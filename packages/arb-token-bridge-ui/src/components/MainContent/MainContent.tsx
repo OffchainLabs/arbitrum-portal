@@ -11,6 +11,7 @@ import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { useMode } from '../../hooks/useMode'
 import { RecoverFunds } from '../RecoverFunds'
+import { BuyPanel } from '../BuyPanel'
 
 export function MainContent() {
   const [isArbitrumStatsVisible] =
@@ -40,6 +41,9 @@ export function MainContent() {
         <Tab.Group as={Fragment} selectedIndex={tab} onChange={setSelectedTab}>
           <TopNavBar />
           <Tab.Panels className="flex w-full items-center justify-center">
+            <Tab.Panel className="w-full sm:max-w-[600px]">
+              <BuyPanel />
+            </Tab.Panel>
             <Tab.Panel className="w-full sm:max-w-[600px]">
               <TransferPanel />
             </Tab.Panel>

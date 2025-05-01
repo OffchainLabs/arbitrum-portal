@@ -1,5 +1,5 @@
 import { Tab } from '@headlessui/react'
-import { PaperAirplaneIcon } from '@heroicons/react/24/outline'
+import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline'
 import { PropsWithChildren } from 'react'
 import { twMerge } from 'tailwind-merge'
 import Image from 'next/image'
@@ -24,9 +24,13 @@ export function TopNavBar() {
   return (
     <Tab.List
       className={twMerge(
-        'grid w-full max-w-[600px] grid-cols-2 bg-white/20 p-[8px] text-white md:rounded'
+        'grid w-full max-w-[600px] grid-cols-3 bg-white/20 p-[8px] text-white md:rounded'
       )}
     >
+      <StyledTab aria-label="Switch to Buy Tab">
+        <WalletIcon className="h-3 w-3" />
+        Buy
+      </StyledTab>
       <StyledTab aria-label="Switch to Bridge Tab">
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge

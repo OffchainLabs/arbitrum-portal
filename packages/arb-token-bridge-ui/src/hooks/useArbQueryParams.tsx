@@ -98,30 +98,6 @@ const debouncedUpdateQueryParams = (
       clearTimeout(debounceTimeout)
       debounceTimeout = null
     }
-
-    originalSetQueryParams(prevState =>
-      updates({ ...prevState, ...pendingUpdates })
-    )
-    pendingUpdates = {}
-  } else {
-    // Handle classic object updates: setQueryParams({ amount: "0.1" })
-    pendingUpdates = { ...pendingUpdates, ...updates }
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout)
-    }
-
-    if (debounce) {
-      debounceTimeout = setTimeout(() => {
-        originalSetQueryParams(pendingUpdates)
-        pendingUpdates = {}
-        debounceTimeout = null
-      }, 400)
-    } else {
-      originalSetQueryParams(pendingUpdates)
-      pendingUpdates = {}
-      debounceTimeout = null
-    }
   }
 }
 
