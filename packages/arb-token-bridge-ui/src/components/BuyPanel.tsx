@@ -30,7 +30,7 @@ export function BuyPanel() {
   const handleGetSignature = useCallback(
     async (url: string): Promise<string> => {
       const response = await fetch(
-        `${getAPIBaseUrl()}/api/moonpay?url=${encodeURIComponent(url)}`,
+        `${getAPIBaseUrl()}/api/moonpay?url=${url}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
