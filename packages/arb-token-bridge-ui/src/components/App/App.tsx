@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-
 import axios from 'axios'
 import { TokenBridgeParams } from '../../hooks/useArbTokenBridge'
 import { BlockedDialog } from './BlockedDialog'

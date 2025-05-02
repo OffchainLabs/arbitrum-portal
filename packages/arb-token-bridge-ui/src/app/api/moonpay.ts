@@ -12,12 +12,11 @@ export default async function handler(
   req: NextApiRequest & { query: { chainId: string } },
   res: NextApiResponse<{ signature: string } | { message: string }>
 ) {
-  const {
-    method,
-    query: { url }
-  } = req
+  const { method } = req
 
-  if (method !== 'GET') {
+  const url = req.body.url
+
+  if (method !== 'POST') {
     res.status(405).json({ message: 'Method not allowed' })
     return
   }

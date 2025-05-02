@@ -11,7 +11,7 @@ import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { useMode } from '../../hooks/useMode'
 import { RecoverFunds } from '../RecoverFunds'
-import { BuyPanel } from '../BuyPanel'
+import BuyPanel from '../BuyPanel'
 
 export function MainContent() {
   const [isArbitrumStatsVisible] =

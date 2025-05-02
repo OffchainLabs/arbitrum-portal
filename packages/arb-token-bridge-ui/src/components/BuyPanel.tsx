@@ -1,41 +1,22 @@
 import { useAccount } from 'wagmi'
-import dynamic from 'next/dynamic'
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
+import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
+import { twMerge } from 'tailwind-merge'
 
 import { getAPIBaseUrl } from '../util'
 
-const MoonPayProvider = dynamic(
-  () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
-  { ssr: false }
-)
-
-const MoonPayBuyWidget = dynamic(
-  () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayBuyWidget),
-  { ssr: false }
-)
-
-export function BuyPanel() {
+const BuyPanel = memo(function BuyPanel() {
   const { address } = useAccount()
 
-  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
-
-  if (typeof moonPayApiKey === 'undefined') {
-    throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
-  }
-
-  async function onLogin() {
-    console.log('Customer logged in to MoonPay!')
-  }
-
   const handleGetSignature = useCallback(
-    async (url: string): Promise<string> => {
-      const response = await fetch(
-        `${getAPIBaseUrl()}/api/moonpay?url=${url}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+    async (widgetUrl: string): Promise<string> => {
+      const response = await fetch(`${getAPIBaseUrl()}/api/moonpay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: widgetUrl })
+      })
       const { signature } = await response.json()
       console.log('Signature:', signature)
       return signature
@@ -44,16 +25,22 @@ export function BuyPanel() {
   )
 
   return (
-    <MoonPayProvider apiKey={moonPayApiKey}>
+    <div
+      className={twMerge(
+        'flex h-full w-full flex-col items-center justify-center',
+        '[&>div]:!m-0 [&>div]:!w-full [&>div]:!rounded-none [&>div]:!border-x-0 [&>div]:!border-white/30 [&>div]:!p-4 lg:[&>div]:!rounded lg:[&>div]:!border-x'
+      )}
+    >
       <MoonPayBuyWidget
         variant="embedded"
         walletAddress={address}
-        onLogin={onLogin}
         baseCurrencyCode="usd"
         defaultCurrencyCode="eth"
         onUrlSignatureRequested={handleGetSignature}
         visible
       />
-    </MoonPayProvider>
+    </div>
   )
-}
+})
+
+export default BuyPanel
