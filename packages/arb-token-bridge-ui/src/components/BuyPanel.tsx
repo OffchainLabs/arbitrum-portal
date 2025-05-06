@@ -18,7 +18,6 @@ const BuyPanel = memo(function BuyPanel() {
         body: JSON.stringify({ url: widgetUrl })
       })
       const { signature } = await response.json()
-      console.log('Signature:', signature)
       return signature
     },
     []

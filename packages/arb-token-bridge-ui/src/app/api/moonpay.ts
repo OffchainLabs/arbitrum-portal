@@ -33,9 +33,6 @@ export default async function handler(
 
   const signedUrl = moonPay.url.generateSignature(url, { returnFullUrl: true })
 
-  console.log('url:', url)
-  console.log('Generated signedUrl:', signedUrl)
-
   if (!signedUrl) {
     res.status(400).json({ message: 'Signature is null' })
     return
