@@ -28,7 +28,7 @@ const BuyPanel = memo(function BuyPanel() {
     <div
       className={twMerge(
         'flex h-full w-full flex-col items-center justify-center',
-        '[&>div]:!m-0 [&>div]:!w-full [&>div]:!rounded-none [&>div]:!border-x-0 [&>div]:!border-white/30 [&>div]:!p-4 lg:[&>div]:!rounded lg:[&>div]:!border-x'
+        '[&>div]:!m-0 [&>div]:!w-full [&>div]:!rounded-none [&>div]:!border-x-0 [&>div]:!border-white/30 [&>div]:!p-4 sm:[&>div]:!rounded sm:[&>div]:!border-x'
       )}
     >
       <MoonPayBuyWidget

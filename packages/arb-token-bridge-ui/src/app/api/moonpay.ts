@@ -31,16 +31,31 @@ export default async function handler(
     return
   }
 
-  const signature = moonPay.url.generateSignature(url)
+  const signedUrl = moonPay.url.generateSignature(url, { returnFullUrl: true })
 
-  const isSignatureValid = moonPay.url.isSignatureValid(
-    `${url}&signature=${signature}`
-  )
+  console.log('url:', url)
+  console.log('Generated signedUrl:', signedUrl)
 
-  if (!isSignatureValid || !signature) {
+  if (!signedUrl) {
+    res.status(400).json({ message: 'Signature is null' })
+    return
+  }
+
+  const isSignatureValid = moonPay.url.isSignatureValid(signedUrl)
+
+  if (!isSignatureValid) {
     res.status(400).json({ message: 'Invalid signature' })
     return
   }
+
+  const signatureFromSignedUrl = signedUrl.split('signature=')[1]
+
+  if (!signatureFromSignedUrl) {
+    res.status(400).json({ message: 'Signature is undefined' })
+    return
+  }
+
+  const signature = decodeURIComponent(signatureFromSignedUrl)
 
   res.status(200).json({ signature })
 }
