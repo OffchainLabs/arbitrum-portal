@@ -1,6 +1,5 @@
 import { useAccount } from 'wagmi'
 import Image from 'next/image'
-import { Cog8ToothIcon } from '@heroicons/react/24/outline'
 import {
   DialogProps,
   DialogWrapper,
@@ -15,6 +14,10 @@ import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
 import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
 import { UseDialogProps } from '../common/Dialog'
 import WidgetTxHistoryIcon from '@/images/WidgetTxHistoryIcon.svg'
+import { Button } from '../common/Button'
+import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton'
+import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
+import { ChevronDownIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
 type WidgetTransferPanelProps = {
   moveFundsButtonOnClick: () => void
@@ -23,7 +26,6 @@ type WidgetTransferPanelProps = {
   tokenImportDialogProps: UseDialogProps
   openDialog: OpenDialogFunction
   dialogProps: DialogProps
-  showSettingsButton: boolean
   closeWithResetTokenImportDialog: () => void
 }
 
@@ -34,7 +36,6 @@ export function WidgetTransferPanel({
   isTokenAlreadyImported,
   tokenFromSearchParams,
   tokenImportDialogProps,
-  showSettingsButton,
   closeWithResetTokenImportDialog
 }: WidgetTransferPanelProps) {
   const { isConnected } = useAccount()
@@ -46,50 +47,53 @@ export function WidgetTransferPanel({
       <div className="relative m-auto grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent p-4 text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2">
         {/* Left/Top panel */}
         <div className="flex h-full flex-col gap-1 overflow-hidden">
-          <div className="mb-2 flex h-[30px] flex-row items-center justify-between text-lg">
-            <WidgetHeaderAccountButton />
+          <div className="mb-2 flex h-[40px] flex-row items-center justify-between text-lg">
+            <Button
+              variant="secondary"
+              className="h-[40px] px-[10px] py-[10px] text-white disabled:bg-transparent disabled:text-white disabled:opacity-100"
+              disabled
+            >
+              <div className="flex items-center gap-2">
+                <PaperAirplaneIcon className="h-3 w-3" />
+                Bridge
+                <ChevronDownIcon className="h-3 w-3 opacity-30" />
+              </div>
+            </Button>
 
             <div className="flex flex-row gap-2 text-sm">
+              <WidgetHeaderAccountButton />
+
               {/* widget transaction history */}
               {isConnected && (
-                <button
-                  className="arb-hover text-white"
+                <Button
+                  variant="secondary"
+                  className="h-[40px] px-[10px] py-[10px] text-white"
                   onClick={() => openDialog('widget_transaction_history')}
                 >
                   <Image
-                    height={20}
-                    width={20}
+                    height={18}
+                    width={18}
                     alt="Tx history logo"
                     src={WidgetTxHistoryIcon}
                   />
-                </button>
+                </Button>
               )}
 
-              {/* slippage and advanced settings */}
-              {showSettingsButton && (
-                <button
-                  onClick={() => openDialog('settings')}
-                  aria-label="Open Settings"
-                >
-                  <Cog8ToothIcon
-                    width={20}
-                    className="arb-hover text-white/80"
-                  />
-                </button>
-              )}
+              <LifiSettingsButton />
             </div>
           </div>
           <TransferPanelMain />
         </div>
 
         {/* Right/Bottom panel */}
-        <div className="flex h-full flex-col gap-1 min-[850px]:justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="mb-2 h-[30px] text-lg">Receive</div>
+        <div className="flex h-full flex-col gap-1 rounded-lg min-[850px]:justify-between min-[850px]:bg-white/5 min-[850px]:p-4">
+          <div className="flex flex-col gap-4">
+            <ReceiveFundsHeader />
+
             <WidgetRoutes />
           </div>
 
-          <div className="sticky bottom-4 flex flex-col gap-2 bg-widget-background pt-2">
+          <div className="flex flex-col gap-2 pt-2">
             <ToSConfirmationCheckbox />
 
             {isConnected ? (

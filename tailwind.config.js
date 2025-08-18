@@ -24,7 +24,7 @@ module.exports = {
 
         // PRIMARY
         cyan: '#DDEAFA',
-        brick: '#FFDDD6',
+        brick: '#ff9f8b',
         orange: '#FFEED3',
         lime: '#E8FFE4',
         lilac: '#754562',
@@ -115,7 +115,8 @@ module.exports = {
         8: '2rem'
       },
       borderRadius: {
-        DEFAULT: 'var(--border-radius, 5px)'
+        DEFAULT: 'var(--border-radius, 10px)',
+        sm: 'calc(var(--border-radius, 10px) / 2)'
       },
       borderWidth: {
         DEFAULT: 'var(--border-width, 1px)'

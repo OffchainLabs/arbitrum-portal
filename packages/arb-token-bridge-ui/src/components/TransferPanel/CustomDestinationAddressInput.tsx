@@ -62,7 +62,7 @@ async function getDestinationAddressWarning({
   return null
 }
 
-export const AdvancedSettings = ({
+export const CustomDestinationAddressInput = ({
   destinationAddress,
   onDestinationAddressChange
 }: {
@@ -173,13 +173,13 @@ export const AdvancedSettings = ({
         </div>
       </div>
 
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-400">{error}</p>}
       {!error && warning && (
-        <p className="mt-1 text-xs text-yellow-500">{warning}</p>
+        <p className="text-xs text-yellow-500">{warning}</p>
       )}
       {destinationAddress && !error && (
         <ExternalLink
-          className="arb-hover mt-2 flex w-fit items-center text-xs font-medium text-white/50"
+          className="arb-hover flex w-fit items-center text-xs font-medium text-white/50"
           href={`${getExplorerUrl(
             isDepositMode ? childChain.id : parentChain.id
           )}/address/${destinationAddress}`}

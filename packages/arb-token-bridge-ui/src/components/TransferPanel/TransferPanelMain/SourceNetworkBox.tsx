@@ -5,7 +5,6 @@ import React, {
   useMemo
 } from 'react'
 import { utils } from 'ethers'
-import Image from 'next/image'
 import { PlusCircleIcon } from '@heroicons/react/24/outline'
 import { create } from 'zustand'
 
@@ -33,13 +32,14 @@ import { useTransferReadiness } from '../useTransferReadiness'
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported'
 import { Button } from '../../common/Button'
 import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals'
-import { getBridgeUiConfigForChain } from '../../../util/bridgeUiConfig'
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals'
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer'
 import { useBalances } from '../../../hooks/useBalances'
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
+import { LifiSettingsButton } from '../LifiSettingsButton'
+import { useMode } from '../../../hooks/useMode'
 
 function Amount2ToggleButton() {
   const [networks] = useNetworks()
@@ -231,10 +231,7 @@ export function SourceNetworkBox() {
   const isBatchTransferSupported = useIsBatchTransferSupported()
   const isCctpTransfer = useIsCctpTransfer()
   const isOft = useIsOftV2Transfer()
-
-  const {
-    network: { logo: networkLogo }
-  } = getBridgeUiConfigForChain(networks.sourceChain.id)
+  const { embedMode } = useMode()
 
   return (
     <>
@@ -244,14 +241,8 @@ export function SourceNetworkBox() {
             type="source"
             onClick={openSourceNetworkSelectionDialog}
           />
-          <div className="relative h-[44px] w-[44px]">
-            <Image
-              src={networkLogo}
-              alt={`${networks.sourceChain.name} logo`}
-              layout={'fill'}
-              objectFit={'contain'}
-            />
-          </div>
+
+          {!embedMode && <LifiSettingsButton />}
         </div>
 
         <div className="flex flex-col gap-1">
