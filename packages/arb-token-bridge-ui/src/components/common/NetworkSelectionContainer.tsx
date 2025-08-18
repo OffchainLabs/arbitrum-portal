@@ -10,12 +10,11 @@ import { Chain } from 'wagmi/chains'
 import { useDebounce } from '@uidotdev/usehooks'
 import {
   ChevronDownIcon,
+  ExclamationCircleIcon,
   ShieldExclamationIcon
 } from '@heroicons/react/24/outline'
 import { twMerge } from 'tailwind-merge'
 import { AutoSizer, List, ListRowProps } from 'react-virtualized'
-import { hex } from 'wcag-contrast'
-
 import { isNetwork, getNetworkName } from '../../util/networks'
 import { ChainId } from '../../types/ChainId'
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode'
@@ -37,15 +36,21 @@ import { useAccountType } from '../../hooks/useAccountType'
 import { useSelectedToken } from '../../hooks/useSelectedToken'
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures'
 import { useMode } from '../../hooks/useMode'
+import { formatAmount } from '../../util/NumberUtils'
+import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrencyBalanceForChainId'
+import { useAccount } from 'wagmi'
 import { Dialog, useDialog } from './Dialog'
 import { DialogProps } from './Dialog2'
+import { Button } from './Button'
+import { Tooltip } from './Tooltip'
+import { Loader } from './atoms/Loader'
 
 type NetworkType = 'core' | 'more' | 'orbit'
 
 enum ChainGroupName {
-  core = 'CORE CHAINS',
-  more = 'MORE CHAINS',
-  orbit = 'ORBIT CHAINS'
+  core = 'Core Chains',
+  more = 'More Chains',
+  orbit = 'Orbit Chains'
 }
 
 type ChainGroupInfo = {
@@ -94,6 +99,7 @@ function ChainTypeInfoRow({
 }) {
   const { name, description } = chainGroup
   const isOrbitGroup = chainGroup.name === ChainGroupName.orbit
+  const isCoreGroup = chainGroup.name === ChainGroupName.core
 
   return (
     <div
@@ -102,7 +108,8 @@ function ChainTypeInfoRow({
       className={twMerge(
         'px-4 py-3',
         !isOrbitGroup &&
-          'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30 before:content-[""]'
+          'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30 before:content-[""]',
+        isCoreGroup && 'before:h-[0px]'
       )}
     >
       <p className="text-sm text-white/70">{name}</p>
@@ -126,7 +133,6 @@ export function NetworkButton({
   const isNetworkSelectionDisabled = isFeatureDisabled(
     DisabledFeatures.NETWORK_SELECTION
   )
-  const [{ theme }] = useArbQueryParams()
 
   const selectedChainId = isSource
     ? networks.sourceChain.id
@@ -140,31 +146,21 @@ export function NetworkButton({
     (isSmartContractWallet && type === 'source') ||
     isLoading
 
-  const backgroundColor =
-    theme.networkThemeOverrideColor ??
-    getBridgeUiConfigForChain(selectedChainId).color
-
-  const colorContrast = hex('#ffffff', backgroundColor)
-
-  const buttonStyle = {
-    backgroundColor,
-    color: colorContrast >= 3 ? '#ffffff' : '#000000'
-  }
-
   return (
-    <button
-      style={buttonStyle}
-      className={twMerge(
-        'arb-hover flex w-max items-center gap-1 rounded px-3 py-2 text-sm text-white outline-none md:gap-2 md:text-2xl'
-      )}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <span className="max-w-[220px] truncate text-sm leading-[1.1] md:max-w-[250px] md:text-xl">
-        {isSource ? 'From:' : 'To: '} {getNetworkName(selectedChainId)}
-      </span>
-      {!disabled && <ChevronDownIcon width={16} />}
-    </button>
+    <Button variant="secondary" disabled={disabled} onClick={onClick}>
+      <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
+        {isSource ? 'From:' : 'To: '}
+        <NetworkImage
+          chainId={
+            isSource ? networks.sourceChain.id : networks.destinationChain.id
+          }
+          className="h-[20px] w-[20px] p-[2px]"
+          size={20}
+        />
+        {getNetworkName(selectedChainId)}
+        {!disabled && <ChevronDownIcon width={12} />}
+      </div>
+    </Button>
   )
 }
 
@@ -183,6 +179,12 @@ function NetworkRow({
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId)
   const chain = getWagmiChain(chainId)
+  const { address: walletAddress } = useAccount()
+  const {
+    data: balanceState,
+    isLoading: isLoadingBalance,
+    error: balanceError
+  } = useNativeCurrencyBalanceForChainId(chainId, walletAddress)
 
   function handleClick() {
     onClick(chain)
@@ -197,27 +199,58 @@ function NetworkRow({
       type="button"
       aria-label={`Switch to ${network.name}`}
       className={twMerge(
-        'flex h-[90px] w-full items-center gap-4 px-4 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
+        'flex h-[40px] w-full items-center gap-4 rounded px-4 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
         isSelected && 'bg-white/10' // selected row
       )}
     >
       <NetworkImage
         chainId={chainId}
-        className="h-[32px] w-[32px] p-[6px]"
+        className="h-[20px] w-[20px] p-[2px]"
         size={20}
       />
-      <div className={twMerge('flex flex-col items-start gap-1')}>
-        <span className="truncate leading-[1.1]">{network.name}</span>
-        {network.description && (
-          <p
-            className="line-clamp-3 text-left text-xs leading-[1.15] text-white/70"
-            title={network.description}
-          >
-            {network.description}
-          </p>
+      <div
+        className={twMerge(
+          'flex w-full flex-row items-center justify-between gap-1'
         )}
-        <p className="text-[10px] leading-none text-white/50">
-          {nativeTokenData?.symbol ?? 'ETH'} is the native gas token
+      >
+        <span className="truncate text-base">{network.name}</span>
+
+        <p className="text-sm leading-none text-white/70">
+          {!walletAddress && (
+            <Tooltip
+              content={`${
+                nativeTokenData?.symbol ?? 'ETH'
+              } is the native token`}
+            >
+              <p className="text-sm leading-none text-white/70">
+                {nativeTokenData?.symbol ?? 'ETH'}
+              </p>
+            </Tooltip>
+          )}
+
+          {isLoadingBalance && <Loader size="small" />}
+
+          {!isLoadingBalance && balanceError && (
+            <Tooltip content="Error fetching balance">
+              <div className="flex items-center gap-1">
+                <ExclamationCircleIcon className="h-4 w-4 text-brick" />0{' '}
+                {nativeTokenData?.symbol ?? 'ETH'}
+              </div>
+            </Tooltip>
+          )}
+
+          {balanceState && (
+            <Tooltip
+              content={`${
+                nativeTokenData?.symbol ?? 'ETH'
+              } is the native token`}
+            >
+              {formatAmount(balanceState.balance, {
+                decimals: balanceState.decimals,
+                symbol: balanceState.symbol
+              })}
+            </Tooltip>
+          )}
         </p>
       </div>
     </button>
@@ -330,7 +363,7 @@ function NetworksPanel({
     }
     const rowItem = getBridgeUiConfigForChain(rowItemOrChainId)
     if (rowItem.network.description) {
-      return 95
+      return 50
     }
     return 60
   }
@@ -390,7 +423,7 @@ function NetworksPanel({
   return (
     <div className="flex flex-col gap-4">
       <SearchPanelTable
-        searchInputPlaceholder="Search a network name"
+        searchInputPlaceholder="Search by network name"
         searchInputValue={networkSearched}
         searchInputOnChange={onSearchInputChange}
         errorMessage={errorMessage}

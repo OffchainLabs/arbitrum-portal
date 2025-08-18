@@ -41,6 +41,7 @@ import { getOrbitChains } from '../../util/orbitChainsList'
 import { useMode } from '../../hooks/useMode'
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures'
 import { isLifiEnabled } from '../../util/featureFlag'
+import { Button } from '../common/Button'
 
 export function SwitchNetworksButton(
   props: React.ButtonHTMLAttributes<HTMLButtonElement>
@@ -79,14 +80,20 @@ export function SwitchNetworksButton(
 
   return (
     <div className="z-[1] flex h-4 w-full items-center justify-center lg:h-1">
-      <button
+      <Button
         type="button"
-        disabled={disabled}
+        variant="tertiary"
         className={twMerge(
-          'group relative flex h-7 w-7 items-center justify-center rounded bg-gray-1 p-1',
-          theme.primaryCtaColor ? 'bg-primary-cta' : ''
+          'group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-gray-1 bg-[#212121] p-1',
+          theme.primaryCtaColor ? 'bg-primary-cta' : '',
+          disabled && 'pointer-events-none'
         )}
         onClick={() => {
+          // we don't want to add `disabled` property to the button because it will change the button styles, so instead we handle it on click
+          if (disabled) {
+            return
+          }
+
           setNetworks({
             sourceChainId: networks.destinationChain.id,
             destinationChainId: networks.sourceChain.id
@@ -95,51 +102,15 @@ export function SwitchNetworksButton(
         aria-label="Switch Networks"
         {...props}
       >
-        <SwitchNetworkButtonBorderTop />
+        {/* <SwitchNetworkButtonBorderTop /> */}
         {isNetworkSwapBlocked ? (
-          <ArrowDownIcon className="h-6 w-6 stroke-1 text-white" />
+          <ArrowDownIcon className="h-4 w-4 stroke-2 text-white" />
         ) : (
-          <ArrowsUpDownIcon className="h-8 w-8 stroke-1 text-white transition duration-300 group-hover:rotate-180 group-hover:opacity-80" />
+          <ArrowsUpDownIcon className="h-4 w-4 stroke-2 text-white transition duration-300 group-hover:rotate-180 group-hover:opacity-80" />
         )}
-        <SwitchNetworkButtonBorderBottom />
-      </button>
+        {/* <SwitchNetworkButtonBorderBottom /> */}
+      </Button>
     </div>
-  )
-}
-
-function SwitchNetworkButtonBorderTop() {
-  const [networks] = useNetworks()
-  const [{ theme }] = useArbQueryParams()
-
-  const sourceNetworkColor = getBridgeUiConfigForChain(
-    networks.sourceChain.id
-  ).color
-
-  return (
-    <div
-      className="absolute left-0 right-0 top-0 m-auto h-[7.5px] w-full rounded-t border-x border-t transition-[border-color] duration-200 lg:h-[10px]"
-      style={{
-        borderColor: theme.networkThemeOverrideColor ?? sourceNetworkColor
-      }}
-    />
-  )
-}
-
-function SwitchNetworkButtonBorderBottom() {
-  const [networks] = useNetworks()
-  const [{ theme }] = useArbQueryParams()
-
-  const destinationNetworkColor = getBridgeUiConfigForChain(
-    networks.destinationChain.id
-  ).color
-
-  return (
-    <div
-      className="absolute bottom-0 left-0 right-0 m-auto h-[7.5px] w-full rounded-b border-x border-b transition-[border-color] duration-200 lg:h-[10px]"
-      style={{
-        borderColor: theme.networkThemeOverrideColor ?? destinationNetworkColor
-      }}
-    />
   )
 }
 
@@ -191,8 +162,6 @@ export function NetworkContainer({
   children: React.ReactNode
 }) {
   const { address: walletAddress } = useAccount()
-  const { color } = getBridgeUiConfigForChain(network.id)
-  const [{ theme }] = useArbQueryParams()
 
   const showCustomAddressBanner = useMemo(() => {
     if (!customAddress) {
@@ -205,17 +174,13 @@ export function NetworkContainer({
   }, [customAddress, walletAddress])
 
   return (
-    <div>
+    <div className="rounded border border-white/10">
       {showCustomAddressBanner && (
         <CustomAddressBanner network={network} customAddress={customAddress} />
       )}
       <div
-        style={{
-          backgroundColor: theme.networkThemeOverrideColor ?? `${color}66`, // 255*40% is 102, = 66 in hex
-          borderColor: theme.networkThemeOverrideColor ?? color
-        }}
         className={twMerge(
-          'relative rounded border transition-colors duration-400',
+          'relative rounded bg-white/5 transition-colors duration-400',
           showCustomAddressBanner && 'rounded-t-none'
         )}
       >
@@ -307,9 +272,7 @@ export function TransferPanelMain() {
   useUpdateUSDCTokenData()
 
   return (
-    <div
-      className={twMerge('flex flex-col pb-6 lg:gap-y-1', embedMode && 'pb-0')}
-    >
+    <div className={twMerge('flex flex-col lg:gap-y-1', embedMode && 'pb-0')}>
       <SourceNetworkBox />
 
       <SwitchNetworksButton />
