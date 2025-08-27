@@ -1,3 +1,4 @@
+import { MoonPayProvider } from '@moonpay/moonpay-react'
 import { ReactNode, useMemo } from 'react'
 import { Provider as OvermindProvider } from 'overmind-react'
 import { WagmiProvider } from 'wagmi'
@@ -54,13 +55,23 @@ createConfig({ integrator: INTEGRATOR_ID })
 export function AppProviders({ children }: AppProvidersProps) {
   const overmind = useMemo(() => createOvermind(config), [])
 
+  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
+
+  if (typeof moonPayApiKey === 'undefined') {
+    throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
+  }
+
   return (
     <OvermindProvider value={overmind}>
       <ArbQueryParamProvider>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider theme={rainbowkitTheme}>
-              <AppContextProvider>{children}</AppContextProvider>
+              <AppContextProvider>
+                <MoonPayProvider apiKey={moonPayApiKey}>
+                  {children}
+                </MoonPayProvider>
+              </AppContextProvider>
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
