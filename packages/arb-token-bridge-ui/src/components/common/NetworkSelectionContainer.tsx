@@ -112,7 +112,10 @@ function ChainTypeInfoRow({
         isCoreGroup && 'before:h-[0px]'
       )}
     >
-      <p className="text-sm text-white/70">{name}</p>
+      <div className="flex flex-row flex-nowrap items-center justify-between">
+        <p className="text-sm text-white/70">{name}</p>
+        <p className="text-xs text-white/50">Native Balance</p>
+      </div>
       {description}
     </div>
   )
@@ -215,14 +218,14 @@ function NetworkRow({
       >
         <span className="truncate text-base">{network.name}</span>
 
-        <p className="text-sm leading-none text-white/70">
+        <p className="text-xs leading-none text-white/70">
           {!walletAddress && (
             <Tooltip
               content={`${
                 nativeTokenData?.symbol ?? 'ETH'
               } is the native token`}
             >
-              <p className="text-sm leading-none text-white/70">
+              <p className="leading-none text-white/70">
                 {nativeTokenData?.symbol ?? 'ETH'}
               </p>
             </Tooltip>
