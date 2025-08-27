@@ -1,12 +1,11 @@
 import { useAccount } from 'wagmi'
 import useSWRImmutable from 'swr/immutable'
 
-import { addressIsSmartContract } from '../util/AddressUtils'
 import { useNetworks } from './useNetworks'
+import { AccountType, getAccountType } from '../util/AccountUtils'
 
 type Result = {
-  isEOA: boolean
-  isSmartContractWallet: boolean
+  accountType: AccountType | undefined
   isLoading: boolean
 }
 
@@ -19,9 +18,10 @@ export function useAccountType(addressOverride?: string): Result {
 
   const address = addressOverride ?? walletAddress
 
-  const { data: isSmartContractWallet = false, isLoading } = useSWRImmutable(
+  const { data: accountType, isLoading } = useSWRImmutable(
     address && sourceChain ? [address, sourceChain.id, 'useAccountType'] : null,
-    ([_address, chainId]) => addressIsSmartContract(_address, chainId),
+    ([_address, chainId]) =>
+      getAccountType({ address: _address, chainId: chainId }),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,
@@ -29,10 +29,8 @@ export function useAccountType(addressOverride?: string): Result {
     }
   )
 
-  // By default, assume it's an EOA
   return {
-    isEOA: !isSmartContractWallet,
-    isSmartContractWallet,
+    accountType,
     isLoading
   }
 }

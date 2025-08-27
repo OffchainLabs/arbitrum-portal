@@ -160,7 +160,8 @@ export function TransferPanel() {
 
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
 
-  const { isSmartContractWallet } = useAccountType()
+  const { accountType } = useAccountType()
+  const isSmartContractWallet = accountType === 'smart-contract-wallet'
 
   const { current: signer } = useLatest(
     useEthersSigner({ chainId: networks.sourceChain.id })

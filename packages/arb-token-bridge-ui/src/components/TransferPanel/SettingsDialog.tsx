@@ -148,7 +148,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
   )
   const { destinationAddressError } =
     useDestinationAddressError(destinationAddress)
-  const { isSmartContractWallet } = useAccountType()
+  const { accountType } = useAccountType()
   const isLifiSupported = useMemo(
     () =>
       isValidLifiTransfer({
@@ -184,7 +184,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
         setDisabledBridgesToStore(disabledBridges)
         props.onClose(confirmed)
 
-        if (isSmartContractWallet) {
+        if (accountType === 'smart-contract-wallet') {
           return
         }
 

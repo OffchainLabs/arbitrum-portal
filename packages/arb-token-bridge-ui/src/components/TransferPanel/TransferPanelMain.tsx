@@ -46,8 +46,7 @@ import { Button } from '../common/Button'
 export function SwitchNetworksButton(
   props: React.ButtonHTMLAttributes<HTMLButtonElement>
 ) {
-  const { isSmartContractWallet, isLoading: isLoadingAccountType } =
-    useAccountType()
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType()
 
   const [{ theme }] = useArbQueryParams()
 
@@ -63,7 +62,7 @@ export function SwitchNetworksButton(
     // block network swaps in case of either a smart contract wallet, or if the destination chain does not support transfers to the source-chain
     // in this case, we show a one-way arrow and disable the swap button
     return (
-      isSmartContractWallet ||
+      accountType === 'smart-contract-wallet' ||
       !getDestinationChainIds(networks.destinationChain.id, {
         disableTransfersToNonArbitrumChains,
         includeLifiEnabledChainPairs: isLifiEnabled()
@@ -72,7 +71,7 @@ export function SwitchNetworksButton(
   }, [
     networks.destinationChain.id,
     networks.sourceChain.id,
-    isSmartContractWallet,
+    accountType,
     disableTransfersToNonArbitrumChains
   ])
 
