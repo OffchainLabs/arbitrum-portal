@@ -18,8 +18,8 @@ export function LifiSettingsButton() {
     current: { isDepositMode }
   } = useLatest(useNetworksRelationship(latestNetworks.current))
 
-  const { isSmartContractWallet, isLoading: isLoadingAccountType } =
-    useAccountType()
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType()
+  const isSmartContractWallet = accountType === 'smart-contract-wallet'
 
   /**
    * Show settings if we're displaying lifi routes

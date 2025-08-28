@@ -15,7 +15,8 @@ export const ReceiveFundsHeader = () => {
 
   const [{ destinationAddress }, setQueryParams] = useArbQueryParams()
 
-  const { isSmartContractWallet } = useAccountType()
+  const { accountType } = useAccountType()
+  const isSmartContractWallet = accountType === 'smart-contract-wallet'
 
   const { destinationAddressError } = useDestinationAddressError()
 
