@@ -1,12 +1,109 @@
+import Image from 'next/image'
 import { useAccount } from 'wagmi'
-import { memo, useCallback } from 'react'
+import React, { memo, useCallback } from 'react'
 import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 
+import MoonPay from '@/images/onramp/moonpay.svg'
+
 import { getAPIBaseUrl } from '../util'
+import { useNativeCurrency } from '../hooks/useNativeCurrency'
+import { getProviderForChainId } from '@/token-bridge-sdk/utils'
+import { ChainId } from '../types/ChainId'
+import { SafeImage } from './common/SafeImage'
+import { useNativeCurrencyBalanceForChainId } from '../hooks/useNativeCurrencyBalanceForChainId'
+import { formatAmount } from '../util/NumberUtils'
+import {
+  NetworkButton,
+  NetworksPanel
+} from './common/NetworkSelectionContainer'
+import { Button } from './common/Button'
+import { NetworkImage } from './common/NetworkImage'
+import { getNetworkName } from '../util/networks'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { Dialog } from './common/Dialog'
+import { useMode } from '../hooks/useMode'
+import { SearchPanel } from './common/SearchPanel/SearchPanel'
+import { Chain } from 'viem'
+import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
+
+const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
+
+export const BuyPanelNetworkSelectionContainer = React.memo(
+  (props: DialogProps & { isOpen: boolean }) => {
+    const { embedMode } = useMode()
+    const { chainId } = useAccount()
+
+    const selectedChainId = chainId ?? ChainId.ArbitrumOne
+
+    return (
+      <Dialog
+        isOpen={props.isOpen}
+        onClose={() => {
+          props.onClose(false)
+        }}
+        title={`Select Network`}
+        actionButtonProps={{ hidden: true }}
+        isFooterHidden={true}
+        className={twMerge(
+          'h-screen overflow-hidden md:h-[calc(100vh_-_175px)] md:max-h-[900px] md:max-w-[500px]',
+          embedMode && 'md:h-full'
+        )}
+      >
+        <SearchPanel>
+          <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
+            <NetworksPanel
+              chainIds={moonPayChainIds}
+              selectedChainId={selectedChainId}
+              close={() => props.onClose(false)}
+              onNetworkRowClick={(chain: Chain) => {}}
+            />
+          </SearchPanel.MainPage>
+        </SearchPanel>
+      </Dialog>
+    )
+  }
+)
+
+BuyPanelNetworkSelectionContainer.displayName =
+  'BuyPanelNetworkSelectionContainer'
+
+function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
+  const { chainId } = useAccount()
+
+  const selectedChainId = chainId ?? ChainId.ArbitrumOne
+
+  return (
+    <Button variant="secondary" onClick={onClick}>
+      <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
+        <NetworkImage
+          chainId={chainId ?? ChainId.ArbitrumOne}
+          className="h-[20px] w-[20px] p-[2px]"
+          size={20}
+        />
+        {getNetworkName(selectedChainId)}
+        <ChevronDownIcon width={12} />
+      </div>
+    </Button>
+  )
+}
 
 const BuyPanel = memo(function BuyPanel() {
-  const { address } = useAccount()
+  const { address, chainId } = useAccount()
+  const provider = getProviderForChainId(chainId ?? ChainId.ArbitrumOne)
+  const nativeCurrency = useNativeCurrency({ provider })
+  const {
+    data: balanceState,
+    isLoading: isLoadingBalance,
+    error: balanceError
+  } = useNativeCurrencyBalanceForChainId(
+    chainId ?? ChainId.ArbitrumOne,
+    address
+  )
+  const [dialogProps, openDialog] = useDialog2()
+  const openBuyPanelNetworkSelectionDialog = () => {
+    openDialog('buy_panel_network_selection')
+  }
 
   const handleGetSignature = useCallback(
     async (widgetUrl: string): Promise<string> => {
@@ -24,20 +121,58 @@ const BuyPanel = memo(function BuyPanel() {
   )
 
   return (
-    <div
-      className={twMerge(
-        'flex h-full w-full flex-col items-center justify-center',
-        '[&>div]:!m-0 [&>div]:!w-full [&>div]:!rounded-none [&>div]:!border-x-0 [&>div]:!border-white/30 [&>div]:!p-4 sm:[&>div]:!rounded sm:[&>div]:!border-x'
-      )}
-    >
-      <MoonPayBuyWidget
-        variant="embedded"
-        walletAddress={address}
-        baseCurrencyCode="usd"
-        defaultCurrencyCode="eth"
-        onUrlSignatureRequested={handleGetSignature}
-        visible
-      />
+    <div className="pb-8 text-white">
+      <div className="my-6 flex flex-col items-center justify-center gap-3 text-center">
+        <BuyPanelNetworkButton onClick={openBuyPanelNetworkSelectionDialog} />
+        <p className="flex items-center justify-center space-x-1 text-lg">
+          <span>Balance:</span>
+          <SafeImage
+            width={20}
+            height={20}
+            src={nativeCurrency.logoUrl}
+            alt={nativeCurrency.symbol}
+            className="!ml-2 block"
+          />
+          {balanceState && (
+            <span>
+              {formatAmount(balanceState.balance, {
+                decimals: balanceState.decimals,
+                symbol: balanceState.symbol
+              })}
+            </span>
+          )}
+        </p>
+      </div>
+      <div
+        className={twMerge(
+          'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
+        )}
+      >
+        <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
+        <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
+        <div className="relative mb-4 flex flex-col items-center justify-center">
+          <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
+          <p className="mt-2 text-3xl">MoonPay</p>
+          <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
+        </div>
+        <div
+          className={twMerge(
+            'relative h-full w-full',
+            '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
+            '[&_iframe]:rounded-lg'
+          )}
+        >
+          <MoonPayBuyWidget
+            variant="embedded"
+            walletAddress={address}
+            baseCurrencyCode="usd"
+            defaultCurrencyCode="eth"
+            onUrlSignatureRequested={handleGetSignature}
+            visible
+          />
+        </div>
+      </div>
+      <DialogWrapper {...dialogProps} />
     </div>
   )
 })

@@ -248,7 +248,7 @@ function AddCustomOrbitChainButton({
   )
 }
 
-function NetworksPanel({
+export function NetworksPanel({
   chainIds,
   selectedChainId,
   onNetworkRowClick,

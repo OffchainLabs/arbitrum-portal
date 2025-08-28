@@ -1,0 +1,10 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dotPattern" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="transparent"/>
+      <rect x="2" y="2" width="3" height="3" fill="#353535"/>
+    </pattern>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="url(#dotPattern)"/>
+</svg>
