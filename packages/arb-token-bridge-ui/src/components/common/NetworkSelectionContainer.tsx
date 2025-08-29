@@ -252,12 +252,14 @@ export function NetworksPanel({
   chainIds,
   selectedChainId,
   onNetworkRowClick,
-  close
+  close,
+  showFooter = true
 }: {
   chainIds: ChainId[]
   selectedChainId: ChainId
   onNetworkRowClick: (value: Chain) => void
   close: (focusableElement?: HTMLElement) => void
+  showFooter?: boolean
 }) {
   const [errorMessage, setErrorMessage] = useState('')
   const [networkSearched, setNetworkSearched] = useState('')
@@ -410,7 +412,7 @@ export function NetworksPanel({
           )}
         </AutoSizer>
       </SearchPanelTable>
-      {!embedMode && (
+      {!embedMode && showFooter && (
         <div className="flex justify-between pb-2">
           <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
           <AddCustomOrbitChainButton closeDialog={close} />

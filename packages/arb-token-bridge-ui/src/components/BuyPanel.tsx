@@ -74,6 +74,7 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
                 setSelectedChainId(chain.id)
                 props.onClose(false)
               }}
+              showFooter={false}
             />
           </SearchPanel.MainPage>
         </SearchPanel>
