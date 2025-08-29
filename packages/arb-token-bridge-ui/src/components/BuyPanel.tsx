@@ -3,6 +3,8 @@ import { useAccount } from 'wagmi'
 import React, { memo, useCallback } from 'react'
 import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
+import { create } from 'zustand'
+import { shallow } from 'zustand/shallow'
 
 import MoonPay from '@/images/onramp/moonpay.svg'
 
@@ -13,10 +15,7 @@ import { ChainId } from '../types/ChainId'
 import { SafeImage } from './common/SafeImage'
 import { useNativeCurrencyBalanceForChainId } from '../hooks/useNativeCurrencyBalanceForChainId'
 import { formatAmount } from '../util/NumberUtils'
-import {
-  NetworkButton,
-  NetworksPanel
-} from './common/NetworkSelectionContainer'
+import { NetworksPanel } from './common/NetworkSelectionContainer'
 import { Button } from './common/Button'
 import { NetworkImage } from './common/NetworkImage'
 import { getNetworkName } from '../util/networks'
@@ -29,12 +28,27 @@ import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 
 const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
 
+type BuyPanelStore = {
+  selectedChainId: ChainId
+  setSelectedChainId: (chainId: ChainId) => void
+}
+
+export const useBuyPanelStore = create<BuyPanelStore>()(set => ({
+  selectedChainId: ChainId.ArbitrumOne,
+  setSelectedChainId: (chainId: ChainId) =>
+    set(() => ({ selectedChainId: chainId }))
+}))
+
 export const BuyPanelNetworkSelectionContainer = React.memo(
   (props: DialogProps & { isOpen: boolean }) => {
     const { embedMode } = useMode()
-    const { chainId } = useAccount()
-
-    const selectedChainId = chainId ?? ChainId.ArbitrumOne
+    const { selectedChainId, setSelectedChainId } = useBuyPanelStore(
+      state => ({
+        selectedChainId: state.selectedChainId,
+        setSelectedChainId: state.setSelectedChainId
+      }),
+      shallow
+    )
 
     return (
       <Dialog
@@ -56,7 +70,10 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
               chainIds={moonPayChainIds}
               selectedChainId={selectedChainId}
               close={() => props.onClose(false)}
-              onNetworkRowClick={(chain: Chain) => {}}
+              onNetworkRowClick={(chain: Chain) => {
+                setSelectedChainId(chain.id)
+                props.onClose(false)
+              }}
             />
           </SearchPanel.MainPage>
         </SearchPanel>
@@ -69,15 +86,19 @@ BuyPanelNetworkSelectionContainer.displayName =
   'BuyPanelNetworkSelectionContainer'
 
 function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
-  const { chainId } = useAccount()
-
-  const selectedChainId = chainId ?? ChainId.ArbitrumOne
+  const { selectedChainId } = useBuyPanelStore(
+    state => ({
+      selectedChainId: state.selectedChainId,
+      setSelectedChainId: state.setSelectedChainId
+    }),
+    shallow
+  )
 
   return (
     <Button variant="secondary" onClick={onClick}>
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage
-          chainId={chainId ?? ChainId.ArbitrumOne}
+          chainId={selectedChainId}
           className="h-[20px] w-[20px] p-[2px]"
           size={20}
         />
@@ -89,17 +110,15 @@ function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
 }
 
 const BuyPanel = memo(function BuyPanel() {
-  const { address, chainId } = useAccount()
-  const provider = getProviderForChainId(chainId ?? ChainId.ArbitrumOne)
+  const { address } = useAccount()
+  const { selectedChainId } = useBuyPanelStore()
+  const provider = getProviderForChainId(selectedChainId)
   const nativeCurrency = useNativeCurrency({ provider })
   const {
     data: balanceState,
     isLoading: isLoadingBalance,
     error: balanceError
-  } = useNativeCurrencyBalanceForChainId(
-    chainId ?? ChainId.ArbitrumOne,
-    address
-  )
+  } = useNativeCurrencyBalanceForChainId(selectedChainId, address)
   const [dialogProps, openDialog] = useDialog2()
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection')
