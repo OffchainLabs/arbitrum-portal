@@ -6,6 +6,8 @@ import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
 import { Chain } from 'viem'
+import { utils } from 'ethers'
+import { ChevronDownIcon } from '@heroicons/react/24/outline'
 
 import MoonPay from '@/images/onramp/moonpay.svg'
 
@@ -20,13 +22,11 @@ import { NetworksPanel } from './common/NetworkSelectionContainer'
 import { Button } from './common/Button'
 import { NetworkImage } from './common/NetworkImage'
 import { getNetworkName } from '../util/networks'
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import { Dialog } from './common/Dialog'
 import { useMode } from '../hooks/useMode'
 import { SearchPanel } from './common/SearchPanel/SearchPanel'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
-import { utils } from 'ethers'
 
 const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
 

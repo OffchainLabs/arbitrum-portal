@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import axios from 'axios'
+
 import { TokenBridgeParams } from '../../hooks/useArbTokenBridge'
 import { BlockedDialog } from './BlockedDialog'
-
 import { useActions } from '../../state'
 import { MainContent } from '../MainContent/MainContent'
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync'
