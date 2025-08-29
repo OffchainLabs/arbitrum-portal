@@ -5,6 +5,7 @@ import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
+import { Chain } from 'viem'
 
 import MoonPay from '@/images/onramp/moonpay.svg'
 
@@ -14,7 +15,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils'
 import { ChainId } from '../types/ChainId'
 import { SafeImage } from './common/SafeImage'
 import { useNativeCurrencyBalanceForChainId } from '../hooks/useNativeCurrencyBalanceForChainId'
-import { formatAmount } from '../util/NumberUtils'
+import { formatAmount, formatUSD } from '../util/NumberUtils'
 import { NetworksPanel } from './common/NetworkSelectionContainer'
 import { Button } from './common/Button'
 import { NetworkImage } from './common/NetworkImage'
@@ -23,8 +24,9 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import { Dialog } from './common/Dialog'
 import { useMode } from '../hooks/useMode'
 import { SearchPanel } from './common/SearchPanel/SearchPanel'
-import { Chain } from 'viem'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
+import { useETHPrice } from '../hooks/useETHPrice'
+import { utils } from 'ethers'
 
 const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -120,10 +122,12 @@ const BuyPanel = memo(function BuyPanel() {
     isLoading: isLoadingBalance,
     error: balanceError
   } = useNativeCurrencyBalanceForChainId(selectedChainId, address)
+  const { ethToUSD } = useETHPrice()
   const [dialogProps, openDialog] = useDialog2()
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection')
   }
+  const showPriceInUsd = balanceState?.symbol.toLowerCase() === 'eth' // only show for
 
   const handleGetSignature = useCallback(
     async (widgetUrl: string): Promise<string> => {
@@ -159,6 +163,15 @@ const BuyPanel = memo(function BuyPanel() {
                 decimals: balanceState.decimals,
                 symbol: balanceState.symbol
               })}
+            </span>
+          )}
+          {showPriceInUsd && (
+            <span className="text-white/70">
+              (
+              {formatUSD(
+                ethToUSD(Number(utils.formatEther(balanceState.balance)))
+              )}
+              )
             </span>
           )}
         </p>
