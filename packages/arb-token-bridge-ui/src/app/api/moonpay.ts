@@ -38,7 +38,7 @@ export default async function handler(
     }
 
     if (url.length > 2000) {
-      res.status(400).json({ message: 'URL is too long' })
+      res.status(414).json({ message: 'URL is too long' })
       return
     }
 
@@ -49,7 +49,9 @@ export default async function handler(
       return
     }
 
-    const signedUrl = moonPay.url.generateSignature(url, { returnFullUrl: true })
+    const signedUrl = moonPay.url.generateSignature(url, {
+      returnFullUrl: true
+    })
 
     if (!signedUrl) {
       res.status(500).json({ message: 'Failed to generate signature' })

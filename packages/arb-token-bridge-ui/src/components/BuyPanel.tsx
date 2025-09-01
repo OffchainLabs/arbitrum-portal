@@ -27,6 +27,7 @@ import { useMode } from '../hooks/useMode'
 import { SearchPanel } from './common/SearchPanel/SearchPanel'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
+import { Loader } from './common/atoms/Loader'
 
 const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -112,8 +113,9 @@ function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-const BuyPanel = memo(function BuyPanel() {
+const BalanceWrapper = memo(function BalanceWrapper() {
   const { address } = useAccount()
+  const { ethToUSD } = useETHPrice()
   const { selectedChainId } = useBuyPanelStore()
   const provider = getProviderForChainId(selectedChainId)
   const nativeCurrency = useNativeCurrency({ provider })
@@ -122,12 +124,58 @@ const BuyPanel = memo(function BuyPanel() {
     isLoading: isLoadingBalance,
     error: balanceError
   } = useNativeCurrencyBalanceForChainId(selectedChainId, address)
-  const { ethToUSD } = useETHPrice()
+  const showPriceInUsd = balanceState?.symbol.toLowerCase() === 'eth'
   const [dialogProps, openDialog] = useDialog2()
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection')
   }
-  const showPriceInUsd = balanceState?.symbol.toLowerCase() === 'eth' // only show for
+
+  if (isLoadingBalance) {
+    return <Loader size="small" />
+  }
+
+  if (balanceError) {
+    return <div>ERROR</div>
+  }
+
+  return (
+    <div className="my-6 flex flex-col items-center justify-center gap-3 text-center">
+      <BuyPanelNetworkButton onClick={openBuyPanelNetworkSelectionDialog} />
+      <p className="flex items-center justify-center space-x-1 text-lg">
+        <span>Balance:</span>
+        <SafeImage
+          width={20}
+          height={20}
+          src={nativeCurrency.logoUrl}
+          alt={nativeCurrency.symbol}
+          className="!ml-2 block"
+        />
+        {balanceState && (
+          <span>
+            {formatAmount(balanceState.balance, {
+              decimals: balanceState.decimals,
+              symbol: balanceState.symbol
+            })}
+          </span>
+        )}
+        {showPriceInUsd && (
+          <span className="text-white/70">
+            (
+            {formatUSD(
+              ethToUSD(Number(utils.formatEther(balanceState.balance)))
+            )}
+            )
+          </span>
+        )}
+      </p>
+
+      <DialogWrapper {...dialogProps} />
+    </div>
+  )
+})
+
+const BuyPanel = memo(function BuyPanel() {
+  const { address } = useAccount()
 
   const handleGetSignature = useCallback(
     async (widgetUrl: string): Promise<string> => {
@@ -146,36 +194,7 @@ const BuyPanel = memo(function BuyPanel() {
 
   return (
     <div className="pb-8 text-white">
-      <div className="my-6 flex flex-col items-center justify-center gap-3 text-center">
-        <BuyPanelNetworkButton onClick={openBuyPanelNetworkSelectionDialog} />
-        <p className="flex items-center justify-center space-x-1 text-lg">
-          <span>Balance:</span>
-          <SafeImage
-            width={20}
-            height={20}
-            src={nativeCurrency.logoUrl}
-            alt={nativeCurrency.symbol}
-            className="!ml-2 block"
-          />
-          {balanceState && (
-            <span>
-              {formatAmount(balanceState.balance, {
-                decimals: balanceState.decimals,
-                symbol: balanceState.symbol
-              })}
-            </span>
-          )}
-          {showPriceInUsd && (
-            <span className="text-white/70">
-              (
-              {formatUSD(
-                ethToUSD(Number(utils.formatEther(balanceState.balance)))
-              )}
-              )
-            </span>
-          )}
-        </p>
-      </div>
+      <BalanceWrapper />
       <div
         className={twMerge(
           'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
@@ -192,7 +211,7 @@ const BuyPanel = memo(function BuyPanel() {
           className={twMerge(
             'relative h-full w-full',
             '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
-            '[&_iframe]:rounded-lg'
+            '[&_iframe]:rounded-xl'
           )}
         >
           <MoonPayBuyWidget
@@ -204,10 +223,16 @@ const BuyPanel = memo(function BuyPanel() {
             visible
           />
         </div>
+        <p className="mt-4 text-center text-sm text-gray-4">
+          On-Ramps are not directly endorsed by Arbitrum. Please use at your own
+          risk.
+        </p>
       </div>
-      <DialogWrapper {...dialogProps} />
     </div>
   )
 })
 
 export default BuyPanel
+function openBuyPanelNetworkSelectionDialog(): void {
+  throw new Error('Function not implemented.')
+}
