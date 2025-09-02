@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "timestamp": "2025-07-29T13:56:58.845Z"
+  },
+  "content": [
+    {
+      "id": "cdb48df5-8aef-4a2d-81fb-33833fd95afb",
+      "rank": 1,
+      "title": "WOOFi's Quest for the Holy Grail of Arbitrum\n",
+      "status": "Live in portal",
+      "teamsInvolved": [
+        "WooFi",
+        "Layer3",
+        "GMX",
+        "Camelot",
+        "Radiant Capital",
+        "Trader Joe",
+        "Silo Finance"
+      ],
+      "link": " https://layer3.xyz/collections/holy-grail-of-arbitrum",
+      "coverImage": "/images/missions/mission-cdb48df5-8aef-4a2d-81fb-33833fd95afb.webp",
+      "startDate": "2024-03-05",
+      "endDate": "2024-03-19"
+    },
+    {
+      "id": "9d705162-5423-400a-81ca-602066a00a2a",
+      "rank": 2,
+      "title": "Experience the Arbitrum OAT/NFT Fusion!",
+      "status": "Live in portal",
+      "teamsInvolved": [
+        "Galxe"
+      ],
+      "link": "https://galxe.com/guest/NLNTXVzPjWxHNG6ZAU32kG",
+      "coverImage": "/images/missions/mission-9d705162-5423-400a-81ca-602066a00a2a.webp",
+      "startDate": "2024-03-01",
+      "endDate": "2024-03-25"
+    },
+    {
+      "id": "acfe2e34-3cfb-4db9-b3e9-96f780c6e4f6",
+      "rank": 3,
+      "title": "Discover Interest Rate Swaps on Arbitrum",
+      "status": "Live in portal",
+      "teamsInvolved": [
+        "IPOR Protocol"
+      ],
+      "link": "https://galxe.com/ipor/campaign/GChXFtwEDj",
+      "coverImage": "/images/missions/mission-acfe2e34-3cfb-4db9-b3e9-96f780c6e4f6.webp",
+      "startDate": "2024-02-22",
+      "endDate": "2024-03-22"
+    },
+    {
+      "id": "f43f31b7-e842-46c1-8b0d-d50a69c09d06",
+      "rank": 5,
+      "title": "Introduction to Kunji Finance",
+      "status": "Live in portal",
+      "teamsInvolved": [
+        "Kunji Finance"
+      ],
+      "link": "https://galxe.com/kunjifinance/campaign/GCep3tUmta",
+      "coverImage": "/images/missions/mission-f43f31b7-e842-46c1-8b0d-d50a69c09d06.webp",
+      "startDate": "2024-01-08",
+      "endDate": "2024-04-30"
+    }
+  ]
+}

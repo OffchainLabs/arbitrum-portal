@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "timestamp": "2025-07-29T13:56:55.387Z"
+  },
+  "content": {
+    "defi": [
+      "dex",
+      "dex-aggregator",
+      "defi-tool",
+      "lending",
+      "derivatives",
+      "liquidity-management",
+      "stablecoin",
+      "perpetuals",
+      "defi-other",
+      "options",
+      "portfolio",
+      "rwa",
+      "insurance"
+    ],
+    "ai-and-depin": [
+      "artificial-intelligence",
+      "depin"
+    ],
+    "gaming": [
+      "action",
+      "adventure",
+      "casual",
+      "gamefi",
+      "racing",
+      "rpg",
+      "strategy"
+    ],
+    "nfts": [
+      "nft-marketplace",
+      "nft",
+      "nft-tool",
+      "social",
+      "nft-fi"
+    ],
+    "bridges-and-on-ramps": [
+      "bridge",
+      "centralized-exchanges",
+      "wallet",
+      "fiat-on-ramp"
+    ],
+    "infra-and-tools": [
+      "analytics",
+      "payments",
+      "developer-tool",
+      "oracle",
+      "dao-tool",
+      "infra-and-tools-other",
+      "node-provider",
+      "security-tool",
+      "crypto-taxes"
+    ]
+  }
+}

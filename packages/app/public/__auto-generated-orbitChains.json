@@ -1,0 +1,3613 @@
+{
+  "meta": {
+    "timestamp": "2025-07-25T18:44:00.681Z"
+  },
+  "content": [
+    {
+      "id": "1f501a3f-59f8-808d-a79a-c41b34cc0b5f",
+      "title": "Adventure Layer",
+      "entityType": "OrbitChain",
+      "slug": "adventure-layer",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/adventure-layer-logo.webp",
+        "bannerUrl": "/images/orbitchains/adventure-layer-banner.webp"
+      },
+      "description": "Adventure Layer is a L2 on top of Berachain, custom made for AI Native Onchain Games. Powered by $AGLD",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://adventurelayer.xyz/",
+        "discord": null,
+        "twitter": "https://x.com/AdventureLayer",
+        "github": null,
+        "news": "https://x.com/AdventureLayer/status/1923016311627456935",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "AGLD",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": "QuickNode",
+        "status": "Mainnet",
+        "type": null,
+        "bridgeUrl": "https://bridge-mainnet.adventurelayer.xyz/",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://advlayer-mainnet.cloud.blockscout.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "21d01a3f-59f8-80a2-857a-ce9d1a6f5cae",
+      "title": "Aergo",
+      "entityType": "OrbitChain",
+      "slug": "aergo",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/aergo-logo.webp",
+        "bannerUrl": "/images/orbitchains/aergo-banner.webp"
+      },
+      "description": "From Aergo to HPP. AI-ready Layer 2 for agents, data, and decentralized infrastructure. Composable. Verifiable.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.hpp.io/",
+        "discord": null,
+        "twitter": "https://x.com/aergo_io",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Conduit",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "2b0101be-f3dd-4056-ac42-4cb66cfcb613",
+      "title": "Aleph Zero",
+      "entityType": "OrbitChain",
+      "slug": "aleph-zero",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/aleph-zero-logo.webp",
+        "bannerUrl": "/images/orbitchains/aleph-zero-banner.webp"
+      },
+      "description": "Building the infrastructure for the next generation of confidential Web3 apps. Now also EVM-compatible.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://alephzero.org/",
+        "discord": null,
+        "twitter": "https://x.com/Aleph__Zero",
+        "github": null,
+        "news": "https://x.com/Aleph__Zero/status/1803795503005512041",
+        "docs": "https://docs.alephzero.org/aleph-zero"
+      },
+      "chain": {
+        "chainId": 41455,
+        "layer": 2,
+        "token": "ALEPH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": null,
+        "bridgeUrl": "https://app.common.fi/bridge",
+        "rpcUrl": "https://rpc.alephzero.raas.gelato.cloud/",
+        "blockExplorerUrl": "https://evm-explorer.alephzero.org/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#ffffff",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "4b141e80-282a-4ad4-9d73-ee1e7a8f7f77",
+      "title": "AlienX",
+      "entityType": "OrbitChain",
+      "slug": "alienx-chain",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/alienx-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/alienx-chain-banner.webp"
+      },
+      "description": "ALIENX is the only staking blockchain driven by AI nodes, built for the mass adoption of NFTs and games.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://alienxchain.io/",
+        "discord": "https://discord.com/invite/645GqaWfKZ",
+        "twitter": "https://twitter.com/ALIENXchain",
+        "github": null,
+        "news": "https://x.com/ALIENXchain/status/1766019353059950931?s=20",
+        "docs": "https://docs.alienxchain.io/"
+      },
+      "chain": {
+        "chainId": 10241024,
+        "layer": 2,
+        "token": "AIX",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.alienxchain.io/",
+        "rpcUrl": "https://rpc.alienxchain.io/http",
+        "blockExplorerUrl": "https://explorer.alienxchain.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#d5f462",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "aad756be-5964-46cc-bec1-b5daed0bfe9c",
+      "title": "Align Network",
+      "entityType": "OrbitChain",
+      "slug": "align-network",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/align-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/align-network-banner.webp"
+      },
+      "description": "Align is an Ethereum (aligned) L2 that focuses on providing a decentralized identity and verification layer for social interactions.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://align.network/",
+        "discord": null,
+        "twitter": "https://twitter.com/align_network",
+        "github": null,
+        "news": "https://twitter.com/align_network/status/1747338516894249287",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "Celestia",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "fdc1a048-0fa6-4e1d-85be-e3323fa5d38a",
+      "title": "AlphaDune",
+      "entityType": "OrbitChain",
+      "slug": "alphadune",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/alphadune-logo.webp",
+        "bannerUrl": "/images/orbitchains/alphadune-banner.webp"
+      },
+      "description": "Loyalty-driven network for GameFi and GambleFi",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://alphadune.com/",
+        "discord": "https://discord.com/invite/N8AnA662Mx",
+        "twitter": "https://twitter.com/alphadune",
+        "github": null,
+        "news": "https://x.com/alphadune/status/1737898072955408609?s=20",
+        "docs": "https://docs.alphadune.com/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "In development",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "fb7d02ce-672c-4b14-b940-b4040f79201d",
+      "title": "AnimeChain",
+      "entityType": "OrbitChain",
+      "slug": "animechain",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/animechain-logo.webp",
+        "bannerUrl": "/images/orbitchains/animechain-banner.webp"
+      },
+      "description": "AnimeChain’s mission is to provide the infrastructure that enables the global anime network to live onchain, governed by creators and participants.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://anime.xyz/",
+        "discord": null,
+        "twitter": "https://twitter.com/animecoin",
+        "github": null,
+        "news": "https://x.com/animecoin/status/1772971822100717983?s=20",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "ANIME",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "TBD",
+        "status": "In development",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#ffd856",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "43128a9b-f6c4-475b-b527-4caad2f7912c",
+      "title": "Anomaly Chain",
+      "entityType": "OrbitChain",
+      "slug": "anomaly-chain",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/anomaly-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/anomaly-chain-banner.webp"
+      },
+      "description": "Anomaly is reimagining a decentralized AI gaming world, Anomaly cultivates an ecosystem where boundless development results in players experiencing games that are as intelligent as they are thrilling.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.anomalygames.ai/",
+        "discord": null,
+        "twitter": "https://twitter.com/anomalygamesinc",
+        "github": null,
+        "news": "https://www.cryptopolitan.com/exclusive-interview-i-anomaly-ceo-long-do/",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Gelato",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#01cc6b",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "81ee29ee-772a-43a1-ad6c-43b268598072",
+      "title": "ApeChain",
+      "entityType": "OrbitChain",
+      "slug": "apechain",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/apechain-logo.webp",
+        "bannerUrl": "/images/orbitchains/apechain-banner.webp"
+      },
+      "description": "ApeCoin blockchain that scales $APE and supports the growth of the ApeCoin ecosystem. Powered by the $APE token and the home of assets and games in the ApeCoin ecosystem with development and growth led by Horizen Labs. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://apechain.com/",
+        "discord": "https://discord.com/invite/apecoindao",
+        "twitter": "https://twitter.com/apecoin",
+        "github": null,
+        "news": "https://x.com/yugalabs/status/1757961449664909380?s=20",
+        "docs": "https://docs.apechain.com/"
+      },
+      "chain": {
+        "chainId": 33139,
+        "layer": 3,
+        "token": "APE",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://apechain.com/portal",
+        "rpcUrl": "https://apechain.calderachain.xyz/http",
+        "blockExplorerUrl": "https://apescan.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#014abf",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1c901a3f-59f8-8098-8350-ffd4d6010d71",
+      "title": "AppChain",
+      "entityType": "OrbitChain",
+      "slug": "app-chain",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/app-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/app-chain-banner.webp"
+      },
+      "description": "Building useful onchain apps. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://appchain.xyz",
+        "discord": "https://discord.com/invite/kntTtZXM4M",
+        "twitter": "https://x.com/onappchain",
+        "github": null,
+        "news": null,
+        "docs": "https://docs.appchain.xyz"
+      },
+      "chain": {
+        "chainId": 466,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": null,
+        "status": "Mainnet",
+        "type": null,
+        "bridgeUrl": "https://bridge.appchain.xyz/",
+        "rpcUrl": "https://appchain.calderachain.xyz/http",
+        "blockExplorerUrl": "https://explorer.appchain.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "87ed767a-0406-4aa2-927a-064d08156cda",
+      "title": "Avive World",
+      "entityType": "OrbitChain",
+      "slug": "avive-world",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/avive-world-logo.webp",
+        "bannerUrl": "/images/orbitchains/avive-world-banner.webp"
+      },
+      "description": "Avive is the world's largest UBI & DePin Projects, with over 9 million worldwide users. Its unique mission is to create a new decentralized social world by empowering geonetworking depin protocols and onboarding millions to Web3.Avive works closely with Arbitrum on building a new L3 Orbit chain focusing on massive adoption, and is listed on OKX in Dec 2023.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://avive.world/",
+        "discord": null,
+        "twitter": "https://twitter.com/Avive_World",
+        "github": null,
+        "news": "https://twitter.com/arbitrum/status/1742954565341700135",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 50320,
+        "layer": 3,
+        "token": "AVIVE",
+        "tokenAddress": "https://www.coingecko.com/en/coins/avive",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "AltLayer",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "https://avive-sepolia.alt.technology\n",
+        "blockExplorerUrl": "https://avive-sepolia-explorer.alt.technology",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "Swagata",
+          "link": "https://twitter.com/swagata2016"
+        },
+        {
+          "primaryText": "Cyber Puma",
+          "link": "https://twitter.com/cyber_puma"
+        }
+      ]
+    },
+    {
+      "id": "7bf4c90a-9b48-4b16-a470-7cc95d9e196e",
+      "title": "BirdLayer",
+      "entityType": "OrbitChain",
+      "slug": "dodo",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/dodo-logo.webp",
+        "bannerUrl": "/images/orbitchains/dodo-banner.webp"
+      },
+      "description": "Omni-Trading Layer-3 connecting liquidity from all chains including BTC and ETH L2s. The first restaked rollup built using the orbit stack.  ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://birdlayer.xyz",
+        "discord": null,
+        "twitter": "https://x.com/Bird_Layer",
+        "github": null,
+        "news": "https://x.com/DODO_chain/status/1782431708752859395",
+        "docs": "https://docs.birdlayer.xyz/en/birdlayer/general/about-birdlayer"
+      },
+      "chain": {
+        "chainId": 53456,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "AltLayer",
+        "status": "Mainnet",
+        "type": "EigenDA",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://scan.birdlayer.xyz",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#ffe804",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "19901a3f-59f8-800e-8032-c54b0002c4f2",
+      "title": "Blessnet",
+      "entityType": "OrbitChain",
+      "slug": "blessnet",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/blessnet-logo.webp",
+        "bannerUrl": "/images/orbitchains/blessnet-banner.webp"
+      },
+      "description": "transact without fearing for your life each time you hit confirm.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.bless.net/",
+        "discord": null,
+        "twitter": "https://x.com/blessdotnet",
+        "github": null,
+        "news": null,
+        "docs": "https://docs.bless.net/"
+      },
+      "chain": {
+        "chainId": 45513,
+        "layer": 3,
+        "token": "BLESS",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": null,
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.bless.net/",
+        "rpcUrl": "https://blessnet.calderachain.xyz/http",
+        "blockExplorerUrl": "https://scan.bless.net",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "14b01a3f-59f8-80fb-80a3-fb3de666b467",
+      "title": "Capx Chain",
+      "entityType": "OrbitChain",
+      "slug": "capx",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/capx-logo.webp",
+        "bannerUrl": "/images/orbitchains/capx-banner.webp"
+      },
+      "description": "Build, Own & Trade AI Agents",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.capx.ai/",
+        "discord": "https://discord.com/invite/capx",
+        "twitter": "https://x.com/0xCapx",
+        "github": null,
+        "news": "https://x.com/0xCapx/status/1861485575553065253",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "GAS",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": null,
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://capxscan.com",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "52782998-c79a-43be-b0a1-47b06ed4488d",
+      "title": "CheeseChain",
+      "entityType": "OrbitChain",
+      "slug": "cheese",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/cheese-logo.webp",
+        "bannerUrl": "/images/orbitchains/cheese-banner.webp"
+      },
+      "description": "Orbit L3 built by Chad Hominem and powered by the $CHEESE token. Launching with gaming, a customized UI for speed, and synthetic leverage trading on memecoins. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": null,
+        "twitter": "https://x.com/layerofcheese",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "$CHEESE",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "TBD",
+        "bridgeUrl": "https://cheesechain.bridge.caldera.xyz/",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://fetascan.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f0ba4f",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1cb01a3f-59f8-80f8-89c8-eead17ea0e49",
+      "title": "Chronicle Yellowstone by Lit Protocol",
+      "entityType": "OrbitChain",
+      "slug": "lit-protocol",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/lit-protocol-logo.webp",
+        "bannerUrl": "/images/orbitchains/lit-protocol-banner.webp"
+      },
+      "description": "Chronicle Yellowstone is Lit Protocol's custom EVM rollup which is superseding the Chronicle blockchain, allowing for a more performant and stable backend for Lit's infrastructure.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.litprotocol.com",
+        "discord": null,
+        "twitter": "https://x.com/LitProtocol",
+        "github": null,
+        "news": null,
+        "docs": "https://developer.litprotocol.com/connecting-to-a-lit-network/lit-blockchains/chronicle-yellowstone"
+      },
+      "chain": {
+        "chainId": 175188,
+        "layer": null,
+        "token": "tstLPX",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum Sepolia",
+        "deployerTeam": "Conduit",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://chronicle-yellowstone-testnet-9qgmzfcohk-ee92f00c441a5ac4.testnets.rollbridge.app",
+        "rpcUrl": "https://yellowstone-rpc.litprotocol.com/",
+        "blockExplorerUrl": "https://yellowstone-explorer.litprotocol.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1d801a3f-59f8-80d7-8dcf-e0d63a0f4bb2",
+      "title": "Converge",
+      "entityType": "OrbitChain",
+      "slug": "converge",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/converge-logo.webp",
+        "bannerUrl": "/images/orbitchains/converge-banner.webp"
+      },
+      "description": "The settlement layer for traditional finance and digital dollars. Built by Ethena and Securitize.",
+      "isFeaturedOnOrbitPage": true,
+      "links": {
+        "website": "https://www.convergeonchain.xyz",
+        "discord": null,
+        "twitter": "https://x.com/convergeonchain",
+        "github": null,
+        "news": "https://www.convergeonchain.xyz/blog-posts/converge-tech-specification-roadmap",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "In development",
+        "type": "Celestia",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "15901a3f-59f8-805f-8c1e-d76930e6529d",
+      "title": "conwai",
+      "entityType": "OrbitChain",
+      "slug": "conwai",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/conwai-logo.webp",
+        "bannerUrl": "/images/orbitchains/conwai-banner.webp"
+      },
+      "description": "Life's a Game. AI Supralayer.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://x.com/conwainet",
+        "discord": "https://discord.com/invite/SMebb4QREy",
+        "twitter": "https://www.conwai.net/",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": 668668,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://conwai.bridge.caldera.xyz/",
+        "rpcUrl": "https://conwai.calderachain.xyz/http",
+        "blockExplorerUrl": "https://conwai.calderaexplorer.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "ee27c92f-6264-4d1f-852a-0f10832c8716",
+      "title": "Corn",
+      "entityType": "OrbitChain",
+      "slug": "corn",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/corn-logo.webp",
+        "bannerUrl": "/images/orbitchains/corn-banner.webp"
+      },
+      "description": "The Super Yield Network Rooted In Digital Gold.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://usecorn.com/",
+        "discord": "https://discord.com/invite/usecorn",
+        "twitter": "https://x.com/use_corn",
+        "github": null,
+        "news": "https://x.com/use_corn/status/1867253262287884379",
+        "docs": "https://docs.usecorn.com/"
+      },
+      "chain": {
+        "chainId": 21000000,
+        "layer": 2,
+        "token": "BTCN",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://usecorn.com/app?action=bridge",
+        "rpcUrl": "https://maizenet-rpc.usecorn.com",
+        "blockExplorerUrl": "https://cornscan.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f5901a",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ce01a3f-59f8-802a-8cf6-efff1f8d763c",
+      "title": "CVEX",
+      "entityType": "OrbitChain",
+      "slug": "cvex",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/cvex-logo.webp",
+        "bannerUrl": "/images/orbitchains/cvex-banner.webp"
+      },
+      "description": "Decentralized derivatives clearing protocol. Reducing margin, unlocking capital, and powering crypto derivatives with full portfolio risk management.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://cvex.xyz",
+        "discord": null,
+        "twitter": "https://x.com/cvex_xyz",
+        "github": null,
+        "news": "https://x.com/cvex_xyz/status/1908893340281774568?s=46&t=wfU_jo76UexyuQ_m0SOa2w",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1fcd3de3-8f55-4a91-b102-c2732463b281",
+      "title": "DataLake",
+      "entityType": "OrbitChain",
+      "slug": "datalake",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/datalake-logo.webp",
+        "bannerUrl": "/images/orbitchains/datalake-banner.webp"
+      },
+      "description": "Data Lake Chain marks the beginning of its mission to build a robust, secure, efficient, and scalable infrastructure to support scientific research. Layer 3 blockchain powered by Arbitrum Orbit as an infrastructure for scientific research",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://data-lake.co/",
+        "discord": null,
+        "twitter": "https://x.com/DataLakeToken",
+        "github": null,
+        "news": "https://x.com/DataLakeToken/status/1812818188465234269",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "LAKE",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum Nova",
+        "deployerTeam": null,
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=data-lake-mainnet&sourceChain=arbitrum-nova",
+        "rpcUrl": "https://rpc-mokotow.data-lake.co",
+        "blockExplorerUrl": "http://explorer.data-lake.co/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "27bba570-1273-4c49-b44d-5b2c983c4342",
+      "title": "Degen Chain",
+      "entityType": "OrbitChain",
+      "slug": "degen",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/degen-logo.webp",
+        "bannerUrl": "/images/orbitchains/degen-banner.webp"
+      },
+      "description": "The first Orbit L3 built on top of Base. Based on and powered by $DEGEN, a community coin spawned on Farcaster.  ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.degen.tips/",
+        "discord": null,
+        "twitter": "https://twitter.com/degentokenbase",
+        "github": null,
+        "news": "https://twitter.com/degentokenbase/status/1773367708505059649?s=20",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "DEGEN",
+        "tokenAddress": null,
+        "parentChain": "Ethereum L2",
+        "deployerTeam": "Syndicate",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.degen.tips/",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#a36efd",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "9a7bad0d-1e22-4784-be65-fe61438d5636",
+      "title": "Deri Chain",
+      "entityType": "OrbitChain",
+      "slug": "deri",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/deri-logo.webp",
+        "bannerUrl": "/images/orbitchains/deri-banner.webp"
+      },
+      "description": "The Deri Chain, abbreviated as dChain, is the dedicated AppChain and a core component of Deri V4. \n\nOur vision for Deri V4 is to build an all-chain, decentralized derivative trading protocol, enhancing the inclusivity, capital efficiency, and user experience in the DeFi derivatives market.\n\nAt the heart of Deri V4's transformative design lies the xDapp model, making the architecture of Deri V4's dChain and iChain pivotal. iChains act as the user interfaces for submitting requests, while the dChain is responsible for processing these requests from all iChains.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://deri.io ",
+        "discord": "https://bit.ly/DeriDiscord",
+        "twitter": "https://twitter.com/DeriProtocol",
+        "github": "https://github.com/deri-protocol",
+        "news": "https://l2beat.com/scaling/summary?#layer3s",
+        "docs": "https://docs.deri.io/"
+      },
+      "chain": {
+        "chainId": 20231119,
+        "layer": 3,
+        "token": "ETH\n",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "AltLayer",
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://deri.io/#/deri-tools",
+        "rpcUrl": "https://rpc-dchain.deri.io",
+        "blockExplorerUrl": "https://explorer-dchain.deri.io/\n",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#3756cd",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "0xAlpha",
+          "link": "https://twitter.com/0x_Alpha"
+        }
+      ]
+    },
+    {
+      "id": "92b058d6-5d84-443b-a903-97ca00eb2b6d",
+      "title": "Destra Network",
+      "entityType": "OrbitChain",
+      "slug": "destra-network",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/destra-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/destra-network-banner.webp"
+      },
+      "description": "The first on-chain one-stop solution for all your DePin, Cloud and AI computing needs.\n\n",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.destra.network/",
+        "discord": null,
+        "twitter": "https://x.com/DestraNetwork",
+        "github": null,
+        "news": "https://x.com/DestraNetwork/status/1819052419495465218",
+        "docs": "https://destra-network.gitbook.io/documentation"
+      },
+      "chain": {
+        "chainId": 9108,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Ankr",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": "https://testnet.destra-rpc.com",
+        "blockExplorerUrl": "https://blockscout-testnet-destra-dubai.raas.ankr.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "d6a06fcf-0a68-4bcc-b00b-c4238f948035",
+      "title": "dRTC Chain",
+      "entityType": "OrbitChain",
+      "slug": "drtc-chain",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/drtc-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/drtc-chain-banner.webp"
+      },
+      "description": "The decentralized real-time communication (dRTC) layer for AI, Gaming, Social, Metaverse and ∞.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://huddle01.com/",
+        "discord": null,
+        "twitter": "https://x.com/huddle01com",
+        "github": null,
+        "news": "https://x.com/huddle01com/status/1813239392929976682",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://huddle-testnet.explorer.caldera.xyz",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#2970fe",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "fff01a3f-59f8-80ae-955a-c32e65ef4d02",
+      "title": "Duck Chain",
+      "entityType": "OrbitChain",
+      "slug": "duckchain",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/duckchain-logo.webp",
+        "bannerUrl": "/images/orbitchains/duckchain-banner.webp"
+      },
+      "description": "Duck Chain is an Orbit L2 on Ton Blockchain",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://duckchain.io/",
+        "discord": null,
+        "twitter": "https://x.com/Duck_Chain",
+        "github": null,
+        "news": "https://x.com/Duck_Chain/status/1820816621155631257",
+        "docs": "https://diary.duckchain.io/"
+      },
+      "chain": {
+        "chainId": 5545,
+        "layer": 2,
+        "token": "TON",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": "Lumoz",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.duckchain.io/",
+        "rpcUrl": "https://rpc.duckchain.io/",
+        "blockExplorerUrl": "https://scan.duckchain.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f9d63c",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "ad47ce35-d2e8-418b-b6b3-fb752163d31a",
+      "title": "ebi.xyz",
+      "entityType": "OrbitChain",
+      "slug": "ebi-xyz",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/ebi-xyz-logo.webp",
+        "bannerUrl": "/images/orbitchains/ebi-xyz-banner.webp"
+      },
+      "description": "Unlocking liquidity on all tokens.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://ebi.xyz/",
+        "discord": "https://discord.com/invite/ebixyz",
+        "twitter": "https://x.com/ebixyzdex",
+        "github": null,
+        "news": "https://x.com/ebixyzdex/status/1805551196704587863",
+        "docs": "https://docs.ebi.xyz/ebi.xyz-overview"
+      },
+      "chain": {
+        "chainId": 98881,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://ebi.xyz/en/account/deposit/",
+        "rpcUrl": "https://rpc.ebi.xyz",
+        "blockExplorerUrl": "https://explorer.ebi.xyz",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#fe3d3e",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "c68d291f-64cf-416c-9c23-3022d37c3a93",
+      "title": "Edgeless Network",
+      "entityType": "OrbitChain",
+      "slug": "edgeless-network",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/edgeless-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/edgeless-network-banner.webp"
+      },
+      "description": "Edgeless Network is the first protocol fee-free ecosystem built as an arbitrum nitro chain with eigenlayer’s DA solution. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.edgeless.network/",
+        "discord": "https://discord.com/invite/edgeless",
+        "twitter": "https://twitter.com/EdgelessNetwork",
+        "github": null,
+        "news": "https://twitter.com/EdgelessNetwork/status/1773334599432654886?s=20",
+        "docs": "https://docs.edgeless.network/"
+      },
+      "chain": {
+        "chainId": 2026,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "EigenDA",
+        "bridgeUrl": "https://bridge.edgeless.network/",
+        "rpcUrl": "https://rpc.edgeless.network/http",
+        "blockExplorerUrl": "https://explorer.edgeless.network/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#a0eb6a",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "96e297c3-1df1-40ce-aa1c-75417ca158b0",
+      "title": "EDU Chain",
+      "entityType": "OrbitChain",
+      "slug": "edu-chain",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/edu-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/edu-chain-banner.webp"
+      },
+      "description": "EDU Chain is designed to onboard real-world educational economies to blockchain and create an ecosystem of decentralized applications (Dapps) to establish an innovative “Learn Own Earn” model for education. EDU Chain, the first decentralized blockchain for education built by Open Campus, helps to democratize education and empower all participants — learners, educators, edtech innovators — to contribute to and benefit from the future of education. Anyone can support the EDU Chain network by operating a node, which allows them to receive network rewards and participate in governance.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://educhain.xyz/",
+        "discord": "https://discord.com/invite/opencampus",
+        "twitter": "https://x.com/opencampus_xyz",
+        "github": "https://github.com/opencampus-xyz",
+        "news": "https://www.animocabrands.com/open-campus-announces-first-decentralized-education-node-sale",
+        "docs": "https://devdocs.opencampus.xyz/"
+      },
+      "chain": {
+        "chainId": 41923,
+        "layer": 3,
+        "token": "EDU",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=edu-chain&sourceChain=arbitrum-one",
+        "rpcUrl": "https://rpc.edu-chain.raas.gelato.cloud/",
+        "blockExplorerUrl": "https://educhain.blockscout.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#141beb",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "21801a3f-59f8-807f-bf29-d1cbe50680d7",
+      "title": "Ethereal",
+      "entityType": "OrbitChain",
+      "slug": "ethereal",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/ethereal-logo.webp",
+        "bannerUrl": "/images/orbitchains/ethereal-banner.webp"
+      },
+      "description": "Ethereal is a decentralized exchange offering institutional-grade performance (sub-20 ms latency, ~1M orders per second) with DeFi-enabled self-custody and security guarantees.",
+      "isFeaturedOnOrbitPage": true,
+      "links": {
+        "website": "https://www.ethereal.trade/",
+        "discord": "https://discord.com/invite/etherealdex",
+        "twitter": "https://x.com/etherealdex",
+        "github": null,
+        "news": null,
+        "docs": "https://docs.ethereal.trade/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Converge",
+        "deployerTeam": "Conduit",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.etherealtest.net/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "11901a3f-59f8-8029-93bc-f027a3c61413",
+      "title": "EVEDEX",
+      "entityType": "OrbitChain",
+      "slug": "evedex",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/evedex-logo.webp",
+        "bannerUrl": "/images/orbitchains/evedex-banner.webp"
+      },
+      "description": "Explore a new level of perpetual trading with a fast and secure, self-custody DEX. Trade crypto hot pairs with up to 100x leverage and seamless, signature-free order execution.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://evedex.com",
+        "discord": null,
+        "twitter": "https://x.com/EveDexOfficial",
+        "github": null,
+        "news": "https://x.com/EventHorizonDEX/status/1843297189461676469",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "Mainnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#1f1267",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "692964f3-8053-462f-9e82-21442451ec41",
+      "title": "Everclear",
+      "entityType": "OrbitChain",
+      "slug": "everclear",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/everclear-logo.webp",
+        "bannerUrl": "/images/orbitchains/everclear-banner.webp"
+      },
+      "description": "The Clearing Layer is the foundation of the Chain Abstraction stack, powering optimal liquidity for intent protocols & solvers. Everclear, the first Clearing Layer, cuts cost/complexity of rebalancing solver liquidity by up to 10x.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.everclear.org/",
+        "discord": null,
+        "twitter": "https://x.com/EverclearOrg",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "EigenDA",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.everclear.org/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "7723dacc-7940-4d61-97fa-f4ccb1220f0a",
+      "title": "Fhenix",
+      "entityType": "OrbitChain",
+      "slug": "fhenix",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/fhenix-logo.webp",
+        "bannerUrl": "/images/orbitchains/fhenix-banner.webp"
+      },
+      "description": "The first Fully Homomorphic Encryption (FHE) powered L2 to bring computation over encrypted data to Ethereum",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.fhenix.io/",
+        "discord": "https://discord.com/invite/FuVgxrvJMY",
+        "twitter": "https://twitter.com/FhenixIO",
+        "github": null,
+        "news": "https://x.com/FhenixIO/status/1762524645423534122?s=20",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Self-Deployed",
+        "status": "In development",
+        "type": "Rollup",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#1c1c35",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "14b01a3f-59f8-8037-8dc2-c39fadcc3550",
+      "title": "Fluence",
+      "entityType": "OrbitChain",
+      "slug": "fluence",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/fluence-logo.webp",
+        "bannerUrl": "/images/orbitchains/fluence-banner.webp"
+      },
+      "description": "Build & deploy apps on our cloudless compute platform.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.fluence.network/",
+        "discord": "https://discord.com/invite/5qSnPZKh7u",
+        "twitter": "https://x.com/fluence_project",
+        "github": null,
+        "news": "https://x.com/gelatonetwork/status/1855960481426542861",
+        "docs": "https://fluence.dev/docs/stake/overview"
+      },
+      "chain": {
+        "chainId": 9999999,
+        "layer": 2,
+        "token": "FLT",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.fluence.network/bridge/fluence",
+        "rpcUrl": "https://rpc.mainnet.fluence.dev/",
+        "blockExplorerUrl": "https://blockscout.mainnet.fluence.dev",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ae01a3f-59f8-8022-a95c-c2d458cc9e05",
+      "title": "Flynet",
+      "entityType": "OrbitChain",
+      "slug": "flynet",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/flynet-logo.webp",
+        "bannerUrl": "/images/orbitchains/flynet-banner.webp"
+      },
+      "description": "Transaction network for restaurant industry participants, by restaurant industry participants by Blackbird",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://flynet.org",
+        "discord": null,
+        "twitter": "https://x.com/blackbird_xyz",
+        "github": null,
+        "news": "https://x.com/blackbird_xyz/status/1895167201646399785",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "F2",
+        "tokenAddress": null,
+        "parentChain": "Ethereum L2",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ca01a3f-59f8-801d-9fa6-e4f5e2fb3cf1",
+      "title": "Forta Chain",
+      "entityType": "OrbitChain",
+      "slug": "forta",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/forta-logo.webp",
+        "bannerUrl": "/images/orbitchains/forta-banner.webp"
+      },
+      "description": "The Forta Chain is an L3 rollup with the core function of supporting the Forta Firewall. Forța Firewall îs an exploit prevention network for rollups that screens and blocks malicious transactions before execution.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.forta.org",
+        "discord": "https://discord.gg/KACdTEutQq",
+        "twitter": "https://x.com/FortaNetwork",
+        "github": "https://github.com/forta-network",
+        "news": "https://x.com/FortaNetwork/status/1846553447145075016",
+        "docs": "https://docs.forta.network/en/latest/forta-chain/"
+      },
+      "chain": {
+        "chainId": 80931,
+        "layer": 3,
+        "token": "FORT",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "https://rpc-forta-chain-8gj1qndmfc.t.conduit.xyz",
+        "blockExplorerUrl": "https://explorer.forta.org",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "17e01a3f-59f8-803a-b5c8-d688003e5a6a",
+      "title": "G7",
+      "entityType": "OrbitChain",
+      "slug": "g7",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/g7-logo.webp",
+        "bannerUrl": "/images/orbitchains/g7-banner.webp"
+      },
+      "description": "Game7 is an onchain gaming ecosystem where both players and developers win.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": "https://discord.com/invite/g7dao",
+        "twitter": null,
+        "github": null,
+        "news": "https://x.com/G7_DAO/status/1880283559640068129",
+        "docs": "https://docs.game7.io/"
+      },
+      "chain": {
+        "chainId": 13746,
+        "layer": 3,
+        "token": "TG7T",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum Sepolia",
+        "deployerTeam": "Conduit",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://build.game7.io/bridge?network=Testnet",
+        "rpcUrl": "https://testnet-rpc.game7.io/",
+        "blockExplorerUrl": "https://testnet.game7.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "FF0000",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "50ac16dc-8ca8-4244-8ac4-10a5333ebeb2",
+      "title": "Gravity Chain",
+      "entityType": "OrbitChain",
+      "slug": "gravity-chain",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/gravity-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/gravity-chain-banner.webp"
+      },
+      "description": "Galxe is a decentralized super app with a quest platform, identity solutions, reputation scores, an AI copilot, and more Galxe has 20M users doing more than 100M monthly transactions. They need a cutting-edge scaling solution to bring their product suite onchain",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://gravity.xyz/",
+        "discord": null,
+        "twitter": "https://x.com/GravityChain",
+        "github": null,
+        "news": "https://x.com/conduitxyz/status/1795935297978458512",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 1625,
+        "layer": 2,
+        "token": "G",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.gravity.xyz/",
+        "rpcUrl": "https://rpc.gravity.xyz/",
+        "blockExplorerUrl": "https://explorer.gravity.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#e57536",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "6652abb9-d239-4669-9535-a1409a7574d4",
+      "title": "Henez Finance",
+      "entityType": "OrbitChain",
+      "slug": "henez-finance",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/henez-finance-logo.webp",
+        "bannerUrl": "/images/orbitchains/henez-finance-banner.webp"
+      },
+      "description": "Henez enables users to seamlessly access liquidity from any blockchain without leaving our interface, eliminating issues related to fragmented liquidity and cumbersome UX.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.henez.fi/",
+        "discord": null,
+        "twitter": "https://x.com/HenezFinance",
+        "github": null,
+        "news": "https://x.com/HenezFinance/status/1813589600121786576",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 911111,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "Celestia",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://henez-testnet.explorer.caldera.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "7b4a2b6d-9091-4106-b089-899c5f8f8c11",
+      "title": "Hook Chain",
+      "entityType": "OrbitChain",
+      "slug": "hook-chain",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/hook-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/hook-chain-banner.webp"
+      },
+      "description": "Hook is building Odyssey, the fastest NFT-focused derivatives DEX supporting perpetual futures, call, and put options. Odyssey features an off-chain orderbook for capital efficiency, isolated markets to manage risk, and its own Arbitrum Orbit chain for high performance trading.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://hook.xyz/",
+        "discord": "http://discord.gg/hookprotocol",
+        "twitter": "https://twitter.com/HookProtocol",
+        "github": null,
+        "news": "https://x.com/HookProtocol/status/1717578637279432712?s=20",
+        "docs": "https://odysseydocumentation.hook.xyz/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://hook.xyz/trade",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#F18552",
+        "secondary": "#FFEDCD"
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "24e351b9-7c06-4db9-ae13-18f69ef23c37",
+      "title": "Hybrid",
+      "entityType": "OrbitChain",
+      "slug": "hybrid",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/hybrid-logo.webp",
+        "bannerUrl": "/images/orbitchains/hybrid-banner.webp"
+      },
+      "description": "Hybrid's core mission is to build consumer AI products like the custom AI Agent infrastructure and Atlas. Transitioned from a Layer 1 blockchain to an orbit layer 2, the team is able to focus more on product innovation and less on blockchain maintenance.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": null,
+        "twitter": null,
+        "github": null,
+        "news": "https://x.com/BuildOnHybrid/status/1800539245104480494",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "HYB",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "In development",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ea16dd4-3569-434c-af2c-3461c81c1a89",
+      "title": "Injective EVM",
+      "entityType": "OrbitChain",
+      "slug": "injective",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/injective-logo.webp",
+        "bannerUrl": "/images/orbitchains/injective-banner.webp"
+      },
+      "description": "inEVM is the perfect marriage of Injective's Cosmos-based layer one and the EVM. inEVM gives users access to cross-chain compatibility with Ethereum, Arbitrum, Injective, and Cosmos. Powered by the INJ token, inEVM transactions qualify for the Injective burn auction.   ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://injective.com/",
+        "discord": "https://discord.com/invite/injective",
+        "twitter": "https://twitter.com/injective",
+        "github": null,
+        "news": "https://x.com/injective/status/1788215217316315592",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "Celestia",
+        "bridgeUrl": "https://bridge.inevm.com/",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#03b5fb",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "69800384-6a0c-4fbb-bebd-719cdcd6104e",
+      "title": "Kinto",
+      "entityType": "OrbitChain",
+      "slug": "kinto",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/kinto-logo.webp",
+        "bannerUrl": "/images/orbitchains/kinto-banner.webp"
+      },
+      "description": "Kinto is an L2 rollup designed to accelerate the transition to an on-chain financial system. It features permissionless KYC and native account abstraction to solve the two biggest blockers to mainstream adoption: security and user experience.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.kinto.xyz/",
+        "discord": "https://discord.com/invite/kinto",
+        "twitter": "https://twitter.com/KintoXYZ",
+        "github": null,
+        "news": "https://x.com/KintoXYZ/status/1737488089570824656?s=20",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://engen.kinto.xyz/portfolio",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#bcbcbc",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1c001a3f-59f8-80b6-a0f8-c94b1e4a9a45",
+      "title": "Lasernet by DIA",
+      "entityType": "OrbitChain",
+      "slug": "lasernet",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/lasernet-logo.webp",
+        "bannerUrl": "/images/orbitchains/lasernet-banner.webp"
+      },
+      "description": "DIA Lumina is a new oracle architecture with an ETH layer-2 at its core. DIA Lumina brings fully on-chain, verifiable, and trustless data through its permissionless and modular design.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.diadata.org",
+        "discord": "https://discord.com/invite/RjHBcZ9mEH",
+        "twitter": "https://x.com/DIAdata_org",
+        "github": null,
+        "news": "https://x.com/DIAdata_org/status/1903446725295222836",
+        "docs": "https://docs.diadata.org/resources/chain-information"
+      },
+      "chain": {
+        "chainId": 1050,
+        "layer": 2,
+        "token": "DIA",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "https://rpc.diadata.org/",
+        "blockExplorerUrl": "https://explorer.diadata.org",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "f01f6171-00ad-4c2a-a042-04e92dbf76d0",
+      "title": "LogX",
+      "entityType": "OrbitChain",
+      "slug": "logx",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/logx-logo.webp",
+        "bannerUrl": "/images/orbitchains/logx-banner.webp"
+      },
+      "description": "Building world's first Modular Derivatives Infra for Infinite Scalability Across All Blockchain Networks.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://logx.trade/",
+        "discord": null,
+        "twitter": "https://x.com/LogX_trade",
+        "github": null,
+        "news": "https://x.com/LogX_trade/status/1837143114957705256",
+        "docs": "https://docs.logx.network/logx-network#the-logx-network-advantage"
+      },
+      "chain": {
+        "chainId": 936369,
+        "layer": 2,
+        "token": "LOGX",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "AltLayer",
+        "status": "Mainnet",
+        "type": "EigenDA",
+        "bridgeUrl": null,
+        "rpcUrl": "https://vzjuxmhfn70kgnlds27h.alt.technology",
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ca01a3f-59f8-8039-b327-f93b57193bc5",
+      "title": "Mawari",
+      "entityType": "OrbitChain",
+      "slug": "mawari",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/mawari-logo.webp",
+        "bannerUrl": "/images/orbitchains/mawari-banner.webp"
+      },
+      "description": "Mawari is the world's first DePIN for Spatial Computing. The Mawari Network powers real-time streaming of immersive AI-driven experiences with near 0 latency.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://mawari.net",
+        "discord": "https://discord.gg/mawari",
+        "twitter": "https://x.com/mawariXR",
+        "github": null,
+        "news": "https://x.com/mawariXR/status/1907768785811157048",
+        "docs": "https://docs.mawari.net"
+      },
+      "chain": {
+        "chainId": 629274,
+        "layer": null,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "https://mawari-network-testnet.rpc.caldera.xyz/http",
+        "blockExplorerUrl": "https://mawari-network-testnet.explorer.caldera.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "79b372a9-ec66-4edc-abaa-c88ab3bd70dd",
+      "title": "Millicent",
+      "entityType": "OrbitChain",
+      "slug": "millicent",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/millicent-logo.webp",
+        "bannerUrl": "/images/orbitchains/millicent-banner.webp"
+      },
+      "description": "Millicent One is a public Ethereum Rollup dedicated to tokenized Real World Assets (RWAs) and digital currencies like tokenized bank deposits, stablecoins, and central bank assets. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": null,
+        "twitter": null,
+        "github": null,
+        "news": "https://x.com/MillicentLabs/status/1788584028641140894",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "USDC",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": null,
+        "status": "In development",
+        "type": "Rollup",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "13001a3f-59f8-80d0-b97c-ee1201655b0c",
+      "title": "MindChain",
+      "entityType": "OrbitChain",
+      "slug": "mindchain",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/mindchain-logo.webp",
+        "bannerUrl": "/images/orbitchains/mindchain-banner.webp"
+      },
+      "description": "An FHE restaking Layer for PoS and AI networks.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.mindnetwork.xyz/",
+        "discord": "https://discord.com/invite/UYj94MJdGJ",
+        "twitter": "https://x.com/mindnetwork_xyz",
+        "github": null,
+        "news": null,
+        "docs": "https://docs.mindnetwork.xyz/minddocs"
+      },
+      "chain": {
+        "chainId": 228,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "AltLayer",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=mind-network&sourceChain=arbitrum-one",
+        "rpcUrl": "https://rpc-mainnet.mindnetwork.xyz",
+        "blockExplorerUrl": "https://explorer.mindnetwork.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "cf89cd45-667a-440e-8b23-963f3a6b8884",
+      "title": "Molten Network",
+      "entityType": "OrbitChain",
+      "slug": "molten-network",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/molten-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/molten-network-banner.webp"
+      },
+      "description": "Molten is a orbit scaling solution to prevent toxic oracle MEV to scale perpetual DEXs in the DeFi ecosystem. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.unidex.exchange/",
+        "discord": "https://github.com/UniDex-Finance",
+        "twitter": "https://twitter.com/MoltenL2",
+        "github": "https://github.com/UniDex-Finance",
+        "news": null,
+        "docs": "https://docs.moltennetwork.com/introduction"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://molten.bridge.caldera.xyz/",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://molten.calderaexplorer.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#ee5943",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "2154795e-e8fd-4d9c-a7b5-629a4859ab45",
+      "title": "Muster",
+      "entityType": "OrbitChain",
+      "slug": "muster",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/muster-logo.webp",
+        "bannerUrl": "/images/orbitchains/muster-banner.webp"
+      },
+      "description": "Muster is meant to be the most efficient gateway to Ethereum.  As an Arbitrum Orbit Chain, it leverages the latest innovations to improve user experience and blockchain accessibility. Muster targets the lowest possible transaction fees. It introduces a native account abstraction and onboarding protocol that completely changes the paradigm in blockchain adoption. A  complete SDK from Cometh is available for dapp builders. Muster is notably the home of cutting edge blockchain games like Cosmik Battle.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": "https://cometh.io/",
+        "twitter": "https://twitter.com/Cometh",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": 4078,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "AltLayer",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=muster&sourceChain=arbitrum-one",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#DF62DD",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "7c0af10e-66e6-4558-b8ff-4695a14e1bc5",
+      "title": "MV CHAIN",
+      "entityType": "OrbitChain",
+      "slug": "mvchain",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/mvchain-logo.webp",
+        "bannerUrl": "/images/orbitchains/mvchain-banner.webp"
+      },
+      "description": "The only Metaverse with a 15-year history. MV CHAIN on Arbitrum Orbit for a better gaming and metaverse experience- Easier access with $MV as the primary token.- Lower gas fees.- Enhanced real-world integration.\n\n",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://genso.game/en/",
+        "discord": null,
+        "twitter": "https://x.com/genso_meta",
+        "github": null,
+        "news": "https://x.com/genso_meta/status/1796451650397196297",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "9651a3bb-69c5-46a4-be6a-35fadcb9957e",
+      "title": "Novastro",
+      "entityType": "OrbitChain",
+      "slug": "novastro",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/novastro-logo.webp",
+        "bannerUrl": "/images/orbitchains/novastro-banner.webp"
+      },
+      "description": "An L2 RWA chain powered by movement.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.novastro.xyz/",
+        "discord": "https://discord.com/invite/AaPvm8ZvuG",
+        "twitter": "https://x.com/Novastro_xyz",
+        "github": null,
+        "news": "https://x.com/Novastro_xyz/status/1820747120158351394",
+        "docs": "https://docs.novastro.xyz/novastro_chain"
+      },
+      "chain": {
+        "chainId": 560098,
+        "layer": 2,
+        "token": "NOVAS",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": null,
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": "https://rpc.novastro-testnet.gelato.digital/",
+        "blockExplorerUrl": "https://explorer.novastro.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "12101a3f-59f8-8085-b436-ff439e163813",
+      "title": "O3",
+      "entityType": "OrbitChain",
+      "slug": "o3",
+      "categoryId": "bridges-and-on-ramps",
+      "images": {
+        "logoUrl": "/images/orbitchains/o3-logo.webp",
+        "bannerUrl": "/images/orbitchains/o3-banner.webp"
+      },
+      "description": "L3 on Bitcoin and a Cross-Chain Bridge supporting EVM, Bitcoin L1 and L2.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://o3layer.com/",
+        "discord": null,
+        "twitter": "https://x.com/O3Layer_",
+        "github": null,
+        "news": "https://x.com/O3Layer_/status/1833487939868713362",
+        "docs": "https://docs.o3layer.com/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "O3",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": null,
+        "status": "Testnet",
+        "type": "Avail",
+        "bridgeUrl": "https://octopusbridge.xyz/",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://app.testnet.octopusbridge.xyz/explorer",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "18b01a3f-59f8-8037-a649-e846c59b8d05",
+      "title": "Oceanum",
+      "entityType": "OrbitChain",
+      "slug": "oceanum",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/oceanum-logo.webp",
+        "bannerUrl": "/images/orbitchains/oceanum-banner.webp"
+      },
+      "description": "AI-specific L3 with Caldera, bringing AI agent scaling across multiple blockchains by Bluwhale.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.bluwhale.com/",
+        "discord": null,
+        "twitter": "https://x.com/bluwhaleai",
+        "github": null,
+        "news": "https://x.com/bluwhaleai/status/1884299162692509746",
+        "docs": "https://bluwhale.gitbook.io/bluwhaleai"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Caldera",
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "abace168-40ae-4a48-b0a8-76a55795e99f",
+      "title": "OEV Network",
+      "entityType": "OrbitChain",
+      "slug": "oev-network",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/oev-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/oev-network-banner.webp"
+      },
+      "description": "Oracles that pay you. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": "https://discord.com/invite/Ftd47Jjcjk",
+        "twitter": "https://x.com/OEVNetwork",
+        "github": null,
+        "news": "https://x.com/API3DAO/status/1806281407808803211",
+        "docs": "https://docs.api3.org/oev-searchers/in-depth/oev-network/"
+      },
+      "chain": {
+        "chainId": 4913,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://oev.bridge.api3.org/",
+        "rpcUrl": "https://oev.rpc.api3.org/http",
+        "blockExplorerUrl": "https://oev.explorer.api3.org/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#1828bc",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1c901a3f-59f8-800b-9e5b-fec2aff119b5",
+      "title": "Onyx DAO",
+      "entityType": "OrbitChain",
+      "slug": "onyx",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/onyx-logo.webp",
+        "bannerUrl": "/images/orbitchains/onyx-banner.webp"
+      },
+      "description": "Onyx is the Backbone of Decentralised Web3 Protocols.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://onyx.org",
+        "discord": null,
+        "twitter": "https://x.com/OnyxDAO",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": 80888,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Ethereum L2",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": "rpc.onyx.org",
+        "blockExplorerUrl": "https://explorer.onyx.org",
+        "gasFee": "XCN"
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1c901a3f-59f8-80e4-9f2d-c80a05fa5efc",
+      "title": "Own",
+      "entityType": "OrbitChain",
+      "slug": "own",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/own-logo.webp",
+        "bannerUrl": "/images/orbitchains/own-banner.webp"
+      },
+      "description": "Own is the first Ethereum Layer 2 protocol built for the creation, management and distribution of tokenized real-world assets (RWAs).",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.iown.xyz",
+        "discord": "https://discord.com/invite/ownxyz",
+        "twitter": "https://x.com/own_xyz",
+        "github": "https://github.com/ownprotocol",
+        "news": "https://x.com/own_xyz/status/1899460832246816961",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "dbed4813-9ff4-4077-bea9-36e501db2c51",
+      "title": "Playnance",
+      "entityType": "OrbitChain",
+      "slug": "playblock",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/playblock-logo.webp",
+        "bannerUrl": "/images/orbitchains/playblock-banner.webp"
+      },
+      "description": "The team behind #1 game on Polygon, Playnance, is building a gasless gaming L3 on top of Arbitrum Nova. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://playnance.com/",
+        "discord": null,
+        "twitter": "https://twitter.com/Playnancetech",
+        "github": "https://github.com/playnance-games/PlayBlock",
+        "news": "https://x.com/gelatonetwork/status/1770487186804166826",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 1829,
+        "layer": 3,
+        "token": "PBG",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.playblock.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f30104",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "133794f3-c0cd-4eaa-ba90-0af5d3da053d",
+      "title": "Plume Network",
+      "entityType": "OrbitChain",
+      "slug": "plume",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/plume-logo.webp",
+        "bannerUrl": "/images/orbitchains/plume-banner.webp"
+      },
+      "description": "Plume is the first modular L2 blockchain dedicated for all real-world assets (RWAs) that integrates asset tokenization and compliance providers directly into the chain. Our mission is to simplify the convoluted processes of RWA project deployment and offer investors a blockchain ecosystem to cross-pollinate and invest in various RWAs.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.plumenetwork.xyz/",
+        "discord": "https://discord.com/invite/plume",
+        "twitter": "https://twitter.com/plumenetwork",
+        "github": "https://github.com/plumenetwork",
+        "news": "https://twitter.com/arbitrum/status/1755033141708828701",
+        "docs": "https://plume.gitbook.io/plume/"
+      },
+      "chain": {
+        "chainId": 98866,
+        "layer": 2,
+        "token": "PLUME",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum\n",
+        "parentChain": "Ethereum",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "http://rpc.plume.org/",
+        "blockExplorerUrl": "https://explorer.plume.org/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f43b39",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "CEO - Chris Yin",
+          "link": "https://twitter.com/chriseyin"
+        },
+        {
+          "primaryText": "CBO - Teddy",
+          "link": "https://twitter.com/teddyp_xyz"
+        },
+        {
+          "primaryText": "CTO - Eugene Y. Q. Shen",
+          "link": "https://twitter.com/eyqshen"
+        }
+      ]
+    },
+    {
+      "id": "1cb01a3f-59f8-80f7-afd0-f98e69ee43f9",
+      "title": "Powerloom Mainnet V2",
+      "entityType": "OrbitChain",
+      "slug": "powerloom",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/powerloom-logo.webp",
+        "bannerUrl": "/images/orbitchains/powerloom-banner.webp"
+      },
+      "description": "Powerloom Mainnet is the Layer-2 chain supporting Powerloom’s composable data network where devs, orgs, and end-users get access to ready-to-consume, affordable, and verifiable onchain datasets. It serves as the platform for generating and validating billions for ‘snapshots’ daily, i.e., the fundamental unit of Powerloom’s data markets and composed datasets.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://powerloom.io",
+        "discord": "https://discord.com/invite/powerloom",
+        "twitter": null,
+        "github": " https://github.com/powerloom",
+        "news": "https://x.com/Powerloom/status/1906846974621745489",
+        "docs": "https://docs.powerloom.io"
+      },
+      "chain": {
+        "chainId": 7869,
+        "layer": 2,
+        "token": "POWER",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": "https://rpc-v2.powerloom.network",
+        "blockExplorerUrl": "https://explorer-v2.powerloom.network",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "55E794",
+        "secondary": "161818"
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "11901a3f-59f8-8036-a514-e6abf0b68bf5",
+      "title": "Pretzel Layer",
+      "entityType": "OrbitChain",
+      "slug": "pretzelbuild",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/pretzelbuild-logo.webp",
+        "bannerUrl": "/images/orbitchains/pretzelbuild-banner.webp"
+      },
+      "description": "Proof-of-Play based L2 app-chain on Berachain\nand leveraging Proof-of-Liquidity, built with Arbitrum Orbit.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://app.pretzel.build/",
+        "discord": null,
+        "twitter": "https://x.com/pretzelbuild",
+        "github": null,
+        "news": "https://x.com/pretzelbuild/status/1843350644083827146",
+        "docs": "https://docs.pretzel.build/"
+      },
+      "chain": {
+        "chainId": 50333,
+        "layer": 2,
+        "token": "BERA",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": "AltLayer",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": "https://pretzel-layer.alt.technology",
+        "blockExplorerUrl": "https://explorer.pretzel.build/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#47291f",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "3524fa6f-1670-49ce-9e6f-41cc2fa3dbc9",
+      "title": "Proof of Play Apex",
+      "entityType": "OrbitChain",
+      "slug": "pop-apex",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/pop-apex-logo.webp",
+        "bannerUrl": "/images/orbitchains/pop-apex-banner.webp"
+      },
+      "description": "Apex is the first chain in Proof of Play's Multichain, powering the popular Pirate Nation game.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.proofofplay.com",
+        "discord": "https://discord.com/invite/piratenation",
+        "twitter": "https://twitter.com/ProofOfPlay",
+        "github": null,
+        "news": "https://twitter.com/KAndrewHuang/status/1760737706127315024",
+        "docs": "https://docs.piratenation.game/"
+      },
+      "chain": {
+        "chainId": 70700,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=pop-apex&sourceChain=arbitrum-one",
+        "rpcUrl": "https://rpc.apex.proofofplay.com",
+        "blockExplorerUrl": "https://explorer.apex.proofofplay.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#6C41FF",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "CEO - Amitt Mahajan",
+          "link": "https://twitter.com/amittm"
+        }
+      ]
+    },
+    {
+      "id": "9b954d58-feb4-4c4b-b66b-6d22a7cc5ed0",
+      "title": "Proof of Play Boss",
+      "entityType": "OrbitChain",
+      "slug": "pop-boss",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/pop-boss-logo.webp",
+        "bannerUrl": "/images/orbitchains/pop-boss-banner.webp"
+      },
+      "description": "Boss is the second chain in Proof of Play's Multichain, powering the popular Pirate Nation game.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.proofofplay.com",
+        "discord": "https://discord.com/invite/piratenation",
+        "twitter": "https://twitter.com/ProofOfPlay",
+        "github": null,
+        "news": "https://twitter.com/KAndrewHuang/status/1760737706127315024",
+        "docs": "https://docs.piratenation.game/"
+      },
+      "chain": {
+        "chainId": 70700,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=pop-apex&sourceChain=arbitrum-one",
+        "rpcUrl": "https://rpc.apex.proofofplay.com",
+        "blockExplorerUrl": "https://explorer.boss.proofofplay.com/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#3E63DD",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "CEO - Amitt Mahajan",
+          "link": "https://twitter.com/amittm"
+        }
+      ]
+    },
+    {
+      "id": "5a6ef9c1-54f2-4dd7-aedb-886798a3591e",
+      "title": "RARI Chain",
+      "entityType": "OrbitChain",
+      "slug": "rari-mainnet",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/rari-mainnet-logo.webp",
+        "bannerUrl": "/images/orbitchains/rari-mainnet-banner.webp"
+      },
+      "description": "The first creator-centric L3 with royalties built on the node level, powered by Arbitrum.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://rarichain.org/",
+        "discord": "http://discord.gg/rarifoundation",
+        "twitter": "https://twitter.com/RariChain",
+        "github": null,
+        "news": "https://twitter.com/CoinDesk/status/1730247797184626729",
+        "docs": "https://rari.docs.caldera.dev/"
+      },
+      "chain": {
+        "chainId": 1380012617,
+        "layer": 3,
+        "token": "ETH\n",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=rari-mainnet&sourceChain=arbitrum-one",
+        "rpcUrl": "https://mainnet.rpc.rarichain.org/http",
+        "blockExplorerUrl": "https://mainnet.explorer.rarichain.org",
+        "gasFee": "Typically less than $0.01"
+      },
+      "color": {
+        "primary": "#B16EFF",
+        "secondary": "#1E1E1E"
+      },
+      "teamMembers": [
+        {
+          "primaryText": "Jana Bertram",
+          "link": "https://twitter.com/yannau"
+        }
+      ]
+    },
+    {
+      "id": "18301a3f-59f8-80f1-8ee5-ccf97275e349",
+      "title": "Rayls",
+      "entityType": "OrbitChain",
+      "slug": "rayls",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/rayls-logo.webp",
+        "bannerUrl": "/images/orbitchains/rayls-banner.webp"
+      },
+      "description": "The first UniFi blockchain ecosystem",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.rayls.com/",
+        "discord": null,
+        "twitter": "https://x.com/RaylsLabs",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "RLS",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "50576db3-f864-456b-acd9-a8ae4d0d0db6",
+      "title": "Reya",
+      "entityType": "OrbitChain",
+      "slug": "reya",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/reya-logo.webp",
+        "bannerUrl": "/images/orbitchains/reya-banner.webp"
+      },
+      "description": "The world's first trading-optimised modular L2 bringing deep liquidity, high performance and capital efficiency for DeFi traders and liquidity providers.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://reya.network/",
+        "discord": "https://discord.com/invite/reyaxyz",
+        "twitter": "https://twitter.com/reya_xyz",
+        "github": null,
+        "news": "https://x.com/reya_xyz/status/1772578280836591736?s=20",
+        "docs": "https://docs.reya.network/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://reya.network/bridge",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.reya.network/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#FFFFFF",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "4c89c8ee-637e-49da-a4f0-2d6a22e9e9a9",
+      "title": "Rivalz Network",
+      "entityType": "OrbitChain",
+      "slug": "rivalz-network",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/rivalz-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/rivalz-network-banner.webp"
+      },
+      "description": "The first AI Intel Layer",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://rivalz.ai/",
+        "discord": null,
+        "twitter": "https://x.com/Rivalz_AI",
+        "github": null,
+        "news": "https://x.com/Rivalz_AI/status/1828848711532781957",
+        "docs": "https://docs.rivalz.ai/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum Sepolia",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "Celestia",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "065cbbee-d75f-4a8e-ac6f-86114fef8ddc",
+      "title": "Sanko",
+      "entityType": "OrbitChain",
+      "slug": "sanko",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/sanko-logo.webp",
+        "bannerUrl": "/images/orbitchains/sanko-banner.webp"
+      },
+      "description": "Sanko Mainnet is a gaming ecosystem used as the blockchain hub for the Sanko gaming universe and beyond, powered by $DMT.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://sanko.xyz/",
+        "discord": "https://discord.com/invite/Cnz62Vfa2C",
+        "twitter": "https://twitter.com/SankoGameCorp",
+        "github": "https://github.com/Sanko-Dream-Machine/",
+        "news": "https://x.com/SankoGameCorp/status/1743328492932985177?s=20",
+        "docs": "https://sanko-1.gitbook.io/sanko-mainnet-docs"
+      },
+      "chain": {
+        "chainId": 1996,
+        "layer": 3,
+        "token": "DMT",
+        "tokenAddress": "https://tools.sanko.xyz/address/0x754cdad6f5821077d6915004be2ce05f93d176f8",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=sanko&sourceChain=arbitrum-one",
+        "rpcUrl": "https://mainnet.sanko.xyz/",
+        "blockExplorerUrl": "https://explorer.sanko.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#0367FF",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "mr smoovie williams",
+          "link": "https://twitter.com/smoovie420"
+        },
+        {
+          "primaryText": "chop stix",
+          "link": "https://twitter.com/fatmensch"
+        },
+        {
+          "primaryText": "deww",
+          "link": "https://twitter.com/deww400"
+        }
+      ]
+    },
+    {
+      "id": "23001a3f-59f8-80b8-9824-e46038019f19",
+      "title": "SIS Chain",
+      "entityType": "OrbitChain",
+      "slug": "sis-chain",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/sis-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/sis-chain-banner.webp"
+      },
+      "description": "",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": null,
+        "twitter": null,
+        "github": null,
+        "news": "https://x.com/symbiosis_fi/status/1943261860855242930",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "SIS",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Caldera",
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1c901a3f-59f8-8085-8571-eb21588d13e9",
+      "title": "Skynet",
+      "entityType": "OrbitChain",
+      "slug": "skynet",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/skynet-logo.webp",
+        "bannerUrl": "/images/orbitchains/skynet-banner.webp"
+      },
+      "description": "Where AI Agents come to life.\n\nTaking AI beyond chatbots: global resources for real-world tasks.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.skynet.io",
+        "discord": "https://discord.com/invite/skynetforai",
+        "twitter": "https://x.com/Skynet_protocol",
+        "github": null,
+        "news": "https://www.zeeve.io/blog/skynet-new-blockchain-on-arbitrum-orbit-will-scale-ai-agents-at-warp-speed/",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "sUSD",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Zeeve",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.skynet.io",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "18501a3f-59f8-808d-b63d-cfdd81bc653c",
+      "title": "SlingShot",
+      "entityType": "OrbitChain",
+      "slug": "slingshot",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/slingshot-logo.webp",
+        "bannerUrl": "/images/orbitchains/slingshot-banner.webp"
+      },
+      "description": "We enable gamers to become owners and creators in community-generated games.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://slingshotdao.com/",
+        "discord": null,
+        "twitter": "https://x.com/slingshotdao?s=21&t=vB-B7B-aJMtHY6ZyVzNmAQ",
+        "github": null,
+        "news": null,
+        "docs": "https://docs.slingshotdao.com/slingshot-dao"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "SLING",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Conduit",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer-slingshot-uivc8ajsjn.t.conduit.xyz/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "6f3d5149-086e-4f0e-823c-656579370cdf",
+      "title": "Song Protocol",
+      "entityType": "OrbitChain",
+      "slug": "songprotocol",
+      "categoryId": "nfts",
+      "images": {
+        "logoUrl": "/images/orbitchains/songprotocol-logo.webp",
+        "bannerUrl": "/images/orbitchains/songprotocol-banner.webp"
+      },
+      "description": "We are witnessing the transformative moment for the music industry. The rise of GenAI has led to an exponential increase in content and creators, calling for a new infrastructure to foster innovation.\n\n\nThis is why we are building Song Protocol, the world’s first music-focused Layer 3 blockchain featuring a built-in automated copyright system. Just as Ethereum serves as the open network for digital assets, Song Protocol aims to be the open network for music. It’s designed to democratize music collaboration and enable innovation for apps utilizing music, all while removing the hassle and expense of copyright issues.\n\nLet’s venture together into the new world, shaping a new musiconomy for the AI era.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://songprotocol.org/",
+        "discord": null,
+        "twitter": "https://twitter.com/songprotocol",
+        "github": null,
+        "news": "https://twitter.com/songprotocol/status/1758340918405738939",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "SONG",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Big Bang Accelerator",
+        "status": "In development",
+        "type": "Rollup",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#FFFFFF",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ca01a3f-59f8-80e6-9391-f014fc5bf726",
+      "title": "Sovrun",
+      "entityType": "OrbitChain",
+      "slug": "sovrun",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/sovrun-logo.webp",
+        "bannerUrl": "/images/orbitchains/sovrun-banner.webp"
+      },
+      "description": "Shaping the future of gaming through AI, Blockchain & Autonomous Worlds",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.sovrun.org/",
+        "discord": null,
+        "twitter": "https://x.com/SovrunOfficial",
+        "github": null,
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": 79225,
+        "layer": 2,
+        "token": "SOVRN",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": null,
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://testnet-l2-explorer-hyperliquid.sovrun.org",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "19801a3f-59f8-8018-beea-d591520ba8a1",
+      "title": "SparkPoint",
+      "entityType": "OrbitChain",
+      "slug": "sparkpoint",
+      "categoryId": "ai-and-depin",
+      "images": {
+        "logoUrl": "/images/orbitchains/sparkpoint-logo.webp",
+        "bannerUrl": "/images/orbitchains/sparkpoint-banner.webp"
+      },
+      "description": "SparkPoint is driving the next wave of blockchain evolution by integrating artificial intelligence (AI) into its ecosystem. At the core of this vision is the SparkAgent AI Agents Launchpad platform, a groundbreaking initiative that combines the power of blockchain and AI to enable intelligent, automated services across various applications.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://sparkpoint.io/",
+        "discord": "https://discord.gg/VhTXE6Ay",
+        "twitter": "https://x.com/sparkpointio",
+        "github": "https://github.com/sparkpointio",
+        "news": null,
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Alchemy",
+        "status": "Testnet",
+        "type": "AnyTrust",
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1b501a3f-59f8-806b-82bf-e7eebaaea560",
+      "title": "Studio Chain",
+      "entityType": "OrbitChain",
+      "slug": "studio-chain",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/studio-chain-logo.webp",
+        "bannerUrl": "/images/orbitchains/studio-chain-banner.webp"
+      },
+      "description": "Powered by the KARRAT Foundation.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.karratcoin.com",
+        "discord": null,
+        "twitter": "https://x.com/karratcoin",
+        "github": null,
+        "news": "https://decrypt.co/309799/my-pet-hooligan-arbitrum-studio-chain",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "4afde7e4-7895-4005-aef8-d034d6e8ac51",
+      "title": "Super Champs",
+      "entityType": "OrbitChain",
+      "slug": "super-champs",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/super-champs-logo.webp",
+        "bannerUrl": "/images/orbitchains/super-champs-banner.webp"
+      },
+      "description": "Superheroes wanted! Strap on your ammo and join the brawl at Super Champs Academy.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://superchamps.komi.io/",
+        "discord": "https://discord.com/invite/superchamps",
+        "twitter": "https://x.com/SuperChampsHQ",
+        "github": null,
+        "news": "https://x.com/SuperChampsHQ/status/1834200340121391324",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "CHAMP",
+        "tokenAddress": null,
+        "parentChain": "Ethereum L2",
+        "deployerTeam": null,
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "061a7511-4072-4032-82d8-269e3c48679e",
+      "title": "Superposition ",
+      "entityType": "OrbitChain",
+      "slug": "superposition",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/superposition-logo.webp",
+        "bannerUrl": "/images/orbitchains/superposition-banner.webp"
+      },
+      "description": "Superposition is the ultimate yield centric blockchain that pays users and developers to use it. Superposition offers novel incentive mechanisms such as Utility Mining and Super Assets and an native on-chain order book built using Stylus that provides shared liquidity for the ecosystem.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://superposition.so",
+        "discord": "https://discord.gg/VjUWjRQP8y",
+        "twitter": "https://twitter.com/Superpositionso",
+        "github": null,
+        "news": "https://x.com/Superpositionso/status/1711319417962008615?s=20",
+        "docs": "https://docs.superposition.so/"
+      },
+      "chain": {
+        "chainId": 55244,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=superposition&sourceChain=arbitrum-one",
+        "rpcUrl": "https://rpc.superposition.so",
+        "blockExplorerUrl": "https://explorer.superposition.so",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#1E1E1E",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "Shahmeer Chaudhry",
+          "link": "https://www.linkedin.com/in/shahmeerchaudhry/"
+        },
+        {
+          "primaryText": "Alexander Baigent",
+          "link": "https://www.linkedin.com/in/alexander-baigent-956022195/"
+        }
+      ]
+    },
+    {
+      "id": "a3e6e3a9-b5be-4648-b89a-b9d57619a309",
+      "title": "SX Network",
+      "entityType": "OrbitChain",
+      "slug": "sx-network",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/sx-network-logo.webp",
+        "bannerUrl": "/images/orbitchains/sx-network-banner.webp"
+      },
+      "description": "SX Bet is a peer-to-peer web3 betting exchange that allows all users to both offer and take bets. This peer-to-peer model of betting leads to better odds and remove the ability of owners to exploit the users for profit. SX Bet is built on it's own custom EVM-compatible blockchain.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.sx.technology/",
+        "discord": null,
+        "twitter": "https://x.com/SX_Network",
+        "github": null,
+        "news": "https://x.com/SX_Network/status/1803902616080126008",
+        "docs": "https://docs.sx.technology/"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "SX",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Gelato",
+        "status": "Mainnet",
+        "type": "Rollup",
+        "bridgeUrl": "https://sx.bet/migrate",
+        "rpcUrl": "https://rpc.sx-rollup.gelato.digital/",
+        "blockExplorerUrl": "https://explorerl2.sx.technology/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#0d78b1",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "1ca01a3f-59f8-80dd-945e-f2faa2b6bedc",
+      "title": "Syndicate",
+      "entityType": "OrbitChain",
+      "slug": "syndicate",
+      "categoryId": "infra-and-tools",
+      "images": {
+        "logoUrl": "/images/orbitchains/syndicate-logo.webp",
+        "bannerUrl": "/images/orbitchains/syndicate-banner.webp"
+      },
+      "description": "The path to a community-owned world starts here. Build scalable, atomically composable appchains with full control over the network, sequencer, and economy.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://syndicate.io",
+        "discord": null,
+        "twitter": "https://x.com/syndicateio",
+        "github": null,
+        "news": "https://syndicate.io/blog/announcing-syndicate-chain",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "e8d60b09-4f44-4ac7-a99a-bcef3232ec68",
+      "title": "Syndr",
+      "entityType": "OrbitChain",
+      "slug": "syndr",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/syndr-logo.webp",
+        "bannerUrl": "/images/orbitchains/syndr-banner.webp"
+      },
+      "description": "Syndr is an institutional-grade, high-performance Options and Futures exchange powered by Arbitrum Orbit.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.syndr.com/",
+        "discord": null,
+        "twitter": "https://twitter.com/SyndrHQ",
+        "github": null,
+        "news": "https://x.com/SyndrHQ/status/1672087908524892167?s=20",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 444444,
+        "layer": 3,
+        "token": "ETH",
+        "tokenAddress": "https://www.coingecko.com/en/coins/ethereum",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": "Celestia",
+        "bridgeUrl": null,
+        "rpcUrl": "https://sepolia.syndr.com/http",
+        "blockExplorerUrl": "https://sepolia-explorer.syndr.com",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": [
+        {
+          "primaryText": "Madhur Kumar Sharma",
+          "link": "https://www.linkedin.com/in/madhurkumarsharma/"
+        },
+        {
+          "primaryText": "Vyom Sharma",
+          "link": "https://www.linkedin.com/in/vcrizpy/"
+        },
+        {
+          "primaryText": "Aryan Raj",
+          "link": "https://www.linkedin.com/in/aryan-raj1110/"
+        }
+      ]
+    },
+    {
+      "id": "1f901a3f-59f8-809c-9cc6-ece1daa55d82",
+      "title": "T-Rex",
+      "entityType": "OrbitChain",
+      "slug": "t-rex",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/t-rex-logo.webp",
+        "bannerUrl": "/images/orbitchains/t-rex-banner.webp"
+      },
+      "description": "Purpose-built blockchain for entertainment and culture",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://trex.xyz/",
+        "discord": null,
+        "twitter": "https://x.com/TREX_chain",
+        "github": null,
+        "news": "https://x.com/TREX_chain/status/1920664358280913255",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": null,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "12101a3f-59f8-80e0-b5af-d81bd283ed71",
+      "title": "Tria",
+      "entityType": "OrbitChain",
+      "slug": "tria",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/tria-logo.webp",
+        "bannerUrl": "/images/orbitchains/tria-banner.webp"
+      },
+      "description": "Building a best path AVS L2 using Arbitrum Orbit to solve the fragmented liquidity problem across crypto. Access all chains with your existing wallet and assets. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://www.tria.so/",
+        "discord": null,
+        "twitter": "https://x.com/useTria",
+        "github": null,
+        "news": "https://x.com/useTria/status/1846215495839604952",
+        "docs": "https://docs.tria.so"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": null,
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "11a01a3f-59f8-80df-b8a4-f5b6ed6a46d5",
+      "title": "Ungaii",
+      "entityType": "OrbitChain",
+      "slug": "ungaii",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/ungaii-logo.webp",
+        "bannerUrl": "/images/orbitchains/ungaii-banner.webp"
+      },
+      "description": "Game Publishing Chain",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://ungaii.io/",
+        "discord": "https://discord.com/invite/maAnU2xDqg",
+        "twitter": "https://x.com/UngaiiChain",
+        "github": null,
+        "news": "https://x.com/UngaiiChain/status/1843984860580553052",
+        "docs": null
+      },
+      "chain": {
+        "chainId": 559955,
+        "layer": null,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": null,
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": "https://ungaii-chain-testnet.bridge.caldera.xyz/",
+        "rpcUrl": "https://ungaii-chain-testnet.rpc.caldera.xyz/http",
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "11901a3f-59f8-80e8-b225-ec974a8284ae",
+      "title": "Uprising",
+      "entityType": "OrbitChain",
+      "slug": "uprising",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/uprising-logo.webp",
+        "bannerUrl": "/images/orbitchains/uprising-banner.webp"
+      },
+      "description": "World’s first native yield gaming blockchain | Secured by Sega, Square Enix, Bandai Namco, Ubisoft & more.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": null,
+        "discord": "https://discord.com/invite/uprisinglabs",
+        "twitter": "https://x.com/Uprising_L2",
+        "github": null,
+        "news": "https://x.com/Uprising_L2/status/1838928965206970662",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 2,
+        "token": "OASYS",
+        "tokenAddress": null,
+        "parentChain": "Alt-L1",
+        "deployerTeam": "AltLayer",
+        "status": "In development",
+        "type": null,
+        "bridgeUrl": null,
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#f75b10",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "9a1fef7d-9c74-49f2-84c5-9841e61ec22e",
+      "title": "WINR",
+      "entityType": "OrbitChain",
+      "slug": "winr",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/winr-logo.webp",
+        "bannerUrl": "/images/orbitchains/winr-banner.webp"
+      },
+      "description": "Decentralized gambling infrastructure",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://x.com/WINRProtocol",
+        "discord": null,
+        "twitter": "https://x.com/WINRProtocol",
+        "github": null,
+        "news": "https://x.com/WINRProtocol/status/1676641461146890240",
+        "docs": null
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "WNR",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Caldera",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://winr-mainnet-0.mainnets.rollbridge.app/",
+        "rpcUrl": null,
+        "blockExplorerUrl": "https://explorer.winr.games",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "f2d500",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "49fa5ffb-6cbf-47a2-a88c-b059dbb8c245",
+      "title": "Xai",
+      "entityType": "OrbitChain",
+      "slug": "xai",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/xai-logo.webp",
+        "bannerUrl": "/images/orbitchains/xai-banner.webp"
+      },
+      "description": "Xai was developed to enable real economies and open trade in the next generation of video games. With Xai, potentially billions of traditional gamers can own and trade valuable in-game items in their favorite games for the first time, without the need to use crypto-wallets. Anyone can support the Xai network by operating a node which allows them to receive network rewards and participate in governance. ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://xai.games/",
+        "discord": "https://discord.com/invite/xaigames",
+        "twitter": "https://twitter.com/xai_games",
+        "github": "https://github.com/xai-foundation/sentry/releases",
+        "news": "https://venturebeat.com/games/offchain-labs-is-building-xai-as-a-layer-3-blockchain-platform-for-games/",
+        "docs": "https://xai-foundation.gitbook.io/xai-network/xai-blockchain/welcome-to-xai"
+      },
+      "chain": {
+        "chainId": 660279,
+        "layer": 3,
+        "token": "XAI",
+        "tokenAddress": "https://www.coingecko.com/en/coins/xai",
+        "parentChain": "Arbitrum One",
+        "deployerTeam": "Offchain Labs",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://bridge.arbitrum.io/?destinationChain=xai&sourceChain=arbitrum-one",
+        "rpcUrl": "https://xai-chain.net/rpc",
+        "blockExplorerUrl": "https://explorer.xai-chain.net/",
+        "gasFee": "Typically less than $0.01"
+      },
+      "color": {
+        "primary": "#F30019",
+        "secondary": "#87000E"
+      },
+      "teamMembers": [
+        {
+          "primaryText": "Tobias Batton",
+          "link": "https://www.crunchbase.com/person/tobias-batton"
+        },
+        {
+          "primaryText": "Mark Harris",
+          "link": "https://www.crunchbase.com/person/mark-harris-0343"
+        }
+      ]
+    },
+    {
+      "id": "683f499c-0f8f-48f8-9f84-4bec17d2b99c",
+      "title": "XCHAIN",
+      "entityType": "OrbitChain",
+      "slug": "xchain",
+      "categoryId": "defi",
+      "images": {
+        "logoUrl": "/images/orbitchains/xchain-logo.webp",
+        "bannerUrl": "/images/orbitchains/xchain-banner.webp"
+      },
+      "description": "XCHAIN provides high throughput, low latency, and low costs, and inherits its security directly from Ethereum. These properties allow IDEX to provide a trading experience equivalent to a centralized exchange, with instant settlement and no gas costs, along with the fund security of a decentralized exchange.",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://idex.io/",
+        "discord": null,
+        "twitter": "https://x.com/idexio",
+        "github": null,
+        "news": null,
+        "docs": "https://api-docs-v4.idex.io/#introduction"
+      },
+      "chain": {
+        "chainId": 94524,
+        "layer": 2,
+        "token": "ETH",
+        "tokenAddress": null,
+        "parentChain": "Ethereum",
+        "deployerTeam": "Conduit",
+        "status": "Mainnet",
+        "type": "AnyTrust",
+        "bridgeUrl": "https://exchange.idex.io/",
+        "rpcUrl": "https://xchain-rpc.idex.io/",
+        "blockExplorerUrl": "https://xchain-explorer.idex.io/",
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "#fd0598",
+        "secondary": ""
+      },
+      "teamMembers": []
+    },
+    {
+      "id": "db3ce985-bd7c-435d-9bc0-cccef06dee05",
+      "title": "XR One",
+      "entityType": "OrbitChain",
+      "slug": "xr-one",
+      "categoryId": "gaming",
+      "images": {
+        "logoUrl": "/images/orbitchains/xr-one-logo.webp",
+        "bannerUrl": "/images/orbitchains/xr-one-banner.webp"
+      },
+      "description": "Groundbreaking Layer 3 chain designed for competitive gaming and powered by the XR token.  ",
+      "isFeaturedOnOrbitPage": false,
+      "links": {
+        "website": "https://xrone.network/",
+        "discord": null,
+        "twitter": "https://x.com/XR_Foundation",
+        "github": null,
+        "news": "https://x.com/saltwatergames/status/1790783080921444555",
+        "docs": "https://xr-one.gitbook.io/xr"
+      },
+      "chain": {
+        "chainId": null,
+        "layer": 3,
+        "token": "",
+        "tokenAddress": null,
+        "parentChain": "Arbitrum Sepolia",
+        "deployerTeam": "Caldera",
+        "status": "Testnet",
+        "type": null,
+        "bridgeUrl": "https://xr-sepolia-testnet.bridge.caldera.xyz/",
+        "rpcUrl": null,
+        "blockExplorerUrl": null,
+        "gasFee": ""
+      },
+      "color": {
+        "primary": "",
+        "secondary": ""
+      },
+      "teamMembers": []
+    }
+  ]
+}
