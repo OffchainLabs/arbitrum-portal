@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
-import React, { memo, useCallback } from 'react'
+import React, { memo, useCallback, useEffect } from 'react'
 import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
@@ -29,7 +29,7 @@ import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
 import { Loader } from './common/atoms/Loader'
 
-const moonPayChainIds = [ChainId.Sepolia, ChainId.Ethereum, ChainId.ArbitrumOne]
+const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
 
 type BuyPanelStore = {
   selectedChainId: ChainId
@@ -114,7 +114,7 @@ function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
 }
 
 const BalanceWrapper = memo(function BalanceWrapper() {
-  const { address } = useAccount()
+  const { address, isConnected } = useAccount()
   const { ethToUSD } = useETHPrice()
   const { selectedChainId } = useBuyPanelStore()
   const provider = getProviderForChainId(selectedChainId)
@@ -130,12 +130,15 @@ const BalanceWrapper = memo(function BalanceWrapper() {
     openDialog('buy_panel_network_selection')
   }
 
-  if (isLoadingBalance) {
-    return <Loader size="small" />
-  }
+  useEffect(() => {
+    console.log('balanceState: ', balanceState)
+    if (balanceState) {
+      // Do something with the balanceState
+    }
+  }, [balanceState])
 
-  if (balanceError) {
-    return <div>ERROR</div>
+  if (!isConnected) {
+    return null
   }
 
   return (
@@ -143,20 +146,26 @@ const BalanceWrapper = memo(function BalanceWrapper() {
       <BuyPanelNetworkButton onClick={openBuyPanelNetworkSelectionDialog} />
       <p className="flex items-center justify-center space-x-1 text-lg">
         <span>Balance:</span>
-        <SafeImage
-          width={20}
-          height={20}
-          src={nativeCurrency.logoUrl}
-          alt={nativeCurrency.symbol}
-          className="!ml-2 block"
-        />
-        {balanceState && (
-          <span>
-            {formatAmount(balanceState.balance, {
-              decimals: balanceState.decimals,
-              symbol: balanceState.symbol
-            })}
-          </span>
+        {typeof balanceState !== 'undefined' && (
+          <>
+            <SafeImage
+              width={20}
+              height={20}
+              src={nativeCurrency.logoUrl}
+              alt={nativeCurrency.symbol}
+              className="!ml-2 block"
+            />
+            <span>
+              {formatAmount(balanceState.balance, {
+                decimals: balanceState.decimals,
+                symbol: balanceState.symbol
+              })}
+            </span>
+          </>
+        )}
+        {isLoadingBalance && <Loader size="small" />}
+        {(balanceError || typeof balanceState === 'undefined') && (
+          <span className="text-error">error</span>
         )}
         {showPriceInUsd && (
           <span className="text-white/70">
