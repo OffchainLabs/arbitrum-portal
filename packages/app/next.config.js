@@ -9,7 +9,10 @@ module.exports = {
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
   experimental: {
-    externalDir: true
+    externalDir: true,
+    fontLoaders: [
+      { loader: '@next/font/google', options: { subsets: ['latin'] } }
+    ]
   },
   webpack: config => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding')
@@ -20,6 +23,11 @@ module.exports = {
       {
         protocol: 'https',
         hostname: 'portal.arbitrum.io'
+      },
+      {
+        protocol: 'https',
+        hostname: 'blog.arbitrum.io',
+        port: ''
       }
     ]
   },
@@ -42,9 +50,51 @@ module.exports = {
   },
   async redirects() {
     return [
+      // Portal redirects
+      {
+        source: '/one',
+        destination: '/?chains=arbitrum-one',
+        permanent: true
+      },
+      {
+        source: '/nova',
+        destination: '/?chains=arbitrum-nova',
+        permanent: true
+      },
+      {
+        source: '/odyssey',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/missions',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/arcade',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/orbit',
+        destination: '/orbit/ecosystem',
+        permanent: true
+      },
+      {
+        source: '/orbit/launch',
+        destination: 'https://orbit.arbitrum.io/',
+        permanent: true
+      },
+      {
+        source: '/orbit/:path*',
+        destination: '/chains/:path*',
+        permanent: true
+      },
+      // Bridge redirects
       {
         source:
-          '/:slug((?!^$|api/|_next/|public/|restricted)(?!.*\\.[^/]+$).+)',
+          '/bridge/:slug((?!^$|api/|_next/|public/|restricted)(?!.*\\.[^/]+$).+)',
         missing: [
           {
             type: 'query',
@@ -56,7 +106,7 @@ module.exports = {
             value: 'image/.*'
           }
         ],
-        destination: '/?destinationChain=:slug',
+        destination: '/bridge?destinationChain=:slug',
         permanent: true
       }
     ]

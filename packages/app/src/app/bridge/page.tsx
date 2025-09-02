@@ -172,7 +172,7 @@ function getDestinationWithSanitizedQueryParams(
     }
   }
 
-  return `/?${params.toString()}`
+  return `/bridge?${params.toString()}`
 }
 
 async function sanitizeAndRedirect(searchParams: {
