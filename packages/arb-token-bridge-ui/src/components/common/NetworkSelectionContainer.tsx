@@ -253,12 +253,14 @@ export function NetworksPanel({
   selectedChainId,
   onNetworkRowClick,
   close,
+  showSearch = true,
   showFooter = true
 }: {
   chainIds: ChainId[]
   selectedChainId: ChainId
   onNetworkRowClick: (value: Chain) => void
   close: (focusableElement?: HTMLElement) => void
+  showSearch?: boolean
   showFooter?: boolean
 }) {
   const [errorMessage, setErrorMessage] = useState('')
@@ -396,6 +398,7 @@ export function NetworksPanel({
         searchInputValue={networkSearched}
         searchInputOnChange={onSearchInputChange}
         errorMessage={errorMessage}
+        showSearch={showSearch}
         isDialog
       >
         <AutoSizer>
