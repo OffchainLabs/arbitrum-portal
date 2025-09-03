@@ -28,7 +28,6 @@ import {
   withDefault
 } from 'use-query-params'
 
-import { defaultTheme } from './useTheme'
 import {
   TabParamEnum,
   DisabledFeatures,
@@ -50,6 +49,7 @@ import {
   ChainParam,
   TabParam
 } from '../util/queryParamUtils'
+import { defaultTheme } from './useTheme'
 
 export {
   TabParamEnum,

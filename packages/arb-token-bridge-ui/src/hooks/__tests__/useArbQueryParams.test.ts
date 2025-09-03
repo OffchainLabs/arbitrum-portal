@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk'
 import { customChainLocalStorageKey } from '../../util/networks'
 import { ChainId } from '../../types/ChainId'
@@ -14,6 +14,12 @@ import {
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam
 } from '../../util/queryParamUtils'
+
+vi.mock('../../util/featureFlag', () => ({
+  isOnrampEnabled: vi.fn()
+}))
+
+import { isOnrampEnabled } from '../../util/featureFlag'
 
 describe('AmountQueryParam custom encoder and decoder', () => {
   describe('encode input field value to query param', () => {
@@ -240,59 +246,118 @@ describe('ChainParam custom encoder and decoder', () => {
 })
 
 describe('TabParam custom encoder and decoder', () => {
-  describe('encode tab index number to string query param', () => {
-    it('should return bridge tab string if value is null or undefined', () => {
-      expect(TabParam.encode(null)).toEqual('bridge')
-      expect(TabParam.encode(undefined)).toEqual('bridge')
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.resetModules()
+  })
+
+  describe('when onramp is enabled (showBuyPanel = true)', () => {
+    beforeEach(() => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true)
     })
 
-    it('should return string query param if value is a valid tab index number', () => {
-      expect(TabParam.encode(0)).toEqual('buy')
-      expect(TabParam.encode(1)).toEqual('bridge')
-      expect(TabParam.encode(2)).toEqual('tx_history')
+    describe('encode tab index number to string query param', () => {
+      it('should return bridge tab string if value is null or undefined', () => {
+        expect(TabParam.encode(null)).toEqual('bridge')
+        expect(TabParam.encode(undefined)).toEqual('bridge')
+      })
+
+      it('should return string query param if value is a valid tab index number', () => {
+        expect(TabParam.encode(0)).toEqual('buy')
+        expect(TabParam.encode(1)).toEqual('bridge')
+        expect(TabParam.encode(2)).toEqual('tx_history')
+      })
+
+      it('should return bridge tab string if value is an invalid tab index number', () => {
+        expect(TabParam.encode(3)).toEqual('bridge')
+        expect(TabParam.encode(4)).toEqual('bridge')
+        expect(TabParam.encode(3111111)).toEqual('bridge')
+        expect(TabParam.encode(-1)).toEqual('bridge')
+        expect(TabParam.encode(-129)).toEqual('bridge')
+      })
     })
 
-    it('should return bridge tab string if value is an invalid tab index number', () => {
-      expect(TabParam.encode(3)).toEqual('bridge')
-      expect(TabParam.encode(4)).toEqual('bridge')
-      expect(TabParam.encode(3111111)).toEqual('bridge')
-      expect(TabParam.encode(-1)).toEqual('bridge')
-      expect(TabParam.encode(-129)).toEqual('bridge')
-    })
+    describe('decode string query param to tab index number', () => {
+      it('should return 1 (bridge index number) if value is null or undefined', () => {
+        expect(TabParam.decode(null)).toEqual(1)
+        expect(TabParam.decode(undefined)).toEqual(1)
+      })
 
-    it('should return bridge tab string if value is an invalid string', () => {
-      // @ts-ignore - test invalid values
-      expect(TabParam.encode('xxx')).toEqual('bridge')
-      // @ts-ignore - test invalid values
-      expect(TabParam.encode('random text')).toEqual('bridge')
-      // @ts-ignore - test invalid values
-      // we are encoding the selected tab index number to string; `tx_history` is not a valid tab index number
-      expect(TabParam.encode('tx_history')).toEqual('bridge')
+      it('should return bridge tab index number if value is an invalid string query param', () => {
+        expect(TabParam.decode('')).toEqual(1)
+        expect(TabParam.decode('random')).toEqual(1)
+        expect(TabParam.decode('random text here')).toEqual(1)
+        expect(TabParam.decode('3')).toEqual(1)
+        expect(TabParam.decode('4')).toEqual(1)
+        expect(TabParam.decode('3111111')).toEqual(1)
+        expect(TabParam.decode('000000')).toEqual(1)
+        expect(TabParam.decode('0')).toEqual(1)
+        expect(TabParam.decode('1')).toEqual(1)
+      })
+
+      it('should return corresponding tab index number if string query param is valid', () => {
+        expect(TabParam.decode('buy')).toEqual(0)
+        expect(TabParam.decode('bridge')).toEqual(1)
+        expect(TabParam.decode('tx_history')).toEqual(2)
+      })
     })
   })
 
-  describe('decode string query param to tab index number', () => {
-    it('should return 1 (bridge index number) if value is null or undefined', () => {
-      expect(TabParam.decode(null)).toEqual(1)
-      expect(TabParam.decode(undefined)).toEqual(1)
+  describe('when onramp is disabled (showBuyPanel = false)', () => {
+    beforeEach(() => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(false)
     })
 
-    it('should return bridge tab index number if value is an invalid string query param', () => {
-      expect(TabParam.decode('')).toEqual(1)
-      expect(TabParam.decode('random')).toEqual(1)
-      expect(TabParam.decode('random text here')).toEqual(1)
-      expect(TabParam.decode('3')).toEqual(1)
-      expect(TabParam.decode('4')).toEqual(1)
-      expect(TabParam.decode('3111111')).toEqual(1)
-      expect(TabParam.decode('000000')).toEqual(1)
-      expect(TabParam.decode('0')).toEqual(1)
-      expect(TabParam.decode('1')).toEqual(1)
+    describe('encode tab index number to string query param', () => {
+      it('should return bridge tab string if value is null or undefined', () => {
+        expect(TabParam.encode(null)).toEqual('bridge')
+        expect(TabParam.encode(undefined)).toEqual('bridge')
+      })
+
+      it('should return string query param if value is a valid tab index number', () => {
+        expect(TabParam.encode(0)).toEqual('bridge')
+        expect(TabParam.encode(1)).toEqual('tx_history')
+      })
+
+      it('should return bridge tab string if value is an invalid tab index number', () => {
+        expect(TabParam.encode(2)).toEqual('bridge')
+        expect(TabParam.encode(3)).toEqual('bridge')
+        expect(TabParam.encode(4)).toEqual('bridge')
+        expect(TabParam.encode(3111111)).toEqual('bridge')
+        expect(TabParam.encode(-1)).toEqual('bridge')
+        expect(TabParam.encode(-129)).toEqual('bridge')
+      })
     })
 
-    it('should return corresponding tab index number if string query param is valid', () => {
-      expect(TabParam.decode('buy')).toEqual(0)
-      expect(TabParam.decode('bridge')).toEqual(1)
-      expect(TabParam.decode('tx_history')).toEqual(2)
+    describe('decode string query param to tab index number', () => {
+      it('should return 0 (bridge index number) if value is null or undefined', () => {
+        expect(TabParam.decode(null)).toEqual(0)
+        expect(TabParam.decode(undefined)).toEqual(0)
+      })
+
+      it('should redirect BUY tab to BRIDGE when buy panel is disabled', () => {
+        expect(TabParam.decode('buy')).toEqual(0)
+      })
+
+      it('should return bridge tab index number if value is an invalid string query param', () => {
+        expect(TabParam.decode('')).toEqual(0)
+        expect(TabParam.decode('random')).toEqual(0)
+        expect(TabParam.decode('random text here')).toEqual(0)
+        expect(TabParam.decode('3')).toEqual(0)
+        expect(TabParam.decode('4')).toEqual(0)
+        expect(TabParam.decode('3111111')).toEqual(0)
+        expect(TabParam.decode('000000')).toEqual(0)
+        expect(TabParam.decode('0')).toEqual(0)
+        expect(TabParam.decode('1')).toEqual(0)
+      })
+
+      it('should return corresponding tab index number if string query param is valid', () => {
+        expect(TabParam.decode('bridge')).toEqual(0)
+        expect(TabParam.decode('tx_history')).toEqual(1)
+      })
     })
   })
 })

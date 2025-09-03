@@ -4,6 +4,7 @@ import { PropsWithChildren } from 'react'
 import { twMerge } from 'tailwind-merge'
 import Image from 'next/image'
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo'
+import { isOnrampEnabled } from '../util/featureFlag'
 
 function StyledTab({ children, ...props }: PropsWithChildren) {
   return (
@@ -20,17 +21,21 @@ StyledTab.displayName = 'StyledTab'
 
 export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo()
+  const showBuyPanel = isOnrampEnabled()
 
   return (
     <Tab.List
       className={twMerge(
-        'grid w-full max-w-[600px] grid-cols-3 bg-white/20 p-[8px] text-white md:rounded'
+        'grid w-full max-w-[600px] bg-white/20 p-[8px] text-white md:rounded',
+        showBuyPanel ? 'grid-cols-3' : 'grid-cols-2'
       )}
     >
-      <StyledTab aria-label="Switch to Buy Tab">
-        <WalletIcon className="h-3 w-3" />
-        Buy
-      </StyledTab>
+      {showBuyPanel && (
+        <StyledTab aria-label="Switch to Buy Tab">
+          <WalletIcon className="h-3 w-3" />
+          Buy
+        </StyledTab>
+      )}
       <StyledTab aria-label="Switch to Bridge Tab">
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge

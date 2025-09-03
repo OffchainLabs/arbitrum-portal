@@ -28,6 +28,7 @@ import { SearchPanel } from './common/SearchPanel/SearchPanel'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
 import { Loader } from './common/atoms/Loader'
+import { isThisOnrampServiceEnabled } from '../util/featureFlag'
 
 const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -186,6 +187,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
 
 const BuyPanel = memo(function BuyPanel() {
   const { address } = useAccount()
+  const showMoonPay = isThisOnrampServiceEnabled('moonpay')
 
   const handleGetSignature = useCallback(
     async (widgetUrl: string): Promise<string> => {
@@ -205,39 +207,41 @@ const BuyPanel = memo(function BuyPanel() {
   return (
     <div className="pb-8 text-white">
       <BalanceWrapper />
-      <div
-        className={twMerge(
-          'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
-        )}
-      >
-        <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-        <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
-        <div className="relative mb-4 flex flex-col items-center justify-center">
-          <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
-          <p className="mt-2 text-3xl">MoonPay</p>
-          <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
-        </div>
+      {showMoonPay && (
         <div
           className={twMerge(
-            'relative h-full w-full',
-            '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
-            '[&_iframe]:rounded-xl'
+            'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
           )}
         >
-          <MoonPayBuyWidget
-            variant="embedded"
-            walletAddress={address}
-            baseCurrencyCode="usd"
-            defaultCurrencyCode="eth"
-            onUrlSignatureRequested={handleGetSignature}
-            visible
-          />
+          <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
+          <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
+          <div className="relative mb-4 flex flex-col items-center justify-center">
+            <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
+            <p className="mt-2 text-3xl">MoonPay</p>
+            <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
+          </div>
+          <div
+            className={twMerge(
+              'relative h-full w-full',
+              '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
+              '[&_iframe]:rounded-xl'
+            )}
+          >
+            <MoonPayBuyWidget
+              variant="embedded"
+              walletAddress={address}
+              baseCurrencyCode="usd"
+              defaultCurrencyCode="eth"
+              onUrlSignatureRequested={handleGetSignature}
+              visible
+            />
+          </div>
+          <p className="mt-4 text-center text-sm text-gray-4">
+            On-Ramps are not directly endorsed by Arbitrum. Please use at your
+            own risk.
+          </p>
         </div>
-        <p className="mt-4 text-center text-sm text-gray-4">
-          On-Ramps are not directly endorsed by Arbitrum. Please use at your own
-          risk.
-        </p>
-      </div>
+      )}
     </div>
   )
 })

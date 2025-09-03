@@ -1,3 +1,6 @@
+import { constants } from 'ethers'
+import { getArbitrumNetwork } from '@arbitrum/sdk'
+
 import {
   ChainKeyQueryParam,
   getChainForChainKeyQueryParam,
@@ -7,10 +10,8 @@ import {
 import { ChainId } from '../types/ChainId'
 import { isSupportedChainId, getDestinationChainIds } from './chainUtils'
 import { isNetwork } from './networks'
-import { isLifiEnabled } from './featureFlag'
+import { isLifiEnabled, isOnrampEnabled } from './featureFlag'
 import { orbitChains } from './orbitChainsList'
-import { constants } from 'ethers'
-import { getArbitrumNetwork } from '@arbitrum/sdk'
 
 export interface ThemeConfig {
   borderRadius?: string
@@ -44,17 +45,40 @@ export enum ModeParamEnum {
   EMBED = 'embed'
 }
 
-export const tabToIndex = {
-  [TabParamEnum.BUY]: 0,
-  [TabParamEnum.BRIDGE]: 1,
-  [TabParamEnum.TX_HISTORY]: 2
-} as const satisfies Record<TabParamEnum, number>
+const showBuyPanel = isOnrampEnabled()
 
-export const indexToTab = {
-  0: TabParamEnum.BUY,
-  1: TabParamEnum.BRIDGE,
-  2: TabParamEnum.TX_HISTORY
-} as const satisfies Record<number, TabParamEnum>
+function createTabMappings() {
+  if (showBuyPanel) {
+    return {
+      tabToIndex: {
+        [TabParamEnum.BUY]: 0,
+        [TabParamEnum.BRIDGE]: 1,
+        [TabParamEnum.TX_HISTORY]: 2
+      } as const satisfies Record<TabParamEnum, number>,
+      indexToTab: {
+        0: TabParamEnum.BUY,
+        1: TabParamEnum.BRIDGE,
+        2: TabParamEnum.TX_HISTORY
+      } as const satisfies Record<number, TabParamEnum>
+    }
+  }
+
+  return {
+    tabToIndex: {
+      [TabParamEnum.BRIDGE]: 0,
+      [TabParamEnum.TX_HISTORY]: 1
+    } as const satisfies Record<
+      Exclude<TabParamEnum, TabParamEnum.BUY>,
+      number
+    >,
+    indexToTab: {
+      0: TabParamEnum.BRIDGE,
+      1: TabParamEnum.TX_HISTORY
+    } as const satisfies Record<number, Exclude<TabParamEnum, TabParamEnum.BUY>>
+  }
+}
+
+export const { tabToIndex, indexToTab } = createTabMappings()
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(
@@ -163,7 +187,10 @@ export function encodeTabQueryParam(
   tabIndex: number | null | undefined
 ): string {
   if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
-    return indexToTab[tabIndex as keyof typeof indexToTab]
+    const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
+    if (tabParam !== undefined) {
+      return tabParam
+    }
   }
   return TabParamEnum.BRIDGE
 }
@@ -171,8 +198,17 @@ export function encodeTabQueryParam(
 export function decodeTabQueryParam(
   tab: string | (string | null)[] | null | undefined
 ): number {
-  if (typeof tab === 'string' && tab in tabToIndex) {
-    return tabToIndex[tab as TabParamEnum]
+  if (typeof tab === 'string') {
+    if (tab === TabParamEnum.BUY && !showBuyPanel) {
+      return tabToIndex[TabParamEnum.BRIDGE]
+    }
+
+    if (tab in tabToIndex) {
+      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex]
+      if (tabIndex !== undefined) {
+        return tabIndex
+      }
+    }
   }
   return tabToIndex[TabParamEnum.BRIDGE]
 }
