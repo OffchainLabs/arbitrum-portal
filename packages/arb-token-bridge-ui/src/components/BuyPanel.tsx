@@ -132,13 +132,6 @@ const BalanceWrapper = memo(function BalanceWrapper() {
     openDialog('buy_panel_network_selection')
   }
 
-  useEffect(() => {
-    console.log('balanceState: ', balanceState)
-    if (balanceState) {
-      // Do something with the balanceState
-    }
-  }, [balanceState])
-
   if (!isConnected) {
     return null
   }

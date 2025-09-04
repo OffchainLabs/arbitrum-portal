@@ -14,12 +14,11 @@ import {
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam
 } from '../../util/queryParamUtils'
+import { isOnrampEnabled } from '../../util/featureFlag'
 
 vi.mock('../../util/featureFlag', () => ({
   isOnrampEnabled: vi.fn()
 }))
-
-import { isOnrampEnabled } from '../../util/featureFlag'
 
 describe('AmountQueryParam custom encoder and decoder', () => {
   describe('encode input field value to query param', () => {

@@ -1,17 +1,25 @@
 import { MoonPay } from '@moonpay/moonpay-node'
 import { NextApiRequest, NextApiResponse } from 'next/types'
+import { isThisOnrampServiceEnabled } from '../../util/featureFlag'
 
 const moonPayApiKey = process.env.MOONPAY_SK
 
-if (typeof moonPayApiKey === 'undefined') {
-  throw new Error('MOONPAY_SK variable missing.')
-}
-const moonPay = new MoonPay(moonPayApiKey)
+const isMoonPayEnabled = isThisOnrampServiceEnabled('moonpay')
 
 export default async function handler(
   req: NextApiRequest & { query: { chainId: string } },
   res: NextApiResponse<{ signature: string } | { message: string }>
 ) {
+  if (!isMoonPayEnabled) {
+    res.status(404).json({ message: 'MoonPay is not supported' })
+    return
+  }
+
+  if (typeof moonPayApiKey === 'undefined') {
+    throw new Error('MOONPAY_SK variable missing.')
+  }
+  const moonPay = new MoonPay(moonPayApiKey)
+
   try {
     const { method } = req
 
