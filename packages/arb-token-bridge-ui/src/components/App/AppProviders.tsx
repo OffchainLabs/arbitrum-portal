@@ -13,7 +13,7 @@ import { getProps } from '../../util/wagmi/setup'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createConfig } from '@lifi/sdk'
 import { INTEGRATOR_ID } from '@/bridge/app/api/crosschain-transfers/lifi'
-
+import { isOnrampEnabled, isOnrampServiceEnabled } from '../../util/featureFlag'
 const rainbowkitTheme = merge(darkTheme(), {
   colors: {
     accentColor: 'var(--blue-link)'
@@ -51,15 +51,29 @@ interface AppProvidersProps {
 
 const queryClient = new QueryClient()
 
+function OnRampProviders({ children }: { children: ReactNode }) {
+  const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
+
+  if (!isOnrampEnabled()) {
+    return children
+  }
+
+  if (isMoonPayEnabled) {
+    const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
+
+    if (typeof moonPayApiKey === 'undefined') {
+      throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
+    }
+
+    return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>
+  }
+
+  return children
+}
+
 createConfig({ integrator: INTEGRATOR_ID })
 export function AppProviders({ children }: AppProvidersProps) {
   const overmind = useMemo(() => createOvermind(config), [])
-
-  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
-
-  if (typeof moonPayApiKey === 'undefined') {
-    throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
-  }
 
   return (
     <OvermindProvider value={overmind}>
@@ -68,9 +82,7 @@ export function AppProviders({ children }: AppProvidersProps) {
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider theme={rainbowkitTheme}>
               <AppContextProvider>
-                <MoonPayProvider apiKey={moonPayApiKey}>
-                  {children}
-                </MoonPayProvider>
+                <OnRampProviders>{children}</OnRampProviders>
               </AppContextProvider>
             </RainbowKitProvider>
           </QueryClientProvider>

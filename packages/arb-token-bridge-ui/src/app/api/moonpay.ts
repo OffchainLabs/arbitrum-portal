@@ -1,10 +1,10 @@
 import { MoonPay } from '@moonpay/moonpay-node'
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { isThisOnrampServiceEnabled } from '../../util/featureFlag'
+import { isOnrampServiceEnabled } from '../../util/featureFlag'
 
 const moonPayApiKey = process.env.MOONPAY_SK
 
-const isMoonPayEnabled = isThisOnrampServiceEnabled('moonpay')
+const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
 
 export default async function handler(
   req: NextApiRequest & { query: { chainId: string } },

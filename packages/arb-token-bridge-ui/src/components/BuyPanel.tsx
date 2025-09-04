@@ -28,7 +28,7 @@ import { SearchPanel } from './common/SearchPanel/SearchPanel'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
 import { Loader } from './common/atoms/Loader'
-import { isThisOnrampServiceEnabled } from '../util/featureFlag'
+import { isOnrampServiceEnabled } from '../util/featureFlag'
 
 const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -180,7 +180,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
 
 const BuyPanel = memo(function BuyPanel() {
   const { address } = useAccount()
-  const showMoonPay = isThisOnrampServiceEnabled('moonpay')
+  const showMoonPay = isOnrampServiceEnabled('moonpay')
 
   const handleGetSignature = useCallback(
     async (widgetUrl: string): Promise<string> => {

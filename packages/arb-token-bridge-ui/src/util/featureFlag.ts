@@ -14,7 +14,7 @@ export function onrampEnabledList() {
   ).split(',') as (typeof full_onramp_services_list)[number][]
 }
 
-export function isThisOnrampServiceEnabled(
+export function isOnrampServiceEnabled(
   service: (typeof full_onramp_services_list)[number]
 ) {
   return onrampEnabledList().includes(service)
