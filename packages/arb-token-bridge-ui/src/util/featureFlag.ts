@@ -9,9 +9,15 @@ export function isOnrampEnabled() {
 export const full_onramp_services_list = ['moonpay'] as const
 
 export function onrampEnabledList() {
-  return (
-    process.env.NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED ?? 'moonpay'
-  ).split(',') as (typeof full_onramp_services_list)[number][]
+  const enabledOnrampServices =
+    process.env.NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED
+
+  if (!enabledOnrampServices) {
+    return []
+  }
+
+  return enabledOnrampServices.split(',') as
+    | (typeof full_onramp_services_list)[number][]
 }
 
 export function isOnrampServiceEnabled(

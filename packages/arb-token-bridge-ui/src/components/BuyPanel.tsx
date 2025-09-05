@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
-import React, { memo, useCallback, useEffect } from 'react'
+import React, { memo, useCallback } from 'react'
 import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
@@ -29,6 +29,7 @@ import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
 import { Loader } from './common/atoms/Loader'
 import { isOnrampServiceEnabled } from '../util/featureFlag'
+import { TokenLogoFallback } from './TransferPanel/TokenInfo'
 
 const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -91,14 +92,12 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
 BuyPanelNetworkSelectionContainer.displayName =
   'BuyPanelNetworkSelectionContainer'
 
-function BuyPanelNetworkButton({ onClick }: { onClick: () => void }) {
-  const { selectedChainId } = useBuyPanelStore(
-    state => ({
-      selectedChainId: state.selectedChainId,
-      setSelectedChainId: state.setSelectedChainId
-    }),
-    shallow
-  )
+function BuyPanelNetworkButton({
+  onClick
+}: {
+  onClick: React.MouseEventHandler<HTMLButtonElement>
+}) {
+  const selectedChainId = useBuyPanelStore(state => state.selectedChainId)
 
   return (
     <Button variant="secondary" onClick={onClick}>
@@ -149,6 +148,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
               src={nativeCurrency.logoUrl}
               alt={nativeCurrency.symbol}
               className="!ml-2 block"
+              fallback={<TokenLogoFallback className="h4 w-4" />}
             />
             <span>
               {formatAmount(balanceState.balance, {
@@ -161,7 +161,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
         {isLoadingBalance && <Loader size="small" />}
         {!isLoadingBalance &&
           (balanceError || typeof balanceState === 'undefined') && (
-            <span className="text-error">error</span>
+            <span className="text-error">Failed to load balance.</span>
           )}
         {showPriceInUsd && (
           <span className="text-white/70">

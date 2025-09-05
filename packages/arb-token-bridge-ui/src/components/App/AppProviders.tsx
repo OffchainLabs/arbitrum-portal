@@ -1,5 +1,5 @@
 import { MoonPayProvider } from '@moonpay/moonpay-react'
-import { ReactNode, useMemo } from 'react'
+import { PropsWithChildren, ReactNode, useMemo } from 'react'
 import { Provider as OvermindProvider } from 'overmind-react'
 import { WagmiProvider } from 'wagmi'
 import { darkTheme, RainbowKitProvider, Theme } from '@rainbow-me/rainbowkit'
@@ -51,7 +51,7 @@ interface AppProvidersProps {
 
 const queryClient = new QueryClient()
 
-function OnRampProviders({ children }: { children: ReactNode }) {
+function OnRampProviders({ children }: PropsWithChildren) {
   const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
 
   if (!isOnrampEnabled()) {
