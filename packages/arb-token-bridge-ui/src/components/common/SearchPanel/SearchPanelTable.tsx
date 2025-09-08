@@ -52,10 +52,11 @@ export const SearchPanelTable = ({
                 className="h-full w-full rounded bg-transparent py-2 pl-7 pr-2 text-sm font-light placeholder:text-xs placeholder:text-white"
               />
             </div>
-            {!!errorMessage && (
-              <p className="text-xs text-red-400">{errorMessage}</p>
-            )}
+            {SearchInputButton}
           </div>
+          {!!errorMessage && (
+            <p className="text-xs text-red-400">{errorMessage}</p>
+          )}
         </form>
       )}
       <div
