@@ -37,7 +37,7 @@ import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals'
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer'
 import { useBalances } from '../../../hooks/useBalances'
-import { getTokenOverride } from '../../../pages/api/crosschain-transfers/utils'
+import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
 import { LifiSettingsButton } from '../LifiSettingsButton'
 import { useMode } from '../../../hooks/useMode'
 

@@ -41,15 +41,15 @@ import {
 } from './hooks/useRouteStore'
 import { shallow } from 'zustand/shallow'
 import { isLifiEnabled } from '../../util/featureFlag'
-import { isValidLifiTransfer } from '../../pages/api/crosschain-transfers/utils'
-import { Token } from '../../pages/api/crosschain-transfers/types'
+import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils'
+import { Token } from '../../app/api/crosschain-transfers/types'
 
 // Add chains IDs that are currently down or disabled
 // It will block transfers (both deposits and withdrawals) and display an info box in the transfer panel
 export const DISABLED_CHAIN_IDS: number[] = []
 
 // withdraw-only chains (will also display error message in the transfer panel)
-const WITHDRAW_ONLY_CHAIN_IDS: number[] = [98865] // Plume Legacy
+const WITHDRAW_ONLY_CHAIN_IDS: number[] = [98865, 70700, 70701] // Plume Legacy, PoP Apex, PoP Boss
 
 type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage

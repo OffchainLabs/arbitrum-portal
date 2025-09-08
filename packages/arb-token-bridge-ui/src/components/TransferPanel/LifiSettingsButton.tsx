@@ -1,7 +1,7 @@
 import { useNetworks } from '../../hooks/useNetworks'
 import { useSelectedToken } from '../../hooks/useSelectedToken'
 import { Cog8ToothIcon } from '@heroicons/react/24/outline'
-import { isValidLifiTransfer } from '../../pages/api/crosschain-transfers/utils'
+import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils'
 import { DialogWrapper, useDialog2 } from '../common/Dialog2'
 import { Button } from '../common/Button'
 import { useAccountType } from '../../hooks/useAccountType'

@@ -96,7 +96,7 @@ import { getAmountToPay } from './useTransferReadiness'
 import { ToSConfirmationCheckbox } from './ToSConfirmationCheckbox'
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel'
 import { useMode } from '../../hooks/useMode'
-import { getTokenOverride } from '../../pages/api/crosschain-transfers/utils'
+import { getTokenOverride } from '../../app/api/crosschain-transfers/utils'
 import { ReceiveFundsHeader } from './ReceiveFundsHeader'
 
 const signerUndefinedError = 'Signer is undefined'
