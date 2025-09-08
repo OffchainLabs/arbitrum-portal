@@ -1,12 +1,12 @@
 import Image from 'next/image'
-import { useAccount } from 'wagmi'
+import { useAccount, useBalance } from 'wagmi'
 import React, { memo, useCallback } from 'react'
 import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
 import { Chain } from 'viem'
-import { utils } from 'ethers'
+import { BigNumber, utils } from 'ethers'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
 
 import MoonPay from '@/images/onramp/moonpay.svg'
@@ -16,7 +16,6 @@ import { useNativeCurrency } from '../hooks/useNativeCurrency'
 import { getProviderForChainId } from '@/token-bridge-sdk/utils'
 import { ChainId } from '../types/ChainId'
 import { SafeImage } from './common/SafeImage'
-import { useNativeCurrencyBalanceForChainId } from '../hooks/useNativeCurrencyBalanceForChainId'
 import { formatAmount, formatUSD } from '../util/NumberUtils'
 import { NetworksPanel } from './common/NetworkSelectionContainer'
 import { Button } from './common/Button'
@@ -124,8 +123,8 @@ const BalanceWrapper = memo(function BalanceWrapper() {
     data: balanceState,
     isLoading: isLoadingBalance,
     error: balanceError
-  } = useNativeCurrencyBalanceForChainId(selectedChainId, address)
-  const showPriceInUsd = balanceState?.symbol.toLowerCase() === 'eth'
+  } = useBalance({ chainId: selectedChainId, address })
+  const showPriceInUsd = nativeCurrency.symbol.toLowerCase() === 'eth'
   const [dialogProps, openDialog] = useDialog2()
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection')
@@ -151,7 +150,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
               fallback={<TokenLogoFallback className="h4 w-4" />}
             />
             <span>
-              {formatAmount(balanceState.balance, {
+              {formatAmount(BigNumber.from(balanceState.value), {
                 decimals: balanceState.decimals,
                 symbol: balanceState.symbol
               })}
@@ -167,7 +166,9 @@ const BalanceWrapper = memo(function BalanceWrapper() {
           <span className="text-white/70">
             (
             {formatUSD(
-              ethToUSD(Number(utils.formatEther(balanceState.balance)))
+              ethToUSD(
+                Number(utils.formatEther(BigNumber.from(balanceState?.value)))
+              )
             )}
             )
           </span>

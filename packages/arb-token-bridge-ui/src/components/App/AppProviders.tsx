@@ -1,4 +1,4 @@
-import { MoonPayProvider } from '@moonpay/moonpay-react'
+import dynamic from 'next/dynamic'
 import { PropsWithChildren, ReactNode, useMemo } from 'react'
 import { Provider as OvermindProvider } from 'overmind-react'
 import { WagmiProvider } from 'wagmi'
@@ -64,6 +64,11 @@ function OnRampProviders({ children }: PropsWithChildren) {
     if (typeof moonPayApiKey === 'undefined') {
       throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
     }
+
+    const MoonPayProvider = dynamic(
+      () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
+      { ssr: false }
+    )
 
     return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>
   }
