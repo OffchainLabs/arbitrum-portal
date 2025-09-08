@@ -1,7 +1,7 @@
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useAccount, useBalance } from 'wagmi'
 import React, { memo, useCallback } from 'react'
-import { MoonPayBuyWidget } from '@moonpay/moonpay-react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
@@ -202,6 +202,11 @@ const MoonPayPanel = memo(function MoonPayPanel() {
   if (!showMoonPay) {
     return null
   }
+
+  const MoonPayBuyWidget = dynamic(
+    () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayBuyWidget),
+    { ssr: false }
+  )
 
   return (
     <div
