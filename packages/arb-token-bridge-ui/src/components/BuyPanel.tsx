@@ -99,7 +99,7 @@ function BuyPanelNetworkButton({
   const selectedChainId = useBuyPanelStore(state => state.selectedChainId)
 
   return (
-    <Button variant="secondary" onClick={onClick}>
+    <Button variant="secondary" onClick={onClick} className="border-white/30">
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage
           chainId={selectedChainId}
@@ -162,12 +162,12 @@ const BalanceWrapper = memo(function BalanceWrapper() {
           (balanceError || typeof balanceState === 'undefined') && (
             <span className="text-error">Failed to load balance.</span>
           )}
-        {showPriceInUsd && (
+        {balanceState && showPriceInUsd && (
           <span className="text-white/70">
             (
             {formatUSD(
               ethToUSD(
-                Number(utils.formatEther(BigNumber.from(balanceState?.value)))
+                Number(utils.formatEther(BigNumber.from(balanceState.value)))
               )
             )}
             )
