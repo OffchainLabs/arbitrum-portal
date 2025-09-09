@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useAccount, useBalance } from 'wagmi'
-import React, { memo, useCallback } from 'react'
+import React, { memo, PropsWithChildren, useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
@@ -27,8 +27,33 @@ import { SearchPanel } from './common/SearchPanel/SearchPanel'
 import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2'
 import { useETHPrice } from '../hooks/useETHPrice'
 import { Loader } from './common/atoms/Loader'
-import { isOnrampServiceEnabled } from '../util/featureFlag'
+import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag'
 import { TokenLogoFallback } from './TransferPanel/TokenInfo'
+
+function OnRampProviders({ children }: PropsWithChildren) {
+  const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
+
+  if (!isOnrampEnabled()) {
+    return children
+  }
+
+  if (isMoonPayEnabled) {
+    const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
+
+    if (typeof moonPayApiKey === 'undefined') {
+      throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
+    }
+
+    const MoonPayProvider = dynamic(
+      () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
+      { ssr: false }
+    )
+
+    return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>
+  }
+
+  return children
+}
 
 const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
 
@@ -249,7 +274,10 @@ export function BuyPanel() {
   return (
     <div className="pb-8 text-white">
       <BalanceWrapper />
-      <MoonPayPanel />
+
+      <OnRampProviders>
+        <MoonPayPanel />
+      </OnRampProviders>
     </div>
   )
 }
