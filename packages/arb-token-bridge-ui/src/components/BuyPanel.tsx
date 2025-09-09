@@ -116,7 +116,7 @@ function BuyPanelNetworkButton({
 const BalanceWrapper = memo(function BalanceWrapper() {
   const { address, isConnected } = useAccount()
   const { ethToUSD } = useETHPrice()
-  const { selectedChainId } = useBuyPanelStore()
+  const selectedChainId = useBuyPanelStore(state => state.selectedChainId)
   const provider = getProviderForChainId(selectedChainId)
   const nativeCurrency = useNativeCurrency({ provider })
   const {
