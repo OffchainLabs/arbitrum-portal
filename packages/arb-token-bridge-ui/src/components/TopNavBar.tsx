@@ -49,7 +49,10 @@ export function TopNavBar() {
         />
         Txn History{' '}
         <span
-          className={twMerge('h-3 w-3 rounded-full', colorClassName.light)}
+          className={twMerge(
+            'h-3 w-3 shrink-0 rounded-full',
+            colorClassName.light
+          )}
         />
       </StyledTab>
     </Tab.List>
