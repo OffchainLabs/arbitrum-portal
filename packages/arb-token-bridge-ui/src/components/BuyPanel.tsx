@@ -65,13 +65,7 @@ const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
   {
     ssr: false,
-    loading: () => (
-      <MoonPaySkeleton>
-        <div className="flex h-full min-h-[600px] w-full items-center justify-center">
-          <Loader color="white" size="medium" />
-        </div>
-      </MoonPaySkeleton>
-    )
+    loading: () => <MoonPaySkeleton />
   }
 )
 
@@ -271,12 +265,7 @@ const MoonPayPanel = memo(function MoonPayPanel() {
   const MoonPayBuyWidget = dynamic(
     () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayBuyWidget),
     {
-      ssr: false,
-      loading: () => (
-        <div className="flex h-full min-h-[600px] w-full items-center justify-center">
-          <Loader color="white" size="medium" />
-        </div>
-      )
+      ssr: false
     }
   )
 
