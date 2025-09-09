@@ -30,9 +30,49 @@ import { Loader } from './common/atoms/Loader'
 import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag'
 import { TokenLogoFallback } from './TransferPanel/TokenInfo'
 
+function MoonPaySkeleton({ children }: PropsWithChildren) {
+  return (
+    <div
+      className={twMerge(
+        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
+      )}
+    >
+      <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
+      <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
+      <div className="relative mb-4 flex flex-col items-center justify-center">
+        <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
+        <p className="mt-2 text-3xl">MoonPay</p>
+        <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
+      </div>
+      <div
+        className={twMerge(
+          'relative h-full min-h-[600px] w-full',
+          '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
+          '[&_iframe]:rounded-xl'
+        )}
+      >
+        {children}
+      </div>
+      <p className="mt-4 text-center text-sm text-gray-4">
+        On-Ramps are not directly endorsed by Arbitrum. Please use at your own
+        risk.
+      </p>
+    </div>
+  )
+}
+
 const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <MoonPaySkeleton>
+        <div className="flex h-full min-h-[600px] w-full items-center justify-center">
+          <Loader color="white" size="medium" />
+        </div>
+      </MoonPaySkeleton>
+    )
+  }
 )
 
 const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
@@ -230,43 +270,27 @@ const MoonPayPanel = memo(function MoonPayPanel() {
 
   const MoonPayBuyWidget = dynamic(
     () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayBuyWidget),
-    { ssr: false }
+    {
+      ssr: false,
+      loading: () => (
+        <div className="flex h-full min-h-[600px] w-full items-center justify-center">
+          <Loader color="white" size="medium" />
+        </div>
+      )
+    }
   )
 
   return (
-    <div
-      className={twMerge(
-        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
-      )}
-    >
-      <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-      <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
-      <div className="relative mb-4 flex flex-col items-center justify-center">
-        <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
-        <p className="mt-2 text-3xl">MoonPay</p>
-        <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
-      </div>
-      <div
-        className={twMerge(
-          'relative h-full min-h-[600px] w-full',
-          '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
-          '[&_iframe]:rounded-xl'
-        )}
-      >
-        <MoonPayBuyWidget
-          variant="embedded"
-          walletAddress={address}
-          baseCurrencyCode="usd"
-          defaultCurrencyCode="eth"
-          onUrlSignatureRequested={handleGetSignature}
-          visible
-        />
-      </div>
-      <p className="mt-4 text-center text-sm text-gray-4">
-        On-Ramps are not directly endorsed by Arbitrum. Please use at your own
-        risk.
-      </p>
-    </div>
+    <MoonPaySkeleton>
+      <MoonPayBuyWidget
+        variant="embedded"
+        walletAddress={address}
+        baseCurrencyCode="usd"
+        defaultCurrencyCode="eth"
+        onUrlSignatureRequested={handleGetSignature}
+        visible
+      />
+    </MoonPaySkeleton>
   )
 })
 
