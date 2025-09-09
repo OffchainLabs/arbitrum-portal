@@ -30,29 +30,29 @@ import { Loader } from './common/atoms/Loader'
 import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag'
 import { TokenLogoFallback } from './TransferPanel/TokenInfo'
 
-function OnRampProviders({ children }: PropsWithChildren) {
-  const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
+const MoonPayProvider = dynamic(
+  () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
+  { ssr: false }
+)
 
+const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
+
+function OnRampProviders({ children }: PropsWithChildren) {
   if (!isOnrampEnabled()) {
     return children
   }
 
-  if (isMoonPayEnabled) {
-    const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
-
-    if (typeof moonPayApiKey === 'undefined') {
-      throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
-    }
-
-    const MoonPayProvider = dynamic(
-      () => import('@moonpay/moonpay-react').then(mod => mod.MoonPayProvider),
-      { ssr: false }
-    )
-
-    return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>
+  if (!isMoonPayEnabled) {
+    return children
   }
 
-  return children
+  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK
+
+  if (typeof moonPayApiKey === 'undefined') {
+    throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.')
+  }
+
+  return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>
 }
 
 const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne]
@@ -172,7 +172,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
               src={nativeCurrency.logoUrl}
               alt={nativeCurrency.symbol}
               className="!ml-2 block"
-              fallback={<TokenLogoFallback className="h4 w-4" />}
+              fallback={<TokenLogoFallback className="h-4 w-4" />}
             />
             <span>
               {formatAmount(BigNumber.from(balanceState.value), {
@@ -248,7 +248,7 @@ const MoonPayPanel = memo(function MoonPayPanel() {
       </div>
       <div
         className={twMerge(
-          'relative h-full w-full',
+          'relative h-full min-h-[600px] w-full',
           '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
           '[&_iframe]:rounded-xl'
         )}
