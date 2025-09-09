@@ -119,7 +119,7 @@ module.exports = {
       borderRadius: {
         DEFAULT: 'var(--border-radius, 5px)',
         sm: 'calc(var(--border-radius, 10px) / 2)',
-        md: 'calc(var(--border-radius, 10px)',
+        md: 'calc(var(--border-radius, 10px))',
         lg: 'calc(var(--border-radius, 10px) * 3 / 2)'
       },
       borderWidth: {
