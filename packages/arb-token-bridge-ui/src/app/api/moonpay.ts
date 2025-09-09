@@ -1,18 +1,17 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { MoonPay } from '@moonpay/moonpay-node'
-import { NextApiRequest, NextApiResponse } from 'next/types'
 import { isOnrampServiceEnabled } from '../../util/featureFlag'
 
 const moonPayApiKey = process.env.MOONPAY_SK
 
 const isMoonPayEnabled = isOnrampServiceEnabled('moonpay')
 
-export default async function handler(
-  req: NextApiRequest & { query: { chainId: string } },
-  res: NextApiResponse<{ signature: string } | { message: string }>
-) {
+export async function POST(req: NextRequest) {
   if (!isMoonPayEnabled) {
-    res.status(404).json({ message: 'MoonPay is not supported' })
-    return
+    return NextResponse.json(
+      { message: 'MoonPay is not supported' },
+      { status: 404 }
+    )
   }
 
   if (typeof moonPayApiKey === 'undefined') {
@@ -21,40 +20,38 @@ export default async function handler(
   const moonPay = new MoonPay(moonPayApiKey)
 
   try {
-    const { method } = req
-
-    if (method !== 'POST') {
-      res.status(405).json({ message: 'Method not allowed' })
-      return
-    }
-
     if (!req.body) {
-      res.status(400).json({ message: 'Request body is required' })
-      return
+      return NextResponse.json(
+        { message: 'Request body is required' },
+        { status: 400 }
+      )
     }
 
-    const url = req.body.url
+    const body = await req.json()
+    const url = body.url
 
     if (!url) {
-      res.status(400).json({ message: 'URL is required' })
-      return
+      return NextResponse.json({ message: 'URL is required' }, { status: 400 })
     }
 
     if (typeof url !== 'string') {
-      res.status(400).json({ message: 'URL must be a string' })
-      return
+      return NextResponse.json(
+        { message: 'URL must be a string' },
+        { status: 400 }
+      )
     }
 
     if (url.length > 2000) {
-      res.status(414).json({ message: 'URL is too long' })
-      return
+      return NextResponse.json({ message: 'URL is too long' }, { status: 414 })
     }
 
     try {
       new URL(url)
     } catch {
-      res.status(400).json({ message: 'Invalid URL format' })
-      return
+      return NextResponse.json(
+        { message: 'Invalid URL format' },
+        { status: 400 }
+      )
     }
 
     const signedUrl = moonPay.url.generateSignature(url, {
@@ -62,34 +59,45 @@ export default async function handler(
     })
 
     if (!signedUrl) {
-      res.status(500).json({ message: 'Failed to generate signature' })
-      return
+      return NextResponse.json(
+        { message: 'Failed to generate signature' },
+        { status: 500 }
+      )
     }
 
     const isSignatureValid = moonPay.url.isSignatureValid(signedUrl)
 
     if (!isSignatureValid) {
-      res.status(500).json({ message: 'Generated signature is invalid' })
-      return
+      return NextResponse.json(
+        { message: 'Generated signature is invalid' },
+        { status: 500 }
+      )
     }
 
     const signatureFromSignedUrl = signedUrl.split('signature=')[1]
 
     if (!signatureFromSignedUrl) {
-      res.status(500).json({ message: 'Failed to extract signature from URL' })
-      return
+      return NextResponse.json(
+        { message: 'Failed to extract signature from URL' },
+        { status: 500 }
+      )
     }
 
     const signature = decodeURIComponent(signatureFromSignedUrl)
 
     if (!signature) {
-      res.status(500).json({ message: 'Failed to decode signature' })
-      return
+      return NextResponse.json(
+        { message: 'Failed to decode signature' },
+        { status: 500 }
+      )
     }
 
-    res.status(200).json({ signature })
+    return NextResponse.json({ signature }, { status: 200 })
   } catch (error) {
     console.error('MoonPay API error:', error)
-    res.status(500).json({ message: 'Internal server error' })
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
