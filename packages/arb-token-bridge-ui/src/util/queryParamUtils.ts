@@ -570,10 +570,17 @@ export const sanitizeTokenQueryParam = ({
 export const sanitizeTabQueryParam = (
   tab: string | string[] | null | undefined
 ): string => {
-  const enumEntryNames = Object.keys(TabParamEnum)
+  if (typeof tab === 'string') {
+    if (tab.toLowerCase() === TabParamEnum.BUY && !showBuyPanel) {
+      return TabParamEnum.BRIDGE
+    }
 
-  if (typeof tab === 'string' && enumEntryNames.includes(tab.toUpperCase())) {
-    return tab.toLowerCase()
+    if (tab in tabToIndex) {
+      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex]
+      if (tabIndex !== undefined) {
+        return tab.toLowerCase()
+      }
+    }
   }
 
   return TabParamEnum.BRIDGE

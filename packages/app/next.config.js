@@ -37,6 +37,15 @@ module.exports = {
             value: 'GET'
           }
         ]
+      },
+      {
+        source: '/api/moonpay',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: 'https://portal.arbitrum.io'
+          }
+        ]
       }
     ]
   },
