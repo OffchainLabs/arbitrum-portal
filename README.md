@@ -2,21 +2,6 @@
 
 ### The canonical token-bridge of [Arbitrum](https://arbitrum.io/)
 
-Are you a developer looking to explore the Arbitrum token bridge and its underlying technology? Then you've come to the right place! We'll walk you through the steps to run the Arbitrum token bridge website locally on your machine.
-
-<br />
-
-Offchain Labs ❤️ Open-source
-
-Interested in contributing to this repo? We welcome your contribution.
-[Check out the contribution guidelines and instructions here](CONTRIBUTING.md).
-
-<br />
-
----
-
-<br />
-
 ## Prerequisites for running the code
 
 - Install [Node.js](https://nodejs.org/en/download/) for your platform
@@ -174,3 +159,7 @@ Read more about the test setup [here](/packages/arb-token-bridge-ui/tests/e2e/RE
 ---
 
 <br />
+
+### License
+
+© 2025 Offchain Labs, Inc. All rights reserved.
