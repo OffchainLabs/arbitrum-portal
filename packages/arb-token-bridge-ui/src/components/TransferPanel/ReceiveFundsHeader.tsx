@@ -6,6 +6,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useDestinationAddressError } from './hooks/useDestinationAddressError'
 import { useAccountType } from '../../hooks/useAccountType'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
+import { Loader } from '../common/atoms/Loader'
+import { useRouteStore } from './hooks/useRouteStore'
+import { shallow } from 'zustand/shallow'
 
 export const ReceiveFundsHeader = () => {
   const [
@@ -19,6 +22,13 @@ export const ReceiveFundsHeader = () => {
   const isSmartContractWallet = accountType === 'smart-contract-wallet'
 
   const { destinationAddressError } = useDestinationAddressError()
+
+  const { isLoading: isLoadingRoutes } = useRouteStore(
+    state => ({
+      isLoading: state.isLoading
+    }),
+    shallow
+  )
 
   const setDestinationAddress = useCallback(
     (newDestinationAddress: string) =>
@@ -58,7 +68,10 @@ export const ReceiveFundsHeader = () => {
       )}
     >
       <div className="flex flex-nowrap items-end justify-between text-white">
-        <div className="text-[18px]">Receive</div>
+        <div className="flex flex-nowrap items-center gap-2">
+          <div className="text-[18px]">Receive</div>
+          {isLoadingRoutes && <Loader color="white" size="small" />}
+        </div>
         <Button
           variant="tertiary"
           aria-label="Show Custom Destination Address"

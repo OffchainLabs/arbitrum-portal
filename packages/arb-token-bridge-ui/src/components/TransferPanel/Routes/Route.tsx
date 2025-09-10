@@ -132,7 +132,7 @@ const RouteAmount = ({
 
   return (
     <div className="flex min-w-36 flex-col gap-1">
-      <div className="flex flex-col text-lg">
+      <div className="flex flex-col gap-1 text-lg">
         <div className="flex flex-row items-center gap-[15px]">
           <TokenLogo
             className="h-[40px] w-[40px] min-w-[40px]"
@@ -155,7 +155,7 @@ const RouteAmount = ({
         </div>
 
         {isBatchTransferSupported && Number(amount2) > 0 && (
-          <div className="flew-row flex items-center gap-1">
+          <div className="flex flex-row items-center gap-[15px] text-base">
             <TokenLogo
               className="h-[40px] w-[40px] min-w-[40px]"
               srcOverride={null}

@@ -37,8 +37,6 @@ function Wrapper({ children }: PropsWithChildren) {
   )
 }
 
-const MAX_ROUTES_VISIBLE = 3
-
 export const Routes = React.memo(() => {
   useRoutesUpdater()
 
@@ -56,6 +54,10 @@ export const Routes = React.memo(() => {
       }),
       shallow
     )
+
+  const { embedMode } = useMode()
+
+  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3
 
   const [networks] = useNetworks()
   const [selectedToken] = useSelectedToken()
