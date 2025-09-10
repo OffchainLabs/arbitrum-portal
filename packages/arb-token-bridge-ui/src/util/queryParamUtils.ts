@@ -571,15 +571,10 @@ export const sanitizeTabQueryParam = (
   tab: string | string[] | null | undefined
 ): string => {
   if (typeof tab === 'string') {
-    if (tab.toLowerCase() === TabParamEnum.BUY && !showBuyPanel) {
-      return TabParamEnum.BRIDGE
-    }
+    const lowercasedTab = tab.toLowerCase()
 
-    if (tab in tabToIndex) {
-      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex]
-      if (tabIndex !== undefined) {
-        return tab.toLowerCase()
-      }
+    if (Object.keys(tabToIndex).includes(lowercasedTab)) {
+      return lowercasedTab
     }
   }
 
