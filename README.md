@@ -163,9 +163,3 @@ Read more about the test setup [here](/packages/arb-token-bridge-ui/tests/e2e/RE
 ### License
 
 © 2025 Offchain Labs, Inc. All rights reserved.
-
-<br />
-
----
-
-<br />
