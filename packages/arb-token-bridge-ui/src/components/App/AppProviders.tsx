@@ -12,6 +12,7 @@ import { getProps } from '../../util/wagmi/setup'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createConfig } from '@lifi/sdk'
 import { INTEGRATOR_ID } from '@/bridge/app/api/crosschain-transfers/lifi'
+
 const rainbowkitTheme = merge(darkTheme(), {
   colors: {
     accentColor: 'var(--blue-link)'
