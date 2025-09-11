@@ -286,8 +286,6 @@ const MoonPayPanel = memo(function MoonPayPanel() {
 export function BuyPanel() {
   return (
     <div className="pb-8 text-white">
-      <BalanceWrapper />
-
       <OnRampProviders>
         <MoonPayPanel />
       </OnRampProviders>
