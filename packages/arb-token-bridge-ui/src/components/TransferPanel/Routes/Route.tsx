@@ -30,6 +30,10 @@ import { shortenAddress } from '../../../util/CommonUtils'
 import { useAppContextState } from '../../App/AppContext'
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types'
 import { useMode } from '../../../hooks/useMode'
+import {
+  RouteGas,
+  BridgeFee
+} from '../../../app/api/crosschain-transfers/types'
 
 // Types
 export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest'
