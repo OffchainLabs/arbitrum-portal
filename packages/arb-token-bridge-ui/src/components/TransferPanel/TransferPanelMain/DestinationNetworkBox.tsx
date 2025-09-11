@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { constants } from 'ethers'
-import Image from 'next/image'
 import { useAccount } from 'wagmi'
+import { shallow } from 'zustand/shallow'
 
 import { useNetworks } from '../../../hooks/useNetworks'
 import { NetworkContainer } from '../TransferPanelMain'
@@ -16,7 +16,6 @@ import { useDialog2, DialogWrapper } from '../../common/Dialog2'
 import { NetworkButton } from '../../common/NetworkSelectionContainer'
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances'
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported'
-import { getBridgeUiConfigForChain } from '../../../util/bridgeUiConfig'
 import { SafeImage } from '../../common/SafeImage'
 import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils'
 import { formatAmount } from '../../../util/NumberUtils'
@@ -26,7 +25,10 @@ import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
 import { sanitizeTokenSymbol } from '../../../util/TokenUtils'
 import { useRouteStore } from '../hooks/useRouteStore'
+import { useSelectedRouteAmount } from '../hooks/useSelectedRouteAmount'
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
+import { Button } from '../../common/Button'
+import { isLifiRoute } from '../hooks/useRouteStore'
 
 function BalanceRow({
   parentErc20Address,
@@ -93,17 +95,23 @@ function BalanceRow({
   const shouldShowBalance = !isConnected ? !!destinationAddress : true
 
   return (
-    <div className="flex justify-between py-3 text-sm">
-      <div className="flex items-center space-x-1.5">
-        <SafeImage
-          src={tokenLogoSrc}
-          alt={`${symbol} logo`}
-          className="h-4 w-4 shrink-0"
-        />
-        <span>{symbol}</span>
-      </div>
+    <div className="flex flex-col items-end gap-[10px] px-[15px]">
+      <Button
+        variant="secondary"
+        className="px-[10px] py-[5px] opacity-70"
+        disabled
+      >
+        <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
+          <SafeImage
+            src={tokenLogoSrc}
+            alt={`${symbol} logo`}
+            className="h-4 w-4 shrink-0"
+          />
+          <span>{symbol}</span>
+        </div>
+      </Button>
       {shouldShowBalance && (
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 text-sm">
           <span>Balance: </span>
           <span
             aria-label={`${symbol} balance amount on ${
@@ -128,7 +136,15 @@ function BalancesContainer() {
   const { isArbitrumOne } = isNetwork(childChain.id)
   const isCctpTransfer = useIsCctpTransfer()
   const [selectedToken] = useSelectedToken()
-  const selectedRoute = useRouteStore(state => state.selectedRoute)
+
+  const { selectedRoute } = useRouteStore(
+    state => ({
+      selectedRoute: state.selectedRoute
+    }),
+    shallow
+  )
+  const selectedRouteAmount = useSelectedRouteAmount()
+
   const { erc20ChildBalances } = useBalances()
   const isBatchTransferSupported = useIsBatchTransferSupported()
   const { isAmount2InputVisible } = useAmount2InputVisibility()
@@ -155,7 +171,8 @@ function BalancesContainer() {
 
   // For cctp transfer, if no route are selected, display USDC balance on destination chain
   const showNativeUsdcBalance =
-    (isCctpTransfer && selectedRoute === 'cctp') ||
+    (isCctpTransfer &&
+      (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
     (isCctpTransfer && !selectedRoute)
 
   const tokenOverride = useMemo(() => {
@@ -171,62 +188,68 @@ function BalancesContainer() {
     return override.destination
   }, [selectedToken, networks])
 
-  return (
-    <div
-      className="rounded px-3 text-white [&>*+*]:border-t [&>*+*]:border-gray-600"
-      style={{ backgroundColor: '#00000050' }}
-    >
-      {showNativeUsdcBalance ? (
-        <BalanceRow
-          parentErc20Address={
-            isArbitrumOne
-              ? CommonAddress.Ethereum.USDC
-              : CommonAddress.ArbitrumOne.USDC
-          }
-          balance={formatAmount(
-            (isArbitrumOne
-              ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
-              : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ??
-              constants.Zero,
-            {
-              decimals: selectedToken?.decimals
-            }
-          )}
-          symbolOverride="USDC"
-        />
-      ) : (
-        <BalanceRow
-          parentErc20Address={selectedToken?.address}
-          balance={
-            selectedTokenOrNativeCurrencyBalance
-              ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
-                  decimals: selectedToken ? selectedToken.decimals : 18
-                })
-              : undefined
-          }
-          symbolOverride={
-            tokenOverride
-              ? tokenOverride.symbol
-              : selectedToken
-              ? sanitizeTokenSymbol(selectedToken.symbol, {
-                  chainId: networks.destinationChain.id,
-                  erc20L1Address: selectedToken.address
-                })
-              : undefined
-          }
-          logoOverride={destination ? destination.logoURI : undefined}
-        />
-      )}
+  const isShowingBatchedTransfer =
+    isBatchTransferSupported && isAmount2InputVisible
 
-      {isBatchTransferSupported && isAmount2InputVisible && (
-        <BalanceRow
-          balance={
-            nativeCurrencyBalances.destinationBalance
-              ? formatAmount(nativeCurrencyBalances.destinationBalance)
-              : undefined
-          }
-        />
-      )}
+  return (
+    <div className="flex min-h-[96px] w-full items-center justify-between rounded bg-white/10 p-3 pr-0 text-white/70">
+      <div className="flex flex-col gap-1 text-xl">
+        {selectedRouteAmount ?? 'Please select route'}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        {showNativeUsdcBalance ? (
+          <BalanceRow
+            parentErc20Address={
+              isArbitrumOne
+                ? CommonAddress.Ethereum.USDC
+                : CommonAddress.ArbitrumOne.USDC
+            }
+            balance={formatAmount(
+              (isArbitrumOne
+                ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
+                : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ??
+                constants.Zero,
+              {
+                decimals: selectedToken?.decimals
+              }
+            )}
+            symbolOverride="USDC"
+          />
+        ) : (
+          <BalanceRow
+            parentErc20Address={selectedToken?.address}
+            balance={
+              selectedTokenOrNativeCurrencyBalance
+                ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
+                    decimals: selectedToken ? selectedToken.decimals : 18
+                  })
+                : undefined
+            }
+            symbolOverride={
+              tokenOverride
+                ? tokenOverride.symbol
+                : selectedToken
+                ? sanitizeTokenSymbol(selectedToken.symbol, {
+                    chainId: networks.destinationChain.id,
+                    erc20L1Address: selectedToken.address
+                  })
+                : undefined
+            }
+            logoOverride={destination ? destination.logoURI : undefined}
+          />
+        )}
+
+        {isShowingBatchedTransfer && (
+          <BalanceRow
+            balance={
+              nativeCurrencyBalances.destinationBalance
+                ? formatAmount(nativeCurrencyBalances.destinationBalance)
+                : undefined
+            }
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -238,9 +261,6 @@ export function DestinationNetworkBox() {
   const openDestinationNetworkSelectionDialog = () => {
     openDialog('destination_network_selection')
   }
-  const {
-    network: { logo: networkLogo }
-  } = getBridgeUiConfigForChain(networks.destinationChain.id)
 
   return (
     <>
@@ -253,14 +273,6 @@ export function DestinationNetworkBox() {
             type="destination"
             onClick={openDestinationNetworkSelectionDialog}
           />
-          <div className="relative h-[44px] w-[44px]">
-            <Image
-              src={networkLogo}
-              alt={`${networks.destinationChain.name} logo`}
-              layout={'fill'}
-              objectFit={'contain'}
-            />
-          </div>
         </div>
         <BalancesContainer />
       </NetworkContainer>

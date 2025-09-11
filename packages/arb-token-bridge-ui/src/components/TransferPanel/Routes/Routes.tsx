@@ -28,7 +28,7 @@ function Wrapper({ children }: PropsWithChildren) {
   return (
     <div
       className={twMerge(
-        'mb-2 flex flex-col gap-2',
+        'flex flex-col gap-2',
         embedMode && 'overflow-auto overflow-x-hidden rounded-md pb-2'
       )}
     >
@@ -36,8 +36,6 @@ function Wrapper({ children }: PropsWithChildren) {
     </div>
   )
 }
-
-const MAX_ROUTES_VISIBLE = 3
 
 export const Routes = React.memo(() => {
   useRoutesUpdater()
@@ -56,6 +54,10 @@ export const Routes = React.memo(() => {
       }),
       shallow
     )
+
+  const { embedMode } = useMode()
+
+  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3
 
   const [networks] = useNetworks()
   const [selectedToken] = useSelectedToken()
