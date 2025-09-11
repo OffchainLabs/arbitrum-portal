@@ -11,11 +11,14 @@ import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { useMode } from '../../hooks/useMode'
 import { RecoverFunds } from '../RecoverFunds'
+import { BuyPanel } from '../BuyPanel'
+import { isOnrampEnabled } from '../../util/featureFlag'
 
 export function MainContent() {
   const [isArbitrumStatsVisible] =
     useLocalStorage<boolean>(statsLocalStorageKey)
   const [{ tab }, setQueryParams] = useArbQueryParams()
+  const showBuyPanel = isOnrampEnabled()
 
   const setSelectedTab = useCallback(
     (index: number) => {
@@ -40,6 +43,11 @@ export function MainContent() {
         <Tab.Group as={Fragment} selectedIndex={tab} onChange={setSelectedTab}>
           <TopNavBar />
           <Tab.Panels className="flex w-full items-center justify-center">
+            {showBuyPanel && (
+              <Tab.Panel className="w-full sm:max-w-[600px]">
+                <BuyPanel />
+              </Tab.Panel>
+            )}
             <Tab.Panel className="w-full sm:max-w-[600px]">
               <TransferPanel />
             </Tab.Panel>

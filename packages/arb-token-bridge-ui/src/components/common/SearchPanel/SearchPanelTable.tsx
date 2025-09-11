@@ -11,6 +11,7 @@ type SearchPanelTableProps = {
   errorMessage: string
   dataCy?: string
   isDialog: boolean
+  showSearch: boolean
 }
 
 export const SearchPanelTable = ({
@@ -24,7 +25,8 @@ export const SearchPanelTable = ({
   errorMessage,
   children,
   dataCy,
-  isDialog
+  isDialog,
+  showSearch
 }: PropsWithChildren<SearchPanelTableProps>) => {
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -36,25 +38,27 @@ export const SearchPanelTable = ({
 
   return (
     <div className="flex w-[calc(100vw_-_60px)] flex-col gap-3 md:w-full">
-      <form onSubmit={onSubmit} className="flex flex-col">
-        <div className="flex items-stretch gap-2">
-          <div className="relative flex h-full w-full grow items-center rounded bg-black/30 text-white shadow-input">
-            <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-2 h-4 w-4 shrink-0" />
-            <input
-              ref={inputRef}
-              type="search"
-              placeholder={searchInputPlaceholder}
-              value={searchInputValue}
-              onChange={searchInputOnChange}
-              className="h-full w-full rounded bg-transparent py-2 pl-7 pr-2 text-sm font-light placeholder:text-xs placeholder:text-white"
-            />
+      {showSearch && (
+        <form onSubmit={onSubmit} className="flex flex-col">
+          <div className="flex items-stretch gap-2">
+            <div className="relative flex h-full w-full grow items-center rounded border-[1px] border-gray-dark bg-black/30 text-white shadow-input">
+              <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-2 h-4 w-4 shrink-0" />
+              <input
+                ref={inputRef}
+                type="search"
+                placeholder={searchInputPlaceholder}
+                value={searchInputValue}
+                onChange={searchInputOnChange}
+                className="h-full w-full rounded bg-transparent py-2 pl-7 pr-2 text-sm font-light placeholder:text-xs placeholder:text-white"
+              />
+            </div>
+            {SearchInputButton}
           </div>
-          {SearchInputButton}
-        </div>
-        {!!errorMessage && (
-          <p className="text-xs text-red-400">{errorMessage}</p>
-        )}
-      </form>
+          {!!errorMessage && (
+            <p className="text-xs text-red-400">{errorMessage}</p>
+          )}
+        </form>
+      )}
       <div
         className={twMerge(
           'sm:shadow-search-panel h-[calc(100vh_-_200px)] min-h-[180px] rounded md:h-[calc(100vh_-_390px)]',

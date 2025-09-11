@@ -19,6 +19,7 @@ import { TokenSearch } from '../TransferPanel/TokenSearch'
 import { SettingsDialog } from '../TransferPanel/SettingsDialog'
 import { RecoverFundsDialog } from '../RecoverFunds'
 import { NetworkSelectionContainer } from './NetworkSelectionContainer'
+import { BuyPanelNetworkSelectionContainer } from '../BuyPanel'
 /**
  * Returns a promise which resolves to an array [boolean, unknown] value,
  * `false` if the action was canceled and `true` if it was confirmed.
@@ -56,6 +57,7 @@ export type DialogType =
   | 'recover_funds'
   | 'source_network_selection'
   | 'destination_network_selection'
+  | 'buy_panel_network_selection'
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
@@ -164,6 +166,8 @@ export function DialogWrapper(props: DialogProps) {
       return <NetworkSelectionContainer {...commonProps} type="source" />
     case 'destination_network_selection':
       return <NetworkSelectionContainer {...commonProps} type="destination" />
+    case 'buy_panel_network_selection':
+      return <BuyPanelNetworkSelectionContainer {...commonProps} />
     default:
       return null
   }
