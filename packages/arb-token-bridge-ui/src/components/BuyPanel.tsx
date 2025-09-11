@@ -31,6 +31,8 @@ import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag'
 import { TokenLogoFallback } from './TransferPanel/TokenInfo'
 
 function MoonPaySkeleton({ children }: PropsWithChildren) {
+  const { embedMode } = useMode()
+
   return (
     <div
       className={twMerge(
@@ -40,9 +42,18 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
       <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
-        <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
-        <p className="mt-2 text-3xl">MoonPay</p>
-        <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
+        <Image
+          src={MoonPay}
+          alt="MoonPay"
+          width={embedMode ? 45 : 65}
+          height={embedMode ? 45 : 65}
+        />
+        <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>
+          MoonPay
+        </p>
+        <p className={twMerge('mt-1 text-xl', embedMode && 'text-sm')}>
+          PayPal, Debit Card, Apple Pay
+        </p>
       </div>
       <div
         className={twMerge(
@@ -53,7 +64,12 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       >
         {children}
       </div>
-      <p className="mt-4 text-center text-sm text-gray-4">
+      <p
+        className={twMerge(
+          'mt-4 text-center text-sm text-gray-4',
+          embedMode && 'text-xs'
+        )}
+      >
         On-Ramps are not directly endorsed by Arbitrum. Please use at your own
         risk.
       </p>
@@ -285,7 +301,7 @@ const MoonPayPanel = memo(function MoonPayPanel() {
 
 export function BuyPanel() {
   return (
-    <div className="pb-8 text-white">
+    <div className="overflow-hidden rounded-lg pb-8 text-white">
       <OnRampProviders>
         <MoonPayPanel />
       </OnRampProviders>
