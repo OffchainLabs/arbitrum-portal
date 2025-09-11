@@ -28,6 +28,7 @@ import { useRouteStore } from '../hooks/useRouteStore'
 import { useSelectedRouteAmount } from '../hooks/useSelectedRouteAmount'
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
 import { Button } from '../../common/Button'
+import { isLifiRoute } from '../hooks/useRouteStore'
 
 function BalanceRow({
   parentErc20Address,
@@ -170,7 +171,8 @@ function BalancesContainer() {
 
   // For cctp transfer, if no route are selected, display USDC balance on destination chain
   const showNativeUsdcBalance =
-    (isCctpTransfer && selectedRoute === 'cctp') ||
+    (isCctpTransfer &&
+      (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
     (isCctpTransfer && !selectedRoute)
 
   const tokenOverride = useMemo(() => {
@@ -185,6 +187,9 @@ function BalancesContainer() {
 
     return override.destination
   }, [selectedToken, networks])
+
+  const isShowingBatchedTransfer =
+    isBatchTransferSupported && isAmount2InputVisible
 
   return (
     <div className="flex min-h-[96px] w-full items-center justify-between rounded bg-white/10 p-3 pr-0 text-white/70">
@@ -235,7 +240,7 @@ function BalancesContainer() {
           />
         )}
 
-        {isBatchTransferSupported && isAmount2InputVisible && (
+        {isShowingBatchedTransfer && (
           <BalanceRow
             balance={
               nativeCurrencyBalances.destinationBalance
