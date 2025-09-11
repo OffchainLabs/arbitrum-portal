@@ -1,5 +1,6 @@
 import { useAccount } from 'wagmi'
 import Image from 'next/image'
+import { twMerge } from 'tailwind-merge'
 import {
   DialogProps,
   DialogWrapper,
@@ -57,7 +58,12 @@ export function WidgetTransferPanel({
     <>
       <DialogWrapper {...dialogProps} />
 
-      <div className="relative m-auto grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent p-4 text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2">
+      <div
+        className={twMerge(
+          'relative m-auto grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent p-4 text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2',
+          isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1'
+        )}
+      >
         {/* Left/Top panel */}
         <div className="flex h-full flex-col gap-1 overflow-hidden">
           <div className="mb-2 flex h-[40px] flex-row items-center justify-between text-lg">

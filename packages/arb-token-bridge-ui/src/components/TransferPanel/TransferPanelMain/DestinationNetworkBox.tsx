@@ -193,7 +193,7 @@ function BalancesContainer() {
 
   return (
     <div className="flex min-h-[96px] w-full items-center justify-between rounded bg-white/10 p-3 pr-0 text-white/70">
-      <div className="flex flex-col gap-1 text-xl">
+      <div className="flex flex-col gap-1 text-xl sm:text-3xl">
         {selectedRouteAmount ?? 'Please select route'}
       </div>
 

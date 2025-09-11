@@ -2,6 +2,7 @@ import { shallow } from 'zustand/shallow'
 import { utils } from 'ethers'
 import { useRouteStore, isLifiRoute } from './useRouteStore'
 import { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi'
+import { formatAmount } from '../../../util/NumberUtils'
 
 export function useSelectedRouteAmount(): string | undefined {
   const { selectedRoute, routes } = useRouteStore(
@@ -24,9 +25,13 @@ export function useSelectedRouteAmount(): string | undefined {
 
   if (isLifiRoute(route.type)) {
     const data = route.data as { route: LifiCrosschainTransfersRoute }
-    return utils.formatUnits(
-      data.route.toAmount.amount,
-      data.route.toAmount.token.decimals
+    return formatAmount(
+      Number(
+        utils.formatUnits(
+          data.route.toAmount.amount,
+          data.route.toAmount.token.decimals
+        )
+      )
     )
   }
 
