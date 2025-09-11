@@ -45,10 +45,8 @@ export enum ModeParamEnum {
   EMBED = 'embed'
 }
 
-const showBuyPanel = isOnrampEnabled()
-
 function createTabMappings() {
-  if (showBuyPanel) {
+  if (isOnrampEnabled()) {
     return {
       tabToIndex: {
         [TabParamEnum.BUY]: 0,
@@ -186,8 +184,9 @@ export function decodeChainQueryParam(
 export function encodeTabQueryParam(
   tabIndex: number | null | undefined
 ): string {
-  if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
-    const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
+  const { indexToTab: _indexToTab } = createTabMappings()
+  if (typeof tabIndex === 'number' && tabIndex in _indexToTab) {
+    const tabParam = _indexToTab[tabIndex as keyof typeof _indexToTab]
     if (tabParam !== undefined) {
       return tabParam
     }
@@ -198,19 +197,20 @@ export function encodeTabQueryParam(
 export function decodeTabQueryParam(
   tab: string | (string | null)[] | null | undefined
 ): number {
+  const { tabToIndex: _tabToIndex } = createTabMappings()
   if (typeof tab === 'string') {
-    if (tab === TabParamEnum.BUY && !showBuyPanel) {
-      return tabToIndex[TabParamEnum.BRIDGE]
+    if (tab === TabParamEnum.BUY && !isOnrampEnabled()) {
+      return _tabToIndex[TabParamEnum.BRIDGE]
     }
 
-    if (tab in tabToIndex) {
-      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex]
+    if (tab in _tabToIndex) {
+      const tabIndex = _tabToIndex[tab as keyof typeof _tabToIndex]
       if (tabIndex !== undefined) {
         return tabIndex
       }
     }
   }
-  return tabToIndex[TabParamEnum.BRIDGE]
+  return _tabToIndex[TabParamEnum.BRIDGE]
 }
 
 export const DisabledFeaturesParam = {
@@ -573,7 +573,9 @@ export const sanitizeTabQueryParam = (
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase()
 
-    if (Object.keys(tabToIndex).includes(lowercasedTab)) {
+    const { tabToIndex: _tabToIndex } = createTabMappings()
+
+    if (Object.keys(_tabToIndex).includes(lowercasedTab)) {
       return lowercasedTab
     }
   }
