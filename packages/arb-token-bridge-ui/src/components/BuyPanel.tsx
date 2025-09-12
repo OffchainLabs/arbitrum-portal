@@ -172,6 +172,7 @@ function BuyPanelNetworkButton({
   )
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const BalanceWrapper = memo(function BalanceWrapper() {
   const { address, isConnected } = useAccount()
   const { ethToUSD } = useETHPrice()
