@@ -157,7 +157,7 @@ export function NetworkButton({
           chainId={
             isSource ? networks.sourceChain.id : networks.destinationChain.id
           }
-          className="h-[20px] w-[20px] p-[2px]"
+          className="h-4 w-4 p-[2px]"
           size={20}
         />
         {getNetworkName(selectedChainId)}
@@ -206,11 +206,7 @@ function NetworkRow({
         isSelected && 'bg-white/10' // selected row
       )}
     >
-      <NetworkImage
-        chainId={chainId}
-        className="h-[20px] w-[20px] p-[2px]"
-        size={20}
-      />
+      <NetworkImage chainId={chainId} className="h-4 w-4 p-[2px]" size={20} />
       <div
         className={twMerge(
           'flex w-full flex-row items-center justify-between gap-1'

@@ -110,9 +110,7 @@ function getBadges(badgeTypes: BadgeType | BadgeType[]) {
   return getBadgeFromBadgeType(badgeTypes)
 }
 
-const DelimiterDot = () => (
-  <div className="h-[5px] w-[5px] rounded-full bg-white" />
-)
+const DelimiterDot = () => <div className="h-1 w-1 rounded-full bg-white" />
 
 // Route Amount Component
 type RouteAmountProps = {
@@ -139,10 +137,10 @@ const RouteAmount = ({
       <div className="flex flex-col gap-1 text-lg">
         <div className="flex flex-row items-center gap-[15px]">
           <TokenLogo
-            className="h-[40px] w-[40px] min-w-[40px]"
+            className="h-10 w-[40px] min-w-[40px]"
             srcOverride={'logoURI' in token ? token.logoURI : null}
             fallback={
-              <div className="h-[40px] w-[40px] min-w-[40px] rounded-full bg-gray-dark" />
+              <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark" />
             }
           />
           <div className="flex flex-col">
@@ -161,10 +159,10 @@ const RouteAmount = ({
         {isBatchTransferSupported && Number(amount2) > 0 && (
           <div className="flex flex-row items-center gap-[15px] text-base">
             <TokenLogo
-              className="h-[40px] w-[40px] min-w-[40px]"
+              className="h-10 w-10 min-w-10"
               srcOverride={null}
               fallback={
-                <div className="h-[40px] w-[40px] min-w-[40px] rounded-full bg-gray-dark" />
+                <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark" />
               }
             />
             {formatAmount(Number(amount2), {

@@ -178,7 +178,7 @@ function BuyPanelNetworkButton({
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage
           chainId={selectedChainId}
-          className="h-[20px] w-[20px] p-[2px]"
+          className="h-4 w-4 p-[2px]"
           size={20}
         />
         {getNetworkName(selectedChainId)}
