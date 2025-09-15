@@ -159,6 +159,7 @@ export function NetworkContainer({
   children: React.ReactNode
 }) {
   const { address: walletAddress } = useAccount()
+  const [{ theme }] = useArbQueryParams()
 
   const showCustomAddressBanner = useMemo(() => {
     if (!customAddress) {
@@ -180,6 +181,10 @@ export function NetworkContainer({
           'relative rounded bg-white/5 transition-colors duration-400',
           showCustomAddressBanner && 'rounded-t-none'
         )}
+        style={{
+          backgroundColor: theme.networkThemeOverrideColor,
+          borderColor: theme.networkThemeOverrideColor
+        }}
       >
         <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-3 opacity-50" />
         <div className="relative space-y-3.5 bg-contain bg-no-repeat p-3 sm:flex-row">

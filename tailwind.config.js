@@ -17,7 +17,9 @@ module.exports = {
         highlight:
           'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))',
         eclipse:
-          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)'
+          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
+        eclipseWidget:
+          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background) 70%, transparent 70%)'
       },
       colors: {
         // ACTION

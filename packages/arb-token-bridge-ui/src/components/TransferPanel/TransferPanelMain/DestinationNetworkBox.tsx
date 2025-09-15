@@ -100,7 +100,7 @@ function BalanceRow({
         className="px-[10px] py-[5px] opacity-70"
         disabled
       >
-        <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
+        <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
           <SafeImage
             src={tokenLogoSrc}
             alt={`${symbol} logo`}
@@ -110,7 +110,7 @@ function BalanceRow({
         </div>
       </Button>
       {shouldShowBalance && (
-        <div className="flex space-x-1 text-sm">
+        <div className="flex space-x-1 text-sm text-gray-6">
           <span>Balance: </span>
           <span
             aria-label={`${symbol} balance amount on ${

@@ -33,11 +33,17 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
   return (
     <div
       className={twMerge(
-        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
+        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg',
+        embedMode && 'bg-widget-background'
       )}
     >
       <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-      <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
+      <div
+        className={twMerge(
+          'absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse',
+          embedMode && 'bg-eclipseWidget'
+        )}
+      ></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
         <SafeImage
           src="/images/onramp/moonpay.svg"

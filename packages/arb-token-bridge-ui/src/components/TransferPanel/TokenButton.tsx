@@ -73,7 +73,7 @@ export function TokenButton({
         onClick={() => openDialog('token_selection')}
         disabled={disabled}
       >
-        <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
+        <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
           {isLoadingToken ? (
             <Loader size="small" color="white" />
           ) : (
