@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import dayjs from 'dayjs'
 import { SafeImage } from '../../common/SafeImage'
 import { BigNumber, constants, utils } from 'ethers'
@@ -140,7 +139,7 @@ const RouteAmount = ({
             className="h-10 w-[40px] min-w-[40px]"
             srcOverride={'logoURI' in token ? token.logoURI : null}
             fallback={
-              <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark" />
+              <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark/70" />
             }
           />
           <div className="flex flex-col">
@@ -162,7 +161,7 @@ const RouteAmount = ({
               className="h-10 w-10 min-w-10"
               srcOverride={null}
               fallback={
-                <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark" />
+                <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark/70" />
               }
             />
             {formatAmount(Number(amount2), {
@@ -218,7 +217,9 @@ const RouteBridge = ({ bridge, bridgeIconURI }: RouteBridgeProps) => (
       height={15}
       alt="bridge"
       className="max-h-3 max-w-3 rounded-full"
-      fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark" />}
+      fallback={
+        <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+      }
     />
     <div className="truncate">
       <span className="ml-1 whitespace-nowrap">{bridge}</span>
@@ -248,7 +249,15 @@ const RouteFees = ({
     <>
       <Tooltip content={'The gas fees paid to operate the network'}>
         <div className="flex items-center">
-          <Image src="/icons/gas.svg" width={14} height={14} alt="gas" />
+          <SafeImage
+            src="/icons/gas.svg"
+            width={14}
+            height={14}
+            alt="gas"
+            fallback={
+              <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+            }
+          />
           <span className="ml-1">
             {isLoadingGasEstimate ? (
               <Loader size="small" color="white" />
@@ -288,11 +297,14 @@ const RouteFees = ({
       {bridgeFee && (
         <Tooltip content={'The fee the bridge takes'}>
           <div className="flex items-center gap-1">
-            <Image
+            <SafeImage
               src="/icons/bridge.svg"
               width={18}
               height={18}
               alt="bridge fee"
+              fallback={
+                <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+              }
             />
             <div className="flex flex-row items-center gap-1">
               <span>

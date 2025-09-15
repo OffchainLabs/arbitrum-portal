@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { useAccount, useBalance } from 'wagmi'
 import React, { memo, PropsWithChildren, useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -42,11 +41,14 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
       <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
-        <Image
+        <SafeImage
           src={MoonPay}
           alt="MoonPay"
           width={embedMode ? 45 : 65}
           height={embedMode ? 45 : 65}
+          fallback={
+            <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
+          }
         />
         <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>
           MoonPay

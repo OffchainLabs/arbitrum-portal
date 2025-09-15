@@ -290,11 +290,14 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
 
             <div className="grid gap-3">
               <div className="flex items-center gap-2 text-base">
-                <Image
+                <SafeImage
                   src="/icons/bridge.svg"
                   width={18}
                   height={18}
                   alt="bridge fee"
+                  fallback={
+                    <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+                  }
                 />{' '}
                 Supported Bridges
               </div>
