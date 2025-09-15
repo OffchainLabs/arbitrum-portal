@@ -15,7 +15,7 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
   const { isConnected } = useAccount()
 
   return (
-    <div className="flex h-[40px] flex-row items-center justify-between text-lg">
+    <div className="flex h-8 flex-row items-center justify-between text-lg">
       <WidgetModeDropdown />
 
       <div className="flex flex-row gap-2 text-sm">
@@ -25,7 +25,7 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
         {isConnected && (
           <Button
             variant="secondary"
-            className="h-[40px] px-[10px] py-[10px] text-white"
+            className="h-8 p-2 text-white"
             onClick={() => openDialog('widget_transaction_history')}
           >
             <Image

@@ -34,7 +34,7 @@ export function LifiSettingsButton() {
       <Button
         id="route-settings-button"
         variant="secondary"
-        className="h-[40px] px-[10px] py-[10px] text-white"
+        className="h-8 p-2 text-white"
         onClick={() => openDialog('settings')}
         aria-label="Open Settings"
       >
