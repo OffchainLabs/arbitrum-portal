@@ -11,9 +11,6 @@ const fetchNativeBalance = async (
 ): Promise<{ balance: BigNumber; decimals: number; symbol: string }> => {
   const provider = getProviderForChainId(chainId)
 
-  // Get balance
-  const balance = await provider.getBalance(walletAddress)
-
   // Get symbol from chain data
   const chains = getChains()
   const chain = chains.find(c => c.chainId === chainId) as
@@ -24,19 +21,21 @@ const fetchNativeBalance = async (
     throw new Error(`Chain not found for chainId ${chainId}`)
   }
 
-  // Get decimals on-chain
-  let decimals: number = 18,
-    symbol: string = 'ETH' // default values
-  if (chain.nativeToken) {
-    // For custom native tokens, use the parent chain provider to get decimals
-    const parentChainProvider = getProviderForChainId(chain.parentChainId)
-    const nativeTokenData = await fetchErc20Data({
-      address: chain.nativeToken,
-      provider: parentChainProvider
-    })
-    decimals = nativeTokenData.decimals
-    symbol = nativeTokenData.symbol
-  }
+  const [balance, nativeTokenData] = await Promise.all([
+    provider.getBalance(walletAddress),
+    chain.nativeToken
+      ? (async () => {
+          const parentChainProvider = getProviderForChainId(chain.parentChainId)
+          return await fetchErc20Data({
+            address: chain.nativeToken!,
+            provider: parentChainProvider
+          })
+        })()
+      : Promise.resolve({ decimals: 18, symbol: 'ETH' })
+  ])
+
+  const decimals = nativeTokenData.decimals
+  const symbol = nativeTokenData.symbol
 
   return {
     balance,
