@@ -19,7 +19,7 @@ module.exports = {
         eclipse:
           'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
         eclipseWidget:
-          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background) 70%, transparent 70%)'
+          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background, #191919) 70%, transparent 70%)'
       },
       colors: {
         // ACTION
