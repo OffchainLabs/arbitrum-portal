@@ -78,7 +78,7 @@ function getBadgeFromBadgeType(badgeType: BadgeType) {
     case 'security-guaranteed': {
       return (
         <Tag
-          className="hidden bg-lime-dark text-lime md:flex"
+          className="hidden bg-claim text-black md:flex"
           key="security-guaranteed"
         >
           Secured by Arbitrum
@@ -87,14 +87,14 @@ function getBadgeFromBadgeType(badgeType: BadgeType) {
     }
     case 'best-deal': {
       return (
-        <Tag className="bg-lilac text-white" key="best-deal">
+        <Tag className="bg-lavender text-black" key="best-deal">
           Best deal
         </Tag>
       )
     }
     case 'fastest': {
       return (
-        <Tag className="bg-lilac text-white" key="fastest">
+        <Tag className="bg-lavender text-black" key="fastest">
           Fastest
         </Tag>
       )

@@ -29,7 +29,7 @@ module.exports = {
         brick: '#ff9f8b',
         orange: '#FFEED3',
         lime: '#E8FFE4',
-        lilac: '#754562',
+        lavender: '#7693EB',
         blue: '#00FBFF',
 
         // SECONDARY
@@ -39,7 +39,7 @@ module.exports = {
         'lime-dark': '#31572A',
 
         // TRANSACTION STATUS COLORS
-        claim: '#6AD28A',
+        claim: '#94d08e',
         retry: '#CD0000',
         pending: '#CCB069',
 

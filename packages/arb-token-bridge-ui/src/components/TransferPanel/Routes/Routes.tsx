@@ -214,13 +214,13 @@ export const Routes = React.memo(() => {
       )}
 
       {hasLowLiquidity && (
-        <div className="rounded border border-lilac bg-lilac/50 p-3 text-sm text-white">
+        <div className="rounded border border-orange-dark bg-orange-dark/50 p-3 text-sm text-white">
           {hasModifiedSettings ? (
             <>
               Unable to find viable routes. Consider{' '}
               <button
                 onClick={() => setQueryParams({ settingsOpen: true })}
-                className="underline hover:text-lilac/80"
+                className="underline"
               >
                 updating your settings
               </button>{' '}
