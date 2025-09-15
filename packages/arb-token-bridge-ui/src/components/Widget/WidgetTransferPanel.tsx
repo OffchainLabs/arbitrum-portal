@@ -1,13 +1,11 @@
 import { useAccount } from 'wagmi'
-import Image from 'next/image'
 import { twMerge } from 'tailwind-merge'
 import {
   DialogProps,
   DialogWrapper,
   OpenDialogFunction
 } from '../common/Dialog2'
-import { WidgetHeaderAccountButton } from './WidgetHeaderAccountButton'
-import { WidgetModeDropdown } from './WidgetModeDropdown'
+import { WidgetHeaderRow } from './WidgetHeaderRow'
 import { WidgetRoutes } from './WidgetRoutes'
 import { MoveFundsButton } from '../TransferPanel/MoveFundsButton'
 import { WidgetConnectWalletButton } from './WidgetConnectWalletButton'
@@ -16,9 +14,6 @@ import { BuyPanel } from '../BuyPanel'
 import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
 import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
 import { UseDialogProps } from '../common/Dialog'
-import WidgetTxHistoryIcon from '@/images/WidgetTxHistoryIcon.svg'
-import { Button } from '../common/Button'
-import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton'
 import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
 import {
   useArbQueryParams,
@@ -60,60 +55,41 @@ export function WidgetTransferPanel({
 
       <div
         className={twMerge(
-          'relative m-auto grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent p-4 text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2',
-          isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1'
+          'relative m-auto flex w-full flex-col gap-4 rounded-lg bg-transparent p-4 text-white'
         )}
       >
-        {/* Left/Top panel */}
-        <div className="flex h-full flex-col gap-1 overflow-hidden">
-          <div className="mb-2 flex h-[40px] flex-row items-center justify-between text-lg">
-            <WidgetModeDropdown />
-
-            <div className="flex flex-row gap-2 text-sm">
-              <WidgetHeaderAccountButton />
-
-              {/* widget transaction history */}
-              {isConnected && (
-                <Button
-                  variant="secondary"
-                  className="h-[40px] px-[10px] py-[10px] text-white"
-                  onClick={() => openDialog('widget_transaction_history')}
-                >
-                  <Image
-                    height={18}
-                    width={18}
-                    alt="Tx history logo"
-                    src={WidgetTxHistoryIcon}
-                  />
-                </Button>
-              )}
-
-              <LifiSettingsButton />
-            </div>
+        <WidgetHeaderRow openDialog={openDialog} />
+        <div
+          className={twMerge(
+            'relative grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2',
+            isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1'
+          )}
+        >
+          {/* Left/Top panel */}
+          <div className="flex h-full flex-col gap-1 overflow-hidden">
+            {isBuyMode && showBuyPanel ? <BuyPanel /> : <TransferPanelMain />}
           </div>
-          {isBuyMode && showBuyPanel ? <BuyPanel /> : <TransferPanelMain />}
+          {/* Right/Bottom panel - only show for bridge mode */}
+          {!isBuyMode && (
+            <div className="flex h-full flex-col gap-1 rounded-lg min-[850px]:justify-between min-[850px]:bg-white/5 min-[850px]:p-4">
+              <div className="flex flex-col gap-4">
+                <ReceiveFundsHeader />
+
+                <WidgetRoutes />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <ToSConfirmationCheckbox />
+
+                {isConnected ? (
+                  <MoveFundsButton onClick={moveFundsButtonOnClick} />
+                ) : (
+                  <WidgetConnectWalletButton />
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Right/Bottom panel - only show for bridge mode */}
-        {!isBuyMode && (
-          <div className="flex h-full flex-col gap-1 rounded-lg min-[850px]:justify-between min-[850px]:bg-white/5 min-[850px]:p-4">
-            <div className="flex flex-col gap-4">
-              <ReceiveFundsHeader />
-
-              <WidgetRoutes />
-            </div>
-
-            <div className="flex flex-col gap-2 pt-2">
-              <ToSConfirmationCheckbox />
-
-              {isConnected ? (
-                <MoveFundsButton onClick={moveFundsButtonOnClick} />
-              ) : (
-                <WidgetConnectWalletButton />
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {isTokenAlreadyImported === false && tokenFromSearchParams && (

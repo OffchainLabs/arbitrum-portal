@@ -66,7 +66,7 @@ export const Routes = React.memo(() => {
 
   const { embedMode } = useMode()
 
-  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3
+  const MAX_ROUTES_VISIBLE = embedMode ? 1 : 3
 
   const [networks] = useNetworks()
   const [selectedToken] = useSelectedToken()
@@ -148,6 +148,7 @@ export const Routes = React.memo(() => {
 
   const hasMoreRoutesOptions =
     !isLoading &&
+    !hasError &&
     hasModifiedSettings &&
     routes.length > 0 &&
     routes.length < eligibleRouteTypes.length
