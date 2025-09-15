@@ -300,8 +300,15 @@ const MoonPayPanel = memo(function MoonPayPanel() {
 })
 
 export function BuyPanel() {
+  const { embedMode } = useMode()
+
   return (
-    <div className="overflow-hidden rounded-lg pb-8 text-white">
+    <div
+      className={twMerge(
+        'overflow-hidden rounded-lg pb-8 text-white',
+        embedMode && 'mx-auto max-w-[540px]'
+      )}
+    >
       <OnRampProviders>
         <MoonPayPanel />
       </OnRampProviders>
