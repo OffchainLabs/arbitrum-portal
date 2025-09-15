@@ -175,7 +175,7 @@ function getDestinationWithSanitizedQueryParams(
   // Run sanitization only once per session
   params.set('sanitized', 'true')
 
-  return `/?${params.toString()}`
+  return `/bridge?${params.toString()}`
 }
 
 async function sanitizeAndRedirect(searchParams: {

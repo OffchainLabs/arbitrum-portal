@@ -44,7 +44,7 @@ module.exports = {
     return [
       {
         source:
-          '/:slug((?!^$|api/|_next/|public/|restricted)(?!.*\\.[^/]+$).+)',
+          '/bridge/:slug((?!^$|api/|_next/|public/|restricted)(?!.*\\.[^/]+$).+)',
         missing: [
           {
             type: 'query',
@@ -56,7 +56,7 @@ module.exports = {
             value: 'image/.*'
           }
         ],
-        destination: '/?destinationChain=:slug',
+        destination: '/bridge?destinationChain=:slug',
         permanent: true
       }
     ]
