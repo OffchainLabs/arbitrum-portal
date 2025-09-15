@@ -11,7 +11,6 @@ import {
   decodeChainQueryParam,
   encodeChainQueryParam,
   DisabledFeaturesParam,
-  ModeParamEnum,
   sanitizeQueryParams,
   encodeString,
   sanitizeTokenQueryParam,
@@ -107,7 +106,6 @@ function getDestinationWithSanitizedQueryParams(
     token: string | undefined
     tab: string
     disabledFeatures: string[] | undefined
-    mode: string | undefined
   },
   query: Record<string, string | string[] | undefined>
 ) {
@@ -121,8 +119,7 @@ function getDestinationWithSanitizedQueryParams(
       key === 'experiments' ||
       key === 'token' ||
       key === 'tab' ||
-      key === 'disabledFeatures' ||
-      key === 'mode'
+      key === 'disabledFeatures'
     ) {
       continue
     }
@@ -140,7 +137,6 @@ function getDestinationWithSanitizedQueryParams(
   const encodedExperiments = encodeString(sanitized.experiments)
   const encodedToken = encodeString(sanitized.token)
   const encodedTab = encodeString(sanitized.tab)
-  const encodedMode = encodeString(sanitized.mode)
 
   if (encodedSource) {
     params.set('sourceChain', encodedSource)
@@ -160,10 +156,6 @@ function getDestinationWithSanitizedQueryParams(
 
   if (encodedTab) {
     params.set('tab', encodedTab)
-  }
-
-  if (encodedMode) {
-    params.set('mode', encodedMode)
   }
 
   if (sanitized.disabledFeatures) {
@@ -193,8 +185,6 @@ async function sanitizeAndRedirect(searchParams: {
     typeof searchParams.token === 'string' ? searchParams.token : undefined
   const tab =
     typeof searchParams.tab === 'string' ? searchParams.tab : undefined
-  const mode =
-    typeof searchParams.mode === 'string' ? searchParams.mode : undefined
   const disabledFeatures =
     typeof searchParams.disabledFeatures === 'string'
       ? [searchParams.disabledFeatures]
@@ -223,8 +213,7 @@ async function sanitizeAndRedirect(searchParams: {
       destinationChainId: sanitizedChainIds.destinationChainId
     }),
     tab: sanitizeTabQueryParam(tab),
-    disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures),
-    mode: mode ? mode : undefined
+    disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures)
   }
 
   // if the sanitized query params are different from the initial values, redirect to the url with sanitized query params
@@ -235,15 +224,14 @@ async function sanitizeAndRedirect(searchParams: {
     token !== sanitized.token ||
     tab !== sanitized.tab ||
     (disabledFeatures?.length || 0) !==
-      (sanitized.disabledFeatures?.length || 0) ||
-    mode !== sanitized.mode
+      (sanitized.disabledFeatures?.length || 0)
   ) {
     console.log(`[sanitizeAndRedirect] sanitizing query params`)
     console.log(
-      `[sanitizeAndRedirect]     sourceChain=${sourceChainId}&destinationChain=${destinationChainId}&experiments=${experiments}&token=${token}&tab=${tab}&disabledFeatures=${disabledFeatures}&mode=${mode} (before)`
+      `[sanitizeAndRedirect]     sourceChain=${sourceChainId}&destinationChain=${destinationChainId}&experiments=${experiments}&token=${token}&tab=${tab}&disabledFeatures=${disabledFeatures} (before)`
     )
     console.log(
-      `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&mode=${sanitized.mode}&sanitized=true (after)`
+      `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`
     )
 
     redirect(getDestinationWithSanitizedQueryParams(sanitized, searchParams))

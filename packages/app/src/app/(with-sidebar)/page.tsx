@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function PortalPage() {
-  return <h1>Portal</h1>
+  return <Link href="/bridge">Bridge</Link>
 }
