@@ -8,8 +8,6 @@ import { Chain } from 'viem'
 import { BigNumber, utils } from 'ethers'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
 
-import MoonPay from '@/images/onramp/moonpay.svg'
-
 import { getAPIBaseUrl } from '../util'
 import { useNativeCurrency } from '../hooks/useNativeCurrency'
 import { getProviderForChainId } from '@/token-bridge-sdk/utils'
@@ -42,7 +40,7 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
         <SafeImage
-          src={MoonPay}
+          src="/images/onramp/moonpay.svg"
           alt="MoonPay"
           width={embedMode ? 45 : 65}
           height={embedMode ? 45 : 65}
