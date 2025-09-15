@@ -397,10 +397,10 @@ export const Route = React.memo(
         style={
           !isDisabled && selected
             ? {
-                borderColor: theme.primaryCtaColor ?? '#5F7D5B',
+                borderColor: theme.primaryCtaColor ?? '#325EE6',
                 backgroundColor: theme.primaryCtaColor
                   ? `${theme.primaryCtaColor}60`
-                  : '#5F7D5B60'
+                  : '#325EE660'
               }
             : {}
         }

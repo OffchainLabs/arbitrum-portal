@@ -194,8 +194,8 @@ function BalancesContainer() {
     isBatchTransferSupported && isAmount2InputVisible
 
   return (
-    <div className="flex min-h-[96px] w-full flex-col gap-2 rounded bg-white/10 p-3 text-white/70">
-      <div className="flex w-full flex-row items-center justify-between">
+    <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
+      <div className="flex h-full w-full flex-row items-center justify-between">
         <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
           {receivedAmount ?? (amount || '0')}
         </div>

@@ -21,6 +21,7 @@ import { useMode } from '../../../hooks/useMode'
 import { twMerge } from 'tailwind-merge'
 import { PlusCircleIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
+import { Button } from '../../common/Button'
 
 function Wrapper({ children }: PropsWithChildren) {
   const { embedMode } = useMode()
@@ -44,16 +45,24 @@ export const Routes = React.memo(() => {
 
   const [, setQueryParams] = useArbQueryParams()
 
-  const { eligibleRouteTypes, routes, hasLowLiquidity, hasModifiedSettings } =
-    useRouteStore(
-      state => ({
-        eligibleRouteTypes: state.eligibleRouteTypes,
-        routes: state.routes,
-        hasLowLiquidity: state.hasLowLiquidity,
-        hasModifiedSettings: state.hasModifiedSettings
-      }),
-      shallow
-    )
+  const {
+    eligibleRouteTypes,
+    routes,
+    hasLowLiquidity,
+    hasModifiedSettings,
+    isLoading,
+    hasError
+  } = useRouteStore(
+    state => ({
+      isLoading: state.isLoading,
+      eligibleRouteTypes: state.eligibleRouteTypes,
+      routes: state.routes,
+      hasLowLiquidity: state.hasLowLiquidity,
+      hasModifiedSettings: state.hasModifiedSettings,
+      hasError: state.error
+    }),
+    shallow
+  )
 
   const { embedMode } = useMode()
 
@@ -137,8 +146,27 @@ export const Routes = React.memo(() => {
     : routes.slice(0, MAX_ROUTES_VISIBLE)
   const hasHiddenRoutes = routes.length > MAX_ROUTES_VISIBLE
 
+  const hasMoreRoutesOptions =
+    !isLoading &&
+    hasModifiedSettings &&
+    routes.length > 0 &&
+    routes.length < eligibleRouteTypes.length
+
   return (
     <Wrapper>
+      {hasMoreRoutesOptions && (
+        <Button
+          variant="primary"
+          className="flex-start w-full rounded bg-[#4970E920] p-3 text-sm"
+          onClick={() => {
+            document.getElementById('route-settings-button')?.click()
+          }}
+        >
+          Want more options? Consider updating your slippage in{' '}
+          <span className="underline">settings.</span>
+        </Button>
+      )}
+
       {visibleRoutes.map((route, index) => {
         const tag = getRouteTag(route.type)
 

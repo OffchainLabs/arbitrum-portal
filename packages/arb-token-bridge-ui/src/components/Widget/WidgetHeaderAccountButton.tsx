@@ -99,7 +99,7 @@ export const WidgetHeaderAccountButton = () => {
               </PopoverButton>
               <Transition>
                 <PopoverPanel className="absolute right-0 top-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
-                  <div className="flex flex-col gap-2 rounded-lg border border-white/20 bg-dark p-2">
+                  <div className="flex flex-col gap-2 rounded-md border border-white/20 bg-dark p-2">
                     {/* Account name and copy */}
                     <Button
                       variant="secondary"

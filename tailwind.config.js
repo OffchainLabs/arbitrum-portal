@@ -64,7 +64,7 @@ module.exports = {
         'ocl-blue': '#243145',
         'atmosphere-blue': '#152C4E',
         'widget-background': 'var(--color-widget-background, #191919)',
-        'primary-cta': 'var(--color-primary-cta, #31572A)'
+        'primary-cta': 'var(--color-primary-cta, #325EE6)'
       },
       spacing: {
         1: '5px',

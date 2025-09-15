@@ -321,7 +321,8 @@ export function useRoutesUpdater() {
       lifiRoutes,
       slippage,
       disabledExchanges,
-      disabledBridges
+      disabledBridges,
+      routeData
     ]
   )
 

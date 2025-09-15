@@ -8,7 +8,6 @@ import { useAccountType } from '../../hooks/useAccountType'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { Loader } from '../common/atoms/Loader'
 import { useRouteStore } from './hooks/useRouteStore'
-import { shallow } from 'zustand/shallow'
 
 export const ReceiveFundsHeader = () => {
   const [
@@ -23,12 +22,7 @@ export const ReceiveFundsHeader = () => {
 
   const { destinationAddressError } = useDestinationAddressError()
 
-  const { isLoading: isLoadingRoutes } = useRouteStore(
-    state => ({
-      isLoading: state.isLoading
-    }),
-    shallow
-  )
+  const isLoadingRoutes = useRouteStore(state => state.isLoading)
 
   const setDestinationAddress = useCallback(
     (newDestinationAddress: string) =>
@@ -62,7 +56,7 @@ export const ReceiveFundsHeader = () => {
   return (
     <div
       className={twMerge(
-        'flex max-h-[40px] flex-col gap-3 overflow-hidden transition-all duration-200',
+        'flex max-h-[30px] flex-col gap-3 overflow-hidden transition-all duration-200',
         showCustomDestinationAddressInput && 'max-h-[180px]',
         destinationAddressError && 'max-h-[230px]'
       )}
