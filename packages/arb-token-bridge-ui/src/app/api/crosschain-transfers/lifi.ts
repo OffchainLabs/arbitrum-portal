@@ -296,24 +296,6 @@ export async function GET(
       )
     }
 
-    let bridgesToExclude: string[] = []
-    if (denyBridges) {
-      if (typeof denyBridges === 'string') {
-        bridgesToExclude.push(denyBridges)
-      } else {
-        bridgesToExclude = denyBridges
-      }
-    }
-
-    let exchangesToExclude: string[] = []
-    if (denyExchanges) {
-      if (typeof denyExchanges === 'string') {
-        exchangesToExclude.push(denyExchanges)
-      } else {
-        exchangesToExclude = denyExchanges
-      }
-    }
-
     const parameters: RoutesRequest = {
       fromAddress,
       fromAmount,
@@ -335,12 +317,12 @@ export async function GET(
     }
 
     options.bridges = {
-      deny: bridgesToExclude.concat(['arbitrum'])
+      deny: denyBridges.concat(['arbitrum'])
     }
 
-    if (exchangesToExclude.length > 0) {
+    if (denyExchanges.length > 0) {
       options.exchanges = {
-        deny: exchangesToExclude
+        deny: denyExchanges
       }
     }
 
