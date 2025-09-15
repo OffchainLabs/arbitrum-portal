@@ -25,7 +25,7 @@ import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
 import { sanitizeTokenSymbol } from '../../../util/TokenUtils'
 import { useRouteStore } from '../hooks/useRouteStore'
-import { useSelectedRouteAmount } from '../hooks/useSelectedRouteAmount'
+import { useReceivedAmount } from '../hooks/useReceivedAmount'
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
 import { Button } from '../../common/Button'
 import { isLifiRoute } from '../hooks/useRouteStore'
@@ -95,7 +95,7 @@ function BalanceRow({
   const shouldShowBalance = !isConnected ? !!destinationAddress : true
 
   return (
-    <div className="flex flex-col items-end gap-[10px] px-[15px]">
+    <div className="flex flex-col items-end gap-[10px] px-[15px] pr-0">
       <Button
         variant="secondary"
         className="px-[10px] py-[5px] opacity-70"
@@ -136,6 +136,7 @@ function BalancesContainer() {
   const { isArbitrumOne } = isNetwork(childChain.id)
   const isCctpTransfer = useIsCctpTransfer()
   const [selectedToken] = useSelectedToken()
+  const [{ amount, amount2 }] = useArbQueryParams()
 
   const { selectedRoute } = useRouteStore(
     state => ({
@@ -143,11 +144,12 @@ function BalancesContainer() {
     }),
     shallow
   )
-  const selectedRouteAmount = useSelectedRouteAmount()
+  const receivedAmount = useReceivedAmount()
 
   const { erc20ChildBalances } = useBalances()
   const isBatchTransferSupported = useIsBatchTransferSupported()
   const { isAmount2InputVisible } = useAmount2InputVisibility()
+
   const { destination } = useMemo(
     () =>
       getTokenOverride({
@@ -192,64 +194,74 @@ function BalancesContainer() {
     isBatchTransferSupported && isAmount2InputVisible
 
   return (
-    <div className="flex min-h-[96px] w-full items-center justify-between rounded bg-white/10 p-3 pr-0 text-white/70">
-      <div className="flex flex-col gap-1 text-xl sm:text-3xl">
-        {selectedRouteAmount ?? 'Please select route'}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        {showNativeUsdcBalance ? (
-          <BalanceRow
-            parentErc20Address={
-              isArbitrumOne
-                ? CommonAddress.Ethereum.USDC
-                : CommonAddress.ArbitrumOne.USDC
-            }
-            balance={formatAmount(
-              (isArbitrumOne
-                ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
-                : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ??
-                constants.Zero,
-              {
-                decimals: selectedToken?.decimals
+    <div className="flex min-h-[96px] w-full flex-col gap-2 rounded bg-white/10 p-3 text-white/70">
+      <div className="flex w-full flex-row items-center justify-between">
+        <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
+          {receivedAmount ?? (amount || '0')}
+        </div>
+        <div className="flex flex-col gap-1">
+          {showNativeUsdcBalance ? (
+            <BalanceRow
+              parentErc20Address={
+                isArbitrumOne
+                  ? CommonAddress.Ethereum.USDC
+                  : CommonAddress.ArbitrumOne.USDC
               }
-            )}
-            symbolOverride="USDC"
-          />
-        ) : (
-          <BalanceRow
-            parentErc20Address={selectedToken?.address}
-            balance={
-              selectedTokenOrNativeCurrencyBalance
-                ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
-                    decimals: selectedToken ? selectedToken.decimals : 18
-                  })
-                : undefined
-            }
-            symbolOverride={
-              tokenOverride
-                ? tokenOverride.symbol
-                : selectedToken
-                ? sanitizeTokenSymbol(selectedToken.symbol, {
-                    chainId: networks.destinationChain.id,
-                    erc20L1Address: selectedToken.address
-                  })
-                : undefined
-            }
-            logoOverride={destination ? destination.logoURI : undefined}
-          />
-        )}
-
-        {isShowingBatchedTransfer && (
-          <BalanceRow
-            balance={
-              nativeCurrencyBalances.destinationBalance
-                ? formatAmount(nativeCurrencyBalances.destinationBalance)
-                : undefined
-            }
-          />
-        )}
+              balance={formatAmount(
+                (isArbitrumOne
+                  ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
+                  : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ??
+                  constants.Zero,
+                {
+                  decimals: selectedToken?.decimals
+                }
+              )}
+              symbolOverride="USDC"
+            />
+          ) : (
+            <BalanceRow
+              parentErc20Address={selectedToken?.address}
+              balance={
+                selectedTokenOrNativeCurrencyBalance
+                  ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
+                      decimals: selectedToken ? selectedToken.decimals : 18
+                    })
+                  : undefined
+              }
+              symbolOverride={
+                tokenOverride
+                  ? tokenOverride.symbol
+                  : selectedToken
+                  ? sanitizeTokenSymbol(selectedToken.symbol, {
+                      chainId: networks.destinationChain.id,
+                      erc20L1Address: selectedToken.address
+                    })
+                  : undefined
+              }
+              logoOverride={destination ? destination.logoURI : undefined}
+            />
+          )}
+        </div>
       </div>
+
+      {isShowingBatchedTransfer && (
+        <>
+          <hr className="border-white/10" />
+          <div className="flex w-full flex-row items-center justify-between">
+            <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
+              {amount2}
+            </div>
+
+            <BalanceRow
+              balance={
+                nativeCurrencyBalances.destinationBalance
+                  ? formatAmount(nativeCurrencyBalances.destinationBalance)
+                  : undefined
+              }
+            />
+          </div>
+        </>
+      )}
     </div>
   )
 }

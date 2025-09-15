@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { utils } from 'ethers'
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
 
 import { sanitizeTokenSymbol } from '../../util/TokenUtils'
 import { useNativeCurrency } from '../../hooks/useNativeCurrency'
@@ -81,7 +80,6 @@ export function TokenButton({
             <>
               <TokenLogo srcOverride={options?.logoSrc} />
               <span className="font-light">{tokenSymbol}</span>
-              {!disabled && <ChevronDownIcon width={12} />}
             </>
           )}
         </div>

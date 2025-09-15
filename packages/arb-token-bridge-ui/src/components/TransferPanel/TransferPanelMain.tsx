@@ -101,13 +101,11 @@ export function SwitchNetworksButton(
         aria-label="Switch Networks"
         {...props}
       >
-        {/* <SwitchNetworkButtonBorderTop /> */}
         {isNetworkSwapBlocked ? (
           <ArrowDownIcon className="h-4 w-4 stroke-2 text-white" />
         ) : (
           <ArrowsUpDownIcon className="h-4 w-4 stroke-2 text-white transition duration-300 group-hover:rotate-180 group-hover:opacity-80" />
         )}
-        {/* <SwitchNetworkButtonBorderBottom /> */}
       </Button>
     </div>
   )

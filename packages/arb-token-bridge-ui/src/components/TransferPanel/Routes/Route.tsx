@@ -444,16 +444,18 @@ export const Route = React.memo(
           />
 
           {/* if custom destination address is the receiver, explicitly show it */}
-          {destinationAddress && <DelimiterDot />}
           {destinationAddress && (
-            <Tooltip
-              content={`${destinationAddress} will be the recipient of the funds. Be sure you mean to send it here.`}
-            >
-              <div className="flex items-center gap-1 rounded bg-orange-dark px-1 py-0.5 text-xs">
-                <UserIcon className="h-3 w-3" />
-                {shortenAddress(destinationAddress)} will receive
-              </div>
-            </Tooltip>
+            <>
+              <DelimiterDot />
+              <Tooltip
+                content={`${destinationAddress} will be the recipient of the funds. Be sure you mean to send it here.`}
+              >
+                <div className="flex items-center gap-1 rounded bg-orange-dark px-1 py-0.5 text-xs">
+                  <UserIcon className="h-3 w-3" />
+                  {shortenAddress(destinationAddress)} will receive
+                </div>
+              </Tooltip>
+            </>
           )}
         </div>
       </button>
