@@ -662,7 +662,8 @@ export function TransferPanel() {
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
-        destinationChain: getNetworkName(networks.destinationChain.id)
+        destinationChain: getNetworkName(networks.destinationChain.id),
+        tag: selectedRoute
       })
 
       if (isSmartContractWallet) {
