@@ -9,14 +9,18 @@ import { useDebounce } from '@uidotdev/usehooks'
 
 export type UseLifiCrossTransfersRouteParams = Pick<
   LifiParams,
-  'fromAmount' | 'fromToken' | 'toToken' | 'slippage' | 'fromAddress'
+  | 'fromAmount'
+  | 'fromToken'
+  | 'toToken'
+  | 'slippage'
+  | 'fromAddress'
+  | 'denyBridges'
+  | 'denyExchanges'
 > & {
   enabled?: boolean
   toAddress: Address | undefined
   fromChainId: number
   toChainId: number
-  denyBridges?: string[]
-  denyExchanges?: string[]
 }
 
 export const useLifiCrossTransfersRoute = ({

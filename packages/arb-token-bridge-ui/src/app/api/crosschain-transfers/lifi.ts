@@ -207,8 +207,8 @@ type LifiCrossTransfersRoutesResponse =
 
 export type LifiParams = QueryParams & {
   slippage?: string
-  denyBridges?: string | string[]
-  denyExchanges?: string | string[]
+  denyBridges?: string[]
+  denyExchanges?: string[]
 }
 
 /** Extending the standard NextJs request with fast bridge transfer params */
