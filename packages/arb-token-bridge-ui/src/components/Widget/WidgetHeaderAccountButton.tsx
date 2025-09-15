@@ -1,4 +1,4 @@
-import { useAccount, useDisconnect, useEnsAvatar, useEnsName } from 'wagmi'
+import { useAccount, useDisconnect } from 'wagmi'
 import { twMerge } from 'tailwind-merge'
 import {
   ArrowLeftEndOnRectangleIcon,
@@ -11,11 +11,10 @@ import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { useState } from 'react'
 
 import { Button } from '../common/Button'
-import { shortenAddress } from '../../util/CommonUtils'
 import { SafeImage } from '../common/SafeImage'
 import { CustomBoringAvatar } from '../common/CustomBoringAvatar'
-import { ChainId } from '../../types/ChainId'
 import { Transition } from '../common/Transition'
+import { useAccountMenu } from '../../hooks/useAccountMenu'
 
 interface AccountContentProps {
   showChevron?: boolean
@@ -32,16 +31,7 @@ const AccountContent = ({
   onCopy,
   isCopied = false
 }: AccountContentProps) => {
-  const { address } = useAccount()
-  const { data: ensName } = useEnsName({
-    address,
-    chainId: ChainId.Ethereum
-  })
-
-  const { data: ensAvatar } = useEnsAvatar({
-    name: ensName ?? '',
-    chainId: ChainId.Ethereum
-  })
+  const { address, accountShort, ensName, ensAvatar, udInfo } = useAccountMenu()
 
   return (
     <div className="flex items-center gap-2">
@@ -50,7 +40,9 @@ const AccountContent = ({
         className="h-6 w-6 rounded-full"
         fallback={<CustomBoringAvatar size={24} name={address} />}
       />
-      <span className="text-white">{shortenAddress(address ?? '')}</span>
+      <span className="text-white">
+        {ensName ?? udInfo.name ?? accountShort}
+      </span>
       {showCopyButton && onCopy && (
         <>
           {isCopied ? (

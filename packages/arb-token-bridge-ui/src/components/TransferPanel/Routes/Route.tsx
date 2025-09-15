@@ -408,7 +408,12 @@ export const Route = React.memo(
         disabled={isDisabled}
         aria-label={`Route ${type}`}
       >
-        <div className="flex flex-row flex-nowrap items-center justify-between gap-2">
+        <div
+          className={twMerge(
+            'flex flex-row flex-wrap items-center justify-between gap-2',
+            isBatchTransferSupported && Number(amount2) > 0 && 'items-start'
+          )}
+        >
           <RouteAmount
             amountReceived={amountReceived}
             token={token}
@@ -418,7 +423,7 @@ export const Route = React.memo(
             childNativeCurrency={childNativeCurrency}
           />
 
-          <div className="flex flex-nowrap gap-3">
+          <div className="flex flex-wrap gap-3 overflow-hidden">
             <div className="flex flex-nowrap items-center gap-1">
               <span className="text-sm text-white/50">via</span>{' '}
               <RouteBridge bridge={bridge} bridgeIconURI={bridgeIconURI} />

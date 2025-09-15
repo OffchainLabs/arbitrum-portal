@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers'
-import useSWRImmutable from 'swr/immutable'
+import useSWR from 'swr'
 import { getChains } from '../util/networks'
 import { getProviderForChainId } from '@/token-bridge-sdk/utils'
 import { fetchErc20Data } from '../util/TokenUtils'
@@ -49,11 +49,11 @@ export const useNativeCurrencyBalanceForChainId = (
   chainId: number,
   walletAddress?: string
 ) => {
-  return useSWRImmutable(
+  return useSWR(
     walletAddress
-      ? [`native-balance-${chainId}`, walletAddress, chainId]
+      ? [chainId, walletAddress, 'native-balance-per-chainId']
       : null,
-    ([, _walletAddress, _chainId]: [string, string, number]) =>
+    ([_chainId, _walletAddress]: [number, string]) =>
       fetchNativeBalance(_chainId, _walletAddress),
     {
       refreshInterval: 30_000,

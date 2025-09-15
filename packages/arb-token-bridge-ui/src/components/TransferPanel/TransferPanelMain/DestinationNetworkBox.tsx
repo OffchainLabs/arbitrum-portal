@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { constants } from 'ethers'
 import { useAccount } from 'wagmi'
-import { shallow } from 'zustand/shallow'
 
 import { useNetworks } from '../../../hooks/useNetworks'
 import { NetworkContainer } from '../TransferPanelMain'
@@ -138,12 +137,8 @@ function BalancesContainer() {
   const [selectedToken] = useSelectedToken()
   const [{ amount, amount2 }] = useArbQueryParams()
 
-  const { selectedRoute } = useRouteStore(
-    state => ({
-      selectedRoute: state.selectedRoute
-    }),
-    shallow
-  )
+  const selectedRoute = useRouteStore(state => state.selectedRoute)
+
   const receivedAmount = useReceivedAmount()
 
   const { erc20ChildBalances } = useBalances()
@@ -246,10 +241,11 @@ function BalancesContainer() {
 
       {isShowingBatchedTransfer && (
         <>
-          <hr className="border-white/10" />
+          <div className="h-[1px] w-full bg-white/20" />
+
           <div className="flex w-full flex-row items-center justify-between">
             <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
-              {amount2}
+              {amount2 || '0'}
             </div>
 
             <BalanceRow
