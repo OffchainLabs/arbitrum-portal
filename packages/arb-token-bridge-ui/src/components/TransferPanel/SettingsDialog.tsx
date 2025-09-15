@@ -24,7 +24,6 @@ import { useAccountType } from '../../hooks/useAccountType'
 import { Dialog, UseDialogProps } from '../common/Dialog'
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils'
 import { isDepositMode as isDepositModeUtil } from '../../util/isDepositMode'
-import Image from 'next/image'
 
 function useTools() {
   const [{ sourceChain, destinationChain }] = useNetworks()
