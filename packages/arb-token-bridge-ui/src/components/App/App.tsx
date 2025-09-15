@@ -16,7 +16,6 @@ import { useNetworks } from '../../hooks/useNetworks'
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
 import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics'
 import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams'
-import { Layout } from '../common/Layout'
 import { useTheme } from '../../hooks/useTheme'
 import dynamic from 'next/dynamic'
 import { Loader } from '../common/atoms/Loader'
@@ -147,9 +146,7 @@ const AppProviders = dynamic(
 export default function App() {
   return (
     <AppProviders>
-      <Layout>
-        <AppContent />
-      </Layout>
+      <AppContent />
     </AppProviders>
   )
 }

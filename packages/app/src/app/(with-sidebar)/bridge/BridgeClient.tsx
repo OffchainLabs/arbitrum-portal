@@ -8,7 +8,7 @@ import posthog from 'posthog-js'
 import {
   addOrbitChainsToArbitrumSDK,
   initializeDayjs
-} from '../../initialization'
+} from '../../../initialization'
 import { ComponentType } from 'react'
 import { registerLocalNetwork } from '@/bridge/util/networks'
 import dynamic from 'next/dynamic'

@@ -22,7 +22,7 @@ import {
   isE2eTestingEnvironment,
   isProductionEnvironment
 } from '@/bridge/util/CommonUtils'
-import { addOrbitChainsToArbitrumSDK } from '../../initialization'
+import { addOrbitChainsToArbitrumSDK } from '../../../initialization'
 
 import 'tippy.js/dist/tippy.css'
 import 'tippy.js/themes/light.css'
@@ -250,7 +250,7 @@ async function sanitizeAndRedirect(searchParams: {
   }
 }
 
-export default async function HomePage({ searchParams }: Props) {
+export default async function BridgePage({ searchParams }: Props) {
   /**
    * This code is run on every query param change,
    * we don't want to sanitize every query param change.
