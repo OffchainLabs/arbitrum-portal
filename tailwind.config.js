@@ -15,7 +15,9 @@ module.exports = {
         gradientCctp: 'linear-gradient(95deg, #77E8CB 0%, #A199F7 100%)',
         gradientCelebration: 'linear-gradient(to right, #1B4ADD6F, #E573106F)',
         highlight:
-          'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))'
+          'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))',
+        eclipse:
+          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)'
       },
       colors: {
         // ACTION
@@ -115,7 +117,10 @@ module.exports = {
         8: '2rem'
       },
       borderRadius: {
-        DEFAULT: 'var(--border-radius, 5px)'
+        DEFAULT: 'var(--border-radius, 5px)',
+        sm: 'calc(var(--border-radius, 10px) / 2)',
+        md: 'calc(var(--border-radius, 10px))',
+        lg: 'calc(var(--border-radius, 10px) * 3 / 2)'
       },
       borderWidth: {
         DEFAULT: 'var(--border-width, 1px)'

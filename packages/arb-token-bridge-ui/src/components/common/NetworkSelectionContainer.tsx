@@ -248,16 +248,20 @@ function AddCustomOrbitChainButton({
   )
 }
 
-function NetworksPanel({
+export function NetworksPanel({
   chainIds,
   selectedChainId,
   onNetworkRowClick,
-  close
+  close,
+  showSearch = true,
+  showFooter = true
 }: {
   chainIds: ChainId[]
   selectedChainId: ChainId
   onNetworkRowClick: (value: Chain) => void
   close: (focusableElement?: HTMLElement) => void
+  showSearch?: boolean
+  showFooter?: boolean
 }) {
   const [errorMessage, setErrorMessage] = useState('')
   const [networkSearched, setNetworkSearched] = useState('')
@@ -394,6 +398,7 @@ function NetworksPanel({
         searchInputValue={networkSearched}
         searchInputOnChange={onSearchInputChange}
         errorMessage={errorMessage}
+        showSearch={showSearch}
         isDialog
       >
         <AutoSizer>
@@ -410,7 +415,7 @@ function NetworksPanel({
           )}
         </AutoSizer>
       </SearchPanelTable>
-      {!embedMode && (
+      {!embedMode && showFooter && (
         <div className="flex justify-between pb-2">
           <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
           <AddCustomOrbitChainButton closeDialog={close} />

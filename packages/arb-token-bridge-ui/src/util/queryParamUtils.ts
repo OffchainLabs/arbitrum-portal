@@ -1,3 +1,6 @@
+import { constants } from 'ethers'
+import { getArbitrumNetwork } from '@arbitrum/sdk'
+
 import {
   ChainKeyQueryParam,
   getChainForChainKeyQueryParam,
@@ -7,10 +10,8 @@ import {
 import { ChainId } from '../types/ChainId'
 import { isSupportedChainId, getDestinationChainIds } from './chainUtils'
 import { isNetwork } from './networks'
-import { isLifiEnabled } from './featureFlag'
+import { isLifiEnabled, isOnrampEnabled } from './featureFlag'
 import { orbitChains } from './orbitChainsList'
-import { constants } from 'ethers'
-import { getArbitrumNetwork } from '@arbitrum/sdk'
 
 export interface ThemeConfig {
   borderRadius?: string
@@ -28,6 +29,7 @@ export enum AmountQueryParamEnum {
 }
 
 export enum TabParamEnum {
+  BUY = 'buy',
   BRIDGE = 'bridge',
   TX_HISTORY = 'tx_history'
 }
@@ -43,15 +45,38 @@ export enum ModeParamEnum {
   EMBED = 'embed'
 }
 
-export const tabToIndex = {
-  [TabParamEnum.BRIDGE]: 0,
-  [TabParamEnum.TX_HISTORY]: 1
-} as const satisfies Record<TabParamEnum, number>
+function createTabMappings() {
+  if (isOnrampEnabled()) {
+    return {
+      tabToIndex: {
+        [TabParamEnum.BUY]: 0,
+        [TabParamEnum.BRIDGE]: 1,
+        [TabParamEnum.TX_HISTORY]: 2
+      } as const satisfies Record<TabParamEnum, number>,
+      indexToTab: {
+        0: TabParamEnum.BUY,
+        1: TabParamEnum.BRIDGE,
+        2: TabParamEnum.TX_HISTORY
+      } as const satisfies Record<number, TabParamEnum>
+    }
+  }
 
-export const indexToTab = {
-  0: TabParamEnum.BRIDGE,
-  1: TabParamEnum.TX_HISTORY
-} as const satisfies Record<number, TabParamEnum>
+  return {
+    tabToIndex: {
+      [TabParamEnum.BRIDGE]: 0,
+      [TabParamEnum.TX_HISTORY]: 1
+    } as const satisfies Record<
+      Exclude<TabParamEnum, TabParamEnum.BUY>,
+      number
+    >,
+    indexToTab: {
+      0: TabParamEnum.BRIDGE,
+      1: TabParamEnum.TX_HISTORY
+    } as const satisfies Record<number, Exclude<TabParamEnum, TabParamEnum.BUY>>
+  }
+}
+
+export const { tabToIndex, indexToTab } = createTabMappings()
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(
@@ -159,8 +184,12 @@ export function decodeChainQueryParam(
 export function encodeTabQueryParam(
   tabIndex: number | null | undefined
 ): string {
-  if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
-    return indexToTab[tabIndex as keyof typeof indexToTab]
+  const { indexToTab: _indexToTab } = createTabMappings()
+  if (typeof tabIndex === 'number' && tabIndex in _indexToTab) {
+    const tabParam = _indexToTab[tabIndex as keyof typeof _indexToTab]
+    if (tabParam !== undefined) {
+      return tabParam
+    }
   }
   return TabParamEnum.BRIDGE
 }
@@ -168,10 +197,20 @@ export function encodeTabQueryParam(
 export function decodeTabQueryParam(
   tab: string | (string | null)[] | null | undefined
 ): number {
-  if (typeof tab === 'string' && tab in tabToIndex) {
-    return tabToIndex[tab as TabParamEnum]
+  const { tabToIndex: _tabToIndex } = createTabMappings()
+  if (typeof tab === 'string') {
+    if (tab === TabParamEnum.BUY && !isOnrampEnabled()) {
+      return _tabToIndex[TabParamEnum.BRIDGE]
+    }
+
+    if (tab in _tabToIndex) {
+      const tabIndex = _tabToIndex[tab as keyof typeof _tabToIndex]
+      if (tabIndex !== undefined) {
+        return tabIndex
+      }
+    }
   }
-  return tabToIndex[TabParamEnum.BRIDGE]
+  return _tabToIndex[TabParamEnum.BRIDGE]
 }
 
 export const DisabledFeaturesParam = {
@@ -531,10 +570,14 @@ export const sanitizeTokenQueryParam = ({
 export const sanitizeTabQueryParam = (
   tab: string | string[] | null | undefined
 ): string => {
-  const enumEntryNames = Object.keys(TabParamEnum)
+  if (typeof tab === 'string') {
+    const lowercasedTab = tab.toLowerCase()
 
-  if (typeof tab === 'string' && enumEntryNames.includes(tab.toUpperCase())) {
-    return tab.toLowerCase()
+    const { tabToIndex: _tabToIndex } = createTabMappings()
+
+    if (Object.keys(_tabToIndex).includes(lowercasedTab)) {
+      return lowercasedTab
+    }
   }
 
   return TabParamEnum.BRIDGE

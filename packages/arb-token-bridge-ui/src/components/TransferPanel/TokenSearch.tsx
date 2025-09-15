@@ -593,6 +593,7 @@ function TokensPanel({
       onSubmit={addNewToken}
       SearchInputButton={AddButton}
       dataCy="tokenSearchList"
+      showSearch={true}
       isDialog={true}
     >
       <AutoSizer>
