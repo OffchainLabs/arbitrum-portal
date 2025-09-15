@@ -9,6 +9,7 @@ import { Toast } from './atoms/Toast'
 
 import { useMode } from '../../hooks/useMode'
 import { unica } from './Font'
+import { BellAlertIcon } from '@heroicons/react/24/outline'
 
 export function Layout(props: PropsWithChildren) {
   const { embedMode } = useMode()
@@ -46,7 +47,20 @@ export function Layout(props: PropsWithChildren) {
                 It also dynamically displays Arbiscan/Novascan status. 
                 To hide or remove its content, simply empty out its children instead of removing the entire component. 
               */}
-            <SiteBanner />
+            <SiteBanner>
+              <div className="text-center">
+                <BellAlertIcon className="mr-1 inline-block h-4 w-4 text-white" />
+                <p className="inline text-sm">
+                  <strong>URL Update:</strong> Starting Sept 23rd, The official
+                  Arbitrum Bridge will redirect from{' '}
+                  <span className="italic underline">bridge.arbitrum.io</span>{' '}
+                  to{' '}
+                  <span className="italic underline">
+                    portal.arbitrum.io/bridge
+                  </span>
+                </p>
+              </div>
+            </SiteBanner>
 
             {props.children}
           </main>
