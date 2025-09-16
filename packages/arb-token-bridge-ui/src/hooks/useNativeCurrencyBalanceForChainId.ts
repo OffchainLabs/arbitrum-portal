@@ -4,6 +4,7 @@ import { getChains } from '../util/networks'
 import { getProviderForChainId } from '@/token-bridge-sdk/utils'
 import { fetchErc20Data } from '../util/TokenUtils'
 import { ChainWithRpcUrl } from '../util/networks'
+import { ether } from '../constants'
 
 const fetchNativeBalance = async (
   chainId: number,
@@ -26,8 +27,8 @@ const fetchNativeBalance = async (
     (async () => {
       if (!chain.nativeToken) {
         return {
-          decimals: 18,
-          symbol: 'ETH'
+          decimals: ether.decimals,
+          symbol: ether.symbol
         }
       }
 

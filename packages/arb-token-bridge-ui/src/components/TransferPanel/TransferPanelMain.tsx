@@ -83,7 +83,7 @@ export function SwitchNetworksButton(
         type="button"
         variant="tertiary"
         className={twMerge(
-          'group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-gray-1 bg-[#212121] p-1',
+          'group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-gray-1 bg-gray-9 p-1',
           theme.primaryCtaColor ? 'bg-primary-cta' : '',
           disabled && 'pointer-events-none'
         )}

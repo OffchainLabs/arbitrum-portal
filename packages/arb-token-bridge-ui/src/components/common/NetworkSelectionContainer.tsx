@@ -108,7 +108,7 @@ function ChainTypeInfoRow({
       className={twMerge(
         'px-4 py-3',
         !isOrbitGroup &&
-          'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30 before:content-[""]',
+          'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30',
         isCoreGroup && 'before:h-[0px]'
       )}
     >
@@ -151,7 +151,7 @@ export function NetworkButton({
 
   return (
     <Button variant="secondary" disabled={disabled} onClick={onClick}>
-      <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
+      <div className="flex flex-nowrap items-center gap-1 text-[18px] leading-[1.1]">
         {isSource ? 'From:' : 'To: '}
         <NetworkImage
           chainId={
@@ -203,7 +203,7 @@ function NetworkRow({
       aria-label={`Switch to ${network.name}`}
       className={twMerge(
         'flex h-[40px] w-full items-center gap-4 rounded px-4 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
-        isSelected && 'bg-white/10' // selected row
+        isSelected && 'bg-white/20 hover:bg-white/20' // selected row
       )}
     >
       <NetworkImage chainId={chainId} className="h-4 w-4 p-[2px]" size={20} />
@@ -364,11 +364,8 @@ export function NetworksPanel({
     if (typeof rowItemOrChainId === 'string') {
       return rowItemOrChainId === ChainGroupName.core ? 45 : 115
     }
-    const rowItem = getBridgeUiConfigForChain(rowItemOrChainId)
-    if (rowItem.network.description) {
-      return 50
-    }
-    return 60
+
+    return 50
   }
 
   useEffect(() => {

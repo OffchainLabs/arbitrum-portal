@@ -100,7 +100,7 @@ function BalanceRow({
         className="px-[10px] py-[5px] opacity-70"
         disabled
       >
-        <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
+        <div className="flex flex-nowrap items-center gap-1 text-[18px] leading-[1.1]">
           <SafeImage
             src={tokenLogoSrc}
             alt={`${symbol} logo`}
@@ -135,7 +135,7 @@ function BalancesContainer() {
   const { isArbitrumOne } = isNetwork(childChain.id)
   const isCctpTransfer = useIsCctpTransfer()
   const [selectedToken] = useSelectedToken()
-  const [{ amount, amount2 }] = useArbQueryParams()
+  const [{ amount2 }] = useArbQueryParams()
 
   const selectedRoute = useRouteStore(state => state.selectedRoute)
 
@@ -191,8 +191,8 @@ function BalancesContainer() {
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
       <div className="flex h-full w-full flex-row items-center justify-between">
-        <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
-          {receivedAmount ?? (amount || '0')}
+        <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
+          {receivedAmount}
         </div>
         <div className="flex flex-col gap-1">
           {showNativeUsdcBalance ? (
@@ -244,7 +244,7 @@ function BalancesContainer() {
           <div className="h-[1px] w-full bg-white/20" />
 
           <div className="flex w-full flex-row items-center justify-between">
-            <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:text-3xl">
+            <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
               {amount2 || '0'}
             </div>
 

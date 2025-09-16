@@ -4,8 +4,9 @@ import { useRouteStore, isLifiRoute } from './useRouteStore'
 import { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi'
 import { formatAmount } from '../../../util/NumberUtils'
 import { useAmountBigNumber } from './useAmountBigNumber'
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
 
-export function useReceivedAmount(): string | undefined {
+export function useReceivedAmount() {
   const { selectedRoute, routes } = useRouteStore(
     state => ({
       selectedRoute: state.selectedRoute,
@@ -14,16 +15,17 @@ export function useReceivedAmount(): string | undefined {
     shallow
   )
 
+  const [{ amount }] = useArbQueryParams()
   const amountBigNumber = useAmountBigNumber()
 
   if (!selectedRoute || amountBigNumber.lte(0)) {
-    return undefined
+    return amount || '0' // amount can also be empty string, hence '0'
   }
 
   const route = routes.find(r => r.type === selectedRoute)
 
   if (!route) {
-    return undefined
+    return amount
   }
 
   if (isLifiRoute(route.type)) {
@@ -38,5 +40,7 @@ export function useReceivedAmount(): string | undefined {
     )
   }
 
-  return (route.data as { amountReceived: string }).amountReceived
+  return (
+    (route.data as { amountReceived: string }).amountReceived || amount || '0'
+  )
 }

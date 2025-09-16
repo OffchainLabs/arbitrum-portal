@@ -118,7 +118,7 @@ export const CustomDestinationAddressInput = ({
 
   return (
     <div className="flex w-full flex-col items-start gap-1 rounded border border-white/10 bg-white/5 p-2 text-white">
-      <p className="text-xs font-light">
+      <p className="text-sm font-light">
         {isSmartContractWallet ? (
           <>
             With Smart Contract Wallets, you{' '}
@@ -126,10 +126,7 @@ export const CustomDestinationAddressInput = ({
             you&apos;d like the funds sent to.
           </>
         ) : (
-          <>
-            Send your funds to a different address. Be sure you mean to send it
-            here.
-          </>
+          'Send your funds to a different address. Be sure you mean to send it here.'
         )}
       </p>
       <div
@@ -138,8 +135,8 @@ export const CustomDestinationAddressInput = ({
           inputLocked
             ? 'border-white/20 bg-white/20'
             : 'border-white bg-black/40',
-          error ? 'border-red-400' : '',
-          warning && !error ? 'border-yellow-500' : ''
+          error && 'border-red-400',
+          warning && !error && 'border-yellow-500'
         )}
       >
         <input
