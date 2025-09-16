@@ -100,7 +100,7 @@ function BalanceRow({
         className="px-[10px] py-[5px] opacity-70"
         disabled
       >
-        <div className="flex flex-nowrap items-center gap-1 text-[18px] leading-[1.1]">
+        <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
           <SafeImage
             src={tokenLogoSrc}
             alt={`${symbol} logo`}

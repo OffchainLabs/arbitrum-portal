@@ -151,7 +151,7 @@ export function NetworkButton({
 
   return (
     <Button variant="secondary" disabled={disabled} onClick={onClick}>
-      <div className="flex flex-nowrap items-center gap-1 text-[18px] leading-[1.1]">
+      <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
         {isSource ? 'From:' : 'To: '}
         <NetworkImage
           chainId={
