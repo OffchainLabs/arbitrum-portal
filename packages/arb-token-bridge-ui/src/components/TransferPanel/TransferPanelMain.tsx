@@ -87,6 +87,11 @@ export function SwitchNetworksButton(
           theme.primaryCtaColor ? 'bg-primary-cta' : '',
           disabled && 'pointer-events-none'
         )}
+        style={{
+          borderRadius: theme.borderRadius,
+          borderWidth: theme.borderWidth,
+          backgroundColor: theme.primaryCtaColor
+        }}
         onClick={() => {
           // we don't want to add `disabled` property to the button because it will change the button styles, so instead we handle it on click
           if (disabled) {
