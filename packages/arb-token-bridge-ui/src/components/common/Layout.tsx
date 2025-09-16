@@ -53,7 +53,9 @@ export function Layout(props: PropsWithChildren) {
                 <p className="inline text-sm">
                   <strong>URL Update:</strong> Starting Sept 23rd, The official
                   Arbitrum Bridge will redirect from{' '}
-                  <span className="italic underline">bridge.arbitrum.io</span>{' '}
+                  <span className="mr-[3px] inline-block italic underline">
+                    bridge.arbitrum.io
+                  </span>{' '}
                   to{' '}
                   <span className="italic underline">
                     portal.arbitrum.io/bridge
