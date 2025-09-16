@@ -207,8 +207,8 @@ type LifiCrossTransfersRoutesResponse =
 
 export type LifiParams = QueryParams & {
   slippage?: string
-  denyBridges?: string | string[]
-  denyExchanges?: string | string[]
+  denyBridges?: string[]
+  denyExchanges?: string[]
 }
 
 /** Extending the standard NextJs request with fast bridge transfer params */
@@ -230,8 +230,8 @@ export async function GET(
   const fromAmount = searchParams.get('fromAmount') || '0'
   const fromAddress = searchParams.get('fromAddress') || undefined
   const toAddress = searchParams.get('toAddress') || undefined
-  const denyBridges = searchParams.get('denyBridges')
-  const denyExchanges = searchParams.get('denyExchanges')
+  const denyBridges = searchParams.getAll('denyBridges')
+  const denyExchanges = searchParams.getAll('denyExchanges')
   const slippage = searchParams.get('slippage')
 
   try {
@@ -296,24 +296,6 @@ export async function GET(
       )
     }
 
-    let bridgesToExclude: string[] = []
-    if (denyBridges) {
-      if (typeof denyBridges === 'string') {
-        bridgesToExclude.push(denyBridges)
-      } else {
-        bridgesToExclude = denyBridges
-      }
-    }
-
-    let exchangesToExclude: string[] = []
-    if (denyExchanges) {
-      if (typeof denyExchanges === 'string') {
-        exchangesToExclude.push(denyExchanges)
-      } else {
-        exchangesToExclude = denyExchanges
-      }
-    }
-
     const parameters: RoutesRequest = {
       fromAddress,
       fromAmount,
@@ -334,14 +316,13 @@ export async function GET(
       options.slippage = parsedSlippage / 100
     }
 
-    if (bridgesToExclude && bridgesToExclude.length > 0) {
-      options.bridges = {
-        deny: bridgesToExclude
-      }
+    options.bridges = {
+      deny: denyBridges.concat(['arbitrum'])
     }
-    if (exchangesToExclude && exchangesToExclude.length > 0) {
+
+    if (denyExchanges.length > 0) {
       options.exchanges = {
-        deny: exchangesToExclude
+        deny: denyExchanges
       }
     }
 
