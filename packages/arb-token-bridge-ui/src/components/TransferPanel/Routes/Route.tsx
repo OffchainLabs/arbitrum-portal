@@ -136,10 +136,10 @@ const RouteAmount = ({
       <div className="flex flex-col gap-1 text-lg">
         <div className="flex flex-row items-center gap-[15px]">
           <TokenLogo
-            className="h-10 w-[40px] min-w-[40px]"
+            className="h-8 w-8 min-w-8"
             srcOverride={'logoURI' in token ? token.logoURI : null}
             fallback={
-              <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark/70" />
+              <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
             }
           />
           <div className="flex flex-col">
@@ -158,10 +158,10 @@ const RouteAmount = ({
         {isBatchTransferSupported && Number(amount2) > 0 && (
           <div className="flex flex-row items-center gap-[15px] text-base">
             <TokenLogo
-              className="h-10 w-10 min-w-10"
+              className="h-8 w-8 min-w-8"
               srcOverride={null}
               fallback={
-                <div className="h-10 w-10 min-w-10 rounded-full bg-gray-dark/70" />
+                <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
               }
             />
             {formatAmount(Number(amount2), {

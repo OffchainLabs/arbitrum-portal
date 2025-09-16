@@ -1,11 +1,11 @@
 import { useAccount } from 'wagmi'
-import Image from 'next/image'
 import { WidgetHeaderAccountButton } from './WidgetHeaderAccountButton'
 import { WidgetModeDropdown } from './WidgetModeDropdown'
 import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton'
 import { Button } from '../common/Button'
 import WidgetTxHistoryIcon from '@/images/WidgetTxHistoryIcon.svg'
 import { OpenDialogFunction } from '../common/Dialog2'
+import { SafeImage } from '../common/SafeImage'
 
 type WidgetHeaderRowProps = {
   openDialog: OpenDialogFunction
@@ -28,11 +28,14 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
             className="h-8 p-2 text-white"
             onClick={() => openDialog('widget_transaction_history')}
           >
-            <Image
+            <SafeImage
               height={18}
               width={18}
               alt="Tx history logo"
               src={WidgetTxHistoryIcon}
+              fallback={
+                <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+              }
             />
           </Button>
         )}

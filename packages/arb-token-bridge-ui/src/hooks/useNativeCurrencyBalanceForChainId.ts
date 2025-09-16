@@ -23,15 +23,20 @@ const fetchNativeBalance = async (
 
   const [balance, nativeTokenData] = await Promise.all([
     provider.getBalance(walletAddress),
-    chain.nativeToken
-      ? (async () => {
-          const parentChainProvider = getProviderForChainId(chain.parentChainId)
-          return await fetchErc20Data({
-            address: chain.nativeToken!,
-            provider: parentChainProvider
-          })
-        })()
-      : Promise.resolve({ decimals: 18, symbol: 'ETH' })
+    (async () => {
+      if (!chain.nativeToken) {
+        return {
+          decimals: 18,
+          symbol: 'ETH'
+        }
+      }
+
+      const parentChainProvider = getProviderForChainId(chain.parentChainId)
+      return fetchErc20Data({
+        address: chain.nativeToken!,
+        provider: parentChainProvider
+      })
+    })()
   ])
 
   const decimals = nativeTokenData.decimals
@@ -52,7 +57,7 @@ export const useNativeCurrencyBalanceForChainId = (
     walletAddress
       ? [chainId, walletAddress, 'native-balance-per-chainId']
       : null,
-    ([_chainId, _walletAddress]: [number, string]) =>
+    ([_chainId, _walletAddress]) =>
       fetchNativeBalance(_chainId, _walletAddress),
     {
       refreshInterval: 30_000,

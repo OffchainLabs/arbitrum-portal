@@ -3,7 +3,6 @@ import { utils } from 'ethers'
 import { useRouteStore, isLifiRoute } from './useRouteStore'
 import { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi'
 import { formatAmount } from '../../../util/NumberUtils'
-import { useLatest } from 'react-use'
 import { useAmountBigNumber } from './useAmountBigNumber'
 
 export function useReceivedAmount(): string | undefined {
@@ -15,7 +14,7 @@ export function useReceivedAmount(): string | undefined {
     shallow
   )
 
-  const { current: amountBigNumber } = useLatest(useAmountBigNumber())
+  const amountBigNumber = useAmountBigNumber()
 
   if (!selectedRoute || amountBigNumber.lte(0)) {
     return undefined
