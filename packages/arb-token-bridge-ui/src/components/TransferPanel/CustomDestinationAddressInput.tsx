@@ -156,6 +156,7 @@ export const CustomDestinationAddressInput = () => {
       <div
         className={twMerge(
           'group my-1 flex h-8 w-full items-center rounded bg-black/50 shadow-input',
+          inputLocked && 'bg-black/20',
           error && 'border border-red-400',
           warning && !error && 'border border-yellow-500'
         )}
@@ -170,7 +171,8 @@ export const CustomDestinationAddressInput = () => {
         <input
           className={twMerge(
             'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
-            error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2'
+            error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2',
+            !inputLocked && 'placeholder-white/60'
           )}
           placeholder={
             !address || isSmartContractWallet
@@ -194,13 +196,13 @@ export const CustomDestinationAddressInput = () => {
           <button
             onClick={() => setInputLocked(!inputLocked)}
             aria-label="Custom destination input lock"
-            className="mx-2"
+            className={twMerge(
+              'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
+              !inputLocked && 'group-hover:bg-transparent'
+            )}
           >
             {inputLocked ? (
-              <LockClosedIcon
-                className="opacity-50 group-hover:opacity-100"
-                height={16}
-              />
+              <LockClosedIcon height={16} />
             ) : (
               <LockOpenIcon height={16} />
             )}
