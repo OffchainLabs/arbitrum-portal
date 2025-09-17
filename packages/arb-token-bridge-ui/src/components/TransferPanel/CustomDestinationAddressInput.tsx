@@ -136,8 +136,8 @@ export const CustomDestinationAddressInput = ({
       <div
         className={twMerge(
           'group my-1 flex h-8 w-full items-center rounded bg-black/50 shadow-input',
-          error && 'border-red-400',
-          warning && !error && 'border-yellow-500'
+          error && 'border border-red-400',
+          warning && !error && 'border border-yellow-500'
         )}
       >
         {error && (
