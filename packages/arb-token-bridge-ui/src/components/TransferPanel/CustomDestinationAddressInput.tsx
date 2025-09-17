@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { useAccount } from 'wagmi'
 import { isAddress } from 'ethers/lib/utils'
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowDownTrayIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from '@heroicons/react/24/outline'
 import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid'
 
 import { getExplorerUrl } from '../../util/networks'
@@ -131,16 +135,23 @@ export const CustomDestinationAddressInput = ({
       </p>
       <div
         className={twMerge(
-          'my-1 flex w-full items-center rounded border px-2 py-1 shadow-input',
-          inputLocked
-            ? 'border-white/20 bg-white/20'
-            : 'border-white bg-black/40',
+          'group my-1 flex h-8 w-full items-center rounded bg-black/50 shadow-input',
           error && 'border-red-400',
           warning && !error && 'border-yellow-500'
         )}
       >
+        {error && (
+          <XCircleIcon className="mx-2 h-4 w-4 shrink-0 rounded-full bg-red-400/20 p-[2px] text-red-400" />
+        )}
+        {destinationAddress && !error && (
+          <CheckCircleIcon className="mx-2 h-4 w-4 shrink-0 rounded-full bg-green-400/20 p-[2px] text-green-400" />
+        )}
+
         <input
-          className="w-full bg-transparent text-sm text-white placeholder-white/50"
+          className={twMerge(
+            'h-full w-full bg-transparent text-base text-white placeholder-[#6d6d6d]',
+            error || (destinationAddress && !error) ? 'pl-0' : 'pl-2'
+          )}
           placeholder={
             !address || isSmartContractWallet
               ? 'Enter Destination Address'
@@ -158,9 +169,13 @@ export const CustomDestinationAddressInput = ({
           <button
             onClick={() => setInputLocked(!inputLocked)}
             aria-label="Custom destination input lock"
+            className="mx-2"
           >
             {inputLocked ? (
-              <LockClosedIcon height={16} />
+              <LockClosedIcon
+                className="opacity-50 group-hover:opacity-100"
+                height={16}
+              />
             ) : (
               <LockOpenIcon height={16} />
             )}
@@ -168,13 +183,13 @@ export const CustomDestinationAddressInput = ({
         )}
       </div>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       {!error && warning && (
-        <p className="text-xs text-yellow-500">{warning}</p>
+        <p className="text-sm text-yellow-500">{warning}</p>
       )}
       {destinationAddress && !error && (
         <ExternalLink
-          className="arb-hover flex w-fit items-center text-xs font-medium text-white/50"
+          className="arb-hover flex w-fit items-center text-sm font-medium text-white/50"
           href={`${getExplorerUrl(
             isDepositMode ? childChain.id : parentChain.id
           )}/address/${destinationAddress}`}

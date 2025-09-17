@@ -92,10 +92,12 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
 
 function ChainTypeInfoRow({
   chainGroup,
-  style
+  style,
+  isConnected
 }: {
   chainGroup: ChainGroupInfo
   style: CSSProperties
+  isConnected: boolean
 }) {
   const { name, description } = chainGroup
   const isOrbitGroup = chainGroup.name === ChainGroupName.orbit
@@ -114,7 +116,9 @@ function ChainTypeInfoRow({
     >
       <div className="flex flex-row flex-nowrap items-center justify-between">
         <p className="text-sm text-white/70">{name}</p>
-        <p className="text-xs text-white/50">Native Balance</p>
+        <p className="text-xs text-white/50">
+          {isConnected ? 'Native Balance' : 'Native Token'}
+        </p>
       </div>
       {description}
     </div>
@@ -301,6 +305,7 @@ export function NetworksPanel({
   const listRef = useRef<List>(null)
   const [isTestnetMode] = useIsTestnetMode()
   const { embedMode } = useMode()
+  const { isConnected } = useAccount()
 
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase()
@@ -382,19 +387,31 @@ export function NetworksPanel({
 
       if (networkOrChainTypeName === ChainGroupName.core) {
         return (
-          <ChainTypeInfoRow chainGroup={chainGroupInfo.core} style={style} />
+          <ChainTypeInfoRow
+            chainGroup={chainGroupInfo.core}
+            style={style}
+            isConnected={isConnected}
+          />
         )
       }
 
       if (networkOrChainTypeName === ChainGroupName.more) {
         return (
-          <ChainTypeInfoRow chainGroup={chainGroupInfo.more} style={style} />
+          <ChainTypeInfoRow
+            chainGroup={chainGroupInfo.more}
+            style={style}
+            isConnected={isConnected}
+          />
         )
       }
 
       if (networkOrChainTypeName === ChainGroupName.orbit) {
         return (
-          <ChainTypeInfoRow chainGroup={chainGroupInfo.orbit} style={style} />
+          <ChainTypeInfoRow
+            chainGroup={chainGroupInfo.orbit}
+            style={style}
+            isConnected={isConnected}
+          />
         )
       }
 
@@ -409,7 +426,13 @@ export function NetworksPanel({
         />
       )
     },
-    [close, networkRowsWithChainInfoRows, onNetworkRowClick, selectedChainId]
+    [
+      close,
+      networkRowsWithChainInfoRows,
+      onNetworkRowClick,
+      selectedChainId,
+      isConnected
+    ]
   )
 
   const onSearchInputChange = useCallback(

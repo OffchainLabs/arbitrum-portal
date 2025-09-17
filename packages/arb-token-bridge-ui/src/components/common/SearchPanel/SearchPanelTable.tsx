@@ -41,15 +41,15 @@ export const SearchPanelTable = ({
       {showSearch && (
         <form onSubmit={onSubmit} className="flex flex-col">
           <div className="flex items-stretch gap-2">
-            <div className="relative flex h-full w-full grow items-center rounded border-[1px] border-gray-dark bg-black/30 text-white shadow-input">
-              <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-2 h-4 w-4 shrink-0" />
+            <div className="relative flex h-full w-full grow items-center rounded bg-black/50 text-white shadow-input">
+              <MagnifyingGlassIcon className="absolute left-3 top-[11px] h-3 w-3 shrink-0" />
               <input
                 ref={inputRef}
                 type="search"
                 placeholder={searchInputPlaceholder}
                 value={searchInputValue}
                 onChange={searchInputOnChange}
-                className="h-full w-full rounded bg-transparent py-2 pl-7 pr-2 text-sm font-light placeholder:text-xs placeholder:text-white"
+                className="h-full w-full rounded bg-transparent py-2 pl-8 pr-2 text-sm font-light placeholder:text-sm placeholder:text-white"
               />
             </div>
             {SearchInputButton}
