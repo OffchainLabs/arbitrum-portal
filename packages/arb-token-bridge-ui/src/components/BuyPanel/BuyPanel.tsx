@@ -26,7 +26,8 @@ import { NetworksPanel } from '../common/NetworkSelectionContainer';
 import { SafeImage } from '../common/SafeImage';
 import { SearchPanel } from '../common/SearchPanel/SearchPanel';
 import { Loader } from '../common/atoms/Loader';
-import { MoonPayPanel, MoonPaySkeleton } from './MoonPayPanel';
+import { Homepage } from './Homepage';
+import { MoonPaySkeleton } from './MoonPayPanel';
 
 const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayProvider),
@@ -38,6 +39,7 @@ const MoonPayProvider = dynamic(
 
 const isMoonPayEnabled = isOnrampServiceEnabled('moonpay');
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function OnRampProviders({ children }: PropsWithChildren) {
   if (!isOnrampEnabled()) {
     return children;
@@ -182,7 +184,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
           <span className="text-error">Failed to load balance.</span>
         )}
         {balanceState && showPriceInUsd && (
-          <span className="text-white/70">
+          <span className="text-white/50">
             ({formatUSD(ethToUSD(Number(utils.formatEther(BigNumber.from(balanceState.value)))))})
           </span>
         )}
@@ -205,9 +207,11 @@ export function BuyPanel() {
     >
       <BalanceWrapper />
 
-      <OnRampProviders>
+      <Homepage />
+
+      {/* <OnRampProviders>
         <MoonPayPanel />
-      </OnRampProviders>
+      </OnRampProviders> */}
     </div>
   );
 }
