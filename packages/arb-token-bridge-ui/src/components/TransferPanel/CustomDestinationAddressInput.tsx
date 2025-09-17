@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { useAccount } from 'wagmi'
 import { isAddress } from 'ethers/lib/utils'
@@ -8,7 +8,6 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline'
 import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid'
-import { useDebounce } from 'react-use'
 
 import { getExplorerUrl } from '../../util/networks'
 import { ExternalLink } from '../common/ExternalLink'
@@ -84,15 +83,9 @@ export const CustomDestinationAddressInput = () => {
     setQueryParams
   ] = useArbQueryParams()
 
-  // Local state for the input value - this is what the user types
   const [localDestinationAddress, setLocalDestinationAddress] = useState(
     destinationAddressFromQueryParams || ''
   )
-
-  // Initialize local state from query params when component mounts or query params change
-  useEffect(() => {
-    setLocalDestinationAddress(destinationAddressFromQueryParams || '')
-  }, [destinationAddressFromQueryParams])
 
   const [inputLocked, setInputLocked] = useState(
     !destinationAddressFromQueryParams &&
@@ -103,31 +96,18 @@ export const CustomDestinationAddressInput = () => {
     localDestinationAddress
   )
 
-  const validateAndCommitToQueryParams = useCallback(
+  const validateAndSubmitDestinationAddress = useCallback(
     (address: string) => {
       if (error || !address || !isAddress(address)) {
         // Clear query params if there's an error
+        setLocalDestinationAddress('')
         setQueryParams({ destinationAddress: undefined })
       } else {
+        // if valid, commit to query params
         setQueryParams({ destinationAddress: address })
       }
     },
-    [error, setQueryParams]
-  )
-
-  // validate and commit to query params when local-state changes (but debounce)
-  useDebounce(
-    () => {
-      if (localDestinationAddress !== destinationAddressFromQueryParams) {
-        validateAndCommitToQueryParams(localDestinationAddress)
-      }
-    },
-    500,
-    [
-      localDestinationAddress,
-      destinationAddressFromQueryParams,
-      validateAndCommitToQueryParams
-    ]
+    [error, setQueryParams, setLocalDestinationAddress]
   )
 
   const { data: warning } = useSWRImmutable(
@@ -205,11 +185,8 @@ export const CustomDestinationAddressInput = () => {
             setLocalDestinationAddress(newValue)
           }}
           onBlur={() => {
-            // clear the local state if there's an error on focus out
-            // this makes sure that local-input doesn't keep on showing error when there is nothing committed to query params
-            if (error) {
-              setLocalDestinationAddress('')
-            }
+            // on blur, validate the input, and if valid, commit to query params, else clear the input
+            validateAndSubmitDestinationAddress(localDestinationAddress)
           }}
           aria-label="Custom Destination Address Input"
         />
