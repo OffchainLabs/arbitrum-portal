@@ -154,7 +154,16 @@ export function NetworkButton({
     isLoading
 
   return (
-    <Button variant="secondary" disabled={disabled} onClick={onClick}>
+    <Button
+      variant="secondary"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={
+        isSource
+          ? `From: ${networks.sourceChain.name}`
+          : `To: ${networks.destinationChain.name}`
+      }
+    >
       <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
         {isSource ? 'From:' : 'To: '}
         <NetworkImage

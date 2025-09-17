@@ -137,7 +137,9 @@ export const fillCustomDestinationAddress = () => {
     .should('be.enabled')
     .type(Cypress.env('CUSTOM_DESTINATION_ADDRESS'))
 
-  cy.findByLabelText('Close Dialog').should('be.visible').click()
+  cy.wait(1_000)
+  cy.findByLabelText('Custom Destination Address Input').blur()
+  cy.wait(1_000)
 }
 
 export function findAmountInput(): Cypress.Chainable<JQuery<HTMLElement>> {
@@ -169,20 +171,13 @@ export function typeAmount2(
 export function findSourceChainButton(
   chain: string
 ): Cypress.Chainable<JQuery<HTMLElement>> {
-  return cy
-    .findByRole('button', { name: `From: ${chain}` })
-    .should('be.visible')
+  return cy.findByLabelText(`From: ${chain}`).should('be.visible')
 }
 
 export function findDestinationChainButton(
   chain: string
 ): Cypress.Chainable<JQuery<HTMLElement>> {
-  return (
-    cy
-      //
-      .findByRole('button', { name: `To: ${chain}` })
-      .should('be.visible')
-  )
+  return cy.findByLabelText(`To: ${chain}`).should('be.visible')
 }
 
 export function findGasFeeSummary(amount: string | number | RegExp) {
