@@ -149,7 +149,7 @@ export const CustomDestinationAddressInput = ({
 
         <input
           className={twMerge(
-            'h-full w-full bg-transparent text-base text-white placeholder-[#6d6d6d]',
+            'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
             error || (destinationAddress && !error) ? 'pl-0' : 'pl-2'
           )}
           placeholder={
