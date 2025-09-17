@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { useAccount } from 'wagmi'
 import { isAddress } from 'ethers/lib/utils'
@@ -8,6 +8,7 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline'
 import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid'
+import { useDebounce } from 'react-use'
 
 import { getExplorerUrl } from '../../util/networks'
 import { ExternalLink } from '../common/ExternalLink'
@@ -18,6 +19,7 @@ import { AccountType } from '../../util/AccountUtils'
 import { useNetworks } from '../../hooks/useNetworks'
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
 import { useDestinationAddressError } from './hooks/useDestinationAddressError'
+import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import useSWRImmutable from 'swr/immutable'
 
 export enum DestinationAddressErrors {
@@ -66,13 +68,7 @@ async function getDestinationAddressWarning({
   return null
 }
 
-export const CustomDestinationAddressInput = ({
-  destinationAddress,
-  onDestinationAddressChange
-}: {
-  destinationAddress: string | undefined
-  onDestinationAddressChange: (e: string) => void
-}) => {
+export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks()
   const {
     childChain,
@@ -83,19 +79,63 @@ export const CustomDestinationAddressInput = ({
   } = useNetworksRelationship(networks)
   const { address } = useAccount()
   const { accountType, isLoading: isLoadingAccountType } = useAccountType()
+  const [
+    { destinationAddress: destinationAddressFromQueryParams },
+    setQueryParams
+  ] = useArbQueryParams()
 
-  const [inputLocked, setInputLocked] = useState(
-    !destinationAddress && accountType !== 'smart-contract-wallet'
+  // Local state for the input value - this is what the user types
+  const [localDestinationAddress, setLocalDestinationAddress] = useState(
+    destinationAddressFromQueryParams || ''
   )
 
-  const { destinationAddressError: error } =
-    useDestinationAddressError(destinationAddress)
+  // Initialize local state from query params when component mounts or query params change
+  useEffect(() => {
+    setLocalDestinationAddress(destinationAddressFromQueryParams || '')
+  }, [destinationAddressFromQueryParams])
+
+  const [inputLocked, setInputLocked] = useState(
+    !destinationAddressFromQueryParams &&
+      accountType !== 'smart-contract-wallet'
+  )
+
+  const { destinationAddressError: error } = useDestinationAddressError(
+    localDestinationAddress
+  )
+
+  const validateAndCommitToQueryParams = useCallback(
+    (address: string) => {
+      if (error || !address || !isAddress(address)) {
+        // Clear query params if there's an error
+        setQueryParams({ destinationAddress: undefined })
+      } else {
+        setQueryParams({ destinationAddress: address })
+      }
+    },
+    [error, setQueryParams]
+  )
+
+  // validate and commit to query params when local-state changes (but debounce)
+  useDebounce(
+    () => {
+      if (localDestinationAddress !== destinationAddressFromQueryParams) {
+        validateAndCommitToQueryParams(localDestinationAddress)
+      }
+    },
+    500,
+    [
+      localDestinationAddress,
+      destinationAddressFromQueryParams,
+      validateAndCommitToQueryParams
+    ]
+  )
+
   const { data: warning } = useSWRImmutable(
-    destinationAddress &&
+    localDestinationAddress &&
       !isLoadingAccountType &&
       typeof accountType !== 'undefined'
       ? [
-          destinationAddress,
+          localDestinationAddress,
           accountType,
           networks.destinationChain.id,
           isDepositMode,
@@ -143,25 +183,33 @@ export const CustomDestinationAddressInput = ({
         {error && (
           <XCircleIcon className="mx-2 h-4 w-4 shrink-0 rounded-full bg-red-400/20 p-[2px] text-red-400" />
         )}
-        {destinationAddress && !error && (
+        {localDestinationAddress && !error && (
           <CheckCircleIcon className="mx-2 h-4 w-4 shrink-0 rounded-full bg-green-400/20 p-[2px] text-green-400" />
         )}
 
         <input
           className={twMerge(
             'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
-            error || (destinationAddress && !error) ? 'pl-0' : 'pl-2'
+            error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2'
           )}
           placeholder={
             !address || isSmartContractWallet
               ? 'Enter Destination Address'
               : address
           }
-          value={destinationAddress}
+          value={localDestinationAddress}
           disabled={inputLocked}
           spellCheck={false}
           onChange={e => {
-            onDestinationAddressChange(e.target.value?.toLowerCase().trim())
+            const newValue = e.target.value?.toLowerCase().trim()
+            setLocalDestinationAddress(newValue)
+          }}
+          onBlur={() => {
+            // clear the local state if there's an error on focus out
+            // this makes sure that local-input doesn't keep on showing error when there is nothing committed to query params
+            if (error) {
+              setLocalDestinationAddress('')
+            }
           }}
           aria-label="Custom Destination Address Input"
         />
@@ -187,12 +235,12 @@ export const CustomDestinationAddressInput = ({
       {!error && warning && (
         <p className="text-sm text-yellow-500">{warning}</p>
       )}
-      {destinationAddress && !error && (
+      {localDestinationAddress && !error && (
         <ExternalLink
           className="arb-hover flex w-fit items-center text-sm font-medium text-white/50"
           href={`${getExplorerUrl(
             isDepositMode ? childChain.id : parentChain.id
-          )}/address/${destinationAddress}`}
+          )}/address/${localDestinationAddress}`}
         >
           <ArrowDownTrayIcon
             height={12}

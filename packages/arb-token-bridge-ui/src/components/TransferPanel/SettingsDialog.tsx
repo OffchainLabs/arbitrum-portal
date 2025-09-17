@@ -18,9 +18,6 @@ import {
 } from '@heroicons/react/24/outline'
 import { shallow } from 'zustand/shallow'
 import { ExternalLink } from '../common/ExternalLink'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { useDestinationAddressError } from './hooks/useDestinationAddressError'
-import { useAccountType } from '../../hooks/useAccountType'
 import { Dialog, UseDialogProps } from '../common/Dialog'
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils'
 import { isDepositMode as isDepositModeUtil } from '../../util/isDepositMode'
@@ -138,16 +135,6 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
     }),
     shallow
   )
-  const [
-    { destinationAddress: destinationAddressFromQueryParams },
-    setQueryParams
-  ] = useArbQueryParams()
-  const [destinationAddress, setDestinationAddress] = useState(
-    destinationAddressFromQueryParams
-  )
-  const { destinationAddressError } =
-    useDestinationAddressError(destinationAddress)
-  const { accountType } = useAccountType()
   const isLifiSupported = useMemo(
     () =>
       isValidLifiTransfer({
@@ -182,20 +169,6 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
         setSlippage(slippageValue)
         setDisabledBridgesToStore(disabledBridges)
         props.onClose(confirmed)
-
-        if (accountType === 'smart-contract-wallet') {
-          return
-        }
-
-        if (destinationAddressError) {
-          setQueryParams({ destinationAddress: undefined })
-          setDestinationAddress(undefined)
-        } else {
-          // If string is empty, we want to remove the param from URL (passing undefined)
-          setQueryParams({
-            destinationAddress: destinationAddress || undefined
-          })
-        }
       }}
       isFooterHidden
     >

@@ -5,9 +5,9 @@ import { CustomDestinationAddressInput } from './CustomDestinationAddressInput'
 import { useCallback, useEffect, useState } from 'react'
 import { useDestinationAddressError } from './hooks/useDestinationAddressError'
 import { useAccountType } from '../../hooks/useAccountType'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { Loader } from '../common/atoms/Loader'
 import { useRouteStore } from './hooks/useRouteStore'
+import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 
 export const ReceiveFundsHeader = () => {
   const [
@@ -15,26 +15,17 @@ export const ReceiveFundsHeader = () => {
     setShowCustomDestinationAddressInput
   ] = useState(false)
 
-  const [{ destinationAddress }, setQueryParams] = useArbQueryParams()
-
   const { accountType } = useAccountType()
   const isSmartContractWallet = accountType === 'smart-contract-wallet'
-
   const { destinationAddressError } = useDestinationAddressError()
 
   const isLoadingRoutes = useRouteStore(state => state.isLoading)
 
-  const setDestinationAddress = useCallback(
-    (newDestinationAddress: string) =>
-      setQueryParams({
-        destinationAddress: newDestinationAddress
-      }),
-    [setQueryParams]
-  )
+  const [{ destinationAddress }] = useArbQueryParams()
 
   useEffect(() => {
-    // if there is an error, show the custom destination address input
-    if (destinationAddressError) {
+    // if there is a destination address or error, show the custom destination address input
+    if (destinationAddress || destinationAddressError) {
       setShowCustomDestinationAddressInput(true)
       return
     }
@@ -42,7 +33,7 @@ export const ReceiveFundsHeader = () => {
     if (isSmartContractWallet && !showCustomDestinationAddressInput) {
       setShowCustomDestinationAddressInput(true)
     }
-  }, [isSmartContractWallet])
+  }, [isSmartContractWallet, destinationAddress, destinationAddressError])
 
   const toggleCustomDestinationAddressInput = useCallback(() => {
     // for SCW, we must always show the custom destination address input
@@ -85,10 +76,7 @@ export const ReceiveFundsHeader = () => {
         </Button>
       </div>
 
-      <CustomDestinationAddressInput
-        destinationAddress={destinationAddress}
-        onDestinationAddressChange={setDestinationAddress}
-      />
+      <CustomDestinationAddressInput />
     </div>
   )
 }
