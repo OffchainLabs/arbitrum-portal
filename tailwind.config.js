@@ -56,7 +56,7 @@ module.exports = {
         'gray-8': '#262626',
         'gray-dark': '#6D6D6D',
         'line-gray': '#F4F4F4',
-        'gray-9':'#212121',
+        'gray-9': '#212121',
         dark: '#1A1C1D', // (or default-black)
         'dark-hover': '#2b2e30', // (or default-black-hover)
 
