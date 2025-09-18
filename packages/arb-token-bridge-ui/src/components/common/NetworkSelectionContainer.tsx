@@ -251,7 +251,7 @@ function NetworkRow({
             </Tooltip>
           )}
 
-          {balanceState && (
+          {!isLoadingBalance && !balanceError && balanceState && (
             <Tooltip
               content={`${
                 nativeTokenData?.symbol ?? 'ETH'
