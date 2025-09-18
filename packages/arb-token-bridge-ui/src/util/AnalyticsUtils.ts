@@ -123,6 +123,7 @@ type AnalyticsEventMap = {
     amount: number
     sourceChain: string
     destinationChain: string
+    tag?: RouteType
   }
   'Recover funds': {
     chainId: ChainId

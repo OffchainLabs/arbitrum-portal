@@ -21,6 +21,8 @@ import { useMode } from '../../../hooks/useMode'
 import { twMerge } from 'tailwind-merge'
 import { PlusCircleIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
+import { Button } from '../../common/Button'
+import { DialogWrapper, useDialog2 } from '../../common/Dialog2'
 
 function Wrapper({ children }: PropsWithChildren) {
   const { embedMode } = useMode()
@@ -28,7 +30,7 @@ function Wrapper({ children }: PropsWithChildren) {
   return (
     <div
       className={twMerge(
-        'mb-2 flex flex-col gap-2',
+        'flex flex-col gap-2',
         embedMode && 'overflow-auto overflow-x-hidden rounded-md pb-2'
       )}
     >
@@ -37,25 +39,36 @@ function Wrapper({ children }: PropsWithChildren) {
   )
 }
 
-const MAX_ROUTES_VISIBLE = 3
-
 export const Routes = React.memo(() => {
   useRoutesUpdater()
 
   const [showHiddenRoutes, setShowHiddenRoutes] = useState(false)
+  const [dialogProps, openDialog] = useDialog2()
 
   const [, setQueryParams] = useArbQueryParams()
 
-  const { eligibleRouteTypes, routes, hasLowLiquidity, hasModifiedSettings } =
-    useRouteStore(
-      state => ({
-        eligibleRouteTypes: state.eligibleRouteTypes,
-        routes: state.routes,
-        hasLowLiquidity: state.hasLowLiquidity,
-        hasModifiedSettings: state.hasModifiedSettings
-      }),
-      shallow
-    )
+  const {
+    eligibleRouteTypes,
+    routes,
+    hasLowLiquidity,
+    hasModifiedSettings,
+    isLoading,
+    hasError
+  } = useRouteStore(
+    state => ({
+      isLoading: state.isLoading,
+      eligibleRouteTypes: state.eligibleRouteTypes,
+      routes: state.routes,
+      hasLowLiquidity: state.hasLowLiquidity,
+      hasModifiedSettings: state.hasModifiedSettings,
+      hasError: state.error
+    }),
+    shallow
+  )
+
+  const { embedMode } = useMode()
+
+  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3
 
   const [networks] = useNetworks()
   const [selectedToken] = useSelectedToken()
@@ -135,82 +148,106 @@ export const Routes = React.memo(() => {
     : routes.slice(0, MAX_ROUTES_VISIBLE)
   const hasHiddenRoutes = routes.length > MAX_ROUTES_VISIBLE
 
+  const hasMoreRoutesOptions =
+    !isLoading &&
+    !hasError &&
+    hasModifiedSettings &&
+    routes.length > 0 &&
+    routes.length < eligibleRouteTypes.length
+
   return (
-    <Wrapper>
-      {visibleRoutes.map((route, index) => {
-        const tag = getRouteTag(route.type)
-
-        switch (route.type) {
-          case 'oftV2':
-            return <OftV2Route key={`oftV2-${index}`} />
-          case 'cctp':
-            return <CctpRoute key={`cctp-${index}`} />
-          case 'lifi':
-          case 'lifi-fastest':
-          case 'lifi-cheapest':
-            return (
-              <LifiRoute
-                key={`lifi-${index}`}
-                type={route.type}
-                route={route.data.route}
-                tag={tag}
-                overrideToken={overrideToken.destination || undefined}
-              />
-            )
-          case 'arbitrum':
-            return <ArbitrumCanonicalRoute key={`arbitrum-${index}`} />
-          default:
-            return null
-        }
-      })}
-
-      {hasHiddenRoutes && (
-        <div className="mt-1 flex justify-center text-xs text-white/80">
-          <button
-            className="arb-hover flex space-x-1"
-            onClick={() => setShowHiddenRoutes(!showHiddenRoutes)}
+    <>
+      <DialogWrapper {...dialogProps} />
+      <Wrapper>
+        {hasMoreRoutesOptions && (
+          <Button
+            variant="primary"
+            className="flex-start w-full rounded bg-[#4970E920] p-3 text-sm"
+            onClick={() => {
+              openDialog('settings')
+            }}
           >
-            <span>
-              {showHiddenRoutes ? 'Show fewer routes' : 'Show more routes'}
-            </span>
-            {showHiddenRoutes ? (
-              <MinusCircleIcon width={16} />
-            ) : (
-              <PlusCircleIcon width={16} />
-            )}
-          </button>
-        </div>
-      )}
+            <div className="w-full whitespace-break-spaces text-left">
+              Want more options? Consider updating your slippage in settings.
+            </div>
+          </Button>
+        )}
 
-      {hasLowLiquidity && (
-        <div className="rounded border border-lilac bg-lilac/50 p-3 text-sm text-white">
-          {hasModifiedSettings ? (
-            <>
-              Unable to find viable routes. Consider{' '}
-              <button
-                onClick={() => setQueryParams({ settingsOpen: true })}
-                className="underline hover:text-lilac/80"
-              >
-                updating your settings
-              </button>{' '}
-              or try a different amount.
-            </>
-          ) : (
-            <>
-              Low liquidity detected. Unable to find viable routes.
-              <br />
-              <br />
-              You can try to:
-              <ol className="mt-2 list-decimal pl-6">
-                <li>Check back soon: Liquidity conditions can improve.</li>
-                <li>Reduce your transaction amount.</li>
-                <li>Consider alternative assets or destinations.</li>
-              </ol>
-            </>
-          )}
-        </div>
-      )}
-    </Wrapper>
+        {visibleRoutes.map((route, index) => {
+          const tag = getRouteTag(route.type)
+
+          switch (route.type) {
+            case 'oftV2':
+              return <OftV2Route key={`oftV2-${index}`} />
+            case 'cctp':
+              return <CctpRoute key={`cctp-${index}`} />
+            case 'lifi':
+            case 'lifi-fastest':
+            case 'lifi-cheapest':
+              return (
+                <LifiRoute
+                  key={`lifi-${index}`}
+                  type={route.type}
+                  route={route.data.route}
+                  tag={tag}
+                  overrideToken={overrideToken.destination || undefined}
+                />
+              )
+            case 'arbitrum':
+              return <ArbitrumCanonicalRoute key={`arbitrum-${index}`} />
+            default:
+              return null
+          }
+        })}
+
+        {hasHiddenRoutes && (
+          <div className="mt-1 flex justify-center text-xs text-white/80">
+            <button
+              className="arb-hover flex space-x-1"
+              onClick={() => setShowHiddenRoutes(!showHiddenRoutes)}
+            >
+              <span>
+                {showHiddenRoutes ? 'Show fewer routes' : 'Show more routes'}
+              </span>
+              {showHiddenRoutes ? (
+                <MinusCircleIcon width={16} />
+              ) : (
+                <PlusCircleIcon width={16} />
+              )}
+            </button>
+          </div>
+        )}
+
+        {hasLowLiquidity && (
+          <div className="rounded border border-orange-dark bg-orange-dark/50 p-3 text-sm text-white">
+            {hasModifiedSettings ? (
+              <>
+                Unable to find viable routes. Consider{' '}
+                <button
+                  onClick={() => setQueryParams({ settingsOpen: true })}
+                  className="underline"
+                >
+                  updating your settings
+                </button>{' '}
+                or try a different amount.
+              </>
+            ) : (
+              <>
+                Low liquidity detected. Unable to find viable routes.
+                <br />
+                <br />
+                You can try to:
+                <ol className="mt-2 list-decimal pl-6">
+                  <li>Check back soon: Liquidity conditions can improve.</li>
+                  <li>Reduce your transaction amount.</li>
+                  <li>Consider alternative assets or destinations.</li>
+                </ol>
+              </>
+            )}
+          </div>
+        )}
+      </Wrapper>
+    </>
   )
 })
 
