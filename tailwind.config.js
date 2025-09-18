@@ -17,7 +17,9 @@ module.exports = {
         highlight:
           'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))',
         eclipse:
-          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)'
+          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
+        eclipseWidget:
+          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background, #191919) 70%, transparent 70%)'
       },
       colors: {
         // ACTION
@@ -26,10 +28,10 @@ module.exports = {
 
         // PRIMARY
         cyan: '#DDEAFA',
-        brick: '#FFDDD6',
+        brick: '#ff9f8b',
         orange: '#FFEED3',
         lime: '#E8FFE4',
-        lilac: '#754562',
+        lavender: '#7693EB',
         blue: '#00FBFF',
 
         // SECONDARY
@@ -39,7 +41,7 @@ module.exports = {
         'lime-dark': '#31572A',
 
         // TRANSACTION STATUS COLORS
-        claim: '#6AD28A',
+        claim: '#94d08e',
         retry: '#CD0000',
         pending: '#CCB069',
 
@@ -54,6 +56,7 @@ module.exports = {
         'gray-8': '#262626',
         'gray-dark': '#6D6D6D',
         'line-gray': '#F4F4F4',
+        'gray-9': '#212121',
         dark: '#1A1C1D', // (or default-black)
         'dark-hover': '#2b2e30', // (or default-black-hover)
 
@@ -64,7 +67,7 @@ module.exports = {
         'ocl-blue': '#243145',
         'atmosphere-blue': '#152C4E',
         'widget-background': 'var(--color-widget-background, #191919)',
-        'primary-cta': 'var(--color-primary-cta, #31572A)'
+        'primary-cta': 'var(--color-primary-cta, #325EE6)'
       },
       spacing: {
         1: '5px',
@@ -117,7 +120,7 @@ module.exports = {
         8: '2rem'
       },
       borderRadius: {
-        DEFAULT: 'var(--border-radius, 5px)',
+        DEFAULT: 'var(--border-radius, 10px)',
         sm: 'calc(var(--border-radius, 10px) / 2)',
         md: 'calc(var(--border-radius, 10px))',
         lg: 'calc(var(--border-radius, 10px) * 3 / 2)'

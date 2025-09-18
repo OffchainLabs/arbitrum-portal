@@ -93,15 +93,11 @@ import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTra
 import { getStepTransaction } from '@lifi/sdk'
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest'
 import { getAmountToPay } from './useTransferReadiness'
-import { AdvancedSettings } from './AdvancedSettings'
-import { Cog8ToothIcon } from '@heroicons/react/24/outline'
 import { ToSConfirmationCheckbox } from './ToSConfirmationCheckbox'
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel'
 import { useMode } from '../../hooks/useMode'
-import {
-  getTokenOverride,
-  isValidLifiTransfer
-} from '../../app/api/crosschain-transfers/utils'
+import { getTokenOverride } from '../../app/api/crosschain-transfers/utils'
+import { ReceiveFundsHeader } from './ReceiveFundsHeader'
 import { NoteBox } from '../common/NoteBox'
 
 const signerUndefinedError = 'Signer is undefined'
@@ -165,7 +161,7 @@ export function TransferPanel() {
 
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
 
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType()
+  const { accountType } = useAccountType()
   const isSmartContractWallet = accountType === 'smart-contract-wallet'
 
   const { current: signer } = useLatest(
@@ -219,14 +215,6 @@ export function TransferPanel() {
     () =>
       setQueryParams({
         tab: tabToIndex[TabParamEnum.TX_HISTORY]
-      }),
-    [setQueryParams]
-  )
-
-  const setDestinationAddress = useCallback(
-    (newDestinationAddress: string) =>
-      setQueryParams({
-        destinationAddress: newDestinationAddress
       }),
     [setQueryParams]
   )
@@ -674,7 +662,8 @@ export function TransferPanel() {
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
-        destinationChain: getNetworkName(networks.destinationChain.id)
+        destinationChain: getNetworkName(networks.destinationChain.id),
+        tag: selectedRoute
       })
 
       if (isSmartContractWallet) {
@@ -1337,20 +1326,6 @@ export function TransferPanel() {
     return transfer()
   }
 
-  /**
-   * Show settings if we're displaying lifi routes
-   * or if it's an EOA (to display custom destination address input)
-   */
-  const showSettingsButton =
-    isValidLifiTransfer({
-      sourceChainId: networks.sourceChain.id,
-      destinationChainId: networks.destinationChain.id,
-      fromToken: isDepositMode
-        ? selectedToken?.address
-        : selectedToken?.l2Address
-    }) ||
-    (!isLoadingAccountType && !isSmartContractWallet)
-
   if (embedMode) {
     return (
       <WidgetTransferPanel
@@ -1360,7 +1335,6 @@ export function TransferPanel() {
         isTokenAlreadyImported={isTokenAlreadyImported}
         tokenFromSearchParams={tokenFromSearchParams}
         tokenImportDialogProps={tokenImportDialogProps}
-        showSettingsButton={showSettingsButton}
         closeWithResetTokenImportDialog={closeWithResetTokenImportDialog}
       />
     )
@@ -1372,7 +1346,7 @@ export function TransferPanel() {
 
       <div
         className={twMerge(
-          'mb-7 flex flex-col border-y border-white/30 bg-gray-1 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
+          'mb-7 flex flex-col gap-4 border-y border-white/30 bg-gray-1 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
           'sm:rounded sm:border'
         )}
       >
@@ -1385,25 +1359,12 @@ export function TransferPanel() {
         )}
 
         <TransferPanelMain />
-        {showSettingsButton && (
-          <div className="z-50 mb-2 ml-auto sm:relative">
-            <button
-              onClick={() => openDialog('settings')}
-              aria-label="Open Settings"
-            >
-              <Cog8ToothIcon width={30} className="arb-hover text-white" />
-            </button>
-          </div>
-        )}
-        <Routes />
-        {!isLoadingAccountType && isSmartContractWallet && (
-          <AdvancedSettings
-            destinationAddress={destinationAddress}
-            onDestinationAddressChange={setDestinationAddress}
-          />
-        )}
 
-        <ToSConfirmationCheckbox className="my-2" />
+        <ReceiveFundsHeader />
+
+        <Routes />
+
+        <ToSConfirmationCheckbox />
 
         {isConnected ? (
           <MoveFundsButton onClick={moveFundsButtonOnClick} />

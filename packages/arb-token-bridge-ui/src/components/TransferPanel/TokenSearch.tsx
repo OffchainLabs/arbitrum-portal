@@ -706,7 +706,7 @@ export function TokenSearch(props: UseDialogProps) {
           <>
             <TokensPanel onTokenSelected={selectToken} />
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-start pt-4">
               {isFetchingTokenLists ? (
                 <SearchPanel.LoaderWithMessage loadingMessage="Fetching Tokens..." />
               ) : (
@@ -728,7 +728,10 @@ export function TokenSearch(props: UseDialogProps) {
 
             <button
               className="flex cursor-pointer items-center gap-2 text-sm"
-              onClick={() => setActivePanel(Panel.MAIN)}
+              onClick={event => {
+                setActivePanel(Panel.MAIN)
+                event.preventDefault()
+              }}
             >
               <ArrowLeftIcon className="h-3 w-3" />
               Back to Select Token

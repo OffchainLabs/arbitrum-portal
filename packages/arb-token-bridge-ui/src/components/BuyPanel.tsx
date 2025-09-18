@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { useAccount, useBalance } from 'wagmi'
 import React, { memo, PropsWithChildren, useCallback } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -8,8 +7,6 @@ import { shallow } from 'zustand/shallow'
 import { Chain } from 'viem'
 import { BigNumber, utils } from 'ethers'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
-
-import MoonPay from '@/images/onramp/moonpay.svg'
 
 import { getAPIBaseUrl } from '../util'
 import { useNativeCurrency } from '../hooks/useNativeCurrency'
@@ -31,18 +28,38 @@ import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag'
 import { TokenLogoFallback } from './TransferPanel/TokenInfo'
 
 function MoonPaySkeleton({ children }: PropsWithChildren) {
+  const { embedMode } = useMode()
+
   return (
     <div
       className={twMerge(
-        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg'
+        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg',
+        embedMode && 'bg-widget-background'
       )}
     >
       <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-      <div className="absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse"></div>
+      <div
+        className={twMerge(
+          'absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse',
+          embedMode && 'bg-eclipseWidget'
+        )}
+      ></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
-        <Image src={MoonPay} alt="MoonPay" width={65} height={65} />
-        <p className="mt-2 text-3xl">MoonPay</p>
-        <p className="mt-1 text-xl">PayPal, Debit Card, Apple Pay</p>
+        <SafeImage
+          src="/images/onramp/moonpay.svg"
+          alt="MoonPay"
+          width={embedMode ? 45 : 65}
+          height={embedMode ? 45 : 65}
+          fallback={
+            <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
+          }
+        />
+        <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>
+          MoonPay
+        </p>
+        <p className={twMerge('mt-1 text-xl', embedMode && 'text-sm')}>
+          PayPal, Debit Card, Apple Pay
+        </p>
       </div>
       <div
         className={twMerge(
@@ -53,7 +70,12 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       >
         {children}
       </div>
-      <p className="mt-4 text-center text-sm text-gray-4">
+      <p
+        className={twMerge(
+          'mt-4 text-center text-sm text-gray-4',
+          embedMode && 'text-xs'
+        )}
+      >
         On-Ramps are not directly endorsed by Arbitrum. Please use at your own
         risk.
       </p>
@@ -162,7 +184,7 @@ function BuyPanelNetworkButton({
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage
           chainId={selectedChainId}
-          className="h-[20px] w-[20px] p-[2px]"
+          className="h-4 w-4 p-[2px]"
           size={20}
         />
         {getNetworkName(selectedChainId)}
@@ -285,8 +307,15 @@ const MoonPayPanel = memo(function MoonPayPanel() {
 })
 
 export function BuyPanel() {
+  const { embedMode } = useMode()
+
   return (
-    <div className="pb-8 text-white">
+    <div
+      className={twMerge(
+        'overflow-hidden rounded-lg pb-8 text-white',
+        embedMode && 'mx-auto max-w-[540px]'
+      )}
+    >
       <OnRampProviders>
         <MoonPayPanel />
       </OnRampProviders>

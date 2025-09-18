@@ -6,7 +6,11 @@ export const useDisabledFeatures = () => {
 
   const isFeatureDisabled = useCallback(
     (feature: DisabledFeatures) => {
-      if (feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS) {
+      // disable withdrawals to non-arbitrum chains, and batch transfers in embed mode
+      if (
+        feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS ||
+        feature === DisabledFeatures.BATCH_TRANSFERS
+      ) {
         return typeof mode !== 'undefined'
       }
 
