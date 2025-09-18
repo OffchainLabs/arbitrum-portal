@@ -368,7 +368,7 @@ export async function GET(
     const fastestRoute = findFastestRoute(filteredRoutes)
 
     if (!cheapestRoute && !fastestRoute) {
-      return NextResponse.json({ data: [] }, { status: 400 })
+      return NextResponse.json({ data: [] }, { status: 200 })
     }
 
     if (cheapestRoute && fastestRoute && cheapestRoute === fastestRoute) {
