@@ -211,8 +211,6 @@ export type LifiParams = QueryParams & {
   denyExchanges?: string[]
 }
 
-/** Extending the standard NextJs request with fast bridge transfer params */
-
 export const INTEGRATOR_ID = '_arbitrum'
 export async function GET(
   request: NextRequest
@@ -370,7 +368,7 @@ export async function GET(
     const fastestRoute = findFastestRoute(filteredRoutes)
 
     if (!cheapestRoute && !fastestRoute) {
-      return NextResponse.json({ data: [] }, { status: 204 })
+      return NextResponse.json({ data: [] }, { status: 200 })
     }
 
     if (cheapestRoute && fastestRoute && cheapestRoute === fastestRoute) {
