@@ -6,8 +6,8 @@ import { ThemeConfig } from '../util/queryParamUtils'
 export const defaultTheme: ThemeConfig = {
   borderRadius: '10px',
   borderWidth: '1px',
-  widgetBackgroundColor: '#191919',
-  fontFamily: `${unica.style.fontFamily}, Roboto, sans-serif`
+  widgetBackgroundColor: '#191919'
+  // fontFamily: `${unica.style.fontFamily}, Roboto, sans-serif`
 }
 
 // Map theme properties to CSS variables
@@ -16,8 +16,8 @@ const themeVariableMap: Record<keyof ThemeConfig, string> = {
   borderWidth: '--border-width',
   widgetBackgroundColor: '--color-widget-background',
   networkThemeOverrideColor: '--color-network-theme-override',
-  primaryCtaColor: '--color-primary-cta',
-  fontFamily: '--font-family'
+  primaryCtaColor: '--color-primary-cta'
+  // fontFamily: '--font-family'
 }
 
 function applyThemeToCSS(theme: ThemeConfig): void {

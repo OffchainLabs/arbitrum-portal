@@ -23,6 +23,7 @@ import {
 } from '@/bridge/util/CommonUtils'
 import { addOrbitChainsToArbitrumSDK } from '../../../initialization'
 
+import '../../../styles/bridge.css'
 import 'tippy.js/dist/tippy.css'
 import 'tippy.js/themes/light.css'
 import '@rainbow-me/rainbowkit/styles.css'

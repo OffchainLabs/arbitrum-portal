@@ -1,4 +1,6 @@
-import Background from '@/app/components/Background'
+import Background from '../../components/Background'
+
+import '../styles/bridge.css'
 
 export default function RestrictedPage() {
   return (

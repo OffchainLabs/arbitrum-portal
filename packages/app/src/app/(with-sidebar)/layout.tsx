@@ -1,5 +1,5 @@
 import { PropsWithChildren } from 'react'
-import Background from '@/app/components/Background'
+import Background from '../../components/Background'
 import { Toast } from '@/bridge/components/common/atoms/Toast'
 import { AppSidebar } from '@/bridge/components/Sidebar/AppSidebar'
 import { SiteBanner } from '@/bridge/components/common/SiteBanner'

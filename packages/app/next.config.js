@@ -20,6 +20,16 @@ module.exports = {
       {
         protocol: 'https',
         hostname: 'portal.arbitrum.io'
+      },
+      {
+        protocol: 'https',
+        hostname: 'blog.arbitrum.io',
+        port: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'portal-data.arbitrum.io',
+        port: ''
       }
     ]
   },
@@ -42,6 +52,7 @@ module.exports = {
   },
   async redirects() {
     return [
+      // Bridge
       {
         source:
           '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed)(?!.*\\.[^/]+$).+)',
@@ -57,6 +68,47 @@ module.exports = {
           }
         ],
         destination: '/bridge?destinationChain=:slug',
+        permanent: true
+      },
+      // Portal
+      {
+        source: '/one',
+        destination: '/?chains=arbitrum-one',
+        permanent: true
+      },
+      {
+        source: '/nova',
+        destination: '/?chains=arbitrum-nova',
+        permanent: true
+      },
+      {
+        source: '/odyssey',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/missions',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/arcade',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/orbit',
+        destination: '/orbit/ecosystem',
+        permanent: true
+      },
+      {
+        source: '/orbit/launch',
+        destination: 'https://orbit.arbitrum.io/',
+        permanent: true
+      },
+      {
+        source: '/orbit/:path*',
+        destination: '/chains/:path*',
         permanent: true
       }
     ]

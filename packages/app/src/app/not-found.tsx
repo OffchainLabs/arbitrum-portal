@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp'
-import Background from '@/app/components/Background'
+import Background from '../components/Background'
 import { AppSidebar } from '@/bridge/components/Sidebar/AppSidebar'
 
 export default function NotFound() {
