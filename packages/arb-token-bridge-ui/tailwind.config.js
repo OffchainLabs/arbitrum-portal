@@ -1,12 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    // Page/Layout
-    './src/app/**/*.{js,ts,jsx,tsx}',
-    './src/components/**/*.{js,ts,jsx,tsx}',
-    // Cobalt
-    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}'
-  ],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {
@@ -155,5 +148,19 @@ module.exports = {
         1000: '1000ms'
       }
     }
-  }
+  },
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    // Page/Layout
+    '../app/src/components/**/*.{js,ts,jsx,tsx}',
+    '../app/src/app/(embed)/**/*.{js,ts,jsx,tsx}',
+    '../app/src/app/(with-sidebar)/bridge/**/*.{js,ts,jsx,tsx}',
+    '../app/src/app/(with-sidebar)/layout.tsx',
+    '../app/src/app/(embed)/**/*.{js,ts,jsx,tsx}',
+    '../app/src/app/not-found.tsx',
+    '../app/src/app/layout.tsx',
+    '../app/src/app/restricted/page.tsx',
+    // Cobalt
+    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}'
+  ]
 }

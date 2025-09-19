@@ -1,33 +1,33 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    '../portal/app/**/*.{js,ts,jsx,tsx}',
-    '../portal/common/**/*.{js,ts,jsx,tsx}',
-    '../portal/components/**/*.{js,ts,jsx,tsx}',
-    './src/app/**/*.{js,ts,jsx,tsx}',
-    './src/components/**/*.{js,ts,jsx,tsx}',
+    // Portal specific components
+    './app/**/*.{js,ts,jsx,tsx}',
+    './common/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    // Page/Layout
+    '../app/src/app/(with-sidebar)/(portal)/**/*.{js,ts,jsx,tsx}',
+    // Cobalt
     '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
-    '../arb-token-bridge-ui/src/components/common/Font.ts'
   ],
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {
     screens: {
       sm: '640px',
       md: '768px',
       lg: '1024px',
-      xl: '1280px'
+      xl: '1280px',
     },
     extend: {
       maxWidth: {
-        site: '1440px'
+        site: '1440px',
       },
       aspectRatio: {
-        '3/1': '3 / 1'
+        '3/1': '3 / 1',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],
-        theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)']
+        theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)'],
       },
       colors: {
         'default-black': '#1a1c1d',
@@ -65,8 +65,8 @@ module.exports = {
           500: '#aeaeae',
           600: '#999999',
           700: '#6c757d',
-          750: '#6d6d6d'
-        }
+          750: '#6d6d6d',
+        },
       },
       boxShadow: {
         tooltip:
@@ -74,11 +74,11 @@ module.exports = {
         logo: '0px 0px 20px rgba(255, 255, 255, 0.7)',
         card: '-1px 3px 12px 1px rgb(101 183 255 / 20%)',
         field:
-          '0px 2px 2px rgba(33, 37, 41, 0.06), 0px 0px 1px rgba(33, 37, 41, 0.08)'
+          '0px 2px 2px rgba(33, 37, 41, 0.06), 0px 0px 1px rgba(33, 37, 41, 0.08)',
       },
       borderRadius: {
         md: '5px',
-        lg: '10px'
+        lg: '10px',
       },
       backgroundImage: {
         'blue-gradient':
@@ -86,11 +86,11 @@ module.exports = {
         'banner-gradient':
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',
         'celebration-gradient':
-          'linear-gradient(to right, #1B4ADD6F, #E573106F)'
+          'linear-gradient(to right, #1B4ADD6F, #E573106F)',
       },
       backgroundSize: {
-        '1/2': '50%'
-      }
-    }
-  }
-}
+        '1/2': '50%',
+      },
+    },
+  },
+};

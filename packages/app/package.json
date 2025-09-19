@@ -12,22 +12,18 @@
     "@rainbow-me/rainbowkit": "^2.2.4",
     "react-toastify": "^9.1.1"
   },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  },
   "scripts": {
-    "predev": "yarn workspace arb-token-bridge-ui generateDenylist",
+    "predev": "yarn workspace arb-token-bridge-ui generateDenylist && yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
     "dev": "next dev",
-    "prebuild": "yarn workspace arb-token-bridge-ui generateDenylist",
+    "prebuild": "yarn workspace arb-token-bridge-ui generateDenylist && yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
     "build": "next build",
     "start": "next start",
     "lint": "tsc && eslint",
     "lint:fix": "tsc && eslint --quiet --fix",
-    "css:bridge:build": "tailwindcss -c ./tailwind.config.js -i ./src/styles/bridge.css -o ./src/styles/bridge.css --minify",
-    "css:bridge:watch": "tailwindcss -c ./tailwind.config.js -i ./src/styles/bridge.css -o ./src/styles/bridge.css --watch",
-    "css:portal:build": "tailwindcss -c ./tailwind.portal.config.js -i ./src/styles/portal.css -o ./src/styles/portal.css --minify",
-    "css:portal:watch": "tailwindcss -c ./tailwind.portal.config.js -i ./src/styles/portal.css -o ./src/styles/portal.css --watch",
-    "css:build": "npm run css:bridge:build && npm run css:portal:build",
-    "css:watch": "npm-run-all --parallel css:bridge:watch css:portal:watch"
-  },
-  "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "css:build": "yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
+    "css:watch": "yarn workspace arb-token-bridge-ui css:watch & yarn workspace portal css:watch"
   }
 }

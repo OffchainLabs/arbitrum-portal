@@ -69,6 +69,8 @@
     "test:ci": "vitest --config vitest.config.ts --run",
     "lint": "tsc && eslint",
     "lint:fix": "tsc && eslint --quiet --fix",
+    "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/styles/tailwind.css -o ../app/src/styles/bridge.css --minify",
+    "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/styles/tailwind.css -o ../app/src/styles/bridge.css --watch",
     "prettier:format": "prettier --write \"src/**/*.{tsx,ts,scss,md,json}\"",
     "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
     "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
