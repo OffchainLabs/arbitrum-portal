@@ -52,15 +52,6 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
       >
         {children}
       </div>
-      <p
-        className={twMerge(
-          'text-gray-4 mt-4 text-center text-sm',
-          embedMode && 'text-xs'
-        )}
-      >
-        On-Ramps are not directly endorsed by Arbitrum. Please use at your own
-        risk.
-      </p>
     </div>
   )
 }

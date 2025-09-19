@@ -195,6 +195,21 @@ const BalanceWrapper = memo(function BalanceWrapper() {
   );
 });
 
+function OnrampDisclaimer() {
+  const { embedMode } = useMode()
+
+  return (
+    <p
+      className={twMerge(
+        'text-gray-4 mt-4 text-center text-sm',
+        embedMode && 'text-xs'
+      )}
+    >
+      On-Ramps are not endorsed by Arbitrum. Please use at your own risk.
+    </p>
+  )
+}
+
 export function BuyPanel() {
   const { embedMode } = useMode();
 
@@ -212,6 +227,8 @@ export function BuyPanel() {
       {/* <OnRampProviders>
         <MoonPayPanel />
       </OnRampProviders> */}
+
+      <OnrampDisclaimer />
     </div>
   );
 }

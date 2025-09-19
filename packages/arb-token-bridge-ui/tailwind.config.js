@@ -53,7 +53,7 @@ module.exports = {
         'dark': '#1A1C1D', // (or default-black)
         'dark-hover': '#2b2e30', // (or default-black-hover)
 
-        'bg-gray-1': '#191919',
+        'gray-neutral-100': '#212121',
 
         // BRAND
         'eth-dark': '#1A1C33',
