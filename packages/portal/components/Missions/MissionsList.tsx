@@ -1,7 +1,9 @@
-import { MISSIONS } from '@/common/missions';
+import { getMissions } from '@/common/missions';
 import { MissionCard } from './MissionCard';
 
-export const MissionsList = () => {
+export const MissionsList = async () => {
+  const missions = await getMissions();
+
   return (
     <div className="flex flex-col gap-6">
       <div className="text-3xl">
@@ -12,7 +14,7 @@ export const MissionsList = () => {
         </span>
       </div>
 
-      {MISSIONS.length > 0 && (
+      {missions.length > 0 && (
         <div className="text-sm">
           The content here is provided by the app developers. Links and content
           are not verified nor endorsed by Arbitrum. If you have any questions,
@@ -20,7 +22,7 @@ export const MissionsList = () => {
         </div>
       )}
 
-      {!MISSIONS.length && (
+      {!missions.length && (
         <div className="text-sm text-white/50">
           Looks like there are no active missions currently. Please check again
           later.
@@ -29,7 +31,7 @@ export const MissionsList = () => {
 
       {/* Missions */}
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2">
-        {MISSIONS.map((mission, index) => {
+        {missions.map((mission, index) => {
           return (
             <MissionCard key={`side_mission_${index}`} mission={mission} />
           );

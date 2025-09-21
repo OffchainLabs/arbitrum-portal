@@ -54,7 +54,7 @@ export const SimilarProjects = ({
       // so that it doesn't scroll up while the images are still loading
       document
         .getElementsByClassName('side-panel')[0]
-        .scrollTo({ top: 0, behavior: 'smooth' });
+        ?.scrollTo({ top: 0, behavior: 'smooth' });
     }, 300);
   };
 

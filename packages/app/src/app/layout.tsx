@@ -4,8 +4,10 @@ import { twMerge } from 'tailwind-merge'
 import { unica } from '@/bridge/components/common/Font'
 
 import '../styles/common.css'
+import { PORTAL_DATA_ENDPOINT } from '@/common/constants'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(PORTAL_DATA_ENDPOINT),
   icons: {
     icon: '/logo.png'
   }

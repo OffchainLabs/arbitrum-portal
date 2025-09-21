@@ -66,10 +66,15 @@ const getCurrentWeekIndex = (hardCodedWeekIndex?: number) => {
   }
 
   // return >7 if arcade has ended
-  const arcadeEndDate = parseDateInEasternTime(
-    ARCADE_WEEKLY_PLAN[ARCADE_WEEKLY_PLAN.length - 1].missionTimeEnd // end of last mission
-  )
-  if (currentDate.isAfter(arcadeEndDate)) {
+  const lastArcadeWeek = ARCADE_WEEKLY_PLAN[ARCADE_WEEKLY_PLAN.length - 1]
+  if (
+    lastArcadeWeek &&
+    currentDate.isAfter(
+      parseDateInEasternTime(
+        lastArcadeWeek.missionTimeEnd // end of last mission
+      )
+    )
+  ) {
     return ARCADE_WEEKLY_PLAN.length
   }
 

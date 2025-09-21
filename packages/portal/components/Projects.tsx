@@ -73,7 +73,7 @@ export const ProjectsList = React.memo(
 
     // Compare slugs for both arrays
     for (let i = 0; i < prevProjects.length; i++) {
-      if (prevProjects[i].slug !== newProjects[i].slug) {
+      if (prevProjects[i]!.slug !== newProjects[i]!.slug) {
         return false;
       }
     }
@@ -125,7 +125,7 @@ export const Projects = ({
               projects: [],
             };
           }
-          groupedByCategories[subcategory.slug].projects.push(project);
+          groupedByCategories[subcategory.slug]!.projects.push(project);
         }
       });
     });
@@ -140,7 +140,7 @@ export const Projects = ({
           {Object.keys(groupedProjectsBySubcategory)
             .sort(sortBySubcategoryRank)
             .map((subcategoryKey) => {
-              const subcategory = groupedProjectsBySubcategory[subcategoryKey];
+              const subcategory = groupedProjectsBySubcategory[subcategoryKey]!;
               return (
                 <div key={subcategoryKey} id={`projects-${subcategoryKey}`}>
                   <Link
@@ -148,7 +148,7 @@ export const Projects = ({
                     href={`#projects-${subcategoryKey}`}
                   >
                     <div>{subcategory.title}</div>
-                    <span className="min-h-6 min-w-6 flex items-center justify-center rounded-full bg-white/20 p-1 px-3 text-center text-xs text-white/50 group-hover:hidden">
+                    <span className="flex min-h-6 min-w-6 items-center justify-center rounded-full bg-white/20 p-1 px-3 text-center text-xs text-white/50 group-hover:hidden">
                       {subcategory.projects.length}
                     </span>
                     <LinkIcon className="hidden h-4 w-4 group-hover:flex" />

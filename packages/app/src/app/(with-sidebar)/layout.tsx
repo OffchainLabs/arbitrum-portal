@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react'
+import { PropsWithChildren, Suspense } from 'react'
 import Background from '../../components/Background'
 import { Toast } from '@/bridge/components/common/atoms/Toast'
 import { AppSidebar } from '@/portal/components/AppSidebar'
@@ -11,7 +11,9 @@ export default function WithSidebarLayout({ children }: PropsWithChildren) {
       <Background />
 
       <div className="relative flex">
-        <AppSidebar />
+        <Suspense>
+          <AppSidebar />
+        </Suspense>
 
         <div className="relative flex w-full flex-col">
           <SiteBanner>

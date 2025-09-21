@@ -213,7 +213,9 @@ export const DyorChecklist = ({
       <div className="z-20 flex h-full w-full flex-col gap-4">
         {content
           .filter(
-            (section) => !section.denyCategories.includes(projectCategory),
+            (section) =>
+              projectCategory &&
+              !section.denyCategories.includes(projectCategory),
           )
           .map((section) => {
             const isExpanded = expandedSections[section.id] || false;

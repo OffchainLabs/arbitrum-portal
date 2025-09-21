@@ -68,9 +68,9 @@ export const SitewideSearchBar = () => {
       if (focusIndex >= pageSize - 1 || focusIndex === -1) {
         // Enter is pressed on `Show all` button
         handleShowAllResults();
-      } else {
+      } else if (searchResults[focusIndex]?.item) {
         // Select the option
-        handleSelection(searchResults[focusIndex].item);
+        handleSelection(searchResults[focusIndex]?.item);
       }
     } else if (e.key === 'Escape' && !isSearchPage) {
       // in case of Esc, clear search which will close popup

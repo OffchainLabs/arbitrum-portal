@@ -188,7 +188,7 @@ export const getProjectDetailsById = (id: string) => {
   if (id === 'dummy-project') {
     return ARCADE_LOCKED_PROJECT_DETAILS;
   }
-  return projectKeyToIndexMap[id] > -1
+  return typeof projectKeyToIndexMap[id] === 'number'
     ? PROJECTS[projectKeyToIndexMap[id]]
     : null;
 };

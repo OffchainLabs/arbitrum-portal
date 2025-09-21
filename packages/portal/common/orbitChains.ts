@@ -2,9 +2,7 @@
 
 import orbitChainsJson from '@/public/__auto-generated-orbitChains.json';
 import { OrbitChain, SearchableData, EntityType, PortalStats } from './types';
-import statsJson from '@/public/__auto-generated-stats.json';
-
-const orbitChainsTvl = (statsJson.content as PortalStats).orbitChainsTvl;
+import { PORTAL_DATA_ENDPOINT } from './constants';
 
 const orbitChainKeyToIndexMap: { [id: string]: number } = {}; // mapping of [orbitChainsKey]=>{..index in ORBIT_CHAINs array}
 export const ORBIT_CHAINS: SearchableData<OrbitChain>[] = []; // complete orbit chains' list
@@ -36,9 +34,8 @@ notionOrbitChains
   });
 
 export const getOrbitChainDetailsById = (id: string) => {
-  return orbitChainKeyToIndexMap[id] > -1
-    ? ORBIT_CHAINS[orbitChainKeyToIndexMap[id]]
-    : null;
+  const index = orbitChainKeyToIndexMap[id];
+  return typeof index === 'number' ? ORBIT_CHAINS[index] : null;
 };
 
 type OrbitChainsGroupedByCategorySlug = {
@@ -49,7 +46,7 @@ export const orbitChainsGroupedByCategorySlug = ORBIT_CHAINS.reduce(
   (groupedResult: OrbitChainsGroupedByCategorySlug, orbitChain) => {
     if (!groupedResult[orbitChain.categoryId])
       groupedResult[orbitChain.categoryId] = [];
-    groupedResult[orbitChain.categoryId].push(orbitChain);
+    groupedResult[orbitChain.categoryId]!.push(orbitChain);
     return groupedResult;
   },
   {},
@@ -100,7 +97,9 @@ const transformStringToTvlStatsKey = (str: string) => {
     .replace(/ chain/g, '');
 };
 
-export const getTvlForOrbitChain = (slug: string): number | undefined => {
+export const getTvlForOrbitChain = async (
+  slug: string,
+): Promise<number | undefined> => {
   const orbitChainDetails = getOrbitChainDetailsById(slug);
   if (!orbitChainDetails) return undefined;
 
@@ -108,6 +107,10 @@ export const getTvlForOrbitChain = (slug: string): number | undefined => {
   const transformedTitle = transformStringToTvlStatsKey(
     orbitChainDetails.title,
   );
+  const statsJson = await fetch(
+    `${PORTAL_DATA_ENDPOINT}/__auto-generated-stats.json`,
+  ).then((res) => res.json());
+  const orbitChainsTvl = (statsJson.content as PortalStats).orbitChainsTvl;
 
   return (
     orbitChainsTvl[slug] ??

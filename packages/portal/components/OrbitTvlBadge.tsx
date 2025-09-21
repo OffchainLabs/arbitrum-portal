@@ -4,8 +4,8 @@ import { getTvlForOrbitChain } from '@/common/orbitChains';
 
 const formatter = Intl.NumberFormat('en', { notation: 'compact' });
 
-export const OrbitTvlBadge = ({ slug }: { slug: string }) => {
-  const tvl = useMemo(() => getTvlForOrbitChain(slug), [slug]);
+export const OrbitTvlBadge = async ({ slug }: { slug: string }) => {
+  const tvl = await useMemo(() => getTvlForOrbitChain(slug), [slug]);
 
   if (!tvl) return null;
 

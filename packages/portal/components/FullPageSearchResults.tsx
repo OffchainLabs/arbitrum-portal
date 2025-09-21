@@ -97,7 +97,7 @@ export const FullPageSearchResults = ({
     projectsCount + categoriesCount + subcategoriesCount + orbitChainsCount;
 
   const showOrbitChainsBeforeProjects =
-    searchResults[0].item.entityType === EntityType.OrbitChain;
+    searchResults[0]!.item.entityType === EntityType.OrbitChain;
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -126,7 +126,7 @@ export const FullPageSearchResults = ({
                   ? 'Categories'
                   : 'Category'}
               </div>
-              <span className="min-h-6 min-w-6 flex items-center justify-center rounded-full bg-white/20 p-1 px-3 text-center text-xs text-white/50">
+              <span className="flex min-h-6 min-w-6 items-center justify-center rounded-full bg-white/20 p-1 px-3 text-center text-xs text-white/50">
                 {categoriesCount + subcategoriesCount}
               </span>
             </div>

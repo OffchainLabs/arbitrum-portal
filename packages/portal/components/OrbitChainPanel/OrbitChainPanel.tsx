@@ -11,9 +11,9 @@ import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import IconLink from '@/public/images/link.svg';
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
-import { EntityType } from '@/common/types';
+import { EcosystemMission, EntityType } from '@/common/types';
 import { LinksWidget } from '@/components/ProjectPanel/LinksWidget';
-import { MISSIONS } from '@/common/missions';
+import { getMissions } from '@/common/missions';
 import { MissionCard } from '@/components/Missions/MissionCard';
 import { ProjectsOnOrbitChain } from './ProjectsOnOrbitChain';
 import { OrbitTeamMembers } from './OrbitTeamMembers';
@@ -21,6 +21,7 @@ import { OrbitChainDetailsTable } from './OrbitChainDetailsTable';
 import { OrbitStatusBadge } from '@/components/OrbitStatusBadge';
 import { OrbitTvlBadge } from '@/components/OrbitTvlBadge';
 import { DisclaimerWidget } from '@/components/ProjectPanel/DisclaimerWidget';
+import { useEffect, useState } from 'react';
 
 export const OrbitChainPanel = () => {
   const posthog = usePostHog();
@@ -28,12 +29,22 @@ export const OrbitChainPanel = () => {
   const { closeEntitySidePanel: closeOrbitSidePanel } = useEntitySidePanel(
     EntityType.OrbitChain,
   );
+  const [missions, setMissions] = useState<EcosystemMission[]>([]);
+
+  useEffect(() => {
+    getMissions().then((data) => setMissions(data));
+  }, []);
+
   const orbitChain = getOrbitChainDetailsById(orbitChainSlug);
 
   // if no orbitChain corresponds to the one passed in query params then no need of this dialog
   if (!orbitChain) return null;
 
-  const relatedMissions = MISSIONS.filter((mission) => {
+  if (!missions) {
+    return null;
+  }
+
+  const relatedMissions = missions.filter((mission) => {
     return mission.teamsInvolved.some(
       (teamName) => teamName.toLowerCase() === orbitChain.title.toLowerCase(),
     );

@@ -40,7 +40,7 @@ export const useSearch = () => {
 
   const searchStringInUrl = useMemo(() => {
     return isSearchPage
-      ? decodeURIComponent(pathname.split('/search/')[1])
+      ? decodeURIComponent(pathname.split('/search/')?.[1] || '')
       : '';
   }, [isSearchPage, pathname]);
 
