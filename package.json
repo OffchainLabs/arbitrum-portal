@@ -65,7 +65,7 @@
     "typescript": "^5.2.2",
     "@types/node": "^16.6.1",
     "@types/react": "^18.2.6",
-    "@types/react-dom": "^18.2.4"
+    "@types/react-dom": "^18.2.10"
   },
   "config": {
     "chromeVersion": "128.0.6613.137",
