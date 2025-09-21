@@ -86,10 +86,8 @@ export const SitewideSearchBar = () => {
         document.body.scrollTop > scrollDownThreshold ||
         document.documentElement.scrollTop > scrollDownThreshold
       ) {
-        console.log('ADD');
         stickyNav?.classList.add('bg-black/80');
       } else {
-        console.log('REMOVE');
         stickyNav?.classList.remove('bg-black/80');
       }
     };
