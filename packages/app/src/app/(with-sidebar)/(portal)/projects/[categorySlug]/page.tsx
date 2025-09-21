@@ -1,19 +1,19 @@
-import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { Projects } from '@/components/Projects';
-import { CategoryPageBanner } from '@/components/CategoryPageBanner';
-import { CategoryPageDescription } from '@/components/CategoryPageDescription';
-import { getCategoryDetailsById } from '@/common/categories';
-import { useFilteredProjects } from '@/hooks/useFilteredProjects';
-import { getMetaData } from '@/common/getMetaData';
+import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { Projects } from '@/portal/components/Projects'
+import { CategoryPageBanner } from '@/portal/components/CategoryPageBanner'
+import { CategoryPageDescription } from '@/portal/components/CategoryPageDescription'
+import { getCategoryDetailsById } from '@/portal/common/categories'
+import { useFilteredProjects } from '@/portal/hooks/useFilteredProjects'
+import { getMetaData } from '@/portal/common/getMetaData'
 import {
   ServerSideAppProps,
-  getServerSideAppParams,
-} from '@/common/getServerSideAppParams';
+  getServerSideAppParams
+} from '@/portal/common/getServerSideAppParams'
 
 // Generate server-side metadata for this page
 export function generateMetadata(props: ServerSideAppProps): Metadata {
-  return getMetaData(props);
+  return getMetaData(props)
 }
 
 export default function Page(props: ServerSideAppProps) {
@@ -21,20 +21,20 @@ export default function Page(props: ServerSideAppProps) {
     selectedCategory,
     selectedSubcategories,
     selectedChains,
-    selectedSort,
-  } = getServerSideAppParams(props);
+    selectedSort
+  } = getServerSideAppParams(props)
 
-  const categoryMetaData = getCategoryDetailsById(selectedCategory);
+  const categoryMetaData = getCategoryDetailsById(selectedCategory)
 
   const projects = useFilteredProjects({
     selectedCategory,
     selectedSubcategories,
-    selectedChains,
-  });
+    selectedChains
+  })
 
   if (!categoryMetaData) {
     // no category data found (eg. invalid category slug in url), redirect back to homepage
-    redirect('/projects');
+    redirect('/projects')
   }
 
   return (
@@ -50,5 +50,5 @@ export default function Page(props: ServerSideAppProps) {
         selectedSort={selectedSort}
       />
     </>
-  );
+  )
 }

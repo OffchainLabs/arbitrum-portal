@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
-import { ArbitrumStatus } from '@/common/types';
-import { HeroBanner } from '@/components/Build/HeroBanner';
-import { BuildSection } from '@/components/Build/BuildSection';
-import { Explorers } from '@/components/Build/Explorers';
-import { NetworkStatus } from '@/components/Build/NetworkStatus';
+import { ArbitrumStatus } from '@/portal/common/types';
+import { HeroBanner } from '@/portal/components/Build/HeroBanner';
+import { BuildSection } from '@/portal/components/Build/BuildSection';
+import { Explorers } from '@/portal/components/Build/Explorers';
+import { NetworkStatus } from '@/portal/components/Build/NetworkStatus';
 
 const metadataContent = {
   title: 'Build with Arbitrum',

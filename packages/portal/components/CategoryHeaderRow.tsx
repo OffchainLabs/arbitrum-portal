@@ -1,5 +1,5 @@
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useArbQueryParams } from 'hooks/useArbQueryParams';
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { Dispatch, SetStateAction, useMemo } from 'react';
 import { usePostHog } from 'posthog-js/react';
 
