@@ -1,13 +1,13 @@
-import { Metadata } from 'next';
-import { MissionsFAQs } from '@/components/Missions/MissionsFAQs';
-import { Card } from '@/components/Card';
-import { MissionsList } from '../../components/Missions/MissionsList';
+import { Metadata } from 'next'
+import { MissionsFAQs } from '@/portal/components/Missions/MissionsFAQs'
+import { Card } from '@/portal/components/Card'
+import { MissionsList } from '@/portal/components/Missions/MissionsList'
 
 const metadataContent = {
   title: 'Arbitrum Ecosystem Missions',
   description:
-    'Welcome to Ecosystem Missions! Dive into Arbitrum — quests, campaigns, and community events await.',
-};
+    'Welcome to Ecosystem Missions! Dive into Arbitrum — quests, campaigns, and community events await.'
+}
 
 // Generate server-side metadata for this page
 export function generateMetadata(): Metadata {
@@ -18,21 +18,21 @@ export function generateMetadata(): Metadata {
       title: metadataContent.title,
       description: metadataContent.description,
       locale: 'en_US',
-      type: 'website',
+      type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
       title: metadataContent.title,
-      description: metadataContent.description,
-    },
-  };
+      description: metadataContent.description
+    }
+  }
 }
 
 type OptionalMissionsPageParams = {
   searchParams: {
-    project?: string;
-  };
-};
+    project?: string
+  }
+}
 
 export default function MissionsPage(params: OptionalMissionsPageParams) {
   return (
@@ -60,5 +60,5 @@ export default function MissionsPage(params: OptionalMissionsPageParams) {
         <MissionsFAQs />
       </div>
     </div>
-  );
+  )
 }
