@@ -32,7 +32,7 @@ export const useDyorProjects = () => {
         posthog?.capture('Project DYOR option selected', analyticsProps);
       }
     },
-    [globalDyorState],
+    [globalDyorState, posthog, setGlobalDyorState],
   );
 
   const unselectDyorItem = useCallback(
@@ -47,13 +47,13 @@ export const useDyorProjects = () => {
         posthog?.capture('Project DYOR option unselected', analyticsProps);
       }
     },
-    [globalDyorState],
+    [globalDyorState, posthog, setGlobalDyorState],
   );
 
   const isProjectDyorInProgress = (projectId: string) => {
     return (
       Object.keys(globalDyorState).includes(projectId) &&
-      globalDyorState[projectId].length > 0
+      globalDyorState[projectId]!.length > 0
     );
   };
 

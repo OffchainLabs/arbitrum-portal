@@ -28,11 +28,13 @@ export const ArcadeWeekPlan = ({
   className,
   gridClassName,
 }: {
-  arcadeWeek: ArcadeWeeklyPlan;
+  arcadeWeek?: ArcadeWeeklyPlan;
   locked?: boolean;
   className?: string;
   gridClassName?: string;
 }) => {
+  if (!arcadeWeek) return null;
+
   return (
     <div className={twMerge('relative flex flex-col gap-4', className)}>
       <div className="text-3xl">{arcadeWeek.title}</div>

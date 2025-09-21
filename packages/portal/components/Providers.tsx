@@ -1,5 +1,5 @@
 'use client';
-
+import { Suspense } from 'react';
 import posthog from 'posthog-js';
 import { PropsWithChildren } from 'react';
 import NextAdapterApp from 'next-query-params/app';
@@ -29,13 +29,15 @@ if (
 
 export const Providers = ({ children }: PropsWithChildren) => {
   return (
-    <PostHogProvider client={posthog}>
-      <QueryParamProvider
-        adapter={NextAdapterApp}
-        options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
-      >
-        {children}
-      </QueryParamProvider>
-    </PostHogProvider>
+    <Suspense>
+      <PostHogProvider client={posthog}>
+        <QueryParamProvider
+          adapter={NextAdapterApp}
+          options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
+        >
+          {children}
+        </QueryParamProvider>
+      </PostHogProvider>
+    </Suspense>
   );
 };

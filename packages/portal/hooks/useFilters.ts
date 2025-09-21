@@ -95,7 +95,7 @@ export const useFilters = () => {
     // 4. Else, One category is selected - fully or partially.
     // From the One category selected, check if the selected subcategories contain ALL the possible subcategories
     const finalSubcategoryList = Object.keys(
-      filtersMap[Object.keys(filtersMap)[0]],
+      filtersMap[Object.keys(filtersMap)[0]!] || {},
     ).sort(sortBySubcategoryRank);
 
     const isOneCategoryCompletelySelected =

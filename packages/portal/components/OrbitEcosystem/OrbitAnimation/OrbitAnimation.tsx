@@ -5,7 +5,7 @@ import './orbitAnimation.css';
 import { ORBIT_CHAINS } from '@/common/orbitChains';
 
 const getRandomOrbiChainImage = () =>
-  ORBIT_CHAINS[Math.floor(Math.random() * (ORBIT_CHAINS.length - 1))].images
+  ORBIT_CHAINS[Math.floor(Math.random() * (ORBIT_CHAINS.length - 1))]?.images
     .logoUrl;
 
 const iconsize = 50;

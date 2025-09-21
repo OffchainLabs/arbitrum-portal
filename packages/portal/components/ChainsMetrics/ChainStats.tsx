@@ -1,14 +1,17 @@
 import { Card } from '@/components/Card';
 import { PortalStats } from '@/common/types';
 import { dayjs, DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
-import statsJson from '@/public/__auto-generated-stats.json';
+import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
 
 const formatter = Intl.NumberFormat('en', { notation: 'compact' });
 
-const statsGeneratedOn = statsJson.meta.timestamp;
-const stats = statsJson.content as PortalStats;
+export const ChainStats = async () => {
+  const statsJson = await fetch(
+    `${PORTAL_DATA_ENDPOINT}/__auto-generated-stats.json`,
+  ).then((res) => res.json());
+  const statsGeneratedOn = statsJson.meta.timestamp;
+  const stats = statsJson.content as PortalStats;
 
-export const ChainStats = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col justify-between lg:flex-row lg:items-end">

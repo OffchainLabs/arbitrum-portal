@@ -12,7 +12,7 @@ import { Category, Subcategory } from '@/common/types';
 import { CATEGORY_TO_SUBCATEGORIES } from '@/common/categories';
 
 const isValidUrlCategory = (cat: string) =>
-  !!(cat.length && CATEGORY_TO_SUBCATEGORIES[cat]?.length > 0);
+  !!((cat.length && CATEGORY_TO_SUBCATEGORIES[cat]?.length) || 0 > 0);
 
 export const CategorySection = ({ category }: { category: Category }) => {
   const { selectedCategory: urlCategory } = useSelectedCategory();
@@ -27,21 +27,24 @@ export const CategorySection = ({ category }: { category: Category }) => {
   const selectedSubcategories = useMemo(
     () =>
       isValidUrlCategory(urlCategory)
-        ? [...urlSubcategories, ...CATEGORY_TO_SUBCATEGORIES[urlCategory]]
+        ? [
+            ...urlSubcategories,
+            ...(CATEGORY_TO_SUBCATEGORIES[urlCategory] || []),
+          ]
         : urlSubcategories,
     [urlSubcategories, urlCategory],
   );
 
   const isEverySubcategorySelected =
     urlCategory === category.slug ||
-    subcategoriesInThisCategory.every((subcategory) =>
+    (subcategoriesInThisCategory || []).every((subcategory) =>
       selectedSubcategories.includes(subcategory),
     );
 
   const selectedSubcategoriesWithinCategory: Subcategory[] =
     isEverySubcategorySelected
       ? category.subcategories
-      : subcategoriesInThisCategory.reduce(
+      : (subcategoriesInThisCategory || []).reduce(
           (subcategoryObjectList, subcategorySlug) => {
             // find selected subcategories from the url query param list
             if (selectedSubcategories.includes(subcategorySlug)) {
@@ -67,7 +70,7 @@ export const CategorySection = ({ category }: { category: Category }) => {
     const resultingSubcategories = [
       ...(urlSubcategories || []), // already present subcategories in URL,
       ...(CATEGORY_TO_SUBCATEGORIES[urlCategory] || []), // if complete parent category selected, it's subcategories
-      ...CATEGORY_TO_SUBCATEGORIES[category.slug], // plus the current one
+      ...(CATEGORY_TO_SUBCATEGORIES[category.slug] || []), // plus the current one
     ];
 
     setFiltersInUrl(resultingSubcategories);
@@ -82,10 +85,10 @@ export const CategorySection = ({ category }: { category: Category }) => {
     const resultingSubcategories = [
       ...(urlSubcategories || []), // already present subcategories in URL,
       ...(CATEGORY_TO_SUBCATEGORIES[urlCategory] || []), // if complete parent category selected, it's subcategories
-      ...CATEGORY_TO_SUBCATEGORIES[category.slug], // plus the current one
+      ...(CATEGORY_TO_SUBCATEGORIES[category.slug] || []), // plus the current one
     ].filter((selectedSubcategory) => {
       return (
-        !subcategoriesInThisCategory.includes(selectedSubcategory) &&
+        !(subcategoriesInThisCategory || []).includes(selectedSubcategory) &&
         urlCategory !== category.slug.toLowerCase()
       );
     });

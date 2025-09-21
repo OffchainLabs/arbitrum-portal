@@ -47,7 +47,7 @@ export const CommunitySpotlight = ({
 
   if (entitySlugs.length === 1) {
     // if only 1 entity is present - show that spanning full page width
-    const entityDetails = getDetailsById(entitySlugs[0]);
+    const entityDetails = getDetailsById(entitySlugs[0]!);
     if (!entityDetails) return null;
     return (
       <TitleWrapper title={title}>

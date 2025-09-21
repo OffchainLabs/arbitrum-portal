@@ -6,8 +6,8 @@ import { PROJECTS } from '@/common/projects';
 function shuffleArray<T>(array: T[]): T[] {
   for (var i = array.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
+    var temp = array[i]!;
+    array[i] = array[j]!;
     array[j] = temp;
   }
   return array;
@@ -17,7 +17,7 @@ function shuffleArray<T>(array: T[]): T[] {
 function inflateArrayToSize<T>(array: T[], size: number): T[] {
   for (let i = array.length - 1; i < size; i++) {
     const randomIndex = Math.floor(array.length * Math.random());
-    array.push(array[randomIndex]);
+    array.push(array[randomIndex]!);
   }
   return array;
 }
