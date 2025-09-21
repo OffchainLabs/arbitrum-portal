@@ -1,16 +1,19 @@
 import { PropsWithChildren } from 'react'
 import Background from '../../components/Background'
 import { Toast } from '@/bridge/components/common/atoms/Toast'
-import { AppSidebar } from '@/bridge/components/Sidebar/AppSidebar'
+import { AppSidebar } from '@/portal/components/AppSidebar'
 import { SiteBanner } from '@/bridge/components/common/SiteBanner'
 import { BellAlertIcon } from '@heroicons/react/24/outline'
 
 export default function WithSidebarLayout({ children }: PropsWithChildren) {
   return (
-    <Background>
-      <div className="flex h-screen w-full overflow-hidden">
+    <>
+      <Background />
+
+      <div className="relative flex">
         <AppSidebar />
-        <main className="flex h-full flex-1 flex-col overflow-y-auto">
+
+        <div className="relative flex w-full flex-col">
           <SiteBanner>
             <div className="text-center">
               <BellAlertIcon className="mr-1 inline-block h-4 w-4 text-white" />
@@ -29,9 +32,10 @@ export default function WithSidebarLayout({ children }: PropsWithChildren) {
           </SiteBanner>
 
           {children}
-        </main>
+        </div>
+
+        <Toast />
       </div>
-      <Toast />
-    </Background>
+    </>
   )
 }
