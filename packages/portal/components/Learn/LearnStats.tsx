@@ -3,15 +3,12 @@ import { Card } from '@/components/Card';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { PortalStats } from '@/common/types';
 import { DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
-import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
+import statsJson from '@/public/__auto-generated-stats.json';
 
-export const LearnStats = async () => {
-  const statsJson = await fetch(
-    `${PORTAL_DATA_ENDPOINT}/__auto-generated-stats.json`,
-  ).then((res) => res.json());
-  const statsGeneratedOn = statsJson.meta.timestamp;
-  const stats = statsJson.content as PortalStats;
+const statsGeneratedOn = statsJson.meta.timestamp;
+const stats = statsJson.content as PortalStats;
 
+export const LearnStats = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col justify-between lg:flex-row lg:items-end">
