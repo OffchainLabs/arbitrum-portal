@@ -5,6 +5,8 @@ import { dayjs, DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
 import { ORBIT_CHAINS } from '@/common/orbitChains';
 import { EntityType, OrbitChain, PortalStats } from '@/common/types';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
+import chainMetricsJson from '@/public/__auto-generated-chain-metrics.json';
+import statsJson from '@/public/__auto-generated-stats.json';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -20,7 +22,6 @@ import { FilterPanel, GAS_SPEED_LIMIT_BUCKETS } from './FilterPanel';
 import { Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { Popover } from '@headlessui/react';
-import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
 
 type ChainData = {
   slug: string;
@@ -103,6 +104,9 @@ const tpsFormatter = new Intl.NumberFormat('en-US', {
 const smallNumberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 3,
 });
+
+// Get portal stats from the json file
+const portalStats: PortalStats = statsJson.content as PortalStats;
 
 // Category name mapping with proper capitalization and spacing
 const CATEGORY_NAME_MAP: Record<string, string> = {
@@ -259,61 +263,38 @@ const Toast = ({ show, message, onClose }: { show: boolean; message: string; onC
   );
 };
 
-type ChainMetrics = {
-  meta: {
-    timestamp: string;
-  };
-  content: {
-    content: ChainData[];
-  };
-  lastUpdated: string
-};
 export const ChainsTable = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [chainMetricsJson, setChainMetricsJson] = useState<ChainMetrics | null>(null);
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      const data = await fetch(
-        `${PORTAL_DATA_ENDPOINT}/__auto-generated-chain-metrics.json`,
-      ).then(res => res.json());
-      setChainMetricsJson(data);
-    };
-    fetchMetrics();
-  }, []);
   
   // Create combined data from orbit chains and metrics
   const chainsData = useMemo(() => {
-    if (!chainMetricsJson) return [];
-
     // Create metrics lookup map
     const metricsMap = new Map(
-      chainMetricsJson.content.content.map((metric) => [
+      chainMetricsJson.content.content.map(metric => [
         metric.slug,
-        { ...metric, status: metric.status as 'active' | 'coming_soon' },
-      ]),
+        { ...metric, status: metric.status as 'active' | 'coming_soon' }
+      ])
     );
 
     // Prepare ARB networks with consistent data structure
-    const preparedArbNetworks = ARB_NETWORKS.map((network) => ({
+    const preparedArbNetworks = ARB_NETWORKS.map(network => ({
       ...network,
       categoryId: 'General',
       chain: {
         token: 'ETH',
         type: network.slug === 'arbitrum-one' ? 'Rollup' : 'AnyTrust',
-      },
+      }
     }));
 
     // Combine and transform all chains
     return [...preparedArbNetworks, ...ORBIT_CHAINS]
-      .map((chain) => {
+      .map(chain => {
         const metrics = metricsMap.get(chain.slug);
         if (!metrics) return null;
 
-        const isOrbitChain =
-          'entityType' in chain && chain.entityType === EntityType.OrbitChain;
-
+        const isOrbitChain = 'entityType' in chain && chain.entityType === EntityType.OrbitChain;
+        
         // Extract common data
         const commonData = {
           slug: metrics.slug,
@@ -323,21 +304,21 @@ export const ChainsTable = () => {
           tps: metrics.tps || 0,
           gasSpeedLimitPerSecond: metrics.gasSpeedLimitPerSecond || null,
         };
-
+        
         if (isOrbitChain) {
           const orbitChain = chain as OrbitChain;
-
+          
           // Keep original gas token for display, but add gasTokenType for filtering
           let gasToken = orbitChain.chain?.token || 'OTHER';
           if (gasToken === '-') gasToken = 'OTHER';
-
+          
           // Determine token type for filtering (ETH or OTHER)
           let gasTokenType = gasToken.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER';
-
+          
           // Handle data availability, replacing '-' with meaningful value
           let dataAvailability = orbitChain.chain?.type || 'Unknown';
           if (dataAvailability === '-') dataAvailability = 'Unknown';
-
+          
           return {
             ...commonData,
             category: orbitChain.categoryId,
@@ -355,8 +336,7 @@ export const ChainsTable = () => {
             ...commonData,
             category: arbNetwork.categoryId,
             gasToken: arbNetwork.chain.token,
-            gasTokenType:
-              arbNetwork.chain.token.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER',
+            gasTokenType: arbNetwork.chain.token.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER',
             dataAvailability: arbNetwork.chain.type,
             features: [],
             logoUrl: arbNetwork.logoUrl || '',
@@ -366,7 +346,7 @@ export const ChainsTable = () => {
         }
       })
       .filter(Boolean) as ChainData[];
-  }, [chainMetricsJson]);
+  }, []);
 
   // Initialize state from URL params or defaults
   const [sortField, setSortField] = useState<keyof ChainData>(() => {
