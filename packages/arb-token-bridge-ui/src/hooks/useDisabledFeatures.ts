@@ -8,10 +8,11 @@ export const useDisabledFeatures = () => {
     (feature: DisabledFeatures) => {
       // disable withdrawals to non-arbitrum chains, and batch transfers in embed mode
       if (
-        feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS ||
-        feature === DisabledFeatures.BATCH_TRANSFERS
+        (feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS ||
+          feature === DisabledFeatures.BATCH_TRANSFERS) &&
+        typeof mode !== 'undefined'
       ) {
-        return typeof mode !== 'undefined'
+        return true
       }
 
       return (disabledFeatures as readonly DisabledFeatures[]).includes(feature)
