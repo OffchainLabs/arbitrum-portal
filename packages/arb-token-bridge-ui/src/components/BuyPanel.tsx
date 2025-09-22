@@ -322,3 +322,5 @@ export function BuyPanel() {
     </div>
   )
 }
+
+// testing widget
