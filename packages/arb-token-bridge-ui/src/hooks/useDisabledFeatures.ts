@@ -1,8 +1,10 @@
 import { useCallback } from 'react'
 import { useArbQueryParams, DisabledFeatures } from './useArbQueryParams'
+import { usePathname } from 'next/navigation'
 
 export const useDisabledFeatures = () => {
-  const [{ disabledFeatures, mode }] = useArbQueryParams()
+  const [{ disabledFeatures }] = useArbQueryParams()
+  const pathname = usePathname()
 
   const isFeatureDisabled = useCallback(
     (feature: DisabledFeatures) => {
@@ -10,7 +12,7 @@ export const useDisabledFeatures = () => {
       if (
         (feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS ||
           feature === DisabledFeatures.BATCH_TRANSFERS) &&
-        mode === 'embed'
+        pathname.includes('embed')
       ) {
         return true
       }
