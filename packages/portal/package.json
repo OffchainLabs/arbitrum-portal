@@ -11,7 +11,8 @@
     "notion:generate:orbit": "yarn ts-node-with-config scripts/generateOrbit.ts",
     "check:links": "yarn ts-node-with-config scripts/brokenLinkChecker.ts",
     "generate:stats": "yarn ts-node-with-config scripts/generateStats.ts",
-    "generate:chain-metrics": "yarn ts-node-with-config scripts/generateChainMetrics.ts"
+    "generate:chain-metrics": "yarn ts-node-with-config scripts/generateChainMetrics.ts",
+    "fetch:data": "yarn node scripts/fetch-data.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.15",
