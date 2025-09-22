@@ -201,8 +201,7 @@ async function sanitizeAndRedirect(searchParams: {
 
   const sanitizedChainIds = sanitizeQueryParams({
     sourceChainId,
-    destinationChainId,
-    disableTransfersToNonArbitrumChains: mode === ModeParamEnum.EMBED
+    destinationChainId
   })
   const sanitized = {
     ...sanitizedChainIds,
