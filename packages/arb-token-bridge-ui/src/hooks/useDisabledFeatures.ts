@@ -10,7 +10,7 @@ export const useDisabledFeatures = () => {
       if (
         (feature === DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS ||
           feature === DisabledFeatures.BATCH_TRANSFERS) &&
-        typeof mode !== 'undefined'
+        mode === 'embed'
       ) {
         return true
       }
