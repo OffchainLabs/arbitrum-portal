@@ -40,7 +40,7 @@ describe('Batch Deposit', () => {
   it('should show L1 and L2 chains, and ETH correctly', () => {
     cy.login({
       networkType: 'parentChain',
-      url: '/'
+      url: '/bridge'
     })
     cy.findSourceChainButton(getL1NetworkName())
     cy.findDestinationChainButton(getL2NetworkName())

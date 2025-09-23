@@ -184,7 +184,7 @@ describe('Import token', () => {
       it('should import token through URL using its L1 address', () => {
         cy.login({
           networkType: 'parentChain',
-          url: '/',
+          url: '/bridge',
           query: {
             token: ERC20TokenAddressL1
           },
@@ -217,7 +217,7 @@ describe('Import token', () => {
       it('should import token through URL using its L2 address', () => {
         cy.login({
           networkType: 'parentChain',
-          url: '/',
+          url: '/bridge',
           query: {
             token: ERC20TokenAddressL2
           },
@@ -253,14 +253,14 @@ describe('Import token', () => {
       it('should display an error message after invalid URL', () => {
         cy.login({
           networkType: 'parentChain',
-          url: '/',
+          url: '/bridge',
           query: {
             token: invalidTokenAddress
           },
           connectMetamask: false
         })
 
-        visitAfterSomeDelay('/', {
+        visitAfterSomeDelay('/bridge', {
           qs: {
             sourceChain: 'nitro-testnode-l2',
             destinationChain: 'nitro-testnode-l3',
