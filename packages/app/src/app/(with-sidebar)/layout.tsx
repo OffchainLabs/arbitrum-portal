@@ -18,7 +18,7 @@ export default function WithSidebarLayout({ children }: PropsWithChildren) {
         <div className="relative flex w-full flex-col">
           <SiteBanner>
             <div className="text-center">
-              <BellAlertIcon className="mr-1 inline-block h-4 w-4 text-white" />
+              <BellAlertIcon className="mr-[5px] inline-block h-[20px] w-[20px] text-white" />
               <p className="inline text-sm">
                 <strong>URL Update:</strong> Starting Sept 23rd, The official
                 Arbitrum Bridge will redirect from{' '}

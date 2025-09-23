@@ -13,7 +13,6 @@ import { Resources } from '@/components/HomePage/Resources';
 import { NewProjects } from '@/components/HomePage/NewProjects';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
 import { SocialsFooter } from '@/components/SocialsFooter';
-import dynamic from 'next/dynamic';
 import { DripCard } from '@/components/DripCard';
 
 const metadataContent = {
