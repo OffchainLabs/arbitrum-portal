@@ -6,8 +6,6 @@ import { unica } from '@/bridge/components/common/Font'
 import '@/bridge/styles/tailwind.css'
 
 export const metadata: Metadata = {
-  title: 'Arbitrum Token Bridge',
-  description: 'Bridge tokens between Ethereum and Arbitrum networks',
   icons: {
     icon: '/logo.png'
   }

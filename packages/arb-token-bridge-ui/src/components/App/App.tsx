@@ -16,7 +16,6 @@ import { useNetworks } from '../../hooks/useNetworks'
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
 import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics'
 import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams'
-import { Layout } from '../common/Layout'
 import { useTheme } from '../../hooks/useTheme'
 import dynamic from 'next/dynamic'
 import { Loader } from '../common/atoms/Loader'
@@ -134,7 +133,7 @@ const AppProviders = dynamic(
   {
     ssr: false, // use-query-params provider doesn't support SSR
     loading: () => (
-      <div className="bg-black-500 flex h-screen w-screen items-center justify-center">
+      <div className="bg-black-500 flex h-screen w-full items-center justify-center">
         <div className="h-12 w-full lg:h-16" />
         <div className="fixed inset-0 m-auto h-[44px] w-[44px]">
           <Loader size="large" color="white" />
@@ -147,9 +146,7 @@ const AppProviders = dynamic(
 export default function App() {
   return (
     <AppProviders>
-      <Layout>
-        <AppContent />
-      </Layout>
+      <AppContent />
     </AppProviders>
   )
 }

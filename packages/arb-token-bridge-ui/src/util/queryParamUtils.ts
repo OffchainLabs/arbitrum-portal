@@ -41,10 +41,6 @@ export enum DisabledFeatures {
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains'
 }
 
-export enum ModeParamEnum {
-  EMBED = 'embed'
-}
-
 function createTabMappings() {
   if (isOnrampEnabled()) {
     return {
@@ -251,20 +247,6 @@ export const DisabledFeaturesParam = {
     }
 
     return Array.from(dedupedFeatures)
-  }
-}
-
-export const ModeParam = {
-  encode: (mode: ModeParamEnum) => {
-    if (!mode) return undefined
-    return mode
-  },
-  decode: (value: string | (string | null)[] | null | undefined) => {
-    const modeStr = value?.toString()?.toLowerCase()
-    if (modeStr === ModeParamEnum.EMBED) {
-      return modeStr
-    }
-    return undefined
   }
 }
 

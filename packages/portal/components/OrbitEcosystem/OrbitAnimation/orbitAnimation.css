@@ -1,0 +1,40 @@
+.atom-nucleus {
+  background-color: #38b6ff;
+  border-radius: 50%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+}
+
+.electron {
+  background-color: white;
+  border-radius: 50px;
+  left: 50%;
+  position: absolute;
+  top: 0%;
+}
+
+.planet-cyan {
+  background-color: cyan !important;
+}
+
+.nice-shadow {
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+.atom-orbit {
+  border-radius: 50%;
+  position: absolute;
+}
+
+@keyframes spin-right {
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-left {
+  100% {
+    -webkit-transform: rotate(-360deg);
+  }
+}
