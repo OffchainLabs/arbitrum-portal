@@ -38,9 +38,13 @@ export const DripCard = () => {
             </div>
           </div>
 
-          <ExternalLink className="text-xs underline underline-offset-8">
+          <p
+            className={
+              'text-xs underline underline-offset-8 hover:no-underline'
+            }
+          >
             Learn More
-          </ExternalLink>
+          </p>
         </div>
       </div>
     </Card>
