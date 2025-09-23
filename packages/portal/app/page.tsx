@@ -55,16 +55,6 @@ export function generateMetadata(props: ServerSideAppProps): Metadata {
   };
 }
 
-// const DripCard = dynamic(
-//   () => import('@/components/DripCard').then((mod) => mod.DripCard),
-//   {
-//     ssr: false,
-//     loading: () => (
-//       <div className="z-10 flex w-full flex-col justify-around gap-4" />
-//     ),
-//   },
-// );
-
 export default function Home(props: ServerSideAppProps) {
   const { legacyCategories } = getServerSideAppParams(props);
   // if found the deprecated url's of the format /?categories=defi, redirect them to /projects/defi

@@ -18,11 +18,9 @@ export default function SearchPage(props: ServerSideAppProps) {
   const searchResults = getSearchResults(searchString)
 
   return (
-    <>
-      <FullPageSearchResults
-        searchString={searchString}
-        searchResults={searchResults}
-      />
-    </>
+    <FullPageSearchResults
+      searchString={searchString}
+      searchResults={searchResults}
+    />
   )
 }

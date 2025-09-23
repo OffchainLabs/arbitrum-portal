@@ -103,7 +103,7 @@ module.exports = {
       },
       {
         source: '/orbit/launch',
-        destination: 'https://orbit.arbitrum.io/',
+        destination: '/chains/ecosystem',
         permanent: true
       },
       {
