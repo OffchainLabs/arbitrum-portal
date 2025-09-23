@@ -144,7 +144,6 @@ const AppProviders = dynamic(
 )
 
 export default function App() {
-  useTest()
   return (
     <AppProviders>
       <AppContent />
