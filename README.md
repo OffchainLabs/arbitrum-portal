@@ -166,4 +166,4 @@ Read more about the test setup [here](/packages/arb-token-bridge-ui/tests/e2e/RE
 
 This repository is proprietary and requires a license from Offchain Labs, Inc. for any use, reproduction, modification, distribution, or creation of derivative works.
 
-For licensing information, including the Developer Terms of Service, please visit: https://playground.arbitrum.io/bridge
+For licensing information, please email: partnerships@offchainlabs.com
