@@ -93,7 +93,7 @@ export default async function BridgePage({ searchParams }: Props) {
    */
   if (searchParams.sanitized !== 'true') {
     addOrbitChainsToArbitrumSDK()
-    await sanitizeAndRedirect(searchParams)
+    await sanitizeAndRedirect(searchParams, '/bridge')
   }
 
   return (

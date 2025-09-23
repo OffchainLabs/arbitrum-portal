@@ -14,7 +14,7 @@ export default async function EmbededPage({
 }) {
   if (searchParams.sanitized !== 'true') {
     addOrbitChainsToArbitrumSDK()
-    await sanitizeAndRedirect(searchParams)
+    await sanitizeAndRedirect(searchParams, '/bridge/embed')
   }
 
   return (

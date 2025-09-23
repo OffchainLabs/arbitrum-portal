@@ -25,7 +25,8 @@ function getDestinationWithSanitizedQueryParams(
     tab: string
     disabledFeatures: string[] | undefined
   },
-  query: Record<string, string | string[] | undefined>
+  query: Record<string, string | string[] | undefined>,
+  baseUrl: string
 ) {
   const params = new URLSearchParams()
 
@@ -85,12 +86,15 @@ function getDestinationWithSanitizedQueryParams(
   // Run sanitization only once per session
   params.set('sanitized', 'true')
 
-  return `/bridge?${params.toString()}`
+  return `${baseUrl}?${params.toString()}`
 }
 
-export async function sanitizeAndRedirect(searchParams: {
-  [key: string]: string | string[] | undefined
-}) {
+export async function sanitizeAndRedirect(
+  searchParams: {
+    [key: string]: string | string[] | undefined
+  },
+  baseUrl: string
+) {
   const sourceChainId = decodeChainQueryParam(searchParams.sourceChain)
   const destinationChainId = decodeChainQueryParam(
     searchParams.destinationChain
@@ -151,6 +155,8 @@ export async function sanitizeAndRedirect(searchParams: {
       `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`
     )
 
-    redirect(getDestinationWithSanitizedQueryParams(sanitized, searchParams))
+    redirect(
+      getDestinationWithSanitizedQueryParams(sanitized, searchParams, baseUrl)
+    )
   }
 }
