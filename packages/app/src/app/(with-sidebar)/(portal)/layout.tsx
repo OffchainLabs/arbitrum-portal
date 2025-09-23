@@ -9,11 +9,13 @@ import '../../../styles/portal.css'
 
 export default function PortalLayout({ children }: PropsWithChildren) {
   return (
-    <Providers>
-      <MobileHeader />
-      <PortalPage>{children}</PortalPage>
-      <OrbitChainPanel />
-      <ProjectPanel />
-    </Providers>
+    <div className="portal-wrapper">
+      <Providers>
+        <MobileHeader />
+        <PortalPage>{children}</PortalPage>
+        <OrbitChainPanel />
+        <ProjectPanel />
+      </Providers>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  important: '.portal-wrapper',
   content: [
     // Portal specific components
     './app/**/*.{js,ts,jsx,tsx}',

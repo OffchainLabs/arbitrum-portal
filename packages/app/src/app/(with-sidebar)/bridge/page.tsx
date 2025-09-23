@@ -97,7 +97,7 @@ export default async function BridgePage({ searchParams }: Props) {
   }
 
   return (
-    <main className="relative flex h-full flex-1 flex-col overflow-y-auto">
+    <main className="bridge-wrapper relative flex h-full flex-1 flex-col overflow-y-auto">
       <BridgeClient />
     </main>
   )
