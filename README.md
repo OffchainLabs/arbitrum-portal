@@ -1,6 +1,6 @@
 # [Arbitrum Token Bridge](https://bridge.arbitrum.io/)
 
-### The canonical token-bridge of [Arbitrum](https://arbitrum.io/)
+### The canonical token bridge of [Arbitrum](https://arbitrum.io/)
 
 ## Prerequisites for running the code
 
