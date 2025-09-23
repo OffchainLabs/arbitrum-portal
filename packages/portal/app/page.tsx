@@ -13,6 +13,7 @@ import { Resources } from '@/components/HomePage/Resources';
 import { NewProjects } from '@/components/HomePage/NewProjects';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
 import { SocialsFooter } from '@/components/SocialsFooter';
+import dynamic from 'next/dynamic';
 import { DripCard } from '@/components/DripCard';
 
 const metadataContent = {
@@ -54,6 +55,16 @@ export function generateMetadata(props: ServerSideAppProps): Metadata {
     },
   };
 }
+
+// const DripCard = dynamic(
+//   () => import('@/components/DripCard').then((mod) => mod.DripCard),
+//   {
+//     ssr: false,
+//     loading: () => (
+//       <div className="z-10 flex w-full flex-col justify-around gap-4" />
+//     ),
+//   },
+// );
 
 export default function Home(props: ServerSideAppProps) {
   const { legacyCategories } = getServerSideAppParams(props);

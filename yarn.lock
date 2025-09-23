@@ -4472,10 +4472,10 @@
   dependencies:
     "@octokit/openapi-types" "^23.0.1"
 
-"@offchainlabs/cobalt@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@offchainlabs/cobalt/-/cobalt-0.4.0.tgz#d0c8a393cdbe9edd16ffe0eeae7285fc25d18cdb"
-  integrity sha512-Gde0WxX8pyG4K+czGWTngKOsq0rdCZJrB9JSInIaQHCsyA8LeKScIPbgpk+J6clYX2T1QcFTUSX523tdWXH0Bw==
+"@offchainlabs/cobalt@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@offchainlabs/cobalt/-/cobalt-0.5.0.tgz#1c2151b2bbb48ddac5a6d5352c04746f1f98a3d3"
+  integrity sha512-JAFaeVuJGXl5gyZdb+FPYoO08y7RVvAvENPewgoyst/jz9vUiPWfN3BDF89+XbiOD85xqYZKTeH+cnknhq0Vow==
 
 "@offchainlabs/prettier-config@0.2.0":
   version "0.2.0"

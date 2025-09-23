@@ -4,7 +4,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
-import { useLocalStorage } from '@uidotdev/usehooks';
+import { useLocalStorage } from '@rehooks/local-storage';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Card } from '@/components/Card';
 import { BRIDGE_LINK } from '@/common/constants';
