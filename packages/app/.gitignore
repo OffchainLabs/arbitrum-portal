@@ -40,3 +40,6 @@ yarn-error.log*
 # Next.js
 .next
 next-env.d.ts
+
+# Auto-generaeted files
+/public/__auto-generated-*.json
