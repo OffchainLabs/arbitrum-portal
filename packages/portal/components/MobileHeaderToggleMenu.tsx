@@ -5,5 +5,5 @@ import { usePostHog } from 'posthog-js/react';
 
 export const MobileHeaderToggleMenu = () => {
   const posthog = usePostHog();
-  return <MobileSidebar logger={posthog} isPortalHost />;
+  return <MobileSidebar logger={posthog} />;
 };

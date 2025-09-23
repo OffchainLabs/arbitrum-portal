@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocalStorage } from '@uidotdev/usehooks';
+import { useLocalStorage } from '@rehooks/local-storage';
 import { usePostHog } from 'posthog-js/react';
 import { getProjectDetailsById } from '@/common/projects';
 

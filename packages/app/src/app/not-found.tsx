@@ -2,13 +2,16 @@ import Image from 'next/image'
 import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp'
 import Background from '../components/Background'
 import { AppSidebar } from '@/portal/components/AppSidebar'
+import { Suspense } from 'react'
 
 export default function NotFound() {
   return (
     <>
       <Background />
       <div className="relative flex">
-        <AppSidebar />
+        <Suspense>
+          <AppSidebar />
+        </Suspense>
         <div className="flex w-full flex-col items-center space-y-4 px-8 py-4 text-center lg:py-0">
           <span className="text-8xl text-white">404</span>
           <p className="text-3xl text-white">
