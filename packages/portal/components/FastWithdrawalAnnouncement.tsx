@@ -1,5 +1,4 @@
 import { Card } from './Card';
-import { ExternalLink } from './ExternalLink';
 
 export const FastWithdrawalAnnouncement = () => {
   return (
@@ -17,9 +16,9 @@ export const FastWithdrawalAnnouncement = () => {
           </div>
         </div>
 
-        <ExternalLink className="text-xs underline decoration-dashed underline-offset-4">
+        <p className="text-xs underline decoration-dashed underline-offset-4">
           Learn More
-        </ExternalLink>
+        </p>
       </div>
     </Card>
   );
