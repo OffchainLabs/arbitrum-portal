@@ -2,63 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  html {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-
-  body {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-
-  /* Ensure font is applied to all elements unless explicitly overridden */
-  * {
-    font-family: inherit;
-  }
-}
-
 :root {
   --primary: transparent;
   --secondary: #ffffff30;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--secondary) var(--primary);
-}
-
-/* Chrome, Edge, and Safari */
-*::-webkit-scrollbar {
-  width: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--primary);
-  border-radius: 5px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--secondary);
-  border-radius: 14px;
-  border: 3px solid var(--primary);
-}
-
-body {
-  background-color: black;
-}
-
-.one-and-nova-border-gradient {
+.portal .one-and-nova-border-gradient {
   border: 3px double transparent;
   background-image: linear-gradient(white, white),
     linear-gradient(268.93deg, #e57310 0.83%, #1b4add 99.02%);
 
   background-origin: border-box;
   background-clip: padding-box, border-box;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 @keyframes panelSlideInAnimation {

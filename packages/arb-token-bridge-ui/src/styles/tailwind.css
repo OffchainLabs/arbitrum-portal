@@ -18,89 +18,41 @@
   --blue-link: #1366C1;
 }
 
-*:focus-visible, button:focus-visible, input:focus-visible {
+.bridge *:focus-visible, .bridge button:focus-visible, .bridge input:focus-visible {
   outline-color: white !important;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--secondary) var(--primary);
-}
-
-/* Chrome, Edge, and Safari */
-*::-webkit-scrollbar {
-  width: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--primary);
-  border-radius: 5px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--secondary);
-  border-radius: 14px;
-  border: 3px solid var(--primary);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-.tabular-nums {
+.bridge .tabular-nums {
   font-family: var(--font-family, var(--font-unica77), Roboto) !important;
   --tw-numeric-spacing: 0px;
 }
 
-@layer base {
-  html {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-  
-  body {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-  
-  /* Ensure font is applied to all elements unless explicitly overridden */
-  * {
-    font-family: inherit;
-  }
-}
-
-#root,
-body {
-  @apply min-h-screen;
-  @apply bg-black;
-  font-weight: 300;
-}
-
 /*** HIDE NUMBER INPUT STEPS BUTTONS ****/
 /* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
+.bridge input::-webkit-outer-spin-button,
+.bridge input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 /* Firefox */
-input[type='number'] {
+.bridge input[type='number'] {
   -moz-appearance: textfield;
 }
 
-button:focus:not(:focus-visible),
-input:focus:not(:focus-visible) {
+.bridge button:focus:not(:focus-visible),
+.bridge input:focus:not(:focus-visible) {
   outline: none;
 }
 
-button:focus-visible,
-input:focus-visible {
+.bridge button:focus-visible,
+.bridge input:focus-visible {
   box-sizing: border-box;
   outline-offset: -2px;
   outline: 2px solid rgb(0, 95, 204);
 }
 
 /*react error overlay hidden in dev mode while testing network switches which trow errors*/
-body > iframe {
+.bridge iframe {
   display: none !important;
 }
 
@@ -115,20 +67,20 @@ body > iframe {
 }
 
 /* Tippy themes */
-.tippy-box[data-theme='orange'] {
+.bridge .tippy-box[data-theme='orange'] {
   background-color: #ffeed3;
   color: #ffeed3;
 }
 
-.tippy-box[data-theme='orange'] > .tippy-arrow {
+.bridge .tippy-box[data-theme='orange'] > .tippy-arrow {
   color: inherit;
 }
 
-.tippy-box[data-theme='orange'] > .tippy-content {
+.bridge .tippy-box[data-theme='orange'] > .tippy-content {
   color: #60461f;
 }
 
-.tippy-box[data-theme~='dark'] {
+.bridge .tippy-box[data-theme~='dark'] {
   border-radius: 5px;
   border: 1px solid #777;
 }
@@ -136,19 +88,19 @@ body > iframe {
 /*
   Custom
 */
-.arb-hover {
+.bridge .arb-hover {
   @apply transition duration-200 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-4 active:opacity-90 disabled:border-0 disabled:opacity-100;
 }
 
-.hover\:animate-rotate-180:hover {
+.bridge .hover\:animate-rotate-180:hover {
   transform: rotate(180deg);
 }
 
-.focus-visible\:animate-rotate-180:focus-visible {
+.bridge .focus-visible\:animate-rotate-180:focus-visible {
   transform: rotate(180deg);
 }
 
-.bg-gradient-overlay {
+.bridge .bg-gradient-overlay {
   background: linear-gradient(
     179.53deg,
     #000000 19.46%,
@@ -158,7 +110,7 @@ body > iframe {
   );
 }
 
-.text-explore-arbitrum-project-name {
+.bridge .text-explore-arbitrum-project-name {
   text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   -webkit-text-stroke-width: 1px;
   -webkit-text-stroke-color: black;
@@ -167,7 +119,7 @@ body > iframe {
 /*
   animate.css (https://github.com/animate-css/animate.css
 */
-.animate__animated {
+.bridge .animate__animated {
   -webkit-animation-duration: 1s;
   animation-duration: 1s;
   -webkit-animation-duration: 1s;
@@ -209,7 +161,7 @@ body > iframe {
   }
 }
 
-.animate__flipInX {
+.bridge .animate__flipInX {
   -webkit-backface-visibility: visible !important;
   backface-visibility: visible !important;
   -webkit-animation-name: flipInX;
@@ -217,7 +169,7 @@ body > iframe {
 }
 
 @layer utilities {
-  .roundedTabRight[data-headlessui-state~='selected']::after {
+  .bridge .roundedTabRight[data-headlessui-state~='selected']::after {
     height: 15px;
     width: 15px;
     position: absolute;
@@ -230,7 +182,7 @@ body > iframe {
     background-repeat: no-repeat;
   }
 
-  .roundedTabLeft[data-headlessui-state~='selected']::before {
+  .bridge .roundedTabLeft[data-headlessui-state~='selected']::before {
     height: 15px;
     width: 15px;
     position: absolute;
@@ -244,7 +196,7 @@ body > iframe {
     transform: rotateY(180deg);
   }
 
-  .roundedTab:not([data-headlessui-state~='selected']) > img {
+  .bridge .roundedTab:not([data-headlessui-state~='selected']) > img {
     display: none;
   }
 }
