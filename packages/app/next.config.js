@@ -70,6 +70,17 @@ module.exports = {
         destination: '/bridge?destinationChain=:slug',
         permanent: true
       },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'bridge.arbitrum.io'
+          }
+        ],
+        destination: 'https://portal.arbitrum.io/bridge/:path*',
+        permanent: true
+      },
       // Portal
       {
         source: '/one',
