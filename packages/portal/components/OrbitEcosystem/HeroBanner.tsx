@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { Card } from '@/components/Card';
-import { OrbitAnimation } from './OrbitAnimation/OrbitAnimation';
 
 export const HeroBanner = () => {
   return (
@@ -20,10 +19,6 @@ export const HeroBanner = () => {
       </div>
 
       <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-blue from-[65%] to-transparent md:from-[35%] lg:bg-gradient-to-r lg:to-[90%]" />
-
-      <div className="absolute h-full w-full translate-x-[-25%] translate-y-[10%] lg:relative lg:translate-x-[50%] lg:translate-y-[-50%]">
-        <OrbitAnimation />
-      </div>
     </Card>
   );
 };
