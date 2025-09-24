@@ -9,6 +9,7 @@ import { getProjectDetailsById } from './projects';
 import { getCategoryDetailsById } from './categories';
 import { EntityType } from './types';
 import { getOrbitChainDetailsById } from './orbitChains';
+import { PORTAL_DATA_ENDPOINT } from './constants';
 
 const projectsHomePageMeta = {
   url: 'https://portal.arbitrum.io/projects',
@@ -66,7 +67,7 @@ export const getEntityMetaData = (
       : fullDescription;
   })();
 
-  const ogImageUrl = `/images/__auto-generated/open-graph/${entityType}-${entityDetails.slug}.jpg`;
+  const ogImageUrl = `${PORTAL_DATA_ENDPOINT}/images/__auto-generated/open-graph/${entityType}-${entityDetails.slug}.jpg`;
   return {
     title,
     description,
