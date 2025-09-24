@@ -32,6 +32,11 @@ body {
   @apply min-h-screen;
 }
 
+/* react error overlay hidden in dev mode while testing network switches which trow errors */
+body > iframe {
+  display: none !important;
+}
+
 /* Firefox */
 * {
   scrollbar-width: thin;
