@@ -78,7 +78,7 @@ export default [
         'error',
         [
           path.join(__dirname, '/packages/arb-token-bridge-ui/src/components'),
-          path.join(__dirname, '/packages/app/pages')
+          path.join(__dirname, '/packages/app/src')
         ]
       ]
     }

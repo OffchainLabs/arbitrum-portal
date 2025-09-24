@@ -22,57 +22,10 @@
   outline-color: white !important;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--secondary) var(--primary);
-}
-
-/* Chrome, Edge, and Safari */
-*::-webkit-scrollbar {
-  width: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--primary);
-  border-radius: 5px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--secondary);
-  border-radius: 14px;
-  border: 3px solid var(--primary);
-}
-
-* {
-  box-sizing: border-box;
-}
-
 .tabular-nums {
   font-family: var(--font-family, var(--font-unica77), Roboto) !important;
+  font-variant-numeric: var(--font-family, var(--font-unica77), Roboto) !important;
   --tw-numeric-spacing: 0px;
-}
-
-@layer base {
-  html {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-  
-  body {
-    font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
-  }
-  
-  /* Ensure font is applied to all elements unless explicitly overridden */
-  * {
-    font-family: inherit;
-  }
-}
-
-#root,
-body {
-  @apply min-h-screen;
-  @apply bg-black;
-  font-weight: 300;
 }
 
 /*** HIDE NUMBER INPUT STEPS BUTTONS ****/
@@ -97,11 +50,6 @@ input:focus-visible {
   box-sizing: border-box;
   outline-offset: -2px;
   outline: 2px solid rgb(0, 95, 204);
-}
-
-/*react error overlay hidden in dev mode while testing network switches which trow errors*/
-body > iframe {
-  display: none !important;
 }
 
 /* Toast styles */

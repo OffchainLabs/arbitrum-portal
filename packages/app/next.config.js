@@ -20,6 +20,16 @@ module.exports = {
       {
         protocol: 'https',
         hostname: 'portal.arbitrum.io'
+      },
+      {
+        protocol: 'https',
+        hostname: 'blog.arbitrum.io',
+        port: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'portal-data.arbitrum.io',
+        port: ''
       }
     ]
   },
@@ -42,9 +52,10 @@ module.exports = {
   },
   async redirects() {
     return [
+      // Bridge
       {
         source:
-          '/:slug((?!^$|api/|_next/|public/|restricted)(?!.*\\.[^/]+$).+)',
+          '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed)(?!.*\\.[^/]+$).+)',
         missing: [
           {
             type: 'query',
@@ -56,7 +67,59 @@ module.exports = {
             value: 'image/.*'
           }
         ],
-        destination: '/?destinationChain=:slug',
+        destination: '/bridge?destinationChain=:slug',
+        permanent: true
+      },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'bridge.arbitrum.io'
+          }
+        ],
+        destination: 'https://portal.arbitrum.io/bridge/:path*',
+        permanent: true
+      },
+      // Portal
+      {
+        source: '/one',
+        destination: '/?chains=arbitrum-one',
+        permanent: true
+      },
+      {
+        source: '/nova',
+        destination: '/?chains=arbitrum-nova',
+        permanent: true
+      },
+      {
+        source: '/odyssey',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/missions',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/arcade',
+        destination: '/',
+        permanent: true
+      },
+      {
+        source: '/orbit',
+        destination: '/orbit/ecosystem',
+        permanent: true
+      },
+      {
+        source: '/orbit/launch',
+        destination: '/chains/ecosystem',
+        permanent: true
+      },
+      {
+        source: '/orbit/:path*',
+        destination: '/chains/:path*',
         permanent: true
       }
     ]

@@ -1,10 +1,8 @@
-import { useArbQueryParams, ModeParamEnum } from './useArbQueryParams'
+import { usePathname } from 'next/navigation'
 
 export function useMode() {
-  const [{ mode }] = useArbQueryParams()
+  const pathname = usePathname()
+  const embedMode = pathname === '/bridge/embed'
 
-  const embedMode = mode === ModeParamEnum.EMBED
-  // later, we can have other booleans like `embedCompactMode` depending on the requirements
-
-  return { mode, embedMode }
+  return { embedMode }
 }

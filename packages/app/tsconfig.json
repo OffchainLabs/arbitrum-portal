@@ -14,9 +14,12 @@
     "next-env.d.ts",
     "src/app/**/*.ts",
     "src/app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     ".next/types/**/*.ts",
     "*.js",
     "../arb-token-bridge-ui/additional.d.ts",
+    "../portal/additional.d.ts",
     "build/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

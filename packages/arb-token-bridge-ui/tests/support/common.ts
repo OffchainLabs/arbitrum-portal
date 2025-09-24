@@ -167,7 +167,7 @@ export const acceptMetamaskAccess = () => {
 }
 
 export const startWebApp = (
-  url = '/',
+  url = '/bridge',
   options: {
     query: { [s: string]: string }
     connectMetamask: boolean

@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: transparent;
+  --secondary: #ffffff30;
+}
+
+.one-and-nova-border-gradient {
+  border: 3px double transparent;
+  background-image: linear-gradient(white, white),
+    linear-gradient(268.93deg, #e57310 0.83%, #1b4add 99.02%);
+
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+@keyframes panelSlideInAnimation {
+  0% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}

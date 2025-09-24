@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { PropsWithChildren } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { unica } from '@/bridge/components/common/Font'
-
-import '@/bridge/styles/tailwind.css'
+import { BodyClassSyncer } from '../components/BodyClassSyncer'
+import '../styles/common.css'
+import { PORTAL_DATA_ENDPOINT } from '@/common/constants'
 
 export const metadata: Metadata = {
-  title: 'Arbitrum Token Bridge',
-  description: 'Bridge tokens between Ethereum and Arbitrum networks',
+  metadataBase: new URL(PORTAL_DATA_ENDPOINT),
   icons: {
     icon: '/logo.png'
   }
@@ -16,8 +16,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body className={twMerge('relative flex-col bg-black', unica.variable)}>
+      <body className={twMerge('relative bg-black text-white', unica.variable)}>
         {children}
+        <BodyClassSyncer />
       </body>
     </html>
   )

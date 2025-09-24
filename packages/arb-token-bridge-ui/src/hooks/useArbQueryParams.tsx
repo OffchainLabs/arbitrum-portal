@@ -32,7 +32,6 @@ import { defaultTheme } from './useTheme'
 import {
   TabParamEnum,
   DisabledFeatures,
-  ModeParamEnum,
   AmountQueryParamEnum,
   tabToIndex,
   indexToTab,
@@ -42,7 +41,6 @@ import {
   decodeChainQueryParam,
   encodeTabQueryParam,
   decodeTabQueryParam,
-  ModeParam,
   ThemeParam,
   AmountQueryParam,
   sanitizeAmountQueryParam,
@@ -54,7 +52,6 @@ import {
 export {
   TabParamEnum,
   DisabledFeatures,
-  ModeParamEnum,
   AmountQueryParamEnum,
   tabToIndex,
   indexToTab,
@@ -162,7 +159,6 @@ export const queryParamProviderOptions = {
     settingsOpen: withDefault(BooleanParam, false),
     tab: TabParam, // which tab is active
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
-    mode: withDefault(ModeParam, undefined), // mode: 'embed', or undefined for normal mode
     theme: withDefault(ThemeParam, defaultTheme) // theme customization
   }
 } as const satisfies QueryParamOptions
