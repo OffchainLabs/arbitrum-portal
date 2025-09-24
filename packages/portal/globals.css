@@ -7,7 +7,7 @@
   --secondary: #ffffff30;
 }
 
-.portal .one-and-nova-border-gradient {
+.one-and-nova-border-gradient {
   border: 3px double transparent;
   background-image: linear-gradient(white, white),
     linear-gradient(268.93deg, #e57310 0.83%, #1b4add 99.02%);

@@ -20,8 +20,8 @@ export default function WithSidebarLayout({ children }: PropsWithChildren) {
             <div className="text-center">
               <BellAlertIcon className="mr-[5px] inline-block h-[20px] w-[20px] text-white" />
               <p className="inline text-sm">
-                <strong>URL Update:</strong> Starting Sept 23rd, The official
-                Arbitrum Bridge will redirect from{' '}
+                <strong>URL Update:</strong> The official Arbitrum Bridge has
+                moved from{' '}
                 <span className="mr-[3px] inline-block italic underline">
                   bridge.arbitrum.io
                 </span>{' '}
