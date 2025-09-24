@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   }
 }
 
-export default function RootLayout({ children, a }: PropsWithChildren) {
+export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
       <body className={twMerge('relative bg-black text-white', unica.variable)}>
