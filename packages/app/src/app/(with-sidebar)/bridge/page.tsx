@@ -9,6 +9,7 @@ import BridgeClient from './BridgeClient'
 import { addOrbitChainsToArbitrumSDK } from '../../../initialization'
 
 import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect'
+import { PORTAL_DOMAIN } from '@/bridge/constants'
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
@@ -46,7 +47,7 @@ export async function generateMetadata({
 
   const siteTitle = `Bridge to ${destinationChainInfo.name}`
   const siteDescription = `Bridge from ${sourceChainInfo.name} to ${destinationChainInfo.name} using the Arbitrum Bridge. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum's security model. Arbitrum is a Layer 2 Optimistic Rollup.`
-  const siteDomain = 'https://bridge.arbitrum.io'
+  const siteDomain = PORTAL_DOMAIN
 
   let metaImagePath = `${sourceChainInfo.id}-to-${destinationChainInfo.id}.jpg`
 
@@ -64,7 +65,7 @@ export async function generateMetadata({
     title: siteTitle,
     description: siteDescription,
     openGraph: {
-      url: siteDomain,
+      url: `${siteDomain}/bridge`,
       type: 'website',
       title: siteTitle,
       description: siteDescription,
