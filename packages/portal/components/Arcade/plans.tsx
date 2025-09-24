@@ -9,7 +9,7 @@ export type ArcadeWeeklyPlan = {
   missions: { projectId: string; missionDetailsLink: string }[];
 };
 
-export const ARCADE_WEEKLY_PLAN: ArcadeWeeklyPlan[] = [
+export const ARCADE_WEEKLY_PLAN = [
   {
     title: 'Chapter 1',
     missionTimeStart: '2024-03-11 12:00',
@@ -184,4 +184,4 @@ export const ARCADE_WEEKLY_PLAN: ArcadeWeeklyPlan[] = [
       },
     ],
   },
-];
+] as const satisfies ArcadeWeeklyPlan[];

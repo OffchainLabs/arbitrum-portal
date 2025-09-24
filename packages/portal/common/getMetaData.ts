@@ -108,7 +108,7 @@ export function getMetaData(props: ServerSideAppProps): Metadata {
   const chainDetails =
     selectedChains?.length &&
     selectedChains.length === 1 &&
-    chainPageMeta[selectedChains[0]]; // details of a single chain selected
+    chainPageMeta[selectedChains[0]!]; // details of a single chain selected
 
   // if Project's dedicated page (side panel)
   if (projectDetails) {

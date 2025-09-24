@@ -19,6 +19,7 @@
     ".next/types/**/*.ts",
     "*.js",
     "../arb-token-bridge-ui/additional.d.ts",
+    "../portal/additional.d.ts",
     "build/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

@@ -1,8 +1,9 @@
-import Background from '@/app/components/Background'
+import Background from '../../components/Background'
 
 export default function RestrictedPage() {
   return (
-    <Background>
+    <>
+      <Background />
       <div className="flex w-full flex-col items-center space-y-4 px-8 py-4 text-center lg:py-20">
         <span className="mb-5 text-4xl leading-tight text-white lg:text-5xl">
           Cannot connect from your location
@@ -12,6 +13,6 @@ export default function RestrictedPage() {
           to legal restrictions.
         </p>
       </div>
-    </Background>
+    </>
   )
 }

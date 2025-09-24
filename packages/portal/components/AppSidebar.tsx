@@ -11,6 +11,9 @@ export const AppSidebar = () => {
 
   useEffect(() => {
     switch (pathname) {
+      case '/bridge':
+        setActiveMenu('Bridge');
+        break;
       case '/':
         setActiveMenu('Home');
         break;
@@ -59,7 +62,6 @@ export const AppSidebar = () => {
         activeMenu={activeMenu}
         linkPostfix={linkPostfix}
         onMenuItemClick={setActiveMenu}
-        isPortalHost
       />
     </div>
   );

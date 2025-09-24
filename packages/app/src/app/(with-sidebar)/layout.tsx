@@ -1,22 +1,27 @@
-import { PropsWithChildren } from 'react'
-import Background from '@/app/components/Background'
+import { PropsWithChildren, Suspense } from 'react'
+import Background from '../../components/Background'
 import { Toast } from '@/bridge/components/common/atoms/Toast'
-import { AppSidebar } from '@/bridge/components/Sidebar/AppSidebar'
+import { AppSidebar } from '@/portal/components/AppSidebar'
 import { SiteBanner } from '@/bridge/components/common/SiteBanner'
 import { BellAlertIcon } from '@heroicons/react/24/outline'
 
 export default function WithSidebarLayout({ children }: PropsWithChildren) {
   return (
-    <Background>
-      <div className="flex h-screen w-full overflow-hidden">
-        <AppSidebar />
-        <main className="flex h-full flex-1 flex-col overflow-y-auto">
+    <>
+      <Background />
+
+      <div className="relative flex">
+        <Suspense>
+          <AppSidebar />
+        </Suspense>
+
+        <div className="relative flex w-full flex-col">
           <SiteBanner>
             <div className="text-center">
-              <BellAlertIcon className="mr-1 inline-block h-4 w-4 text-white" />
+              <BellAlertIcon className="mr-[5px] inline-block h-[20px] w-[20px] text-white" />
               <p className="inline text-sm">
-                <strong>URL Update:</strong> Starting Sept 23rd, The official
-                Arbitrum Bridge will redirect from{' '}
+                <strong>URL Update:</strong> The official Arbitrum Bridge has
+                moved from{' '}
                 <span className="mr-[3px] inline-block italic underline">
                   bridge.arbitrum.io
                 </span>{' '}
@@ -29,9 +34,10 @@ export default function WithSidebarLayout({ children }: PropsWithChildren) {
           </SiteBanner>
 
           {children}
-        </main>
+        </div>
+
+        <Toast />
       </div>
-      <Toast />
-    </Background>
+    </>
   )
 }

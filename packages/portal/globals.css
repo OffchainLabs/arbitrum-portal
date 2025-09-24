@@ -7,32 +7,6 @@
   --secondary: #ffffff30;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--secondary) var(--primary);
-}
-
-/* Chrome, Edge, and Safari */
-*::-webkit-scrollbar {
-  width: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--primary);
-  border-radius: 5px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--secondary);
-  border-radius: 14px;
-  border: 3px solid var(--primary);
-}
-
-body {
-  background-color: black;
-}
-
 .one-and-nova-border-gradient {
   border: 3px double transparent;
   background-image: linear-gradient(white, white),
@@ -40,10 +14,6 @@ body {
 
   background-origin: border-box;
   background-clip: padding-box, border-box;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 @keyframes panelSlideInAnimation {

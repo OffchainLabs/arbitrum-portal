@@ -53,7 +53,7 @@ describe('User enters site with query params on URL', () => {
     context(
       '?amount=max should set transfer panel amount to maximum amount possible based on balance',
       () => {
-        visitAfterSomeDelay('/', {
+        visitAfterSomeDelay('/bridge', {
           qs: {
             amount: 'max',
             sourceChain: getNetworkSlug('parent'),
@@ -83,7 +83,7 @@ describe('User enters site with query params on URL', () => {
     context(
       '?amount=MAX should set transfer panel amount to maximum amount possible based on balance',
       () => {
-        visitAfterSomeDelay('/', {
+        visitAfterSomeDelay('/bridge', {
           qs: {
             amount: 'MAX',
             sourceChain: getNetworkSlug('parent'),
@@ -116,7 +116,7 @@ describe('User enters site with query params on URL', () => {
     context(
       '?amount=MaX should set transfer panel amount to maximum amount possible based on balance',
       () => {
-        visitAfterSomeDelay('/', {
+        visitAfterSomeDelay('/bridge', {
           qs: {
             amount: 'MaX',
             sourceChain: getNetworkSlug('parent'),
@@ -152,7 +152,7 @@ describe('User enters site with query params on URL', () => {
       }
     )
     context('?amount=56 should set transfer panel amount to 56', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '56',
           sourceChain: getNetworkSlug('parent'),
@@ -163,7 +163,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '56')
     })
     context('?amount=1.6678 should set transfer panel amount to 1.6678', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '1.6678',
           sourceChain: getNetworkSlug('parent'),
@@ -174,7 +174,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '1.6678')
     })
     context('?amount=6 should set transfer panel amount to 6', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '6',
           sourceChain: getNetworkSlug('parent'),
@@ -185,7 +185,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '6')
     })
     context('?amount=0.123 should set transfer panel amount to 0.123', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '0.123',
           sourceChain: getNetworkSlug('parent'),
@@ -197,7 +197,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '0.123')
     })
     context('?amount=-0.123 should set transfer panel amount to 0.123', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '-0.123',
           sourceChain: getNetworkSlug('parent'),
@@ -208,7 +208,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '0.123')
     })
     it('?amount=asdfs should not set transfer panel amount', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: 'asdfs',
           sourceChain: getNetworkSlug('parent'),
@@ -219,7 +219,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('be.empty')
     })
     context('?amount=0 should set transfer panel amount to 0', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '0',
           sourceChain: getNetworkSlug('parent'),
@@ -230,7 +230,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '0')
     })
     context('?amount=0.0001 should set transfer panel amount to 0.0001', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '0.0001',
           sourceChain: getNetworkSlug('parent'),
@@ -241,7 +241,7 @@ describe('User enters site with query params on URL', () => {
       cy.findAmountInput().should('have.value', '0.0001')
     })
     context('?amount=123,3,43 should not set transfer panel amount', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           amount: '123,3,43',
           sourceChain: getNetworkSlug('parent'),
@@ -254,7 +254,7 @@ describe('User enters site with query params on URL', () => {
     context(
       '?amount=0, 123.222, 0.3 should not set transfer panel amount',
       () => {
-        visitAfterSomeDelay('/', {
+        visitAfterSomeDelay('/bridge', {
           qs: {
             amount: '0, 123.222, 0.3',
             sourceChain: getNetworkSlug('parent'),
@@ -266,7 +266,7 @@ describe('User enters site with query params on URL', () => {
       }
     )
     context('should select token using query params', () => {
-      visitAfterSomeDelay('/', {
+      visitAfterSomeDelay('/bridge', {
         qs: {
           sourceChain: 'sepolia',
           destinationChain: 'arbitrum-sepolia',

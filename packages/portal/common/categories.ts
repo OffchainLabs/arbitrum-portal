@@ -60,7 +60,7 @@ export const CATEGORY_TO_SUBCATEGORIES: { [categoryKey: string]: string[] } =
   categoriesToSubcategoriesJson.content;
 
 export const getCategoryDetailsById = (categoryId: string) => {
-  return categoryKeyToIndexMap[categoryId] > -1
+  return typeof categoryKeyToIndexMap[categoryId] === 'number'
     ? CATEGORIES[categoryKeyToIndexMap[categoryId]]
     : null;
 };
@@ -68,7 +68,7 @@ export const getCategoryDetailsById = (categoryId: string) => {
 export const getCategoryFromSubcategory = (subcategoryKey: string) => {
   const categoryKey = Object.keys(CATEGORY_TO_SUBCATEGORIES).find(
     (categoryKey) =>
-      CATEGORY_TO_SUBCATEGORIES[categoryKey].includes(subcategoryKey),
+      CATEGORY_TO_SUBCATEGORIES[categoryKey]!.includes(subcategoryKey),
   );
   return categoryKey ?? null;
 };
@@ -85,9 +85,8 @@ export function getCategoryBySubcategoryList(
   const inputSubcategoriesStringified = subcategoryList.sort().join('_');
 
   Object.keys(CATEGORY_TO_SUBCATEGORIES).forEach((categoryKey) => {
-    const allSubcategoriesInCategory = CATEGORY_TO_SUBCATEGORIES[categoryKey]
-      .sort()
-      .join('_');
+    const allSubcategoriesInCategory =
+      CATEGORY_TO_SUBCATEGORIES[categoryKey]!.sort().join('_');
 
     if (inputSubcategoriesStringified === allSubcategoriesInCategory) {
       fullySelectedCategory = categoryKey;

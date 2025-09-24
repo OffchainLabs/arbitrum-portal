@@ -46,7 +46,7 @@ describe('Read classic deposit messages', () => {
 
   context('User has classic native token deposit transaction', () => {
     it('can read successful native token deposit', () => {
-      cy.visit('/')
+      cy.visit('/bridge')
 
       window.localStorage.setItem(
         `arbitrum:bridge:deposits-${Cypress.env('ADDRESS').toLowerCase()}`,
@@ -78,7 +78,7 @@ describe('Read classic deposit messages', () => {
 
   context('User has classic ERC-20 deposit transaction', () => {
     it('can read successful ERC-20 deposit', () => {
-      cy.visit('/')
+      cy.visit('/bridge')
 
       window.localStorage.setItem(
         `arbitrum:bridge:deposits-${Cypress.env('ADDRESS').toLowerCase()}`,

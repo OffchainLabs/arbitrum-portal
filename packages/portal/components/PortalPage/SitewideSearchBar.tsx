@@ -68,7 +68,7 @@ export const SitewideSearchBar = () => {
       if (focusIndex >= pageSize - 1 || focusIndex === -1) {
         // Enter is pressed on `Show all` button
         handleShowAllResults();
-      } else {
+      } else if (searchResults[focusIndex]) {
         // Select the option
         handleSelection(searchResults[focusIndex].item);
       }

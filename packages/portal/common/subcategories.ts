@@ -46,7 +46,7 @@ const subcategoryKeyToIndexMap: { [id: string]: number } = Object.fromEntries(
 );
 
 export const getSubcategoryDetailsById = (id: string) => {
-  return subcategoryKeyToIndexMap[id] > -1
+  return typeof subcategoryKeyToIndexMap[id] === 'number'
     ? SUBCATEGORIES[subcategoryKeyToIndexMap[id]]
     : null;
 };

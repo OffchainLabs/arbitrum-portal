@@ -13,8 +13,8 @@
     "test:ci": "yarn workspace arb-token-bridge-ui test:ci",
     "prettier:check": "./node_modules/.bin/prettier --check .",
     "prettier:format": "./node_modules/.bin/prettier --write .",
-    "lint": "yarn workspace app lint && yarn workspace arb-token-bridge-ui lint",
-    "lint:fix": "yarn workspace app lint:fix && yarn workspace arb-token-bridge-ui lint:fix",
+    "lint": "yarn workspace app lint && yarn workspace arb-token-bridge-ui lint && yarn workspace portal lint",
+    "lint:fix": "yarn workspace app lint:fix && yarn workspace arb-token-bridge-ui lint:fix && yarn workspace portal lint:fix",
     "postinstall": "yarn install:chromium",
     "install:chromium": "npx @puppeteer/browsers install chrome@$npm_package_config_chromeVersion --path $npm_package_config_chromePath",
     "test:e2e": "yarn workspace arb-token-bridge-ui env-cmd --silent --file .e2e.env yarn synpress run --configFile synpress.config.ts",
@@ -35,7 +35,8 @@
     "sharp/tar-fs": "3.0.9",
     "**/form-data": "4.0.4",
     "**/axios": "1.12.0",
-    "@eslint/plugin-kit": "0.3.4"
+    "@eslint/plugin-kit": "0.3.4",
+    "minimatch": "10.0.1"
   },
   "keywords": [],
   "author": "",
@@ -65,7 +66,7 @@
     "typescript": "^5.2.2",
     "@types/node": "^16.6.1",
     "@types/react": "^18.2.6",
-    "@types/react-dom": "^18.2.4"
+    "@types/react-dom": "^18.2.10"
   },
   "config": {
     "chromeVersion": "128.0.6613.137",

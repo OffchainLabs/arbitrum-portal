@@ -36,9 +36,8 @@ notionOrbitChains
   });
 
 export const getOrbitChainDetailsById = (id: string) => {
-  return orbitChainKeyToIndexMap[id] > -1
-    ? ORBIT_CHAINS[orbitChainKeyToIndexMap[id]]
-    : null;
+  const index = orbitChainKeyToIndexMap[id];
+  return typeof index === 'number' ? ORBIT_CHAINS[index] : null;
 };
 
 type OrbitChainsGroupedByCategorySlug = {
@@ -49,7 +48,7 @@ export const orbitChainsGroupedByCategorySlug = ORBIT_CHAINS.reduce(
   (groupedResult: OrbitChainsGroupedByCategorySlug, orbitChain) => {
     if (!groupedResult[orbitChain.categoryId])
       groupedResult[orbitChain.categoryId] = [];
-    groupedResult[orbitChain.categoryId].push(orbitChain);
+    groupedResult[orbitChain.categoryId]!.push(orbitChain);
     return groupedResult;
   },
   {},
