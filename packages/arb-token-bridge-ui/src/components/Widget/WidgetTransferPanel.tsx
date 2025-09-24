@@ -3,9 +3,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { BUY_EMBED_PATHNAME } from '@/bridge/constants';
-import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 
-import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
 import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
 import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
