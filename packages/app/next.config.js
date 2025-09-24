@@ -71,6 +71,17 @@ module.exports = {
         permanent: true
       },
       {
+        source: '/images/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'bridge.arbitrum.io'
+          }
+        ],
+        destination: 'https://portal.arbitrum.io/images/:path*',
+        permanent: true
+      },
+      {
         source: '/:path*',
         has: [
           {
