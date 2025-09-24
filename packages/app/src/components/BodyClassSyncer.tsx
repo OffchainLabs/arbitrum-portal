@@ -9,8 +9,11 @@ export function BodyClassSyncer() {
    * We need class to be on body rather than layout wrapper because of portal.
    */
   useEffect(() => {
+    // Catch /bridge and bridge?... but not /bridges-and-on-ramps
+    const isBridgeRoute =
+      pathname === '/bridge' || pathname.startsWith('/bridge/')
     document.body.classList.add(
-      pathname.includes('bridge') ? 'bridge-wrapper' : 'portal-wrapper'
+      isBridgeRoute ? 'bridge-wrapper' : 'portal-wrapper'
     )
 
     return () => {
