@@ -8,11 +8,6 @@ import { isNetwork } from '@/bridge/util/networks'
 import BridgeClient from './BridgeClient'
 import { addOrbitChainsToArbitrumSDK } from '../../../initialization'
 
-import '../../../styles/bridge.css'
-import 'tippy.js/dist/tippy.css'
-import 'tippy.js/themes/light.css'
-import '@rainbow-me/rainbowkit/styles.css'
-import 'react-toastify/dist/ReactToastify.css'
 import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect'
 
 type Props = {
