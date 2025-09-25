@@ -52,7 +52,8 @@ The Bridge app requires environment variables for full functionality:
    **Required:**
 
    - `NEXT_PUBLIC_RPC_PROVIDER = infura / alchemy`
-   - `NEXT_PUBLIC_INFURA_KEY = your-infura-key / your-alchemy-key`
+   - `NEXT_PUBLIC_INFURA_KEY = your-infura-key`
+   - `NEXT_PUBLIC_ALCHEMY_KEY = your-alchemy-key`
    - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = your-walletconnect-project-id` (Get from [WalletConnect dashboard](https://cloud.walletconnect.com/app))
 
    **Optional features (enable as needed):**
