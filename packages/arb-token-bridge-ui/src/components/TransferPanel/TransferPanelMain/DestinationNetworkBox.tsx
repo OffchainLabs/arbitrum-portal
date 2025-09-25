@@ -110,7 +110,7 @@ function BalanceRow({
         </div>
       </Button>
       {shouldShowBalance && (
-        <div className="flex space-x-1 text-sm text-gray-6">
+        <div className="text-gray-6 flex space-x-1 text-sm">
           <span>Balance: </span>
           <span
             aria-label={`${symbol} balance amount on ${

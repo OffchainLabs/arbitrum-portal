@@ -155,7 +155,7 @@ export const CustomDestinationAddressInput = () => {
       </p>
       <div
         className={twMerge(
-          'group my-1 flex h-8 w-full items-center rounded bg-black/50 shadow-input',
+          'shadow-input group my-1 flex h-8 w-full items-center rounded bg-black/50',
           inputLocked && 'bg-black/20',
           error && 'border border-red-400',
           warning && !error && 'border border-yellow-500'
@@ -170,7 +170,7 @@ export const CustomDestinationAddressInput = () => {
 
         <input
           className={twMerge(
-            'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
+            'placeholder-gray-dark h-full w-full bg-transparent text-sm text-white',
             error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2',
             !inputLocked && 'placeholder-white/60'
           )}

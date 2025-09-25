@@ -78,7 +78,7 @@ function getBadgeFromBadgeType(badgeType: BadgeType) {
     case 'security-guaranteed': {
       return (
         <Tag
-          className="hidden bg-claim text-black md:flex"
+          className="bg-claim hidden text-black md:flex"
           key="security-guaranteed"
         >
           Secured by Arbitrum
@@ -139,7 +139,7 @@ const RouteAmount = ({
             className="h-8 w-8 min-w-8"
             srcOverride={'logoURI' in token ? token.logoURI : null}
             fallback={
-              <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
+              <div className="bg-gray-dark/70 h-8 w-8 min-w-8 rounded-full" />
             }
           />
           <div className="flex flex-col">
@@ -161,7 +161,7 @@ const RouteAmount = ({
               className="h-8 w-8 min-w-8"
               srcOverride={null}
               fallback={
-                <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
+                <div className="bg-gray-dark/70 h-8 w-8 min-w-8 rounded-full" />
               }
             />
             {formatAmount(Number(amount2), {
@@ -218,7 +218,7 @@ const RouteBridge = ({ bridge, bridgeIconURI }: RouteBridgeProps) => (
       alt="bridge"
       className="max-h-3 max-w-3 rounded-full"
       fallback={
-        <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+        <div className="bg-gray-dark/70 h-3 w-3 min-w-3 rounded-full" />
       }
     />
     <div className="truncate">
@@ -255,7 +255,7 @@ const RouteFees = ({
             height={14}
             alt="gas"
             fallback={
-              <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+              <div className="bg-gray-dark/70 h-3 w-3 min-w-3 rounded-full" />
             }
           />
           <span className="ml-1">
@@ -303,7 +303,7 @@ const RouteFees = ({
               height={18}
               alt="bridge fee"
               fallback={
-                <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+                <div className="bg-gray-dark/70 h-3 w-3 min-w-3 rounded-full" />
               }
             />
             <div className="flex flex-row items-center gap-1">
@@ -465,7 +465,7 @@ export const Route = React.memo(
               <Tooltip
                 content={`${destinationAddress} will be the recipient of the funds. Be sure you mean to send it here.`}
               >
-                <div className="flex items-center gap-1 rounded bg-orange-dark px-1 py-0.5 text-xs">
+                <div className="bg-orange-dark flex items-center gap-1 rounded px-1 py-0.5 text-xs">
                   <UserIcon className="h-3 w-3" />
                   {shortenAddress(destinationAddress)} will receive
                 </div>

@@ -146,7 +146,7 @@ function TokenListsPanel() {
 
   return (
     <>
-      <div className="flex flex-col gap-6 rounded-md border border-gray-dark p-6 text-white">
+      <div className="border-gray-dark flex flex-col gap-6 rounded-md border p-6 text-white">
         {listsToShow.map(tokenList => (
           <TokenListRow key={tokenList.id} tokenList={tokenList} />
         ))}
@@ -575,7 +575,7 @@ function TokensPanel({
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
         disabled={!isAddress(newToken)}
-        className="border border-gray-dark py-1"
+        className="border-gray-dark border py-1"
         aria-label="Add New Token"
       >
         Add

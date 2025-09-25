@@ -97,7 +97,7 @@ export const WidgetModeDropdown = () => {
           </PopoverButton>
           <Transition>
             <PopoverPanel className="absolute left-0 top-0 z-10 w-[150px] origin-top overflow-hidden rounded-md text-sm text-white">
-              <div className="flex w-full flex-col gap-1 rounded-md border border-white/20 bg-widget-background p-2">
+              <div className="bg-widget-background flex w-full flex-col gap-1 rounded-md border border-white/20 p-2">
                 <ModeOption
                   icon={<PaperAirplaneIcon className="h-3 w-3" />}
                   label="Bridge"

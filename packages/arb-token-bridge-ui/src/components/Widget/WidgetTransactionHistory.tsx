@@ -41,7 +41,7 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
     >
       <Button
         variant="secondary"
-        className="absolute right-6 top-3 border-none bg-primary-cta"
+        className="bg-primary-cta absolute right-6 top-3 border-none"
       >
         <ExternalLink
           href="https://bridge.arbitrum.io/?tab=tx_history"

@@ -91,7 +91,7 @@ export const WidgetHeaderAccountButton = () => {
               </PopoverButton>
               <Transition>
                 <PopoverPanel className="absolute right-0 top-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
-                  <div className="flex flex-col gap-2 rounded-md border border-white/20 bg-widget-background p-2">
+                  <div className="bg-widget-background flex flex-col gap-2 rounded-md border border-white/20 p-2">
                     {/* Account name and copy */}
                     <Button
                       variant="secondary"
@@ -127,7 +127,7 @@ export const WidgetHeaderAccountButton = () => {
       {!isConnected && (
         <Button
           variant="primary"
-          className="flex h-[40px] w-full justify-between bg-primary-cta"
+          className="bg-primary-cta flex h-[40px] w-full justify-between"
           onClick={openConnectModal}
         >
           <div>Connect Wallet</div>

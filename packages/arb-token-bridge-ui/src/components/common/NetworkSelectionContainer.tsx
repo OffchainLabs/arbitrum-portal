@@ -65,7 +65,7 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   more: {
     name: ChainGroupName.more,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
+      <p className="bg-orange-dark text-orange mt-2 flex gap-1 whitespace-normal rounded px-2 py-1 text-xs">
         <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
         <span>
           Independent projects using non-Arbitrum technology. These chains have
@@ -78,7 +78,7 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   orbit: {
     name: ChainGroupName.orbit,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
+      <p className="bg-orange-dark text-orange mt-2 flex gap-1 whitespace-normal rounded px-2 py-1 text-xs">
         <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
         <span>
           Independent projects using Arbitrum technology. Orbit chains have
@@ -245,7 +245,7 @@ function NetworkRow({
           {!isLoadingBalance && balanceError && (
             <Tooltip content="Error fetching balance">
               <div className="flex items-center gap-1">
-                <ExclamationCircleIcon className="h-4 w-4 text-brick" />0{' '}
+                <ExclamationCircleIcon className="text-brick h-4 w-4" />0{' '}
                 {nativeTokenData?.symbol ?? 'ETH'}
               </div>
             </Tooltip>

@@ -112,7 +112,7 @@ export function WithdrawalConfirmationDialog(
       <div className="flex flex-col pt-4">
         <TabGroup onChange={setSelectedIndex}>
           {showFastBridgesTab && (
-            <TabList className="border-b border-gray-dark">
+            <TabList className="border-gray-dark border-b">
               <TabButton>Third party bridge</TabButton>
               <TabButton>Arbitrum’s bridge</TabButton>
             </TabList>
@@ -200,7 +200,7 @@ export function WithdrawalConfirmationDialog(
                   <SecurityGuaranteed />
                 </div>
 
-                <div className="flex flex-col justify-center space-y-2.5 rounded border border-gray-dark bg-black/80 py-4 align-middle text-white">
+                <div className="border-gray-dark flex flex-col justify-center space-y-2.5 rounded border bg-black/80 py-4 align-middle text-white">
                   <p className="text-center text-sm font-light">
                     Set calendar reminder for {confirmationPeriod} from now
                   </p>

@@ -115,9 +115,9 @@ function SourceChainTokenBalance({
   if (formattedBalance) {
     return (
       <>
-        <span className="text-sm font-light text-gray-6">Balance: </span>
+        <span className="text-gray-6 text-sm font-light">Balance: </span>
         <span
-          className="whitespace-nowrap text-sm text-gray-6"
+          className="text-gray-6 whitespace-nowrap text-sm"
           aria-label={`${symbol} balance amount on ${
             isDepositMode ? 'parentChain' : 'childChain'
           }`}
@@ -166,7 +166,7 @@ function ErrorMessage({
 
   if (typeof errorMessage === 'string') {
     return (
-      <span className={twMerge('text-sm text-brick', embedMode && 'text-xs')}>
+      <span className={twMerge('text-brick text-sm', embedMode && 'text-xs')}>
         {errorMessage}
       </span>
     )
@@ -175,7 +175,7 @@ function ErrorMessage({
   switch (errorMessage) {
     case TransferReadinessRichErrorMessage.GAS_ESTIMATION_FAILURE:
       return (
-        <span className="text-sm text-brick">
+        <span className="text-brick text-sm">
           Gas estimation failed, join our{' '}
           <ExternalLink
             href="https://discord.com/invite/ZpZuw7p"
@@ -190,7 +190,7 @@ function ErrorMessage({
     case TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY:
     case TransferReadinessRichErrorMessage.TOKEN_TRANSFER_DISABLED:
       return (
-        <div className="text-sm text-brick">
+        <div className="text-brick text-sm">
           <span>This token can&apos;t be bridged over.</span>
         </div>
       )

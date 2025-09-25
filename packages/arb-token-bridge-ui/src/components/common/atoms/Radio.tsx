@@ -56,7 +56,7 @@ export const Radio = ({
                     {option.description && (
                       <RadioGroup.Description
                         as="span"
-                        className="text-sm text-gray-3"
+                        className="text-gray-3 text-sm"
                       >
                         <span>{option.description}</span>
                       </RadioGroup.Description>

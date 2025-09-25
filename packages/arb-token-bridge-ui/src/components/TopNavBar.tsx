@@ -9,7 +9,7 @@ import { isOnrampEnabled } from '../util/featureFlag'
 function StyledTab({ children, ...props }: PropsWithChildren) {
   return (
     <Tab
-      className="flex h-full items-center justify-center gap-2 rounded p-1 text-sm ui-selected:bg-black/75 lg:text-lg"
+      className="ui-selected:bg-black/75 flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg"
       {...props}
     >
       {children}

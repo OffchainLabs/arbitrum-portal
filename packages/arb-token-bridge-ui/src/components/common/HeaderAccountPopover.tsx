@@ -62,7 +62,7 @@ export function HeaderAccountPopover({
           'ui-open:bg-white/20 ui-not-open:bg-transparent ui-not-open:hover:bg-white/20',
           'sm:w-max sm:rounded sm:border sm:px-2 sm:py-1',
           isTestnet
-            ? 'sm:border-white sm:ui-not-open:bg-white/20'
+            ? 'sm:ui-not-open:bg-white/20 sm:border-white'
             : 'sm:border-gray-1 sm:ui-not-open:bg-gray-1 sm:ui-not-open:hover:bg-white/10'
         )}
         style={destinationChainStyle}
@@ -76,17 +76,17 @@ export function HeaderAccountPopover({
             <CustomBoringAvatar size={isSmallScreen ? 24 : 40} name={address} />
           }
         />
-        <span className="flex flex-col text-justify text-base leading-extra-tight text-gray-4 sm:text-white">
+        <span className="leading-extra-tight text-gray-4 flex flex-col text-justify text-base sm:text-white">
           {ensName ?? udInfo.name ?? accountShort}
           {accountType === 'smart-contract-wallet' && (
             <span className="text-[10px]">Smart Contract Wallet</span>
           )}
         </span>
 
-        <ChevronDownIcon className="ml-auto h-[16px] w-[16px] text-gray-4 transition duration-200 sm:text-white" />
+        <ChevronDownIcon className="text-gray-4 ml-auto h-[16px] w-[16px] transition duration-200 sm:text-white" />
       </Popover.Button>
       <Transition className="w-full sm:absolute sm:top-0">
-        <Popover.Panel className="flex w-full flex-col overflow-hidden rounded pb-2 sm:absolute sm:top-0 sm:bg-dark">
+        <Popover.Panel className="sm:bg-dark flex w-full flex-col overflow-hidden rounded pb-2 sm:absolute sm:top-0">
           {/* Profile photo with address */}
           {showCopied && (
             <span className="absolute right-2 top-4 z-50 text-xs text-white">
@@ -95,7 +95,7 @@ export function HeaderAccountPopover({
           )}
           <div className="relative hidden w-full flex-row items-center px-2 pb-2 pt-3 sm:flex">
             {/* Blurred background */}
-            <div className="absolute inset-0 flex h-8 w-full flex-col items-center overflow-hidden bg-dark text-center">
+            <div className="bg-dark absolute inset-0 flex h-8 w-full flex-col items-center overflow-hidden text-center">
               <div className="scale-400 blur-2xl filter">
                 <SafeImage
                   className="h-100 w-100 rounded-full"
@@ -107,7 +107,7 @@ export function HeaderAccountPopover({
 
             {/* Actual image and account name */}
             <div className="relative flex flex-row items-center gap-2">
-              <div className="avatar-container box-content rounded-full border-[3px] border-dark">
+              <div className="avatar-container border-dark box-content rounded-full border-[3px]">
                 <SafeImage
                   src={ensAvatar || undefined}
                   className="h-[54px] w-[54px] rounded-full"

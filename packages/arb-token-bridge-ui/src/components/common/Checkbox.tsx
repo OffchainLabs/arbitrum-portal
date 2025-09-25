@@ -20,11 +20,11 @@ export function Checkbox({ labelClassName, label, ...props }: CheckboxProps) {
         className={twMerge(
           'h-3 w-3 flex-shrink-0 rounded-[3px] transition duration-200 ease-in-out',
           props.checked
-            ? 'border-[1px] border-dark bg-white'
-            : 'border-[1px] border-gray-6 bg-dark'
+            ? 'border-dark border-[1px] bg-white'
+            : 'border-gray-6 bg-dark border-[1px]'
         )}
       >
-        <CheckIcon className="ml-[2px] mt-[1px] h-2 w-2 stroke-[5] text-dark" />
+        <CheckIcon className="text-dark ml-[2px] mt-[1px] h-2 w-2 stroke-[5]" />
       </Switch>
       <Switch.Label
         className={twMerge(

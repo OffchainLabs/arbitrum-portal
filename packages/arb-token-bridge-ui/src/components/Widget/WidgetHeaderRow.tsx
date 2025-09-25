@@ -33,7 +33,7 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
               alt="Tx history logo"
               src="/images/WidgetTxHistoryIcon.svg"
               fallback={
-                <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+                <div className="bg-gray-dark/70 h-3 w-3 min-w-3 rounded-full" />
               }
             />
           </Button>

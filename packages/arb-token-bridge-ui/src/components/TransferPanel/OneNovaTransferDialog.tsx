@@ -85,7 +85,7 @@ export function OneNovaTransferDialog(props: UseDialogProps) {
     >
       <div className="flex flex-col pt-4">
         <Tab.Group as={Fragment}>
-          <Tab.List className="border-b border-gray-dark">
+          <Tab.List className="border-gray-dark border-b">
             <TabButton>Third party bridge</TabButton>
           </Tab.List>
 

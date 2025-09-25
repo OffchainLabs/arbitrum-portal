@@ -141,7 +141,7 @@ export function Dialog(props: DialogProps) {
         transition
         className={twMerge(
           'fixed inset-0 bg-black opacity-80 transition-opacity',
-          'data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
+          'data-[enter]:duration-400 data-[closed]:opacity-0 data-[enter]:ease-out',
           'data-[leave]:duration-200 data-[leave]:ease-in'
         )}
         aria-hidden="true"
@@ -149,10 +149,10 @@ export function Dialog(props: DialogProps) {
       <HeadlessUIDialog.Panel
         transition
         className={twMerge(
-          'z-10 max-h-screen w-screen scale-100 overflow-y-auto border border-gray-dark bg-gray-1 opacity-100 transition-[transform_opacity] md:max-w-[727px] md:rounded',
-          'data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
+          'border-gray-dark bg-gray-1 z-10 max-h-screen w-screen scale-100 overflow-y-auto border opacity-100 transition-[transform_opacity] md:max-w-[727px] md:rounded',
+          'data-[enter]:duration-400 data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:ease-out',
           'data-[leave]:duration-200 data-[leave]:ease-in',
-          embedMode && 'border-0 bg-widget-background',
+          embedMode && 'bg-widget-background border-0',
           className
         )}
       >
@@ -163,7 +163,7 @@ export function Dialog(props: DialogProps) {
           )}
         >
           <HeadlessUIDialog.Title
-            className={twMerge('text-xl text-gray-2', embedMode && 'text-lg')}
+            className={twMerge('text-gray-2 text-xl', embedMode && 'text-lg')}
           >
             {props.title}
           </HeadlessUIDialog.Title>
@@ -171,12 +171,12 @@ export function Dialog(props: DialogProps) {
             <button type="button" onClick={() => handleClose(false)}>
               {embedMode ? (
                 <ChevronLeftIcon
-                  className="arb-hover h-4 w-4 text-gray-7"
+                  className="arb-hover text-gray-7 h-4 w-4"
                   aria-label="Close Dialog"
                 />
               ) : (
                 <XMarkIcon
-                  className="arb-hover h-6 w-6 text-gray-7"
+                  className="arb-hover text-gray-7 h-6 w-6"
                   aria-label="Close Dialog"
                 />
               )}

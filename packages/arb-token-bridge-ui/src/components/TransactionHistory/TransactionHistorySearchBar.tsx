@@ -91,7 +91,7 @@ export function TransactionHistorySearchBar() {
     <div className="mb-4 flex flex-row items-stretch gap-1 pr-4 md:pr-0">
       <form
         className={twMerge(
-          'relative flex w-full items-center justify-center overflow-hidden rounded border border-gray-dark bg-black text-white md:w-1/2'
+          'border-gray-dark relative flex w-full items-center justify-center overflow-hidden rounded border bg-black text-white md:w-1/2'
         )}
         onSubmit={event => event.preventDefault()}
       >
@@ -121,9 +121,9 @@ export function TransactionHistorySearchBar() {
           type="submit"
           variant="secondary"
           className={twMerge(
-            'select-none rounded-l-none border-y-0 border-r-0 border-gray-dark bg-black py-[7px]',
+            'border-gray-dark select-none rounded-l-none border-y-0 border-r-0 bg-black py-[7px]',
             'hover:bg-white/20 hover:opacity-100',
-            'disabled:border-y-0 disabled:border-r-0 disabled:border-l-gray-dark'
+            'disabled:border-l-gray-dark disabled:border-y-0 disabled:border-r-0'
           )}
           onClick={searchTxForAddress}
           disabled={!address}

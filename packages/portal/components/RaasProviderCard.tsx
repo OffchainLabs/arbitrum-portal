@@ -16,10 +16,15 @@ export const RaasProviderCard = ({
 }) => {
   return (
     <Link href={link} target="_blank">
-      <div className="group flex h-full flex-col gap-4 rounded-md border border-solid border-grey bg-[#191919] p-4 active:bg-[rgba(109,109,109,0.4)] md:hover:bg-[rgba(109,109,109)]">
+      <div className="border-grey group flex h-full flex-col gap-4 rounded-md border border-solid bg-[#191919] p-4 active:bg-[rgba(109,109,109,0.4)] md:hover:bg-[rgba(109,109,109)]">
         <div>
           <div className="relative h-[40px] w-[160px]">
-            <Image src={logo} alt={`${name} logo`} fill className="object-contain object-left" />
+            <Image
+              src={logo}
+              alt={`${name} logo`}
+              fill
+              className="object-contain object-left"
+            />
           </div>
         </div>
         <h4 className="text-2xl font-light">{name}</h4>
@@ -29,7 +34,8 @@ export const RaasProviderCard = ({
         </div>
         <div className="border-px border-b border-gray-200" />
         <p className="flex items-center justify-between text-xs font-light">
-          Go to website <i className="pi pi-external-link invisible ml-1 group-hover:visible" />
+          Go to website{' '}
+          <i className="pi pi-external-link invisible ml-1 group-hover:visible" />
         </p>
       </div>
     </Link>

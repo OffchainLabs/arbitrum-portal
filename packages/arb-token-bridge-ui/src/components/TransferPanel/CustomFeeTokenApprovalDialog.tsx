@@ -113,7 +113,7 @@ export function CustomFeeTokenApprovalDialog(
             alt={`${customFeeToken.name} logo`}
             className="h-6 w-6 grow-0"
             fallback={
-              <div className="flex h-6 w-6 items-center justify-center rounded-full border border-white/30 bg-gray-dark text-sm font-medium">
+              <div className="bg-gray-dark flex h-6 w-6 items-center justify-center rounded-full border border-white/30 text-sm font-medium">
                 ?
               </div>
             }
@@ -173,13 +173,13 @@ export function CustomFeeTokenApprovalDialog(
         <div className="flex flex-col">
           <NoteBox>
             {selectedToken ? (
-              <span className="text-sm font-light text-cyan-dark">
+              <span className="text-cyan-dark text-sm font-light">
                 After approval, you&apos;ll see additional prompts related to
                 depositing your{' '}
                 <span className="font-medium">{selectedToken.symbol}</span>.
               </span>
             ) : (
-              <span className="text-sm font-light text-cyan-dark">
+              <span className="text-cyan-dark text-sm font-light">
                 After approval, you&apos;ll see an additional prompt in your
                 wallet to deposit your{' '}
                 <span className="font-medium">{customFeeToken.symbol}</span>.

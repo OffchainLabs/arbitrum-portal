@@ -23,7 +23,7 @@ export const Project = ({
 }) => {
   return (
     <ExternalLink
-      className="relative flex h-full min-h-[150px] w-full flex-col gap-2 overflow-hidden rounded-md border border-white/30 bg-dark p-4 hover:bg-dark-hover hover:opacity-100"
+      className="bg-dark hover:bg-dark-hover relative flex h-full min-h-[150px] w-full flex-col gap-2 overflow-hidden rounded-md border border-white/30 p-4 hover:opacity-100"
       aria-label={`${project.title}`}
       href={
         isTestnetMode

@@ -2,7 +2,7 @@ import { ExternalLink } from '../common/ExternalLink'
 
 export const BoLDUpgradeWarning = () => {
   return (
-    <div className="mt-2 flex w-full flex-col gap-2 rounded border border-white/30 bg-orange-dark/60 p-2 text-sm font-light text-white">
+    <div className="bg-orange-dark/60 mt-2 flex w-full flex-col gap-2 rounded border border-white/30 p-2 text-sm font-light text-white">
       <p className="">
         <span className="font-bold">Arbitrum One</span> and{' '}
         <span className="font-bold">Arbitrum Nova</span> upgraded to{' '}

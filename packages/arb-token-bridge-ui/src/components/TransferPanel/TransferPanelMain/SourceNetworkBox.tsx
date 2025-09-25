@@ -50,7 +50,7 @@ function Amount2ToggleButton() {
   return (
     <Button
       variant="secondary"
-      className="border-none bg-black/40 shadow-2"
+      className="shadow-2 border-none bg-black/40"
       onClick={showAmount2Input}
     >
       <div

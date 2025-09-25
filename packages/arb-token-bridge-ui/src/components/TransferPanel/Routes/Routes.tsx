@@ -219,7 +219,7 @@ export const Routes = React.memo(() => {
         )}
 
         {hasLowLiquidity && (
-          <div className="rounded border border-orange-dark bg-orange-dark/50 p-3 text-sm text-white">
+          <div className="border-orange-dark bg-orange-dark/50 rounded border p-3 text-sm text-white">
             {hasModifiedSettings ? (
               <>
                 Unable to find viable routes. Consider{' '}

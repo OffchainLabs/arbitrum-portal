@@ -93,7 +93,7 @@ function Tools({
                 width="15"
                 height="15"
                 className="ml-1 rounded"
-                fallback={<div className="h-3 w-3 bg-gray-dark" />}
+                fallback={<div className="bg-gray-dark h-3 w-3" />}
               />
               <div
                 key={tool.key}
@@ -172,7 +172,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
       }}
       isFooterHidden
     >
-      <div className="mt-4 flex flex-col gap-6 pb-6 text-sm text-gray-2">
+      <div className="text-gray-2 mt-4 flex flex-col gap-6 pb-6 text-sm">
         {isLifiSupported && useLifiSettingsStore.persist.hasHydrated() && (
           <>
             <div className="flex flex-col gap-3">
@@ -185,7 +185,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                       height={16}
                       className="text-orange"
                     />
-                    <span className="text-sm text-orange">
+                    <span className="text-orange text-sm">
                       Slippage amount is low. You may see very limited route
                       options.
                     </span>
@@ -197,7 +197,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                       height={16}
                       className="text-orange"
                     />
-                    <span className="text-sm text-orange">
+                    <span className="text-orange text-sm">
                       Slippage amount is high. Industry recommendation is 0.5%
                       or less.
                     </span>
@@ -247,7 +247,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                     }
                   }}
                   className={twMerge(
-                    'h-[40px] w-[100px] rounded border border-white/10 bg-white/10 py-1 pl-2 pr-5  text-center text-sm text-gray-4',
+                    'text-gray-4 h-[40px] w-[100px] rounded border border-white/10 bg-white/10 py-1 pl-2  pr-5 text-center text-sm',
                     (slippageIsTooHigh || slippageIsTooLow) &&
                       'border-orange-dark bg-orange-dark'
                   )}
@@ -268,7 +268,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                   height={18}
                   alt="bridge fee"
                   fallback={
-                    <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
+                    <div className="bg-gray-dark/70 h-3 w-3 min-w-3 rounded-full" />
                   }
                 />{' '}
                 Supported Bridges

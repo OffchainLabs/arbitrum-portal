@@ -22,7 +22,7 @@ export function TokenLogoFallback({ className }: { className?: string }) {
   return (
     <div
       className={twMerge(
-        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gray-dark text-sm font-medium',
+        'bg-gray-dark flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/30 text-sm font-medium',
         className
       )}
     >

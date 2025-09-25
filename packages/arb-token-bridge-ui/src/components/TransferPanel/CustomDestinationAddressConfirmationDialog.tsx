@@ -54,7 +54,7 @@ export function CustomDestinationAddressConfirmationDialog(
         </p>
       </div>
 
-      <p className="mb-8 rounded-md bg-orange/10 p-4">
+      <p className="bg-orange/10 mb-8 rounded-md p-4">
         <Checkbox
           label={
             <span className="font-light">

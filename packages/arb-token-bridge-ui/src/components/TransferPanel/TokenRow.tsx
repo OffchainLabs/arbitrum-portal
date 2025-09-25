@@ -253,7 +253,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
 
 function ArbitrumTokenBadge() {
   return (
-    <StatusBadge variant="green" className="text-xs leading-extra-tight">
+    <StatusBadge variant="green" className="leading-extra-tight text-xs">
       <CheckCircleIcon className="h-3 w-3" />
       <p>
         <span>Official</span>
@@ -419,9 +419,9 @@ export function TokenRow({
             {isArbitrumToken && <ArbitrumTokenBadge />}
             {isPotentialFakeArbitrumToken && (
               <Tooltip content="This token is different from the official Arbitrum token (ARB).">
-                <div className="box-border flex w-max flex-nowrap items-center gap-1 rounded-full border-[1px] border-gray-dark px-1 py-[2px] pr-2 text-sm">
-                  <ExclamationCircleIcon className="h-3 w-3 text-gray-dark" />
-                  <span className="text-xs text-gray-dark">Careful</span>
+                <div className="border-gray-dark box-border flex w-max flex-nowrap items-center gap-1 rounded-full border-[1px] px-1 py-[2px] pr-2 text-sm">
+                  <ExclamationCircleIcon className="text-gray-dark h-3 w-3" />
+                  <span className="text-gray-dark text-xs">Careful</span>
                 </div>
               </Tooltip>
             )}

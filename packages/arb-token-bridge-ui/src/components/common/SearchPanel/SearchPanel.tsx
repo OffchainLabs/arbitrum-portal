@@ -92,7 +92,7 @@ function CloseButton({
 }: React.HTMLAttributes<HTMLButtonElement>) {
   return (
     <button className={twMerge('arb-hover', className)} {...props}>
-      <XMarkIcon className="h-7 w-7 text-gray-7 lg:h-5 lg:w-5" />
+      <XMarkIcon className="text-gray-7 h-7 w-7 lg:h-5 lg:w-5" />
     </button>
   )
 }
@@ -171,7 +171,7 @@ SearchPanel.SecondaryPageCTA = SecondaryPageCTA
 
 function LoaderWithMessage({ loadingMessage }: { loadingMessage?: string }) {
   return (
-    <span className="flex flex-row items-center gap-2 text-sm font-normal text-gray-6">
+    <span className="text-gray-6 flex flex-row items-center gap-2 text-sm font-normal">
       <Loader color="white" size="small" />
       {loadingMessage}
     </span>

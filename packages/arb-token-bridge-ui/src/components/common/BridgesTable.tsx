@@ -64,7 +64,7 @@ export function BridgesTable(props: {
   })
 
   return (
-    <div className="rounded border border-gray-dark">
+    <div className="border-gray-dark rounded border">
       <table className="w-full overflow-hidden rounded">
         <thead className="bg-black text-left">
           <tr className="text-white">
@@ -123,7 +123,7 @@ export function BridgesTable(props: {
               <td>
                 <ExternalLink
                   href={bridge.href}
-                  className="arb-hover flex w-full items-center justify-end pr-5 text-gray-4"
+                  className="arb-hover text-gray-4 flex w-full items-center justify-end pr-5"
                   onClick={() => onClick(bridge.name)}
                 >
                   <ArrowTopRightOnSquareIcon className="h-3 w-3" />

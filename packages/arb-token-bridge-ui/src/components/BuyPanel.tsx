@@ -33,14 +33,14 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
   return (
     <div
       className={twMerge(
-        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg',
+        'bg-gray-8 relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-4 pt-5 text-white md:rounded-lg',
         embedMode && 'bg-widget-background'
       )}
     >
       <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
       <div
         className={twMerge(
-          'absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse',
+          'bg-eclipse absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2',
           embedMode && 'bg-eclipseWidget'
         )}
       ></div>
@@ -51,7 +51,7 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
           width={embedMode ? 45 : 65}
           height={embedMode ? 45 : 65}
           fallback={
-            <div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />
+            <div className="bg-gray-dark/70 h-8 w-8 min-w-8 rounded-full" />
           }
         />
         <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>
@@ -72,7 +72,7 @@ function MoonPaySkeleton({ children }: PropsWithChildren) {
       </div>
       <p
         className={twMerge(
-          'mt-4 text-center text-sm text-gray-4',
+          'text-gray-4 mt-4 text-center text-sm',
           embedMode && 'text-xs'
         )}
       >

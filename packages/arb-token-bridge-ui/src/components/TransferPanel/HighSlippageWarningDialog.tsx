@@ -124,7 +124,7 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
           ]}
         />
 
-        <div className="flex items-center justify-between rounded bg-orange-dark px-2 py-1 font-bold text-orange">
+        <div className="bg-orange-dark text-orange flex items-center justify-between rounded px-2 py-1 font-bold">
           <span>Value lost</span>
           <span>
             -{lossPercentage.toString()}% (

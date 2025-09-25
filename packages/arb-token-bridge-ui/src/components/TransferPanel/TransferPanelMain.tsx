@@ -83,7 +83,7 @@ export function SwitchNetworksButton(
         type="button"
         variant="tertiary"
         className={twMerge(
-          'group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-gray-1 bg-gray-9 p-1',
+          'border-gray-1 bg-gray-9 group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] p-1',
           theme.primaryCtaColor ? 'bg-primary-cta' : '',
           disabled && 'pointer-events-none'
         )}
@@ -183,7 +183,7 @@ export function NetworkContainer({
       )}
       <div
         className={twMerge(
-          'relative rounded bg-white/5 transition-colors duration-400',
+          'duration-400 relative rounded bg-white/5 transition-colors',
           showCustomAddressBanner && 'rounded-t-none'
         )}
         style={{

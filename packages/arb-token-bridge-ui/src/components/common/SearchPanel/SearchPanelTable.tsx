@@ -41,7 +41,7 @@ export const SearchPanelTable = ({
       {showSearch && (
         <form onSubmit={onSubmit} className="flex flex-col">
           <div className="flex items-stretch gap-2">
-            <div className="relative flex h-full w-full grow items-center rounded bg-black/50 text-white shadow-input">
+            <div className="shadow-input relative flex h-full w-full grow items-center rounded bg-black/50 text-white">
               <MagnifyingGlassIcon className="absolute left-3 top-[11px] h-3 w-3 shrink-0" />
               <input
                 ref={inputRef}
