@@ -354,16 +354,6 @@ export const TabParam = {
     decodeTabQueryParam({ tab })
 }
 
-// Custom TabParam that can access disabled features from the current query params
-export const createTabParamWithDisabledFeatures = ({
-  disabledFeatures = []
-}: { disabledFeatures?: string[] } = {}) => ({
-  encode: (tabIndex: number | null | undefined) =>
-    encodeTabQueryParam({ tabIndex, disabledFeatures }),
-  decode: (tab: string | (string | null)[] | null | undefined) =>
-    decodeTabQueryParam({ tab, disabledFeatures })
-})
-
 export const isBuyFeatureEnabled = ({
   disabledFeatures = []
 }: { disabledFeatures?: string[] } = {}) => {
