@@ -565,13 +565,10 @@ export const sanitizeTokenQueryParam = ({
   return tokenLowercased;
 };
 
-export const sanitizeTabQueryParam = ({
-  tab,
-  disabledFeatures = []
-}: {
-  tab: string | string[] | null | undefined
-  disabledFeatures?: string[]
-}): string => {
+export const sanitizeTabQueryParam = (
+  tab: string | string[] | null | undefined,
+  { disabledFeatures = [] }: { disabledFeatures?: string[] } = {}
+): string => {
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase();
 

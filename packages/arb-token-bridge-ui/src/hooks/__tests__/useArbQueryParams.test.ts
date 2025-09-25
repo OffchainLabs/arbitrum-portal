@@ -413,9 +413,9 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be kept if it is a valid tab string value', () => {
-      const result1 = sanitizeTabQueryParam({ tab: 'buy' })
-      const result2 = sanitizeTabQueryParam({ tab: 'bridge' })
-      const result3 = sanitizeTabQueryParam({ tab: 'tx_history' })
+      const result1 = sanitizeTabQueryParam('buy')
+      const result2 = sanitizeTabQueryParam('bridge')
+      const result3 = sanitizeTabQueryParam('tx_history')
 
       expect(result1).toEqual('buy');
       expect(result2).toEqual('bridge');
@@ -423,10 +423,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be case insensitive', () => {
-      const result1 = sanitizeTabQueryParam({ tab: 'BUY' })
-      const result2 = sanitizeTabQueryParam({ tab: 'Buy' })
-      const result3 = sanitizeTabQueryParam({ tab: 'TX_history' })
-      const result4 = sanitizeTabQueryParam({ tab: 'Tx_HiStoRy' })
+      const result1 = sanitizeTabQueryParam('BUY')
+      const result2 = sanitizeTabQueryParam('Buy')
+      const result3 = sanitizeTabQueryParam('TX_history')
+      const result4 = sanitizeTabQueryParam('Tx_HiStoRy')
 
       expect(result1).toEqual('buy');
       expect(result2).toEqual('buy');
@@ -435,10 +435,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should default to bridge if the value is invalid', () => {
-      const result1 = sanitizeTabQueryParam({ tab: '0' })
-      const result2 = sanitizeTabQueryParam({ tab: '1' })
-      const result3 = sanitizeTabQueryParam({ tab: '3' })
-      const result4 = sanitizeTabQueryParam({ tab: 'tx_HISTORY_' })
+      const result1 = sanitizeTabQueryParam('0')
+      const result2 = sanitizeTabQueryParam('1')
+      const result3 = sanitizeTabQueryParam('3')
+      const result4 = sanitizeTabQueryParam('tx_HISTORY_')
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -454,18 +454,18 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be kept if it is a valid tab string value', () => {
-      const result1 = sanitizeTabQueryParam({ tab: 'bridge' })
-      const result2 = sanitizeTabQueryParam({ tab: 'tx_history' })
+      const result1 = sanitizeTabQueryParam('bridge')
+      const result2 = sanitizeTabQueryParam('tx_history')
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('tx_history');
     });
 
     it('should be case insensitive', () => {
-      const result1 = sanitizeTabQueryParam({ tab: 'Bridge' })
-      const result2 = sanitizeTabQueryParam({ tab: 'BriDge' })
-      const result3 = sanitizeTabQueryParam({ tab: 'TX_history' })
-      const result4 = sanitizeTabQueryParam({ tab: 'Tx_HiStoRy' })
+      const result1 = sanitizeTabQueryParam('Bridge')
+      const result2 = sanitizeTabQueryParam('BriDge')
+      const result3 = sanitizeTabQueryParam('TX_history')
+      const result4 = sanitizeTabQueryParam('Tx_HiStoRy')
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -474,10 +474,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should default to bridge if the value is invalid', () => {
-      const result1 = sanitizeTabQueryParam({ tab: '0' })
-      const result2 = sanitizeTabQueryParam({ tab: '1' })
-      const result3 = sanitizeTabQueryParam({ tab: '3' })
-      const result4 = sanitizeTabQueryParam({ tab: 'tx_HISTORY_' })
+      const result1 = sanitizeTabQueryParam('0')
+      const result2 = sanitizeTabQueryParam('1')
+      const result3 = sanitizeTabQueryParam('3')
+      const result4 = sanitizeTabQueryParam('tx_HISTORY_')
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -698,27 +698,25 @@ describe.sequential('Buy Feature Disabled Tests', () => {
   describe('sanitizeTabQueryParam with disabled features', () => {
     it('should keep buy tab when buy is not disabled', () => {
       vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(sanitizeTabQueryParam({ tab: 'buy', disabledFeatures: [] })).toBe(
-        'buy'
+      expect(sanitizeTabQueryParam('buy', { disabledFeatures: [] })).toBe('buy')
+      expect(sanitizeTabQueryParam('bridge', { disabledFeatures: [] })).toBe(
+        'bridge'
       )
       expect(
-        sanitizeTabQueryParam({ tab: 'bridge', disabledFeatures: [] })
-      ).toBe('bridge')
-      expect(
-        sanitizeTabQueryParam({ tab: 'tx_history', disabledFeatures: [] })
+        sanitizeTabQueryParam('tx_history', { disabledFeatures: [] })
       ).toBe('tx_history')
     })
 
     it('should default buy tab to bridge when buy is disabled', () => {
       vi.mocked(isOnrampEnabled).mockReturnValue(true)
+      expect(sanitizeTabQueryParam('buy', { disabledFeatures: ['buy'] })).toBe(
+        'bridge'
+      )
       expect(
-        sanitizeTabQueryParam({ tab: 'buy', disabledFeatures: ['buy'] })
+        sanitizeTabQueryParam('bridge', { disabledFeatures: ['buy'] })
       ).toBe('bridge')
       expect(
-        sanitizeTabQueryParam({ tab: 'bridge', disabledFeatures: ['buy'] })
-      ).toBe('bridge')
-      expect(
-        sanitizeTabQueryParam({ tab: 'tx_history', disabledFeatures: ['buy'] })
+        sanitizeTabQueryParam('tx_history', { disabledFeatures: ['buy'] })
       ).toBe('tx_history')
     })
   })
