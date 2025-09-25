@@ -8,10 +8,14 @@ import {
 import { useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { isOnrampEnabled } from '../../util/featureFlag';
-import { Button } from '../common/Button';
-import { Transition } from '../common/Transition';
+import { Button } from '../common/Button'
+import { Transition } from '../common/Transition'
+import {
+  useArbQueryParams,
+  TabParamEnum,
+  indexToTab
+} from '../../hooks/useArbQueryParams'
+import { isBuyFeatureEnabled } from '../../util/queryParamUtils'
 
 interface ModeOptionProps {
   icon: React.ReactNode;
@@ -36,8 +40,8 @@ const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
 };
 
 export const WidgetModeDropdown = () => {
-  const [{ tab }, setQueryParams] = useArbQueryParams();
-  const showBuyPanel = isOnrampEnabled();
+  const [{ tab, disabledFeatures }, setQueryParams] = useArbQueryParams()
+  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures })
 
   const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
 

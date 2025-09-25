@@ -39,10 +39,16 @@ export enum DisabledFeatures {
   TX_HISTORY = 'tx-history',
   NETWORK_SELECTION = 'network-selection',
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains',
+  BUY = 'buy'
 }
 
-function createTabMappings() {
-  if (isOnrampEnabled()) {
+function createTabMappings({
+  disabledFeatures = []
+}: { disabledFeatures?: string[] } = {}) {
+  const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
+  const showBuyTab = isOnrampEnabled() && !isBuyDisabled
+
+  if (showBuyTab) {
     return {
       tabToIndex: {
         [TabParamEnum.BUY]: 0,
@@ -69,7 +75,15 @@ function createTabMappings() {
   };
 }
 
-export const { tabToIndex, indexToTab } = createTabMappings();
+// Default tab mappings (used when disabled features are not available)
+export const { tabToIndex, indexToTab } = createTabMappings()
+
+// Function to get tab mappings with disabled features
+export const getTabMappings = ({
+  disabledFeatures = []
+}: { disabledFeatures?: string[] } = {}) => {
+  return createTabMappings({ disabledFeatures })
+}
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(feature.toLowerCase() as DisabledFeatures);
@@ -167,8 +181,14 @@ export function decodeChainQueryParam(
   return undefined;
 }
 
-export function encodeTabQueryParam(tabIndex: number | null | undefined): string {
-  const { indexToTab: _indexToTab } = createTabMappings();
+export function encodeTabQueryParam({
+  tabIndex,
+  disabledFeatures = []
+}: {
+  tabIndex: number | null | undefined
+  disabledFeatures?: string[]
+}): string {
+  const { indexToTab: _indexToTab } = createTabMappings({ disabledFeatures })
   if (typeof tabIndex === 'number' && tabIndex in _indexToTab) {
     const tabParam = _indexToTab[tabIndex as keyof typeof _indexToTab];
     if (tabParam !== undefined) {
@@ -178,11 +198,18 @@ export function encodeTabQueryParam(tabIndex: number | null | undefined): string
   return TabParamEnum.BRIDGE;
 }
 
-export function decodeTabQueryParam(tab: string | (string | null)[] | null | undefined): number {
-  const { tabToIndex: _tabToIndex } = createTabMappings();
+export function decodeTabQueryParam({
+  tab,
+  disabledFeatures = []
+}: {
+  tab: string | (string | null)[] | null | undefined
+  disabledFeatures?: string[]
+}): number {
+  const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures })
   if (typeof tab === 'string') {
-    if (tab === TabParamEnum.BUY && !isOnrampEnabled()) {
-      return _tabToIndex[TabParamEnum.BRIDGE];
+    const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
+    if (tab === TabParamEnum.BUY && (!isOnrampEnabled() || isBuyDisabled)) {
+      return _tabToIndex[TabParamEnum.BRIDGE]
     }
 
     if (tab in _tabToIndex) {
@@ -321,9 +348,28 @@ export const ChainParam = {
 };
 
 export const TabParam = {
-  encode: encodeTabQueryParam,
-  decode: decodeTabQueryParam,
-};
+  encode: (tabIndex: number | null | undefined) =>
+    encodeTabQueryParam({ tabIndex }),
+  decode: (tab: string | (string | null)[] | null | undefined) =>
+    decodeTabQueryParam({ tab })
+}
+
+// Custom TabParam that can access disabled features from the current query params
+export const createTabParamWithDisabledFeatures = ({
+  disabledFeatures = []
+}: { disabledFeatures?: string[] } = {}) => ({
+  encode: (tabIndex: number | null | undefined) =>
+    encodeTabQueryParam({ tabIndex, disabledFeatures }),
+  decode: (tab: string | (string | null)[] | null | undefined) =>
+    decodeTabQueryParam({ tab, disabledFeatures })
+})
+
+export const isBuyFeatureEnabled = ({
+  disabledFeatures = []
+}: { disabledFeatures?: string[] } = {}) => {
+  // Buy feature is enabled if onramp is enabled in .env, and buy is not disabled in the query params
+  return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.BUY)
+}
 
 const cache: Record<
   string,
@@ -519,11 +565,17 @@ export const sanitizeTokenQueryParam = ({
   return tokenLowercased;
 };
 
-export const sanitizeTabQueryParam = (tab: string | string[] | null | undefined): string => {
+export const sanitizeTabQueryParam = ({
+  tab,
+  disabledFeatures = []
+}: {
+  tab: string | string[] | null | undefined
+  disabledFeatures?: string[]
+}): string => {
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase();
 
-    const { tabToIndex: _tabToIndex } = createTabMappings();
+    const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures })
 
     if (Object.keys(_tabToIndex).includes(lowercasedTab)) {
       return lowercasedTab;
