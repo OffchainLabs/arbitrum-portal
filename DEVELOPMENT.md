@@ -22,7 +22,7 @@ This repository contains the **Arbitrum Portal** - a Next.js application that co
 
 2. Install dependencies:
 
-   **Note**: Use a Node version manager (like nvm) to ensure your Node version is compatible with project requirements in `.nvmrc` to avoid installation errors.
+   > **Note**: Use a Node version manager (like nvm) to ensure your Node version is compatible with project requirements in `.nvmrc` to avoid installation errors.
 
    ```bash
    $ yarn
@@ -42,7 +42,7 @@ This repository contains the **Arbitrum Portal** - a Next.js application that co
 
 5. Visit `http://localhost:3000/`
 
-**Note**: Your application will now be running with the Ecosystem app accessible. If you want to use the Bridge app (`/bridge` page), continue to the Environment Setup section below.
+> **Note**: Your application will now be running with the Ecosystem app accessible. If you want to use the Bridge app (`/bridge` page), continue to the Environment Setup section below.
 
 ## Environment Setup
 
@@ -65,7 +65,7 @@ The Bridge app requires environment variables for full functionality:
 
 ## Testing
 
-**Note**: Testing is only available for the Bridge app. The Ecosystem app does not have associated tests - so this section can be ignored if you're only interested in running the Ecosystem app.
+> **Note**: Testing is only available for the Bridge app. The Ecosystem app does not have associated tests - so this section can be ignored if you're only interested in running the Ecosystem app.
 
 ### Unit Tests
 
