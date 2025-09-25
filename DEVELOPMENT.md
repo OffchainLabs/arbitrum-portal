@@ -73,7 +73,8 @@ The Bridge app requires environment variables for full functionality:
 #### Unit Tests
 
 ```bash
-$ yarn test:ci
+# Run Unit tests in watch mode
+$ yarn workspace arb-token-bridge-ui test
 ```
 
 #### E2E Tests
