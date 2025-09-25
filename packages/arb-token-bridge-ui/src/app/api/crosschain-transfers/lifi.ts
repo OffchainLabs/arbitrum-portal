@@ -218,10 +218,7 @@ export type LifiParams = QueryParams & {
 
 function getIntegratorId(request: NextRequest): string {
   const referer = request.headers.get('referer')
-
-  // Check for embed mode via referer header
   const isEmbedMode = referer && referer.includes('/bridge/embed')
-
   return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL
 }
 
