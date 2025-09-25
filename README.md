@@ -2,12 +2,9 @@
   <img src="https://arbitrum.io/assets/arbitrum/logo_color.png" alt="Arbitrum logo" width="128">
 </p>
 
-<p align="center">
-  <span style="font-size:2em; font-weight:bold">
-    Arbitrum Portal
-  </span>
-</p>
-
+<h3 align="center">
+  Arbitrum Portal
+</h3>
 
 <p align="center">
   Your Gateway into the Arbitrum Ecosystem
@@ -18,10 +15,6 @@
     portal.arbitrum.io
   </a>
 </p>
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and contribution guidelines.
 
 ## License
 
