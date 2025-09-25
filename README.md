@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://arbitrum.io/assets/arbitrum/logo_color.png" alt="Arbitrum logo" width="150">
+  <img src="https://arbitrum.io/assets/arbitrum/logo_color.png" alt="Arbitrum logo" width="128">
 </p>
 
 <p align="center">
-  <h1>
+  <span style="font-size:2em; font-weight:bold">
     Arbitrum Portal
-  </h1>
+  </span>
 </p>
 
 
@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://portal.arbitrum.io">
+  <a href="https://portal.arbitrum.io" target="_blank">
     portal.arbitrum.io
   </a>
 </p>
