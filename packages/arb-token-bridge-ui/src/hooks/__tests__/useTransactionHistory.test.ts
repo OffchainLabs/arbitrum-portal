@@ -37,6 +37,11 @@ vi.mock('wagmi', async importActual => ({
   })
 }))
 
+vi.mock('next/navigation', async importActual => ({
+  ...(await importActual()),
+  usePathname: vi.fn().mockReturnValue('/bridge')
+}))
+
 vi.mock('../useArbQueryParams', async importActual => ({
   ...(await importActual()),
   useArbQueryParams: vi.fn().mockReturnValue([{}, vi.fn()])
