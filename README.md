@@ -4,15 +4,16 @@
 
 # Arbitrum Portal
 
+Your Gateway into the Arbitrum Ecosystem
+
 [portal.arbitrum.io](https://portal.arbitrum.io/)
 
-Your gateway to the leading Layer 2 ecosystem built on Ethereum. The Arbitrum Portal provides an inclusive place for the Arbitrum and Ethereum communities to discover the vibrant app ecosystem spanning DeFi, Gaming, NFTs, Bridges, Dev Tooling, and more.
 
 </div>
 
 ## Contributing
 
-For internal developers: See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and contribution guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and contribution guidelines.
 
 ## License
 
