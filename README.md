@@ -1,15 +1,23 @@
-<div align="center">
+<p align="center">
+  <img src="https://arbitrum.io/assets/arbitrum/logo_color.png" alt="Arbitrum logo" width="150">
+</p>
 
-<img src="https://arbitrum.io/assets/arbitrum/logo_color.png" alt="Arbitrum logo" width="100">
-
-# Arbitrum Portal
-
-Your Gateway into the Arbitrum Ecosystem
-
-[portal.arbitrum.io](https://portal.arbitrum.io/)
+<p align="center">
+  <h1>
+    Arbitrum Portal
+  </h1>
+</p>
 
 
-</div>
+<p align="center">
+  Your Gateway into the Arbitrum Ecosystem
+</p>
+
+<p align="center">
+  <a href="https://portal.arbitrum.io">
+    portal.arbitrum.io
+  </a>
+</p>
 
 ## Contributing
 
