@@ -1,32 +1,35 @@
-import '@synthetixio/synpress/support/index.d.ts'
+/// <reference types="cypress" />
+import '@synthetixio/synpress/support/index.d.ts';
+import 'cypress-wait-until';
+
 import {
   acceptTnC,
-  login,
-  searchAndSelectToken,
+  claimCctp,
+  clickClaimButton,
+  clickMoveFundsButton,
+  closeTransactionDetails,
+  confirmSpending,
   fillCustomDestinationAddress,
-  typeAmount,
-  typeAmount2,
-  findAmountInput,
   findAmount2Input,
-  findSourceChainButton,
+  findAmountInput,
+  findClaimButton,
   findDestinationChainButton,
   findGasFeeSummary,
   findMoveFundsButton,
-  clickMoveFundsButton,
   findSelectTokenButton,
-  openTransactionDetails,
-  closeTransactionDetails,
+  findSourceChainButton,
   findTransactionDetailsCustomDestinationAddress,
   findTransactionInTransactionHistory,
-  findClaimButton,
-  clickClaimButton,
+  login,
+  openTransactionDetails,
+  searchAndSelectToken,
+  selectRoute,
   selectTransactionsPanelTab,
-  confirmSpending,
-  claimCctp,
-  switchToTransferPanelTab,
   switchToTransactionHistoryTab,
-  selectRoute
-} from '../support/commands'
+  switchToTransferPanelTab,
+  typeAmount,
+  typeAmount2,
+} from '../support/commands';
 
 declare global {
   namespace Cypress {
@@ -35,38 +38,38 @@ declare global {
        * Custom command to connect MetaMask to the UI.
        * @example cy.login()
        */
-      acceptTnC(): typeof acceptTnC
-      login: typeof login
-      selectTransactionsPanelTab: typeof selectTransactionsPanelTab
+      acceptTnC(): typeof acceptTnC;
+      login: typeof login;
+      selectTransactionsPanelTab: typeof selectTransactionsPanelTab;
       searchAndSelectToken({
         tokenName,
-        tokenAddress
+        tokenAddress,
       }: {
-        tokenName: string
-        tokenAddress: string
-      }): typeof searchAndSelectToken
-      fillCustomDestinationAddress(): typeof fillCustomDestinationAddress
-      typeAmount: typeof typeAmount
-      typeAmount2: typeof typeAmount2
-      findAmountInput: typeof findAmountInput
-      findAmount2Input: typeof findAmount2Input
-      findSourceChainButton: typeof findSourceChainButton
-      findDestinationChainButton: typeof findDestinationChainButton
-      findGasFeeSummary: typeof findGasFeeSummary
-      findMoveFundsButton: typeof findMoveFundsButton
-      clickMoveFundsButton: typeof clickMoveFundsButton
-      findSelectTokenButton: typeof findSelectTokenButton
-      openTransactionDetails: typeof openTransactionDetails
-      closeTransactionDetails: typeof closeTransactionDetails
-      switchToTransferPanelTab: typeof switchToTransferPanelTab
-      switchToTransactionHistoryTab: typeof switchToTransactionHistoryTab
-      findTransactionDetailsCustomDestinationAddress: typeof findTransactionDetailsCustomDestinationAddress
-      findTransactionInTransactionHistory: typeof findTransactionInTransactionHistory
-      findClaimButton: typeof findClaimButton
-      clickClaimButton: typeof clickClaimButton
-      confirmSpending: typeof confirmSpending
-      claimCctp: typeof claimCctp
-      selectRoute: typeof selectRoute
+        tokenName: string;
+        tokenAddress: string;
+      }): typeof searchAndSelectToken;
+      fillCustomDestinationAddress(): typeof fillCustomDestinationAddress;
+      typeAmount: typeof typeAmount;
+      typeAmount2: typeof typeAmount2;
+      findAmountInput: typeof findAmountInput;
+      findAmount2Input: typeof findAmount2Input;
+      findSourceChainButton: typeof findSourceChainButton;
+      findDestinationChainButton: typeof findDestinationChainButton;
+      findGasFeeSummary: typeof findGasFeeSummary;
+      findMoveFundsButton: typeof findMoveFundsButton;
+      clickMoveFundsButton: typeof clickMoveFundsButton;
+      findSelectTokenButton: typeof findSelectTokenButton;
+      openTransactionDetails: typeof openTransactionDetails;
+      closeTransactionDetails: typeof closeTransactionDetails;
+      switchToTransferPanelTab: typeof switchToTransferPanelTab;
+      switchToTransactionHistoryTab: typeof switchToTransactionHistoryTab;
+      findTransactionDetailsCustomDestinationAddress: typeof findTransactionDetailsCustomDestinationAddress;
+      findTransactionInTransactionHistory: typeof findTransactionInTransactionHistory;
+      findClaimButton: typeof findClaimButton;
+      clickClaimButton: typeof clickClaimButton;
+      confirmSpending: typeof confirmSpending;
+      claimCctp: typeof claimCctp;
+      selectRoute: typeof selectRoute;
     }
   }
 }

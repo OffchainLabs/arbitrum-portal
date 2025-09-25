@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: ['master']
     types:
       - opened
       - reopened
@@ -44,7 +44,7 @@ jobs:
     secrets: inherit
 
   test-ui:
-    name: "Test UI"
+    name: 'Test UI'
     runs-on: ubuntu-4
     needs: [build, check-files]
     if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
@@ -67,7 +67,7 @@ jobs:
         run: yarn start-server-and-test 'start' http://127.0.0.1:3000 'yarn test:ci'
 
   audit:
-    name: "Audit"
+    name: 'Audit'
     runs-on: ubuntu-4
     steps:
       - name: Checkout
@@ -85,7 +85,8 @@ jobs:
         run: yarn audit:ci
 
   check-formatting:
-    name: "Check Formatting"
+    name: 'Check Formatting'
+    needs: [build, check-files]
     runs-on: ubuntu-4
     steps:
       - name: Checkout
@@ -99,12 +100,15 @@ jobs:
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
 
+      - name: Restore build artifacts
+        uses: ./.github/actions/restore-build-artifacts
+
       - name: Check formatting with Prettier
         run: yarn prettier:check
 
       - name: Check formatting with ESLint
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          NODE_OPTIONS: '--max_old_space_size=4096'
         run: yarn lint
 
   # e2e-tests:
@@ -117,7 +121,7 @@ jobs:
   #   secrets: inherit
 
   test-e2e-success:
-    name: "Test E2E Success"
+    name: 'Test E2E Success'
     runs-on: ubuntu-4
     # needs: [e2e-tests]
     if: always()
@@ -131,4 +135,3 @@ jobs:
       #   run: exit 1
       - name: Regular E2E Skipped
         run: echo "Regular E2E tests skipped"
-

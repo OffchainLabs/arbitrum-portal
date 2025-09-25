@@ -11,6 +11,17 @@
     // https://stackoverflow.com/questions/63118405/how-to-fix-eslintrc-the-file-does-not-match-your-project-config
     "eslint.config.mjs",
     "./packages/arb-token-bridge-ui/tests/**/*.ts",
-    "./packages/arb-token-bridge-ui/synpress*.ts"
+    "./packages/arb-token-bridge-ui/synpress*.ts",
+    "./packages/portal/**/*.ts",
+    "./packages/app/**/*.ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/node_modules",
+    "**/dist",
+    "**/packages/app/build",
+    "public"
   ]
 }

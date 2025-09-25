@@ -38,8 +38,9 @@ jobs:
       id: cache
       uses: actions/cache/restore@v4
       with:
-        path:  |
+        path: |
           ./packages/app/build
+          ./packages/app/public/__auto-generated-*
         key: build-artifacts-${{ github.run_id }}
 
     - name: Install node_modules
@@ -64,4 +65,5 @@ jobs:
       with:
         path: |
           ./packages/app/build
+          ./packages/app/public/__auto-generated-*
         key: build-artifacts-${{ github.run_id }}

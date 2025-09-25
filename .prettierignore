@@ -1,6 +1,5 @@
 **/.next
 **/out
-**/build
+**/packages/app/build
 **/dist
-.github/
-**/src/styles/
+**/public/

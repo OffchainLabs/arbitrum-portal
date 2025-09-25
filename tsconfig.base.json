@@ -14,7 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noUncheckedIndexedAccess": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
+    "noEmit": true,
+    "incremental": true,
     "baseUrl": ".",
     "paths": {
       "@/app/*": ["./packages/portal/app/*"],
@@ -29,6 +31,12 @@
       "@/icons/*": ["./packages/app/public/icons/*"],
       "@/images/*": ["./packages/app/public/images/*"],
       "@/public/*": ["./packages/app/public/*"]
-    }
+    },
+    "types": [
+      "dayjs/plugin/relativeTime",
+      "dayjs/plugin/advancedFormat",
+      "dayjs/plugin/timezone",
+      "dayjs/plugin/utc"
+    ]
   }
 }
