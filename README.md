@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://portal.arbitrum.io" target="_blank">
+  <a href="https://portal.arbitrum.io">
     portal.arbitrum.io
   </a>
 </p>
