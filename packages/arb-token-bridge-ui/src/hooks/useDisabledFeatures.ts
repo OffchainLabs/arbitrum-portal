@@ -19,7 +19,7 @@ export const useDisabledFeatures = () => {
 
       return (disabledFeatures as readonly DisabledFeatures[]).includes(feature)
     },
-    [disabledFeatures]
+    [disabledFeatures, pathname]
   )
 
   return { isFeatureDisabled }
