@@ -1,52 +1,43 @@
 ## Prerequisites
 
-- Install [Node.js](https://nodejs.org/en/download/)
-- Install [Yarn (version 1)](https://classic.yarnpkg.com)
+- Install [Node.js](https://nodejs.org/en/download/).
+- Install [Yarn (version 1)](https://classic.yarnpkg.com).
+- Use a Node version manager (like `nvm`) to ensure your Node version is compatible with project requirements in `.nvmrc` to avoid installation errors.
 
 ## Repository Structure
 
 This repository contains the **Arbitrum Portal** - a Next.js application that combines:
 
 - **Ecosystem App** (`packages/portal/`) - The Arbitrum ecosystem homepage showcasing projects, chains, and resources.
-- **Bridge App** (`packages/arb-token-bridge-ui/`) - The token bridging interface for moving assets between Arbitrum Chains
-- **Main App** (`packages/app/`) - The Next.js application that orchestrates / routes to both apps
+- **Bridge App** (`packages/arb-token-bridge-ui/`) - The token bridging interface for moving assets between Arbitrum Chains.
+- **Main App** (`packages/app/`) - The Next.js application that orchestrates / routes to both apps.
 
 ## Quick Start
 
 1. Clone the repository:
 
    ```bash
-   $ git clone https://github.com/OffchainLabs/arbitrum-portal
+   $ git clone git@github.com:OffchainLabs/arbitrum-portal.git
    $ cd arbitrum-portal
    ```
 
 2. Install dependencies:
 
-   > **Note**: Use a Node version manager (like nvm) to ensure your Node version is compatible with project requirements in `.nvmrc` to avoid installation errors.
-
    ```bash
    $ yarn
    ```
 
-3. Build the project:
-
-   ```bash
-   $ yarn build
-   ```
-
-4. Run the application:
+3. Run the application:
 
    ```bash
    $ yarn dev
    ```
 
-5. Visit `http://localhost:3000/`
+4. Visit `http://localhost:3000/`
 
 > **Note**: Your application will now be running with the Ecosystem app accessible. If you want to use the Bridge app (`/bridge` page), continue to the Environment Setup section below.
 
-## Environment Setup
-
-### For Bridge App
+## Environment Setup for Bridge App
 
 The Bridge app requires environment variables for full functionality:
 
@@ -58,22 +49,34 @@ The Bridge app requires environment variables for full functionality:
 
 2. Add your keys to `.env`:
 
-   - `NEXT_PUBLIC_INFURA_KEY=your-infura-key`
-   - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id`
+   **Required:**
 
-3. Get a WalletConnect project ID from [WalletConnect dashboard](https://cloud.walletconnect.com/app)
+   - `NEXT_PUBLIC_RPC_PROVIDER = infura / alchemy`
+   - `NEXT_PUBLIC_INFURA_KEY = your-infura-key / your-alchemy-key`
+   - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = your-walletconnect-project-id` (Get from [WalletConnect dashboard](https://cloud.walletconnect.com/app))
+
+   **Optional features (enable as needed):**
+
+   - `NEXT_PUBLIC_FEATURE_FLAG_LIFI = true` (Enable LiFi integration)
+   - `LIFI_KEY = your-lifi-key` (Get from [LiFi dashboard](https://portal.li.fi/))
+
+   - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP = true / false` (Enable onramp functionality)
+   - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED = moonpay` (Specify onramp services)
+
+   - `NEXT_PUBLIC_MOONPAY_PK = your-moonpay-public-key` (Get from [MoonPay dashboard](https://dashboard.moonpay.com/))
+   - `MOONPAY_SK = your-moonpay-secret-key` (Get from [MoonPay dashboard](https://dashboard.moonpay.com/))
 
 ## Testing
 
 > **Note**: Testing is only available for the Bridge app. The Ecosystem app does not have associated tests - so this section can be ignored if you're only interested in running the Ecosystem app.
 
-### Unit Tests
+#### Unit Tests
 
 ```bash
 $ yarn test:ci
 ```
 
-### E2E Tests
+#### E2E Tests
 
 E2E tests are only available for the Bridge app and require a local Nitro test node:
 
