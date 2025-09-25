@@ -124,9 +124,12 @@ export async function sanitizeAndRedirect(
       sourceChainId: sanitizedChainIds.sourceChainId,
       destinationChainId: sanitizedChainIds.destinationChainId,
     }),
-    tab: sanitizeTabQueryParam(tab),
-    disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures),
-  };
+    tab: sanitizeTabQueryParam({
+      tab,
+      disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures)
+    }),
+    disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures)
+  }
 
   // if the sanitized query params are different from the initial values, redirect to the url with sanitized query params
   if (
