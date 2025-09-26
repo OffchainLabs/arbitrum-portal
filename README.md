@@ -16,6 +16,10 @@
   </a>
 </p>
 
+## Development
+
+For instructions on how to run the code locally, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
 ## License
 
 © 2025 Offchain Labs, Inc. All rights reserved.
