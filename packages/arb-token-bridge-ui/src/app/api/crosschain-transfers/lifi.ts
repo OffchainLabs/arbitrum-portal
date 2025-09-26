@@ -15,6 +15,11 @@ import { CrosschainTransfersRouteBase, QueryParams, Token } from './types'
 import { ether } from '../../../constants'
 import { isValidLifiTransfer } from './utils'
 
+export const LIFI_INTEGRATOR_IDS = {
+  NORMAL: '_arbitrum',
+  EMBED: 'widget_prod'
+} as const
+
 export enum Order {
   /**
    * This sorting option prioritises routes with the highest estimated return amount.
@@ -211,12 +216,19 @@ export type LifiParams = QueryParams & {
   denyExchanges?: string[]
 }
 
-export const INTEGRATOR_ID = '_arbitrum'
+function getIntegratorId(request: NextRequest): string {
+  const referer = request.headers.get('referer')
+  const isEmbedMode = referer && referer.includes('/bridge/embed')
+  return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL
+}
+
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
+  const integratorId = getIntegratorId(request)
+
   createConfig({
-    integrator: INTEGRATOR_ID,
+    integrator: integratorId,
     apiKey: process.env.LIFI_KEY
   })
 
@@ -305,7 +317,7 @@ export async function GET(
     }
 
     const options: RoutesRequest['options'] = {
-      integrator: INTEGRATOR_ID,
+      integrator: integratorId,
       allowSwitchChain: false,
       allowDestinationCall: false
     }

@@ -11,7 +11,7 @@ import { AppContextProvider } from './AppContext'
 import { getProps } from '../../util/wagmi/setup'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createConfig } from '@lifi/sdk'
-import { INTEGRATOR_ID } from '@/bridge/app/api/crosschain-transfers/lifi'
+import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi'
 
 const rainbowkitTheme = merge(darkTheme(), {
   colors: {
@@ -28,6 +28,11 @@ const rainbowkitTheme = merge(darkTheme(), {
 // https://github.com/wagmi-dev/references/blob/main/packages/connectors/src/walletConnect.ts#L114
 const searchParams = new URLSearchParams(window.location.search)
 const targetChainKey = searchParams.get('sourceChain')
+
+const integratorId =
+  window.location.pathname === '/bridge/embed'
+    ? LIFI_INTEGRATOR_IDS.EMBED
+    : LIFI_INTEGRATOR_IDS.NORMAL
 
 const wagmiConfig = getProps(targetChainKey)
 
@@ -50,7 +55,7 @@ interface AppProvidersProps {
 
 const queryClient = new QueryClient()
 
-createConfig({ integrator: INTEGRATOR_ID })
+createConfig({ integrator: integratorId })
 export function AppProviders({ children }: AppProvidersProps) {
   const overmind = useMemo(() => createOvermind(config), [])
 
