@@ -10,7 +10,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  return NextResponse.next();
+  // Redirect /?tab=buy to /bridge/buy and keep query param (without tab)
+  if (url.searchParams.get('mode') === 'buy') {
+    url.pathname = '/bridge/buy'
+    url.searchParams.delete('tab')
+    return NextResponse.redirect(url, 308)
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {

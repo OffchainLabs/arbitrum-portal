@@ -54,7 +54,7 @@ module.exports = {
     return [
       // Bridge
       {
-        source: '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed)(?!.*\\.[^/]+$).+)',
+        source: '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed|buy)(?!.*\\.[^/]+$).+)',
         missing: [
           {
             type: 'query',
