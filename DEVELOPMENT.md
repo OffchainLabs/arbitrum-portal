@@ -44,7 +44,7 @@ The Bridge app requires environment variables for full functionality:
 1. Copy the environment file:
 
    ```bash
-   $ cp ./packages/app/.env.local.sample ./packages/app/.env
+   $ cp ./packages/app/.env.sample ./packages/app/.env
    ```
 
 2. Add your keys to `.env`:
