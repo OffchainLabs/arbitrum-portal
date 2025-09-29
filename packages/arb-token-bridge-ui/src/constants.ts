@@ -33,3 +33,7 @@ export const ether = { name: 'Ether', symbol: 'ETH', decimals: 18 } as const;
 export const PORTAL_API_ENDPOINT = 'https://portal.arbitrum.io'
 
 export const BUY_PATHNAME = '/bridge/buy'
+
+export const EMBED_PATHNAME = '/bridge/embed'
+
+export const BUY_EMBED_PATHNAME = '/bridge/embed/buy'

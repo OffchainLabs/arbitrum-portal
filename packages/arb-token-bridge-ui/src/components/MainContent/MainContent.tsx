@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@uidotdev/usehooks'
 import { Tab, TabGroup, TabPanels } from '@headlessui/react'
 import { useCallback, Fragment } from 'react'
+import { usePathname } from 'next/navigation'
 
 import { TransferPanel } from '../TransferPanel/TransferPanel'
 import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats'
@@ -12,7 +13,6 @@ import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { useMode } from '../../hooks/useMode'
 import { RecoverFunds } from '../RecoverFunds'
 import { BuyPanel } from '../BuyPanel'
-import { usePathname } from 'next/navigation'
 import { BUY_PATHNAME } from '@/bridge/constants'
 
 export function MainContent() {

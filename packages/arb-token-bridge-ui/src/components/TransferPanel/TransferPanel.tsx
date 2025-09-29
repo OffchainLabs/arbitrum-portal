@@ -10,31 +10,29 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
-import { BridgeTransfer, TransferOverrides } from '@/token-bridge-sdk/BridgeTransferStarter';
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
-
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
-import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
-import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
-import { AssetType, DepositGasEstimates } from '../../hooks/arbTokenBridge.types';
-import { useAccountType } from '../../hooks/useAccountType';
-import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
-import { useError } from '../../hooks/useError';
-import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
-import { useMode } from '../../hooks/useMode';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
-import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
-import { useTokenLists } from '../../hooks/useTokenLists';
-import { useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { useAppState } from '../../state';
+import { getNetworkName, isNetwork } from '../../util/networks';
+import { TokenDepositCheckDialogType } from './TokenDepositCheckDialog';
+import {
+  TokenImportDialog,
+  useTokenImportDialogStore
+} from './TokenImportDialog';
+import {
+  TabParamEnum,
+  tabToIndex,
+  useArbQueryParams
+} from '../../hooks/useArbQueryParams';
+import { useDialog } from '../common/Dialog';
+import { useAppContextActions } from '../App/AppContext';
+import { trackEvent } from '../../util/AnalyticsUtils';
+import { TransferPanelMain } from './TransferPanelMain';
+import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
+import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
+import { errorToast, warningToast } from '../common/atoms/Toast';
+import { useAccountType } from '../../hooks/useAccountType';
+import { BUY_EMBED_PATHNAME, DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
+import { isUserRejectedError } from '../../util/isUserRejectedError';
+import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import {
   DepositStatus,
   LifiMergedTransaction,
@@ -42,48 +40,57 @@ import {
   WithdrawalStatus,
 } from '../../state/app/state';
 import { normalizeTimestamp } from '../../state/app/utils';
-import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { trackEvent } from '../../util/AnalyticsUtils';
-import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
-import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
-import { getNetworkName, isNetwork } from '../../util/networks';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
-import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
-import { useDialog } from '../common/Dialog';
 import { DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { ExternalLink } from '../common/ExternalLink';
 import { NoteBox } from '../common/NoteBox';
-import { errorToast, warningToast } from '../common/atoms/Toast';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import { getAmountLoss } from './HighSlippageWarningDialog';
 import { MoveFundsButton } from './MoveFundsButton';
 import { ReceiveFundsHeader } from './ReceiveFundsHeader';
 import { Routes } from './Routes/Routes';
 import { ToSConfirmationCheckbox } from './ToSConfirmationCheckbox';
-import { TokenDepositCheckDialogType } from './TokenDepositCheckDialog';
-import { TokenImportDialog, useTokenImportDialogStore } from './TokenImportDialog';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
-import { TransferPanelMain } from './TransferPanelMain';
 import { ImportTokenModalStatus, getWarningTokenDescription } from './TransferPanelUtils';
 import {
   convertBridgeSdkToMergedTransaction,
-  convertBridgeSdkToPendingDepositTransaction,
+  convertBridgeSdkToPendingDepositTransaction
 } from './bridgeSdkConversionUtils';
-import { useAmountBigNumber } from './hooks/useAmountBigNumber';
+import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
+import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { useBalances } from '../../hooks/useBalances';
+import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
+import { useTokenLists } from '../../hooks/useTokenLists';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
+import { useAmountBigNumber } from './hooks/useAmountBigNumber';
+import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
+import { useError } from '../../hooks/useError';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
+import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { getAmountToPay } from './useTransferReadiness';
-import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
+import { useMode } from '../../hooks/useMode';
+import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { WidgetBuyPanel } from '../Widget/WidgetBuyPanel';
+import { useNetworks } from '@/bridge/hooks/useNetworks';
+import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
+import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
+import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
+import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
+import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
+import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -103,13 +110,15 @@ const networkConnectionWarningToast = () =>
 export function TransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
-  const [{ amount, amount2, destinationAddress, token: tokenFromSearchParams }, setQueryParams] =
-    useArbQueryParams();
-  const { embedMode } = useMode();
-  const [importTokenModalStatus, setImportTokenModalStatus] = useState<ImportTokenModalStatus>(
-    ImportTokenModalStatus.IDLE,
-  );
-  const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
+  const [
+    { amount, amount2, destinationAddress, token: tokenFromSearchParams },
+    setQueryParams
+  ] = useArbQueryParams()
+  const { embedMode, pathname } = useMode()
+  const [importTokenModalStatus, setImportTokenModalStatus] =
+    useState<ImportTokenModalStatus>(ImportTokenModalStatus.IDLE)
+  const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] =
+    useState(false)
   const {
     app: {
       arbTokenBridge: { token },
@@ -1253,6 +1262,12 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
+    if (pathname === BUY_EMBED_PATHNAME) {
+      return (
+        <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />
+      )
+    }
+
     return (
       <WidgetTransferPanel
         openDialog={openDialog}
@@ -1272,8 +1287,8 @@ export function TransferPanel() {
 
       <div
         className={twMerge(
-          'mb-7 flex flex-col gap-4 border-y border-white/30 bg-gray-1 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
-          'sm:rounded sm:border',
+          'bg-gray-1 mb-7 flex flex-col gap-4 border-y border-white/30 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
+          'sm:rounded sm:border'
         )}
       >
         {/* PoP Apex 70700 and PoP Boss 70701 */}

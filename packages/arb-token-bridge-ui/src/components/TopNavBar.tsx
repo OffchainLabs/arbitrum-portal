@@ -1,32 +1,29 @@
-import { Tab, TabList } from '@headlessui/react';
-import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline';
-import Image from 'next/image';
-import React from 'react';
-import { twMerge } from 'tailwind-merge';
+import { Tab, TabList } from '@headlessui/react'
+import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline'
+import React, { PropsWithChildren } from 'react'
+import { twMerge } from 'tailwind-merge'
+import Image from 'next/image'
+import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo'
+import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 
-import { isOnrampEnabled } from '../util/featureFlag';
-import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
-import { useArbQueryParams } from '../hooks/useArbQueryParams';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { BUY_EMBED_PATHNAME, BUY_PATHNAME } from '../constants'
+import { useMode } from '../hooks/useMode'
+import { isOnrampEnabled } from '../util/featureFlag'
 
-import { BUY_PATHNAME } from '../constants';
-import { useMode } from '../hooks/useMode';
-
-function StyledTab({
-  children,
-  href,
-  ...props
-}: React.AnchorHTMLAttributes<HTMLAnchorElement> &
-  React.HTMLAttributes<HTMLAnchorElement>) {
+function StyledTab({ children, ...props }: PropsWithChildren) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
   const { embedMode } = useMode()
 
   return (
     <Tab
       as={Link}
-      href={href ?? '/bridge'}
+      href={{
+        pathname: embedMode ? '/bridge/embed' : '/bridge',
+        query: Object.fromEntries(searchParams.entries())
+      }}
       className={twMerge(
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
         isBuyTab ? '' : 'ui-selected:bg-black/75'
@@ -42,10 +39,10 @@ StyledTab.displayName = 'StyledTab';
 
 export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo()
-  const [{ disabledFeatures }] = useArbQueryParams()
   const showBuyPanel = isOnrampEnabled();
   const pathname = usePathname()
   const isBuyTab = pathname === BUY_PATHNAME
+  const { embedMode } = useMode()
 
   return (
     <div
@@ -56,7 +53,7 @@ export function TopNavBar() {
     >
       {showBuyPanel && (
         <Link
-          href={BUY_PATHNAME}
+          href={embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME}
           className={twMerge(
             'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
             isBuyTab && 'bg-black/75'
@@ -68,7 +65,7 @@ export function TopNavBar() {
         </Link>
       )}
       <TabList className={twMerge('col-span-2 grid grid-cols-2')}>
-        <StyledTab aria-label="Switch to Bridge Tab" href="/bridge">
+        <StyledTab aria-label="Switch to Bridge Tab">
           <PaperAirplaneIcon className="h-3 w-3" />
           Bridge
         </StyledTab>

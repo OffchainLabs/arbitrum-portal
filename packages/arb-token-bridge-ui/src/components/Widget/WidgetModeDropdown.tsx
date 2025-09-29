@@ -1,17 +1,20 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { twMerge } from 'tailwind-merge';
 import {
   CheckIcon,
   ChevronDownIcon,
   PaperAirplaneIcon,
   WalletIcon,
 } from '@heroicons/react/24/outline';
-import { useCallback } from 'react';
-import { twMerge } from 'tailwind-merge';
+'use client'
 
-import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { isOnrampEnabled } from '../../util/featureFlag';
 import { Button } from '../common/Button';
 import { Transition } from '../common/Transition';
+import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
+import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
 
 interface ModeOptionProps {
   icon: React.ReactNode;
@@ -36,18 +39,11 @@ const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
 };
 
 export const WidgetModeDropdown = () => {
-  const [{ tab }, setQueryParams] = useArbQueryParams();
   const showBuyPanel = isOnrampEnabled();
-
-  const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
-
-  const handleModeChange = useCallback(
-    (newTab: TabParamEnum) => {
-      const newTabIndex = newTab === TabParamEnum.BUY ? 0 : showBuyPanel ? 1 : 0;
-      setQueryParams({ tab: newTabIndex });
-    },
-    [setQueryParams, showBuyPanel],
-  );
+  const router = useRouter()
+  const pathname = usePathname()
+  const isBuyTab = pathname === BUY_EMBED_PATHNAME
+  const isBridgeTab = pathname === EMBED_PATHNAME
 
   if (!showBuyPanel) {
     // If buy panel is not enabled, just show the bridge button without dropdown
@@ -75,12 +71,12 @@ export const WidgetModeDropdown = () => {
               className="h-[40px] px-[10px] py-[10px] text-white disabled:bg-transparent disabled:text-white disabled:opacity-100"
             >
               <div className="flex items-center gap-2">
-                {currentTab === TabParamEnum.BUY ? (
+                {isBuyTab ? (
                   <WalletIcon className="h-3 w-3" />
                 ) : (
                   <PaperAirplaneIcon className="h-3 w-3" />
                 )}
-                {currentTab === TabParamEnum.BUY ? 'Buy' : 'Bridge'}
+                {isBuyTab ? 'Buy' : 'Bridge'}
                 <ChevronDownIcon
                   className={twMerge('h-3 w-3 opacity-30 transition-all', open && 'rotate-180')}
                 />
@@ -89,23 +85,23 @@ export const WidgetModeDropdown = () => {
           </PopoverButton>
           <Transition>
             <PopoverPanel className="absolute left-0 top-0 z-10 w-[150px] origin-top overflow-hidden rounded-md text-sm text-white">
-              <div className="flex w-full flex-col gap-1 rounded-md border border-white/20 bg-widget-background p-2">
+              <div className="bg-widget-background flex w-full flex-col gap-1 rounded-md border border-white/20 p-2">
                 <ModeOption
                   icon={<PaperAirplaneIcon className="h-3 w-3" />}
                   label="Bridge"
-                  isSelected={currentTab === TabParamEnum.BRIDGE}
+                  isSelected={isBridgeTab}
                   onClick={() => {
-                    handleModeChange(TabParamEnum.BRIDGE);
-                    close();
+                    router.push(EMBED_PATHNAME)
+                    close()
                   }}
                 />
                 <ModeOption
                   icon={<WalletIcon className="h-3 w-3" />}
                   label="Buy"
-                  isSelected={currentTab === TabParamEnum.BUY}
+                  isSelected={isBuyTab}
                   onClick={() => {
-                    handleModeChange(TabParamEnum.BUY);
-                    close();
+                    router.push(BUY_EMBED_PATHNAME)
+                    close()
                   }}
                 />
               </div>
