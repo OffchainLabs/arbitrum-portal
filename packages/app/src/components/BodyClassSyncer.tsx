@@ -1,26 +1,22 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useSelectedLayoutSegments } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { PathnameEnum } from '@/bridge/constants';
-
 export function BodyClassSyncer() {
-  const pathname = usePathname();
+  const segments = useSelectedLayoutSegments();
   /**
    * To avoid override of CSS, we scope tailwind CSS with id.
    * We need class to be on body rather than layout wrapper because of portal.
    */
   useEffect(() => {
-    // Catch /bridge and bridge?... but not /bridges-and-on-ramps
-    const isBridgeRoute =
-      pathname === PathnameEnum.BRIDGE || pathname.startsWith(PathnameEnum.BRIDGE);
+    const isBridgeRoute = segments.includes('bridge');
     document.body.classList.add(isBridgeRoute ? 'bridge-wrapper' : 'portal-wrapper');
 
     return () => {
       document.body.classList.remove('bridge-wrapper', 'portal-wrapper');
     };
-  }, [pathname]);
+  }, [segments]);
 
   return null;
 }
