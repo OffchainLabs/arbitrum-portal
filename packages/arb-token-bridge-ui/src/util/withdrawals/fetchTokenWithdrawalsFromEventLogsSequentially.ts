@@ -96,6 +96,7 @@ export async function fetchTokenWithdrawalsFromEventLogsSequentially({
       query => query.priority === currentPriority
     )
 
+    // eslint-disable-next-line no-await-in-loop
     const currentPriorityResults = await Promise.all(
       currentPriorityQueries.map(query =>
         backOff(() => fetchTokenWithdrawalsFromEventLogs(query.params))
@@ -106,6 +107,7 @@ export async function fetchTokenWithdrawalsFromEventLogsSequentially({
       result.push(...r)
     })
 
+    // eslint-disable-next-line no-await-in-loop
     await wait(delayMs)
 
     currentPriority++

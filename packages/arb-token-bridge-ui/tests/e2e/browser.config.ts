@@ -24,12 +24,14 @@ const getBrowserPath = () => {
   return chromePath
 }
 
-export const browserConfig = {
+export const browserConfig: Cypress.Browser = {
   name: 'chrome',
   family: 'chromium',
   channel: 'stable',
   displayName: 'Chromium',
   version: packageConfig.chromeVersion,
-  majorVersion: packageConfig.chromeVersion.split('.')[0],
-  path: getBrowserPath()
+  majorVersion: packageConfig.chromeVersion.split('.')[0] as string,
+  path: getBrowserPath(),
+  isHeaded: true,
+  isHeadless: false
 }

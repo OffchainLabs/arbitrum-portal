@@ -41,26 +41,22 @@ export const CategorySection = ({ category }: { category: Category }) => {
       selectedSubcategories.includes(subcategory),
     );
 
-  const selectedSubcategoriesWithinCategory: Subcategory[] =
-    isEverySubcategorySelected
-      ? category.subcategories
-      : (subcategoriesInThisCategory || []).reduce(
-          (subcategoryObjectList, subcategorySlug) => {
-            // find selected subcategories from the url query param list
-            if (selectedSubcategories.includes(subcategorySlug)) {
-              // using the slug, find the Subcategory object in the category's Subcategory[]
-              let selectedSubcategoryObject = category.subcategories.find(
-                (subcategory) => subcategory.slug === subcategorySlug,
-              );
-              // now push the `Subcategory` object found for the slug to the list
-              if (selectedSubcategoryObject) {
-                subcategoryObjectList.push(selectedSubcategoryObject);
-              }
-            }
-            return subcategoryObjectList;
-          },
-          [] as Subcategory[],
-        );
+  const selectedSubcategoriesWithinCategory: Subcategory[] = isEverySubcategorySelected
+    ? category.subcategories
+    : (subcategoriesInThisCategory || []).reduce((subcategoryObjectList, subcategorySlug) => {
+        // find selected subcategories from the url query param list
+        if (selectedSubcategories.includes(subcategorySlug)) {
+          // using the slug, find the Subcategory object in the category's Subcategory[]
+          const selectedSubcategoryObject = category.subcategories.find(
+            (subcategory) => subcategory.slug === subcategorySlug,
+          );
+          // now push the `Subcategory` object found for the slug to the list
+          if (selectedSubcategoryObject) {
+            subcategoryObjectList.push(selectedSubcategoryObject);
+          }
+        }
+        return subcategoryObjectList;
+      }, [] as Subcategory[]);
 
   function selectAll() {
     posthog?.capture('Category Select All Button Click', {

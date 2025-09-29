@@ -47,6 +47,6 @@ export const getChainToMonitor = ({
     hasExplorerUrl(chain) ? chain.explorerUrl : getExplorerUrl(chain.chainId)
   ),
   orbitRpcUrl: sanitizeRpcUrl(rpcUrl),
-  parentRpcUrl: sanitizeRpcUrl(rpcURLs[chain.parentChainId]),
+  parentRpcUrl: sanitizeRpcUrl(rpcURLs[chain.parentChainId] as string),
   parentExplorerUrl: sanitizeExplorerUrl(getExplorerUrl(chain.parentChainId))
 })

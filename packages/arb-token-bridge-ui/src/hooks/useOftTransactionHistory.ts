@@ -304,6 +304,7 @@ export function useOftTransactionHistory({
 
     const validMessages = []
     for (const message of layerZeroResponse.data) {
+      // eslint-disable-next-line no-await-in-loop
       if (await validateLayerZeroMessage(message)) {
         validMessages.push(message)
       }

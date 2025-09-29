@@ -28,13 +28,7 @@ export function generateMetadata(): Metadata {
   }
 }
 
-type OptionalMissionsPageParams = {
-  searchParams: {
-    project?: string
-  }
-}
-
-export default function MissionsPage(params: OptionalMissionsPageParams) {
+export default function MissionsPage() {
   return (
     <div className="relative mx-auto flex w-full max-w-[1000px] flex-col gap-[80px]">
       {/* Banner Image */}

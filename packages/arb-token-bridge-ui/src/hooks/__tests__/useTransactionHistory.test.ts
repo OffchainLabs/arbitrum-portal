@@ -123,6 +123,7 @@ describe.sequential('useTransactionHistory', () => {
 
         expect(result.current.loading).toBe(true)
 
+        // eslint-disable-next-line no-await-in-loop
         await waitFor(
           () => {
             // fetching finished

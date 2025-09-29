@@ -15,7 +15,7 @@ import specFiles from './tests/e2e/cctp.json'
 import { CommonAddress } from './src/util/CommonAddressUtils'
 import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory'
 import { TokenMessengerAbi } from './src/util/cctp/TokenMessengerAbi'
-import { ChainDomain } from './src/pages/api/cctp/[type]'
+import { ChainDomain } from './src/app/api/cctp/[type]'
 import { browserConfig } from './tests/e2e/browser.config'
 
 export async function fundUsdc({
@@ -189,7 +189,7 @@ async function createCctpTx(
 
   await tokenMessenger.deployed()
 
-  const depositForBurnTx = await tokenMessenger.functions.depositForBurn(
+  const depositForBurnTx = await tokenMessenger.functions.depositForBurn?.(
     utils.parseUnits(amount, 6),
     type === 'deposit' ? ChainDomain.ArbitrumOne : ChainDomain.Ethereum,
     utils.hexlify(utils.zeroPad(destinationAddress, 32)),
@@ -239,11 +239,11 @@ export default defineConfig({
 
       setupCypressTasks(on, { requiresNetworkSetup: false })
       synpressPlugins(on, config)
+      config.browsers = [browserConfig]
       return config
     },
     baseUrl: 'http://localhost:3000',
     specPattern: tests,
     supportFile: 'tests/support/index.ts',
-    browsers: [browserConfig]
   }
 })

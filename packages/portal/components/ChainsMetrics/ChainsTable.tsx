@@ -3,10 +3,9 @@
 import { ARB_NETWORKS } from '@/common/chains';
 import { dayjs, DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
 import { ORBIT_CHAINS } from '@/common/orbitChains';
-import { EntityType, OrbitChain, PortalStats } from '@/common/types';
+import { EntityType, OrbitChain } from '@/common/types';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import chainMetricsJson from '@/public/__auto-generated-chain-metrics.json';
-import statsJson from '@/public/__auto-generated-stats.json';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -18,6 +17,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
+
 import { FilterPanel, GAS_SPEED_LIMIT_BUCKETS } from './FilterPanel';
 import { Transition } from '@headlessui/react';
 import { Fragment } from 'react';
@@ -101,13 +101,6 @@ const tpsFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 });
 
-const smallNumberFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 3,
-});
-
-// Get portal stats from the json file
-const portalStats: PortalStats = statsJson.content as PortalStats;
-
 // Category name mapping with proper capitalization and spacing
 const CATEGORY_NAME_MAP: Record<string, string> = {
   defi: 'DeFi',
@@ -139,7 +132,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
 
   return (
     <Popover className="relative inline-block ml-1">
-      {({ open }) => (
+      {() => (
         <>
           <Popover.Button 
             ref={buttonRef}
@@ -313,7 +306,7 @@ export const ChainsTable = () => {
           if (gasToken === '-') gasToken = 'OTHER';
           
           // Determine token type for filtering (ETH or OTHER)
-          let gasTokenType = gasToken.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER';
+          const gasTokenType = gasToken.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER';
           
           // Handle data availability, replacing '-' with meaningful value
           let dataAvailability = orbitChain.chain?.type || 'Unknown';
@@ -899,7 +892,6 @@ export const ChainsTable = () => {
               ) : (
                 <>
                   {sortedChainsData.map((chain, index) => {
-                    const isOrbitChain = chain.orbitChain !== null;
                     return (
                       <tr
                         key={index}

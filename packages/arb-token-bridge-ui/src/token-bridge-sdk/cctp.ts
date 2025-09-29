@@ -134,12 +134,14 @@ export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {
 
   const waitForAttestation = async (attestationHash: Address) => {
     while (true) {
+      // eslint-disable-next-line no-await-in-loop
       const attestation = await fetchAttestation(attestationHash)
       if (attestation.status === 'complete') {
         return attestation.attestation
       }
 
-      await new Promise(r => setTimeout(r, 30_000))
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 30_000))
     }
   }
 

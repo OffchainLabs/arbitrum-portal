@@ -77,7 +77,7 @@ describe('Withdraw native token', () => {
             .should('be.enabled')
             .click()
 
-          cy.confirmMetamaskTransaction()
+          cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
 
           cy.findTransactionInTransactionHistory({
             duration: 'Less than a minute',
@@ -104,7 +104,7 @@ describe('Withdraw native token', () => {
             })
           )
 
-          cy.confirmMetamaskTransaction()
+          cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
 
           cy.findByLabelText('show settled transactions')
             .should('be.visible')
@@ -162,7 +162,7 @@ describe('Withdraw native token', () => {
         .should('be.enabled')
         .click()
 
-      cy.confirmMetamaskTransaction()
+      cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
 
       const txData = {
         amount: ETHToWithdraw,

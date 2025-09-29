@@ -230,13 +230,13 @@ export default defineConfig({
 
       synpressPlugins(on, config)
       setupCypressTasks(on, { requiresNetworkSetup: true })
+      config.browsers = [browserConfig]
       return config
     },
     baseUrl: 'http://localhost:3000',
     specPattern: tests,
     supportFile: 'tests/support/index.ts',
     defaultCommandTimeout: 20_000,
-    browsers: [browserConfig]
   }
 })
 

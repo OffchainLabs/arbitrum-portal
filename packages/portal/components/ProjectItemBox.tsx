@@ -113,9 +113,11 @@ const ItemContent = ({
         project: title,
         Element: analyticsSource,
       };
-      isBookmarked
-        ? removeBookmarkedProject(slug, analyticsProps)
-        : addBookmarkedProject(slug, analyticsProps);
+      if (isBookmarked) {
+        removeBookmarkedProject(slug, analyticsProps);
+      } else {
+        addBookmarkedProject(slug, analyticsProps);
+      }
     }
 
     event.stopPropagation();

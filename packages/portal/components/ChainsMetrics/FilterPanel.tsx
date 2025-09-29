@@ -3,33 +3,22 @@
 import { Popover } from '@headlessui/react';
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 
-// Define TVL and TPS buckets
-const TVL_BUCKETS = [
-  { label: '< $1M', min: 0, max: 1000000 },
-  { label: '$1M - $10M', min: 1000000, max: 10000000 },
-  { label: '> $10M', min: 10000000, max: Infinity }
-];
-
-const TPS_BUCKETS = [
-  { label: '< 1', min: 0, max: 1 },
-  { label: '1 - 10', min: 1, max: 10 },
-  { label: '> 10', min: 10, max: Infinity }
-];
+type Buckets = { label: string; min: number; max: number }[];
 
 // Define Gas Speed Limit buckets
 export const GAS_SPEED_LIMIT_BUCKETS = [
   { label: '< 1M gas/sec', min: 0, max: 1000000 },
   { label: '1M - 10M gas/sec', min: 1000000, max: 10000000 },
-  { label: '> 10M gas/sec', min: 10000000, max: Infinity }
-];
+  { label: '> 10M gas/sec', min: 10000000, max: Infinity },
+] as const satisfies Buckets;
 
 // Filter Panel Component types
 export type FilterOptionsType = {
   categories: { id: string; name: string }[];
   dataAvailability: string[];
   gasToken: string[];
-  tvlBuckets: typeof TVL_BUCKETS;
-  tpsBuckets: typeof TPS_BUCKETS;
+  tvlBuckets: Buckets;
+  tpsBuckets: Buckets;
   gasSpeedLimitBuckets: typeof GAS_SPEED_LIMIT_BUCKETS;
 };
 
@@ -60,7 +49,7 @@ export const FilterPanel = ({
   
   return (
     <Popover className="relative w-full lg:w-max">
-      {({ open }) => (
+      {() => (
         <>
           <Popover.Button as="div">
             <FilterDropdownButton activeFilters={activeFilters} />

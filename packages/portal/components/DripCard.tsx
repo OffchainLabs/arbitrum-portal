@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import { ExternalLink } from '@/components/ExternalLink';
 import { Card } from './Card';
 
 export const DripCard = () => {

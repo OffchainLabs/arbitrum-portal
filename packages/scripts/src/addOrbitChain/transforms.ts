@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import * as core from '@actions/core'
@@ -178,8 +177,10 @@ export const extractRawChainData = (
 
   while ((match = pattern.exec(issue.body)) !== null) {
     const [, label, value] = match
-    const trimmedLabel = label.trim()
-    const trimmedValue = value.trim()
+    const trimmedLabel = label?.trim()
+    const trimmedValue = value?.trim()
+
+    if (!trimmedLabel || !trimmedValue) break;
 
     const key = chainDataLabelToKey[trimmedLabel] || trimmedLabel
 
@@ -213,6 +214,7 @@ export const resizeImage = async (
 
   while (resizedImage.length > maxSizeKB * 1024 && scale > 0.1) {
     const image = sharp(imageBuffer)
+    // eslint-disable-next-line no-await-in-loop
     const metadata = await image.metadata()
 
     if (!metadata.width || !metadata.height) {
@@ -222,9 +224,8 @@ export const resizeImage = async (
     const newWidth = Math.round(metadata.width * scale)
     const newHeight = Math.round(metadata.height * scale)
 
-    resizedImage = await image
-      .resize(newWidth, newHeight, { fit: 'inside' })
-      .toBuffer()
+    // eslint-disable-next-line no-await-in-loop
+    resizedImage = await image.resize(newWidth, newHeight, { fit: 'inside' }).toBuffer()
 
     scale -= 0.1
   }

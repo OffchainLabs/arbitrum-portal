@@ -103,7 +103,7 @@ describe('Withdraw USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString())
 
     cy.wait(10_000)
-    cy.confirmMetamaskTransaction(undefined)
+    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive'})
     const txData = {
       amount: USDCAmountToSend,
       symbol: 'USDC'

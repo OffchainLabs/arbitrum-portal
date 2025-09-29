@@ -30,7 +30,7 @@ async function generateCoreChainsToMonitor() {
   const coreChainsToMonitor = chains.map(coreChain =>
     getChainToMonitor({
       chain: coreChain,
-      rpcUrl: coreChain.rpcURL
+      rpcUrl: coreChain.rpcURL as string
     })
   )
 

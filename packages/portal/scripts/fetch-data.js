@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 const BACKEND_ENDPOINT = 'https://portal-data.arbitrum.io';
 

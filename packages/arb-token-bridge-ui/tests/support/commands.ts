@@ -43,7 +43,7 @@ export function login({
   // if networkName is not specified we connect to default network from config
   const network =
     networkType === 'parentChain' ? getL1NetworkConfig() : getL2NetworkConfig()
-  const networkNameWithDefault = networkName ?? network.name
+  const networkNameWithDefault = networkName ?? network.networkName
 
   function _startWebApp() {
     const sourceChain = networkNameWithDefault.toLowerCase().replace(/ /g, '-')
@@ -359,7 +359,7 @@ export function claimCctp(amount: number, options: { accept: boolean }) {
   })
   cy.findClaimButton(formattedAmount, { timeout: 120_000 }).click()
   if (options.accept) {
-    cy.confirmMetamaskTransaction(undefined)
+    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive'})
     cy.findByLabelText('show settled transactions').should('be.visible').click()
     cy.findByText(formattedAmount).should('be.visible')
   } else {

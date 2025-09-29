@@ -208,6 +208,7 @@ export const chainSchema = z
 
       for (const address of addresses) {
         try {
+          // eslint-disable-next-line no-await-in-loop
           const code = await provider.getCode(address)
           if (code === '0x') {
             throw new Error('Address is not a contract')

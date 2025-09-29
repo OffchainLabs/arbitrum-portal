@@ -361,6 +361,7 @@ async function generate(argv: Args) {
   for (const combination of configs) {
     const { isCoreChain: isChildChainCoreChain } = isNetwork(combination[1])
 
+    /* eslint-disable no-await-in-loop */
     if (argv.orbit && !isChildChainCoreChain) {
       await generateSvg(combination[1])
     }
@@ -369,6 +370,7 @@ async function generate(argv: Args) {
       await generateSvg({ from: combination[0], to: combination[1] })
       await generateSvg({ from: combination[1], to: combination[0] })
     }
+    /* eslint-enable no-await-in-loop */
   }
 }
 

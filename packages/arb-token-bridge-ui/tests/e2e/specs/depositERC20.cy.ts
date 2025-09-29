@@ -38,7 +38,7 @@ describe('Deposit Token', () => {
 
   // Happy Path
   Object.keys(depositTestCases).forEach(tokenType => {
-    const testCase = depositTestCases[tokenType]
+    const testCase = depositTestCases[tokenType as keyof typeof depositTestCases]
     context(`User has some ${tokenType} and is on L1`, () => {
       let l1ERC20bal: string
 

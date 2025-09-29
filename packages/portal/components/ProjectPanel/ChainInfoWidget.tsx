@@ -36,7 +36,9 @@ export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
                   clickable ? 'cursor-pointer hover:bg-white/10' : '',
                 )}
                 onClick={() => {
-                  clickable ? openOrbitChainPanel(chainSlug) : null;
+                  if (clickable) {
+                    openOrbitChainPanel(chainSlug);
+                  }
                 }}
               >
                 <Image

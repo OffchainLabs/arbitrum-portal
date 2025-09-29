@@ -134,9 +134,11 @@ export const ProjectPanel = () => {
                         Element: 'Project Panel',
                       };
 
-                      isBookmarked
-                        ? removeBookmarkedProject(projectSlug, analyticsProps)
-                        : addBookmarkedProject(projectSlug, analyticsProps);
+                      if (isBookmarked) {
+                        removeBookmarkedProject(projectSlug, analyticsProps);
+                      } else {
+                        addBookmarkedProject(projectSlug, analyticsProps);
+                      }
                     }}
                   >
                     {isBookmarked ? (

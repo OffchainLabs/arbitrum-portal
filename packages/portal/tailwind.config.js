@@ -11,6 +11,7 @@ module.exports = {
     // Cobalt
     '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
   ],
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {
     screens: {

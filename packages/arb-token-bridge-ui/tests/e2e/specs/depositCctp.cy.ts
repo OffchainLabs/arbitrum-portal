@@ -78,7 +78,7 @@ describe('Deposit USDC through CCTP', () => {
      * CCTP flow is tested in withdrawCctp.cy.ts
      */
     // cy.wait(40_000)
-    // cy.confirmMetamaskTransaction(undefined)
+    // cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
     // cy.findTransactionInTransactionHistory({
     //   duration: 'a minute',
     //   amount: USDCAmountToSend,
@@ -113,7 +113,7 @@ describe('Deposit USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString())
 
     cy.wait(40_000)
-    cy.confirmMetamaskTransaction(undefined)
+    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
     const txData = { amount: USDCAmountToSend, symbol: 'USDC' }
     cy.wait(15_000)
     cy.findTransactionInTransactionHistory({

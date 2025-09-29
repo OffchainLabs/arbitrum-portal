@@ -510,9 +510,8 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
           const parentChainId = getArbitrumNetwork(chainId).parentChainId
           let currentChainId = latestSigner.provider.network.chainId
           while (currentChainId !== parentChainId) {
-            currentChainId = (
-              await switchChainAsync({ chainId: parentChainId })
-            ).id
+            // eslint-disable-next-line no-await-in-loop
+            currentChainId = (await switchChainAsync({ chainId: parentChainId })).id
           }
 
           try {

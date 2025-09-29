@@ -22,7 +22,7 @@ export type NetworkName =
   | 'Sepolia'
 
 type NetworkConfig = {
-  name: NetworkName
+  networkName: NetworkName
   rpcUrl: string
   chainId: number
   symbol: string
@@ -31,11 +31,11 @@ type NetworkConfig = {
 }
 
 export const getL1NetworkName = () => {
-  return getL1NetworkConfig().name
+  return getL1NetworkConfig().networkName
 }
 
 export const getL2NetworkName = () => {
-  return getL2NetworkConfig().name
+  return getL2NetworkConfig().networkName
 }
 
 export const getNetworkSlug = (network: 'parent' | 'child') => {
@@ -48,7 +48,7 @@ export const getL1NetworkConfig = (): NetworkConfig => {
   const isOrbitTest = Cypress.env('ORBIT_TEST') == '1'
 
   return {
-    name: isOrbitTest ? 'Nitro Testnode L2' : 'Nitro Testnode L1',
+    networkName: isOrbitTest ? 'Nitro Testnode L2' : 'Nitro Testnode L1',
     rpcUrl: Cypress.env('ETH_RPC_URL'),
     chainId: isOrbitTest ? 412346 : 1337,
     symbol: 'ETH',
@@ -69,7 +69,7 @@ export const getL2NetworkConfig = (): NetworkConfig => {
     : defaultL3Network
 
   return {
-    name: isOrbitTest ? 'Nitro Testnode L3' : 'Nitro Testnode L2',
+    networkName: isOrbitTest ? 'Nitro Testnode L3' : 'Nitro Testnode L2',
     rpcUrl: Cypress.env('ARB_RPC_URL'),
     chainId: isOrbitTest ? 333333 : 412346,
     symbol: nativeTokenSymbol,
@@ -82,7 +82,7 @@ export const getL2NetworkConfig = (): NetworkConfig => {
 
 export const getL1TestnetNetworkConfig = (): NetworkConfig => {
   return {
-    name: 'Sepolia',
+    networkName: 'Sepolia',
     rpcUrl: Cypress.env('ETH_SEPOLIA_RPC_URL'),
     chainId: 11155111,
     symbol: 'ETH',
@@ -93,7 +93,7 @@ export const getL1TestnetNetworkConfig = (): NetworkConfig => {
 
 export const getL2TestnetNetworkConfig = (): NetworkConfig => {
   return {
-    name: 'Arbitrum Sepolia',
+    networkName: 'Arbitrum Sepolia',
     rpcUrl: Cypress.env('ARB_SEPOLIA_RPC_URL'),
     chainId: 421614,
     symbol: 'ETH',
@@ -153,7 +153,7 @@ export async function getInitialERC20Balance({
   const [tokenData] = await multiCaller.getTokenData([tokenAddress], {
     balanceOf: { account: address }
   })
-  return tokenData.balance
+  return tokenData?.balance
 }
 
 export const acceptMetamaskAccess = () => {
@@ -220,6 +220,7 @@ export async function generateActivityOnChains({
   wallet: Wallet
 }) {
   const keepMining = async (miner: Signer) => {
+    /* eslint-disable no-await-in-loop */
     while (true) {
       await (
         await miner.sendTransaction({
@@ -232,6 +233,7 @@ export async function generateActivityOnChains({
 
       await wait(100)
     }
+    /* eslint-enable no-await-in-loop */
   }
   // whilst waiting for status we mine on both parentChain and childChain
   console.log('Generating activity on parentChain...')
@@ -294,6 +296,7 @@ export async function checkForAssertions({
   const parentChainId = (await parentProvider.getNetwork()).chainId
 
   try {
+    /* eslint-disable no-await-in-loop */
     while (true) {
       console.log(
         `***** Assertion status on ChainId ${parentChainId}: ${(
@@ -304,6 +307,7 @@ export async function checkForAssertions({
       )
       await wait(10000)
     }
+    /* eslint-enable no-await-in-loop */
   } catch (e) {
     console.log(
       `Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`,

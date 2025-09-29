@@ -101,9 +101,11 @@ export async function drive<TStep extends UiDriverStep>(
     }
 
     // execute current step and obtain the result
+    // eslint-disable-next-line no-await-in-loop
     const result = await executor(context, step)
 
     // pass the result back into the generator
+    // eslint-disable-next-line no-await-in-loop
     nextStep = await flow.next(result)
   }
 
