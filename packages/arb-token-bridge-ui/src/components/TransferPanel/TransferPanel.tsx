@@ -1349,7 +1349,6 @@ export function TransferPanel() {
           'sm:rounded sm:border'
         )}
       >
-
         <TransferPanelMain />
 
         <ReceiveFundsHeader />
