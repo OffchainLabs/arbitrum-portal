@@ -98,7 +98,6 @@ import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel'
 import { useMode } from '../../hooks/useMode'
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils'
 import { ReceiveFundsHeader } from './ReceiveFundsHeader'
-import { NoteBox } from '../common/NoteBox'
 
 const signerUndefinedError = 'Signer is undefined'
 const transferNotAllowedError = 'Transfer not allowed'
@@ -1350,13 +1349,6 @@ export function TransferPanel() {
           'sm:rounded sm:border'
         )}
       >
-        {/* PoP Apex 70700 and PoP Boss 70701 */}
-        {(childChain.id === 70700 || childChain.id === 70701) && (
-          <NoteBox variant="warning" className="mb-4">
-            Proof of Play will be deprecating their chains Proof of Play Apex
-            and Proof of Play Boss on Sept 27th, please withdraw funds now.
-          </NoteBox>
-        )}
 
         <TransferPanelMain />
 
