@@ -30,4 +30,6 @@ export const ETHER_TOKEN_LOGO = '/images/EthereumLogoRound.svg';
 
 export const ether = { name: 'Ether', symbol: 'ETH', decimals: 18 } as const;
 
-export const PORTAL_API_ENDPOINT = 'https://portal.arbitrum.io';
+export const PORTAL_API_ENDPOINT = 'https://portal.arbitrum.io'
+
+export const BUY_PATHNAME = '/bridge/buy'

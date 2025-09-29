@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { BUY_PATHNAME } from '@/bridge/constants'
+import { NextRequest, NextResponse } from 'next/server'
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
@@ -12,7 +13,7 @@ export function middleware(req: NextRequest) {
 
   // Redirect /?tab=buy to /bridge/buy and keep query param (without tab)
   if (url.searchParams.get('mode') === 'buy') {
-    url.pathname = '/bridge/buy'
+    url.pathname = BUY_PATHNAME
     url.searchParams.delete('tab')
     return NextResponse.redirect(url, 308)
   }
