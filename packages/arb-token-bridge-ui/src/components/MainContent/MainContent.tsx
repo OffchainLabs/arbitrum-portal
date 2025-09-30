@@ -49,7 +49,12 @@ export function MainContent() {
       <RecoverFunds />
 
       <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 sm:pt-6">
-        <TabGroup as={Fragment} selectedIndex={tab} onChange={onTabSelected}>
+        <TabGroup
+          manual
+          as={Fragment}
+          selectedIndex={tab}
+          onChange={onTabSelected}
+        >
           <TopNavBar />
           {pathname === BUY_PATHNAME ? (
             <BuyPanel />

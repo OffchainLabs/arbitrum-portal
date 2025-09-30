@@ -91,13 +91,24 @@ export async function sanitizeAndRedirect(
     [key: string]: string | string[] | undefined;
   },
   baseUrl: string,
+  options?: { disabledQueryParams?: string[] }
 ) {
-  const sourceChainId = decodeChainQueryParam(searchParams.sourceChain);
-  const destinationChainId = decodeChainQueryParam(searchParams.destinationChain);
+  const disabledQueryParams = options?.disabledQueryParams || []
+
+  const sourceChainId = decodeChainQueryParam(searchParams.sourceChain)
+  const destinationChainId = decodeChainQueryParam(
+    searchParams.destinationChain
+  )
   const experiments =
-    typeof searchParams.experiments === 'string' ? searchParams.experiments : undefined;
-  const token = typeof searchParams.token === 'string' ? searchParams.token : undefined;
-  const tab = typeof searchParams.tab === 'string' ? searchParams.tab : undefined;
+    typeof searchParams.experiments === 'string'
+      ? searchParams.experiments
+      : undefined
+  const token =
+    typeof searchParams.token === 'string' ? searchParams.token : undefined
+  const tab =
+    !disabledQueryParams.includes('tab') && typeof searchParams.tab === 'string'
+      ? searchParams.tab
+      : undefined
   const disabledFeatures =
     typeof searchParams.disabledFeatures === 'string'
       ? [searchParams.disabledFeatures]

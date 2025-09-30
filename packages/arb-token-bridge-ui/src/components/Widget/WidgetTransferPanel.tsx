@@ -1,19 +1,28 @@
-import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
-
-import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { isOnrampEnabled } from '../../util/featureFlag';
-import { BuyPanel } from '../BuyPanel';
-import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
-import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
-import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
-import { TokenImportDialog } from '../TransferPanel/TokenImportDialog';
-import { TransferPanelMain } from '../TransferPanel/TransferPanelMain';
-import { UseDialogProps } from '../common/Dialog';
-import { DialogProps, DialogWrapper, OpenDialogFunction } from '../common/Dialog2';
-import { WidgetConnectWalletButton } from './WidgetConnectWalletButton';
-import { WidgetHeaderRow } from './WidgetHeaderRow';
-import { WidgetRoutes } from './WidgetRoutes';
+import { useAccount } from 'wagmi'
+import { twMerge } from 'tailwind-merge'
+import {
+  DialogProps,
+  DialogWrapper,
+  OpenDialogFunction
+} from '../common/Dialog2'
+import { WidgetHeaderRow } from './WidgetHeaderRow'
+import { WidgetRoutes } from './WidgetRoutes'
+import { MoveFundsButton } from '../TransferPanel/MoveFundsButton'
+import { WidgetConnectWalletButton } from './WidgetConnectWalletButton'
+import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
+import { BuyPanel } from '../BuyPanel'
+import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
+import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
+import { UseDialogProps } from '../common/Dialog'
+import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
+import {
+  useArbQueryParams,
+  indexToTab,
+  TabParamEnum
+} from '../../hooks/useArbQueryParams'
+import { usePathname } from 'next/navigation'
+import { BUY_EMBED_PATHNAME } from '@/bridge/constants'
+import { isOnrampEnabled } from '@/bridge/util/featureFlag'
 
 type WidgetTransferPanelProps = {
   moveFundsButtonOnClick: () => void;
@@ -39,7 +48,9 @@ export function WidgetTransferPanel({
   const showBuyPanel = isOnrampEnabled();
 
   const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
-  const isBuyMode = currentTab === TabParamEnum.BUY;
+  const [{ disabledFeatures }] = useArbQueryParams()
+  const pathname = usePathname()
+  const isBuyMode = pathname === BUY_EMBED_PATHNAME
 
   return (
     <>

@@ -1,4 +1,3 @@
-import { useAccount } from 'wagmi'
 import { twMerge } from 'tailwind-merge'
 import {
   DialogProps,
@@ -8,8 +7,6 @@ import {
 import { WidgetHeaderRow } from './WidgetHeaderRow'
 import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
 import { BuyPanel } from '../BuyPanel'
-import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
-import { UseDialogProps } from '../common/Dialog'
 import { useArbQueryParams } from '../../hooks/useArbQueryParams'
 import { isBuyFeatureEnabled } from '../../util/queryParamUtils'
 

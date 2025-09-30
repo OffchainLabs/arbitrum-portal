@@ -15,6 +15,7 @@ import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
 import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
+import { useSearchParams } from 'next/navigation';
 
 interface ModeOptionProps {
   icon: React.ReactNode;
@@ -41,6 +42,7 @@ const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
 export const WidgetModeDropdown = () => {
   const showBuyPanel = isOnrampEnabled();
   const router = useRouter()
+  const searchParams = useSearchParams()
   const pathname = usePathname()
   const isBuyTab = pathname === BUY_EMBED_PATHNAME
   const isBridgeTab = pathname === EMBED_PATHNAME
@@ -91,7 +93,7 @@ export const WidgetModeDropdown = () => {
                   label="Bridge"
                   isSelected={isBridgeTab}
                   onClick={() => {
-                    router.push(EMBED_PATHNAME)
+                    router.push(`${EMBED_PATHNAME}?${searchParams.toString()}`)
                     close()
                   }}
                 />
@@ -100,7 +102,9 @@ export const WidgetModeDropdown = () => {
                   label="Buy"
                   isSelected={isBuyTab}
                   onClick={() => {
-                    router.push(BUY_EMBED_PATHNAME)
+                    router.push(
+                      `${BUY_EMBED_PATHNAME}?${searchParams.toString()}`
+                    )
                     close()
                   }}
                 />

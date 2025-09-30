@@ -13,7 +13,9 @@ export default async function EmbededBuyPage({
 }) {
   if (searchParams.sanitized !== 'true') {
     addOrbitChainsToArbitrumSDK()
-    await sanitizeAndRedirect(searchParams, '/bridge/embed/buy')
+    await sanitizeAndRedirect(searchParams, '/bridge/embed/buy', {
+      disabledQueryParams: ['tab']
+    })
   }
 
   return (

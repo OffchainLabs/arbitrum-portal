@@ -11,7 +11,7 @@ import { BUY_EMBED_PATHNAME, BUY_PATHNAME } from '../constants'
 import { useMode } from '../hooks/useMode'
 import { isOnrampEnabled } from '../util/featureFlag'
 
-function StyledTab({ children, ...props }: PropsWithChildren) {
+function StyledTab({ children, href, ...props }: React.T) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
@@ -28,6 +28,7 @@ function StyledTab({ children, ...props }: PropsWithChildren) {
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
         isBuyTab ? '' : 'ui-selected:bg-black/75'
       )}
+      tabIndex={0}
       {...props}
     >
       {children}
@@ -41,6 +42,7 @@ export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo()
   const showBuyPanel = isOnrampEnabled();
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
   const { embedMode } = useMode()
 
@@ -50,10 +52,14 @@ export function TopNavBar() {
         'grid w-full max-w-[600px] bg-white/20 p-[8px] text-white md:rounded',
         showBuyPanel ? 'grid-cols-3' : 'grid-cols-2',
       )}
+      role="tablist"
     >
       {showBuyPanel && (
         <Link
-          href={embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME}
+          href={{
+            pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
+            query: searchParams.toString()
+          }}
           className={twMerge(
             'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
             isBuyTab && 'bg-black/75'
@@ -64,7 +70,10 @@ export function TopNavBar() {
           Buy
         </Link>
       )}
-      <TabList className={twMerge('col-span-2 grid grid-cols-2')}>
+      <TabList
+        className={twMerge('col-span-2 grid grid-cols-2')}
+        aria-role="tab"
+      >
         <StyledTab aria-label="Switch to Bridge Tab">
           <PaperAirplaneIcon className="h-3 w-3" />
           Bridge
