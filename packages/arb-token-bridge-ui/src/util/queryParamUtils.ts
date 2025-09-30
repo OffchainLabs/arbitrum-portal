@@ -42,14 +42,16 @@ export enum DisabledFeatures {
 }
 
 export const tabToIndex = {
-  [TabParamEnum.BRIDGE]: 0,
-  [TabParamEnum.TX_HISTORY]: 1
-} as const satisfies Record<Exclude<TabParamEnum, TabParamEnum.BUY>, number>
+  [TabParamEnum.BUY]: 0,
+  [TabParamEnum.BRIDGE]: 1,
+  [TabParamEnum.TX_HISTORY]: 2
+} as const satisfies Record<TabParamEnum, number>
 
 export const indexToTab = {
-  0: TabParamEnum.BRIDGE,
-  1: TabParamEnum.TX_HISTORY
-} as const satisfies Record<number, Exclude<TabParamEnum, TabParamEnum.BUY>>
+  0: TabParamEnum.BUY,
+  1: TabParamEnum.BRIDGE,
+  2: TabParamEnum.TX_HISTORY
+} as const satisfies Record<number, TabParamEnum>
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(feature.toLowerCase() as DisabledFeatures);
@@ -155,7 +157,10 @@ export function encodeTabQueryParam({
   if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
     const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
     if (tabParam !== undefined) {
-      return tabParam;
+      if (tabParam === TabParamEnum.BUY) {
+        return ''
+      }
+      return tabParam
     }
   }
   return TabParamEnum.BRIDGE;
@@ -170,8 +175,11 @@ export function decodeTabQueryParam({
 }): number {
   if (typeof tab === 'string') {
     const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
-    if (tab === TabParamEnum.BUY && (!isOnrampEnabled() || isBuyDisabled)) {
-      return tabToIndex[TabParamEnum.BRIDGE]
+
+    if (tab === TabParamEnum.BUY) {
+      if (!isOnrampEnabled() || isBuyDisabled) {
+        return tabToIndex[TabParamEnum.BRIDGE]
+      }
     }
 
     if (tab in tabToIndex) {

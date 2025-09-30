@@ -11,7 +11,14 @@ import { BUY_EMBED_PATHNAME, BUY_PATHNAME } from '../constants'
 import { useMode } from '../hooks/useMode'
 import { isOnrampEnabled } from '../util/featureFlag'
 
-function StyledTab({ children, href, ...props }: React.T) {
+function StyledTab({
+  children,
+  href,
+  ...props
+}: Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> &
+  PropsWithChildren<{
+    href?: string | { pathname: string; query: string }
+  }>) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
@@ -20,10 +27,12 @@ function StyledTab({ children, href, ...props }: React.T) {
   return (
     <Tab
       as={Link}
-      href={{
-        pathname: embedMode ? '/bridge/embed' : '/bridge',
-        query: Object.fromEntries(searchParams.entries())
-      }}
+      href={
+        href ?? {
+          pathname: embedMode ? '/bridge/embed' : '/bridge',
+          query: Object.fromEntries(searchParams.entries())
+        }
+      }
       className={twMerge(
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
         isBuyTab ? '' : 'ui-selected:bg-black/75'
@@ -47,15 +56,14 @@ export function TopNavBar() {
   const { embedMode } = useMode()
 
   return (
-    <div
+    <TabList
       className={twMerge(
         'grid w-full max-w-[600px] bg-white/20 p-[8px] text-white md:rounded',
         showBuyPanel ? 'grid-cols-3' : 'grid-cols-2',
       )}
-      role="tablist"
     >
       {showBuyPanel && (
-        <Link
+        <StyledTab
           href={{
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
             query: searchParams.toString()
@@ -68,32 +76,27 @@ export function TopNavBar() {
         >
           <WalletIcon className="h-3 w-3" />
           Buy
-        </Link>
+        </StyledTab>
       )}
-      <TabList
-        className={twMerge('col-span-2 grid grid-cols-2')}
-        aria-role="tab"
-      >
-        <StyledTab aria-label="Switch to Bridge Tab">
-          <PaperAirplaneIcon className="h-3 w-3" />
-          Bridge
-        </StyledTab>
-        <StyledTab aria-label="Switch to Transaction History Tab">
-          <Image
-            src="/icons/history.svg"
-            width={24}
-            height={24}
-            alt="history icon"
-          />
-          Txn History{' '}
-          <span
-            className={twMerge(
-              'h-3 w-3 shrink-0 rounded-full',
-              colorClassName.light
-            )}
-          />
-        </StyledTab>
-      </TabList>
-    </div>
+      <StyledTab aria-label="Switch to Bridge Tab">
+        <PaperAirplaneIcon className="h-3 w-3" />
+        Bridge
+      </StyledTab>
+      <StyledTab aria-label="Switch to Transaction History Tab">
+        <Image
+          src="/icons/history.svg"
+          width={24}
+          height={24}
+          alt="history icon"
+        />
+        Txn History{' '}
+        <span
+          className={twMerge(
+            'h-3 w-3 shrink-0 rounded-full',
+            colorClassName.light
+          )}
+        />
+      </StyledTab>
+    </TabList>
   )
 }
