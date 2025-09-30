@@ -1,5 +1,5 @@
 import { useLocalStorage } from '@uidotdev/usehooks'
-import { Tab, TabGroup, TabPanel, TabPanels } from '@headlessui/react'
+import { TabGroup, TabPanel, TabPanels } from '@headlessui/react'
 import { useCallback, Fragment } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
@@ -14,11 +14,12 @@ import { useMode } from '../../hooks/useMode'
 import { RecoverFunds } from '../RecoverFunds'
 import { BuyPanel } from '../BuyPanel'
 import { BUY_PATHNAME } from '@/bridge/constants'
+import { isOnrampEnabled } from '@/bridge/util/featureFlag'
 
 export function MainContent() {
-  const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [isArbitrumStatsVisible] =
     useLocalStorage<boolean>(statsLocalStorageKey)
   const [{ tab }, setQueryParams] = useArbQueryParams()
@@ -35,6 +36,7 @@ export function MainContent() {
     },
     [setQueryParams],
   );
+  const showBuyPanel = isOnrampEnabled()
 
   useBalanceUpdater()
 
@@ -52,21 +54,26 @@ export function MainContent() {
         <TabGroup
           manual
           as={Fragment}
-          selectedIndex={tab}
-          onChange={setSelectedTab}
+          selectedIndex={showBuyPanel ? tab : tab - 1}
+          onChange={() => {}}
         >
           <TopNavBar />
-          <TabPanels className="flex w-full items-center justify-center">
-            <TabPanel className="w-full sm:max-w-[600px]">
-              <BuyPanel />
-            </TabPanel>
-            <TabPanel className="w-full sm:max-w-[600px]">
-              <TransferPanel />
-            </TabPanel>
-            <TabPanel className="w-full md:px-4">
-              <TransactionHistory />
-            </TabPanel>
-          </TabPanels>
+
+          {pathname === BUY_PATHNAME && showBuyPanel ? (
+            <BuyPanel />
+          ) : (
+            <TabPanels className="flex w-full items-center justify-center">
+              {showBuyPanel && (
+                <TabPanel className="w-full sm:max-w-[600px]"></TabPanel>
+              )}
+              <TabPanel className="w-full sm:max-w-[600px]">
+                <TransferPanel />
+              </TabPanel>
+              <TabPanel className="w-full md:px-4">
+                <TransactionHistory />
+              </TabPanel>
+            </TabPanels>
+          )}
         </TabGroup>
       </div>
 

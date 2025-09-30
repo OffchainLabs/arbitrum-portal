@@ -1,6 +1,6 @@
 import { Tab, TabList } from '@headlessui/react'
 import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline'
-import React, { PropsWithChildren } from 'react'
+import React, { PropsWithChildren, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import Image from 'next/image'
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo'
@@ -30,7 +30,7 @@ function StyledTab({
       href={
         href ?? {
           pathname: embedMode ? '/bridge/embed' : '/bridge',
-          query: Object.fromEntries(searchParams.entries())
+          query: searchParams.toString()
         }
       }
       className={twMerge(
@@ -54,6 +54,10 @@ export function TopNavBar() {
   const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
   const { embedMode } = useMode()
+  const searchParamsWithoutTab = useMemo(() => {
+    const { tab, ...rest } = Object.fromEntries(searchParams.entries())
+    return new URLSearchParams(rest)
+  }, [searchParams])
 
   return (
     <TabList
@@ -66,7 +70,7 @@ export function TopNavBar() {
         <StyledTab
           href={{
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
-            query: searchParams.toString()
+            query: searchParamsWithoutTab.toString()
           }}
           className={twMerge(
             'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
@@ -78,11 +82,23 @@ export function TopNavBar() {
           Buy
         </StyledTab>
       )}
-      <StyledTab aria-label="Switch to Bridge Tab">
+      <StyledTab
+        aria-label="Switch to Bridge Tab"
+        href={{
+          pathname: embedMode ? '/bridge/embed' : '/bridge',
+          query: `${searchParamsWithoutTab.toString()}&tab=bridge`
+        }}
+      >
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge
       </StyledTab>
-      <StyledTab aria-label="Switch to Transaction History Tab">
+      <StyledTab
+        aria-label="Switch to Transaction History Tab"
+        href={{
+          pathname: embedMode ? '/bridge/embed' : '/bridge',
+          query: `${searchParamsWithoutTab.toString()}&tab=tx_history`
+        }}
+      >
         <Image
           src="/icons/history.svg"
           width={24}

@@ -106,9 +106,7 @@ export async function sanitizeAndRedirect(
   const token =
     typeof searchParams.token === 'string' ? searchParams.token : undefined
   const tab =
-    !disabledQueryParams.includes('tab') && typeof searchParams.tab === 'string'
-      ? searchParams.tab
-      : undefined
+    typeof searchParams.tab === 'string' ? searchParams.tab : undefined
   const disabledFeatures =
     typeof searchParams.disabledFeatures === 'string'
       ? [searchParams.disabledFeatures]

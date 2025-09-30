@@ -157,9 +157,6 @@ export function encodeTabQueryParam({
   if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
     const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
     if (tabParam !== undefined) {
-      if (tabParam === TabParamEnum.BUY) {
-        return ''
-      }
       return tabParam
     }
   }
