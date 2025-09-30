@@ -23,7 +23,7 @@ env:
 jobs:
   check-build-cache:
     name: Check cache for build artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4
     if: github.event.pull_request.draft == false
     steps:
     - name: Checkout

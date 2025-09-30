@@ -24,7 +24,7 @@ env:
 jobs:
   check-files:
     name: Check files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4
     outputs:
       run_tests: ${{ steps.check-files.outputs.run_tests }}
       test_scripts: ${{ steps.check-files.outputs.test_scripts }}
@@ -35,7 +35,7 @@ jobs:
 
   test-scripts:
     name: "Test Scripts"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4
     needs: [check-files]
     if: needs.check-files.outputs.test_scripts == 'true'
     steps:
