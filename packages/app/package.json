@@ -7,13 +7,13 @@
     "next": "^14.2.32",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tippy.js": "^6.3.7",
-    "use-query-params": "^2.2.1",
-    "@rainbow-me/rainbowkit": "^2.2.4",
-    "react-toastify": "^9.1.1"
+    "tippy.js": "^6.3.7"
   },
-  "devDependencies": {
-    "tailwindcss": "^3.4.0"
+  "peerDependencies": {
+    "@rainbow-me/rainbowkit": "*",
+    "react-toastify": "*",
+    "tailwindcss": "*",
+    "use-query-params": "*"
   },
   "scripts": {
     "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build:all",
@@ -23,7 +23,7 @@
     "start": "next start",
     "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --minify",
     "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --watch",
-    "css:build:all": "yarn css:build && yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
-    "css:watch:all": "yarn css:watch && yarn workspace arb-token-bridge-ui css:watch & yarn workspace portal css:watch"
+    "css:build:all": "yarn css:build && yarn workspace arb-token-bridge-ui css:build && yarn workspace portal css:build",
+    "css:watch:all": "yarn css:watch && yarn workspace arb-token-bridge-ui css:watch && yarn workspace portal css:watch"
   }
 }
