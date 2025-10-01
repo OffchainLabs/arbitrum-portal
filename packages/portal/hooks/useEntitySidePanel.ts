@@ -15,15 +15,6 @@ import { EntityType } from '@/common/types';
  * - use-query-params : https://github.com/pbeshai/use-query-params/issues/267
  */
 
-/**
- * TEMPORARY WORKAROUND
- * - to avoid resetting the window scroll position when query-params change
- * - we make use of router.push with {scroll:false} to make sure scroll position doesn't change
- * - this is an existing issue in use-query-params in APP ROUTER
- * - NextJS : https://github.com/vercel/next.js/issues/49087
- * - use-query-params : https://github.com/pbeshai/use-query-params/issues/267
- */
-
 export const useEntitySidePanel = (entityType: EntityType) => {
   const router = useRouter();
 
