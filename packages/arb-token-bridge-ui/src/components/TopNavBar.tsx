@@ -7,20 +7,26 @@ import { useTransactionReminderInfo } from './TransactionHistory/useTransactionR
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-import { BUY_EMBED_PATHNAME, BUY_PATHNAME } from '../constants'
+import {
+  BRIDGE_PATHNAME,
+  BUY_EMBED_PATHNAME,
+  BUY_PATHNAME,
+  EMBED_PATHNAME
+} from '../constants'
 import { useMode } from '../hooks/useMode'
 import { isOnrampEnabled } from '../util/featureFlag'
 
 function StyledTab({
   children,
   href,
+  hrefQuery,
   ...props
 }: Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> &
   PropsWithChildren<{
-    href?: string | { pathname: string; query: string }
+    href?: { pathname: string; query: string }
+    hrefQuery?: string
   }>) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
   const { embedMode } = useMode()
 
@@ -29,8 +35,8 @@ function StyledTab({
       as={Link}
       href={
         href ?? {
-          pathname: embedMode ? '/bridge/embed' : '/bridge',
-          query: searchParams.toString()
+          pathname: embedMode ? EMBED_PATHNAME : BRIDGE_PATHNAME,
+          query: hrefQuery
         }
       }
       className={twMerge(
@@ -54,6 +60,7 @@ export function TopNavBar() {
   const searchParams = useSearchParams()
   const isBuyTab = pathname === BUY_PATHNAME
   const { embedMode } = useMode()
+
   const searchParamsWithoutTab = useMemo(() => {
     const { tab, ...rest } = Object.fromEntries(searchParams.entries())
     return new URLSearchParams(rest)
@@ -84,20 +91,14 @@ export function TopNavBar() {
       )}
       <StyledTab
         aria-label="Switch to Bridge Tab"
-        href={{
-          pathname: embedMode ? '/bridge/embed' : '/bridge',
-          query: `${searchParamsWithoutTab.toString()}&tab=bridge`
-        }}
+        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=bridge`}
       >
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge
       </StyledTab>
       <StyledTab
         aria-label="Switch to Transaction History Tab"
-        href={{
-          pathname: embedMode ? '/bridge/embed' : '/bridge',
-          query: `${searchParamsWithoutTab.toString()}&tab=tx_history`
-        }}
+        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=tx_history`}
       >
         <Image
           src="/icons/history.svg"
