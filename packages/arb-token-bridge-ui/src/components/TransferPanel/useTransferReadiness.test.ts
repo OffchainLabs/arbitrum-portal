@@ -1,32 +1,34 @@
-import { describe, expect, it } from 'vitest'
-import { getAmountToPay } from './useTransferReadiness'
-import { RouteContext } from './hooks/useRouteStore'
-import { BigNumber } from 'ethers'
-import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter'
+import { BigNumber } from 'ethers';
+import { describe, expect, it } from 'vitest';
+
+import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
+
+import { RouteContext } from './hooks/useRouteStore';
+import { getAmountToPay } from './useTransferReadiness';
 
 const eth = {
   address: '0x0000000000000000000000000000000000000000',
   symbol: 'ETH',
   decimals: 18,
   logoURI:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png'
-}
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+};
 const usdc = {
   address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
   symbol: 'USDC',
   decimals: 6,
   logoURI:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png'
-}
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+};
 
 function getMock({
   gas,
   fee,
-  fromAmount
+  fromAmount,
 }: {
-  gas: AmountWithToken
-  fee: AmountWithToken
-  fromAmount: AmountWithToken
+  gas: AmountWithToken;
+  fee: AmountWithToken;
+  fromAmount: AmountWithToken;
 }): RouteContext {
   return {
     spenderAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
@@ -41,14 +43,14 @@ function getMock({
         symbol: 'ETH',
         decimals: 18,
         logoURI:
-          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png'
-      }
+          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+      },
     },
     toolDetails: {
       key: 'gasZipBridge',
       name: 'GasZip',
       logoURI:
-        'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg'
+        'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
     },
     durationMs: 4000,
     destinationTxId: null,
@@ -60,7 +62,7 @@ function getMock({
         key: 'gasZipBridge',
         name: 'GasZip',
         logoURI:
-          'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg'
+          'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
       },
       action: {
         fromToken: {
@@ -71,7 +73,7 @@ function getMock({
           name: 'ETH',
           logoURI:
             'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-          priceUSD: '3731.44'
+          priceUSD: '3731.44',
         },
         fromAmount: '306838702657301',
         toToken: {
@@ -82,13 +84,13 @@ function getMock({
           name: 'ETH',
           logoURI:
             'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-          priceUSD: '3731.44'
+          priceUSD: '3731.44',
         },
         fromChainId: 1,
         toChainId: 42161,
         slippage: 0.005,
         fromAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
-        toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'
+        toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
       },
       estimate: {
         tool: 'gasZipBridge',
@@ -113,13 +115,13 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44'
-            }
-          }
+              priceUSD: '3731.44',
+            },
+          },
         ],
         executionDuration: 4,
         fromAmountUSD: '1.1450',
-        toAmountUSD: '1.1437'
+        toAmountUSD: '1.1437',
       },
       includedSteps: [
         {
@@ -136,7 +138,7 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44'
+              priceUSD: '3731.44',
             },
             toChainId: 42161,
             toToken: {
@@ -147,11 +149,11 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44'
+              priceUSD: '3731.44',
             },
             slippage: 0.005,
             fromAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-            toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'
+            toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
           },
           estimate: {
             tool: 'gasZipBridge',
@@ -174,26 +176,26 @@ function getMock({
                   name: 'ETH',
                   logoURI:
                     'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                  priceUSD: '3731.44'
-                }
-              }
+                  priceUSD: '3731.44',
+                },
+              },
             ],
             executionDuration: 4,
             approvalAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-            feeCosts: []
+            feeCosts: [],
           },
           tool: 'gasZipBridge',
           toolDetails: {
             key: 'gasZipBridge',
             name: 'GasZip',
             logoURI:
-              'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg'
-          }
-        }
+              'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
+          },
+        },
       ],
-      integrator: '_arbitrum'
-    }
-  }
+      integrator: '_arbitrum',
+    },
+  };
 }
 
 describe('getAmountToPay', () => {
@@ -203,21 +205,21 @@ describe('getAmountToPay', () => {
         gas: {
           amount: BigNumber.from('70000'),
           amountUSD: '0.596',
-          token: eth
+          token: eth,
         },
         fee: {
           amount: BigNumber.from('35000'),
           amountUSD: '0.298',
-          token: eth
+          token: eth,
         },
         fromAmount: {
           amount: BigNumber.from('306838702657301'),
           amountUSD: '1.1450',
-          token: eth
-        }
-      })
-    )
-    expect(fromAmountUsd).toBe(2.039)
+          token: eth,
+        },
+      }),
+    );
+    expect(fromAmountUsd).toBe(2.039);
     expect(amounts).toStrictEqual({
       '0x0000000000000000000000000000000000000000': {
         amount: BigNumber.from('306838702657301').add('70000').add('35000'),
@@ -227,11 +229,11 @@ describe('getAmountToPay', () => {
           decimals: 18,
           logoURI:
             'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-          symbol: 'ETH'
-        }
-      }
-    })
-  })
+          symbol: 'ETH',
+        },
+      },
+    });
+  });
 
   it('should return the different amounts with tokens when token sent is not the gas token', () => {
     const { amounts, fromAmountUsd } = getAmountToPay(
@@ -239,33 +241,33 @@ describe('getAmountToPay', () => {
         gas: {
           amount: BigNumber.from('70000'),
           amountUSD: '0.596',
-          token: eth
+          token: eth,
         },
         fee: {
           amount: BigNumber.from('35000'),
           amountUSD: '0.298',
-          token: eth
+          token: eth,
         },
         fromAmount: {
           amount: BigNumber.from('10000000'),
           amountUSD: '10',
-          token: usdc
-        }
-      })
-    )
+          token: usdc,
+        },
+      }),
+    );
 
-    expect(fromAmountUsd).toBe(10.894)
+    expect(fromAmountUsd).toBe(10.894);
     expect(amounts).toStrictEqual({
       '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
         amount: BigNumber.from('10000000'),
         amountUSD: '10',
-        token: usdc
+        token: usdc,
       },
       '0x0000000000000000000000000000000000000000': {
         amount: BigNumber.from('70000').add('35000'),
         amountUSD: '0.894',
-        token: eth
-      }
-    })
-  })
-})
+        token: eth,
+      },
+    });
+  });
+});

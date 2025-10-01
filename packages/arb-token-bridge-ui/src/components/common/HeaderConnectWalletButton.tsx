@@ -1,6 +1,6 @@
-import { PlusCircleIcon } from '@heroicons/react/24/outline'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { twMerge } from 'tailwind-merge'
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { twMerge } from 'tailwind-merge';
 
 export function HeaderConnectWalletButton() {
   return (
@@ -12,7 +12,7 @@ export function HeaderConnectWalletButton() {
             type="button"
             className={twMerge(
               'arb-hover flex w-full flex-row items-center border border-primary-cta bg-primary-cta px-[12px] py-2 text-white',
-              'sm:min-w-[198px] sm:rounded sm:bg-primary-cta sm:py-1 sm:pl-2 sm:pr-3 sm:text-base sm:font-normal'
+              'sm:min-w-[198px] sm:rounded sm:bg-primary-cta sm:py-1 sm:pl-2 sm:pr-3 sm:text-base sm:font-normal',
             )}
           >
             <PlusCircleIcon className="mr-3 h-[24px] w-[24px] stroke-1 sm:h-8 sm:w-8" />
@@ -21,5 +21,5 @@ export function HeaderConnectWalletButton() {
         </div>
       )}
     </ConnectButton.Custom>
-  )
+  );
 }

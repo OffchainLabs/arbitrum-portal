@@ -1,20 +1,20 @@
-import { isValidTeleportChainPair } from '../../token-bridge-sdk/teleport'
-import { hasL1Subgraph } from '../SubgraphUtils'
-import { getAPIBaseUrl, sanitizeQueryParams } from '../index'
+import { isValidTeleportChainPair } from '../../token-bridge-sdk/teleport';
+import { hasL1Subgraph } from '../SubgraphUtils';
+import { getAPIBaseUrl, sanitizeQueryParams } from '../index';
 
 export type FetchEthTeleportsFromSubgraphResult = {
-  transactionHash: string
-  timestamp: string
-  blockCreatedAt: string
-  l2Calldata: string
-  value: string
-  sender: string
-  retryableTicketID: string
-  destAddr: string
-  parentChainId: string
-  childChainId: string // l3 chain id
-  teleport_type: 'eth'
-}
+  transactionHash: string;
+  timestamp: string;
+  blockCreatedAt: string;
+  l2Calldata: string;
+  value: string;
+  sender: string;
+  retryableTicketID: string;
+  destAddr: string;
+  parentChainId: string;
+  childChainId: string; // l3 chain id
+  teleport_type: 'eth';
+};
 
 /**
  * Fetches initiated ETH Teleports from subgraph in range of [fromBlock, toBlock] and pageParams.
@@ -40,22 +40,22 @@ export const fetchEthTeleportsFromSubgraph = async ({
   l3ChainId,
   pageSize = 10,
   pageNumber = 0,
-  searchString = ''
+  searchString = '',
 }: {
-  sender?: string
-  receiver?: string
-  fromBlock: number
-  toBlock?: number
-  l1ChainId: number
-  l2ChainId: number
-  l3ChainId: number
-  pageSize?: number
-  pageNumber?: number
-  searchString?: string
+  sender?: string;
+  receiver?: string;
+  fromBlock: number;
+  toBlock?: number;
+  l1ChainId: number;
+  l2ChainId: number;
+  l3ChainId: number;
+  pageSize?: number;
+  pageNumber?: number;
+  searchString?: string;
 }): Promise<FetchEthTeleportsFromSubgraphResult[]> => {
   if (toBlock && fromBlock >= toBlock) {
     // if fromBlock > toBlock or both are equal / 0
-    return []
+    return [];
   }
 
   const urlParams = new URLSearchParams(
@@ -69,44 +69,39 @@ export const fetchEthTeleportsFromSubgraph = async ({
       l3ChainId,
       pageSize,
       page: pageNumber,
-      search: searchString
-    })
-  )
+      search: searchString,
+    }),
+  );
 
   if (!hasL1Subgraph(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`)
+    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
   }
 
-  if (pageSize === 0) return [] // don't query subgraph if nothing requested
+  if (pageSize === 0) return []; // don't query subgraph if nothing requested
 
   // don't query if not a valid teleport configuration
   if (
     !isValidTeleportChainPair({
       sourceChainId: Number(l1ChainId),
-      destinationChainId: Number(l3ChainId)
+      destinationChainId: Number(l3ChainId),
     })
   ) {
     throw new Error(
-      `Invalid teleport source and destination chain id: ${l1ChainId} -> ${l3ChainId}`
-    )
+      `Invalid teleport source and destination chain id: ${l1ChainId} -> ${l3ChainId}`,
+    );
   }
 
-  const response = await fetch(
-    `${getAPIBaseUrl()}/api/teleports/eth?${urlParams}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  )
+  const response = await fetch(`${getAPIBaseUrl()}/api/teleports/eth?${urlParams}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-  const transactions: FetchEthTeleportsFromSubgraphResult[] = (
-    await response.json()
-  ).data
+  const transactions: FetchEthTeleportsFromSubgraphResult[] = (await response.json()).data;
 
-  return transactions.map(tx => ({
+  return transactions.map((tx) => ({
     ...tx,
     parentChainId: String(l1ChainId),
     childChainId: String(l3ChainId),
-    teleport_type: 'eth'
-  }))
-}
+    teleport_type: 'eth',
+  }));
+};

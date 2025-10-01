@@ -5,7 +5,7 @@
       {
         "name": "next"
       }
-    ],
+    ]
   },
   "include": [
     "eslint.config.mjs",

@@ -1,9 +1,10 @@
-import { forwardRef, useState } from 'react';
 import { usePostHog } from 'posthog-js/react';
+import { forwardRef, useState } from 'react';
 import { useDebounce } from 'react-use';
 
-import { SearchField, SearchFieldProps } from './SearchField';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
+
+import { SearchField, SearchFieldProps } from './SearchField';
 
 export const SearchAppField = forwardRef<HTMLInputElement, SearchFieldProps>(
   function SearchAppField({ placeholder, wrapperClassName }, ref) {

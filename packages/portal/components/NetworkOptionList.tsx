@@ -1,5 +1,6 @@
-import { NetworkOption } from './NetworkOption';
 import { ARB_NETWORKS, ORBIT_NETWORKS_IN_FILTERS } from '@/common/chains';
+
+import { NetworkOption } from './NetworkOption';
 
 export const NetworkOptionList = () => {
   return (

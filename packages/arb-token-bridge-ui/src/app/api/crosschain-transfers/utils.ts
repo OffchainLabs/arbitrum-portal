@@ -1,29 +1,23 @@
-import { ether, ETHER_TOKEN_LOGO } from '../../../constants'
-import {
-  ERC20BridgeToken,
-  TokenType
-} from '../../../hooks/arbTokenBridge.types'
-import { ChainId } from '../../../types/ChainId'
-import { addressesEqual } from '../../../util/AddressUtils'
-import {
-  bridgedUsdcToken,
-  CommonAddress,
-  commonUsdcToken
-} from '../../../util/CommonAddressUtils'
-import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants'
-import { constants } from 'ethers'
+import { constants } from 'ethers';
+
+import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
+import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressUtils';
+import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
+import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants';
 
 export function isLifiTransfer({
   sourceChainId,
-  destinationChainId
+  destinationChainId,
 }: {
-  sourceChainId: number
-  destinationChainId: number
+  sourceChainId: number;
+  destinationChainId: number;
 }) {
   return !!(
     allowedLifiSourceChainIds.includes(sourceChainId) &&
     lifiDestinationChainIds[sourceChainId]?.includes(destinationChainId)
-  )
+  );
 }
 
 function isUsdcToken(tokenAddress: string | undefined) {
@@ -33,45 +27,41 @@ function isUsdcToken(tokenAddress: string | undefined) {
     addressesEqual(tokenAddress, CommonAddress.Superposition.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.ApeChain.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.Base.USDC)
-  )
+  );
 }
 
 export function isValidLifiTransfer({
   fromToken,
   sourceChainId,
-  destinationChainId
+  destinationChainId,
 }: {
-  fromToken: string | undefined
-  sourceChainId: number
-  destinationChainId: number
+  fromToken: string | undefined;
+  sourceChainId: number;
+  destinationChainId: number;
 }): boolean {
   // Check if it's a valid lifi pair
   if (
     !isLifiTransfer({
       sourceChainId,
-      destinationChainId
+      destinationChainId,
     })
   ) {
-    return false
+    return false;
   }
 
   /**
    * Check if it's Ether (native token)
    * ApeChain has the zero address for Ether
    */
-  if (
-    sourceChainId !== ChainId.ApeChain &&
-    destinationChainId !== ChainId.ApeChain &&
-    !fromToken
-  ) {
-    return true
+  if (sourceChainId !== ChainId.ApeChain && destinationChainId !== ChainId.ApeChain && !fromToken) {
+    return true;
   }
 
   if (
     addressesEqual(fromToken, CommonAddress.ApeChain.WETH) ||
     addressesEqual(fromToken, constants.AddressZero)
   ) {
-    return true
+    return true;
   }
 
   if (
@@ -83,13 +73,12 @@ export function isValidLifiTransfer({
       sourceChainId === ChainId.Superposition) ||
     (addressesEqual(fromToken, CommonAddress.ApeChain.USDCe) &&
       sourceChainId === ChainId.ApeChain) ||
-    (addressesEqual(fromToken, CommonAddress.Base.USDC) &&
-      sourceChainId === ChainId.Base)
+    (addressesEqual(fromToken, CommonAddress.Base.USDC) && sourceChainId === ChainId.Base)
   ) {
-    return true
+    return true;
   }
 
-  return false
+  return false;
 }
 
 const etherWithLogo: ERC20BridgeToken = {
@@ -97,8 +86,8 @@ const etherWithLogo: ERC20BridgeToken = {
   logoURI: ETHER_TOKEN_LOGO,
   type: TokenType.ERC20,
   address: constants.AddressZero,
-  listIds: new Set<string>()
-}
+  listIds: new Set<string>(),
+};
 
 /**
  * Temporary solutions until token lists support overrides
@@ -108,8 +97,8 @@ const Weth = {
   name: 'Wrapped Ether',
   decimals: 18,
   logoURI:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png'
-}
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+};
 
 function getUsdc(chainId: number) {
   return (
@@ -117,49 +106,49 @@ function getUsdc(chainId: number) {
       [ChainId.Ethereum]: {
         address: CommonAddress.Ethereum.USDC,
         symbol: 'USDC',
-        name: 'USDC'
+        name: 'USDC',
       },
       [ChainId.ArbitrumOne]: {
         address: CommonAddress.ArbitrumOne.USDC,
         symbol: 'USDC',
-        name: 'USDC'
+        name: 'USDC',
       },
       [ChainId.Superposition]: {
         address: CommonAddress.Superposition.USDCe,
         symbol: 'USDC.e',
-        name: 'Bridged USDC'
+        name: 'Bridged USDC',
       },
       [ChainId.ApeChain]: {
         address: CommonAddress.ApeChain.USDCe,
         symbol: 'USDC.e',
-        name: 'Bridged USDC'
+        name: 'Bridged USDC',
       },
       [ChainId.Base]: {
         address: CommonAddress.Base.USDC,
         symbol: 'USDC',
-        name: 'USD Coin'
-      }
+        name: 'USD Coin',
+      },
     }[chainId] || null
-  )
+  );
 }
 
 /** Returns source and destination token for current token on (source,destination) */
 export function getTokenOverride({
   fromToken,
   sourceChainId,
-  destinationChainId
+  destinationChainId,
 }: {
-  fromToken: string | undefined
-  sourceChainId: number
-  destinationChainId: number
+  fromToken: string | undefined;
+  sourceChainId: number;
+  destinationChainId: number;
 }):
   | {
-      source: ERC20BridgeToken
-      destination: ERC20BridgeToken
+      source: ERC20BridgeToken;
+      destination: ERC20BridgeToken;
     }
   | {
-      source: null
-      destination: null
+      source: null;
+      destination: null;
     } {
   // Eth on ApeChain
   if (addressesEqual(fromToken, constants.AddressZero)) {
@@ -169,28 +158,28 @@ export function getTokenOverride({
           ...Weth,
           address: CommonAddress.ApeChain.WETH,
           type: TokenType.ERC20,
-          listIds: new Set<string>()
+          listIds: new Set<string>(),
         },
         destination: {
           ...etherWithLogo,
-          address: constants.AddressZero
-        }
-      }
+          address: constants.AddressZero,
+        },
+      };
     }
 
     if (destinationChainId === ChainId.ApeChain) {
       return {
         source: {
           ...etherWithLogo,
-          address: constants.AddressZero
+          address: constants.AddressZero,
         },
         destination: {
           ...Weth,
           address: CommonAddress.ApeChain.WETH,
           type: TokenType.ERC20,
-          listIds: new Set<string>()
-        }
-      }
+          listIds: new Set<string>(),
+        },
+      };
     }
   }
 
@@ -198,14 +187,14 @@ export function getTokenOverride({
   if (!fromToken) {
     return {
       source: null,
-      destination: null
-    }
+      destination: null,
+    };
   }
 
   // USDC
   if (fromToken && isUsdcToken(fromToken)) {
-    const destinationUsdcToken = getUsdc(destinationChainId)
-    const sourceUsdcToken = getUsdc(sourceChainId)
+    const destinationUsdcToken = getUsdc(destinationChainId);
+    const sourceUsdcToken = getUsdc(sourceChainId);
 
     if (
       addressesEqual(fromToken, CommonAddress.Ethereum.USDC) &&
@@ -218,15 +207,15 @@ export function getTokenOverride({
           ...bridgedUsdcToken,
           name: 'Bridged USDC',
           type: TokenType.ERC20,
-          listIds: new Set<string>()
+          listIds: new Set<string>(),
         },
         destination: {
           ...commonUsdcToken,
           ...destinationUsdcToken,
           type: TokenType.ERC20,
-          listIds: new Set<string>()
-        }
-      }
+          listIds: new Set<string>(),
+        },
+      };
     }
 
     if (destinationUsdcToken && sourceUsdcToken) {
@@ -235,20 +224,20 @@ export function getTokenOverride({
           ...commonUsdcToken,
           ...sourceUsdcToken,
           type: TokenType.ERC20,
-          listIds: new Set<string>()
+          listIds: new Set<string>(),
         },
         destination: {
           ...commonUsdcToken,
           ...destinationUsdcToken,
           type: TokenType.ERC20,
-          listIds: new Set<string>()
-        }
-      }
+          listIds: new Set<string>(),
+        },
+      };
     }
   }
 
   return {
     source: null,
-    destination: null
-  }
+    destination: null,
+  };
 }

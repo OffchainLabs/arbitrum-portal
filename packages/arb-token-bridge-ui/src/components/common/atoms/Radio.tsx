@@ -1,36 +1,26 @@
-import { RadioGroup } from '@headlessui/react'
+import { RadioGroup } from '@headlessui/react';
 
 export type RadioType<T> = {
-  value: T
-  onChange: (param: T) => void
-  label?: string
-  orientation?: 'horizontal' | 'vertical'
+  value: T;
+  onChange: (param: T) => void;
+  label?: string;
+  orientation?: 'horizontal' | 'vertical';
   options: {
-    label: string
-    description?: string
-    value: T
-    id: string
-  }[]
-}
+    label: string;
+    description?: string;
+    value: T;
+    id: string;
+  }[];
+};
 
-export const Radio = ({
-  value,
-  label,
-  orientation,
-  onChange,
-  options
-}: RadioType<string>) => {
+export const Radio = ({ value, label, orientation, onChange, options }: RadioType<string>) => {
   return (
     <RadioGroup value={value} onChange={onChange} className="radio-switch">
       {/* radio group title (optional) */}
       {label && <RadioGroup.Label className="mb-4">{label}</RadioGroup.Label>}
 
-      <div
-        className={`flex gap-6 ${
-          orientation === 'vertical' && 'flex-col items-start'
-        }`}
-      >
-        {options.map(option => (
+      <div className={`flex gap-6 ${orientation === 'vertical' && 'flex-col items-start'}`}>
+        {options.map((option) => (
           <RadioGroup.Option key={option.id} value={option.value}>
             {({ checked }: { checked: boolean }) => (
               <>
@@ -45,19 +35,13 @@ export const Radio = ({
                   {/* radio option text */}
                   <div className="flex flex-col">
                     {/* option label */}
-                    <RadioGroup.Label
-                      as="p"
-                      className={`heading mb-1 mr-4 text-sm`}
-                    >
+                    <RadioGroup.Label as="p" className={`heading mb-1 mr-4 text-sm`}>
                       {option.label}
                     </RadioGroup.Label>
 
                     {/* option description */}
                     {option.description && (
-                      <RadioGroup.Description
-                        as="span"
-                        className="text-sm text-gray-3"
-                      >
+                      <RadioGroup.Description as="span" className="text-sm text-gray-3">
                         <span>{option.description}</span>
                       </RadioGroup.Description>
                     )}
@@ -69,5 +53,5 @@ export const Radio = ({
         ))}
       </div>
     </RadioGroup>
-  )
-}
+  );
+};

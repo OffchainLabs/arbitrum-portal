@@ -1,1 +1,1 @@
-export { GET } from '@/bridge/app/api/status'
+export { GET } from '@/bridge/app/api/status';

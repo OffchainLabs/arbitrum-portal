@@ -1,11 +1,8 @@
-import { Disclosure } from '@headlessui/react'
-import {
-  InformationCircleIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/outline'
+import { Disclosure } from '@headlessui/react';
+import { ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
-import { ExternalLink } from '../common/ExternalLink'
-import { DOCS_DOMAIN } from '../../constants'
+import { DOCS_DOMAIN } from '../../constants';
+import { ExternalLink } from '../common/ExternalLink';
 
 export function PendingDepositWarning() {
   return (
@@ -17,20 +14,19 @@ export function PendingDepositWarning() {
         <div className="flex items-start gap-1">
           <InformationCircleIcon className="mt-[2px] h-3 w-3 shrink-0 stroke-orange-dark" />
           <p>
-            Deposit might fail if the gas fee provided was too low. Stay on this
-            page until the transaction succeeds.
+            Deposit might fail if the gas fee provided was too low. Stay on this page until the
+            transaction succeeds.
           </p>
         </div>
         <ChevronRightIcon className="ml-auto h-3 w-3 shrink-0 ui-open:rotate-90 ui-open:transform" />
       </Disclosure.Button>
       <Disclosure.Panel className="flex flex-col gap-2 pl-4">
         <p>
-          If you must leave, check back <strong>within a week</strong>. In most
-          cases, your deposits should go through successfully.
+          If you must leave, check back <strong>within a week</strong>. In most cases, your deposits
+          should go through successfully.
           <br />
-          However, if it failed, re-execute <strong>within a week</strong> from
-          the time of the initial transaction, or else{' '}
-          <strong>your funds could be lost forever!</strong>
+          However, if it failed, re-execute <strong>within a week</strong> from the time of the
+          initial transaction, or else <strong>your funds could be lost forever!</strong>
         </p>
         <p>
           Learn more about{' '}
@@ -44,5 +40,5 @@ export function PendingDepositWarning() {
         </p>
       </Disclosure.Panel>
     </Disclosure>
-  )
+  );
 }

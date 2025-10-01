@@ -1,8 +1,10 @@
-import { Card } from '@/components/Card';
-import { OrbitChain, OrbitChainTeamMember } from '@/common/types';
-import { LinkedinIcon, TwitterXIcon } from '../SvgIcons';
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
+
+import { OrbitChain, OrbitChainTeamMember } from '@/common/types';
+import { Card } from '@/components/Card';
+
+import { LinkedinIcon, TwitterXIcon } from '../SvgIcons';
 
 const generateTeamMemberAvatar = (member: OrbitChainTeamMember) => {
   if (member.avatarUrl) {
@@ -71,9 +73,7 @@ export const OrbitTeamMembers = ({
             >
               {avatar}
               <div className="flex flex-col items-center">
-                <div className="text-center text-base">
-                  {member.primaryText}
-                </div>
+                <div className="text-center text-base">{member.primaryText}</div>
                 <div className="text-sm opacity-50">{member.secondaryText}</div>
               </div>
             </Card>

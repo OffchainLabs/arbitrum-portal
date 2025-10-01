@@ -1,29 +1,29 @@
-import { getProviderForChainId } from '../token-bridge-sdk/utils'
+import { getProviderForChainId } from '../token-bridge-sdk/utils';
 
 export type AccountType =
   | 'externally-owned-account'
   | 'delegated-account'
-  | 'smart-contract-wallet'
+  | 'smart-contract-wallet';
 
 export async function getAccountType({
   address,
-  chainId
+  chainId,
 }: {
-  address: string
-  chainId: number
+  address: string;
+  chainId: number;
 }): Promise<AccountType | undefined> {
-  const provider = getProviderForChainId(chainId)
+  const provider = getProviderForChainId(chainId);
   try {
-    const code = await provider.getCode(address)
+    const code = await provider.getCode(address);
     // delegation designator prefix for 7702
     if (code.startsWith('0xef01')) {
-      return 'delegated-account'
+      return 'delegated-account';
     }
     if (code.length > 2) {
-      return 'smart-contract-wallet'
+      return 'smart-contract-wallet';
     }
-    return 'externally-owned-account'
+    return 'externally-owned-account';
   } catch (_) {
-    return undefined
+    return undefined;
   }
 }

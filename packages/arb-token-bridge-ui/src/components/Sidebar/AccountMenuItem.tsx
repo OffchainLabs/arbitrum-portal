@@ -1,26 +1,18 @@
 import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline'
-import { MenuItem, MenuItemExpandable } from '@offchainlabs/cobalt'
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
+import { MenuItem, MenuItemExpandable } from '@offchainlabs/cobalt';
 
-import { getExplorerUrl } from '../../util/networks'
-import { SafeImage } from '../common/SafeImage'
-import { useAccountMenu } from '../../hooks/useAccountMenu'
-import { CustomBoringAvatar } from '../common/CustomBoringAvatar'
+import { useAccountMenu } from '../../hooks/useAccountMenu';
+import { getExplorerUrl } from '../../util/networks';
+import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
+import { SafeImage } from '../common/SafeImage';
 
 export const AccountMenuItem = () => {
-  const {
-    address,
-    accountShort,
-    ensName,
-    ensAvatar,
-    disconnect,
-    udInfo,
-    chain,
-    setQueryParams
-  } = useAccountMenu()
+  const { address, accountShort, ensName, ensAvatar, disconnect, udInfo, chain, setQueryParams } =
+    useAccountMenu();
 
   return (
     <MenuItemExpandable
@@ -55,5 +47,5 @@ export const AccountMenuItem = () => {
         isMobile
       />
     </MenuItemExpandable>
-  )
-}
+  );
+};

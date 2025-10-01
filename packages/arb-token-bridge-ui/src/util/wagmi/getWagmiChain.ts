@@ -1,66 +1,66 @@
-import { mainnet, arbitrum, Chain } from 'wagmi/chains'
+import { Chain, arbitrum, mainnet } from 'wagmi/chains';
 
+import { ChainId } from '../../types/ChainId';
+import { getCustomChainFromLocalStorageById } from '../networks';
+import { orbitChains } from '../orbitChainsList';
 import {
-  chainToWagmiChain,
-  sepolia,
   arbitrumNova,
   arbitrumSepolia,
+  base,
+  baseSepolia,
+  chainToWagmiChain,
   localL1Network,
   localL2Network,
   localL3Network,
-  baseSepolia,
-  base
-} from './wagmiAdditionalNetworks'
-import { getCustomChainFromLocalStorageById } from '../networks'
-import { ChainId } from '../../types/ChainId'
-import { orbitChains } from '../orbitChainsList'
+  sepolia,
+} from './wagmiAdditionalNetworks';
 
 export function getWagmiChain(chainId: number): Chain {
-  const customChain = getCustomChainFromLocalStorageById(chainId)
-  const orbitChain = orbitChains[chainId]
+  const customChain = getCustomChainFromLocalStorageById(chainId);
+  const orbitChain = orbitChains[chainId];
 
   if (customChain) {
-    return chainToWagmiChain(customChain)
+    return chainToWagmiChain(customChain);
   }
 
   if (orbitChain) {
-    return chainToWagmiChain(orbitChain)
+    return chainToWagmiChain(orbitChain);
   }
 
   switch (chainId) {
     case ChainId.Ethereum:
-      return mainnet
+      return mainnet;
 
     case ChainId.ArbitrumOne:
-      return arbitrum
+      return arbitrum;
 
     case ChainId.ArbitrumNova:
-      return arbitrumNova
+      return arbitrumNova;
 
     case ChainId.Base:
-      return base
+      return base;
 
     // Testnets
     case ChainId.Sepolia:
-      return sepolia
+      return sepolia;
 
     case ChainId.ArbitrumSepolia:
-      return arbitrumSepolia
+      return arbitrumSepolia;
 
     case ChainId.BaseSepolia:
-      return baseSepolia
+      return baseSepolia;
 
     // Local networks
     case ChainId.Local:
-      return localL1Network
+      return localL1Network;
 
     case ChainId.ArbitrumLocal:
-      return localL2Network
+      return localL2Network;
 
     case ChainId.L3Local:
-      return localL3Network
+      return localL3Network;
 
     default:
-      throw new Error(`[getWagmiChain] Unexpected chain id: ${chainId}`)
+      throw new Error(`[getWagmiChain] Unexpected chain id: ${chainId}`);
   }
 }

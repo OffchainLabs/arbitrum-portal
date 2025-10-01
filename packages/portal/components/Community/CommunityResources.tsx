@@ -3,8 +3,7 @@ import { Card } from '@/components/Card';
 const resourcesCards = [
   {
     title: 'Blog',
-    description:
-      'Read words that are friendly to the less technical Arbitrum fans',
+    description: 'Read words that are friendly to the less technical Arbitrum fans',
     link: 'https://blog.arbitrum.io/',
     image: '/images/banner-blog.webp',
   },
@@ -59,12 +58,8 @@ export const CommunityResources = () => {
             />
 
             <div className="flex flex-grow flex-col gap-3 p-4">
-              <div className="line-clamp-2 text-sm font-semibold">
-                {card.title}
-              </div>
-              <div className="flex flex-row gap-2 text-xs opacity-75">
-                {card.description}
-              </div>
+              <div className="line-clamp-2 text-sm font-semibold">{card.title}</div>
+              <div className="flex flex-row gap-2 text-xs opacity-75">{card.description}</div>
             </div>
           </Card>
         ))}

@@ -1,4 +1,5 @@
 import { FullProject } from '@/common/types';
+
 import { ProjectsList } from './Projects';
 
 export const SearchedProjects = ({ projects }: { projects: FullProject[] }) => {

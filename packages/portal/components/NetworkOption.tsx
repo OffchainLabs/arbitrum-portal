@@ -1,13 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import CheckIcon from '@heroicons/react/24/outline/CheckIcon';
-import { useMemo } from 'react';
+import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
+import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { Network } from '@/common/chains';
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useSelectedChains } from '@/hooks/useSelectedChains';
 
 export const NetworkOption = ({ network }: { network: Network }) => {
@@ -16,8 +16,7 @@ export const NetworkOption = ({ network }: { network: Network }) => {
   const posthog = usePostHog();
 
   const checked = useMemo(
-    () =>
-      selectedChains.some((selectedChain) => selectedChain === network.slug),
+    () => selectedChains.some((selectedChain) => selectedChain === network.slug),
     [network.slug, selectedChains],
   );
   const isOnlyOneChecked = selectedChains.length === 1 && checked;
@@ -30,9 +29,7 @@ export const NetworkOption = ({ network }: { network: Network }) => {
 
     if (checked) {
       setQueryParams({
-        chains: selectedChains
-          .filter((chain) => chain !== network.slug)
-          .join('_'),
+        chains: selectedChains.filter((chain) => chain !== network.slug).join('_'),
       });
     } else {
       // should check, so we always add
@@ -43,10 +40,7 @@ export const NetworkOption = ({ network }: { network: Network }) => {
   return (
     <div
       key={network.slug}
-      className={twMerge(
-        'group flex select-none justify-start rounded-md',
-        'hover:bg-white',
-      )}
+      className={twMerge('group flex select-none justify-start rounded-md', 'hover:bg-white')}
     >
       <input
         type="checkbox"

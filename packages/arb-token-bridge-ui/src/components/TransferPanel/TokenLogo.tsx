@@ -1,12 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
-import { SafeImage } from '../common/SafeImage'
-import { twMerge } from 'tailwind-merge'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { SafeImage } from '../common/SafeImage';
+import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 /**
  * Shows the selected token logo by default.
@@ -17,42 +17,36 @@ import { useSelectedToken } from '../../hooks/useSelectedToken'
 export const TokenLogo = ({
   srcOverride,
   className,
-  fallback
+  fallback,
 }: {
-  srcOverride?: string | null
-  className?: string
-  fallback?: JSX.Element
+  srcOverride?: string | null;
+  className?: string;
+  fallback?: JSX.Element;
 }) => {
-  const [selectedToken] = useSelectedToken()
-  const tokensFromLists = useTokensFromLists()
-  const tokensFromUser = useTokensFromUser()
+  const [selectedToken] = useSelectedToken();
+  const tokensFromLists = useTokensFromLists();
+  const tokensFromUser = useTokensFromUser();
 
-  const [networks] = useNetworks()
-  const { childChainProvider } = useNetworksRelationship(networks)
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
+  const [networks] = useNetworks();
+  const { childChainProvider } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const src = useMemo(() => {
     // Override to show the native currency logo
     if (srcOverride === null) {
-      return nativeCurrency.logoUrl
+      return nativeCurrency.logoUrl;
     }
 
     if (typeof srcOverride !== 'undefined') {
-      return srcOverride
+      return srcOverride;
     }
 
     if (selectedToken) {
-      return selectedToken.logoURI
+      return selectedToken.logoURI;
     }
 
-    return nativeCurrency.logoUrl
-  }, [
-    nativeCurrency.logoUrl,
-    selectedToken,
-    srcOverride,
-    tokensFromLists,
-    tokensFromUser
-  ])
+    return nativeCurrency.logoUrl;
+  }, [nativeCurrency.logoUrl, selectedToken, srcOverride, tokensFromLists, tokensFromUser]);
 
   return (
     <SafeImage
@@ -61,5 +55,5 @@ export const TokenLogo = ({
       className={twMerge('h-4 w-4 shrink-0', className)}
       fallback={fallback}
     />
-  )
-}
+  );
+};

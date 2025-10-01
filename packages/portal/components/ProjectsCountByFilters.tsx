@@ -1,24 +1,30 @@
 'use client';
 
-import { useState } from 'react';
 import { MinusIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+
+import { CATEGORIES } from '@/common/categories';
 import { useFilteredProjectsClient } from '@/hooks/useFilteredProjectsClient';
 import { useFilters } from '@/hooks/useFilters';
-import { CATEGORIES } from '@/common/categories';
 
-const slugTitleMap = CATEGORIES.reduce((slugTitleMap, category) => {
-  // Add the category slug and title
-  slugTitleMap[category.slug] = category.title;
+const slugTitleMap = CATEGORIES.reduce(
+  (slugTitleMap, category) => {
+    // Add the category slug and title
+    slugTitleMap[category.slug] = category.title;
 
-  // Add all the subcategory slugs and titles
-  const subcategorySlugsTitles: { [slug: string]: string } =
-    category.subcategories.reduce((subcategoryMap, subcategory) => {
-      subcategoryMap[subcategory.slug] = subcategory.title;
-      return subcategoryMap;
-    }, {} as { [slug: string]: string });
+    // Add all the subcategory slugs and titles
+    const subcategorySlugsTitles: { [slug: string]: string } = category.subcategories.reduce(
+      (subcategoryMap, subcategory) => {
+        subcategoryMap[subcategory.slug] = subcategory.title;
+        return subcategoryMap;
+      },
+      {} as { [slug: string]: string },
+    );
 
-  return { ...slugTitleMap, ...subcategorySlugsTitles };
-}, {} as { [slug: string]: string });
+    return { ...slugTitleMap, ...subcategorySlugsTitles };
+  },
+  {} as { [slug: string]: string },
+);
 
 function slugsToCategoryOrSubcategoryTitle(slug: string) {
   if (!slugTitleMap[slug]) {

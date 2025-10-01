@@ -1,67 +1,63 @@
-import useLocalStorage from '@rehooks/local-storage'
-import Image from 'next/image'
 import {
+  ArrowTopRightOnSquareIcon,
   StarIcon as StarIconOutline,
-  ArrowTopRightOnSquareIcon
-} from '@heroicons/react/24/outline'
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+} from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import useLocalStorage from '@rehooks/local-storage';
+import Image from 'next/image';
 
-import { ExternalLink } from './ExternalLink'
-import {
-  FastBridgeInfo,
-  FastBridgeNames,
-  SpecialTokenSymbol
-} from '../../util/fastBridges'
-import { trackEvent } from '../../util/AnalyticsUtils'
+import { trackEvent } from '../../util/AnalyticsUtils';
+import { FastBridgeInfo, FastBridgeNames, SpecialTokenSymbol } from '../../util/fastBridges';
+import { ExternalLink } from './ExternalLink';
 
 export function BridgesTable(props: {
-  bridgeList: FastBridgeInfo[]
-  selectedNonCanonicalToken?: SpecialTokenSymbol.USDC
+  bridgeList: FastBridgeInfo[];
+  selectedNonCanonicalToken?: SpecialTokenSymbol.USDC;
 }) {
   const [favorites, setFavorites] = useLocalStorage<string[]>(
     'arbitrum:bridge:favorite-fast-bridges',
-    []
-  )
+    [],
+  );
 
   function onClick(bridgeName: FastBridgeNames) {
     if (props.selectedNonCanonicalToken) {
       trackEvent('Fast Bridge Click', {
         bridge: bridgeName,
-        tokenSymbol: props.selectedNonCanonicalToken
-      })
+        tokenSymbol: props.selectedNonCanonicalToken,
+      });
     } else {
-      trackEvent('Fast Bridge Click', { bridge: bridgeName })
+      trackEvent('Fast Bridge Click', { bridge: bridgeName });
     }
   }
 
   function isFavorite(bridgeName: FastBridgeNames) {
-    return favorites.includes(bridgeName)
+    return favorites.includes(bridgeName);
   }
 
   function toggleFavorite(bridgeName: FastBridgeNames) {
     if (favorites.includes(bridgeName)) {
-      setFavorites(favorites.filter(favorite => favorite !== bridgeName))
+      setFavorites(favorites.filter((favorite) => favorite !== bridgeName));
     } else {
-      setFavorites([...favorites, bridgeName])
+      setFavorites([...favorites, bridgeName]);
     }
   }
 
   const sortedFastBridges = props.bridgeList.sort((a, b) => {
-    const isFavoriteA = isFavorite(a.name)
-    const isFavoriteB = isFavorite(b.name)
+    const isFavoriteA = isFavorite(a.name);
+    const isFavoriteB = isFavorite(b.name);
 
     if (isFavoriteA && !isFavoriteB) {
-      return -1
+      return -1;
     } else if (!isFavoriteA && isFavoriteB) {
-      return 1
+      return 1;
     }
 
     if (a.name.toLowerCase() < b.name.toLowerCase()) {
-      return -1
+      return -1;
     } else {
-      return 1
+      return 1;
     }
-  })
+  });
 
   return (
     <div className="rounded border border-gray-dark">
@@ -74,7 +70,7 @@ export function BridgesTable(props: {
           </tr>
         </thead>
         <tbody className="font-light">
-          {sortedFastBridges.map(bridge => (
+          {sortedFastBridges.map((bridge) => (
             <tr
               key={bridge.name}
               className="cursor-pointer rounded border-t border-white bg-black transition duration-300 hover:bg-white/20"
@@ -86,10 +82,10 @@ export function BridgesTable(props: {
                   onClick={() => onClick(bridge.name)}
                 >
                   <button
-                    onClick={event => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      toggleFavorite(bridge.name)
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      toggleFavorite(bridge.name);
                     }}
                     className="arb-hover"
                   >
@@ -103,10 +99,7 @@ export function BridgesTable(props: {
               </td>
 
               <td>
-                <ExternalLink
-                  href={bridge.href}
-                  onClick={() => onClick(bridge.name)}
-                >
+                <ExternalLink href={bridge.href} onClick={() => onClick(bridge.name)}>
                   <div className="flex items-center space-x-4 px-5 py-3">
                     <Image
                       src={bridge.imageSrc}
@@ -134,5 +127,5 @@ export function BridgesTable(props: {
         </tbody>
       </table>
     </div>
-  )
+  );
 }

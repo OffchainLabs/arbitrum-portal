@@ -1,5 +1,6 @@
 import { Popover } from '@headlessui/react';
 import { ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline';
+
 import { NetworkOptionList } from './NetworkOptionList';
 
 export const NetworkDropdown = () => {

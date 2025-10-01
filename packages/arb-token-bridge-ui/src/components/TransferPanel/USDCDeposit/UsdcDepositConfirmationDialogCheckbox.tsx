@@ -1,41 +1,38 @@
-import { ExternalLink } from '../../common/ExternalLink'
-import { Checkbox } from '../../common/Checkbox'
-import { useEffect, useState } from 'react'
-import { isNetwork } from '../../../util/networks'
-import { useAccount } from 'wagmi'
-import { getCctpTransferDuration } from '../../../hooks/useTransferDuration'
-import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration'
+import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
+
+import { getCctpTransferDuration } from '../../../hooks/useTransferDuration';
+import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
+import { isNetwork } from '../../../util/networks';
+import { Checkbox } from '../../common/Checkbox';
+import { ExternalLink } from '../../common/ExternalLink';
 
 export function USDCDepositConfirmationDialogCheckbox({
   onChange,
   onAllCheckboxesCheched,
-  isBridgingNativeUSDC
+  isBridgingNativeUSDC,
 }: {
-  onChange: (checked: boolean) => void
-  onAllCheckboxesCheched?: () => void
-  isBridgingNativeUSDC?: true
+  onChange: (checked: boolean) => void;
+  onAllCheckboxesCheched?: () => void;
+  isBridgingNativeUSDC?: true;
 }) {
-  const [checkboxesChecked, setCheckboxesChecked] = useState([
-    false,
-    false,
-    false
-  ])
-  const externalLinkClassnames = 'arb-hover underline'
-  const { chain } = useAccount()
-  const { isTestnet } = isNetwork(chain?.id ?? 0)
+  const [checkboxesChecked, setCheckboxesChecked] = useState([false, false, false]);
+  const externalLinkClassnames = 'arb-hover underline';
+  const { chain } = useAccount();
+  const { isTestnet } = isNetwork(chain?.id ?? 0);
 
-  const destinationNetworkName = isTestnet ? 'Arbitrum Sepolia' : 'Arbitrum One'
+  const destinationNetworkName = isTestnet ? 'Arbitrum Sepolia' : 'Arbitrum One';
 
   function linksOnClickHandler(event: React.MouseEvent<HTMLAnchorElement>) {
-    event.stopPropagation()
-    event.nativeEvent.stopImmediatePropagation()
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
   }
 
   useEffect(() => {
-    if (checkboxesChecked.every(checked => checked)) {
-      onAllCheckboxesCheched?.()
+    if (checkboxesChecked.every((checked) => checked)) {
+      onAllCheckboxesCheched?.();
     }
-  }, [checkboxesChecked, onAllCheckboxesCheched])
+  }, [checkboxesChecked, onAllCheckboxesCheched]);
 
   return (
     <>
@@ -52,13 +49,13 @@ export function USDCDepositConfirmationDialogCheckbox({
               </span>
             }
             checked={checkboxesChecked[0] ?? false}
-            onChange={checked => {
-              onChange(checked)
-              setCheckboxesChecked(prevCheckboxesState => {
-                const newState = [...prevCheckboxesState]
-                newState[0] = checked
-                return newState
-              })
+            onChange={(checked) => {
+              onChange(checked);
+              setCheckboxesChecked((prevCheckboxesState) => {
+                const newState = [...prevCheckboxesState];
+                newState[0] = checked;
+                return newState;
+              });
             }}
           />
           <Checkbox
@@ -66,22 +63,19 @@ export function USDCDepositConfirmationDialogCheckbox({
               <span className="select-none font-light">
                 I understand that it will take{' '}
                 <span className="font-medium">
-                  ~
-                  {minutesToHumanReadableTime(
-                    getCctpTransferDuration(isTestnet)
-                  )}
+                  ~{minutesToHumanReadableTime(getCctpTransferDuration(isTestnet))}
                 </span>{' '}
                 before I can claim my USDC on {destinationNetworkName}.
               </span>
             }
             checked={checkboxesChecked[1] ?? false}
-            onChange={checked => {
-              onChange(checked)
-              setCheckboxesChecked(prevCheckboxesState => {
-                const newState = [...prevCheckboxesState]
-                newState[1] = checked
-                return newState
-              })
+            onChange={(checked) => {
+              onChange(checked);
+              setCheckboxesChecked((prevCheckboxesState) => {
+                const newState = [...prevCheckboxesState];
+                newState[1] = checked;
+                return newState;
+              });
             }}
           />
         </>
@@ -89,8 +83,8 @@ export function USDCDepositConfirmationDialogCheckbox({
       <Checkbox
         label={
           <span className="select-none font-light">
-            I understand <span className="font-medium">USDC.e</span> is
-            different from <span className="font-medium">USDC</span>.{' '}
+            I understand <span className="font-medium">USDC.e</span> is different from{' '}
+            <span className="font-medium">USDC</span>.{' '}
             <ExternalLink
               className={externalLinkClassnames}
               href="https://arbitrumfoundation.medium.com/usdc-to-come-natively-to-arbitrum-f751a30e3d83"
@@ -102,15 +96,15 @@ export function USDCDepositConfirmationDialogCheckbox({
           </span>
         }
         checked={checkboxesChecked[2] ?? false}
-        onChange={checked => {
-          onChange(checked)
-          setCheckboxesChecked(prevCheckboxesState => {
-            const newState = [...prevCheckboxesState]
-            newState[2] = checked
-            return newState
-          })
+        onChange={(checked) => {
+          onChange(checked);
+          setCheckboxesChecked((prevCheckboxesState) => {
+            const newState = [...prevCheckboxesState];
+            newState[2] = checked;
+            return newState;
+          });
         }}
       />
     </>
-  )
+  );
 }

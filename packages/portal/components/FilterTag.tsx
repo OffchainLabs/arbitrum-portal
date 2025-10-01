@@ -2,16 +2,17 @@
 
 import { CheckIcon } from '@heroicons/react/24/outline';
 import { usePostHog } from 'posthog-js/react';
-import { twMerge } from 'tailwind-merge';
 import { useMemo } from 'react';
-import { useSelectedChains } from '@/hooks/useSelectedChains';
-import { useSelectedCategory } from '@/hooks/useSelectedCategory';
-import { useSelectedSubcategories } from '@/hooks/useSelectedSubcategories';
-import { useFilters } from '@/hooks/useFilters';
+import { twMerge } from 'tailwind-merge';
+
 import { CATEGORY_TO_SUBCATEGORIES } from '@/common/categories';
-import { AppCountChain, Category, Subcategory } from '@/common/types';
 import { getChainDetailsById } from '@/common/chains';
 import { getSelectedChainsInfo } from '@/common/getSelectedChainsInfo';
+import { AppCountChain, Category, Subcategory } from '@/common/types';
+import { useFilters } from '@/hooks/useFilters';
+import { useSelectedCategory } from '@/hooks/useSelectedCategory';
+import { useSelectedChains } from '@/hooks/useSelectedChains';
+import { useSelectedSubcategories } from '@/hooks/useSelectedSubcategories';
 
 export const FilterTag = ({
   category,
@@ -21,8 +22,7 @@ export const FilterTag = ({
   subcategory: Subcategory;
 }) => {
   const { selectedCategory } = useSelectedCategory();
-  const { selectedSubcategories: urlSubcategories } =
-    useSelectedSubcategories();
+  const { selectedSubcategories: urlSubcategories } = useSelectedSubcategories();
   const { selectedChains } = useSelectedChains();
   const { areAllChainsSelected } = getSelectedChainsInfo(selectedChains);
   const posthog = usePostHog();
@@ -54,8 +54,7 @@ export const FilterTag = ({
   }, [selectedChains, subcategory, areAllChainsSelected]);
 
   const isIndividuallySelected = urlSubcategories.includes(subcategory.slug);
-  const isParentCategorySelected =
-    selectedCategory === category.slug.toLowerCase();
+  const isParentCategorySelected = selectedCategory === category.slug.toLowerCase();
 
   const isSelected = isIndividuallySelected || isParentCategorySelected;
 

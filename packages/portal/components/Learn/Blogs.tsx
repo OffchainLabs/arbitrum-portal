@@ -1,8 +1,8 @@
 import { formatDate } from '@/common/dateUtils';
+import { Blog } from '@/common/types';
 import { Card } from '@/components/Card';
 import { ExternalLink } from '@/components/ExternalLink';
 import { ResponsiveHorizontalScrollableLayout } from '@/components/ResponsiveHorizontalScrollableLayout';
-import { Blog } from '@/common/types';
 
 export const Blogs = ({ blogs }: { blogs: Blog[] }) => {
   if (!blogs?.length) {
@@ -43,9 +43,7 @@ export const Blogs = ({ blogs }: { blogs: Blog[] }) => {
             />
 
             <div className="flex flex-grow flex-col justify-between gap-3 p-4">
-              <div className="line-clamp-2 text-sm font-semibold">
-                {blog.title}
-              </div>
+              <div className="line-clamp-2 text-sm font-semibold">{blog.title}</div>
               <div className="flex flex-row gap-2 text-xs opacity-75">
                 <div>{formatDate(blog.published_at, 'MMM DD, YYYY')}</div>
                 &bull;

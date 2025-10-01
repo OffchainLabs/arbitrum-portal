@@ -1,20 +1,19 @@
 export function onDisconnectHandler() {
   if (typeof indexedDB === 'undefined') {
-    return
+    return;
   }
 
   if (typeof localStorage === 'undefined') {
-    return
+    return;
   }
 
-  const isWalletConnect =
-    localStorage.getItem('wagmi.wallet') === '"walletConnect"'
+  const isWalletConnect = localStorage.getItem('wagmi.wallet') === '"walletConnect"';
 
   if (!isWalletConnect) {
-    return
+    return;
   }
 
-  indexedDB.deleteDatabase('WALLET_CONNECT_V2_INDEXED_DB')
+  indexedDB.deleteDatabase('WALLET_CONNECT_V2_INDEXED_DB');
 
-  setTimeout(() => window.location.reload(), 100)
+  setTimeout(() => window.location.reload(), 100);
 }

@@ -1,12 +1,8 @@
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
-import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 import { ProjectItemBox } from '@/components/ProjectItemBox';
+import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 
-export const ProjectsOnOrbitChain = ({
-  orbitChainSlug,
-}: {
-  orbitChainSlug: string;
-}) => {
+export const ProjectsOnOrbitChain = ({ orbitChainSlug }: { orbitChainSlug: string }) => {
   const orbitChain = getOrbitChainDetailsById(orbitChainSlug);
 
   const projects = useFilteredProjects({

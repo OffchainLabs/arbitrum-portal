@@ -1,23 +1,24 @@
-import { PropsWithChildren } from 'react'
+import '@rainbow-me/rainbowkit/styles.css';
+import { Metadata } from 'next';
+import { PropsWithChildren } from 'react';
+import 'react-toastify/dist/ReactToastify.css';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light.css';
 
-import '../../../styles/bridge.css'
-import 'tippy.js/dist/tippy.css'
-import 'tippy.js/themes/light.css'
-import '@rainbow-me/rainbowkit/styles.css'
-import 'react-toastify/dist/ReactToastify.css'
-import { Metadata } from 'next'
-import { PORTAL_DOMAIN } from '@/bridge/constants'
+import { PORTAL_DOMAIN } from '@/bridge/constants';
+
+import '../../../styles/bridge.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(PORTAL_DOMAIN),
   icons: {
-    icon: '/logo.png'
-  }
-}
+    icon: '/logo.png',
+  },
+};
 
 /** CSS imported in layout are imported only once
  * They would be imported multiple times if imported in page.tsx
  */
 export default function BridgeLayout({ children }: PropsWithChildren) {
-  return <>{children}</>
+  return <>{children}</>;
 }

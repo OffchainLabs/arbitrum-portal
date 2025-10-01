@@ -1,16 +1,17 @@
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
-import timeZone from 'dayjs/plugin/timezone'
-import utc from 'dayjs/plugin/utc'
-import { registerCustomArbitrumNetwork } from '@arbitrum/sdk'
-import { getOrbitChains } from '@/bridge/util/orbitChainsList'
-import {
-  mapCustomChainToNetworkData,
-  getCustomChainsFromLocalStorage
-} from '@/bridge/util/networks'
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import dayjs from 'dayjs';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import timeZone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
-let arbitrumSdkInitialized = false
+import {
+  getCustomChainsFromLocalStorage,
+  mapCustomChainToNetworkData,
+} from '@/bridge/util/networks';
+import { getOrbitChains } from '@/bridge/util/orbitChainsList';
+
+let arbitrumSdkInitialized = false;
 
 /**
  * This file include initialization that need to be performed on client or on server
@@ -20,27 +21,25 @@ let arbitrumSdkInitialized = false
  */
 
 export function initializeDayjs() {
-  dayjs.extend(utc)
-  dayjs.extend(relativeTime)
-  dayjs.extend(timeZone)
-  dayjs.extend(advancedFormat)
+  dayjs.extend(utc);
+  dayjs.extend(relativeTime);
+  dayjs.extend(timeZone);
+  dayjs.extend(advancedFormat);
 }
 
 export function addOrbitChainsToArbitrumSDK() {
   if (arbitrumSdkInitialized) {
-    return
+    return;
   }
 
-  ;[...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach(
-    chain => {
-      try {
-        registerCustomArbitrumNetwork(chain)
-        mapCustomChainToNetworkData(chain)
-      } catch (_) {
-        // already added
-      }
+  [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    try {
+      registerCustomArbitrumNetwork(chain);
+      mapCustomChainToNetworkData(chain);
+    } catch (_) {
+      // already added
     }
-  )
+  });
 
-  arbitrumSdkInitialized = true
+  arbitrumSdkInitialized = true;
 }

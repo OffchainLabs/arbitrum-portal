@@ -1,11 +1,13 @@
-import useSWR from 'swr'
-import { getAPIBaseUrl } from '../util'
+import { useDebounce } from '@uidotdev/usehooks';
+import useSWR from 'swr';
+import { Address } from 'viem';
+
 import {
   LifiCrosschainTransfersRoute,
-  LifiParams
-} from '@/bridge/app/api/crosschain-transfers/lifi'
-import { Address } from 'viem'
-import { useDebounce } from '@uidotdev/usehooks'
+  LifiParams,
+} from '@/bridge/app/api/crosschain-transfers/lifi';
+
+import { getAPIBaseUrl } from '../util';
 
 export type UseLifiCrossTransfersRouteParams = Pick<
   LifiParams,
@@ -17,11 +19,11 @@ export type UseLifiCrossTransfersRouteParams = Pick<
   | 'denyBridges'
   | 'denyExchanges'
 > & {
-  enabled?: boolean
-  toAddress: Address | undefined
-  fromChainId: number
-  toChainId: number
-}
+  enabled?: boolean;
+  toAddress: Address | undefined;
+  fromChainId: number;
+  toChainId: number;
+};
 
 export const useLifiCrossTransfersRoute = ({
   enabled = true,
@@ -34,7 +36,7 @@ export const useLifiCrossTransfersRoute = ({
   toAddress,
   denyBridges,
   denyExchanges,
-  slippage
+  slippage,
 }: UseLifiCrossTransfersRouteParams) => {
   /** Fetch only after 1 second elapsed since last parameter changed */
   const queryKey = useDebounce(
@@ -50,11 +52,11 @@ export const useLifiCrossTransfersRoute = ({
           denyBridges,
           denyExchanges,
           slippage,
-          'useLifiCrossTransfersRoute'
+          'useLifiCrossTransfersRoute',
         ] as const)
       : null,
-    1 * 1000 // 1 second in miliseconds
-  )
+    1 * 1000, // 1 second in miliseconds
+  );
 
   return useSWR(
     queryKey,
@@ -68,60 +70,56 @@ export const useLifiCrossTransfersRoute = ({
       _toAddress,
       _denyBridges,
       _denyExchanges,
-      _slippage
+      _slippage,
     ]) => {
       const urlParams = new URLSearchParams({
         fromAmount: _fromAmount,
         fromChainId: _fromChainId.toString(),
         toChainId: _toChainId.toString(),
         fromToken: _fromToken,
-        toToken: _toToken
-      })
+        toToken: _toToken,
+      });
 
       if (_fromAddress) {
-        urlParams.append('fromAddress', _fromAddress)
+        urlParams.append('fromAddress', _fromAddress);
       }
 
       if (_toAddress) {
-        urlParams.append('toAddress', _toAddress)
+        urlParams.append('toAddress', _toAddress);
       }
 
       if (_denyBridges && _denyBridges.length > 0) {
-        _denyBridges.map(denyBridge =>
-          urlParams.append('denyBridges', denyBridge)
-        )
+        _denyBridges.map((denyBridge) => urlParams.append('denyBridges', denyBridge));
       }
       if (_denyExchanges && _denyExchanges.length > 0) {
-        _denyExchanges.map(denyExchange =>
-          urlParams.append('denyExchanges', denyExchange)
-        )
+        _denyExchanges.map((denyExchange) => urlParams.append('denyExchanges', denyExchange));
       }
       if (_slippage) {
-        urlParams.set('slippage', _slippage.toString())
+        urlParams.set('slippage', _slippage.toString());
       }
 
       const response = await fetch(
         `${getAPIBaseUrl()}/api/crosschain-transfers/lifi?${urlParams.toString()}`,
         {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      ).then(async response => {
-        const data = await response.json()
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ).then(async (response) => {
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.message)
+          throw new Error(data.message);
         }
 
-        return data as Promise<{ data: LifiCrosschainTransfersRoute[] }>
-      })
+        return data as Promise<{ data: LifiCrosschainTransfersRoute[] }>;
+      });
 
-      return response.data
+      return response.data;
     },
     {
       refreshInterval: 1 * 60 * 1_000, // 1 minutes in miliseconds
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      shouldRetryOnError: false
-    }
-  )
-}
+      shouldRetryOnError: false,
+    },
+  );
+};

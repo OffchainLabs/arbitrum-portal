@@ -1,6 +1,6 @@
-import { ArbitrumNetwork } from '@arbitrum/sdk'
+import { ArbitrumNetwork } from '@arbitrum/sdk';
 
-import { ChainId } from '../types/ChainId'
+import { ChainId } from '../types/ChainId';
 
 export const defaultL2Network: ArbitrumNetwork = {
   chainId: 412346,
@@ -11,7 +11,7 @@ export const defaultL2Network: ArbitrumNetwork = {
     inbox: '0x9f8c1c641336A371031499e3c362e40d58d0f254',
     outbox: '0x50143333b44Ea46255BEb67255C9Afd35551072F',
     rollup: '0xe5Ab92C74CD297F0a1F2914cE37204FC5Bc4e82D',
-    sequencerInbox: '0x18d19C5d3E685f5be5b9C86E097f0E439285D216'
+    sequencerInbox: '0x18d19C5d3E685f5be5b9C86E097f0E439285D216',
   },
   isCustom: true,
   isTestnet: true,
@@ -30,9 +30,9 @@ export const defaultL2Network: ArbitrumNetwork = {
     childMultiCall: '0x6B1E93aE298B64e8f5b9f43B65Dd8F1eaA6DD4c3',
     childProxyAdmin: '0x9F95547ABB0FfC92b4E37b3124d1e8613d5aB74A',
     childWeth: '0xA1abD387192e3bb4e84D3109181F9f005aBaF5CA',
-    childWethGateway: '0x67aE8014BD1A0c1Ed747715d22b3b3a188aC324B'
-  }
-}
+    childWethGateway: '0x67aE8014BD1A0c1Ed747715d22b3b3a188aC324B',
+  },
+};
 
 export const defaultL3Network: ArbitrumNetwork = {
   chainId: 333333,
@@ -43,7 +43,7 @@ export const defaultL3Network: ArbitrumNetwork = {
     inbox: '0xDcA690902d3154886Ec259308258D10EA5450996',
     outbox: '0xda243bD61B011024FC923164db75Dde198AC6175',
     rollup: '0x47b238E195b638b8972Cb3649e5d6775c279245d',
-    sequencerInbox: '0x16c54EE2015CD824415c2077F4103f444E00A8cb'
+    sequencerInbox: '0x16c54EE2015CD824415c2077F4103f444E00A8cb',
   },
   isCustom: true,
   isTestnet: true,
@@ -62,9 +62,9 @@ export const defaultL3Network: ArbitrumNetwork = {
     childMultiCall: '0x052B15c8Ff0544287AE689C4F2FC53A3905d7Db3',
     childProxyAdmin: '0x36C56eC2CF3a3f53db9F01d0A5Ae84b36fb0A1e2',
     childWeth: '0x582a8dBc77f665dF2c49Ce0a138978e9267dd968',
-    childWethGateway: '0xA6AB233B3c7bfd0399834897b5073974A3D467e2'
-  }
-}
+    childWethGateway: '0xA6AB233B3c7bfd0399834897b5073974A3D467e2',
+  },
+};
 
 export const defaultL3CustomGasTokenNetwork: ArbitrumNetwork = {
   chainId: 333333,
@@ -75,7 +75,7 @@ export const defaultL3CustomGasTokenNetwork: ArbitrumNetwork = {
     inbox: '0xDcA690902d3154886Ec259308258D10EA5450996',
     outbox: '0xda243bD61B011024FC923164db75Dde198AC6175',
     rollup: '0x44612A67F6A7c4C894fB4AeA66c7Cfa7A0f0D388',
-    sequencerInbox: '0x16c54EE2015CD824415c2077F4103f444E00A8cb'
+    sequencerInbox: '0x16c54EE2015CD824415c2077F4103f444E00A8cb',
   },
   nativeToken: '0xE069078bA9ACCE4eeAE609d8754515Cf13dd6706',
   isCustom: true,
@@ -96,6 +96,6 @@ export const defaultL3CustomGasTokenNetwork: ArbitrumNetwork = {
     childMultiCall: '0x052B15c8Ff0544287AE689C4F2FC53A3905d7Db3',
     childProxyAdmin: '0x36C56eC2CF3a3f53db9F01d0A5Ae84b36fb0A1e2',
     childWeth: '0x0000000000000000000000000000000000000000',
-    childWethGateway: '0x0000000000000000000000000000000000000000'
-  }
-}
+    childWethGateway: '0x0000000000000000000000000000000000000000',
+  },
+};

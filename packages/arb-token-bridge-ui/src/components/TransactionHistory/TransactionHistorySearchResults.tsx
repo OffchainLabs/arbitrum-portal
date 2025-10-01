@@ -1,122 +1,104 @@
-import dayjs from 'dayjs'
-import { useEffect, useMemo } from 'react'
-import { Tab } from '@headlessui/react'
+import { Tab } from '@headlessui/react';
+import dayjs from 'dayjs';
+import { useEffect, useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
 
-import { MergedTransaction } from '../../state/app/state'
-import {
-  ContentWrapper,
-  TransactionHistoryTable
-} from './TransactionHistoryTable'
-import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo'
-import {
-  isTxClaimable,
-  isTxCompleted,
-  isTxExpired,
-  isTxFailed,
-  isTxPending
-} from './helpers'
-import { TabButton } from '../common/Tab'
-import { TransactionsTableDetails } from './TransactionsTableDetails'
-import {
-  useForceFetchReceived,
-  useTransactionHistory
-} from '../../hooks/useTransactionHistory'
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar'
-import { shallow } from 'zustand/shallow'
-import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer'
+import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { MergedTransaction } from '../../state/app/state';
+import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
+import { TabButton } from '../common/Tab';
+import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
+import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import { ContentWrapper, TransactionHistoryTable } from './TransactionHistoryTable';
+import { TransactionsTableDetails } from './TransactionsTableDetails';
+import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } from './helpers';
 
 function useTransactionHistoryUpdater() {
-  const sanitizedAddress = useTransactionHistoryAddressStore(
-    state => state.sanitizedAddress
-  )
+  const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
   const transactionHistoryProps = useTransactionHistory(sanitizedAddress, {
-    runFetcher: true
-  })
+    runFetcher: true,
+  });
 
-  const { transactions, updatePendingTransaction } = transactionHistoryProps
+  const { transactions, updatePendingTransaction } = transactionHistoryProps;
 
   const pendingTransactions = useMemo(() => {
-    return transactions.filter(isTxPending)
-  }, [transactions])
+    return transactions.filter(isTxPending);
+  }, [transactions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      pendingTransactions.forEach(updatePendingTransaction)
-    }, 10_000)
+      pendingTransactions.forEach(updatePendingTransaction);
+    }, 10_000);
 
-    return () => clearInterval(interval)
-  }, [pendingTransactions, updatePendingTransaction])
+    return () => clearInterval(interval);
+  }, [pendingTransactions, updatePendingTransaction]);
 
-  return transactionHistoryProps
+  return transactionHistoryProps;
 }
 
 const tabClasses =
-  'text-white px-3 mr-2 border-b-2 ui-selected:border-white ui-not-selected:border-transparent ui-not-selected:text-white/80 arb-hover'
+  'text-white px-3 mr-2 border-b-2 ui-selected:border-white ui-not-selected:border-transparent ui-not-selected:text-white/80 arb-hover';
 
 export function TransactionHistorySearchResults() {
-  const props = useTransactionHistoryUpdater()
-  const { transactions } = props
+  const props = useTransactionHistoryUpdater();
+  const { transactions } = props;
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
-    state => ({
+    (state) => ({
       forceFetchReceived: state.forceFetchReceived,
-      setForceFetchReceived: state.setForceFetchReceived
+      setForceFetchReceived: state.setForceFetchReceived,
     }),
-    shallow
-  )
-  const searchError = useTransactionHistoryAddressStore(
-    state => state.searchError
-  )
-  const txHistoryAddress = useTransactionHistoryAddressStore(
-    state => state.sanitizedAddress
-  )
+    shallow,
+  );
+  const searchError = useTransactionHistoryAddressStore((state) => state.searchError);
+  const txHistoryAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
   const oldestTxTimeAgoString = useMemo(() => {
-    return dayjs(transactions[transactions.length - 1]?.createdAt).toNow(true)
-  }, [transactions])
+    return dayjs(transactions[transactions.length - 1]?.createdAt).toNow(true);
+  }, [transactions]);
 
   const groupedTransactions = useMemo(
     () =>
       transactions.reduce(
         (acc, tx) => {
           if (isTxCompleted(tx) || isTxExpired(tx)) {
-            acc.settled.push(tx)
+            acc.settled.push(tx);
           }
           if (isTxPending(tx)) {
-            acc.pending.push(tx)
+            acc.pending.push(tx);
           }
           if (isTxClaimable(tx)) {
-            acc.claimable.push(tx)
+            acc.claimable.push(tx);
           }
           if (isTxFailed(tx)) {
-            acc.failed.push(tx)
+            acc.failed.push(tx);
           }
-          return acc
+          return acc;
         },
         {
           settled: [] as MergedTransaction[],
           pending: [] as MergedTransaction[],
           claimable: [] as MergedTransaction[],
-          failed: [] as MergedTransaction[]
-        }
+          failed: [] as MergedTransaction[],
+        },
       ),
-    [transactions]
-  )
+    [transactions],
+  );
 
   const pendingTransactions = [
     ...groupedTransactions.failed,
     ...groupedTransactions.pending,
-    ...groupedTransactions.claimable
-  ]
+    ...groupedTransactions.claimable,
+  ];
 
-  const settledTransactions = groupedTransactions.settled
+  const settledTransactions = groupedTransactions.settled;
 
   if (searchError) {
     return (
       <ContentWrapper>
         <p>{searchError}</p>
       </ContentWrapper>
-    )
+    );
   }
 
   return (
@@ -131,28 +113,18 @@ export function TransactionHistorySearchResults() {
 
       <Tab.Group as="div" className="h-full overflow-hidden rounded md:pr-0">
         <Tab.List className="mb-4 flex border-b border-white/30">
-          <TabButton
-            aria-label="show pending transactions"
-            className={tabClasses}
-          >
+          <TabButton aria-label="show pending transactions" className={tabClasses}>
             <span className="text-sm md:text-base">Pending transactions</span>
           </TabButton>
-          <TabButton
-            aria-label="show settled transactions"
-            className={tabClasses}
-          >
+          <TabButton aria-label="show settled transactions" className={tabClasses}>
             <span className="text-sm md:text-base">Settled transactions</span>
           </TabButton>
         </Tab.List>
 
         {!forceFetchReceived && typeof txHistoryAddress !== 'undefined' && (
           <div className="mb-2 text-xs text-white">
-            Missing a transaction after sending to or receiving from a different
-            address? Click{' '}
-            <button
-              onClick={() => setForceFetchReceived(true)}
-              className="arb-hover underline"
-            >
+            Missing a transaction after sending to or receiving from a different address? Click{' '}
+            <button onClick={() => setForceFetchReceived(true)} className="arb-hover underline">
               here
             </button>{' '}
             for a detailed search.
@@ -180,5 +152,5 @@ export function TransactionHistorySearchResults() {
       </Tab.Group>
       <TransactionsTableDetails />
     </>
-  )
+  );
 }

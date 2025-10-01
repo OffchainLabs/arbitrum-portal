@@ -1,121 +1,114 @@
 import {
   BridgeTransferStarter,
-  BridgeTransferStarterPropsWithChainIds
-} from './BridgeTransferStarter'
-import { EthDepositStarter } from './EthDepositStarter'
-import { Erc20DepositStarter } from './Erc20DepositStarter'
-import { EthWithdrawalStarter } from './EthWithdrawalStarter'
-import { Erc20WithdrawalStarter } from './Erc20WithdrawalStarter'
-import { EthTeleportStarter } from './EthTeleportStarter'
-import { Erc20TeleportStarter } from './Erc20TeleportStarter'
-import { getBridgeTransferProperties, getProviderForChainId } from './utils'
-import { getOftV2TransferConfig } from './oftUtils'
-import { OftV2TransferStarter } from './OftV2TransferStarter'
-import { LifiTransferStarter } from './LifiTransferStarter'
+  BridgeTransferStarterPropsWithChainIds,
+} from './BridgeTransferStarter';
+import { Erc20DepositStarter } from './Erc20DepositStarter';
+import { Erc20TeleportStarter } from './Erc20TeleportStarter';
+import { Erc20WithdrawalStarter } from './Erc20WithdrawalStarter';
+import { EthDepositStarter } from './EthDepositStarter';
+import { EthTeleportStarter } from './EthTeleportStarter';
+import { EthWithdrawalStarter } from './EthWithdrawalStarter';
+import { LifiTransferStarter } from './LifiTransferStarter';
+import { OftV2TransferStarter } from './OftV2TransferStarter';
+import { getOftV2TransferConfig } from './oftUtils';
+import { getBridgeTransferProperties, getProviderForChainId } from './utils';
 
 function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
-  let cacheKey = `source:${props.sourceChainId}-destination:${props.destinationChainId}`
+  let cacheKey = `source:${props.sourceChainId}-destination:${props.destinationChainId}`;
 
   if (props.sourceChainErc20Address) {
-    cacheKey += `-sourceErc20:${props.sourceChainErc20Address}`
+    cacheKey += `-sourceErc20:${props.sourceChainErc20Address}`;
   }
 
   if (props.destinationChainErc20Address) {
-    cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`
+    cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`;
   }
 
   if (props.lifiData) {
-    cacheKey += `-${props.lifiData.transactionRequest?.data}-${props.lifiData.spenderAddress}`
+    cacheKey += `-${props.lifiData.transactionRequest?.data}-${props.lifiData.spenderAddress}`;
   }
 
-  return cacheKey
+  return cacheKey;
 }
 
-function withCache(
-  key: string,
-  value: BridgeTransferStarter
-): BridgeTransferStarter {
-  cache[key] = value
-  return value
+function withCache(key: string, value: BridgeTransferStarter): BridgeTransferStarter {
+  cache[key] = value;
+  return value;
 }
 
-const cache: { [key: string]: BridgeTransferStarter } = {}
+const cache: { [key: string]: BridgeTransferStarter } = {};
 
 export class BridgeTransferStarterFactory {
-  public static create(
-    props: BridgeTransferStarterPropsWithChainIds
-  ): BridgeTransferStarter {
-    const sourceChainProvider = getProviderForChainId(props.sourceChainId)
-    const destinationChainProvider = getProviderForChainId(
-      props.destinationChainId
-    )
+  public static create(props: BridgeTransferStarterPropsWithChainIds): BridgeTransferStarter {
+    const sourceChainProvider = getProviderForChainId(props.sourceChainId);
+    const destinationChainProvider = getProviderForChainId(props.destinationChainId);
 
     // once we have the providers, we can get the transfer properties, and initialize the classes further
     const initProps = {
       sourceChainProvider,
       destinationChainProvider,
       sourceChainErc20Address: props.sourceChainErc20Address,
-      destinationChainErc20Address: props.destinationChainErc20Address
-    }
+      destinationChainErc20Address: props.destinationChainErc20Address,
+    };
 
     const {
       isDeposit: isCanonicalDeposit,
       isNativeCurrencyTransfer,
       isSupported,
       isTeleport,
-      isWithdrawal: isCanonicalWithdrawal
-    } = getBridgeTransferProperties(props)
+      isWithdrawal: isCanonicalWithdrawal,
+    } = getBridgeTransferProperties(props);
 
     if (!isSupported) {
-      throw new Error('Unsupported transfer detected')
+      throw new Error('Unsupported transfer detected');
     }
 
-    const cacheKey = getCacheKey(props)
-    const cacheValue = cache[cacheKey]
+    const cacheKey = getCacheKey(props);
+    const cacheValue = cache[cacheKey];
 
     if (typeof cacheValue !== 'undefined') {
-      return cacheValue
+      return cacheValue;
     }
 
     const isOft = getOftV2TransferConfig({
       sourceChainId: props.sourceChainId,
       destinationChainId: props.destinationChainId,
-      sourceChainErc20Address: props.sourceChainErc20Address
-    })
+      sourceChainErc20Address: props.sourceChainErc20Address,
+    });
 
     if (props.lifiData) {
       return withCache(
         cacheKey,
-        new LifiTransferStarter({ ...initProps, lifiData: props.lifiData })
-      )
+        new LifiTransferStarter({ ...initProps, lifiData: props.lifiData }),
+      );
     }
 
     if (isOft.isValid) {
-      return withCache(cacheKey, new OftV2TransferStarter(initProps))
+      return withCache(cacheKey, new OftV2TransferStarter(initProps));
     }
 
     if (isTeleport) {
       if (isNativeCurrencyTransfer) {
-        return withCache(cacheKey, new EthTeleportStarter(initProps))
+        return withCache(cacheKey, new EthTeleportStarter(initProps));
       }
-      return withCache(cacheKey, new Erc20TeleportStarter(initProps))
+      return withCache(cacheKey, new Erc20TeleportStarter(initProps));
     }
 
     if (isCanonicalDeposit) {
       if (!isNativeCurrencyTransfer) {
-        return withCache(cacheKey, new Erc20DepositStarter(initProps))
+        return withCache(cacheKey, new Erc20DepositStarter(initProps));
       }
-      return withCache(cacheKey, new EthDepositStarter(initProps))
+      return withCache(cacheKey, new EthDepositStarter(initProps));
     }
 
     if (isCanonicalWithdrawal) {
       if (!isNativeCurrencyTransfer) {
-        return withCache(cacheKey, new Erc20WithdrawalStarter(initProps))
+        return withCache(cacheKey, new Erc20WithdrawalStarter(initProps));
       }
 
-      return withCache(cacheKey, new EthWithdrawalStarter(initProps))
+      return withCache(cacheKey, new EthWithdrawalStarter(initProps));
     }
 
-    throw new Error('No transfer starter found for the given properties.')
+    throw new Error('No transfer starter found for the given properties.');
   }
 }

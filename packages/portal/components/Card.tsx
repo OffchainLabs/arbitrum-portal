@@ -1,13 +1,15 @@
 'use client';
 
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link, { LinkProps as NextLinkProps } from 'next/link';
-import React, { PropsWithChildren } from 'react';
 import { usePostHog } from 'posthog-js/react';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { ExternalLink } from './ExternalLink';
+
 import EclipseBottom from '@/public/images/eclipse_bottom.png';
+
+import { ExternalLink } from './ExternalLink';
 
 // Our card component can act as a Next-Link / External Link / Button or a simple div
 export type CardType = 'link' | 'externalLink' | 'button' | 'div';
@@ -67,10 +69,7 @@ export const Card = ({
   const captureEventOnClick = (e: any) => {
     try {
       if (props.analyticsProps) {
-        posthog?.capture(
-          props.analyticsProps.eventName,
-          props.analyticsProps.eventProperties,
-        );
+        posthog?.capture(props.analyticsProps.eventName, props.analyticsProps.eventProperties);
       }
     } catch (e) {}
 
@@ -82,8 +81,7 @@ export const Card = ({
 
   // Card that can also act as a next-optimized internal link
   if (cardType === 'link') {
-    const { analyticsProps, cardType, ...cardProps } = props as LinkProps &
-      CardAnalyticsProps;
+    const { analyticsProps, cardType, ...cardProps } = props as LinkProps & CardAnalyticsProps;
     return (
       <Link
         {...cardProps}
@@ -108,11 +106,7 @@ export const Card = ({
     return (
       <ExternalLink
         {...cardProps}
-        className={twMerge(
-          'hover:bg-default-black-hover',
-          grainy && '[&>*]:z-10',
-          commonClassName,
-        )}
+        className={twMerge('hover:bg-default-black-hover', grainy && '[&>*]:z-10', commonClassName)}
         onClick={captureEventOnClick}
       >
         {grainy ? <GrainyBackground /> : null}
@@ -129,11 +123,7 @@ export const Card = ({
     return (
       <button
         {...cardProps}
-        className={twMerge(
-          'hover:bg-default-black-hover',
-          grainy && '[&>*]:z-10',
-          commonClassName,
-        )}
+        className={twMerge('hover:bg-default-black-hover', grainy && '[&>*]:z-10', commonClassName)}
         onClick={captureEventOnClick}
       >
         {grainy ? <GrainyBackground /> : null}

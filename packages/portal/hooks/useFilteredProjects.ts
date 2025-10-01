@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { FullProject } from '@/common/types';
-import { PROJECTS } from '@/common/projects';
+
 import { filterByChains, filterBySubcategories } from '@/common/projectFilters';
+import { PROJECTS } from '@/common/projects';
+import { FullProject } from '@/common/types';
 
 type Props = {
   selectedCategory: string;
@@ -20,12 +21,7 @@ export function useFilteredProjects({
   );
 
   const filteredItems: FullProject[] = useMemo(
-    () =>
-      filterBySubcategories(
-        filteredProjectsByChains,
-        selectedCategory,
-        selectedSubcategories,
-      ),
+    () => filterBySubcategories(filteredProjectsByChains, selectedCategory, selectedSubcategories),
     [filteredProjectsByChains, selectedCategory, selectedSubcategories],
   );
 

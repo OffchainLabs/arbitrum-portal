@@ -1,31 +1,28 @@
-import { useMemo } from 'react'
-import { shallow } from 'zustand/shallow'
+import { useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
 
-import { useNetworks } from '../../../hooks/useNetworks'
-import { Route } from './Route'
-import { getCctpTransferDuration } from '../../../hooks/useTransferDuration'
-import { isNetwork } from '../../../util/networks'
-import { useRouteStore } from '../hooks/useRouteStore'
-import { getUsdcTokenAddressFromSourceChainId } from '../../../state/cctpState'
-import {
-  ERC20BridgeToken,
-  TokenType
-} from '../../../hooks/arbTokenBridge.types'
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { getCctpTransferDuration } from '../../../hooks/useTransferDuration';
+import { getUsdcTokenAddressFromSourceChainId } from '../../../state/cctpState';
+import { isNetwork } from '../../../util/networks';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { Route } from './Route';
 
 export function CctpRoute() {
-  const [{ sourceChain }] = useNetworks()
-  const { isTestnet } = isNetwork(sourceChain.id)
+  const [{ sourceChain }] = useNetworks();
+  const { isTestnet } = isNetwork(sourceChain.id);
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    state => ({
+    (state) => ({
       selectedRoute: state.selectedRoute,
-      setSelectedRoute: state.setSelectedRoute
+      setSelectedRoute: state.setSelectedRoute,
     }),
-    shallow
-  )
+    shallow,
+  );
 
   const cctpData = useRouteStore(
-    state => state.routes.find(route => route.type === 'cctp')?.data
-  )
+    (state) => state.routes.find((route) => route.type === 'cctp')?.data,
+  );
 
   const nativeUsdcToken: ERC20BridgeToken = useMemo(
     () => ({
@@ -36,13 +33,13 @@ export function CctpRoute() {
       name: 'USD Coin',
       listIds: new Set<string>(),
       logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png'
+        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
     }),
-    [sourceChain.id]
-  )
+    [sourceChain.id],
+  );
 
   if (!cctpData) {
-    return null
+    return null;
   }
 
   return (
@@ -59,5 +56,5 @@ export function CctpRoute() {
       onSelectedRouteClick={setSelectedRoute}
       tag="best-deal"
     />
-  )
+  );
 }

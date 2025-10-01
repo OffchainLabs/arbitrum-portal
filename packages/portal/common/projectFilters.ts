@@ -1,13 +1,11 @@
-import { FullProject } from '@/common/types';
+import { CATEGORY_TO_SUBCATEGORIES } from '@/common/categories';
 import { getChainDetailsById } from '@/common/chains';
 import { sortBySubcategoryRank } from '@/common/subcategories';
-import { CATEGORY_TO_SUBCATEGORIES } from '@/common/categories';
+import { FullProject } from '@/common/types';
+
 import { getSelectedChainsInfo } from './getSelectedChainsInfo';
 
-export const filterByChains = (
-  projects: FullProject[],
-  selectedChains: string[],
-) => {
+export const filterByChains = (projects: FullProject[], selectedChains: string[]) => {
   const { areAllChainsSelected } = getSelectedChainsInfo(selectedChains);
 
   if (areAllChainsSelected) return projects;
@@ -19,9 +17,7 @@ export const filterByChains = (
   });
 
   return projects.filter((project) => {
-    return selectedChainTitles.some(
-      (title) => project.chainsMap[title] === true,
-    );
+    return selectedChainTitles.some((title) => project.chainsMap[title] === true);
   });
 };
 
@@ -44,15 +40,10 @@ export const filterBySubcategories = (
   );
 };
 
-export const filterByFeatured = (
-  projects: FullProject[],
-  isFeatured: boolean,
-) => {
+export const filterByFeatured = (projects: FullProject[], isFeatured: boolean) => {
   if (!isFeatured) return projects; // If not filtering by featured, return all projects
 
   return projects.filter(
-    (project) =>
-      project.meta.isFeaturedOnHomePage ||
-      project.meta.isFeaturedOnCategoryPage,
+    (project) => project.meta.isFeaturedOnHomePage || project.meta.isFeaturedOnCategoryPage,
   );
 };

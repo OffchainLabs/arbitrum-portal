@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePostHog } from 'posthog-js/react';
-import { twMerge } from 'tailwind-merge';
-import { useRouter } from 'next/navigation';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
+import { useEffect, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
+import { SearchResult } from '@/common/getSearchResults';
 import { SearchResultsPopup } from '@/components/SearchResultsPopup';
 import { useSearch } from '@/hooks/useSearch';
-import { SearchResult } from '@/common/getSearchResults';
 
 const PREVIEW_LIMIT = 5; // after this limit, we show "Show all <results> button" to link to search page
 

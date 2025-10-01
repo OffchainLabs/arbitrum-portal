@@ -1,33 +1,31 @@
-import { HeroBanner } from '@/portal/components/OrbitEcosystem/HeroBanner'
-import { GettingStarted } from '@/portal/components/OrbitEcosystem/GettingStarted'
-import { CommunitySpotlight } from '@/portal/components/CommunitySpotlight'
-import { spotlightOrbitChains } from '@/portal/common/orbitChains'
-import { EntityType } from '@/portal/common/types'
-import { OrbitChainsListingByCategories } from '@/portal/components/OrbitEcosystem/OrbitChainsListingByCategories'
-import { FastWithdrawalAnnouncement } from '@/portal/components/FastWithdrawalAnnouncement'
-import {
-  getServerSideAppParams,
-  ServerSideAppProps
-} from '@/portal/common/getServerSideAppParams'
-import { Metadata } from 'next'
-import { getEntityMetaData } from '@/portal/common/getMetaData'
+import { Metadata } from 'next';
+
+import { getEntityMetaData } from '@/portal/common/getMetaData';
+import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getServerSideAppParams';
+import { spotlightOrbitChains } from '@/portal/common/orbitChains';
+import { EntityType } from '@/portal/common/types';
+import { CommunitySpotlight } from '@/portal/components/CommunitySpotlight';
+import { FastWithdrawalAnnouncement } from '@/portal/components/FastWithdrawalAnnouncement';
+import { GettingStarted } from '@/portal/components/OrbitEcosystem/GettingStarted';
+import { HeroBanner } from '@/portal/components/OrbitEcosystem/HeroBanner';
+import { OrbitChainsListingByCategories } from '@/portal/components/OrbitEcosystem/OrbitChainsListingByCategories';
 
 const metadataContent = {
   title: 'Arbitrum Orbit — A Universe of Chains',
   description:
-    "Discover Orbit Chains: Customizable Solutions Built on Arbitrum's Advanced Blockchain Technology"
-}
+    "Discover Orbit Chains: Customizable Solutions Built on Arbitrum's Advanced Blockchain Technology",
+};
 
 // Generate server-side metadata for this page
 export function generateMetadata(props: ServerSideAppProps): Metadata {
-  const { selectedOrbitChain } = getServerSideAppParams(props)
+  const { selectedOrbitChain } = getServerSideAppParams(props);
 
-  const entitySlug = selectedOrbitChain || ''
+  const entitySlug = selectedOrbitChain || '';
 
-  const entityMetaData = getEntityMetaData(EntityType.OrbitChain, entitySlug)
+  const entityMetaData = getEntityMetaData(EntityType.OrbitChain, entitySlug);
 
   if (entityMetaData) {
-    return entityMetaData
+    return entityMetaData;
   }
 
   return {
@@ -37,14 +35,14 @@ export function generateMetadata(props: ServerSideAppProps): Metadata {
       title: metadataContent.title,
       description: metadataContent.description,
       locale: 'en_US',
-      type: 'website'
+      type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: metadataContent.title,
-      description: metadataContent.description
-    }
-  }
+      description: metadataContent.description,
+    },
+  };
 }
 
 export default function OrbitPage() {
@@ -64,5 +62,5 @@ export default function OrbitPage() {
 
       <OrbitChainsListingByCategories />
     </div>
-  )
+  );
 }

@@ -1,8 +1,7 @@
 import dayjs from 'dayjs';
-
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import advanced from 'dayjs/plugin/advancedFormat';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -29,19 +28,14 @@ export const formatDate = (date: string, formatOverride?: string) => {
 
   // if the year is not the current year, show the year
   if (dayjs(date).year() !== new Date().getFullYear()) {
-    return parseDateInEasternTime(date).format(
-      DISPLAY_DATETIME_FORMAT_WITH_YEAR,
-    );
+    return parseDateInEasternTime(date).format(DISPLAY_DATETIME_FORMAT_WITH_YEAR);
   }
 
   // else, show the date without the year
   return parseDateInEasternTime(date).format(DISPLAY_DATETIME_FORMAT);
 };
 
-export const formatOptionalDate = (
-  date: string | null,
-  formatOverride?: string,
-) => {
+export const formatOptionalDate = (date: string | null, formatOverride?: string) => {
   if (!date) return null;
   return formatDate(date, formatOverride);
 };

@@ -1,148 +1,132 @@
-import { describe, expect, it, test } from 'vitest'
-import { getTokenOverride, isValidLifiTransfer } from './utils'
-import { ChainId } from '../../../types/ChainId'
-import { constants } from 'ethers'
-import { CommonAddress } from '../../../util/CommonAddressUtils'
+import { constants } from 'ethers';
+import { describe, expect, it, test } from 'vitest';
+
+import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { getTokenOverride, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
   sourceChainId,
-  usdcAddress
+  usdcAddress,
 }: {
-  sourceChainId: ChainId
-  usdcAddress: string
+  sourceChainId: ChainId;
+  usdcAddress: string;
 }) {
-  return [
-    ChainId.ApeChain,
-    ChainId.Superposition,
-    ChainId.ArbitrumOne,
-    ChainId.Ethereum
-  ]
-    .filter(chain => sourceChainId !== chain)
-    .map(destinationChainId => [
+  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+    .filter((chain) => sourceChainId !== chain)
+    .map((destinationChainId) => [
       {
         fromToken: usdcAddress,
         sourceChainId,
-        destinationChainId
+        destinationChainId,
       },
       {
         fromToken:
-          sourceChainId === ChainId.ApeChain ||
-          destinationChainId === ChainId.ApeChain
+          sourceChainId === ChainId.ApeChain || destinationChainId === ChainId.ApeChain
             ? constants.AddressZero
             : undefined,
         sourceChainId,
-        destinationChainId
-      }
+        destinationChainId,
+      },
     ])
-    .flatMap(testCase => testCase)
+    .flatMap((testCase) => testCase);
 }
 
 function generateBaseWithdrawTestCases() {
-  return [
-    ChainId.ApeChain,
-    ChainId.Superposition,
-    ChainId.ArbitrumOne,
-    ChainId.Ethereum
-  ]
-    .map(sourceChainId => {
+  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+    .map((sourceChainId) => {
       const usdcToken =
         sourceChainId === ChainId.ApeChain
           ? CommonAddress.Base.USDC
           : sourceChainId === ChainId.Superposition
-          ? CommonAddress.Superposition.USDCe
-          : sourceChainId === ChainId.Ethereum
-          ? CommonAddress.Ethereum.USDC
-          : CommonAddress.ArbitrumOne.USDC
+            ? CommonAddress.Superposition.USDCe
+            : sourceChainId === ChainId.Ethereum
+              ? CommonAddress.Ethereum.USDC
+              : CommonAddress.ArbitrumOne.USDC;
       return [
         {
           fromToken: usdcToken,
           sourceChainId,
           destinationChainId: ChainId.Base,
-          expected: false
+          expected: false,
         },
         {
           fromToken: undefined,
           sourceChainId,
           destinationChainId: ChainId.Base,
-          expected: false
-        }
-      ]
+          expected: false,
+        },
+      ];
     })
-    .flatMap(testCase => testCase)
+    .flatMap((testCase) => testCase);
 }
 
 function generateBaseDepositTestCases() {
   return [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition]
-    .map(destinationChainId => [
+    .map((destinationChainId) => [
       {
         fromToken: CommonAddress.Base.USDC,
         sourceChainId: ChainId.Base,
-        destinationChainId
+        destinationChainId,
       },
       {
         fromToken: constants.AddressZero,
         sourceChainId: ChainId.Base,
-        destinationChainId
-      }
+        destinationChainId,
+      },
     ])
-    .flatMap(testCase => testCase)
+    .flatMap((testCase) => testCase);
 }
 
 describe('isValidLifiTransfer', () => {
   test.each([
     ...generateTestCases({
       sourceChainId: ChainId.ArbitrumOne,
-      usdcAddress: CommonAddress.ArbitrumOne.USDC
+      usdcAddress: CommonAddress.ArbitrumOne.USDC,
     }),
     ...generateTestCases({
       sourceChainId: ChainId.Ethereum,
-      usdcAddress: CommonAddress.Ethereum.USDC
+      usdcAddress: CommonAddress.Ethereum.USDC,
     }),
     ...generateTestCases({
       sourceChainId: ChainId.ApeChain,
-      usdcAddress: CommonAddress.ApeChain.USDCe
+      usdcAddress: CommonAddress.ApeChain.USDCe,
     }),
     ...generateTestCases({
       sourceChainId: ChainId.Superposition,
-      usdcAddress: CommonAddress.Superposition.USDCe
-    })
+      usdcAddress: CommonAddress.Superposition.USDCe,
+    }),
   ])(
     `from $sourceChainId to $destinationChainId with token $fromToken should return true`,
     ({ destinationChainId, fromToken, sourceChainId }) => {
-      expect(
-        isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })
-      ).toBe(true)
-    }
-  )
+      expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
+    },
+  );
 
   test.each(generateBaseWithdrawTestCases())(
     `Withdraw from $sourceChainId to Base with token $fromToken should return false`,
     ({ destinationChainId, fromToken, sourceChainId }) => {
-      expect(
-        isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })
-      ).toBe(false)
-    }
-  )
+      expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(false);
+    },
+  );
 
   test.each(generateBaseDepositTestCases())(
     `Deposit from Base to $destinationChainId with token $fromToken should return true`,
     ({ destinationChainId, fromToken, sourceChainId }) => {
-      expect(
-        isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })
-      ).toBe(true)
-    }
-  )
+      expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
+    },
+  );
 
   it('ArbitrumOne to ApeChain with Ape should return false', () => {
     expect(
       isValidLifiTransfer({
         fromToken: undefined,
         sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: ChainId.ApeChain
-      })
-    ).toBe(false)
-  })
-})
+        destinationChainId: ChainId.ApeChain,
+      }),
+    ).toBe(false);
+  });
+});
 
 describe('getTokenOverride', () => {
   const weth = {
@@ -153,8 +137,8 @@ describe('getTokenOverride', () => {
     name: 'Wrapped Ether',
     symbol: 'WETH',
     type: 'ERC20',
-    listIds: new Set()
-  }
+    listIds: new Set(),
+  };
   const eth = {
     address: '0x0000000000000000000000000000000000000000',
     decimals: 18,
@@ -162,68 +146,68 @@ describe('getTokenOverride', () => {
     logoURI: '/images/EthereumLogoRound.svg',
     name: 'Ether',
     symbol: 'ETH',
-    type: 'ERC20'
-  }
+    type: 'ERC20',
+  };
 
   it('For transfers including ApeChain, returns WETH on ApeChain, Ether on the other chain', () => {
     const apeToArbOverride = getTokenOverride({
       fromToken: constants.AddressZero,
       sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.ArbitrumOne
-    })
+      destinationChainId: ChainId.ArbitrumOne,
+    });
     const apeToMainnetOverride = getTokenOverride({
       fromToken: constants.AddressZero,
       sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.Ethereum
-    })
+      destinationChainId: ChainId.Ethereum,
+    });
 
     const arbToApeOverride = getTokenOverride({
       fromToken: constants.AddressZero,
       sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.ArbitrumOne
-    })
+      destinationChainId: ChainId.ArbitrumOne,
+    });
     const mainnetToApeOverride = getTokenOverride({
       fromToken: constants.AddressZero,
       sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.Ethereum
-    })
+      destinationChainId: ChainId.Ethereum,
+    });
 
-    expect(apeToArbOverride.source).toEqual(weth)
-    expect(apeToMainnetOverride.source).toEqual(weth)
+    expect(apeToArbOverride.source).toEqual(weth);
+    expect(apeToMainnetOverride.source).toEqual(weth);
 
-    expect(apeToArbOverride.destination).toEqual(eth)
-    expect(apeToMainnetOverride.destination).toEqual(eth)
+    expect(apeToArbOverride.destination).toEqual(eth);
+    expect(apeToMainnetOverride.destination).toEqual(eth);
 
-    expect(arbToApeOverride.source).toEqual(weth)
-    expect(mainnetToApeOverride.source).toEqual(weth)
+    expect(arbToApeOverride.source).toEqual(weth);
+    expect(mainnetToApeOverride.source).toEqual(weth);
 
-    expect(arbToApeOverride.destination).toEqual(eth)
-    expect(mainnetToApeOverride.destination).toEqual(eth)
-  })
+    expect(arbToApeOverride.destination).toEqual(eth);
+    expect(mainnetToApeOverride.destination).toEqual(eth);
+  });
 
   it("Don't override native token for ApeChain", () => {
     const arbToApeOverride = getTokenOverride({
       fromToken: undefined,
       sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.ApeChain
-    })
+      destinationChainId: ChainId.ApeChain,
+    });
 
     // No override, default to null (Ape on ApeChain)
-    expect(arbToApeOverride.source).toEqual(null)
-    expect(arbToApeOverride.destination).toEqual(null)
-  })
+    expect(arbToApeOverride.source).toEqual(null);
+    expect(arbToApeOverride.destination).toEqual(null);
+  });
 
   it('For transfers including Superposition returns USDCe on Superposition', () => {
     const arbToSuperpositionOverride = getTokenOverride({
       fromToken: CommonAddress.ArbitrumOne.USDC,
       sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Superposition
-    })
+      destinationChainId: ChainId.Superposition,
+    });
     const superpositionToMainnetOverride = getTokenOverride({
       fromToken: CommonAddress.Ethereum.USDC,
       sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.Ethereum
-    })
+      destinationChainId: ChainId.Ethereum,
+    });
 
     const nativeUsdcToken = {
       decimals: 6,
@@ -232,8 +216,8 @@ describe('getTokenOverride', () => {
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
       name: 'USDC',
       symbol: 'USDC',
-      type: 'ERC20'
-    }
+      type: 'ERC20',
+    };
     const bridgedUsdcToken = {
       decimals: 6,
       listIds: new Set(),
@@ -241,24 +225,24 @@ describe('getTokenOverride', () => {
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
       name: 'Bridged USDC',
       symbol: 'USDC.e',
-      type: 'ERC20'
-    }
+      type: 'ERC20',
+    };
     expect(arbToSuperpositionOverride.source).toEqual({
       ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC
-    })
+      address: CommonAddress.ArbitrumOne.USDC,
+    });
     expect(arbToSuperpositionOverride.destination).toEqual({
       ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe
-    })
+      address: CommonAddress.Superposition.USDCe,
+    });
 
     expect(superpositionToMainnetOverride.source).toEqual({
       ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe
-    })
+      address: CommonAddress.Superposition.USDCe,
+    });
     expect(superpositionToMainnetOverride.destination).toEqual({
       ...nativeUsdcToken,
-      address: CommonAddress.Ethereum.USDC
-    })
-  })
-})
+      address: CommonAddress.Ethereum.USDC,
+    });
+  });
+});

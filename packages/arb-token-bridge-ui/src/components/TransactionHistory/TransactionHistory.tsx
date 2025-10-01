@@ -1,34 +1,34 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
 
-import { MergedTransaction } from '../../state/app/state'
-import { TransactionHistorySearchBar } from './TransactionHistorySearchBar'
-import { TransactionHistorySearchResults } from './TransactionHistorySearchResults'
+import { MergedTransaction } from '../../state/app/state';
+import { TransactionHistorySearchBar } from './TransactionHistorySearchBar';
+import { TransactionHistorySearchResults } from './TransactionHistorySearchResults';
 
 type TxDetailsStore = {
-  tx: MergedTransaction | null
-  isOpen: boolean
-  open: (tx: MergedTransaction) => void
-  close: () => void
-  reset: () => void
-}
+  tx: MergedTransaction | null;
+  isOpen: boolean;
+  open: (tx: MergedTransaction) => void;
+  close: () => void;
+  reset: () => void;
+};
 
-export const useTxDetailsStore = create<TxDetailsStore>(set => ({
+export const useTxDetailsStore = create<TxDetailsStore>((set) => ({
   tx: null,
   isOpen: false,
   open: (tx: MergedTransaction) => {
     set(() => ({
-      tx
-    }))
+      tx,
+    }));
     // this is so that we can trigger transition when opening the panel
     setTimeout(() => {
       set(() => ({
-        isOpen: true
-      }))
-    }, 0)
+        isOpen: true,
+      }));
+    }, 0);
   },
   close: () => set({ isOpen: false, tx: null }),
-  reset: () => set({ tx: null })
-}))
+  reset: () => set({ tx: null }),
+}));
 
 export const TransactionHistory = () => {
   return (
@@ -37,5 +37,5 @@ export const TransactionHistory = () => {
 
       <TransactionHistorySearchResults />
     </div>
-  )
-}
+  );
+};

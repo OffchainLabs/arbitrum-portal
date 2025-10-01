@@ -1,4 +1,5 @@
 import { twMerge } from 'tailwind-merge';
+
 import { Card } from '@/components/Card';
 
 const docsContent = [
@@ -25,8 +26,7 @@ const docsContent = [
   },
   {
     title: 'About our networks',
-    description:
-      'An explanation of Arbitrum One, Arbitrum Nova, Sepolia, and more',
+    description: 'An explanation of Arbitrum One, Arbitrum Nova, Sepolia, and more',
     className: 'hover:bg-[#E5731075] bg-[#E57310]',
     bgImage: "url('/images/intro-networks.webp')",
     link: 'https://docs.arbitrum.io/build-decentralized-apps/public-chains',

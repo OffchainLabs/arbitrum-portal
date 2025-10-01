@@ -1,10 +1,11 @@
-import { useCallback } from 'react'
-import { useArbQueryParams, DisabledFeatures } from './useArbQueryParams'
-import { usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation';
+import { useCallback } from 'react';
+
+import { DisabledFeatures, useArbQueryParams } from './useArbQueryParams';
 
 export const useDisabledFeatures = () => {
-  const [{ disabledFeatures }] = useArbQueryParams()
-  const pathname = usePathname()
+  const [{ disabledFeatures }] = useArbQueryParams();
+  const pathname = usePathname();
 
   const isFeatureDisabled = useCallback(
     (feature: DisabledFeatures) => {
@@ -14,13 +15,13 @@ export const useDisabledFeatures = () => {
           feature === DisabledFeatures.BATCH_TRANSFERS) &&
         pathname.includes('embed')
       ) {
-        return true
+        return true;
       }
 
-      return (disabledFeatures as readonly DisabledFeatures[]).includes(feature)
+      return (disabledFeatures as readonly DisabledFeatures[]).includes(feature);
     },
-    [disabledFeatures, pathname]
-  )
+    [disabledFeatures, pathname],
+  );
 
-  return { isFeatureDisabled }
-}
+  return { isFeatureDisabled };
+};

@@ -1,31 +1,27 @@
 // the conversion layer for making bridge-sdk results compatible with our current ui code
+import { TransactionResponse } from '@ethersproject/providers';
+import dayjs from 'dayjs';
+import { BigNumber, utils } from 'ethers';
 
-import { BigNumber, utils } from 'ethers'
-import dayjs from 'dayjs'
-import { TransactionResponse } from '@ethersproject/providers'
+import { BridgeTransfer } from '@/token-bridge-sdk/BridgeTransferStarter';
 
-import { BridgeTransfer } from '@/token-bridge-sdk/BridgeTransferStarter'
-import {
-  DepositStatus,
-  MergedTransaction,
-  WithdrawalStatus
-} from '../../state/app/state'
-import { Deposit } from '../../hooks/useTransactionHistory'
-import { AssetType, ERC20BridgeToken } from '../../hooks/arbTokenBridge.types'
-import { NativeCurrency } from '../../hooks/useNativeCurrency'
+import { AssetType, ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
+import { NativeCurrency } from '../../hooks/useNativeCurrency';
+import { Deposit } from '../../hooks/useTransactionHistory';
+import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 
 type SdkToUiConversionProps = {
-  bridgeTransfer: BridgeTransfer
-  parentChainId: number
-  childChainId: number
-  selectedToken: ERC20BridgeToken | null
-  walletAddress: string
-  destinationAddress?: string
-  nativeCurrency: NativeCurrency
-  amount: BigNumber
-  amount2?: BigNumber
-  timestampCreated: string
-}
+  bridgeTransfer: BridgeTransfer;
+  parentChainId: number;
+  childChainId: number;
+  selectedToken: ERC20BridgeToken | null;
+  walletAddress: string;
+  destinationAddress?: string;
+  nativeCurrency: NativeCurrency;
+  amount: BigNumber;
+  amount2?: BigNumber;
+  timestampCreated: string;
+};
 
 export const convertBridgeSdkToMergedTransaction = ({
   bridgeTransfer,
@@ -36,14 +32,14 @@ export const convertBridgeSdkToMergedTransaction = ({
   destinationAddress,
   nativeCurrency,
   amount,
-  amount2
+  amount2,
 }: SdkToUiConversionProps): MergedTransaction => {
-  const { transferType } = bridgeTransfer
+  const { transferType } = bridgeTransfer;
   const isDeposit =
     transferType === 'eth_deposit' ||
     transferType === 'erc20_deposit' ||
     transferType === 'eth_teleport' ||
-    transferType === 'erc20_teleport'
+    transferType === 'erc20_teleport';
 
   return {
     sender: walletAddress!,
@@ -57,7 +53,7 @@ export const convertBridgeSdkToMergedTransaction = ({
     assetType: selectedToken ? AssetType.ERC20 : AssetType.ETH,
     value: utils.formatUnits(
       amount,
-      selectedToken ? selectedToken.decimals : nativeCurrency.decimals
+      selectedToken ? selectedToken.decimals : nativeCurrency.decimals,
     ),
     value2: amount2 ? utils.formatEther(amount2) : undefined,
     depositStatus: isDeposit ? DepositStatus.L1_PENDING : undefined,
@@ -68,9 +64,9 @@ export const convertBridgeSdkToMergedTransaction = ({
     parentChainId: Number(parentChainId),
     childChainId: Number(childChainId),
     sourceChainId: isDeposit ? Number(parentChainId) : Number(childChainId),
-    destinationChainId: isDeposit ? Number(childChainId) : Number(parentChainId)
-  } as MergedTransaction
-}
+    destinationChainId: isDeposit ? Number(childChainId) : Number(parentChainId),
+  } as MergedTransaction;
+};
 
 export const convertBridgeSdkToPendingDepositTransaction = ({
   bridgeTransfer,
@@ -82,10 +78,9 @@ export const convertBridgeSdkToPendingDepositTransaction = ({
   destinationAddress,
   amount,
   amount2,
-  timestampCreated
+  timestampCreated,
 }: SdkToUiConversionProps): Deposit => {
-  const transaction =
-    bridgeTransfer.sourceChainTransaction as TransactionResponse
+  const transaction = bridgeTransfer.sourceChainTransaction as TransactionResponse;
   return {
     sender: walletAddress!,
     destination: destinationAddress ?? walletAddress,
@@ -97,7 +92,7 @@ export const convertBridgeSdkToPendingDepositTransaction = ({
     l2NetworkID: String(childChainId),
     value: utils.formatUnits(
       amount,
-      selectedToken ? selectedToken.decimals : nativeCurrency.decimals
+      selectedToken ? selectedToken.decimals : nativeCurrency.decimals,
     ),
     value2: amount2 ? utils.formatEther(amount2) : undefined,
     parentChainId,
@@ -106,6 +101,6 @@ export const convertBridgeSdkToPendingDepositTransaction = ({
     type: 'deposit-l1',
     source: 'local_storage_cache',
     timestampCreated: String(timestampCreated),
-    nonce: transaction.nonce
-  } as Deposit
-}
+    nonce: transaction.nonce,
+  } as Deposit;
+};

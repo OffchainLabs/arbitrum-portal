@@ -1,19 +1,18 @@
 'use client';
 
+import { usePostHog } from 'posthog-js/react';
 import React, { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
+
 import { Card } from '../Card';
 import { ExternalLink } from '../ExternalLink';
-import { twMerge } from 'tailwind-merge';
-import { usePostHog } from 'posthog-js/react';
 
 const Title = ({ children }: PropsWithChildren) => {
   return <div className="text-lg">{children}</div>;
 };
 
 const DataKey = ({ children }: PropsWithChildren) => {
-  return (
-    <div className="whitespace-nowrap text-sm text-white/40">{children}</div>
-  );
+  return <div className="whitespace-nowrap text-sm text-white/40">{children}</div>;
 };
 
 const DataValue = ({ children }: PropsWithChildren) => {

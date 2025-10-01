@@ -1,16 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
+import React, { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
+
 import { FullProject } from '@/common/types';
+import { useDyorProjects } from '@/hooks/useDyorProjects';
+
 import { Card } from './Card';
 import { ExternalLink } from './ExternalLink';
-import { useDyorProjects } from '@/hooks/useDyorProjects';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@heroicons/react/24/outline';
 
 type Check = { id: string; title: React.ReactNode; checked: boolean };
 type Content = {
@@ -35,14 +33,12 @@ const content: Content = [
       },
       {
         id: 'realCommunity',
-        title:
-          'Do community members seem real and engage with sustained excitement?',
+        title: 'Do community members seem real and engage with sustained excitement?',
         checked: false,
       },
       {
         id: 'easyToUnderstand',
-        title:
-          'Does their website explain what they do in a way you understand?',
+        title: 'Does their website explain what they do in a way you understand?',
         checked: false,
       },
       {
@@ -67,8 +63,8 @@ const content: Content = [
         id: 'smartContractCheck',
         title: (
           <div>
-            Check their smart contract on{' '}
-            <ExternalLink>bcheck.edu</ExternalLink>. Are there any red flags?
+            Check their smart contract on <ExternalLink>bcheck.edu</ExternalLink>. Are there any red
+            flags?
           </div>
         ),
         checked: false,
@@ -77,9 +73,8 @@ const content: Content = [
         id: 'tokenContractCheck',
         title: (
           <div>
-            Check their smart contract on{' '}
-            <ExternalLink>tokensniffer.com</ExternalLink>. Are there any red
-            flags?
+            Check their smart contract on <ExternalLink>tokensniffer.com</ExternalLink>. Are there
+            any red flags?
           </div>
         ),
         checked: false,
@@ -107,8 +102,7 @@ const content: Content = [
   {
     id: 'tokenomics',
     title: 'Scope the tokenomics',
-    description:
-      'If the project has a token, make sure to check the following information.',
+    description: 'If the project has a token, make sure to check the following information.',
     denyCategories: ['bridges-and-on-ramps', 'infra-and-tools'],
     checks: [
       {
@@ -118,8 +112,7 @@ const content: Content = [
       },
       {
         id: 'buySellEnabled',
-        title:
-          'Can you buy and sell the token? (Check Poocoin / Bogged / Dextools)',
+        title: 'Can you buy and sell the token? (Check Poocoin / Bogged / Dextools)',
         checked: false,
       },
       {
@@ -155,8 +148,7 @@ export const DyorChecklist = ({
     [key: string]: boolean;
   }>({});
 
-  const { globalDyorState, selectDyorItem, unselectDyorItem } =
-    useDyorProjects();
+  const { globalDyorState, selectDyorItem, unselectDyorItem } = useDyorProjects();
 
   const projectState = useMemo(
     () => globalDyorState[projectKey] || [],
@@ -196,27 +188,18 @@ export const DyorChecklist = ({
       <div className="z-20 mb-2 flex flex-col gap-2">
         <div className="flex items-start gap-2 text-xl">
           D.Y.O.R. Checklist{' '}
-          <Image
-            alt="D.Y.O.R. Checklist"
-            src="/images/myapps_dyor.webp"
-            height={25}
-            width={25}
-          />
+          <Image alt="D.Y.O.R. Checklist" src="/images/myapps_dyor.webp" height={25} width={25} />
         </div>
         <div className="text-sm text-white/75">
-          If you’d like to dig deeper into this project, here is a recommended
-          list of a non-exhaustive steps you can take to Do Your Own Research.
-          We don&apos;t affiliate with any of the sources.
+          If you’d like to dig deeper into this project, here is a recommended list of a
+          non-exhaustive steps you can take to Do Your Own Research. We don&apos;t affiliate with
+          any of the sources.
         </div>
       </div>
 
       <div className="z-20 flex h-full w-full flex-col gap-4">
         {content
-          .filter(
-            (section) =>
-              projectCategory &&
-              !section.denyCategories.includes(projectCategory),
-          )
+          .filter((section) => projectCategory && !section.denyCategories.includes(projectCategory))
           .map((section) => {
             const isExpanded = expandedSections[section.id] || false;
             return (
@@ -245,11 +228,7 @@ export const DyorChecklist = ({
                     </div>
                   </div>
 
-                  {isExpanded && (
-                    <div className="text-sm text-white/75">
-                      {section.description}
-                    </div>
-                  )}
+                  {isExpanded && <div className="text-sm text-white/75">{section.description}</div>}
                 </div>
 
                 <div

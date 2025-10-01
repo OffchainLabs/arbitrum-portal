@@ -1,40 +1,37 @@
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { constants, utils } from 'ethers'
-import { Route } from './Route'
-import { ether } from '../../../constants'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { useOftV2FeeEstimates } from '../../../hooks/TransferPanel/useOftV2FeeEstimates'
-import { useRouteStore } from '../hooks/useRouteStore'
-import { useMemo } from 'react'
-import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary'
-import { shallow } from 'zustand/shallow'
+import { constants, utils } from 'ethers';
+import { useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
+
+import { ether } from '../../../constants';
+import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
+import { useOftV2FeeEstimates } from '../../../hooks/TransferPanel/useOftV2FeeEstimates';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { Route } from './Route';
 
 // Only displayed during USDT transfers
 export function OftV2Route() {
-  const [networks] = useNetworks()
-  const { isDepositMode } = useNetworksRelationship(networks)
+  const [networks] = useNetworks();
+  const { isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    state => ({
+    (state) => ({
       selectedRoute: state.selectedRoute,
-      setSelectedRoute: state.setSelectedRoute
+      setSelectedRoute: state.setSelectedRoute,
     }),
-    shallow
-  )
-  const [selectedToken] = useSelectedToken()
+    shallow,
+  );
+  const [selectedToken] = useSelectedToken();
 
   const oftV2Data = useRouteStore(
-    state => state.routes.find(route => route.type === 'oftV2')?.data
-  )
+    (state) => state.routes.find((route) => route.type === 'oftV2')?.data,
+  );
 
-  const { feeEstimates: oftFeeEstimates, error: oftFeeEstimatesError } =
-    useOftV2FeeEstimates({
-      sourceChainErc20Address: isDepositMode
-        ? selectedToken?.address
-        : selectedToken?.l2Address
-    })
-  const { estimatedChildChainGasFees, estimatedParentChainGasFees, status } =
-    useGasSummary()
+  const { feeEstimates: oftFeeEstimates, error: oftFeeEstimatesError } = useOftV2FeeEstimates({
+    sourceChainErc20Address: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
+  });
+  const { estimatedChildChainGasFees, estimatedParentChainGasFees, status } = useGasSummary();
 
   const gasCost = useMemo(() => {
     if (
@@ -42,44 +39,35 @@ export function OftV2Route() {
       typeof estimatedParentChainGasFees !== 'number' ||
       typeof estimatedChildChainGasFees !== 'number'
     ) {
-      return undefined
+      return undefined;
     }
 
     return [
       {
         gasCost: isDepositMode
-          ? utils
-              .parseUnits(estimatedParentChainGasFees.toString(), 18)
-              .toString()
-          : utils
-              .parseUnits(estimatedChildChainGasFees.toString(), 18)
-              .toString(),
+          ? utils.parseUnits(estimatedParentChainGasFees.toString(), 18).toString()
+          : utils.parseUnits(estimatedChildChainGasFees.toString(), 18).toString(),
         gasToken: {
           ...ether,
-          address: constants.AddressZero
-        }
-      }
-    ]
-  }, [
-    status,
-    isDepositMode,
-    estimatedParentChainGasFees,
-    estimatedChildChainGasFees
-  ])
+          address: constants.AddressZero,
+        },
+      },
+    ];
+  }, [status, isDepositMode, estimatedParentChainGasFees, estimatedChildChainGasFees]);
 
   const bridgeFee = useMemo(() => {
     if (!oftFeeEstimates?.sourceChainGasFee) {
-      return undefined
+      return undefined;
     }
 
     return {
       fee: oftFeeEstimates.sourceChainGasFee.toString(),
-      token: { ...ether, address: constants.AddressZero }
-    }
-  }, [oftFeeEstimates?.sourceChainGasFee])
+      token: { ...ether, address: constants.AddressZero },
+    };
+  }, [oftFeeEstimates?.sourceChainGasFee]);
 
   if (oftFeeEstimatesError || !oftV2Data) {
-    return null
+    return null;
   }
 
   return (
@@ -95,5 +83,5 @@ export function OftV2Route() {
       selected={selectedRoute === 'oftV2'}
       onSelectedRouteClick={setSelectedRoute}
     />
-  )
+  );
 }

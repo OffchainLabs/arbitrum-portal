@@ -1,1 +1,1 @@
-export { GET } from '@/bridge/app/api/cctp/[type]'
+export { GET } from '@/bridge/app/api/cctp/[type]';

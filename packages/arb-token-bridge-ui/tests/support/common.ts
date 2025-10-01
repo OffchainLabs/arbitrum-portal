@@ -1,51 +1,50 @@
 /*
   All the utility functions and configs related to our testing
 */
+import { EthBridger, MultiCaller } from '@arbitrum/sdk';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+import { BigNumber, Signer, Wallet, ethers, utils } from 'ethers';
 
-import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers'
-import { BigNumber, Signer, Wallet, ethers, utils } from 'ethers'
-import { EthBridger, MultiCaller } from '@arbitrum/sdk'
-import { MULTICALL_TESTNET_ADDRESS } from '../../src/constants'
+import { MULTICALL_TESTNET_ADDRESS } from '../../src/constants';
 import {
   defaultL2Network,
+  defaultL3CustomGasTokenNetwork,
   defaultL3Network,
-  defaultL3CustomGasTokenNetwork
-} from '../../src/util/networksNitroTestnode'
+} from '../../src/util/networksNitroTestnode';
 
-export type NetworkType = 'parentChain' | 'childChain'
+export type NetworkType = 'parentChain' | 'childChain';
 export type NetworkName =
   | 'Nitro Testnode L1'
   | 'Nitro Testnode L2'
   | 'Nitro Testnode L3'
   | 'Arbitrum Sepolia'
   | 'Ethereum'
-  | 'Sepolia'
+  | 'Sepolia';
 
 type NetworkConfig = {
-  networkName: NetworkName
-  rpcUrl: string
-  chainId: number
-  symbol: string
-  isTestnet: boolean
-  multiCall: string
-}
+  networkName: NetworkName;
+  rpcUrl: string;
+  chainId: number;
+  symbol: string;
+  isTestnet: boolean;
+  multiCall: string;
+};
 
 export const getL1NetworkName = () => {
-  return getL1NetworkConfig().networkName
-}
+  return getL1NetworkConfig().networkName;
+};
 
 export const getL2NetworkName = () => {
-  return getL2NetworkConfig().networkName
-}
+  return getL2NetworkConfig().networkName;
+};
 
 export const getNetworkSlug = (network: 'parent' | 'child') => {
-  const networkName =
-    network === 'parent' ? getL1NetworkName() : getL2NetworkName()
-  return networkName.toLowerCase().replace(' ', '-')
-}
+  const networkName = network === 'parent' ? getL1NetworkName() : getL2NetworkName();
+  return networkName.toLowerCase().replace(' ', '-');
+};
 
 export const getL1NetworkConfig = (): NetworkConfig => {
-  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1'
+  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1';
 
   return {
     networkName: isOrbitTest ? 'Nitro Testnode L2' : 'Nitro Testnode L1',
@@ -55,18 +54,16 @@ export const getL1NetworkConfig = (): NetworkConfig => {
     isTestnet: true,
     multiCall: isOrbitTest
       ? defaultL2Network.tokenBridge!.childMultiCall
-      : defaultL2Network.tokenBridge!.parentMultiCall
-  }
-}
+      : defaultL2Network.tokenBridge!.parentMultiCall,
+  };
+};
 
 export const getL2NetworkConfig = (): NetworkConfig => {
-  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1'
-  const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH'
-  const isCustomFeeToken = nativeTokenSymbol !== 'ETH'
+  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1';
+  const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH';
+  const isCustomFeeToken = nativeTokenSymbol !== 'ETH';
 
-  const l3Network = isCustomFeeToken
-    ? defaultL3CustomGasTokenNetwork
-    : defaultL3Network
+  const l3Network = isCustomFeeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network;
 
   return {
     networkName: isOrbitTest ? 'Nitro Testnode L3' : 'Nitro Testnode L2',
@@ -76,9 +73,9 @@ export const getL2NetworkConfig = (): NetworkConfig => {
     isTestnet: true,
     multiCall: isOrbitTest
       ? l3Network.tokenBridge!.childMultiCall
-      : defaultL2Network.tokenBridge!.childMultiCall
-  }
-}
+      : defaultL2Network.tokenBridge!.childMultiCall,
+  };
+};
 
 export const getL1TestnetNetworkConfig = (): NetworkConfig => {
   return {
@@ -87,9 +84,9 @@ export const getL1TestnetNetworkConfig = (): NetworkConfig => {
     chainId: 11155111,
     symbol: 'ETH',
     isTestnet: true,
-    multiCall: MULTICALL_TESTNET_ADDRESS
-  }
-}
+    multiCall: MULTICALL_TESTNET_ADDRESS,
+  };
+};
 
 export const getL2TestnetNetworkConfig = (): NetworkConfig => {
   return {
@@ -98,126 +95,120 @@ export const getL2TestnetNetworkConfig = (): NetworkConfig => {
     chainId: 421614,
     symbol: 'ETH',
     isTestnet: true,
-    multiCall: MULTICALL_TESTNET_ADDRESS
-  }
-}
+    multiCall: MULTICALL_TESTNET_ADDRESS,
+  };
+};
 
-export const ERC20TokenName = 'Test Arbitrum Token'
-export const ERC20TokenSymbol = 'TESTARB'
-export const ERC20TokenDecimals = 18
-export const invalidTokenAddress = utils.computeAddress(utils.randomBytes(32))
+export const ERC20TokenName = 'Test Arbitrum Token';
+export const ERC20TokenSymbol = 'TESTARB';
+export const ERC20TokenDecimals = 18;
+export const invalidTokenAddress = utils.computeAddress(utils.randomBytes(32));
 
-export const moreThanZeroBalance = /0(\.\d+)/
+export const moreThanZeroBalance = /0(\.\d+)/;
 
 export function getZeroToLessThanOneToken(symbol: string) {
-  return new RegExp(`0(\\.\\d+)* ${symbol}`)
+  return new RegExp(`0(\\.\\d+)* ${symbol}`);
 }
 
 export const importTokenThroughUI = (address: string) => {
   // Click on the ETH dropdown (Select token button)
-  cy.findSelectTokenButton(Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH').click()
+  cy.findSelectTokenButton(Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH').click();
 
   // open the Select Token popup
   cy.findByPlaceholderText(/Search by token name/i)
     .should('be.visible')
-    .type(address)
+    .type(address);
 
   // Click on the Add new token button
-  return cy
-    .findByRole('button', { name: 'Add New Token' })
-    .should('be.visible')
-    .click()
-}
+  return cy.findByRole('button', { name: 'Add New Token' }).should('be.visible').click();
+};
 
 export async function getInitialETHBalance(
   rpcURL: string,
-  walletAddress?: string
+  walletAddress?: string,
 ): Promise<BigNumber> {
-  const provider = new StaticJsonRpcProvider(rpcURL)
-  return await provider.getBalance(walletAddress ?? Cypress.env('ADDRESS'))
+  const provider = new StaticJsonRpcProvider(rpcURL);
+  return await provider.getBalance(walletAddress ?? Cypress.env('ADDRESS'));
 }
 
 export async function getInitialERC20Balance({
   tokenAddress,
   multiCallerAddress,
   rpcURL,
-  address
+  address,
 }: {
-  tokenAddress: string
-  multiCallerAddress: string
-  rpcURL: string
-  address: string
+  tokenAddress: string;
+  multiCallerAddress: string;
+  rpcURL: string;
+  address: string;
 }): Promise<BigNumber | undefined> {
-  const provider = new StaticJsonRpcProvider(rpcURL)
-  const multiCaller = new MultiCaller(provider, multiCallerAddress)
+  const provider = new StaticJsonRpcProvider(rpcURL);
+  const multiCaller = new MultiCaller(provider, multiCallerAddress);
   const [tokenData] = await multiCaller.getTokenData([tokenAddress], {
-    balanceOf: { account: address }
-  })
-  return tokenData?.balance
+    balanceOf: { account: address },
+  });
+  return tokenData?.balance;
 }
 
 export const acceptMetamaskAccess = () => {
   cy.acceptMetamaskAccess().then(() => {
-    cy.isCypressWindowActive().then(cyWindowIsActive => {
+    cy.isCypressWindowActive().then((cyWindowIsActive) => {
       if (!cyWindowIsActive) {
-        cy.switchToCypressWindow().should('be.true')
+        cy.switchToCypressWindow().should('be.true');
       }
-    })
-  })
-}
+    });
+  });
+};
 
 export const startWebApp = (
   url = '/bridge',
   options: {
-    query: { [s: string]: string }
-    connectMetamask: boolean
-  }
+    query: { [s: string]: string };
+    connectMetamask: boolean;
+  },
 ) => {
   // once all the metamask setup is done, we can start the actual web-app for testing
   // clear local storage for terms to always have it pop up
-  cy.clearLocalStorage('arbitrum:bridge:tos-v2')
+  cy.clearLocalStorage('arbitrum:bridge:tos-v2');
   cy.visit(url, {
-    qs: options.query
-  })
+    qs: options.query,
+  });
   if (Cypress.currentRetry > 0) {
     // ensures we don't test with the same state that could have caused the test to fail
-    cy.reload(true)
+    cy.reload(true);
   }
 
-  cy.task('getWalletConnectedToDapp').then(connected => {
+  cy.task('getWalletConnectedToDapp').then((connected) => {
     if (!connected) {
-      cy.findAllByText('Connect Wallet').first().should('be.visible')
+      cy.findAllByText('Connect Wallet').first().should('be.visible');
       if (options.connectMetamask) {
-        cy.findAllByText('Connect Wallet').first().click()
-        cy.findByText('MetaMask').should('be.visible').click()
-        acceptMetamaskAccess()
-        cy.task('setWalletConnectedToDapp')
+        cy.findAllByText('Connect Wallet').first().click();
+        cy.findByText('MetaMask').should('be.visible').click();
+        acceptMetamaskAccess();
+        cy.task('setWalletConnectedToDapp');
       }
     }
-  })
-}
+  });
+};
 
-export const visitAfterSomeDelay = (
-  url: string,
-  options?: Partial<Cypress.VisitOptions>
-) => {
-  cy.wait(15_000) // let all the race conditions settle, let UI load well first
-  cy.visit(url, options)
-  cy.wait(15_000)
-}
+export const visitAfterSomeDelay = (url: string, options?: Partial<Cypress.VisitOptions>) => {
+  cy.wait(15_000); // let all the race conditions settle, let UI load well first
+  cy.visit(url, options);
+  cy.wait(15_000);
+};
 
 export const wait = (ms = 0): Promise<void> => {
-  return new Promise(res => setTimeout(res, ms))
-}
+  return new Promise((res) => setTimeout(res, ms));
+};
 
 export async function generateActivityOnChains({
   parentProvider,
   childProvider,
-  wallet
+  wallet,
 }: {
-  parentProvider: Provider
-  childProvider: Provider
-  wallet: Wallet
+  parentProvider: Provider;
+  childProvider: Provider;
+  wallet: Wallet;
 }) {
   const keepMining = async (miner: Signer) => {
     /* eslint-disable no-await-in-loop */
@@ -227,73 +218,73 @@ export async function generateActivityOnChains({
           to: await miner.getAddress(),
           value: 0,
           // random data to make the tx heavy, so that batches are posted sooner (since they're posted according to calldata size)
-          data: '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000010c3c627574746f6e20636c6173733d226e61766261722d746f67676c65722220747970653d22627574746f6e2220646174612d746f67676c653d22636f6c6c617073652220646174612d7461726765743d22236e6176626172537570706f72746564436f6e74656e742220617269612d636f6e74726f6c733d226e6176626172537570706f72746564436f6e74656e742220617269612d657870616e6465643d2266616c73652220617269612d6c6162656c3d223c253d20676574746578742822546f67676c65206e617669676174696f6e222920253e223e203c7370616e20636c6173733d226e61766261722d746f67676c65722d69636f6e223e3c2f7370616e3e203c2f627574746f6e3e0000000000000000000000000000000000000000'
+          data: '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000010c3c627574746f6e20636c6173733d226e61766261722d746f67676c65722220747970653d22627574746f6e2220646174612d746f67676c653d22636f6c6c617073652220646174612d7461726765743d22236e6176626172537570706f72746564436f6e74656e742220617269612d636f6e74726f6c733d226e6176626172537570706f72746564436f6e74656e742220617269612d657870616e6465643d2266616c73652220617269612d6c6162656c3d223c253d20676574746578742822546f67676c65206e617669676174696f6e222920253e223e203c7370616e20636c6173733d226e61766261722d746f67676c65722d69636f6e223e3c2f7370616e3e203c2f627574746f6e3e0000000000000000000000000000000000000000',
         })
-      ).wait()
+      ).wait();
 
-      await wait(100)
+      await wait(100);
     }
     /* eslint-enable no-await-in-loop */
-  }
+  };
   // whilst waiting for status we mine on both parentChain and childChain
-  console.log('Generating activity on parentChain...')
-  const minerParent = Wallet.createRandom().connect(parentProvider)
+  console.log('Generating activity on parentChain...');
+  const minerParent = Wallet.createRandom().connect(parentProvider);
 
   const decimals = await getNativeTokenDecimals({
     parentProvider,
-    childProvider
-  })
+    childProvider,
+  });
 
   await fundEth({
     address: await minerParent.getAddress(),
     provider: parentProvider,
     sourceWallet: wallet,
     networkType: 'parentChain',
-    amount: utils.parseUnits('0.2', decimals)
-  })
+    amount: utils.parseUnits('0.2', decimals),
+  });
 
-  console.log('Generating activity on childChain...')
-  const minerChild = Wallet.createRandom().connect(childProvider)
+  console.log('Generating activity on childChain...');
+  const minerChild = Wallet.createRandom().connect(childProvider);
 
   await fundEth({
     address: await minerChild.getAddress(),
     provider: childProvider,
     sourceWallet: wallet,
     networkType: 'childChain',
-    amount: utils.parseEther('0.2')
-  })
+    amount: utils.parseEther('0.2'),
+  });
 
-  await Promise.allSettled([keepMining(minerParent), keepMining(minerChild)])
+  await Promise.allSettled([keepMining(minerParent), keepMining(minerChild)]);
 }
 
 export async function checkForAssertions({
   parentProvider,
-  testType
+  testType,
 }: {
-  parentProvider: Provider
-  testType: 'regular' | 'orbit-eth' | 'orbit-custom'
+  parentProvider: Provider;
+  testType: 'regular' | 'orbit-eth' | 'orbit-custom';
 }) {
   const abi = [
     'function latestConfirmed() public view returns (uint64)',
-    'function latestNodeCreated() public view returns (uint64)'
-  ]
+    'function latestNodeCreated() public view returns (uint64)',
+  ];
 
-  let rollupAddress: string
+  let rollupAddress: string;
 
   switch (testType) {
     case 'orbit-eth':
-      rollupAddress = defaultL3Network.ethBridge.rollup
-      break
+      rollupAddress = defaultL3Network.ethBridge.rollup;
+      break;
     case 'orbit-custom':
-      rollupAddress = defaultL3CustomGasTokenNetwork.ethBridge.rollup
-      break
+      rollupAddress = defaultL3CustomGasTokenNetwork.ethBridge.rollup;
+      break;
     default:
-      rollupAddress = defaultL2Network.ethBridge.rollup
+      rollupAddress = defaultL2Network.ethBridge.rollup;
   }
 
-  const rollupContract = new ethers.Contract(rollupAddress, abi, parentProvider)
+  const rollupContract = new ethers.Contract(rollupAddress, abi, parentProvider);
 
-  const parentChainId = (await parentProvider.getNetwork()).chainId
+  const parentChainId = (await parentProvider.getNetwork()).chainId;
 
   try {
     /* eslint-disable no-await-in-loop */
@@ -301,18 +292,13 @@ export async function checkForAssertions({
       console.log(
         `***** Assertion status on ChainId ${parentChainId}: ${(
           await rollupContract.latestNodeCreated()
-        ).toString()} created / ${(
-          await rollupContract.latestConfirmed()
-        ).toString()} confirmed`
-      )
-      await wait(10000)
+        ).toString()} created / ${(await rollupContract.latestConfirmed()).toString()} confirmed`,
+      );
+      await wait(10000);
     }
     /* eslint-enable no-await-in-loop */
   } catch (e) {
-    console.log(
-      `Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`,
-      e
-    )
+    console.log(`Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`, e);
   }
 }
 
@@ -321,82 +307,82 @@ export async function fundEth({
   provider,
   sourceWallet, // source wallet that will fund the `address`,
   networkType,
-  amount
+  amount,
 }: {
-  address: string
-  provider: Provider
-  sourceWallet: Wallet
-  networkType: NetworkType
-  amount: BigNumber
+  address: string;
+  provider: Provider;
+  sourceWallet: Wallet;
+  networkType: NetworkType;
+  amount: BigNumber;
 }) {
-  console.log(`Funding ETH ${address} on ${networkType}...`)
-  const balance = await provider.getBalance(address)
+  console.log(`Funding ETH ${address} on ${networkType}...`);
+  const balance = await provider.getBalance(address);
   // Fund only if the balance is less than 2 eth
   if (balance.lt(amount)) {
     const tx = await sourceWallet.connect(provider).sendTransaction({
       to: address,
-      value: amount
-    })
-    await tx.wait()
+      value: amount,
+    });
+    await tx.wait();
   }
 }
 
 export async function getCustomDestinationAddress() {
-  console.log('Getting custom destination address...')
-  return (await Wallet.createRandom().getAddress()).toLowerCase()
+  console.log('Getting custom destination address...');
+  return (await Wallet.createRandom().getAddress()).toLowerCase();
 }
 
 export function setupCypressTasks(
   on: Cypress.PluginEvents,
-  { requiresNetworkSetup }: { requiresNetworkSetup: boolean }
+  { requiresNetworkSetup }: { requiresNetworkSetup: boolean },
 ) {
-  let currentNetworkName: NetworkName | null = null
-  let networkSetupComplete = !requiresNetworkSetup
-  let walletConnectedToDapp = false
+  let currentNetworkName: NetworkName | null = null;
+  let networkSetupComplete = !requiresNetworkSetup;
+  let walletConnectedToDapp = false;
 
   on('task', {
     setCurrentNetworkName: (networkName: NetworkName) => {
-      currentNetworkName = networkName
-      return null
+      currentNetworkName = networkName;
+      return null;
     },
     getCurrentNetworkName: () => {
-      return currentNetworkName
+      return currentNetworkName;
     },
     setNetworkSetupComplete: () => {
-      networkSetupComplete = true
-      return null
+      networkSetupComplete = true;
+      return null;
     },
     getNetworkSetupComplete: () => {
-      return networkSetupComplete
+      return networkSetupComplete;
     },
     setWalletConnectedToDapp: () => {
-      walletConnectedToDapp = true
-      return null
+      walletConnectedToDapp = true;
+      return null;
     },
     getWalletConnectedToDapp: () => {
-      return walletConnectedToDapp
-    }
-  })
+      return walletConnectedToDapp;
+    },
+  });
 }
 
 export async function getNativeTokenDecimals({
   parentProvider,
-  childProvider
+  childProvider,
 }: {
-  parentProvider: Provider
-  childProvider: Provider
+  parentProvider: Provider;
+  childProvider: Provider;
 }) {
-  const multiCaller = await MultiCaller.fromProvider(parentProvider)
-  const ethBridger = await EthBridger.fromProvider(childProvider)
-  const isCustomFeeToken = typeof ethBridger.nativeToken !== 'undefined'
+  const multiCaller = await MultiCaller.fromProvider(parentProvider);
+  const ethBridger = await EthBridger.fromProvider(childProvider);
+  const isCustomFeeToken = typeof ethBridger.nativeToken !== 'undefined';
 
   const nativeToken = isCustomFeeToken
     ? (
         await multiCaller.getTokenData([ethBridger.nativeToken!], {
-          decimals: true
+          decimals: true,
         })
       )[0]
-    : undefined
+    : undefined;
 
-  return nativeToken?.decimals ?? 18
+  return nativeToken?.decimals ?? 18;
 }

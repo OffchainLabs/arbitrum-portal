@@ -1,20 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { twMerge } from 'tailwind-merge';
 import { usePostHog } from 'posthog-js/react';
-import { CATEGORIES } from '@/common/categories';
-import { OrbitItemBox } from '@/components/OrbitItemBox';
-import {
-  ORBIT_CHAINS,
-  orbitChainsGroupedByCategorySlug,
-} from '@/common/orbitChains';
+import { useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-const ORBIT_CATEGORIES = [
-  { id: 'all', slug: 'all', title: 'All' },
-  ...CATEGORIES,
-].filter((cat) => cat.slug !== 'bridges-and-on-ramps');
+import { CATEGORIES } from '@/common/categories';
+import { ORBIT_CHAINS, orbitChainsGroupedByCategorySlug } from '@/common/orbitChains';
+import { OrbitItemBox } from '@/components/OrbitItemBox';
+
+const ORBIT_CATEGORIES = [{ id: 'all', slug: 'all', title: 'All' }, ...CATEGORIES].filter(
+  (cat) => cat.slug !== 'bridges-and-on-ramps',
+);
 
 type CategoryKeys = (typeof ORBIT_CATEGORIES)[number]['slug'];
 
@@ -54,9 +51,7 @@ export const OrbitChainsListingByCategories = () => {
             <button
               className={twMerge(
                 'group relative flex h-20 w-[20%] shrink grow skew-x-[-23deg] items-end justify-start overflow-hidden p-2 px-3 text-xs transition-all hover:w-[30%]',
-                selectedCategory === category.slug
-                  ? 'bg-default-black'
-                  : 'bg-white/10',
+                selectedCategory === category.slug ? 'bg-default-black' : 'bg-white/10',
                 index === 0 && 'ml-[-20px]',
                 index === ORBIT_CATEGORIES.length - 1 && 'mr-[-20px]',
               )}
@@ -73,8 +68,7 @@ export const OrbitChainsListingByCategories = () => {
                 alt={category.slug}
                 className={twMerge(
                   'skew-x-[23deg] scale-[2.3] opacity-30 grayscale group-hover:grayscale-0',
-                  selectedCategory === category.slug &&
-                    'opacity-70 grayscale-0',
+                  selectedCategory === category.slug && 'opacity-70 grayscale-0',
                 )}
               />
               <div
@@ -85,9 +79,7 @@ export const OrbitChainsListingByCategories = () => {
                 )}
               >
                 <span className="hidden lg:block"> {category.title}</span>
-                <span className="lg:hidden">
-                  {category.title.split(' ')[0]}
-                </span>
+                <span className="lg:hidden">{category.title.split(' ')[0]}</span>
               </div>
             </button>
           ))}

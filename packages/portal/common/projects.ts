@@ -1,27 +1,22 @@
 // Projects' database and utility functions
 import projectsJson from '@/public/__auto-generated-projects.json';
+
 import { CATEGORIES, getCategoryFromSubcategory } from './categories';
 import { dayjs } from './dateUtils';
 import { sortByRank } from './sort';
 import {
-  ProjectWithSubcategories,
-  FullProject,
-  SearchableData,
   EntityType,
+  FullProject,
+  ProjectWithSubcategories,
+  SearchableData,
   SortOptions,
 } from './types';
 
-function sortProjectsByTitle(
-  a: ProjectWithSubcategories,
-  b: ProjectWithSubcategories,
-) {
+function sortProjectsByTitle(a: ProjectWithSubcategories, b: ProjectWithSubcategories) {
   return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
 }
 
-function sortProjectsByDescription(
-  a: ProjectWithSubcategories,
-  b: ProjectWithSubcategories,
-) {
+function sortProjectsByDescription(a: ProjectWithSubcategories, b: ProjectWithSubcategories) {
   // a has description, b doesn't, so put a first
   if (a.description && !b.description) {
     return -1;
@@ -65,9 +60,7 @@ export function sortProjects(
   return sortProjectsByDescriptionResult;
 }
 
-export const getProjectFallbackDescription = (
-  project: ProjectWithSubcategories,
-) => {
+export const getProjectFallbackDescription = (project: ProjectWithSubcategories) => {
   const subcatTitles = project.subcategories.map((subcat) => subcat.title);
   let concatSubcat = '';
 
@@ -75,8 +68,7 @@ export const getProjectFallbackDescription = (
     concatSubcat = subcatTitles[0] + ' category';
   } else {
     const lastSubcatTitle = subcatTitles.pop();
-    concatSubcat =
-      subcatTitles.join(', ') + ' and ' + lastSubcatTitle + ' categories';
+    concatSubcat = subcatTitles.join(', ') + ' and ' + lastSubcatTitle + ' categories';
   }
   return `${project.title} belongs to the ${concatSubcat}.`;
 };
@@ -89,23 +81,21 @@ const categorySpotlights: { [categoryKey: string]: string[] } = {};
 export let CHAINS_WITH_PROJECTS: Record<string, boolean> = {}; // to keep track of non empty chains
 const PROJECTS_PER_CHAIN_MAP: Record<string, number> = {}; // to keep track of number of projects per chain
 
-const notionProjects: ProjectWithSubcategories[] = projectsJson.content.map(
-  (projectFromNotion) => {
-    CHAINS_WITH_PROJECTS = {
-      ...CHAINS_WITH_PROJECTS,
-      ...(projectFromNotion.chainsMap as Record<string, boolean>),
-    };
+const notionProjects: ProjectWithSubcategories[] = projectsJson.content.map((projectFromNotion) => {
+  CHAINS_WITH_PROJECTS = {
+    ...CHAINS_WITH_PROJECTS,
+    ...(projectFromNotion.chainsMap as Record<string, boolean>),
+  };
 
-    Object.keys(projectFromNotion.chainsMap).forEach((chain) => {
-      PROJECTS_PER_CHAIN_MAP[chain] = (PROJECTS_PER_CHAIN_MAP[chain] ?? 0) + 1;
-    });
+  Object.keys(projectFromNotion.chainsMap).forEach((chain) => {
+    PROJECTS_PER_CHAIN_MAP[chain] = (PROJECTS_PER_CHAIN_MAP[chain] ?? 0) + 1;
+  });
 
-    return {
-      ...projectFromNotion,
-      chainsMap: projectFromNotion.chainsMap as Record<string, boolean>, // assert the type coz inference from JSON is throwing error
-    };
-  },
-);
+  return {
+    ...projectFromNotion,
+    chainsMap: projectFromNotion.chainsMap as Record<string, boolean>, // assert the type coz inference from JSON is throwing error
+  };
+});
 
 notionProjects
   //
@@ -114,18 +104,13 @@ notionProjects
     const projectKey = project.slug;
 
     // get project categories from it's subcategories
-    const subcategoryIds = project.subcategories.map(
-      (subcategory) => subcategory.slug,
-    );
-    const categoryIds = subcategoryIds.reduce(
-      (result: string[], subcategoryKey: string) => {
-        const categoryKey = getCategoryFromSubcategory(subcategoryKey);
-        return categoryKey && !result.includes(categoryKey) // same category shouldn't be included twice
-          ? [...result, categoryKey]
-          : [...result];
-      },
-      [],
-    );
+    const subcategoryIds = project.subcategories.map((subcategory) => subcategory.slug);
+    const categoryIds = subcategoryIds.reduce((result: string[], subcategoryKey: string) => {
+      const categoryKey = getCategoryFromSubcategory(subcategoryKey);
+      return categoryKey && !result.includes(categoryKey) // same category shouldn't be included twice
+        ? [...result, categoryKey]
+        : [...result];
+    }, []);
 
     // add project to homepage spotlight
     if (project.meta.isFeaturedOnHomePage) {
@@ -135,8 +120,7 @@ notionProjects
     // add project to each of the categories' spotlight
     if (project.meta.isFeaturedOnCategoryPage) {
       categoryIds.forEach((categoryId) => {
-        if (!categorySpotlights[categoryId])
-          categorySpotlights[categoryId] = [];
+        if (!categorySpotlights[categoryId]) categorySpotlights[categoryId] = [];
 
         categorySpotlights[categoryId].push(projectKey);
       });
@@ -144,8 +128,7 @@ notionProjects
 
     const fullProject = {
       ...project,
-      description:
-        project.description || getProjectFallbackDescription(project),
+      description: project.description || getProjectFallbackDescription(project),
       subcategoryIds,
       categoryIds,
 
@@ -188,9 +171,7 @@ export const getProjectDetailsById = (id: string) => {
   if (id === 'dummy-project') {
     return ARCADE_LOCKED_PROJECT_DETAILS;
   }
-  return typeof projectKeyToIndexMap[id] === 'number'
-    ? PROJECTS[projectKeyToIndexMap[id]]
-    : null;
+  return typeof projectKeyToIndexMap[id] === 'number' ? PROJECTS[projectKeyToIndexMap[id]] : null;
 };
 
 export const getSpotlightProjects = (key: string) => {
@@ -214,9 +195,7 @@ export const ALL_SPOTLIGHT_PROJECTS = CATEGORIES.map((category) =>
   .map((projectKey) => getProjectDetailsById(projectKey))
   .filter(Boolean) as SearchableData<FullProject>[];
 
-export const TRENDING_PROJECTS = PROJECTS.filter(
-  (project) => project.meta.isTrending,
-);
+export const TRENDING_PROJECTS = PROJECTS.filter((project) => project.meta.isTrending);
 
 export const getProjectsCountForChain = (chainTitle: string) => {
   return PROJECTS_PER_CHAIN_MAP[chainTitle] ?? 0;

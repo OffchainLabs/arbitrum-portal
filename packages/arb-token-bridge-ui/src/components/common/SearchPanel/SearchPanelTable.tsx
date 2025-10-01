@@ -1,40 +1,40 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import React, { PropsWithChildren, useEffect } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import React, { PropsWithChildren, useEffect } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 type SearchPanelTableProps = {
-  searchInputPlaceholder: string
-  searchInputValue: string
-  searchInputOnChange: React.ChangeEventHandler<HTMLInputElement>
-  SearchInputButton?: React.JSX.Element
-  onSubmit?: React.FormEventHandler<HTMLFormElement>
-  errorMessage: string
-  dataCy?: string
-  isDialog: boolean
-  showSearch: boolean
-}
+  searchInputPlaceholder: string;
+  searchInputValue: string;
+  searchInputOnChange: React.ChangeEventHandler<HTMLInputElement>;
+  SearchInputButton?: React.JSX.Element;
+  onSubmit?: React.FormEventHandler<HTMLFormElement>;
+  errorMessage: string;
+  dataCy?: string;
+  isDialog: boolean;
+  showSearch: boolean;
+};
 
 export const SearchPanelTable = ({
   searchInputPlaceholder,
   searchInputValue,
   searchInputOnChange,
   SearchInputButton,
-  onSubmit = event => {
-    event.preventDefault()
+  onSubmit = (event) => {
+    event.preventDefault();
   },
   errorMessage,
   children,
   dataCy,
   isDialog,
-  showSearch
+  showSearch,
 }: PropsWithChildren<SearchPanelTableProps>) => {
-  const inputRef = React.useRef<HTMLInputElement>(null)
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }, [inputRef])
+  }, [inputRef]);
 
   return (
     <div className="flex w-[calc(100vw_-_60px)] flex-col gap-3 md:w-full">
@@ -54,20 +54,18 @@ export const SearchPanelTable = ({
             </div>
             {SearchInputButton}
           </div>
-          {!!errorMessage && (
-            <p className="text-xs text-red-400">{errorMessage}</p>
-          )}
+          {!!errorMessage && <p className="text-xs text-red-400">{errorMessage}</p>}
         </form>
       )}
       <div
         className={twMerge(
           'sm:shadow-search-panel h-[calc(100vh_-_200px)] min-h-[180px] rounded md:h-[calc(100vh_-_390px)]',
-          isDialog ? 'md:max-h-[700px]' : 'md:max-h-[400px]'
+          isDialog ? 'md:max-h-[700px]' : 'md:max-h-[400px]',
         )}
         data-cy={dataCy}
       >
         {children}
       </div>
     </div>
-  )
-}
+  );
+};

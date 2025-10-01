@@ -1,5 +1,4 @@
 // Chains' database and utility functions; used for populating dropdowns and displaying chain logos, filtering by chains etc.
-
 import { ORBIT_CHAINS } from './orbitChains';
 import { CHAINS_WITH_PROJECTS } from './projects';
 
@@ -9,8 +8,7 @@ export const ARB_NETWORKS = [
     slug: 'arbitrum-one',
     title: 'Arbitrum One',
     logoUrl: `/images/ArbOneLogo.svg`,
-    description:
-      'Rollup protocol. Permissionless validation, secured by operational fraud proofs.',
+    description: 'Rollup protocol. Permissionless validation, secured by operational fraud proofs.',
     color: {
       primary: '#1B4ADD',
       secondary: '#001A6B',
@@ -55,15 +53,10 @@ export const getChainDetailsById = (id: string) => {
 };
 
 // returns slug - eg. Arbitrum One -> arbitrum-one, Arbitrum Nova -> arbitrum-nova, XAI -> xai
-export const getChainSlugFromTitle = (title: string) =>
-  title.replaceAll(' ', '-').toLowerCase();
+export const getChainSlugFromTitle = (title: string) => title.replaceAll(' ', '-').toLowerCase();
 
 export const sortByChainRank = (a: string, b: string) => {
-  return (
-    (getChainDetailsById(a)?.rank ?? 0) - (getChainDetailsById(b)?.rank ?? 0)
-  );
+  return (getChainDetailsById(a)?.rank ?? 0) - (getChainDetailsById(b)?.rank ?? 0);
 };
 
-export const VALID_CHAIN_SLUGS = [...ARB_NETWORKS, ...ORBIT_CHAINS].map(
-  (chain) => chain.slug,
-);
+export const VALID_CHAIN_SLUGS = [...ARB_NETWORKS, ...ORBIT_CHAINS].map((chain) => chain.slug);

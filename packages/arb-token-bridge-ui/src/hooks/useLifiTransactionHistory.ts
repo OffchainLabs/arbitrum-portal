@@ -1,18 +1,16 @@
-import useSWRImmutable from 'swr/immutable'
-import { getTransactionHistory } from '@lifi/sdk'
+import { getTransactionHistory } from '@lifi/sdk';
+import useSWRImmutable from 'swr/immutable';
 
 export function useLifiTransactionHistory({
-  walletAddress
+  walletAddress,
 }: {
-  walletAddress: string | undefined
+  walletAddress: string | undefined;
 }) {
   return useSWRImmutable(
-    walletAddress
-      ? ([walletAddress, 'useLifiTransactionHistory'] as const)
-      : null,
+    walletAddress ? ([walletAddress, 'useLifiTransactionHistory'] as const) : null,
     ([walletAddress]) =>
       getTransactionHistory({
-        wallet: walletAddress
-      }).then(response => response.transfers)
-  )
+        wallet: walletAddress,
+      }).then((response) => response.transfers),
+  );
 }

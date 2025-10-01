@@ -1,33 +1,30 @@
-'use client'
-import {
-  isE2eTestingEnvironment,
-  isProductionEnvironment
-} from '@/bridge/util/CommonUtils'
-import { initializeSentry } from '@/bridge/util/SentryUtils'
-import posthog from 'posthog-js'
-import {
-  addOrbitChainsToArbitrumSDK,
-  initializeDayjs
-} from '../../../initialization'
-import { ComponentType } from 'react'
-import { registerLocalNetwork } from '@/bridge/util/networks'
-import dynamic from 'next/dynamic'
-import { Loader } from '@/bridge/components/common/atoms/Loader'
+'use client';
+
+import dynamic from 'next/dynamic';
+import posthog from 'posthog-js';
+import { ComponentType } from 'react';
+
+import { Loader } from '@/bridge/components/common/atoms/Loader';
+import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
+import { initializeSentry } from '@/bridge/util/SentryUtils';
+import { registerLocalNetwork } from '@/bridge/util/networks';
+
+import { addOrbitChainsToArbitrumSDK, initializeDayjs } from '../../../initialization';
 
 // Configure dayjs plugins
-initializeDayjs()
+initializeDayjs();
 
 // Initialize Sentry for error tracking
-initializeSentry(process.env.NEXT_PUBLIC_SENTRY_DSN)
+initializeSentry(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 // Initialize PostHog
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
-    loaded: posthog => {
+    loaded: (posthog) => {
       if (!isProductionEnvironment) {
         // when in dev, you can see data that would be sent in prod (in devtools)
-        posthog.debug()
+        posthog.debug();
       }
     },
     // store data in temporary memory that expires with each session
@@ -35,21 +32,21 @@ if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
     // by default posthog autocaptures (sends) events such as onClick, etc
     // we set up our own events instead
     autocapture: false,
-    disable_session_recording: true
-  })
+    disable_session_recording: true,
+  });
 }
 
 const App = dynamic(
   () => {
-    return new Promise<{ default: ComponentType }>(async resolve => {
+    return new Promise<{ default: ComponentType }>(async (resolve) => {
       if (!isProductionEnvironment || isE2eTestingEnvironment) {
-        await registerLocalNetwork()
+        await registerLocalNetwork();
       }
 
-      addOrbitChainsToArbitrumSDK()
-      const AppComponent = await import('@/bridge/components/App/App')
-      resolve(AppComponent)
-    })
+      addOrbitChainsToArbitrumSDK();
+      const AppComponent = await import('@/bridge/components/App/App');
+      resolve(AppComponent);
+    });
   },
   {
     loading: () => (
@@ -59,10 +56,10 @@ const App = dynamic(
           <Loader size="large" color="white" />
         </div>
       </div>
-    )
-  }
-)
+    ),
+  },
+);
 
 export default function Index() {
-  return <App />
+  return <App />;
 }

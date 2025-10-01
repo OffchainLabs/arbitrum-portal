@@ -1,18 +1,18 @@
-import { Fragment, PropsWithChildren, useState } from 'react'
+import { Transition } from '@headlessui/react';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { Fragment, PropsWithChildren, useState } from 'react';
 
-import { ExternalLink } from '../common/ExternalLink'
-import { Transition } from '@headlessui/react'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { ExternalLink } from '../common/ExternalLink';
 
 export const TransactionsTableExternalLink = ({
   children,
   href,
-  disabled = false
+  disabled = false,
 }: PropsWithChildren<{ href: string; disabled?: boolean }>) => {
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(false);
 
   if (disabled) {
-    return children
+    return children;
   }
 
   return (
@@ -37,5 +37,5 @@ export const TransactionsTableExternalLink = ({
         </Transition.Child>
       </Transition>
     </ExternalLink>
-  )
-}
+  );
+};

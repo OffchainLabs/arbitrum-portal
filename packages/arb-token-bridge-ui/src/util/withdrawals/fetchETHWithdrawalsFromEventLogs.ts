@@ -1,5 +1,5 @@
-import { Provider, BlockTag } from '@ethersproject/providers'
-import { ChildToParentMessageReader } from '@arbitrum/sdk'
+import { ChildToParentMessageReader } from '@arbitrum/sdk';
+import { BlockTag, Provider } from '@ethersproject/providers';
 
 /**
  * Fetches initiated ETH withdrawals from event logs in range of [fromBlock, toBlock].
@@ -14,15 +14,15 @@ export function fetchETHWithdrawalsFromEventLogs({
   receiver,
   fromBlock,
   toBlock,
-  l2Provider
+  l2Provider,
 }: {
-  receiver?: string
-  fromBlock: BlockTag
-  toBlock: BlockTag
-  l2Provider: Provider
+  receiver?: string;
+  fromBlock: BlockTag;
+  toBlock: BlockTag;
+  l2Provider: Provider;
 }) {
   if (typeof receiver === 'undefined') {
-    return Promise.resolve([])
+    return Promise.resolve([]);
   }
 
   // funds received by this address
@@ -30,6 +30,6 @@ export function fetchETHWithdrawalsFromEventLogs({
     l2Provider,
     { fromBlock, toBlock },
     undefined,
-    receiver
-  )
+    receiver,
+  );
 }

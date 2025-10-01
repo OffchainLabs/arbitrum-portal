@@ -1,4 +1,5 @@
 import { twMerge } from 'tailwind-merge';
+
 import { Card } from '@/components/Card';
 
 const governanceCards = [
@@ -10,8 +11,7 @@ const governanceCards = [
   },
   {
     title: 'Governance Forum',
-    description:
-      'Browse Arbitrum Improvement Proposals and see what people are voting on',
+    description: 'Browse Arbitrum Improvement Proposals and see what people are voting on',
     borderClassName: 'from-[#13AAFF] to-[#F72774]',
     link: 'https://forum.arbitrum.foundation/',
   },

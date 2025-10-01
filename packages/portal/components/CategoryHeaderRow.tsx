@@ -1,9 +1,9 @@
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useArbQueryParams } from '@/hooks/useArbQueryParams';
-import { Dispatch, SetStateAction, useMemo } from 'react';
 import { usePostHog } from 'posthog-js/react';
+import { Dispatch, SetStateAction, useMemo } from 'react';
 
 import { Category } from '@/common/types';
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 
 export const CategoryHeaderRow = ({
   category,
@@ -21,9 +21,7 @@ export const CategoryHeaderRow = ({
   const [{ categories = [] }] = useArbQueryParams();
   const posthog = usePostHog();
 
-  const subcategories = category.subcategories.map(
-    (subcategory) => subcategory.slug,
-  );
+  const subcategories = category.subcategories.map((subcategory) => subcategory.slug);
 
   const toggleExpansion = () => {
     posthog?.capture('Category Click', {

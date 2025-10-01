@@ -1,36 +1,33 @@
-import { useMemo } from 'react'
-import { constants, utils } from 'ethers'
+import { constants, utils } from 'ethers';
+import { useMemo } from 'react';
 
-import {
-  sanitizeAmountQueryParam,
-  useArbQueryParams
-} from '../../../hooks/useArbQueryParams'
-import { truncateExtraDecimals } from '../../../util/NumberUtils'
-import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals'
+import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals';
+import { sanitizeAmountQueryParam, useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { truncateExtraDecimals } from '../../../util/NumberUtils';
 
 export function useAmountBigNumber() {
-  const [{ amount }, setQueryParams] = useArbQueryParams()
-  const selectedTokenDecimals = useSelectedTokenDecimals()
+  const [{ amount }, setQueryParams] = useArbQueryParams();
+  const selectedTokenDecimals = useSelectedTokenDecimals();
 
   return useMemo(() => {
     try {
       if (amount === '' || isNaN(Number(amount))) {
-        return constants.Zero
+        return constants.Zero;
       }
 
-      const amountSafe = amount || '0'
+      const amountSafe = amount || '0';
 
       const sanitizedAmount = sanitizeAmountQueryParam(
-        truncateExtraDecimals(amountSafe, selectedTokenDecimals)
-      )
+        truncateExtraDecimals(amountSafe, selectedTokenDecimals),
+      );
 
       if (amount !== sanitizedAmount) {
-        setQueryParams({ amount: sanitizedAmount }, { debounce: true })
+        setQueryParams({ amount: sanitizedAmount }, { debounce: true });
       }
 
-      return utils.parseUnits(sanitizedAmount, selectedTokenDecimals)
+      return utils.parseUnits(sanitizedAmount, selectedTokenDecimals);
     } catch (error) {
-      return constants.Zero
+      return constants.Zero;
     }
-  }, [amount, selectedTokenDecimals, setQueryParams])
+  }, [amount, selectedTokenDecimals, setQueryParams]);
 }

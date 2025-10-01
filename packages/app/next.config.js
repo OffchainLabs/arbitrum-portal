@@ -9,29 +9,29 @@ module.exports = {
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
   experimental: {
-    externalDir: true
+    externalDir: true,
   },
-  webpack: config => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding')
-    return config
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    return config;
   },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'portal.arbitrum.io'
+        hostname: 'portal.arbitrum.io',
       },
       {
         protocol: 'https',
         hostname: 'blog.arbitrum.io',
-        port: ''
+        port: '',
       },
       {
         protocol: 'https',
         hostname: 'portal-data.arbitrum.io',
-        port: ''
-      }
-    ]
+        port: '',
+      },
+    ],
   },
   async headers() {
     return [
@@ -40,99 +40,98 @@ module.exports = {
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'https://portal.arbitrum.io'
+            value: 'https://portal.arbitrum.io',
           },
           {
             key: 'Access-Control-Allow-Methods',
-            value: 'GET'
-          }
-        ]
-      }
-    ]
+            value: 'GET',
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
       // Bridge
       {
-        source:
-          '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed)(?!.*\\.[^/]+$).+)',
+        source: '/bridge/:slug((?!^$|api/|_next/|public/|restricted|embed)(?!.*\\.[^/]+$).+)',
         missing: [
           {
             type: 'query',
-            key: 'destinationChain'
+            key: 'destinationChain',
           },
           {
             type: 'header',
             key: 'accept',
-            value: 'image/.*'
-          }
+            value: 'image/.*',
+          },
         ],
         destination: '/bridge?destinationChain=:slug',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/images/:path*',
         has: [
           {
             type: 'host',
-            value: 'bridge.arbitrum.io'
-          }
+            value: 'bridge.arbitrum.io',
+          },
         ],
         destination: 'https://portal.arbitrum.io/images/:path*',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/:path*',
         has: [
           {
             type: 'host',
-            value: 'bridge.arbitrum.io'
-          }
+            value: 'bridge.arbitrum.io',
+          },
         ],
         destination: 'https://portal.arbitrum.io/bridge/:path*',
-        permanent: true
+        permanent: true,
       },
       // Portal
       {
         source: '/one',
         destination: '/?chains=arbitrum-one',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/nova',
         destination: '/?chains=arbitrum-nova',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/odyssey',
         destination: '/',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/missions',
         destination: '/',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/arcade',
         destination: '/',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/orbit',
         destination: '/orbit/ecosystem',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/orbit/launch',
         destination: '/chains/ecosystem',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/orbit/:path*',
         destination: '/chains/:path*',
-        permanent: true
-      }
-    ]
-  }
-}
+        permanent: true,
+      },
+    ];
+  },
+};

@@ -1,78 +1,72 @@
-import React from 'react'
-import satori, { Font } from 'satori'
-import sharp from 'sharp'
-import fs from 'fs'
-import path from 'path'
-import dotenv from 'dotenv'
-import yargs, { Arguments, InferredOptionTypes } from 'yargs'
-import { hideBin } from 'yargs/helpers'
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import React from 'react';
+import satori, { Font } from 'satori';
+import sharp from 'sharp';
+import yargs, { Arguments, InferredOptionTypes } from 'yargs';
+import { hideBin } from 'yargs/helpers';
+
+import { ChainId } from './types/ChainId';
+import { getBridgeUiConfigForChain } from './util/bridgeUiConfig';
+import { isNetwork } from './util/networks';
+import { orbitMainnets, orbitTestnets } from './util/orbitChainsList';
 
 // this has to be called before import from "networks.ts"
 // to ensure that the environment variables are loaded
-dotenv.config({ path: path.resolve(__dirname, '../.env') })
-
-import { isNetwork } from './util/networks'
-import { ChainId } from './types/ChainId'
-import { getBridgeUiConfigForChain } from './util/bridgeUiConfig'
-import { orbitMainnets, orbitTestnets } from './util/orbitChainsList'
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const dimensions = {
   width: 1200,
-  height: 627
-} as const
+  height: 627,
+} as const;
 
 async function getFonts(): Promise<Font[]> {
-  const unica77_regular = fs.readFileSync('./src/font/Unica77LL-Regular.otf')
-  const unica77_medium = fs.readFileSync('./src/font/Unica77LL-Medium.otf')
+  const unica77_regular = fs.readFileSync('./src/font/Unica77LL-Regular.otf');
+  const unica77_medium = fs.readFileSync('./src/font/Unica77LL-Medium.otf');
 
   return [
     {
       name: 'Unica77',
       data: unica77_regular,
       weight: 400,
-      style: 'normal'
+      style: 'normal',
     },
     {
       name: 'Unica77',
       data: unica77_medium,
       weight: 500,
-      style: 'normal'
-    }
-  ]
+      style: 'normal',
+    },
+  ];
 }
 
-type Chain = ChainId | number
+type Chain = ChainId | number;
 
-type ChainCombination = [Chain, Chain]
+type ChainCombination = [Chain, Chain];
 
 const chainToLogo: { [key: Chain]: string } = {
   [ChainId.Ethereum]: 'https://l2beat.com/icons/ethereum.png',
   [ChainId.ArbitrumOne]: 'https://l2beat.com/icons/arbitrum.png',
   [ChainId.ArbitrumNova]: 'https://l2beat.com/icons/nova.png',
   [ChainId.Sepolia]: 'https://l2beat.com/icons/ethereum.png',
-  [ChainId.ArbitrumSepolia]: 'https://l2beat.com/icons/arbitrum.png'
-}
+  [ChainId.ArbitrumSepolia]: 'https://l2beat.com/icons/arbitrum.png',
+};
 
 const configs: ChainCombination[] = [
   [ChainId.Ethereum, ChainId.ArbitrumOne],
   [ChainId.Ethereum, ChainId.ArbitrumNova],
   [ChainId.Sepolia, ChainId.ArbitrumSepolia],
   ...Object.values(orbitMainnets).map(
-    chain => [chain.parentChainId, chain.chainId] as ChainCombination
+    (chain) => [chain.parentChainId, chain.chainId] as ChainCombination,
   ),
   ...Object.values(orbitTestnets).map(
-    chain => [chain.parentChainId, chain.chainId] as ChainCombination
-  )
-]
+    (chain) => [chain.parentChainId, chain.chainId] as ChainCombination,
+  ),
+];
 
-function ChainWrapper({
-  chain,
-  direction
-}: {
-  chain: Chain
-  direction: 'From' | 'To'
-}) {
-  const chainConfig = getBridgeUiConfigForChain(chain)
+function ChainWrapper({ chain, direction }: { chain: Chain; direction: 'From' | 'To' }) {
+  const chainConfig = getBridgeUiConfigForChain(chain);
   return (
     <div
       style={{
@@ -85,7 +79,7 @@ function ChainWrapper({
         backgroundColor: `${chainConfig.color}40`,
         border: '1px solid',
         borderColor: chainConfig.color,
-        borderRadius: '5px'
+        borderRadius: '5px',
       }}
     >
       <span
@@ -95,7 +89,7 @@ function ChainWrapper({
           backgroundColor: chainConfig.color,
           padding: '15px 20px',
           fontSize: '60px',
-          borderRadius: '5px'
+          borderRadius: '5px',
         }}
       >
         {direction}: {chainConfig.network.name}
@@ -108,17 +102,17 @@ function ChainWrapper({
         style={{ opacity: 0.5 }}
       />
     </div>
-  )
+  );
 }
 
 function ArbitrumLogo({
   style,
   width,
-  height
+  height,
 }: {
-  style: React.CSSProperties
-  width: number
-  height: number
+  style: React.CSSProperties;
+  width: number;
+  height: number;
 }) {
   return (
     <img
@@ -128,7 +122,7 @@ function ArbitrumLogo({
       height={height}
       alt="Arbitrum Logo"
     />
-  )
+  );
 }
 
 function getCoreChainImage(from: Chain, to: Chain) {
@@ -141,27 +135,26 @@ function getCoreChainImage(from: Chain, to: Chain) {
         width: dimensions.width,
         height: dimensions.height,
         backgroundColor: 'black',
-        fontFamily: 'Unica77'
+        fontFamily: 'Unica77',
       }}
     >
       <div
         style={{
           transform: 'rotate(180deg)',
           mixBlendMode: 'overlay',
-          backgroundImage:
-            'url("https://arbitrum.io/background/grains_bottom.png")',
+          backgroundImage: 'url("https://arbitrum.io/background/grains_bottom.png")',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'cover',
           width: '100%',
           height: '100%',
-          opacity: 0.35
+          opacity: 0.35,
         }}
       />
       <ArbitrumLogo
         style={{
           position: 'absolute',
           top: '100px',
-          left: '10px'
+          left: '10px',
         }}
         width={320}
         height={345}
@@ -174,7 +167,7 @@ function getCoreChainImage(from: Chain, to: Chain) {
           fontSize: '40px',
           fontWeight: '500',
           color: 'white',
-          letterSpacing: '4px'
+          letterSpacing: '4px',
         }}
       >
         BRIDGE
@@ -193,7 +186,7 @@ function getCoreChainImage(from: Chain, to: Chain) {
           gap: '30px',
           fontSize: '40px',
           fontWeight: '400',
-          color: 'white'
+          color: 'white',
         }}
       >
         <ChainWrapper chain={from} direction="From" />
@@ -206,15 +199,15 @@ function getCoreChainImage(from: Chain, to: Chain) {
         <ChainWrapper chain={to} direction="To" />
       </div>
     </div>
-  )
+  );
 }
 
 async function getOrbitChainImage(orbitChain: Chain) {
-  const chainConfig = getBridgeUiConfigForChain(orbitChain)
-  const isSvg = chainConfig.network.logo.endsWith('.svg')
-  const logoFileBuffer = fs.readFileSync(`./public${chainConfig.network.logo}`)
+  const chainConfig = getBridgeUiConfigForChain(orbitChain);
+  const isSvg = chainConfig.network.logo.endsWith('.svg');
+  const logoFileBuffer = fs.readFileSync(`./public${chainConfig.network.logo}`);
 
-  console.log(`Generating image for ${orbitChain}`)
+  console.log(`Generating image for ${orbitChain}`);
 
   const imageContent = isSvg
     ? await sharp(logoFileBuffer)
@@ -222,10 +215,10 @@ async function getOrbitChainImage(orbitChain: Chain) {
           width: 120,
           height: 120,
           fit: 'contain',
-          background: 'transparent'
+          background: 'transparent',
         })
         .toBuffer()
-    : await sharp(logoFileBuffer).png().toBuffer()
+    : await sharp(logoFileBuffer).png().toBuffer();
 
   return (
     <div
@@ -236,7 +229,7 @@ async function getOrbitChainImage(orbitChain: Chain) {
         width: dimensions.width,
         height: dimensions.height,
         backgroundColor: chainConfig.color,
-        fontFamily: 'Unica77'
+        fontFamily: 'Unica77',
       }}
     >
       <div
@@ -245,7 +238,7 @@ async function getOrbitChainImage(orbitChain: Chain) {
           position: 'absolute',
           top: 0,
           left: 0,
-          backgroundColor: 'rgba(0,0,0,0.8)'
+          backgroundColor: 'rgba(0,0,0,0.8)',
         }}
       ></div>
       <div
@@ -258,14 +251,14 @@ async function getOrbitChainImage(orbitChain: Chain) {
           position: 'relative',
           textAlign: 'center',
           paddingLeft: '40px',
-          paddingRight: '40px'
+          paddingRight: '40px',
         }}
       >
         <ArbitrumLogo
           style={{
             position: 'absolute',
             bottom: '40px',
-            right: '40px'
+            right: '40px',
           }}
           width={156}
           height={168}
@@ -284,7 +277,7 @@ async function getOrbitChainImage(orbitChain: Chain) {
             color: 'white',
             letterSpacing: '4px',
             lineHeight: '1',
-            marginBottom: '30px'
+            marginBottom: '30px',
           }}
         >
           {chainConfig.network.name.toUpperCase()}
@@ -295,28 +288,20 @@ async function getOrbitChainImage(orbitChain: Chain) {
             fontWeight: '500',
             color: 'white',
             letterSpacing: '4px',
-            lineHeight: '1'
+            lineHeight: '1',
           }}
         >
           BRIDGE
         </span>
       </div>
     </div>
-  )
+  );
 }
-async function generateSvg(orbitChain: Chain): Promise<void>
-async function generateSvg({
-  from,
-  to
-}: {
-  from: Chain
-  to: Chain
-}): Promise<void>
-async function generateSvg(
-  chainsOrOrbitChain: Chain | { from: Chain; to: Chain }
-): Promise<void> {
-  const fonts = await getFonts()
-  const isOrbitChain = typeof chainsOrOrbitChain === 'number'
+async function generateSvg(orbitChain: Chain): Promise<void>;
+async function generateSvg({ from, to }: { from: Chain; to: Chain }): Promise<void>;
+async function generateSvg(chainsOrOrbitChain: Chain | { from: Chain; to: Chain }): Promise<void> {
+  const fonts = await getFonts();
+  const isOrbitChain = typeof chainsOrOrbitChain === 'number';
 
   const svg = await satori(
     isOrbitChain
@@ -324,20 +309,18 @@ async function generateSvg(
       : getCoreChainImage(chainsOrOrbitChain.from, chainsOrOrbitChain.to),
     {
       ...dimensions,
-      fonts
-    }
-  )
+      fonts,
+    },
+  );
 
   const file = isOrbitChain
     ? `${chainsOrOrbitChain}.jpg`
-    : `${chainsOrOrbitChain.from}-to-${chainsOrOrbitChain.to}.jpg`
-  const filePath = `./public/images/__auto-generated/open-graph/${file}`
+    : `${chainsOrOrbitChain.from}-to-${chainsOrOrbitChain.to}.jpg`;
+  const filePath = `./public/images/__auto-generated/open-graph/${file}`;
 
-  await sharp(Buffer.from(svg))
-    .jpeg({ quality: 90, mozjpeg: true })
-    .toFile(filePath)
+  await sharp(Buffer.from(svg)).jpeg({ quality: 90, mozjpeg: true }).toFile(filePath);
 
-  console.log(`Generated ${filePath}`)
+  console.log(`Generated ${filePath}`);
 }
 
 const generateOptions = {
@@ -345,30 +328,30 @@ const generateOptions = {
     alias: 'c',
     type: 'boolean',
     description: 'Generate images for core chains',
-    default: false
+    default: false,
   },
   orbit: {
     alias: 'o',
     type: 'boolean',
     description: 'Generate images for orbit chains',
-    default: true
-  }
-} as const
+    default: true,
+  },
+} as const;
 
-type Args = Arguments<InferredOptionTypes<typeof generateOptions>>
+type Args = Arguments<InferredOptionTypes<typeof generateOptions>>;
 
 async function generate(argv: Args) {
   for (const combination of configs) {
-    const { isCoreChain: isChildChainCoreChain } = isNetwork(combination[1])
+    const { isCoreChain: isChildChainCoreChain } = isNetwork(combination[1]);
 
     /* eslint-disable no-await-in-loop */
     if (argv.orbit && !isChildChainCoreChain) {
-      await generateSvg(combination[1])
+      await generateSvg(combination[1]);
     }
 
     if (argv.core && isChildChainCoreChain) {
-      await generateSvg({ from: combination[0], to: combination[1] })
-      await generateSvg({ from: combination[1], to: combination[0] })
+      await generateSvg({ from: combination[0], to: combination[1] });
+      await generateSvg({ from: combination[1], to: combination[0] });
     }
     /* eslint-enable no-await-in-loop */
   }
@@ -378,9 +361,9 @@ yargs(hideBin(process.argv))
   .command<Args>({
     command: 'generate',
     describe: 'Generate OpenGraph images',
-    handler: async argv => {
-      await generate(argv)
-    }
+    handler: async (argv) => {
+      await generate(argv);
+    },
   })
   .options(generateOptions)
-  .parse()
+  .parse();

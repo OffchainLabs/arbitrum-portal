@@ -1,4 +1,4 @@
-import { ExternalLink } from '../common/ExternalLink'
+import { ExternalLink } from '../common/ExternalLink';
 
 export const BoLDUpgradeWarning = () => {
   return (
@@ -15,10 +15,9 @@ export const BoLDUpgradeWarning = () => {
         on Feb 12 09:00 ET.
         <br />
         <br />
-        If you initiated a withdrawal between Feb 5 09:00 ET and Feb 12 09:00
-        ET, your withdrawal will be delayed by up to an additional 6.4 days,
-        depending on when you initiated it.
+        If you initiated a withdrawal between Feb 5 09:00 ET and Feb 12 09:00 ET, your withdrawal
+        will be delayed by up to an additional 6.4 days, depending on when you initiated it.
       </p>
     </div>
-  )
-}
+  );
+};

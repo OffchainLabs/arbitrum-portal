@@ -1,8 +1,8 @@
 // Orbit Chains' database and utility functions
-
 import orbitChainsJson from '@/public/__auto-generated-orbitChains.json';
-import { OrbitChain, SearchableData, EntityType, PortalStats } from './types';
 import statsJson from '@/public/__auto-generated-stats.json';
+
+import { EntityType, OrbitChain, PortalStats, SearchableData } from './types';
 
 const orbitChainsTvl = (statsJson.content as PortalStats).orbitChainsTvl;
 
@@ -11,9 +11,10 @@ export const ORBIT_CHAINS: SearchableData<OrbitChain>[] = []; // complete orbit 
 
 export const spotlightOrbitChains: string[] = [];
 
-const notionOrbitChains: OrbitChain[] = orbitChainsJson.content.map(
-  (entity) => ({ ...entity, entityType: EntityType.OrbitChain }),
-);
+const notionOrbitChains: OrbitChain[] = orbitChainsJson.content.map((entity) => ({
+  ...entity,
+  entityType: EntityType.OrbitChain,
+}));
 
 notionOrbitChains
   //
@@ -46,8 +47,7 @@ type OrbitChainsGroupedByCategorySlug = {
 
 export const orbitChainsGroupedByCategorySlug = ORBIT_CHAINS.reduce(
   (groupedResult: OrbitChainsGroupedByCategorySlug, orbitChain) => {
-    if (!groupedResult[orbitChain.categoryId])
-      groupedResult[orbitChain.categoryId] = [];
+    if (!groupedResult[orbitChain.categoryId]) groupedResult[orbitChain.categoryId] = [];
     groupedResult[orbitChain.categoryId]!.push(orbitChain);
     return groupedResult;
   },
@@ -104,9 +104,7 @@ export const getTvlForOrbitChain = (slug: string): number | undefined => {
   if (!orbitChainDetails) return undefined;
 
   const transformedSlug = transformStringToTvlStatsKey(slug);
-  const transformedTitle = transformStringToTvlStatsKey(
-    orbitChainDetails.title,
-  );
+  const transformedTitle = transformStringToTvlStatsKey(orbitChainDetails.title);
 
   return (
     orbitChainsTvl[slug] ??

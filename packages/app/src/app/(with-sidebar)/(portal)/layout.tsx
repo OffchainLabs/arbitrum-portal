@@ -1,11 +1,12 @@
-import { PropsWithChildren } from 'react'
-import { MobileHeader } from '@/portal/components/MobileHeader'
-import { OrbitChainPanel } from '@/portal/components/OrbitChainPanel/OrbitChainPanel'
-import { ProjectPanel } from '@/portal/components/ProjectPanel'
-import { PortalPage } from '@/portal/components/PortalPage/PortalPage'
-import { Providers } from '@/portal/components/Providers'
+import { PropsWithChildren } from 'react';
 
-import '../../../styles/portal.css'
+import { MobileHeader } from '@/portal/components/MobileHeader';
+import { OrbitChainPanel } from '@/portal/components/OrbitChainPanel/OrbitChainPanel';
+import { PortalPage } from '@/portal/components/PortalPage/PortalPage';
+import { ProjectPanel } from '@/portal/components/ProjectPanel';
+import { Providers } from '@/portal/components/Providers';
+
+import '../../../styles/portal.css';
 
 export default function PortalLayout({ children }: PropsWithChildren) {
   return (
@@ -17,5 +18,5 @@ export default function PortalLayout({ children }: PropsWithChildren) {
         <ProjectPanel />
       </Providers>
     </div>
-  )
+  );
 }

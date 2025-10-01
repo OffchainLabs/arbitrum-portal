@@ -1,14 +1,14 @@
 import { Metadata } from 'next';
+
 import { ArbitrumStatus } from '@/portal/common/types';
-import { HeroBanner } from '@/portal/components/Build/HeroBanner';
 import { BuildSection } from '@/portal/components/Build/BuildSection';
 import { Explorers } from '@/portal/components/Build/Explorers';
+import { HeroBanner } from '@/portal/components/Build/HeroBanner';
 import { NetworkStatus } from '@/portal/components/Build/NetworkStatus';
 
 const metadataContent = {
   title: 'Build with Arbitrum',
-  description:
-    'Get your hands dirty and jump into technical docs and tutorials',
+  description: 'Get your hands dirty and jump into technical docs and tutorials',
 };
 
 // Generate server-side metadata for this page

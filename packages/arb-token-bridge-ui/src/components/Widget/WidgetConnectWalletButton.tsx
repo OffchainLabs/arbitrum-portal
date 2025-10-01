@@ -1,6 +1,7 @@
-import { useCallback } from 'react'
-import { ConnectWalletButton } from '../TransferPanel/ConnectWalletButton'
-import { useMode } from '../../hooks/useMode'
+import { useCallback } from 'react';
+
+import { useMode } from '../../hooks/useMode';
+import { ConnectWalletButton } from '../TransferPanel/ConnectWalletButton';
 
 /**
  * A wrapper around ConnectWalletButton that handles mobile browser restrictions in embed mode.
@@ -10,33 +11,29 @@ import { useMode } from '../../hooks/useMode'
  */
 
 const isMobileBrowser = () => {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined') return false;
 
-  const userAgent = window.navigator.userAgent.toLowerCase()
-  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-    userAgent
-  )
-}
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+};
 
 export function WidgetConnectWalletButton() {
-  const { embedMode } = useMode()
-  const isMobile = isMobileBrowser()
+  const { embedMode } = useMode();
+  const isMobile = isMobileBrowser();
 
   const handleClick = useCallback(() => {
     if (embedMode && isMobile && window.top) {
-      const currentParams = new URLSearchParams(window.location.search)
-      currentParams.delete('embedMode')
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.delete('embedMode');
 
       const newUrl = `https://bridge.arbitrum.io${
         currentParams.toString() ? `?${currentParams.toString()}` : ''
-      }`
-      window.top.location.href = newUrl // redirect the parent window to bridge.arbitrum.io
+      }`;
+      window.top.location.href = newUrl; // redirect the parent window to bridge.arbitrum.io
     }
-  }, [embedMode, isMobile])
+  }, [embedMode, isMobile]);
 
   return (
-    <ConnectWalletButton
-      onClick={embedMode && isMobile && window.top ? handleClick : undefined}
-    />
-  )
+    <ConnectWalletButton onClick={embedMode && isMobile && window.top ? handleClick : undefined} />
+  );
 }

@@ -25,9 +25,7 @@
       "@/hooks/*": ["./packages/portal/hooks/*"],
       "@/bridge/*": ["./packages/arb-token-bridge-ui/src/*"],
       "@/portal/*": ["./packages/portal/*"],
-      "@/token-bridge-sdk/*": [
-        "./packages/arb-token-bridge-ui/src/token-bridge-sdk/*"
-      ],
+      "@/token-bridge-sdk/*": ["./packages/arb-token-bridge-ui/src/token-bridge-sdk/*"],
       "@/icons/*": ["./packages/app/public/icons/*"],
       "@/images/*": ["./packages/app/public/images/*"],
       "@/public/*": ["./packages/app/public/*"]

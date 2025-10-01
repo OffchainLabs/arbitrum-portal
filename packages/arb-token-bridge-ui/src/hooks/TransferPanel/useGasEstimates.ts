@@ -1,30 +1,31 @@
-import { BigNumber, constants, utils } from 'ethers'
-import useSWR from 'swr'
-import { Config, useAccount, useConfig } from 'wagmi'
+import { BigNumber, constants, utils } from 'ethers';
+import { useMemo } from 'react';
+import useSWR from 'swr';
+import { Address } from 'viem';
+import { Config, useAccount, useConfig } from 'wagmi';
+import { shallow } from 'zustand/shallow';
 
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain'
-import { useNetworks } from '../useNetworks'
-import { useSelectedToken } from '../useSelectedToken'
-import { useArbQueryParams } from '../useArbQueryParams'
-import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter'
+import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
+import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
 import {
+  RouteContext,
+  RouteType,
   getContextFromRoute,
   isLifiRoute,
-  RouteContext,
   useRouteStore,
-  RouteType
-} from '../../components/TransferPanel/hooks/useRouteStore'
-import { useMemo } from 'react'
+} from '../../components/TransferPanel/hooks/useRouteStore';
+import { useArbQueryParams } from '../useArbQueryParams';
+import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
 import {
+  UseLifiCrossTransfersRouteParams,
   useLifiCrossTransfersRoute,
-  UseLifiCrossTransfersRouteParams
-} from '../useLifiCrossTransferRoute'
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils'
-import { Address } from 'viem'
-import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore'
-import { shallow } from 'zustand/shallow'
+} from '../useLifiCrossTransferRoute';
+import { useNetworks } from '../useNetworks';
+import { useSelectedToken } from '../useSelectedToken';
 
 async function fetcher([
   walletAddress,
@@ -35,7 +36,7 @@ async function fetcher([
   destinationAddress,
   amount,
   wagmiConfig,
-  routeContext
+  routeContext,
 ]: [
   walletAddress: string | undefined,
   sourceChainId: number,
@@ -45,76 +46,76 @@ async function fetcher([
   destinationAddress: string | undefined,
   amount: BigNumber,
   wagmiConfig: Config,
-  routeContext: RouteContext | undefined
+  routeContext: RouteContext | undefined,
 ]): Promise<TransferEstimateGasResult> {
-  const _walletAddress = walletAddress ?? constants.AddressZero
-  const sourceProvider = getProviderForChainId(sourceChainId)
-  const signer = sourceProvider.getSigner(_walletAddress)
+  const _walletAddress = walletAddress ?? constants.AddressZero;
+  const sourceProvider = getProviderForChainId(sourceChainId);
+  const signer = sourceProvider.getSigner(_walletAddress);
   // use chainIds to initialize the bridgeTransferStarter to save RPC calls
   const bridgeTransferStarter = BridgeTransferStarterFactory.create({
     sourceChainId,
     sourceChainErc20Address,
     destinationChainId,
     destinationChainErc20Address,
-    lifiData: routeContext
-  })
+    lifiData: routeContext,
+  });
 
   return await bridgeTransferStarter.transferEstimateGas({
     amount,
     from: await signer.getAddress(),
     destinationAddress,
-    wagmiConfig
-  })
+    wagmiConfig,
+  });
 }
 
 export function useGasEstimates({
   sourceChainErc20Address,
   destinationChainErc20Address,
-  amount
+  amount,
 }: {
-  sourceChainErc20Address?: string
-  destinationChainErc20Address?: string
-  amount: BigNumber
+  sourceChainErc20Address?: string;
+  destinationChainErc20Address?: string;
+  amount: BigNumber;
 }): {
-  gasEstimates: TransferEstimateGasResult
-  error: any
+  gasEstimates: TransferEstimateGasResult;
+  error: any;
 } {
-  const [{ sourceChain, destinationChain }] = useNetworks()
-  const [selectedToken] = useSelectedToken()
-  const [{ destinationAddress }] = useArbQueryParams()
-  const { address: walletAddress } = useAccount()
-  const balance = useBalanceOnSourceChain(selectedToken)
-  const wagmiConfig = useConfig()
+  const [{ sourceChain, destinationChain }] = useNetworks();
+  const [selectedToken] = useSelectedToken();
+  const [{ destinationAddress }] = useArbQueryParams();
+  const { address: walletAddress } = useAccount();
+  const balance = useBalanceOnSourceChain(selectedToken);
+  const wagmiConfig = useConfig();
   const { context, eligibleRouteTypes } = useRouteStore(
-    state => ({
+    (state) => ({
       context: state.context,
-      eligibleRouteTypes: state.eligibleRouteTypes
+      eligibleRouteTypes: state.eligibleRouteTypes,
     }),
-    shallow
-  )
+    shallow,
+  );
   const allRoutesAreLifi = useMemo(
     () => eligibleRouteTypes.every((route: RouteType) => isLifiRoute(route)),
-    [eligibleRouteTypes]
-  )
-  const isLifiRouteEligible = eligibleRouteTypes.includes('lifi')
+    [eligibleRouteTypes],
+  );
+  const isLifiRouteEligible = eligibleRouteTypes.includes('lifi');
 
   const overrideToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: sourceChain.id,
         fromToken: selectedToken?.address,
-        destinationChainId: destinationChain.id
+        destinationChainId: destinationChain.id,
       }),
-    [selectedToken?.address, sourceChain.id, destinationChain.id]
-  )
+    [selectedToken?.address, sourceChain.id, destinationChain.id],
+  );
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
-    state => ({
+    (state) => ({
       disabledBridges: state.disabledBridges,
       disabledExchanges: state.disabledExchanges,
-      slippage: state.slippage
+      slippage: state.slippage,
     }),
-    shallow
-  )
+    shallow,
+  );
   const parameters = {
     enabled: isLifiRouteEligible,
     fromAddress: walletAddress,
@@ -126,28 +127,22 @@ export function useGasEstimates({
     toToken: overrideToken.destination?.address || constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
-    slippage
-  } satisfies Omit<UseLifiCrossTransfersRouteParams, 'order'>
+    slippage,
+  } satisfies Omit<UseLifiCrossTransfersRouteParams, 'order'>;
 
   const { data: lifiRoutes, isLoading: isLoadingLifiRoutes } =
-    useLifiCrossTransfersRoute(parameters)
+    useLifiCrossTransfersRoute(parameters);
 
-  const amountToTransfer =
-    balance !== null && amount.gte(balance) ? balance : amount
+  const amountToTransfer = balance !== null && amount.gte(balance) ? balance : amount;
 
-  const sanitizedDestinationAddress = utils.isAddress(
-    String(destinationAddress)
-  )
+  const sanitizedDestinationAddress = utils.isAddress(String(destinationAddress))
     ? destinationAddress
-    : undefined
+    : undefined;
 
   const { data: gasEstimates, error } = useSWR(
     () => {
-      if (
-        allRoutesAreLifi &&
-        (isLoadingLifiRoutes || lifiRoutes?.length === 0)
-      ) {
-        return null
+      if (allRoutesAreLifi && (isLoadingLifiRoutes || lifiRoutes?.length === 0)) {
+        return null;
       }
 
       /**
@@ -158,7 +153,7 @@ export function useGasEstimates({
        */
       const lifiContext = allRoutesAreLifi
         ? lifiRoutes?.[0] && getContextFromRoute(lifiRoutes?.[0])
-        : context
+        : context;
 
       return [
         sourceChain.id,
@@ -170,8 +165,8 @@ export function useGasEstimates({
         walletAddress,
         wagmiConfig,
         lifiContext,
-        'gasEstimates'
-      ] as const
+        'gasEstimates',
+      ] as const;
     },
     ([
       _sourceChainId,
@@ -182,7 +177,7 @@ export function useGasEstimates({
       _destinationAddress,
       _walletAddress,
       _wagmiConfig,
-      _routeContext
+      _routeContext,
     ]) =>
       fetcher([
         _walletAddress,
@@ -193,15 +188,15 @@ export function useGasEstimates({
         _destinationAddress,
         BigNumber.from(_amount),
         _wagmiConfig,
-        _routeContext
+        _routeContext,
       ]),
     {
       refreshInterval: 30_000,
       shouldRetryOnError: true,
       errorRetryCount: 2,
-      errorRetryInterval: 5_000
-    }
-  )
+      errorRetryInterval: 5_000,
+    },
+  );
 
-  return { gasEstimates, error }
+  return { gasEstimates, error };
 }

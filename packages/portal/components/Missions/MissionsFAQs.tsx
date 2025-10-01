@@ -1,4 +1,5 @@
 import { FAQs } from '@/components/FAQs';
+
 import { ExternalLink } from '../ExternalLink';
 
 const faqContent = [
@@ -6,9 +7,9 @@ const faqContent = [
     q: 'What is the Arbitrum Arcade?',
     a: (
       <>
-        An Onchain Gameathon designed to showcase the most innovative gaming
-        experiences in web3. The arcade provides exposure and prizes to up and
-        coming content creators and brings in-game achievements onchain with{' '}
+        An Onchain Gameathon designed to showcase the most innovative gaming experiences in web3.
+        The arcade provides exposure and prizes to up and coming content creators and brings in-game
+        achievements onchain with{' '}
         <ExternalLink href="https://www.clique.social/" className="underline">
           Clique
         </ExternalLink>
@@ -24,8 +25,8 @@ const faqContent = [
     q: 'What is Clique?',
     a: (
       <>
-        Clique builds identity oracles that verify the provenance of offchain
-        information, learn more{' '}
+        Clique builds identity oracles that verify the provenance of offchain information, learn
+        more{' '}
         <ExternalLink href="https://www.clique.tech/" className="underline">
           here
         </ExternalLink>
@@ -37,8 +38,8 @@ const faqContent = [
     q: 'What is EAS?',
     a: (
       <>
-        EAS (Ethereum Attestation Service) is infrastructure for making
-        attestations onchain or offchain, learn more{' '}
+        EAS (Ethereum Attestation Service) is infrastructure for making attestations onchain or
+        offchain, learn more{' '}
         <ExternalLink href="https://attest.sh/" className="underline">
           here
         </ExternalLink>
@@ -54,9 +55,9 @@ const faqContent = [
     q: 'What’s a Chapter?',
     a: (
       <>
-        A chapter represents a week. Each chapter is comprised of 3-4 different
-        games that users can play in exchange for onchain attestations and that
-        contribute to a final NFT after the campaign has ended.
+        A chapter represents a week. Each chapter is comprised of 3-4 different games that users can
+        play in exchange for onchain attestations and that contribute to a final NFT after the
+        campaign has ended.
       </>
     ),
   },
@@ -64,11 +65,10 @@ const faqContent = [
     q: 'Which games are participating?',
     a: (
       <>
-        AI Arena, Army of Tactics, BattleFly, BattlePlan!, Bitmates, Cosmik
-        Battle, Dininho, Forgotten Runiverse, Kaiju Cards, Knights of the Ether,
-        Kuroro Beasts, Lost Donkeys, Mighty Action Heroes, Minters World, Monkey
-        Empire, Pirate Nation, Realm, SankoGameCorp, Tales of Elleria, The
-        Beacon, Treasure, Xai, Zeeverse, and ZTX are all involved in the first 7
+        AI Arena, Army of Tactics, BattleFly, BattlePlan!, Bitmates, Cosmik Battle, Dininho,
+        Forgotten Runiverse, Kaiju Cards, Knights of the Ether, Kuroro Beasts, Lost Donkeys, Mighty
+        Action Heroes, Minters World, Monkey Empire, Pirate Nation, Realm, SankoGameCorp, Tales of
+        Elleria, The Beacon, Treasure, Xai, Zeeverse, and ZTX are all involved in the first 7
         chapters of the Arbitrum Arcade.
       </>
     ),
@@ -84,12 +84,8 @@ const faqContent = [
         >
           here
         </ExternalLink>{' '}
-        by April 15th. They must be deployed on an Arbitrum chain and listed on
-        the{' '}
-        <ExternalLink
-          href="https://portal.arbitrum.io/projects/gaming"
-          className="underline"
-        >
+        by April 15th. They must be deployed on an Arbitrum chain and listed on the{' '}
+        <ExternalLink href="https://portal.arbitrum.io/projects/gaming" className="underline">
           Arbitrum Portal
         </ExternalLink>{' '}
         to be eligible.
@@ -100,39 +96,26 @@ const faqContent = [
     q: 'What is the Arbitrum Foundation’s role in Arbitrum Arcade?',
     a: (
       <>
-        The Arbitrum Foundation will livestream gameplay of every chapter of the
-        campaign with members of the community.
+        The Arbitrum Foundation will livestream gameplay of every chapter of the campaign with
+        members of the community.
       </>
     ),
   },
   {
     q: 'What is the “Contribution Score”?',
-    a: (
-      <>
-        A metric used by Clique to measure a user’s achievements in each
-        specific game.
-      </>
-    ),
+    a: <>A metric used by Clique to measure a user’s achievements in each specific game.</>,
   },
   {
     q: 'What is the “Arbitrum Ecosystem Score”',
-    a: (
-      <>
-        A metric used by Clique to measure a user’s involvement in the Arbitrum
-        ecosystem.
-      </>
-    ),
+    a: <>A metric used by Clique to measure a user’s involvement in the Arbitrum ecosystem.</>,
   },
   {
     q: 'How do I get my mission listed on this page?',
     a: (
       <>
-        Please reach out to the partnerships team to get your mission added! If
-        you are not already in touch, please send an email to{' '}
-        <ExternalLink
-          href="mailto: partnerships@offchainlabs.com"
-          className="underline"
-        >
+        Please reach out to the partnerships team to get your mission added! If you are not already
+        in touch, please send an email to{' '}
+        <ExternalLink href="mailto: partnerships@offchainlabs.com" className="underline">
           partnerships@offchainlabs.com
         </ExternalLink>{' '}
         and someone will reply as soon as possible.

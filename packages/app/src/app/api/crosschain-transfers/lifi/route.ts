@@ -1,1 +1,1 @@
-export { GET } from '@/bridge/app/api/crosschain-transfers/lifi'
+export { GET } from '@/bridge/app/api/crosschain-transfers/lifi';

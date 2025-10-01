@@ -1,14 +1,16 @@
 'use client';
 
+import { BookmarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
-import { BookmarkIcon } from '@heroicons/react/24/outline';
+
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useDyorProjects } from '@/hooks/useDyorProjects';
-import { useArbQueryParams } from '@/hooks/useArbQueryParams';
-import { ProjectsList } from './Projects';
+
 import { Card } from './Card';
+import { ProjectsList } from './Projects';
 
 const CountBadge = ({ count }: { count: number }) => (
   <span className="flex h-5 items-center justify-center rounded-full bg-default-black-hover p-1 px-3 text-center text-xs text-white/50 group-hover:hidden">
@@ -76,8 +78,7 @@ export const MyProjects = () => {
       {!projects.length ? (
         <div className="flex flex-col gap-8 opacity-80">
           <div>
-            Looks like you have not{' '}
-            {isDyorView ? 'conducted research (DYOR) on' : 'bookmarked'} any
+            Looks like you have not {isDyorView ? 'conducted research (DYOR) on' : 'bookmarked'} any
             apps yet.
             <div className="mt-2 flex flex-row items-center gap-2 text-sm opacity-80">
               To {isDyorView ? 'DYOR' : 'bookmark'},{' '}
@@ -91,10 +92,7 @@ export const MyProjects = () => {
               present on any app.
             </div>
           </div>
-          <Link
-            href="/projects/defi"
-            className="underline underline-offset-8 hover:opacity-70"
-          >
+          <Link href="/projects/defi" className="underline underline-offset-8 hover:opacity-70">
             Explore Apps on Arbitrum
           </Link>
         </div>

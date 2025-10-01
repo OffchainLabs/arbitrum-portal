@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
-import { EntityType } from '@/common/types';
+
 import { ENTITY_METADATA } from '@/common/entities';
+import { EntityType } from '@/common/types';
 
 /**
  * TEMPORARY WORKAROUND

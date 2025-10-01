@@ -1,32 +1,33 @@
-import dayjs from 'dayjs'
-import { describe, beforeAll, it, expect } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { registerCustomArbitrumNetwork } from '@arbitrum/sdk'
-import { MergedTransaction } from '../../state/app/state'
-import { AssetType } from '../../hooks/arbTokenBridge.types'
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { renderHook } from '@testing-library/react';
+import dayjs from 'dayjs';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+import { AssetType } from '../../hooks/arbTokenBridge.types';
 import {
   getCctpTransferDuration,
   getOrbitDepositDuration,
   getStandardDepositDuration,
-  useTransferDuration
-} from '../../hooks/useTransferDuration'
-import { getOrbitChains } from '../../util/orbitChainsList'
+  useTransferDuration,
+} from '../../hooks/useTransferDuration';
+import { MergedTransaction } from '../../state/app/state';
+import { getOrbitChains } from '../../util/orbitChainsList';
 
-const DAY_IN_MINUTES = 24 * 60
-const HOUR_IN_MINUTES = 60
+const DAY_IN_MINUTES = 24 * 60;
+const HOUR_IN_MINUTES = 60;
 
 function mockTransactionObject({
   minutesSinceStart,
   isDeposit,
   isCctp,
   parentChainId,
-  childChainId
+  childChainId,
 }: {
-  minutesSinceStart: number
-  isDeposit: boolean
-  isCctp: boolean
-  parentChainId: number
-  childChainId: number
+  minutesSinceStart: number;
+  isDeposit: boolean;
+  isCctp: boolean;
+  parentChainId: number;
+  childChainId: number;
 }): MergedTransaction {
   return {
     sender: '',
@@ -51,27 +52,27 @@ function mockTransactionObject({
     childChainId,
     parentChainId,
     sourceChainId: isDeposit ? parentChainId : childChainId,
-    destinationChainId: isDeposit ? childChainId : parentChainId
-  }
+    destinationChainId: isDeposit ? childChainId : parentChainId,
+  };
 }
 
 const renderHookAsyncUseTransferDuration = async (tx: MergedTransaction) => {
-  const hook = renderHook(() => useTransferDuration(tx))
-  return { result: hook.result }
-}
+  const hook = renderHook(() => useTransferDuration(tx));
+  return { result: hook.result };
+};
 
 describe('useTransferDuration', () => {
-  const DEPOSIT_TIME_MINUTES_MAINNET = getStandardDepositDuration(false)
-  const DEPOSIT_TIME_MINUTES_TESTNET = getStandardDepositDuration(true)
-  const DEPOSIT_TIME_MINUTES_ORBIT_MAINNET = getOrbitDepositDuration(false)
-  const DEPOSIT_TIME_MINUTES_ORBIT_TESTNET = getOrbitDepositDuration(true)
-  const TRANSFER_TIME_MINUTES_CCTP_MAINNET = getCctpTransferDuration(false)
-  const TRANSFER_TIME_MINUTES_CCTP_TESTNET = getCctpTransferDuration(true)
+  const DEPOSIT_TIME_MINUTES_MAINNET = getStandardDepositDuration(false);
+  const DEPOSIT_TIME_MINUTES_TESTNET = getStandardDepositDuration(true);
+  const DEPOSIT_TIME_MINUTES_ORBIT_MAINNET = getOrbitDepositDuration(false);
+  const DEPOSIT_TIME_MINUTES_ORBIT_TESTNET = getOrbitDepositDuration(true);
+  const TRANSFER_TIME_MINUTES_CCTP_MAINNET = getCctpTransferDuration(false);
+  const TRANSFER_TIME_MINUTES_CCTP_TESTNET = getCctpTransferDuration(true);
 
   beforeAll(() => {
     // register all chains so we can read `isTestnet`
-    getOrbitChains().forEach(chain => registerCustomArbitrumNetwork(chain))
-  })
+    getOrbitChains().forEach((chain) => registerCustomArbitrumNetwork(chain));
+  });
 
   // ========= DEPOSITS =========
 
@@ -82,15 +83,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(14)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(14);
+  });
 
   it('gets standard deposit duration for an ongoing transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -99,15 +98,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(6)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(6);
+  });
 
   it('gets standard deposit duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -116,15 +113,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(9)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(9);
+  });
 
   it('gets standard deposit duration for an ongoing transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -133,15 +128,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(7)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(7);
+  });
 
   it('gets cctp deposit duration for a new transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -150,14 +143,12 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: true,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      TRANSFER_TIME_MINUTES_CCTP_MAINNET
-    )
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(TRANSFER_TIME_MINUTES_CCTP_MAINNET);
+  });
 
   it('gets cctp deposit duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -166,14 +157,12 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: true,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      TRANSFER_TIME_MINUTES_CCTP_TESTNET
-    )
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(TRANSFER_TIME_MINUTES_CCTP_TESTNET);
+  });
 
   it('gets orbit deposit duration for a new transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -182,15 +171,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 42161,
-        childChainId: 660279
-      })
-    )
+        childChainId: 660279,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_ORBIT_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(4)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_ORBIT_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(4);
+  });
 
   it('gets orbit deposit duration for an ongoing transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -199,15 +186,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 42161,
-        childChainId: 660279
-      })
-    )
+        childChainId: 660279,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_ORBIT_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(1)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_ORBIT_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(1);
+  });
 
   it('gets orbit deposit duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -216,15 +201,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 421614,
-        childChainId: 37714555429
-      })
-    )
+        childChainId: 37714555429,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_ORBIT_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(0)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_ORBIT_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(0);
+  });
 
   it('gets orbit deposit duration for an ongoing transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -233,15 +216,13 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 421614,
-        childChainId: 37714555429
-      })
-    )
+        childChainId: 37714555429,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_ORBIT_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(0)
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_ORBIT_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(0);
+  });
 
   it('gets teleport duration for a new transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -250,15 +231,15 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 1380012617
-      })
-    )
+        childChainId: 1380012617,
+      }),
+    );
 
     expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_MAINNET + DEPOSIT_TIME_MINUTES_ORBIT_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(19)
-  })
+      DEPOSIT_TIME_MINUTES_MAINNET + DEPOSIT_TIME_MINUTES_ORBIT_MAINNET,
+    );
+    expect(result.current.estimatedMinutesLeft).toEqual(19);
+  });
 
   it('gets teleport duration for an ongoing transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -267,15 +248,15 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 1380012617
-      })
-    )
+        childChainId: 1380012617,
+      }),
+    );
 
     expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_MAINNET + DEPOSIT_TIME_MINUTES_ORBIT_MAINNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(8)
-  })
+      DEPOSIT_TIME_MINUTES_MAINNET + DEPOSIT_TIME_MINUTES_ORBIT_MAINNET,
+    );
+    expect(result.current.estimatedMinutesLeft).toEqual(8);
+  });
 
   it('gets teleport duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -284,15 +265,15 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 1918988905
-      })
-    )
+        childChainId: 1918988905,
+      }),
+    );
 
     expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_TESTNET + DEPOSIT_TIME_MINUTES_ORBIT_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(10)
-  })
+      DEPOSIT_TIME_MINUTES_TESTNET + DEPOSIT_TIME_MINUTES_ORBIT_TESTNET,
+    );
+    expect(result.current.estimatedMinutesLeft).toEqual(10);
+  });
 
   it('gets teleport duration for an ongoing transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -301,15 +282,15 @@ describe('useTransferDuration', () => {
         isDeposit: true,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 1918988905
-      })
-    )
+        childChainId: 1918988905,
+      }),
+    );
 
     expect(result.current.approximateDurationInMinutes).toEqual(
-      DEPOSIT_TIME_MINUTES_TESTNET + DEPOSIT_TIME_MINUTES_ORBIT_TESTNET
-    )
-    expect(result.current.estimatedMinutesLeft).toEqual(6)
-  })
+      DEPOSIT_TIME_MINUTES_TESTNET + DEPOSIT_TIME_MINUTES_ORBIT_TESTNET,
+    );
+    expect(result.current.estimatedMinutesLeft).toEqual(6);
+  });
 
   // ========= WITHDRAWALS =========
 
@@ -320,17 +301,13 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(
-      6 * DAY_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(
-      6 * DAY_IN_MINUTES
-    )
-  })
+    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(6 * DAY_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(6 * DAY_IN_MINUTES);
+  });
 
   it('gets standard withdrawal duration for an ongoing transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -339,18 +316,14 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: false,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(
-      6 * DAY_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(
-      3 * DAY_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeLessThan(4 * DAY_IN_MINUTES)
-  })
+    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(6 * DAY_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(3 * DAY_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeLessThan(4 * DAY_IN_MINUTES);
+  });
 
   it('gets standard withdrawal duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -359,15 +332,13 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(
-      HOUR_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(HOUR_IN_MINUTES)
-  })
+    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(HOUR_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(HOUR_IN_MINUTES);
+  });
 
   it('gets standard withdrawal duration for an ongoing transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -376,20 +347,14 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: false,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(
-      HOUR_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(
-      0.3 * HOUR_IN_MINUTES
-    )
-    expect(result.current.estimatedMinutesLeft).toBeLessThan(
-      0.7 * HOUR_IN_MINUTES
-    )
-  })
+    expect(result.current.approximateDurationInMinutes).toBeGreaterThan(HOUR_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeGreaterThan(0.3 * HOUR_IN_MINUTES);
+    expect(result.current.estimatedMinutesLeft).toBeLessThan(0.7 * HOUR_IN_MINUTES);
+  });
 
   it('gets cctp withdrawal duration for a new transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -398,14 +363,12 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: true,
         parentChainId: 1,
-        childChainId: 42161
-      })
-    )
+        childChainId: 42161,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      TRANSFER_TIME_MINUTES_CCTP_MAINNET
-    )
-  })
+    expect(result.current.approximateDurationInMinutes).toEqual(TRANSFER_TIME_MINUTES_CCTP_MAINNET);
+  });
 
   it('gets cctp withdrawal duration for a new transfer on Testnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
@@ -414,12 +377,10 @@ describe('useTransferDuration', () => {
         isDeposit: false,
         isCctp: true,
         parentChainId: 11155111,
-        childChainId: 421614
-      })
-    )
+        childChainId: 421614,
+      }),
+    );
 
-    expect(result.current.approximateDurationInMinutes).toEqual(
-      TRANSFER_TIME_MINUTES_CCTP_TESTNET
-    )
-  })
-})
+    expect(result.current.approximateDurationInMinutes).toEqual(TRANSFER_TIME_MINUTES_CCTP_TESTNET);
+  });
+});

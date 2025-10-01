@@ -1,11 +1,12 @@
-import Link from 'next/link';
-import Fuse from 'fuse.js';
-import { twMerge } from 'tailwind-merge';
-import Image from 'next/image';
-import { FuzzySearchResult, SearchResult } from '@/common/getSearchResults';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { FullProject, OrbitChain, SearchableData } from '@/common/types';
+import Fuse from 'fuse.js';
+import Image from 'next/image';
+import Link from 'next/link';
+import { twMerge } from 'tailwind-merge';
+
 import { ENTITY_METADATA, isOrbitChain, isProject } from '@/common/entities';
+import { FuzzySearchResult, SearchResult } from '@/common/getSearchResults';
+import { FullProject, OrbitChain, SearchableData } from '@/common/types';
 
 type MatchIndex = { [index: number]: boolean };
 
@@ -26,19 +27,14 @@ const SearchTitleAndDescriptionWithHighlight = ({
 }) => {
   // get the match-details for title and description of the item
 
-  const matcheDetailsForTitle = searchResult.matches?.find(
-    (match) => match.key === 'title',
-  );
+  const matcheDetailsForTitle = searchResult.matches?.find((match) => match.key === 'title');
   const matcheDetailsForDescription = searchResult.matches?.find(
     (match) => match.key === 'searchTitle',
   );
   return (
     <div className="flex flex-col items-start text-left">
       <div className="font-light">
-        <TextWithMatchHighlight
-          text={item.title}
-          matchDetails={matcheDetailsForTitle}
-        />
+        <TextWithMatchHighlight text={item.title} matchDetails={matcheDetailsForTitle} />
       </div>
       {item.searchTitle ? (
         <div className="text-xs font-light opacity-50">
@@ -80,10 +76,7 @@ const TextWithMatchHighlight = ({
     <>
       {text.split('').map((char: string, charIndex: number) => {
         return (
-          <span
-            key={charIndex}
-            className={bestMatchIndexes[charIndex] ? 'bg-white/0' : ''}
-          >
+          <span key={charIndex} className={bestMatchIndexes[charIndex] ? 'bg-white/0' : ''}>
             {char}
           </span>
         );
@@ -112,9 +105,7 @@ export const SearchResultsPopup = ({
     <div className="absolute top-[50px] z-[100000] flex max-h-[500px] w-full flex-col items-center overflow-auto rounded-md bg-default-black py-4 text-center text-sm text-white/80 shadow-lg lg:max-w-[400px]">
       <div className="relative h-full w-full">
         {/* minimum character limit message */}
-        {searchString.length < 2 && !searchResults.length
-          ? 'Enter at least 2 characters'
-          : null}
+        {searchString.length < 2 && !searchResults.length ? 'Enter at least 2 characters' : null}
 
         {/* no results found */}
         {noResults && (
@@ -147,12 +138,7 @@ export const SearchResultsPopup = ({
                   {/* Search result image */}
                   <div className="relative h-6 w-6 rounded-full bg-white/10">
                     {doesSearchResultHaveImage(item) && item.images?.logoUrl ? (
-                      <Image
-                        alt="logo"
-                        src={item.images.logoUrl}
-                        fill
-                        className="rounded-xl"
-                      />
+                      <Image alt="logo" src={item.images.logoUrl} fill className="rounded-xl" />
                     ) : (
                       // for category / subcategory with no image
                       <MagnifyingGlassIcon className="h-6 w-6 p-1" />
@@ -160,10 +146,7 @@ export const SearchResultsPopup = ({
                   </div>
 
                   {/* Title and description with highlights */}
-                  <SearchTitleAndDescriptionWithHighlight
-                    item={item}
-                    searchResult={result}
-                  />
+                  <SearchTitleAndDescriptionWithHighlight item={item} searchResult={result} />
                 </div>
 
                 {/* Type Tag */}
@@ -180,14 +163,11 @@ export const SearchResultsPopup = ({
           <Link
             className={twMerge(
               'flex w-full flex-col items-center justify-between gap-4 border-b border-white/10 p-4',
-              (focusIndex === previewLimit ||
-                focusIndex === searchResults.length) &&
-                'bg-white/10',
+              (focusIndex === previewLimit || focusIndex === searchResults.length) && 'bg-white/10',
             )}
             href={`/search/${searchString}`}
           >
-            Show all {searchResults.length > 1 ? searchResults.length : ''}{' '}
-            results
+            Show all {searchResults.length > 1 ? searchResults.length : ''} results
           </Link>
         ) : null}
       </div>

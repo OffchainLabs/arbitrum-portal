@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
-import { ProjectItemBox } from '@/components/ProjectItemBox';
-import { ExternalLink } from '@/components/ExternalLink';
-import ExternalLinkIcon from '@/public/images/link.svg';
 import { useCallback } from 'react';
+
 import { getProjectDetailsById } from '@/common/projects';
+import { ExternalLink } from '@/components/ExternalLink';
+import { ProjectItemBox } from '@/components/ProjectItemBox';
+import ExternalLinkIcon from '@/public/images/link.svg';
 
 export const ArcadeProjectWithMissionLink = ({
   projectSlug,
@@ -48,11 +49,7 @@ export const ArcadeProjectWithMissionLink = ({
         onClick={captureArcadeLinkEvent}
       >
         See details
-        <Image
-          src={ExternalLinkIcon}
-          alt={`View mission details`}
-          className="h-6 w-6"
-        />
+        <Image src={ExternalLinkIcon} alt={`View mission details`} className="h-6 w-6" />
       </ExternalLink>
     </>
   );

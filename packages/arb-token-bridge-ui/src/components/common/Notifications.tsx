@@ -1,7 +1,6 @@
 // import { InformationCircleIcon } from '@heroicons/react/24/outline'
 // import { twMerge } from 'tailwind-merge'
-
-import { PropsWithChildren } from 'react'
+import { PropsWithChildren } from 'react';
 
 function NotificationContainer({ children }: PropsWithChildren) {
   return (
@@ -10,7 +9,7 @@ function NotificationContainer({ children }: PropsWithChildren) {
         <div className="flex w-full flex-wrap gap-2">{children}</div>
       </div>
     </div>
-  )
+  );
 }
 
 // function Notification({
@@ -41,5 +40,5 @@ function NotificationContainer({ children }: PropsWithChildren) {
 // }
 
 export function Notifications() {
-  return <NotificationContainer />
+  return <NotificationContainer />;
 }

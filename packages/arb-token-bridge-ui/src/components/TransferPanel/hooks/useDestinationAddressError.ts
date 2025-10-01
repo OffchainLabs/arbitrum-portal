@@ -1,52 +1,51 @@
-import useSWRImmutable from 'swr/immutable'
-import { isAddress } from 'ethers/lib/utils'
-import { useAccount } from 'wagmi'
+import { isAddress } from 'ethers/lib/utils';
+import useSWRImmutable from 'swr/immutable';
+import { useAccount } from 'wagmi';
 
-import { DestinationAddressErrors } from '../CustomDestinationAddressInput'
-import { addressIsDenylisted } from '../../../util/AddressUtils'
-import { useAccountType } from '../../../hooks/useAccountType'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
+import { useAccountType } from '../../../hooks/useAccountType';
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { addressIsDenylisted } from '../../../util/AddressUtils';
+import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({
   destinationAddress,
   isSenderSmartContractWallet,
-  isTeleportMode
+  isTeleportMode,
 }: {
-  destinationAddress?: string
-  isSenderSmartContractWallet: boolean
-  isTeleportMode: boolean
+  destinationAddress?: string;
+  isSenderSmartContractWallet: boolean;
+  isTeleportMode: boolean;
 }): Promise<DestinationAddressErrors | null> {
   if (!destinationAddress && isSenderSmartContractWallet) {
     // destination address required for contract wallets
-    return DestinationAddressErrors.REQUIRED_ADDRESS
+    return DestinationAddressErrors.REQUIRED_ADDRESS;
   }
   if (!destinationAddress) {
-    return null
+    return null;
   }
   if (!isAddress(destinationAddress)) {
-    return DestinationAddressErrors.INVALID_ADDRESS
+    return DestinationAddressErrors.INVALID_ADDRESS;
   }
   if (await addressIsDenylisted(destinationAddress)) {
-    return DestinationAddressErrors.DENYLISTED_ADDRESS
+    return DestinationAddressErrors.DENYLISTED_ADDRESS;
   }
   if (isTeleportMode) {
-    return DestinationAddressErrors.TELEPORT_DISABLED
+    return DestinationAddressErrors.TELEPORT_DISABLED;
   }
 
   // no error
-  return null
+  return null;
 }
 
 export function useDestinationAddressError(destinationAddress?: string) {
-  const [{ destinationAddress: destinationAddressFromQueryParams }] =
-    useArbQueryParams()
-  const [networks] = useNetworks()
-  const { address } = useAccount()
-  const { isTeleportMode } = useNetworksRelationship(networks)
-  const { accountType } = useAccountType()
-  const isSenderSmartContractWallet = accountType === 'smart-contract-wallet'
+  const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
+  const [networks] = useNetworks();
+  const { address } = useAccount();
+  const { isTeleportMode } = useNetworksRelationship(networks);
+  const { accountType } = useAccountType();
+  const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { data: destinationAddressError } = useSWRImmutable(
     [
@@ -54,16 +53,16 @@ export function useDestinationAddressError(destinationAddress?: string) {
       (destinationAddress ?? destinationAddressFromQueryParams)?.toLowerCase(),
       isSenderSmartContractWallet,
       isTeleportMode,
-      'useDestinationAddressError'
+      'useDestinationAddressError',
     ] as const,
     // Extracts the first element of the query key as the fetcher param
     ([, _destinationAddress, _isSenderSmartContractWallet, _isTeleportMode]) =>
       getDestinationAddressError({
         destinationAddress: _destinationAddress,
         isSenderSmartContractWallet: _isSenderSmartContractWallet,
-        isTeleportMode: _isTeleportMode
-      })
-  )
+        isTeleportMode: _isTeleportMode,
+      }),
+  );
 
-  return { destinationAddressError }
+  return { destinationAddressError };
 }

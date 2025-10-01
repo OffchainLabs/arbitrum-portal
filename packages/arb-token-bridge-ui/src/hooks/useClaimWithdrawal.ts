@@ -1,75 +1,70 @@
-import { useCallback, useState } from 'react'
-import { useAccount } from 'wagmi'
+import { ChildTransactionReceipt } from '@arbitrum/sdk';
+import dayjs from 'dayjs';
+import { ContractReceipt, utils } from 'ethers';
+import { useCallback, useState } from 'react';
+import { useAccount } from 'wagmi';
 
-import { useAppState } from '../state'
-import { MergedTransaction, WithdrawalStatus } from '../state/app/state'
-import { isUserRejectedError } from '../util/isUserRejectedError'
-import { errorToast } from '../components/common/atoms/Toast'
-import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types'
-import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../components/TransactionHistory/helpers'
-import { ChildTransactionReceipt } from '@arbitrum/sdk'
-import { ContractReceipt, utils } from 'ethers'
-import { useTransactionHistory } from './useTransactionHistory'
-import dayjs from 'dayjs'
-import { fetchErc20Data } from '../util/TokenUtils'
-import { fetchNativeCurrency } from './useNativeCurrency'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { captureSentryErrorWithExtraData } from '../util/SentryUtils'
-import { useTransactionHistoryAddressStore } from '../components/TransactionHistory/TransactionHistorySearchBar'
-import { useEthersSigner } from '../util/wagmi/useEthersSigner'
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { useTransactionHistoryAddressStore } from '../components/TransactionHistory/TransactionHistorySearchBar';
+import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../components/TransactionHistory/helpers';
+import { errorToast } from '../components/common/atoms/Toast';
+import { useAppState } from '../state';
+import { MergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
+import { fetchErc20Data } from '../util/TokenUtils';
+import { isUserRejectedError } from '../util/isUserRejectedError';
+import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
+import { fetchNativeCurrency } from './useNativeCurrency';
+import { useTransactionHistory } from './useTransactionHistory';
 
 export type UseClaimWithdrawalResult = {
-  claim: () => Promise<void>
-  isClaiming: boolean
-}
+  claim: () => Promise<void>;
+  isClaiming: boolean;
+};
 
-export function useClaimWithdrawal(
-  tx: MergedTransaction
-): UseClaimWithdrawalResult {
+export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalResult {
   const {
-    app: { arbTokenBridge }
-  } = useAppState()
-  const { address } = useAccount()
-  const sanitizedAddress = useTransactionHistoryAddressStore(
-    state => state.sanitizedAddress
-  )
-  const signer = useEthersSigner({ chainId: tx.parentChainId })
-  const { updatePendingTransaction } = useTransactionHistory(
-    sanitizedAddress ?? address
-  )
-  const [isClaiming, setIsClaiming] = useState(false)
+    app: { arbTokenBridge },
+  } = useAppState();
+  const { address } = useAccount();
+  const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+  const signer = useEthersSigner({ chainId: tx.parentChainId });
+  const { updatePendingTransaction } = useTransactionHistory(sanitizedAddress ?? address);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const claim = useCallback(async () => {
     if (isClaiming || !tx.isWithdrawal || tx.isCctp) {
-      return
+      return;
     }
 
     if (tx.uniqueId === null) {
-      return errorToast("Can't find withdrawal transaction.")
+      return errorToast("Can't find withdrawal transaction.");
     }
 
-    let res, err: any
+    let res, err: any;
 
-    setIsClaiming(true)
+    setIsClaiming(true);
 
-    const childChainProvider = getProviderForChainId(tx.childChainId)
-    const txReceipt = await childChainProvider.getTransactionReceipt(tx.txId)
-    const l2TxReceipt = new ChildTransactionReceipt(txReceipt)
-    const [event] = l2TxReceipt.getChildToParentEvents()
+    const childChainProvider = getProviderForChainId(tx.childChainId);
+    const txReceipt = await childChainProvider.getTransactionReceipt(tx.txId);
+    const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
+    const [event] = l2TxReceipt.getChildToParentEvents();
 
     if (!event) {
-      setIsClaiming(false)
-      errorToast("Can't claim withdrawal: event not found.")
-      return
+      setIsClaiming(false);
+      errorToast("Can't claim withdrawal: event not found.");
+      return;
     }
 
     const { symbol, decimals } =
       tx.assetType === AssetType.ERC20
         ? await fetchErc20Data({
             address: tx.tokenAddress as string,
-            provider: getProviderForChainId(tx.parentChainId)
+            provider: getProviderForChainId(tx.parentChainId),
           })
-        : await fetchNativeCurrency({ provider: childChainProvider })
+        : await fetchNativeCurrency({ provider: childChainProvider });
 
     const extendedEvent: L2ToL1EventResultPlus = {
       ...event,
@@ -84,63 +79,56 @@ export function useClaimWithdrawal(
       decimals,
       nodeBlockDeadline: tx.nodeBlockDeadline,
       parentChainId: tx.parentChainId,
-      childChainId: tx.childChainId
-    }
+      childChainId: tx.childChainId,
+    };
 
     try {
       if (!signer) {
-        throw 'Signer is undefined'
+        throw 'Signer is undefined';
       }
       if (tx.assetType === AssetType.ETH) {
         res = await arbTokenBridge.eth.triggerOutbox({
           event: extendedEvent,
-          l1Signer: signer
-        })
+          l1Signer: signer,
+        });
       } else {
         res = await arbTokenBridge.token.triggerOutbox({
           event: extendedEvent,
-          l1Signer: signer
-        })
+          l1Signer: signer,
+        });
       }
     } catch (error: any) {
-      err = error
+      err = error;
     } finally {
-      setIsClaiming(false)
+      setIsClaiming(false);
     }
 
     // Don't show any alert / log any error in case user denies the signature
     if (isUserRejectedError(err)) {
-      return
+      return;
     }
 
     captureSentryErrorWithExtraData({
       error: err,
-      originFunction: 'useClaimWithdrawal claim'
-    })
+      originFunction: 'useClaimWithdrawal claim',
+    });
     if (!res) {
-      errorToast(`Can't claim withdrawal: ${err?.message ?? err}`)
+      errorToast(`Can't claim withdrawal: ${err?.message ?? err}`);
     }
 
-    const isSuccess = (res as ContractReceipt).status === 1
-    const txHash = (res as ContractReceipt).transactionHash
+    const isSuccess = (res as ContractReceipt).status === 1;
+    const txHash = (res as ContractReceipt).transactionHash;
 
     await updatePendingTransaction({
       ...tx,
       status: isSuccess ? WithdrawalStatus.EXECUTED : WithdrawalStatus.FAILURE,
-      resolvedAt: isSuccess ? dayjs().valueOf() : null
-    })
+      resolvedAt: isSuccess ? dayjs().valueOf() : null,
+    });
 
     if (isSuccess) {
-      setParentChainTxDetailsOfWithdrawalClaimTx(tx, txHash)
+      setParentChainTxDetailsOfWithdrawalClaimTx(tx, txHash);
     }
-  }, [
-    arbTokenBridge.eth,
-    arbTokenBridge.token,
-    isClaiming,
-    signer,
-    tx,
-    updatePendingTransaction
-  ])
+  }, [arbTokenBridge.eth, arbTokenBridge.token, isClaiming, signer, tx, updatePendingTransaction]);
 
-  return { claim, isClaiming }
+  return { claim, isClaiming };
 }

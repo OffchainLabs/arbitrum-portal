@@ -1,5 +1,6 @@
-import Image from 'next/image';
 import { PlayCircleIcon } from '@heroicons/react/24/solid';
+import Image from 'next/image';
+
 import { FullProject } from '@/common/types';
 import { Card } from '@/components/Card';
 

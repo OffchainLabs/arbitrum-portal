@@ -1,10 +1,11 @@
-import { ChainId } from '../../types/ChainId'
-import { ProductionChainId } from './getRpcUrl'
-import { getAlchemyRpcUrl } from './alchemy'
-import { it, expect } from 'vitest'
+import { expect, it } from 'vitest';
+
+import { ChainId } from '../../types/ChainId';
+import { getAlchemyRpcUrl } from './alchemy';
+import { ProductionChainId } from './getRpcUrl';
 
 it('successfully returns the correct url for the provided chain and key', () => {
-  const key = '123456'
+  const key = '123456';
 
   const result: { [Key in ProductionChainId]: string } = {
     // L1 Mainnet
@@ -20,8 +21,8 @@ it('successfully returns the correct url for the provided chain and key', () => 
     [ChainId.BaseSepolia]: getAlchemyRpcUrl(ChainId.BaseSepolia, key),
     // Orbit chains
     [ChainId.ApeChain]: getAlchemyRpcUrl(ChainId.ApeChain, key),
-    [ChainId.Superposition]: getAlchemyRpcUrl(ChainId.Superposition, key)
-  }
+    [ChainId.Superposition]: getAlchemyRpcUrl(ChainId.Superposition, key),
+  };
 
   expect(result).toMatchInlineSnapshot(`
     {
@@ -35,5 +36,5 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "8453": "https://base-mainnet.g.alchemy.com/v2/123456",
       "84532": "https://base-sepolia.g.alchemy.com/v2/123456",
     }
-  `)
-})
+  `);
+});

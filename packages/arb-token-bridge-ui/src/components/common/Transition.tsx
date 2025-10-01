@@ -1,41 +1,41 @@
-import { Transition as HeadlessUiTransition } from '@headlessui/react'
-import { PropsWithChildren } from 'react'
-import { twMerge } from 'tailwind-merge'
+import { Transition as HeadlessUiTransition } from '@headlessui/react';
+import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-type TransitionSpeed = 'slow' | 'normal' | 'fast'
+type TransitionSpeed = 'slow' | 'normal' | 'fast';
 
 type TransitionOptions = {
-  enterSpeed?: TransitionSpeed
-  leaveSpeed?: TransitionSpeed
-  unmountOnLeave?: boolean
-  startClassName?: string
-  endClassName?: string
-}
+  enterSpeed?: TransitionSpeed;
+  leaveSpeed?: TransitionSpeed;
+  unmountOnLeave?: boolean;
+  startClassName?: string;
+  endClassName?: string;
+};
 
 type TransitionProps = PropsWithChildren<{
-  isOpen?: boolean
-  options?: TransitionOptions
-  className?: string
-  afterLeave?: () => void
-}>
+  isOpen?: boolean;
+  options?: TransitionOptions;
+  className?: string;
+  afterLeave?: () => void;
+}>;
 
 function getDurationClassName(speed: TransitionSpeed) {
   switch (speed) {
     case 'slow':
-      return 'duration-1000'
+      return 'duration-1000';
     case 'normal':
-      return 'duration-500'
+      return 'duration-500';
     case 'fast':
-      return 'duration-200'
+      return 'duration-200';
   }
 }
 
 export const Transition = (props: TransitionProps) => {
-  const { options, children, className, isOpen, afterLeave } = props
+  const { options, children, className, isOpen, afterLeave } = props;
 
-  const enterSpeed = options?.enterSpeed ?? 'fast'
-  const leaveSpeed = options?.leaveSpeed ?? 'fast'
-  const unmountOnLeave = options?.unmountOnLeave ?? true
+  const enterSpeed = options?.enterSpeed ?? 'fast';
+  const leaveSpeed = options?.leaveSpeed ?? 'fast';
+  const unmountOnLeave = options?.unmountOnLeave ?? true;
 
   return (
     <HeadlessUiTransition
@@ -51,5 +51,5 @@ export const Transition = (props: TransitionProps) => {
     >
       {className ? <div className={className}>{children}</div> : children}
     </HeadlessUiTransition>
-  )
-}
+  );
+};

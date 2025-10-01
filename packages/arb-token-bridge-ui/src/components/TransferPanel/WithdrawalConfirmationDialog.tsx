@@ -1,102 +1,94 @@
-import { useState } from 'react'
-import { TabGroup, TabList, TabPanel } from '@headlessui/react'
-import dayjs from 'dayjs'
-import Image from 'next/image'
+import { TabGroup, TabList, TabPanel } from '@headlessui/react';
+import dayjs from 'dayjs';
+import Image from 'next/image';
+import { useState } from 'react';
 
-import { Dialog, UseDialogProps } from '../common/Dialog'
-import { Checkbox } from '../common/Checkbox'
-import { ExternalLink } from '../common/ExternalLink'
-import { TabButton } from '../common/Tab'
-import { BridgesTable } from '../common/BridgesTable'
-import { trackEvent } from '../../util/AnalyticsUtils'
-import { getNetworkName, isNetwork } from '../../util/networks'
-import { getFastBridges } from '../../util/fastBridges'
 import {
   CONFIRMATION_PERIOD_ARTICLE_LINK,
-  FAST_WITHDRAWAL_DOCS_ARTICLE_LINK
-} from '../../constants'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { SecurityGuaranteed, SecurityNotGuaranteed } from './SecurityLabels'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration'
-import { getConfirmationTime } from '../../util/WithdrawalUtils'
-import { isLifiEnabled } from '../../util/featureFlag'
+  FAST_WITHDRAWAL_DOCS_ARTICLE_LINK,
+} from '../../constants';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
+import { trackEvent } from '../../util/AnalyticsUtils';
+import { getConfirmationTime } from '../../util/WithdrawalUtils';
+import { getFastBridges } from '../../util/fastBridges';
+import { isLifiEnabled } from '../../util/featureFlag';
+import { getNetworkName, isNetwork } from '../../util/networks';
+import { BridgesTable } from '../common/BridgesTable';
+import { Checkbox } from '../common/Checkbox';
+import { Dialog, UseDialogProps } from '../common/Dialog';
+import { ExternalLink } from '../common/ExternalLink';
+import { TabButton } from '../common/Tab';
+import { SecurityGuaranteed, SecurityNotGuaranteed } from './SecurityLabels';
 
 function getCalendarUrl(
   withdrawalDate: dayjs.Dayjs,
   amount: string,
   token: string,
-  networkName: string
+  networkName: string,
 ) {
-  const title = `${amount} ${token} Withdrawal from ${networkName}`
+  const title = `${amount} ${token} Withdrawal from ${networkName}`;
 
   // Google event date format: YYYYMMDDTHHmmss/YYYYMMDDTHHmmss
-  const parsedWithdrawalDate = withdrawalDate.format(
-    'YYYYMMDD[T]HHmm[00%2F]YYYYMMDD[T]HHmm[00]'
-  )
+  const parsedWithdrawalDate = withdrawalDate.format('YYYYMMDD[T]HHmm[00%2F]YYYYMMDD[T]HHmm[00]');
 
-  return `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${title}&dates=${parsedWithdrawalDate}&details=Withdrawn+on+%3Ca%20href=%22https://bridge.arbitrum.io%22%3Ehttps://bridge.arbitrum.io%3C/a%3E`
+  return `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${title}&dates=${parsedWithdrawalDate}&details=Withdrawn+on+%3Ca%20href=%22https://bridge.arbitrum.io%22%3Ehttps://bridge.arbitrum.io%3C/a%3E`;
 }
 
-export function WithdrawalConfirmationDialog(
-  props: UseDialogProps & { amount: string }
-) {
-  const [networks] = useNetworks()
-  const { childChain, childChainProvider, parentChain } =
-    useNetworksRelationship(networks)
+export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: string }) {
+  const [networks] = useNetworks();
+  const { childChain, childChainProvider, parentChain } = useNetworksRelationship(networks);
 
-  const { fastWithdrawalActive } = getConfirmationTime(childChain.id)
+  const { fastWithdrawalActive } = getConfirmationTime(childChain.id);
 
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const destinationNetworkName = getNetworkName(parentChain.id)
+  const destinationNetworkName = getNetworkName(parentChain.id);
 
-  const [selectedToken] = useSelectedToken()
+  const [selectedToken] = useSelectedToken();
 
   const nativeCurrency = useNativeCurrency({
-    provider: childChainProvider
-  })
+    provider: childChainProvider,
+  });
 
   const fastBridges = getFastBridges({
     from: childChain.id,
     to: parentChain.id,
     tokenSymbol: selectedToken?.symbol ?? nativeCurrency.symbol,
     tokenAddress: selectedToken?.address,
-    amount: props.amount
-  })
+    amount: props.amount,
+  });
 
-  const [checkbox1Checked, setCheckbox1Checked] = useState(false)
-  const [checkbox2Checked, setCheckbox2Checked] = useState(false)
-  const [checkbox3Checked, setCheckbox3Checked] = useState(false)
+  const [checkbox1Checked, setCheckbox1Checked] = useState(false);
+  const [checkbox2Checked, setCheckbox2Checked] = useState(false);
+  const [checkbox3Checked, setCheckbox3Checked] = useState(false);
 
-  const { isArbitrumOne } = isNetwork(childChain.id)
+  const { isArbitrumOne } = isNetwork(childChain.id);
 
   const allCheckboxesChecked =
-    checkbox1Checked &&
-    checkbox2Checked &&
-    (fastWithdrawalActive ? checkbox3Checked : true)
+    checkbox1Checked && checkbox2Checked && (fastWithdrawalActive ? checkbox3Checked : true);
 
   const estimatedConfirmationDate = getWithdrawalConfirmationDate({
     createdAt: null,
-    withdrawalFromChainId: childChain.id
-  })
+    withdrawalFromChainId: childChain.id,
+  });
 
-  const confirmationPeriod = estimatedConfirmationDate.fromNow(true)
+  const confirmationPeriod = estimatedConfirmationDate.fromNow(true);
 
   function closeWithReset(confirmed: boolean) {
-    props.onClose(confirmed)
+    props.onClose(confirmed);
 
-    setCheckbox1Checked(false)
-    setCheckbox2Checked(false)
-    setCheckbox3Checked(false)
-    setSelectedIndex(0)
+    setCheckbox1Checked(false);
+    setCheckbox2Checked(false);
+    setCheckbox3Checked(false);
+    setSelectedIndex(0);
   }
 
-  const showFastBridgesTab = isArbitrumOne && !isLifiEnabled()
-  const isFastBridgesTab =
-    showFastBridgesTab && isArbitrumOne && selectedIndex === 0
+  const showFastBridgesTab = isArbitrumOne && !isLifiEnabled();
+  const isFastBridgesTab = showFastBridgesTab && isArbitrumOne && selectedIndex === 0;
 
   return (
     <Dialog
@@ -106,7 +98,7 @@ export function WithdrawalConfirmationDialog(
       title={`Move funds to ${destinationNetworkName}`}
       actionButtonProps={{
         disabled: !allCheckboxesChecked,
-        hidden: isFastBridgesTab
+        hidden: isFastBridgesTab,
       }}
     >
       <div className="flex flex-col pt-4">
@@ -135,12 +127,8 @@ export function WithdrawalConfirmationDialog(
             <div className="flex flex-col space-y-4 py-4">
               <div className="flex flex-col space-y-4">
                 <p className="font-light">
-                  Get your funds in ~{confirmationPeriod} and pay a small fee
-                  twice.{' '}
-                  <ExternalLink
-                    href={CONFIRMATION_PERIOD_ARTICLE_LINK}
-                    className="underline"
-                  >
+                  Get your funds in ~{confirmationPeriod} and pay a small fee twice.{' '}
+                  <ExternalLink href={CONFIRMATION_PERIOD_ARTICLE_LINK} className="underline">
                     Learn more.
                   </ExternalLink>
                 </p>
@@ -150,8 +138,8 @@ export function WithdrawalConfirmationDialog(
                 <Checkbox
                   label={
                     <span className="font-light">
-                      I understand that it will take ~{confirmationPeriod}{' '}
-                      before I can claim my funds on {destinationNetworkName}
+                      I understand that it will take ~{confirmationPeriod} before I can claim my
+                      funds on {destinationNetworkName}
                     </span>
                   }
                   checked={checkbox1Checked}
@@ -161,8 +149,7 @@ export function WithdrawalConfirmationDialog(
                 <Checkbox
                   label={
                     <span className="font-light">
-                      I understand that after claiming my funds, I’ll have to
-                      send{' '}
+                      I understand that after claiming my funds, I’ll have to send{' '}
                       <span className="font-medium">
                         another transaction on {destinationNetworkName}
                       </span>{' '}
@@ -177,14 +164,13 @@ export function WithdrawalConfirmationDialog(
                   <Checkbox
                     label={
                       <span className="font-light">
-                        I understand that ~{confirmationPeriod} is an estimate,
-                        and it&apos;s possible the committee fails and it will
-                        default back to the 8 days.{' '}
+                        I understand that ~{confirmationPeriod} is an estimate, and it&apos;s
+                        possible the committee fails and it will default back to the 8 days.{' '}
                         <ExternalLink
                           href={FAST_WITHDRAWAL_DOCS_ARTICLE_LINK}
                           className="underline"
-                          onClick={e => {
-                            e.stopPropagation()
+                          onClick={(e) => {
+                            e.stopPropagation();
                           }}
                         >
                           Learn more.
@@ -210,7 +196,7 @@ export function WithdrawalConfirmationDialog(
                         estimatedConfirmationDate,
                         props.amount,
                         selectedToken?.symbol || nativeCurrency.symbol,
-                        getNetworkName(childChain.id)
+                        getNetworkName(childChain.id),
                       )}
                       onClick={() => trackEvent('Add to Google Calendar Click')}
                       className="arb-hover flex items-center space-x-2 rounded border border-white p-2 text-sm"
@@ -224,9 +210,7 @@ export function WithdrawalConfirmationDialog(
                       <span>Add to Google calendar</span>
                     </ExternalLink>
                   </div>
-                  <p className="text-center text-xs font-light">
-                    We don’t store any email data
-                  </p>
+                  <p className="text-center text-xs font-light">We don’t store any email data</p>
                 </div>
               </div>
             </div>
@@ -234,5 +218,5 @@ export function WithdrawalConfirmationDialog(
         </TabGroup>
       </div>
     </Dialog>
-  )
+  );
 }

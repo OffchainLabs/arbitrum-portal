@@ -1,8 +1,8 @@
-import fs from 'fs'
-import path from 'path'
-import axios from 'axios'
-import { TokenList } from '@uniswap/token-lists'
-import { getArbitrumNetworks } from '@arbitrum/sdk'
+import { getArbitrumNetworks } from '@arbitrum/sdk';
+import { TokenList } from '@uniswap/token-lists';
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 const tokenListsUrls = [
   'https://tokenlist.arbitrum.io/ArbTokenLists/arbitrum_token_token_list.json',
@@ -16,8 +16,8 @@ const tokenListsUrls = [
   'https://tokenlist.arbitrum.io/ArbTokenLists/421613_arbed_coingecko.json',
   'https://tokenlist.arbitrum.io/ArbTokenLists/421614_arbed_uniswap_labs.json',
   'https://tokenlist.arbitrum.io/ArbTokenLists/421614_arbed_coingecko.json',
-  'https://tokenlist.arbitrum.io/ArbTokenLists/660279_arbed_uniswap_labs.json'
-]
+  'https://tokenlist.arbitrum.io/ArbTokenLists/660279_arbed_uniswap_labs.json',
+];
 
 // denylisted destination addresses in order: One, Nova, Sepolia
 // https://docs.arbitrum.io/for-devs/useful-addresses
@@ -110,54 +110,49 @@ const DESTINATION_ADDRESS_DENYLIST = [
   '0xB51EDdfc9A945e2B909905e4F242C4796Ac0C61d',
   // Testnet: Sepolia
   '0x8a8f0a24d7e58a76FC8F77bb68C7c902b91e182e',
-  '0x87630025E63A30eCf9Ca9d580d9D95922Fea6aF0'
-]
+  '0x87630025E63A30eCf9Ca9d580d9D95922Fea6aF0',
+];
 
 async function main() {
-  const promises = tokenListsUrls.map(url => axios.get<TokenList>(url))
-  const tokenLists = (await Promise.all(promises)).map(res => res.data)
-  const allTokens = tokenLists.map(list => list.tokens).flat()
-  const allTokenAddresses = [...new Set(allTokens.map(token => token.address))]
+  const promises = tokenListsUrls.map((url) => axios.get<TokenList>(url));
+  const tokenLists = (await Promise.all(promises)).map((res) => res.data);
+  const allTokens = tokenLists.map((list) => list.tokens).flat();
+  const allTokenAddresses = [...new Set(allTokens.map((token) => token.address))];
 
-  const denylistedAddresses = [
-    ...DESTINATION_ADDRESS_DENYLIST,
-    ...allTokenAddresses
-  ]
+  const denylistedAddresses = [...DESTINATION_ADDRESS_DENYLIST, ...allTokenAddresses];
 
-  getArbitrumNetworks().map(arbitrumNetwork => {
-    const { ethBridge, tokenBridge } = arbitrumNetwork
-    const { classicOutboxes } = ethBridge
+  getArbitrumNetworks().map((arbitrumNetwork) => {
+    const { ethBridge, tokenBridge } = arbitrumNetwork;
+    const { classicOutboxes } = ethBridge;
 
     if (classicOutboxes) {
-      denylistedAddresses.push(...Object.keys(classicOutboxes))
+      denylistedAddresses.push(...Object.keys(classicOutboxes));
     }
 
-    delete ethBridge.classicOutboxes
-    denylistedAddresses.push(...Object.values(ethBridge))
+    delete ethBridge.classicOutboxes;
+    denylistedAddresses.push(...Object.values(ethBridge));
 
     if (tokenBridge) {
-      denylistedAddresses.push(...Object.values(tokenBridge))
+      denylistedAddresses.push(...Object.values(tokenBridge));
     }
-  })
+  });
 
   const resultJson =
     JSON.stringify(
       {
         meta: {
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         },
-        content: [
-          ...new Set(denylistedAddresses.map(address => address.toLowerCase()))
-        ]
+        content: [...new Set(denylistedAddresses.map((address) => address.toLowerCase()))],
       },
       null,
-      2
-    ) + '\n'
+      2,
+    ) + '\n';
 
   fs.writeFileSync(
     path.join(__dirname, '../../app/public/__auto-generated-denylist.json'),
-    resultJson
-  )
+    resultJson,
+  );
 }
 
-main()
+main();

@@ -1,11 +1,8 @@
 import { twMerge } from 'tailwind-merge';
+
 import { ARCADE_WEEKLY_PLAN } from './plans';
 
-export const ArcadeTimeline = ({
-  currentWeekIndex,
-}: {
-  currentWeekIndex: number;
-}) => {
+export const ArcadeTimeline = ({ currentWeekIndex }: { currentWeekIndex: number }) => {
   if (currentWeekIndex < 0) currentWeekIndex = 0;
   if (currentWeekIndex >= ARCADE_WEEKLY_PLAN.length)
     currentWeekIndex = ARCADE_WEEKLY_PLAN.length - 1;

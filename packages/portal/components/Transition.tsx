@@ -1,5 +1,5 @@
-import React, { Fragment } from 'react';
 import { Transition as HeadlessUITransition } from '@headlessui/react';
+import React, { Fragment } from 'react';
 
 type TransitionDuration = 'fast' | 'normal';
 
@@ -35,18 +35,9 @@ export type TransitionProps = {
   children: React.ReactNode;
 };
 
-export function Transition({
-  duration = 'fast',
-  show,
-  children,
-}: TransitionProps) {
+export function Transition({ duration = 'fast', show, children }: TransitionProps) {
   return (
-    <HeadlessUITransition
-      appear
-      as={Fragment}
-      show={show}
-      {...getTransitionProps(duration)}
-    >
+    <HeadlessUITransition appear as={Fragment} show={show} {...getTransitionProps(duration)}>
       <div>{children}</div>
     </HeadlessUITransition>
   );

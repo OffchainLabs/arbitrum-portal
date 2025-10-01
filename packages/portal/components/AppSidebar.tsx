@@ -1,8 +1,9 @@
 'use client';
+
 import { Sidebar } from '@offchainlabs/cobalt';
-import { usePostHog } from 'posthog-js/react';
-import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
+import { useEffect, useState } from 'react';
 
 export const AppSidebar = () => {
   const posthog = usePostHog();
@@ -52,8 +53,7 @@ export const AppSidebar = () => {
 
   const [activeMenu, setActiveMenu] = useState('Home');
   const chainsParam = searchParams.get('chains') || '';
-  const linkPostfix =
-    chainsParam && `?chains=${encodeURIComponent(chainsParam)}`;
+  const linkPostfix = chainsParam && `?chains=${encodeURIComponent(chainsParam)}`;
 
   return (
     <div className="sticky top-0 z-50 h-full">

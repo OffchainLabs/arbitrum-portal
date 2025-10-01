@@ -1,31 +1,31 @@
-import { Cog8ToothIcon } from '@heroicons/react/24/outline'
-import { DialogWrapper, useDialog2 } from '../common/Dialog2'
-import { Button } from '../common/Button'
-import { useAccountType } from '../../hooks/useAccountType'
-import { isLifiRoute, RouteType, useRouteStore } from './hooks/useRouteStore'
-import { useMemo } from 'react'
+import { Cog8ToothIcon } from '@heroicons/react/24/outline';
+import { useMemo } from 'react';
+
+import { useAccountType } from '../../hooks/useAccountType';
+import { Button } from '../common/Button';
+import { DialogWrapper, useDialog2 } from '../common/Dialog2';
+import { RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 
 export function LifiSettingsButton() {
-  const [dialogProps, openDialog] = useDialog2()
-  const eligibleRouteTypes = useRouteStore(state => state.eligibleRouteTypes)
+  const [dialogProps, openDialog] = useDialog2();
+  const eligibleRouteTypes = useRouteStore((state) => state.eligibleRouteTypes);
 
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType()
-  const isSmartContractWallet = accountType === 'smart-contract-wallet'
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType();
+  const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const isLifiEligible = useMemo(
     () => eligibleRouteTypes.some((route: RouteType) => isLifiRoute(route)),
-    [eligibleRouteTypes]
-  )
+    [eligibleRouteTypes],
+  );
 
   /**
    * Show settings if we're displaying lifi routes
    * or if it's an EOA (to display custom destination address input)
    */
-  const showSettingsButton =
-    isLifiEligible && !isLoadingAccountType && !isSmartContractWallet
+  const showSettingsButton = isLifiEligible && !isLoadingAccountType && !isSmartContractWallet;
 
   if (!showSettingsButton) {
-    return null
+    return null;
   }
 
   return (
@@ -41,5 +41,5 @@ export function LifiSettingsButton() {
         <Cog8ToothIcon width={20} className="arb-hover text-white/80" />
       </Button>
     </>
-  )
+  );
 }

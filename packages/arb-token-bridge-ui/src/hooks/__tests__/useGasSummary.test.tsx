@@ -1,16 +1,17 @@
-import { BigNumber, constants } from 'ethers'
-import { getGasSummaryStatus } from '../TransferPanel/useGasSummary'
-import { ChainId } from '../../types/ChainId'
-import { CommonAddress } from '../../util/CommonAddressUtils'
-import { vi, describe, it, expect } from 'vitest'
+import { BigNumber, constants } from 'ethers';
+import { describe, expect, it, vi } from 'vitest';
+
+import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import { getGasSummaryStatus } from '../TransferPanel/useGasSummary';
 
 vi.mock('../TransferPanel/useSelectedTokenDecimals', () => ({
-  useSelectedTokenDecimals: vi.fn().mockReturnValue(18)
-}))
+  useSelectedTokenDecimals: vi.fn().mockReturnValue(18),
+}));
 
 vi.mock('../../components/TransferPanel/hooks/useAmountBigNumber', () => ({
-  useAmountBigNumber: vi.fn()
-}))
+  useAmountBigNumber: vi.fn(),
+}));
 
 describe('getGasSummaryStatus', () => {
   describe('given the following combinations of amount and balance', () => {
@@ -21,43 +22,43 @@ describe('getGasSummaryStatus', () => {
       estimatedChildChainGasFees: 0,
       gasEstimatesError: null,
       sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum
-    }
+      destinationChainId: ChainId.Ethereum,
+    };
 
     it('should return success if both amount and balance are zero', async () => {
       const result = getGasSummaryStatus({
         ...mockedGasSummaryParams,
         amountBigNumber: constants.Zero,
-        balance: constants.Zero
-      })
-      expect(result).toEqual('success')
-    })
+        balance: constants.Zero,
+      });
+      expect(result).toEqual('success');
+    });
 
     it('should return insufficientBalance if amount is lower than balance', async () => {
       const result = getGasSummaryStatus({
         ...mockedGasSummaryParams,
         amountBigNumber: BigNumber.from(100_000),
-        balance: constants.Zero
-      })
-      expect(result).toEqual('insufficientBalance')
-    })
+        balance: constants.Zero,
+      });
+      expect(result).toEqual('insufficientBalance');
+    });
 
     it('should return loading if balance is null', async () => {
       const result1 = getGasSummaryStatus({
         ...mockedGasSummaryParams,
         amountBigNumber: BigNumber.from(100_000),
-        balance: null
-      })
-      expect(result1).toEqual('loading')
+        balance: null,
+      });
+      expect(result1).toEqual('loading');
 
       const result2 = getGasSummaryStatus({
         ...mockedGasSummaryParams,
         amountBigNumber: constants.Zero,
-        balance: null
-      })
-      expect(result2).toEqual('loading')
-    })
-  })
+        balance: null,
+      });
+      expect(result2).toEqual('loading');
+    });
+  });
 
   it('should return error if there is a gas estimate error', async () => {
     const result = getGasSummaryStatus({
@@ -66,10 +67,10 @@ describe('getGasSummaryStatus', () => {
       amountBigNumber: BigNumber.from(100_000),
       balance: BigNumber.from(100_000),
       sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum
-    })
-    expect(result).toEqual('error')
-  })
+      destinationChainId: ChainId.Ethereum,
+    });
+    expect(result).toEqual('error');
+  });
 
   it('should return unavailable if UI is withdrawal mode from Arbitrum One to Ethereum and selected token is Arbitrum One native USDC', async () => {
     const result = getGasSummaryStatus({
@@ -78,10 +79,10 @@ describe('getGasSummaryStatus', () => {
       amountBigNumber: BigNumber.from(100_000),
       balance: BigNumber.from(100_000),
       sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum
-    })
-    expect(result).toEqual('unavailable')
-  })
+      destinationChainId: ChainId.Ethereum,
+    });
+    expect(result).toEqual('unavailable');
+  });
 
   it('should return unavailable if UI is withdrawal mode from Arbitrum Sepolia to Sepolia and selected token is Arbitrum Sepolia native USDC', async () => {
     const result = getGasSummaryStatus({
@@ -90,8 +91,8 @@ describe('getGasSummaryStatus', () => {
       amountBigNumber: BigNumber.from(100_000),
       balance: BigNumber.from(100_000),
       sourceChainId: ChainId.ArbitrumSepolia,
-      destinationChainId: ChainId.Sepolia
-    })
-    expect(result).toEqual('unavailable')
-  })
-})
+      destinationChainId: ChainId.Sepolia,
+    });
+    expect(result).toEqual('unavailable');
+  });
+});

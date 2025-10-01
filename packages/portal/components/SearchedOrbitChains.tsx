@@ -1,11 +1,8 @@
 import { OrbitChain } from '@/common/types';
+
 import { OrbitItemBox } from './OrbitItemBox';
 
-export const SearchedOrbitChains = ({
-  orbitChains,
-}: {
-  orbitChains: OrbitChain[];
-}) => {
+export const SearchedOrbitChains = ({ orbitChains }: { orbitChains: OrbitChain[] }) => {
   const orbitChainsCount = orbitChains.length;
   if (!orbitChainsCount) return null;
 

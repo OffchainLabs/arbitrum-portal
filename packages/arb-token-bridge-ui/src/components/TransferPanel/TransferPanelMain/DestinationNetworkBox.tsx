@@ -1,111 +1,89 @@
-import { useMemo } from 'react'
-import { constants } from 'ethers'
-import { useAccount } from 'wagmi'
+import { constants } from 'ethers';
+import { useMemo } from 'react';
+import { useAccount } from 'wagmi';
 
-import { useNetworks } from '../../../hooks/useNetworks'
-import { NetworkContainer } from '../TransferPanelMain'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { useBalances } from '../../../hooks/useBalances'
-import { CommonAddress } from '../../../util/CommonAddressUtils'
-import { isNetwork } from '../../../util/networks'
-import { useSelectedTokenBalances } from '../../../hooks/TransferPanel/useSelectedTokenBalances'
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { useDialog2, DialogWrapper } from '../../common/Dialog2'
-import { NetworkButton } from '../../common/NetworkSelectionContainer'
-import { useNativeCurrencyBalances } from './useNativeCurrencyBalances'
-import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported'
-import { SafeImage } from '../../common/SafeImage'
-import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils'
-import { formatAmount } from '../../../util/NumberUtils'
-import { Loader } from '../../common/atoms/Loader'
-import { useAmount2InputVisibility } from './SourceNetworkBox'
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
-import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
-import { sanitizeTokenSymbol } from '../../../util/TokenUtils'
-import { useRouteStore } from '../hooks/useRouteStore'
-import { useReceivedAmount } from '../hooks/useReceivedAmount'
-import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
-import { Button } from '../../common/Button'
-import { isLifiRoute } from '../hooks/useRouteStore'
+import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
+import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
+import { useSelectedTokenBalances } from '../../../hooks/TransferPanel/useSelectedTokenBalances';
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useBalances } from '../../../hooks/useBalances';
+import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { formatAmount } from '../../../util/NumberUtils';
+import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
+import { isNetwork } from '../../../util/networks';
+import { Button } from '../../common/Button';
+import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
+import { NetworkButton } from '../../common/NetworkSelectionContainer';
+import { SafeImage } from '../../common/SafeImage';
+import { Loader } from '../../common/atoms/Loader';
+import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils';
+import { NetworkContainer } from '../TransferPanelMain';
+import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
+import { useReceivedAmount } from '../hooks/useReceivedAmount';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { isLifiRoute } from '../hooks/useRouteStore';
+import { useAmount2InputVisibility } from './SourceNetworkBox';
+import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
 function BalanceRow({
   parentErc20Address,
   balance,
   logoOverride,
-  symbolOverride
+  symbolOverride,
 }: {
-  parentErc20Address?: string
-  balance: string | undefined
-  logoOverride?: string
-  symbolOverride?: string
+  parentErc20Address?: string;
+  balance: string | undefined;
+  logoOverride?: string;
+  symbolOverride?: string;
 }) {
-  const [networks] = useNetworks()
-  const [{ destinationAddress }] = useArbQueryParams()
-  const { isConnected } = useAccount()
-  const { childChainProvider, isDepositMode } =
-    useNetworksRelationship(networks)
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
+  const [networks] = useNetworks();
+  const [{ destinationAddress }] = useArbQueryParams();
+  const { isConnected } = useAccount();
+  const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
-  const tokensFromLists = useTokensFromLists()
-  const tokensFromUser = useTokensFromUser()
+  const tokensFromLists = useTokensFromLists();
+  const tokensFromUser = useTokensFromUser();
 
   const tokenLogoSrc = useMemo(() => {
     if (logoOverride) {
-      return logoOverride
+      return logoOverride;
     }
 
     if (parentErc20Address) {
       return (
-        tokensFromLists[parentErc20Address]?.logoURI ??
-        tokensFromUser[parentErc20Address]?.logoURI
-      )
+        tokensFromLists[parentErc20Address]?.logoURI ?? tokensFromUser[parentErc20Address]?.logoURI
+      );
     }
 
-    return nativeCurrency.logoUrl
-  }, [
-    nativeCurrency.logoUrl,
-    parentErc20Address,
-    tokensFromLists,
-    tokensFromUser
-  ])
+    return nativeCurrency.logoUrl;
+  }, [nativeCurrency.logoUrl, parentErc20Address, tokensFromLists, tokensFromUser]);
 
   const symbol = useMemo(() => {
     if (symbolOverride) {
-      return symbolOverride
+      return symbolOverride;
     }
 
     if (parentErc20Address) {
       return (
-        tokensFromLists[parentErc20Address]?.symbol ??
-        tokensFromUser[parentErc20Address]?.symbol
-      )
+        tokensFromLists[parentErc20Address]?.symbol ?? tokensFromUser[parentErc20Address]?.symbol
+      );
     }
 
-    return nativeCurrency.symbol
-  }, [
-    symbolOverride,
-    nativeCurrency.symbol,
-    parentErc20Address,
-    tokensFromLists,
-    tokensFromUser
-  ])
+    return nativeCurrency.symbol;
+  }, [symbolOverride, nativeCurrency.symbol, parentErc20Address, tokensFromLists, tokensFromUser]);
 
-  const shouldShowBalance = !isConnected ? !!destinationAddress : true
+  const shouldShowBalance = !isConnected ? !!destinationAddress : true;
 
   return (
     <div className="flex flex-col items-end gap-[10px] px-[15px] pr-0">
-      <Button
-        variant="secondary"
-        className="px-[10px] py-[5px] opacity-70"
-        disabled
-      >
+      <Button variant="secondary" className="px-[10px] py-[5px] opacity-70" disabled>
         <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-          <SafeImage
-            src={tokenLogoSrc}
-            alt={`${symbol} logo`}
-            className="h-4 w-4 shrink-0"
-          />
+          <SafeImage src={tokenLogoSrc} alt={`${symbol} logo`} className="h-4 w-4 shrink-0" />
           <span>{symbol}</span>
         </div>
       </Button>
@@ -117,76 +95,66 @@ function BalanceRow({
               isDepositMode ? 'childChain' : 'parentChain'
             }`}
           >
-            {balance ? (
-              balance
-            ) : (
-              <Loader wrapperClass="ml-2" size="small" color="white" />
-            )}
+            {balance ? balance : <Loader wrapperClass="ml-2" size="small" color="white" />}
           </span>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function BalancesContainer() {
-  const [networks] = useNetworks()
-  const { childChain } = useNetworksRelationship(networks)
-  const { isArbitrumOne } = isNetwork(childChain.id)
-  const isCctpTransfer = useIsCctpTransfer()
-  const [selectedToken] = useSelectedToken()
-  const [{ amount2 }] = useArbQueryParams()
+  const [networks] = useNetworks();
+  const { childChain } = useNetworksRelationship(networks);
+  const { isArbitrumOne } = isNetwork(childChain.id);
+  const isCctpTransfer = useIsCctpTransfer();
+  const [selectedToken] = useSelectedToken();
+  const [{ amount2 }] = useArbQueryParams();
 
-  const selectedRoute = useRouteStore(state => state.selectedRoute)
+  const selectedRoute = useRouteStore((state) => state.selectedRoute);
 
-  const receivedAmount = useReceivedAmount()
+  const receivedAmount = useReceivedAmount();
 
-  const { erc20ChildBalances } = useBalances()
-  const isBatchTransferSupported = useIsBatchTransferSupported()
-  const { isAmount2InputVisible } = useAmount2InputVisibility()
+  const { erc20ChildBalances } = useBalances();
+  const isBatchTransferSupported = useIsBatchTransferSupported();
+  const { isAmount2InputVisible } = useAmount2InputVisibility();
 
   const { destination } = useMemo(
     () =>
       getTokenOverride({
         destinationChainId: networks.destinationChain.id,
         fromToken: selectedToken?.address,
-        sourceChainId: networks.sourceChain.id
+        sourceChainId: networks.sourceChain.id,
       }),
-    [
-      selectedToken?.address,
-      networks.destinationChain.id,
-      networks.sourceChain.id
-    ]
-  )
+    [selectedToken?.address, networks.destinationChain.id, networks.sourceChain.id],
+  );
 
-  const nativeCurrencyBalances = useNativeCurrencyBalances()
-  const selectedTokenBalances = useSelectedTokenBalances()
+  const nativeCurrencyBalances = useNativeCurrencyBalances();
+  const selectedTokenBalances = useSelectedTokenBalances();
 
   const selectedTokenOrNativeCurrencyBalance = selectedToken
     ? selectedTokenBalances.destinationBalance
-    : nativeCurrencyBalances.destinationBalance
+    : nativeCurrencyBalances.destinationBalance;
 
   // For cctp transfer, if no route are selected, display USDC balance on destination chain
   const showNativeUsdcBalance =
-    (isCctpTransfer &&
-      (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
-    (isCctpTransfer && !selectedRoute)
+    (isCctpTransfer && (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
+    (isCctpTransfer && !selectedRoute);
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
       fromToken: selectedToken?.address,
       sourceChainId: networks.sourceChain.id,
-      destinationChainId: networks.destinationChain.id
-    })
+      destinationChainId: networks.destinationChain.id,
+    });
     if (!override) {
-      return null
+      return null;
     }
 
-    return override.destination
-  }, [selectedToken, networks])
+    return override.destination;
+  }, [selectedToken, networks]);
 
-  const isShowingBatchedTransfer =
-    isBatchTransferSupported && isAmount2InputVisible
+  const isShowingBatchedTransfer = isBatchTransferSupported && isAmount2InputVisible;
 
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
@@ -198,18 +166,15 @@ function BalancesContainer() {
           {showNativeUsdcBalance ? (
             <BalanceRow
               parentErc20Address={
-                isArbitrumOne
-                  ? CommonAddress.Ethereum.USDC
-                  : CommonAddress.ArbitrumOne.USDC
+                isArbitrumOne ? CommonAddress.Ethereum.USDC : CommonAddress.ArbitrumOne.USDC
               }
               balance={formatAmount(
                 (isArbitrumOne
                   ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
-                  : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ??
-                  constants.Zero,
+                  : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ?? constants.Zero,
                 {
-                  decimals: selectedToken?.decimals
-                }
+                  decimals: selectedToken?.decimals,
+                },
               )}
               symbolOverride="USDC"
             />
@@ -219,7 +184,7 @@ function BalancesContainer() {
               balance={
                 selectedTokenOrNativeCurrencyBalance
                   ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
-                      decimals: selectedToken ? selectedToken.decimals : 18
+                      decimals: selectedToken ? selectedToken.decimals : 18,
                     })
                   : undefined
               }
@@ -227,11 +192,11 @@ function BalancesContainer() {
                 tokenOverride
                   ? tokenOverride.symbol
                   : selectedToken
-                  ? sanitizeTokenSymbol(selectedToken.symbol, {
-                      chainId: networks.destinationChain.id,
-                      erc20L1Address: selectedToken.address
-                    })
-                  : undefined
+                    ? sanitizeTokenSymbol(selectedToken.symbol, {
+                        chainId: networks.destinationChain.id,
+                        erc20L1Address: selectedToken.address,
+                      })
+                    : undefined
               }
               logoOverride={destination ? destination.logoURI : undefined}
             />
@@ -259,32 +224,26 @@ function BalancesContainer() {
         </>
       )}
     </div>
-  )
+  );
 }
 
 export function DestinationNetworkBox() {
-  const [networks] = useNetworks()
-  const [{ destinationAddress }] = useArbQueryParams()
-  const [dialogProps, openDialog] = useDialog2()
+  const [networks] = useNetworks();
+  const [{ destinationAddress }] = useArbQueryParams();
+  const [dialogProps, openDialog] = useDialog2();
   const openDestinationNetworkSelectionDialog = () => {
-    openDialog('destination_network_selection')
-  }
+    openDialog('destination_network_selection');
+  };
 
   return (
     <>
-      <NetworkContainer
-        network={networks.destinationChain}
-        customAddress={destinationAddress}
-      >
+      <NetworkContainer network={networks.destinationChain} customAddress={destinationAddress}>
         <div className="flex justify-between">
-          <NetworkButton
-            type="destination"
-            onClick={openDestinationNetworkSelectionDialog}
-          />
+          <NetworkButton type="destination" onClick={openDestinationNetworkSelectionDialog} />
         </div>
         <BalancesContainer />
       </NetworkContainer>
       <DialogWrapper {...dialogProps} />
     </>
-  )
+  );
 }

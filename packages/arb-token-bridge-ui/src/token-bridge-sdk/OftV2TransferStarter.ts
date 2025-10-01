@@ -1,31 +1,23 @@
+import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory';
+import { Config, estimateGas, simulateContract, writeContract } from '@wagmi/core';
+import { BigNumber, constants } from 'ethers';
+import { Address, encodeFunctionData } from 'viem';
+
+import { fetchErc20Allowance } from '../util/TokenUtils';
+import { isDepositMode as isDepositModeUtil } from '../util/isDepositMode';
+import { isNetwork } from '../util/networks';
 import {
-  Config,
-  estimateGas,
-  simulateContract,
-  writeContract
-} from '@wagmi/core'
-import { Address, encodeFunctionData } from 'viem'
-import { BigNumber, constants } from 'ethers'
-import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory'
-import {
+  ApproveTokenProps,
   BridgeTransferStarter,
+  BridgeTransferStarterProps,
+  RequiresTokenApprovalProps,
   TransferEstimateGasProps,
   TransferProps,
   TransferType,
-  ApproveTokenProps,
-  RequiresTokenApprovalProps,
-  BridgeTransferStarterProps
-} from './BridgeTransferStarter'
-import { fetchErc20Allowance } from '../util/TokenUtils'
-import { getAddressFromSigner, getChainIdFromProvider } from './utils'
-import {
-  getOftV2TransferConfig,
-  buildSendParams,
-  getOftV2Quote
-} from './oftUtils'
-import { oftV2Abi } from './oftV2Abi'
-import { isNetwork } from '../util/networks'
-import { isDepositMode as isDepositModeUtil } from '../util/isDepositMode'
+} from './BridgeTransferStarter';
+import { buildSendParams, getOftV2Quote, getOftV2TransferConfig } from './oftUtils';
+import { oftV2Abi } from './oftV2Abi';
+import { getAddressFromSigner, getChainIdFromProvider } from './utils';
 
 async function prepareTransferConfig({
   from,
@@ -34,29 +26,29 @@ async function prepareTransferConfig({
   amount,
   destinationAddress,
   sourceChainId,
-  wagmiConfig
+  wagmiConfig,
 }: {
-  from: string
-  oftContractAddress: string
-  destLzEndpointId: number
-  amount: BigNumber
-  destinationAddress?: string
-  sourceChainId: number
-  wagmiConfig: Config
+  from: string;
+  oftContractAddress: string;
+  destLzEndpointId: number;
+  amount: BigNumber;
+  destinationAddress?: string;
+  sourceChainId: number;
+  wagmiConfig: Config;
 }) {
   const sendParams = buildSendParams({
     dstEid: destLzEndpointId,
     address: from,
     amount,
-    destinationAddress
-  })
+    destinationAddress,
+  });
 
   const quoteFee = await getOftV2Quote({
     sendParams,
     address: oftContractAddress as Address,
     chainId: sourceChainId,
-    wagmiConfig
-  })
+    wagmiConfig,
+  });
 
   return simulateContract(wagmiConfig, {
     address: oftContractAddress as Address,
@@ -65,79 +57,79 @@ async function prepareTransferConfig({
     args: [
       // wagmi typing being weird that it doesn't recognize SendParams as a valid type
       sendParams as {
-        dstEid: number
-        to: `0x${string}`
-        amountLD: bigint
-        minAmountLD: bigint
-        extraOptions: `0x${string}`
-        composeMsg: `0x${string}`
-        oftCmd: `0x${string}`
+        dstEid: number;
+        to: `0x${string}`;
+        amountLD: bigint;
+        minAmountLD: bigint;
+        extraOptions: `0x${string}`;
+        composeMsg: `0x${string}`;
+        oftCmd: `0x${string}`;
       },
       quoteFee,
-      from as Address
+      from as Address,
     ],
-    value: quoteFee.nativeFee
-  })
+    value: quoteFee.nativeFee,
+  });
 }
 
 export class OftV2TransferStarter extends BridgeTransferStarter {
-  public transferType: TransferType = 'oftV2'
-  private isOftTransferValidated?: boolean
-  private oftAdapterAddress?: string
-  private destLzEndpointId?: number
-  private isSourceChainEthereum?: boolean
+  public transferType: TransferType = 'oftV2';
+  private isOftTransferValidated?: boolean;
+  private oftAdapterAddress?: string;
+  private destLzEndpointId?: number;
+  private isSourceChainEthereum?: boolean;
 
   constructor(props: BridgeTransferStarterProps) {
-    super(props)
+    super(props);
     if (!this.sourceChainErc20Address) {
-      throw Error('OFT token address not found')
+      throw Error('OFT token address not found');
     }
   }
 
   private async validateOftTransfer() {
     if (typeof this.isOftTransferValidated !== 'undefined') {
       if (!this.isOftTransferValidated) {
-        throw Error('OFT transfer validation failed')
+        throw Error('OFT transfer validation failed');
       }
-      return
+      return;
     }
 
     if (!this.sourceChainErc20Address) {
-      this.isOftTransferValidated = false
-      throw Error('OFT token address not found')
+      this.isOftTransferValidated = false;
+      throw Error('OFT token address not found');
     }
 
     const [sourceChainId, destinationChainId] = await Promise.all([
-      this.sourceChainProvider.getNetwork().then(n => n.chainId),
-      this.destinationChainProvider.getNetwork().then(n => n.chainId)
-    ])
+      this.sourceChainProvider.getNetwork().then((n) => n.chainId),
+      this.destinationChainProvider.getNetwork().then((n) => n.chainId),
+    ]);
 
     const oftTransferConfig = getOftV2TransferConfig({
       sourceChainId,
       destinationChainId,
-      sourceChainErc20Address: this.sourceChainErc20Address
-    })
+      sourceChainErc20Address: this.sourceChainErc20Address,
+    });
 
     if (!oftTransferConfig.isValid) {
-      this.isOftTransferValidated = false
-      throw Error('OFT transfer validation failed')
+      this.isOftTransferValidated = false;
+      throw Error('OFT transfer validation failed');
     }
 
-    this.isSourceChainEthereum = !!isNetwork(sourceChainId).isEthereumMainnet
-    this.isOftTransferValidated = true
-    this.oftAdapterAddress = oftTransferConfig.sourceChainAdapterAddress
-    this.destLzEndpointId = oftTransferConfig.destinationChainLzEndpointId
+    this.isSourceChainEthereum = !!isNetwork(sourceChainId).isEthereumMainnet;
+    this.isOftTransferValidated = true;
+    this.oftAdapterAddress = oftTransferConfig.sourceChainAdapterAddress;
+    this.destLzEndpointId = oftTransferConfig.destinationChainLzEndpointId;
   }
 
   private getOftAdapterContractAddress(): string {
     if (!this.isOftTransferValidated) {
-      throw Error('OFT transfer validation failed')
+      throw Error('OFT transfer validation failed');
     }
-    return this.oftAdapterAddress!
+    return this.oftAdapterAddress!;
   }
 
   public async requiresNativeCurrencyApproval() {
-    return false
+    return false;
   }
 
   public async approveNativeCurrencyEstimateGas() {
@@ -150,75 +142,70 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
 
   public async requiresTokenApproval({
     amount,
-    owner
+    owner,
   }: RequiresTokenApprovalProps): Promise<boolean> {
-    await this.validateOftTransfer()
+    await this.validateOftTransfer();
 
     // only Eth adapter will need token approval
-    if (!this.isSourceChainEthereum) return false
+    if (!this.isSourceChainEthereum) return false;
 
     const allowance = await fetchErc20Allowance({
       address: this.sourceChainErc20Address!,
       provider: this.sourceChainProvider,
       owner,
-      spender: this.getOftAdapterContractAddress()
-    })
+      spender: this.getOftAdapterContractAddress(),
+    });
 
-    return allowance.lt(amount)
+    return allowance.lt(amount);
   }
 
   public async approveTokenEstimateGas({ signer }: ApproveTokenProps) {
-    await this.validateOftTransfer()
+    await this.validateOftTransfer();
 
-    const address = await getAddressFromSigner(signer)
+    const address = await getAddressFromSigner(signer);
     const contract = ERC20__factory.connect(
       this.sourceChainErc20Address!,
-      this.sourceChainProvider
-    )
+      this.sourceChainProvider,
+    );
 
     return contract.estimateGas.approve(
       this.oftAdapterAddress!,
       constants.MaxUint256, // Eth USDT will need MAX approval since that cannot be changed afterwards
-      { from: address }
-    )
+      { from: address },
+    );
   }
 
   public async approveToken({ signer }: ApproveTokenProps) {
-    await this.validateOftTransfer()
-    const spender = this.getOftAdapterContractAddress()
-    const contract = ERC20__factory.connect(
-      this.sourceChainErc20Address!,
-      signer
-    )
+    await this.validateOftTransfer();
+    const spender = this.getOftAdapterContractAddress();
+    const contract = ERC20__factory.connect(this.sourceChainErc20Address!, signer);
 
-    return contract.functions.approve(spender, constants.MaxUint256) // Eth USDT will need MAX approval since that cannot be changed afterwards
+    return contract.functions.approve(spender, constants.MaxUint256); // Eth USDT will need MAX approval since that cannot be changed afterwards
   }
 
   public async transferEstimateGas({
     amount,
     from,
     destinationAddress,
-    wagmiConfig
+    wagmiConfig,
   }: TransferEstimateGasProps) {
-    await this.validateOftTransfer()
+    await this.validateOftTransfer();
 
     const isDepositMode = isDepositModeUtil({
       sourceChainId: await getChainIdFromProvider(this.sourceChainProvider),
-      destinationChainId: await getChainIdFromProvider(
-        this.destinationChainProvider
-      )
-    })
+      destinationChainId: await getChainIdFromProvider(this.destinationChainProvider),
+    });
 
     if (!this.sourceChainErc20Address) {
-      throw Error('OFT token address not found')
+      throw Error('OFT token address not found');
     }
 
     const allowance = await fetchErc20Allowance({
       address: this.sourceChainErc20Address,
       provider: this.sourceChainProvider,
       owner: from,
-      spender: this.getOftAdapterContractAddress()
-    })
+      spender: this.getOftAdapterContractAddress(),
+    });
 
     if (allowance.lt(amount)) {
       /**
@@ -239,15 +226,15 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
        */
       const gasEstimate = isDepositMode
         ? BigNumber.from(600_000 * 1.3)
-        : BigNumber.from(360_000 * 1.3)
+        : BigNumber.from(360_000 * 1.3);
       return {
         estimatedParentChainGas: isDepositMode ? gasEstimate : constants.Zero,
-        estimatedChildChainGas: isDepositMode ? constants.Zero : gasEstimate
-      }
+        estimatedChildChainGas: isDepositMode ? constants.Zero : gasEstimate,
+      };
     }
 
     if (!wagmiConfig) {
-      return undefined
+      return undefined;
     }
 
     const { request } = await prepareTransferConfig({
@@ -257,10 +244,10 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
       destLzEndpointId: this.destLzEndpointId!,
       destinationAddress,
       sourceChainId: await getChainIdFromProvider(this.sourceChainProvider),
-      wagmiConfig
-    })
+      wagmiConfig,
+    });
 
-    const { value, args } = request
+    const { value, args } = request;
 
     const gasEstimate = await estimateGas(wagmiConfig, {
       chainId: await getChainIdFromProvider(this.sourceChainProvider),
@@ -269,40 +256,36 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
       data: encodeFunctionData({
         abi: oftV2Abi,
         functionName: 'send',
-        args
-      })
-    })
+        args,
+      }),
+    });
 
     return {
-      estimatedParentChainGas: isDepositMode
-        ? BigNumber.from(gasEstimate)
-        : constants.Zero,
-      estimatedChildChainGas: isDepositMode
-        ? constants.Zero
-        : BigNumber.from(gasEstimate)
-    }
+      estimatedParentChainGas: isDepositMode ? BigNumber.from(gasEstimate) : constants.Zero,
+      estimatedChildChainGas: isDepositMode ? constants.Zero : BigNumber.from(gasEstimate),
+    };
   }
 
   public async transferEstimateFee({
     amount,
     from,
     destinationAddress,
-    wagmiConfig
+    wagmiConfig,
   }: TransferEstimateGasProps) {
-    await this.validateOftTransfer()
+    await this.validateOftTransfer();
 
     const sendParams = buildSendParams({
       dstEid: this.destLzEndpointId!,
       address: from,
       amount,
-      destinationAddress
-    })
+      destinationAddress,
+    });
 
     if (!wagmiConfig) {
       return {
         estimatedSourceChainFee: constants.Zero,
-        estimatedDestinationChainFee: constants.Zero
-      }
+        estimatedDestinationChainFee: constants.Zero,
+      };
     }
 
     // the amount in native currency that needs to be paid at the source chain to cover for both source and destination message transfers
@@ -310,22 +293,22 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
       address: this.getOftAdapterContractAddress() as Address,
       sendParams,
       chainId: await getChainIdFromProvider(this.sourceChainProvider),
-      wagmiConfig
-    })
+      wagmiConfig,
+    });
 
     return {
       estimatedSourceChainFee: nativeFee,
-      estimatedDestinationChainFee: constants.Zero
-    }
+      estimatedDestinationChainFee: constants.Zero,
+    };
   }
 
   public async transfer({
     amount,
     signer,
     destinationAddress,
-    wagmiConfig
+    wagmiConfig,
   }: TransferProps & { wagmiConfig: Config }) {
-    await this.validateOftTransfer()
+    await this.validateOftTransfer();
 
     const { request } = await prepareTransferConfig({
       from: await signer.getAddress(),
@@ -334,17 +317,17 @@ export class OftV2TransferStarter extends BridgeTransferStarter {
       destLzEndpointId: this.destLzEndpointId!,
       destinationAddress,
       sourceChainId: await getChainIdFromProvider(this.sourceChainProvider),
-      wagmiConfig
-    })
+      wagmiConfig,
+    });
 
-    const sendTx = await writeContract(wagmiConfig, request)
+    const sendTx = await writeContract(wagmiConfig, request);
 
     return {
       transferType: this.transferType,
       status: 'pending',
       sourceChainProvider: this.sourceChainProvider,
       sourceChainTransaction: { hash: sendTx },
-      destinationChainProvider: this.destinationChainProvider
-    }
+      destinationChainProvider: this.destinationChainProvider,
+    };
   }
 }

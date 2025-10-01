@@ -1,7 +1,7 @@
 name: Add Orbit Chain Request
 description: File a request to have your Orbit chain added to the bridge
-title: "[feat]: Add Orbit chain "
-labels: ["Type: Add Orbit Chain"]
+title: '[feat]: Add Orbit chain '
+labels: ['Type: Add Orbit Chain']
 body:
   - type: markdown
     attributes:
@@ -69,20 +69,20 @@ body:
       label: Explorer URL
     validations:
       required: true
-      
+
   - type: dropdown
     id: parent-chain-id
     attributes:
       label: Parent chain ID
       description: Select the parent chain for your Orbit chain.
       options:
-        - "1"
-        - "42161"
-        - "42170"
-        - "421614"
-        - "11155111"
-        - "8453"
-        - "84532"
+        - '1'
+        - '42161'
+        - '42170'
+        - '421614'
+        - '11155111'
+        - '8453'
+        - '84532'
     validations:
       required: true
 
@@ -196,7 +196,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## Orbit chain token bridge contract addresses 
+        ## Orbit chain token bridge contract addresses
   - type: input
     id: child-custom-gateway
     attributes:
@@ -241,8 +241,8 @@ body:
       label: Fast Withdrawals active
       description: Only select Yes if your chain has Fast Withdrawals enabled. We will show information in our UI that your chain has Fast Withdrawals implemented and that withdrawals will take less time than usual.
       options:
-        - "No"
-        - "Yes"
+        - 'No'
+        - 'Yes'
       default: 0
   - type: input
     id: fast-withdrawal-time

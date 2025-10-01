@@ -1,19 +1,17 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import {
-  getServerSideAppParams,
-  ServerSideAppProps,
-} from '@/common/getServerSideAppParams';
+
 import { getEntityMetaData } from '@/common/getMetaData';
+import { ServerSideAppProps, getServerSideAppParams } from '@/common/getServerSideAppParams';
 import { EntityType } from '@/common/types';
-import { HeroBanner } from '@/components/HomePage/HeroBanner';
-import { TrendingProjects } from '@/components/HomePage/TrendingProjects';
-import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
-import { Resources } from '@/components/HomePage/Resources';
-import { NewProjects } from '@/components/HomePage/NewProjects';
-import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
-import { SocialsFooter } from '@/components/SocialsFooter';
 import { DripCard } from '@/components/DripCard';
+import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
+import { HeroBanner } from '@/components/HomePage/HeroBanner';
+import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
+import { NewProjects } from '@/components/HomePage/NewProjects';
+import { Resources } from '@/components/HomePage/Resources';
+import { TrendingProjects } from '@/components/HomePage/TrendingProjects';
+import { SocialsFooter } from '@/components/SocialsFooter';
 
 const metadataContent = {
   url: 'https://portal.arbitrum.io',
@@ -26,9 +24,7 @@ const metadataContent = {
 export function generateMetadata(props: ServerSideAppProps): Metadata {
   const { selectedProject, selectedOrbitChain } = getServerSideAppParams(props);
 
-  const entityType = selectedProject
-    ? EntityType.Project
-    : EntityType.OrbitChain;
+  const entityType = selectedProject ? EntityType.Project : EntityType.OrbitChain;
 
   const entitySlug = selectedProject || selectedOrbitChain || '';
 
