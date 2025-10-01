@@ -91,6 +91,7 @@ import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/Bri
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
+import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -114,6 +115,7 @@ export function TransferPanel() {
     { amount, amount2, destinationAddress, token: tokenFromSearchParams },
     setQueryParams
   ] = useArbQueryParams()
+    const showBuyPanel = isOnrampEnabled()
   const { embedMode, pathname } = useMode()
   const [importTokenModalStatus, setImportTokenModalStatus] =
     useState<ImportTokenModalStatus>(ImportTokenModalStatus.IDLE)
@@ -1262,7 +1264,7 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
-    if (pathname === BUY_EMBED_PATHNAME) {
+    if (pathname === BUY_EMBED_PATHNAME && showBuyPanel) {
       return (
         <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />
       )
