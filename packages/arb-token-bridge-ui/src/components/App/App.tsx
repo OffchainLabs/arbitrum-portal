@@ -97,6 +97,20 @@ const AppContent = React.memo(() => {
   // apply custom themes if any
   useTheme();
 
+  // Register service worker for notifications
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(registration => {
+          console.log('Service Worker registered:', registration)
+        })
+        .catch(err => {
+          console.error('Service Worker registration failed:', err)
+        })
+    }
+  }, [])
+
   if (address && isBlocked) {
     return (
       <BlockedDialog

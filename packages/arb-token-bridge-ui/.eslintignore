@@ -1,0 +1,2 @@
+# Service worker is plain JavaScript for browser, not part of TypeScript project
+public/sw.js
