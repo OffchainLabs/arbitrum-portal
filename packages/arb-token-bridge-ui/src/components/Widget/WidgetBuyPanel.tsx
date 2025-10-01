@@ -39,7 +39,7 @@ export function WidgetBuyPanel({
         >
           {/* Left/Top panel */}
           <div className="flex h-full flex-col gap-1 overflow-hidden">
-            {showBuyPanel ? <BuyPanel /> : <TransferPanelMain />}
+            <BuyPanel />
           </div>
         </div>
       </div>

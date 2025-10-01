@@ -90,11 +90,8 @@ export async function sanitizeAndRedirect(
   searchParams: {
     [key: string]: string | string[] | undefined;
   },
-  baseUrl: string,
-  options?: { disabledQueryParams?: string[] }
+  baseUrl: string
 ) {
-  const disabledQueryParams = options?.disabledQueryParams || []
-
   const sourceChainId = decodeChainQueryParam(searchParams.sourceChain)
   const destinationChainId = decodeChainQueryParam(
     searchParams.destinationChain
