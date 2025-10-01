@@ -1,17 +1,17 @@
-import { hasL1Subgraph } from '../SubgraphUtils'
-import { getAPIBaseUrl, sanitizeQueryParams } from '../index'
+import { hasL1Subgraph } from '../SubgraphUtils';
+import { getAPIBaseUrl, sanitizeQueryParams } from '../index';
 
 export type FetchEthDepositsToCustomDestinationFromSubgraphResult = {
-  receiver: string
-  sender: string
-  timestamp: string
-  transactionHash: string
-  type: 'EthDeposit'
-  isClassic: false
-  id: string
-  ethValue: string
-  blockCreatedAt: string
-}
+  receiver: string;
+  sender: string;
+  timestamp: string;
+  transactionHash: string;
+  type: 'EthDeposit';
+  isClassic: false;
+  id: string;
+  ethValue: string;
+  blockCreatedAt: string;
+};
 
 /**
  * Fetches initiated retryable deposits (ETH transfers to custom destination) from subgraph in range of [fromBlock, toBlock] and pageParams.
@@ -35,20 +35,20 @@ export const fetchEthDepositsToCustomDestinationFromSubgraph = async ({
   l2ChainId,
   pageSize = 10,
   pageNumber = 0,
-  searchString = ''
+  searchString = '',
 }: {
-  sender?: string
-  receiver?: string
-  fromBlock: number
-  toBlock?: number
-  l2ChainId: number
-  pageSize?: number
-  pageNumber?: number
-  searchString?: string
+  sender?: string;
+  receiver?: string;
+  fromBlock: number;
+  toBlock?: number;
+  l2ChainId: number;
+  pageSize?: number;
+  pageNumber?: number;
+  searchString?: string;
 }): Promise<FetchEthDepositsToCustomDestinationFromSubgraphResult[]> => {
   if (toBlock && fromBlock >= toBlock) {
     // if fromBlock > toBlock or both are equal / 0
-    return []
+    return [];
   }
 
   const urlParams = new URLSearchParams(
@@ -60,26 +60,27 @@ export const fetchEthDepositsToCustomDestinationFromSubgraph = async ({
       l2ChainId,
       pageSize,
       page: pageNumber,
-      search: searchString
-    })
-  )
+      search: searchString,
+    }),
+  );
 
   if (!hasL1Subgraph(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`)
+    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
   }
 
-  if (pageSize === 0) return [] // don't query subgraph if nothing requested
+  if (pageSize === 0) return []; // don't query subgraph if nothing requested
 
   const response = await fetch(
     `${getAPIBaseUrl()}/api/eth-deposits-custom-destination?${urlParams}`,
     {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  )
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
 
-  const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
-    (await response.json()).data
+  const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] = (
+    await response.json()
+  ).data;
 
-  return transactions
-}
+  return transactions;
+};

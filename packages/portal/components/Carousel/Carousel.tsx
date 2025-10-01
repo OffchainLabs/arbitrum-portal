@@ -1,8 +1,9 @@
 'use client';
 
-import './flickity.css';
 import { PropsWithChildren } from 'react';
 import Flickity from 'react-flickity-component';
+
+import './flickity.css';
 
 const Carousel = ({
   children,

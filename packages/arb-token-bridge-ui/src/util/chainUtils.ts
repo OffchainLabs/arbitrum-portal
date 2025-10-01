@@ -1,36 +1,33 @@
-import { mainnet, arbitrum } from '@wagmi/core/chains'
+import { arbitrum, mainnet } from '@wagmi/core/chains';
+
+import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
+import { ChainId } from '../types/ChainId';
 import {
   getChainByChainId,
   getChildChainIds,
   getCustomChainsFromLocalStorage,
+  isArbitrumChain,
   isNetwork,
   sortChainIds,
-  isArbitrumChain
-} from './networks'
-import { ChainId } from '../types/ChainId'
+} from './networks';
+import { getOrbitChains } from './orbitChainsList';
 import {
-  sepolia,
+  localL2Network as arbitrumLocal,
   arbitrumNova,
   arbitrumSepolia,
-  localL1Network as local,
-  localL2Network as arbitrumLocal,
-  localL3Network as l3Local,
   base,
-  baseSepolia
-} from './wagmi/wagmiAdditionalNetworks'
-import { getOrbitChains } from './orbitChainsList'
-import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants'
+  baseSepolia,
+  localL3Network as l3Local,
+  localL1Network as local,
+  sepolia,
+} from './wagmi/wagmiAdditionalNetworks';
 
-export function isSupportedChainId(
-  chainId: ChainId | undefined
-): chainId is ChainId {
+export function isSupportedChainId(chainId: ChainId | undefined): chainId is ChainId {
   if (!chainId) {
-    return false
+    return false;
   }
 
-  const customChainIds = getCustomChainsFromLocalStorage().map(
-    chain => chain.chainId
-  )
+  const customChainIds = getCustomChainsFromLocalStorage().map((chain) => chain.chainId);
 
   return [
     mainnet.id,
@@ -43,31 +40,31 @@ export function isSupportedChainId(
     arbitrumLocal.id,
     l3Local.id,
     local.id,
-    ...getOrbitChains().map(chain => chain.chainId),
-    ...customChainIds
-  ].includes(chainId)
+    ...getOrbitChains().map((chain) => chain.chainId),
+    ...customChainIds,
+  ].includes(chainId);
 }
 
 export function getDestinationChainIds(
   chainId: ChainId | number,
   {
     includeLifiEnabledChainPairs = false,
-    disableTransfersToNonArbitrumChains = false
+    disableTransfersToNonArbitrumChains = false,
   }: {
-    includeLifiEnabledChainPairs?: boolean
-    disableTransfersToNonArbitrumChains?: boolean
-  } = {}
+    includeLifiEnabledChainPairs?: boolean;
+    disableTransfersToNonArbitrumChains?: boolean;
+  } = {},
 ): ChainId[] {
   const chain = getChainByChainId(chainId, {
-    includeRootChainsWithoutDestination: includeLifiEnabledChainPairs
-  })
+    includeRootChainsWithoutDestination: includeLifiEnabledChainPairs,
+  });
 
   if (!chain) {
-    return []
+    return [];
   }
 
-  const parentChainId = isArbitrumChain(chain) ? chain.parentChainId : undefined
-  const chainIds = getChildChainIds(chain)
+  const parentChainId = isArbitrumChain(chain) ? chain.parentChainId : undefined;
+  const chainIds = getChildChainIds(chain);
 
   /**
    * Add parent chain if:
@@ -77,26 +74,23 @@ export function getDestinationChainIds(
   if (
     parentChainId &&
     (!isNetwork(parentChainId).isNonArbitrumNetwork ||
-      (isNetwork(parentChainId).isNonArbitrumNetwork &&
-        !disableTransfersToNonArbitrumChains))
+      (isNetwork(parentChainId).isNonArbitrumNetwork && !disableTransfersToNonArbitrumChains))
   ) {
-    chainIds.push(parentChainId)
+    chainIds.push(parentChainId);
   }
 
   /** Include lifi chains, if flag is on */
-  const lifiChainIds = lifiDestinationChainIds[chainId]
+  const lifiChainIds = lifiDestinationChainIds[chainId];
   if (includeLifiEnabledChainPairs && lifiChainIds && lifiChainIds.length) {
-    chainIds.push(...lifiChainIds)
+    chainIds.push(...lifiChainIds);
   }
 
   /** Disabling transfers to non arbitrum chains, remove non-arbitrum chains */
   if (disableTransfersToNonArbitrumChains) {
     return sortChainIds([
-      ...new Set(
-        chainIds.filter(chainId => !isNetwork(chainId).isNonArbitrumNetwork)
-      )
-    ])
+      ...new Set(chainIds.filter((chainId) => !isNetwork(chainId).isNonArbitrumNetwork)),
+    ]);
   }
 
-  return sortChainIds([...new Set(chainIds)])
+  return sortChainIds([...new Set(chainIds)]);
 }

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink } from './ExternalLink';
+
 import { dayjs } from '../common/dateUtils';
+import { ExternalLink } from './ExternalLink';
 
 type ArbitrumStatusResponse = {
   content: {
@@ -19,21 +20,13 @@ type ArbitrumStatusResponse = {
     }[];
   };
 };
-const SiteBannerArbiscanIncident = ({
-  type,
-}: {
-  type: 'arbitrum-one' | 'arbitrum-nova';
-}) => {
+const SiteBannerArbiscanIncident = ({ type }: { type: 'arbitrum-one' | 'arbitrum-nova' }) => {
   const isArbitrumOne = type === 'arbitrum-one';
 
   const chainName = isArbitrumOne ? 'Arbitrum One' : 'Arbitrum Nova';
-  const explorerUrl = isArbitrumOne
-    ? 'https://arbiscan.io/'
-    : 'https://nova.arbiscan.io/';
+  const explorerUrl = isArbitrumOne ? 'https://arbiscan.io/' : 'https://nova.arbiscan.io/';
   const explorerTitle = isArbitrumOne ? 'Arbiscan' : 'Nova Arbiscan';
-  const alternativeExplorerUrl = isArbitrumOne
-    ? 'https://www.oklink.com/arbitrum'
-    : false;
+  const alternativeExplorerUrl = isArbitrumOne ? 'https://www.oklink.com/arbitrum' : false;
 
   return (
     <div className="bg-dark-orange px-4 py-[8px] text-center text-sm font-normal text-white">
@@ -42,15 +35,12 @@ const SiteBannerArbiscanIncident = ({
           <ExternalLink className="arb-hover underline" href={explorerUrl}>
             {explorerTitle}
           </ExternalLink>{' '}
-          is temporarily facing some issues while showing the latest data.{' '}
-          {chainName} is still live and running.{' '}
+          is temporarily facing some issues while showing the latest data. {chainName} is still live
+          and running.{' '}
           {alternativeExplorerUrl ? (
             <>
               If you need an alternative block explorer, you can visit{' '}
-              <ExternalLink
-                className="arb-hover underline"
-                href={alternativeExplorerUrl}
-              >
+              <ExternalLink className="arb-hover underline" href={alternativeExplorerUrl}>
                 here
               </ExternalLink>
               .
@@ -91,9 +81,7 @@ export const SiteBanner = ({
         const response = await fetch('https://bridge.arbitrum.io/api/status', {
           method: 'GET',
         });
-        setArbitrumStatus(
-          (await response.json()).data as ArbitrumStatusResponse,
-        );
+        setArbitrumStatus((await response.json()).data as ArbitrumStatusResponse);
       } catch (e) {
         // error fetching status
         console.error(e);
@@ -104,19 +92,16 @@ export const SiteBanner = ({
 
   // show incident-banner if there is an active incident
   const showArbiscanOneIncidentBanner = arbitrumStatus.content.components.some(
-    (component) =>
-      isComponentArbiscanOne(component) && !isComponentOperational(component),
+    (component) => isComponentArbiscanOne(component) && !isComponentOperational(component),
   );
   const showArbiscanNovaIncidentBanner = arbitrumStatus.content.components.some(
-    (component) =>
-      isComponentArbiscanNova(component) && !isComponentOperational(component),
+    (component) => isComponentArbiscanNova(component) && !isComponentOperational(component),
   );
 
   // show info-banner till expiry date if provided
   const showInfoBanner =
     !!children &&
-    (!expiryDate ||
-      (expiryDate && dayjs.utc().isBefore(dayjs(expiryDate).utc(true))));
+    (!expiryDate || (expiryDate && dayjs.utc().isBefore(dayjs(expiryDate).utc(true))));
 
   if (showArbiscanOneIncidentBanner) {
     return <SiteBannerArbiscanIncident type="arbitrum-one" />;

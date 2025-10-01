@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
+
 import { getTvlForOrbitChain } from '@/common/orbitChains';
 
 const formatter = Intl.NumberFormat('en', { notation: 'compact' });

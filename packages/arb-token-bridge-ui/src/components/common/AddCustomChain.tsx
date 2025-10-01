@@ -1,92 +1,85 @@
-import { useState } from 'react'
-import { isAddress } from 'ethers/lib/utils'
-import { Popover } from '@headlessui/react'
-import { registerCustomArbitrumNetwork } from '@arbitrum/sdk'
-import { StaticJsonRpcProvider } from '@ethersproject/providers'
-import { EllipsisHorizontalIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { constants } from 'ethers'
-import { z } from 'zod'
-import { RollupAdminLogic__factory } from '@arbitrum/sdk/dist/lib/abi/factories/RollupAdminLogic__factory'
-import SyntaxHighlighter from 'react-syntax-highlighter'
-import { stackoverflowDark } from 'react-syntax-highlighter/dist/esm/styles/hljs'
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { RollupAdminLogic__factory } from '@arbitrum/sdk/dist/lib/abi/factories/RollupAdminLogic__factory';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { Popover } from '@headlessui/react';
+import { EllipsisHorizontalIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { constants } from 'ethers';
+import { isAddress } from 'ethers/lib/utils';
+import { useState } from 'react';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { stackoverflowDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { z } from 'zod';
 
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { ChainId } from '../../types/ChainId';
+import { Erc20Data, fetchErc20Data } from '../../util/TokenUtils';
 import {
   ChainWithRpcUrl,
-  getCustomChainsFromLocalStorage,
   getCustomChainFromLocalStorageById,
+  getCustomChainsFromLocalStorage,
   getNetworkName,
+  isNetwork,
   removeCustomChainFromLocalStorage,
+  rpcURLs,
   saveCustomChainToLocalStorage,
   supportedCustomOrbitParentChains,
-  rpcURLs,
-  isNetwork
-} from '../../util/networks'
-import { ChainId } from '../../types/ChainId'
-import { Loader } from './atoms/Loader'
-import { Erc20Data, fetchErc20Data } from '../../util/TokenUtils'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { Transition } from './Transition'
-import { Button } from './Button'
+} from '../../util/networks';
+import { Button } from './Button';
+import { Transition } from './Transition';
+import { Loader } from './atoms/Loader';
 
-const orbitConfigsLocalStorageKey = 'arbitrum:orbit:configs'
+const orbitConfigsLocalStorageKey = 'arbitrum:orbit:configs';
 
 type Contracts = {
-  customGateway: string
-  multicall: string
-  proxyAdmin: string
-  router: string
-  standardGateway: string
-  weth: string
-  wethGateway: string
-}
+  customGateway: string;
+  multicall: string;
+  proxyAdmin: string;
+  router: string;
+  standardGateway: string;
+  weth: string;
+  wethGateway: string;
+};
 
 type OrbitConfig = {
   chainInfo: {
-    chainName: string
-    chainId: number
-    parentChainId: number
-    rpcUrl: string
-    explorerUrl: string
-    nativeToken?: string
-  }
+    chainName: string;
+    chainId: number;
+    parentChainId: number;
+    rpcUrl: string;
+    explorerUrl: string;
+    nativeToken?: string;
+  };
   coreContracts: {
-    rollup: string
-    inbox: string
-    outbox: string
-    sequencerInbox: string
-    bridge: string
-  }
+    rollup: string;
+    inbox: string;
+    outbox: string;
+    sequencerInbox: string;
+    bridge: string;
+  };
   tokenBridgeContracts: {
-    l2Contracts: Contracts
-    l3Contracts: Contracts
-  }
-}
+    l2Contracts: Contracts;
+    l3Contracts: Contracts;
+  };
+};
 
-const zAddress = z
-  .string()
-  .refine(address => isAddress(address), 'Invalid address')
+const zAddress = z.string().refine((address) => isAddress(address), 'Invalid address');
 
 const zChainId = z
   .number()
   .int()
   .positive()
-  .refine(
-    chainId => !Object.values(ChainId).includes(chainId),
-    'Invalid custom Orbit chain ID'
-  )
-  .refine(
-    chainId => !getCustomChainFromLocalStorageById(chainId),
-    'Custom chain already added'
-  )
+  .refine((chainId) => !Object.values(ChainId).includes(chainId), 'Invalid custom Orbit chain ID')
+  .refine((chainId) => !getCustomChainFromLocalStorageById(chainId), 'Custom chain already added');
 
 const zParentChainId = z
   .number()
   .int()
   .positive()
   .refine(
-    chainId => supportedCustomOrbitParentChains.includes(chainId),
-    'Unsupported parent chain ID'
-  )
+    (chainId) => supportedCustomOrbitParentChains.includes(chainId),
+    'Unsupported parent chain ID',
+  );
 
 const zContract = z.object({
   customGateway: zAddress,
@@ -95,8 +88,8 @@ const zContract = z.object({
   router: zAddress,
   standardGateway: zAddress,
   weth: zAddress,
-  wethGateway: zAddress
-})
+  wethGateway: zAddress,
+});
 
 const ZodOrbitConfig = z.object({
   chainInfo: z.object({
@@ -105,64 +98,54 @@ const ZodOrbitConfig = z.object({
     parentChainId: zParentChainId,
     rpcUrl: z.string().url(),
     explorerUrl: z.string().url(),
-    nativeToken: zAddress.optional()
+    nativeToken: zAddress.optional(),
   }),
   coreContracts: z.object({
     rollup: zAddress,
     inbox: zAddress,
     outbox: zAddress,
     sequencerInbox: zAddress,
-    bridge: zAddress
+    bridge: zAddress,
   }),
   tokenBridgeContracts: z.object({
     l2Contracts: zContract,
-    l3Contracts: zContract
-  })
-})
+    l3Contracts: zContract,
+  }),
+});
 
 function getOrbitConfigsFromLocalStorage(): OrbitConfig[] {
-  const configs = localStorage.getItem(orbitConfigsLocalStorageKey)
+  const configs = localStorage.getItem(orbitConfigsLocalStorageKey);
 
   if (!configs) {
-    return []
+    return [];
   }
 
-  return JSON.parse(configs)
+  return JSON.parse(configs);
 }
 
-function getOrbitConfigFromLocalStorageById(
-  chainId: ChainId
-): OrbitConfig | undefined {
-  const configs = getOrbitConfigsFromLocalStorage()
-  return configs.find(config => config.chainInfo.chainId === chainId)
+function getOrbitConfigFromLocalStorageById(chainId: ChainId): OrbitConfig | undefined {
+  const configs = getOrbitConfigsFromLocalStorage();
+  return configs.find((config) => config.chainInfo.chainId === chainId);
 }
 
 function removeOrbitConfigFromLocalStorage(chainId: ChainId) {
-  const configs = getOrbitConfigsFromLocalStorage()
-  const newConfigs = configs.filter(
-    config => config.chainInfo.chainId !== chainId
-  )
-  localStorage.setItem(orbitConfigsLocalStorageKey, JSON.stringify(newConfigs))
+  const configs = getOrbitConfigsFromLocalStorage();
+  const newConfigs = configs.filter((config) => config.chainInfo.chainId !== chainId);
+  localStorage.setItem(orbitConfigsLocalStorageKey, JSON.stringify(newConfigs));
 }
 
 function saveOrbitConfigToLocalStorage(data: OrbitConfig) {
-  const configs = getOrbitConfigsFromLocalStorage()
-  localStorage.setItem(
-    orbitConfigsLocalStorageKey,
-    JSON.stringify([...configs, data])
-  )
+  const configs = getOrbitConfigsFromLocalStorage();
+  localStorage.setItem(orbitConfigsLocalStorageKey, JSON.stringify([...configs, data]));
 }
 
-async function mapOrbitConfigToOrbitChain(
-  data: OrbitConfig
-): Promise<ChainWithRpcUrl> {
+async function mapOrbitConfigToOrbitChain(data: OrbitConfig): Promise<ChainWithRpcUrl> {
   const rollup = RollupAdminLogic__factory.connect(
     data.coreContracts.rollup,
-    getProviderForChainId(data.chainInfo.parentChainId)
-  )
-  const confirmPeriodBlocks =
-    (await rollup.confirmPeriodBlocks()).toNumber() ?? 150
-  const { isTestnet } = isNetwork(data.chainInfo.parentChainId)
+    getProviderForChainId(data.chainInfo.parentChainId),
+  );
+  const confirmPeriodBlocks = (await rollup.confirmPeriodBlocks()).toNumber() ?? 150;
+  const { isTestnet } = isNetwork(data.chainInfo.parentChainId);
 
   return {
     chainId: data.chainInfo.chainId,
@@ -172,7 +155,7 @@ async function mapOrbitConfigToOrbitChain(
       inbox: data.coreContracts.inbox,
       outbox: data.coreContracts.outbox,
       rollup: data.coreContracts.rollup,
-      sequencerInbox: data.coreContracts.sequencerInbox
+      sequencerInbox: data.coreContracts.sequencerInbox,
     },
     rpcUrl: data.chainInfo.rpcUrl,
     explorerUrl: data.chainInfo.explorerUrl,
@@ -195,68 +178,66 @@ async function mapOrbitConfigToOrbitChain(
       childMultiCall: data.tokenBridgeContracts.l3Contracts.multicall,
       childProxyAdmin: data.tokenBridgeContracts.l3Contracts.proxyAdmin,
       childWeth: data.tokenBridgeContracts.l3Contracts.weth,
-      childWethGateway: data.tokenBridgeContracts.l3Contracts.wethGateway
-    }
-  }
+      childWethGateway: data.tokenBridgeContracts.l3Contracts.wethGateway,
+    },
+  };
 }
 
 async function fetchNativeToken(
-  data: OrbitConfig
+  data: OrbitConfig,
 ): Promise<
   | { nativeToken: undefined; nativeTokenData: undefined }
   | { nativeToken: string; nativeTokenData: Erc20Data }
 > {
-  const nativeToken = data.chainInfo.nativeToken
+  const nativeToken = data.chainInfo.nativeToken;
   const nativeTokenIsEther =
-    typeof nativeToken === 'undefined' || nativeToken === constants.AddressZero
+    typeof nativeToken === 'undefined' || nativeToken === constants.AddressZero;
 
   if (nativeTokenIsEther) {
-    return { nativeToken: undefined, nativeTokenData: undefined }
+    return { nativeToken: undefined, nativeTokenData: undefined };
   }
 
   const nativeTokenData = await fetchErc20Data({
     address: nativeToken,
-    provider: new StaticJsonRpcProvider(rpcURLs[data.chainInfo.parentChainId])
-  })
+    provider: new StaticJsonRpcProvider(rpcURLs[data.chainInfo.parentChainId]),
+  });
 
-  return { nativeToken, nativeTokenData }
+  return { nativeToken, nativeTokenData };
 }
 
 export const AddCustomChain = () => {
-  const [chainJson, setChainJson] = useState<string>('')
-  const [error, setError] = useState<string | null>(null)
-  const [addingChain, setAddingChain] = useState(false)
+  const [chainJson, setChainJson] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [addingChain, setAddingChain] = useState(false);
 
-  const customChains = getCustomChainsFromLocalStorage()
+  const customChains = getCustomChainsFromLocalStorage();
 
   async function onAddChain() {
-    setAddingChain(true)
-    setError(null)
+    setAddingChain(true);
+    setError(null);
 
     try {
-      const data = JSON.parse(
-        chainJson.trim().replace(/[\r\n]+/g, '')
-      ) as OrbitConfig
+      const data = JSON.parse(chainJson.trim().replace(/[\r\n]+/g, '')) as OrbitConfig;
 
       if (!data) {
-        throw new Error('JSON input is empty.')
+        throw new Error('JSON input is empty.');
       }
 
       // validate config
-      ZodOrbitConfig.parse(data)
+      ZodOrbitConfig.parse(data);
 
-      const customChain = await mapOrbitConfigToOrbitChain(data)
-      const nativeToken = await fetchNativeToken(data)
+      const customChain = await mapOrbitConfigToOrbitChain(data);
+      const nativeToken = await fetchNativeToken(data);
       // Orbit config has been validated and will be added to the custom list after page refreshes
       // let's still try to add it here to handle eventual errors
-      registerCustomArbitrumNetwork(customChain)
-      saveCustomChainToLocalStorage({ ...customChain, ...nativeToken })
-      saveOrbitConfigToLocalStorage(data)
+      registerCustomArbitrumNetwork(customChain);
+      saveCustomChainToLocalStorage({ ...customChain, ...nativeToken });
+      saveOrbitConfigToLocalStorage(data);
       // reload to apply changes
-      location.reload()
+      location.reload();
     } catch (error: any) {
-      setError(error.message ?? 'Something went wrong.')
-      setAddingChain(false)
+      setError(error.message ?? 'Something went wrong.');
+      setAddingChain(false);
     }
   }
 
@@ -264,7 +245,7 @@ export const AddCustomChain = () => {
     <>
       <div className="mb-4 flex flex-col items-stretch gap-2 lg:flex-row">
         <textarea
-          onChange={e => setChainJson(e.target.value)}
+          onChange={(e) => setChainJson(e.target.value)}
           placeholder={`Paste the JSON configuration from the 'outputInfo.json' file that's generated at the end of the custom Orbit chain deployment.
 `}
           className="h-auto min-h-[200px] w-full rounded border border-gray-dark bg-dark p-4 font-mono text-xs font-light text-white placeholder:text-white/70"
@@ -337,11 +318,7 @@ export const AddCustomChain = () => {
         {addingChain ? (
           <Loader size="small" color="white" />
         ) : (
-          <Button
-            variant="secondary"
-            onClick={onAddChain}
-            disabled={!chainJson.trim()}
-          >
+          <Button variant="secondary" onClick={onAddChain} disabled={!chainJson.trim()}>
             Add Chain
           </Button>
         )}
@@ -362,23 +339,16 @@ export const AddCustomChain = () => {
               </tr>
             </thead>
             <tbody>
-              {customChains.map(customChain => (
-                <tr
-                  key={customChain.chainId}
-                  className="border-b border-gray-dark"
-                >
+              {customChains.map((customChain) => (
+                <tr key={customChain.chainId} className="border-b border-gray-dark">
                   <th className="max-w-[100px] truncate py-3 text-sm font-normal">
                     {customChain.name}
                   </th>
-                  <th className="py-3 text-sm font-normal">
-                    {customChain.chainId}
-                  </th>
+                  <th className="py-3 text-sm font-normal">{customChain.chainId}</th>
                   <th className="py-3 text-sm font-normal">
                     {getNetworkName(customChain.parentChainId)}
                   </th>
-                  <th className="py-3 text-sm font-normal">
-                    {customChain.parentChainId}
-                  </th>
+                  <th className="py-3 text-sm font-normal">{customChain.parentChainId}</th>
                   <th className="py-3">
                     <Popover className="relative">
                       <Popover.Button className="arb-hover">
@@ -389,14 +359,10 @@ export const AddCustomChain = () => {
                           <button
                             className="rounded-t p-4 text-left transition duration-300 hover:bg-[#333333]"
                             onClick={() => {
-                              removeCustomChainFromLocalStorage(
-                                customChain.chainId
-                              )
-                              removeOrbitConfigFromLocalStorage(
-                                customChain.chainId
-                              )
+                              removeCustomChainFromLocalStorage(customChain.chainId);
+                              removeOrbitConfigFromLocalStorage(customChain.chainId);
                               // reload to apply changes
-                              location.reload()
+                              location.reload();
                             }}
                           >
                             Delete this chain
@@ -405,14 +371,10 @@ export const AddCustomChain = () => {
                             className="rounded-b p-4 text-left transition duration-300 hover:bg-[#333333]"
                             href={`data:text/json;charset=utf-8,${encodeURIComponent(
                               JSON.stringify(
-                                getOrbitConfigFromLocalStorageById(
-                                  customChain.chainId
-                                )
-                              )
+                                getOrbitConfigFromLocalStorageById(customChain.chainId),
+                              ),
                             )}`}
-                            download={`${customChain.name
-                              .split(' ')
-                              .join('')}.json`}
+                            download={`${customChain.name.split(' ').join('')}.json`}
                           >
                             Download config for this chain
                           </a>
@@ -427,5 +389,5 @@ export const AddCustomChain = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};

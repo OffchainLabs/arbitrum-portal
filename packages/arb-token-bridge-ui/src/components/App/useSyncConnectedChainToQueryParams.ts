@@ -1,107 +1,88 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useAccount, useDisconnect } from 'wagmi'
-import {
-  DisabledFeatures,
-  useArbQueryParams
-} from '../../hooks/useArbQueryParams'
-import { sanitizeQueryParams } from '../../hooks/useNetworks'
-import { onDisconnectHandler } from '../../util/walletConnectUtils'
-import { getNetworkName } from '../../util/networks'
-import { useDisabledFeatures } from '../../hooks/useDisabledFeatures'
-import { getAccountType } from '../../util/AccountUtils'
+import { useCallback, useEffect, useState } from 'react';
+import { useAccount, useDisconnect } from 'wagmi';
+
+import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
+import { sanitizeQueryParams } from '../../hooks/useNetworks';
+import { getAccountType } from '../../util/AccountUtils';
+import { getNetworkName } from '../../util/networks';
+import { onDisconnectHandler } from '../../util/walletConnectUtils';
 
 export function useSyncConnectedChainToQueryParams() {
-  const { address, chain } = useAccount()
-  const [shouldSync, setShouldSync] = useState(false)
-  const [didSync, setDidSync] = useState(false)
+  const { address, chain } = useAccount();
+  const [shouldSync, setShouldSync] = useState(false);
+  const [didSync, setDidSync] = useState(false);
   const { disconnect } = useDisconnect({
     mutation: {
-      onSettled: onDisconnectHandler
-    }
-  })
-  const { isFeatureDisabled } = useDisabledFeatures()
+      onSettled: onDisconnectHandler,
+    },
+  });
+  const { isFeatureDisabled } = useDisabledFeatures();
 
-  const [{ sourceChain, destinationChain }, setQueryParams] =
-    useArbQueryParams()
+  const [{ sourceChain, destinationChain }, setQueryParams] = useArbQueryParams();
 
   const disableTransfersToNonArbitrumChains = isFeatureDisabled(
-    DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS
-  )
+    DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS,
+  );
 
   const setSourceChainToConnectedChain = useCallback(() => {
     if (typeof chain === 'undefined') {
-      return
+      return;
     }
 
     const { sourceChainId: sourceChain, destinationChainId: destinationChain } =
       sanitizeQueryParams({
         sourceChainId: chain.id,
         destinationChainId: undefined,
-        disableTransfersToNonArbitrumChains
-      })
+        disableTransfersToNonArbitrumChains,
+      });
 
-    setQueryParams({ sourceChain, destinationChain })
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains])
+    setQueryParams({ sourceChain, destinationChain });
+  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
 
   useEffect(() => {
     async function checkCorrectChainForSmartContractWallet() {
       if (typeof chain === 'undefined') {
-        return
+        return;
       }
       if (!address) {
-        return
+        return;
       }
       const accountType = await getAccountType({
         address,
-        chainId: chain.id
-      })
+        chainId: chain.id,
+      });
       if (accountType === 'smart-contract-wallet' && sourceChain !== chain.id) {
-        const chainName = getNetworkName(chain.id)
+        const chainName = getNetworkName(chain.id);
 
-        setSourceChainToConnectedChain()
+        setSourceChainToConnectedChain();
 
         window.alert(
-          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`
-        )
-        disconnect()
+          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
+        );
+        disconnect();
       }
     }
 
-    checkCorrectChainForSmartContractWallet()
-  }, [
-    address,
-    chain,
-    disconnect,
-    setQueryParams,
-    setSourceChainToConnectedChain,
-    sourceChain
-  ])
+    checkCorrectChainForSmartContractWallet();
+  }, [address, chain, disconnect, setQueryParams, setSourceChainToConnectedChain, sourceChain]);
 
   useEffect(() => {
     if (shouldSync) {
-      return
+      return;
     }
 
     // Only sync connected chain to query params if the query params were not initially provided
-    if (
-      typeof sourceChain === 'undefined' &&
-      typeof destinationChain === 'undefined'
-    ) {
-      setShouldSync(true)
+    if (typeof sourceChain === 'undefined' && typeof destinationChain === 'undefined') {
+      setShouldSync(true);
     }
-  }, [shouldSync, sourceChain, destinationChain])
+  }, [shouldSync, sourceChain, destinationChain]);
 
   useEffect(() => {
     // When the chain is connected and we should sync, and we haven't synced yet, sync the connected chain to the query params
     if (chain && shouldSync && !didSync) {
-      setSourceChainToConnectedChain()
-      setDidSync(true)
+      setSourceChainToConnectedChain();
+      setDidSync(true);
     }
-  }, [
-    chain,
-    shouldSync,
-    didSync,
-    setQueryParams,
-    setSourceChainToConnectedChain
-  ])
+  }, [chain, shouldSync, didSync, setQueryParams, setSourceChainToConnectedChain]);
 }

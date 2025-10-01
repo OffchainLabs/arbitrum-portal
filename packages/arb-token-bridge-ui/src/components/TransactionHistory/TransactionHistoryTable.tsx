@@ -1,40 +1,35 @@
+import { ExclamationCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import dayjs from 'dayjs';
 import {
   ButtonHTMLAttributes,
   PropsWithChildren,
+  forwardRef,
   useEffect,
   useMemo,
   useRef,
-  forwardRef
-} from 'react'
-import { twMerge } from 'tailwind-merge'
-import { Column, Table } from 'react-virtualized'
-import {
-  ExclamationCircleIcon,
-  PlusCircleIcon
-} from '@heroicons/react/24/outline'
-import dayjs from 'dayjs'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
+} from 'react';
+import { Column, Table } from 'react-virtualized';
+import { twMerge } from 'tailwind-merge';
 
-import { isTokenDeposit } from '../../state/app/utils'
-import {
-  ChainPair,
-  UseTransactionHistoryResult
-} from '../../hooks/useTransactionHistory'
-import { Tooltip } from '../common/Tooltip'
-import { getNetworkName } from '../../util/networks'
-import { isTxPending } from './helpers'
-import { PendingDepositWarning } from './PendingDepositWarning'
-import { TransactionsTableRow } from './TransactionsTableRow'
-import { EmptyTransactionHistory } from './EmptyTransactionHistory'
-import { MergedTransaction } from '../../state/app/state'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import { MergedTransaction } from '../../state/app/state';
+import { isTokenDeposit } from '../../state/app/utils';
+import { getNetworkName } from '../../util/networks';
+import { Tooltip } from '../common/Tooltip';
+import { EmptyTransactionHistory } from './EmptyTransactionHistory';
+import { PendingDepositWarning } from './PendingDepositWarning';
+import { TransactionsTableRow } from './TransactionsTableRow';
+import { isTxPending } from './helpers';
 
 export const BatchTransferNativeTokenTooltip = ({
   children,
-  tx
+  tx,
 }: PropsWithChildren<{ tx: MergedTransaction }>) => {
-  const childProvider = getProviderForChainId(tx.childChainId)
-  const nativeCurrency = useNativeCurrency({ provider: childProvider })
+  const childProvider = getProviderForChainId(tx.childChainId);
+  const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
   return (
     <Tooltip
@@ -42,82 +37,61 @@ export const BatchTransferNativeTokenTooltip = ({
     >
       {children}
     </Tooltip>
-  )
-}
+  );
+};
 
-export const ContentWrapper = forwardRef<
-  HTMLDivElement,
-  PropsWithChildren<{ className?: string }>
->(({ children, className = '', ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={twMerge(
-        'w-full flex-col items-center rounded px-3 py-2 text-center text-sm text-white lg:text-left',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-})
+export const ContentWrapper = forwardRef<HTMLDivElement, PropsWithChildren<{ className?: string }>>(
+  ({ children, className = '', ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={twMerge(
+          'w-full flex-col items-center rounded px-3 py-2 text-center text-sm text-white lg:text-left',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  },
+);
 
-ContentWrapper.displayName = 'ContentWrapper'
+ContentWrapper.displayName = 'ContentWrapper';
 
-const TableHeader = ({
-  children,
-  className
-}: PropsWithChildren<{ className?: string }>) => (
-  <div
-    className={twMerge(
-      'h-full w-full pb-2 pt-4 text-left text-sm font-normal',
-      className
-    )}
-  >
+const TableHeader = ({ children, className }: PropsWithChildren<{ className?: string }>) => (
+  <div className={twMerge('h-full w-full pb-2 pt-4 text-left text-sm font-normal', className)}>
     {children}
   </div>
-)
+);
 
-export const LoadMoreButton = (
-  props: ButtonHTMLAttributes<HTMLButtonElement>
-) => {
+export const LoadMoreButton = (props: ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
-    <button
-      {...props}
-      className="arb-hover text-xs"
-      aria-label="Load More Transactions"
-    >
+    <button {...props} className="arb-hover text-xs" aria-label="Load More Transactions">
       <div className="flex space-x-1 rounded border border-white px-2 py-1">
         <span>Load more</span>
         <PlusCircleIcon width={16} />
       </div>
     </button>
-  )
-}
+  );
+};
 
 export const HistoryLoader = () => {
-  return <span className="animate-pulse">Loading transactions...</span>
-}
+  return <span className="animate-pulse">Loading transactions...</span>;
+};
 
-const FailedChainPairsTooltip = ({
-  failedChainPairs
-}: {
-  failedChainPairs: ChainPair[]
-}) => {
+const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: ChainPair[] }) => {
   if (failedChainPairs.length === 0) {
-    return null
+    return null;
   }
 
   return (
     <Tooltip
       content={
         <div className="flex flex-col space-y-1 text-xs">
-          <span>
-            We were unable to fetch data for the following chain pairs:
-          </span>
+          <span>We were unable to fetch data for the following chain pairs:</span>
           <ul className="flex list-disc flex-col pl-4">
-            {failedChainPairs.map(pair => (
+            {failedChainPairs.map((pair) => (
               <li key={`${pair.parentChainId}-${pair.childChainId}`}>
                 <b>{getNetworkName(pair.parentChainId)}</b>
                 {' <> '}
@@ -130,17 +104,15 @@ const FailedChainPairsTooltip = ({
     >
       <ExclamationCircleIcon height={20} className="text-error" />
     </Tooltip>
-  )
-}
+  );
+};
 
 type TransactionHistoryTableProps = UseTransactionHistoryResult & {
-  selectedTabIndex: number
-  oldestTxTimeAgoString: string
-}
+  selectedTabIndex: number;
+  oldestTxTimeAgoString: string;
+};
 
-export const TransactionHistoryTable = (
-  props: TransactionHistoryTableProps
-) => {
+export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => {
   const {
     transactions,
     loading,
@@ -149,51 +121,50 @@ export const TransactionHistoryTable = (
     failedChainPairs,
     resume,
     selectedTabIndex,
-    oldestTxTimeAgoString
-  } = props
+    oldestTxTimeAgoString,
+  } = props;
 
-  const TABLE_HEADER_HEIGHT = 52
-  const TABLE_ROW_HEIGHT = 60
-  const isTxHistoryEmpty = transactions.length === 0
-  const isPendingTab = selectedTabIndex === 0
+  const TABLE_HEADER_HEIGHT = 52;
+  const TABLE_ROW_HEIGHT = 60;
+  const isTxHistoryEmpty = transactions.length === 0;
+  const isPendingTab = selectedTabIndex === 0;
 
-  const paused = !loading && !completed
+  const paused = !loading && !completed;
 
-  const contentWrapperRef = useRef<HTMLDivElement | null>(null)
-  const tableRef = useRef<Table | null>(null)
+  const contentWrapperRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<Table | null>(null);
 
   const tableHeight = useMemo(() => {
     if (window.innerWidth < 768) {
-      return TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT
+      return TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT;
     }
-    const SIDE_PANEL_HEADER_HEIGHT = 125
-    const viewportHeight = window.innerHeight
-    const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0
+    const SIDE_PANEL_HEADER_HEIGHT = 125;
+    const viewportHeight = window.innerHeight;
+    const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0;
     return Math.max(
       // we subtract a little padding at the end so that the table doesn't end at the edge of the screen
       viewportHeight - contentWrapperOffsetTop - SIDE_PANEL_HEADER_HEIGHT,
-      0
-    )
-  }, [contentWrapperRef.current?.offsetTop, transactions.length])
+      0,
+    );
+  }, [contentWrapperRef.current?.offsetTop, transactions.length]);
 
   const pendingTokenDepositsCount = useMemo(() => {
-    return transactions.filter(tx => isTokenDeposit(tx) && isTxPending(tx))
-      .length
-  }, [transactions])
+    return transactions.filter((tx) => isTokenDeposit(tx) && isTxPending(tx)).length;
+  }, [transactions]);
 
   const topmostPendingTxId = useMemo(() => {
-    return transactions.filter(isTxPending)[0]?.txId
-  }, [transactions])
+    return transactions.filter(isTxPending)[0]?.txId;
+  }, [transactions]);
 
   // recalculate table height when tx number changes, or when user selects different tab
   useEffect(() => {
-    tableRef.current?.recomputeRowHeights()
+    tableRef.current?.recomputeRowHeights();
   }, [
     transactions.length,
     selectedTabIndex,
     isTxHistoryEmpty,
-    contentWrapperRef.current?.offsetTop
-  ])
+    contentWrapperRef.current?.offsetTop,
+  ]);
 
   if (isTxHistoryEmpty) {
     return (
@@ -204,7 +175,7 @@ export const TransactionHistoryTable = (
         resume={resume}
         tabType={isPendingTab ? 'pending' : 'settled'}
       />
-    )
+    );
   }
 
   return (
@@ -215,7 +186,7 @@ export const TransactionHistoryTable = (
       <div
         className={twMerge(
           'sticky left-0 w-full rounded-tr-lg pr-4 md:px-4 md:pt-4',
-          isPendingTab ? '' : 'rounded-tl-lg'
+          isPendingTab ? '' : 'rounded-tl-lg',
         )}
       >
         {loading ? (
@@ -228,9 +199,8 @@ export const TransactionHistoryTable = (
             <div className="flex items-center justify-start space-x-1">
               <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
               <span className="text-xs">
-                Showing {transactions.length}{' '}
-                {isPendingTab ? 'pending' : 'settled'} transactions made in{' '}
-                {oldestTxTimeAgoString}.
+                Showing {transactions.length} {isPendingTab ? 'pending' : 'settled'} transactions
+                made in {oldestTxTimeAgoString}.
               </span>
             </div>
 
@@ -247,7 +217,7 @@ export const TransactionHistoryTable = (
         rowHeight={TABLE_ROW_HEIGHT}
         rowCount={transactions.length}
         headerHeight={TABLE_HEADER_HEIGHT}
-        headerRowRenderer={props => (
+        headerRowRenderer={(props) => (
           <div className="flex w-[960px] border-b border-white/30 text-white md:mx-4">
             {props.columns}
           </div>
@@ -255,19 +225,18 @@ export const TransactionHistoryTable = (
         className="table-auto last:border-b-0"
         rowGetter={({ index }) => transactions[index]}
         rowRenderer={({ index, style }) => {
-          const tx = transactions[index]
+          const tx = transactions[index];
 
           if (!tx) {
-            return null
+            return null;
           }
 
-          const isLastRow = index + 1 === transactions.length
-          const key = `${tx.parentChainId}-${tx.childChainId}-${tx.txId}`
-          const secondsPassed = dayjs().diff(dayjs(tx.createdAt), 'second')
+          const isLastRow = index + 1 === transactions.length;
+          const key = `${tx.parentChainId}-${tx.childChainId}-${tx.txId}`;
+          const secondsPassed = dayjs().diff(dayjs(tx.createdAt), 'second');
 
           // only blink the topmost tx, in case many txs are queued in a short amount of time
-          const isTopmostPendingTx =
-            topmostPendingTxId && topmostPendingTxId === tx.txId
+          const isTopmostPendingTx = topmostPendingTxId && topmostPendingTxId === tx.txId;
 
           return (
             <div key={key} style={style}>
@@ -275,13 +244,11 @@ export const TransactionHistoryTable = (
                 tx={tx}
                 className={twMerge(
                   isLastRow && 'border-b-0',
-                  isTopmostPendingTx &&
-                    secondsPassed <= 30 &&
-                    'animate-blink bg-highlight'
+                  isTopmostPendingTx && secondsPassed <= 30 && 'animate-blink bg-highlight',
                 )}
               />
             </div>
-          )
+          );
         }}
       >
         <Column
@@ -316,5 +283,5 @@ export const TransactionHistoryTable = (
         />
       </Table>
     </ContentWrapper>
-  )
-}
+  );
+};

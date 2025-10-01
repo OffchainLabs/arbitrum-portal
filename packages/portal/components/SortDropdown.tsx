@@ -1,7 +1,7 @@
 import { Popover } from '@headlessui/react';
+import { ArrowsUpDownIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
-import { ArrowsUpDownIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 import { SortOptions } from '@/common/types';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
@@ -41,8 +41,7 @@ export const SortDropdown = () => {
               <button
                 className={twMerge(
                   'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-white hover:text-black md:flex',
-                  sortBy === SortOptions.ARBITRUM_NATIVE &&
-                    'bg-default-black-hover',
+                  sortBy === SortOptions.ARBITRUM_NATIVE && 'bg-default-black-hover',
                 )}
                 onClick={() => {
                   setSort(SortOptions.ARBITRUM_NATIVE);
@@ -54,8 +53,7 @@ export const SortDropdown = () => {
               <button
                 className={twMerge(
                   'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-white hover:text-black md:flex',
-                  sortBy === SortOptions.ALPHABETICAL &&
-                    'bg-default-black-hover',
+                  sortBy === SortOptions.ALPHABETICAL && 'bg-default-black-hover',
                 )}
                 onClick={() => {
                   setSort(SortOptions.ALPHABETICAL);

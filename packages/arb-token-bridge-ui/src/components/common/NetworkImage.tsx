@@ -1,30 +1,30 @@
-import Image from 'next/image'
-import { twMerge } from 'tailwind-merge'
+import Image from 'next/image';
+import { twMerge } from 'tailwind-merge';
 
-import { getNetworkName } from '../../util/networks'
-import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig'
+import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
+import { getNetworkName } from '../../util/networks';
 
 export const NetworkImage = ({
   chainId,
   className,
-  size
+  size,
 }: {
-  chainId: number
-  className?: string
-  size?: number
+  chainId: number;
+  className?: string;
+  size?: number;
 }) => {
-  const imageSize = size ?? 16
-  const { network, color } = getBridgeUiConfigForChain(chainId)
-  const networkName = getNetworkName(chainId)
+  const imageSize = size ?? 16;
+  const { network, color } = getBridgeUiConfigForChain(chainId);
+  const networkName = getNetworkName(chainId);
 
   return (
     <div
       style={{
-        backgroundColor: `${color}75`
+        backgroundColor: `${color}75`,
       }}
       className={twMerge(
         'flex w-4 shrink-0 items-center justify-center rounded-full p-[4px]',
-        className
+        className,
       )}
     >
       <Image
@@ -35,5 +35,5 @@ export const NetworkImage = ({
         height={imageSize}
       />
     </div>
-  )
-}
+  );
+};

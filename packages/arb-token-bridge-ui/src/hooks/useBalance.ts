@@ -1,169 +1,166 @@
-import { useCallback, useMemo } from 'react'
-import { BigNumber, utils } from 'ethers'
-import useSWR, {
-  useSWRConfig,
-  unstable_serialize,
-  Middleware,
-  SWRHook
-} from 'swr'
-import { MultiCaller } from '@arbitrum/sdk'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { captureSentryErrorWithExtraData } from '../util/SentryUtils'
+import { MultiCaller } from '@arbitrum/sdk';
+import { BigNumber, utils } from 'ethers';
+import { useCallback, useMemo } from 'react';
+import useSWR, { Middleware, SWRHook, unstable_serialize, useSWRConfig } from 'swr';
+
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 
 type Erc20Balances = {
-  [address: string]: BigNumber | undefined
-}
+  [address: string]: BigNumber | undefined;
+};
 
 export type UseBalanceProps = {
-  chainId: number
-  walletAddress: string | undefined
-}
+  chainId: number;
+  walletAddress: string | undefined;
+};
 
 const merge: Middleware = (useSWRNext: SWRHook) => {
   return (key, fetcher, config) => {
-    const { cache } = useSWRConfig()
+    const { cache } = useSWRConfig();
 
     const extendedFetcher = async () => {
       if (!fetcher) {
-        return
+        return;
       }
-      const newBalances = await fetcher(key)
-      const oldData = cache.get(unstable_serialize(key))?.data
+      const newBalances = await fetcher(key);
+      const oldData = cache.get(unstable_serialize(key))?.data;
       return {
         ...(oldData || {}),
-        ...newBalances
-      }
-    }
+        ...newBalances,
+      };
+    };
 
-    return useSWRNext(key, extendedFetcher, config)
-  }
-}
+    return useSWRNext(key, extendedFetcher, config);
+  };
+};
 
 const fetchErc20 = async ({
   addresses,
   walletAddress,
-  chainId
+  chainId,
 }: {
-  addresses: string[] | undefined
-  walletAddress: string | undefined
-  chainId: number
+  addresses: string[] | undefined;
+  walletAddress: string | undefined;
+  chainId: number;
 }) => {
   if (typeof walletAddress === 'undefined') {
-    return
+    return;
   }
 
   if (!addresses?.length) {
-    return {}
+    return {};
   }
 
-  const provider = getProviderForChainId(chainId)
+  const provider = getProviderForChainId(chainId);
 
   try {
-    const multiCaller = await MultiCaller.fromProvider(provider)
+    const multiCaller = await MultiCaller.fromProvider(provider);
     const addressesBalances = await multiCaller.getTokenData(addresses, {
-      balanceOf: { account: walletAddress }
-    })
+      balanceOf: { account: walletAddress },
+    });
 
     return addresses.reduce((acc, address, index) => {
-      const balance = addressesBalances[index]
+      const balance = addressesBalances[index];
       if (balance) {
-        acc[address.toLowerCase()] = balance.balance
+        acc[address.toLowerCase()] = balance.balance;
       }
 
-      return acc
-    }, {} as Erc20Balances)
+      return acc;
+    }, {} as Erc20Balances);
   } catch (error) {
     captureSentryErrorWithExtraData({
       error,
       originFunction: 'useBalance fetchErc20',
       additionalData: {
         token_addresses: addresses.toString(),
-        chain: chainId.toString()
-      }
-    })
-    return {}
+        chain: chainId.toString(),
+      },
+    });
+    return {};
   }
-}
+};
 
 const useBalance = ({ chainId, walletAddress }: UseBalanceProps) => {
   const walletAddressLowercased = useMemo(() => {
     // use balances for the wallet address only if it's valid
     if (!walletAddress || !utils.isAddress(walletAddress)) {
-      return undefined
+      return undefined;
     }
-    return walletAddress.toLowerCase()
-  }, [walletAddress])
+    return walletAddress.toLowerCase();
+  }, [walletAddress]);
 
   const queryKey = useCallback(
     (type: 'eth' | 'erc20') => {
       if (typeof walletAddressLowercased === 'undefined') {
         // Don't fetch
-        return null
+        return null;
       }
 
-      return [walletAddressLowercased, chainId, 'balance', type] as const
+      return [walletAddressLowercased, chainId, 'balance', type] as const;
     },
-    [chainId, walletAddressLowercased]
-  )
+    [chainId, walletAddressLowercased],
+  );
 
   const { data: dataEth = null, mutate: updateEthBalance } = useSWR(
     queryKey('eth'),
     ([_walletAddress, _chainId]) => {
-      const _provider = getProviderForChainId(_chainId)
-      return _provider.getBalance(_walletAddress)
+      const _provider = getProviderForChainId(_chainId);
+      return _provider.getBalance(_walletAddress);
     },
     {
       refreshInterval: 15_000,
       shouldRetryOnError: true,
       errorRetryCount: 2,
-      errorRetryInterval: 3_000
-    }
-  )
+      errorRetryInterval: 3_000,
+    },
+  );
   const { data: dataErc20 = null, mutate: mutateErc20 } = useSWR(
     queryKey('erc20'),
     ([_walletAddressLowercased, _chainId]) =>
       fetchErc20({
         addresses: [],
         walletAddress: _walletAddressLowercased,
-        chainId: _chainId
+        chainId: _chainId,
       }),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,
       errorRetryInterval: 3_000,
-      use: [merge]
-    }
-  )
+      use: [merge],
+    },
+  );
 
   const updateErc20 = useCallback(
     async (addresses: string[]) => {
       if (!walletAddressLowercased) {
-        return null
+        return null;
       }
 
       const balances = await fetchErc20({
         addresses,
         chainId,
-        walletAddress: walletAddressLowercased
-      })
+        walletAddress: walletAddressLowercased,
+      });
 
       return mutateErc20(balances, {
         populateCache(result, currentData) {
           return {
             ...currentData,
-            ...result
-          }
+            ...result,
+          };
         },
-        revalidate: false
-      })
+        revalidate: false,
+      });
     },
-    [chainId, mutateErc20, walletAddressLowercased]
-  )
+    [chainId, mutateErc20, walletAddressLowercased],
+  );
 
   return {
     eth: [dataEth, updateEthBalance] as const,
-    erc20: [dataErc20, updateErc20] as const
-  }
-}
+    erc20: [dataErc20, updateErc20] as const,
+  };
+};
 
-export { useBalance }
+export { useBalance };

@@ -1,45 +1,39 @@
-import { useMemo } from 'react'
-import { BigNumber, constants } from 'ethers'
-import { useAccount } from 'wagmi'
+import { BigNumber, constants } from 'ethers';
+import { useMemo } from 'react';
+import { useAccount } from 'wagmi';
 
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { useBalances } from '../../../hooks/useBalances'
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useBalances } from '../../../hooks/useBalances';
+import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 
 export function useNativeCurrencyBalances(): {
-  sourceBalance: BigNumber | null
-  destinationBalance: BigNumber | null
+  sourceBalance: BigNumber | null;
+  destinationBalance: BigNumber | null;
 } {
-  const [networks] = useNetworks()
-  const { childChainProvider, isDepositMode } =
-    useNetworksRelationship(networks)
-  const [{ destinationAddress }] = useArbQueryParams()
-  const { isConnected } = useAccount()
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
+  const [networks] = useNetworks();
+  const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const [{ destinationAddress }] = useArbQueryParams();
+  const { isConnected } = useAccount();
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance } =
-    useBalances()
+  const { ethParentBalance, erc20ParentBalances, ethChildBalance } = useBalances();
 
   const customFeeTokenParentBalance =
-    'address' in nativeCurrency
-      ? erc20ParentBalances?.[nativeCurrency.address] ?? null
-      : null
-  const customFeeTokenChildBalance = ethChildBalance
+    'address' in nativeCurrency ? (erc20ParentBalances?.[nativeCurrency.address] ?? null) : null;
+  const customFeeTokenChildBalance = ethChildBalance;
 
   const destinationBalance = useMemo(() => {
     if (!isConnected && !destinationAddress) {
-      return constants.Zero
+      return constants.Zero;
     }
 
     if (!nativeCurrency.isCustom) {
-      return isDepositMode ? ethChildBalance : ethParentBalance
+      return isDepositMode ? ethChildBalance : ethParentBalance;
     }
 
-    return isDepositMode
-      ? customFeeTokenChildBalance
-      : customFeeTokenParentBalance
+    return isDepositMode ? customFeeTokenChildBalance : customFeeTokenParentBalance;
   }, [
     customFeeTokenChildBalance,
     customFeeTokenParentBalance,
@@ -48,30 +42,28 @@ export function useNativeCurrencyBalances(): {
     ethParentBalance,
     isConnected,
     isDepositMode,
-    nativeCurrency.isCustom
-  ])
+    nativeCurrency.isCustom,
+  ]);
 
   return useMemo(() => {
     if (!isConnected) {
       return {
         sourceBalance: constants.Zero,
-        destinationBalance
-      }
+        destinationBalance,
+      };
     }
 
     if (!nativeCurrency.isCustom) {
       return {
         sourceBalance: isDepositMode ? ethParentBalance : ethChildBalance,
-        destinationBalance
-      }
+        destinationBalance,
+      };
     }
 
     return {
-      sourceBalance: isDepositMode
-        ? customFeeTokenParentBalance
-        : customFeeTokenChildBalance,
-      destinationBalance
-    }
+      sourceBalance: isDepositMode ? customFeeTokenParentBalance : customFeeTokenChildBalance,
+      destinationBalance,
+    };
   }, [
     isConnected,
     nativeCurrency.isCustom,
@@ -80,6 +72,6 @@ export function useNativeCurrencyBalances(): {
     customFeeTokenChildBalance,
     destinationBalance,
     ethParentBalance,
-    ethChildBalance
-  ])
+    ethChildBalance,
+  ]);
 }

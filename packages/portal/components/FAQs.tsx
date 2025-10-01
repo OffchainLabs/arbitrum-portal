@@ -3,8 +3,9 @@
 import { Disclosure } from '@headlessui/react';
 import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import React from 'react';
-import { Card } from './Card';
 import { twMerge } from 'tailwind-merge';
+
+import { Card } from './Card';
 
 type FAQ = { q: React.ReactNode; a: React.ReactNode };
 
@@ -31,9 +32,7 @@ export const FAQs = ({ content }: { content: FAQ[] }) => {
                   )}
                 </Disclosure.Button>
                 <Disclosure.Panel>
-                  <div className="relative z-10 pr-[30px] pt-2 opacity-70 lg:pr-[150px]">
-                    {c.a}
-                  </div>
+                  <div className="relative z-10 pr-[30px] pt-2 opacity-70 lg:pr-[150px]">{c.a}</div>
                 </Disclosure.Panel>
               </>
             )}

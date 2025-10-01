@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
+
 import { CATEGORIES } from '@/common/categories';
 import { getSpotlightProjects } from '@/common/projects';
 import { Card } from '@/components/Card';
-import { ResponsiveHorizontalScrollableLayout } from '@/components/ResponsiveHorizontalScrollableLayout';
 import { ProjectItemBox } from '@/components/ProjectItemBox';
+import { ResponsiveHorizontalScrollableLayout } from '@/components/ResponsiveHorizontalScrollableLayout';
 
 export const EcosystemEssentials = () => {
   const [selectedCategory, setSelectedCategory] = useState('defi');

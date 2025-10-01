@@ -1,4 +1,5 @@
 import { FullProject } from '@/common/types';
+
 import { ProjectWidget } from './ProjectWidget';
 
 export const PlatformsWidget = ({ project }: { project: FullProject }) => {

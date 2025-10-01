@@ -1,9 +1,6 @@
+import { CheckCircleIcon, ExclamationCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { twMerge } from 'tailwind-merge';
-import {
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+
 import { ArbitrumStatus } from '@/common/types';
 import { Card } from '@/components/Card';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -25,8 +22,7 @@ const statusToContentMap = {
     icon: <XCircleIcon className="h-6 w-6 shrink-0" />,
   },
   [ArbitrumStatus.UNKNOWN]: {
-    content:
-      'Could not fetch network status. Please check the status page for details.',
+    content: 'Could not fetch network status. Please check the status page for details.',
     className: 'bg-[#DFE0E160] hover:bg-[#DFE0E180]',
     icon: <ExclamationCircleIcon className="h-6 w-6 shrink-0" />,
   },

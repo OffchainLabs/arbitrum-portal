@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 const BACKEND_ENDPOINT = 'https://portal-data.arbitrum.io';
 
@@ -31,9 +33,7 @@ function fetchJson(url) {
             const jsonData = JSON.parse(data);
             resolve(jsonData);
           } catch (error) {
-            reject(
-              new Error(`Failed to parse JSON from ${url}: ${error.message}`),
-            );
+            reject(new Error(`Failed to parse JSON from ${url}: ${error.message}`));
           }
         });
       })

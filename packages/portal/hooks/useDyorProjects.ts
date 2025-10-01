@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import { useLocalStorage } from '@rehooks/local-storage';
 import { usePostHog } from 'posthog-js/react';
+import { useCallback, useMemo } from 'react';
+
 import { getProjectDetailsById } from '@/common/projects';
 
 export const DYOR_PROJECTS_KEY = 'arbitrum:portal:dyor:projects';
@@ -17,8 +18,10 @@ export type GlobalDYORState = { [key: string]: string[] }; // key=projectId, val
 export const useDyorProjects = () => {
   const posthog = usePostHog();
 
-  const [globalDyorState = {}, setGlobalDyorState] =
-    useLocalStorage<GlobalDYORState>(DYOR_PROJECTS_KEY, {});
+  const [globalDyorState = {}, setGlobalDyorState] = useLocalStorage<GlobalDYORState>(
+    DYOR_PROJECTS_KEY,
+    {},
+  );
 
   const selectDyorItem = useCallback(
     (projectId: string, checkId: string, analyticsProps?: AnalyticsProps) => {
@@ -52,8 +55,7 @@ export const useDyorProjects = () => {
 
   const isProjectDyorInProgress = (projectId: string) => {
     return (
-      Object.keys(globalDyorState).includes(projectId) &&
-      globalDyorState[projectId]!.length > 0
+      Object.keys(globalDyorState).includes(projectId) && globalDyorState[projectId]!.length > 0
     );
   };
 

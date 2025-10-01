@@ -1,45 +1,44 @@
-import { isTokenNativeUSDC } from '../../util/TokenUtils'
-import { useNetworks } from '../useNetworks'
-import { useNetworksRelationship } from '../useNetworksRelationship'
-import { useSelectedToken } from '../useSelectedToken'
-import { useIsOftV2Transfer } from '../../components/TransferPanel/hooks/useIsOftV2Transfer'
-import { useDisabledFeatures } from '../useDisabledFeatures'
-import { DisabledFeatures } from '../useArbQueryParams'
-import { useIsArbitrumCanonicalTransfer } from '../../components/TransferPanel/hooks/useIsCanonicalTransfer'
+import { useIsArbitrumCanonicalTransfer } from '../../components/TransferPanel/hooks/useIsCanonicalTransfer';
+import { useIsOftV2Transfer } from '../../components/TransferPanel/hooks/useIsOftV2Transfer';
+import { isTokenNativeUSDC } from '../../util/TokenUtils';
+import { DisabledFeatures } from '../useArbQueryParams';
+import { useDisabledFeatures } from '../useDisabledFeatures';
+import { useNetworks } from '../useNetworks';
+import { useNetworksRelationship } from '../useNetworksRelationship';
+import { useSelectedToken } from '../useSelectedToken';
 
 export const useIsBatchTransferSupported = () => {
-  const [networks] = useNetworks()
-  const { isDepositMode, isTeleportMode, isLifi } =
-    useNetworksRelationship(networks)
-  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer()
-  const [selectedToken] = useSelectedToken()
-  const isOftTransfer = useIsOftV2Transfer()
-  const { isFeatureDisabled } = useDisabledFeatures()
+  const [networks] = useNetworks();
+  const { isDepositMode, isTeleportMode, isLifi } = useNetworksRelationship(networks);
+  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
+  const [selectedToken] = useSelectedToken();
+  const isOftTransfer = useIsOftV2Transfer();
+  const { isFeatureDisabled } = useDisabledFeatures();
 
   if (isFeatureDisabled(DisabledFeatures.BATCH_TRANSFERS)) {
-    return false
+    return false;
   }
   if (!selectedToken) {
-    return false
+    return false;
   }
   if (!isDepositMode) {
-    return false
+    return false;
   }
   if (isTokenNativeUSDC(selectedToken.address)) {
-    return false
+    return false;
   }
   // TODO: teleport is disabled for now but it needs to be looked into more to check whether it is or can be supported
   if (isTeleportMode) {
-    return false
+    return false;
   }
 
   if (isLifi && !isArbitrumCanonicalTransfer) {
-    return false
+    return false;
   }
 
   if (isOftTransfer) {
-    return false
+    return false;
   }
 
-  return true
-}
+  return true;
+};

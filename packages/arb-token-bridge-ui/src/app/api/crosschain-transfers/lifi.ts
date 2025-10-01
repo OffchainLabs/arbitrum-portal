@@ -1,24 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
 import {
-  createConfig,
-  TransactionRequest as LiFiTransactionRequest,
-  GasCost,
   FeeCost,
-  StepToolDetails,
-  getRoutes,
-  RoutesRequest,
+  GasCost,
+  LiFiStep,
+  TransactionRequest as LiFiTransactionRequest,
   Route,
-  LiFiStep
-} from '@lifi/sdk'
-import { BigNumber, constants, utils } from 'ethers'
-import { CrosschainTransfersRouteBase, QueryParams, Token } from './types'
-import { ether } from '../../../constants'
-import { isValidLifiTransfer } from './utils'
+  RoutesRequest,
+  StepToolDetails,
+  createConfig,
+  getRoutes,
+} from '@lifi/sdk';
+import { BigNumber, constants, utils } from 'ethers';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { ether } from '../../../constants';
+import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
+import { isValidLifiTransfer } from './utils';
 
 export const LIFI_INTEGRATOR_IDS = {
   NORMAL: '_arbitrum',
-  EMBED: 'widget_prod'
-} as const
+  EMBED: 'widget_prod',
+} as const;
 
 export enum Order {
   /**
@@ -30,7 +31,7 @@ export enum Order {
    * This sorting option prioritizes routes with the shortest estimated execution time.
    * Users who value speed and want their transactions to be completed as quickly as possible should choose the fastest routes
    */
-  Fastest = 'FASTEST'
+  Fastest = 'FASTEST',
 }
 
 export type TransactionRequest = Required<
@@ -38,18 +39,17 @@ export type TransactionRequest = Required<
     LiFiTransactionRequest,
     'value' | 'to' | 'data' | 'from' | 'chainId' | 'gasPrice' | 'gasLimit'
   >
->
+>;
 
-type Tags = Order[]
-export interface LifiCrosschainTransfersRoute
-  extends CrosschainTransfersRouteBase {
-  type: 'lifi'
+type Tags = Order[];
+export interface LifiCrosschainTransfersRoute extends CrosschainTransfersRouteBase {
+  type: 'lifi';
   protocolData: {
-    orders: Tags
-    tool: StepToolDetails
+    orders: Tags;
+    tool: StepToolDetails;
     /** This is needed to fetch transactionRequest later on */
-    step: LiFiStep
-  }
+    step: LiFiStep;
+  };
 }
 
 function sumGasCosts(gasCosts: GasCost[] | undefined) {
@@ -58,37 +58,33 @@ function sumGasCosts(gasCosts: GasCost[] | undefined) {
       ({ amount, amountUSD }, gas) => {
         return {
           amount: amount.add(BigNumber.from(gas.estimate)),
-          amountUSD: amountUSD + Number(gas.amountUSD)
-        }
+          amountUSD: amountUSD + Number(gas.amountUSD),
+        };
       },
-      { amount: constants.Zero, amountUSD: 0 }
-    ) ?? constants.Zero
+      { amount: constants.Zero, amountUSD: 0 },
+    ) ?? constants.Zero;
 
   return {
     amount: result.amount.toString(),
-    amountUSD: result.amountUSD.toString()
-  }
+    amountUSD: result.amountUSD.toString(),
+  };
 }
 function sumFee(feeCosts: FeeCost[] | undefined) {
   const result =
     (feeCosts || []).reduce(
       ({ amount, amountUSD }, fee) => {
         return {
-          amount: fee.included
-            ? amount
-            : amount.add(BigNumber.from(fee.amount)),
-          amountUSD: fee.included
-            ? amountUSD
-            : amountUSD + Number(fee.amountUSD)
-        }
+          amount: fee.included ? amount : amount.add(BigNumber.from(fee.amount)),
+          amountUSD: fee.included ? amountUSD : amountUSD + Number(fee.amountUSD),
+        };
       },
-      { amount: constants.Zero, amountUSD: 0 }
-    ) ?? constants.Zero
+      { amount: constants.Zero, amountUSD: 0 },
+    ) ?? constants.Zero;
 
   return {
     amount: result.amount.toString(),
-    amountUSD: result.amountUSD.toString()
-  }
+    amountUSD: result.amountUSD.toString(),
+  };
 }
 
 function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
@@ -96,32 +92,32 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   fromAddress,
   toAddress,
   fromChainId,
-  toChainId
+  toChainId,
 }: {
-  route: Route
-  fromAddress?: string
-  toAddress?: string
-  fromChainId: string
-  toChainId: string
+  route: Route;
+  fromAddress?: string;
+  toAddress?: string;
+  fromChainId: string;
+  toChainId: string;
 }): LifiCrosschainTransfersRoute {
-  const step = route.steps[0]!
-  const tags: Order[] = []
+  const step = route.steps[0]!;
+  const tags: Order[] = [];
   if (route.tags && route.tags.includes(Order.Cheapest)) {
-    tags.push(Order.Cheapest)
+    tags.push(Order.Cheapest);
   }
   if (route.tags && route.tags.includes(Order.Fastest)) {
-    tags.push(Order.Fastest)
+    tags.push(Order.Fastest);
   }
 
   const gasToken: Token =
     step.estimate.gasCosts && step.estimate.gasCosts.length > 0
       ? step.estimate.gasCosts[0]!.token
-      : { ...ether, address: constants.AddressZero }
+      : { ...ether, address: constants.AddressZero };
 
   const feeToken: Token =
     step.estimate.feeCosts && step.estimate.feeCosts.length > 0
       ? step.estimate.feeCosts[0]!.token
-      : { ...ether, address: constants.AddressZero }
+      : { ...ether, address: constants.AddressZero };
 
   return {
     type: 'lifi',
@@ -129,24 +125,24 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     gas: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       ...sumGasCosts(step.estimate.gasCosts),
-      token: gasToken
+      token: gasToken,
     },
     fee: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       ...sumFee(step.estimate.feeCosts),
-      token: feeToken
+      token: feeToken,
     },
     fromAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.action.fromAmount,
       amountUSD: step.estimate.fromAmountUSD || '0',
-      token: step.action.fromToken
+      token: step.action.fromToken,
     },
     toAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.estimate.toAmount,
       amountUSD: step.estimate.toAmountUSD || '0',
-      token: step.action.toToken
+      token: step.action.toToken,
     },
     fromAddress,
     toAddress,
@@ -156,154 +152,138 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     protocolData: {
       step,
       tool: step.toolDetails,
-      orders: tags
-    }
-  }
+      orders: tags,
+    },
+  };
 }
 
 function findCheapestRoute(
-  routes: LifiCrosschainTransfersRoute[]
+  routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const cheapestRoute = routes.reduce((currentMin, route) => {
     if (!currentMin) {
-      return route
+      return route;
     }
 
-    if (
-      BigNumber.from(route.toAmount.amount).lt(
-        BigNumber.from(currentMin.toAmount.amount)
-      )
-    ) {
-      return route
+    if (BigNumber.from(route.toAmount.amount).lt(BigNumber.from(currentMin.toAmount.amount))) {
+      return route;
     }
-    return currentMin
-  }, routes[0])
+    return currentMin;
+  }, routes[0]);
 
-  return cheapestRoute
+  return cheapestRoute;
 }
 
 function findFastestRoute(
-  routes: LifiCrosschainTransfersRoute[]
+  routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const fastestRoute = routes.reduce((currentMin, route) => {
     if (!currentMin) {
-      return route
+      return route;
     }
 
-    if (
-      BigNumber.from(route.durationMs).lt(BigNumber.from(currentMin.durationMs))
-    ) {
-      return route
+    if (BigNumber.from(route.durationMs).lt(BigNumber.from(currentMin.durationMs))) {
+      return route;
     }
-    return currentMin
-  }, routes[0])
+    return currentMin;
+  }, routes[0]);
 
-  return fastestRoute
+  return fastestRoute;
 }
 
 type LifiCrossTransfersRoutesResponse =
   | {
-      message: string
-      data: null
+      message: string;
+      data: null;
     }
   | {
-      data: LifiCrosschainTransfersRoute[]
-    }
+      data: LifiCrosschainTransfersRoute[];
+    };
 
 export type LifiParams = QueryParams & {
-  slippage?: string
-  denyBridges?: string[]
-  denyExchanges?: string[]
-}
+  slippage?: string;
+  denyBridges?: string[];
+  denyExchanges?: string[];
+};
 
 function getIntegratorId(request: NextRequest): string {
-  const referer = request.headers.get('referer')
-  const isEmbedMode = referer && referer.includes('/bridge/embed')
-  return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL
+  const referer = request.headers.get('referer');
+  const isEmbedMode = referer && referer.includes('/bridge/embed');
+  return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
 }
 
 export async function GET(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
-  const integratorId = getIntegratorId(request)
+  const integratorId = getIntegratorId(request);
 
   createConfig({
     integrator: integratorId,
-    apiKey: process.env.LIFI_KEY
-  })
+    apiKey: process.env.LIFI_KEY,
+  });
 
-  const { searchParams } = new URL(request.url)
-  const fromToken = searchParams.get('fromToken')
-  const toToken = searchParams.get('toToken')
-  const fromChainId = searchParams.get('fromChainId')
-  const toChainId = searchParams.get('toChainId')
-  const fromAmount = searchParams.get('fromAmount') || '0'
-  const fromAddress = searchParams.get('fromAddress') || undefined
-  const toAddress = searchParams.get('toAddress') || undefined
-  const denyBridges = searchParams.getAll('denyBridges')
-  const denyExchanges = searchParams.getAll('denyExchanges')
-  const slippage = searchParams.get('slippage')
+  const { searchParams } = new URL(request.url);
+  const fromToken = searchParams.get('fromToken');
+  const toToken = searchParams.get('toToken');
+  const fromChainId = searchParams.get('fromChainId');
+  const toChainId = searchParams.get('toChainId');
+  const fromAmount = searchParams.get('fromAmount') || '0';
+  const fromAddress = searchParams.get('fromAddress') || undefined;
+  const toAddress = searchParams.get('toAddress') || undefined;
+  const denyBridges = searchParams.getAll('denyBridges');
+  const denyExchanges = searchParams.getAll('denyExchanges');
+  const slippage = searchParams.get('slippage');
 
   try {
     // Validate parameters
     if (!fromToken || !utils.isAddress(fromToken)) {
       return NextResponse.json(
         { message: 'fromToken is not a valid address', data: null },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     if (!toToken || !utils.isAddress(toToken)) {
       return NextResponse.json(
         { message: 'toToken is not a valid address', data: null },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     if (!fromChainId) {
-      return NextResponse.json(
-        { message: 'fromChainId is required', data: null },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'fromChainId is required', data: null }, { status: 400 });
     }
 
     if (!toChainId) {
-      return NextResponse.json(
-        { message: 'toChainId is required', data: null },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'toChainId is required', data: null }, { status: 400 });
     }
 
     if (
       !isValidLifiTransfer({
         fromToken,
         sourceChainId: Number(fromChainId),
-        destinationChainId: Number(toChainId)
+        destinationChainId: Number(toChainId),
       })
     ) {
       return NextResponse.json(
         {
           message: `Sending fromToken (${fromToken}) from chain ${fromChainId} to chain ${toChainId} is not supported`,
-          data: null
+          data: null,
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // Validate options
-    const parsedSlippage = Number(slippage)
-    if (
-      (slippage && Number.isNaN(parsedSlippage)) ||
-      parsedSlippage <= 0 ||
-      parsedSlippage > 100
-    ) {
+    const parsedSlippage = Number(slippage);
+    if ((slippage && Number.isNaN(parsedSlippage)) || parsedSlippage <= 0 || parsedSlippage > 100) {
       return NextResponse.json(
         {
           message: `Slippage is invalid`,
-          data: null
+          data: null,
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     const parameters: RoutesRequest = {
@@ -313,42 +293,42 @@ export async function GET(
       fromChainId: Number(fromChainId),
       toChainId: Number(toChainId),
       toTokenAddress: toToken,
-      toAddress
-    }
+      toAddress,
+    };
 
     const options: RoutesRequest['options'] = {
       integrator: integratorId,
       allowSwitchChain: false,
-      allowDestinationCall: false
-    }
+      allowDestinationCall: false,
+    };
 
     if (slippage) {
-      options.slippage = parsedSlippage / 100
+      options.slippage = parsedSlippage / 100;
     }
 
     options.bridges = {
-      deny: denyBridges.concat(['arbitrum'])
-    }
+      deny: denyBridges.concat(['arbitrum']),
+    };
 
     if (denyExchanges.length > 0) {
       options.exchanges = {
-        deny: denyExchanges
-      }
+        deny: denyExchanges,
+      };
     }
 
-    const { routes } = await getRoutes({ ...parameters, options })
+    const { routes } = await getRoutes({ ...parameters, options });
 
     const filteredRoutes = routes
-      .filter(route => route.steps.length === 1)
-      .map(route =>
+      .filter((route) => route.steps.length === 1)
+      .map((route) =>
         parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
           route,
           fromAddress,
           toAddress: toAddress || fromAddress,
           fromChainId,
-          toChainId
-        })
-      )
+          toChainId,
+        }),
+      );
 
     /**
      * We only care about the fastest and the cheapest route
@@ -361,26 +341,24 @@ export async function GET(
      * If we filtered the fastest and/or cheapest route, we manually compute and
      */
     const tags = filteredRoutes.reduce((acc, route) => {
-      return acc.concat(route.protocolData.orders)
-    }, [] as Order[])
+      return acc.concat(route.protocolData.orders);
+    }, [] as Order[]);
 
     // We didn't filter route with tags
     if (tags.length === 2) {
       return NextResponse.json(
         {
-          data: filteredRoutes.filter(
-            route => route.protocolData.orders.length > 0
-          )
+          data: filteredRoutes.filter((route) => route.protocolData.orders.length > 0),
         },
-        { status: 200 }
-      )
+        { status: 200 },
+      );
     }
 
-    const cheapestRoute = findCheapestRoute(filteredRoutes)
-    const fastestRoute = findFastestRoute(filteredRoutes)
+    const cheapestRoute = findCheapestRoute(filteredRoutes);
+    const fastestRoute = findFastestRoute(filteredRoutes);
 
     if (!cheapestRoute && !fastestRoute) {
-      return NextResponse.json({ data: [] }, { status: 200 })
+      return NextResponse.json({ data: [] }, { status: 200 });
     }
 
     if (cheapestRoute && fastestRoute && cheapestRoute === fastestRoute) {
@@ -391,47 +369,47 @@ export async function GET(
               ...cheapestRoute,
               protocolData: {
                 ...cheapestRoute.protocolData,
-                orders: [Order.Cheapest, Order.Fastest]
-              }
-            }
-          ]
+                orders: [Order.Cheapest, Order.Fastest],
+              },
+            },
+          ],
         },
-        { status: 200 }
-      )
+        { status: 200 },
+      );
     }
 
-    const data: LifiCrosschainTransfersRoute[] = []
+    const data: LifiCrosschainTransfersRoute[] = [];
     if (cheapestRoute) {
       data.push({
         ...cheapestRoute,
         protocolData: {
           ...cheapestRoute.protocolData,
-          orders: [Order.Cheapest]
-        }
-      })
+          orders: [Order.Cheapest],
+        },
+      });
     }
     if (fastestRoute) {
       data.push({
         ...fastestRoute,
         protocolData: {
           ...fastestRoute.protocolData,
-          orders: [Order.Fastest]
-        }
-      })
+          orders: [Order.Fastest],
+        },
+      });
     }
     return NextResponse.json(
       {
-        data
+        data,
       },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json(
       {
         message: error?.message ?? 'Something went wrong',
-        data: null
+        data: null,
       },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

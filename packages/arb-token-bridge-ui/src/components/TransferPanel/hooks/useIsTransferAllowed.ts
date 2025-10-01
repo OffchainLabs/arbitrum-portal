@@ -1,44 +1,44 @@
-import { useMemo } from 'react'
-import { useAccount } from 'wagmi'
+import { useMemo } from 'react';
+import { useAccount } from 'wagmi';
 
-import { useAppState } from '../../../state'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useDestinationAddressError } from './useDestinationAddressError'
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useAppState } from '../../../state';
+import { useDestinationAddressError } from './useDestinationAddressError';
 
 export function useIsTransferAllowed() {
   const {
     app: {
       arbTokenBridgeLoaded,
-      arbTokenBridge: { eth }
-    }
-  } = useAppState()
+      arbTokenBridge: { eth },
+    },
+  } = useAppState();
   // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const { address: walletAddress, isConnected, chain } = useAccount()
-  const [networks] = useNetworks()
-  const { destinationAddressError } = useDestinationAddressError()
+  const { address: walletAddress, isConnected, chain } = useAccount();
+  const [networks] = useNetworks();
+  const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
-    const isConnectedToTheWrongChain = chain?.id !== networks.sourceChain.id
+    const isConnectedToTheWrongChain = chain?.id !== networks.sourceChain.id;
 
     if (!arbTokenBridgeLoaded) {
-      return false
+      return false;
     }
     if (!eth) {
-      return false
+      return false;
     }
     if (!isConnected) {
-      return false
+      return false;
     }
     if (!walletAddress) {
-      return false
+      return false;
     }
     if (isConnectedToTheWrongChain) {
-      return false
+      return false;
     }
     if (!!destinationAddressError) {
-      return false
+      return false;
     }
-    return true
+    return true;
   }, [
     arbTokenBridgeLoaded,
     chain?.id,
@@ -46,6 +46,6 @@ export function useIsTransferAllowed() {
     isConnected,
     eth,
     networks.sourceChain.id,
-    walletAddress
-  ])
+    walletAddress,
+  ]);
 }

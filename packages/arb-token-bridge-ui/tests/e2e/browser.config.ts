@@ -1,8 +1,9 @@
-import { config as packageConfig } from '../../../../package.json'
-import { join, resolve } from 'path'
+import { join, resolve } from 'path';
+
+import { config as packageConfig } from '../../../../package.json';
 
 const getBrowserPath = () => {
-  const workspaceRoot = resolve(process.cwd(), '../..')
+  const workspaceRoot = resolve(process.cwd(), '../..');
 
   const chromePath =
     process.platform === 'darwin'
@@ -12,24 +13,26 @@ const getBrowserPath = () => {
           'chrome',
           `mac_arm-${packageConfig.chromeVersion}`,
           'chrome-mac-arm64',
-          'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'
+          'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
         )
       : join(
           workspaceRoot,
           packageConfig.chromePath,
           'chrome/linux-' + packageConfig.chromeVersion,
-          'chrome-linux64/chrome'
-        )
+          'chrome-linux64/chrome',
+        );
 
-  return chromePath
-}
+  return chromePath;
+};
 
-export const browserConfig = {
+export const browserConfig: Cypress.Browser = {
   name: 'chrome',
   family: 'chromium',
   channel: 'stable',
   displayName: 'Chromium',
   version: packageConfig.chromeVersion,
-  majorVersion: packageConfig.chromeVersion.split('.')[0],
-  path: getBrowserPath()
-}
+  majorVersion: packageConfig.chromeVersion.split('.')[0] as string,
+  path: getBrowserPath(),
+  isHeaded: true,
+  isHeadless: false,
+};

@@ -2,13 +2,13 @@ name: 'Check Files'
 description: 'Checks modified files to determine if tests should be run'
 outputs:
   test_scripts:
-    description: "Should test scripts"
+    description: 'Should test scripts'
     value: ${{ steps.check-files.outputs.test_scripts }}
   run_tests:
     description: 'Whether tests should be run based on modified files'
     value: ${{ steps.check-files.outputs.run_tests }}
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout
       uses: actions/checkout@v4

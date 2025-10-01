@@ -1,159 +1,139 @@
-import {
-  PropsWithChildren,
-  useEffect,
-  useMemo,
-  useCallback,
-  useState
-} from 'react'
-import { ArbitrumCanonicalRoute } from './ArbitrumCanonicalRoute'
-import { CctpRoute } from './CctpRoute'
-import { OftV2Route } from './OftV2Route'
-import React from 'react'
-import { useRouteStore } from '../hooks/useRouteStore'
-import { useRoutesUpdater } from '../hooks/useRoutesUpdater'
-import { LifiRoute } from './LifiRoute'
-import { shallow } from 'zustand/shallow'
-import { BadgeType } from './Route'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
-import { useMode } from '../../../hooks/useMode'
-import { twMerge } from 'tailwind-merge'
-import { PlusCircleIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
-import { Button } from '../../common/Button'
-import { DialogWrapper, useDialog2 } from '../../common/Dialog2'
+import { MinusCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { twMerge } from 'tailwind-merge';
+import { shallow } from 'zustand/shallow';
+
+import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useMode } from '../../../hooks/useMode';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { Button } from '../../common/Button';
+import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { useRoutesUpdater } from '../hooks/useRoutesUpdater';
+import { ArbitrumCanonicalRoute } from './ArbitrumCanonicalRoute';
+import { CctpRoute } from './CctpRoute';
+import { LifiRoute } from './LifiRoute';
+import { OftV2Route } from './OftV2Route';
+import { BadgeType } from './Route';
 
 function Wrapper({ children }: PropsWithChildren) {
-  const { embedMode } = useMode()
+  const { embedMode } = useMode();
 
   return (
     <div
       className={twMerge(
         'flex flex-col gap-2',
-        embedMode && 'overflow-auto overflow-x-hidden rounded-md pb-2'
+        embedMode && 'overflow-auto overflow-x-hidden rounded-md pb-2',
       )}
     >
       {children}
     </div>
-  )
+  );
 }
 
 export const Routes = React.memo(() => {
-  useRoutesUpdater()
+  useRoutesUpdater();
 
-  const [showHiddenRoutes, setShowHiddenRoutes] = useState(false)
-  const [dialogProps, openDialog] = useDialog2()
+  const [showHiddenRoutes, setShowHiddenRoutes] = useState(false);
+  const [dialogProps, openDialog] = useDialog2();
 
-  const [, setQueryParams] = useArbQueryParams()
+  const [, setQueryParams] = useArbQueryParams();
 
-  const {
-    eligibleRouteTypes,
-    routes,
-    hasLowLiquidity,
-    hasModifiedSettings,
-    isLoading,
-    hasError
-  } = useRouteStore(
-    state => ({
-      isLoading: state.isLoading,
-      eligibleRouteTypes: state.eligibleRouteTypes,
-      routes: state.routes,
-      hasLowLiquidity: state.hasLowLiquidity,
-      hasModifiedSettings: state.hasModifiedSettings,
-      hasError: state.error
-    }),
-    shallow
-  )
+  const { eligibleRouteTypes, routes, hasLowLiquidity, hasModifiedSettings, isLoading, hasError } =
+    useRouteStore(
+      (state) => ({
+        isLoading: state.isLoading,
+        eligibleRouteTypes: state.eligibleRouteTypes,
+        routes: state.routes,
+        hasLowLiquidity: state.hasLowLiquidity,
+        hasModifiedSettings: state.hasModifiedSettings,
+        hasError: state.error,
+      }),
+      shallow,
+    );
 
-  const { embedMode } = useMode()
+  const { embedMode } = useMode();
 
-  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3
+  const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3;
 
-  const [networks] = useNetworks()
-  const [selectedToken] = useSelectedToken()
+  const [networks] = useNetworks();
+  const [selectedToken] = useSelectedToken();
   const overrideToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: networks.sourceChain.id,
         fromToken: selectedToken?.address,
-        destinationChainId: networks.destinationChain.id
+        destinationChainId: networks.destinationChain.id,
       }),
-    [
-      selectedToken?.address,
-      networks.sourceChain.id,
-      networks.destinationChain.id
-    ]
-  )
+    [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
+  );
 
   useEffect(() => {
-    setShowHiddenRoutes(false)
-  }, [selectedToken])
+    setShowHiddenRoutes(false);
+  }, [selectedToken]);
 
   const getRouteTag = useCallback(
     (routeType: string): BadgeType | undefined => {
       switch (routeType) {
         case 'cctp':
           // Tag as "Best Deal" when shown with LiFi routes OR when shown with Canonical
-          if (
-            eligibleRouteTypes.includes('lifi') ||
-            eligibleRouteTypes.includes('arbitrum')
-          ) {
-            return 'best-deal'
+          if (eligibleRouteTypes.includes('lifi') || eligibleRouteTypes.includes('arbitrum')) {
+            return 'best-deal';
           }
-          return undefined
+          return undefined;
 
         case 'arbitrum':
           // Always show "Security guaranteed by Arbitrum" for security
-          return 'security-guaranteed'
+          return 'security-guaranteed';
 
         case 'lifi-cheapest':
           if (eligibleRouteTypes.includes('cctp')) {
             // LiFi + CCTP: CCTP = "Best Deal", Cheapest LiFi = no tag
-            return undefined
+            return undefined;
           } else {
             // LiFi only: Show "best deal"
             // LiFi + Canonical: Cheapest LiFi = "Best Deal"
-            return 'best-deal'
+            return 'best-deal';
           }
 
         case 'lifi-fastest':
           // Fastest always gets "fastest" tag
-          return 'fastest'
+          return 'fastest';
 
         case 'lifi':
           // Single LiFi route (when fastest and cheapest are the same)
           if (eligibleRouteTypes.includes('cctp')) {
             // LiFi + CCTP: CCTP = "Best Deal", LiFi = 'fastest'
-            return 'fastest'
+            return 'fastest';
           } else {
             // LiFi only: Show "best deal"
             // LiFi + Canonical: LiFi = "Best Deal"
-            return 'best-deal'
+            return 'best-deal';
           }
 
         default:
-          return undefined
+          return undefined;
       }
     },
-    [eligibleRouteTypes]
-  )
+    [eligibleRouteTypes],
+  );
 
   if (eligibleRouteTypes.length === 0) {
-    return null
+    return null;
   }
 
-  const visibleRoutes = showHiddenRoutes
-    ? routes
-    : routes.slice(0, MAX_ROUTES_VISIBLE)
-  const hasHiddenRoutes = routes.length > MAX_ROUTES_VISIBLE
+  const visibleRoutes = showHiddenRoutes ? routes : routes.slice(0, MAX_ROUTES_VISIBLE);
+  const hasHiddenRoutes = routes.length > MAX_ROUTES_VISIBLE;
 
   const hasMoreRoutesOptions =
     !isLoading &&
     !hasError &&
     hasModifiedSettings &&
     routes.length > 0 &&
-    routes.length < eligibleRouteTypes.length
+    routes.length < eligibleRouteTypes.length;
 
   return (
     <>
@@ -164,7 +144,7 @@ export const Routes = React.memo(() => {
             variant="primary"
             className="flex-start w-full rounded bg-[#4970E920] p-3 text-sm"
             onClick={() => {
-              openDialog('settings')
+              openDialog('settings');
             }}
           >
             <div className="w-full whitespace-break-spaces text-left">
@@ -174,13 +154,13 @@ export const Routes = React.memo(() => {
         )}
 
         {visibleRoutes.map((route, index) => {
-          const tag = getRouteTag(route.type)
+          const tag = getRouteTag(route.type);
 
           switch (route.type) {
             case 'oftV2':
-              return <OftV2Route key={`oftV2-${index}`} />
+              return <OftV2Route key={`oftV2-${index}`} />;
             case 'cctp':
-              return <CctpRoute key={`cctp-${index}`} />
+              return <CctpRoute key={`cctp-${index}`} />;
             case 'lifi':
             case 'lifi-fastest':
             case 'lifi-cheapest':
@@ -192,11 +172,11 @@ export const Routes = React.memo(() => {
                   tag={tag}
                   overrideToken={overrideToken.destination || undefined}
                 />
-              )
+              );
             case 'arbitrum':
-              return <ArbitrumCanonicalRoute key={`arbitrum-${index}`} />
+              return <ArbitrumCanonicalRoute key={`arbitrum-${index}`} />;
             default:
-              return null
+              return null;
           }
         })}
 
@@ -206,14 +186,8 @@ export const Routes = React.memo(() => {
               className="arb-hover flex space-x-1"
               onClick={() => setShowHiddenRoutes(!showHiddenRoutes)}
             >
-              <span>
-                {showHiddenRoutes ? 'Show fewer routes' : 'Show more routes'}
-              </span>
-              {showHiddenRoutes ? (
-                <MinusCircleIcon width={16} />
-              ) : (
-                <PlusCircleIcon width={16} />
-              )}
+              <span>{showHiddenRoutes ? 'Show fewer routes' : 'Show more routes'}</span>
+              {showHiddenRoutes ? <MinusCircleIcon width={16} /> : <PlusCircleIcon width={16} />}
             </button>
           </div>
         )}
@@ -248,7 +222,7 @@ export const Routes = React.memo(() => {
         )}
       </Wrapper>
     </>
-  )
-})
+  );
+});
 
-Routes.displayName = 'Routes'
+Routes.displayName = 'Routes';

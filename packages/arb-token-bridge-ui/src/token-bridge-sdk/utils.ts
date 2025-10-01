@@ -1,68 +1,65 @@
-import { BigNumber, Signer } from 'ethers'
-import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers'
-
-import { isNetwork, rpcURLs } from '../util/networks'
-import { ChainId } from '../types/ChainId'
-import { BridgeTransferStarterPropsWithChainIds } from './BridgeTransferStarter'
-import { isValidTeleportChainPair } from './teleport'
 import {
   Erc20Bridger,
   Erc20L1L3Bridger,
   EthBridger,
   EthL1L3Bridger,
-  getArbitrumNetwork
-} from '@arbitrum/sdk'
-import { isDepositMode } from '../util/isDepositMode'
-import { EnhancedProvider } from './EnhancedProvider'
-import { isValidLifiTransfer } from '../app/api/crosschain-transfers/utils'
+  getArbitrumNetwork,
+} from '@arbitrum/sdk';
+import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+import { BigNumber, Signer } from 'ethers';
+
+import { isValidLifiTransfer } from '../app/api/crosschain-transfers/utils';
+import { ChainId } from '../types/ChainId';
+import { isDepositMode } from '../util/isDepositMode';
+import { isNetwork, rpcURLs } from '../util/networks';
+import { BridgeTransferStarterPropsWithChainIds } from './BridgeTransferStarter';
+import { EnhancedProvider } from './EnhancedProvider';
+import { isValidTeleportChainPair } from './teleport';
 
 export const getAddressFromSigner = async (signer: Signer) => {
-  const address = await signer.getAddress()
-  return address
-}
+  const address = await signer.getAddress();
+  return address;
+};
 
 export const getChainIdFromProvider = async (provider: Provider) => {
-  const network = await provider.getNetwork()
-  return network.chainId
-}
+  const network = await provider.getNetwork();
+  return network.chainId;
+};
 
-export const getBridgeTransferProperties = (
-  props: BridgeTransferStarterPropsWithChainIds
-) => {
-  const sourceChainId = props.sourceChainId
-  const destinationChainId = props.destinationChainId
+export const getBridgeTransferProperties = (props: BridgeTransferStarterPropsWithChainIds) => {
+  const sourceChainId = props.sourceChainId;
+  const destinationChainId = props.destinationChainId;
 
   const isDestinationChainEthereumMainnetOrTestnet =
-    isNetwork(destinationChainId).isEthereumMainnetOrTestnet
+    isNetwork(destinationChainId).isEthereumMainnetOrTestnet;
 
-  const isSourceChainArbitrum = isNetwork(sourceChainId).isArbitrum
-  const isDestinationChainArbitrum = isNetwork(destinationChainId).isArbitrum
+  const isSourceChainArbitrum = isNetwork(sourceChainId).isArbitrum;
+  const isDestinationChainArbitrum = isNetwork(destinationChainId).isArbitrum;
 
-  const isSourceChainOrbit = isNetwork(sourceChainId).isOrbitChain
+  const isSourceChainOrbit = isNetwork(sourceChainId).isOrbitChain;
 
-  const { isBase: isDestinationChainBase } = isNetwork(destinationChainId)
+  const { isBase: isDestinationChainBase } = isNetwork(destinationChainId);
 
-  const isDeposit = isDepositMode({ sourceChainId, destinationChainId })
+  const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
 
   const isWithdrawal =
     (isSourceChainArbitrum && isDestinationChainEthereumMainnetOrTestnet) || //  l2 arbitrum chains to l1
     (isSourceChainOrbit && isDestinationChainEthereumMainnetOrTestnet) || // l2 orbit chains to l1
     (isSourceChainOrbit && isDestinationChainArbitrum) || // l3 orbit chains to l1
-    (isSourceChainOrbit && isDestinationChainBase) // l3 orbit chain to Base l2
+    (isSourceChainOrbit && isDestinationChainBase); // l3 orbit chain to Base l2
 
   const isTeleport = isValidTeleportChainPair({
     sourceChainId,
-    destinationChainId
-  })
+    destinationChainId,
+  });
 
   const isLifi = isValidLifiTransfer({
     sourceChainId,
     destinationChainId,
-    fromToken: props.sourceChainErc20Address
-  })
+    fromToken: props.sourceChainErc20Address,
+  });
 
-  const isNativeCurrencyTransfer =
-    typeof props.sourceChainErc20Address === 'undefined'
+  const isNativeCurrencyTransfer = typeof props.sourceChainErc20Address === 'undefined';
 
   return {
     isDeposit,
@@ -70,16 +67,13 @@ export const getBridgeTransferProperties = (
     isNativeCurrencyTransfer,
     isTeleport,
     isSupported: isDeposit || isWithdrawal || isTeleport || isLifi,
-    isLifi
-  }
-}
+    isLifi,
+  };
+};
 
 // https://github.com/OffchainLabs/arbitrum-sdk/blob/main/src/lib/message/L1ToL2MessageGasEstimator.ts#L76
-export function percentIncrease(
-  num: BigNumber,
-  increase: BigNumber
-): BigNumber {
-  return num.add(num.mul(increase).div(100))
+export function percentIncrease(num: BigNumber, increase: BigNumber): BigNumber {
+  return num.add(num.mul(increase).div(100));
 }
 
 // We cannot hardcode Erc20Bridger anymore in code, especially while dealing with tokens
@@ -87,47 +81,47 @@ export function percentIncrease(
 export const getBridger = async ({
   sourceChainId,
   destinationChainId,
-  isNativeCurrencyTransfer = false
+  isNativeCurrencyTransfer = false,
 }: {
-  sourceChainId: number
-  destinationChainId: number
-  isNativeCurrencyTransfer?: boolean
+  sourceChainId: number;
+  destinationChainId: number;
+  isNativeCurrencyTransfer?: boolean;
 }) => {
-  const destinationChainProvider = getProviderForChainId(destinationChainId)
+  const destinationChainProvider = getProviderForChainId(destinationChainId);
 
   if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
-    const l3Network = getArbitrumNetwork(destinationChainId)
+    const l3Network = getArbitrumNetwork(destinationChainId);
 
     return isNativeCurrencyTransfer
       ? new EthL1L3Bridger(l3Network)
-      : new Erc20L1L3Bridger(l3Network)
+      : new Erc20L1L3Bridger(l3Network);
   }
 
   return isNativeCurrencyTransfer
     ? EthBridger.fromProvider(destinationChainProvider)
-    : Erc20Bridger.fromProvider(destinationChainProvider)
-}
+    : Erc20Bridger.fromProvider(destinationChainProvider);
+};
 
 const getProviderForChainCache: {
-  [chainId: number]: StaticJsonRpcProvider
+  [chainId: number]: StaticJsonRpcProvider;
 } = {
   // start with empty cache
-}
+};
 
 function createProviderWithCache(chainId: ChainId) {
-  const rpcUrl = rpcURLs[chainId]
+  const rpcUrl = rpcURLs[chainId];
 
-  const provider = new EnhancedProvider(rpcUrl, chainId)
-  getProviderForChainCache[chainId] = provider
-  return provider
+  const provider = new EnhancedProvider(rpcUrl, chainId);
+  getProviderForChainCache[chainId] = provider;
+  return provider;
 }
 
 export function getProviderForChainId(chainId: ChainId): StaticJsonRpcProvider {
-  const cachedProvider = getProviderForChainCache[chainId]
+  const cachedProvider = getProviderForChainCache[chainId];
 
   if (typeof cachedProvider !== 'undefined') {
-    return cachedProvider
+    return cachedProvider;
   }
 
-  return createProviderWithCache(chainId)
+  return createProviderWithCache(chainId);
 }

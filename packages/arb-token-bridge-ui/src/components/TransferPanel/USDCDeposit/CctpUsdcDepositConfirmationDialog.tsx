@@ -1,35 +1,36 @@
-import { useState } from 'react'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { Dialog, UseDialogProps } from '../../common/Dialog'
-import { CctpTabContent } from '../CctpTabContent'
-import { SecurityNotGuaranteed } from '../SecurityLabels'
-import { USDCDepositConfirmationDialogCheckbox } from './UsdcDepositConfirmationDialogCheckbox'
-import { getNetworkName } from '../../../util/networks'
-import { trackEvent } from '../../../util/AnalyticsUtils'
-import { SpecialTokenSymbol } from '../../../util/fastBridges'
+import { useState } from 'react';
+
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { trackEvent } from '../../../util/AnalyticsUtils';
+import { SpecialTokenSymbol } from '../../../util/fastBridges';
+import { getNetworkName } from '../../../util/networks';
+import { Dialog, UseDialogProps } from '../../common/Dialog';
+import { CctpTabContent } from '../CctpTabContent';
+import { SecurityNotGuaranteed } from '../SecurityLabels';
+import { USDCDepositConfirmationDialogCheckbox } from './UsdcDepositConfirmationDialogCheckbox';
 
 export function CctpUsdcDepositConfirmationDialog(props: UseDialogProps) {
-  const [networks] = useNetworks()
-  const { childChain } = useNetworksRelationship(networks)
-  const [allCheckboxesChecked, setAllCheckboxesChecked] = useState(false)
-  const destinationNetworkName = getNetworkName(childChain.id)
+  const [networks] = useNetworks();
+  const { childChain } = useNetworksRelationship(networks);
+  const [allCheckboxesChecked, setAllCheckboxesChecked] = useState(false);
+  const destinationNetworkName = getNetworkName(childChain.id);
 
   return (
     <Dialog
       {...props}
       title={`Move funds to ${destinationNetworkName}`}
       actionButtonProps={{
-        disabled: !allCheckboxesChecked
+        disabled: !allCheckboxesChecked,
       }}
       onClose={(confirmed: boolean) => {
         if (confirmed) {
           trackEvent('Use CCTP Click', {
             tokenSymbol: SpecialTokenSymbol.USDC,
-            type: 'Deposit'
-          })
+            type: 'Deposit',
+          });
         }
-        props.onClose(confirmed)
+        props.onClose(confirmed);
       }}
     >
       <div className="flex flex-col space-y-4 py-4">
@@ -38,11 +39,11 @@ export function CctpUsdcDepositConfirmationDialog(props: UseDialogProps) {
             <div className="flex flex-col space-y-4">
               <USDCDepositConfirmationDialogCheckbox
                 onAllCheckboxesCheched={() => {
-                  setAllCheckboxesChecked(true)
+                  setAllCheckboxesChecked(true);
                 }}
-                onChange={checked => {
+                onChange={(checked) => {
                   if (!checked) {
-                    setAllCheckboxesChecked(false)
+                    setAllCheckboxesChecked(false);
                   }
                 }}
                 isBridgingNativeUSDC
@@ -53,5 +54,5 @@ export function CctpUsdcDepositConfirmationDialog(props: UseDialogProps) {
         </div>
       </div>
     </Dialog>
-  )
+  );
 }

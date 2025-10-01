@@ -1,45 +1,43 @@
 /**
  * When user wants to bridge ERC20 from L2 to L1
  */
-
-import { formatAmount } from '../../../src/util/NumberUtils'
+import { formatAmount } from '../../../src/util/NumberUtils';
 import {
+  ERC20TokenSymbol,
   getInitialERC20Balance,
   getL1NetworkConfig,
-  getL2NetworkConfig,
   getL1NetworkName,
+  getL2NetworkConfig,
   getL2NetworkName,
   getZeroToLessThanOneToken,
-  ERC20TokenSymbol
-} from '../../support/common'
+} from '../../support/common';
 
 const withdrawalTestCases = {
   'Standard ERC20': {
     symbol: ERC20TokenSymbol,
     l1Address: Cypress.env('ERC20_TOKEN_ADDRESS_PARENT_CHAIN'),
-    l2Address: Cypress.env('ERC20_TOKEN_ADDRESS_CHILD_CHAIN')
+    l2Address: Cypress.env('ERC20_TOKEN_ADDRESS_CHILD_CHAIN'),
   },
-  WETH: {
+  'WETH': {
     symbol: 'WETH',
     l1Address: Cypress.env('L1_WETH_ADDRESS'),
-    l2Address: Cypress.env('L2_WETH_ADDRESS')
-  }
-}
+    l2Address: Cypress.env('L2_WETH_ADDRESS'),
+  },
+};
 
 describe('Withdraw ERC20 Token', () => {
-  const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL')
-  const zeroToLessThanOneNativeToken =
-    getZeroToLessThanOneToken(nativeTokenSymbol)
-  let ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)) // randomize the amount to be sure that previous transactions are not checked in e2e
+  const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL');
+  const zeroToLessThanOneNativeToken = getZeroToLessThanOneToken(nativeTokenSymbol);
+  let ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)); // randomize the amount to be sure that previous transactions are not checked in e2e
   // when all of our tests need to run in a logged-in state
   // we have to make sure we preserve a healthy LocalStorage state
   // because it is cleared between each `it` cypress test
 
-  Object.keys(withdrawalTestCases).forEach(tokenType => {
-    const testCase = withdrawalTestCases[tokenType]
+  Object.keys(withdrawalTestCases).forEach((tokenType) => {
+    const testCase = withdrawalTestCases[tokenType as keyof typeof withdrawalTestCases];
     // Happy Path
     context(`User is on L2 and imports ${tokenType}`, () => {
-      let l1ERC20bal: string, l2ERC20bal: string
+      let l1ERC20bal: string, l2ERC20bal: string;
 
       // log in to metamask before withdrawal
       beforeEach(() => {
@@ -47,234 +45,232 @@ describe('Withdraw ERC20 Token', () => {
           tokenAddress: testCase.l1Address,
           multiCallerAddress: getL1NetworkConfig().multiCall,
           address: Cypress.env('ADDRESS'),
-          rpcURL: Cypress.env('ETH_RPC_URL')
+          rpcURL: Cypress.env('ETH_RPC_URL'),
         }).then(
-          val =>
+          (val) =>
             (l1ERC20bal = formatAmount(val, {
-              symbol: testCase.symbol
-            }))
-        )
+              symbol: testCase.symbol,
+            })),
+        );
 
         getInitialERC20Balance({
           tokenAddress: testCase.l2Address,
           multiCallerAddress: getL2NetworkConfig().multiCall,
           address: Cypress.env('ADDRESS'),
-          rpcURL: Cypress.env('ARB_RPC_URL')
+          rpcURL: Cypress.env('ARB_RPC_URL'),
         }).then(
-          val =>
+          (val) =>
             (l2ERC20bal = formatAmount(val, {
-              symbol: testCase.symbol
-            }))
-        )
-      })
+              symbol: testCase.symbol,
+            })),
+        );
+      });
 
       it('should show form fields correctly', () => {
-        cy.login({ networkType: 'childChain' })
-        cy.findSourceChainButton(getL2NetworkName())
-        cy.findDestinationChainButton(getL1NetworkName())
-        cy.findMoveFundsButton().should('be.disabled')
-        cy.findSelectTokenButton(nativeTokenSymbol)
-      })
+        cy.login({ networkType: 'childChain' });
+        cy.findSourceChainButton(getL2NetworkName());
+        cy.findDestinationChainButton(getL1NetworkName());
+        cy.findMoveFundsButton().should('be.disabled');
+        cy.findSelectTokenButton(nativeTokenSymbol);
+      });
 
       it(`should withdraw ${tokenType} to the same address successfully`, () => {
-        ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)) // randomize the amount to be sure that previous transactions are not checked in e2e
+        ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)); // randomize the amount to be sure that previous transactions are not checked in e2e
 
-        cy.login({ networkType: 'childChain' })
+        cy.login({ networkType: 'childChain' });
         context(`should add ${tokenType} correctly`, () => {
           cy.searchAndSelectToken({
             tokenName: testCase.symbol,
-            tokenAddress: testCase.l2Address
-          })
-        })
+            tokenAddress: testCase.l2Address,
+          });
+        });
 
         context('should show summary', () => {
-          cy.typeAmount(ERC20AmountToSend)
-          cy.findGasFeeSummary(zeroToLessThanOneNativeToken)
-        })
+          cy.typeAmount(ERC20AmountToSend);
+          cy.findGasFeeSummary(zeroToLessThanOneNativeToken);
+        });
 
         context('should show clickable withdraw button', () => {
-          cy.selectRoute('arbitrum')
-          cy.acceptTnC()
-          cy.clickMoveFundsButton({ shouldConfirmInMetamask: false })
-        })
+          cy.selectRoute('arbitrum');
+          cy.acceptTnC();
+          cy.clickMoveFundsButton({ shouldConfirmInMetamask: false });
+        });
 
         context('should withdraw successfully', () => {
           // the Continue withdrawal button should be disabled at first
           cy.findByRole('button', {
-            name: /Continue/i
-          }).should('be.disabled')
+            name: /Continue/i,
+          }).should('be.disabled');
 
           cy.findByRole('switch', {
-            name: /before I can claim my funds/i
+            name: /before I can claim my funds/i,
           })
             .should('be.visible')
-            .click()
+            .click();
 
           cy.findByRole('switch', {
-            name: /after claiming my funds/i
+            name: /after claiming my funds/i,
           })
             .should('be.visible')
-            .click()
+            .click();
           // the Continue withdrawal button should not be disabled now
           cy.findByRole('button', {
-            name: /Continue/i
+            name: /Continue/i,
           })
             .should('be.enabled')
-            .click()
+            .click();
 
-          cy.confirmMetamaskTransaction()
+          cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
 
           cy.findTransactionInTransactionHistory({
             duration: 'Less than a minute',
             amount: ERC20AmountToSend,
-            symbol: testCase.symbol
-          })
-        })
+            symbol: testCase.symbol,
+          });
+        });
 
         context('transfer panel amount should be reset', () => {
-          cy.switchToTransferPanelTab()
-          cy.findAmountInput().should('have.value', '')
-          cy.findMoveFundsButton().should('be.disabled')
-        })
-      })
+          cy.switchToTransferPanelTab();
+          cy.findAmountInput().should('have.value', '');
+          cy.findMoveFundsButton().should('be.disabled');
+        });
+      });
 
       it('should claim funds', { defaultCommandTimeout: 200_000 }, () => {
         // increase the timeout for this test as claim button can take ~(20 blocks *10 blocks/sec) to activate
 
-        cy.login({ networkType: 'parentChain' }) // login to L1 to claim the funds (otherwise would need to change network after clicking on claim)
+        cy.login({ networkType: 'parentChain' }); // login to L1 to claim the funds (otherwise would need to change network after clicking on claim)
 
-        cy.switchToTransactionHistoryTab('pending')
+        cy.switchToTransactionHistoryTab('pending');
 
         cy.clickClaimButton(
           formatAmount(ERC20AmountToSend, {
-            symbol: testCase.symbol
-          })
-        )
+            symbol: testCase.symbol,
+          }),
+        );
 
-        cy.confirmMetamaskTransaction()
+        cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
 
-        cy.findByLabelText('show settled transactions')
-          .should('be.visible')
-          .click()
+        cy.findByLabelText('show settled transactions').should('be.visible').click();
 
         cy.findByText(
           `${formatAmount(ERC20AmountToSend, {
-            symbol: testCase.symbol
-          })}`
-        ).should('be.visible')
+            symbol: testCase.symbol,
+          })}`,
+        ).should('be.visible');
 
-        cy.switchToTransferPanelTab()
+        cy.switchToTransferPanelTab();
 
         cy.searchAndSelectToken({
           tokenName: testCase.symbol,
-          tokenAddress: testCase.l2Address
-        })
+          tokenAddress: testCase.l2Address,
+        });
 
         // the balance on the destination chain should not be the same as before
         cy.findByLabelText(`${testCase.symbol} balance amount on parentChain`)
           .should('be.visible')
           .its('text')
-          .should('not.eq', l1ERC20bal)
-      })
+          .should('not.eq', l1ERC20bal);
+      });
 
       it(`should withdraw ${tokenType} to custom destination address successfully`, () => {
-        const ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)) // randomize the amount to be sure that previous transactions are not checked in e2e
+        const ERC20AmountToSend = Number((Math.random() * 0.001).toFixed(5)); // randomize the amount to be sure that previous transactions are not checked in e2e
 
-        cy.login({ networkType: 'childChain' })
+        cy.login({ networkType: 'childChain' });
         context('should add a new token', () => {
           cy.searchAndSelectToken({
             tokenName: testCase.symbol,
-            tokenAddress: testCase.l2Address
-          })
-        })
+            tokenAddress: testCase.l2Address,
+          });
+        });
 
         context('should show summary', () => {
-          cy.typeAmount(ERC20AmountToSend)
-          cy.findGasFeeSummary(zeroToLessThanOneNativeToken)
-        })
+          cy.typeAmount(ERC20AmountToSend);
+          cy.findGasFeeSummary(zeroToLessThanOneNativeToken);
+        });
 
         context('should fill custom destination address successfully', () => {
-          cy.fillCustomDestinationAddress()
-        })
+          cy.fillCustomDestinationAddress();
+        });
 
         context('should show clickable withdraw button', () => {
-          cy.selectRoute('arbitrum')
-          cy.acceptTnC()
-          cy.clickMoveFundsButton({ shouldConfirmInMetamask: false })
-        })
+          cy.selectRoute('arbitrum');
+          cy.acceptTnC();
+          cy.clickMoveFundsButton({ shouldConfirmInMetamask: false });
+        });
 
         context('should initiate withdrawal successfully', () => {
           // the Continue withdrawal button should be disabled at first
           cy.findByRole('button', {
-            name: /Continue/i
-          }).should('be.disabled')
+            name: /Continue/i,
+          }).should('be.disabled');
 
           cy.findByRole('switch', {
-            name: /before I can claim my funds/i
+            name: /before I can claim my funds/i,
           })
             .should('be.visible')
-            .click()
+            .click();
 
           cy.findByRole('switch', {
-            name: /after claiming my funds/i
+            name: /after claiming my funds/i,
           })
             .should('be.visible')
-            .click()
+            .click();
           // the Continue withdrawal button should not be disabled now
           cy.findByRole('button', {
-            name: /Continue/i
+            name: /Continue/i,
           })
             .should('be.enabled')
-            .click()
+            .click();
 
-          cy.confirmMetamaskTransaction()
+          cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
           const txData = {
             amount: ERC20AmountToSend,
-            symbol: testCase.symbol
-          }
+            symbol: testCase.symbol,
+          };
           cy.findTransactionInTransactionHistory({
             duration: 'Less than a minute',
-            ...txData
-          })
-          cy.openTransactionDetails(txData)
+            ...txData,
+          });
+          cy.openTransactionDetails(txData);
           cy.findTransactionDetailsCustomDestinationAddress(
-            Cypress.env('CUSTOM_DESTINATION_ADDRESS')
-          )
+            Cypress.env('CUSTOM_DESTINATION_ADDRESS'),
+          );
 
           // close popup
-          cy.closeTransactionDetails()
-          cy.switchToTransferPanelTab()
+          cy.closeTransactionDetails();
+          cy.switchToTransferPanelTab();
 
           // the balance on the source chain should not be the same as before
           cy.findByLabelText(`${testCase.symbol} balance amount on childChain`)
             .should('be.visible')
             .its('text')
-            .should('not.eq', l2ERC20bal)
+            .should('not.eq', l2ERC20bal);
 
-          cy.findAmountInput().should('have.value', '')
-          cy.findMoveFundsButton().should('be.disabled')
-        })
-      })
+          cy.findAmountInput().should('have.value', '');
+          cy.findMoveFundsButton().should('be.disabled');
+        });
+      });
 
       // TODO => test for bridge amount higher than user's L2 ERC20 balance
-    })
-  })
+    });
+  });
 
   // TODO - will have both cases:
   // 1. Arbitrum network is not added to metamask yet (add + switch)
   // 2. Arbitrum network already configured in metamask (only switch)
-  context('user has some L2-ERC20 and is on L1', () => {})
+  context('user has some L2-ERC20 and is on L1', () => {});
   // TODO
-  context('user has some L2-ERC20 and is on wrong chain', () => {})
+  context('user has some L2-ERC20 and is on wrong chain', () => {});
   // TODO
-  context('user has 0 L2-ERC20 and is on L1', () => {})
+  context('user has 0 L2-ERC20 and is on L1', () => {});
   // TODO
-  context('user has 0 L2-ERC20 and is on L2', () => {})
+  context('user has 0 L2-ERC20 and is on L2', () => {});
   // TODO
-  context('user has 0 L2-ERC20 and is on wrong chain', () => {})
+  context('user has 0 L2-ERC20 and is on wrong chain', () => {});
   // TODO
   context(
     'user has some LPT tokens which require token approval permission and is on L2',
-    () => {}
-  )
-})
+    () => {},
+  );
+});

@@ -1,27 +1,27 @@
-import { useAccount, useDisconnect } from 'wagmi'
-import { twMerge } from 'tailwind-merge'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
   ArrowLeftEndOnRectangleIcon,
+  CheckIcon,
   ChevronDownIcon,
   DocumentDuplicateIcon,
-  CheckIcon
-} from '@heroicons/react/24/outline'
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { useConnectModal } from '@rainbow-me/rainbowkit'
-import { useState } from 'react'
+} from '@heroicons/react/24/outline';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useState } from 'react';
+import { twMerge } from 'tailwind-merge';
+import { useAccount, useDisconnect } from 'wagmi';
 
-import { Button } from '../common/Button'
-import { SafeImage } from '../common/SafeImage'
-import { CustomBoringAvatar } from '../common/CustomBoringAvatar'
-import { Transition } from '../common/Transition'
-import { useAccountMenu } from '../../hooks/useAccountMenu'
+import { useAccountMenu } from '../../hooks/useAccountMenu';
+import { Button } from '../common/Button';
+import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
+import { SafeImage } from '../common/SafeImage';
+import { Transition } from '../common/Transition';
 
 interface AccountContentProps {
-  showChevron?: boolean
-  isOpen?: boolean
-  showCopyButton?: boolean
-  onCopy?: () => void
-  isCopied?: boolean
+  showChevron?: boolean;
+  isOpen?: boolean;
+  showCopyButton?: boolean;
+  onCopy?: () => void;
+  isCopied?: boolean;
 }
 
 const AccountContent = ({
@@ -29,9 +29,9 @@ const AccountContent = ({
   isOpen = false,
   showCopyButton = false,
   onCopy,
-  isCopied = false
+  isCopied = false,
 }: AccountContentProps) => {
-  const { address, accountShort, ensName, ensAvatar, udInfo } = useAccountMenu()
+  const { address, accountShort, ensName, ensAvatar, udInfo } = useAccountMenu();
 
   return (
     <div className="flex items-center gap-2">
@@ -40,9 +40,7 @@ const AccountContent = ({
         className="h-6 w-6 rounded-full"
         fallback={<CustomBoringAvatar size={24} name={address} />}
       />
-      <span className="text-white">
-        {ensName ?? udInfo.name ?? accountShort}
-      </span>
+      <span className="text-white">{ensName ?? udInfo.name ?? accountShort}</span>
       {showCopyButton && onCopy && (
         <>
           {isCopied ? (
@@ -53,27 +51,25 @@ const AccountContent = ({
         </>
       )}
       {showChevron && (
-        <ChevronDownIcon
-          className={twMerge('h-3 w-3 transition-all', isOpen && 'rotate-180')}
-        />
+        <ChevronDownIcon className={twMerge('h-3 w-3 transition-all', isOpen && 'rotate-180')} />
       )}
     </div>
-  )
-}
+  );
+};
 
 export const WidgetHeaderAccountButton = () => {
-  const { isConnected, address } = useAccount()
-  const { openConnectModal } = useConnectModal()
-  const { disconnect } = useDisconnect()
-  const [isCopied, setIsCopied] = useState(false)
+  const { isConnected, address } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const { disconnect } = useDisconnect();
+  const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = async () => {
     if (address) {
-      await navigator.clipboard.writeText(address)
-      setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
+      await navigator.clipboard.writeText(address);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     }
-  }
+  };
 
   return (
     <div className="flex items-center gap-2 text-base text-white">
@@ -82,10 +78,7 @@ export const WidgetHeaderAccountButton = () => {
           {({ open }) => (
             <>
               <PopoverButton as="div">
-                <Button
-                  variant="secondary"
-                  className="h-[40px] px-[10px] py-[10px]"
-                >
+                <Button variant="secondary" className="h-[40px] px-[10px] py-[10px]">
                   <AccountContent showChevron={true} isOpen={open} />
                 </Button>
               </PopoverButton>
@@ -93,11 +86,7 @@ export const WidgetHeaderAccountButton = () => {
                 <PopoverPanel className="absolute right-0 top-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
                   <div className="flex flex-col gap-2 rounded-md border border-white/20 bg-widget-background p-2">
                     {/* Account name and copy */}
-                    <Button
-                      variant="secondary"
-                      onClick={copyToClipboard}
-                      className="border-none"
-                    >
+                    <Button variant="secondary" onClick={copyToClipboard} className="border-none">
                       <AccountContent
                         showCopyButton={true}
                         onCopy={copyToClipboard}
@@ -134,5 +123,5 @@ export const WidgetHeaderAccountButton = () => {
         </Button>
       )}
     </div>
-  )
-}
+  );
+};

@@ -1,12 +1,13 @@
 // Categories' database and utility functions
-import categoriesJson from '@/public/__auto-generated-categories.json';
 import categoriesToSubcategoriesJson from '@/public/__auto-generated-categories-to-subcategories.json';
+import categoriesJson from '@/public/__auto-generated-categories.json';
+
 import { Category, EntityType, SearchableData, Subcategory } from './types';
 
 const categoryMetaData: {
   [slug: string]: { image: string; description: string };
 } = {
-  defi: {
+  'defi': {
     image: '/images/illustration-defi.webp',
     description: 'Explore financial projects.',
   },
@@ -14,11 +15,11 @@ const categoryMetaData: {
     image: '/images/illustration-infra-tools.webp',
     description: 'Explore the new wave of intelligence.',
   },
-  nfts: {
+  'nfts': {
     image: '/images/illustration-nft.webp',
     description: 'Browse new art collections.',
   },
-  gaming: {
+  'gaming': {
     image: '/images/illustration-gaming.webp',
     description: 'Enter into new worlds.',
   },
@@ -66,27 +67,22 @@ export const getCategoryDetailsById = (categoryId: string) => {
 };
 
 export const getCategoryFromSubcategory = (subcategoryKey: string) => {
-  const categoryKey = Object.keys(CATEGORY_TO_SUBCATEGORIES).find(
-    (categoryKey) =>
-      CATEGORY_TO_SUBCATEGORIES[categoryKey]!.includes(subcategoryKey),
+  const categoryKey = Object.keys(CATEGORY_TO_SUBCATEGORIES).find((categoryKey) =>
+    CATEGORY_TO_SUBCATEGORIES[categoryKey]!.includes(subcategoryKey),
   );
   return categoryKey ?? null;
 };
-export const isCategory = (category: string) =>
-  categoryKeyToIndexMap[category] !== undefined;
+export const isCategory = (category: string) => categoryKeyToIndexMap[category] !== undefined;
 
 // returns the `category-key` if the SUBCATEGORIES provided completely match a single CATEGORY
 // returns `false` if the CATEGORY is partially selected OR has any SUBCATEGORIES outside of it
-export function getCategoryBySubcategoryList(
-  subcategoryList: string[],
-): string | false {
+export function getCategoryBySubcategoryList(subcategoryList: string[]): string | false {
   let fullySelectedCategory = '';
 
   const inputSubcategoriesStringified = subcategoryList.sort().join('_');
 
   Object.keys(CATEGORY_TO_SUBCATEGORIES).forEach((categoryKey) => {
-    const allSubcategoriesInCategory =
-      CATEGORY_TO_SUBCATEGORIES[categoryKey]!.sort().join('_');
+    const allSubcategoriesInCategory = CATEGORY_TO_SUBCATEGORIES[categoryKey]!.sort().join('_');
 
     if (inputSubcategoriesStringified === allSubcategoriesInCategory) {
       fullySelectedCategory = categoryKey;
@@ -97,10 +93,7 @@ export function getCategoryBySubcategoryList(
 }
 
 export const sortByCategoryRank = (a: string, b: string) => {
-  return (
-    (getCategoryDetailsById(a)?.rank ?? 0) -
-    (getCategoryDetailsById(b)?.rank ?? 0)
-  );
+  return (getCategoryDetailsById(a)?.rank ?? 0) - (getCategoryDetailsById(b)?.rank ?? 0);
 };
 
 export const VALID_CATEGORY_SLUGS = CATEGORIES.map((cat) => cat.slug);

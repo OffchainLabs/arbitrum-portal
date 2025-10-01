@@ -2,11 +2,7 @@ import { Card } from '../Card';
 import { ArcadeWeekPlan } from './ArcadeWeekPlan';
 import { ARCADE_WEEKLY_PLAN } from './plans';
 
-export const ArcadeCurrentMissions = ({
-  currentWeekIndex,
-}: {
-  currentWeekIndex: number;
-}) => {
+export const ArcadeCurrentMissions = ({ currentWeekIndex }: { currentWeekIndex: number }) => {
   return (
     <div className="flex flex-col gap-[80px] lg:gap-[150px]">
       <div className="flex flex-col gap-[50px]">
@@ -29,10 +25,7 @@ export const ArcadeCurrentMissions = ({
 
       {/* Upcoming week */}
       {currentWeekIndex < ARCADE_WEEKLY_PLAN.length - 1 && (
-        <ArcadeWeekPlan
-          locked
-          arcadeWeek={ARCADE_WEEKLY_PLAN[currentWeekIndex + 1]}
-        />
+        <ArcadeWeekPlan locked arcadeWeek={ARCADE_WEEKLY_PLAN[currentWeekIndex + 1]} />
       )}
     </div>
   );

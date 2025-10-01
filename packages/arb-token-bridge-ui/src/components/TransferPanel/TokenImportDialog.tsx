@@ -1,93 +1,83 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLatest } from 'react-use'
-import { create } from 'zustand'
+import { constants } from 'ethers';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLatest } from 'react-use';
+import { create } from 'zustand';
 
-import { useERC20L1Address } from '../../hooks/useERC20L1Address'
-import { useAppState } from '../../state'
-import {
-  erc20DataToErc20BridgeToken,
-  fetchErc20Data,
-  isValidErc20
-} from '../../util/TokenUtils'
-import { Loader } from '../common/atoms/Loader'
-import { Dialog, UseDialogProps } from '../common/Dialog'
-import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils'
-import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types'
-import { warningToast } from '../common/atoms/Toast'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { TokenInfo } from './TokenInfo'
-import { NoteBox } from '../common/NoteBox'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { constants } from 'ethers'
+import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
+import { useERC20L1Address } from '../../hooks/useERC20L1Address';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { useAppState } from '../../state';
+import { erc20DataToErc20BridgeToken, fetchErc20Data, isValidErc20 } from '../../util/TokenUtils';
+import { Dialog, UseDialogProps } from '../common/Dialog';
+import { NoteBox } from '../common/NoteBox';
+import { Loader } from '../common/atoms/Loader';
+import { warningToast } from '../common/atoms/Toast';
+import { TokenInfo } from './TokenInfo';
+import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 enum ImportStatus {
   LOADING,
   KNOWN,
   KNOWN_UNIMPORTED,
   UNKNOWN,
-  ERROR
+  ERROR,
 }
 
 type TokenListSearchResult =
   | {
-      found: false
+      found: false;
     }
   | {
-      found: true
-      token: ERC20BridgeToken
-      status: ImportStatus
-    }
+      found: true;
+      token: ERC20BridgeToken;
+      status: ImportStatus;
+    };
 
 type TokenImportDialogStore = {
-  isOpen: boolean
-  openDialog: () => void
-  closeDialog: () => void
-}
+  isOpen: boolean;
+  openDialog: () => void;
+  closeDialog: () => void;
+};
 
-export const useTokenImportDialogStore = create<TokenImportDialogStore>(
-  set => ({
-    isOpen: false,
-    openDialog: () => set({ isOpen: true }),
-    closeDialog: () => set({ isOpen: false })
-  })
-)
+export const useTokenImportDialogStore = create<TokenImportDialogStore>((set) => ({
+  isOpen: false,
+  openDialog: () => set({ isOpen: true }),
+  closeDialog: () => set({ isOpen: false }),
+}));
 
 type TokenImportDialogProps = Omit<UseDialogProps, 'isOpen'> & {
-  tokenAddress: string
-}
+  tokenAddress: string;
+};
 
-export function TokenImportDialog({
-  onClose,
-  tokenAddress
-}: TokenImportDialogProps): JSX.Element {
+export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogProps): JSX.Element {
   const {
     app: {
-      arbTokenBridge: { bridgeTokens, token }
-    }
-  } = useAppState()
-  const [, setSelectedToken] = useSelectedToken()
-  const [networks] = useNetworks()
-  const { childChainProvider, parentChainProvider } =
-    useNetworksRelationship(networks)
+      arbTokenBridge: { bridgeTokens, token },
+    },
+  } = useAppState();
+  const [, setSelectedToken] = useSelectedToken();
+  const [networks] = useNetworks();
+  const { childChainProvider, parentChainProvider } = useNetworksRelationship(networks);
 
-  const tokensFromUser = useTokensFromUser()
-  const latestTokensFromUser = useLatest(tokensFromUser)
+  const tokensFromUser = useTokensFromUser();
+  const latestTokensFromUser = useLatest(tokensFromUser);
 
-  const tokensFromLists = useTokensFromLists()
-  const latestTokensFromLists = useLatest(tokensFromLists)
+  const tokensFromLists = useTokensFromLists();
+  const latestTokensFromLists = useLatest(tokensFromLists);
 
-  const latestBridgeTokens = useLatest(bridgeTokens)
+  const latestBridgeTokens = useLatest(bridgeTokens);
 
-  const [status, setStatus] = useState<ImportStatus>(ImportStatus.LOADING)
-  const [isImportingToken, setIsImportingToken] = useState<boolean>(false)
-  const [tokenToImport, setTokenToImport] = useState<ERC20BridgeToken>()
-  const isOpen = useTokenImportDialogStore(state => state.isOpen)
-  const [isDialogVisible, setIsDialogVisible] = useState(false)
+  const [status, setStatus] = useState<ImportStatus>(ImportStatus.LOADING);
+  const [isImportingToken, setIsImportingToken] = useState<boolean>(false);
+  const [tokenToImport, setTokenToImport] = useState<ERC20BridgeToken>();
+  const isOpen = useTokenImportDialogStore((state) => state.isOpen);
+  const [isDialogVisible, setIsDialogVisible] = useState(false);
   const { data: l1Address, isLoading: isL1AddressLoading } = useERC20L1Address({
     eitherL1OrL2Address: tokenAddress,
-    l2Provider: childChainProvider
-  })
+    l2Provider: childChainProvider,
+  });
 
   // we use a different state to handle dialog visibility to trigger the entry transition,
   // otherwise if we only used isOpen then the transition would never trigger because
@@ -95,125 +85,125 @@ export function TokenImportDialog({
   //
   // for the transition to work we need to start as false and update it to true
   useEffect(() => {
-    setIsDialogVisible(isOpen)
-  }, [isOpen])
+    setIsDialogVisible(isOpen);
+  }, [isOpen]);
 
   const modalTitle = useMemo(() => {
     switch (status) {
       case ImportStatus.LOADING:
-        return 'Loading token'
+        return 'Loading token';
       case ImportStatus.KNOWN:
       case ImportStatus.KNOWN_UNIMPORTED:
-        return 'Import known token'
+        return 'Import known token';
       case ImportStatus.UNKNOWN:
-        return 'Import unknown token'
+        return 'Import unknown token';
       case ImportStatus.ERROR:
-        return 'Invalid token address'
+        return 'Invalid token address';
     }
-  }, [status])
+  }, [status]);
 
   const getL1TokenDataFromL1Address = useCallback(async () => {
     if (!l1Address) {
-      return
+      return;
     }
 
-    const erc20Params = { address: l1Address, provider: parentChainProvider }
+    const erc20Params = { address: l1Address, provider: parentChainProvider };
 
     if (!(await isValidErc20(erc20Params))) {
-      throw new Error(`${l1Address} is not a valid ERC-20 token`)
+      throw new Error(`${l1Address} is not a valid ERC-20 token`);
     }
 
-    return fetchErc20Data(erc20Params)
-  }, [parentChainProvider, l1Address])
+    return fetchErc20Data(erc20Params);
+  }, [parentChainProvider, l1Address]);
 
   const searchForTokenInLists = useCallback(
     (erc20L1Address: string): TokenListSearchResult => {
       // We found the token in an imported list
-      const currentBridgeTokens = latestBridgeTokens.current
+      const currentBridgeTokens = latestBridgeTokens.current;
       if (typeof currentBridgeTokens === 'undefined') {
-        return { found: false }
+        return { found: false };
       }
 
-      const l1Token = currentBridgeTokens[erc20L1Address]
+      const l1Token = currentBridgeTokens[erc20L1Address];
       if (typeof l1Token !== 'undefined') {
         return {
           found: true,
           token: l1Token,
-          status: ImportStatus.KNOWN
-        }
+          status: ImportStatus.KNOWN,
+        };
       }
 
       const tokens = {
         ...latestTokensFromLists.current,
-        ...latestTokensFromUser.current
-      }
+        ...latestTokensFromUser.current,
+      };
 
-      const token = tokens[erc20L1Address]
+      const token = tokens[erc20L1Address];
       // We found the token in an unimported list
       if (typeof token !== 'undefined') {
         return {
           found: true,
           token,
-          status: ImportStatus.KNOWN_UNIMPORTED
-        }
+          status: ImportStatus.KNOWN_UNIMPORTED,
+        };
       }
 
-      return { found: false }
+      return { found: false };
     },
-    [latestBridgeTokens, latestTokensFromLists, latestTokensFromUser]
-  )
+    [latestBridgeTokens, latestTokensFromLists, latestTokensFromUser],
+  );
 
   const selectToken = useCallback(
     async (_token: ERC20BridgeToken) => {
-      await token.updateTokenData(_token.address)
-      setSelectedToken(_token.address)
+      await token.updateTokenData(_token.address);
+      setSelectedToken(_token.address);
     },
-    [token, setSelectedToken]
-  )
+    [token, setSelectedToken],
+  );
 
   useEffect(() => {
     if (!isOpen || isImportingToken) {
-      return
+      return;
     }
 
     if (typeof bridgeTokens === 'undefined') {
-      return
+      return;
     }
 
     if (!isL1AddressLoading && !l1Address) {
-      setStatus(ImportStatus.ERROR)
-      return
+      setStatus(ImportStatus.ERROR);
+      return;
     }
 
     if (l1Address) {
       if (l1Address === constants.AddressZero) {
-        return
+        return;
       }
 
-      const searchResult1 = searchForTokenInLists(l1Address)
+      const searchResult1 = searchForTokenInLists(l1Address);
 
       if (searchResult1.found) {
-        setStatus(searchResult1.status)
-        setTokenToImport(searchResult1.token)
+        setStatus(searchResult1.status);
+        setTokenToImport(searchResult1.token);
 
-        return
+        return;
       }
     }
 
     // Can't find the address provided, so we look further
     getL1TokenDataFromL1Address()
-      .then(data => {
+      .then((data) => {
         if (!data) {
-          return
+          return;
         }
 
         // We couldn't find the address within our lists
-        setStatus(ImportStatus.UNKNOWN)
-        setTokenToImport(erc20DataToErc20BridgeToken(data))
+        setStatus(ImportStatus.UNKNOWN);
+        setTokenToImport(erc20DataToErc20BridgeToken(data));
       })
       .catch(() => {
-        setStatus(ImportStatus.ERROR)
-      })
+        setStatus(ImportStatus.ERROR);
+      });
   }, [
     tokenAddress,
     bridgeTokens,
@@ -222,49 +212,49 @@ export function TokenImportDialog({
     isOpen,
     l1Address,
     searchForTokenInLists,
-    isImportingToken
-  ])
+    isImportingToken,
+  ]);
 
   async function storeNewToken(newToken: string) {
     return token.add(newToken).catch((ex: Error) => {
-      setStatus(ImportStatus.ERROR)
+      setStatus(ImportStatus.ERROR);
 
       if (ex.name === 'TokenDisabledError') {
-        warningToast('This token is currently paused in the bridge')
+        warningToast('This token is currently paused in the bridge');
       }
-    })
+    });
   }
 
   function handleTokenImport() {
     if (typeof bridgeTokens === 'undefined') {
-      return
+      return;
     }
 
     if (isImportingToken) {
-      return
+      return;
     }
 
-    setIsImportingToken(true)
+    setIsImportingToken(true);
 
     if (!l1Address) {
-      return
+      return;
     }
 
     if (typeof bridgeTokens[l1Address] !== 'undefined') {
       // Token is already added to the bridge
-      onClose(true)
-      selectToken(tokenToImport!)
+      onClose(true);
+      selectToken(tokenToImport!);
     } else {
       // Token is not added to the bridge, so we add it
       storeNewToken(l1Address)
         .then(() => {
           if (tokenToImport) {
-            selectToken(tokenToImport)
+            selectToken(tokenToImport);
           }
         })
         .catch(() => {
-          setStatus(ImportStatus.ERROR)
-        })
+          setStatus(ImportStatus.ERROR);
+        });
     }
   }
 
@@ -280,7 +270,7 @@ export function TokenImportDialog({
           <Loader color="white" size="medium" />
         </div>
       </Dialog>
-    )
+    );
   }
 
   if (status === ImportStatus.ERROR) {
@@ -292,11 +282,11 @@ export function TokenImportDialog({
         actionButtonProps={{ hidden: true }}
       >
         <span className="flex py-4">
-          Whoops, looks like this token address is invalid. Try asking the token
-          team to update their link.
+          Whoops, looks like this token address is invalid. Try asking the token team to update
+          their link.
         </span>
       </Dialog>
-    )
+    );
   }
 
   return (
@@ -306,20 +296,15 @@ export function TokenImportDialog({
       title={modalTitle}
       actionButtonProps={{
         loading: isImportingToken,
-        onClick: handleTokenImport
+        onClick: handleTokenImport,
       }}
       actionButtonTitle="Import token"
     >
       <div className="flex flex-col space-y-4 pt-4">
-        {status === ImportStatus.KNOWN && (
-          <span>This token is on an imported token list:</span>
-        )}
+        {status === ImportStatus.KNOWN && <span>This token is on an imported token list:</span>}
 
         {status === ImportStatus.KNOWN_UNIMPORTED && (
-          <span>
-            This token hasn&apos;t been imported yet but appears on a token
-            list:
-          </span>
+          <span>This token hasn&apos;t been imported yet but appears on a token list:</span>
         )}
 
         <div className="flex flex-col pb-4">
@@ -329,16 +314,14 @@ export function TokenImportDialog({
             <NoteBox className="mt-4" variant="warning">
               <div className="flex flex-col space-y-2">
                 <p>
-                  This token address doesn&apos;t exist in any of the token
-                  lists we have. This doesn&apos;t mean it&apos;s not good, it
-                  just means{' '}
+                  This token address doesn&apos;t exist in any of the token lists we have. This
+                  doesn&apos;t mean it&apos;s not good, it just means{' '}
                   <span className="font-bold">proceed with caution.</span>
                 </p>
                 <p>
-                  It&apos;s easy to impersonate the name of any token, including
-                  ETH. Make sure you trust the source it came from. If it&apos;s
-                  a popular token, there&apos;s a good chance we have it on our
-                  list. If it&apos;s a smaller or newer token, it&apos;s
+                  It&apos;s easy to impersonate the name of any token, including ETH. Make sure you
+                  trust the source it came from. If it&apos;s a popular token, there&apos;s a good
+                  chance we have it on our list. If it&apos;s a smaller or newer token, it&apos;s
                   reasonable to believe we might not have it.
                 </p>
               </div>
@@ -349,12 +332,11 @@ export function TokenImportDialog({
             <span className="font-medium">
               Non-standard tokens aren&apos;t supported by the bridge.
             </span>{' '}
-            Ex: if the token balance increases or decreases while sitting in a
-            wallet address. Contact the team behind the token to find out if
-            this token is standard or not.
+            Ex: if the token balance increases or decreases while sitting in a wallet address.
+            Contact the team behind the token to find out if this token is standard or not.
           </NoteBox>
         </div>
       </div>
     </Dialog>
-  )
+  );
 }

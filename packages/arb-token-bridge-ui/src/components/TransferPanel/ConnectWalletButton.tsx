@@ -1,9 +1,9 @@
-import { useConnectModal } from '@rainbow-me/rainbowkit'
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 
-import { Button } from '../common/Button'
+import { Button } from '../common/Button';
 
 export function ConnectWalletButton({ onClick }: { onClick?: () => void }) {
-  const { openConnectModal } = useConnectModal()
+  const { openConnectModal } = useConnectModal();
 
   return (
     <Button
@@ -13,5 +13,5 @@ export function ConnectWalletButton({ onClick }: { onClick?: () => void }) {
     >
       <span className="block w-full truncate">Connect Wallet</span>
     </Button>
-  )
+  );
 }

@@ -1,1 +1,1 @@
-export { POST } from '@/bridge/app/api/moonpay'
+export { POST } from '@/bridge/app/api/moonpay';

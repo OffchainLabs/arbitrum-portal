@@ -1,54 +1,52 @@
 import {
   Address,
   EthBridger,
-  getArbitrumNetwork,
   ParentToChildMessageGasEstimator,
-  ParentTransactionReceipt
-} from '@arbitrum/sdk'
-import useSWRImmutable from 'swr/immutable'
-import {
-  getNetworkName,
-  getSupportedChainIds,
-  isNetwork
-} from '../util/networks'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { BigNumber, constants, Signer } from 'ethers'
-import { useNetworks } from '../hooks/useNetworks'
-import { useAccount } from 'wagmi'
-import { useEffect, useMemo, useState } from 'react'
-import { fetchNativeCurrency, NativeCurrency } from '../hooks/useNativeCurrency'
-import { ChainId } from '../types/ChainId'
-import { formatAmount } from '../util/NumberUtils'
-import { isAddress, parseEther } from 'ethers/lib/utils'
-import { errorToast } from './common/atoms/Toast'
-import { getBaseFee } from '@arbitrum/sdk/dist/lib/utils/lib'
-import { StaticJsonRpcProvider } from '@ethersproject/providers'
-import { Inbox__factory } from '@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory'
-import { ERC20Inbox__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20Inbox__factory'
-import { ParentToChildMessageGasParams } from '@arbitrum/sdk/dist/lib/message/ParentToChildMessageCreator'
-import { Button } from './common/Button'
-import { getInboxAddressFromOrbitChainId } from '../util/orbitChainsList'
-import { useEthersSigner } from '../util/wagmi/useEthersSigner'
-import { isUserRejectedError } from '../util/isUserRejectedError'
-import { useError } from '../hooks/useError'
-import { Column, Table, TableCellRenderer } from 'react-virtualized'
-import { DialogWrapper, useDialog2 } from './common/Dialog2'
-import { Dialog, UseDialogProps } from './common/Dialog'
-import { SafeImage } from './common/SafeImage'
-import { NetworkImage } from './common/NetworkImage'
-import { twMerge } from 'tailwind-merge'
-import { Loader } from './common/atoms/Loader'
-import { NoteBox } from './common/NoteBox'
-import { trackEvent } from '../util/AnalyticsUtils'
-import { shortenAddress } from '../util/CommonUtils'
-import { Tooltip } from './common/Tooltip'
-import { TokenLogoFallback } from './TransferPanel/TokenInfo'
-import { addressesEqual } from '../util/AddressUtils'
-import { useSwitchNetworkWithConfig } from '../hooks/useSwitchNetworkWithConfig'
-import { useLatest } from 'react-use'
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { shallow } from 'zustand/shallow'
+  ParentTransactionReceipt,
+  getArbitrumNetwork,
+} from '@arbitrum/sdk';
+import { ERC20Inbox__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20Inbox__factory';
+import { Inbox__factory } from '@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory';
+import { ParentToChildMessageGasParams } from '@arbitrum/sdk/dist/lib/message/ParentToChildMessageCreator';
+import { getBaseFee } from '@arbitrum/sdk/dist/lib/utils/lib';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { BigNumber, Signer, constants } from 'ethers';
+import { isAddress, parseEther } from 'ethers/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
+import { useLatest } from 'react-use';
+import { Column, Table, TableCellRenderer } from 'react-virtualized';
+import useSWRImmutable from 'swr/immutable';
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
+
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { useError } from '../hooks/useError';
+import { NativeCurrency, fetchNativeCurrency } from '../hooks/useNativeCurrency';
+import { useNetworks } from '../hooks/useNetworks';
+import { useSwitchNetworkWithConfig } from '../hooks/useSwitchNetworkWithConfig';
+import { ChainId } from '../types/ChainId';
+import { addressesEqual } from '../util/AddressUtils';
+import { trackEvent } from '../util/AnalyticsUtils';
+import { shortenAddress } from '../util/CommonUtils';
+import { formatAmount } from '../util/NumberUtils';
+import { isUserRejectedError } from '../util/isUserRejectedError';
+import { getNetworkName, getSupportedChainIds, isNetwork } from '../util/networks';
+import { getInboxAddressFromOrbitChainId } from '../util/orbitChainsList';
+import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { TokenLogoFallback } from './TransferPanel/TokenInfo';
+import { Button } from './common/Button';
+import { Dialog, UseDialogProps } from './common/Dialog';
+import { DialogWrapper, useDialog2 } from './common/Dialog2';
+import { NetworkImage } from './common/NetworkImage';
+import { NoteBox } from './common/NoteBox';
+import { SafeImage } from './common/SafeImage';
+import { Tooltip } from './common/Tooltip';
+import { Loader } from './common/atoms/Loader';
+import { errorToast } from './common/atoms/Toast';
 
 async function createRetryableTicket({
   inboxAddress,
@@ -57,23 +55,20 @@ async function createRetryableTicket({
   destinationAddress,
   l2CallValue,
   gasEstimation,
-  signerAddress
+  signerAddress,
 }: {
-  inboxAddress: string
-  childProvider: StaticJsonRpcProvider
-  signer: Signer
-  destinationAddress: string
-  l2CallValue: BigNumber
-  gasEstimation: ParentToChildMessageGasParams
-  signerAddress: string
+  inboxAddress: string;
+  childProvider: StaticJsonRpcProvider;
+  signer: Signer;
+  destinationAddress: string;
+  l2CallValue: BigNumber;
+  gasEstimation: ParentToChildMessageGasParams;
+  signerAddress: string;
 }) {
-  const { nativeToken } = await EthBridger.fromProvider(childProvider)
+  const { nativeToken } = await EthBridger.fromProvider(childProvider);
 
-  if (
-    typeof nativeToken === 'undefined' ||
-    addressesEqual(nativeToken, constants.AddressZero)
-  ) {
-    const inbox = Inbox__factory.connect(inboxAddress, childProvider)
+  if (typeof nativeToken === 'undefined' || addressesEqual(nativeToken, constants.AddressZero)) {
+    const inbox = Inbox__factory.connect(inboxAddress, childProvider);
     return await inbox.connect(signer).unsafeCreateRetryableTicket(
       destinationAddress, // to
       l2CallValue, // l2CallValue
@@ -85,12 +80,12 @@ async function createRetryableTicket({
       '0x', // data
       {
         from: signerAddress,
-        value: 0
-      }
-    )
+        value: 0,
+      },
+    );
   }
 
-  const inbox = ERC20Inbox__factory.connect(inboxAddress, childProvider)
+  const inbox = ERC20Inbox__factory.connect(inboxAddress, childProvider);
   // And we send the request through the method unsafeCreateRetryableTicket of the Inbox contract
   // We need this method because we don't want the contract to check that we are not sending the l2CallValue
   // in the "value" of the transaction, because we want to use the amount that is already on child chain
@@ -105,9 +100,9 @@ async function createRetryableTicket({
     0, // tokenTotalFeeAmount
     '0x', // data
     {
-      from: signerAddress
-    }
-  )
+      from: signerAddress,
+    },
+  );
 }
 
 async function prepareTransaction({
@@ -115,19 +110,17 @@ async function prepareTransaction({
   destinationAddress,
   childProvider,
   parentProvider,
-  balanceToRecover
+  balanceToRecover,
 }: {
-  address: string
-  destinationAddress: string
-  childProvider: StaticJsonRpcProvider
-  parentProvider: StaticJsonRpcProvider
-  balanceToRecover: BigNumber
+  address: string;
+  destinationAddress: string;
+  childProvider: StaticJsonRpcProvider;
+  parentProvider: StaticJsonRpcProvider;
+  balanceToRecover: BigNumber;
 }) {
   // We estimate gas usage
-  const parentToChildMessageGasEstimator = new ParentToChildMessageGasEstimator(
-    childProvider
-  )
-  const aliasedAddress = getAliasedAddress(address)
+  const parentToChildMessageGasEstimator = new ParentToChildMessageGasEstimator(childProvider);
+  const aliasedAddress = getAliasedAddress(address);
 
   const gasEstimation = await parentToChildMessageGasEstimator.estimateAll(
     {
@@ -136,20 +129,20 @@ async function prepareTransaction({
       l2CallValue: balanceToRecover,
       excessFeeRefundAddress: destinationAddress,
       callValueRefundAddress: destinationAddress,
-      data: '0x'
+      data: '0x',
     },
     await getBaseFee(parentProvider),
-    parentProvider
-  )
+    parentProvider,
+  );
 
   const l2CallValue = balanceToRecover
     .sub(gasEstimation.maxSubmissionCost)
-    .sub(gasEstimation.gasLimit.mul(gasEstimation.maxFeePerGas))
+    .sub(gasEstimation.gasLimit.mul(gasEstimation.maxFeePerGas));
 
   return {
     l2CallValue,
-    gasEstimation
-  }
+    gasEstimation,
+  };
 }
 
 async function recoverFunds({
@@ -159,23 +152,23 @@ async function recoverFunds({
   parentProvider,
   balanceToRecover,
   inboxAddress,
-  signer
+  signer,
 }: {
-  address: string
-  destinationAddress: string
-  childProvider: StaticJsonRpcProvider
-  parentProvider: StaticJsonRpcProvider
-  balanceToRecover: BigNumber
-  inboxAddress: string
-  signer: Signer
+  address: string;
+  destinationAddress: string;
+  childProvider: StaticJsonRpcProvider;
+  parentProvider: StaticJsonRpcProvider;
+  balanceToRecover: BigNumber;
+  inboxAddress: string;
+  signer: Signer;
 }) {
   const { gasEstimation, l2CallValue } = await prepareTransaction({
     address,
     destinationAddress,
     childProvider,
     parentProvider,
-    balanceToRecover
-  })
+    balanceToRecover,
+  });
 
   return await createRetryableTicket({
     childProvider,
@@ -184,92 +177,92 @@ async function recoverFunds({
     inboxAddress,
     l2CallValue,
     signer,
-    signerAddress: address
-  })
+    signerAddress: address,
+  });
 }
 
 export function getAliasedAddress(address: string) {
-  return new Address(address).applyAlias().value
+  return new Address(address).applyAlias().value;
 }
 
 async function filterLostFundsWithoutEnoughGas({
   chainId,
   balance,
-  address
+  address,
 }: {
-  chainId: ChainId
-  balance: BigNumber
-  address: string
+  chainId: ChainId;
+  balance: BigNumber;
+  address: string;
 }) {
   if (balance.isZero()) {
-    return constants.Zero
+    return constants.Zero;
   }
 
-  const childProvider = getProviderForChainId(chainId)
-  const chain = getArbitrumNetwork(chainId)
+  const childProvider = getProviderForChainId(chainId);
+  const chain = getArbitrumNetwork(chainId);
 
-  const parentProvider = getProviderForChainId(chain.parentChainId)
+  const parentProvider = getProviderForChainId(chain.parentChainId);
   const { l2CallValue } = await prepareTransaction({
     address,
     destinationAddress: getAliasedAddress(address),
     childProvider,
     parentProvider,
-    balanceToRecover: balance
-  })
+    balanceToRecover: balance,
+  });
 
   if (l2CallValue.isNegative()) {
-    return constants.Zero
+    return constants.Zero;
   }
 
-  return balance
+  return balance;
 }
 
 export function useFundsOnAliasedAddress({
   address,
-  isTestnet
+  isTestnet,
 }: {
-  address: string | undefined
-  isTestnet: boolean
+  address: string | undefined;
+  isTestnet: boolean;
 }) {
   return useSWRImmutable(
     address ? [address, isTestnet, 'useFundsOnAliasedAddress'] : null,
     async ([address, isTestnet]) => {
-      const aliasedAddress = getAliasedAddress(address)
+      const aliasedAddress = getAliasedAddress(address);
       const chainIds = getSupportedChainIds({
         includeTestnets: isTestnet,
-        includeMainnets: !isTestnet
-      }).filter(chainId => {
-        const { isBase, isEthereumMainnetOrTestnet } = isNetwork(chainId)
-        return !isBase && !isEthereumMainnetOrTestnet
-      })
+        includeMainnets: !isTestnet,
+      }).filter((chainId) => {
+        const { isBase, isEthereumMainnetOrTestnet } = isNetwork(chainId);
+        return !isBase && !isEthereumMainnetOrTestnet;
+      });
 
-      const balancePromises = chainIds.map(async chainId => {
-        const provider = getProviderForChainId(chainId)
-        const nativeCurrency = await fetchNativeCurrency({ provider })
+      const balancePromises = chainIds.map(async (chainId) => {
+        const provider = getProviderForChainId(chainId);
+        const nativeCurrency = await fetchNativeCurrency({ provider });
 
         try {
-          const balance = await provider.getBalance(aliasedAddress)
+          const balance = await provider.getBalance(aliasedAddress);
           const balanceFiltered = await filterLostFundsWithoutEnoughGas({
             chainId,
             balance,
-            address
-          })
-          return [chainId, balanceFiltered, nativeCurrency] as const
+            address,
+          });
+          return [chainId, balanceFiltered, nativeCurrency] as const;
         } catch (error) {
-          return [chainId, constants.Zero, nativeCurrency] as const
+          return [chainId, constants.Zero, nativeCurrency] as const;
         }
-      })
+      });
 
-      const balances = await Promise.all(balancePromises)
+      const balances = await Promise.all(balancePromises);
       // Aliased account will always have some leftover, we can't check for balance of 0, as it would always return 0
       // We compare with 0.005 instead
-      return balances.filter(([, balance]) => balance.gt(parseEther('0.005')))
-    }
-  )
+      return balances.filter(([, balance]) => balance.gt(parseEther('0.005')));
+    },
+  );
 }
 
 const TokenColumn: TableCellRenderer = ({ rowData }) => {
-  const [, balance, nativeCurrency] = rowData
+  const [, balance, nativeCurrency] = rowData;
 
   return (
     <span className="flex h-12 items-center align-middle">
@@ -279,25 +272,23 @@ const TokenColumn: TableCellRenderer = ({ rowData }) => {
         width={20}
         fallback={<TokenLogoFallback className="h4 w-4" />}
       />
-      <span className="ml-1 text-xs">
-        {formatAmount(balance, nativeCurrency)}
-      </span>
+      <span className="ml-1 text-xs">{formatAmount(balance, nativeCurrency)}</span>
     </span>
-  )
-}
+  );
+};
 
 export function RecoverFunds() {
-  const { address } = useAccount()
-  const [{ sourceChain }] = useNetworks()
-  const { isTestnet } = isNetwork(sourceChain.id)
+  const { address } = useAccount();
+  const [{ sourceChain }] = useNetworks();
+  const { isTestnet } = isNetwork(sourceChain.id);
   const { data: lostFunds } = useFundsOnAliasedAddress({
     address,
-    isTestnet
-  })
-  const [dialogProps, openDialog] = useDialog2()
+    isTestnet,
+  });
+  const [dialogProps, openDialog] = useDialog2();
 
   if (!address || !lostFunds || lostFunds.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -311,7 +302,7 @@ export function RecoverFunds() {
               wrapperClassName="inline arb-hover underline cursor-help"
               content={getAliasedAddress(address)}
               tippyProps={{
-                hideOnClick: false
+                hideOnClick: false,
               }}
             >
               {shortenAddress(getAliasedAddress(address))}
@@ -321,7 +312,7 @@ export function RecoverFunds() {
               wrapperClassName="inline arb-hover underline cursor-help"
               content={address}
               tippyProps={{
-                hideOnClick: false
+                hideOnClick: false,
               }}
             >
               {shortenAddress(address)}
@@ -329,133 +320,109 @@ export function RecoverFunds() {
             )
           </p>
 
-          <Button
-            variant="primary"
-            onClick={() => openDialog('recover_funds')}
-            className="ml-1"
-          >
+          <Button variant="primary" onClick={() => openDialog('recover_funds')} className="ml-1">
             Recover funds
           </Button>
         </div>
       </NoteBox>
     </>
-  )
+  );
 }
 
 type RecoverFundsTransactionsStore = {
-  transactions: Record<string, Record<number, string>>
-  addTransaction: (parameters: {
-    walletAddress: string
-    chainId: ChainId
-    tx: string
-  }) => void
-  removeTransaction: (parameters: {
-    walletAddress: string
-    chainId: ChainId
-  }) => void
-}
-export const useRecoverFundsTransactionsStore =
-  create<RecoverFundsTransactionsStore>()(
-    persist(
-      set => ({
-        transactions: {},
-        addTransaction: ({ chainId, walletAddress, tx }) =>
-          set(state => ({
-            transactions: {
-              [walletAddress]: {
-                ...(state.transactions[walletAddress] || {}),
-                [chainId]: tx
-              }
-            }
-          })),
-        removeTransaction: ({ chainId, walletAddress }) =>
-          set(state => {
-            const newState = { ...state }
-            delete newState.transactions[walletAddress]?.[chainId]
-            return newState
-          })
-      }),
-      {
-        name: 'recover-funds-transaction-cache',
-        version: 1
-      }
-    )
-  )
+  transactions: Record<string, Record<number, string>>;
+  addTransaction: (parameters: { walletAddress: string; chainId: ChainId; tx: string }) => void;
+  removeTransaction: (parameters: { walletAddress: string; chainId: ChainId }) => void;
+};
+export const useRecoverFundsTransactionsStore = create<RecoverFundsTransactionsStore>()(
+  persist(
+    (set) => ({
+      transactions: {},
+      addTransaction: ({ chainId, walletAddress, tx }) =>
+        set((state) => ({
+          transactions: {
+            [walletAddress]: {
+              ...(state.transactions[walletAddress] || {}),
+              [chainId]: tx,
+            },
+          },
+        })),
+      removeTransaction: ({ chainId, walletAddress }) =>
+        set((state) => {
+          const newState = { ...state };
+          delete newState.transactions[walletAddress]?.[chainId];
+          return newState;
+        }),
+    }),
+    {
+      name: 'recover-funds-transaction-cache',
+      version: 1,
+    },
+  ),
+);
 
 const ActionColumn: TableCellRenderer = ({ rowData }) => {
-  const [chainId, balance]: [ChainId, BigNumber, NativeCurrency] = rowData
-  const { address } = useAccount()
-  const [isLoading, setIsLoading] = useState(false)
-  const [destinationAddress, setDestinationAddress] = useState<
-    string | undefined
-  >(undefined)
-  const { handleError } = useError()
-  const signer = useEthersSigner()
-  const { current: latestSigner } = useLatest(signer)
-  const childChainProvider = getProviderForChainId(chainId)
-  const [{ sourceChain }] = useNetworks()
-  const { isTestnet } = isNetwork(sourceChain.id)
-  const { transactions, addTransaction, removeTransaction } =
-    useRecoverFundsTransactionsStore(
-      state => ({
-        transactions: state.transactions,
-        addTransaction: state.addTransaction,
-        removeTransaction: state.removeTransaction
-      }),
-      shallow
-    )
+  const [chainId, balance]: [ChainId, BigNumber, NativeCurrency] = rowData;
+  const { address } = useAccount();
+  const [isLoading, setIsLoading] = useState(false);
+  const [destinationAddress, setDestinationAddress] = useState<string | undefined>(undefined);
+  const { handleError } = useError();
+  const signer = useEthersSigner();
+  const { current: latestSigner } = useLatest(signer);
+  const childChainProvider = getProviderForChainId(chainId);
+  const [{ sourceChain }] = useNetworks();
+  const { isTestnet } = isNetwork(sourceChain.id);
+  const { transactions, addTransaction, removeTransaction } = useRecoverFundsTransactionsStore(
+    (state) => ({
+      transactions: state.transactions,
+      addTransaction: state.addTransaction,
+      removeTransaction: state.removeTransaction,
+    }),
+    shallow,
+  );
   const { mutate } = useFundsOnAliasedAddress({
     address,
-    isTestnet
-  })
-  const { switchChainAsync } = useSwitchNetworkWithConfig()
+    isTestnet,
+  });
+  const { switchChainAsync } = useSwitchNetworkWithConfig();
   const parentChainProvider = useMemo(() => {
-    const chain = getArbitrumNetwork(chainId)
-    return getProviderForChainId(chain.parentChainId)
-  }, [chainId])
+    const chain = getArbitrumNetwork(chainId);
+    return getProviderForChainId(chain.parentChainId);
+  }, [chainId]);
 
   useEffect(() => {
     async function resumeTransaction() {
       try {
         if (!address) {
-          return
+          return;
         }
-        const txHash = transactions[address]?.[chainId]
+        const txHash = transactions[address]?.[chainId];
         if (!txHash) {
-          return
+          return;
         }
 
         // When transaction is pulled from localStorage, `wait` function has been removed due to JSON.stringify
-        const provider = getProviderForChainId(
-          getArbitrumNetwork(chainId).parentChainId
-        )
-        const tx = await provider.getTransaction(txHash)
-        const parentSubmissionTx =
-          ParentTransactionReceipt.monkeyPatchContractCallWait(tx)
-        const parentSubmissionTxReceipt = await parentSubmissionTx.wait()
-        await parentSubmissionTxReceipt.waitForChildTransactionReceipt(
-          childChainProvider
-        )
+        const provider = getProviderForChainId(getArbitrumNetwork(chainId).parentChainId);
+        const tx = await provider.getTransaction(txHash);
+        const parentSubmissionTx = ParentTransactionReceipt.monkeyPatchContractCallWait(tx);
+        const parentSubmissionTxReceipt = await parentSubmissionTx.wait();
+        await parentSubmissionTxReceipt.waitForChildTransactionReceipt(childChainProvider);
         // Refetch lists
-        await mutate()
-        removeTransaction({ walletAddress: address, chainId })
+        await mutate();
+        removeTransaction({ walletAddress: address, chainId });
       } catch (error) {
         handleError({
           error,
           label: 'recover_funds',
-          category: 'contract_interaction'
-        })
-        errorToast(
-          `Recover funds transaction failed: ${
-            (error as Error)?.message ?? error
-          }`
-        )
+          category: 'contract_interaction',
+        });
+        errorToast(`Recover funds transaction failed: ${(error as Error)?.message ?? error}`);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    resumeTransaction()
+    resumeTransaction();
   }, [
     transactions,
     address,
@@ -464,34 +431,32 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
     mutate,
     removeTransaction,
     setIsLoading,
-    handleError
-  ])
+    handleError,
+  ]);
 
   if (!address) {
-    return null
+    return null;
   }
 
   const inboxAddress = isNetwork(chainId).isOrbitChain
     ? getInboxAddressFromOrbitChainId(chainId)
-    : getArbitrumNetwork(chainId).ethBridge.inbox
+    : getArbitrumNetwork(chainId).ethBridge.inbox;
 
   return (
     <div className="flex h-12 items-center align-middle">
       <input
         className={twMerge(
           'h-full rounded border border-white bg-black/40 px-3 py-1 text-sm font-light placeholder:text-white/60',
-          destinationAddress &&
-            !isAddress(destinationAddress) &&
-            'border-red-400'
+          destinationAddress && !isAddress(destinationAddress) && 'border-red-400',
         )}
         name="destinationAddressInput"
         placeholder={`Recovery address`}
-        onChange={e => {
-          const newDestinationAddress = e.target.value
-          setDestinationAddress(newDestinationAddress)
+        onChange={(e) => {
+          const newDestinationAddress = e.target.value;
+          setDestinationAddress(newDestinationAddress);
         }}
-        onBlur={e => {
-          setDestinationAddress(e.target.value)
+        onBlur={(e) => {
+          setDestinationAddress(e.target.value);
         }}
         // stop password managers from autofilling
         data-1p-ignore
@@ -504,19 +469,18 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
         className="ml-auto mr-3 w-14 rounded bg-green-400 p-2 text-xs text-black"
         onClick={async () => {
           if (!latestSigner || !destinationAddress) {
-            return
+            return;
           }
 
-          const parentChainId = getArbitrumNetwork(chainId).parentChainId
-          let currentChainId = latestSigner.provider.network.chainId
+          const parentChainId = getArbitrumNetwork(chainId).parentChainId;
+          let currentChainId = latestSigner.provider.network.chainId;
           while (currentChainId !== parentChainId) {
-            currentChainId = (
-              await switchChainAsync({ chainId: parentChainId })
-            ).id
+            // eslint-disable-next-line no-await-in-loop
+            currentChainId = (await switchChainAsync({ chainId: parentChainId })).id;
           }
 
           try {
-            setIsLoading(true)
+            setIsLoading(true);
             const tx = await recoverFunds({
               address,
               balanceToRecover: balance,
@@ -524,35 +488,31 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
               destinationAddress,
               parentProvider: parentChainProvider,
               inboxAddress: inboxAddress as string,
-              signer: latestSigner
-            })
+              signer: latestSigner,
+            });
             addTransaction({
               walletAddress: address,
               chainId,
-              tx: tx.hash
-            })
+              tx: tx.hash,
+            });
             trackEvent('Recover funds', {
               chainId,
-              balanceToRecover: balance.toString()
-            })
+              balanceToRecover: balance.toString(),
+            });
 
             // Rest of the flow is handled in useEffect, for both transactions triggered during that session, and transactions in previous sessions
           } catch (error) {
-            setIsLoading(false)
+            setIsLoading(false);
             if (isUserRejectedError(error)) {
-              return
+              return;
             }
 
             handleError({
               error,
               label: 'recover_funds',
-              category: 'contract_interaction'
-            })
-            errorToast(
-              `Recover funds transaction failed: ${
-                (error as Error)?.message ?? error
-              }`
-            )
+              category: 'contract_interaction',
+            });
+            errorToast(`Recover funds transaction failed: ${(error as Error)?.message ?? error}`);
           }
         }}
         disabled={
@@ -569,20 +529,20 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
         )}
       </Button>
     </div>
-  )
-}
+  );
+};
 
 export function RecoverFundsDialog(props: UseDialogProps) {
-  const { address } = useAccount()
-  const [{ sourceChain }] = useNetworks()
-  const { isTestnet } = isNetwork(sourceChain.id)
+  const { address } = useAccount();
+  const [{ sourceChain }] = useNetworks();
+  const { isTestnet } = isNetwork(sourceChain.id);
   const { data: lostFunds, isLoading } = useFundsOnAliasedAddress({
     address,
-    isTestnet
-  })
+    isTestnet,
+  });
 
   if (isLoading || !lostFunds || lostFunds.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -598,7 +558,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
         rowHeight={60}
         rowCount={lostFunds.length}
         headerHeight={52}
-        headerRowRenderer={props => (
+        headerRowRenderer={(props) => (
           <div className="mx:4 flex w-full border-b border-white/30 text-white">
             {props.columns}
           </div>
@@ -610,7 +570,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
             <div
               className={twMerge(
                 'flex items-center border-white/30 align-middle',
-                index !== lostFunds.length && 'border-b'
+                index !== lostFunds.length && 'border-b',
               )}
               key={rowData[0]}
             >
@@ -619,7 +579,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               {columns[2]}
               <div className="ml-auto">{columns[3]}</div>
             </div>
-          )
+          );
         }}
       >
         <Column
@@ -628,7 +588,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               TOKEN
             </div>
           }
-          cellRenderer={props => <TokenColumn {...props} />}
+          cellRenderer={(props) => <TokenColumn {...props} />}
           dataKey="balance"
           width={180}
         />
@@ -654,14 +614,12 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               DESTINATION ADDRESS
             </div>
           }
-          cellRenderer={props => (
-            <ActionColumn {...props} key={props.rowData[0]} />
-          )}
+          cellRenderer={(props) => <ActionColumn {...props} key={props.rowData[0]} />}
           dataKey="destinationAddress"
           width={345}
           flexShrink={0}
         />
       </Table>
     </Dialog>
-  )
+  );
 }

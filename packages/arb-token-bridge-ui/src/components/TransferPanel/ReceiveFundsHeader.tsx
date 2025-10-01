@@ -1,55 +1,53 @@
-import { twMerge } from 'tailwind-merge'
-import { Button } from '../common/Button'
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
-import { CustomDestinationAddressInput } from './CustomDestinationAddressInput'
-import { useCallback, useEffect, useState } from 'react'
-import { useDestinationAddressError } from './hooks/useDestinationAddressError'
-import { useAccountType } from '../../hooks/useAccountType'
-import { Loader } from '../common/atoms/Loader'
-import { useRouteStore } from './hooks/useRouteStore'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { useCallback, useEffect, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { useAccountType } from '../../hooks/useAccountType';
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { Button } from '../common/Button';
+import { Loader } from '../common/atoms/Loader';
+import { CustomDestinationAddressInput } from './CustomDestinationAddressInput';
+import { useDestinationAddressError } from './hooks/useDestinationAddressError';
+import { useRouteStore } from './hooks/useRouteStore';
 
 export const ReceiveFundsHeader = () => {
-  const [
-    showCustomDestinationAddressInput,
-    setShowCustomDestinationAddressInput
-  ] = useState(false)
+  const [showCustomDestinationAddressInput, setShowCustomDestinationAddressInput] = useState(false);
 
-  const { accountType } = useAccountType()
-  const isSmartContractWallet = accountType === 'smart-contract-wallet'
-  const { destinationAddressError } = useDestinationAddressError()
+  const { accountType } = useAccountType();
+  const isSmartContractWallet = accountType === 'smart-contract-wallet';
+  const { destinationAddressError } = useDestinationAddressError();
 
-  const isLoadingRoutes = useRouteStore(state => state.isLoading)
+  const isLoadingRoutes = useRouteStore((state) => state.isLoading);
 
-  const [{ destinationAddress }] = useArbQueryParams()
+  const [{ destinationAddress }] = useArbQueryParams();
 
   useEffect(() => {
     // if there is a destination address or error, show the custom destination address input
     if (destinationAddress || destinationAddressError) {
-      setShowCustomDestinationAddressInput(true)
-      return
+      setShowCustomDestinationAddressInput(true);
+      return;
     }
 
     if (isSmartContractWallet && !showCustomDestinationAddressInput) {
-      setShowCustomDestinationAddressInput(true)
+      setShowCustomDestinationAddressInput(true);
     }
-  }, [isSmartContractWallet, destinationAddress, destinationAddressError])
+  }, [isSmartContractWallet, destinationAddress, destinationAddressError]);
 
   const toggleCustomDestinationAddressInput = useCallback(() => {
     // for SCW, we must always show the custom destination address input
     if (isSmartContractWallet) {
-      setShowCustomDestinationAddressInput(true)
+      setShowCustomDestinationAddressInput(true);
     }
 
-    setShowCustomDestinationAddressInput(prev => !prev)
-  }, [isSmartContractWallet])
+    setShowCustomDestinationAddressInput((prev) => !prev);
+  }, [isSmartContractWallet]);
 
   return (
     <div
       className={twMerge(
         'flex max-h-8 flex-col gap-3 overflow-hidden transition-all duration-200',
         showCustomDestinationAddressInput && 'max-h-[180px]',
-        destinationAddressError && 'max-h-[230px]'
+        destinationAddressError && 'max-h-[230px]',
       )}
     >
       <div className="flex flex-nowrap items-end justify-between text-white">
@@ -69,7 +67,7 @@ export const ReceiveFundsHeader = () => {
             <ChevronDownIcon
               className={twMerge(
                 'h-3 w-3 transition duration-200',
-                showCustomDestinationAddressInput && 'rotate-180'
+                showCustomDestinationAddressInput && 'rotate-180',
               )}
             />
           </div>
@@ -78,5 +76,5 @@ export const ReceiveFundsHeader = () => {
 
       <CustomDestinationAddressInput />
     </div>
-  )
-}
+  );
+};

@@ -1,23 +1,23 @@
-import { Provider, BlockTag } from '@ethersproject/providers'
-import { Erc20Bridger, EventArgs } from '@arbitrum/sdk'
-import { WithdrawalInitiatedEvent } from '@arbitrum/sdk/dist/lib/abi/L2ArbitrumGateway'
+import { Erc20Bridger, EventArgs } from '@arbitrum/sdk';
+import { WithdrawalInitiatedEvent } from '@arbitrum/sdk/dist/lib/abi/L2ArbitrumGateway';
+import { BlockTag, Provider } from '@ethersproject/providers';
 
 function dedupeEvents(
   events: (EventArgs<WithdrawalInitiatedEvent> & {
-    txHash: string
-  })[]
+    txHash: string;
+  })[],
 ) {
-  return [...new Map(events.map(item => [item.txHash, item])).values()]
+  return [...new Map(events.map((item) => [item.txHash, item])).values()];
 }
 
 export type FetchTokenWithdrawalsFromEventLogsParams = {
-  sender?: string
-  receiver?: string
-  fromBlock: BlockTag
-  toBlock: BlockTag
-  l2Provider: Provider
-  l2GatewayAddresses?: string[]
-}
+  sender?: string;
+  receiver?: string;
+  fromBlock: BlockTag;
+  toBlock: BlockTag;
+  l2Provider: Provider;
+  l2GatewayAddresses?: string[];
+};
 
 /**
  * Fetches initiated token withdrawals from event logs in range of [fromBlock, toBlock].
@@ -36,12 +36,12 @@ export async function fetchTokenWithdrawalsFromEventLogs({
   fromBlock,
   toBlock,
   l2Provider,
-  l2GatewayAddresses = []
+  l2GatewayAddresses = [],
 }: FetchTokenWithdrawalsFromEventLogsParams) {
-  const erc20Bridger = await Erc20Bridger.fromProvider(l2Provider)
-  const promises: ReturnType<Erc20Bridger['getWithdrawalEvents']>[] = []
+  const erc20Bridger = await Erc20Bridger.fromProvider(l2Provider);
+  const promises: ReturnType<Erc20Bridger['getWithdrawalEvents']>[] = [];
 
-  l2GatewayAddresses.forEach(gatewayAddress => {
+  l2GatewayAddresses.forEach((gatewayAddress) => {
     // funds sent by this address
     if (sender) {
       promises.push(
@@ -51,9 +51,9 @@ export async function fetchTokenWithdrawalsFromEventLogs({
           { fromBlock, toBlock },
           undefined,
           sender,
-          undefined
-        )
-      )
+          undefined,
+        ),
+      );
     }
 
     // funds received by this address
@@ -65,12 +65,12 @@ export async function fetchTokenWithdrawalsFromEventLogs({
           { fromBlock, toBlock },
           undefined,
           undefined,
-          receiver
-        )
-      )
+          receiver,
+        ),
+      );
     }
-  })
+  });
 
   // when getting funds received by this address we will also get duplicate txs returned in 'funds sent by this address'
-  return dedupeEvents((await Promise.all(promises)).flat())
+  return dedupeEvents((await Promise.all(promises)).flat());
 }

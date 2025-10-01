@@ -1,15 +1,14 @@
 {
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../../../",
     "types": [
       "./e2e/cypress.d.ts",
       "@synthetixio/synpress/support",
-      "cypress-wait-until",
-      "@testing-library/cypress"
+      "@testing-library/cypress",
+      "@types/mocha",
+      "cypress"
     ],
-    "outDir": "./output",
-    "resolveJsonModule": true,
-    "esModuleInterop": true
+    "outDir": "./output"
   },
   "include": ["**/*.*"],
   "exclude": ["node_modules"]

@@ -1,26 +1,24 @@
-import { it } from 'vitest'
-import { BigNumber } from 'ethers'
-import {
-  TransactionRequest,
-  TransactionReceipt
-} from '@ethersproject/providers'
-import { BridgeTransferStarter } from '@/token-bridge-sdk/BridgeTransferStarter'
+import { TransactionReceipt, TransactionRequest } from '@ethersproject/providers';
+import { BigNumber } from 'ethers';
+import { it } from 'vitest';
 
-import { UiDriverContext } from './UiDriver'
-import { stepGeneratorForCctp } from './UiDriverCctp'
-import { nextStep, expectStep } from './UiDriverTestUtils'
+import { BridgeTransferStarter } from '@/token-bridge-sdk/BridgeTransferStarter';
+
+import { UiDriverContext } from './UiDriver';
+import { stepGeneratorForCctp } from './UiDriverCctp';
+import { expectStep, nextStep } from './UiDriverTestUtils';
 
 const mockedApproveTokenTxRequest = {
   to: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
   data: '0x095ea7b30000000000000000000000009f3b8679c73c2fef8b59b4f3444d4e156fb70aa5ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
-  value: BigNumber.from(0)
-}
+  value: BigNumber.from(0),
+};
 
 function approveTokenPayload(txRequest: TransactionRequest) {
   return {
     txRequest,
-    txRequestLabel: 'stepGeneratorForCctp.approveToken'
-  }
+    txRequestLabel: 'stepGeneratorForCctp.approveToken',
+  };
 }
 
 it(`
@@ -33,21 +31,21 @@ it(`
 `, async () => {
   const context: UiDriverContext = {
     isDepositMode: true,
-    isSmartContractWallet: false
-  } as UiDriverContext
+    isSmartContractWallet: false,
+  } as UiDriverContext;
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [false]))
     //
-    .hasType('return')
-})
+    .hasType('return');
+});
 
 it(`
   context:
@@ -59,21 +57,21 @@ it(`
 `, async () => {
   const context: UiDriverContext = {
     isDepositMode: false,
-    isSmartContractWallet: false
-  } as UiDriverContext
+    isSmartContractWallet: false,
+  } as UiDriverContext;
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_withdrawal')
+    .hasPayload('confirm_cctp_withdrawal');
   expectStep(await nextStep(generator, [false]))
     //
-    .hasType('return')
-})
+    .hasType('return');
+});
 
 it(`
   context:
@@ -96,25 +94,25 @@ it(`
     walletAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     transferStarter: {
-      requiresTokenApproval: () => true
-    } as unknown as BridgeTransferStarter
-  }
+      requiresTokenApproval: () => true,
+    } as unknown as BridgeTransferStarter,
+  };
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('approve_token')
+    .hasPayload('approve_token');
   expectStep(await nextStep(generator, [false]))
     //
-    .hasType('return')
-})
+    .hasType('return');
+});
 
 it(`
   context:
@@ -139,28 +137,28 @@ it(`
     destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     transferStarter: {
       requiresTokenApproval: () => true,
-      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest
-    } as unknown as BridgeTransferStarter
-  }
+      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest,
+    } as unknown as BridgeTransferStarter,
+  };
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('approve_token')
+    .hasPayload('approve_token');
   expectStep(await nextStep(generator, [true]))
     .hasType('tx_ethers')
-    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest))
+    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest));
   expectStep(await nextStep(generator, [{ error: new Error() }]))
     //
-    .hasType('return')
-})
+    .hasType('return');
+});
 
 it(`
   context:
@@ -185,28 +183,28 @@ it(`
     destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     transferStarter: {
       requiresTokenApproval: () => true,
-      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest
-    } as unknown as BridgeTransferStarter
-  }
+      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest,
+    } as unknown as BridgeTransferStarter,
+  };
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('approve_token')
+    .hasPayload('approve_token');
   expectStep(await nextStep(generator, [true]))
     .hasType('tx_ethers')
-    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest))
+    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest));
   expectStep(await nextStep(generator, [{ data: {} as TransactionReceipt }]))
     //
-    .doesNotExist()
-})
+    .doesNotExist();
+});
 
 it(`
   context:
@@ -229,22 +227,22 @@ it(`
     destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     transferStarter: {
       requiresTokenApproval: () => false,
-      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest
-    } as unknown as BridgeTransferStarter
-  }
+      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest,
+    } as unknown as BridgeTransferStarter,
+  };
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     //
-    .doesNotExist()
-})
+    .doesNotExist();
+});
 
 it(`
   context:
@@ -261,24 +259,24 @@ it(`
     isDepositMode: true,
     isSmartContractWallet: true,
     walletAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-    destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
-  } as UiDriverContext
+    destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  } as UiDriverContext;
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('scw_custom_destination_address')
+    .hasPayload('scw_custom_destination_address');
   expectStep(await nextStep(generator, [false]))
     //
-    .hasType('return')
-})
+    .hasType('return');
+});
 
 it(`
   context:
@@ -304,31 +302,31 @@ it(`
     destinationAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     transferStarter: {
       requiresTokenApproval: () => true,
-      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest
-    } as unknown as BridgeTransferStarter
-  }
+      approveTokenPrepareTxRequest: () => mockedApproveTokenTxRequest,
+    } as unknown as BridgeTransferStarter,
+  };
 
-  const generator = stepGeneratorForCctp(context)
+  const generator = stepGeneratorForCctp(context);
 
   expectStep(await nextStep(generator))
     //
-    .hasType('start')
+    .hasType('start');
   expectStep(await nextStep(generator))
     .hasType('dialog')
-    .hasPayload('confirm_cctp_deposit')
+    .hasPayload('confirm_cctp_deposit');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('scw_custom_destination_address')
+    .hasPayload('scw_custom_destination_address');
   expectStep(await nextStep(generator, [true]))
     .hasType('dialog')
-    .hasPayload('approve_token')
+    .hasPayload('approve_token');
   expectStep(await nextStep(generator, [true]))
     //
-    .hasType('scw_tooltip')
+    .hasType('scw_tooltip');
   expectStep(await nextStep(generator))
     .hasType('tx_ethers')
-    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest))
+    .hasPayload(approveTokenPayload(mockedApproveTokenTxRequest));
   expectStep(await nextStep(generator, [{ data: {} as TransactionReceipt }]))
     //
-    .doesNotExist()
-})
+    .doesNotExist();
+});

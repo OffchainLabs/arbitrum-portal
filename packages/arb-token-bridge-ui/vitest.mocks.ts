@@ -1,9 +1,9 @@
-import { vi } from 'vitest'
+import { vi } from 'vitest';
 
 vi.mock('next/font/local', () => ({
   default: vi.fn(() => ({
     style: {
-      fontFamily: 'Roboto, sans-serif'
-    }
-  }))
-}))
+      fontFamily: 'Roboto, sans-serif',
+    },
+  })),
+}));

@@ -1,13 +1,13 @@
-import { useAccount } from 'wagmi'
-import { TransactionDetailsContent } from '../TransactionHistory/TransactionDetailsContent'
-import { Dialog, UseDialogProps } from '../common/Dialog'
-import { ExternalLink } from '../common/ExternalLink'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
-import { useTransactionHistory } from '../../hooks/useTransactionHistory'
-import { Button } from '../common/Button'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { useAccount } from 'wagmi';
 
-export const CROSS_CHAIN_TRANSACTIONS_STORAGE_KEY =
-  'arbitrum:bridge:cross-chain-transactions'
+import { useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { TransactionDetailsContent } from '../TransactionHistory/TransactionDetailsContent';
+import { Button } from '../common/Button';
+import { Dialog, UseDialogProps } from '../common/Dialog';
+import { ExternalLink } from '../common/ExternalLink';
+
+export const CROSS_CHAIN_TRANSACTIONS_STORAGE_KEY = 'arbitrum:bridge:cross-chain-transactions';
 
 const WidgetTransactionHistoryLoadingPlaceholder = () => {
   return (
@@ -21,15 +21,14 @@ const WidgetTransactionHistoryLoadingPlaceholder = () => {
         <div className="h-[170px] w-full animate-pulse rounded-md bg-white/20" />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export const WidgetTransactionHistory = (props: UseDialogProps) => {
-  const { address: walletAddress } = useAccount()
-  const { transactions, loading: isLoadingTransactions } =
-    useTransactionHistory(walletAddress)
-  const currentTx = transactions[0]
-  const isLoading = transactions.length ? false : isLoadingTransactions
+  const { address: walletAddress } = useAccount();
+  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(walletAddress);
+  const currentTx = transactions[0];
+  const isLoading = transactions.length ? false : isLoadingTransactions;
 
   return (
     <Dialog
@@ -39,10 +38,7 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
       isFooterHidden={true}
       className="relative h-screen overflow-hidden"
     >
-      <Button
-        variant="secondary"
-        className="absolute right-6 top-3 border-none bg-primary-cta"
-      >
+      <Button variant="secondary" className="absolute right-6 top-3 border-none bg-primary-cta">
         <ExternalLink
           href="https://bridge.arbitrum.io/?tab=tx_history"
           className="flex items-center gap-1 text-xs"
@@ -64,12 +60,9 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
         )}
 
         {!isLoading && currentTx && (
-          <TransactionDetailsContent
-            tx={currentTx}
-            walletAddress={walletAddress}
-          />
+          <TransactionDetailsContent tx={currentTx} walletAddress={walletAddress} />
         )}
       </div>
     </Dialog>
-  )
-}
+  );
+};

@@ -1,38 +1,38 @@
 'use client';
 
-import { usePostHog } from 'posthog-js/react';
 import { BookmarkIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkedIcon } from '@heroicons/react/24/solid';
-import { twMerge } from 'tailwind-merge';
 import Image from 'next/image';
-import { SidePanel } from '@/components/SidePanel';
-import { ExternalLink } from '@/components/ExternalLink';
+import { usePostHog } from 'posthog-js/react';
+import { twMerge } from 'tailwind-merge';
+
+import { getProjectDetailsById } from '@/common/projects';
+import { EntityType } from '@/common/types';
 import { Card } from '@/components/Card';
-import { SimilarProjects } from './SimilarProjects';
-import { LinksWidget } from './LinksWidget';
-import { ChainInfoWidget } from './ChainInfoWidget';
-import { PlatformsWidget } from './PlatformsWidget';
-import { NFTWidget } from './NFTWidget';
+import { DyorChecklist } from '@/components/DyorChecklist';
+import { ExternalLink } from '@/components/ExternalLink';
+import { SidePanel } from '@/components/SidePanel';
+import { Tooltip } from '@/components/Tooltip';
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
+import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
+import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
+import IconLink from '@/public/images/link.svg';
+
 import { AuditWidget } from './AuditWidget';
+import { ChainInfoWidget } from './ChainInfoWidget';
+import { DisclaimerWidget } from './DisclaimerWidget';
 import { GithubWidget } from './GithubWidget';
+import { LinksWidget } from './LinksWidget';
+import { NFTWidget } from './NFTWidget';
+import { PlatformsWidget } from './PlatformsWidget';
+import { SimilarProjects } from './SimilarProjects';
 import { TeamWidget } from './TeamWidget';
 import { VideoWidget } from './VideoWidget';
-import { useArbQueryParams } from '@/hooks/useArbQueryParams';
-import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
-import { getProjectDetailsById } from '@/common/projects';
-import IconLink from '@/public/images/link.svg';
-import { EntityType } from '@/common/types';
-import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
-import { Tooltip } from '@/components/Tooltip';
-import { DyorChecklist } from '@/components/DyorChecklist';
-import { DisclaimerWidget } from './DisclaimerWidget';
 
 export const ProjectPanel = () => {
   const posthog = usePostHog();
   const [{ project: projectSlug }] = useArbQueryParams();
-  const { closeEntitySidePanel: closeProjectPanel } = useEntitySidePanel(
-    EntityType.Project,
-  );
+  const { closeEntitySidePanel: closeProjectPanel } = useEntitySidePanel(EntityType.Project);
   const project = getProjectDetailsById(projectSlug);
   const { isBookmarkedProject, addBookmarkedProject, removeBookmarkedProject } =
     useBookmarkedProjects();
@@ -134,9 +134,11 @@ export const ProjectPanel = () => {
                         Element: 'Project Panel',
                       };
 
-                      isBookmarked
-                        ? removeBookmarkedProject(projectSlug, analyticsProps)
-                        : addBookmarkedProject(projectSlug, analyticsProps);
+                      if (isBookmarked) {
+                        removeBookmarkedProject(projectSlug, analyticsProps);
+                      } else {
+                        addBookmarkedProject(projectSlug, analyticsProps);
+                      }
                     }}
                   >
                     {isBookmarked ? (
@@ -170,9 +172,8 @@ export const ProjectPanel = () => {
                   <Tooltip
                     content={
                       <p className="text-xs">
-                        Arbitrum Native - Projects that either operate
-                        exclusively on Arbitrum or launched on Arbitrum as one
-                        of their primary deployments.
+                        Arbitrum Native - Projects that either operate exclusively on Arbitrum or
+                        launched on Arbitrum as one of their primary deployments.
                       </p>
                     }
                   >
@@ -193,9 +194,7 @@ export const ProjectPanel = () => {
         <LinksWidget entityDetails={project} />
 
         {/* Video widget on top if Gaming category */}
-        {project.categoryIds.includes('gaming') && (
-          <VideoWidget project={project} />
-        )}
+        {project.categoryIds.includes('gaming') && <VideoWidget project={project} />}
         <div className="flex flex-col flex-nowrap gap-4 lg:flex-row">
           {/* Team and Org details */}
           <TeamWidget project={project} />
@@ -214,18 +213,13 @@ export const ProjectPanel = () => {
         </div>
 
         {/* Video widget at bottom if Defi category */}
-        {project.categoryIds.includes('defi') && (
-          <VideoWidget project={project} />
-        )}
+        {project.categoryIds.includes('defi') && <VideoWidget project={project} />}
 
         {/* Disclaimer for details of project */}
         <DisclaimerWidget />
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:flex-row">
-          <DyorChecklist
-            project={project}
-            className="col-span-1 lg:col-span-2"
-          />
+          <DyorChecklist project={project} className="col-span-1 lg:col-span-2" />
           <SimilarProjects project={project} className="col-span-1" />
         </div>
       </div>

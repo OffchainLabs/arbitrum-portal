@@ -1,78 +1,71 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { gql } from '@apollo/client'
+import { gql } from '@apollo/client';
+import { NextRequest, NextResponse } from 'next/server';
 
 import {
   getL1SubgraphClient,
-  getSourceFromSubgraphClient
-} from '../../api-utils/ServerSubgraphUtils'
-import { FetchEthDepositsToCustomDestinationFromSubgraphResult } from '../../util/deposits/fetchEthDepositsToCustomDestinationFromSubgraph'
+  getSourceFromSubgraphClient,
+} from '../../api-utils/ServerSubgraphUtils';
+import { FetchEthDepositsToCustomDestinationFromSubgraphResult } from '../../util/deposits/fetchEthDepositsToCustomDestinationFromSubgraph';
 
 type RetryableFromSubgraph = {
-  destAddr: string
-  sender: string
-  timestamp: string
-  transactionHash: string
-  id: string
-  l2Callvalue: string
-  blockCreatedAt: string
-}
+  destAddr: string;
+  sender: string;
+  timestamp: string;
+  transactionHash: string;
+  id: string;
+  l2Callvalue: string;
+  blockCreatedAt: string;
+};
 
 type EthDepositsToCustomDestinationResponse = {
-  meta?: { source: string | null }
-  data: FetchEthDepositsToCustomDestinationFromSubgraphResult[]
-  message?: string
-}
+  meta?: { source: string | null };
+  data: FetchEthDepositsToCustomDestinationFromSubgraphResult[];
+  message?: string;
+};
 
 export async function GET(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<NextResponse<EthDepositsToCustomDestinationResponse>> {
   try {
-    const { searchParams } = new URL(request.url)
-    const sender = searchParams.get('sender') || undefined
-    const receiver = searchParams.get('receiver') || undefined
-    const search = searchParams.get('search') || ''
-    const l2ChainId = searchParams.get('l2ChainId')
-    const page = searchParams.get('page') || '0'
-    const pageSize = searchParams.get('pageSize') || '10'
-    const fromBlock = searchParams.get('fromBlock') || undefined
-    const toBlock = searchParams.get('toBlock') || undefined
+    const { searchParams } = new URL(request.url);
+    const sender = searchParams.get('sender') || undefined;
+    const receiver = searchParams.get('receiver') || undefined;
+    const search = searchParams.get('search') || '';
+    const l2ChainId = searchParams.get('l2ChainId');
+    const page = searchParams.get('page') || '0';
+    const pageSize = searchParams.get('pageSize') || '10';
+    const fromBlock = searchParams.get('fromBlock') || undefined;
+    const toBlock = searchParams.get('toBlock') || undefined;
 
-    const errorMessage = []
-    if (!l2ChainId) errorMessage.push('<l2ChainId> is required')
-    if (!sender && !receiver)
-      errorMessage.push('<sender> or <receiver> is required')
+    const errorMessage = [];
+    if (!l2ChainId) errorMessage.push('<l2ChainId> is required');
+    if (!sender && !receiver) errorMessage.push('<sender> or <receiver> is required');
 
     if (errorMessage.length) {
       return NextResponse.json(
         {
           message: `incomplete request: ${errorMessage.join(', ')}`,
-          data: []
+          data: [],
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // if invalid pageSize, send empty data instead of error
     if (isNaN(Number(pageSize)) || Number(pageSize) === 0) {
-      return NextResponse.json({ data: [] }, { status: 200 })
+      return NextResponse.json({ data: [] }, { status: 200 });
     }
 
     const additionalFilters = `${
-      typeof fromBlock !== 'undefined'
-        ? `blockCreatedAt_gte: ${Number(fromBlock)},`
-        : ''
+      typeof fromBlock !== 'undefined' ? `blockCreatedAt_gte: ${Number(fromBlock)},` : ''
     }
-    ${
-      typeof toBlock !== 'undefined'
-        ? `blockCreatedAt_lte: ${Number(toBlock)},`
-        : ''
-    }
+    ${typeof toBlock !== 'undefined' ? `blockCreatedAt_lte: ${Number(toBlock)},` : ''}
     ${search ? `transactionHash_contains: "${search}",` : ''}
     l2Callvalue_gt: 0
     l2Calldata: "0x"
-    `
+    `;
 
-    const subgraphClient = getL1SubgraphClient(Number(l2ChainId))
+    const subgraphClient = getL1SubgraphClient(Number(l2ChainId));
 
     const subgraphResult = await subgraphClient.query({
       query: gql(`{
@@ -80,11 +73,7 @@ export async function GET(
           where: {            
             or: [
               ${sender ? `{ sender: "${sender}", ${additionalFilters} },` : ''}
-              ${
-                receiver
-                  ? `{ destAddr: "${receiver}", ${additionalFilters} },`
-                  : ''
-              }
+              ${receiver ? `{ destAddr: "${receiver}", ${additionalFilters} },` : ''}
             ]
           }
           orderBy: blockCreatedAt
@@ -100,14 +89,13 @@ export async function GET(
           l2Callvalue
           blockCreatedAt
         }
-      }`)
-    })
+      }`),
+    });
 
-    const retryablesFromSubgraph: RetryableFromSubgraph[] =
-      subgraphResult.data.retryables
+    const retryablesFromSubgraph: RetryableFromSubgraph[] = subgraphResult.data.retryables;
 
     const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
-      retryablesFromSubgraph.map(retryable => {
+      retryablesFromSubgraph.map((retryable) => {
         return {
           receiver: retryable.destAddr,
           sender: retryable.sender,
@@ -117,24 +105,24 @@ export async function GET(
           isClassic: false,
           id: retryable.id,
           ethValue: retryable.l2Callvalue,
-          blockCreatedAt: retryable.blockCreatedAt
-        }
-      })
+          blockCreatedAt: retryable.blockCreatedAt,
+        };
+      });
 
     return NextResponse.json(
       {
         meta: { source: getSourceFromSubgraphClient(subgraphClient) },
-        data: transactions
+        data: transactions,
       },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json(
       {
         message: error?.message ?? 'Something went wrong',
-        data: []
+        data: [],
       },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

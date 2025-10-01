@@ -1,55 +1,47 @@
-import React, { forwardRef, useState } from 'react'
-import { twMerge } from 'tailwind-merge'
-import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import React, { forwardRef, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { Loader, LoaderProps } from './atoms/Loader'
+import { Loader, LoaderProps } from './atoms/Loader';
 
-type ButtonVariant = 'primary' | 'secondary' | 'tertiary'
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
 
 function getClassNameForVariant(variant: ButtonVariant) {
   switch (variant) {
     case 'primary':
-      return 'border-dark'
+      return 'border-dark';
 
     case 'secondary':
-      return 'hover:(not:disabled):opacity-70 active:(not:disabled):opacity-80 arb-hover flex w-max flex-nowrap items-center gap-1 rounded border border-white/20 px-[12px] py-[8px] text-sm text-white outline-none hover:bg-white/10 bg-transparent'
+      return 'hover:(not:disabled):opacity-70 active:(not:disabled):opacity-80 arb-hover flex w-max flex-nowrap items-center gap-1 rounded border border-white/20 px-[12px] py-[8px] text-sm text-white outline-none hover:bg-white/10 bg-transparent';
 
     case 'tertiary':
-      return 'bg-transparent border-transparent text-white disabled:border-none disabled:bg-transparent'
+      return 'bg-transparent border-transparent text-white disabled:border-none disabled:bg-transparent';
   }
 }
 
 type ButtonLoadingProps = Partial<{
-  loaderColor: string
-  loaderSize: LoaderProps['size']
-}>
+  loaderColor: string;
+  loaderSize: LoaderProps['size'];
+}>;
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant: ButtonVariant
-  loading?: boolean
-  loadingProps?: ButtonLoadingProps
-  textLeft?: boolean
-  showArrow?: boolean
-  truncate?: boolean
-}
+  variant: ButtonVariant;
+  loading?: boolean;
+  loadingProps?: ButtonLoadingProps;
+  textLeft?: boolean;
+  showArrow?: boolean;
+  truncate?: boolean;
+};
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      variant,
-      loading,
-      loadingProps,
-      disabled,
-      className: customClassName,
-      children,
-      ...props
-    },
-    ref
+    { variant, loading, loadingProps, disabled, className: customClassName, children, ...props },
+    ref,
   ) => {
-    const [hovered, setHovered] = useState(false)
+    const [hovered, setHovered] = useState(false);
 
-    const showLoader = loading || false
-    const truncate = props.truncate ?? true
+    const showLoader = loading || false;
+    const truncate = props.truncate ?? true;
 
     return (
       <button
@@ -60,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'arb-hover relative w-max rounded border bg-dark p-2 text-sm',
           'text-white disabled:cursor-not-allowed disabled:border disabled:border-white/10 disabled:bg-white/10 disabled:text-white/50',
           getClassNameForVariant(variant),
-          customClassName
+          customClassName,
         )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -70,7 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           className={twMerge(
             'flex flex-row items-center space-x-3',
             props.textLeft ? 'justify-start' : 'justify-center',
-            props.showArrow && 'pr-4'
+            props.showArrow && 'pr-4',
           )}
         >
           {showLoader && (
@@ -85,14 +77,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <ArrowRightIcon
             className={twMerge(
               'absolute right-3 top-[50%] translate-y-[-50%] transition-transform duration-300',
-              hovered && 'translate-x-[3px]'
+              hovered && 'translate-x-[3px]',
             )}
             width={16}
           />
         )}
       </button>
-    )
-  }
-)
+    );
+  },
+);
 
-Button.displayName = 'Button'
+Button.displayName = 'Button';

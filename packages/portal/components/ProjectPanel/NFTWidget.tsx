@@ -1,5 +1,7 @@
 import Image from 'next/image';
+
 import { FullProject } from '@/common/types';
+
 import { ProjectWidget } from './ProjectWidget';
 
 export const NFTWidget = ({ project }: { project: FullProject }) => {
@@ -16,9 +18,7 @@ export const NFTWidget = ({ project }: { project: FullProject }) => {
       {project.meta.nftMintDate && (
         <>
           <ProjectWidget.DataKey>Date of mint</ProjectWidget.DataKey>
-          <ProjectWidget.DataValue>
-            {project.meta.nftMintDate}
-          </ProjectWidget.DataValue>
+          <ProjectWidget.DataValue>{project.meta.nftMintDate}</ProjectWidget.DataValue>
         </>
       )}
 
@@ -29,12 +29,7 @@ export const NFTWidget = ({ project }: { project: FullProject }) => {
         }
         analyticsTitle="Opensea"
       >
-        <Image
-          src={'/images/opensea.svg'}
-          width={20}
-          height={20}
-          alt="OpenSea"
-        />
+        <Image src={'/images/opensea.svg'} width={20} height={20} alt="OpenSea" />
         Get NFT
       </ProjectWidget.CTA>
     </ProjectWidget>

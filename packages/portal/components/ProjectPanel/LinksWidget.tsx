@@ -1,16 +1,13 @@
-import Image from 'next/image';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
+import Image from 'next/image';
+import { useMemo } from 'react';
+
+import { ENTITY_METADATA, isOrbitChain, isProject } from '@/common/entities';
 import { FullProject, OrbitChain } from '@/common/types';
 import { Card } from '@/components/Card';
 import { DiscordIcon, TwitterXIcon } from '@/components/SvgIcons';
-import { useMemo } from 'react';
-import { ENTITY_METADATA, isOrbitChain, isProject } from '@/common/entities';
 
-export const LinksWidget = ({
-  entityDetails,
-}: {
-  entityDetails: FullProject | OrbitChain;
-}) => {
+export const LinksWidget = ({ entityDetails }: { entityDetails: FullProject | OrbitChain }) => {
   const fallbackNewsLink = `https://news.google.com/search?q=${encodeURI(
     entityDetails.title,
   )}%20web3&hl=en-US&gl=US&ceid=US%3Aen`;
@@ -37,13 +34,7 @@ export const LinksWidget = ({
       {
         id: 'news',
         img: (
-          <Image
-            src="/images/news.webp"
-            width={20}
-            height={20}
-            alt="news"
-            className="fill-white"
-          />
+          <Image src="/images/news.webp" width={20} height={20} alt="news" className="fill-white" />
         ),
         href: entityDetails.links.news ?? fallbackNewsLink,
         title: 'Search News',

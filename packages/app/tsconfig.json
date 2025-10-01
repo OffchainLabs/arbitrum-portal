@@ -5,10 +5,7 @@
       {
         "name": "next"
       }
-    ],
-    "noEmit": true,
-    "incremental": true,
-    "jsx": "preserve"
+    ]
   },
   "include": [
     "next-env.d.ts",

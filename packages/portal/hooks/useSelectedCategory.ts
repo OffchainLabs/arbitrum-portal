@@ -1,5 +1,4 @@
 // Returns whatever category has been selected in the URL
-
 import { usePathname } from 'next/navigation';
 
 export const useSelectedCategory = () => {

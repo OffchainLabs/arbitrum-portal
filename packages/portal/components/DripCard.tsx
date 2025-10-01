@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { ExternalLink } from '@/components/ExternalLink';
+
 import { Card } from './Card';
 
 export const DripCard = () => {
@@ -31,20 +31,13 @@ export const DripCard = () => {
             <div className="text-base lg:text-2xl">
               DRIP is now live.{' '}
               <span className="font-light opacity-70">
-                The DeFi Renaissance Incentive Program rewards real DeFi actions
-                on Arbitrum. Use your crypto to deposit, borrow, loop, and
-                repeat!
+                The DeFi Renaissance Incentive Program rewards real DeFi actions on Arbitrum. Use
+                your crypto to deposit, borrow, loop, and repeat!
               </span>
             </div>
           </div>
 
-          <p
-            className={
-              'text-xs underline underline-offset-8 hover:no-underline'
-            }
-          >
-            Learn More
-          </p>
+          <p className={'text-xs underline underline-offset-8 hover:no-underline'}>Learn More</p>
         </div>
       </div>
     </Card>

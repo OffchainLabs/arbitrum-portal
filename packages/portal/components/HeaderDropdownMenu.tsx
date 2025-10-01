@@ -1,19 +1,18 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Popover } from '@headlessui/react';
-import { twMerge } from 'tailwind-merge';
 import {
   BookmarkIcon,
   ChevronDownIcon,
   PlusCircleIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import {
-  SUBMIT_ORBIT_CHAIN_LINK,
-  SUBMIT_PROJECT_LINK,
-} from '@/common/constants';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { twMerge } from 'tailwind-merge';
+
+import { SUBMIT_ORBIT_CHAIN_LINK, SUBMIT_PROJECT_LINK } from '@/common/constants';
+
 import { ExternalLink } from './ExternalLink';
 
 export const HeaderDropdownMenu = () => {
@@ -42,11 +41,7 @@ export const HeaderDropdownMenu = () => {
           return (
             <div className="flex flex-col gap-2 text-left">
               <div>
-                <Link
-                  href="/bookmarks"
-                  className={menuItemClassName}
-                  onClick={() => close()}
-                >
+                <Link href="/bookmarks" className={menuItemClassName} onClick={() => close()}>
                   <BookmarkIcon className="h-4 w-4" />
                   My apps
                 </Link>
@@ -54,9 +49,7 @@ export const HeaderDropdownMenu = () => {
 
               <ExternalLink
                 className={twMerge(menuItemClassName, 'hidden lg:flex')}
-                href={
-                  isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK
-                }
+                href={isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK}
                 onClick={() => close()}
               >
                 <PlusCircleIcon className="h-4 w-4" />

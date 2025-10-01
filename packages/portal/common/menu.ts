@@ -34,8 +34,7 @@ export const learnMenuItems: (MenuItem & { showOnHomepage?: boolean })[] = [
   {
     title: 'One vs. Nova',
     link: 'https://developer.arbitrum.io/for-devs/concepts/public-chains',
-    description:
-      'What is the difference between Arbitrum One and Arbitrum Nova?',
+    description: 'What is the difference between Arbitrum One and Arbitrum Nova?',
     showOnHomepage: true,
   },
   {
@@ -106,10 +105,7 @@ export const toolsMenuItems: MenuItem[] = [
   },
 ];
 
-export const toolsMenuItemsDeveloperResources = toolsMenuItems.slice(
-  0,
-  toolsMenuItems.length - 7,
-);
+export const toolsMenuItemsDeveloperResources = toolsMenuItems.slice(0, toolsMenuItems.length - 7);
 export const toolsMenuItemsLiveMonitoring = toolsMenuItems.slice(
   toolsMenuItems.length - 7,
   toolsMenuItems.length - 5,

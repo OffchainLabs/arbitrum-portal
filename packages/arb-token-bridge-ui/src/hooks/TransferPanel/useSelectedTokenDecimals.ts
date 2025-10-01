@@ -1,12 +1,9 @@
-import { useSelectedToken } from '../useSelectedToken'
-import { useSourceChainNativeCurrencyDecimals } from '../useSourceChainNativeCurrencyDecimals'
+import { useSelectedToken } from '../useSelectedToken';
+import { useSourceChainNativeCurrencyDecimals } from '../useSourceChainNativeCurrencyDecimals';
 
 export function useSelectedTokenDecimals() {
-  const [selectedToken] = useSelectedToken()
-  const nativeCurrencyDecimalsOnSourceChain =
-    useSourceChainNativeCurrencyDecimals()
+  const [selectedToken] = useSelectedToken();
+  const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
 
-  return selectedToken
-    ? selectedToken.decimals
-    : nativeCurrencyDecimalsOnSourceChain
+  return selectedToken ? selectedToken.decimals : nativeCurrencyDecimalsOnSourceChain;
 }

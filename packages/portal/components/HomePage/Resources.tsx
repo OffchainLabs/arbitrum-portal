@@ -1,6 +1,7 @@
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
+
 import { Card, CardType } from '@/components/Card';
 import { LoadingPlaceholderCarousel } from '@/components/Carousel/LoadingPlaceholderCarousel';
 

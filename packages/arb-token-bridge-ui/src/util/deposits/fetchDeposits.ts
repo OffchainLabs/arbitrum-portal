@@ -1,30 +1,30 @@
-import { Provider } from '@ethersproject/providers'
-import { utils } from 'ethers'
+import { Provider } from '@ethersproject/providers';
+import { utils } from 'ethers';
 
+import { defaultErc20Decimals } from '../../defaults';
+import { AssetType } from '../../hooks/arbTokenBridge.types';
+import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
+import { Transaction } from '../../types/Transactions';
 import {
+  FetchDepositsFromSubgraphResult,
   fetchDepositsFromSubgraph,
-  FetchDepositsFromSubgraphResult
-} from './fetchDepositsFromSubgraph'
-import { AssetType } from '../../hooks/arbTokenBridge.types'
-import { Transaction } from '../../types/Transactions'
-import { defaultErc20Decimals } from '../../defaults'
-import { fetchNativeCurrency } from '../../hooks/useNativeCurrency'
+} from './fetchDepositsFromSubgraph';
 import {
+  FetchEthDepositsToCustomDestinationFromSubgraphResult,
   fetchEthDepositsToCustomDestinationFromSubgraph,
-  FetchEthDepositsToCustomDestinationFromSubgraphResult
-} from './fetchEthDepositsToCustomDestinationFromSubgraph'
+} from './fetchEthDepositsToCustomDestinationFromSubgraph';
 
 export type FetchDepositParams = {
-  sender?: string
-  receiver?: string
-  fromBlock?: number
-  toBlock?: number
-  l1Provider: Provider
-  l2Provider: Provider
-  pageSize?: number
-  pageNumber?: number
-  searchString?: string
-}
+  sender?: string;
+  receiver?: string;
+  fromBlock?: number;
+  toBlock?: number;
+  l1Provider: Provider;
+  l2Provider: Provider;
+  pageSize?: number;
+  pageNumber?: number;
+  searchString?: string;
+};
 
 /* Fetch complete deposits - both ETH and Token deposits from subgraph into one list */
 /* Also fills in any additional data required per transaction for our UI logic to work well */
@@ -38,24 +38,23 @@ export const fetchDeposits = async ({
   l2Provider,
   pageSize = 10,
   pageNumber = 0,
-  searchString = ''
+  searchString = '',
 }: FetchDepositParams): Promise<Transaction[]> => {
-  if (typeof sender === 'undefined' && typeof receiver === 'undefined')
-    return []
-  if (!l1Provider || !l2Provider) return []
+  if (typeof sender === 'undefined' && typeof receiver === 'undefined') return [];
+  if (!l1Provider || !l2Provider) return [];
 
-  const l1ChainId = (await l1Provider.getNetwork()).chainId
-  const l2ChainId = (await l2Provider.getNetwork()).chainId
+  const l1ChainId = (await l1Provider.getNetwork()).chainId;
+  const l2ChainId = (await l2Provider.getNetwork()).chainId;
 
-  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider })
+  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider });
 
   if (!fromBlock) {
-    fromBlock = 0
+    fromBlock = 0;
   }
 
-  let depositsFromSubgraph: FetchDepositsFromSubgraphResult[] = []
+  let depositsFromSubgraph: FetchDepositsFromSubgraphResult[] = [];
   let ethDepositsToCustomDestinationFromSubgraph: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
-    []
+    [];
 
   const subgraphParams = {
     sender,
@@ -65,48 +64,45 @@ export const fetchDeposits = async ({
     l2ChainId,
     pageSize,
     pageNumber,
-    searchString
-  }
+    searchString,
+  };
 
   try {
-    depositsFromSubgraph = await fetchDepositsFromSubgraph(subgraphParams)
+    depositsFromSubgraph = await fetchDepositsFromSubgraph(subgraphParams);
   } catch (error: any) {
-    console.log('Error fetching deposits from subgraph', error)
+    console.log('Error fetching deposits from subgraph', error);
   }
 
   try {
     ethDepositsToCustomDestinationFromSubgraph =
-      await fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams)
+      await fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams);
   } catch (error: any) {
-    console.log(
-      'Error fetching native token deposits to custom destination from subgraph',
-      error
-    )
+    console.log('Error fetching native token deposits to custom destination from subgraph', error);
   }
 
   const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph.map(
     (tx: FetchDepositsFromSubgraphResult) => {
-      const isEthDeposit = tx.type === 'EthDeposit'
+      const isEthDeposit = tx.type === 'EthDeposit';
 
       const assetDetails = {
         assetName: nativeCurrency.symbol,
         assetType: AssetType.ETH,
-        tokenAddress: ''
-      }
+        tokenAddress: '',
+      };
 
       if (!isEthDeposit) {
         // update some values for token deposit
-        const symbol = tx.l1Token?.symbol || ''
+        const symbol = tx.l1Token?.symbol || '';
 
-        assetDetails.assetName = symbol
-        assetDetails.assetType = AssetType.ERC20
-        assetDetails.tokenAddress = tx?.l1Token?.id || ''
+        assetDetails.assetName = symbol;
+        assetDetails.assetType = AssetType.ERC20;
+        assetDetails.tokenAddress = tx?.l1Token?.id || '';
       }
 
-      const amount = isEthDeposit ? tx.ethValue : tx.tokenAmount
+      const amount = isEthDeposit ? tx.ethValue : tx.tokenAmount;
 
-      const tokenDecimals = tx?.l1Token?.decimals ?? defaultErc20Decimals
-      const decimals = isEthDeposit ? nativeCurrency.decimals : tokenDecimals
+      const tokenDecimals = tx?.l1Token?.decimals ?? defaultErc20Decimals;
+      const decimals = isEthDeposit ? nativeCurrency.decimals : tokenDecimals;
 
       return {
         type: 'deposit-l1',
@@ -129,10 +125,10 @@ export const fetchDeposits = async ({
         isClassic: tx.isClassic,
 
         childChainId: l2ChainId,
-        parentChainId: l1ChainId
-      }
-    }
-  )
+        parentChainId: l1ChainId,
+      };
+    },
+  );
 
   const mappedEthDepositsToCustomDestinationFromSubgraph: Transaction[] =
     ethDepositsToCustomDestinationFromSubgraph.map(
@@ -157,13 +153,12 @@ export const fetchDeposits = async ({
           isClassic: false,
 
           childChainId: l2ChainId,
-          parentChainId: l1ChainId
-        }
-      }
-    )
+          parentChainId: l1ChainId,
+        };
+      },
+    );
 
-  return [
-    ...mappedDepositsFromSubgraph,
-    ...mappedEthDepositsToCustomDestinationFromSubgraph
-  ].sort((a, b) => Number(b.timestampCreated) - Number(a.timestampCreated))
-}
+  return [...mappedDepositsFromSubgraph, ...mappedEthDepositsToCustomDestinationFromSubgraph].sort(
+    (a, b) => Number(b.timestampCreated) - Number(a.timestampCreated),
+  );
+};

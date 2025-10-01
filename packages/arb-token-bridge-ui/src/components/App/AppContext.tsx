@@ -1,66 +1,58 @@
-import { createContext, useContext, useReducer, Dispatch } from 'react'
+import { Dispatch, createContext, useContext, useReducer } from 'react';
 
 type AppContextState = {
   layout: {
-    isTransferring: boolean
-  }
-}
+    isTransferring: boolean;
+  };
+};
 
 const initialState: AppContextState = {
   layout: {
-    isTransferring: false
-  }
-}
+    isTransferring: false,
+  },
+};
 
-type AppContextValue = [AppContextState, Dispatch<Action>]
+type AppContextValue = [AppContextState, Dispatch<Action>];
 
-const AppContext = createContext<AppContextValue>([initialState, () => {}])
+const AppContext = createContext<AppContextValue>([initialState, () => {}]);
 
-type Action = { type: 'layout.set_is_transferring'; payload: boolean }
+type Action = { type: 'layout.set_is_transferring'; payload: boolean };
 
 function reducer(state: AppContextState, action: Action) {
   switch (action.type) {
     case 'layout.set_is_transferring':
       return {
         ...state,
-        layout: { ...state.layout, isTransferring: action.payload }
-      }
+        layout: { ...state.layout, isTransferring: action.payload },
+      };
 
     default:
-      return state
+      return state;
   }
 }
 
-export function AppContextProvider({
-  children
-}: {
-  children: React.ReactNode
-}) {
-  const [state, dispatch] = useReducer(reducer, initialState)
+export function AppContextProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  return (
-    <AppContext.Provider value={[state, dispatch]}>
-      {children}
-    </AppContext.Provider>
-  )
+  return <AppContext.Provider value={[state, dispatch]}>{children}</AppContext.Provider>;
 }
 
 export function useAppContextState(): AppContextState {
-  const [state] = useContext(AppContext)
-  return state
+  const [state] = useContext(AppContext);
+  return state;
 }
 
 // exports actions in a more readable and succinct format
 // deprecates the direct use of `dispatch` in code, unless trying to override
 export const useAppContextActions = (dispatchOverride?: Dispatch<Action>) => {
-  const [, dispatchContext] = useContext(AppContext)
-  const dispatch = dispatchOverride ?? dispatchContext
+  const [, dispatchContext] = useContext(AppContext);
+  const dispatch = dispatchOverride ?? dispatchContext;
 
   const setTransferring = (payload: boolean) => {
-    dispatch({ type: 'layout.set_is_transferring', payload })
-  }
+    dispatch({ type: 'layout.set_is_transferring', payload });
+  };
 
   return {
-    setTransferring
-  }
-}
+    setTransferring,
+  };
+};

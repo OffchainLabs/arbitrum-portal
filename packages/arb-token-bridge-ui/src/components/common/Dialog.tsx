@@ -1,40 +1,37 @@
-import { DialogBackdrop, Dialog as HeadlessUIDialog } from '@headlessui/react'
-import { useCallback, useRef, useState } from 'react'
-import { ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { twMerge } from 'tailwind-merge'
+import { DialogBackdrop, Dialog as HeadlessUIDialog } from '@headlessui/react';
+import { ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useCallback, useRef, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { Button, ButtonProps } from './Button'
-import { useMode } from '../../hooks/useMode'
+import { useMode } from '../../hooks/useMode';
+import { Button, ButtonProps } from './Button';
+
 /**
  * Returns a promise which resolves to an array [boolean, unknown] value,
  * `false` if the action was canceled and `true` if it was confirmed.
  * Second index contain any additional information
  */
-type WaitForInputFunction = () => Promise<[boolean, unknown]>
+type WaitForInputFunction = () => Promise<[boolean, unknown]>;
 
 /**
  * Opens the dialog and returns a function which can be called to retreive a {@link WaitForInputFunction}.
  */
-export type OpenDialogFunction = () => WaitForInputFunction
+export type OpenDialogFunction = () => WaitForInputFunction;
 
 /**
  * Contains two props, `isOpen` and `onClose`, which should be passed down to a Dialog component.
  */
-export type UseDialogProps = Pick<DialogProps, 'isOpen' | 'onClose'>
+export type UseDialogProps = Pick<DialogProps, 'isOpen' | 'onClose'>;
 
 /**
  * Contains additional info about the dialog.
  */
-export type OtherDialogInfo = { didOpen: boolean }
+export type OtherDialogInfo = { didOpen: boolean };
 
 /**
  * Returns an array containing {@link UseDialogProps} and {@link OpenDialogFunction}.
  */
-export type UseDialogResult = [
-  UseDialogProps,
-  OpenDialogFunction,
-  OtherDialogInfo
-]
+export type UseDialogResult = [UseDialogProps, OpenDialogFunction, OtherDialogInfo];
 
 /**
  * Initial parameters for the dialog.
@@ -43,91 +40,86 @@ type UseDialogParams = {
   /**
    * Whether the dialog should be open by default.
    */
-  defaultIsOpen?: boolean
-}
+  defaultIsOpen?: boolean;
+};
 
 export function useDialog(params?: UseDialogParams): UseDialogResult {
   const resolveRef =
-    useRef<
-      (value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void
-    >()
+    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>();
 
   // Whether the dialog is currently open
-  const [isOpen, setIsOpen] = useState(params?.defaultIsOpen ?? false)
+  const [isOpen, setIsOpen] = useState(params?.defaultIsOpen ?? false);
   // Whether the dialog was ever open
-  const [didOpen, setDidOpen] = useState(params?.defaultIsOpen ?? false)
+  const [didOpen, setDidOpen] = useState(params?.defaultIsOpen ?? false);
 
   const openDialog: OpenDialogFunction = useCallback(() => {
-    setIsOpen(true)
-    setDidOpen(true)
+    setIsOpen(true);
+    setDidOpen(true);
 
     return () => {
-      return new Promise(resolve => {
-        resolveRef.current = resolve
-      })
+      return new Promise((resolve) => {
+        resolveRef.current = resolve;
+      });
+    };
+  }, []);
+
+  const closeDialog = useCallback((confirmed: boolean, onCloseData?: unknown) => {
+    if (typeof resolveRef.current !== 'undefined') {
+      resolveRef.current([confirmed, onCloseData]);
     }
-  }, [])
 
-  const closeDialog = useCallback(
-    (confirmed: boolean, onCloseData?: unknown) => {
-      if (typeof resolveRef.current !== 'undefined') {
-        resolveRef.current([confirmed, onCloseData])
-      }
+    setIsOpen(false);
+  }, []);
 
-      setIsOpen(false)
-    },
-    []
-  )
-
-  return [{ isOpen, onClose: closeDialog }, openDialog, { didOpen }]
+  return [{ isOpen, onClose: closeDialog }, openDialog, { didOpen }];
 }
 
 export type DialogProps = {
-  isOpen: boolean
-  closeable?: boolean
-  title?: string | JSX.Element
-  initialFocus?: React.MutableRefObject<HTMLElement | null>
-  cancelButtonProps?: Partial<ButtonProps>
-  actionButtonProps?: Partial<ButtonProps>
-  actionButtonTitle?: string
-  isFooterHidden?: boolean
-  onClose: (confirmed: boolean, onCloseData?: unknown) => void
-  className?: string
-  children?: React.ReactNode
-}
+  isOpen: boolean;
+  closeable?: boolean;
+  title?: string | JSX.Element;
+  initialFocus?: React.MutableRefObject<HTMLElement | null>;
+  cancelButtonProps?: Partial<ButtonProps>;
+  actionButtonProps?: Partial<ButtonProps>;
+  actionButtonTitle?: string;
+  isFooterHidden?: boolean;
+  onClose: (confirmed: boolean, onCloseData?: unknown) => void;
+  className?: string;
+  children?: React.ReactNode;
+};
 
 export function Dialog(props: DialogProps) {
-  const isFooterHidden = props.isFooterHidden || false
-  const closeable = props.closeable ?? true
-  const className = props.className || ''
-  const cancelButtonRef = useRef(null)
-  const { embedMode } = useMode()
-  const onClose = props.onClose
+  const isFooterHidden = props.isFooterHidden || false;
+  const closeable = props.closeable ?? true;
+  const className = props.className || '';
+  const cancelButtonRef = useRef(null);
+  const { embedMode } = useMode();
+  const onClose = props.onClose;
 
   // separate state to track transition state and have a smooth exit animation
-  const [isClosing, setIsClosing] = useState(false)
+  const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(
     (confirmed: boolean) => {
       if (!confirmed && !closeable) {
-        return
+        return;
       }
 
-      setIsClosing(true)
+      setIsClosing(true);
 
       setTimeout(() => {
-        onClose(confirmed)
+        onClose(confirmed);
 
         // prevent flickering caused by race conditions
         setTimeout(() => {
-          setIsClosing(false)
-        }, 10)
+          setIsClosing(false);
+        }, 10);
 
         // 200ms for the transition to finish
-      }, 200)
+      }, 200);
     },
-    [closeable, onClose]
-  )
+    [closeable, onClose],
+  );
 
   return (
     <HeadlessUIDialog
@@ -142,7 +134,7 @@ export function Dialog(props: DialogProps) {
         className={twMerge(
           'fixed inset-0 bg-black opacity-80 transition-opacity',
           'data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
-          'data-[leave]:duration-200 data-[leave]:ease-in'
+          'data-[leave]:duration-200 data-[leave]:ease-in',
         )}
         aria-hidden="true"
       />
@@ -153,13 +145,13 @@ export function Dialog(props: DialogProps) {
           'data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
           'data-[leave]:duration-200 data-[leave]:ease-in',
           embedMode && 'border-0 bg-widget-background',
-          className
+          className,
         )}
       >
         <div
           className={twMerge(
             'flex items-start justify-between px-6 pt-4',
-            embedMode && 'flex-row-reverse items-center justify-end gap-4'
+            embedMode && 'flex-row-reverse items-center justify-end gap-4',
           )}
         >
           <HeadlessUIDialog.Title
@@ -175,10 +167,7 @@ export function Dialog(props: DialogProps) {
                   aria-label="Close Dialog"
                 />
               ) : (
-                <XMarkIcon
-                  className="arb-hover h-6 w-6 text-gray-7"
-                  aria-label="Close Dialog"
-                />
+                <XMarkIcon className="arb-hover h-6 w-6 text-gray-7" aria-label="Close Dialog" />
               )}
             </button>
           )}
@@ -212,5 +201,5 @@ export function Dialog(props: DialogProps) {
         )}
       </HeadlessUIDialog.Panel>
     </HeadlessUIDialog>
-  )
+  );
 }

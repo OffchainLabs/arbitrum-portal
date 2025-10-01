@@ -1,20 +1,20 @@
-import { BigNumber, utils } from 'ethers'
+import { BigNumber, utils } from 'ethers';
 
 export function formatUSD(value: number) {
   if (value === 0) {
-    return `$0.00`
+    return `$0.00`;
   }
 
   if (value > 0 && value < 0.01) {
-    return `< $0.01`
+    return `< $0.01`;
   }
 
   const formattedValue = value.toLocaleString(undefined, {
     minimumFractionDigits: Number.isInteger(value) ? undefined : 2,
-    maximumFractionDigits: 2
-  })
+    maximumFractionDigits: 2,
+  });
 
-  return `$${formattedValue}`
+  return `$${formattedValue}`;
 }
 
 export enum MaximumFractionDigits {
@@ -22,7 +22,7 @@ export enum MaximumFractionDigits {
   Short = 1,
   Compact = 3,
   Standard = 4,
-  Long = 5
+  Long = 5,
 }
 
 /**
@@ -35,44 +35,44 @@ export enum MaximumFractionDigits {
 const formatNumber = (
   number: number,
   options: {
-    maximumFractionDigits: MaximumFractionDigits
-    notation: 'standard' | 'compact'
-  }
-): string => Intl.NumberFormat('en', options).format(number)
+    maximumFractionDigits: MaximumFractionDigits;
+    notation: 'standard' | 'compact';
+  },
+): string => Intl.NumberFormat('en', options).format(number);
 
 // Format amount according to a specific set of rules to limit space used
 export const formatAmount = <T extends number | BigNumber | undefined>(
   balance: T,
   options: {
-    decimals?: number
-    symbol?: string
-  } = {}
+    decimals?: number;
+    symbol?: string;
+  } = {},
 ): string => {
-  const { decimals, symbol } = options
+  const { decimals, symbol } = options;
 
   if (typeof balance === 'undefined') {
-    return ''
+    return '';
   }
 
   const value: number = BigNumber.isBigNumber(balance)
     ? parseFloat(utils.formatUnits(balance, decimals))
-    : balance
-  const suffix = symbol ? ` ${symbol}` : ''
+    : balance;
+  const suffix = symbol ? ` ${symbol}` : '';
 
   if (value === 0) {
-    return `0${suffix}`
+    return `0${suffix}`;
   }
 
-  const isShortSymbol = options.symbol ? options.symbol.length < 5 : true
+  const isShortSymbol = options.symbol ? options.symbol.length < 5 : true;
 
   // Small number, show 4 or 5 decimals based on token name length
   if (value < 1) {
     const maximumFractionDigits = isShortSymbol
       ? MaximumFractionDigits.Long
-      : MaximumFractionDigits.Standard
-    const minDisplayValue = Math.pow(10, -maximumFractionDigits)
+      : MaximumFractionDigits.Standard;
+    const minDisplayValue = Math.pow(10, -maximumFractionDigits);
     if (value < minDisplayValue) {
-      return `< 0.${'0'.repeat(maximumFractionDigits - 1)}1${suffix}`
+      return `< 0.${'0'.repeat(maximumFractionDigits - 1)}1${suffix}`;
     }
 
     return (
@@ -80,9 +80,9 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
         maximumFractionDigits: isShortSymbol
           ? MaximumFractionDigits.Long
           : MaximumFractionDigits.Standard,
-        notation: 'compact'
+        notation: 'compact',
       }) + suffix
-    )
+    );
   }
 
   // Long token name, display shortened form with only 1 decimal
@@ -90,9 +90,9 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
     return (
       formatNumber(value, {
         maximumFractionDigits: MaximumFractionDigits.Short,
-        notation: 'compact'
+        notation: 'compact',
       }) + suffix
-    )
+    );
   }
 
   // Show compact number (1.234T, 1.234M)
@@ -100,9 +100,9 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
     return (
       formatNumber(value, {
         maximumFractionDigits: MaximumFractionDigits.Compact,
-        notation: 'compact'
+        notation: 'compact',
       }) + suffix
-    )
+    );
   }
 
   // Show full number without decimals
@@ -110,26 +110,26 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
     return (
       formatNumber(value, {
         maximumFractionDigits: MaximumFractionDigits.None,
-        notation: 'standard'
+        notation: 'standard',
       }) + suffix
-    )
+    );
   }
 
   // Show full number with 4 decimals
   return (
     formatNumber(value, {
       maximumFractionDigits: MaximumFractionDigits.Standard,
-      notation: 'standard'
+      notation: 'standard',
     }) + suffix
-  )
-}
+  );
+};
 
 export const truncateExtraDecimals = (amount: string, decimals: number) => {
-  const decimalPart = amount.split('.')[1]
+  const decimalPart = amount.split('.')[1];
 
   if (typeof decimalPart === 'undefined') {
-    return amount
+    return amount;
   }
 
-  return `${amount.split('.')[0]}.${decimalPart.slice(0, decimals)}`
-}
+  return `${amount.split('.')[0]}.${decimalPart.slice(0, decimals)}`;
+};

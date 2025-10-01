@@ -1,66 +1,66 @@
-import { useEffect, useMemo, useState } from 'react'
-import { BigNumber, constants, utils } from 'ethers'
-import { Dialog, UseDialogProps } from '../common/Dialog'
-import { Checkbox } from '../common/Checkbox'
-import { SafeImage } from '../common/SafeImage'
-import { ExternalLink } from '../common/ExternalLink'
-import { useETHPrice } from '../../hooks/useETHPrice'
-import { formatAmount, formatUSD } from '../../util/NumberUtils'
-import { getExplorerUrl, isNetwork } from '../../util/networks'
-import { useGasPrice } from '../../hooks/useGasPrice'
-import { NativeCurrencyErc20 } from '../../hooks/useNativeCurrency'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { shortenAddress } from '../../util/CommonUtils'
-import { NoteBox } from '../common/NoteBox'
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner'
+import { BigNumber, constants, utils } from 'ethers';
+import { useEffect, useMemo, useState } from 'react';
+
+import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
+
+import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useETHPrice } from '../../hooks/useETHPrice';
+import { useGasPrice } from '../../hooks/useGasPrice';
+import { NativeCurrencyErc20 } from '../../hooks/useNativeCurrency';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { shortenAddress } from '../../util/CommonUtils';
+import { formatAmount, formatUSD } from '../../util/NumberUtils';
+import { getExplorerUrl, isNetwork } from '../../util/networks';
+import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { Checkbox } from '../common/Checkbox';
+import { Dialog, UseDialogProps } from '../common/Dialog';
+import { ExternalLink } from '../common/ExternalLink';
+import { NoteBox } from '../common/NoteBox';
+import { SafeImage } from '../common/SafeImage';
 
 export type CustomFeeTokenApprovalDialogProps = UseDialogProps & {
-  customFeeToken: NativeCurrencyErc20
-}
+  customFeeToken: NativeCurrencyErc20;
+};
 
-export function CustomFeeTokenApprovalDialog(
-  props: CustomFeeTokenApprovalDialogProps
-) {
-  const { customFeeToken, isOpen } = props
+export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialogProps) {
+  const { customFeeToken, isOpen } = props;
 
-  const { ethToUSD } = useETHPrice()
-  const [selectedToken] = useSelectedToken()
+  const { ethToUSD } = useETHPrice();
+  const [selectedToken] = useSelectedToken();
 
-  const [networks] = useNetworks()
-  const { sourceChain, destinationChain } = networks
-  const { parentChain, parentChainProvider } = useNetworksRelationship(networks)
-  const { isEthereumMainnet } = isNetwork(parentChain.id)
-  const isBatchTransferSupported = useIsBatchTransferSupported()
-  const [{ amount2 }] = useArbQueryParams()
+  const [networks] = useNetworks();
+  const { sourceChain, destinationChain } = networks;
+  const { parentChain, parentChainProvider } = useNetworksRelationship(networks);
+  const { isEthereumMainnet } = isNetwork(parentChain.id);
+  const isBatchTransferSupported = useIsBatchTransferSupported();
+  const [{ amount2 }] = useArbQueryParams();
 
-  const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0
+  const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
-  const l1Signer = useEthersSigner({ chainId: parentChain.id })
-  const l1GasPrice = useGasPrice({ provider: parentChainProvider })
+  const l1Signer = useEthersSigner({ chainId: parentChain.id });
+  const l1GasPrice = useGasPrice({ provider: parentChainProvider });
 
-  const [checked, setChecked] = useState(false)
-  const [estimatedGas, setEstimatedGas] = useState<BigNumber>(constants.Zero)
+  const [checked, setChecked] = useState(false);
+  const [estimatedGas, setEstimatedGas] = useState<BigNumber>(constants.Zero);
 
   // Estimated gas fees, denominated in Ether, represented as a floating point number
   const estimatedGasFees = useMemo(
     () => parseFloat(utils.formatEther(estimatedGas.mul(l1GasPrice))),
-    [estimatedGas, l1GasPrice]
-  )
+    [estimatedGas, l1GasPrice],
+  );
 
   const approvalFeeText = useMemo(() => {
-    const eth = formatAmount(estimatedGasFees, { symbol: 'ETH' })
-    const usd = formatUSD(ethToUSD(estimatedGasFees))
-    return `${eth}${isEthereumMainnet ? ` (${usd})` : ''}`
-  }, [estimatedGasFees, ethToUSD, isEthereumMainnet])
+    const eth = formatAmount(estimatedGasFees, { symbol: 'ETH' });
+    const usd = formatUSD(ethToUSD(estimatedGasFees));
+    return `${eth}${isEthereumMainnet ? ` (${usd})` : ''}`;
+  }, [estimatedGasFees, ethToUSD, isEthereumMainnet]);
 
   useEffect(() => {
     if (!isOpen) {
-      return
+      return;
     }
 
     async function getEstimatedGas() {
@@ -75,27 +75,26 @@ export function CustomFeeTokenApprovalDialog(
           sourceChainId: sourceChain.id,
           sourceChainErc20Address: selectedToken?.address,
           destinationChainId: destinationChain.id,
-          destinationChainErc20Address: selectedToken?.l2Address
-        })
+          destinationChainErc20Address: selectedToken?.l2Address,
+        });
 
-        const estimatedGas =
-          await bridgeTransferStarter.approveNativeCurrencyEstimateGas({
-            signer: l1Signer
-          })
+        const estimatedGas = await bridgeTransferStarter.approveNativeCurrencyEstimateGas({
+          signer: l1Signer,
+        });
 
         if (estimatedGas) {
-          setEstimatedGas(estimatedGas)
+          setEstimatedGas(estimatedGas);
         }
       }
     }
 
-    getEstimatedGas()
-  }, [isOpen, selectedToken, l1Signer, sourceChain, destinationChain])
+    getEstimatedGas();
+  }, [isOpen, selectedToken, l1Signer, sourceChain, destinationChain]);
 
   function closeWithReset(confirmed: boolean) {
-    props.onClose(confirmed)
+    props.onClose(confirmed);
 
-    setChecked(false)
+    setChecked(false);
   }
 
   return (
@@ -121,14 +120,10 @@ export function CustomFeeTokenApprovalDialog(
           <div className="flex flex-col">
             <div className="flex items-center space-x-1">
               <span className="text-base">{customFeeToken.symbol}</span>
-              <span className="text-xs text-white/70">
-                {customFeeToken.name}
-              </span>
+              <span className="text-xs text-white/70">{customFeeToken.name}</span>
             </div>
             <ExternalLink
-              href={`${getExplorerUrl(parentChain.id)}/token/${
-                customFeeToken.address
-              }`}
+              href={`${getExplorerUrl(parentChain.id)}/token/${customFeeToken.address}`}
               className="arb-hover text-xs underline"
             >
               {shortenAddress(customFeeToken.address)}
@@ -141,9 +136,8 @@ export function CustomFeeTokenApprovalDialog(
           <span className="font-medium">
             {customFeeToken.name} ({customFeeToken.symbol})
           </span>{' '}
-          as the fee token. Before continuing with your deposit, you must first
-          allow the bridge contract to access your{' '}
-          <span className="font-medium">{customFeeToken.symbol}</span>.
+          as the fee token. Before continuing with your deposit, you must first allow the bridge
+          contract to access your <span className="font-medium">{customFeeToken.symbol}</span>.
           {isBatchTransfer && (
             <span>
               {' '}
@@ -160,10 +154,7 @@ export function CustomFeeTokenApprovalDialog(
           label={
             <span className="font-light">
               I understand that I have to pay a one-time{' '}
-              <span className="font-medium">
-                approval fee of {approvalFeeText}
-              </span>{' '}
-              for this.
+              <span className="font-medium">approval fee of {approvalFeeText}</span> for this.
             </span>
           }
           checked={checked}
@@ -174,14 +165,12 @@ export function CustomFeeTokenApprovalDialog(
           <NoteBox>
             {selectedToken ? (
               <span className="text-sm font-light text-cyan-dark">
-                After approval, you&apos;ll see additional prompts related to
-                depositing your{' '}
+                After approval, you&apos;ll see additional prompts related to depositing your{' '}
                 <span className="font-medium">{selectedToken.symbol}</span>.
               </span>
             ) : (
               <span className="text-sm font-light text-cyan-dark">
-                After approval, you&apos;ll see an additional prompt in your
-                wallet to deposit your{' '}
+                After approval, you&apos;ll see an additional prompt in your wallet to deposit your{' '}
                 <span className="font-medium">{customFeeToken.symbol}</span>.
               </span>
             )}
@@ -189,5 +178,5 @@ export function CustomFeeTokenApprovalDialog(
         </div>
       </div>
     </Dialog>
-  )
+  );
 }

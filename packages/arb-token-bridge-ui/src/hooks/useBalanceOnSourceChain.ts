@@ -1,68 +1,60 @@
-import { useAccount } from 'wagmi'
-import { BigNumber, constants } from 'ethers'
+import { BigNumber, constants } from 'ethers';
+import { useAccount } from 'wagmi';
 
-import { useBalance } from './useBalance'
-import { useNetworksRelationship } from './useNetworksRelationship'
-import { useNetworks } from './useNetworks'
-import { ERC20BridgeToken } from './arbTokenBridge.types'
-import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances'
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC
-} from '../util/TokenUtils'
-import { isNetwork } from '../util/networks'
-import { addressesEqual } from '../util/AddressUtils'
-import { useNativeCurrency } from './useNativeCurrency'
+import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
+import { addressesEqual } from '../util/AddressUtils';
+import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
+import { isNetwork } from '../util/networks';
+import { ERC20BridgeToken } from './arbTokenBridge.types';
+import { useBalance } from './useBalance';
+import { useNativeCurrency } from './useNativeCurrency';
+import { useNetworks } from './useNetworks';
+import { useNetworksRelationship } from './useNetworksRelationship';
 
 /**
  * Balance of the child chain's native currency or ERC20 token
  */
-export function useBalanceOnSourceChain(
-  token: ERC20BridgeToken | null
-): BigNumber | null {
-  const { address: walletAddress } = useAccount()
-  const [networks] = useNetworks()
-  const { isDepositMode } = useNetworksRelationship(networks)
-  const { isOrbitChain: isSourceOrbitChain } = isNetwork(
-    networks.sourceChain.id
-  )
+export function useBalanceOnSourceChain(token: ERC20BridgeToken | null): BigNumber | null {
+  const { address: walletAddress } = useAccount();
+  const [networks] = useNetworks();
+  const { isDepositMode } = useNetworksRelationship(networks);
+  const { isOrbitChain: isSourceOrbitChain } = isNetwork(networks.sourceChain.id);
   const sourceChainNativeCurrency = useNativeCurrency({
-    provider: networks.sourceChainProvider
-  })
+    provider: networks.sourceChainProvider,
+  });
 
   const {
     erc20: [erc20SourceChainBalances],
-    eth: [ethSourceChainBalance]
-  } = useBalance({ chainId: networks.sourceChain.id, walletAddress })
+    eth: [ethSourceChainBalance],
+  } = useBalance({ chainId: networks.sourceChain.id, walletAddress });
 
-  const nativeCurrencyBalances = useNativeCurrencyBalances()
+  const nativeCurrencyBalances = useNativeCurrencyBalances();
 
   // user selected source chain native currency or
   // user bridging the destination chain's native currency
   if (!token) {
-    return nativeCurrencyBalances.sourceBalance
+    return nativeCurrencyBalances.sourceBalance;
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
     // If ether is the native currency on the source chain
     if (!sourceChainNativeCurrency.isCustom) {
-      return ethSourceChainBalance
+      return ethSourceChainBalance;
     }
 
     return token.l2Address
-      ? erc20SourceChainBalances?.[token.l2Address.toLowerCase()] ||
-          constants.Zero
-      : constants.Zero
+      ? erc20SourceChainBalances?.[token.l2Address.toLowerCase()] || constants.Zero
+      : constants.Zero;
   }
 
-  const tokenAddressLowercased = token.address.toLowerCase()
+  const tokenAddressLowercased = token.address.toLowerCase();
 
   if (!erc20SourceChainBalances) {
-    return constants.Zero
+    return constants.Zero;
   }
 
   if (isDepositMode) {
-    return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero
+    return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero;
   }
 
   if (
@@ -71,18 +63,18 @@ export function useBalanceOnSourceChain(
   ) {
     // because we read parent chain address, make sure we don't read Orbit chain's address if it's the source chain
     if (!isSourceOrbitChain) {
-      return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero
+      return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero;
     }
   }
 
-  const tokenChildChainAddress = token.l2Address?.toLowerCase()
+  const tokenChildChainAddress = token.l2Address?.toLowerCase();
 
   // token that has never been deposited so it doesn't have an l2Address
   // this should not happen because user shouldn't be able to select it
   if (!tokenChildChainAddress) {
-    return constants.Zero
+    return constants.Zero;
   }
 
   // token withdrawal
-  return erc20SourceChainBalances[tokenChildChainAddress] ?? constants.Zero
+  return erc20SourceChainBalances[tokenChildChainAddress] ?? constants.Zero;
 }

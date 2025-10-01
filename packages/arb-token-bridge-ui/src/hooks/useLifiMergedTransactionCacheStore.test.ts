@@ -1,24 +1,21 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
-import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore'
-import {
-  DepositStatus,
-  LifiMergedTransaction,
-  WithdrawalStatus
-} from '../state/app/state'
-import { AssetType } from './arbTokenBridge.types'
-import dayjs from 'dayjs'
-import { BigNumber, constants } from 'ethers'
-import { shallow } from 'zustand/shallow'
+import { act, renderHook, waitFor } from '@testing-library/react';
+import dayjs from 'dayjs';
+import { BigNumber, constants } from 'ethers';
+import { describe, expect, it } from 'vitest';
+import { shallow } from 'zustand/shallow';
+
+import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { AssetType } from './arbTokenBridge.types';
+import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
 
 function createMockedLifiTransaction({
   hash,
   sender,
-  destinationAddress
+  destinationAddress,
 }: {
-  hash: string
-  sender: string
-  destinationAddress: string
+  hash: string;
+  sender: string;
+  destinationAddress: string;
 }): LifiMergedTransaction {
   return {
     txId: hash,
@@ -45,7 +42,7 @@ function createMockedLifiTransaction({
     toolDetails: {
       key: 'lifi',
       logoURI: '',
-      name: 'name'
+      name: 'name',
     },
     durationMs: 1_000,
     fromAmount: {
@@ -54,8 +51,8 @@ function createMockedLifiTransaction({
       token: {
         address: constants.AddressZero,
         decimals: 18,
-        symbol: 'ETH'
-      }
+        symbol: 'ETH',
+      },
     },
     toAmount: {
       amount: BigNumber.from(9),
@@ -63,85 +60,80 @@ function createMockedLifiTransaction({
       token: {
         address: constants.AddressZero,
         decimals: 18,
-        symbol: 'ETH'
-      }
+        symbol: 'ETH',
+      },
     },
     destinationTxId: null,
-    transactionRequest: {}
-  }
+    transactionRequest: {},
+  };
 }
 
 describe('useLifiMergedTransactionCacheStore', () => {
   it('should return undefined by default', async () => {
-    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
-      useLifiMergedTransactionCacheStore(
-        state => state.transactions[walletAddress]
-      )
-    )
+      useLifiMergedTransactionCacheStore((state) => state.transactions[walletAddress]),
+    );
 
-    expect(result.current).toEqual(undefined)
-  })
+    expect(result.current).toEqual(undefined);
+  });
 
   it('should cache transaction for sender and destination address', async () => {
-    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        state => ({
+        (state) => ({
           addTransaction: state.addTransaction,
-          transactions: state.transactions
+          transactions: state.transactions,
         }),
-        shallow
-      )
-    )
+        shallow,
+      ),
+    );
 
     const sameDestinationTransaction = createMockedLifiTransaction({
       hash: '0x240c2c89b5f153b0cc1fce5ea709473b858359887d0aa1d4157fe130c95d2134',
       sender: walletAddress,
-      destinationAddress: walletAddress
-    })
+      destinationAddress: walletAddress,
+    });
     await act(async () => {
-      result.current.addTransaction(sameDestinationTransaction)
-    })
+      result.current.addTransaction(sameDestinationTransaction);
+    });
 
     await waitFor(() => {
       // Transaction is added to cache only once
-      expect(result.current.transactions[walletAddress]).toEqual([
-        sameDestinationTransaction
-      ])
-    })
+      expect(result.current.transactions[walletAddress]).toEqual([sameDestinationTransaction]);
+    });
 
-    const customDestinationAddress =
-      '0x7503Aad60fd0d205702b0Dcd945a1b36c42101b3'
+    const customDestinationAddress = '0x7503Aad60fd0d205702b0Dcd945a1b36c42101b3';
     const differentDestinationTransaction = createMockedLifiTransaction({
       hash: '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c',
       sender: walletAddress,
-      destinationAddress: customDestinationAddress
-    })
+      destinationAddress: customDestinationAddress,
+    });
     await act(async () => {
-      result.current.addTransaction(differentDestinationTransaction)
-    })
+      result.current.addTransaction(differentDestinationTransaction);
+    });
 
     const { result: resultAfterChanges } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        state => ({
+        (state) => ({
           addTransaction: state.addTransaction,
-          transactions: state.transactions
+          transactions: state.transactions,
         }),
-        shallow
-      )
-    )
+        shallow,
+      ),
+    );
     await waitFor(() => {
       // Transaction is added to cache for sender
       expect(resultAfterChanges.current.transactions[walletAddress]).toEqual([
         differentDestinationTransaction,
-        sameDestinationTransaction
-      ])
+        sameDestinationTransaction,
+      ]);
 
       // Transaction is added to cache for custom address
-      expect(
-        resultAfterChanges.current.transactions[customDestinationAddress]
-      ).toEqual([differentDestinationTransaction])
-    })
-  })
-})
+      expect(resultAfterChanges.current.transactions[customDestinationAddress]).toEqual([
+        differentDestinationTransaction,
+      ]);
+    });
+  });
+});

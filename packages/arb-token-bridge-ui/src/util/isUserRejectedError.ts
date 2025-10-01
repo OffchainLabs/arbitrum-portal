@@ -1,4 +1,4 @@
-import { UserRejectedRequestError } from 'viem'
+import { UserRejectedRequestError } from 'viem';
 
 /**
  * This should only be used to conditionally act on errors,
@@ -12,8 +12,7 @@ function isUserRejectedError(error: any) {
     error?.code === 'ACTION_REJECTED' ||
     error?.message?.match(/User Cancelled/) ||
     error instanceof UserRejectedRequestError ||
-    error?.details ===
-      'MetaMask Tx Signature: User denied transaction signature.'
-  )
+    error?.details === 'MetaMask Tx Signature: User denied transaction signature.'
+  );
 }
-export { isUserRejectedError }
+export { isUserRejectedError };

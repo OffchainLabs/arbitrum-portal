@@ -1,35 +1,26 @@
 'use client';
 
 import { Popover } from '@headlessui/react';
-import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
-// Define TVL and TPS buckets
-const TVL_BUCKETS = [
-  { label: '< $1M', min: 0, max: 1000000 },
-  { label: '$1M - $10M', min: 1000000, max: 10000000 },
-  { label: '> $10M', min: 10000000, max: Infinity }
-];
+import { FilterDropdownButton } from './FilterDropdownButton';
 
-const TPS_BUCKETS = [
-  { label: '< 1', min: 0, max: 1 },
-  { label: '1 - 10', min: 1, max: 10 },
-  { label: '> 10', min: 10, max: Infinity }
-];
+type Buckets = { label: string; min: number; max: number }[];
 
 // Define Gas Speed Limit buckets
 export const GAS_SPEED_LIMIT_BUCKETS = [
   { label: '< 1M gas/sec', min: 0, max: 1000000 },
   { label: '1M - 10M gas/sec', min: 1000000, max: 10000000 },
-  { label: '> 10M gas/sec', min: 10000000, max: Infinity }
-];
+  { label: '> 10M gas/sec', min: 10000000, max: Infinity },
+] as const satisfies Buckets;
 
 // Filter Panel Component types
 export type FilterOptionsType = {
   categories: { id: string; name: string }[];
   dataAvailability: string[];
   gasToken: string[];
-  tvlBuckets: typeof TVL_BUCKETS;
-  tpsBuckets: typeof TPS_BUCKETS;
+  tvlBuckets: Buckets;
+  tpsBuckets: Buckets;
   gasSpeedLimitBuckets: typeof GAS_SPEED_LIMIT_BUCKETS;
 };
 
@@ -50,22 +41,19 @@ type FilterPanelProps = {
   toggleFilter: (type: keyof ActiveFiltersType, value: string) => void;
 };
 
-import { FilterDropdownButton } from './FilterDropdownButton';
-
-export const FilterPanel = ({ 
-  filterOptions, 
-  activeFilters, 
-  toggleFilter 
+export const FilterPanel = ({
+  filterOptions,
+  activeFilters,
+  toggleFilter,
 }: Omit<FilterPanelProps, 'showFilters' | 'setShowFilters'>) => {
-  
   return (
     <Popover className="relative w-full lg:w-max">
-      {({ open }) => (
+      {() => (
         <>
           <Popover.Button as="div">
             <FilterDropdownButton activeFilters={activeFilters} />
           </Popover.Button>
-          
+
           <Popover.Panel className="fixed inset-x-4 top-20 z-50 flex max-h-[80vh] flex-col overflow-auto rounded-md bg-[#181818] p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)] sm:w-[600px] md:w-[700px] lg:absolute lg:inset-auto lg:right-0 lg:top-auto lg:mt-4 lg:w-[700px] lg:max-w-3xl">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-xl font-medium text-white">Filters</h3>
@@ -164,7 +152,9 @@ export const FilterPanel = ({
 
               {/* Gas Speed Limit Buckets filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">Gas Speed Limit</h4>
+                <h4 className="text-base md:text-base font-medium text-gray-300">
+                  Gas Speed Limit
+                </h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.gasSpeedLimitBuckets.map((bucket) => (
                     <div key={bucket.label} className="flex cursor-pointer items-start">
@@ -193,7 +183,9 @@ export const FilterPanel = ({
 
               {/* Data Availability filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">Data Availability</h4>
+                <h4 className="text-base md:text-base font-medium text-gray-300">
+                  Data Availability
+                </h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.dataAvailability.map((da) => (
                     <div key={da} className="flex cursor-pointer items-start">
@@ -254,4 +246,4 @@ export const FilterPanel = ({
       )}
     </Popover>
   );
-}; 
+};

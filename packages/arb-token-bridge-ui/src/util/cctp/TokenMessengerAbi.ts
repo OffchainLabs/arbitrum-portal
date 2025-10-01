@@ -2,10 +2,10 @@ export const TokenMessengerAbi = [
   {
     inputs: [
       { internalType: 'address', name: '_messageTransmitter', type: 'address' },
-      { internalType: 'uint32', name: '_messageBodyVersion', type: 'uint32' }
+      { internalType: 'uint32', name: '_messageBodyVersion', type: 'uint32' },
     ],
     stateMutability: 'nonpayable',
-    type: 'constructor'
+    type: 'constructor',
   },
   {
     anonymous: false,
@@ -15,47 +15,47 @@ export const TokenMessengerAbi = [
         indexed: true,
         internalType: 'address',
         name: 'burnToken',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'amount',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'depositor',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'bytes32',
         name: 'mintRecipient',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         indexed: false,
         internalType: 'uint32',
         name: 'destinationDomain',
-        type: 'uint32'
+        type: 'uint32',
       },
       {
         indexed: false,
         internalType: 'bytes32',
         name: 'destinationTokenMessenger',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         indexed: false,
         internalType: 'bytes32',
         name: 'destinationCaller',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'DepositForBurn',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -64,11 +64,11 @@ export const TokenMessengerAbi = [
         indexed: false,
         internalType: 'address',
         name: 'localMinter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'LocalMinterAdded',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -77,11 +77,11 @@ export const TokenMessengerAbi = [
         indexed: false,
         internalType: 'address',
         name: 'localMinter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'LocalMinterRemoved',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -90,23 +90,23 @@ export const TokenMessengerAbi = [
         indexed: true,
         internalType: 'address',
         name: 'mintRecipient',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'amount',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'mintToken',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'MintAndWithdraw',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -115,17 +115,17 @@ export const TokenMessengerAbi = [
         indexed: true,
         internalType: 'address',
         name: 'previousOwner',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'newOwner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'OwnershipTransferStarted',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -134,17 +134,17 @@ export const TokenMessengerAbi = [
         indexed: true,
         internalType: 'address',
         name: 'previousOwner',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'newOwner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'OwnershipTransferred',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -153,17 +153,17 @@ export const TokenMessengerAbi = [
         indexed: false,
         internalType: 'uint32',
         name: 'domain',
-        type: 'uint32'
+        type: 'uint32',
       },
       {
         indexed: false,
         internalType: 'bytes32',
         name: 'tokenMessenger',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'RemoteTokenMessengerAdded',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -172,17 +172,17 @@ export const TokenMessengerAbi = [
         indexed: false,
         internalType: 'uint32',
         name: 'domain',
-        type: 'uint32'
+        type: 'uint32',
       },
       {
         indexed: false,
         internalType: 'bytes32',
         name: 'tokenMessenger',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'RemoteTokenMessengerRemoved',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -191,49 +191,35 @@ export const TokenMessengerAbi = [
         indexed: true,
         internalType: 'address',
         name: 'newRescuer',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'RescuerChanged',
-    type: 'event'
+    type: 'event',
   },
   {
     inputs: [],
     name: 'acceptOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
-    inputs: [
-      { internalType: 'address', name: 'newLocalMinter', type: 'address' }
-    ],
+    inputs: [{ internalType: 'address', name: 'newLocalMinter', type: 'address' }],
     name: 'addLocalMinter',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'uint32', name: 'domain', type: 'uint32' },
-      { internalType: 'bytes32', name: 'tokenMessenger', type: 'bytes32' }
+      { internalType: 'bytes32', name: 'tokenMessenger', type: 'bytes32' },
     ],
     name: 'addRemoteTokenMessenger',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    inputs: [
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { internalType: 'uint32', name: 'destinationDomain', type: 'uint32' },
-      { internalType: 'bytes32', name: 'mintRecipient', type: 'bytes32' },
-      { internalType: 'address', name: 'burnToken', type: 'address' }
-    ],
-    name: 'depositForBurn',
-    outputs: [{ internalType: 'uint64', name: '_nonce', type: 'uint64' }],
-    stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
@@ -241,23 +227,35 @@ export const TokenMessengerAbi = [
       { internalType: 'uint32', name: 'destinationDomain', type: 'uint32' },
       { internalType: 'bytes32', name: 'mintRecipient', type: 'bytes32' },
       { internalType: 'address', name: 'burnToken', type: 'address' },
-      { internalType: 'bytes32', name: 'destinationCaller', type: 'bytes32' }
+    ],
+    name: 'depositForBurn',
+    outputs: [{ internalType: 'uint64', name: '_nonce', type: 'uint64' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'uint32', name: 'destinationDomain', type: 'uint32' },
+      { internalType: 'bytes32', name: 'mintRecipient', type: 'bytes32' },
+      { internalType: 'address', name: 'burnToken', type: 'address' },
+      { internalType: 'bytes32', name: 'destinationCaller', type: 'bytes32' },
     ],
     name: 'depositForBurnWithCaller',
     outputs: [{ internalType: 'uint64', name: 'nonce', type: 'uint64' }],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'uint32', name: 'remoteDomain', type: 'uint32' },
       { internalType: 'bytes32', name: 'sender', type: 'bytes32' },
-      { internalType: 'bytes', name: 'messageBody', type: 'bytes' }
+      { internalType: 'bytes', name: 'messageBody', type: 'bytes' },
     ],
     name: 'handleReceiveMessage',
     outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -266,62 +264,60 @@ export const TokenMessengerAbi = [
       {
         internalType: 'contract IMessageTransmitter',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'localMinter',
-    outputs: [
-      { internalType: 'contract ITokenMinter', name: '', type: 'address' }
-    ],
+    outputs: [{ internalType: 'contract ITokenMinter', name: '', type: 'address' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'messageBodyVersion',
     outputs: [{ internalType: 'uint32', name: '', type: 'uint32' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'owner',
     outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'pendingOwner',
     outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'uint32', name: '', type: 'uint32' }],
     name: 'remoteTokenMessengers',
     outputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'removeLocalMinter',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'uint32', name: 'domain', type: 'uint32' }],
     name: 'removeRemoteTokenMessenger',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
@@ -330,49 +326,49 @@ export const TokenMessengerAbi = [
       {
         internalType: 'bytes32',
         name: 'newDestinationCaller',
-        type: 'bytes32'
+        type: 'bytes32',
       },
-      { internalType: 'bytes32', name: 'newMintRecipient', type: 'bytes32' }
+      { internalType: 'bytes32', name: 'newMintRecipient', type: 'bytes32' },
     ],
     name: 'replaceDepositForBurn',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'contract IERC20',
         name: 'tokenContract',
-        type: 'address'
+        type: 'address',
       },
       { internalType: 'address', name: 'to', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' }
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
     ],
     name: 'rescueERC20',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'rescuer',
     outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'address', name: 'newOwner', type: 'address' }],
     name: 'transferOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'address', name: 'newRescuer', type: 'address' }],
     name: 'updateRescuer',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
-  }
-] as const
+    type: 'function',
+  },
+] as const;

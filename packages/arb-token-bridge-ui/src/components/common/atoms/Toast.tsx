@@ -1,26 +1,26 @@
-import { ToastContainer, toast } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify';
 
 export const errorToast = (
   message: React.ReactNode,
   {
-    autoClose
+    autoClose,
   }: {
-    autoClose?: number | false | undefined
-  } = { autoClose: 5000 }
+    autoClose?: number | false | undefined;
+  } = { autoClose: 5000 },
 ) => {
-  toast.error(message, { autoClose })
-}
+  toast.error(message, { autoClose });
+};
 
 export const warningToast = (
   message: React.ReactNode,
   {
-    autoClose
+    autoClose,
   }: {
-    autoClose?: number | false | undefined
-  } = { autoClose: 5000 }
+    autoClose?: number | false | undefined;
+  } = { autoClose: 5000 },
 ) => {
-  toast.warning(message, { autoClose })
-}
+  toast.warning(message, { autoClose });
+};
 
 export const Toast = () => {
   return (
@@ -35,5 +35,5 @@ export const Toast = () => {
       pauseOnHover
       theme="dark"
     />
-  )
-}
+  );
+};

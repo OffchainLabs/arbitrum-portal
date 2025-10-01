@@ -1,20 +1,15 @@
 // hook which takes in the subcategories and outputs the best set of URL filters describing it
 // takes care of all heavy-lifting of whether we should route to Category page / or subcategory or whatever..
 // eg. [subcat1, subcat2], subcat3 => cat1, subcat3
-
-import { useMemo } from 'react';
-import queryString from 'query-string';
 import { useRouter } from 'next/navigation';
-import {
-  getSubcategoryDetailsById,
-  sortBySubcategoryRank,
-} from '@/common/subcategories';
-import { useSelectedChains } from './useSelectedChains';
-import {
-  CATEGORY_TO_SUBCATEGORIES,
-  getCategoryBySubcategoryList,
-} from '@/common/categories';
+import queryString from 'query-string';
+import { useMemo } from 'react';
+
+import { CATEGORY_TO_SUBCATEGORIES, getCategoryBySubcategoryList } from '@/common/categories';
+import { getSubcategoryDetailsById, sortBySubcategoryRank } from '@/common/subcategories';
+
 import { useSelectedCategory } from './useSelectedCategory';
+import { useSelectedChains } from './useSelectedChains';
 import { useSelectedSubcategories } from './useSelectedSubcategories';
 
 // given a list of subcategories,
@@ -94,12 +89,11 @@ export const useFilters = () => {
 
     // 4. Else, One category is selected - fully or partially.
     // From the One category selected, check if the selected subcategories contain ALL the possible subcategories
-    const finalSubcategoryList = Object.keys(
-      filtersMap[Object.keys(filtersMap)[0]!] || {},
-    ).sort(sortBySubcategoryRank);
+    const finalSubcategoryList = Object.keys(filtersMap[Object.keys(filtersMap)[0]!] || {}).sort(
+      sortBySubcategoryRank,
+    );
 
-    const isOneCategoryCompletelySelected =
-      getCategoryBySubcategoryList(finalSubcategoryList);
+    const isOneCategoryCompletelySelected = getCategoryBySubcategoryList(finalSubcategoryList);
 
     // One category is selected completely, route to it's dedicated category page
     if (isOneCategoryCompletelySelected) {

@@ -1,7 +1,8 @@
-import { withDefault, StringParam, useQueryParams } from 'use-query-params';
 import { useCallback, useMemo } from 'react';
+import { StringParam, useQueryParams, withDefault } from 'use-query-params';
 
 import { CHAINS } from '@/common/chains';
+
 import { SortOptions } from '../common/types';
 
 const defaultChains = CHAINS.map((network) => network.slug).join('_');
@@ -19,17 +20,7 @@ const config = {
 };
 export function useArbQueryParams() {
   const [
-    {
-      search,
-      categories,
-      subcategories,
-      chains,
-      project,
-      orbitChain,
-      groupBy,
-      myAppsView,
-      sortBy,
-    },
+    { search, categories, subcategories, chains, project, orbitChain, groupBy, myAppsView, sortBy },
     setQueryParams,
   ] = useQueryParams(config);
 

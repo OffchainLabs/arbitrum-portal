@@ -1,4 +1,5 @@
 import Image from 'next/image';
+
 import { Card } from '@/components/Card';
 
 export const CareersCard = () => (
@@ -24,12 +25,10 @@ export const CareersCard = () => (
 
     <div className="flex w-full flex-col flex-nowrap items-start justify-between gap-4 text-lg lg:flex-row lg:items-end lg:text-2xl">
       <div className="text-white/50">
-        <span className="text-white">Jobs in the Arbitrum Ecosystem.</span>{' '}
-        Career opportunities to build a more secure and decentralized tomorrow.
+        <span className="text-white">Jobs in the Arbitrum Ecosystem.</span> Career opportunities to
+        build a more secure and decentralized tomorrow.
       </div>
-      <div className="whitespace-nowrap text-xs underline underline-offset-8">
-        Learn More
-      </div>
+      <div className="whitespace-nowrap text-xs underline underline-offset-8">Learn More</div>
     </div>
   </Card>
 );

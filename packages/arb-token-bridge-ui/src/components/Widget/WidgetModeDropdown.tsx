@@ -1,27 +1,23 @@
-import { twMerge } from 'tailwind-merge'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
+  CheckIcon,
   ChevronDownIcon,
   PaperAirplaneIcon,
   WalletIcon,
-  CheckIcon
-} from '@heroicons/react/24/outline'
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { useCallback } from 'react'
+} from '@heroicons/react/24/outline';
+import { useCallback } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { Button } from '../common/Button'
-import { Transition } from '../common/Transition'
-import {
-  useArbQueryParams,
-  TabParamEnum,
-  indexToTab
-} from '../../hooks/useArbQueryParams'
-import { isOnrampEnabled } from '../../util/featureFlag'
+import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { isOnrampEnabled } from '../../util/featureFlag';
+import { Button } from '../common/Button';
+import { Transition } from '../common/Transition';
 
 interface ModeOptionProps {
-  icon: React.ReactNode
-  label: string
-  isSelected: boolean
-  onClick: () => void
+  icon: React.ReactNode;
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
 }
 
 const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
@@ -36,23 +32,22 @@ const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
       </div>
       {isSelected && <CheckIcon className="h-3 w-3 text-green-500" />}
     </button>
-  )
-}
+  );
+};
 
 export const WidgetModeDropdown = () => {
-  const [{ tab }, setQueryParams] = useArbQueryParams()
-  const showBuyPanel = isOnrampEnabled()
+  const [{ tab }, setQueryParams] = useArbQueryParams();
+  const showBuyPanel = isOnrampEnabled();
 
-  const currentTab =
-    indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE
+  const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
 
   const handleModeChange = useCallback(
     (newTab: TabParamEnum) => {
-      const newTabIndex = newTab === TabParamEnum.BUY ? 0 : showBuyPanel ? 1 : 0
-      setQueryParams({ tab: newTabIndex })
+      const newTabIndex = newTab === TabParamEnum.BUY ? 0 : showBuyPanel ? 1 : 0;
+      setQueryParams({ tab: newTabIndex });
     },
-    [setQueryParams, showBuyPanel]
-  )
+    [setQueryParams, showBuyPanel],
+  );
 
   if (!showBuyPanel) {
     // If buy panel is not enabled, just show the bridge button without dropdown
@@ -67,7 +62,7 @@ export const WidgetModeDropdown = () => {
           Bridge
         </div>
       </Button>
-    )
+    );
   }
 
   return (
@@ -87,10 +82,7 @@ export const WidgetModeDropdown = () => {
                 )}
                 {currentTab === TabParamEnum.BUY ? 'Buy' : 'Bridge'}
                 <ChevronDownIcon
-                  className={twMerge(
-                    'h-3 w-3 opacity-30 transition-all',
-                    open && 'rotate-180'
-                  )}
+                  className={twMerge('h-3 w-3 opacity-30 transition-all', open && 'rotate-180')}
                 />
               </div>
             </Button>
@@ -103,8 +95,8 @@ export const WidgetModeDropdown = () => {
                   label="Bridge"
                   isSelected={currentTab === TabParamEnum.BRIDGE}
                   onClick={() => {
-                    handleModeChange(TabParamEnum.BRIDGE)
-                    close()
+                    handleModeChange(TabParamEnum.BRIDGE);
+                    close();
                   }}
                 />
                 <ModeOption
@@ -112,8 +104,8 @@ export const WidgetModeDropdown = () => {
                   label="Buy"
                   isSelected={currentTab === TabParamEnum.BUY}
                   onClick={() => {
-                    handleModeChange(TabParamEnum.BUY)
-                    close()
+                    handleModeChange(TabParamEnum.BUY);
+                    close();
                   }}
                 />
               </div>
@@ -122,5 +114,5 @@ export const WidgetModeDropdown = () => {
         </>
       )}
     </Popover>
-  )
-}
+  );
+};

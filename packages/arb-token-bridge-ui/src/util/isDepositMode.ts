@@ -1,24 +1,23 @@
-import { isNetwork } from '../util/networks'
+import { isNetwork } from '../util/networks';
 
 export function isDepositMode({
   sourceChainId,
-  destinationChainId
+  destinationChainId,
 }: {
-  sourceChainId: number
-  destinationChainId: number
+  sourceChainId: number;
+  destinationChainId: number;
 }) {
   const {
     isEthereumMainnetOrTestnet: isSourceChainEthereum,
     isArbitrum: isSourceChainArbitrum,
-    isBase: isSourceChainBase
-  } = isNetwork(sourceChainId)
-  const { isOrbitChain: isDestinationChainOrbit } =
-    isNetwork(destinationChainId)
+    isBase: isSourceChainBase,
+  } = isNetwork(sourceChainId);
+  const { isOrbitChain: isDestinationChainOrbit } = isNetwork(destinationChainId);
 
   const isDepositMode =
     isSourceChainEthereum ||
     isSourceChainBase ||
-    (isSourceChainArbitrum && isDestinationChainOrbit)
+    (isSourceChainArbitrum && isDestinationChainOrbit);
 
-  return isDepositMode
+  return isDepositMode;
 }

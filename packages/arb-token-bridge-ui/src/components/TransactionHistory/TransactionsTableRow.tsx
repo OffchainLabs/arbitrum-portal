@@ -1,41 +1,42 @@
-import { useMemo, useState } from 'react'
-import { useInterval } from 'react-use'
-import { twMerge } from 'tailwind-merge'
-import dayjs from 'dayjs'
 import {
   ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline'
-import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg'
-import Image from 'next/image'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
+  XCircleIcon,
+} from '@heroicons/react/24/outline';
+import dayjs from 'dayjs';
+import Image from 'next/image';
+import { useMemo, useState } from 'react';
+import { useInterval } from 'react-use';
+import { twMerge } from 'tailwind-merge';
 
-import { DepositStatus, MergedTransaction } from '../../state/app/state'
-import { formatAmount } from '../../util/NumberUtils'
-import { sanitizeTokenSymbol } from '../../util/TokenUtils'
-import { getExplorerUrl, getNetworkName } from '../../util/networks'
-import { NetworkImage } from '../common/NetworkImage'
+import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { AssetType } from '../../hooks/arbTokenBridge.types';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import { formatAmount } from '../../util/NumberUtils';
+import { isBatchTransfer } from '../../util/TokenDepositUtils';
+import { sanitizeTokenSymbol } from '../../util/TokenUtils';
+import { getExplorerUrl, getNetworkName } from '../../util/networks';
+import { Button } from '../common/Button';
+import { ExternalLink } from '../common/ExternalLink';
+import { NetworkImage } from '../common/NetworkImage';
+import { useTxDetailsStore } from './TransactionHistory';
+import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
+import { TransactionsTableExternalLink } from './TransactionsTableExternalLink';
+import { TransactionsTableRowAction } from './TransactionsTableRowAction';
+import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
 import {
   getDestinationNetworkTxId,
   isTxClaimable,
   isTxExpired,
   isTxFailed,
-  isTxPending
-} from './helpers'
-import { ExternalLink } from '../common/ExternalLink'
-import { Button } from '../common/Button'
-import { TransactionsTableRowAction } from './TransactionsTableRowAction'
-import { AssetType } from '../../hooks/arbTokenBridge.types'
-import { TransactionsTableTokenImage } from './TransactionsTableTokenImage'
-import { useTxDetailsStore } from './TransactionHistory'
-import { TransactionsTableExternalLink } from './TransactionsTableExternalLink'
-import { isBatchTransfer } from '../../util/TokenDepositUtils'
-import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
+  isTxPending,
+} from './helpers';
 
 const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
-  const { sourceChainId, destinationChainId } = tx
+  const { sourceChainId, destinationChainId } = tx;
 
   if (isTxFailed(tx)) {
     return (
@@ -48,7 +49,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
         <span>Failed</span>
         <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
       </ExternalLink>
-    )
+    );
   }
 
   if (isTxExpired(tx)) {
@@ -62,7 +63,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
         <span>Expired</span>
         <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
       </ExternalLink>
-    )
+    );
   }
 
   if (isTxPending(tx)) {
@@ -76,7 +77,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
         <span>Pending</span>
         <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
       </ExternalLink>
-    )
+    );
   }
 
   if (isTxClaimable(tx)) {
@@ -90,10 +91,10 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
         <span>Claimable</span>
         <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
       </ExternalLink>
-    )
+    );
   }
 
-  const destinationNetworkTxId = getDestinationNetworkTxId(tx)
+  const destinationNetworkTxId = getDestinationNetworkTxId(tx);
 
   // Success
   return (
@@ -110,40 +111,36 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
         <CheckCircleIcon height={14} className="shrink-0" />
         <span>Success</span>
 
-        {destinationNetworkTxId && (
-          <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
-        )}
+        {destinationNetworkTxId && <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />}
       </div>
     </ExternalLink>
-  )
-}
+  );
+};
 
 export function TransactionsTableRow({
   tx,
-  className = ''
+  className = '',
 }: {
-  tx: MergedTransaction
-  className?: string
+  tx: MergedTransaction;
+  className?: string;
 }) {
-  const openTxDetails = useTxDetailsStore(state => state.open)
-  const childProvider = getProviderForChainId(tx.childChainId)
-  const nativeCurrency = useNativeCurrency({ provider: childProvider })
+  const openTxDetails = useTxDetailsStore((state) => state.open);
+  const childProvider = getProviderForChainId(tx.childChainId);
+  const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
-  const { sourceChainId, destinationChainId } = tx
+  const { sourceChainId, destinationChainId } = tx;
 
-  const [txRelativeTime, setTxRelativeTime] = useState(
-    dayjs(tx.createdAt).fromNow()
-  )
+  const [txRelativeTime, setTxRelativeTime] = useState(dayjs(tx.createdAt).fromNow());
 
-  const isClaimableTx = tx.isCctp || tx.isWithdrawal
+  const isClaimableTx = tx.isCctp || tx.isWithdrawal;
 
   // make sure relative time updates periodically
-  useInterval(() => setTxRelativeTime(dayjs(tx.createdAt).fromNow()), 10_000)
+  useInterval(() => setTxRelativeTime(dayjs(tx.createdAt).fromNow()), 10_000);
 
   const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
     erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId
-  })
+    chainId: tx.sourceChainId,
+  });
 
   const isError = useMemo(() => {
     if (tx.isCctp || !tx.isWithdrawal) {
@@ -151,43 +148,36 @@ export function TransactionsTableRow({
         tx.depositStatus === DepositStatus.L1_FAILURE ||
         tx.depositStatus === DepositStatus.EXPIRED
       ) {
-        return true
+        return true;
       }
 
       if (tx.depositStatus === DepositStatus.CREATION_FAILED) {
         // In case of a retryable ticket creation failure, mark only the token deposits as errors
-        return tx.assetType === AssetType.ETH
+        return tx.assetType === AssetType.ETH;
       }
     }
 
     // Withdrawal
-    return tx.status === 'Failure'
-  }, [tx])
+    return tx.status === 'Failure';
+  }, [tx]);
 
   const testId = useMemo(() => {
-    const type = isClaimableTx ? 'claimable' : 'deposit'
-    const id = `${type}-row-${tx.txId}-${tx.value}${tx.asset}`
+    const type = isClaimableTx ? 'claimable' : 'deposit';
+    const id = `${type}-row-${tx.txId}-${tx.value}${tx.asset}`;
 
     if (tx.value2) {
-      return `${id}-${tx.value2}${nativeCurrency.symbol}`
+      return `${id}-${tx.value2}${nativeCurrency.symbol}`;
     }
 
-    return id
-  }, [
-    isClaimableTx,
-    nativeCurrency.symbol,
-    tx.asset,
-    tx.txId,
-    tx.value,
-    tx.value2
-  ])
+    return id;
+  }, [isClaimableTx, nativeCurrency.symbol, tx.asset, tx.txId, tx.value, tx.value2]);
 
   return (
     <div
       data-testid={testId}
       className={twMerge(
         'relative grid h-[60px] grid-cols-[140px_140px_140px_140px_100px_170px_140px] items-center justify-between border-b border-white/30 text-xs text-white md:mx-4',
-        className
+        className,
       )}
     >
       <div className="pr-3 align-middle">{txRelativeTime}</div>
@@ -200,7 +190,7 @@ export function TransactionsTableRow({
             <TransactionsTableTokenImage tx={tx} />
             <span className="ml-2">
               {formatAmount(Number(tx.value), {
-                symbol: tokenSymbol
+                symbol: tokenSymbol,
               })}
             </span>
           </TransactionsTableExternalLink>
@@ -216,7 +206,7 @@ export function TransactionsTableRow({
               />
               <span className="ml-2">
                 {formatAmount(Number(tx.value2), {
-                  symbol: nativeCurrency.symbol
+                  symbol: nativeCurrency.symbol,
                 })}
               </span>
             </div>
@@ -237,9 +227,7 @@ export function TransactionsTableRow({
       </div>
       <div className="flex items-center space-x-2">
         <TransactionsTableExternalLink
-          href={`${getExplorerUrl(destinationChainId)}/address/${
-            tx.destination ?? tx.sender
-          }`}
+          href={`${getExplorerUrl(destinationChainId)}/address/${tx.destination ?? tx.sender}`}
         >
           <NetworkImage chainId={destinationChainId} className="h-5 w-5" />
 
@@ -269,5 +257,5 @@ export function TransactionsTableRow({
         </Button>
       </div>
     </div>
-  )
+  );
 }

@@ -1,1 +1,1 @@
-export const defaultErc20Decimals = 0
+export const defaultErc20Decimals = 0;

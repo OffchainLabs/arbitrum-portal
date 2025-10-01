@@ -1,33 +1,33 @@
-import { useCallback } from 'react'
-import { useAccount } from 'wagmi'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useCallback } from 'react';
+import { useAccount } from 'wagmi';
 
-import { GET_HELP_LINK } from '../../constants'
-import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal'
-import { useClaimCctp } from '../../state/cctpState'
+import { GET_HELP_LINK } from '../../constants';
+import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
+import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
+import { useRedeemTeleporter } from '../../hooks/useRedeemTeleporter';
+import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import {
   DepositStatus,
   MergedTransaction,
-  TeleporterMergedTransaction
-} from '../../state/app/state'
-import { trackEvent } from '../../util/AnalyticsUtils'
-import { isUserRejectedError } from '../../util/isUserRejectedError'
-import { getNetworkName } from '../../util/networks'
-import { errorToast } from '../common/atoms/Toast'
-import { Button } from '../common/Button'
-import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig'
-import { isDepositReadyToRedeem } from '../../state/app/utils'
-import { useRedeemRetryable } from '../../hooks/useRedeemRetryable'
-import { TransferCountdown } from '../common/TransferCountdown'
-import { getChainIdForRedeemingRetryable } from '../../util/RetryableUtils'
-import { isTeleportTx } from '../../types/Transactions'
-import { useRedeemTeleporter } from '../../hooks/useRedeemTeleporter'
-import { sanitizeTokenSymbol } from '../../util/TokenUtils'
-import { formatAmount } from '../../util/NumberUtils'
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar'
-import { Tooltip } from '../common/Tooltip'
-import { addressesEqual } from '../../util/AddressUtils'
-import { getTransactionType, isLifiTransfer } from './helpers'
+  TeleporterMergedTransaction,
+} from '../../state/app/state';
+import { isDepositReadyToRedeem } from '../../state/app/utils';
+import { useClaimCctp } from '../../state/cctpState';
+import { isTeleportTx } from '../../types/Transactions';
+import { addressesEqual } from '../../util/AddressUtils';
+import { trackEvent } from '../../util/AnalyticsUtils';
+import { formatAmount } from '../../util/NumberUtils';
+import { getChainIdForRedeemingRetryable } from '../../util/RetryableUtils';
+import { sanitizeTokenSymbol } from '../../util/TokenUtils';
+import { isUserRejectedError } from '../../util/isUserRejectedError';
+import { getNetworkName } from '../../util/networks';
+import { Button } from '../common/Button';
+import { Tooltip } from '../common/Tooltip';
+import { TransferCountdown } from '../common/TransferCountdown';
+import { errorToast } from '../common/atoms/Toast';
+import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import { getTransactionType, isLifiTransfer } from './helpers';
 
 function ActionRowConnectButton() {
   return (
@@ -42,68 +42,63 @@ function ActionRowConnectButton() {
         </Button>
       )}
     </ConnectButton.Custom>
-  )
+  );
 }
 
 export function TransactionsTableRowAction({
   tx,
   isError,
-  type
+  type,
 }: {
-  tx: MergedTransaction | TeleporterMergedTransaction
-  isError: boolean
-  type: 'deposits' | 'withdrawals'
+  tx: MergedTransaction | TeleporterMergedTransaction;
+  isError: boolean;
+  type: 'deposits' | 'withdrawals';
 }) {
-  const { address: connectedAddress, chain, isConnected } = useAccount()
-  const { switchChainAsync } = useSwitchNetworkWithConfig()
-  const networkName = getNetworkName(chain?.id ?? 0)
-  const searchedAddress = useTransactionHistoryAddressStore(
-    state => state.sanitizedAddress
-  )
+  const { address: connectedAddress, chain, isConnected } = useAccount();
+  const { switchChainAsync } = useSwitchNetworkWithConfig();
+  const networkName = getNetworkName(chain?.id ?? 0);
+  const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
   const isViewingAnotherAddress =
-    connectedAddress &&
-    searchedAddress &&
-    !addressesEqual(connectedAddress, searchedAddress)
+    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
 
   const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
     erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId
-  })
+    chainId: tx.sourceChainId,
+  });
 
-  const { claim, isClaiming } = useClaimWithdrawal(tx)
-  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx)
-  const { redeem, isRedeeming: isRetryableRedeeming } = useRedeemRetryable(
+  const { claim, isClaiming } = useClaimWithdrawal(tx);
+  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
+  const { redeem, isRedeeming: isRetryableRedeeming } = useRedeemRetryable(tx, searchedAddress);
+  const { redeem: teleporterRedeem, isRedeeming: isTeleporterRedeeming } = useRedeemTeleporter(
     tx,
-    searchedAddress
-  )
-  const { redeem: teleporterRedeem, isRedeeming: isTeleporterRedeeming } =
-    useRedeemTeleporter(tx, searchedAddress)
+    searchedAddress,
+  );
 
-  const isRedeeming = isRetryableRedeeming || isTeleporterRedeeming
+  const isRedeeming = isRetryableRedeeming || isTeleporterRedeeming;
 
-  const chainIdForRedeemingRetryable = getChainIdForRedeemingRetryable(tx)
+  const chainIdForRedeemingRetryable = getChainIdForRedeemingRetryable(tx);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
     ? chain?.id === chainIdForRedeemingRetryable // for redemption actions, we can have different chain id
-    : chain?.id === tx.destinationChainId // for claims, we need to be on the destination chain
+    : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
 
   const handleRedeemRetryable = useCallback(async () => {
     try {
       if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: chainIdForRedeemingRetryable })
+        await switchChainAsync({ chainId: chainIdForRedeemingRetryable });
       }
 
       if (isTeleportTx(tx)) {
-        await teleporterRedeem()
+        await teleporterRedeem();
       } else {
-        await redeem()
+        await redeem();
       }
     } catch (error: any) {
       if (isUserRejectedError(error)) {
-        return
+        return;
       }
-      errorToast(`Can't retry the deposit: ${error?.message ?? error}`)
+      errorToast(`Can't retry the deposit: ${error?.message ?? error}`);
     }
   }, [
     tx,
@@ -111,53 +106,44 @@ export function TransactionsTableRowAction({
     chainIdForRedeemingRetryable,
     redeem,
     switchChainAsync,
-    teleporterRedeem
-  ])
+    teleporterRedeem,
+  ]);
 
   const handleClaim = useCallback(async () => {
     try {
       if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: tx.destinationChainId })
+        await switchChainAsync({ chainId: tx.destinationChainId });
       }
 
       if (tx.isCctp) {
-        return await claimCctp()
+        return await claimCctp();
       } else {
-        return await claim()
+        return await claim();
       }
     } catch (error: any) {
       if (isUserRejectedError(error)) {
-        return
+        return;
       }
 
       errorToast(
-        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${
-          error?.message ?? error
-        }`
-      )
+        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${error?.message ?? error}`,
+      );
     }
-  }, [
-    claim,
-    claimCctp,
-    isConnectedToCorrectNetworkForAction,
-    switchChainAsync,
-    tx,
-    type
-  ])
+  }, [claim, claimCctp, isConnectedToCorrectNetworkForAction, switchChainAsync, tx, type]);
 
   const getHelpOnError = () => {
-    window.open(GET_HELP_LINK, '_blank')
+    window.open(GET_HELP_LINK, '_blank');
 
     // track the button click
     trackEvent('Tx Error: Get Help Click', {
       network: networkName,
-      transactionType: getTransactionType(tx)
-    })
-  }
+      transactionType: getTransactionType(tx),
+    });
+  };
 
   if (isDepositReadyToRedeem(tx)) {
     if (!isConnected) {
-      return <ActionRowConnectButton />
+      return <ActionRowConnectButton />;
     }
 
     // Failed retryable
@@ -172,7 +158,7 @@ export function TransactionsTableRowAction({
       >
         Retry
       </Button>
-    )
+    );
   }
 
   if (
@@ -186,20 +172,20 @@ export function TransactionsTableRowAction({
         <span>Time left:</span>
         <TransferCountdown tx={tx} />
       </div>
-    )
+    );
   }
 
   if (tx.status === 'Confirmed') {
     if (tx.isCctp && tx.resolvedAt) {
-      return null
+      return null;
     }
 
     if (!isConnected) {
-      return <ActionRowConnectButton />
+      return <ActionRowConnectButton />;
     }
 
     if (isLifiTransfer(tx)) {
-      return null
+      return null;
     }
 
     return isClaiming || isClaimingCctp ? (
@@ -208,14 +194,14 @@ export function TransactionsTableRowAction({
       <Tooltip
         content={
           <span>{`Funds will arrive at ${searchedAddress} on ${getNetworkName(
-            tx.destinationChainId
+            tx.destinationChainId,
           )} once the claim transaction succeeds.`}</span>
         }
         show={isViewingAnotherAddress}
       >
         <Button
           aria-label={`Claim ${formatAmount(Number(tx.value), {
-            symbol: tokenSymbol
+            symbol: tokenSymbol,
           })}`}
           variant="primary"
           className="w-14 rounded bg-green-400 p-2 text-xs text-black"
@@ -224,20 +210,16 @@ export function TransactionsTableRowAction({
           Claim
         </Button>
       </Tooltip>
-    )
+    );
   }
 
   if (isError) {
     return (
-      <Button
-        variant="secondary"
-        className="w-14 border-white/30 text-xs"
-        onClick={getHelpOnError}
-      >
+      <Button variant="secondary" className="w-14 border-white/30 text-xs" onClick={getHelpOnError}>
         Get help
       </Button>
-    )
+    );
   }
 
-  return null
+  return null;
 }

@@ -1,35 +1,32 @@
-import Image from 'next/image'
-import { ExternalLink } from './ExternalLink'
-import { PORTAL_API_ENDPOINT } from '../../constants'
+import Image from 'next/image';
+
+import { PORTAL_API_ENDPOINT } from '../../constants';
+import { ExternalLink } from './ExternalLink';
 
 export type PortalProject = {
-  chains: string[]
-  description: string
-  id: string
-  images: { logoUrl: string; bannerUrl: string }
-  subcategories: { id: string; title: string }[]
-  title: string
-  url: string
-}
+  chains: string[];
+  description: string;
+  id: string;
+  images: { logoUrl: string; bannerUrl: string };
+  subcategories: { id: string; title: string }[];
+  title: string;
+  url: string;
+};
 
 export const Project = ({
   project,
   onClick,
-  isTestnetMode
+  isTestnetMode,
 }: {
-  project: PortalProject
-  onClick?: () => void
-  isTestnetMode: boolean
+  project: PortalProject;
+  onClick?: () => void;
+  isTestnetMode: boolean;
 }) => {
   return (
     <ExternalLink
       className="relative flex h-full min-h-[150px] w-full flex-col gap-2 overflow-hidden rounded-md border border-white/30 bg-dark p-4 hover:bg-dark-hover hover:opacity-100"
       aria-label={`${project.title}`}
-      href={
-        isTestnetMode
-          ? PORTAL_API_ENDPOINT
-          : `${PORTAL_API_ENDPOINT}?project=${project.id}`
-      }
+      href={isTestnetMode ? PORTAL_API_ENDPOINT : `${PORTAL_API_ENDPOINT}?project=${project.id}`}
       onClick={onClick}
     >
       {/* Normal project contents */}
@@ -56,12 +53,10 @@ export const Project = ({
             <h5 className="relative flex items-center gap-2 text-left text-lg font-semibold leading-7">
               {project.title}
             </h5>
-            <p className="mb-2 line-clamp-3 text-sm opacity-70">
-              {project.description}
-            </p>
+            <p className="mb-2 line-clamp-3 text-sm opacity-70">{project.description}</p>
 
             <p className="flex flex-wrap justify-start gap-2 text-center leading-6 text-gray-700">
-              {project.subcategories.slice(0, 2).map(subcategory => (
+              {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={subcategory.id}
                   className="inline-flex items-start justify-start gap-2 break-words rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60"
@@ -74,5 +69,5 @@ export const Project = ({
         </div>
       </div>
     </ExternalLink>
-  )
-}
+  );
+};

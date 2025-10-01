@@ -1,33 +1,33 @@
 'use client';
 
-import { usePostHog } from 'posthog-js/react';
 import { ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { twMerge } from 'tailwind-merge';
 import Image from 'next/image';
-import { SidePanel } from '@/components/SidePanel';
-import { ExternalLink } from '@/components/ExternalLink';
-import { Card } from '@/components/Card';
-import { useArbQueryParams } from '@/hooks/useArbQueryParams';
-import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
-import IconLink from '@/public/images/link.svg';
+import { usePostHog } from 'posthog-js/react';
+import { twMerge } from 'tailwind-merge';
+
+import { MISSIONS } from '@/common/missions';
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
 import { EntityType } from '@/common/types';
-import { LinksWidget } from '@/components/ProjectPanel/LinksWidget';
-import { MISSIONS } from '@/common/missions';
+import { Card } from '@/components/Card';
+import { ExternalLink } from '@/components/ExternalLink';
 import { MissionCard } from '@/components/Missions/MissionCard';
-import { ProjectsOnOrbitChain } from './ProjectsOnOrbitChain';
-import { OrbitTeamMembers } from './OrbitTeamMembers';
-import { OrbitChainDetailsTable } from './OrbitChainDetailsTable';
 import { OrbitStatusBadge } from '@/components/OrbitStatusBadge';
 import { OrbitTvlBadge } from '@/components/OrbitTvlBadge';
 import { DisclaimerWidget } from '@/components/ProjectPanel/DisclaimerWidget';
+import { LinksWidget } from '@/components/ProjectPanel/LinksWidget';
+import { SidePanel } from '@/components/SidePanel';
+import { useArbQueryParams } from '@/hooks/useArbQueryParams';
+import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
+import IconLink from '@/public/images/link.svg';
+
+import { OrbitChainDetailsTable } from './OrbitChainDetailsTable';
+import { OrbitTeamMembers } from './OrbitTeamMembers';
+import { ProjectsOnOrbitChain } from './ProjectsOnOrbitChain';
 
 export const OrbitChainPanel = () => {
   const posthog = usePostHog();
   const [{ orbitChain: orbitChainSlug }] = useArbQueryParams();
-  const { closeEntitySidePanel: closeOrbitSidePanel } = useEntitySidePanel(
-    EntityType.OrbitChain,
-  );
+  const { closeEntitySidePanel: closeOrbitSidePanel } = useEntitySidePanel(EntityType.OrbitChain);
   const orbitChain = getOrbitChainDetailsById(orbitChainSlug);
 
   // if no orbitChain corresponds to the one passed in query params then no need of this dialog
@@ -114,9 +114,7 @@ export const OrbitChainPanel = () => {
           <div className="flex flex-col gap-4 px-6 pb-6">
             {/* Title */}
             <div className="z-20 flex flex-nowrap items-center justify-between gap-4">
-              <div className="text-xl font-bold lg:text-3xl">
-                {orbitChain.title}
-              </div>
+              <div className="text-xl font-bold lg:text-3xl">{orbitChain.title}</div>
             </div>
             <div className="flex flex-wrap justify-start gap-3 text-center leading-6 text-gray-700">
               <OrbitStatusBadge status={orbitChain.chain.status} />
@@ -128,34 +126,25 @@ export const OrbitChainPanel = () => {
         </Card>
 
         <div className="flex flex-col flex-nowrap gap-4 lg:flex-row">
-          <OrbitTeamMembers
-            orbitChain={orbitChain}
-            className="w-full shrink-0 lg:w-[250px]"
-          />
+          <OrbitTeamMembers orbitChain={orbitChain} className="w-full shrink-0 lg:w-[250px]" />
 
           {/* Status and Chain Type widget */}
           <div className="flex w-full flex-col justify-between gap-4">
             <Card className="flex h-full items-center p-6">
               <div className="flex h-full w-1/2 flex-col justify-center">
                 <div className="text-lg">Status</div>
-                <div className="text-sm opacity-50">
-                  {orbitChain.chain.status || '-'}
-                </div>
+                <div className="text-sm opacity-50">{orbitChain.chain.status || '-'}</div>
               </div>
 
               <div className="flex h-full w-1/2 flex-col justify-center border-l border-white/20 pl-8">
                 <div className="text-lg">Chain Type</div>
-                <div className="text-sm opacity-50">
-                  {orbitChain.chain.type || '-'}
-                </div>
+                <div className="text-sm opacity-50">{orbitChain.chain.type || '-'}</div>
               </div>
             </Card>
             {orbitChain.chain.bridgeUrl && (
               <Card
                 className="group relative flex h-[60px] items-center justify-between p-6 text-lg hover:opacity-80"
-                style={
-                  primaryColor ? { backgroundColor: `${primaryColor}40` } : {}
-                }
+                style={primaryColor ? { backgroundColor: `${primaryColor}40` } : {}}
                 cardType="externalLink"
                 href={orbitChain.chain.bridgeUrl}
               >
@@ -170,15 +159,10 @@ export const OrbitChainPanel = () => {
 
         {relatedMissions.length > 0 ? (
           <div className="col-span-4 row-span-2 my-8 flex flex-col gap-4">
-            <div className="text-xl">
-              Ongoing Quest{relatedMissions.length > 1 ? 's' : ''}
-            </div>
+            <div className="text-xl">Ongoing Quest{relatedMissions.length > 1 ? 's' : ''}</div>
             <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2">
               {relatedMissions.map((mission, index) => (
-                <MissionCard
-                  key={`oribitChain-mission-${index}`}
-                  mission={mission}
-                />
+                <MissionCard key={`oribitChain-mission-${index}`} mission={mission} />
               ))}
             </div>
           </div>

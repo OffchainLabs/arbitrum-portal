@@ -1,60 +1,57 @@
-import { BadgeType, Route } from './Route'
-import {
-  getContextFromRoute,
-  RouteType,
-  useRouteStore
-} from '../hooks/useRouteStore'
-import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi'
-import { useCallback, useMemo } from 'react'
-import { shallow } from 'zustand/shallow'
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types'
-import { utils } from 'ethers'
+import { utils } from 'ethers';
+import { useCallback, useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
+
+import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
+import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { RouteType, getContextFromRoute, useRouteStore } from '../hooks/useRouteStore';
+import { BadgeType, Route } from './Route';
 
 // Simplified LifiRoute component that handles only one route
 export function LifiRoute({
   type,
   route,
   tag,
-  overrideToken
+  overrideToken,
 }: {
-  type: 'lifi' | 'lifi-fastest' | 'lifi-cheapest'
-  route: LifiCrosschainTransfersRoute
-  tag?: BadgeType | BadgeType[]
-  overrideToken?: ERC20BridgeToken | undefined
+  type: 'lifi' | 'lifi-fastest' | 'lifi-cheapest';
+  route: LifiCrosschainTransfersRoute;
+  tag?: BadgeType | BadgeType[];
+  overrideToken?: ERC20BridgeToken | undefined;
 }) {
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    state => ({
+    (state) => ({
       selectedRoute: state.selectedRoute,
-      setSelectedRoute: state.setSelectedRoute
+      setSelectedRoute: state.setSelectedRoute,
     }),
-    shallow
-  )
-  const isSelected = selectedRoute === type
+    shallow,
+  );
+  const isSelected = selectedRoute === type;
 
   const setSelectedRouteWithContext = useCallback(
     (routeType: RouteType) => {
-      setSelectedRoute(routeType, getContextFromRoute(route))
+      setSelectedRoute(routeType, getContextFromRoute(route));
     },
-    [route, setSelectedRoute]
-  )
+    [route, setSelectedRoute],
+  );
 
   const bridgeFee = useMemo(
     () => ({
       fee: route.fee.amount,
-      token: route.fee.token
+      token: route.fee.token,
     }),
-    [route.fee.amount, route.fee.token]
-  )
+    [route.fee.amount, route.fee.token],
+  );
 
   const gasCost = useMemo(
     () => [
       {
         gasCost: route.gas.amount,
-        gasToken: route.gas.token
-      }
+        gasToken: route.gas.token,
+      },
     ],
-    [route.gas.amount, route.gas.token]
-  )
+    [route.gas.amount, route.gas.token],
+  );
 
   return (
     <Route
@@ -62,10 +59,7 @@ export function LifiRoute({
       bridge={route.protocolData.tool.name}
       bridgeIconURI={route.protocolData.tool.logoURI}
       durationMs={route.durationMs}
-      amountReceived={utils.formatUnits(
-        route.toAmount.amount,
-        route.toAmount.token.decimals
-      )}
+      amountReceived={utils.formatUnits(route.toAmount.amount, route.toAmount.token.decimals)}
       overrideToken={overrideToken}
       isLoadingGasEstimate={false}
       gasCost={gasCost}
@@ -74,5 +68,5 @@ export function LifiRoute({
       onSelectedRouteClick={setSelectedRouteWithContext}
       tag={tag}
     />
-  )
+  );
 }

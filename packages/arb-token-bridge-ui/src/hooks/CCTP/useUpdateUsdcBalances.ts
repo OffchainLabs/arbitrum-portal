@@ -1,52 +1,49 @@
-import { useCallback } from 'react'
-import { Address } from 'viem'
-import useSWRImmutable from 'swr/immutable'
+import { useCallback } from 'react';
+import useSWRImmutable from 'swr/immutable';
+import { Address } from 'viem';
 
-import { CommonAddress } from '../../util/CommonAddressUtils'
-import { getL2ERC20Address } from '../../util/TokenUtils'
-import { useNetworks } from '../useNetworks'
-import { useNetworksRelationship } from '../useNetworksRelationship'
-import { isNetwork } from '../../util/networks'
-import { useBalances } from '../useBalances'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import { getL2ERC20Address } from '../../util/TokenUtils';
+import { isNetwork } from '../../util/networks';
+import { useBalances } from '../useBalances';
+import { useNetworks } from '../useNetworks';
+import { useNetworksRelationship } from '../useNetworksRelationship';
 
 export async function getChildUsdcAddress({
   parentChainId,
-  childChainId
+  childChainId,
 }: {
-  parentChainId: number
-  childChainId: number
+  parentChainId: number;
+  childChainId: number;
 }) {
-  const {
-    isEthereumMainnet: isParentEthereumMainnet,
-    isSepolia: isParentSepolia
-  } = isNetwork(parentChainId)
-  const {
-    isArbitrumOne: isChildArbitrumOne,
-    isArbitrumSepolia: isChildArbitrumSepolia
-  } = isNetwork(childChainId)
+  const { isEthereumMainnet: isParentEthereumMainnet, isSepolia: isParentSepolia } =
+    isNetwork(parentChainId);
+  const { isArbitrumOne: isChildArbitrumOne, isArbitrumSepolia: isChildArbitrumSepolia } =
+    isNetwork(childChainId);
 
   if (isParentEthereumMainnet && isChildArbitrumOne) {
-    return CommonAddress.ArbitrumOne.USDC
+    return CommonAddress.ArbitrumOne.USDC;
   }
 
   if (isParentSepolia && isChildArbitrumSepolia) {
-    return CommonAddress.ArbitrumSepolia.USDC
+    return CommonAddress.ArbitrumSepolia.USDC;
   }
 
-  const parentUsdcAddress = getParentUsdcAddress(parentChainId)
-  const parentProvider = getProviderForChainId(parentChainId)
-  const childProvider = getProviderForChainId(childChainId)
+  const parentUsdcAddress = getParentUsdcAddress(parentChainId);
+  const parentProvider = getProviderForChainId(parentChainId);
+  const childProvider = getProviderForChainId(childChainId);
 
   if (!parentUsdcAddress) {
-    return
+    return;
   }
 
   return getL2ERC20Address({
     erc20L1Address: parentUsdcAddress,
     l1Provider: parentProvider,
-    l2Provider: childProvider
-  })
+    l2Provider: childProvider,
+  });
 }
 
 export function getParentUsdcAddress(parentChainId: number) {
@@ -54,41 +51,37 @@ export function getParentUsdcAddress(parentChainId: number) {
     isEthereumMainnet: isParentEthereumMainnet,
     isSepolia: isParentSepolia,
     isArbitrumOne: isParentArbitrumOne,
-    isArbitrumSepolia: isParentArbitrumSepolia
-  } = isNetwork(parentChainId)
+    isArbitrumSepolia: isParentArbitrumSepolia,
+  } = isNetwork(parentChainId);
 
   if (isParentEthereumMainnet) {
-    return CommonAddress.Ethereum.USDC
+    return CommonAddress.Ethereum.USDC;
   }
 
   if (isParentSepolia) {
-    return CommonAddress.Sepolia.USDC
+    return CommonAddress.Sepolia.USDC;
   }
 
   if (isParentArbitrumOne) {
-    return CommonAddress.ArbitrumOne.USDC
+    return CommonAddress.ArbitrumOne.USDC;
   }
 
   if (isParentArbitrumSepolia) {
-    return CommonAddress.ArbitrumSepolia.USDC
+    return CommonAddress.ArbitrumSepolia.USDC;
   }
 }
 
-export function useUpdateUsdcBalances({
-  walletAddress
-}: {
-  walletAddress: Address | undefined
-}) {
-  const [networks] = useNetworks()
-  const { parentChain, childChain } = useNetworksRelationship(networks)
+export function useUpdateUsdcBalances({ walletAddress }: { walletAddress: Address | undefined }) {
+  const [networks] = useNetworks();
+  const { parentChain, childChain } = useNetworksRelationship(networks);
 
   const {
     updateErc20ParentBalances: updateErc20ParentBalance,
-    updateErc20ChildBalances: updateErc20ChildBalance
+    updateErc20ChildBalances: updateErc20ChildBalance,
   } = useBalances({
     parentWalletAddress: walletAddress,
-    childWalletAddress: walletAddress
-  })
+    childWalletAddress: walletAddress,
+  });
 
   // we don't have native USDC addresses for Orbit chains, we need to fetch it
   const { data: childUsdcAddress, isLoading } = useSWRImmutable(
@@ -96,49 +89,48 @@ export function useUpdateUsdcBalances({
     ([parentChainId, childChainId]) =>
       getChildUsdcAddress({
         parentChainId,
-        childChainId
-      })
-  )
+        childChainId,
+      }),
+  );
 
   const updateUsdcBalances = useCallback(() => {
-    const parentUsdcAddress = getParentUsdcAddress(parentChain.id)
+    const parentUsdcAddress = getParentUsdcAddress(parentChain.id);
 
-    const {
-      isEthereumMainnet: isParentEthereumMainnet,
-      isSepolia: isParentSepolia
-    } = isNetwork(parentChain.id)
+    const { isEthereumMainnet: isParentEthereumMainnet, isSepolia: isParentSepolia } = isNetwork(
+      parentChain.id,
+    );
 
     // USDC is not native for the selected networks, do nothing
     if (!parentUsdcAddress) {
-      return
+      return;
     }
 
     if (isLoading) {
-      return
+      return;
     }
 
-    updateErc20ParentBalance([parentUsdcAddress.toLowerCase()])
+    updateErc20ParentBalance([parentUsdcAddress.toLowerCase()]);
 
     if (childUsdcAddress) {
-      updateErc20ChildBalance([childUsdcAddress.toLowerCase()])
+      updateErc20ChildBalance([childUsdcAddress.toLowerCase()]);
     }
 
     if (isParentEthereumMainnet) {
-      updateErc20ChildBalance([CommonAddress.ArbitrumOne['USDC.e']])
+      updateErc20ChildBalance([CommonAddress.ArbitrumOne['USDC.e']]);
     }
 
     if (isParentSepolia) {
-      updateErc20ChildBalance([CommonAddress.ArbitrumSepolia['USDC.e']])
+      updateErc20ChildBalance([CommonAddress.ArbitrumSepolia['USDC.e']]);
     }
   }, [
     isLoading,
     childUsdcAddress,
     parentChain.id,
     updateErc20ChildBalance,
-    updateErc20ParentBalance
-  ])
+    updateErc20ParentBalance,
+  ]);
 
   return {
-    updateUsdcBalances
-  }
+    updateUsdcBalances,
+  };
 }

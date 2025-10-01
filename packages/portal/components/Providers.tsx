@@ -1,15 +1,13 @@
 'use client';
-import { Suspense } from 'react';
-import posthog from 'posthog-js';
-import { PropsWithChildren } from 'react';
+
 import NextAdapterApp from 'next-query-params/app';
+import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
+import { Suspense } from 'react';
+import { PropsWithChildren } from 'react';
 import { QueryParamProvider } from 'use-query-params';
 
-if (
-  typeof window !== 'undefined' &&
-  typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string'
-) {
+if (typeof window !== 'undefined' && typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
     loaded: (posthog) => {

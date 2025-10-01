@@ -1,28 +1,26 @@
-import { useMemo, useEffect } from 'react'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams'
-import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer'
-import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer'
-import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { useAccount } from 'wagmi'
-import { constants } from 'ethers'
-import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils'
-import { useAmountBigNumber } from '../hooks/useAmountBigNumber'
-import {
-  useLifiSettingsStore,
-  defaultSlippage
-} from '../hooks/useLifiSettingsStore'
-import { isNetwork } from '../../../util/networks'
-import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag'
-import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils'
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types'
-import { useRouteStore, RouteType, RouteData } from './useRouteStore'
-import { shallow } from 'zustand/shallow'
-import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute'
-import { Address } from 'viem'
-import { Order } from '../../../app/api/crosschain-transfers/lifi'
+import { constants } from 'ethers';
+import { useEffect, useMemo } from 'react';
+import { Address } from 'viem';
+import { useAccount } from 'wagmi';
+import { shallow } from 'zustand/shallow';
+
+import { Order } from '../../../app/api/crosschain-transfers/lifi';
+import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
+import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
+import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
+import { isNetwork } from '../../../util/networks';
+import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
+import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
+import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
+import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
+import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
+import { RouteData, RouteType, useRouteStore } from './useRouteStore';
 
 /**
  * Determines the best route based on priority order.
@@ -37,40 +35,38 @@ import { Order } from '../../../app/api/crosschain-transfers/lifi'
  * @param routes - Array of successfully fetched routes
  * @returns The best route type or undefined if no routes available
  */
-function getBestRouteForDefaultSelection(
-  routes: RouteData[]
-): RouteType | undefined {
+function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undefined {
   // 1. OFT V2 (highest priority)
-  const oftV2Route = routes.find(route => route.type === 'oftV2')
-  if (oftV2Route) return 'oftV2'
+  const oftV2Route = routes.find((route) => route.type === 'oftV2');
+  if (oftV2Route) return 'oftV2';
 
   // 2. CCTP (second priority)
-  const cctpRoute = routes.find(route => route.type === 'cctp')
-  if (cctpRoute) return 'cctp'
+  const cctpRoute = routes.find((route) => route.type === 'cctp');
+  if (cctpRoute) return 'cctp';
 
   // 3. LiFi best deal (third priority)
-  const lifiCheapestRoute = routes.find(route => route.type === 'lifi-cheapest')
-  if (lifiCheapestRoute) return 'lifi-cheapest'
+  const lifiCheapestRoute = routes.find((route) => route.type === 'lifi-cheapest');
+  if (lifiCheapestRoute) return 'lifi-cheapest';
 
-  const lifiFastestRoute = routes.find(route => route.type === 'lifi-fastest')
-  if (lifiFastestRoute) return 'lifi-fastest'
+  const lifiFastestRoute = routes.find((route) => route.type === 'lifi-fastest');
+  if (lifiFastestRoute) return 'lifi-fastest';
 
-  const lifiRoute = routes.find(route => route.type === 'lifi')
-  if (lifiRoute) return 'lifi'
+  const lifiRoute = routes.find((route) => route.type === 'lifi');
+  if (lifiRoute) return 'lifi';
 
   // 4. First available route (fallback)
-  return routes[0]?.type
+  return routes[0]?.type;
 }
 
 interface GetEligibleRoutesParams {
-  isOftV2Transfer: boolean
-  isNativeUsdcTransfer: boolean
-  amount: string
-  isDepositMode: boolean
-  sourceChainId: number
-  destinationChainId: number
-  selectedToken: ERC20BridgeToken | null
-  isArbitrumCanonicalTransfer: boolean
+  isOftV2Transfer: boolean;
+  isNativeUsdcTransfer: boolean;
+  amount: string;
+  isDepositMode: boolean;
+  sourceChainId: number;
+  destinationChainId: number;
+  selectedToken: ERC20BridgeToken | null;
+  isArbitrumCanonicalTransfer: boolean;
 }
 
 function getEligibleRoutes({
@@ -81,83 +77,81 @@ function getEligibleRoutes({
   sourceChainId,
   destinationChainId,
   selectedToken,
-  isArbitrumCanonicalTransfer
+  isArbitrumCanonicalTransfer,
 }: GetEligibleRoutesParams): RouteType[] {
-  const { isTestnet } = isNetwork(sourceChainId)
-  const isLifiEnabled = isLifiEnabledUtil() && !isTestnet
-  const eligibleRouteTypes: RouteType[] = []
+  const { isTestnet } = isNetwork(sourceChainId);
+  const isLifiEnabled = isLifiEnabledUtil() && !isTestnet;
+  const eligibleRouteTypes: RouteType[] = [];
 
   if (Number(amount) === 0) {
-    return []
+    return [];
   }
 
   if (isOftV2Transfer) {
-    eligibleRouteTypes.push('oftV2')
-    return eligibleRouteTypes
+    eligibleRouteTypes.push('oftV2');
+    return eligibleRouteTypes;
   }
 
   if (isNativeUsdcTransfer) {
-    eligibleRouteTypes.push('cctp')
+    eligibleRouteTypes.push('cctp');
 
     if (isLifiEnabled) {
-      eligibleRouteTypes.push('lifi')
+      eligibleRouteTypes.push('lifi');
     }
 
     if (isDepositMode) {
-      eligibleRouteTypes.push('arbitrum')
+      eligibleRouteTypes.push('arbitrum');
     }
 
-    return eligibleRouteTypes
+    return eligibleRouteTypes;
   }
 
   const isValidLifiRoute =
     isLifiEnabled &&
     isValidLifiTransfer({
-      fromToken: isDepositMode
-        ? selectedToken?.address
-        : selectedToken?.l2Address,
+      fromToken: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
       sourceChainId: sourceChainId,
-      destinationChainId: destinationChainId
-    })
+      destinationChainId: destinationChainId,
+    });
 
   if (isValidLifiRoute) {
-    eligibleRouteTypes.push('lifi')
+    eligibleRouteTypes.push('lifi');
   }
 
   if (isArbitrumCanonicalTransfer) {
-    eligibleRouteTypes.push('arbitrum')
+    eligibleRouteTypes.push('arbitrum');
   }
 
-  return eligibleRouteTypes
+  return eligibleRouteTypes;
 }
 
 export function useRoutesUpdater() {
-  const [networks] = useNetworks()
-  const { isDepositMode } = useNetworksRelationship(networks)
-  const [{ amount }] = useArbQueryParams()
-  const isNativeUsdcTransfer = useIsCctpTransfer()
-  const isOftV2Transfer = useIsOftV2Transfer()
-  const [selectedToken] = useSelectedToken()
-  const { address } = useAccount()
-  const [{ destinationAddress }] = useArbQueryParams()
-  const amountBN = useAmountBigNumber()
+  const [networks] = useNetworks();
+  const { isDepositMode } = useNetworksRelationship(networks);
+  const [{ amount }] = useArbQueryParams();
+  const isNativeUsdcTransfer = useIsCctpTransfer();
+  const isOftV2Transfer = useIsOftV2Transfer();
+  const [selectedToken] = useSelectedToken();
+  const { address } = useAccount();
+  const [{ destinationAddress }] = useArbQueryParams();
+  const amountBN = useAmountBigNumber();
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
-    state => ({
+    (state) => ({
       disabledBridges: state.disabledBridges,
       disabledExchanges: state.disabledExchanges,
-      slippage: state.slippage
+      slippage: state.slippage,
     }),
-    shallow
-  )
+    shallow,
+  );
 
-  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer()
+  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
   const { setRouteState, userSelectedRoute } = useRouteStore(
-    state => ({
+    (state) => ({
       setRouteState: state.setRouteState,
-      userSelectedRoute: state.userSelectedRoute
+      userSelectedRoute: state.userSelectedRoute,
     }),
-    shallow
-  )
+    shallow,
+  );
 
   const eligibleRouteTypes = useMemo(
     () =>
@@ -169,7 +163,7 @@ export function useRoutesUpdater() {
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
         selectedToken,
-        isArbitrumCanonicalTransfer
+        isArbitrumCanonicalTransfer,
       }),
     [
       isOftV2Transfer,
@@ -179,23 +173,19 @@ export function useRoutesUpdater() {
       networks.sourceChain.id,
       networks.destinationChain.id,
       selectedToken,
-      isArbitrumCanonicalTransfer
-    ]
-  )
+      isArbitrumCanonicalTransfer,
+    ],
+  );
 
   const overrideToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: networks.sourceChain.id,
         fromToken: selectedToken?.address,
-        destinationChainId: networks.destinationChain.id
+        destinationChainId: networks.destinationChain.id,
       }),
-    [
-      selectedToken?.address,
-      networks.sourceChain.id,
-      networks.destinationChain.id
-    ]
-  )
+    [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
+  );
 
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
@@ -208,26 +198,26 @@ export function useRoutesUpdater() {
     toToken: overrideToken.destination?.address || constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
-    slippage
-  }
+    slippage,
+  };
 
   const {
     data: lifiRoutes,
     isLoading: isLifiLoading,
-    error: lifiError
-  } = useLifiCrossTransfersRoute(lifiParameters)
+    error: lifiError,
+  } = useLifiCrossTransfersRoute(lifiParameters);
 
   const routeData = useMemo(() => {
-    const routes: RouteData[] = []
+    const routes: RouteData[] = [];
 
     // OFT V2 route data
     if (eligibleRouteTypes.includes('oftV2')) {
       routes.push({
         type: 'oftV2',
         data: {
-          amountReceived: amount
-        }
-      })
+          amountReceived: amount,
+        },
+      });
     }
 
     // CCTP route data
@@ -235,50 +225,49 @@ export function useRoutesUpdater() {
       routes.push({
         type: 'cctp',
         data: {
-          amountReceived: amount
-        }
-      })
+          amountReceived: amount,
+        },
+      });
     }
 
     // LiFi route data - handle fastest/cheapest consolidation
     if (eligibleRouteTypes.includes('lifi') && lifiRoutes) {
-      const cheapestRoute = lifiRoutes.find(route =>
-        route.protocolData.orders.find(order => order === Order.Cheapest)
-      )
-      const fastestRoute = lifiRoutes.find(route =>
-        route.protocolData.orders.find(order => order === Order.Fastest)
-      )
+      const cheapestRoute = lifiRoutes.find((route) =>
+        route.protocolData.orders.find((order) => order === Order.Cheapest),
+      );
+      const fastestRoute = lifiRoutes.find((route) =>
+        route.protocolData.orders.find((order) => order === Order.Fastest),
+      );
 
       // Check if fastest and cheapest are the same route
-      const isSameRoute =
-        cheapestRoute && fastestRoute && cheapestRoute === fastestRoute
+      const isSameRoute = cheapestRoute && fastestRoute && cheapestRoute === fastestRoute;
 
       if (isSameRoute) {
         // Single route with both fastest and cheapest tags
         routes.push({
           type: 'lifi',
           data: {
-            route: cheapestRoute
-          }
-        })
+            route: cheapestRoute,
+          },
+        });
       } else {
         // Separate routes for fastest and cheapest
         if (cheapestRoute) {
           routes.push({
             type: 'lifi-cheapest',
             data: {
-              route: cheapestRoute
-            }
-          })
+              route: cheapestRoute,
+            },
+          });
         }
 
         if (fastestRoute) {
           routes.push({
             type: 'lifi-fastest',
             data: {
-              route: fastestRoute
-            }
-          })
+              route: fastestRoute,
+            },
+          });
         }
       }
     }
@@ -288,13 +277,13 @@ export function useRoutesUpdater() {
       routes.push({
         type: 'arbitrum',
         data: {
-          amountReceived: amount
-        }
-      })
+          amountReceived: amount,
+        },
+      });
     }
 
-    return routes
-  }, [eligibleRouteTypes, lifiRoutes, amount])
+    return routes;
+  }, [eligibleRouteTypes, lifiRoutes, amount]);
 
   const flags = useMemo(
     () => ({
@@ -312,7 +301,7 @@ export function useRoutesUpdater() {
         // Check if user has modified default settings
         slippage !== defaultSlippage.toString() ||
         disabledExchanges.length > 0 ||
-        disabledBridges.length > 0
+        disabledBridges.length > 0,
     }),
     [
       eligibleRouteTypes,
@@ -322,36 +311,31 @@ export function useRoutesUpdater() {
       slippage,
       disabledExchanges,
       disabledBridges,
-      routeData
-    ]
-  )
+      routeData,
+    ],
+  );
 
   // Only show error if ALL routes fail (LiFi is the only route and it failed)
   const hasError =
-    lifiError &&
-    eligibleRouteTypes.includes('lifi') &&
-    eligibleRouteTypes.length === 1
+    lifiError && eligibleRouteTypes.includes('lifi') && eligibleRouteTypes.length === 1;
 
   useEffect(() => {
     // if user has not selected a route, then pre-select the best route
     const selectedRoute =
-      userSelectedRoute &&
-      routeData.some(route => route.type === userSelectedRoute)
+      userSelectedRoute && routeData.some((route) => route.type === userSelectedRoute)
         ? userSelectedRoute // User selection is valid - preserve it
-        : getBestRouteForDefaultSelection(routeData) // Auto-select best route - becomes default selection
+        : getBestRouteForDefaultSelection(routeData); // Auto-select best route - becomes default selection
 
     setRouteState({
       eligibleRouteTypes,
       isLoading: isLifiLoading,
-      error: hasError
-        ? `Routes failed to load: ${lifiError?.message || 'Unknown error'}`
-        : null,
+      error: hasError ? `Routes failed to load: ${lifiError?.message || 'Unknown error'}` : null,
 
       routes: routeData,
       hasLowLiquidity: flags.hasLowLiquidity,
       hasModifiedSettings: flags.hasModifiedSettings,
-      selectedRoute
-    })
+      selectedRoute,
+    });
   }, [
     eligibleRouteTypes,
     isLifiLoading,
@@ -360,6 +344,6 @@ export function useRoutesUpdater() {
     routeData,
     flags,
     setRouteState,
-    userSelectedRoute
-  ])
+    userSelectedRoute,
+  ]);
 }

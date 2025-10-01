@@ -1,6 +1,6 @@
 // taken directly from https://github.com/OffchainLabs/arbitrum-website/blob/ae274056463c83271a7cf989de35d30d5aca9dd0/app/community/calendarCard.tsx
-
 import { twMerge } from 'tailwind-merge';
+
 import { Card } from '@/components/Card';
 
 type EventType = 'Hackathon' | 'Event';
@@ -39,17 +39,10 @@ export const CalendarCard = ({
       }}
     >
       <h6 className={twMerge(getTypeTextColor(type), 'text-sm')}>{type}</h6>
-      <p className="leading-extra-tight line-clamp-1 text-lg lg:text-xl">
-        {title}
-      </p>
-      <span className="leading-extra-tight text-lg opacity-50 lg:text-xl">
-        {subTitle}
-      </span>
+      <p className="leading-extra-tight line-clamp-1 text-lg lg:text-xl">{title}</p>
+      <span className="leading-extra-tight text-lg opacity-50 lg:text-xl">{subTitle}</span>
       <span
-        className={twMerge(
-          'mt-12 border-b py-[3px] text-xs leading-none',
-          'lg:mt-11',
-        )}
+        className={twMerge('mt-12 border-b py-[3px] text-xs leading-none', 'lg:mt-11')}
         aria-label={`Learn more about ${title}`}
       >
         Learn More

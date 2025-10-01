@@ -1,36 +1,33 @@
-import { twMerge } from 'tailwind-merge'
+import { useCallback } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { useIsTestnetMode } from '../../hooks/useIsTestnetMode'
-
-import { Switch } from './atoms/Switch'
-import { useCallback } from 'react'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
+import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { Switch } from './atoms/Switch';
 
 export const TestnetToggle = ({
   className,
   label,
   description,
-  includeToggleStateOnLabel
+  includeToggleStateOnLabel,
 }: {
   className?: {
-    wrapper?: string
-    switch?: string
-  }
-  label: string
-  description?: string
-  includeToggleStateOnLabel?: boolean
+    wrapper?: string;
+    switch?: string;
+  };
+  label: string;
+  description?: string;
+  includeToggleStateOnLabel?: boolean;
 }) => {
-  const [isTestnetMode, toggleTestnetMode] = useIsTestnetMode()
-  const [, setSelectedToken] = useSelectedToken()
+  const [isTestnetMode, toggleTestnetMode] = useIsTestnetMode();
+  const [, setSelectedToken] = useSelectedToken();
 
   const handleTestnetToggle = useCallback(() => {
-    toggleTestnetMode()
-    setSelectedToken(null)
-  }, [setSelectedToken, toggleTestnetMode])
+    toggleTestnetMode();
+    setSelectedToken(null);
+  }, [setSelectedToken, toggleTestnetMode]);
 
-  const labelText = includeToggleStateOnLabel
-    ? `${label} ${isTestnetMode ? 'ON' : 'OFF'}`
-    : label
+  const labelText = includeToggleStateOnLabel ? `${label} ${isTestnetMode ? 'ON' : 'OFF'}` : label;
 
   return (
     <label className={twMerge('cursor-pointer', className?.wrapper)}>
@@ -42,5 +39,5 @@ export const TestnetToggle = ({
         onChange={handleTestnetToggle}
       />
     </label>
-  )
-}
+  );
+};

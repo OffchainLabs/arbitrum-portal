@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+
 import { ArbitrumWebsiteNotionCmsRow } from '@/common/types';
 import { CalendarCard } from '@/components/CalendarCard';
 import { LoadingPlaceholderCarousel } from '@/components/Carousel/LoadingPlaceholderCarousel';

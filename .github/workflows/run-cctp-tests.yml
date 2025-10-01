@@ -2,7 +2,7 @@ name: CCTP Tests
 
 on:
   workflow_dispatch:
- 
+
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-cctp
@@ -18,14 +18,14 @@ env:
 
 jobs:
   cctp-e2e-tests:
-    name: "CCTP E2E Tests"
+    name: 'CCTP E2E Tests'
     uses: ./.github/workflows/e2e-tests.yml
     with:
       test_type: 'cctp'
     secrets: inherit
 
   test-e2e-success:
-    name: "CCTP Test E2E Success"
+    name: 'CCTP Test E2E Success'
     runs-on: ubuntu-latest
     needs: [cctp-e2e-tests]
     if: always()

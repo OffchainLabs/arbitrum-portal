@@ -1,11 +1,11 @@
-import { DepositStatus, MergedTransaction } from '../../state/app/state'
 import {
   getOrbitDepositDuration,
   minutesToHumanReadableTime,
-  useTransferDuration
-} from '../../hooks/useTransferDuration'
-import { isNetwork } from '../../util/networks'
-import { isTeleportTx } from '../../types/Transactions'
+  useTransferDuration,
+} from '../../hooks/useTransferDuration';
+import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import { isTeleportTx } from '../../types/Transactions';
+import { isNetwork } from '../../util/networks';
 
 /**
  * Displays a transfer countdown for a deposit, withdrawal, or cctp.
@@ -17,39 +17,36 @@ import { isTeleportTx } from '../../types/Transactions'
 export function TransferCountdown({
   tx,
   firstLegOnly,
-  textAfterTime = ''
+  textAfterTime = '',
 }: {
-  tx: MergedTransaction
-  firstLegOnly?: boolean
-  textAfterTime?: string
+  tx: MergedTransaction;
+  firstLegOnly?: boolean;
+  textAfterTime?: string;
 }) {
-  const { isTestnet } = isNetwork(tx.sourceChainId)
-  let { estimatedMinutesLeft } = useTransferDuration(tx)
+  const { isTestnet } = isNetwork(tx.sourceChainId);
+  let { estimatedMinutesLeft } = useTransferDuration(tx);
 
   if (estimatedMinutesLeft === null) {
-    return <span>Calculating...</span>
+    return <span>Calculating...</span>;
   }
 
-  const isTeleport = isTeleportTx(tx)
+  const isTeleport = isTeleportTx(tx);
   // To get the first retryable only, we subtract the Orbit deposit time (second retryable)
   if (isTeleport && firstLegOnly) {
-    estimatedMinutesLeft -= getOrbitDepositDuration(isTestnet)
+    estimatedMinutesLeft -= getOrbitDepositDuration(isTestnet);
   }
 
-  const isStandardDeposit =
-    !tx.isWithdrawal && !tx.isCctp && !isTeleport && !tx.isOft
+  const isStandardDeposit = !tx.isWithdrawal && !tx.isCctp && !isTeleport && !tx.isOft;
 
   if (isStandardDeposit) {
-    const depositStatus = tx.depositStatus
+    const depositStatus = tx.depositStatus;
 
     // Only show when status is Pending
     if (
       !depositStatus ||
-      ![DepositStatus.L1_PENDING, DepositStatus.L2_PENDING].includes(
-        depositStatus
-      )
+      ![DepositStatus.L1_PENDING, DepositStatus.L2_PENDING].includes(depositStatus)
     ) {
-      return null
+      return null;
     }
   }
 
@@ -57,5 +54,5 @@ export function TransferCountdown({
     <span className="whitespace-nowrap">
       {minutesToHumanReadableTime(estimatedMinutesLeft)} {textAfterTime}
     </span>
-  )
+  );
 }

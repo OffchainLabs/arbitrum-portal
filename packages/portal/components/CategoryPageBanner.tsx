@@ -1,7 +1,9 @@
 import { twMerge } from 'tailwind-merge';
-import { Category, EntityType } from '@/common/types';
-import { CommunitySpotlight } from './CommunitySpotlight';
+
 import { getSpotlightProjects } from '@/common/projects';
+import { Category, EntityType } from '@/common/types';
+
+import { CommunitySpotlight } from './CommunitySpotlight';
 
 const DefiCategoryData = () => (
   <iframe
@@ -19,12 +21,7 @@ export const CategoryPageBanner = ({ category }: { category: Category }) => {
 
   if (category.slug === 'defi') {
     return (
-      <div
-        className={twMerge(
-          commonWrapperClassName,
-          'h-[380px] px-0 py-4 lg:p-4',
-        )}
-      >
+      <div className={twMerge(commonWrapperClassName, 'h-[380px] px-0 py-4 lg:p-4')}>
         <DefiCategoryData />
       </div>
     );
@@ -35,11 +32,7 @@ export const CategoryPageBanner = ({ category }: { category: Category }) => {
   // show featured projects carousel / tiles
   return (
     <CommunitySpotlight
-      title={
-        spotlightProjects.length === 1
-          ? 'Featured Project'
-          : 'Featured Projects'
-      }
+      title={spotlightProjects.length === 1 ? 'Featured Project' : 'Featured Projects'}
       entitySlugs={spotlightProjects}
       entityType={EntityType.Project}
     />
