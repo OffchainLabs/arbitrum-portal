@@ -1,5 +1,6 @@
-import Image from 'next/image'
-import EclipseBottom from '@/images/eclipse_bottom.png'
+import Image from 'next/image';
+
+import EclipseBottom from '@/images/eclipse_bottom.png';
 
 export default function Background() {
   return (
@@ -17,5 +18,5 @@ export default function Background() {
         aria-hidden
       />
     </>
-  )
+  );
 }

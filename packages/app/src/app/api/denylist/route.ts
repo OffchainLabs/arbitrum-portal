@@ -1,1 +1,1 @@
-export { GET } from '@/bridge/app/api/denylist'
+export { GET } from '@/bridge/app/api/denylist';

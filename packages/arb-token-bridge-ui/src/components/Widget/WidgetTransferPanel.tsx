@@ -1,36 +1,29 @@
-import { useAccount } from 'wagmi'
-import { twMerge } from 'tailwind-merge'
-import {
-  DialogProps,
-  DialogWrapper,
-  OpenDialogFunction
-} from '../common/Dialog2'
-import { WidgetHeaderRow } from './WidgetHeaderRow'
-import { WidgetRoutes } from './WidgetRoutes'
-import { MoveFundsButton } from '../TransferPanel/MoveFundsButton'
-import { WidgetConnectWalletButton } from './WidgetConnectWalletButton'
-import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
-import { BuyPanel } from '../BuyPanel'
-import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
-import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
-import { UseDialogProps } from '../common/Dialog'
-import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
-import {
-  useArbQueryParams,
-  indexToTab,
-  TabParamEnum
-} from '../../hooks/useArbQueryParams'
-import { isOnrampEnabled } from '../../util/featureFlag'
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
+
+import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { isOnrampEnabled } from '../../util/featureFlag';
+import { BuyPanel } from '../BuyPanel';
+import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
+import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
+import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
+import { TokenImportDialog } from '../TransferPanel/TokenImportDialog';
+import { TransferPanelMain } from '../TransferPanel/TransferPanelMain';
+import { UseDialogProps } from '../common/Dialog';
+import { DialogProps, DialogWrapper, OpenDialogFunction } from '../common/Dialog2';
+import { WidgetConnectWalletButton } from './WidgetConnectWalletButton';
+import { WidgetHeaderRow } from './WidgetHeaderRow';
+import { WidgetRoutes } from './WidgetRoutes';
 
 type WidgetTransferPanelProps = {
-  moveFundsButtonOnClick: () => void
-  isTokenAlreadyImported?: boolean
-  tokenFromSearchParams?: string
-  tokenImportDialogProps: UseDialogProps
-  openDialog: OpenDialogFunction
-  dialogProps: DialogProps
-  closeWithResetTokenImportDialog: () => void
-}
+  moveFundsButtonOnClick: () => void;
+  isTokenAlreadyImported?: boolean;
+  tokenFromSearchParams?: string;
+  tokenImportDialogProps: UseDialogProps;
+  openDialog: OpenDialogFunction;
+  dialogProps: DialogProps;
+  closeWithResetTokenImportDialog: () => void;
+};
 
 export function WidgetTransferPanel({
   dialogProps,
@@ -39,15 +32,14 @@ export function WidgetTransferPanel({
   isTokenAlreadyImported,
   tokenFromSearchParams,
   tokenImportDialogProps,
-  closeWithResetTokenImportDialog
+  closeWithResetTokenImportDialog,
 }: WidgetTransferPanelProps) {
-  const { isConnected } = useAccount()
-  const [{ tab }] = useArbQueryParams()
-  const showBuyPanel = isOnrampEnabled()
+  const { isConnected } = useAccount();
+  const [{ tab }] = useArbQueryParams();
+  const showBuyPanel = isOnrampEnabled();
 
-  const currentTab =
-    indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE
-  const isBuyMode = currentTab === TabParamEnum.BUY
+  const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
+  const isBuyMode = currentTab === TabParamEnum.BUY;
 
   return (
     <>
@@ -55,14 +47,14 @@ export function WidgetTransferPanel({
 
       <div
         className={twMerge(
-          'relative m-auto flex w-full flex-col gap-4 rounded-lg bg-transparent p-4 text-white'
+          'relative m-auto flex w-full flex-col gap-4 rounded-lg bg-transparent p-4 text-white',
         )}
       >
         <WidgetHeaderRow openDialog={openDialog} />
         <div
           className={twMerge(
             'relative grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2',
-            isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1'
+            isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1',
           )}
         >
           {/* Left/Top panel */}
@@ -100,5 +92,5 @@ export function WidgetTransferPanel({
         />
       )}
     </>
-  )
+  );
 }

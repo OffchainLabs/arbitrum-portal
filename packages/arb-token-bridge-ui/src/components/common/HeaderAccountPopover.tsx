@@ -1,58 +1,50 @@
-import { Popover } from '@headlessui/react'
+import { Popover } from '@headlessui/react';
 import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
   Cog6ToothIcon,
-  DocumentDuplicateIcon
-} from '@heroicons/react/24/outline'
-import { useState } from 'react'
-import { useCopyToClipboard, useMedia } from 'react-use'
-import { twMerge } from 'tailwind-merge'
+  DocumentDuplicateIcon,
+} from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { useCopyToClipboard, useMedia } from 'react-use';
+import { twMerge } from 'tailwind-merge';
 
-import { useAccountType } from '../../hooks/useAccountType'
-import { useNetworks } from '../../hooks/useNetworks'
-import { getExplorerUrl, isNetwork } from '../../util/networks'
-import { useAccountMenu } from '../../hooks/useAccountMenu'
-import { ExternalLink } from './ExternalLink'
-import { SafeImage } from './SafeImage'
-import { Transition } from './Transition'
-import { CustomBoringAvatar } from './CustomBoringAvatar'
-import { useDestinationChainStyle } from '../../hooks/useDestinationChainStyle'
+import { useAccountMenu } from '../../hooks/useAccountMenu';
+import { useAccountType } from '../../hooks/useAccountType';
+import { useDestinationChainStyle } from '../../hooks/useDestinationChainStyle';
+import { useNetworks } from '../../hooks/useNetworks';
+import { getExplorerUrl, isNetwork } from '../../util/networks';
+import { CustomBoringAvatar } from './CustomBoringAvatar';
+import { ExternalLink } from './ExternalLink';
+import { SafeImage } from './SafeImage';
+import { Transition } from './Transition';
 
 export function HeaderAccountPopover({
-  isCorrectNetworkConnected = true
+  isCorrectNetworkConnected = true,
 }: {
-  isCorrectNetworkConnected?: boolean // is the app connected to a correct network? if no, then show limited options in the menu
+  isCorrectNetworkConnected?: boolean; // is the app connected to a correct network? if no, then show limited options in the menu
 }) {
-  const {
-    address,
-    accountShort,
-    ensName,
-    ensAvatar,
-    disconnect,
-    udInfo,
-    chain,
-    setQueryParams
-  } = useAccountMenu()
-  const [{ sourceChain }] = useNetworks()
-  const { isTestnet } = isNetwork(sourceChain.id)
-  const [, copyToClipboard] = useCopyToClipboard()
-  const isSmallScreen = useMedia('(max-width: 639px)')
-  const { accountType } = useAccountType()
+  const { address, accountShort, ensName, ensAvatar, disconnect, udInfo, chain, setQueryParams } =
+    useAccountMenu();
+  const [{ sourceChain }] = useNetworks();
+  const { isTestnet } = isNetwork(sourceChain.id);
+  const [, copyToClipboard] = useCopyToClipboard();
+  const isSmallScreen = useMedia('(max-width: 639px)');
+  const { accountType } = useAccountType();
 
-  const destinationChainStyle = useDestinationChainStyle()
+  const destinationChainStyle = useDestinationChainStyle();
 
-  const [showCopied, setShowCopied] = useState(false)
+  const [showCopied, setShowCopied] = useState(false);
 
   function copy(value: string) {
-    setShowCopied(true)
-    copyToClipboard(value)
-    setTimeout(() => setShowCopied(false), 1000)
+    setShowCopied(true);
+    copyToClipboard(value);
+    setTimeout(() => setShowCopied(false), 1000);
   }
 
   const headerItemsClassName =
-    'arb-hover flex w-full flex-row items-center space-x-2 px-12 py-2 text-sm sm:text-sm text-gray-4 sm:text-white hover:bg-ocl-blue sm:px-4 sm:py-1'
+    'arb-hover flex w-full flex-row items-center space-x-2 px-12 py-2 text-sm sm:text-sm text-gray-4 sm:text-white hover:bg-ocl-blue sm:px-4 sm:py-1';
 
   return (
     <Popover className="relative w-full px-4 sm:w-max sm:p-0">
@@ -63,7 +55,7 @@ export function HeaderAccountPopover({
           'sm:w-max sm:rounded sm:border sm:px-2 sm:py-1',
           isTestnet
             ? 'sm:border-white sm:ui-not-open:bg-white/20'
-            : 'sm:border-gray-1 sm:ui-not-open:bg-gray-1 sm:ui-not-open:hover:bg-white/10'
+            : 'sm:border-gray-1 sm:ui-not-open:bg-gray-1 sm:ui-not-open:hover:bg-white/10',
         )}
         style={destinationChainStyle}
         role="button"
@@ -72,9 +64,7 @@ export function HeaderAccountPopover({
         <SafeImage
           src={ensAvatar || undefined}
           className="h-6 w-6 rounded-full sm:h-8 sm:w-8"
-          fallback={
-            <CustomBoringAvatar size={isSmallScreen ? 24 : 40} name={address} />
-          }
+          fallback={<CustomBoringAvatar size={isSmallScreen ? 24 : 40} name={address} />}
         />
         <span className="flex flex-col text-justify text-base leading-extra-tight text-gray-4 sm:text-white">
           {ensName ?? udInfo.name ?? accountShort}
@@ -150,10 +140,7 @@ export function HeaderAccountPopover({
             )}
 
             {/* Disconnect button */}
-            <button
-              className={headerItemsClassName}
-              onClick={() => disconnect()}
-            >
+            <button className={headerItemsClassName} onClick={() => disconnect()}>
               <ArrowLeftOnRectangleIcon className="h-3 w-3 text-white/60 sm:text-white" />
               <span>Disconnect</span>
             </button>
@@ -161,5 +148,5 @@ export function HeaderAccountPopover({
         </Popover.Panel>
       </Transition>
     </Popover>
-  )
+  );
 }

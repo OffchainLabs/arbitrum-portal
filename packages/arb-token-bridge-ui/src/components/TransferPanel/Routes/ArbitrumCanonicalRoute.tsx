@@ -1,94 +1,85 @@
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { utils } from 'ethers'
-import { Route } from './Route'
-import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary'
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency'
+import dayjs from 'dayjs';
+import { utils } from 'ethers';
+import { useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
+
+import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
+import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import {
   getOrbitDepositDuration,
   getStandardDepositDuration,
-  getWithdrawalDuration
-} from '../../../hooks/useTransferDuration'
-import { isNetwork } from '../../../util/networks'
-import dayjs from 'dayjs'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { isTokenNativeUSDC } from '../../../util/TokenUtils'
-import { useRouteStore } from '../hooks/useRouteStore'
-import { useMemo } from 'react'
-import { shallow } from 'zustand/shallow'
-import { getGasCostAndToken } from './getGasCostAndToken'
-import {
-  bridgedUsdcToken,
-  nativeUsdcToken
-} from '../../../util/CommonAddressUtils'
+  getWithdrawalDuration,
+} from '../../../hooks/useTransferDuration';
+import { bridgedUsdcToken, nativeUsdcToken } from '../../../util/CommonAddressUtils';
+import { isTokenNativeUSDC } from '../../../util/TokenUtils';
+import { isNetwork } from '../../../util/networks';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { Route } from './Route';
+import { getGasCostAndToken } from './getGasCostAndToken';
 
 function getDuration({
   isTestnet,
   sourceChainId,
   isTeleportMode,
   isWithdrawal,
-  isOrbitChain
+  isOrbitChain,
 }: {
-  isTestnet: boolean
-  sourceChainId: number
-  isTeleportMode: boolean
-  isWithdrawal: boolean
-  isOrbitChain: boolean
+  isTestnet: boolean;
+  sourceChainId: number;
+  isTeleportMode: boolean;
+  isWithdrawal: boolean;
+  isOrbitChain: boolean;
 }) {
   if (isTeleportMode) {
-    return (
-      getStandardDepositDuration(isTestnet) + getOrbitDepositDuration(isTestnet)
-    )
+    return getStandardDepositDuration(isTestnet) + getOrbitDepositDuration(isTestnet);
   }
 
   if (isWithdrawal) {
     return getWithdrawalDuration({
       createdAt: dayjs().valueOf(),
-      sourceChainId: sourceChainId
-    })
+      sourceChainId: sourceChainId,
+    });
   }
 
   if (isOrbitChain) {
-    return getOrbitDepositDuration(isTestnet)
+    return getOrbitDepositDuration(isTestnet);
   }
 
-  return getStandardDepositDuration(isTestnet)
+  return getStandardDepositDuration(isTestnet);
 }
 
 export function ArbitrumCanonicalRoute() {
-  const [networks] = useNetworks()
-  const {
-    childChain,
-    isTeleportMode,
-    childChainProvider,
-    parentChainProvider,
-    isDepositMode
-  } = useNetworksRelationship(networks)
+  const [networks] = useNetworks();
+  const { childChain, isTeleportMode, childChainProvider, parentChainProvider, isDepositMode } =
+    useNetworksRelationship(networks);
   const {
     status: gasSummaryStatus,
     estimatedParentChainGasFees,
-    estimatedChildChainGasFees
-  } = useGasSummary()
+    estimatedChildChainGasFees,
+  } = useGasSummary();
   const childChainNativeCurrency = useNativeCurrency({
-    provider: childChainProvider
-  })
+    provider: childChainProvider,
+  });
   const parentChainNativeCurrency = useNativeCurrency({
-    provider: parentChainProvider
-  })
-  const { isTestnet, isOrbitChain } = isNetwork(childChain.id)
+    provider: parentChainProvider,
+  });
+  const { isTestnet, isOrbitChain } = isNetwork(childChain.id);
 
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    state => ({
+    (state) => ({
       selectedRoute: state.selectedRoute,
-      setSelectedRoute: state.setSelectedRoute
+      setSelectedRoute: state.setSelectedRoute,
     }),
-    shallow
-  )
-  const [selectedToken] = useSelectedToken()
+    shallow,
+  );
+  const [selectedToken] = useSelectedToken();
 
   const arbitrumData = useRouteStore(
-    state => state.routes.find(route => route.type === 'arbitrum')?.data
-  )
+    (state) => state.routes.find((route) => route.type === 'arbitrum')?.data,
+  );
 
   const { gasCost, isLoading } = useMemo(
     () =>
@@ -98,7 +89,7 @@ export function ArbitrumCanonicalRoute() {
         gasSummaryStatus,
         estimatedChildChainGasFees,
         estimatedParentChainGasFees,
-        isDepositMode
+        isDepositMode,
       }),
     [
       childChainNativeCurrency,
@@ -106,17 +97,17 @@ export function ArbitrumCanonicalRoute() {
       estimatedParentChainGasFees,
       gasSummaryStatus,
       isDepositMode,
-      parentChainNativeCurrency
-    ]
-  )
+      parentChainNativeCurrency,
+    ],
+  );
 
   /**
    * For USDC:
    * - Withdrawing USDC.e, we receive USDC on Mainnet
    * - Depositing USDC, we receive USDC.e on Arbitrum
    */
-  const isUsdcTransfer = isTokenNativeUSDC(selectedToken?.address)
-  const overrideToken = isDepositMode ? bridgedUsdcToken : nativeUsdcToken
+  const isUsdcTransfer = isTokenNativeUSDC(selectedToken?.address);
+  const overrideToken = isDepositMode ? bridgedUsdcToken : nativeUsdcToken;
 
   const durationMs =
     getDuration({
@@ -124,13 +115,13 @@ export function ArbitrumCanonicalRoute() {
       isWithdrawal: !isDepositMode,
       sourceChainId: networks.sourceChain.id,
       isTeleportMode,
-      isOrbitChain
+      isOrbitChain,
     }) *
     60 *
-    1_000
+    1_000;
 
   if (!arbitrumData) {
-    return null
+    return null;
   }
 
   return (
@@ -146,12 +137,9 @@ export function ArbitrumCanonicalRoute() {
         gasCost && gasCost.length > 0
           ? gasCost.map(({ gasCost, gasToken }) => ({
               gasCost: utils
-                .parseUnits(
-                  gasCost.toFixed(childChainNativeCurrency.decimals),
-                  gasToken.decimals
-                )
+                .parseUnits(gasCost.toFixed(childChainNativeCurrency.decimals), gasToken.decimals)
                 .toString(),
-              gasToken
+              gasToken,
             }))
           : []
       }
@@ -159,5 +147,5 @@ export function ArbitrumCanonicalRoute() {
       tag="security-guaranteed"
       selected={selectedRoute === 'arbitrum'}
     />
-  )
+  );
 }

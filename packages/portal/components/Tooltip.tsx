@@ -6,11 +6,7 @@ export type TooltipProps = {
   content?: React.ReactNode;
 };
 
-export function Tooltip({
-  show = true,
-  content,
-  children,
-}: TooltipProps): JSX.Element {
+export function Tooltip({ show = true, content, children }: TooltipProps): JSX.Element {
   if (!show) {
     return <>{children}</>;
   }

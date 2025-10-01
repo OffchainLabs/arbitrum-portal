@@ -1,66 +1,57 @@
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
-import { Chain } from 'wagmi/chains'
-import { useDebounce } from '@uidotdev/usehooks'
 import {
   ChevronDownIcon,
   ExclamationCircleIcon,
-  ShieldExclamationIcon
-} from '@heroicons/react/24/outline'
-import { twMerge } from 'tailwind-merge'
-import { AutoSizer, List, ListRowProps } from 'react-virtualized'
-import { isNetwork, getNetworkName } from '../../util/networks'
-import { ChainId } from '../../types/ChainId'
-import { useIsTestnetMode } from '../../hooks/useIsTestnetMode'
-import { SearchPanel } from './SearchPanel/SearchPanel'
-import { SearchPanelTable } from './SearchPanel/SearchPanelTable'
-import { TestnetToggle } from './TestnetToggle'
-import {
-  useArbQueryParams,
-  DisabledFeatures
-} from '../../hooks/useArbQueryParams'
-import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig'
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain'
-import { NetworkImage } from './NetworkImage'
-import { useNetworks } from '../../hooks/useNetworks'
-import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog'
-import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils'
-import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection'
-import { useAccountType } from '../../hooks/useAccountType'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { useDisabledFeatures } from '../../hooks/useDisabledFeatures'
-import { useMode } from '../../hooks/useMode'
-import { formatAmount } from '../../util/NumberUtils'
-import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrencyBalanceForChainId'
-import { useAccount } from 'wagmi'
-import { Dialog, useDialog } from './Dialog'
-import { DialogProps } from './Dialog2'
-import { Button } from './Button'
-import { Tooltip } from './Tooltip'
-import { Loader } from './atoms/Loader'
+  ShieldExclamationIcon,
+} from '@heroicons/react/24/outline';
+import { useDebounce } from '@uidotdev/usehooks';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AutoSizer, List, ListRowProps } from 'react-virtualized';
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
+import { Chain } from 'wagmi/chains';
 
-type NetworkType = 'core' | 'more' | 'orbit'
+import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection';
+import { useAccountType } from '../../hooks/useAccountType';
+import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
+import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import { useMode } from '../../hooks/useMode';
+import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrencyBalanceForChainId';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { ChainId } from '../../types/ChainId';
+import { formatAmount } from '../../util/NumberUtils';
+import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
+import { getNetworkName, isNetwork } from '../../util/networks';
+import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
+import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
+import { Button } from './Button';
+import { Dialog, useDialog } from './Dialog';
+import { DialogProps } from './Dialog2';
+import { NetworkImage } from './NetworkImage';
+import { SearchPanel } from './SearchPanel/SearchPanel';
+import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
+import { TestnetToggle } from './TestnetToggle';
+import { Tooltip } from './Tooltip';
+import { Loader } from './atoms/Loader';
+
+type NetworkType = 'core' | 'more' | 'orbit';
 
 enum ChainGroupName {
   core = 'Core Chains',
   more = 'More Chains',
-  orbit = 'Orbit Chains'
+  orbit = 'Orbit Chains',
 }
 
 type ChainGroupInfo = {
-  name: ChainGroupName
-  description?: React.ReactNode
-}
+  name: ChainGroupName;
+  description?: React.ReactNode;
+};
 
 const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   core: {
-    name: ChainGroupName.core
+    name: ChainGroupName.core,
   },
   more: {
     name: ChainGroupName.more,
@@ -68,12 +59,11 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
       <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
         <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
         <span>
-          Independent projects using non-Arbitrum technology. These chains have
-          varying degrees of decentralization.{' '}
-          <span className="font-semibold">Bridge at your own risk.</span>
+          Independent projects using non-Arbitrum technology. These chains have varying degrees of
+          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
         </span>
       </p>
-    )
+    ),
   },
   orbit: {
     name: ChainGroupName.orbit,
@@ -81,27 +71,26 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
       <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
         <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
         <span>
-          Independent projects using Arbitrum technology. Orbit chains have
-          varying degrees of decentralization.{' '}
-          <span className="font-semibold">Bridge at your own risk.</span>
+          Independent projects using Arbitrum technology. Orbit chains have varying degrees of
+          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
         </span>
       </p>
-    )
-  }
-}
+    ),
+  },
+};
 
 function ChainTypeInfoRow({
   chainGroup,
   style,
-  isConnected
+  isConnected,
 }: {
-  chainGroup: ChainGroupInfo
-  style: CSSProperties
-  isConnected: boolean
+  chainGroup: ChainGroupInfo;
+  style: CSSProperties;
+  isConnected: boolean;
 }) {
-  const { name, description } = chainGroup
-  const isOrbitGroup = chainGroup.name === ChainGroupName.orbit
-  const isCoreGroup = chainGroup.name === ChainGroupName.core
+  const { name, description } = chainGroup;
+  const isOrbitGroup = chainGroup.name === ChainGroupName.orbit;
+  const isCoreGroup = chainGroup.name === ChainGroupName.core;
 
   return (
     <div
@@ -111,47 +100,41 @@ function ChainTypeInfoRow({
         'px-4 py-3',
         !isOrbitGroup &&
           'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30',
-        isCoreGroup && 'before:h-[0px]'
+        isCoreGroup && 'before:h-[0px]',
       )}
     >
       <div className="flex flex-row flex-nowrap items-center justify-between">
         <p className="text-sm text-white/70">{name}</p>
-        <p className="text-xs text-white/50">
-          {isConnected ? 'Native Balance' : 'Native Token'}
-        </p>
+        <p className="text-xs text-white/50">{isConnected ? 'Native Balance' : 'Native Token'}</p>
       </div>
       {description}
     </div>
-  )
+  );
 }
 
 export function NetworkButton({
   type,
-  onClick
+  onClick,
 }: {
-  type: 'source' | 'destination'
-  onClick: () => void
+  type: 'source' | 'destination';
+  onClick: () => void;
 }) {
-  const [networks] = useNetworks()
-  const { accountType, isLoading } = useAccountType()
-  const isSource = type === 'source'
-  const chains = useChainIdsForNetworkSelection({ isSource })
-  const { isFeatureDisabled } = useDisabledFeatures()
-  const isNetworkSelectionDisabled = isFeatureDisabled(
-    DisabledFeatures.NETWORK_SELECTION
-  )
+  const [networks] = useNetworks();
+  const { accountType, isLoading } = useAccountType();
+  const isSource = type === 'source';
+  const chains = useChainIdsForNetworkSelection({ isSource });
+  const { isFeatureDisabled } = useDisabledFeatures();
+  const isNetworkSelectionDisabled = isFeatureDisabled(DisabledFeatures.NETWORK_SELECTION);
 
-  const selectedChainId = isSource
-    ? networks.sourceChain.id
-    : networks.destinationChain.id
+  const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
 
-  const hasOneOrLessChain = chains.length <= 1
+  const hasOneOrLessChain = chains.length <= 1;
 
   const disabled =
     isNetworkSelectionDisabled ||
     hasOneOrLessChain ||
     (accountType === 'smart-contract-wallet' && type === 'source') ||
-    isLoading
+    isLoading;
 
   return (
     <Button
@@ -159,17 +142,13 @@ export function NetworkButton({
       disabled={disabled}
       onClick={onClick}
       aria-label={
-        isSource
-          ? `From: ${networks.sourceChain.name}`
-          : `To: ${networks.destinationChain.name}`
+        isSource ? `From: ${networks.sourceChain.name}` : `To: ${networks.destinationChain.name}`
       }
     >
       <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
         {isSource ? 'From:' : 'To: '}
         <NetworkImage
-          chainId={
-            isSource ? networks.sourceChain.id : networks.destinationChain.id
-          }
+          chainId={isSource ? networks.sourceChain.id : networks.destinationChain.id}
           className="h-4 w-4 p-[2px]"
           size={20}
         />
@@ -177,7 +156,7 @@ export function NetworkButton({
         {!disabled && <ChevronDownIcon width={12} />}
       </div>
     </Button>
-  )
+  );
 }
 
 function NetworkRow({
@@ -185,26 +164,26 @@ function NetworkRow({
   isSelected,
   style,
   onClick,
-  close
+  close,
 }: {
-  chainId: ChainId
-  isSelected: boolean
-  style: CSSProperties
-  onClick: (value: Chain) => void
-  close: (focusableElement?: HTMLElement) => void
+  chainId: ChainId;
+  isSelected: boolean;
+  style: CSSProperties;
+  onClick: (value: Chain) => void;
+  close: (focusableElement?: HTMLElement) => void;
 }) {
-  const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId)
-  const chain = getWagmiChain(chainId)
-  const { address: walletAddress } = useAccount()
+  const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
+  const chain = getWagmiChain(chainId);
+  const { address: walletAddress } = useAccount();
   const {
     data: balanceState,
     isLoading: isLoadingBalance,
-    error: balanceError
-  } = useNativeCurrencyBalanceForChainId(chainId, walletAddress)
+    error: balanceError,
+  } = useNativeCurrencyBalanceForChainId(chainId, walletAddress);
 
   function handleClick() {
-    onClick(chain)
-    close() // close the popover after option-click
+    onClick(chain);
+    close(); // close the popover after option-click
   }
 
   return (
@@ -216,27 +195,17 @@ function NetworkRow({
       aria-label={`Switch to ${network.name}`}
       className={twMerge(
         'flex h-[40px] w-full items-center gap-4 rounded px-4 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
-        isSelected && 'bg-white/20 hover:bg-white/20' // selected row
+        isSelected && 'bg-white/20 hover:bg-white/20', // selected row
       )}
     >
       <NetworkImage chainId={chainId} className="h-4 w-4 p-[2px]" size={20} />
-      <div
-        className={twMerge(
-          'flex w-full flex-row items-center justify-between gap-1'
-        )}
-      >
+      <div className={twMerge('flex w-full flex-row items-center justify-between gap-1')}>
         <span className="truncate text-base">{network.name}</span>
 
         <p className="text-xs leading-none text-white/70">
           {!walletAddress && (
-            <Tooltip
-              content={`${
-                nativeTokenData?.symbol ?? 'ETH'
-              } is the native token`}
-            >
-              <p className="leading-none text-white/70">
-                {nativeTokenData?.symbol ?? 'ETH'}
-              </p>
+            <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
+              <p className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</p>
             </Tooltip>
           )}
 
@@ -252,45 +221,41 @@ function NetworkRow({
           )}
 
           {!isLoadingBalance && !balanceError && balanceState && (
-            <Tooltip
-              content={`${
-                nativeTokenData?.symbol ?? 'ETH'
-              } is the native token`}
-            >
+            <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
               {formatAmount(balanceState.balance, {
                 decimals: balanceState.decimals,
-                symbol: balanceState.symbol
+                symbol: balanceState.symbol,
               })}
             </Tooltip>
           )}
         </p>
       </div>
     </button>
-  )
+  );
 }
 
 function AddCustomOrbitChainButton({
-  closeDialog
+  closeDialog,
 }: {
-  closeDialog: (focusableElement?: HTMLElement) => void
+  closeDialog: (focusableElement?: HTMLElement) => void;
 }) {
-  const [, setQueryParams] = useArbQueryParams()
-  const [isTestnetMode] = useIsTestnetMode()
+  const [, setQueryParams] = useArbQueryParams();
+  const [isTestnetMode] = useIsTestnetMode();
 
   const openSettingsPanel = () => {
-    setQueryParams({ settingsOpen: true })
-    closeDialog()
-  }
+    setQueryParams({ settingsOpen: true });
+    closeDialog();
+  };
 
   if (!isTestnetMode) {
-    return null
+    return null;
   }
 
   return (
     <button className="arb-hover text-sm underline" onClick={openSettingsPanel}>
       <span>Add Custom Orbit Chain</span>
     </button>
-  )
+  );
 }
 
 export function NetworksPanel({
@@ -299,99 +264,92 @@ export function NetworksPanel({
   onNetworkRowClick,
   close,
   showSearch = true,
-  showFooter = true
+  showFooter = true,
 }: {
-  chainIds: ChainId[]
-  selectedChainId: ChainId
-  onNetworkRowClick: (value: Chain) => void
-  close: (focusableElement?: HTMLElement) => void
-  showSearch?: boolean
-  showFooter?: boolean
+  chainIds: ChainId[];
+  selectedChainId: ChainId;
+  onNetworkRowClick: (value: Chain) => void;
+  close: (focusableElement?: HTMLElement) => void;
+  showSearch?: boolean;
+  showFooter?: boolean;
 }) {
-  const [errorMessage, setErrorMessage] = useState('')
-  const [networkSearched, setNetworkSearched] = useState('')
-  const debouncedNetworkSearched = useDebounce(networkSearched, 200)
-  const listRef = useRef<List>(null)
-  const [isTestnetMode] = useIsTestnetMode()
-  const { embedMode } = useMode()
-  const { isConnected } = useAccount()
+  const [errorMessage, setErrorMessage] = useState('');
+  const [networkSearched, setNetworkSearched] = useState('');
+  const debouncedNetworkSearched = useDebounce(networkSearched, 200);
+  const listRef = useRef<List>(null);
+  const [isTestnetMode] = useIsTestnetMode();
+  const { embedMode } = useMode();
+  const { isConnected } = useAccount();
 
   const networksToShow = useMemo(() => {
-    const _networkSearched = debouncedNetworkSearched.trim().toLowerCase()
+    const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
     if (_networkSearched) {
-      return chainIds.filter(chainId => {
-        const networkName =
-          getBridgeUiConfigForChain(chainId).network.name.toLowerCase()
-        return networkName.includes(_networkSearched)
-      })
+      return chainIds.filter((chainId) => {
+        const networkName = getBridgeUiConfigForChain(chainId).network.name.toLowerCase();
+        return networkName.includes(_networkSearched);
+      });
     }
 
-    const coreNetworks = chainIds.filter(
-      chainId => isNetwork(chainId).isCoreChain
-    )
+    const coreNetworks = chainIds.filter((chainId) => isNetwork(chainId).isCoreChain);
     const moreNetworks = chainIds.filter(
-      chainId =>
-        !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain
-    )
-    const orbitNetworks = chainIds.filter(
-      chainId => isNetwork(chainId).isOrbitChain
-    )
+      (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
+    );
+    const orbitNetworks = chainIds.filter((chainId) => isNetwork(chainId).isOrbitChain);
 
     return {
       core: coreNetworks,
       more: moreNetworks,
-      orbit: orbitNetworks
+      orbit: orbitNetworks,
+    };
+  }, [debouncedNetworkSearched, chainIds]);
+
+  const isNetworkSearchResult = Array.isArray(networksToShow);
+
+  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName)[] = useMemo(() => {
+    if (isNetworkSearchResult) {
+      return networksToShow;
     }
-  }, [debouncedNetworkSearched, chainIds])
 
-  const isNetworkSearchResult = Array.isArray(networksToShow)
+    const groupedNetworks = [];
 
-  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName)[] =
-    useMemo(() => {
-      if (isNetworkSearchResult) {
-        return networksToShow
-      }
+    if (networksToShow.core.length > 0) {
+      groupedNetworks.push(ChainGroupName.core, ...networksToShow.core);
+    }
 
-      const groupedNetworks = []
+    if (networksToShow.more.length > 0) {
+      groupedNetworks.push(ChainGroupName.more, ...networksToShow.more);
+    }
 
-      if (networksToShow.core.length > 0) {
-        groupedNetworks.push(ChainGroupName.core, ...networksToShow.core)
-      }
+    if (networksToShow.orbit.length > 0) {
+      groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit);
+    }
 
-      if (networksToShow.more.length > 0) {
-        groupedNetworks.push(ChainGroupName.more, ...networksToShow.more)
-      }
-
-      if (networksToShow.orbit.length > 0) {
-        groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit)
-      }
-
-      return groupedNetworks
-    }, [isNetworkSearchResult, networksToShow])
+    return groupedNetworks;
+  }, [isNetworkSearchResult, networksToShow]);
 
   function getRowHeight({ index }: { index: number }) {
-    const rowItemOrChainId = networkRowsWithChainInfoRows[index]
+    const rowItemOrChainId = networkRowsWithChainInfoRows[index];
     if (!rowItemOrChainId) {
-      return 0
+      return 0;
     }
     if (typeof rowItemOrChainId === 'string') {
-      return rowItemOrChainId === ChainGroupName.core ? 45 : 115
+      return rowItemOrChainId === ChainGroupName.core ? 45 : 115;
     }
 
-    return 50
+    return 50;
   }
 
   useEffect(() => {
-    listRef.current?.recomputeRowHeights()
-  }, [isTestnetMode, networkRowsWithChainInfoRows])
+    listRef.current?.recomputeRowHeights();
+  }, [isTestnetMode, networkRowsWithChainInfoRows]);
 
   const rowRenderer = useCallback(
     ({ index, style }: ListRowProps) => {
-      const networkOrChainTypeName = networkRowsWithChainInfoRows[index]
+      const networkOrChainTypeName = networkRowsWithChainInfoRows[index];
 
       if (!networkOrChainTypeName) {
-        return null
+        return null;
       }
 
       if (networkOrChainTypeName === ChainGroupName.core) {
@@ -401,7 +359,7 @@ export function NetworksPanel({
             style={style}
             isConnected={isConnected}
           />
-        )
+        );
       }
 
       if (networkOrChainTypeName === ChainGroupName.more) {
@@ -411,7 +369,7 @@ export function NetworksPanel({
             style={style}
             isConnected={isConnected}
           />
-        )
+        );
       }
 
       if (networkOrChainTypeName === ChainGroupName.orbit) {
@@ -421,7 +379,7 @@ export function NetworksPanel({
             style={style}
             isConnected={isConnected}
           />
-        )
+        );
       }
 
       return (
@@ -433,24 +391,15 @@ export function NetworksPanel({
           onClick={onNetworkRowClick}
           close={close}
         />
-      )
+      );
     },
-    [
-      close,
-      networkRowsWithChainInfoRows,
-      onNetworkRowClick,
-      selectedChainId,
-      isConnected
-    ]
-  )
+    [close, networkRowsWithChainInfoRows, onNetworkRowClick, selectedChainId, isConnected],
+  );
 
-  const onSearchInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setErrorMessage('')
-      setNetworkSearched(event.target.value)
-    },
-    []
-  )
+  const onSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage('');
+    setNetworkSearched(event.target.value);
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">
@@ -483,57 +432,55 @@ export function NetworksPanel({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export const NetworkSelectionContainer = React.memo(
   (
     props: DialogProps & { isOpen: boolean } & {
-      type: 'source' | 'destination'
-    }
+      type: 'source' | 'destination';
+    },
   ) => {
-    const [, setSelectedToken] = useSelectedToken()
-    const [networks, setNetworks] = useNetworks()
-    const [oneNovaTransferDialogProps, openOneNovaTransferDialog] = useDialog()
-    const [, setQueryParams] = useArbQueryParams()
-    const { embedMode } = useMode()
+    const [, setSelectedToken] = useSelectedToken();
+    const [networks, setNetworks] = useNetworks();
+    const [oneNovaTransferDialogProps, openOneNovaTransferDialog] = useDialog();
+    const [, setQueryParams] = useArbQueryParams();
+    const { embedMode } = useMode();
 
-    const isSource = props.type === 'source'
+    const isSource = props.type === 'source';
 
-    const selectedChainId = isSource
-      ? networks.sourceChain.id
-      : networks.destinationChain.id
+    const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
 
     const supportedChainIds = useChainIdsForNetworkSelection({
-      isSource
-    })
+      isSource,
+    });
 
     const onNetworkRowClick = useCallback(
       (value: Chain) => {
-        const pairedChain = isSource ? 'destinationChain' : 'sourceChain'
+        const pairedChain = isSource ? 'destinationChain' : 'sourceChain';
 
         if (shouldOpenOneNovaDialog([value.id, networks[pairedChain].id])) {
-          openOneNovaTransferDialog()
-          return
+          openOneNovaTransferDialog();
+          return;
         }
 
         if (networks[pairedChain].id === value.id) {
           setNetworks({
             sourceChainId: networks.destinationChain.id,
-            destinationChainId: networks.sourceChain.id
-          })
-          return
+            destinationChainId: networks.sourceChain.id,
+          });
+          return;
         }
 
         // if changing sourceChainId, let the destinationId be the same, and let the `setNetworks` func decide whether it's a valid or invalid chain pair
         // this way, the destination doesn't reset to the default chain if the source chain is changed, and if both are valid
         setNetworks({
           sourceChainId: isSource ? value.id : networks.sourceChain.id,
-          destinationChainId: isSource ? networks.destinationChain.id : value.id
-        })
+          destinationChainId: isSource ? networks.destinationChain.id : value.id,
+        });
 
-        setSelectedToken(null)
-        setQueryParams({ destinationAddress: undefined })
+        setSelectedToken(null);
+        setQueryParams({ destinationAddress: undefined });
       },
       [
         isSource,
@@ -541,9 +488,9 @@ export const NetworkSelectionContainer = React.memo(
         setNetworks,
         setSelectedToken,
         setQueryParams,
-        openOneNovaTransferDialog
-      ]
-    )
+        openOneNovaTransferDialog,
+      ],
+    );
 
     return (
       <>
@@ -555,7 +502,7 @@ export const NetworkSelectionContainer = React.memo(
           isFooterHidden={true}
           className={twMerge(
             'h-screen overflow-hidden md:h-[calc(100vh_-_175px)] md:max-h-[900px] md:max-w-[500px]',
-            embedMode && 'md:h-full'
+            embedMode && 'md:h-full',
           )}
         >
           <SearchPanel>
@@ -571,8 +518,8 @@ export const NetworkSelectionContainer = React.memo(
         </Dialog>
         <OneNovaTransferDialog {...oneNovaTransferDialogProps} />
       </>
-    )
-  }
-)
+    );
+  },
+);
 
-NetworkSelectionContainer.displayName = 'NetworkSelectionContainer'
+NetworkSelectionContainer.displayName = 'NetworkSelectionContainer';

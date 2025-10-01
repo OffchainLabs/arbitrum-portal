@@ -2,7 +2,7 @@ name: Scripts Test
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: ['master']
     types:
       - opened
       - edited
@@ -34,7 +34,7 @@ jobs:
         id: check-files
 
   test-scripts:
-    name: "Test Scripts"
+    name: 'Test Scripts'
     runs-on: ubuntu-4
     needs: [check-files]
     if: needs.check-files.outputs.test_scripts == 'true'

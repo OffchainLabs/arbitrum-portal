@@ -1,61 +1,61 @@
-import { useAccount } from 'wagmi'
-import { useAccountType } from '../../hooks/useAccountType'
-import { useMemo } from 'react'
-import { ChainId } from '../../types/ChainId'
-import { useBalance } from '../../hooks/useBalance'
-import { CommonAddress } from '../../util/CommonAddressUtils'
-import { useLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory'
-import { ExternalLink } from '../common/ExternalLink'
+import { useMemo } from 'react';
+import { useAccount } from 'wagmi';
+
+import { useAccountType } from '../../hooks/useAccountType';
+import { useBalance } from '../../hooks/useBalance';
+import { useLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
+import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import { ExternalLink } from '../common/ExternalLink';
 
 export const highlightTransactionHistoryDisclaimer = () => {
-  const element = document.getElementById('tx-history-disclaimer')
-  if (!element) return
+  const element = document.getElementById('tx-history-disclaimer');
+  if (!element) return;
 
-  element.classList.add('animate-blink', 'bg-highlight')
+  element.classList.add('animate-blink', 'bg-highlight');
 
   // Remove highlight effect after 3 seconds
   setTimeout(() => {
-    element.classList.remove('animate-blink', 'bg-highlight')
-  }, 3000)
-}
+    element.classList.remove('animate-blink', 'bg-highlight');
+  }, 3000);
+};
 
 export function TransactionHistoryDisclaimer() {
-  const { address: walletAddress } = useAccount()
-  const { accountType } = useAccountType()
+  const { address: walletAddress } = useAccount();
+  const { accountType } = useAccountType();
   const { data: lifiTransactions } = useLifiTransactionHistory({
-    walletAddress
-  })
+    walletAddress,
+  });
 
   const {
-    erc20: [mainnetBalances]
+    erc20: [mainnetBalances],
   } = useBalance({
     chainId: ChainId.Ethereum,
-    walletAddress
-  })
+    walletAddress,
+  });
   const {
-    erc20: [arbOneBalances]
+    erc20: [arbOneBalances],
   } = useBalance({
     chainId: ChainId.ArbitrumOne,
-    walletAddress
-  })
+    walletAddress,
+  });
 
   const showOftDisclaimer = useMemo(() => {
-    const mainnetUsdtBalance = mainnetBalances?.[CommonAddress.Ethereum.USDT]
-    const arbOneUsdtBalance = arbOneBalances?.[CommonAddress.ArbitrumOne.USDT]
+    const mainnetUsdtBalance = mainnetBalances?.[CommonAddress.Ethereum.USDT];
+    const arbOneUsdtBalance = arbOneBalances?.[CommonAddress.ArbitrumOne.USDT];
 
     const userHasUsdtBalance =
       (mainnetUsdtBalance && mainnetUsdtBalance.gt(0)) ||
-      (arbOneUsdtBalance && arbOneUsdtBalance.gt(0))
+      (arbOneUsdtBalance && arbOneUsdtBalance.gt(0));
 
-    return userHasUsdtBalance && accountType === 'smart-contract-wallet'
-  }, [mainnetBalances, arbOneBalances, accountType])
+    return userHasUsdtBalance && accountType === 'smart-contract-wallet';
+  }, [mainnetBalances, arbOneBalances, accountType]);
 
   const showLifiDisclaimer =
-    accountType === 'smart-contract-wallet' ||
-    (lifiTransactions && lifiTransactions.length > 0)
+    accountType === 'smart-contract-wallet' || (lifiTransactions && lifiTransactions.length > 0);
 
   if (!showOftDisclaimer && !showLifiDisclaimer) {
-    return null
+    return null;
   }
 
   return (
@@ -83,8 +83,7 @@ export function TransactionHistoryDisclaimer() {
             </li>
           ) : (
             <li>
-              LiFi transactions inititated by Smart-contract wallets can be
-              found on{' '}
+              LiFi transactions inititated by Smart-contract wallets can be found on{' '}
               <ExternalLink
                 href={
                   walletAddress
@@ -100,8 +99,7 @@ export function TransactionHistoryDisclaimer() {
           ))}
         {showOftDisclaimer && (
           <li>
-            LayerZero USDT transfers initiated by Smart-contract wallets can be
-            found on{' '}
+            LayerZero USDT transfers initiated by Smart-contract wallets can be found on{' '}
             <ExternalLink
               href={
                 walletAddress
@@ -125,9 +123,7 @@ export function TransactionHistoryDisclaimer() {
           </li>
         )}
       </ul>
-      <span className="pl-4">
-        Full integration of transactions history is coming soon.
-      </span>
+      <span className="pl-4">Full integration of transactions history is coming soon.</span>
     </div>
-  )
+  );
 }

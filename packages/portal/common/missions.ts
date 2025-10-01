@@ -1,5 +1,6 @@
-import missionsJson from '@/public/__auto-generated-ecosystem-missions.json';
 import { dayjs, getCurrentDateInEasternTime } from '@/common/dateUtils';
+import missionsJson from '@/public/__auto-generated-ecosystem-missions.json';
+
 import { EcosystemMission } from './types';
 
 // Parse and filter out the missions that are outside the time range

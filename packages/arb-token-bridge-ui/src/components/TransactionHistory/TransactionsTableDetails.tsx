@@ -1,58 +1,52 @@
-import { Fragment, useMemo } from 'react'
-import { Dialog, DialogBackdrop, Transition } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import { shallow } from 'zustand/shallow'
-import { useTxDetailsStore } from './TransactionHistory'
-import { TransactionDetailsContent } from './TransactionDetailsContent'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar'
-import { useTransactionHistory } from '../../hooks/useTransactionHistory'
-import { getProviderForChainId } from '../../token-bridge-sdk/utils'
+import { Dialog, DialogBackdrop, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import { Fragment, useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
+
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { getProviderForChainId } from '../../token-bridge-sdk/utils';
+import { TransactionDetailsContent } from './TransactionDetailsContent';
+import { useTxDetailsStore } from './TransactionHistory';
+import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
 
 export const TransactionsTableDetails = () => {
-  const sanitizedAddress = useTransactionHistoryAddressStore(
-    state => state.sanitizedAddress
-  )
+  const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
   const { txFromStore, isOpen, close, reset } = useTxDetailsStore(
-    state => ({
+    (state) => ({
       txFromStore: state.tx,
       isOpen: state.isOpen,
       close: state.close,
-      reset: state.reset
+      reset: state.reset,
     }),
-    shallow
-  )
+    shallow,
+  );
 
-  const { transactions } = useTransactionHistory(sanitizedAddress)
+  const { transactions } = useTransactionHistory(sanitizedAddress);
 
   const tx = useMemo(() => {
     if (!txFromStore) {
-      return null
+      return null;
     }
 
     // we need to get tx from the hook to make sure we have up to date details, e.g. status
     return transactions.find(
-      t =>
+      (t) =>
         t.parentChainId === txFromStore.parentChainId &&
         t.childChainId === txFromStore.childChainId &&
-        t.txId === txFromStore.txId
-    )
-  }, [transactions, txFromStore])
+        t.txId === txFromStore.txId,
+    );
+  }, [transactions, txFromStore]);
 
-  const childProvider = getProviderForChainId(tx?.childChainId ?? 0)
-  const nativeCurrency = useNativeCurrency({ provider: childProvider })
+  const childProvider = getProviderForChainId(tx?.childChainId ?? 0);
+  const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
   if (!tx || !sanitizedAddress || !nativeCurrency) {
-    return null
+    return null;
   }
 
   return (
-    <Dialog
-      as="div"
-      open={typeof tx !== 'undefined'}
-      className="relative z-40"
-      onClose={close}
-    >
+    <Dialog as="div" open={typeof tx !== 'undefined'} className="relative z-40" onClose={close}>
       <Transition show={isOpen} as={Fragment}>
         <Transition.Child
           as={Fragment}
@@ -63,10 +57,7 @@ export const TransactionsTableDetails = () => {
           leaveFrom="opacity-70"
           leaveTo="opacity-0"
         >
-          <DialogBackdrop
-            className="fixed inset-0 bg-black opacity-70"
-            aria-hidden="true"
-          />
+          <DialogBackdrop className="fixed inset-0 bg-black opacity-70" aria-hidden="true" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -96,15 +87,12 @@ export const TransactionsTableDetails = () => {
                   </button>
                 </Dialog.Title>
 
-                <TransactionDetailsContent
-                  tx={tx}
-                  walletAddress={sanitizedAddress}
-                />
+                <TransactionDetailsContent tx={tx} walletAddress={sanitizedAddress} />
               </Dialog.Panel>
             </Transition.Child>
           </div>
         </div>
       </Transition>
     </Dialog>
-  )
-}
+  );
+};

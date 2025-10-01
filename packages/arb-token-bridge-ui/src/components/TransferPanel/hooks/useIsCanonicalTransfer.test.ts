@@ -1,15 +1,13 @@
-import { beforeAll, describe, expect, it } from 'vitest'
-import {
-  ERC20BridgeToken,
-  TokenType
-} from '../../../hooks/arbTokenBridge.types'
-import { isArbitrumCanonicalTransfer } from './useIsCanonicalTransfer'
-import { ChainId } from '../../../types/ChainId'
-import { constants } from 'ethers'
-import { ether } from '../../../constants'
-import { registerCustomArbitrumNetwork } from '@arbitrum/sdk'
-import orbitChainsData from '../../../util/orbitChainsData.json'
-import { CommonAddress } from '../../../util/CommonAddressUtils'
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { constants } from 'ethers';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+import { ether } from '../../../constants';
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
+import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
+import orbitChainsData from '../../../util/orbitChainsData.json';
+import { isArbitrumCanonicalTransfer } from './useIsCanonicalTransfer';
 
 const usdcToken: ERC20BridgeToken = {
   address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -17,25 +15,23 @@ const usdcToken: ERC20BridgeToken = {
   symbol: 'USDC',
   type: TokenType.ERC20,
   name: 'USDC',
-  listIds: new Set<string>()
-}
+  listIds: new Set<string>(),
+};
 
-const rariChainId = 1380012617
+const rariChainId = 1380012617;
 
 describe('isArbitrumCanonicalTransfer', () => {
   beforeAll(() => {
     registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find(chain => chain.chainId === ChainId.ApeChain)!
-    )
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
+    );
     registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find(
-        chain => chain.chainId === ChainId.Superposition
-      )!
-    )
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
+    );
     registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find(chain => chain.chainId === rariChainId)!
-    )
-  })
+      orbitChainsData.mainnet.find((chain) => chain.chainId === rariChainId)!,
+    );
+  });
 
   describe('for deposits', () => {
     it('should return true from Ethereum to Arbitrum One', () => {
@@ -46,9 +42,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(ethDeposit).toBe(true)
+        selectedToken: null,
+      });
+      expect(ethDeposit).toBe(true);
 
       const erc20Deposit = isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,
@@ -57,10 +53,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(erc20Deposit).toBe(true)
-    })
+        selectedToken: usdcToken,
+      });
+      expect(erc20Deposit).toBe(true);
+    });
 
     it('should return false for withdraw only token', () => {
       const erc20Deposit = isArbitrumCanonicalTransfer({
@@ -70,10 +66,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(erc20Deposit).toBe(false)
-    })
+        selectedToken: usdcToken,
+      });
+      expect(erc20Deposit).toBe(false);
+    });
 
     it('should return false from Base to Arbitrum One', () => {
       const baseDeposit = isArbitrumCanonicalTransfer({
@@ -83,10 +79,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(baseDeposit).toBe(false)
-    })
+        selectedToken: null,
+      });
+      expect(baseDeposit).toBe(false);
+    });
 
     it('should return false for disabled token', () => {
       const deposit = isArbitrumCanonicalTransfer({
@@ -102,11 +98,11 @@ describe('isArbitrumCanonicalTransfer', () => {
           symbol: 'rDPX',
           type: TokenType.ERC20,
           name: 'rDPX',
-          listIds: new Set<string>()
-        }
-      })
-      expect(deposit).toBe(false)
-    })
+          listIds: new Set<string>(),
+        },
+      });
+      expect(deposit).toBe(false);
+    });
 
     it('should return from ArbitrumOne to ApeChain', () => {
       const apeDeposit = isArbitrumCanonicalTransfer({
@@ -116,9 +112,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         parentChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(apeDeposit).toBe(true)
+        selectedToken: null,
+      });
+      expect(apeDeposit).toBe(true);
 
       const ethDeposit = isArbitrumCanonicalTransfer({
         sourceChainId: ChainId.ArbitrumOne,
@@ -132,11 +128,11 @@ describe('isArbitrumCanonicalTransfer', () => {
           type: TokenType.ERC20,
           address: constants.AddressZero,
           l2Address: CommonAddress.ApeChain.WETH,
-          listIds: new Set<string>()
-        }
-      })
-      expect(ethDeposit).toBe(false)
-    })
+          listIds: new Set<string>(),
+        },
+      });
+      expect(ethDeposit).toBe(false);
+    });
 
     it('should return from ArbitrumOne to Superposition', () => {
       const ethDeposit = isArbitrumCanonicalTransfer({
@@ -146,9 +142,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         parentChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(ethDeposit).toBe(true)
+        selectedToken: null,
+      });
+      expect(ethDeposit).toBe(true);
 
       const usdcDeposit = isArbitrumCanonicalTransfer({
         sourceChainId: ChainId.ArbitrumOne,
@@ -159,11 +155,11 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: {
           ...usdcToken,
-          address: CommonAddress.ArbitrumOne.USDC
-        }
-      })
-      expect(usdcDeposit).toBe(true)
-    })
+          address: CommonAddress.ArbitrumOne.USDC,
+        },
+      });
+      expect(usdcDeposit).toBe(true);
+    });
 
     it('Should return true for USDC transfers', () => {
       const ethTeleport = isArbitrumCanonicalTransfer({
@@ -176,12 +172,12 @@ describe('isArbitrumCanonicalTransfer', () => {
         selectedToken: {
           ...usdcToken,
           address: CommonAddress.Ethereum.USDC,
-          l2Address: CommonAddress.ArbitrumOne['USDC.e']
-        }
-      })
-      expect(ethTeleport).toBe(true)
-    })
-  })
+          l2Address: CommonAddress.ArbitrumOne['USDC.e'],
+        },
+      });
+      expect(ethTeleport).toBe(true);
+    });
+  });
 
   describe('for withdrawals', () => {
     it('should return true from Arbitrum One to Ethereum', () => {
@@ -192,9 +188,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.Ethereum,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(ethWithdrawal).toBe(true)
+        selectedToken: null,
+      });
+      expect(ethWithdrawal).toBe(true);
 
       const erc20Withdrawal = isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,
@@ -203,10 +199,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.Ethereum,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(erc20Withdrawal).toBe(true)
-    })
+        selectedToken: usdcToken,
+      });
+      expect(erc20Withdrawal).toBe(true);
+    });
 
     it('should return true for withdraw only token', () => {
       const erc20Withdrawal = isArbitrumCanonicalTransfer({
@@ -216,10 +212,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.Ethereum,
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(erc20Withdrawal).toBe(true)
-    })
+        selectedToken: usdcToken,
+      });
+      expect(erc20Withdrawal).toBe(true);
+    });
 
     it('should return false from Arbitrum One to Base', () => {
       const baseWithdrawal = isArbitrumCanonicalTransfer({
@@ -229,10 +225,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.Base,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(baseWithdrawal).toBe(false)
-    })
+        selectedToken: null,
+      });
+      expect(baseWithdrawal).toBe(false);
+    });
 
     it('should return false for disabled token', () => {
       const withdrawal = isArbitrumCanonicalTransfer({
@@ -248,11 +244,11 @@ describe('isArbitrumCanonicalTransfer', () => {
           symbol: 'FU',
           type: TokenType.ERC20,
           name: 'FU',
-          listIds: new Set<string>()
-        }
-      })
-      expect(withdrawal).toBe(false)
-    })
+          listIds: new Set<string>(),
+        },
+      });
+      expect(withdrawal).toBe(false);
+    });
 
     it('should return from ApeChain to ArbitrumOne', () => {
       const apeWithdraw = isArbitrumCanonicalTransfer({
@@ -262,9 +258,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         parentChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(apeWithdraw).toBe(true)
+        selectedToken: null,
+      });
+      expect(apeWithdraw).toBe(true);
 
       const wethWithdraw = isArbitrumCanonicalTransfer({
         sourceChainId: ChainId.ApeChain,
@@ -281,11 +277,11 @@ describe('isArbitrumCanonicalTransfer', () => {
           logoURI: '',
           name: 'Wrapped Ether',
           symbol: 'WETH',
-          type: TokenType.ERC20
-        }
-      })
-      expect(wethWithdraw).toBe(false)
-    })
+          type: TokenType.ERC20,
+        },
+      });
+      expect(wethWithdraw).toBe(false);
+    });
 
     it('should return from Superposition to ArbitrumOne', () => {
       const ethWithdraw = isArbitrumCanonicalTransfer({
@@ -295,9 +291,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         parentChainId: ChainId.ArbitrumOne,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(ethWithdraw).toBe(true)
+        selectedToken: null,
+      });
+      expect(ethWithdraw).toBe(true);
 
       const usdcWithdraw = isArbitrumCanonicalTransfer({
         sourceChainId: ChainId.Superposition,
@@ -308,12 +304,12 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: {
           ...usdcToken,
-          address: CommonAddress.ArbitrumOne.USDC
-        }
-      })
-      expect(usdcWithdraw).toBe(true)
-    })
-  })
+          address: CommonAddress.ArbitrumOne.USDC,
+        },
+      });
+      expect(usdcWithdraw).toBe(true);
+    });
+  });
 
   describe('teleport mode', () => {
     it('should return true from Ethereum to Rari for ETH', () => {
@@ -324,10 +320,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: rariChainId,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(teleport).toBe(true)
-    })
+        selectedToken: null,
+      });
+      expect(teleport).toBe(true);
+    });
     it('should return false from Ethereum to Rari for ERC20', () => {
       const teleport = isArbitrumCanonicalTransfer({
         childChainId: rariChainId,
@@ -336,10 +332,10 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: rariChainId,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(teleport).toBe(false)
-    })
+        selectedToken: usdcToken,
+      });
+      expect(teleport).toBe(false);
+    });
     it('should return true from Ethereum to Rari for enabled token', () => {
       const teleport = isArbitrumCanonicalTransfer({
         childChainId: rariChainId,
@@ -354,11 +350,11 @@ describe('isArbitrumCanonicalTransfer', () => {
           symbol: 'RARI',
           type: TokenType.ERC20,
           name: 'RARI',
-          listIds: new Set<string>()
-        }
-      })
-      expect(teleport).toBe(true)
-    })
+          listIds: new Set<string>(),
+        },
+      });
+      expect(teleport).toBe(true);
+    });
 
     it('should return false from Ethereum to ApeChain', () => {
       const ethTeleport = isArbitrumCanonicalTransfer({
@@ -368,9 +364,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ApeChain,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null
-      })
-      expect(ethTeleport).toBe(false)
+        selectedToken: null,
+      });
+      expect(ethTeleport).toBe(false);
 
       const erc20Teleport = isArbitrumCanonicalTransfer({
         childChainId: ChainId.ApeChain,
@@ -379,9 +375,9 @@ describe('isArbitrumCanonicalTransfer', () => {
         destinationChainId: ChainId.ApeChain,
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken
-      })
-      expect(erc20Teleport).toBe(false)
-    })
-  })
-})
+        selectedToken: usdcToken,
+      });
+      expect(erc20Teleport).toBe(false);
+    });
+  });
+});

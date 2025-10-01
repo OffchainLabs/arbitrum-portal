@@ -1,7 +1,4 @@
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
+import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export function SecurityGuaranteed() {
   return (
@@ -11,7 +8,7 @@ export function SecurityGuaranteed() {
         <span>Security guaranteed by Ethereum</span>
       </div>
     </div>
-  )
+  );
 }
 
 export function SecurityNotGuaranteed() {
@@ -22,5 +19,5 @@ export function SecurityNotGuaranteed() {
         <span>Security not guaranteed by Arbitrum</span>
       </div>
     </div>
-  )
+  );
 }

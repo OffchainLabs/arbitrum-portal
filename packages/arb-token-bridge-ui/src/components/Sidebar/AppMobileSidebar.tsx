@@ -1,14 +1,15 @@
-import { PlusCircleIcon } from '@heroicons/react/24/outline'
-import { MenuItem } from '@offchainlabs/cobalt'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { usePostHog } from 'posthog-js/react'
-import { useAccount } from 'wagmi'
-import { AccountMenuItem } from './AccountMenuItem'
-import { MobileSidebar } from '@offchainlabs/cobalt'
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { MenuItem } from '@offchainlabs/cobalt';
+import { MobileSidebar } from '@offchainlabs/cobalt';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { usePostHog } from 'posthog-js/react';
+import { useAccount } from 'wagmi';
+
+import { AccountMenuItem } from './AccountMenuItem';
 
 export const AppMobileSidebar: React.FC<React.PropsWithChildren> = () => {
-  const posthog = usePostHog()
-  const { isConnected } = useAccount()
+  const posthog = usePostHog();
+  const { isConnected } = useAccount();
 
   return (
     <div className="flex flex-col justify-center sm:hidden">
@@ -34,5 +35,5 @@ export const AppMobileSidebar: React.FC<React.PropsWithChildren> = () => {
         )}
       </MobileSidebar>
     </div>
-  )
-}
+  );
+};

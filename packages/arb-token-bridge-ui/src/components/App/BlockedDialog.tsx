@@ -1,8 +1,8 @@
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
-import { Dialog, DialogProps } from '../common/Dialog'
-import { ExternalLink } from '../common/ExternalLink'
-import { GET_HELP_LINK } from '../../constants'
+import { GET_HELP_LINK } from '../../constants';
+import { Dialog, DialogProps } from '../common/Dialog';
+import { ExternalLink } from '../common/ExternalLink';
 
 export function BlockedDialog(props: DialogProps & { address: string }) {
   return (
@@ -21,15 +21,12 @@ export function BlockedDialog(props: DialogProps & { address: string }) {
         <span>This address is affiliated with a blocked activity.</span>
         <span>
           If you think this was an error, you can request a review by filing a{' '}
-          <ExternalLink
-            href={GET_HELP_LINK}
-            className="arb-hover text-white underline"
-          >
+          <ExternalLink href={GET_HELP_LINK} className="arb-hover text-white underline">
             support ticket
           </ExternalLink>
           .
         </span>
       </div>
     </Dialog>
-  )
+  );
 }

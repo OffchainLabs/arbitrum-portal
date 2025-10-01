@@ -1,13 +1,14 @@
-import { twMerge } from 'tailwind-merge';
 import Image from 'next/image';
-import { FullProject } from '@/common/types';
-import { ProjectWidget } from './ProjectWidget';
-import IconLink from '@/public/images/link.svg';
+import { twMerge } from 'tailwind-merge';
+
 import { formatOptionalDate } from '@/common/dateUtils';
+import { FullProject } from '@/common/types';
+import IconLink from '@/public/images/link.svg';
+
+import { ProjectWidget } from './ProjectWidget';
 
 export const AuditWidget = ({ project }: { project: FullProject }) => {
-  const auditInformationAvailable =
-    project.meta.auditReportDate || project.links.audit;
+  const auditInformationAvailable = project.meta.auditReportDate || project.links.audit;
 
   // show this widget for defi category only
   const isDefi = project.categoryIds.includes('defi');
@@ -23,10 +24,7 @@ export const AuditWidget = ({ project }: { project: FullProject }) => {
           <div className="flex items-center gap-2">
             <ProjectWidget.DataKey>Last audit</ProjectWidget.DataKey>
             <ProjectWidget.DataValue>
-              {formatOptionalDate(
-                project.meta.auditReportDate,
-                'MMM, DD, YYYY',
-              )}
+              {formatOptionalDate(project.meta.auditReportDate, 'MMM, DD, YYYY')}
             </ProjectWidget.DataValue>
           </div>
         )}

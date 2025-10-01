@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
-import { Card } from '@/components/Card';
-import { AnimatedNumber } from '@/components/AnimatedNumber';
-import { PortalStats } from '@/common/types';
+
 import { DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
+import { PortalStats } from '@/common/types';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
+import { Card } from '@/components/Card';
 import statsJson from '@/public/__auto-generated-stats.json';
 
 const statsGeneratedOn = statsJson.meta.timestamp;

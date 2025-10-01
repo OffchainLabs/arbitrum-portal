@@ -2,14 +2,15 @@
 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-import { Card } from './Card';
-import { useSearch } from '@/hooks/useSearch';
-import { FuzzySearchResult, SearchResult } from '@/common/getSearchResults';
 import { getCategoryDetailsById } from '@/common/categories';
+import { FuzzySearchResult, SearchResult } from '@/common/getSearchResults';
+import { getOrbitChainDetailsById } from '@/common/orbitChains';
 import { getProjectDetailsById } from '@/common/projects';
 import { getSubcategoryDetailsById } from '@/common/subcategories';
 import { EntityType, FullProject, OrbitChain } from '@/common/types';
-import { getOrbitChainDetailsById } from '@/common/orbitChains';
+import { useSearch } from '@/hooks/useSearch';
+
+import { Card } from './Card';
 import { SearchedOrbitChains } from './SearchedOrbitChains';
 import { SearchedProjects } from './SearchedProjects';
 
@@ -53,29 +54,23 @@ export const FullPageSearchResults = ({
   const fullPageResult = getFullPageGroupedResults(searchResults);
 
   const projects =
-    fullPageResult[EntityType.Project].reduce(
-      (result: FullProject[], project) => {
-        const projectDetails = getProjectDetailsById(project.slug);
-        if (projectDetails) {
-          result.push(projectDetails);
-        }
-        return result;
-      },
-      [],
-    ) || [];
+    fullPageResult[EntityType.Project].reduce((result: FullProject[], project) => {
+      const projectDetails = getProjectDetailsById(project.slug);
+      if (projectDetails) {
+        result.push(projectDetails);
+      }
+      return result;
+    }, []) || [];
 
   const orbitChains =
-    fullPageResult[EntityType.OrbitChain].reduce(
-      (result: OrbitChain[], orbitChain) => {
-        const orbitChainDetails = getOrbitChainDetailsById(orbitChain.slug);
+    fullPageResult[EntityType.OrbitChain].reduce((result: OrbitChain[], orbitChain) => {
+      const orbitChainDetails = getOrbitChainDetailsById(orbitChain.slug);
 
-        if (orbitChainDetails) {
-          result.push(orbitChainDetails);
-        }
-        return result;
-      },
-      [],
-    ) || [];
+      if (orbitChainDetails) {
+        result.push(orbitChainDetails);
+      }
+      return result;
+    }, []) || [];
 
   const categories =
     fullPageResult[EntityType.Category].map((category) => ({
@@ -93,11 +88,9 @@ export const FullPageSearchResults = ({
   const categoriesCount = categories.length;
   const subcategoriesCount = subcategories.length;
   const orbitChainsCount = orbitChains.length;
-  const totalResultCount =
-    projectsCount + categoriesCount + subcategoriesCount + orbitChainsCount;
+  const totalResultCount = projectsCount + categoriesCount + subcategoriesCount + orbitChainsCount;
 
-  const showOrbitChainsBeforeProjects =
-    searchResults[0]!.item.entityType === EntityType.OrbitChain;
+  const showOrbitChainsBeforeProjects = searchResults[0]!.item.entityType === EntityType.OrbitChain;
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -121,11 +114,7 @@ export const FullPageSearchResults = ({
         {categoriesCount > 0 || subcategoriesCount > 0 ? (
           <div>
             <div className="mb-4 flex items-center gap-2 text-xl">
-              <div>
-                {categoriesCount + subcategoriesCount > 1
-                  ? 'Categories'
-                  : 'Category'}
-              </div>
+              <div>{categoriesCount + subcategoriesCount > 1 ? 'Categories' : 'Category'}</div>
               <span className="flex min-h-6 min-w-6 items-center justify-center rounded-full bg-white/20 p-1 px-3 text-center text-xs text-white/50">
                 {categoriesCount + subcategoriesCount}
               </span>
@@ -146,9 +135,7 @@ export const FullPageSearchResults = ({
                     <div className="flex flex-col items-start text-left">
                       <div className="font-light">{filter.title}</div>
                       {filter.searchTitle && (
-                        <div className="text-xs font-light opacity-50">
-                          {filter.searchTitle}
-                        </div>
+                        <div className="text-xs font-light opacity-50">{filter.searchTitle}</div>
                       )}
                     </div>
                   </div>

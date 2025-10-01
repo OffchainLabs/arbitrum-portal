@@ -10,23 +10,22 @@ module.exports = {
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',
         highlight:
           'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))',
-        eclipse:
-          'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
+        eclipse: 'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
         eclipseWidget:
-          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background, #191919) 70%, transparent 70%)'
+          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background, #191919) 70%, transparent 70%)',
       },
       colors: {
         // ACTION
-        error: '#CD0000',
+        'error': '#CD0000',
         'blue-link': '#1366C1',
 
         // PRIMARY
-        cyan: '#DDEAFA',
-        brick: '#ff9f8b',
-        orange: '#FFEED3',
-        lime: '#E8FFE4',
-        lavender: '#7693EB',
-        blue: '#00FBFF',
+        'cyan': '#DDEAFA',
+        'brick': '#ff9f8b',
+        'orange': '#FFEED3',
+        'lime': '#E8FFE4',
+        'lavender': '#7693EB',
+        'blue': '#00FBFF',
 
         // SECONDARY
         'cyan-dark': '#11365E',
@@ -35,9 +34,9 @@ module.exports = {
         'lime-dark': '#31572A',
 
         // TRANSACTION STATUS COLORS
-        claim: '#94d08e',
-        retry: '#CD0000',
-        pending: '#CCB069',
+        'claim': '#94d08e',
+        'retry': '#CD0000',
+        'pending': '#CCB069',
 
         // NEUTRAL (GRAYS)
         'gray-1': '#191919',
@@ -51,7 +50,7 @@ module.exports = {
         'gray-dark': '#6D6D6D',
         'line-gray': '#F4F4F4',
         'gray-9': '#212121',
-        dark: '#1A1C1D', // (or default-black)
+        'dark': '#1A1C1D', // (or default-black)
         'dark-hover': '#2b2e30', // (or default-black-hover)
 
         'bg-gray-1': '#191919',
@@ -61,7 +60,7 @@ module.exports = {
         'ocl-blue': '#243145',
         'atmosphere-blue': '#152C4E',
         'widget-background': 'var(--color-widget-background, #191919)',
-        'primary-cta': 'var(--color-primary-cta, #325EE6)'
+        'primary-cta': 'var(--color-primary-cta, #325EE6)',
       },
       spacing: {
         1: '5px',
@@ -95,58 +94,57 @@ module.exports = {
         60: '300px',
         64: '320px',
         78: '380px',
-        80: '400px'
+        80: '400px',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],
-        theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)']
+        theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)'],
       },
       fontSize: {
-        xl: '1.375rem'
+        xl: '1.375rem',
       },
       lineHeight: {
-        'extra-tight': '1.15'
+        'extra-tight': '1.15',
       },
       maxWidth: {
         2: '0.5rem',
         4: '1rem',
         6: '1.5rem',
-        8: '2rem'
+        8: '2rem',
       },
       borderRadius: {
         DEFAULT: 'var(--border-radius, 10px)',
         sm: 'calc(var(--border-radius, 10px) / 2)',
         md: 'calc(var(--border-radius, 10px))',
-        lg: 'calc(var(--border-radius, 10px) * 3 / 2)'
+        lg: 'calc(var(--border-radius, 10px) * 3 / 2)',
       },
       borderWidth: {
-        DEFAULT: 'var(--border-width, 1px)'
+        DEFAULT: 'var(--border-width, 1px)',
       },
       boxShadow: {
         // shadow used for input fields across the app
-        input:
-          '0px 2px 2px rgba(33,37,41,0.06), 0px 0px 1px rgba(33,37,41,0.08)',
-        2: '0px 0px 1px 0px rgba(33, 37, 41, 0.08), 0px 2px 2px 0px rgba(33, 37, 41, 0.06)'
+        input: '0px 2px 2px rgba(33,37,41,0.06), 0px 0px 1px rgba(33,37,41,0.08)',
+        2: '0px 0px 1px 0px rgba(33, 37, 41, 0.08), 0px 2px 2px 0px rgba(33, 37, 41, 0.06)',
       },
       keyframes: {
         'blink-pulse': {
           '0%, 100%': {
-            opacity: 1
+            opacity: 1,
           },
           '50%': {
-            opacity: 0.5
-          }
-        }
+            opacity: 0.5,
+          },
+        },
       },
       animation: {
         blink: 'blink-pulse 1s ease-in-out 1',
-        blinkInfinite: 'blink-pulse 1s ease-in-out infinite'
+        blinkInfinite: 'blink-pulse 1s ease-in-out infinite',
       },
       transitionDuration: {
         400: '400ms',
-        1000: '1000ms'
-      }
-    }
+        1000: '1000ms',
+      },
+    },
   },
   content: [
     './src/**/*.{js,ts,jsx,tsx}',
@@ -160,6 +158,6 @@ module.exports = {
     '../app/src/app/layout.tsx',
     '../app/src/app/restricted/page.tsx',
     // Cobalt
-    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}'
-  ]
-}
+    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
+  ],
+};

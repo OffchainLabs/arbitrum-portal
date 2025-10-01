@@ -78,9 +78,7 @@ export type ProjectWithSubcategories = Omit<Project, 'subcategoryIds'> & {
   subcategories: SubcategoryWithoutAppCount[];
 };
 
-export type ProjectOrProjectWithSubcategories =
-  | Project
-  | ProjectWithSubcategories;
+export type ProjectOrProjectWithSubcategories = Project | ProjectWithSubcategories;
 
 export type FullProject = ProjectWithSubcategories & {
   entityType: EntityType.Project;

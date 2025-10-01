@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { FullProject } from '@/common/types';
-import { useFilteredProjects } from '@/hooks/useFilteredProjects';
-import { ProjectItemBox } from '@/components/ProjectItemBox';
-import { CHAINS, getChainSlugFromTitle } from '@/common/chains';
 import { twMerge } from 'tailwind-merge';
+
+import { CHAINS, getChainSlugFromTitle } from '@/common/chains';
+import { FullProject } from '@/common/types';
+import { ProjectItemBox } from '@/components/ProjectItemBox';
+import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 
 const MAX_LIMIT = 5;
 
@@ -52,9 +53,7 @@ export const SimilarProjects = ({
     setTimeout(() => {
       // adding a small delay on the click of similar-project
       // so that it doesn't scroll up while the images are still loading
-      document
-        .getElementsByClassName('side-panel')[0]
-        ?.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementsByClassName('side-panel')[0]?.scrollTo({ top: 0, behavior: 'smooth' });
     }, 300);
   };
 
@@ -77,9 +76,7 @@ export const SimilarProjects = ({
               analyticsSource="More like this"
               displayMode="compact"
             />
-            {index < similarProjects.length - 1 && (
-              <hr className="border-white/20" />
-            )}
+            {index < similarProjects.length - 1 && <hr className="border-white/20" />}
           </>
         ))}
       </div>

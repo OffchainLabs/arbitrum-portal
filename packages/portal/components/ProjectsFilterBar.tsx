@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowSmallLeftIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-import { NetworkDropdown } from './NetworkDropdown';
-import { CategoryDropdown } from './CategoryDropdown';
-import { SidePanel } from './SidePanel';
 import { CategoriesPanel } from './CategoriesPanel';
+import { CategoryDropdown } from './CategoryDropdown';
 import { CategoryDropdownButton } from './CategoryDropdownButton';
+import { NetworkDropdown } from './NetworkDropdown';
+import { SidePanel } from './SidePanel';
 import { SortDropdown } from './SortDropdown';
 
 export const ProjectsFilterBar = () => {
@@ -58,11 +58,7 @@ export const ProjectsFilterBar = () => {
         </ul>
       </div>
 
-      <SidePanel
-        isOpen={isSidePanelOpen}
-        onClose={closePanel}
-        className="w-full bg-default-black"
-      >
+      <SidePanel isOpen={isSidePanelOpen} onClose={closePanel} className="w-full bg-default-black">
         <div className="flex items-center justify-between px-4 py-8 text-white">
           <button
             onClick={closePanel}
@@ -71,10 +67,7 @@ export const ProjectsFilterBar = () => {
             <ArrowSmallLeftIcon className="h-4 w-4 stroke-2" />
             <span>Done</span>
           </button>
-          <button
-            className="text-sm font-medium leading-7 hover:opacity-70"
-            onClick={resetFilters}
-          >
+          <button className="text-sm font-medium leading-7 hover:opacity-70" onClick={resetFilters}>
             Clear all
           </button>
         </div>

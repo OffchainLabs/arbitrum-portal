@@ -1,12 +1,6 @@
-import BoringAvatar from 'boring-avatars'
+import BoringAvatar from 'boring-avatars';
 
-export function CustomBoringAvatar({
-  size,
-  name
-}: {
-  size: number
-  name?: string
-}) {
+export function CustomBoringAvatar({ size, name }: { size: number; name?: string }) {
   return (
     <BoringAvatar
       size={size}
@@ -14,5 +8,5 @@ export function CustomBoringAvatar({
       variant="beam"
       colors={['#11365E', '#EDD75A', '#73B06F', '#0C8F8F', '#405059']}
     />
-  )
+  );
 }

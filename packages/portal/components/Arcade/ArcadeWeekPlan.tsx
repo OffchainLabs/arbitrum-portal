@@ -1,14 +1,13 @@
-import dynamic from 'next/dynamic';
-import { twMerge } from 'tailwind-merge';
-import { PropsWithChildren } from 'react';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
+import dynamic from 'next/dynamic';
+import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { formatDate, parseDateInEasternTime } from '@/common/dateUtils';
+import { ARCADE_LOCKED_PROJECT_DETAILS, getProjectDetailsById } from '@/common/projects';
+
 import { ArcadeProjectWithMissionLink } from './ArcadeProjectWithMissionLink';
 import { ArcadeWeeklyPlan } from './plans';
-import { formatDate, parseDateInEasternTime } from '@/common/dateUtils';
-import {
-  ARCADE_LOCKED_PROJECT_DETAILS,
-  getProjectDetailsById,
-} from '@/common/projects';
 
 const Countdown = dynamic(() => import('@/components/Countdown'), {
   ssr: false,
@@ -45,8 +44,7 @@ export const ArcadeWeekPlan = ({
           <div>
             <ArcadeLabel>Timeframe</ArcadeLabel>
             <ArcadeValue>
-              {formatDate(arcadeWeek.missionTimeStart)} -{' '}
-              {formatDate(arcadeWeek.missionTimeEnd)}
+              {formatDate(arcadeWeek.missionTimeStart)} - {formatDate(arcadeWeek.missionTimeEnd)}
             </ArcadeValue>
           </div>
         </div>
@@ -62,11 +60,7 @@ export const ArcadeWeekPlan = ({
                 <LockClosedIcon className="h-4 w-4" />
                 Chapter unlocks in
               </div>
-              <Countdown
-                toDate={parseDateInEasternTime(
-                  arcadeWeek.missionTimeStart,
-                ).valueOf()}
-              />
+              <Countdown toDate={parseDateInEasternTime(arcadeWeek.missionTimeStart).valueOf()} />
             </div>
           )}
 
@@ -80,16 +74,11 @@ export const ArcadeWeekPlan = ({
                 key={`arcade-mission-${mission.projectId}`}
                 className={twMerge(
                   'flex flex-col justify-between gap-2',
-                  locked &&
-                    'pointer-events-none select-none opacity-50 blur-lg filter',
+                  locked && 'pointer-events-none select-none opacity-50 blur-lg filter',
                 )}
               >
                 <ArcadeProjectWithMissionLink
-                  projectSlug={
-                    locked
-                      ? ARCADE_LOCKED_PROJECT_DETAILS.slug
-                      : projectDetails.slug
-                  }
+                  projectSlug={locked ? ARCADE_LOCKED_PROJECT_DETAILS.slug : projectDetails.slug}
                   missionLink={locked ? '#' : mission.missionDetailsLink}
                 />
               </div>

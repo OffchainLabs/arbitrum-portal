@@ -1,4 +1,5 @@
 import Image from 'next/image';
+
 import { Card } from '@/components/Card';
 import { RaasProviderGrid } from '@/components/RaasProviderGrid';
 
@@ -11,8 +12,7 @@ const resourceCards = [
   },
   {
     title: 'Arbitrum Tutorials',
-    description:
-      'Learn from a series of tutorials about how to build and interact with Arbitrum',
+    description: 'Learn from a series of tutorials about how to build and interact with Arbitrum',
     className: 'col-span-1',
     link: 'https://github.com/OffchainLabs/arbitrum-tutorials',
   },
@@ -24,8 +24,7 @@ const resourceCards = [
   },
   {
     title: 'Infra and Tool Apps',
-    description:
-      'Browse apps you can use to help you build and deploy on Arbitrum',
+    description: 'Browse apps you can use to help you build and deploy on Arbitrum',
     className: 'col-span-1',
     link: 'https://portal.arbitrum.io/projects/infra-and-tools',
   },
@@ -87,7 +86,8 @@ export const BuildSection = () => {
           <h3 className="text-lg">Launch Your Own Chain</h3>
         </div>
         <div className="-mt-3 text-sm opacity-70">
-          Leverage a third-party Rollup as a Service (RaaS) provider to take your orbit chain to mainnet.
+          Leverage a third-party Rollup as a Service (RaaS) provider to take your orbit chain to
+          mainnet.
         </div>
         <hr className="border-white/40" />
 
@@ -115,9 +115,7 @@ export const BuildSection = () => {
             eventName: `Build Page - Grants Clicks`,
           }}
         >
-          <div className="text-sm font-semibold">
-            Arbitrum Foundation Grants
-          </div>
+          <div className="text-sm font-semibold">Arbitrum Foundation Grants</div>
 
           <Image
             src="/images/arbitrum-foundation-logo.webp"

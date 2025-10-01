@@ -1,31 +1,23 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['cjs', 'es'],
-      fileName: format => `scripts.${format}.js`
+      fileName: (format) => `scripts.${format}.js`,
     },
     rollupOptions: {
-      external: [
-        '@actions/core',
-        '@actions/github',
-        'axios',
-        'fs',
-        'commander',
-        'sharp',
-        'path'
-      ]
-    }
+      external: ['@actions/core', '@actions/github', 'axios', 'fs', 'commander', 'sharp', 'path'],
+    },
   },
   optimizeDeps: {
-    exclude: ['sharp']
+    exclude: ['sharp'],
   },
   resolve: {
     alias: {
-      path: 'path'
-    }
-  }
-})
+      path: 'path',
+    },
+  },
+});

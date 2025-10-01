@@ -49,6 +49,6 @@
     //
     // GHSA-qj3p-xc97-xw74|arb-token-bridge-ui>wagmi>@wagmi/connectors>@metamask/sdk>@metamask/sdk-communication-layer
     // GHSA-qj3p-xc97-xw74|arb-token-bridge-ui>wagmi>@wagmi/connectors>@metamask/sdk
-    "GHSA-qj3p-xc97-xw74"
-  ]
+    "GHSA-qj3p-xc97-xw74",
+  ],
 }

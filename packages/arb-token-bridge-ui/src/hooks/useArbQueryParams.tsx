@@ -13,9 +13,9 @@
     `setQueryParams(newAmount)`
 
 */
-import { useCallback } from 'react'
-import queryString from 'query-string'
-import NextAdapterApp from 'next-query-params/app'
+import NextAdapterApp from 'next-query-params/app';
+import queryString from 'query-string';
+import { useCallback } from 'react';
 import {
   BooleanParam,
   DecodedValueMap,
@@ -25,29 +25,29 @@ import {
   SetQuery,
   StringParam,
   useQueryParams,
-  withDefault
-} from 'use-query-params'
+  withDefault,
+} from 'use-query-params';
 
-import { defaultTheme } from './useTheme'
 import {
-  TabParamEnum,
-  DisabledFeatures,
+  AmountQueryParam,
   AmountQueryParamEnum,
-  tabToIndex,
+  ChainParam,
+  DisabledFeatures,
+  DisabledFeaturesParam,
+  TabParam,
+  TabParamEnum,
+  ThemeParam,
+  TokenQueryParam,
+  decodeChainQueryParam,
+  decodeTabQueryParam,
+  encodeChainQueryParam,
+  encodeTabQueryParam,
   indexToTab,
   isValidDisabledFeature,
-  DisabledFeaturesParam,
-  encodeChainQueryParam,
-  decodeChainQueryParam,
-  encodeTabQueryParam,
-  decodeTabQueryParam,
-  ThemeParam,
-  AmountQueryParam,
   sanitizeAmountQueryParam,
-  TokenQueryParam,
-  ChainParam,
-  TabParam
-} from '../util/queryParamUtils'
+  tabToIndex,
+} from '../util/queryParamUtils';
+import { defaultTheme } from './useTheme';
 
 export {
   TabParamEnum,
@@ -66,61 +66,59 @@ export {
   sanitizeAmountQueryParam,
   TokenQueryParam,
   ChainParam,
-  TabParam
-}
+  TabParam,
+};
 
 /**
  * We use variables outside of the hook to share the accumulator accross multiple calls of useArbQueryParams
  */
 let pendingUpdates: DecodedValueMap<QueryParamConfigMap> = {
   /** If no sanitization happened on the server, set a flag on first change of query param to avoid infinite loop */
-  sanitized: 'true'
-}
-let debounceTimeout: NodeJS.Timeout | null = null
+  sanitized: 'true',
+};
+let debounceTimeout: NodeJS.Timeout | null = null;
 export type SetQueryParamsParameters =
   | Partial<DecodedValueMap<QueryParamConfigMap>>
   | ((
-      latestValues: DecodedValueMap<QueryParamConfigMap>
-    ) => Partial<DecodedValueMap<QueryParamConfigMap>>)
+      latestValues: DecodedValueMap<QueryParamConfigMap>,
+    ) => Partial<DecodedValueMap<QueryParamConfigMap>>);
 
 const debouncedUpdateQueryParams = (
   updates: SetQueryParamsParameters,
   originalSetQueryParams: SetQuery<QueryParamConfigMap>,
   /** debounce only applies to object update, for function updates it will be called immediately */
-  debounce: boolean = false
+  debounce: boolean = false,
 ) => {
   // Handle function update: setQueryParams((prevState) => ({ ...prevState, ...newUpdate }))
   if (typeof updates === 'function') {
     if (debounceTimeout) {
-      clearTimeout(debounceTimeout)
-      debounceTimeout = null
+      clearTimeout(debounceTimeout);
+      debounceTimeout = null;
     }
 
-    originalSetQueryParams(prevState =>
-      updates({ ...prevState, ...pendingUpdates })
-    )
-    pendingUpdates = {}
+    originalSetQueryParams((prevState) => updates({ ...prevState, ...pendingUpdates }));
+    pendingUpdates = {};
   } else {
     // Handle classic object updates: setQueryParams({ amount: "0.1" })
-    pendingUpdates = { ...pendingUpdates, ...updates }
+    pendingUpdates = { ...pendingUpdates, ...updates };
 
     if (debounceTimeout) {
-      clearTimeout(debounceTimeout)
+      clearTimeout(debounceTimeout);
     }
 
     if (debounce) {
       debounceTimeout = setTimeout(() => {
-        originalSetQueryParams(pendingUpdates)
-        pendingUpdates = {}
-        debounceTimeout = null
-      }, 400)
+        originalSetQueryParams(pendingUpdates);
+        pendingUpdates = {};
+        debounceTimeout = null;
+      }, 400);
     } else {
-      originalSetQueryParams(pendingUpdates)
-      pendingUpdates = {}
-      debounceTimeout = null
+      originalSetQueryParams(pendingUpdates);
+      pendingUpdates = {};
+      debounceTimeout = null;
     }
   }
-}
+};
 
 export const useArbQueryParams = () => {
   /*
@@ -129,19 +127,16 @@ export const useArbQueryParams = () => {
       setQueryParams (setter for all query state variables with debounced accumulator)
     ]
   */
-  const [queryParams, setQueryParams] =
-    useQueryParams<typeof queryParamProviderOptions.params>()
+  const [queryParams, setQueryParams] = useQueryParams<typeof queryParamProviderOptions.params>();
 
   const debouncedSetQueryParams = useCallback(
-    (
-      updates: SetQueryParamsParameters,
-      { debounce }: { debounce?: boolean } = {}
-    ) => debouncedUpdateQueryParams(updates, setQueryParams, debounce),
-    [setQueryParams]
-  )
+    (updates: SetQueryParamsParameters, { debounce }: { debounce?: boolean } = {}) =>
+      debouncedUpdateQueryParams(updates, setQueryParams, debounce),
+    [setQueryParams],
+  );
 
-  return [queryParams, debouncedSetQueryParams] as const
-}
+  return [queryParams, debouncedSetQueryParams] as const;
+};
 
 export const queryParamProviderOptions = {
   searchStringToObject: queryString.parse,
@@ -159,20 +154,13 @@ export const queryParamProviderOptions = {
     settingsOpen: withDefault(BooleanParam, false),
     tab: TabParam, // which tab is active
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
-    theme: withDefault(ThemeParam, defaultTheme) // theme customization
-  }
-} as const satisfies QueryParamOptions
-export function ArbQueryParamProvider({
-  children
-}: {
-  children: React.ReactNode
-}) {
+    theme: withDefault(ThemeParam, defaultTheme), // theme customization
+  },
+} as const satisfies QueryParamOptions;
+export function ArbQueryParamProvider({ children }: { children: React.ReactNode }) {
   return (
-    <QueryParamProvider
-      adapter={NextAdapterApp}
-      options={queryParamProviderOptions}
-    >
+    <QueryParamProvider adapter={NextAdapterApp} options={queryParamProviderOptions}>
       {children}
     </QueryParamProvider>
-  )
+  );
 }

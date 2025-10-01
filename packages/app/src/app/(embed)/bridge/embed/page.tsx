@@ -1,19 +1,20 @@
-import BridgeClient from '../../../(with-sidebar)/bridge/BridgeClient'
-import { Toast } from '@/bridge/components/common/atoms/Toast'
+import { addOrbitChainsToArbitrumSDK } from 'packages/app/src/initialization';
+import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
 
-import { addOrbitChainsToArbitrumSDK } from 'packages/app/src/initialization'
-import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect'
+import { Toast } from '@/bridge/components/common/atoms/Toast';
+
+import BridgeClient from '../../../(with-sidebar)/bridge/BridgeClient';
 
 export default async function EmbededPage({
-  searchParams
+  searchParams,
 }: {
   searchParams: {
-    [key: string]: string | string[] | undefined
-  }
+    [key: string]: string | string[] | undefined;
+  };
 }) {
   if (searchParams.sanitized !== 'true') {
-    addOrbitChainsToArbitrumSDK()
-    await sanitizeAndRedirect(searchParams, '/bridge/embed')
+    addOrbitChainsToArbitrumSDK();
+    await sanitizeAndRedirect(searchParams, '/bridge/embed');
   }
 
   return (
@@ -21,5 +22,5 @@ export default async function EmbededPage({
       <BridgeClient />
       <Toast />
     </>
-  )
+  );
 }

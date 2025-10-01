@@ -1,25 +1,25 @@
-import { useState, useEffect } from 'react'
-import { providers } from 'ethers'
+import { providers } from 'ethers';
+import { useEffect, useState } from 'react';
 
 export function useChainId({ provider }: { provider: providers.Provider }) {
-  const [chainId, setChainId] = useState<number | undefined>(undefined)
+  const [chainId, setChainId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function updateChainId() {
-      const network = await provider.getNetwork()
+      const network = await provider.getNetwork();
       if (!cancelled) {
-        setChainId(network.chainId)
+        setChainId(network.chainId);
       }
     }
 
-    updateChainId()
+    updateChainId();
 
     return () => {
-      cancelled = true
-    }
-  }, [provider])
+      cancelled = true;
+    };
+  }, [provider]);
 
-  return chainId
+  return chainId;
 }

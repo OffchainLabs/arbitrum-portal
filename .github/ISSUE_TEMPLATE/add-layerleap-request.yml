@@ -1,7 +1,7 @@
 name: Add Layer Leap Request
 description: File a request to have your Orbit chain support Layer Leap transfers
-title: "[feat]: enable Layer Leap for <Orbit Chain>"
-labels: ["Type: Add LayerLeap"]
+title: '[feat]: enable Layer Leap for <Orbit Chain>'
+labels: ['Type: Add LayerLeap']
 body:
   - type: markdown
     attributes:
@@ -21,7 +21,7 @@ body:
       placeholder: Your Orbit Chain name
     validations:
       required: true
-    
+
   - type: markdown
     attributes:
       value: |
@@ -39,7 +39,7 @@ body:
       label: Native token name
       placeholder: eg. Ether
     validations:
-      required: false           
+      required: false
   - type: input
     id: native-token-symbol
     attributes:
@@ -48,11 +48,10 @@ body:
     validations:
       required: false
 
-
   - type: markdown
     attributes:
-        value: |
-          Information for enabling Layer Leap transfers for your Orbit Chain
+      value: |
+        Information for enabling Layer Leap transfers for your Orbit Chain
   - type: checkboxes
     attributes:
       label: Enable Layer Leap

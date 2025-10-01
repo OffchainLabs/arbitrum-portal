@@ -1,7 +1,8 @@
-import { BigNumber, providers } from 'ethers'
-import { BridgeTransferStarter } from '@/token-bridge-sdk/BridgeTransferStarter'
+import { BigNumber, providers } from 'ethers';
 
-import { DialogType } from '../components/common/Dialog2'
+import { BridgeTransferStarter } from '@/token-bridge-sdk/BridgeTransferStarter';
+
+import { DialogType } from '../components/common/Dialog2';
 
 export type Dialog = Extract<
   DialogType,
@@ -9,16 +10,16 @@ export type Dialog = Extract<
   | 'confirm_cctp_withdrawal'
   | 'scw_custom_destination_address'
   | 'approve_token'
->
+>;
 
 export type UiDriverContext = {
-  amountBigNumber: BigNumber
-  isDepositMode: boolean
-  isSmartContractWallet: boolean
-  walletAddress: string
-  destinationAddress?: string
-  transferStarter: BridgeTransferStarter
-}
+  amountBigNumber: BigNumber;
+  isDepositMode: boolean;
+  isSmartContractWallet: boolean;
+  walletAddress: string;
+  destinationAddress?: string;
+  transferStarter: BridgeTransferStarter;
+};
 
 export type UiDriverStep =
   | { type: 'start' } //
@@ -26,58 +27,55 @@ export type UiDriverStep =
   | { type: 'dialog'; payload: Dialog }
   | { type: 'scw_tooltip' }
   | {
-      type: 'tx_ethers'
+      type: 'tx_ethers';
       payload: {
-        txRequest: providers.TransactionRequest
-        txRequestLabel: string
-      }
-    }
+        txRequest: providers.TransactionRequest;
+        txRequestLabel: string;
+      };
+    };
 
-export type UiDriverStepType = UiDriverStep['type']
+export type UiDriverStepType = UiDriverStep['type'];
 
 export type UiDriverStepPayloadFor<TStepType extends UiDriverStepType> =
   Extract<UiDriverStep, { type: TStepType }> extends {
-    payload: infer TPayload
+    payload: infer TPayload;
   }
     ? TPayload
-    : never
+    : never;
 
-type Result<T> =
-  | { data: T; error?: undefined }
-  | { data?: undefined; error: Error }
+type Result<T> = { data: T; error?: undefined } | { data?: undefined; error: Error };
 
-export type UiDriverStepResultFor<TStepType extends UiDriverStepType> =
-  TStepType extends 'start'
-    ? void
-    : TStepType extends 'return'
+export type UiDriverStepResultFor<TStepType extends UiDriverStepType> = TStepType extends 'start'
+  ? void
+  : TStepType extends 'return'
     ? void
     : TStepType extends 'dialog'
-    ? boolean
-    : TStepType extends 'scw_tooltip'
-    ? void
-    : TStepType extends 'tx_ethers'
-    ? Result<providers.TransactionReceipt>
-    : never
+      ? boolean
+      : TStepType extends 'scw_tooltip'
+        ? void
+        : TStepType extends 'tx_ethers'
+          ? Result<providers.TransactionReceipt>
+          : never;
 
 export type UiDriverStepGenerator<TStep extends UiDriverStep = UiDriverStep> = (
-  context: UiDriverContext
-) => AsyncGenerator<TStep, void, UiDriverStepResultFor<TStep['type']>>
+  context: UiDriverContext,
+) => AsyncGenerator<TStep, void, UiDriverStepResultFor<TStep['type']>>;
 
 export type UiDriverStepExecutor<TStep extends UiDriverStep = UiDriverStep> = (
   context: UiDriverContext,
-  step: TStep
-) => Promise<UiDriverStepResultFor<TStep['type']>>
+  step: TStep,
+) => Promise<UiDriverStepResultFor<TStep['type']>>;
 
 // TypeScript doesn't to the greatest job with generators
 // This 2nd generator helps with types both for params and result when yielding a step
 export async function* step<TStep extends UiDriverStep>(
-  step: TStep
+  step: TStep,
 ): AsyncGenerator<
   TStep,
   UiDriverStepResultFor<TStep['type']>,
   UiDriverStepResultFor<TStep['type']>
 > {
-  return yield step
+  return yield step;
 }
 
 /**
@@ -86,28 +84,28 @@ export async function* step<TStep extends UiDriverStep>(
 export async function drive<TStep extends UiDriverStep>(
   generator: UiDriverStepGenerator<TStep>,
   executor: UiDriverStepExecutor<TStep>,
-  context: UiDriverContext
+  context: UiDriverContext,
 ): Promise<boolean> {
-  const flow = generator(context)
+  const flow = generator(context);
 
-  let nextStep = await flow.next()
+  let nextStep = await flow.next();
 
   while (!nextStep.done) {
-    const step = nextStep.value
+    const step = nextStep.value;
 
     // handle special type for early return
     if (step.type === 'return') {
-      return true
+      return true;
     }
 
     // execute current step and obtain the result
     // eslint-disable-next-line no-await-in-loop
-    const result = await executor(context, step)
+    const result = await executor(context, step);
 
     // pass the result back into the generator
     // eslint-disable-next-line no-await-in-loop
-    nextStep = await flow.next(result)
+    nextStep = await flow.next(result);
   }
 
-  return false
+  return false;
 }

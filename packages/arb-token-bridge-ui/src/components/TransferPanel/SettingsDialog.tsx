@@ -1,42 +1,40 @@
-import { getTools } from '@lifi/sdk'
-import {
-  defaultSlippage,
-  useLifiSettingsStore
-} from './hooks/useLifiSettingsStore'
-import { useNetworks } from '../../hooks/useNetworks'
-import useSWRImmutable from 'swr/immutable'
-import React, { useCallback, useMemo, useState } from 'react'
-import { Checkbox } from '../common/Checkbox'
-import { Loader } from '../common/atoms/Loader'
-import { SafeImage } from '../common/SafeImage'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { twMerge } from 'tailwind-merge'
 import {
   ArrowTopRightOnSquareIcon,
   ExclamationCircleIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline'
-import { shallow } from 'zustand/shallow'
-import { ExternalLink } from '../common/ExternalLink'
-import { Dialog, UseDialogProps } from '../common/Dialog'
-import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils'
-import { isDepositMode as isDepositModeUtil } from '../../util/isDepositMode'
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
+import { getTools } from '@lifi/sdk';
+import React, { useCallback, useMemo, useState } from 'react';
+import useSWRImmutable from 'swr/immutable';
+import { twMerge } from 'tailwind-merge';
+import { shallow } from 'zustand/shallow';
+
+import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { isDepositMode as isDepositModeUtil } from '../../util/isDepositMode';
+import { Checkbox } from '../common/Checkbox';
+import { Dialog, UseDialogProps } from '../common/Dialog';
+import { ExternalLink } from '../common/ExternalLink';
+import { SafeImage } from '../common/SafeImage';
+import { Loader } from '../common/atoms/Loader';
+import { defaultSlippage, useLifiSettingsStore } from './hooks/useLifiSettingsStore';
 
 function useTools() {
-  const [{ sourceChain, destinationChain }] = useNetworks()
+  const [{ sourceChain, destinationChain }] = useNetworks();
 
   return useSWRImmutable(
     [sourceChain.id, destinationChain.id] as const,
     async ([_sourceChainId, _destinationChainId]) => {
       const tools = await getTools({
-        chains: [_sourceChainId, _destinationChainId]
-      })
+        chains: [_sourceChainId, _destinationChainId],
+      });
       return {
-        bridges: tools.bridges.filter(bridge => bridge.key !== 'arbitrum'),
-        exchanges: tools.exchanges
-      }
-    }
-  )
+        bridges: tools.bridges.filter((bridge) => bridge.key !== 'arbitrum'),
+        exchanges: tools.exchanges,
+      };
+    },
+  );
 }
 
 /**
@@ -44,46 +42,46 @@ function useTools() {
  */
 export function formatSlippage(slippage = ''): string {
   if (!slippage) {
-    return slippage
+    return slippage;
   }
   if (slippage === '.') {
-    return '0.'
+    return '0.';
   }
 
-  const parsedSlippage = Number.parseFloat(slippage)
+  const parsedSlippage = Number.parseFloat(slippage);
   if (Number.isNaN(Number(slippage)) && !Number.isNaN(parsedSlippage)) {
-    return parsedSlippage.toString()
+    return parsedSlippage.toString();
   }
   if (Number.isNaN(parsedSlippage) && slippage !== '.') {
-    return defaultSlippage
+    return defaultSlippage;
   }
   if (parsedSlippage > 100) {
-    return '100'
+    return '100';
   }
   if (parsedSlippage < 0) {
-    return Math.abs(parsedSlippage).toString()
+    return Math.abs(parsedSlippage).toString();
   }
 
   // Returning slippage rather than parsedSlippage here allows for 0. slippage
-  return slippage
+  return slippage;
 }
 
 function Tools({
   tools,
   disabledTools,
-  toggle
+  toggle,
 }: {
   tools: {
-    key: string
-    name: string
-    logoURI: string
-  }[]
-  disabledTools: string[]
-  toggle: (tool: string, enable: boolean) => void
+    key: string;
+    name: string;
+    logoURI: string;
+  }[];
+  disabledTools: string[];
+  toggle: (tool: string, enable: boolean) => void;
 }) {
   return (
     <div className={twMerge('grid grid-cols-2 gap-3 pl-2', 'sm:grid-cols-3')}>
-      {tools.map(tool => (
+      {tools.map((tool) => (
         <Checkbox
           key={tool.key}
           label={
@@ -95,70 +93,60 @@ function Tools({
                 className="ml-1 rounded"
                 fallback={<div className="h-3 w-3 bg-gray-dark" />}
               />
-              <div
-                key={tool.key}
-                className="ml-1 truncate whitespace-nowrap"
-                title={tool.name}
-              >
+              <div key={tool.key} className="ml-1 truncate whitespace-nowrap" title={tool.name}>
                 {tool.name}
               </div>
             </div>
           }
           labelClassName="w-[calc(100%_-_20px)] sm:w-full"
           checked={!disabledTools.includes(tool.key)}
-          onChange={checked => toggle(tool.key, checked)}
+          onChange={(checked) => toggle(tool.key, checked)}
         />
       ))}
     </div>
-  )
+  );
 }
 
 export const SettingsDialog = React.memo((props: UseDialogProps) => {
-  const { data: tools, isLoading: isLoadingTools } = useTools()
-  const [networks] = useNetworks()
+  const { data: tools, isLoading: isLoadingTools } = useTools();
+  const [networks] = useNetworks();
   const isDepositMode = isDepositModeUtil({
     sourceChainId: networks.sourceChain.id,
-    destinationChainId: networks.destinationChain.id
-  })
-  const [selectedToken] = useSelectedToken()
-  const {
-    slippage,
-    setSlippage,
-    storeDisabledBridges,
-    setDisabledBridgesToStore
-  } = useLifiSettingsStore(
-    state => ({
-      slippage: state.slippage,
-      setSlippage: state.setSlippage,
-      storeDisabledBridges: state.disabledBridges,
-      setDisabledBridgesToStore: state.setDisabledBridges
-    }),
-    shallow
-  )
+    destinationChainId: networks.destinationChain.id,
+  });
+  const [selectedToken] = useSelectedToken();
+  const { slippage, setSlippage, storeDisabledBridges, setDisabledBridgesToStore } =
+    useLifiSettingsStore(
+      (state) => ({
+        slippage: state.slippage,
+        setSlippage: state.setSlippage,
+        storeDisabledBridges: state.disabledBridges,
+        setDisabledBridgesToStore: state.setDisabledBridges,
+      }),
+      shallow,
+    );
   const isLifiSupported = useMemo(
     () =>
       isValidLifiTransfer({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-        fromToken: isDepositMode
-          ? selectedToken?.address
-          : selectedToken?.l2Address
+        fromToken: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
       }),
-    [selectedToken, networks.sourceChain.id, networks.destinationChain.id]
-  )
-  const [slippageValue, setSlippageValue] = useState(slippage)
-  const [disabledBridges, setDisabledBridges] = useState(storeDisabledBridges)
+    [selectedToken, networks.sourceChain.id, networks.destinationChain.id],
+  );
+  const [slippageValue, setSlippageValue] = useState(slippage);
+  const [disabledBridges, setDisabledBridges] = useState(storeDisabledBridges);
 
   const toggleBridge = useCallback((bridge: string, enabled: boolean) => {
-    setDisabledBridges(disabledBridges =>
+    setDisabledBridges((disabledBridges) =>
       enabled
-        ? disabledBridges.filter(b => b !== bridge)
-        : [...new Set([...disabledBridges, bridge])]
-    )
-  }, [])
+        ? disabledBridges.filter((b) => b !== bridge)
+        : [...new Set([...disabledBridges, bridge])],
+    );
+  }, []);
 
-  const slippageIsTooHigh = slippageValue && Number(slippageValue) >= 1
-  const slippageIsTooLow = slippageValue && Number(slippageValue) <= 0.01
+  const slippageIsTooHigh = slippageValue && Number(slippageValue) >= 1;
+  const slippageIsTooLow = slippageValue && Number(slippageValue) <= 0.01;
 
   return (
     <Dialog
@@ -166,9 +154,9 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
       title={<div className="text-xl">Settings</div>}
       onClose={(confirmed: boolean) => {
         // When user leave, persist settings to zustand store
-        setSlippage(slippageValue)
-        setDisabledBridgesToStore(disabledBridges)
-        props.onClose(confirmed)
+        setSlippage(slippageValue);
+        setDisabledBridgesToStore(disabledBridges);
+        props.onClose(confirmed);
       }}
       isFooterHidden
     >
@@ -181,34 +169,23 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
               <div className="flex flex-nowrap items-center gap-1 opacity-50">
                 {slippageIsTooLow && (
                   <>
-                    <ExclamationCircleIcon
-                      height={16}
-                      className="text-orange"
-                    />
+                    <ExclamationCircleIcon height={16} className="text-orange" />
                     <span className="text-sm text-orange">
-                      Slippage amount is low. You may see very limited route
-                      options.
+                      Slippage amount is low. You may see very limited route options.
                     </span>
                   </>
                 )}
                 {slippageIsTooHigh && (
                   <>
-                    <ExclamationCircleIcon
-                      height={16}
-                      className="text-orange"
-                    />
+                    <ExclamationCircleIcon height={16} className="text-orange" />
                     <span className="text-sm text-orange">
-                      Slippage amount is high. Industry recommendation is 0.5%
-                      or less.
+                      Slippage amount is high. Industry recommendation is 0.5% or less.
                     </span>
                   </>
                 )}
                 {!slippageIsTooHigh && !slippageIsTooLow && (
                   <>
-                    <InformationCircleIcon
-                      height={16}
-                      className="text-white/80"
-                    />
+                    <InformationCircleIcon height={16} className="text-white/80" />
                     <span className="flex flex-nowrap gap-1">
                       0.5% - 1% is the recommended range for slippage.{' '}
                       <ExternalLink
@@ -229,32 +206,29 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                   inputMode="decimal"
                   placeholder={defaultSlippage}
                   value={slippageValue}
-                  onChange={e => {
-                    const value = e.target.value
-                    setSlippageValue(formatSlippage(value))
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSlippageValue(formatSlippage(value));
                   }}
-                  onFocus={e => {
+                  onFocus={(e) => {
                     // On focus, if the current value is equal to the default slippage, clear the input
                     if (e.target.value === defaultSlippage) {
-                      setSlippageValue('')
-                      e.target.value = ''
+                      setSlippageValue('');
+                      e.target.value = '';
                     }
                   }}
-                  onBlur={e => {
-                    const value = e.target.value
+                  onBlur={(e) => {
+                    const value = e.target.value;
                     if (Number.parseFloat(value) === 0 || !value) {
-                      setSlippageValue(defaultSlippage)
+                      setSlippageValue(defaultSlippage);
                     }
                   }}
                   className={twMerge(
                     'h-[40px] w-[100px] rounded border border-white/10 bg-white/10 py-1 pl-2 pr-5  text-center text-sm text-gray-4',
-                    (slippageIsTooHigh || slippageIsTooLow) &&
-                      'border-orange-dark bg-orange-dark'
+                    (slippageIsTooHigh || slippageIsTooLow) && 'border-orange-dark bg-orange-dark',
                   )}
                 />
-                <div className="absolute bottom-0 right-2 top-0 flex items-center">
-                  %
-                </div>
+                <div className="absolute bottom-0 right-2 top-0 flex items-center">%</div>
               </span>
             </div>
 
@@ -267,9 +241,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                   width={18}
                   height={18}
                   alt="bridge fee"
-                  fallback={
-                    <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
-                  }
+                  fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
                 />{' '}
                 Supported Bridges
               </div>
@@ -286,7 +258,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
         )}
       </div>
     </Dialog>
-  )
-})
+  );
+});
 
-SettingsDialog.displayName = 'SettingsDialog'
+SettingsDialog.displayName = 'SettingsDialog';

@@ -1,9 +1,10 @@
-import { ChainId } from '../../types/ChainId'
-import { getInfuraRpcUrl, InfuraSupportedChainId } from './infura'
-import { it, expect } from 'vitest'
+import { expect, it } from 'vitest';
+
+import { ChainId } from '../../types/ChainId';
+import { InfuraSupportedChainId, getInfuraRpcUrl } from './infura';
 
 it('successfully returns the correct url for the provided chain and key', () => {
-  const key = '123456'
+  const key = '123456';
 
   const result: { [Key in InfuraSupportedChainId]: string } = {
     // L1 Mainnet
@@ -17,8 +18,8 @@ it('successfully returns the correct url for the provided chain and key', () => 
     [ChainId.ArbitrumSepolia]: getInfuraRpcUrl(ChainId.ArbitrumSepolia, key),
     [ChainId.BaseSepolia]: getInfuraRpcUrl(ChainId.BaseSepolia, key),
     [ChainId.ApeChain]: getInfuraRpcUrl(ChainId.ApeChain, key),
-    [ChainId.Superposition]: getInfuraRpcUrl(ChainId.Superposition, key)
-  }
+    [ChainId.Superposition]: getInfuraRpcUrl(ChainId.Superposition, key),
+  };
 
   expect(result).toMatchInlineSnapshot(`
     {
@@ -31,5 +32,5 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "8453": "https://base-mainnet.infura.io/v3/123456",
       "84532": "https://base-sepolia.infura.io/v3/123456",
     }
-  `)
-})
+  `);
+});

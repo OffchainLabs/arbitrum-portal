@@ -1,5 +1,6 @@
-import Image from 'next/image'
-import { ExternalLink } from '../common/ExternalLink'
+import Image from 'next/image';
+
+import { ExternalLink } from '../common/ExternalLink';
 
 export const OftTransferDisclaimer = () => {
   return (
@@ -21,5 +22,5 @@ export const OftTransferDisclaimer = () => {
         </ExternalLink>
       </p>
     </div>
-  )
-}
+  );
+};

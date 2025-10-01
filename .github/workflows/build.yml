@@ -2,7 +2,7 @@ name: Cache build artifacts
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: ['master']
     types:
       - opened
       - reopened
@@ -26,44 +26,44 @@ jobs:
     runs-on: ubuntu-4
     if: github.event.pull_request.draft == false
     steps:
-    - name: Checkout
-      uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
 
-    - name: Setup Node 22
-      uses: actions/setup-node@v5
-      with:
-        node-version: 22
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
 
-    - name: Check cache for build artifacts
-      id: cache
-      uses: actions/cache/restore@v4
-      with:
-        path: |
-          ./packages/app/build
-          ./packages/app/public/__auto-generated-*
-        key: build-artifacts-${{ github.run_id }}
+      - name: Check cache for build artifacts
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./packages/app/build
+            ./packages/app/public/__auto-generated-*
+          key: build-artifacts-${{ github.run_id }}
 
-    - name: Install node_modules
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: OffchainLabs/actions/node-modules/install@main
+      - name: Install node_modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: OffchainLabs/actions/node-modules/install@main
 
-    - name: Build
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: bash
-      run: yarn build
-      env:
-        NEXT_PUBLIC_IS_E2E_TEST: true
-        NEXT_PUBLIC_RPC_PROVIDER: alchemy
-        NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
-        NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
-        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
-        THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+      - name: Build
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: yarn build
+        env:
+          NEXT_PUBLIC_IS_E2E_TEST: true
+          NEXT_PUBLIC_RPC_PROVIDER: alchemy
+          NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+          THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
 
-    - name: Cache build artifacts
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: |
-          ./packages/app/build
-          ./packages/app/public/__auto-generated-*
-        key: build-artifacts-${{ github.run_id }}
+      - name: Cache build artifacts
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ./packages/app/build
+            ./packages/app/public/__auto-generated-*
+          key: build-artifacts-${{ github.run_id }}

@@ -1,67 +1,65 @@
-import React, { useEffect, useState } from 'react'
-import { useAccount } from 'wagmi'
+import axios from 'axios';
+import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 
-import axios from 'axios'
-import { TokenBridgeParams } from '../../hooks/useArbTokenBridge'
-import { BlockedDialog } from './BlockedDialog'
-
-import { useActions } from '../../state'
-import { MainContent } from '../MainContent/MainContent'
-import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync'
-import { TokenListSyncer } from '../syncers/TokenListSyncer'
-import { Header, HeaderAccountOrConnectWalletButton } from '../common/Header'
-import { useAccountIsBlocked } from '../../hooks/useAccountIsBlocked'
-import { useCCTPIsBlocked } from '../../hooks/CCTP/useCCTPIsBlocked'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics'
-import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams'
-import { useTheme } from '../../hooks/useTheme'
-import dynamic from 'next/dynamic'
-import { Loader } from '../common/atoms/Loader'
+import { useCCTPIsBlocked } from '../../hooks/CCTP/useCCTPIsBlocked';
+import { useAccountIsBlocked } from '../../hooks/useAccountIsBlocked';
+import { TokenBridgeParams } from '../../hooks/useArbTokenBridge';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useTheme } from '../../hooks/useTheme';
+import { useActions } from '../../state';
+import { MainContent } from '../MainContent/MainContent';
+import { Header, HeaderAccountOrConnectWalletButton } from '../common/Header';
+import { Loader } from '../common/atoms/Loader';
+import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
+import { TokenListSyncer } from '../syncers/TokenListSyncer';
+import { BlockedDialog } from './BlockedDialog';
+import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics';
+import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams';
 
 declare global {
   interface Window {
-    Cypress?: any
+    Cypress?: any;
   }
 }
 
 const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
-  const actions = useActions()
-  const [networks] = useNetworks()
+  const actions = useActions();
+  const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, parentChainProvider } =
-    useNetworksRelationship(networks)
+    useNetworksRelationship(networks);
 
   // We want to be sure this fetch is completed by the time we open the USDC modals
-  useCCTPIsBlocked()
+  useCCTPIsBlocked();
 
-  useSyncConnectedChainToAnalytics()
-  useSyncConnectedChainToQueryParams()
+  useSyncConnectedChainToAnalytics();
+  useSyncConnectedChainToQueryParams();
 
-  const [tokenBridgeParams, setTokenBridgeParams] =
-    useState<TokenBridgeParams | null>(null)
+  const [tokenBridgeParams, setTokenBridgeParams] = useState<TokenBridgeParams | null>(null);
 
   // Listen for account and network changes
   useEffect(() => {
     // Any time one of those changes
-    setTokenBridgeParams(null)
+    setTokenBridgeParams(null);
 
-    actions.app.reset()
+    actions.app.reset();
     actions.app.setChainIds({
       l1NetworkChainId: parentChain.id,
-      l2NetworkChainId: childChain.id
-    })
+      l2NetworkChainId: childChain.id,
+    });
 
     setTokenBridgeParams({
       l1: {
         network: parentChain,
-        provider: parentChainProvider
+        provider: parentChainProvider,
       },
       l2: {
         network: childChain,
-        provider: childChainProvider
-      }
-    })
+        provider: childChainProvider,
+      },
+    });
   }, [
     networks.sourceChain.id,
     parentChain.id,
@@ -69,35 +67,35 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
     parentChain,
     childChain,
     parentChainProvider,
-    childChainProvider
-  ])
+    childChainProvider,
+  ]);
 
   useEffect(() => {
     axios
       .get(
-        'https://raw.githubusercontent.com/OffchainLabs/arb-token-lists/aff40a59608678cfd9b034dd198011c90b65b8b6/src/WarningList/warningTokens.json'
+        'https://raw.githubusercontent.com/OffchainLabs/arb-token-lists/aff40a59608678cfd9b034dd198011c90b65b8b6/src/WarningList/warningTokens.json',
       )
-      .then(res => {
-        actions.app.setWarningTokens(res.data)
+      .then((res) => {
+        actions.app.setWarningTokens(res.data);
       })
-      .catch(err => {
-        console.warn('Failed to fetch warning tokens:', err)
-      })
-  }, [])
+      .catch((err) => {
+        console.warn('Failed to fetch warning tokens:', err);
+      });
+  }, []);
 
   if (!tokenBridgeParams) {
-    return null
+    return null;
   }
 
-  return <ArbTokenBridgeStoreSync tokenBridgeParams={tokenBridgeParams} />
-}
+  return <ArbTokenBridgeStoreSync tokenBridgeParams={tokenBridgeParams} />;
+};
 
 const AppContent = React.memo(() => {
-  const { address } = useAccount()
-  const { isBlocked } = useAccountIsBlocked()
+  const { address } = useAccount();
+  const { isBlocked } = useAccountIsBlocked();
 
   // apply custom themes if any
-  useTheme()
+  useTheme();
 
   if (address && isBlocked) {
     return (
@@ -111,7 +109,7 @@ const AppContent = React.memo(() => {
 
         onClose={() => {}}
       />
-    )
+    );
   }
 
   return (
@@ -123,30 +121,27 @@ const AppContent = React.memo(() => {
       <ArbTokenBridgeStoreSyncWrapper />
       <MainContent />
     </>
-  )
-})
+  );
+});
 
-AppContent.displayName = 'AppContent'
+AppContent.displayName = 'AppContent';
 
-const AppProviders = dynamic(
-  () => import('./AppProviders').then(mod => mod.AppProviders),
-  {
-    ssr: false, // use-query-params provider doesn't support SSR
-    loading: () => (
-      <div className="bg-black-500 flex h-screen w-full items-center justify-center">
-        <div className="h-12 w-full lg:h-16" />
-        <div className="fixed inset-0 m-auto h-[44px] w-[44px]">
-          <Loader size="large" color="white" />
-        </div>
+const AppProviders = dynamic(() => import('./AppProviders').then((mod) => mod.AppProviders), {
+  ssr: false, // use-query-params provider doesn't support SSR
+  loading: () => (
+    <div className="bg-black-500 flex h-screen w-full items-center justify-center">
+      <div className="h-12 w-full lg:h-16" />
+      <div className="fixed inset-0 m-auto h-[44px] w-[44px]">
+        <Loader size="large" color="white" />
       </div>
-    )
-  }
-)
+    </div>
+  ),
+});
 
 export default function App() {
   return (
     <AppProviders>
       <AppContent />
     </AppProviders>
-  )
+  );
 }

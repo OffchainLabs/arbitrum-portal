@@ -1,29 +1,28 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
+import { usePostHog } from 'posthog-js/react';
+import React from 'react';
 import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
-import { usePostHog } from 'posthog-js/react';
-import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
-import { ItemBoxProps } from './ProjectItemBox';
+
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
-import { EntityType } from '@/common/types';
 import { getProjectsCountForChain } from '@/common/projects';
+import { EntityType } from '@/common/types';
+import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
+
 import { ExternalLink } from './ExternalLink';
 import { OrbitSpotlightProjectPreview } from './OrbitSpotlightProjectPreview';
 import { OrbitStatusBadge } from './OrbitStatusBadge';
 import { OrbitTvlBadge } from './OrbitTvlBadge';
+import { ItemBoxProps } from './ProjectItemBox';
 
 const ItemContent = ({
   slug,
   displayMode,
   analyticsSource,
   onClick,
-}: Pick<
-  ItemBoxProps,
-  'slug' | 'displayMode' | 'analyticsSource' | 'onClick'
->) => {
+}: Pick<ItemBoxProps, 'slug' | 'displayMode' | 'analyticsSource' | 'onClick'>) => {
   const orbitChain = getOrbitChainDetailsById(slug);
   const { openEntitySidePanel: openOrbitChainSidePanel } = useEntitySidePanel(
     EntityType.OrbitChain,
@@ -81,12 +80,7 @@ const ItemContent = ({
         </>
       )}
       {/* Normal orbit-chain contents */}
-      <div
-        className={twMerge(
-          'z-10 flex flex-col gap-4',
-          isSpotlightMode && 'w-full lg:w-1/3',
-        )}
-      >
+      <div className={twMerge('z-10 flex flex-col gap-4', isSpotlightMode && 'w-full lg:w-1/3')}>
         {/* Logos */}
         <div className="flex shrink-0 grow-0 flex-col gap-2 overflow-hidden bg-cover bg-center">
           {/* Chain logo */}
@@ -97,12 +91,7 @@ const ItemContent = ({
             )}
           >
             <div className="[&:hover_span]:opacity-100">
-              <Image
-                alt={`${title} logo`}
-                src={images.logoUrl}
-                width={40}
-                height={40}
-              />
+              <Image alt={`${title} logo`} src={images.logoUrl} width={40} height={40} />
             </div>
           </div>
         </div>
@@ -116,8 +105,7 @@ const ItemContent = ({
 
             {!isSpotlightMode && projectsOnOrbitChain > 0 && (
               <span className="text-xs opacity-50">
-                {projectsOnOrbitChain}{' '}
-                {`project${projectsOnOrbitChain === 1 ? '' : 's'}`}
+                {projectsOnOrbitChain} {`project${projectsOnOrbitChain === 1 ? '' : 's'}`}
               </span>
             )}
 
@@ -131,9 +119,7 @@ const ItemContent = ({
             </p>
 
             <div className="mt-3 flex flex-nowrap gap-2">
-              {!isSpotlightMode && (
-                <OrbitStatusBadge status={orbitChain.chain.status} />
-              )}
+              {!isSpotlightMode && <OrbitStatusBadge status={orbitChain.chain.status} />}
 
               {!isSpotlightMode && <OrbitTvlBadge slug={slug} />}
 

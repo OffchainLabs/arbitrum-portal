@@ -1,7 +1,9 @@
-import { constants } from 'ethers'
-import { UseGasSummaryResult } from '../../../hooks/TransferPanel/useGasSummary'
-import { NativeCurrency } from '../../../hooks/useNativeCurrency'
-import { Token } from '@/bridge/app/api/crosschain-transfers/types'
+import { constants } from 'ethers';
+
+import { Token } from '@/bridge/app/api/crosschain-transfers/types';
+
+import { UseGasSummaryResult } from '../../../hooks/TransferPanel/useGasSummary';
+import { NativeCurrency } from '../../../hooks/useNativeCurrency';
 
 export function getGasCostAndToken({
   childChainNativeCurrency,
@@ -9,42 +11,42 @@ export function getGasCostAndToken({
   gasSummaryStatus,
   estimatedChildChainGasFees,
   estimatedParentChainGasFees,
-  isDepositMode
+  isDepositMode,
 }: {
-  childChainNativeCurrency: NativeCurrency
-  parentChainNativeCurrency: NativeCurrency
-  gasSummaryStatus: UseGasSummaryResult['status']
-  estimatedChildChainGasFees: UseGasSummaryResult['estimatedChildChainGasFees']
-  estimatedParentChainGasFees: UseGasSummaryResult['estimatedParentChainGasFees']
-  isDepositMode: boolean
+  childChainNativeCurrency: NativeCurrency;
+  parentChainNativeCurrency: NativeCurrency;
+  gasSummaryStatus: UseGasSummaryResult['status'];
+  estimatedChildChainGasFees: UseGasSummaryResult['estimatedChildChainGasFees'];
+  estimatedParentChainGasFees: UseGasSummaryResult['estimatedParentChainGasFees'];
+  isDepositMode: boolean;
 }): {
-  isLoading: boolean
-  gasCost: { gasCost: number; gasToken: Token }[] | null
+  isLoading: boolean;
+  gasCost: { gasCost: number; gasToken: Token }[] | null;
 } {
   const sameNativeCurrency =
-    childChainNativeCurrency.isCustom === parentChainNativeCurrency.isCustom
+    childChainNativeCurrency.isCustom === parentChainNativeCurrency.isCustom;
   const estimatedTotalGasFees =
     gasSummaryStatus === 'loading' ||
     typeof estimatedChildChainGasFees == 'undefined' ||
     typeof estimatedParentChainGasFees == 'undefined'
       ? undefined
-      : estimatedParentChainGasFees + estimatedChildChainGasFees
+      : estimatedParentChainGasFees + estimatedChildChainGasFees;
 
   const childChainNativeCurrencyWithAddress: Token =
     'address' in childChainNativeCurrency
       ? childChainNativeCurrency
-      : { ...childChainNativeCurrency, address: constants.AddressZero }
+      : { ...childChainNativeCurrency, address: constants.AddressZero };
 
   const parentChainNativeCurrencyWithAddress: Token =
     'address' in parentChainNativeCurrency
       ? parentChainNativeCurrency
-      : { ...parentChainNativeCurrency, address: constants.AddressZero }
+      : { ...parentChainNativeCurrency, address: constants.AddressZero };
 
   if (typeof estimatedTotalGasFees === 'undefined') {
     return {
       gasCost: null,
-      isLoading: true
-    }
+      isLoading: true,
+    };
   }
 
   /**
@@ -62,10 +64,10 @@ export function getGasCostAndToken({
       gasCost: [
         {
           gasCost: estimatedTotalGasFees,
-          gasToken: childChainNativeCurrencyWithAddress
-        }
-      ]
-    }
+          gasToken: childChainNativeCurrencyWithAddress,
+        },
+      ],
+    };
   }
 
   /** Different Native Currencies between Parent and Child chains
@@ -84,20 +86,20 @@ export function getGasCostAndToken({
     const gasCost: { gasCost: number; gasToken: Token }[] = [
       {
         gasCost: estimatedParentChainGasFees!,
-        gasToken: parentChainNativeCurrencyWithAddress
+        gasToken: parentChainNativeCurrencyWithAddress,
       },
 
       // for custom-native-token deposits that use retryables we will need to add the child gas fee
       {
         gasCost: estimatedChildChainGasFees!,
-        gasToken: childChainNativeCurrencyWithAddress
-      }
-    ]
+        gasToken: childChainNativeCurrencyWithAddress,
+      },
+    ];
 
     return {
       gasCost,
-      isLoading: false
-    }
+      isLoading: false,
+    };
   }
 
   return {
@@ -105,8 +107,8 @@ export function getGasCostAndToken({
     gasCost: [
       {
         gasCost: estimatedChildChainGasFees!,
-        gasToken: childChainNativeCurrencyWithAddress
-      }
-    ]
-  }
+        gasToken: childChainNativeCurrencyWithAddress,
+      },
+    ],
+  };
 }

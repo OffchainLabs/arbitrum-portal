@@ -1,13 +1,14 @@
-import { Card } from '@/portal/components/Card'
-import { ChainsTable } from '@/portal/components/ChainsMetrics/ChainsTable'
-import { ChainStats } from '@/portal/components/ChainsMetrics/ChainStats'
-import { Metadata } from 'next'
+import { Metadata } from 'next';
+
+import { Card } from '@/portal/components/Card';
+import { ChainStats } from '@/portal/components/ChainsMetrics/ChainStats';
+import { ChainsTable } from '@/portal/components/ChainsMetrics/ChainsTable';
 
 const metadataContent = {
   title: 'Arbitrum Chains Metrics',
   description:
-    'Explore detailed metrics for all Arbitrum Chains showing TVL, TPS, wallets, and transactions. Filter chains by category, TVL, TPS, and share your custom filtered view.'
-}
+    'Explore detailed metrics for all Arbitrum Chains showing TVL, TPS, wallets, and transactions. Filter chains by category, TVL, TPS, and share your custom filtered view.',
+};
 
 export function generateMetadata(): Metadata {
   return {
@@ -17,14 +18,14 @@ export function generateMetadata(): Metadata {
       title: metadataContent.title,
       description: metadataContent.description,
       locale: 'en_US',
-      type: 'website'
+      type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: metadataContent.title,
-      description: metadataContent.description
-    }
-  }
+      description: metadataContent.description,
+    },
+  };
 }
 
 export default function ChainsMetricsPage() {
@@ -40,5 +41,5 @@ export default function ChainsMetricsPage() {
 
       <ChainsTable />
     </div>
-  )
+  );
 }

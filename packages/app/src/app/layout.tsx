@@ -1,17 +1,19 @@
-import type { Metadata } from 'next'
-import { PropsWithChildren } from 'react'
-import { twMerge } from 'tailwind-merge'
-import { unica } from '@/bridge/components/common/Font'
-import { BodyClassSyncer } from '../components/BodyClassSyncer'
-import '../styles/common.css'
-import { PORTAL_DATA_ENDPOINT } from '@/common/constants'
+import type { Metadata } from 'next';
+import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { unica } from '@/bridge/components/common/Font';
+import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
+
+import { BodyClassSyncer } from '../components/BodyClassSyncer';
+import '../styles/common.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(PORTAL_DATA_ENDPOINT),
   icons: {
-    icon: '/logo.png'
-  }
-}
+    icon: '/logo.png',
+  },
+};
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
@@ -21,5 +23,5 @@ export default function RootLayout({ children }: PropsWithChildren) {
         <BodyClassSyncer />
       </body>
     </html>
-  )
+  );
 }

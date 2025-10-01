@@ -1,1 +1,1 @@
-export { GET } from '@/bridge/app/api/teleports/eth'
+export { GET } from '@/bridge/app/api/teleports/eth';

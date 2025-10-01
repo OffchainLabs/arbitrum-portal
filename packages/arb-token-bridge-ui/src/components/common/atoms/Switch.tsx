@@ -1,15 +1,15 @@
-import { Switch as HeadlessSwitch } from '@headlessui/react'
-import { twMerge } from 'tailwind-merge'
+import { Switch as HeadlessSwitch } from '@headlessui/react';
+import { twMerge } from 'tailwind-merge';
 
 export type SwitchProps = {
-  className?: string
-  label?: string
-  description?: string
-  name?: string
-  checked: boolean
-  disabled?: boolean
-  onChange: () => void
-}
+  className?: string;
+  label?: string;
+  description?: string;
+  name?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: () => void;
+};
 
 export const Switch = ({
   className,
@@ -18,7 +18,7 @@ export const Switch = ({
   name,
   checked,
   disabled,
-  onChange
+  onChange,
 }: SwitchProps) => {
   return (
     <HeadlessSwitch.Group>
@@ -30,7 +30,7 @@ export const Switch = ({
             className={twMerge(
               'relative inline-flex h-3 w-7 items-center rounded-full transition-colors ui-checked:bg-white ui-not-checked:bg-white/50 [&:disabled]:cursor-not-allowed',
               'duration-200 [&_span]:bg-black [&_span]:ui-checked:translate-x-[22px] [&_span]:ui-not-checked:translate-x-[3px] [&~*]:ui-checked:text-white',
-              className
+              className,
             )}
             disabled={disabled}
             aria-label={name}
@@ -39,9 +39,7 @@ export const Switch = ({
           </HeadlessSwitch>
 
           {label && (
-            <HeadlessSwitch.Label
-              className={twMerge('heading mr-4 cursor-pointer text-sm')}
-            >
+            <HeadlessSwitch.Label className={twMerge('heading mr-4 cursor-pointer text-sm')}>
               {label}
             </HeadlessSwitch.Label>
           )}
@@ -53,5 +51,5 @@ export const Switch = ({
         )}
       </div>
     </HeadlessSwitch.Group>
-  )
-}
+  );
+};

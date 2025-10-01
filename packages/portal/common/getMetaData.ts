@@ -1,15 +1,12 @@
 // Generate metadata on server side
-
 import { Metadata } from 'next';
-import {
-  ServerSideAppProps,
-  getServerSideAppParams,
-} from './getServerSideAppParams';
-import { getProjectDetailsById } from './projects';
+
 import { getCategoryDetailsById } from './categories';
-import { EntityType } from './types';
-import { getOrbitChainDetailsById } from './orbitChains';
 import { PORTAL_DATA_ENDPOINT } from './constants';
+import { ServerSideAppProps, getServerSideAppParams } from './getServerSideAppParams';
+import { getOrbitChainDetailsById } from './orbitChains';
+import { getProjectDetailsById } from './projects';
+import { EntityType } from './types';
 
 const projectsHomePageMeta = {
   url: 'https://portal.arbitrum.io/projects',
@@ -19,10 +16,12 @@ const projectsHomePageMeta = {
 };
 
 const categoriesHomePageMeta: { [slug: string]: string } = {
-  defi: 'Explore DeFi chains on Arbitrum: Unlock fast, low-cost decentralized finance solutions on Ethereum’s leading Layer 2 scaling platform.',
-  gaming:
+  'defi':
+    'Explore DeFi chains on Arbitrum: Unlock fast, low-cost decentralized finance solutions on Ethereum’s leading Layer 2 scaling platform.',
+  'gaming':
     'Play Pirate Nation, The Beacon, Farcana, and more on the fastest-growing gaming ecosystem on Ethereum.',
-  nfts: 'Create and trade NFTs seamlessly on Arbitrum’s NFT-focused chains. Enjoy low fees, fast transactions, and scalability on Ethereum Layer 2.',
+  'nfts':
+    'Create and trade NFTs seamlessly on Arbitrum’s NFT-focused chains. Enjoy low fees, fast transactions, and scalability on Ethereum Layer 2.',
   'bridges-and-on-ramps':
     'Bridge to Arbitrum, on-ramp fiat, and use a smart contract wallet on the most decentralized L2 on Ethereum.',
   'infra-and-tools':
@@ -46,10 +45,7 @@ const chainPageMeta: {
   },
 };
 
-export const getEntityMetaData = (
-  entityType: EntityType,
-  entitySlug: string,
-): Metadata | null => {
+export const getEntityMetaData = (entityType: EntityType, entitySlug: string): Metadata | null => {
   const entityDetails =
     entityType === EntityType.OrbitChain
       ? getOrbitChainDetailsById(entitySlug)
@@ -59,8 +55,7 @@ export const getEntityMetaData = (
 
   const title = entityDetails['title'] + ' — Arbitrum Portal';
   const description = (() => {
-    const fullDescription =
-      entityDetails.description ?? projectsHomePageMeta.description;
+    const fullDescription = entityDetails.description ?? projectsHomePageMeta.description;
 
     return fullDescription.length > 150
       ? fullDescription.substring(0, 150) + '...'
@@ -96,20 +91,13 @@ export const getEntityMetaData = (
 
 export function getMetaData(props: ServerSideAppProps): Metadata {
   // read route params
-  const {
-    selectedCategory,
-    selectedProject,
-    selectedChains,
-    searchString,
-    selectedOrbitChain,
-  } = getServerSideAppParams(props);
+  const { selectedCategory, selectedProject, selectedChains, searchString, selectedOrbitChain } =
+    getServerSideAppParams(props);
   const projectDetails = getProjectDetailsById(selectedProject || ''); // details of a single project selected
   const categoryDetails = getCategoryDetailsById(selectedCategory); // details of a single category selected
   const orbitChainDetails = getOrbitChainDetailsById(selectedOrbitChain || ''); // details of orbit chain panel, if open
   const chainDetails =
-    selectedChains?.length &&
-    selectedChains.length === 1 &&
-    chainPageMeta[selectedChains[0]!]; // details of a single chain selected
+    selectedChains?.length && selectedChains.length === 1 && chainPageMeta[selectedChains[0]!]; // details of a single chain selected
 
   // if Project's dedicated page (side panel)
   if (projectDetails) {

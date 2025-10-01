@@ -1,35 +1,35 @@
-import { expect } from 'vitest'
+import { expect } from 'vitest';
 
-import { UiDriverStep, UiDriverStepResultFor } from './UiDriver'
+import { UiDriverStep, UiDriverStepResultFor } from './UiDriver';
 
 export async function nextStep<TStep extends UiDriverStep>(
   generator: AsyncGenerator<TStep, void, UiDriverStepResultFor<TStep['type']>>,
-  nextStepInputs: [] | [UiDriverStepResultFor<TStep['type']>] = []
+  nextStepInputs: [] | [UiDriverStepResultFor<TStep['type']>] = [],
 ) {
-  return (await generator.next(...nextStepInputs)).value
+  return (await generator.next(...nextStepInputs)).value;
 }
 
 export function expectStep<TStep extends UiDriverStep>(step: TStep | void) {
   return {
     hasType<TStepType extends TStep['type']>(expectedStepType: TStepType) {
-      expect(step).toBeDefined()
-      expect(step!.type).toEqual(expectedStepType)
-      return expectStep(step as Extract<TStep, { type: TStepType }>)
+      expect(step).toBeDefined();
+      expect(step!.type).toEqual(expectedStepType);
+      return expectStep(step as Extract<TStep, { type: TStepType }>);
     },
 
     hasPayload<TExpected extends Extract<TStep, { payload: any }>['payload']>(
-      expectedStepPayload: TExpected
+      expectedStepPayload: TExpected,
     ) {
       if (!('payload' in step!)) {
-        throw new Error(`Step of type "${step!.type}" does not have a payload.`)
+        throw new Error(`Step of type "${step!.type}" does not have a payload.`);
       }
 
-      expect(step.payload).toEqual(expectedStepPayload)
-      return this
+      expect(step.payload).toEqual(expectedStepPayload);
+      return this;
     },
 
     doesNotExist() {
-      expect(step).toBeUndefined()
-    }
-  }
+      expect(step).toBeUndefined();
+    },
+  };
 }

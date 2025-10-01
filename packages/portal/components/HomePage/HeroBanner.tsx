@@ -1,6 +1,7 @@
 import Image from 'next/image';
-import { Card } from '@/components/Card';
+
 import { PROJECTS } from '@/common/projects';
+import { Card } from '@/components/Card';
 
 // Fisher-Yates shuffle algorithm
 function shuffleArray<T>(array: T[]): T[] {
@@ -24,9 +25,7 @@ function inflateArrayToSize<T>(array: T[], size: number): T[] {
 
 // Shuffle and inflate the array to 90 projects
 const projectsToHighlight = inflateArrayToSize(
-  shuffleArray(
-    PROJECTS.filter((project) => project.meta.isFeaturedOnHomePageBanner),
-  ),
+  shuffleArray(PROJECTS.filter((project) => project.meta.isFeaturedOnHomePageBanner)),
   90,
 );
 
@@ -37,8 +36,7 @@ export const HeroBanner = () => {
         <h1 className="text-4xl">Ethereum’s Leading Ecosystem</h1>
         <div className="text-base">
           Step into the Arbitrum Portal and discover one of the{' '}
-          {Math.floor(PROJECTS.length / 100) * 100}+ applications built on
-          Arbitrum
+          {Math.floor(PROJECTS.length / 100) * 100}+ applications built on Arbitrum
         </div>
       </div>
 

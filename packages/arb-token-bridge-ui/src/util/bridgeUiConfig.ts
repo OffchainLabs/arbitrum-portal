@@ -1,27 +1,27 @@
-import { getCustomChainFromLocalStorageById } from './networks'
-import { ChainId } from '../types/ChainId'
-import { orbitChains, BridgeUiConfig } from './orbitChainsList'
+import { ChainId } from '../types/ChainId';
+import { getCustomChainFromLocalStorageById } from './networks';
+import { BridgeUiConfig, orbitChains } from './orbitChainsList';
 
 export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
   type BaseBridgeUiConfig = Omit<BridgeUiConfig, 'network'> & {
-    network: Omit<BridgeUiConfig['network'], 'name'>
-  }
+    network: Omit<BridgeUiConfig['network'], 'name'>;
+  };
 
   const ethereumBaseConfig: BaseBridgeUiConfig = {
     color: '#454A75',
     network: {
-      logo: '/images/EthereumLogo.svg'
-    }
-  }
+      logo: '/images/EthereumLogo.svg',
+    },
+  };
 
   const arbitrumBaseConfig: BaseBridgeUiConfig = {
     color: '#1B4ADD',
     network: {
-      logo: '/images/ArbitrumLogo.svg'
-    }
-  }
+      logo: '/images/ArbitrumLogo.svg',
+    },
+  };
 
-  const customChain = getCustomChainFromLocalStorageById(chainId)
+  const customChain = getCustomChainFromLocalStorageById(chainId);
 
   switch (chainId) {
     case ChainId.Ethereum:
@@ -30,26 +30,26 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
         network: {
           ...ethereumBaseConfig.network,
           name: 'Ethereum',
-          description: 'The OG chain that started it all.'
-        }
-      }
+          description: 'The OG chain that started it all.',
+        },
+      };
     case ChainId.Sepolia:
       return {
         ...ethereumBaseConfig,
         network: {
           ...ethereumBaseConfig.network,
           name: 'Sepolia',
-          description: 'The current recommended Ethereum testnet.'
-        }
-      }
+          description: 'The current recommended Ethereum testnet.',
+        },
+      };
     case ChainId.Local:
       return {
         ...ethereumBaseConfig,
         network: {
           ...ethereumBaseConfig.network,
-          name: 'Nitro Testnode L1'
-        }
-      }
+          name: 'Nitro Testnode L1',
+        },
+      };
     case ChainId.ArbitrumOne:
       return {
         ...arbitrumBaseConfig,
@@ -58,34 +58,34 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
           name: 'Arbitrum One',
           logo: '/images/ArbitrumOneLogo.svg',
           description:
-            'Rollup protocol. The original Arbitrum chain. Secured by functional fraud proofs.'
-        }
-      }
+            'Rollup protocol. The original Arbitrum chain. Secured by functional fraud proofs.',
+        },
+      };
     case ChainId.ArbitrumSepolia:
       return {
         ...arbitrumBaseConfig,
         network: {
           ...arbitrumBaseConfig.network,
           name: 'Arbitrum Sepolia',
-          description: 'The current recommended Arbitrum testnet.'
-        }
-      }
+          description: 'The current recommended Arbitrum testnet.',
+        },
+      };
     case ChainId.ArbitrumLocal:
       return {
         ...arbitrumBaseConfig,
         network: {
           ...arbitrumBaseConfig.network,
-          name: 'Nitro Testnode L2'
-        }
-      }
+          name: 'Nitro Testnode L2',
+        },
+      };
     case ChainId.L3Local:
       return {
         color: '#12AAFF',
         network: {
           name: 'Nitro Testnode L3',
-          logo: '/images/OrbitLogo.svg'
-        }
-      }
+          logo: '/images/OrbitLogo.svg',
+        },
+      };
     case ChainId.ArbitrumNova:
       return {
         color: '#E57310',
@@ -93,44 +93,43 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
           name: 'Arbitrum Nova',
           logo: '/images/ArbitrumNovaLogo.svg',
           description:
-            'AnyTrust protocol. Low fees for high-volume transactions. Secured by a trust-minimized Data Availability Committee (DAC).'
-        }
-      }
+            'AnyTrust protocol. Low fees for high-volume transactions. Secured by a trust-minimized Data Availability Committee (DAC).',
+        },
+      };
     case ChainId.Base:
       return {
         color: '#0052ff',
         network: {
           name: 'Base',
           logo: '/images/BaseWhite.svg',
-          description:
-            'Base is an Optimistic Rollup built by Coinbase with the OP Stack.'
-        }
-      }
+          description: 'Base is an Optimistic Rollup built by Coinbase with the OP Stack.',
+        },
+      };
     case ChainId.BaseSepolia:
       return {
         color: '#0052ff',
         network: {
           name: 'Base Sepolia',
           logo: '/images/BaseWhite.svg',
-          description: 'Base Sepolia is an Ethereum L2 testnet by Coinbase.'
-        }
-      }
+          description: 'Base Sepolia is an Ethereum L2 testnet by Coinbase.',
+        },
+      };
     default: {
       // added Orbit chains
-      const orbitChain = orbitChains[chainId]
+      const orbitChain = orbitChains[chainId];
 
       if (orbitChain) {
-        return orbitChain.bridgeUiConfig
+        return orbitChain.bridgeUiConfig;
       }
 
       return {
         color: '#12AAFF',
         network: {
           name: customChain ? customChain.name : 'Unknown',
-          logo: '/images/OrbitLogo.svg'
+          logo: '/images/OrbitLogo.svg',
         },
-        nativeTokenData: customChain?.nativeTokenData
-      }
+        nativeTokenData: customChain?.nativeTokenData,
+      };
     }
   }
 }

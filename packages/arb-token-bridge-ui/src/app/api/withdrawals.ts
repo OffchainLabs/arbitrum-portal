@@ -1,78 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { gql } from '@apollo/client'
+import { gql } from '@apollo/client';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { WithdrawalFromSubgraph } from '../../util/withdrawals/fetchWithdrawalsFromSubgraph'
 import {
   getL2SubgraphClient,
-  getSourceFromSubgraphClient
-} from '../../api-utils/ServerSubgraphUtils'
+  getSourceFromSubgraphClient,
+} from '../../api-utils/ServerSubgraphUtils';
+import { WithdrawalFromSubgraph } from '../../util/withdrawals/fetchWithdrawalsFromSubgraph';
 
 type WithdrawalResponse = {
-  meta?: { source: string | null }
-  data: WithdrawalFromSubgraph[]
-  message?: string // in case of any error
-}
+  meta?: { source: string | null };
+  data: WithdrawalFromSubgraph[];
+  message?: string; // in case of any error
+};
 
-export async function GET(
-  request: NextRequest
-): Promise<NextResponse<WithdrawalResponse>> {
+export async function GET(request: NextRequest): Promise<NextResponse<WithdrawalResponse>> {
   try {
-    const { searchParams } = new URL(request.url)
-    const sender = searchParams.get('sender') || undefined
-    const receiver = searchParams.get('receiver') || undefined
-    const search = searchParams.get('search') || ''
-    const l2ChainId = searchParams.get('l2ChainId')
-    const page = searchParams.get('page') || '0'
-    const pageSize = searchParams.get('pageSize') || '10'
-    const fromBlock = searchParams.get('fromBlock') || undefined
-    const toBlock = searchParams.get('toBlock') || undefined
+    const { searchParams } = new URL(request.url);
+    const sender = searchParams.get('sender') || undefined;
+    const receiver = searchParams.get('receiver') || undefined;
+    const search = searchParams.get('search') || '';
+    const l2ChainId = searchParams.get('l2ChainId');
+    const page = searchParams.get('page') || '0';
+    const pageSize = searchParams.get('pageSize') || '10';
+    const fromBlock = searchParams.get('fromBlock') || undefined;
+    const toBlock = searchParams.get('toBlock') || undefined;
 
     // validate the request parameters
-    const errorMessage = []
-    if (!l2ChainId) errorMessage.push('<l2ChainId> is required')
-    if (!sender && !receiver)
-      errorMessage.push('<sender> or <receiver> is required')
+    const errorMessage = [];
+    if (!l2ChainId) errorMessage.push('<l2ChainId> is required');
+    if (!sender && !receiver) errorMessage.push('<sender> or <receiver> is required');
 
     if (errorMessage.length) {
       return NextResponse.json(
         {
           message: `incomplete request: ${errorMessage.join(', ')}`,
-          data: []
+          data: [],
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // if invalid pageSize, send empty data instead of error
     if (isNaN(Number(pageSize)) || Number(pageSize) === 0) {
-      return NextResponse.json({ data: [] }, { status: 200 })
+      return NextResponse.json({ data: [] }, { status: 200 });
     }
 
     const additionalFilters = `${
-      typeof fromBlock !== 'undefined'
-        ? `l2BlockNum_gte: ${Number(fromBlock)},`
-        : ''
+      typeof fromBlock !== 'undefined' ? `l2BlockNum_gte: ${Number(fromBlock)},` : ''
     }
-    ${
-      typeof toBlock !== 'undefined'
-        ? `l2BlockNum_lte: ${Number(toBlock)},`
-        : ''
-    }
+    ${typeof toBlock !== 'undefined' ? `l2BlockNum_lte: ${Number(toBlock)},` : ''}
     ${search ? `l2TxHash_contains: "${search}"` : ''}
-    `
+    `;
 
-    let subgraphClient
+    let subgraphClient;
     try {
-      subgraphClient = getL2SubgraphClient(Number(l2ChainId))
+      subgraphClient = getL2SubgraphClient(Number(l2ChainId));
     } catch (error: any) {
       // catch attempt to query unsupported networks and throw a 400
       return NextResponse.json(
         {
           message: error?.message ?? 'Something went wrong',
-          data: []
+          data: [],
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     const subgraphResult = await subgraphClient.query({
@@ -81,11 +72,7 @@ export async function GET(
           where: {            
             or: [
               ${sender ? `{ sender: "${sender}", ${additionalFilters} },` : ''}
-              ${
-                receiver
-                  ? `{ receiver: "${receiver}", ${additionalFilters} },`
-                  : ''
-              }
+              ${receiver ? `{ receiver: "${receiver}", ${additionalFilters} },` : ''}
             ]
           }
           orderBy: l2BlockTimestamp
@@ -107,11 +94,11 @@ export async function GET(
           l2TxHash,
           l2BlockNum
         }
-    }`
-    })
+    }`,
+    });
 
-    const transactions: WithdrawalFromSubgraph[] =
-      subgraphResult.data.withdrawals.map((eventData: any) => {
+    const transactions: WithdrawalFromSubgraph[] = subgraphResult.data.withdrawals.map(
+      (eventData: any) => {
         const {
           id,
           type,
@@ -123,8 +110,8 @@ export async function GET(
           isClassic,
           l2BlockTimestamp,
           l2TxHash,
-          l2BlockNum
-        } = eventData
+          l2BlockNum,
+        } = eventData;
 
         return {
           id,
@@ -137,24 +124,25 @@ export async function GET(
           isClassic,
           l2BlockTimestamp,
           l2TxHash,
-          l2BlockNum
-        }
-      })
+          l2BlockNum,
+        };
+      },
+    );
 
     return NextResponse.json(
       {
         meta: { source: getSourceFromSubgraphClient(subgraphClient) },
-        data: transactions
+        data: transactions,
       },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json(
       {
         message: error?.message ?? 'Something went wrong',
-        data: []
+        data: [],
       },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

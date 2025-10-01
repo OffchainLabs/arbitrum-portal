@@ -1,6 +1,6 @@
-import { Card } from '@/components/Card';
+import { DISPLAY_DATETIME_FORMAT, dayjs } from '@/common/dateUtils';
 import { PortalStats } from '@/common/types';
-import { dayjs, DISPLAY_DATETIME_FORMAT } from '@/common/dateUtils';
+import { Card } from '@/components/Card';
 import statsJson from '@/public/__auto-generated-stats.json';
 
 const formatter = Intl.NumberFormat('en', { notation: 'compact' });
@@ -26,13 +26,10 @@ export const ChainStats = () => {
               backgroundImage: `url('/images/illustration-stats-1.webp')`,
             }}
           >
-            <span className="text-3xl">{stats.totalOrbitChainsOnMainnet}</span>{' '}
-            Chains on Mainnet
+            <span className="text-3xl">{stats.totalOrbitChainsOnMainnet}</span> Chains on Mainnet
           </Card>
           <Card className="flex h-[100px] flex-col gap-1">
-            <span className="text-3xl">
-              ${formatter.format(stats.totalAmountBridgedToOrbit)}
-            </span>{' '}
+            <span className="text-3xl">${formatter.format(stats.totalAmountBridgedToOrbit)}</span>{' '}
             Total Bridged
           </Card>
         </div>
@@ -52,10 +49,8 @@ export const ChainStats = () => {
               backgroundImage: `url('/images/illustration-stats-2.webp')`,
             }}
           >
-            <span className="text-3xl">
-              {formatter.format(stats.totalOrbitDevelopers)}+
-            </span>{' '}
-            Human Developers
+            <span className="text-3xl">{formatter.format(stats.totalOrbitDevelopers)}+</span> Human
+            Developers
           </Card>
         </div>
         <Card

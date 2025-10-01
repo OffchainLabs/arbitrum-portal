@@ -1,40 +1,38 @@
-import { twMerge } from 'tailwind-merge'
-import useLocalStorage from '@rehooks/local-storage'
+import useLocalStorage from '@rehooks/local-storage';
+import { twMerge } from 'tailwind-merge';
 
-import { statsLocalStorageKey } from '../MainContent/ArbitrumStats'
-import { AddCustomChain } from './AddCustomChain'
-import { Switch } from './atoms/Switch'
-import { SidePanel } from './SidePanel'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { ExternalLink } from './ExternalLink'
-import { ORBIT_QUICKSTART_LINK } from '../../constants'
+import { ORBIT_QUICKSTART_LINK } from '../../constants';
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { statsLocalStorageKey } from '../MainContent/ArbitrumStats';
+import { AddCustomChain } from './AddCustomChain';
+import { ExternalLink } from './ExternalLink';
+import { SidePanel } from './SidePanel';
+import { Switch } from './atoms/Switch';
 
 const SectionTitle = ({
   className,
-  children
+  children,
 }: {
-  className?: string
-  children: React.ReactNode
-}) => (
-  <div className={twMerge('heading mb-4 text-lg', className)}>{children}</div>
-)
+  className?: string;
+  children: React.ReactNode;
+}) => <div className={twMerge('heading mb-4 text-lg', className)}>{children}</div>;
 
 export const SettingsDialog = () => {
-  const [{ settingsOpen }, setQueryParams] = useArbQueryParams()
+  const [{ settingsOpen }, setQueryParams] = useArbQueryParams();
 
   const [isArbitrumStatsVisible, setIsArbitrumStatsVisible] =
-    useLocalStorage<boolean>(statsLocalStorageKey)
+    useLocalStorage<boolean>(statsLocalStorageKey);
 
   const openArbitrumStats = () => {
-    setIsArbitrumStatsVisible(true)
-  }
+    setIsArbitrumStatsVisible(true);
+  };
 
   const closeArbitrumStats = () => {
-    setIsArbitrumStatsVisible(false)
-  }
+    setIsArbitrumStatsVisible(false);
+  };
 
   function closeSettings() {
-    setQueryParams({ settingsOpen: false })
+    setQueryParams({ settingsOpen: false });
   }
 
   return (
@@ -55,9 +53,7 @@ export const SettingsDialog = () => {
             description="Live, nerdy stats about Ethereum and Arbitrum chains, like
         block number and current gas price."
             checked={!!isArbitrumStatsVisible}
-            onChange={
-              isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats
-            }
+            onChange={isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats}
           />
         </div>
 
@@ -65,14 +61,11 @@ export const SettingsDialog = () => {
         <div className="w-full transition-opacity">
           <SectionTitle className="mb-1">Add Custom Orbit Chain</SectionTitle>
           <p className="mb-4 text-sm">
-            Add in your own Orbit chain to the bridge. This will only be for
-            local testing, other users will not see it.
+            Add in your own Orbit chain to the bridge. This will only be for local testing, other
+            users will not see it.
             <br />
             Learn more about how to create and add your Orbit Testnet in{' '}
-            <ExternalLink
-              className="arb-hover underline"
-              href={ORBIT_QUICKSTART_LINK}
-            >
+            <ExternalLink className="arb-hover underline" href={ORBIT_QUICKSTART_LINK}>
               Arbitrum Orbit Quickstart
             </ExternalLink>
             .
@@ -82,5 +75,5 @@ export const SettingsDialog = () => {
         </div>
       </div>
     </SidePanel>
-  )
-}
+  );
+};

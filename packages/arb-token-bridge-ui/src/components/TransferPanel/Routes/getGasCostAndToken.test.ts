@@ -1,8 +1,9 @@
-import { describe, expect, test } from 'vitest'
-import { constants } from 'ethers'
-import { getGasCostAndToken } from './getGasCostAndToken'
-import { NativeCurrency } from '../../../hooks/useNativeCurrency'
-import { GasEstimationStatus } from '../../../hooks/TransferPanel/useGasSummary'
+import { constants } from 'ethers';
+import { describe, expect, test } from 'vitest';
+
+import { GasEstimationStatus } from '../../../hooks/TransferPanel/useGasSummary';
+import { NativeCurrency } from '../../../hooks/useNativeCurrency';
+import { getGasCostAndToken } from './getGasCostAndToken';
 
 describe('getGasCostAndToken', () => {
   const mockNativeCurrency: NativeCurrency & { address: string } = {
@@ -10,41 +11,41 @@ describe('getGasCostAndToken', () => {
     symbol: 'ETH',
     decimals: 18,
     isCustom: false,
-    address: constants.AddressZero
-  }
+    address: constants.AddressZero,
+  };
 
   const mockCustomNativeCurrency: NativeCurrency = {
     name: 'XAI',
     symbol: 'XAI',
     decimals: 18,
     isCustom: true,
-    address: '0x0000000000000000000000000000000000000222'
-  }
+    address: '0x0000000000000000000000000000000000000222',
+  };
 
   describe('should return isLoading true', () => {
     const expected = {
       isLoading: true,
-      gasCost: null
-    }
+      gasCost: null,
+    };
     test.each([
       {
         status: 'loading',
         estimatedParentChainGasFees: undefined,
         estimatedChildChainGasFees: undefined,
-        expected
+        expected,
       },
       {
         status: 'success',
         estimatedParentChainGasFees: 123,
         estimatedChildChainGasFees: undefined,
-        expected
+        expected,
       },
       {
         status: 'success',
         estimatedParentChainGasFees: undefined,
         estimatedChildChainGasFees: 123,
-        expected
-      }
+        expected,
+      },
     ])(
       `getGasCostAndToken({
         ...,
@@ -52,12 +53,7 @@ describe('getGasCostAndToken', () => {
         estimatedParentChainGasFees: $estimatedParentChainGasFees,
         estimatedChildChainGasFees: $estimatedChildChainGasFees
       })`,
-      ({
-        status,
-        estimatedParentChainGasFees,
-        estimatedChildChainGasFees,
-        expected
-      }) => {
+      ({ status, estimatedParentChainGasFees, estimatedChildChainGasFees, expected }) => {
         expect(
           getGasCostAndToken({
             childChainNativeCurrency: mockNativeCurrency,
@@ -65,11 +61,11 @@ describe('getGasCostAndToken', () => {
             gasSummaryStatus: status as GasEstimationStatus,
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
-            isDepositMode: true
-          })
-        ).toEqual(expected)
-      }
-    )
+            isDepositMode: true,
+          }),
+        ).toEqual(expected);
+      },
+    );
 
     // test.each([
     //   {
@@ -101,7 +97,7 @@ describe('getGasCostAndToken', () => {
     //     expect(status + b).toBe(expected)
     //   }
     // )
-  })
+  });
 
   describe('should return combined gas fee for same native currency', () => {
     test.each([
@@ -110,29 +106,29 @@ describe('getGasCostAndToken', () => {
         childCurrency: mockNativeCurrency,
         estimatedParentChainGasFees: 201,
         estimatedChildChainGasFees: 305,
-        isDepositMode: true
+        isDepositMode: true,
       },
       {
         parentCurrency: mockNativeCurrency,
         childCurrency: mockNativeCurrency,
         estimatedParentChainGasFees: 352,
         estimatedChildChainGasFees: 123,
-        isDepositMode: false
+        isDepositMode: false,
       },
       {
         parentCurrency: mockCustomNativeCurrency,
         childCurrency: mockCustomNativeCurrency,
         estimatedParentChainGasFees: 634,
         estimatedChildChainGasFees: 234,
-        isDepositMode: true
+        isDepositMode: true,
       },
       {
         parentCurrency: mockCustomNativeCurrency,
         childCurrency: mockCustomNativeCurrency,
         estimatedParentChainGasFees: 3890,
         estimatedChildChainGasFees: 32409,
-        isDepositMode: false
-      }
+        isDepositMode: false,
+      },
     ])(
       `getGasCostAndToken({
         ...,
@@ -144,7 +140,7 @@ describe('getGasCostAndToken', () => {
         childCurrency,
         estimatedParentChainGasFees,
         estimatedChildChainGasFees,
-        isDepositMode
+        isDepositMode,
       }) => {
         expect(
           getGasCostAndToken({
@@ -153,20 +149,20 @@ describe('getGasCostAndToken', () => {
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
-            isDepositMode
-          })
+            isDepositMode,
+          }),
         ).toEqual({
           isLoading: false,
           gasCost: [
             {
               gasCost: estimatedParentChainGasFees + estimatedChildChainGasFees,
-              gasToken: childCurrency
-            }
-          ]
-        })
-      }
-    )
-  })
+              gasToken: childCurrency,
+            },
+          ],
+        });
+      },
+    );
+  });
 
   describe('should return gas cost for different native currencies in deposit mode', () => {
     test.each([
@@ -180,14 +176,14 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 201,
-              gasToken: mockNativeCurrency
+              gasToken: mockNativeCurrency,
             },
             {
               gasCost: 305,
-              gasToken: mockCustomNativeCurrency
-            }
-          ]
-        }
+              gasToken: mockCustomNativeCurrency,
+            },
+          ],
+        },
       },
       {
         parentCurrency: mockNativeCurrency,
@@ -199,14 +195,14 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 201,
-              gasToken: mockNativeCurrency
+              gasToken: mockNativeCurrency,
             },
             {
               gasCost: 305,
-              gasToken: mockCustomNativeCurrency
-            }
-          ]
-        }
+              gasToken: mockCustomNativeCurrency,
+            },
+          ],
+        },
       },
       {
         parentCurrency: mockCustomNativeCurrency,
@@ -218,14 +214,14 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 634,
-              gasToken: mockCustomNativeCurrency
+              gasToken: mockCustomNativeCurrency,
             },
             {
               gasCost: 234,
-              gasToken: mockNativeCurrency
-            }
-          ]
-        }
+              gasToken: mockNativeCurrency,
+            },
+          ],
+        },
       },
       {
         parentCurrency: mockCustomNativeCurrency,
@@ -237,15 +233,15 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 634,
-              gasToken: mockCustomNativeCurrency
+              gasToken: mockCustomNativeCurrency,
             },
             {
               gasCost: 234,
-              gasToken: mockNativeCurrency
-            }
-          ]
-        }
-      }
+              gasToken: mockNativeCurrency,
+            },
+          ],
+        },
+      },
     ])(
       `getGasCostAndToken({
         ...,
@@ -258,7 +254,7 @@ describe('getGasCostAndToken', () => {
         childCurrency,
         estimatedParentChainGasFees,
         estimatedChildChainGasFees,
-        expected
+        expected,
       }) => {
         expect(
           getGasCostAndToken({
@@ -267,12 +263,12 @@ describe('getGasCostAndToken', () => {
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
-            isDepositMode: true
-          })
-        ).toEqual(expected)
-      }
-    )
-  })
+            isDepositMode: true,
+          }),
+        ).toEqual(expected);
+      },
+    );
+  });
 
   describe('should return gas cost for different native currencies in withdrawal mode', () => {
     test.each([
@@ -286,10 +282,10 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 305,
-              gasToken: mockCustomNativeCurrency
-            }
-          ]
-        }
+              gasToken: mockCustomNativeCurrency,
+            },
+          ],
+        },
       },
       {
         parentCurrency: mockCustomNativeCurrency,
@@ -301,11 +297,11 @@ describe('getGasCostAndToken', () => {
           gasCost: [
             {
               gasCost: 234,
-              gasToken: mockNativeCurrency
-            }
-          ]
-        }
-      }
+              gasToken: mockNativeCurrency,
+            },
+          ],
+        },
+      },
     ])(
       `getGasCostAndToken({
         ...,
@@ -317,7 +313,7 @@ describe('getGasCostAndToken', () => {
         childCurrency,
         estimatedParentChainGasFees,
         estimatedChildChainGasFees,
-        expected
+        expected,
       }) => {
         expect(
           getGasCostAndToken({
@@ -326,10 +322,10 @@ describe('getGasCostAndToken', () => {
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
-            isDepositMode: false
-          })
-        ).toEqual(expected)
-      }
-    )
-  })
-})
+            isDepositMode: false,
+          }),
+        ).toEqual(expected);
+      },
+    );
+  });
+});

@@ -1,16 +1,17 @@
-import { JsonRpcProvider } from '@ethersproject/providers'
-import { useState, useEffect, useMemo } from 'react'
-import Resolution from '@unstoppabledomains/resolution'
+import { JsonRpcProvider } from '@ethersproject/providers';
+import Resolution from '@unstoppabledomains/resolution';
+import { useEffect, useMemo, useState } from 'react';
+import { useAccount, useDisconnect, useEnsAvatar, useEnsName } from 'wagmi';
 
-import { useAccount, useDisconnect, useEnsName, useEnsAvatar } from 'wagmi'
-import { useArbQueryParams } from './useArbQueryParams'
-import { shortenAddress } from '../util/CommonUtils'
-import { onDisconnectHandler } from '../util/walletConnectUtils'
-import { getProviderForChainId } from '@/token-bridge-sdk/utils'
-import { ChainId } from '../types/ChainId'
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-type UDInfo = { name: string | null }
-const udInfoDefaults: UDInfo = { name: null }
+import { ChainId } from '../types/ChainId';
+import { shortenAddress } from '../util/CommonUtils';
+import { onDisconnectHandler } from '../util/walletConnectUtils';
+import { useArbQueryParams } from './useArbQueryParams';
+
+type UDInfo = { name: string | null };
+const udInfoDefaults: UDInfo = { name: null };
 
 async function tryLookupUDName(provider: JsonRpcProvider, address: string) {
   const UDresolution = Resolution.fromEthersProvider({
@@ -22,76 +23,76 @@ async function tryLookupUDName(provider: JsonRpcProvider, address: string) {
       locations: {
         Layer1: {
           network: 'mainnet',
-          provider
+          provider,
         },
         Layer2: {
           network: 'mainnet',
-          provider
-        }
-      }
-    }
-  })
+          provider,
+        },
+      },
+    },
+  });
   try {
-    return await UDresolution.reverse(address)
+    return await UDresolution.reverse(address);
   } catch (error) {
-    return null
+    return null;
   }
 }
 
 export const useAccountMenu = () => {
-  const { address, chain } = useAccount()
+  const { address, chain } = useAccount();
   const { disconnect } = useDisconnect({
     mutation: {
-      onSettled: onDisconnectHandler
-    }
-  })
+      onSettled: onDisconnectHandler,
+    },
+  });
 
-  const [, setQueryParams] = useArbQueryParams()
+  const [, setQueryParams] = useArbQueryParams();
 
-  const [udInfo, setUDInfo] = useState<UDInfo>(udInfoDefaults)
+  const [udInfo, setUDInfo] = useState<UDInfo>(udInfoDefaults);
   const { data: ensName } = useEnsName({
     address,
-    chainId: ChainId.Ethereum
-  })
+    chainId: ChainId.Ethereum,
+  });
 
   const { data: ensAvatar } = useEnsAvatar({
     name: ensName ?? '',
-    chainId: ChainId.Ethereum
-  })
+    chainId: ChainId.Ethereum,
+  });
 
   useEffect(() => {
-    if (!address) return
+    if (!address) return;
     async function resolveUdName() {
       const udName = await tryLookupUDName(
         getProviderForChainId(ChainId.Ethereum),
-        address as string
-      )
+        address as string,
+      );
 
-      setUDInfo({ name: udName })
+      setUDInfo({ name: udName });
     }
-    resolveUdName()
-  }, [address])
+    resolveUdName();
+  }, [address]);
 
   const accountShort = useMemo(() => {
     if (typeof address === 'undefined') {
-      return ''
+      return '';
     }
 
-    return shortenAddress(address)
-  }, [address])
+    return shortenAddress(address);
+  }, [address]);
 
   useEffect(() => {
-    if (!address) return
+    if (!address) return;
     async function resolveUdName() {
       const udName = await tryLookupUDName(
         getProviderForChainId(ChainId.Ethereum),
-        address as string
-      )
+        address as string,
+      );
 
-      setUDInfo({ name: udName })
+      setUDInfo({ name: udName });
     }
-    resolveUdName()
-  }, [address])
+    resolveUdName();
+  }, [address]);
 
   return {
     address,
@@ -101,6 +102,6 @@ export const useAccountMenu = () => {
     disconnect,
     udInfo,
     chain,
-    setQueryParams
-  }
-}
+    setQueryParams,
+  };
+};

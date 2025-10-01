@@ -1,4 +1,5 @@
 import { ChevronDownIcon, FunnelIcon } from '@heroicons/react/24/outline';
+
 import { ActiveFiltersType } from './FilterPanel';
 
 export const FilterDropdownButton = ({
@@ -9,13 +10,14 @@ export const FilterDropdownButton = ({
   activeFilters?: ActiveFiltersType;
 }) => {
   // Count active filters
-  const activeFiltersCount = activeFilters ? 
-    activeFilters.categories.length + 
-    activeFilters.dataAvailability.length + 
-    activeFilters.gasToken.length +
-    activeFilters.tvlBuckets.length +
-    activeFilters.tpsBuckets.length +
-    activeFilters.gasSpeedLimitBuckets.length : 0;
+  const activeFiltersCount = activeFilters
+    ? activeFilters.categories.length +
+      activeFilters.dataAvailability.length +
+      activeFilters.gasToken.length +
+      activeFilters.tvlBuckets.length +
+      activeFilters.tpsBuckets.length +
+      activeFilters.gasSpeedLimitBuckets.length
+    : 0;
 
   return (
     <button
@@ -28,7 +30,7 @@ export const FilterDropdownButton = ({
         </span>
 
         <span>Filters</span>
-        
+
         {activeFiltersCount > 0 && (
           <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
             {activeFiltersCount}
@@ -41,4 +43,4 @@ export const FilterDropdownButton = ({
       </span>
     </button>
   );
-}; 
+};

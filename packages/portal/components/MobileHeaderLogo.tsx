@@ -1,6 +1,7 @@
+import Image, { ImageProps } from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
-import Image, { ImageProps } from 'next/image';
+
 import ArbitrumLogo from '@/public/images/ArbitrumLogo.svg';
 
 function HeaderImageElement({ ...props }: ImageProps) {
@@ -9,10 +10,7 @@ function HeaderImageElement({ ...props }: ImageProps) {
       id="header-image"
       src={props.src}
       alt={props.alt || 'Arbitrum logo'}
-      className={twMerge(
-        '-ml-2 h-[40px] w-[40px] lg:ml-0',
-        props.className || '',
-      )}
+      className={twMerge('-ml-2 h-[40px] w-[40px] lg:ml-0', props.className || '')}
     />
   );
 }

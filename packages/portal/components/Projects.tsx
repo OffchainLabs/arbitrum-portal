@@ -1,19 +1,17 @@
 'use client';
 
+import { LinkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import React, { useEffect, useMemo } from 'react';
-import { useWindowSize } from 'react-use';
 import { forceCheck } from 'react-lazyload';
-import { LinkIcon } from '@heroicons/react/24/outline';
-import { ProjectItemBox } from './ProjectItemBox';
-import {
-  EntityCardDisplayMode,
-  FullProject,
-  SortOptions,
-} from '@/common/types';
+import { useWindowSize } from 'react-use';
+
+import { EntityCardDisplayMode, FullProject, SortOptions } from '@/common/types';
 import { useFilters } from '@/hooks/useFilters';
-import { sortBySubcategoryRank } from '../common/subcategories';
+
 import { sortProjects } from '../common/projects';
+import { sortBySubcategoryRank } from '../common/subcategories';
+import { ProjectItemBox } from './ProjectItemBox';
 
 export const ProjectsList = React.memo(
   ({
@@ -53,11 +51,7 @@ export const ProjectsList = React.memo(
       analyticsSource: prevAnalyticsSource,
       selectedSort: prevSelectedSort,
     },
-    {
-      projects: newProjects,
-      analyticsSource: newAnalyticsSource,
-      selectedSort: newSelectedSort,
-    },
+    { projects: newProjects, analyticsSource: newAnalyticsSource, selectedSort: newSelectedSort },
   ) => {
     if (prevAnalyticsSource !== newAnalyticsSource) {
       return false;
@@ -115,10 +109,7 @@ export const Projects = ({
 
     projects.forEach((project) => {
       project.subcategories.forEach((subcategory) => {
-        if (
-          allowedSubcategories.length === 0 ||
-          allowedSubcategories.includes(subcategory.slug)
-        ) {
+        if (allowedSubcategories.length === 0 || allowedSubcategories.includes(subcategory.slug)) {
           if (!groupedByCategories[subcategory.slug]) {
             groupedByCategories[subcategory.slug] = {
               ...subcategory,

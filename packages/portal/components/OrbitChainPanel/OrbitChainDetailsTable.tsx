@@ -1,11 +1,10 @@
-import { twMerge } from 'tailwind-merge';
+import { ArrowTopRightOnSquareIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ArrowTopRightOnSquareIcon,
-  DocumentDuplicateIcon,
-} from '@heroicons/react/24/outline';
-import { OrbitChain } from '@/common/types';
+import { twMerge } from 'tailwind-merge';
+
 import { ORBIT_RAAS_CONFIG } from '@/common/orbitChains';
+import { OrbitChain } from '@/common/types';
+
 import { Card } from '../Card';
 import { ExternalLink } from '../ExternalLink';
 
@@ -13,8 +12,7 @@ const getRaasProviderLink = (deployerTeam: string | null) => {
   if (!deployerTeam) return null;
 
   return ORBIT_RAAS_CONFIG.find(
-    (raas) =>
-      raas.title.trim().toLowerCase() === deployerTeam.trim().toLowerCase(),
+    (raas) => raas.title.trim().toLowerCase() === deployerTeam.trim().toLowerCase(),
   )?.link;
 };
 
@@ -49,8 +47,7 @@ const Table = ({ key, data }: { key: string; data: TableData }) => {
   return (
     <div className="box-content overflow-hidden rounded-md border border-[#5B5B5B]">
       {data.map((row, index) => {
-        if (!row.value || row.value === null || row.value === undefined)
-          return null;
+        if (!row.value || row.value === null || row.value === undefined) return null;
 
         const isActionable = row.link || row.copy;
 
@@ -193,20 +190,10 @@ const generateOrbitTable2Data = (orbitChain: OrbitChain) => {
   ];
 };
 
-export const OrbitChainDetailsTable = ({
-  orbitChain,
-}: {
-  orbitChain: OrbitChain;
-}) => {
-  const table1Data = useMemo(
-    () => generateOrbitTable1Data(orbitChain),
-    [orbitChain],
-  );
+export const OrbitChainDetailsTable = ({ orbitChain }: { orbitChain: OrbitChain }) => {
+  const table1Data = useMemo(() => generateOrbitTable1Data(orbitChain), [orbitChain]);
 
-  const table2Data = useMemo(
-    () => generateOrbitTable2Data(orbitChain),
-    [orbitChain],
-  );
+  const table2Data = useMemo(() => generateOrbitTable2Data(orbitChain), [orbitChain]);
 
   if (table1Data.length === 0 && table2Data.length === 0) return null;
 

@@ -1,17 +1,18 @@
-import { useAccount } from 'wagmi'
-import { WidgetHeaderAccountButton } from './WidgetHeaderAccountButton'
-import { WidgetModeDropdown } from './WidgetModeDropdown'
-import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton'
-import { Button } from '../common/Button'
-import { OpenDialogFunction } from '../common/Dialog2'
-import { SafeImage } from '../common/SafeImage'
+import { useAccount } from 'wagmi';
+
+import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton';
+import { Button } from '../common/Button';
+import { OpenDialogFunction } from '../common/Dialog2';
+import { SafeImage } from '../common/SafeImage';
+import { WidgetHeaderAccountButton } from './WidgetHeaderAccountButton';
+import { WidgetModeDropdown } from './WidgetModeDropdown';
 
 type WidgetHeaderRowProps = {
-  openDialog: OpenDialogFunction
-}
+  openDialog: OpenDialogFunction;
+};
 
 export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
-  const { isConnected } = useAccount()
+  const { isConnected } = useAccount();
 
   return (
     <div className="flex h-8 flex-row items-center justify-between text-lg">
@@ -32,9 +33,7 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
               width={18}
               alt="Tx history logo"
               src="/images/WidgetTxHistoryIcon.svg"
-              fallback={
-                <div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />
-              }
+              fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
             />
           </Button>
         )}
@@ -42,5 +41,5 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
         <LifiSettingsButton />
       </div>
     </div>
-  )
+  );
 }

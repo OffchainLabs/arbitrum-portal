@@ -1,4 +1,4 @@
-import { Issue, IncomingChainData, OrbitChain } from '../../schemas'
+import { IncomingChainData, Issue, OrbitChain } from '../../schemas';
 
 export const mockIssue: Issue = {
   body: `
@@ -12,8 +12,8 @@ Test Chain
 _No response_
   `,
   state: 'open',
-  html_url: 'https://github.com/example/repo/issues/1'
-}
+  html_url: 'https://github.com/example/repo/issues/1',
+};
 
 export const fullMockIssue: Issue = {
   body: `
@@ -93,15 +93,14 @@ TST
 0x0000000000000000000000000000000000000014
   `,
   state: 'open',
-  html_url: 'https://github.com/example/repo/issues/1'
-}
+  html_url: 'https://github.com/example/repo/issues/1',
+};
 
 export const mockRawData = {
   chainId: '42161',
   name: 'Test Chain',
   description: 'A test chain.',
-  chainLogo:
-    'https://github.com/user-attachments/assets/bb30cba1-242f-49a3-95bd-57e5bdee61e5',
+  chainLogo: 'https://github.com/user-attachments/assets/bb30cba1-242f-49a3-95bd-57e5bdee61e5',
   color: '#FF0000',
   rpcUrl: 'https://rpc.example.com',
   explorerUrl: 'https://explorer.example.com',
@@ -123,8 +122,8 @@ export const mockRawData = {
   childGatewayRouter: '0x0000000000000000000000000000000000000010',
   childMultiCall: '0x0000000000000000000000000000000000000011',
   childWeth: '0x0000000000000000000000000000000000000013',
-  childWethGateway: '0x0000000000000000000000000000000000000014'
-}
+  childWethGateway: '0x0000000000000000000000000000000000000014',
+};
 
 export const mockAddresses = {
   bridge: '0x1234',
@@ -143,15 +142,14 @@ export const mockAddresses = {
   childGatewayRouter: '0xBBBB',
   childMultiCall: '0xCCCC',
   childWeth: '0xEEEE',
-  childWethGateway: '0xFFFF'
-}
+  childWethGateway: '0xFFFF',
+};
 
 export const mockIncomingChainData: IncomingChainData = {
   chainId: '1234567890',
   name: 'Test Chain',
   description: 'This is a test chain.',
-  chainLogo:
-    'https://github.com/user-attachments/assets/bb30cba1-242f-49a3-95bd-57e5bdee61e5',
+  chainLogo: 'https://github.com/user-attachments/assets/bb30cba1-242f-49a3-95bd-57e5bdee61e5',
   color: '#FF0000',
   rpcUrl: 'https://sepolia-rollup.arbitrum.io/rpc',
   explorerUrl: 'https://testexplorer.com',
@@ -175,8 +173,8 @@ export const mockIncomingChainData: IncomingChainData = {
   parentMultiCall: '0x0000000000000000000000000000000000000010',
   childMultiCall: '0x0000000000000000000000000000000000000017',
   fastWithdrawalMinutes: '15',
-  fastWithdrawalActive: true
-}
+  fastWithdrawalActive: true,
+};
 
 export const mockOrbitChain: OrbitChain = {
   chainId: 660279,
@@ -186,7 +184,7 @@ export const mockOrbitChain: OrbitChain = {
     inbox: '0xaE21fDA3de92dE2FDAF606233b2863782Ba046F9',
     outbox: '0x1E400568AD4840dbE50FB32f306B842e9ddeF726',
     rollup: '0xC47DacFbAa80Bd9D8112F4e8069482c2A3221336',
-    sequencerInbox: '0x995a9d3ca121D48d21087eDE20bc8acb2398c8B1'
+    sequencerInbox: '0x995a9d3ca121D48d21087eDE20bc8acb2398c8B1',
   },
   nativeToken: '0x4Cb9a7AE498CEDcBb5EAe9f25736aE7d428C9D66',
   explorerUrl: 'https://explorer.xai-chain.net',
@@ -210,23 +208,23 @@ export const mockOrbitChain: OrbitChain = {
     parentProxyAdmin: '0x0000000000000000000000000000000000000000',
     childProxyAdmin: '0x0000000000000000000000000000000000000000',
     parentMultiCall: '0x90B02D9F861017844F30dFbdF725b6aa84E63822',
-    childMultiCall: '0xEEC168551A85911Ec3A905e0561b656979f3ea67'
+    childMultiCall: '0xEEC168551A85911Ec3A905e0561b656979f3ea67',
   },
   bridgeUiConfig: {
     color: '#F30019',
     network: {
       name: 'Xai',
       logo: '/images/XaiLogo.svg',
-      description: 'A chain for Web2 and Web3 gamers to play blockchain games.'
+      description: 'A chain for Web2 and Web3 gamers to play blockchain games.',
     },
     nativeTokenData: {
       name: 'Xai',
       symbol: 'XAI',
-      logoUrl: '/images/XaiLogo.svg'
+      logoUrl: '/images/XaiLogo.svg',
     },
-    fastWithdrawalTime: 900000
-  }
-}
+    fastWithdrawalTime: 900000,
+  },
+};
 
 export const mockValidTokenBridge = {
   parentGatewayRouter: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
@@ -240,5 +238,5 @@ export const mockValidTokenBridge = {
   parentWeth: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
   childWeth: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
   parentMultiCall: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-  childMultiCall: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
-}
+  childMultiCall: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+};

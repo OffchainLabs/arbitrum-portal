@@ -1,13 +1,13 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
-import { usePostHog } from 'posthog-js/react';
 
-import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import { FuzzySearchResult, getSearchResults } from '@/common/getSearchResults';
 import { EntityType } from '@/common/types';
+import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 
 type SearchStore = {
   searchString: string;
@@ -16,8 +16,7 @@ type SearchStore = {
 
 export const searchStore = create<SearchStore>((set) => ({
   searchString: '',
-  setSearchString: (value: string) =>
-    set((store) => ({ ...store, searchString: value })),
+  setSearchString: (value: string) => set((store) => ({ ...store, searchString: value })),
 }));
 
 /** hook used for setting the search state, syncing with URL and text bar **/
@@ -29,19 +28,13 @@ export const useSearch = () => {
   const { searchString, setSearchString } = searchStore();
   const [searchResults, setSearchResults] = useState<FuzzySearchResult[]>([]);
 
-  const { openEntitySidePanel: openProjectPanel } = useEntitySidePanel(
-    EntityType.Project,
-  );
-  const { openEntitySidePanel: openOrbitChainPanel } = useEntitySidePanel(
-    EntityType.OrbitChain,
-  );
+  const { openEntitySidePanel: openProjectPanel } = useEntitySidePanel(EntityType.Project);
+  const { openEntitySidePanel: openOrbitChainPanel } = useEntitySidePanel(EntityType.OrbitChain);
 
   const isSearchPage: boolean = pathname.indexOf('/search/') > -1;
 
   const searchStringInUrl = useMemo(() => {
-    return isSearchPage
-      ? decodeURIComponent(pathname.split('/search/')?.[1] || '')
-      : '';
+    return isSearchPage ? decodeURIComponent(pathname.split('/search/')?.[1] || '') : '';
   }, [isSearchPage, pathname]);
 
   useEffect(() => {
@@ -96,12 +89,7 @@ export const useSearch = () => {
 
       successCallback?.();
     },
-    [
-      router,
-      openProjectPanel,
-      openOrbitChainPanel,
-      captureSearchResultClickAnalytics,
-    ],
+    [router, openProjectPanel, openOrbitChainPanel, captureSearchResultClickAnalytics],
   );
 
   return {

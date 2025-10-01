@@ -1,4 +1,4 @@
-import { NoteBox } from '../common/NoteBox'
+import { NoteBox } from '../common/NoteBox';
 
 export const CustomMainnetChainWarning = () => {
   return (
@@ -12,15 +12,14 @@ export const CustomMainnetChainWarning = () => {
       </div>
       <div className="mt-2 flex flex-col text-sm">
         <p>
-          <b>WARNING:</b> If someone instructed you to add this chain,{' '}
-          <b>DO NOT CONTINUE</b>.
+          <b>WARNING:</b> If someone instructed you to add this chain, <b>DO NOT CONTINUE</b>.
         </p>
 
         <p>
-          This is a common tactic used in scams, and you are at high risk of
-          permanently losing your funds.
+          This is a common tactic used in scams, and you are at high risk of permanently losing your
+          funds.
         </p>
       </div>
     </NoteBox>
-  )
-}
+  );
+};

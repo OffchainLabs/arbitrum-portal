@@ -1,26 +1,26 @@
-import { hasL1Subgraph } from '../SubgraphUtils'
-import { getAPIBaseUrl, sanitizeQueryParams } from './../index'
+import { hasL1Subgraph } from '../SubgraphUtils';
+import { getAPIBaseUrl, sanitizeQueryParams } from './../index';
 
 export type FetchDepositsFromSubgraphResult = {
-  receiver: string
-  sender: string
-  sequenceNumber: string
-  timestamp: string
-  transactionHash: string
-  type: 'EthDeposit' | 'TokenDeposit'
-  isClassic: boolean
-  id: string
-  ethValue: string
-  tokenAmount?: string
-  blockCreatedAt: string
+  receiver: string;
+  sender: string;
+  sequenceNumber: string;
+  timestamp: string;
+  transactionHash: string;
+  type: 'EthDeposit' | 'TokenDeposit';
+  isClassic: boolean;
+  id: string;
+  ethValue: string;
+  tokenAmount?: string;
+  blockCreatedAt: string;
   l1Token?: {
-    symbol: string
-    decimals: number
-    id: string
-    name: string
-    registeredAtBlock: string
-  }
-}
+    symbol: string;
+    decimals: number;
+    id: string;
+    name: string;
+    registeredAtBlock: string;
+  };
+};
 
 /**
  * Fetches initiated deposits (ETH + Tokens) from subgraph in range of [fromBlock, toBlock] and pageParams.
@@ -44,24 +44,24 @@ export const fetchDepositsFromSubgraph = async ({
   l2ChainId,
   pageSize = 10,
   pageNumber = 0,
-  searchString = ''
+  searchString = '',
 }: {
-  sender?: string
-  receiver?: string
-  fromBlock: number
-  toBlock?: number
-  l2ChainId: number
-  pageSize?: number
-  pageNumber?: number
-  searchString?: string
+  sender?: string;
+  receiver?: string;
+  fromBlock: number;
+  toBlock?: number;
+  l2ChainId: number;
+  pageSize?: number;
+  pageNumber?: number;
+  searchString?: string;
 }): Promise<FetchDepositsFromSubgraphResult[]> => {
   if (!hasL1Subgraph(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`)
+    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
   }
 
   if (toBlock && fromBlock >= toBlock) {
     // if fromBlock > toBlock or both are equal / 0
-    return []
+    return [];
   }
 
   const urlParams = new URLSearchParams(
@@ -73,20 +73,18 @@ export const fetchDepositsFromSubgraph = async ({
       l2ChainId,
       pageSize,
       page: pageNumber,
-      search: searchString
-    })
-  )
+      search: searchString,
+    }),
+  );
 
-  if (pageSize === 0) return [] // don't query subgraph if nothing requested
+  if (pageSize === 0) return []; // don't query subgraph if nothing requested
 
   const response = await fetch(`${getAPIBaseUrl()}/api/deposits?${urlParams}`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
-  })
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-  const transactions: FetchDepositsFromSubgraphResult[] = (
-    await response.json()
-  ).data
+  const transactions: FetchDepositsFromSubgraphResult[] = (await response.json()).data;
 
-  return transactions
-}
+  return transactions;
+};

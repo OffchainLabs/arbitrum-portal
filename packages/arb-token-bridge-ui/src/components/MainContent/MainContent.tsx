@@ -1,38 +1,37 @@
-import { useLocalStorage } from '@uidotdev/usehooks'
-import { Tab } from '@headlessui/react'
-import { useCallback, Fragment } from 'react'
+import { Tab } from '@headlessui/react';
+import { useLocalStorage } from '@uidotdev/usehooks';
+import { Fragment, useCallback } from 'react';
 
-import { TransferPanel } from '../TransferPanel/TransferPanel'
-import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats'
-import { SettingsDialog } from '../common/SettingsDialog'
-import { TransactionHistory } from '../TransactionHistory/TransactionHistory'
-import { TopNavBar } from '../TopNavBar'
-import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { useMode } from '../../hooks/useMode'
-import { RecoverFunds } from '../RecoverFunds'
-import { BuyPanel } from '../BuyPanel'
-import { isOnrampEnabled } from '../../util/featureFlag'
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useMode } from '../../hooks/useMode';
+import { isOnrampEnabled } from '../../util/featureFlag';
+import { BuyPanel } from '../BuyPanel';
+import { RecoverFunds } from '../RecoverFunds';
+import { TopNavBar } from '../TopNavBar';
+import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
+import { TransferPanel } from '../TransferPanel/TransferPanel';
+import { SettingsDialog } from '../common/SettingsDialog';
+import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
+import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
-  const [isArbitrumStatsVisible] =
-    useLocalStorage<boolean>(statsLocalStorageKey)
-  const [{ tab }, setQueryParams] = useArbQueryParams()
-  const showBuyPanel = isOnrampEnabled()
+  const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
+  const [{ tab }, setQueryParams] = useArbQueryParams();
+  const showBuyPanel = isOnrampEnabled();
 
   const setSelectedTab = useCallback(
     (index: number) => {
-      setQueryParams({ tab: index })
+      setQueryParams({ tab: index });
     },
-    [setQueryParams]
-  )
+    [setQueryParams],
+  );
 
-  useBalanceUpdater()
+  useBalanceUpdater();
 
-  const { embedMode } = useMode()
+  const { embedMode } = useMode();
 
   if (embedMode) {
-    return <TransferPanel />
+    return <TransferPanel />;
   }
 
   return (
@@ -64,5 +63,5 @@ export function MainContent() {
       {/* Toggle-able Stats for nerds */}
       {isArbitrumStatsVisible && <ArbitrumStats />}
     </>
-  )
+  );
 }

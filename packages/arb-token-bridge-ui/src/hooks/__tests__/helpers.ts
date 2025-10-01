@@ -1,21 +1,17 @@
-import { vi } from 'vitest'
-import { getArbitrumNetwork } from '@arbitrum/sdk'
-import { ChainWithRpcUrl } from '../../util/networks'
-import {
-  PartialLocation,
-  QueryParamAdapter,
-  QueryParamAdapterComponent
-} from 'use-query-params'
+import { getArbitrumNetwork } from '@arbitrum/sdk';
+import { PartialLocation, QueryParamAdapter, QueryParamAdapterComponent } from 'use-query-params';
+import { vi } from 'vitest';
+
+import { ChainWithRpcUrl } from '../../util/networks';
 
 export function createMockOrbitChain({
   chainId,
-  parentChainId
+  parentChainId,
 }: {
-  chainId: number
-  parentChainId: number
+  chainId: number;
+  parentChainId: number;
 }): ChainWithRpcUrl {
-  const isTestnet =
-    parentChainId === 1 ? false : getArbitrumNetwork(parentChainId).isTestnet
+  const isTestnet = parentChainId === 1 ? false : getArbitrumNetwork(parentChainId).isTestnet;
 
   return {
     chainId: chainId,
@@ -25,7 +21,7 @@ export function createMockOrbitChain({
       inbox: '',
       outbox: '',
       rollup: '',
-      sequencerInbox: ''
+      sequencerInbox: '',
     },
     nativeToken: '',
     explorerUrl: '',
@@ -34,38 +30,30 @@ export function createMockOrbitChain({
     isTestnet,
     name: `Mocked Orbit Chain ${chainId}`,
     slug: `mocked-orbit-chain-${chainId}`,
-    parentChainId
-  }
+    parentChainId,
+  };
 }
 
 /** Taken from https://github.com/pbeshai/use-query-params/blob/master/packages/use-query-params/src/__tests__/helpers.ts */
-type QueryParamAdapterComponentWithQueryParamAdapter =
-  QueryParamAdapterComponent & {
-    adapter: QueryParamAdapter
-  }
+type QueryParamAdapterComponentWithQueryParamAdapter = QueryParamAdapterComponent & {
+  adapter: QueryParamAdapter;
+};
 export function makeMockAdapter(
-  currentLocation: PartialLocation
+  currentLocation: PartialLocation,
 ): QueryParamAdapterComponentWithQueryParamAdapter {
   const adapter: QueryParamAdapter = {
     replace: vi
       .fn()
-      .mockImplementation(newLocation =>
-        Object.assign(currentLocation, newLocation)
-      ),
-    push: vi
-      .fn()
-      .mockImplementation(newLocation =>
-        Object.assign(currentLocation, newLocation)
-      ),
+      .mockImplementation((newLocation) => Object.assign(currentLocation, newLocation)),
+    push: vi.fn().mockImplementation((newLocation) => Object.assign(currentLocation, newLocation)),
     get location() {
-      return currentLocation
-    }
-  }
+      return currentLocation;
+    },
+  };
 
-  const Adapter: QueryParamAdapterComponentWithQueryParamAdapter = ({
-    children
-  }) => children(adapter)
-  Adapter.adapter = adapter
+  const Adapter: QueryParamAdapterComponentWithQueryParamAdapter = ({ children }) =>
+    children(adapter);
+  Adapter.adapter = adapter;
 
-  return Adapter
+  return Adapter;
 }

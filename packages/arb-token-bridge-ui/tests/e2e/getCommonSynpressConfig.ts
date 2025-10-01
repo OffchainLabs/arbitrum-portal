@@ -12,10 +12,10 @@ export function getCommonSynpressConfig(shouldRecordVideo: boolean) {
     viewportWidth: 1366,
     viewportHeight: 850,
     env: {
-      coverage: false
+      coverage: false,
     },
     defaultCommandTimeout: 30000,
     pageLoadTimeout: 30000,
-    requestTimeout: 30000
-  } as const satisfies Cypress.ConfigOptions
+    requestTimeout: 30000,
+  } as const satisfies Cypress.ConfigOptions;
 }

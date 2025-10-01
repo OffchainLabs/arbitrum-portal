@@ -1,57 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { gql } from '@apollo/client'
+import { gql } from '@apollo/client';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { ChainId } from '../../../../types/ChainId'
 import {
   getL1SubgraphClient,
   getL2SubgraphClient,
-  getSourceFromSubgraphClient
-} from '../../../../api-utils/ServerSubgraphUtils'
+  getSourceFromSubgraphClient,
+} from '../../../../api-utils/ServerSubgraphUtils';
+import { ChainId } from '../../../../types/ChainId';
 
 function getSubgraphClient(chainId: number) {
   switch (chainId) {
     case ChainId.Ethereum:
       // it's the same whether we do arb1 or nova
-      return getL1SubgraphClient(ChainId.ArbitrumOne)
+      return getL1SubgraphClient(ChainId.ArbitrumOne);
 
     case ChainId.Sepolia:
-      return getL1SubgraphClient(ChainId.ArbitrumSepolia)
+      return getL1SubgraphClient(ChainId.ArbitrumSepolia);
 
     case ChainId.ArbitrumOne:
-      return getL2SubgraphClient(ChainId.ArbitrumOne)
+      return getL2SubgraphClient(ChainId.ArbitrumOne);
 
     case ChainId.ArbitrumNova:
-      return getL2SubgraphClient(ChainId.ArbitrumNova)
+      return getL2SubgraphClient(ChainId.ArbitrumNova);
 
     case ChainId.ArbitrumSepolia:
-      return getL2SubgraphClient(ChainId.ArbitrumSepolia)
+      return getL2SubgraphClient(ChainId.ArbitrumSepolia);
 
     default:
-      throw new Error(`[getSubgraphClient] unsupported chain id: ${chainId}`)
+      throw new Error(`[getSubgraphClient] unsupported chain id: ${chainId}`);
   }
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chainId: string } }
-): Promise<
-  NextResponse<
-    { data: number; meta?: { source: string | null } } | { message: string }
-  >
-> {
-  const { chainId } = params
+  { params }: { params: { chainId: string } },
+): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
+  const { chainId } = params;
 
   try {
-    const subgraphClient = getSubgraphClient(Number(chainId))
+    const subgraphClient = getSubgraphClient(Number(chainId));
 
     const result: {
       data: {
         _meta: {
           block: {
-            number: number
-          }
-        }
-      }
+            number: number;
+          };
+        };
+      };
     } = await subgraphClient.query({
       query: gql`
         {
@@ -61,17 +57,17 @@ export async function GET(
             }
           }
         }
-      `
-    })
+      `,
+    });
 
     return NextResponse.json(
       {
         meta: { source: getSourceFromSubgraphClient(subgraphClient) },
-        data: result.data._meta.block.number
+        data: result.data._meta.block.number,
       },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   } catch (error) {
-    return NextResponse.json({ data: 0 }, { status: 200 })
+    return NextResponse.json({ data: 0 }, { status: 200 });
   }
 }

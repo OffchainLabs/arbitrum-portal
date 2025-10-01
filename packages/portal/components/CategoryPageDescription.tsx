@@ -1,53 +1,49 @@
 import Image from 'next/image';
+
 import { Category } from '../common/types';
 import { Card } from './Card';
 
 const descriptions: { [id: string]: React.ReactNode } = {
-  defi: 'DeFi, short for Decentralized Finance, is a way to do financial activities like lending, borrowing, and trading using blockchain technology instead of traditional banks. It uses smart contracts to automate processes and removes the need for intermediaries, making finance more accessible and open to everyone.',
-  nfts: 'An NFT, short for Non-Fungible Token, is a unique digital asset that is stored on a blockchain and can be used to represent ownership of anything from artwork to music to videos. It is a digital certificate of authenticity that makes it impossible to counterfeit or forge, and it also provides a secure way to track ownership.',
+  'defi':
+    'DeFi, short for Decentralized Finance, is a way to do financial activities like lending, borrowing, and trading using blockchain technology instead of traditional banks. It uses smart contracts to automate processes and removes the need for intermediaries, making finance more accessible and open to everyone.',
+  'nfts':
+    'An NFT, short for Non-Fungible Token, is a unique digital asset that is stored on a blockchain and can be used to represent ownership of anything from artwork to music to videos. It is a digital certificate of authenticity that makes it impossible to counterfeit or forge, and it also provides a secure way to track ownership.',
   'bridges-and-on-ramps': (
     <>
       Bridges allow users to move their assets between different blockchains.
       <br />
       <br />
-      On-ramps allow users to buy cryptocurrencies and other digital assets with
-      fiat currency, which is the traditional form of money.
+      On-ramps allow users to buy cryptocurrencies and other digital assets with fiat currency,
+      which is the traditional form of money.
     </>
   ),
-  gaming:
+  'gaming':
     'Web3 gaming is a new paradigm in gaming that uses blockchain technology to give players more control over their in-game assets and experiences. It allows players to own their in-game assets and can trade them with other players. This is in contrast to traditional gaming, where players do not own their in-game assets.',
   'infra-and-tools': (
     <>
-      Infra projects provide the foundation for decentralized applications. It
-      allows users to own their data and assets, and it ensures that
-      transactions are secure and transparent.
+      Infra projects provide the foundation for decentralized applications. It allows users to own
+      their data and assets, and it ensures that transactions are secure and transparent.
       <br />
       <br />
-      Tool projects make it easier for developers to build and deploy Web3
-      applications. They provide a variety of features that help developers to
-      interact with the blockchain, develop smart contracts, and test their
-      applications.
+      Tool projects make it easier for developers to build and deploy Web3 applications. They
+      provide a variety of features that help developers to interact with the blockchain, develop
+      smart contracts, and test their applications.
     </>
   ),
   'ai-and-depin': (
     <>
-      AI can analyze network usage patterns to optimize performance or forecast
-      demand, creating more efficient and intelligent decentralized
-      infrastructures that scale seamlessly with user needs.
+      AI can analyze network usage patterns to optimize performance or forecast demand, creating
+      more efficient and intelligent decentralized infrastructures that scale seamlessly with user
+      needs.
       <br />
       <br />
-      DePIN leverages blockchain to coordinate decentralized resources, like
-      storage or wireless networks, enabling participants to contribute and earn
-      tokens for real-world assets.
+      DePIN leverages blockchain to coordinate decentralized resources, like storage or wireless
+      networks, enabling participants to contribute and earn tokens for real-world assets.
     </>
   ),
 };
 
-export const CategoryPageDescription = ({
-  category,
-}: {
-  category: Category;
-}) => {
+export const CategoryPageDescription = ({ category }: { category: Category }) => {
   const description = descriptions[category.slug];
   if (!description) return null;
 

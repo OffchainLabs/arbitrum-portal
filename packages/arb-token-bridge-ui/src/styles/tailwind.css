@@ -15,10 +15,12 @@
   --toastify-text-color-error: #1a1c1d;
   --toastify-font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
   --toastify-toast-min-height: 44px;
-  --blue-link: #1366C1;
+  --blue-link: #1366c1;
 }
 
-*:focus-visible, button:focus-visible, input:focus-visible {
+*:focus-visible,
+button:focus-visible,
+input:focus-visible {
   outline-color: white !important;
 }
 
@@ -85,7 +87,7 @@ input:focus-visible {
   Custom
 */
 .arb-hover {
-  @apply transition duration-200 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-4 active:opacity-90 disabled:border-0 disabled:opacity-100;
+  @apply focus-visible:ring-gray-4 transition duration-200 hover:opacity-80 focus-visible:ring-2 active:opacity-90 disabled:border-0 disabled:opacity-100;
 }
 
 .hover\:animate-rotate-180:hover {

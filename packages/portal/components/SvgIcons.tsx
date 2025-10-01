@@ -100,13 +100,7 @@ export const LinkedinIcon = ({ size }: { size?: number }) => {
 };
 
 export const MobileHeaderOpen = () => (
-  <svg
-    width="15"
-    height="12"
-    viewBox="0 0 15 12"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="15" height="12" viewBox="0 0 15 12" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="0.701172" y1="11.5" x2="15.0012" y2="11.5" stroke="white" />
     <line x1="0.701172" y1="6" x2="15.0012" y2="6" stroke="white" />
     <line x1="0.701172" y1="0.5" x2="15.0012" y2="0.5" stroke="white" />
@@ -114,13 +108,7 @@ export const MobileHeaderOpen = () => (
 );
 
 export const MobileHeaderClose = () => (
-  <svg
-    width="24"
-    height="20"
-    viewBox="0 0 29 28"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="24" height="20" viewBox="0 0 29 28" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       fillRule="evenodd"
       clipRule="evenodd"

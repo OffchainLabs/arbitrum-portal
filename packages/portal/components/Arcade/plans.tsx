@@ -17,23 +17,19 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'treasure-dao',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-treasure',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-treasure',
       },
       {
         projectId: 'ai-arena',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-aiarena',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-aiarena',
       },
       {
         projectId: 'pirate-nation',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-pirate',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-pirate',
       },
       {
         projectId: 'dininho-funworld',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-dininho',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-dininho',
       },
     ],
   },
@@ -44,18 +40,15 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'ztx',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-ztx',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-ztx',
       },
       {
         projectId: 'tales-of-elleria',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-tales-of-elleria',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-tales-of-elleria',
       },
       {
         projectId: 'monkey-empire',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-monkey-empire',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-monkey-empire',
       },
     ],
   },
@@ -66,18 +59,15 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'cosmik-battle',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-cosmik-battle',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-cosmik-battle',
       },
       {
         projectId: 'zeeverse',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-zeeverse',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-zeeverse',
       },
       {
         projectId: 'knights-of-the-ether',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-knights-of-the-ether',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-knights-of-the-ether',
       },
     ],
   },
@@ -88,18 +78,15 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'battlefly',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-battlefly',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-battlefly',
       },
       {
         projectId: 'kaiju-cards',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-kaiju-cards',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-kaiju-cards',
       },
       {
         projectId: 'realm',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-realm',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-realm',
       },
     ],
   },
@@ -110,13 +97,11 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'battleplan',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-battleplan',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-battleplan',
       },
       {
         projectId: 'the-lost-donkeys',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-thelostdonkeys',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-thelostdonkeys',
       },
     ],
   },
@@ -127,19 +112,16 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'kuroro-beast',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-kuroro-beasts',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-kuroro-beasts',
       },
       {
         projectId: 'mighty-action-heroes',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-mighty-action-heroes',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-mighty-action-heroes',
       },
 
       {
         projectId: 'bitmates',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-bitmates',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-bitmates',
       },
     ],
   },
@@ -150,13 +132,11 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'the-beacon',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-the-beacon',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-the-beacon',
       },
       {
         projectId: 'rhascau',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-rhascau',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-rhascau',
       },
     ],
   },
@@ -167,8 +147,7 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'king-of-destiny',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-infinigods',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-infinigods',
       },
     ],
   },
@@ -179,8 +158,7 @@ export const ARCADE_WEEKLY_PLAN = [
     missions: [
       {
         projectId: 'tarochi',
-        missionDetailsLink:
-          'https://arbitrum.clique.tech/individual/arbitrum-tarochi',
+        missionDetailsLink: 'https://arbitrum.clique.tech/individual/arbitrum-tarochi',
       },
     ],
   },

@@ -33,9 +33,7 @@ function fetchJson(url) {
             const jsonData = JSON.parse(data);
             resolve(jsonData);
           } catch (error) {
-            reject(
-              new Error(`Failed to parse JSON from ${url}: ${error.message}`),
-            );
+            reject(new Error(`Failed to parse JSON from ${url}: ${error.message}`));
           }
         });
       })

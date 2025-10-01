@@ -1,13 +1,14 @@
 'use client';
 
-import Image from 'next/image';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useLocalStorage } from '@rehooks/local-storage';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
-import { useLocalStorage } from '@rehooks/local-storage';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { Card } from '@/components/Card';
+
 import { BRIDGE_LINK } from '@/common/constants';
+import { Card } from '@/components/Card';
 import { LoadingPlaceholderCarousel } from '@/components/Carousel/LoadingPlaceholderCarousel';
 import { ExternalLink } from '@/components/ExternalLink';
 
@@ -79,9 +80,7 @@ const ShowHideSectionButton = ({
 
   const handleShowSection = () => {
     setShowSection(!showSection);
-    posthog?.capture(
-      `Orbit Page - ${showSection ? 'Hide' : 'Show'} Getting Started Section`,
-    );
+    posthog?.capture(`Orbit Page - ${showSection ? 'Hide' : 'Show'} Getting Started Section`);
   };
 
   return (
@@ -92,38 +91,23 @@ const ShowHideSectionButton = ({
       )}
       onClick={handleShowSection}
     >
-      {showSection ? (
-        <EyeSlashIcon className="h-4 w-4" />
-      ) : (
-        <EyeIcon className="h-4 w-4" />
-      )}
+      {showSection ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
       {showSection ? 'Hide' : 'Show Intro to Orbit'}
     </button>
   );
 };
 export const GettingStarted = () => {
-  const [showSection, setShowSection] = useLocalStorage<boolean>(
-    SHOW_INTRO_TO_ORBIT_KEY,
-    true,
-  );
+  const [showSection, setShowSection] = useLocalStorage<boolean>(SHOW_INTRO_TO_ORBIT_KEY, true);
 
   if (!showSection) {
-    return (
-      <ShowHideSectionButton
-        showSection={showSection}
-        setShowSection={setShowSection}
-      />
-    );
+    return <ShowHideSectionButton showSection={showSection} setShowSection={setShowSection} />;
   }
 
   return (
     <div className="align-carousel-controls-with-title relative flex flex-col gap-4">
       <div className="z-30 flex justify-between">
         <div className="text-2xl">Getting Started</div>
-        <ShowHideSectionButton
-          showSection={showSection}
-          setShowSection={setShowSection}
-        />
+        <ShowHideSectionButton showSection={showSection} setShowSection={setShowSection} />
       </div>
       <hr className="border-white/40" />
 

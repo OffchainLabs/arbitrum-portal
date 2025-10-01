@@ -1,22 +1,23 @@
-import dayjs, { Dayjs } from 'dayjs'
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport'
+import dayjs, { Dayjs } from 'dayjs';
 
-import { MergedTransaction } from '../state/app/state'
-import { useRemainingTimeCctp } from '../state/cctpState'
-import { isNetwork } from '../util/networks'
-import { getConfirmationTime } from '../util/WithdrawalUtils'
-import { getBoldInfo, getDifferenceInSeconds } from '../util/BoLDUtils'
-import { isLifiTransfer } from '../components/TransactionHistory/helpers'
+import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
+
+import { isLifiTransfer } from '../components/TransactionHistory/helpers';
+import { MergedTransaction } from '../state/app/state';
+import { useRemainingTimeCctp } from '../state/cctpState';
+import { getBoldInfo, getDifferenceInSeconds } from '../util/BoLDUtils';
+import { getConfirmationTime } from '../util/WithdrawalUtils';
+import { isNetwork } from '../util/networks';
 
 const DEPOSIT_TIME_MINUTES = {
   mainnet: 15,
-  testnet: 10
-}
+  testnet: 10,
+};
 
 const TRANSFER_TIME_MINUTES_CCTP = {
   mainnet: 15,
-  testnet: 1
-}
+  testnet: 1,
+};
 
 /**
  * TODO: An assumption should be 15 minutes for mainnet orbit deposits
@@ -25,13 +26,13 @@ const TRANSFER_TIME_MINUTES_CCTP = {
  */
 const DEPOSIT_TIME_MINUTES_ORBIT = {
   mainnet: 5,
-  testnet: 1
-}
+  testnet: 1,
+};
 
 type UseTransferDurationResult = {
-  approximateDurationInMinutes: number
-  estimatedMinutesLeft: number | null
-}
+  approximateDurationInMinutes: number;
+  estimatedMinutesLeft: number | null;
+};
 
 /**
  * Calculates the transfer duration in minutes for a given transaction.
@@ -41,69 +42,66 @@ type UseTransferDurationResult = {
  * @property {number} approximateDurationInMinutes - The total duration of the transfer in minutes.
  * @property {number | null} estimatedMinutesLeft - The remaining time for the transfer in minutes, or null if calculating or unavailable.
  */
-export const useTransferDuration = (
-  tx: MergedTransaction
-): UseTransferDurationResult => {
-  const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx)
+export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationResult => {
+  const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx);
 
-  const { sourceChainId, destinationChainId, isCctp, childChainId, isOft } = tx
-  const { isTestnet, isOrbitChain } = isNetwork(childChainId)
+  const { sourceChainId, destinationChainId, isCctp, childChainId, isOft } = tx;
+  const { isTestnet, isOrbitChain } = isNetwork(childChainId);
 
-  const standardDepositDuration = getStandardDepositDuration(isTestnet)
-  const orbitDepositDuration = getOrbitDepositDuration(isTestnet)
+  const standardDepositDuration = getStandardDepositDuration(isTestnet);
+  const orbitDepositDuration = getOrbitDepositDuration(isTestnet);
 
   if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
     // Deposit only
     return {
-      approximateDurationInMinutes:
-        standardDepositDuration + orbitDepositDuration,
+      approximateDurationInMinutes: standardDepositDuration + orbitDepositDuration,
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
-        totalDuration: standardDepositDuration + orbitDepositDuration
-      })
-    }
+        totalDuration: standardDepositDuration + orbitDepositDuration,
+      }),
+    };
   }
 
   if (isLifiTransfer(tx)) {
-    const durationMinutes = (tx.durationMs || 15_000) / (60 * 1_000)
+    const durationMinutes = (tx.durationMs || 15_000) / (60 * 1_000);
 
     return {
       approximateDurationInMinutes: durationMinutes,
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
-        totalDuration: durationMinutes
-      })
-    }
+        totalDuration: durationMinutes,
+      }),
+    };
   }
 
   if (isCctp) {
-    const cctpTransferDuration = getCctpTransferDuration(isTestnet)
+    const cctpTransferDuration = getCctpTransferDuration(isTestnet);
     return {
       approximateDurationInMinutes: cctpTransferDuration,
-      estimatedMinutesLeft: estimatedMinutesLeftCctp
-    }
+      estimatedMinutesLeft: estimatedMinutesLeftCctp,
+    };
   }
 
   if (isOft) {
-    const OFT_TRANSFER_DURATION_MINUTES = 5
+    const OFT_TRANSFER_DURATION_MINUTES = 5;
     return {
       approximateDurationInMinutes: OFT_TRANSFER_DURATION_MINUTES,
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
-        totalDuration: OFT_TRANSFER_DURATION_MINUTES
-      })
-    }
+        totalDuration: OFT_TRANSFER_DURATION_MINUTES,
+      }),
+    };
   }
 
   if (tx.isWithdrawal) {
-    const withdrawalDuration = getWithdrawalDuration(tx)
+    const withdrawalDuration = getWithdrawalDuration(tx);
     return {
       approximateDurationInMinutes: withdrawalDuration,
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
-        totalDuration: withdrawalDuration
-      })
-    }
+        totalDuration: withdrawalDuration,
+      }),
+    };
   }
 
   if (isOrbitChain) {
@@ -111,102 +109,96 @@ export const useTransferDuration = (
       approximateDurationInMinutes: orbitDepositDuration,
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
-        totalDuration: orbitDepositDuration
-      })
-    }
+        totalDuration: orbitDepositDuration,
+      }),
+    };
   }
 
   return {
     approximateDurationInMinutes: standardDepositDuration,
     estimatedMinutesLeft: getRemainingMinutes({
       createdAt: tx.createdAt,
-      totalDuration: standardDepositDuration
-    })
-  }
-}
+      totalDuration: standardDepositDuration,
+    }),
+  };
+};
 
 export function getWithdrawalConfirmationDate({
   createdAt,
-  withdrawalFromChainId
+  withdrawalFromChainId,
 }: {
-  createdAt: number | null
-  withdrawalFromChainId: number
+  createdAt: number | null;
+  withdrawalFromChainId: number;
 }): Dayjs {
-  const { confirmationTimeInSeconds } = getConfirmationTime(
-    withdrawalFromChainId
-  )
+  const { confirmationTimeInSeconds } = getConfirmationTime(withdrawalFromChainId);
 
   // For new txs createdAt won't be defined yet, we default to the current time in that case
   if (createdAt === null) {
-    return dayjs().add(confirmationTimeInSeconds, 'second')
+    return dayjs().add(confirmationTimeInSeconds, 'second');
   }
 
-  const boldInfo = getBoldInfo({ createdAt, withdrawalFromChainId })
+  const boldInfo = getBoldInfo({ createdAt, withdrawalFromChainId });
 
   if (boldInfo.affected) {
     // Messages not confirmed at the time of the BoLD upgrade had their confirmation time reset and start again
     const confirmationTimeBeforeResetInSeconds = getDifferenceInSeconds(
       new Date(createdAt),
-      boldInfo.upgradeTime
-    )
+      boldInfo.upgradeTime,
+    );
 
     return dayjs(createdAt)
       .add(confirmationTimeBeforeResetInSeconds, 'second')
-      .add(confirmationTimeInSeconds, 'second')
+      .add(confirmationTimeInSeconds, 'second');
   }
 
   // Add the confirmation time to createdAt
-  return dayjs(createdAt).add(confirmationTimeInSeconds, 'second')
+  return dayjs(createdAt).add(confirmationTimeInSeconds, 'second');
 }
 
 export function getWithdrawalDuration({
   createdAt,
-  sourceChainId
+  sourceChainId,
 }: Pick<MergedTransaction, 'createdAt' | 'sourceChainId'>) {
   const confirmationDate = getWithdrawalConfirmationDate({
     createdAt: createdAt,
-    withdrawalFromChainId: sourceChainId
-  })
-  return Math.max(confirmationDate.diff(createdAt, 'minute'), 0)
+    withdrawalFromChainId: sourceChainId,
+  });
+  return Math.max(confirmationDate.diff(createdAt, 'minute'), 0);
 }
 
 export function getStandardDepositDuration(testnet: boolean) {
-  return testnet ? DEPOSIT_TIME_MINUTES.testnet : DEPOSIT_TIME_MINUTES.mainnet
+  return testnet ? DEPOSIT_TIME_MINUTES.testnet : DEPOSIT_TIME_MINUTES.mainnet;
 }
 
 export function getOrbitDepositDuration(testnet: boolean) {
-  return testnet
-    ? DEPOSIT_TIME_MINUTES_ORBIT.testnet
-    : DEPOSIT_TIME_MINUTES_ORBIT.mainnet
+  return testnet ? DEPOSIT_TIME_MINUTES_ORBIT.testnet : DEPOSIT_TIME_MINUTES_ORBIT.mainnet;
 }
 
 export function getCctpTransferDuration(testnet: boolean) {
-  return testnet
-    ? TRANSFER_TIME_MINUTES_CCTP.testnet
-    : TRANSFER_TIME_MINUTES_CCTP.mainnet
+  return testnet ? TRANSFER_TIME_MINUTES_CCTP.testnet : TRANSFER_TIME_MINUTES_CCTP.mainnet;
 }
 
 function getRemainingMinutes({
   createdAt,
-  totalDuration
+  totalDuration,
 }: {
-  createdAt: number | null
-  totalDuration: number
+  createdAt: number | null;
+  totalDuration: number;
 }): number {
   // For new txs createdAt won't be defined yet, we default to the current time in that case
-  const createdAtDate = createdAt ? dayjs(createdAt) : dayjs()
-  const estimatedCompletionTime = createdAtDate.add(totalDuration, 'minutes')
+  const createdAtDate = createdAt ? dayjs(createdAt) : dayjs();
+  const estimatedCompletionTime = createdAtDate.add(totalDuration, 'minutes');
 
-  return Math.max(estimatedCompletionTime.diff(dayjs(), 'minute'), 0)
+  return Math.max(estimatedCompletionTime.diff(dayjs(), 'minute'), 0);
 }
 
 export function minutesToHumanReadableTime(minutes: number | null) {
   if (minutes === null) {
-    return 'Calculating...'
+    return 'Calculating...';
   }
   if (minutes <= 0) {
-    return 'Less than a minute'
+    return 'Less than a minute';
   }
   // will convert number to '20 minutes', '1 hour', '7 days', etc
-  return dayjs().add(minutes, 'minutes').fromNow(true)
+  return dayjs().add(minutes, 'minutes').fromNow(true);
 }

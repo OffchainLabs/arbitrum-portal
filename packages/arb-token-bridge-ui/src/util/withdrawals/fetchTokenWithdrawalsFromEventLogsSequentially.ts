@@ -1,60 +1,59 @@
-import { constants } from 'ethers'
-import { Provider, BlockTag } from '@ethersproject/providers'
-import { Erc20Bridger } from '@arbitrum/sdk'
+import { Erc20Bridger } from '@arbitrum/sdk';
+import { BlockTag, Provider } from '@ethersproject/providers';
+import { constants } from 'ethers';
 
+import { backOff, wait } from '../ExponentialBackoffUtils';
 import {
+  FetchTokenWithdrawalsFromEventLogsParams,
   fetchTokenWithdrawalsFromEventLogs,
-  FetchTokenWithdrawalsFromEventLogsParams
-} from './fetchTokenWithdrawalsFromEventLogs'
-
-import { backOff, wait } from '../ExponentialBackoffUtils'
+} from './fetchTokenWithdrawalsFromEventLogs';
 
 type FetchTokenWithdrawalsFromEventLogsQuery = {
-  params: FetchTokenWithdrawalsFromEventLogsParams
-  priority: number
-}
+  params: FetchTokenWithdrawalsFromEventLogsParams;
+  priority: number;
+};
 
 export type Query = {
-  sender?: string
-  receiver?: string
-  gateways?: string[]
-}
+  sender?: string;
+  receiver?: string;
+  gateways?: string[];
+};
 
 export type FetchTokenWithdrawalsFromEventLogsSequentiallyParams = {
-  sender?: string
-  receiver?: string
-  provider: Provider
-  fromBlock?: BlockTag
-  toBlock?: BlockTag
+  sender?: string;
+  receiver?: string;
+  provider: Provider;
+  fromBlock?: BlockTag;
+  toBlock?: BlockTag;
   /**
    * How long to delay in-between queries of different priority. Defaults to 0.
    */
-  delayMs?: number
-  queries: Query[]
-}
+  delayMs?: number;
+  queries: Query[];
+};
 
 export type FetchTokenWithdrawalsFromEventLogsSequentiallyResult = Awaited<
   ReturnType<Erc20Bridger['getWithdrawalEvents']>
->
+>;
 
 export async function fetchTokenWithdrawalsFromEventLogsSequentially({
   provider,
   fromBlock = 0,
   toBlock = 'latest',
   delayMs = 0,
-  queries: queriesProp
+  queries: queriesProp,
 }: FetchTokenWithdrawalsFromEventLogsSequentiallyParams): Promise<FetchTokenWithdrawalsFromEventLogsSequentiallyResult> {
   // keep track of priority; increment as queries are added
-  let priority = 0
+  let priority = 0;
 
   // keep track of queries
-  const queries: FetchTokenWithdrawalsFromEventLogsQuery[] = []
+  const queries: FetchTokenWithdrawalsFromEventLogsQuery[] = [];
 
   // helper function to reuse common params
   function buildQueryParams({
     sender,
     receiver,
-    gateways = []
+    gateways = [],
   }: Query): FetchTokenWithdrawalsFromEventLogsQuery['params'] {
     return {
       sender,
@@ -62,56 +61,54 @@ export async function fetchTokenWithdrawalsFromEventLogsSequentially({
       fromBlock,
       toBlock,
       l2Provider: provider,
-      l2GatewayAddresses: gateways
-    }
+      l2GatewayAddresses: gateways,
+    };
   }
 
   // for sanitizing, adding queries and incrementing priority
   function addQuery(params: FetchTokenWithdrawalsFromEventLogsQuery['params']) {
-    const gateways = params.l2GatewayAddresses ?? []
-    const gatewaysSanitized = gateways.filter(g => g !== constants.AddressZero)
+    const gateways = params.l2GatewayAddresses ?? [];
+    const gatewaysSanitized = gateways.filter((g) => g !== constants.AddressZero);
 
     if (gatewaysSanitized.length === 0) {
-      return
+      return;
     }
 
     queries.push({
       params: { ...params, l2GatewayAddresses: gatewaysSanitized },
-      priority: ++priority
-    })
+      priority: ++priority,
+    });
   }
 
-  queriesProp.forEach(query => {
-    addQuery(buildQueryParams(query))
-  })
+  queriesProp.forEach((query) => {
+    addQuery(buildQueryParams(query));
+  });
 
   // for iterating through all priorities in the while loop below
-  let currentPriority = 1
+  let currentPriority = 1;
 
   // final result
-  const result: FetchTokenWithdrawalsFromEventLogsSequentiallyResult = []
+  const result: FetchTokenWithdrawalsFromEventLogsSequentiallyResult = [];
 
   while (currentPriority <= priority) {
-    const currentPriorityQueries = queries.filter(
-      query => query.priority === currentPriority
-    )
+    const currentPriorityQueries = queries.filter((query) => query.priority === currentPriority);
 
     // eslint-disable-next-line no-await-in-loop
     const currentPriorityResults = await Promise.all(
-      currentPriorityQueries.map(query =>
-        backOff(() => fetchTokenWithdrawalsFromEventLogs(query.params))
-      )
-    )
+      currentPriorityQueries.map((query) =>
+        backOff(() => fetchTokenWithdrawalsFromEventLogs(query.params)),
+      ),
+    );
 
-    currentPriorityResults.forEach(r => {
-      result.push(...r)
-    })
+    currentPriorityResults.forEach((r) => {
+      result.push(...r);
+    });
 
     // eslint-disable-next-line no-await-in-loop
-    await wait(delayMs)
+    await wait(delayMs);
 
-    currentPriority++
+    currentPriority++;
   }
 
-  return result
+  return result;
 }

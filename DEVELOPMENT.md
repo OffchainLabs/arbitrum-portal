@@ -50,14 +50,12 @@ The Bridge app requires environment variables for full functionality:
 2. Add your keys to `.env`:
 
    **Required:**
-
    - `NEXT_PUBLIC_RPC_PROVIDER = infura / alchemy`
    - `NEXT_PUBLIC_INFURA_KEY = your-infura-key`
    - `NEXT_PUBLIC_ALCHEMY_KEY = your-alchemy-key`
    - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = your-walletconnect-project-id` (Get from [WalletConnect dashboard](https://cloud.walletconnect.com/app))
 
    **Optional features (enable as needed):**
-
    - `NEXT_PUBLIC_FEATURE_FLAG_LIFI = true` (Enable LiFi integration)
    - `LIFI_KEY = your-lifi-key` (Get from [LiFi dashboard](https://portal.li.fi/))
 
@@ -109,7 +107,6 @@ E2E tests are only available for the Bridge app and require a local Nitro test n
    ```
 
 4. **Update `.e2e.env`** with your keys:
-
    - `NEXT_PUBLIC_INFURA_KEY=your-infura-key`
    - `PRIVATE_KEY_USER=your-test-private-key`
 

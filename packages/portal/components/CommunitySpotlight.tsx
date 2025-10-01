@@ -1,11 +1,13 @@
 import dynamic from 'next/dynamic';
 import { PropsWithChildren } from 'react';
-import { getProjectDetailsById } from '@/common/projects';
-import { ProjectItemBox } from './ProjectItemBox';
-import { EntityType } from '@/common/types';
+
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
-import { OrbitItemBox } from './OrbitItemBox';
+import { getProjectDetailsById } from '@/common/projects';
+import { EntityType } from '@/common/types';
+
 import { LoadingPlaceholderCarousel } from './Carousel/LoadingPlaceholderCarousel';
+import { OrbitItemBox } from './OrbitItemBox';
+import { ProjectItemBox } from './ProjectItemBox';
 
 const Carousel = dynamic(() => import('@/components/Carousel/Carousel'), {
   ssr: false,
@@ -35,12 +37,9 @@ export const CommunitySpotlight = ({
   entityType: EntityType;
 }) => {
   const getDetailsById =
-    entityType === EntityType.OrbitChain
-      ? getOrbitChainDetailsById
-      : getProjectDetailsById;
+    entityType === EntityType.OrbitChain ? getOrbitChainDetailsById : getProjectDetailsById;
 
-  const ItemBox =
-    entityType === EntityType.OrbitChain ? OrbitItemBox : ProjectItemBox;
+  const ItemBox = entityType === EntityType.OrbitChain ? OrbitItemBox : ProjectItemBox;
 
   // if no project to spotlight
   if (entitySlugs.length === 0) return null;

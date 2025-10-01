@@ -1,29 +1,29 @@
-import { SwitchChainParameters } from '@wagmi/core'
-import { useSwitchChain } from 'wagmi'
+import { SwitchChainParameters } from '@wagmi/core';
+import { useSwitchChain } from 'wagmi';
 
-import { getNetworkName, isNetwork } from '../util/networks'
-import { isUserRejectedError } from '../util/isUserRejectedError'
-import { warningToast } from '../components/common/atoms/Toast'
-import { captureSentryErrorWithExtraData } from '../util/SentryUtils'
+import { warningToast } from '../components/common/atoms/Toast';
+import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
+import { isUserRejectedError } from '../util/isUserRejectedError';
+import { getNetworkName, isNetwork } from '../util/networks';
 
 type SwitchNetworkConfig = {
-  isSwitchingNetworkBeforeTx?: boolean
-}
+  isSwitchingNetworkBeforeTx?: boolean;
+};
 
 const handleSwitchNetworkNotSupported = (
   attemptedChainId: number,
-  isSwitchingNetworkBeforeTx: boolean
+  isSwitchingNetworkBeforeTx: boolean,
 ) => {
-  const isDeposit = isNetwork(attemptedChainId).isEthereumMainnetOrTestnet
-  const targetTxName = isDeposit ? 'deposit' : 'withdraw'
-  const networkName = getNetworkName(attemptedChainId)
+  const isDeposit = isNetwork(attemptedChainId).isEthereumMainnetOrTestnet;
+  const targetTxName = isDeposit ? 'deposit' : 'withdraw';
+  const networkName = getNetworkName(attemptedChainId);
 
   const message = isSwitchingNetworkBeforeTx
     ? `Please connect to ${networkName} on your wallet before signing your ${targetTxName} transaction.`
-    : `Please connect to ${networkName} on your wallet.`
+    : `Please connect to ${networkName} on your wallet.`;
 
-  warningToast(message)
-}
+  warningToast(message);
+};
 
 /**
  * Function to invoke when an error is thrown while attempting to switch network.
@@ -35,29 +35,26 @@ const handleSwitchNetworkNotSupported = (
 function handleSwitchNetworkError(
   error: any,
   { chainId }: SwitchChainParameters,
-  context: unknown = { isSwitchingNetworkBeforeTx: false }
+  context: unknown = { isSwitchingNetworkBeforeTx: false },
 ) {
   const { isSwitchingNetworkBeforeTx } = context as {
-    isSwitchingNetworkBeforeTx: boolean
-  }
+    isSwitchingNetworkBeforeTx: boolean;
+  };
   if (isUserRejectedError(error)) {
-    return
+    return;
   }
-  if (
-    error.name === 'SwitchChainNotSupportedError' ||
-    error.name === 'AddChainError'
-  ) {
-    handleSwitchNetworkNotSupported(chainId, isSwitchingNetworkBeforeTx)
+  if (error.name === 'SwitchChainNotSupportedError' || error.name === 'AddChainError') {
+    handleSwitchNetworkNotSupported(chainId, isSwitchingNetworkBeforeTx);
   } else {
     captureSentryErrorWithExtraData({
       error,
-      originFunction: 'handleSwitchNetworkError'
-    })
+      originFunction: 'handleSwitchNetworkError',
+    });
   }
 }
 
 export function useSwitchNetworkWithConfig({
-  isSwitchingNetworkBeforeTx = false
+  isSwitchingNetworkBeforeTx = false,
 }: SwitchNetworkConfig = {}) {
   return useSwitchChain({
     mutation: {
@@ -75,7 +72,7 @@ export function useSwitchNetworkWithConfig({
        * @returns `{ isSwitchingNetworkBeforeTx: boolean }`
        */
       onMutate: () => ({ isSwitchingNetworkBeforeTx }),
-      onError: handleSwitchNetworkError
-    }
-  })
+      onError: handleSwitchNetworkError,
+    },
+  });
 }

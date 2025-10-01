@@ -1,8 +1,8 @@
-import { usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation';
 
 export function useMode() {
-  const pathname = usePathname()
-  const embedMode = pathname === '/bridge/embed'
+  const pathname = usePathname();
+  const embedMode = pathname === '/bridge/embed';
 
-  return { embedMode }
+  return { embedMode };
 }

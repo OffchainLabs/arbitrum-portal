@@ -1,6 +1,7 @@
 import React from 'react';
-import { MobileHeaderToggleMenu } from './MobileHeaderToggleMenu';
+
 import { MobileHeaderLogo } from './MobileHeaderLogo';
+import { MobileHeaderToggleMenu } from './MobileHeaderToggleMenu';
 
 export function MobileHeader() {
   return (

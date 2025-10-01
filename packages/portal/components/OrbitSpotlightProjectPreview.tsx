@@ -1,9 +1,10 @@
 import Image from 'next/image';
-import { twMerge } from 'tailwind-merge';
 import { usePostHog } from 'posthog-js/react';
+import { twMerge } from 'tailwind-merge';
+
 import { EntityType, FullProject } from '@/common/types';
-import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
+import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 
 export const OrbitSpotlightProjectPreview = ({
   orbitChainSlug,
@@ -20,14 +21,9 @@ export const OrbitSpotlightProjectPreview = ({
     selectedChains: [orbitChainSlug],
   });
 
-  const { openEntitySidePanel: openProjectPanel } = useEntitySidePanel(
-    EntityType.Project,
-  );
+  const { openEntitySidePanel: openProjectPanel } = useEntitySidePanel(EntityType.Project);
 
-  const handleProjectClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    project: FullProject,
-  ) => {
+  const handleProjectClick = (event: React.MouseEvent<HTMLButtonElement>, project: FullProject) => {
     // stop event bubbling
     event.preventDefault();
     event.stopPropagation();

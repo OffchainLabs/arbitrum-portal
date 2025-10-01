@@ -1,65 +1,56 @@
-import type { Metadata } from 'next'
-import {
-  ChainKeyQueryParam,
-  getChainForChainKeyQueryParam
-} from '@/bridge/types/ChainQueryParam'
+import type { Metadata } from 'next';
+import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
 
-import { isNetwork } from '@/bridge/util/networks'
-import BridgeClient from './BridgeClient'
-import { addOrbitChainsToArbitrumSDK } from '../../../initialization'
+import { PORTAL_DOMAIN } from '@/bridge/constants';
+import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
+import { isNetwork } from '@/bridge/util/networks';
 
-import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect'
-import { PORTAL_DOMAIN } from '@/bridge/constants'
+import { addOrbitChainsToArbitrumSDK } from '../../../initialization';
+import BridgeClient from './BridgeClient';
 
 type Props = {
-  searchParams: { [key: string]: string | string[] | undefined }
-}
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-export async function generateMetadata({
-  searchParams
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sourceChainSlug = (
-    typeof searchParams.sourceChain === 'string'
-      ? searchParams.sourceChain
-      : 'ethereum'
-  ) as ChainKeyQueryParam
+    typeof searchParams.sourceChain === 'string' ? searchParams.sourceChain : 'ethereum'
+  ) as ChainKeyQueryParam;
   const destinationChainSlug = (
     typeof searchParams.destinationChain === 'string'
       ? searchParams.destinationChain
       : 'arbitrum-one'
-  ) as ChainKeyQueryParam
+  ) as ChainKeyQueryParam;
 
-  let sourceChainInfo
-  let destinationChainInfo
+  let sourceChainInfo;
+  let destinationChainInfo;
 
   try {
-    sourceChainInfo = getChainForChainKeyQueryParam(sourceChainSlug)
-    destinationChainInfo = getChainForChainKeyQueryParam(destinationChainSlug)
+    sourceChainInfo = getChainForChainKeyQueryParam(sourceChainSlug);
+    destinationChainInfo = getChainForChainKeyQueryParam(destinationChainSlug);
   } catch (error) {
-    sourceChainInfo = getChainForChainKeyQueryParam('ethereum')
-    destinationChainInfo = getChainForChainKeyQueryParam('arbitrum-one')
+    sourceChainInfo = getChainForChainKeyQueryParam('ethereum');
+    destinationChainInfo = getChainForChainKeyQueryParam('arbitrum-one');
   }
 
-  const { isOrbitChain: isSourceOrbitChain } = isNetwork(sourceChainInfo.id)
-  const { isOrbitChain: isDestinationOrbitChain } = isNetwork(
-    destinationChainInfo.id
-  )
+  const { isOrbitChain: isSourceOrbitChain } = isNetwork(sourceChainInfo.id);
+  const { isOrbitChain: isDestinationOrbitChain } = isNetwork(destinationChainInfo.id);
 
-  const siteTitle = `Bridge to ${destinationChainInfo.name}`
-  const siteDescription = `Bridge from ${sourceChainInfo.name} to ${destinationChainInfo.name} using the Arbitrum Bridge. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum's security model. Arbitrum is a Layer 2 Optimistic Rollup.`
-  const siteDomain = PORTAL_DOMAIN
+  const siteTitle = `Bridge to ${destinationChainInfo.name}`;
+  const siteDescription = `Bridge from ${sourceChainInfo.name} to ${destinationChainInfo.name} using the Arbitrum Bridge. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum's security model. Arbitrum is a Layer 2 Optimistic Rollup.`;
+  const siteDomain = PORTAL_DOMAIN;
 
-  let metaImagePath = `${sourceChainInfo.id}-to-${destinationChainInfo.id}.jpg`
+  let metaImagePath = `${sourceChainInfo.id}-to-${destinationChainInfo.id}.jpg`;
 
   if (isSourceOrbitChain) {
-    metaImagePath = `${sourceChainInfo.id}.jpg`
+    metaImagePath = `${sourceChainInfo.id}.jpg`;
   }
 
   if (isDestinationOrbitChain) {
-    metaImagePath = `${destinationChainInfo.id}.jpg`
+    metaImagePath = `${destinationChainInfo.id}.jpg`;
   }
 
-  const imageUrl = `${siteDomain}/images/__auto-generated/open-graph/${metaImagePath}`
+  const imageUrl = `${siteDomain}/images/__auto-generated/open-graph/${metaImagePath}`;
 
   return {
     title: siteTitle,
@@ -69,16 +60,16 @@ export async function generateMetadata({
       type: 'website',
       title: siteTitle,
       description: siteDescription,
-      images: [imageUrl]
+      images: [imageUrl],
     },
     twitter: {
       card: 'summary_large_image',
       site: siteDomain,
       title: siteTitle,
       description: siteDescription,
-      images: [imageUrl]
-    }
-  }
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function BridgePage({ searchParams }: Props) {
@@ -88,13 +79,13 @@ export default async function BridgePage({ searchParams }: Props) {
    * It should only be executed once per user per session.
    */
   if (searchParams.sanitized !== 'true') {
-    addOrbitChainsToArbitrumSDK()
-    await sanitizeAndRedirect(searchParams, '/bridge')
+    addOrbitChainsToArbitrumSDK();
+    await sanitizeAndRedirect(searchParams, '/bridge');
   }
 
   return (
     <main className="bridge-wrapper relative flex h-full flex-1 flex-col overflow-y-auto">
       <BridgeClient />
     </main>
-  )
+  );
 }

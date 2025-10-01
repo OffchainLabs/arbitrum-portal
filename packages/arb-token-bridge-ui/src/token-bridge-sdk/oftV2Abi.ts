@@ -2,7 +2,7 @@ export const oftV2Abi = [
   {
     type: 'error',
     name: 'InvalidLocalDecimals',
-    inputs: []
+    inputs: [],
   },
   {
     type: 'error',
@@ -10,13 +10,13 @@ export const oftV2Abi = [
     inputs: [
       {
         name: 'amountLD',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         name: 'minAmountLD',
-        type: 'uint256'
-      }
-    ]
+        type: 'uint256',
+      },
+    ],
   },
   {
     type: 'event',
@@ -25,30 +25,30 @@ export const oftV2Abi = [
       {
         name: 'guid',
         type: 'bytes32',
-        indexed: true
+        indexed: true,
       },
       {
         name: 'dstEid',
         type: 'uint32',
-        indexed: false
+        indexed: false,
       },
       {
         name: 'fromAddress',
         type: 'address',
-        indexed: true
+        indexed: true,
       },
       {
         name: 'amountSentLD',
         type: 'uint256',
-        indexed: false
+        indexed: false,
       },
       {
         name: 'amountReceivedLD',
         type: 'uint256',
-        indexed: false
-      }
+        indexed: false,
+      },
     ],
-    anonymous: false
+    anonymous: false,
   },
   {
     type: 'event',
@@ -57,25 +57,25 @@ export const oftV2Abi = [
       {
         name: 'guid',
         type: 'bytes32',
-        indexed: true
+        indexed: true,
       },
       {
         name: 'srcEid',
         type: 'uint32',
-        indexed: false
+        indexed: false,
       },
       {
         name: 'toAddress',
         type: 'address',
-        indexed: true
+        indexed: true,
       },
       {
         name: 'amountReceivedLD',
         type: 'uint256',
-        indexed: false
-      }
+        indexed: false,
+      },
     ],
-    anonymous: false
+    anonymous: false,
   },
   {
     type: 'function',
@@ -84,14 +84,14 @@ export const oftV2Abi = [
     outputs: [
       {
         name: 'interfaceId',
-        type: 'bytes4'
+        type: 'bytes4',
       },
       {
         name: 'version',
-        type: 'uint64'
-      }
+        type: 'uint64',
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -100,10 +100,10 @@ export const oftV2Abi = [
     outputs: [
       {
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -112,10 +112,10 @@ export const oftV2Abi = [
     outputs: [
       {
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -124,10 +124,10 @@ export const oftV2Abi = [
     outputs: [
       {
         name: '',
-        type: 'uint8'
-      }
+        type: 'uint8',
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -139,34 +139,34 @@ export const oftV2Abi = [
         components: [
           {
             name: 'dstEid',
-            type: 'uint32'
+            type: 'uint32',
           },
           {
             name: 'to',
-            type: 'bytes32'
+            type: 'bytes32',
           },
           {
             name: 'amountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'minAmountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'extraOptions',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'composeMsg',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'oftCmd',
-            type: 'bytes'
-          }
-        ]
-      }
+            type: 'bytes',
+          },
+        ],
+      },
     ],
     outputs: [
       {
@@ -175,13 +175,13 @@ export const oftV2Abi = [
         components: [
           {
             name: 'minAmountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'maxAmountLD',
-            type: 'uint256'
-          }
-        ]
+            type: 'uint256',
+          },
+        ],
       },
       {
         name: '',
@@ -189,13 +189,13 @@ export const oftV2Abi = [
         components: [
           {
             name: 'feeAmountLD',
-            type: 'int256'
+            type: 'int256',
           },
           {
             name: 'description',
-            type: 'string'
-          }
-        ]
+            type: 'string',
+          },
+        ],
       },
       {
         name: '',
@@ -203,16 +203,16 @@ export const oftV2Abi = [
         components: [
           {
             name: 'amountSentLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'amountReceivedLD',
-            type: 'uint256'
-          }
-        ]
-      }
+            type: 'uint256',
+          },
+        ],
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -224,38 +224,38 @@ export const oftV2Abi = [
         components: [
           {
             name: 'dstEid',
-            type: 'uint32'
+            type: 'uint32',
           },
           {
             name: 'to',
-            type: 'bytes32'
+            type: 'bytes32',
           },
           {
             name: 'amountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'minAmountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'extraOptions',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'composeMsg',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'oftCmd',
-            type: 'bytes'
-          }
-        ]
+            type: 'bytes',
+          },
+        ],
       },
       {
         name: '_payInLzToken',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     outputs: [
       {
@@ -264,16 +264,16 @@ export const oftV2Abi = [
         components: [
           {
             name: 'nativeFee',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'lzTokenFee',
-            type: 'uint256'
-          }
-        ]
-      }
+            type: 'uint256',
+          },
+        ],
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -285,33 +285,33 @@ export const oftV2Abi = [
         components: [
           {
             name: 'dstEid',
-            type: 'uint32'
+            type: 'uint32',
           },
           {
             name: 'to',
-            type: 'bytes32'
+            type: 'bytes32',
           },
           {
             name: 'amountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'minAmountLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'extraOptions',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'composeMsg',
-            type: 'bytes'
+            type: 'bytes',
           },
           {
             name: 'oftCmd',
-            type: 'bytes'
-          }
-        ]
+            type: 'bytes',
+          },
+        ],
       },
       {
         name: '_fee',
@@ -319,18 +319,18 @@ export const oftV2Abi = [
         components: [
           {
             name: 'nativeFee',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'lzTokenFee',
-            type: 'uint256'
-          }
-        ]
+            type: 'uint256',
+          },
+        ],
       },
       {
         name: '_refundAddress',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     outputs: [
       {
@@ -339,11 +339,11 @@ export const oftV2Abi = [
         components: [
           {
             name: 'guid',
-            type: 'bytes32'
+            type: 'bytes32',
           },
           {
             name: 'nonce',
-            type: 'uint64'
+            type: 'uint64',
           },
           {
             name: 'fee',
@@ -351,15 +351,15 @@ export const oftV2Abi = [
             components: [
               {
                 name: 'nativeFee',
-                type: 'uint256'
+                type: 'uint256',
               },
               {
                 name: 'lzTokenFee',
-                type: 'uint256'
-              }
-            ]
-          }
-        ]
+                type: 'uint256',
+              },
+            ],
+          },
+        ],
       },
       {
         name: '',
@@ -367,15 +367,15 @@ export const oftV2Abi = [
         components: [
           {
             name: 'amountSentLD',
-            type: 'uint256'
+            type: 'uint256',
           },
           {
             name: 'amountReceivedLD',
-            type: 'uint256'
-          }
-        ]
-      }
+            type: 'uint256',
+          },
+        ],
+      },
     ],
-    stateMutability: 'payable'
-  }
-] as const
+    stateMutability: 'payable',
+  },
+] as const;

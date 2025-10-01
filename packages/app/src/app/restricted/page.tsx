@@ -1,4 +1,4 @@
-import Background from '../../components/Background'
+import Background from '../../components/Background';
 
 export default function RestrictedPage() {
   return (
@@ -9,10 +9,10 @@ export default function RestrictedPage() {
           Cannot connect from your location
         </span>
         <p className="text-2xl leading-relaxed tracking-wide text-white">
-          We apologize, this page is not available in certain jurisdictions due
-          to legal restrictions.
+          We apologize, this page is not available in certain jurisdictions due to legal
+          restrictions.
         </p>
       </div>
     </>
-  )
+  );
 }

@@ -1,6 +1,5 @@
 // Extract meaningful, sanitized selected-filters from props passed to the app
 // Helpful for SSR or RSCs
-
 import { SortOptions } from './types';
 
 export type ServerSideAppProps = {
@@ -20,8 +19,7 @@ export type ServerSideAppProps = {
 
 export const getServerSideAppParams = (props: ServerSideAppProps) => {
   const selectedCategory = props?.params.categorySlug || 'all';
-  const selectedSubcategories =
-    props?.searchParams.subcategories?.split('_') || [];
+  const selectedSubcategories = props?.searchParams.subcategories?.split('_') || [];
   const selectedChains = props?.searchParams.chains?.split('_') || [];
 
   const selectedProject = props?.searchParams.project;

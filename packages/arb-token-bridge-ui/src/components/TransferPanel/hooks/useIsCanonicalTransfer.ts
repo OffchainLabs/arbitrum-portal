@@ -1,12 +1,13 @@
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport'
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types'
-import { useNetworks } from '../../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
-import { useSelectedToken } from '../../../hooks/useSelectedToken'
-import { isDepositMode } from '../../../util/isDepositMode'
-import { getDestinationChainIds } from '../../../util/networks'
-import { isDisabledCanonicalTransfer } from '../TransferDisabledDialog'
-import { useSelectedTokenIsWithdrawOnly } from './useSelectedTokenIsWithdrawOnly'
+import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
+
+import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { isDepositMode } from '../../../util/isDepositMode';
+import { getDestinationChainIds } from '../../../util/networks';
+import { isDisabledCanonicalTransfer } from '../TransferDisabledDialog';
+import { useSelectedTokenIsWithdrawOnly } from './useSelectedTokenIsWithdrawOnly';
 
 export function isArbitrumCanonicalTransfer({
   sourceChainId,
@@ -15,26 +16,25 @@ export function isArbitrumCanonicalTransfer({
   parentChainId,
   isSelectedTokenWithdrawOnly,
   isSelectedTokenWithdrawOnlyLoading,
-  selectedToken
+  selectedToken,
 }: {
-  sourceChainId: number
-  destinationChainId: number
-  childChainId: number
-  parentChainId: number
-  isSelectedTokenWithdrawOnly: boolean
-  isSelectedTokenWithdrawOnlyLoading: boolean
-  selectedToken: ERC20BridgeToken | null
+  sourceChainId: number;
+  destinationChainId: number;
+  childChainId: number;
+  parentChainId: number;
+  isSelectedTokenWithdrawOnly: boolean;
+  isSelectedTokenWithdrawOnlyLoading: boolean;
+  selectedToken: ERC20BridgeToken | null;
 }): boolean {
-  const isDeposit = isDepositMode({ sourceChainId, destinationChainId })
+  const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
   const isTeleportMode = isValidTeleportChainPair({
     destinationChainId,
-    sourceChainId
-  })
-  const isValidPair =
-    getDestinationChainIds(sourceChainId).includes(destinationChainId)
+    sourceChainId,
+  });
+  const isValidPair = getDestinationChainIds(sourceChainId).includes(destinationChainId);
 
   if (!isValidPair) {
-    return false
+    return false;
   }
 
   if (
@@ -45,21 +45,21 @@ export function isArbitrumCanonicalTransfer({
       isSelectedTokenWithdrawOnlyLoading,
       isTeleportMode,
       parentChainId: parentChainId,
-      selectedToken
+      selectedToken,
     })
   ) {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
 export const useIsArbitrumCanonicalTransfer = function () {
-  const [selectedToken] = useSelectedToken()
-  const [networks] = useNetworks()
-  const { childChain, parentChain } = useNetworksRelationship(networks)
+  const [selectedToken] = useSelectedToken();
+  const [networks] = useNetworks();
+  const { childChain, parentChain } = useNetworksRelationship(networks);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
-    useSelectedTokenIsWithdrawOnly()
+    useSelectedTokenIsWithdrawOnly();
 
   return isArbitrumCanonicalTransfer({
     sourceChainId: networks.sourceChain.id,
@@ -68,6 +68,6 @@ export const useIsArbitrumCanonicalTransfer = function () {
     parentChainId: parentChain.id,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    selectedToken
-  })
-}
+    selectedToken,
+  });
+};

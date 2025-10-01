@@ -6,23 +6,23 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'owner',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'spender',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'Approval',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -31,17 +31,17 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'authorizer',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'AuthorizationCanceled',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -50,17 +50,17 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'authorizer',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'AuthorizationUsed',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -69,11 +69,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: '_account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'Blacklisted',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -82,11 +82,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'newBlacklister',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'BlacklisterChanged',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -95,17 +95,17 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'burner',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'amount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'Burn',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -114,11 +114,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'newMasterMinter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'MasterMinterChanged',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -127,23 +127,23 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'minter',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'amount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'Mint',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -152,17 +152,17 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'minter',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'minterAllowedAmount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'MinterConfigured',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -171,11 +171,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'oldMinter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'MinterRemoved',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -184,23 +184,23 @@ export const FiatTokenProxyAbi = [
         indexed: false,
         internalType: 'address',
         name: 'previousOwner',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'address',
         name: 'newOwner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'OwnershipTransferred',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
     inputs: [],
     name: 'Pause',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -209,11 +209,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'newAddress',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'PauserChanged',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -222,11 +222,11 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'newRescuer',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'RescuerChanged',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -235,23 +235,23 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: 'from',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: true,
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'Transfer',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
@@ -260,17 +260,17 @@ export const FiatTokenProxyAbi = [
         indexed: true,
         internalType: 'address',
         name: '_account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'UnBlacklisted',
-    type: 'event'
+    type: 'event',
   },
   {
     anonymous: false,
     inputs: [],
     name: 'Unpause',
-    type: 'event'
+    type: 'event',
   },
   {
     inputs: [],
@@ -279,11 +279,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bytes32',
         name: '',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -292,11 +292,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bytes32',
         name: '',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -305,11 +305,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bytes32',
         name: '',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -318,11 +318,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bytes32',
         name: '',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -331,115 +331,115 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bytes32',
         name: '',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'owner',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'spender',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'allowance',
     outputs: [
       {
         internalType: 'uint256',
         name: '',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'spender',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'approve',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'authorizer',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'authorizationState',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'balanceOf',
     outputs: [
       {
         internalType: 'uint256',
         name: '',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'blacklist',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -448,81 +448,81 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'address',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'uint256',
         name: '_amount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'burn',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'authorizer',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'uint8',
         name: 'v',
-        type: 'uint8'
+        type: 'uint8',
       },
       {
         internalType: 'bytes32',
         name: 'r',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'bytes32',
         name: 's',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'cancelAuthorization',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'minter',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'minterAllowedAmount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'configureMinter',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -531,11 +531,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'string',
         name: '',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -544,171 +544,171 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'uint8',
         name: '',
-        type: 'uint8'
-      }
+        type: 'uint8',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'spender',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'decrement',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'decreaseAllowance',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'spender',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'increment',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'increaseAllowance',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'string',
         name: 'tokenName',
-        type: 'string'
+        type: 'string',
       },
       {
         internalType: 'string',
         name: 'tokenSymbol',
-        type: 'string'
+        type: 'string',
       },
       {
         internalType: 'string',
         name: 'tokenCurrency',
-        type: 'string'
+        type: 'string',
       },
       {
         internalType: 'uint8',
         name: 'tokenDecimals',
-        type: 'uint8'
+        type: 'uint8',
       },
       {
         internalType: 'address',
         name: 'newMasterMinter',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'newPauser',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'newBlacklister',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'newOwner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'string',
         name: 'newName',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     name: 'initializeV2',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'lostAndFound',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'initializeV2_1',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'isBlacklisted',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'isMinter',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -717,54 +717,54 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'address',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: '_amount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'mint',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'minter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'minterAllowance',
     outputs: [
       {
         internalType: 'uint256',
         name: '',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -773,30 +773,30 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'string',
         name: '',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'owner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'nonces',
     outputs: [
       {
         internalType: 'uint256',
         name: '',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -805,18 +805,18 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'address',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'pause',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -825,11 +825,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -838,149 +838,149 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'address',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'owner',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'spender',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint256',
         name: 'deadline',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint8',
         name: 'v',
-        type: 'uint8'
+        type: 'uint8',
       },
       {
         internalType: 'bytes32',
         name: 'r',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'bytes32',
         name: 's',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'permit',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'from',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint256',
         name: 'validAfter',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint256',
         name: 'validBefore',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'uint8',
         name: 'v',
-        type: 'uint8'
+        type: 'uint8',
       },
       {
         internalType: 'bytes32',
         name: 'r',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'bytes32',
         name: 's',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'receiveWithAuthorization',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'minter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'removeMinter',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'contract IERC20',
         name: 'tokenContract',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'amount',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'rescueERC20',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -989,11 +989,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'address',
         name: '',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -1002,11 +1002,11 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'string',
         name: '',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -1015,202 +1015,202 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'uint256',
         name: '',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'transfer',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'from',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
-      }
+        type: 'uint256',
+      },
     ],
     name: 'transferFrom',
     outputs: [
       {
         internalType: 'bool',
         name: '',
-        type: 'bool'
-      }
+        type: 'bool',
+      },
     ],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'newOwner',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'transferOwnership',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'from',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'address',
         name: 'to',
-        type: 'address'
+        type: 'address',
       },
       {
         internalType: 'uint256',
         name: 'value',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint256',
         name: 'validAfter',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'uint256',
         name: 'validBefore',
-        type: 'uint256'
+        type: 'uint256',
       },
       {
         internalType: 'bytes32',
         name: 'nonce',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'uint8',
         name: 'v',
-        type: 'uint8'
+        type: 'uint8',
       },
       {
         internalType: 'bytes32',
         name: 'r',
-        type: 'bytes32'
+        type: 'bytes32',
       },
       {
         internalType: 'bytes32',
         name: 's',
-        type: 'bytes32'
-      }
+        type: 'bytes32',
+      },
     ],
     name: 'transferWithAuthorization',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_account',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'unBlacklist',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
     name: 'unpause',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_newBlacklister',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'updateBlacklister',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_newMasterMinter',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'updateMasterMinter',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: '_newPauser',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'updatePauser',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'address',
         name: 'newRescuer',
-        type: 'address'
-      }
+        type: 'address',
+      },
     ],
     name: 'updateRescuer',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [],
@@ -1219,10 +1219,10 @@ export const FiatTokenProxyAbi = [
       {
         internalType: 'string',
         name: '',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
-  }
-] as const
+    type: 'function',
+  },
+] as const;

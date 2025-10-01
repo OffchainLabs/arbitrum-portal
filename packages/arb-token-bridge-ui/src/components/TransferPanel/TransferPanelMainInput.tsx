@@ -1,85 +1,71 @@
-import React, {
-  ChangeEventHandler,
-  useCallback,
-  useEffect,
-  useState,
-  useMemo
-} from 'react'
-import { twMerge } from 'tailwind-merge'
-import { useAccount } from 'wagmi'
+import { constants } from 'ethers';
+import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
 
-import { TokenButton, TokenButtonOptions } from './TokenButton'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship'
-import { useSelectedTokenBalances } from '../../hooks/TransferPanel/useSelectedTokenBalances'
-import { useSelectedToken } from '../../hooks/useSelectedToken'
-import { TransferReadinessRichErrorMessage } from './useTransferReadinessUtils'
-import { ExternalLink } from '../common/ExternalLink'
-import { formatAmount } from '../../util/NumberUtils'
-import { useNativeCurrency } from '../../hooks/useNativeCurrency'
-import { Loader } from '../common/atoms/Loader'
-import { sanitizeAmountQueryParam } from '../../hooks/useArbQueryParams'
-import { truncateExtraDecimals } from '../../util/NumberUtils'
-import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances'
-import { useSelectedTokenDecimals } from '../../hooks/TransferPanel/useSelectedTokenDecimals'
-import { useMode } from '../../hooks/useMode'
-import { addressesEqual } from '../../util/AddressUtils'
-import { constants } from 'ethers'
-import { Button } from '../common/Button'
+import { useSelectedTokenBalances } from '../../hooks/TransferPanel/useSelectedTokenBalances';
+import { useSelectedTokenDecimals } from '../../hooks/TransferPanel/useSelectedTokenDecimals';
+import { sanitizeAmountQueryParam } from '../../hooks/useArbQueryParams';
+import { useMode } from '../../hooks/useMode';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNetworks } from '../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { addressesEqual } from '../../util/AddressUtils';
+import { formatAmount } from '../../util/NumberUtils';
+import { truncateExtraDecimals } from '../../util/NumberUtils';
+import { Button } from '../common/Button';
+import { ExternalLink } from '../common/ExternalLink';
+import { Loader } from '../common/atoms/Loader';
+import { TokenButton, TokenButtonOptions } from './TokenButton';
+import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
+import { TransferReadinessRichErrorMessage } from './useTransferReadinessUtils';
 
-function MaxButton({
-  className = '',
-  ...rest
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const [selectedToken] = useSelectedToken()
+function MaxButton({ className = '', ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const [selectedToken] = useSelectedToken();
 
-  const selectedTokenBalances = useSelectedTokenBalances()
-  const nativeCurrencyBalances = useNativeCurrencyBalances()
+  const selectedTokenBalances = useSelectedTokenBalances();
+  const nativeCurrencyBalances = useNativeCurrencyBalances();
 
   const maxButtonVisible = useMemo(() => {
-    const nativeCurrencySourceBalance = nativeCurrencyBalances.sourceBalance
+    const nativeCurrencySourceBalance = nativeCurrencyBalances.sourceBalance;
 
-    const tokenBalance = selectedTokenBalances.sourceBalance
+    const tokenBalance = selectedTokenBalances.sourceBalance;
 
     if (selectedToken) {
-      return tokenBalance && !tokenBalance.isZero()
+      return tokenBalance && !tokenBalance.isZero();
     }
 
-    return nativeCurrencySourceBalance && !nativeCurrencySourceBalance.isZero()
-  }, [
-    nativeCurrencyBalances.sourceBalance,
-    selectedTokenBalances.sourceBalance,
-    selectedToken
-  ])
+    return nativeCurrencySourceBalance && !nativeCurrencySourceBalance.isZero();
+  }, [nativeCurrencyBalances.sourceBalance, selectedTokenBalances.sourceBalance, selectedToken]);
 
   if (!maxButtonVisible) {
-    return null
+    return null;
   }
 
   return (
     <Button variant="secondary" className={className} {...rest}>
       MAX
     </Button>
-  )
+  );
 }
 
 function SourceChainTokenBalance({
   balanceOverride,
-  symbolOverride
+  symbolOverride,
 }: {
-  balanceOverride?: AmountInputOptions['balance']
-  symbolOverride?: AmountInputOptions['symbol']
+  balanceOverride?: AmountInputOptions['balance'];
+  symbolOverride?: AmountInputOptions['symbol'];
 }) {
-  const [selectedToken] = useSelectedToken()
-  const [networks] = useNetworks()
-  const { isDepositMode, childChainProvider } =
-    useNetworksRelationship(networks)
-  const selectedTokenDecimals = useSelectedTokenDecimals()
+  const [selectedToken] = useSelectedToken();
+  const [networks] = useNetworks();
+  const { isDepositMode, childChainProvider } = useNetworksRelationship(networks);
+  const selectedTokenDecimals = useSelectedTokenDecimals();
 
-  const nativeCurrencyBalances = useNativeCurrencyBalances()
-  const selectedTokenBalances = useSelectedTokenBalances()
+  const nativeCurrencyBalances = useNativeCurrencyBalances();
+  const selectedTokenBalances = useSelectedTokenBalances();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider })
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   /**
    * If token is ETH (lifi), show ETH balance on source chain
@@ -88,29 +74,27 @@ function SourceChainTokenBalance({
    */
   const tokenBalance = (() => {
     if (addressesEqual(selectedToken?.address, constants.AddressZero)) {
-      return selectedTokenBalances.sourceBalance
+      return selectedTokenBalances.sourceBalance;
     }
 
     if (!selectedToken) {
-      return nativeCurrencyBalances.sourceBalance
+      return nativeCurrencyBalances.sourceBalance;
     }
 
-    return selectedTokenBalances.sourceBalance
-  })()
+    return selectedTokenBalances.sourceBalance;
+  })();
 
   const balance =
-    balanceOverride ??
-    (selectedToken ? tokenBalance : nativeCurrencyBalances.sourceBalance)
+    balanceOverride ?? (selectedToken ? tokenBalance : nativeCurrencyBalances.sourceBalance);
 
   const formattedBalance =
     balance !== null
       ? formatAmount(balance, {
-          decimals: selectedTokenDecimals
+          decimals: selectedTokenDecimals,
         })
-      : null
+      : null;
 
-  const symbol =
-    symbolOverride ?? selectedToken?.symbol ?? nativeCurrency.symbol
+  const symbol = symbolOverride ?? selectedToken?.symbol ?? nativeCurrency.symbol;
 
   if (formattedBalance) {
     return (
@@ -118,14 +102,12 @@ function SourceChainTokenBalance({
         <span className="text-sm font-light text-gray-6">Balance: </span>
         <span
           className="whitespace-nowrap text-sm text-gray-6"
-          aria-label={`${symbol} balance amount on ${
-            isDepositMode ? 'parentChain' : 'childChain'
-          }`}
+          aria-label={`${symbol} balance amount on ${isDepositMode ? 'parentChain' : 'childChain'}`}
         >
           {formattedBalance}
         </span>
       </>
-    )
+    );
   }
 
   return (
@@ -133,43 +115,39 @@ function SourceChainTokenBalance({
       <span className="text-sm font-light text-white/70">Balance: </span>
       <Loader wrapperClass="ml-1" color="white" size={12} />
     </>
-  )
+  );
 }
 
-const TransferPanelInputField = React.memo(
-  (props: React.InputHTMLAttributes<HTMLInputElement>) => {
-    return (
-      <input
-        type="text"
-        inputMode="decimal"
-        placeholder="0"
-        aria-label="Amount input"
-        className="h-full w-full max-w-[250px] bg-transparent px-3 text-xl font-light text-white placeholder:text-gray-300 sm:max-w-[350px] sm:text-3xl"
-        {...props}
-      />
-    )
-  }
-)
+const TransferPanelInputField = React.memo((props: React.InputHTMLAttributes<HTMLInputElement>) => {
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      placeholder="0"
+      aria-label="Amount input"
+      className="h-full w-full max-w-[250px] bg-transparent px-3 text-xl font-light text-white placeholder:text-gray-300 sm:max-w-[350px] sm:text-3xl"
+      {...props}
+    />
+  );
+});
 
-TransferPanelInputField.displayName = 'TransferPanelInputField'
+TransferPanelInputField.displayName = 'TransferPanelInputField';
 
 function ErrorMessage({
-  errorMessage
+  errorMessage,
 }: {
-  errorMessage: string | TransferReadinessRichErrorMessage | undefined
+  errorMessage: string | TransferReadinessRichErrorMessage | undefined;
 }) {
-  const { embedMode } = useMode()
+  const { embedMode } = useMode();
 
   if (typeof errorMessage === 'undefined') {
-    return null
+    return null;
   }
 
   if (typeof errorMessage === 'string') {
     return (
-      <span className={twMerge('text-sm text-brick', embedMode && 'text-xs')}>
-        {errorMessage}
-      </span>
-    )
+      <span className={twMerge('text-sm text-brick', embedMode && 'text-xs')}>{errorMessage}</span>
+    );
   }
 
   switch (errorMessage) {
@@ -177,15 +155,12 @@ function ErrorMessage({
       return (
         <span className="text-sm text-brick">
           Gas estimation failed, join our{' '}
-          <ExternalLink
-            href="https://discord.com/invite/ZpZuw7p"
-            className="underline"
-          >
+          <ExternalLink href="https://discord.com/invite/ZpZuw7p" className="underline">
             Discord
           </ExternalLink>{' '}
           and reach out in #support for assistance.
         </span>
-      )
+      );
 
     case TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY:
     case TransferReadinessRichErrorMessage.TOKEN_TRANSFER_DISABLED:
@@ -193,24 +168,23 @@ function ErrorMessage({
         <div className="text-sm text-brick">
           <span>This token can&apos;t be bridged over.</span>
         </div>
-      )
+      );
   }
 }
 
 type AmountInputOptions = TokenButtonOptions & {
-  balance?: number | undefined
-}
+  balance?: number | undefined;
+};
 
-export type TransferPanelMainInputProps =
-  React.InputHTMLAttributes<HTMLInputElement> & {
-    errorMessage?: string | TransferReadinessRichErrorMessage | undefined
-    maxButtonOnClick: React.ButtonHTMLAttributes<HTMLButtonElement>['onClick']
-    value: string
-    options?: AmountInputOptions
-    maxAmount: string | undefined
-    isMaxAmount: boolean
-    decimals: number
-  }
+export type TransferPanelMainInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  errorMessage?: string | TransferReadinessRichErrorMessage | undefined;
+  maxButtonOnClick: React.ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
+  value: string;
+  options?: AmountInputOptions;
+  maxAmount: string | undefined;
+  isMaxAmount: boolean;
+  decimals: number;
+};
 
 export const TransferPanelMainInput = React.memo(
   ({
@@ -224,12 +198,12 @@ export const TransferPanelMainInput = React.memo(
     options,
     ...rest
   }: TransferPanelMainInputProps) => {
-    const { isConnected } = useAccount()
-    const [localValue, setLocalValue] = useState(value)
-    const selectedTokenDecimals = useSelectedTokenDecimals()
+    const { isConnected } = useAccount();
+    const [localValue, setLocalValue] = useState(value);
+    const selectedTokenDecimals = useSelectedTokenDecimals();
     const sanitizedAmount = sanitizeAmountQueryParam(
-      truncateExtraDecimals(value, selectedTokenDecimals)
-    )
+      truncateExtraDecimals(value, selectedTokenDecimals),
+    );
 
     useEffect(() => {
       /**
@@ -238,62 +212,49 @@ export const TransferPanelMainInput = React.memo(
        * was reset to an empty string
        */
       if (value === '') {
-        setLocalValue('')
+        setLocalValue('');
       }
 
       if (!isMaxAmount || !maxAmount) {
-        return
+        return;
       }
 
       /**
        * On first render, maxAmount is not defined, once we receive max amount value, we set the localValue
        * If user types anything before we receive the amount, isMaxAmount is set to false in the parent
        */
-      setLocalValue(maxAmount)
-    }, [isMaxAmount, maxAmount, value])
+      setLocalValue(maxAmount);
+    }, [isMaxAmount, maxAmount, value]);
 
-    const handleMaxButtonClick: React.MouseEventHandler<HTMLButtonElement> =
-      useCallback(
-        e => {
-          maxButtonOnClick?.(e)
-          if (maxAmount) {
-            setLocalValue(maxAmount)
-          }
-        },
-        [maxAmount, maxButtonOnClick]
-      )
+    const handleMaxButtonClick: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+      (e) => {
+        maxButtonOnClick?.(e);
+        if (maxAmount) {
+          setLocalValue(maxAmount);
+        }
+      },
+      [maxAmount, maxButtonOnClick],
+    );
 
     const handleInputChange: ChangeEventHandler<HTMLInputElement> = useCallback(
-      e => {
-        setLocalValue(
-          sanitizeAmountQueryParam(
-            truncateExtraDecimals(e.target.value, decimals)
-          )
-        )
-        onChange?.(e)
+      (e) => {
+        setLocalValue(sanitizeAmountQueryParam(truncateExtraDecimals(e.target.value, decimals)));
+        onChange?.(e);
       },
-      [decimals, onChange]
-    )
+      [decimals, onChange],
+    );
 
     useEffect(() => {
       if (value !== sanitizedAmount) {
-        setLocalValue(sanitizedAmount)
+        setLocalValue(sanitizedAmount);
       }
-    }, [sanitizedAmount, value])
+    }, [sanitizedAmount, value]);
 
     return (
       <>
         <div className="flex flex-row rounded bg-white/10">
-          <div
-            className={twMerge(
-              'flex min-h-[96px] grow flex-row items-center justify-between'
-            )}
-          >
-            <TransferPanelInputField
-              {...rest}
-              value={localValue}
-              onChange={handleInputChange}
-            />
+          <div className={twMerge('flex min-h-[96px] grow flex-row items-center justify-between')}>
+            <TransferPanelInputField {...rest} value={localValue} onChange={handleInputChange} />
             <div className="flex flex-col items-end gap-[10px] px-[15px]">
               <TokenButton options={options} />
               {isConnected && (
@@ -314,8 +275,8 @@ export const TransferPanelMainInput = React.memo(
 
         <ErrorMessage errorMessage={errorMessage} />
       </>
-    )
-  }
-)
+    );
+  },
+);
 
-TransferPanelMainInput.displayName = 'TransferPanelMainInput'
+TransferPanelMainInput.displayName = 'TransferPanelMainInput';
