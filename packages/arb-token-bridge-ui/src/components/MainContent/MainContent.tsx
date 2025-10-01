@@ -63,6 +63,7 @@ export function MainContent() {
             <BuyPanel />
           ) : (
             <TabPanels className="flex w-full items-center justify-center">
+              {/* this is for the transfer panel and tx history tab panels to switch correctly because we have 3 tabs when buy is enabled */}
               {showBuyPanel && (
                 <TabPanel className="w-full sm:max-w-[600px]"></TabPanel>
               )}

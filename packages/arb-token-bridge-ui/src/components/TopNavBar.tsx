@@ -41,7 +41,7 @@ function StyledTab({
       }
       className={twMerge(
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
-        isBuyTab ? '' : 'ui-selected:bg-black/75'
+        !isBuyTab && 'ui-selected:bg-black/75'
       )}
       tabIndex={0}
       {...props}
