@@ -149,11 +149,9 @@ export function decodeChainQueryParam(
   return undefined;
 }
 
-export function encodeTabQueryParam({
-  tabIndex
-}: {
+export function encodeTabQueryParam(
   tabIndex: number | null | undefined
-}): string {
+): string {
   if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
     const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
     if (tabParam !== undefined) {
@@ -163,18 +161,13 @@ export function encodeTabQueryParam({
   return TabParamEnum.BRIDGE;
 }
 
-export function decodeTabQueryParam({
-  tab,
-  disabledFeatures = []
-}: {
+export function decodeTabQueryParam(
   tab: string | (string | null)[] | null | undefined
-  disabledFeatures?: string[]
-}): number {
+): number {
   if (typeof tab === 'string') {
-    const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
 
     if (tab === TabParamEnum.BUY) {
-      if (!isOnrampEnabled() || isBuyDisabled) {
+      if (!isOnrampEnabled()) {
         return tabToIndex[TabParamEnum.BRIDGE]
       }
     }

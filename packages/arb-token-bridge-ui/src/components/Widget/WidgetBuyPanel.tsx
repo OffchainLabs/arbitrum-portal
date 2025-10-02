@@ -5,10 +5,7 @@ import {
   OpenDialogFunction
 } from '../common/Dialog2'
 import { WidgetHeaderRow } from './WidgetHeaderRow'
-import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
 import { BuyPanel } from '../BuyPanel'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { isBuyFeatureEnabled } from '../../util/queryParamUtils'
 
 type WidgetTransferPanelProps = {
   openDialog: OpenDialogFunction
@@ -19,8 +16,6 @@ export function WidgetBuyPanel({
   dialogProps,
   openDialog
 }: WidgetTransferPanelProps) {
-  const [{ disabledFeatures }] = useArbQueryParams()
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures })
 
   return (
     <>

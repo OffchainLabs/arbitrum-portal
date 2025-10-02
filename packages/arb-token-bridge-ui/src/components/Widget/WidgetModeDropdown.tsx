@@ -1,21 +1,20 @@
+'use client';
+
+import { isOnrampEnabled } from '../../util/featureFlag';
+import { Button } from '../common/Button';
+import { Transition } from '../common/Transition';
+import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { twMerge } from 'tailwind-merge';
 import {
   CheckIcon,
   ChevronDownIcon,
   PaperAirplaneIcon,
   WalletIcon,
 } from '@heroicons/react/24/outline';
-'use client'
-
-import { isOnrampEnabled } from '../../util/featureFlag';
-import { Button } from '../common/Button';
-import { Transition } from '../common/Transition';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-
-import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
 import { useSearchParams } from 'next/navigation';
+import { twMerge } from 'tailwind-merge';
 
 interface ModeOptionProps {
   icon: React.ReactNode;
@@ -41,11 +40,11 @@ const ModeOption = ({ icon, label, isSelected, onClick }: ModeOptionProps) => {
 
 export const WidgetModeDropdown = () => {
   const showBuyPanel = isOnrampEnabled();
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const pathname = usePathname()
-  const isBuyTab = pathname === BUY_EMBED_PATHNAME
-  const isBridgeTab = pathname === EMBED_PATHNAME
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const isBuyTab = pathname === BUY_EMBED_PATHNAME;
+  const isBridgeTab = pathname === EMBED_PATHNAME;
 
   if (!showBuyPanel) {
     // If buy panel is not enabled, just show the bridge button without dropdown
@@ -80,7 +79,10 @@ export const WidgetModeDropdown = () => {
                 )}
                 {isBuyTab ? 'Buy' : 'Bridge'}
                 <ChevronDownIcon
-                  className={twMerge('h-3 w-3 opacity-30 transition-all', open && 'rotate-180')}
+                  className={twMerge(
+                    'h-3 w-3 opacity-30 transition-all',
+                    open && 'rotate-180',
+                  )}
                 />
               </div>
             </Button>
@@ -93,8 +95,8 @@ export const WidgetModeDropdown = () => {
                   label="Bridge"
                   isSelected={isBridgeTab}
                   onClick={() => {
-                    router.push(`${EMBED_PATHNAME}?${searchParams.toString()}`)
-                    close()
+                    router.push(`${EMBED_PATHNAME}?${searchParams.toString()}`);
+                    close();
                   }}
                 />
                 <ModeOption
@@ -103,9 +105,9 @@ export const WidgetModeDropdown = () => {
                   isSelected={isBuyTab}
                   onClick={() => {
                     router.push(
-                      `${BUY_EMBED_PATHNAME}?${searchParams.toString()}`
-                    )
-                    close()
+                      `${BUY_EMBED_PATHNAME}?${searchParams.toString()}`,
+                    );
+                    close();
                   }}
                 />
               </div>
