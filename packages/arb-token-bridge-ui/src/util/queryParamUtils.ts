@@ -44,14 +44,14 @@ export enum DisabledFeatures {
 export const tabToIndex = {
   [TabParamEnum.BUY]: 0,
   [TabParamEnum.BRIDGE]: 1,
-  [TabParamEnum.TX_HISTORY]: 2
-} as const satisfies Record<TabParamEnum, number>
+  [TabParamEnum.TX_HISTORY]: 2,
+} as const satisfies Record<TabParamEnum, number>;
 
 export const indexToTab = {
   0: TabParamEnum.BUY,
   1: TabParamEnum.BRIDGE,
-  2: TabParamEnum.TX_HISTORY
-} as const satisfies Record<number, TabParamEnum>
+  2: TabParamEnum.TX_HISTORY,
+} as const satisfies Record<number, TabParamEnum>;
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(feature.toLowerCase() as DisabledFeatures);
@@ -149,37 +149,32 @@ export function decodeChainQueryParam(
   return undefined;
 }
 
-export function encodeTabQueryParam(
-  tabIndex: number | null | undefined
-): string {
+export function encodeTabQueryParam(tabIndex: number | null | undefined): string {
   if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
-    const tabParam = indexToTab[tabIndex as keyof typeof indexToTab]
+    const tabParam = indexToTab[tabIndex as keyof typeof indexToTab];
     if (tabParam !== undefined) {
-      return tabParam
+      return tabParam;
     }
   }
   return TabParamEnum.BRIDGE;
 }
 
-export function decodeTabQueryParam(
-  tab: string | (string | null)[] | null | undefined
-): number {
+export function decodeTabQueryParam(tab: string | (string | null)[] | null | undefined): number {
   if (typeof tab === 'string') {
-
     if (tab === TabParamEnum.BUY) {
       if (!isOnrampEnabled()) {
-        return tabToIndex[TabParamEnum.BRIDGE]
+        return tabToIndex[TabParamEnum.BRIDGE];
       }
     }
 
     if (tab in tabToIndex) {
-      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex]
+      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex];
       if (tabIndex !== undefined) {
         return tabIndex;
       }
     }
   }
-  return tabToIndex[TabParamEnum.BRIDGE]
+  return tabToIndex[TabParamEnum.BRIDGE];
 }
 
 export const DisabledFeaturesParam = {
@@ -506,14 +501,12 @@ export const sanitizeTokenQueryParam = ({
   return tokenLowercased;
 };
 
-export const sanitizeTabQueryParam = (
-  tab: string | string[] | null | undefined
-): string => {
+export const sanitizeTabQueryParam = (tab: string | string[] | null | undefined): string => {
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase();
 
     if (Object.keys(tabToIndex).includes(lowercasedTab)) {
-      return lowercasedTab
+      return lowercasedTab;
     }
   }
 

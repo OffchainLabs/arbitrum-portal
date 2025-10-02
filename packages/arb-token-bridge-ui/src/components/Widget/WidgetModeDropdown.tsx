@@ -1,9 +1,5 @@
 'use client';
 
-import { isOnrampEnabled } from '../../util/featureFlag';
-import { Button } from '../common/Button';
-import { Transition } from '../common/Transition';
-import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
   CheckIcon,
@@ -15,6 +11,12 @@ import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
+
+import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
+
+import { isOnrampEnabled } from '../../util/featureFlag';
+import { Button } from '../common/Button';
+import { Transition } from '../common/Transition';
 
 interface ModeOptionProps {
   icon: React.ReactNode;
@@ -79,10 +81,7 @@ export const WidgetModeDropdown = () => {
                 )}
                 {isBuyTab ? 'Buy' : 'Bridge'}
                 <ChevronDownIcon
-                  className={twMerge(
-                    'h-3 w-3 opacity-30 transition-all',
-                    open && 'rotate-180',
-                  )}
+                  className={twMerge('h-3 w-3 opacity-30 transition-all', open && 'rotate-180')}
                 />
               </div>
             </Button>
@@ -104,9 +103,7 @@ export const WidgetModeDropdown = () => {
                   label="Buy"
                   isSelected={isBuyTab}
                   onClick={() => {
-                    router.push(
-                      `${BUY_EMBED_PATHNAME}?${searchParams.toString()}`,
-                    );
+                    router.push(`${BUY_EMBED_PATHNAME}?${searchParams.toString()}`);
                     close();
                   }}
                 />

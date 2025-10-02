@@ -1,27 +1,21 @@
-import { useAccount } from 'wagmi'
-import { twMerge } from 'tailwind-merge'
-import {
-  DialogProps,
-  DialogWrapper,
-  OpenDialogFunction
-} from '../common/Dialog2'
-import { WidgetHeaderRow } from './WidgetHeaderRow'
-import { WidgetRoutes } from './WidgetRoutes'
-import { MoveFundsButton } from '../TransferPanel/MoveFundsButton'
-import { WidgetConnectWalletButton } from './WidgetConnectWalletButton'
-import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
-import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
-import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
-import { UseDialogProps } from '../common/Dialog'
-import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
-import {
-  useArbQueryParams,
-  indexToTab,
-  TabParamEnum
-} from '../../hooks/useArbQueryParams'
-import { usePathname } from 'next/navigation'
-import { BUY_EMBED_PATHNAME } from '@/bridge/constants'
-import { isOnrampEnabled } from '@/bridge/util/featureFlag'
+import { usePathname } from 'next/navigation';
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
+
+import { BUY_EMBED_PATHNAME } from '@/bridge/constants';
+import { isOnrampEnabled } from '@/bridge/util/featureFlag';
+
+import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
+import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
+import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
+import { TokenImportDialog } from '../TransferPanel/TokenImportDialog';
+import { TransferPanelMain } from '../TransferPanel/TransferPanelMain';
+import { UseDialogProps } from '../common/Dialog';
+import { DialogProps, DialogWrapper, OpenDialogFunction } from '../common/Dialog2';
+import { WidgetConnectWalletButton } from './WidgetConnectWalletButton';
+import { WidgetHeaderRow } from './WidgetHeaderRow';
+import { WidgetRoutes } from './WidgetRoutes';
 
 type WidgetTransferPanelProps = {
   moveFundsButtonOnClick: () => void;
@@ -43,8 +37,8 @@ export function WidgetTransferPanel({
   closeWithResetTokenImportDialog,
 }: WidgetTransferPanelProps) {
   const { isConnected } = useAccount();
-  const pathname = usePathname()
-  const isBuyMode = pathname === BUY_EMBED_PATHNAME
+  const pathname = usePathname();
+  const isBuyMode = pathname === BUY_EMBED_PATHNAME;
 
   return (
     <>

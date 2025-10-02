@@ -1,44 +1,44 @@
-import { useLocalStorage } from '@uidotdev/usehooks'
-import { TabGroup, TabPanel, TabPanels } from '@headlessui/react'
-import { useCallback, Fragment } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { TabGroup, TabPanel, TabPanels } from '@headlessui/react';
+import { useLocalStorage } from '@uidotdev/usehooks';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Fragment, useCallback } from 'react';
 
-import { TransferPanel } from '../TransferPanel/TransferPanel'
-import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats'
-import { SettingsDialog } from '../common/SettingsDialog'
-import { TransactionHistory } from '../TransactionHistory/TransactionHistory'
-import { TopNavBar } from '../TopNavBar'
-import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { useMode } from '../../hooks/useMode'
-import { RecoverFunds } from '../RecoverFunds'
-import { BuyPanel } from '../BuyPanel'
-import { BUY_PATHNAME } from '@/bridge/constants'
-import { isOnrampEnabled } from '@/bridge/util/featureFlag'
+import { BUY_PATHNAME } from '@/bridge/constants';
+import { isOnrampEnabled } from '@/bridge/util/featureFlag';
+
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useMode } from '../../hooks/useMode';
+import { BuyPanel } from '../BuyPanel';
+import { RecoverFunds } from '../RecoverFunds';
+import { TopNavBar } from '../TopNavBar';
+import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
+import { TransferPanel } from '../TransferPanel/TransferPanel';
+import { SettingsDialog } from '../common/SettingsDialog';
+import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
+import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const pathname = usePathname()
-  const [isArbitrumStatsVisible] =
-    useLocalStorage<boolean>(statsLocalStorageKey)
-  const [{ tab }, setQueryParams] = useArbQueryParams()
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
+  const [{ tab }, setQueryParams] = useArbQueryParams();
 
   const setSelectedTab = useCallback(
     (index: number) => {
-      console.log('setSelectedTab: ', index)
+      console.log('setSelectedTab: ', index);
       if (index === -1) {
         // Buy tab is selected, but we don't set it in query params
-        router.push(`${BUY_PATHNAME}?${searchParams.toString()}`)
+        router.push(`${BUY_PATHNAME}?${searchParams.toString()}`);
       } else {
-        setQueryParams({ tab: index + 1 })
+        setQueryParams({ tab: index + 1 });
       }
     },
     [setQueryParams],
   );
-  const showBuyPanel = isOnrampEnabled()
+  const showBuyPanel = isOnrampEnabled();
 
-  useBalanceUpdater()
+  useBalanceUpdater();
 
   const { embedMode } = useMode();
 
@@ -64,9 +64,7 @@ export function MainContent() {
           ) : (
             <TabPanels className="flex w-full items-center justify-center">
               {/* this is for the transfer panel and tx history tab panels to switch correctly because we have 3 tabs when buy is enabled */}
-              {showBuyPanel && (
-                <TabPanel className="w-full sm:max-w-[600px]"></TabPanel>
-              )}
+              {showBuyPanel && <TabPanel className="w-full sm:max-w-[600px]"></TabPanel>}
               <TabPanel className="w-full sm:max-w-[600px]">
                 <TransferPanel />
               </TabPanel>

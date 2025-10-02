@@ -288,7 +288,7 @@ export function BuyPanel() {
     <div
       className={twMerge(
         'w-full overflow-hidden rounded-lg pb-8 text-white sm:max-w-[600px]',
-        embedMode && 'mx-auto max-w-[540px]'
+        embedMode && 'mx-auto max-w-[540px]',
       )}
     >
       <OnRampProviders>
