@@ -196,18 +196,13 @@ const BalanceWrapper = memo(function BalanceWrapper() {
 });
 
 function OnrampDisclaimer() {
-  const { embedMode } = useMode()
+  const { embedMode } = useMode();
 
   return (
-    <p
-      className={twMerge(
-        'text-gray-4 mt-4 text-center text-sm',
-        embedMode && 'text-xs'
-      )}
-    >
+    <p className={twMerge('text-gray-4 mt-4 text-center text-sm', embedMode && 'text-xs')}>
       On-Ramps are not endorsed by Arbitrum. Please use at your own risk.
     </p>
-  )
+  );
 }
 
 export function BuyPanel() {

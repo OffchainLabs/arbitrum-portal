@@ -8,7 +8,7 @@ import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
-import { BuyPanel } from '../BuyPanel';
+import { BuyPanel } from '../BuyPanel/BuyPanel';
 import { RecoverFunds } from '../RecoverFunds';
 import { TopNavBar } from '../TopNavBar';
 import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
