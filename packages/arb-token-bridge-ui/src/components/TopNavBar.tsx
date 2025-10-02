@@ -25,13 +25,7 @@ function StyledTab({
   }>) {
   const pathname = usePathname();
   const isBuyTab = pathname === BUY_PATHNAME;
-  const searchParams = useSearchParams();
   const { embedMode } = useMode();
-
-  const searchParamsWithoutTab = useMemo(() => {
-    const { tab, ...rest } = Object.fromEntries(searchParams.entries());
-    return new URLSearchParams(rest);
-  }, [searchParams]);
 
   return (
     <Tab
@@ -39,7 +33,7 @@ function StyledTab({
       href={
         href ?? {
           pathname: embedMode ? EMBED_PATHNAME : BRIDGE_PATHNAME,
-          query: `${searchParamsWithoutTab.toString()}${hrefQuery}`,
+          query: hrefQuery,
         }
       }
       className={twMerge(
@@ -62,6 +56,12 @@ export function TopNavBar() {
   const { embedMode } = useMode();
   const pathname = usePathname();
   const isBuyTab = pathname === BUY_PATHNAME;
+  const searchParams = useSearchParams();
+
+  const searchParamsWithoutTab = useMemo(() => {
+    const { tab, ...rest } = Object.fromEntries(searchParams.entries());
+    return new URLSearchParams(rest);
+  }, [searchParams]);
 
   return (
     <TabList
@@ -74,7 +74,7 @@ export function TopNavBar() {
         <StyledTab
           href={{
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
-            query: '',
+            query: `${searchParamsWithoutTab.toString()}&tab=buy`,
           }}
           className={isBuyTab ? 'bg-black/75' : ''}
           aria-label="Switch to Buy Tab"
@@ -83,13 +83,16 @@ export function TopNavBar() {
           Buy
         </StyledTab>
       )}
-      <StyledTab aria-label="Switch to Bridge Tab" hrefQuery={`&tab=${TabParamEnum.BRIDGE}`}>
+      <StyledTab
+        aria-label="Switch to Bridge Tab"
+        hrefQuery={`${searchParamsWithoutTab.toString()}`}
+      >
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge
       </StyledTab>
       <StyledTab
         aria-label="Switch to Transaction History Tab"
-        hrefQuery={`&tab=${TabParamEnum.TX_HISTORY}`}
+        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=${TabParamEnum.TX_HISTORY}`}
       >
         <Image src="/icons/history.svg" width={24} height={24} alt="history icon" />
         Txn History{' '}

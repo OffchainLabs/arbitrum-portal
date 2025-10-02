@@ -152,7 +152,7 @@ export const queryParamProviderOptions = {
     destinationAddress: withDefault(StringParam, undefined),
     token: TokenQueryParam, // import a new token using a Dialog Box
     settingsOpen: withDefault(BooleanParam, false),
-    tab: TabParam, // which tab is active
+    tab: withDefault(TabParam, tabToIndex[TabParamEnum.BRIDGE]), // which tab is active
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
     theme: withDefault(ThemeParam, defaultTheme), // theme customization
   },

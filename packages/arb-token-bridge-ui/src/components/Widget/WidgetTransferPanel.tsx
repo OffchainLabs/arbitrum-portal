@@ -1,8 +1,5 @@
-import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
-
-import { BUY_EMBED_PATHNAME } from '@/bridge/constants';
 
 import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
 import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
@@ -35,8 +32,6 @@ export function WidgetTransferPanel({
   closeWithResetTokenImportDialog,
 }: WidgetTransferPanelProps) {
   const { isConnected } = useAccount();
-  const pathname = usePathname();
-  const isBuyMode = pathname === BUY_EMBED_PATHNAME;
 
   return (
     <>
@@ -51,7 +46,6 @@ export function WidgetTransferPanel({
         <div
           className={twMerge(
             'relative grid w-full grid-cols-1 gap-4 rounded-lg bg-transparent text-white transition-all duration-300 min-[850px]:grid min-[850px]:grid-cols-2',
-            isBuyMode && 'grid-cols-1 min-[850px]:grid-cols-1',
           )}
         >
           {/* Left/Top panel */}

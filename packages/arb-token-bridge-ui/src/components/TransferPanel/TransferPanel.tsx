@@ -4,6 +4,7 @@ import { getStepTransaction } from '@lifi/sdk';
 import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
+import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
@@ -108,7 +109,8 @@ export function TransferPanel() {
   const [{ amount, amount2, destinationAddress, token: tokenFromSearchParams }, setQueryParams] =
     useArbQueryParams();
   const showBuyPanel = isOnrampEnabled();
-  const { embedMode, pathname } = useMode();
+  const pathname = usePathname();
+  const { embedMode } = useMode();
   const [importTokenModalStatus, setImportTokenModalStatus] = useState<ImportTokenModalStatus>(
     ImportTokenModalStatus.IDLE,
   );

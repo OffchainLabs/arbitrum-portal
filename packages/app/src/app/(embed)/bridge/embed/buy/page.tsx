@@ -5,7 +5,7 @@ import { Toast } from '@/bridge/components/common/atoms/Toast';
 
 import BridgeClient from '../../../../(with-sidebar)/bridge/BridgeClient';
 
-export default async function EmbededBuyPage({
+export default async function EmbeddedBuyPage({
   searchParams,
 }: {
   searchParams: {
