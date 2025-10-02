@@ -24,7 +24,7 @@ function StyledTab({
     hrefQuery?: string;
   }>) {
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.BUY;
+  const isBuyTab = pathname.startsWith(PathnameEnum.BUY);
   const { embedMode } = useMode();
 
   return (
@@ -56,7 +56,7 @@ export function TopNavBar() {
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   const { embedMode } = useMode();
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.BUY;
+  const isBuyTab = pathname.startsWith(PathnameEnum.BUY);
   const searchParams = useSearchParams();
 
   const searchParamsWithoutTab = useMemo(() => {

@@ -1,6 +1,7 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { BigNumber, utils } from 'ethers';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import React, { PropsWithChildren, memo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
@@ -27,7 +28,7 @@ import { SafeImage } from '../common/SafeImage';
 import { SearchPanel } from '../common/SearchPanel/SearchPanel';
 import { Loader } from '../common/atoms/Loader';
 import { Homepage } from './Homepage';
-import { MoonPaySkeleton } from './MoonPayPanel';
+import { MoonPayPanel, MoonPaySkeleton } from './MoonPayPanel';
 
 const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayProvider),
@@ -39,7 +40,6 @@ const MoonPayProvider = dynamic(
 
 const isMoonPayEnabled = isOnrampServiceEnabled('moonpay');
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function OnRampProviders({ children }: PropsWithChildren) {
   if (!isOnrampEnabled()) {
     return children;
@@ -205,6 +205,21 @@ function OnrampDisclaimer() {
   );
 }
 
+function OnrampServicePanel() {
+  const pathname = usePathname();
+  const onrampService = pathname.split('/').pop();
+
+  switch (onrampService) {
+    case 'moonpay':
+      if (!isMoonPayEnabled) {
+        return null;
+      }
+      return <MoonPayPanel />;
+    default:
+      return <Homepage />;
+  }
+}
+
 export function BuyPanel() {
   const { embedMode } = useMode();
 
@@ -217,11 +232,9 @@ export function BuyPanel() {
     >
       <BalanceWrapper />
 
-      <Homepage />
-
-      {/* <OnRampProviders>
-        <MoonPayPanel />
-      </OnRampProviders> */}
+      <OnRampProviders>
+        <OnrampServicePanel />
+      </OnRampProviders>
 
       <OnrampDisclaimer />
     </div>
