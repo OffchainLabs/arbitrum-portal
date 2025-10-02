@@ -1,26 +1,19 @@
-import { useAccount } from 'wagmi'
-import { twMerge } from 'tailwind-merge'
-import {
-  DialogProps,
-  DialogWrapper,
-  OpenDialogFunction
-} from '../common/Dialog2'
-import { WidgetHeaderRow } from './WidgetHeaderRow'
-import { WidgetRoutes } from './WidgetRoutes'
-import { MoveFundsButton } from '../TransferPanel/MoveFundsButton'
-import { WidgetConnectWalletButton } from './WidgetConnectWalletButton'
-import { TransferPanelMain } from '../TransferPanel/TransferPanelMain'
-import { BuyPanel } from '../BuyPanel'
-import { TokenImportDialog } from '../TransferPanel/TokenImportDialog'
-import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox'
-import { UseDialogProps } from '../common/Dialog'
-import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader'
-import {
-  useArbQueryParams,
-  indexToTab,
-  TabParamEnum
-} from '../../hooks/useArbQueryParams'
-import { isBuyFeatureEnabled } from '../../util/queryParamUtils'
+import { twMerge } from 'tailwind-merge';
+import { useAccount } from 'wagmi';
+
+import { TabParamEnum, indexToTab, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { isBuyFeatureEnabled } from '../../util/queryParamUtils';
+import { BuyPanel } from '../BuyPanel';
+import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
+import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
+import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
+import { TokenImportDialog } from '../TransferPanel/TokenImportDialog';
+import { TransferPanelMain } from '../TransferPanel/TransferPanelMain';
+import { UseDialogProps } from '../common/Dialog';
+import { DialogProps, DialogWrapper, OpenDialogFunction } from '../common/Dialog2';
+import { WidgetConnectWalletButton } from './WidgetConnectWalletButton';
+import { WidgetHeaderRow } from './WidgetHeaderRow';
+import { WidgetRoutes } from './WidgetRoutes';
 
 type WidgetTransferPanelProps = {
   moveFundsButtonOnClick: () => void;
@@ -41,9 +34,9 @@ export function WidgetTransferPanel({
   tokenImportDialogProps,
   closeWithResetTokenImportDialog,
 }: WidgetTransferPanelProps) {
-  const { isConnected } = useAccount()
-  const [{ tab, disabledFeatures }] = useArbQueryParams()
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures })
+  const { isConnected } = useAccount();
+  const [{ tab, disabledFeatures }] = useArbQueryParams();
+  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures });
 
   const currentTab = indexToTab[tab as keyof typeof indexToTab] || TabParamEnum.BRIDGE;
   const isBuyMode = currentTab === TabParamEnum.BUY;

@@ -39,14 +39,12 @@ export enum DisabledFeatures {
   TX_HISTORY = 'tx-history',
   NETWORK_SELECTION = 'network-selection',
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains',
-  BUY = 'buy'
+  BUY = 'buy',
 }
 
-function createTabMappings({
-  disabledFeatures = []
-}: { disabledFeatures?: string[] } = {}) {
-  const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
-  const showBuyTab = isOnrampEnabled() && !isBuyDisabled
+function createTabMappings({ disabledFeatures = [] }: { disabledFeatures?: string[] } = {}) {
+  const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY);
+  const showBuyTab = isOnrampEnabled() && !isBuyDisabled;
 
   if (showBuyTab) {
     return {
@@ -76,14 +74,12 @@ function createTabMappings({
 }
 
 // Default tab mappings (used when disabled features are not available)
-export const { tabToIndex, indexToTab } = createTabMappings()
+export const { tabToIndex, indexToTab } = createTabMappings();
 
 // Function to get tab mappings with disabled features
-export const getTabMappings = ({
-  disabledFeatures = []
-}: { disabledFeatures?: string[] } = {}) => {
-  return createTabMappings({ disabledFeatures })
-}
+export const getTabMappings = ({ disabledFeatures = [] }: { disabledFeatures?: string[] } = {}) => {
+  return createTabMappings({ disabledFeatures });
+};
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(feature.toLowerCase() as DisabledFeatures);
@@ -183,12 +179,12 @@ export function decodeChainQueryParam(
 
 export function encodeTabQueryParam({
   tabIndex,
-  disabledFeatures = []
+  disabledFeatures = [],
 }: {
-  tabIndex: number | null | undefined
-  disabledFeatures?: string[]
+  tabIndex: number | null | undefined;
+  disabledFeatures?: string[];
 }): string {
-  const { indexToTab: _indexToTab } = createTabMappings({ disabledFeatures })
+  const { indexToTab: _indexToTab } = createTabMappings({ disabledFeatures });
   if (typeof tabIndex === 'number' && tabIndex in _indexToTab) {
     const tabParam = _indexToTab[tabIndex as keyof typeof _indexToTab];
     if (tabParam !== undefined) {
@@ -200,16 +196,16 @@ export function encodeTabQueryParam({
 
 export function decodeTabQueryParam({
   tab,
-  disabledFeatures = []
+  disabledFeatures = [],
 }: {
-  tab: string | (string | null)[] | null | undefined
-  disabledFeatures?: string[]
+  tab: string | (string | null)[] | null | undefined;
+  disabledFeatures?: string[];
 }): number {
-  const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures })
+  const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures });
   if (typeof tab === 'string') {
-    const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY)
+    const isBuyDisabled = disabledFeatures.includes(DisabledFeatures.BUY);
     if (tab === TabParamEnum.BUY && (!isOnrampEnabled() || isBuyDisabled)) {
-      return _tabToIndex[TabParamEnum.BRIDGE]
+      return _tabToIndex[TabParamEnum.BRIDGE];
     }
 
     if (tab in _tabToIndex) {
@@ -348,18 +344,16 @@ export const ChainParam = {
 };
 
 export const TabParam = {
-  encode: (tabIndex: number | null | undefined) =>
-    encodeTabQueryParam({ tabIndex }),
-  decode: (tab: string | (string | null)[] | null | undefined) =>
-    decodeTabQueryParam({ tab })
-}
+  encode: (tabIndex: number | null | undefined) => encodeTabQueryParam({ tabIndex }),
+  decode: (tab: string | (string | null)[] | null | undefined) => decodeTabQueryParam({ tab }),
+};
 
 export const isBuyFeatureEnabled = ({
-  disabledFeatures = []
+  disabledFeatures = [],
 }: { disabledFeatures?: string[] } = {}) => {
   // Buy feature is enabled if onramp is enabled in .env, and buy is not disabled in the query params
-  return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.BUY)
-}
+  return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.BUY);
+};
 
 const cache: Record<
   string,
@@ -557,12 +551,12 @@ export const sanitizeTokenQueryParam = ({
 
 export const sanitizeTabQueryParam = (
   tab: string | string[] | null | undefined,
-  { disabledFeatures = [] }: { disabledFeatures?: string[] } = {}
+  { disabledFeatures = [] }: { disabledFeatures?: string[] } = {},
 ): string => {
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase();
 
-    const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures })
+    const { tabToIndex: _tabToIndex } = createTabMappings({ disabledFeatures });
 
     if (Object.keys(_tabToIndex).includes(lowercasedTab)) {
       return lowercasedTab;

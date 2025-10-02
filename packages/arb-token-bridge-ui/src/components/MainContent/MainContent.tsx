@@ -2,23 +2,22 @@ import { Tab } from '@headlessui/react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { Fragment, useCallback } from 'react';
 
-import { TransferPanel } from '../TransferPanel/TransferPanel'
-import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats'
-import { SettingsDialog } from '../common/SettingsDialog'
-import { TransactionHistory } from '../TransactionHistory/TransactionHistory'
-import { TopNavBar } from '../TopNavBar'
-import { useBalanceUpdater } from '../syncers/useBalanceUpdater'
-import { useArbQueryParams } from '../../hooks/useArbQueryParams'
-import { useMode } from '../../hooks/useMode'
-import { RecoverFunds } from '../RecoverFunds'
-import { BuyPanel } from '../BuyPanel'
-import { isBuyFeatureEnabled } from '../../util/queryParamUtils'
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useMode } from '../../hooks/useMode';
+import { isBuyFeatureEnabled } from '../../util/queryParamUtils';
+import { BuyPanel } from '../BuyPanel';
+import { RecoverFunds } from '../RecoverFunds';
+import { TopNavBar } from '../TopNavBar';
+import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
+import { TransferPanel } from '../TransferPanel/TransferPanel';
+import { SettingsDialog } from '../common/SettingsDialog';
+import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
+import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
-  const [isArbitrumStatsVisible] =
-    useLocalStorage<boolean>(statsLocalStorageKey)
-  const [{ tab, disabledFeatures }, setQueryParams] = useArbQueryParams()
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures })
+  const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
+  const [{ tab, disabledFeatures }, setQueryParams] = useArbQueryParams();
+  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures });
 
   const setSelectedTab = useCallback(
     (index: number) => {

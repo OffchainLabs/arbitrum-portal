@@ -5,20 +5,21 @@ import { ChainId } from '../../types/ChainId';
 import { isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
 import {
+  TabParam,
+  decodeTabQueryParam,
+  encodeTabQueryParam,
+  getTabMappings,
+  isBuyFeatureEnabled,
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam,
-  isBuyFeatureEnabled,
-  getTabMappings,
-  encodeTabQueryParam,
-  decodeTabQueryParam
-} from '../../util/queryParamUtils'
+} from '../../util/queryParamUtils';
 import {
   AmountQueryParam,
   ChainParam,
   DisabledFeatures,
-  DisabledFeaturesParam
-} from '../useArbQueryParams'
-import { createMockOrbitChain } from './helpers'
+  DisabledFeaturesParam,
+} from '../useArbQueryParams';
+import { createMockOrbitChain } from './helpers';
 
 vi.mock('../../util/featureFlag', () => ({
   isOnrampEnabled: vi.fn(),
@@ -413,9 +414,9 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be kept if it is a valid tab string value', () => {
-      const result1 = sanitizeTabQueryParam('buy')
-      const result2 = sanitizeTabQueryParam('bridge')
-      const result3 = sanitizeTabQueryParam('tx_history')
+      const result1 = sanitizeTabQueryParam('buy');
+      const result2 = sanitizeTabQueryParam('bridge');
+      const result3 = sanitizeTabQueryParam('tx_history');
 
       expect(result1).toEqual('buy');
       expect(result2).toEqual('bridge');
@@ -423,10 +424,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be case insensitive', () => {
-      const result1 = sanitizeTabQueryParam('BUY')
-      const result2 = sanitizeTabQueryParam('Buy')
-      const result3 = sanitizeTabQueryParam('TX_history')
-      const result4 = sanitizeTabQueryParam('Tx_HiStoRy')
+      const result1 = sanitizeTabQueryParam('BUY');
+      const result2 = sanitizeTabQueryParam('Buy');
+      const result3 = sanitizeTabQueryParam('TX_history');
+      const result4 = sanitizeTabQueryParam('Tx_HiStoRy');
 
       expect(result1).toEqual('buy');
       expect(result2).toEqual('buy');
@@ -435,10 +436,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should default to bridge if the value is invalid', () => {
-      const result1 = sanitizeTabQueryParam('0')
-      const result2 = sanitizeTabQueryParam('1')
-      const result3 = sanitizeTabQueryParam('3')
-      const result4 = sanitizeTabQueryParam('tx_HISTORY_')
+      const result1 = sanitizeTabQueryParam('0');
+      const result2 = sanitizeTabQueryParam('1');
+      const result3 = sanitizeTabQueryParam('3');
+      const result4 = sanitizeTabQueryParam('tx_HISTORY_');
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -454,18 +455,18 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should be kept if it is a valid tab string value', () => {
-      const result1 = sanitizeTabQueryParam('bridge')
-      const result2 = sanitizeTabQueryParam('tx_history')
+      const result1 = sanitizeTabQueryParam('bridge');
+      const result2 = sanitizeTabQueryParam('tx_history');
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('tx_history');
     });
 
     it('should be case insensitive', () => {
-      const result1 = sanitizeTabQueryParam('Bridge')
-      const result2 = sanitizeTabQueryParam('BriDge')
-      const result3 = sanitizeTabQueryParam('TX_history')
-      const result4 = sanitizeTabQueryParam('Tx_HiStoRy')
+      const result1 = sanitizeTabQueryParam('Bridge');
+      const result2 = sanitizeTabQueryParam('BriDge');
+      const result3 = sanitizeTabQueryParam('TX_history');
+      const result4 = sanitizeTabQueryParam('Tx_HiStoRy');
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -474,10 +475,10 @@ describe.sequential('sanitizeTabQueryParam', () => {
     });
 
     it('should default to bridge if the value is invalid', () => {
-      const result1 = sanitizeTabQueryParam('0')
-      const result2 = sanitizeTabQueryParam('1')
-      const result3 = sanitizeTabQueryParam('3')
-      const result4 = sanitizeTabQueryParam('tx_HISTORY_')
+      const result1 = sanitizeTabQueryParam('0');
+      const result2 = sanitizeTabQueryParam('1');
+      const result3 = sanitizeTabQueryParam('3');
+      const result4 = sanitizeTabQueryParam('tx_HISTORY_');
 
       expect(result1).toEqual('bridge');
       expect(result2).toEqual('bridge');
@@ -547,177 +548,139 @@ describe('DisabledFeaturesParam', () => {
     });
 
     it('should handle invalid URL values', () => {
-      expect(DisabledFeaturesParam.decode('disabledFeatures=')).toEqual([])
-      expect(DisabledFeaturesParam.decode('?disabledFeatures=')).toEqual([])
-      expect(DisabledFeaturesParam.decode('randomInvalidValue')).toEqual([])
-    })
-  })
-})
+      expect(DisabledFeaturesParam.decode('disabledFeatures=')).toEqual([]);
+      expect(DisabledFeaturesParam.decode('?disabledFeatures=')).toEqual([]);
+      expect(DisabledFeaturesParam.decode('randomInvalidValue')).toEqual([]);
+    });
+  });
+});
 
 describe.sequential('Buy Feature Disabled Tests', () => {
   afterAll(() => {
-    vi.clearAllMocks()
-    vi.unstubAllEnvs()
-  })
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
 
   describe('isBuyFeatureEnabled', () => {
     it('should return true when onramp is enabled and buy is not disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(true)
-      expect(
-        isBuyFeatureEnabled({ disabledFeatures: ['batch-transfers'] })
-      ).toBe(true)
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['batch-transfers'] })).toBe(true);
+    });
 
     it('should return false when onramp is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(false)
-      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(false)
-      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false)
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false);
+    });
 
     it('should return false when buy is disabled via query param', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false)
-      expect(
-        isBuyFeatureEnabled({ disabledFeatures: ['buy', 'batch-transfers'] })
-      ).toBe(false)
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy', 'batch-transfers'] })).toBe(false);
+    });
 
     it('should work with default empty object', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(isBuyFeatureEnabled()).toBe(true)
-      expect(isBuyFeatureEnabled({})).toBe(true)
-    })
-  })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled()).toBe(true);
+      expect(isBuyFeatureEnabled({})).toBe(true);
+    });
+  });
 
   describe('getTabMappings with disabled features', () => {
     it('should return 3-tab mapping when onramp enabled and buy not disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      const mappings = getTabMappings({ disabledFeatures: [] })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      const mappings = getTabMappings({ disabledFeatures: [] });
       expect(mappings.tabToIndex).toEqual({
         buy: 0,
         bridge: 1,
-        tx_history: 2
-      })
+        tx_history: 2,
+      });
       expect(mappings.indexToTab).toEqual({
         0: 'buy',
         1: 'bridge',
-        2: 'tx_history'
-      })
-    })
+        2: 'tx_history',
+      });
+    });
 
     it('should return 2-tab mapping when buy is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      const mappings = getTabMappings({ disabledFeatures: ['buy'] })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      const mappings = getTabMappings({ disabledFeatures: ['buy'] });
       expect(mappings.tabToIndex).toEqual({
         bridge: 0,
-        tx_history: 1
-      })
+        tx_history: 1,
+      });
       expect(mappings.indexToTab).toEqual({
         0: 'bridge',
-        1: 'tx_history'
-      })
-    })
+        1: 'tx_history',
+      });
+    });
 
     it('should return 2-tab mapping when onramp is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(false)
-      const mappings = getTabMappings({ disabledFeatures: [] })
+      vi.mocked(isOnrampEnabled).mockReturnValue(false);
+      const mappings = getTabMappings({ disabledFeatures: [] });
       expect(mappings.tabToIndex).toEqual({
         bridge: 0,
-        tx_history: 1
-      })
+        tx_history: 1,
+      });
       expect(mappings.indexToTab).toEqual({
         0: 'bridge',
-        1: 'tx_history'
-      })
-    })
-  })
+        1: 'tx_history',
+      });
+    });
+  });
 
   describe('encodeTabQueryParam with disabled features', () => {
     it('should encode buy tab when buy is not disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(encodeTabQueryParam({ tabIndex: 0, disabledFeatures: [] })).toBe(
-        'buy'
-      )
-      expect(encodeTabQueryParam({ tabIndex: 1, disabledFeatures: [] })).toBe(
-        'bridge'
-      )
-      expect(encodeTabQueryParam({ tabIndex: 2, disabledFeatures: [] })).toBe(
-        'tx_history'
-      )
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(encodeTabQueryParam({ tabIndex: 0, disabledFeatures: [] })).toBe('buy');
+      expect(encodeTabQueryParam({ tabIndex: 1, disabledFeatures: [] })).toBe('bridge');
+      expect(encodeTabQueryParam({ tabIndex: 2, disabledFeatures: [] })).toBe('tx_history');
+    });
 
     it('should not encode buy tab when buy is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(
-        encodeTabQueryParam({ tabIndex: 0, disabledFeatures: ['buy'] })
-      ).toBe('bridge')
-      expect(
-        encodeTabQueryParam({ tabIndex: 1, disabledFeatures: ['buy'] })
-      ).toBe('tx_history')
-    })
-  })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(encodeTabQueryParam({ tabIndex: 0, disabledFeatures: ['buy'] })).toBe('bridge');
+      expect(encodeTabQueryParam({ tabIndex: 1, disabledFeatures: ['buy'] })).toBe('tx_history');
+    });
+  });
 
   describe('decodeTabQueryParam with disabled features', () => {
     it('should decode buy tab when buy is not disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(decodeTabQueryParam({ tab: 'buy', disabledFeatures: [] })).toBe(0)
-      expect(decodeTabQueryParam({ tab: 'bridge', disabledFeatures: [] })).toBe(
-        1
-      )
-      expect(
-        decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: [] })
-      ).toBe(2)
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(decodeTabQueryParam({ tab: 'buy', disabledFeatures: [] })).toBe(0);
+      expect(decodeTabQueryParam({ tab: 'bridge', disabledFeatures: [] })).toBe(1);
+      expect(decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: [] })).toBe(2);
+    });
 
     it('should redirect buy tab to bridge when buy is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(
-        decodeTabQueryParam({ tab: 'buy', disabledFeatures: ['buy'] })
-      ).toBe(0) // bridge index
-      expect(
-        decodeTabQueryParam({ tab: 'bridge', disabledFeatures: ['buy'] })
-      ).toBe(0)
-      expect(
-        decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: ['buy'] })
-      ).toBe(1)
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(decodeTabQueryParam({ tab: 'buy', disabledFeatures: ['buy'] })).toBe(0); // bridge index
+      expect(decodeTabQueryParam({ tab: 'bridge', disabledFeatures: ['buy'] })).toBe(0);
+      expect(decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: ['buy'] })).toBe(1);
+    });
 
     it('should redirect buy tab to bridge when onramp is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(false)
-      expect(decodeTabQueryParam({ tab: 'buy', disabledFeatures: [] })).toBe(0) // bridge index
-      expect(decodeTabQueryParam({ tab: 'bridge', disabledFeatures: [] })).toBe(
-        0
-      )
-      expect(
-        decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: [] })
-      ).toBe(1)
-    })
-  })
+      vi.mocked(isOnrampEnabled).mockReturnValue(false);
+      expect(decodeTabQueryParam({ tab: 'buy', disabledFeatures: [] })).toBe(0); // bridge index
+      expect(decodeTabQueryParam({ tab: 'bridge', disabledFeatures: [] })).toBe(0);
+      expect(decodeTabQueryParam({ tab: 'tx_history', disabledFeatures: [] })).toBe(1);
+    });
+  });
 
   describe('sanitizeTabQueryParam with disabled features', () => {
     it('should keep buy tab when buy is not disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(sanitizeTabQueryParam('buy', { disabledFeatures: [] })).toBe('buy')
-      expect(sanitizeTabQueryParam('bridge', { disabledFeatures: [] })).toBe(
-        'bridge'
-      )
-      expect(
-        sanitizeTabQueryParam('tx_history', { disabledFeatures: [] })
-      ).toBe('tx_history')
-    })
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(sanitizeTabQueryParam('buy', { disabledFeatures: [] })).toBe('buy');
+      expect(sanitizeTabQueryParam('bridge', { disabledFeatures: [] })).toBe('bridge');
+      expect(sanitizeTabQueryParam('tx_history', { disabledFeatures: [] })).toBe('tx_history');
+    });
 
     it('should default buy tab to bridge when buy is disabled', () => {
-      vi.mocked(isOnrampEnabled).mockReturnValue(true)
-      expect(sanitizeTabQueryParam('buy', { disabledFeatures: ['buy'] })).toBe(
-        'bridge'
-      )
-      expect(
-        sanitizeTabQueryParam('bridge', { disabledFeatures: ['buy'] })
-      ).toBe('bridge')
-      expect(
-        sanitizeTabQueryParam('tx_history', { disabledFeatures: ['buy'] })
-      ).toBe('tx_history')
-    })
-  })
-})
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(sanitizeTabQueryParam('buy', { disabledFeatures: ['buy'] })).toBe('bridge');
+      expect(sanitizeTabQueryParam('bridge', { disabledFeatures: ['buy'] })).toBe('bridge');
+      expect(sanitizeTabQueryParam('tx_history', { disabledFeatures: ['buy'] })).toBe('tx_history');
+    });
+  });
+});

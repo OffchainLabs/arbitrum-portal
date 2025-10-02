@@ -1,11 +1,12 @@
-import { Tab } from '@headlessui/react'
-import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline'
-import { PropsWithChildren } from 'react'
-import { twMerge } from 'tailwind-merge'
-import Image from 'next/image'
-import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo'
-import { useArbQueryParams } from '../hooks/useArbQueryParams'
-import { isBuyFeatureEnabled } from '../util/queryParamUtils'
+import { Tab } from '@headlessui/react';
+import { PaperAirplaneIcon, WalletIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { useArbQueryParams } from '../hooks/useArbQueryParams';
+import { isBuyFeatureEnabled } from '../util/queryParamUtils';
+import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
 
 function StyledTab({ children, ...props }: PropsWithChildren) {
   return (
@@ -21,9 +22,9 @@ function StyledTab({ children, ...props }: PropsWithChildren) {
 StyledTab.displayName = 'StyledTab';
 
 export function TopNavBar() {
-  const { colorClassName } = useTransactionReminderInfo()
-  const [{ disabledFeatures }] = useArbQueryParams()
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures })
+  const { colorClassName } = useTransactionReminderInfo();
+  const [{ disabledFeatures }] = useArbQueryParams();
+  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures });
 
   return (
     <Tab.List
