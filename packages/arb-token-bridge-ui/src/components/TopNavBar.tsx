@@ -9,10 +9,12 @@ import { twMerge } from 'tailwind-merge';
 import { BRIDGE_PATHNAME, BUY_EMBED_PATHNAME, BUY_PATHNAME, EMBED_PATHNAME } from '../constants';
 import { useMode } from '../hooks/useMode';
 import { isOnrampEnabled } from '../util/featureFlag';
+import { TabParamEnum } from '../util/queryParamUtils';
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
 
 function StyledTab({
   children,
+  className,
   href,
   hrefQuery,
   ...props
@@ -23,7 +25,13 @@ function StyledTab({
   }>) {
   const pathname = usePathname();
   const isBuyTab = pathname === BUY_PATHNAME;
+  const searchParams = useSearchParams();
   const { embedMode } = useMode();
+
+  const searchParamsWithoutTab = useMemo(() => {
+    const { tab, ...rest } = Object.fromEntries(searchParams.entries());
+    return new URLSearchParams(rest);
+  }, [searchParams]);
 
   return (
     <Tab
@@ -31,14 +39,14 @@ function StyledTab({
       href={
         href ?? {
           pathname: embedMode ? EMBED_PATHNAME : BRIDGE_PATHNAME,
-          query: hrefQuery,
+          query: `${searchParamsWithoutTab.toString()}${hrefQuery}`,
         }
       }
       className={twMerge(
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
-        !isBuyTab && 'ui-selected:bg-black/75',
+        isBuyTab ? 'bg-black/75' : 'ui-selected:bg-black/75',
+        className,
       )}
-      tabIndex={0}
       {...props}
     >
       {children}
@@ -51,15 +59,7 @@ StyledTab.displayName = 'StyledTab';
 export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo();
   const showBuyPanel = isOnrampEnabled();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isBuyTab = pathname === BUY_PATHNAME;
   const { embedMode } = useMode();
-
-  const searchParamsWithoutTab = useMemo(() => {
-    const { tab, ...rest } = Object.fromEntries(searchParams.entries());
-    return new URLSearchParams(rest);
-  }, [searchParams]);
 
   return (
     <TabList
@@ -72,28 +72,21 @@ export function TopNavBar() {
         <StyledTab
           href={{
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
-            query: searchParamsWithoutTab.toString(),
+            query: '',
           }}
-          className={twMerge(
-            'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
-            isBuyTab && 'bg-black/75',
-          )}
           aria-label="Switch to Buy Tab"
         >
           <WalletIcon className="h-3 w-3" />
           Buy
         </StyledTab>
       )}
-      <StyledTab
-        aria-label="Switch to Bridge Tab"
-        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=bridge`}
-      >
+      <StyledTab aria-label="Switch to Bridge Tab" hrefQuery={`&tab=${TabParamEnum.BRIDGE}`}>
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge
       </StyledTab>
       <StyledTab
         aria-label="Switch to Transaction History Tab"
-        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=tx_history`}
+        hrefQuery={`&tab=${TabParamEnum.TX_HISTORY}`}
       >
         <Image src="/icons/history.svg" width={24} height={24} alt="history icon" />
         Txn History{' '}
