@@ -44,7 +44,7 @@ function StyledTab({
       }
       className={twMerge(
         'flex h-full items-center justify-center gap-2 rounded p-1 text-sm lg:text-lg',
-        isBuyTab ? 'bg-black/75' : 'ui-selected:bg-black/75',
+        !isBuyTab && 'ui-selected:bg-black/75',
         className,
       )}
       {...props}
@@ -60,6 +60,8 @@ export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo();
   const showBuyPanel = isOnrampEnabled();
   const { embedMode } = useMode();
+  const pathname = usePathname();
+  const isBuyTab = pathname === BUY_PATHNAME;
 
   return (
     <TabList
@@ -74,6 +76,7 @@ export function TopNavBar() {
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
             query: '',
           }}
+          className={isBuyTab && 'bg-black/75'}
           aria-label="Switch to Buy Tab"
         >
           <WalletIcon className="h-3 w-3" />
