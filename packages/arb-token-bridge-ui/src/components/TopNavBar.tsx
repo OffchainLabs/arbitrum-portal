@@ -76,7 +76,7 @@ export function TopNavBar() {
             pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
             query: '',
           }}
-          className={isBuyTab && 'bg-black/75'}
+          className={isBuyTab ? 'bg-black/75' : ''}
           aria-label="Switch to Buy Tab"
         >
           <WalletIcon className="h-3 w-3" />
