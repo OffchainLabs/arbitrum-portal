@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
 
 import { addOrbitChainsToArbitrumSDK } from '../../../../initialization';
@@ -5,6 +6,12 @@ import BridgeClient from '../BridgeClient';
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export const metadata: Metadata = {
+  title: 'On-Ramp to Arbitrum',
+  description:
+    'On-ramp directly to Arbitrum with one of several third party providers. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum’s security model. Arbitrum is a Layer 2 Optimistic Rollup.',
 };
 
 export default async function BridgeBuyPage({ searchParams }: Props) {
