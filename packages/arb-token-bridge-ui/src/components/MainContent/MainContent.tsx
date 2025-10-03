@@ -25,6 +25,9 @@ export function MainContent() {
 
   const selectedTab = useMemo(() => {
     if (showBuyPanel) {
+      // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
+      // because we use /buy and don't use ?tab=buy
+      // so we need to hardcode to return 0 rather than `tab`
       if (pathname === BUY_PATHNAME) {
         return 0;
       }

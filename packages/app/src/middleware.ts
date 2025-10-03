@@ -5,6 +5,7 @@ import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
+  const isBuyDisabledInSearchParams = url.searchParams.get('disabledFeatures')?.includes('buy');
 
   // Redirect /?mode=embed to /bridge/embed and keep query params (without mode)
   if (url.searchParams.get('mode') === 'embed') {
@@ -15,10 +16,7 @@ export function middleware(req: NextRequest) {
 
   // In embed mode, when buy is disabled
   // Redirect /bridge/embed/buy to /bridge/embed and keep query params (without tab)
-  if (
-    url.pathname === BUY_EMBED_PATHNAME &&
-    (!isOnrampEnabled() || url.searchParams.get('disabledFeatures')?.includes('buy'))
-  ) {
+  if (url.pathname === BUY_EMBED_PATHNAME && (!isOnrampEnabled() || isBuyDisabledInSearchParams)) {
     url.pathname = '/bridge/embed';
     url.searchParams.delete('tab');
     return NextResponse.redirect(url, 308);
@@ -26,10 +24,7 @@ export function middleware(req: NextRequest) {
 
   // In normal mode, when buy is disabled
   // Redirect /bridge/buy to /bridge and keep query params
-  if (
-    url.pathname === BUY_PATHNAME &&
-    (!isOnrampEnabled() || url.searchParams.get('disabledFeatures')?.includes('buy'))
-  ) {
+  if (url.pathname === BUY_PATHNAME && (!isOnrampEnabled() || isBuyDisabledInSearchParams)) {
     url.pathname = '/bridge';
     url.searchParams.set('tab', 'bridge');
     return NextResponse.redirect(url, 308);
