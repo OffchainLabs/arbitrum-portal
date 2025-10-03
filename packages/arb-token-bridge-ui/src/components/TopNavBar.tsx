@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import React, { PropsWithChildren, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { BRIDGE_PATHNAME, BUY_EMBED_PATHNAME, BUY_PATHNAME, EMBED_PATHNAME } from '../constants';
+import { PathnameEnum } from '../constants';
 import { useMode } from '../hooks/useMode';
 import { isOnrampEnabled } from '../util/featureFlag';
 import { TabParamEnum } from '../util/queryParamUtils';
@@ -24,7 +24,7 @@ function StyledTab({
     hrefQuery?: string;
   }>) {
   const pathname = usePathname();
-  const isBuyTab = pathname === BUY_PATHNAME;
+  const isBuyTab = pathname === PathnameEnum.BUY;
   const { embedMode } = useMode();
 
   return (
@@ -32,7 +32,7 @@ function StyledTab({
       as={Link}
       href={
         href ?? {
-          pathname: embedMode ? EMBED_PATHNAME : BRIDGE_PATHNAME,
+          pathname: embedMode ? PathnameEnum.EMBED : PathnameEnum.BRIDGE,
           query: hrefQuery,
         }
       }
@@ -55,7 +55,7 @@ export function TopNavBar() {
   const showBuyPanel = isOnrampEnabled();
   const { embedMode } = useMode();
   const pathname = usePathname();
-  const isBuyTab = pathname === BUY_PATHNAME;
+  const isBuyTab = pathname === PathnameEnum.BUY;
   const searchParams = useSearchParams();
 
   const searchParamsWithoutTab = useMemo(() => {
@@ -73,8 +73,8 @@ export function TopNavBar() {
       {showBuyPanel && (
         <StyledTab
           href={{
-            pathname: embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME,
-            query: `${searchParamsWithoutTab.toString()}&tab=buy`,
+            pathname: embedMode ? PathnameEnum.EMBED_BUY : PathnameEnum.BUY,
+            query: searchParamsWithoutTab.toString(),
           }}
           className={isBuyTab ? 'bg-black/75' : ''}
           aria-label="Switch to Buy Tab"
@@ -83,10 +83,7 @@ export function TopNavBar() {
           Buy
         </StyledTab>
       )}
-      <StyledTab
-        aria-label="Switch to Bridge Tab"
-        hrefQuery={`${searchParamsWithoutTab.toString()}`}
-      >
+      <StyledTab aria-label="Switch to Bridge Tab" hrefQuery={searchParamsWithoutTab.toString()}>
         <PaperAirplaneIcon className="h-3 w-3" />
         Bridge
       </StyledTab>

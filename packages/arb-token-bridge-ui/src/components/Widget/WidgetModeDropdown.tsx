@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '@/bridge/constants';
+import { PathnameEnum } from '@/bridge/constants';
 
 import { isOnrampEnabled } from '../../util/featureFlag';
 import { Button } from '../common/Button';
@@ -45,8 +45,8 @@ export const WidgetModeDropdown = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const isBuyTab = pathname === BUY_EMBED_PATHNAME;
-  const isBridgeTab = pathname === EMBED_PATHNAME;
+  const isBuyTab = pathname === PathnameEnum.EMBED_BUY;
+  const isBridgeTab = pathname === PathnameEnum.EMBED;
 
   if (!showBuyPanel) {
     // If buy panel is not enabled, just show the bridge button without dropdown
@@ -94,7 +94,7 @@ export const WidgetModeDropdown = () => {
                   label="Bridge"
                   isSelected={isBridgeTab}
                   onClick={() => {
-                    router.push(`${EMBED_PATHNAME}?${searchParams.toString()}`);
+                    router.push(`${PathnameEnum.EMBED}?${searchParams.toString()}`);
                     close();
                   }}
                 />
@@ -103,7 +103,7 @@ export const WidgetModeDropdown = () => {
                   label="Buy"
                   isSelected={isBuyTab}
                   onClick={() => {
-                    router.push(`${BUY_EMBED_PATHNAME}?${searchParams.toString()}`);
+                    router.push(`${PathnameEnum.EMBED_BUY}?${searchParams.toString()}`);
                     close();
                   }}
                 />

@@ -1,3 +1,5 @@
+import { PathnameEnum } from '@/bridge/constants';
+
 import EmbedPageWrapper from '../EmbedPageWrapper';
 
 export default async function EmbeddedBuyPage({
@@ -7,5 +9,5 @@ export default async function EmbeddedBuyPage({
     [key: string]: string | string[] | undefined;
   };
 }) {
-  return <EmbedPageWrapper searchParams={searchParams} redirectPath="/bridge/embed/buy" />;
+  return <EmbedPageWrapper searchParams={searchParams} redirectPath={PathnameEnum.EMBED_BUY} />;
 }

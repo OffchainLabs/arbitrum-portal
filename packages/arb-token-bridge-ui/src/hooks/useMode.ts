@@ -1,10 +1,10 @@
 import { usePathname } from 'next/navigation';
 
-import { BUY_EMBED_PATHNAME, EMBED_PATHNAME } from '../constants';
+import { PathnameEnum } from '../constants';
 
 export function useMode() {
   const pathname = usePathname();
-  const embedMode = pathname === EMBED_PATHNAME || pathname === BUY_EMBED_PATHNAME;
+  const embedMode = pathname === PathnameEnum.EMBED || pathname === PathnameEnum.EMBED_BUY;
 
   return { embedMode };
 }

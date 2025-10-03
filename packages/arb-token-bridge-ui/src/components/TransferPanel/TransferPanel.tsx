@@ -23,7 +23,7 @@ import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { BUY_EMBED_PATHNAME, DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
+import { DOCS_DOMAIN, GET_HELP_LINK, PathnameEnum } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -1258,7 +1258,7 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
-    if (pathname === BUY_EMBED_PATHNAME && showBuyPanel) {
+    if (pathname === PathnameEnum.EMBED_BUY && showBuyPanel) {
       return <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />;
     }
 

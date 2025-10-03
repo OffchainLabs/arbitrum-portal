@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+import { PathnameEnum } from '@/bridge/constants';
+
 import BridgePageWrapper from '../BridgePageWrapper';
 
 type Props = {
@@ -13,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default async function BridgeBuyPage({ searchParams }: Props) {
-  return <BridgePageWrapper searchParams={searchParams} redirectPath="/bridge/buy" />;
+  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BUY} />;
 }

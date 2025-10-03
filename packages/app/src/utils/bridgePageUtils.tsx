@@ -1,14 +1,16 @@
+import { PathnameEnum } from '@/bridge/constants';
+
 import { addOrbitChainsToArbitrumSDK } from '../initialization';
 import { sanitizeAndRedirect } from './sanitizeAndRedirect';
 
 export interface BridgePageProps {
   searchParams: { [key: string]: string | string[] | undefined };
-  redirectPath: string;
+  redirectPath: PathnameEnum;
 }
 
 export async function initializeBridgePage(
   searchParams: { [key: string]: string | string[] | undefined },
-  redirectPath: string,
+  redirectPath: PathnameEnum,
 ) {
   /**
    * This code is run on every query param change,

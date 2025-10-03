@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { PORTAL_DOMAIN } from '@/bridge/constants';
+import { PORTAL_DOMAIN, PathnameEnum } from '@/bridge/constants';
 import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
 import { isNetwork } from '@/bridge/util/networks';
 
@@ -71,5 +71,5 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function BridgePage({ searchParams }: Props) {
-  return <BridgePageWrapper searchParams={searchParams} redirectPath="/bridge" />;
+  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BRIDGE} />;
 }
