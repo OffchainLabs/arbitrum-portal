@@ -28,7 +28,9 @@ import { SafeImage } from '../common/SafeImage';
 import { SearchPanel } from '../common/SearchPanel/SearchPanel';
 import { Loader } from '../common/atoms/Loader';
 import { Homepage } from './Homepage';
+import { LinkoutOnrampPanel } from './LinkoutOnrampPanel';
 import { MoonPayPanel, MoonPaySkeleton } from './MoonPayPanel';
+import { onrampServices } from './utils';
 
 const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayProvider),
@@ -199,7 +201,7 @@ function OnrampDisclaimer() {
   const { embedMode } = useMode();
 
   return (
-    <p className={twMerge('text-gray-4 mt-4 text-center text-sm', embedMode && 'text-xs')}>
+    <p className={twMerge('text-gray-4 mt-auto pt-4 text-center text-sm', embedMode && 'text-xs')}>
       On-Ramps are not endorsed by Arbitrum. Please use at your own risk.
     </p>
   );
@@ -208,6 +210,7 @@ function OnrampDisclaimer() {
 function OnrampServicePanel() {
   const pathname = usePathname();
   const onrampService = pathname.split('/').pop();
+  const allOnrampServices = onrampServices.map((service) => service.slug);
 
   switch (onrampService) {
     case 'moonpay':
@@ -215,6 +218,8 @@ function OnrampServicePanel() {
         return null;
       }
       return <MoonPayPanel />;
+    case allOnrampServices.find((service) => service === onrampService):
+      return <LinkoutOnrampPanel serviceSlug={onrampService!} />;
     default:
       return <Homepage />;
   }
@@ -226,7 +231,7 @@ export function BuyPanel() {
   return (
     <div
       className={twMerge(
-        'bg-gray-1 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px]',
+        'bg-gray-1 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
         embedMode && 'mx-auto max-w-[540px]',
       )}
     >

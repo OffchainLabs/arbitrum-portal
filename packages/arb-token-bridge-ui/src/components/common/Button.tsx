@@ -1,4 +1,4 @@
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import React, { forwardRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -74,9 +74,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <span className={twMerge(truncate && 'truncate')}>{children}</span>
         </div>
         {props.showArrow && (
-          <ArrowRightIcon
+          <ChevronRightIcon
             className={twMerge(
-              'absolute right-3 top-[50%] translate-y-[-50%] transition-transform duration-300',
+              'absolute right-2 top-[50%] translate-y-[-50%] transition-transform duration-300',
               hovered && 'translate-x-[3px]',
             )}
             width={16}

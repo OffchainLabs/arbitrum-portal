@@ -1,17 +1,14 @@
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import React, { PropsWithChildren, memo, useCallback } from 'react';
+import { PropsWithChildren, memo, useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
-import { PathnameEnum } from '@/bridge/constants';
 import { useMode } from '@/bridge/hooks/useMode';
 
 import { getAPIBaseUrl } from '../../util';
 import { isOnrampServiceEnabled } from '../../util/featureFlag';
-import { Button } from '../common/Button';
 import { SafeImage } from '../common/SafeImage';
+import { BackButton } from './BackButton';
 
 export function MoonPaySkeleton({ children }: PropsWithChildren) {
   const { embedMode } = useMode();
@@ -52,18 +49,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
       >
         {children}
       </div>
-      <Link
-        href={embedMode ? PathnameEnum.EMBED_BUY : PathnameEnum.BUY}
-        className="flex flex-row justify-content items-center absolute top-4 left-4 gap-2 hover:opacity-80"
-      >
-        <Button
-          variant="secondary"
-          className="rounded-full w-6 h-6 flex items-center justify-center bg-white/20 backdrop-blur border-none hover:opacity-100 hover:bg-white/20 hover:text-white/70"
-        >
-          <ChevronLeftIcon className="h-3 w-3" />
-        </Button>
-        <span>Back</span>
-      </Link>
+      <BackButton />
     </div>
   );
 }
