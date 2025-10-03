@@ -50,5 +50,11 @@
     // GHSA-qj3p-xc97-xw74|arb-token-bridge-ui>wagmi>@wagmi/connectors>@metamask/sdk>@metamask/sdk-communication-layer
     // GHSA-qj3p-xc97-xw74|arb-token-bridge-ui>wagmi>@wagmi/connectors>@metamask/sdk
     "GHSA-qj3p-xc97-xw74",
+    // https://github.com/advisories/GHSA-ffrw-9mx8-89p8
+    // fast-redact vulnerable to prototype pollution
+    // GHSA-ffrw-9mx8-89p8|wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>@walletconnect/types>@walletconnect/logger>pino>fast-redact
+    // Reason to ignore: No patch available yet
+    // Low severity vulnerability in logging dependency. Limited impact as it's deep in WalletConnect provider chain.
+    "GHSA-ffrw-9mx8-89p8",
   ],
 }
