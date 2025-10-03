@@ -5,7 +5,7 @@ import React, { PropsWithChildren, memo, useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
-import { BUY_EMBED_PATHNAME, BUY_PATHNAME } from '@/bridge/constants';
+import { PathnameEnum } from '@/bridge/constants';
 import { useMode } from '@/bridge/hooks/useMode';
 
 import { getAPIBaseUrl } from '../../util';
@@ -53,7 +53,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
         {children}
       </div>
       <Link
-        href={embedMode ? BUY_EMBED_PATHNAME : BUY_PATHNAME}
+        href={embedMode ? PathnameEnum.EMBED_BUY : PathnameEnum.BUY}
         className="flex flex-row justify-content items-center absolute top-4 left-4 gap-2 hover:opacity-80"
       >
         <Button
