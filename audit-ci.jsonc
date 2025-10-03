@@ -54,7 +54,7 @@
     // fast-redact vulnerable to prototype pollution
     // GHSA-ffrw-9mx8-89p8|wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>@walletconnect/types>@walletconnect/logger>pino>fast-redact
     // Reason to ignore: No patch available yet
-    // Low severity vulnerability in logging dependency. Limited impact as it's deep in WalletConnect provider chain.
+    // Low severity vulnerability in logging dependency. No patches available yet.
     "GHSA-ffrw-9mx8-89p8",
   ],
 }
