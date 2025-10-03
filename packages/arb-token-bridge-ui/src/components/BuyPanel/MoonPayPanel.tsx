@@ -58,7 +58,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
       >
         <Button
           variant="secondary"
-          className="rounded-full w-6 h-6 flex items-center justify-center bg-white/20 backdrop-blur border-none hover:opacity-100 hover:bg-white/20"
+          className="rounded-full w-6 h-6 flex items-center justify-center bg-white/20 backdrop-blur border-none hover:opacity-100 hover:bg-white/20 hover:text-white/70"
         >
           <ChevronLeftIcon className="h-3 w-3" />
         </Button>

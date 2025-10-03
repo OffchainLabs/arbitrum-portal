@@ -28,7 +28,7 @@ export function MainContent() {
       // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
       // because we use /buy and don't use ?tab=buy
       // so we need to hardcode to return 0 rather than `tab`
-      if (pathname === PathnameEnum.BUY) {
+      if (pathname.startsWith(PathnameEnum.BUY)) {
         return 0;
       }
       return tab;
@@ -52,7 +52,7 @@ export function MainContent() {
         <TabGroup manual as={Fragment} selectedIndex={selectedTab} onChange={() => {}}>
           <TopNavBar />
 
-          <TabPanels className="flex w-full items-center justify-center">
+          <TabPanels className="flex w-full items-center justify-center mb-8 md:mb-16 px-2">
             {showBuyPanel && (
               <TabPanel className="w-full sm:max-w-[600px]">
                 <BuyPanel />

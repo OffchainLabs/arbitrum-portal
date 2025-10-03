@@ -5,13 +5,13 @@ import { sanitizeAndRedirect } from './sanitizeAndRedirect';
 
 export interface BridgePageProps {
   searchParams: { [key: string]: string | string[] | undefined };
-  redirectPath: PathnameEnum;
+  redirectPath:
+    | PathnameEnum
+    | `${PathnameEnum.BUY}/${string}`
+    | `${PathnameEnum.EMBED_BUY}/${string} `;
 }
 
-export async function initializeBridgePage(
-  searchParams: { [key: string]: string | string[] | undefined },
-  redirectPath: PathnameEnum,
-) {
+export async function initializeBridgePage({ searchParams, redirectPath }: BridgePageProps) {
   /**
    * This code is run on every query param change,
    * we don't want to sanitize every query param change.
