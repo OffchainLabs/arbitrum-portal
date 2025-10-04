@@ -62,9 +62,11 @@ export const orbitChains = { ...orbitMainnets, ...orbitTestnets };
 function sanitizeRpcUrl(chains: OrbitChainConfig[]): void {
   const orbitAlchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY_ORBIT;
 
+  const ignoreChainIds: number[] = [10058111, 241320162, 88899, 32766]; // these don't support v2 api, fallback to public api
+
   if (getRpcProvider() === 'alchemy' && orbitAlchemyKey) {
     chains.forEach((chain) => {
-      if (chain.rpcUrl.includes('alchemy.com/public')) {
+      if (chain.rpcUrl.includes('alchemy.com/public') && !ignoreChainIds.includes(chain.chainId)) {
         // Replace .alchemy.com/public with .alchemy.com/v2/{API_KEY}
         chain.rpcUrl = chain.rpcUrl.replace(
           '.alchemy.com/public',
