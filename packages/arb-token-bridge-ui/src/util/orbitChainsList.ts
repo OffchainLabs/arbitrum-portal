@@ -60,13 +60,16 @@ export const orbitChains = { ...orbitMainnets, ...orbitTestnets };
  * @param chains Array of chain configurations
  */
 function sanitizeRpcUrl(chains: OrbitChainConfig[]): void {
-  if (getRpcProvider() === 'alchemy') {
-    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY_ORBIT;
+  const orbitAlchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY_ORBIT;
 
+  if (getRpcProvider() === 'alchemy' && orbitAlchemyKey) {
     chains.forEach((chain) => {
       if (chain.rpcUrl.includes('alchemy.com/public')) {
         // Replace .alchemy.com/public with .alchemy.com/v2/{API_KEY}
-        chain.rpcUrl = chain.rpcUrl.replace('.alchemy.com/public', `.alchemy.com/v2/${alchemyKey}`);
+        chain.rpcUrl = chain.rpcUrl.replace(
+          '.alchemy.com/public',
+          `.alchemy.com/v2/${orbitAlchemyKey}`,
+        );
       }
     });
   }
