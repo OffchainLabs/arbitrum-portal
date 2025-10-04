@@ -23,6 +23,7 @@ import {
   isSameTransaction,
   isTxPending,
 } from '../components/TransactionHistory/helpers';
+import { FETCH_SELECTED_NETWORK_TX_HISTORY_ONLY } from '../constants';
 import { MergedTransaction } from '../state/app/state';
 import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
@@ -54,6 +55,7 @@ import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
 import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
+import { useNetworks } from './useNetworks';
 import {
   getUpdatedOftTransfer,
   updateAdditionalLayerZeroData,
@@ -129,7 +131,47 @@ function sortByTimestampDescending(a: Transfer, b: Transfer) {
   return getTransactionTimestamp(a) > getTransactionTimestamp(b) ? -1 : 1;
 }
 
-function getMultiChainFetchList(): ChainPair[] {
+function getMultiChainFetchList(selectedNetworks?: {
+  sourceChainId: ChainId;
+  destinationChainId: ChainId;
+}): ChainPair[] {
+  // If specific networks are selected, only fetch for those
+  if (selectedNetworks) {
+    const { sourceChainId, destinationChainId } = selectedNetworks;
+
+    // Check if this is a valid chain pair (parent-child relationship)
+    const sourceChain = getChains().find((chain) => chain.chainId === sourceChainId);
+    const destinationChain = getChains().find((chain) => chain.chainId === destinationChainId);
+
+    if (sourceChain && destinationChain) {
+      // Check if destination is a child of source
+      const childChainIds = getChildChainIds(sourceChain);
+      if (childChainIds.includes(destinationChainId)) {
+        return [
+          {
+            parentChainId: sourceChainId,
+            childChainId: destinationChainId,
+          },
+        ];
+      }
+
+      // Check if source is a child of destination (reverse relationship)
+      const parentChildChainIds = getChildChainIds(destinationChain);
+      if (parentChildChainIds.includes(sourceChainId)) {
+        return [
+          {
+            parentChainId: destinationChainId,
+            childChainId: sourceChainId,
+          },
+        ];
+      }
+    }
+
+    // If no valid parent-child relationship, return empty array
+    return [];
+  }
+
+  // Fallback to original behavior for backward compatibility
   return getChains().flatMap((chain) => {
     // We only grab child chains because we don't want duplicates and we need the parent chain
     // Although the type is correct here we default to an empty array for custom networks backwards compatibility
@@ -298,7 +340,10 @@ export async function fetchWithdrawalsInBatches(
 /**
  * Fetches transaction history only for deposits and withdrawals, without their statuses.
  */
-const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
+const useTransactionHistoryWithoutStatuses = (
+  address: Address | undefined,
+  networks: { sourceChain: { id: ChainId }; destinationChain: { id: ChainId } },
+) => {
   const { chain } = useAccount();
   const [isTestnetMode] = useIsTestnetMode();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
@@ -361,8 +406,16 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
         return [];
       }
 
+      // Use selected networks to limit fetching if flag is enabled
+      const selectedNetworks = FETCH_SELECTED_NETWORK_TX_HISTORY_ONLY
+        ? {
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+          }
+        : undefined;
+
       return Promise.all(
-        getMultiChainFetchList()
+        getMultiChainFetchList(selectedNetworks)
           .filter((chainPair) => {
             if (isSmartContractWallet) {
               // only fetch txs from the connected network
@@ -451,7 +504,15 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           }),
       );
     },
-    [address, isTestnetMode, addFailedChainPair, isSmartContractWallet, chain, forceFetchReceived],
+    [
+      address,
+      isTestnetMode,
+      addFailedChainPair,
+      isSmartContractWallet,
+      chain,
+      forceFetchReceived,
+      networks,
+    ],
   );
 
   const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
@@ -511,6 +572,9 @@ export const useTransactionHistory = (
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
 
+  // Get the currently selected networks from the bridge interface
+  const [networks] = useNetworks();
+
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
   const { connector } = useAccount();
   // max number of transactions mapped in parallel
@@ -526,7 +590,7 @@ export const useTransactionHistory = (
     loading: isLoadingTxsWithoutStatus,
     error,
     failedChainPairs,
-  } = useTransactionHistoryWithoutStatuses(address);
+  } = useTransactionHistoryWithoutStatuses(address, networks);
 
   const getCacheKey = useCallback(
     (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
@@ -548,10 +612,19 @@ export const useTransactionHistory = (
     if (isLoadingAccountType || !chain || !isTxHistoryEnabled) {
       return [];
     }
+
+    // Use selected networks for cache filtering if flag is enabled
+    const selectedNetworks = FETCH_SELECTED_NETWORK_TX_HISTORY_ONLY
+      ? {
+          sourceChainId: networks.sourceChain.id,
+          destinationChainId: networks.destinationChain.id,
+        }
+      : undefined;
+
     return getDepositsWithoutStatusesFromCache(address)
       .filter((tx) => isNetwork(tx.parentChainId).isTestnet === isTestnetMode)
       .filter((tx) => {
-        const chainPairExists = getMultiChainFetchList().some((chainPair) => {
+        const chainPairExists = getMultiChainFetchList(selectedNetworks).some((chainPair) => {
           return (
             chainPair.parentChainId === tx.parentChainId &&
             chainPair.childChainId === tx.childChainId
@@ -578,6 +651,8 @@ export const useTransactionHistory = (
     isSmartContractWallet,
     chain,
     isTxHistoryEnabled,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
   ]);
 
   const lifiTransactionsFromCache = useMemo(() => {

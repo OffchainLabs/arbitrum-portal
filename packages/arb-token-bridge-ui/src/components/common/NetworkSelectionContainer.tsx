@@ -1,6 +1,6 @@
 import {
   ChevronDownIcon,
-  ExclamationCircleIcon,
+  // ExclamationCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
@@ -16,11 +16,11 @@ import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryPara
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { useMode } from '../../hooks/useMode';
-import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrencyBalanceForChainId';
+// import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrencyBalanceForChainId';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
-import { formatAmount } from '../../util/NumberUtils';
+// import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
@@ -34,7 +34,8 @@ import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
 import { Tooltip } from './Tooltip';
-import { Loader } from './atoms/Loader';
+
+// import { Loader } from './atoms/Loader';
 
 type NetworkType = 'core' | 'more' | 'orbit';
 
@@ -175,11 +176,11 @@ function NetworkRow({
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
   const chain = getWagmiChain(chainId);
   const { address: walletAddress } = useAccount();
-  const {
-    data: balanceState,
-    isLoading: isLoadingBalance,
-    error: balanceError,
-  } = useNativeCurrencyBalanceForChainId(chainId, walletAddress);
+  // const {
+  //   data: balanceState,
+  //   isLoading: isLoadingBalance,
+  //   error: balanceError,
+  // } = useNativeCurrencyBalanceForChainId(chainId, walletAddress);
 
   function handleClick() {
     onClick(chain);
@@ -209,7 +210,7 @@ function NetworkRow({
             </Tooltip>
           )}
 
-          {isLoadingBalance && <Loader size="small" />}
+          {/* {isLoadingBalance && <Loader size="small" />}
 
           {!isLoadingBalance && balanceError && (
             <Tooltip content="Error fetching balance">
@@ -227,7 +228,7 @@ function NetworkRow({
                 symbol: balanceState.symbol,
               })}
             </Tooltip>
-          )}
+          )} */}
         </p>
       </div>
     </button>
