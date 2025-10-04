@@ -4,6 +4,7 @@ import { addressesEqual } from './AddressUtils';
 import { isE2eTestingEnvironment } from './CommonUtils';
 import { ChainWithRpcUrl } from './networks';
 import orbitChainsData from './orbitChainsData.json';
+import { getRpcProvider } from './rpc/getRpcUrl';
 
 export type NetworkType =
   | 'Ethereum'
@@ -54,6 +55,23 @@ export const orbitTestnets: {
 
 export const orbitChains = { ...orbitMainnets, ...orbitTestnets };
 
+/**
+ * Sanitizes RPC URLs based on the current provider configuration
+ * @param chains Array of chain configurations
+ */
+function sanitizeRpcUrl(chains: OrbitChainConfig[]): void {
+  if (getRpcProvider() === 'alchemy') {
+    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY_ORBIT;
+
+    chains.forEach((chain) => {
+      if (chain.rpcUrl.includes('alchemy.com/public')) {
+        // Replace .alchemy.com/public with .alchemy.com/v2/{API_KEY}
+        chain.rpcUrl = chain.rpcUrl.replace('.alchemy.com/public', `.alchemy.com/v2/${alchemyKey}`);
+      }
+    });
+  }
+}
+
 export function getOrbitChains(
   {
     mainnet,
@@ -70,6 +88,10 @@ export function getOrbitChains(
 
   const mainnetChains = mainnet ? Object.values(orbitMainnets) : [];
   const testnetChains = testnet ? Object.values(orbitTestnets) : [];
+
+  // Sanitize RPC URLs based on provider configuration
+  sanitizeRpcUrl(mainnetChains);
+  sanitizeRpcUrl(testnetChains);
 
   return [...mainnetChains, ...testnetChains];
 }

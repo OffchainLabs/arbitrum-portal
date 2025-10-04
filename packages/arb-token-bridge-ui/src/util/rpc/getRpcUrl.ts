@@ -9,7 +9,7 @@ export type ProductionChainId = Exclude<
   ChainId.Local | ChainId.ArbitrumLocal | ChainId.L3Local
 >;
 
-function getRpcProvider(): RpcProvider {
+export function getRpcProvider(): RpcProvider {
   const rpcProviderFromEnv = process.env.NEXT_PUBLIC_RPC_PROVIDER;
 
   if (typeof rpcProviderFromEnv === 'undefined' || rpcProviderFromEnv === '') {
