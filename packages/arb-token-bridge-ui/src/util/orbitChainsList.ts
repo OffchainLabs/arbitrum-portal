@@ -92,7 +92,6 @@ export function getOrbitChains(
   const mainnetChains = mainnet ? Object.values(orbitMainnets) : [];
   const testnetChains = testnet ? Object.values(orbitTestnets) : [];
 
-  // Sanitize RPC URLs based on provider configuration
   sanitizeRpcUrl(mainnetChains);
   sanitizeRpcUrl(testnetChains);
 
