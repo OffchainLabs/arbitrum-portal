@@ -1279,20 +1279,17 @@ export function TransferPanel() {
     <>
       <DialogWrapper {...dialogProps} />
 
+      <NoteBox variant="warning" className="mb-4 mx-auto">
+        The chains PoP Apex and PoP Boss have been deprecated. Please contact the Proof of Play team
+        directly for withdrawal support.
+      </NoteBox>
+
       <div
         className={twMerge(
           'bg-gray-1 mb-7 flex flex-col gap-4 border-y border-white/30 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
           'sm:rounded sm:border',
         )}
       >
-        {/* PoP Apex 70700 and PoP Boss 70701 */}
-        {(childChain.id === 70700 || childChain.id === 70701) && (
-          <NoteBox variant="warning" className="mb-4">
-            Proof of Play will be deprecating their chains Proof of Play Apex and Proof of Play Boss
-            on Sept 27th, please withdraw funds now.
-          </NoteBox>
-        )}
-
         <TransferPanelMain />
 
         <ReceiveFundsHeader />
