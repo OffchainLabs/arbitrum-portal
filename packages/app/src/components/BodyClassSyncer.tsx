@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { PathnameEnum } from '@/bridge/constants';
+
 export function BodyClassSyncer() {
   const pathname = usePathname();
   /**
@@ -11,7 +13,8 @@ export function BodyClassSyncer() {
    */
   useEffect(() => {
     // Catch /bridge and bridge?... but not /bridges-and-on-ramps
-    const isBridgeRoute = pathname === '/bridge' || pathname.startsWith('/bridge/');
+    const isBridgeRoute =
+      pathname === PathnameEnum.BRIDGE || pathname.startsWith(PathnameEnum.BRIDGE);
     document.body.classList.add(isBridgeRoute ? 'bridge-wrapper' : 'portal-wrapper');
 
     return () => {

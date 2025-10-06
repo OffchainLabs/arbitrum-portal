@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
 
-import { PORTAL_DOMAIN } from '@/bridge/constants';
+import { PORTAL_DOMAIN, PathnameEnum } from '@/bridge/constants';
 import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
 import { isNetwork } from '@/bridge/util/networks';
 
-import { addOrbitChainsToArbitrumSDK } from '../../../initialization';
-import BridgeClient from './BridgeClient';
+import BridgePageWrapper from './BridgePageWrapper';
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -73,19 +71,5 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function BridgePage({ searchParams }: Props) {
-  /**
-   * This code is run on every query param change,
-   * we don't want to sanitize every query param change.
-   * It should only be executed once per user per session.
-   */
-  if (searchParams.sanitized !== 'true') {
-    addOrbitChainsToArbitrumSDK();
-    await sanitizeAndRedirect(searchParams, '/bridge');
-  }
-
-  return (
-    <main className="bridge-wrapper relative flex h-full flex-1 flex-col overflow-y-auto">
-      <BridgeClient />
-    </main>
-  );
+  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BRIDGE} />;
 }

@@ -1,6 +1,8 @@
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { useAccount } from 'wagmi';
 
+import { TabParamEnum } from '@/bridge/util/queryParamUtils';
+
 import { useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { TransactionDetailsContent } from '../TransactionHistory/TransactionDetailsContent';
 import { Button } from '../common/Button';
@@ -40,7 +42,7 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
     >
       <Button variant="secondary" className="absolute right-6 top-3 border-none bg-primary-cta">
         <ExternalLink
-          href="https://bridge.arbitrum.io/?tab=tx_history"
+          href={`https://portal.arbitrum.io/bridge?tab=${TabParamEnum.TX_HISTORY}`}
           className="flex items-center gap-1 text-xs"
         >
           See full transaction history

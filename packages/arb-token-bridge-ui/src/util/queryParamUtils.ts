@@ -41,35 +41,17 @@ export enum DisabledFeatures {
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains',
 }
 
-function createTabMappings() {
-  if (isOnrampEnabled()) {
-    return {
-      tabToIndex: {
-        [TabParamEnum.BUY]: 0,
-        [TabParamEnum.BRIDGE]: 1,
-        [TabParamEnum.TX_HISTORY]: 2,
-      } as const satisfies Record<TabParamEnum, number>,
-      indexToTab: {
-        0: TabParamEnum.BUY,
-        1: TabParamEnum.BRIDGE,
-        2: TabParamEnum.TX_HISTORY,
-      } as const satisfies Record<number, TabParamEnum>,
-    };
-  }
+export const tabToIndex = {
+  [TabParamEnum.BUY]: 0,
+  [TabParamEnum.BRIDGE]: 1,
+  [TabParamEnum.TX_HISTORY]: 2,
+} as const satisfies Record<TabParamEnum, number>;
 
-  return {
-    tabToIndex: {
-      [TabParamEnum.BRIDGE]: 0,
-      [TabParamEnum.TX_HISTORY]: 1,
-    } as const satisfies Record<Exclude<TabParamEnum, TabParamEnum.BUY>, number>,
-    indexToTab: {
-      0: TabParamEnum.BRIDGE,
-      1: TabParamEnum.TX_HISTORY,
-    } as const satisfies Record<number, Exclude<TabParamEnum, TabParamEnum.BUY>>,
-  };
-}
-
-export const { tabToIndex, indexToTab } = createTabMappings();
+export const indexToTab = {
+  0: TabParamEnum.BUY,
+  1: TabParamEnum.BRIDGE,
+  2: TabParamEnum.TX_HISTORY,
+} as const satisfies Record<number, TabParamEnum>;
 
 export const isValidDisabledFeature = (feature: string) => {
   return Object.values(DisabledFeatures).includes(feature.toLowerCase() as DisabledFeatures);
@@ -168,9 +150,8 @@ export function decodeChainQueryParam(
 }
 
 export function encodeTabQueryParam(tabIndex: number | null | undefined): string {
-  const { indexToTab: _indexToTab } = createTabMappings();
-  if (typeof tabIndex === 'number' && tabIndex in _indexToTab) {
-    const tabParam = _indexToTab[tabIndex as keyof typeof _indexToTab];
+  if (typeof tabIndex === 'number' && tabIndex in indexToTab) {
+    const tabParam = indexToTab[tabIndex as keyof typeof indexToTab];
     if (tabParam !== undefined) {
       return tabParam;
     }
@@ -179,20 +160,21 @@ export function encodeTabQueryParam(tabIndex: number | null | undefined): string
 }
 
 export function decodeTabQueryParam(tab: string | (string | null)[] | null | undefined): number {
-  const { tabToIndex: _tabToIndex } = createTabMappings();
   if (typeof tab === 'string') {
-    if (tab === TabParamEnum.BUY && !isOnrampEnabled()) {
-      return _tabToIndex[TabParamEnum.BRIDGE];
+    if (tab === TabParamEnum.BUY) {
+      if (!isOnrampEnabled()) {
+        return tabToIndex[TabParamEnum.BRIDGE];
+      }
     }
 
-    if (tab in _tabToIndex) {
-      const tabIndex = _tabToIndex[tab as keyof typeof _tabToIndex];
+    if (tab in tabToIndex) {
+      const tabIndex = tabToIndex[tab as keyof typeof tabToIndex];
       if (tabIndex !== undefined) {
         return tabIndex;
       }
     }
   }
-  return _tabToIndex[TabParamEnum.BRIDGE];
+  return tabToIndex[TabParamEnum.BRIDGE];
 }
 
 export const DisabledFeaturesParam = {
@@ -523,9 +505,7 @@ export const sanitizeTabQueryParam = (tab: string | string[] | null | undefined)
   if (typeof tab === 'string') {
     const lowercasedTab = tab.toLowerCase();
 
-    const { tabToIndex: _tabToIndex } = createTabMappings();
-
-    if (Object.keys(_tabToIndex).includes(lowercasedTab)) {
+    if (Object.keys(tabToIndex).includes(lowercasedTab)) {
       return lowercasedTab;
     }
   }

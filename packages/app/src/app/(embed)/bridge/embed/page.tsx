@@ -1,9 +1,6 @@
-import { addOrbitChainsToArbitrumSDK } from 'packages/app/src/initialization';
-import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
+import { PathnameEnum } from '@/bridge/constants';
 
-import { Toast } from '@/bridge/components/common/atoms/Toast';
-
-import BridgeClient from '../../../(with-sidebar)/bridge/BridgeClient';
+import EmbedPageWrapper from './EmbedPageWrapper';
 
 export default async function EmbededPage({
   searchParams,
@@ -12,15 +9,5 @@ export default async function EmbededPage({
     [key: string]: string | string[] | undefined;
   };
 }) {
-  if (searchParams.sanitized !== 'true') {
-    addOrbitChainsToArbitrumSDK();
-    await sanitizeAndRedirect(searchParams, '/bridge/embed');
-  }
-
-  return (
-    <>
-      <BridgeClient />
-      <Toast />
-    </>
-  );
+  return <EmbedPageWrapper searchParams={searchParams} redirectPath={PathnameEnum.EMBED} />;
 }

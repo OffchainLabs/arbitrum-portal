@@ -4,36 +4,38 @@ import { getStepTransaction } from '@lifi/sdk';
 import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
+import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
-import { BridgeTransfer, TransferOverrides } from '@/token-bridge-sdk/BridgeTransferStarter';
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
+import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
+import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
+import { useNetworks } from '@/bridge/hooks/useNetworks';
+import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
+import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
+import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
+import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
+import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
+import { DOCS_DOMAIN, GET_HELP_LINK, PathnameEnum } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
-import { AssetType, DepositGasEstimates } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useMode } from '../../hooks/useMode';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import { useTokenLists } from '../../hooks/useTokenLists';
-import { useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { useAppState } from '../../state';
 import {
   DepositStatus,
@@ -57,6 +59,7 @@ import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
+import { WidgetBuyPanel } from '../Widget/WidgetBuyPanel';
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
 import { useDialog } from '../common/Dialog';
 import { DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -105,6 +108,8 @@ export function TransferPanel() {
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
   const [{ amount, amount2, destinationAddress, token: tokenFromSearchParams }, setQueryParams] =
     useArbQueryParams();
+  const showBuyPanel = isOnrampEnabled();
+  const pathname = usePathname();
   const { embedMode } = useMode();
   const [importTokenModalStatus, setImportTokenModalStatus] = useState<ImportTokenModalStatus>(
     ImportTokenModalStatus.IDLE,
@@ -1253,6 +1258,10 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
+    if (pathname === PathnameEnum.EMBED_BUY && showBuyPanel) {
+      return <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />;
+    }
+
     return (
       <WidgetTransferPanel
         openDialog={openDialog}
@@ -1277,7 +1286,7 @@ export function TransferPanel() {
 
       <div
         className={twMerge(
-          'mb-7 flex flex-col gap-4 border-y border-white/30 bg-gray-1 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
+          'bg-gray-1 mb-7 flex flex-col gap-4 border-y border-white/30 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
           'sm:rounded sm:border',
         )}
       >

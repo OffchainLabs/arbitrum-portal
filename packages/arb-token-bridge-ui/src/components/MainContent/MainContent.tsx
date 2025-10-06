@@ -1,10 +1,13 @@
-import { Tab } from '@headlessui/react';
+import { TabGroup, TabPanel, TabPanels } from '@headlessui/react';
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { Fragment, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import { Fragment, useMemo } from 'react';
+
+import { PathnameEnum } from '@/bridge/constants';
+import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
-import { isOnrampEnabled } from '../../util/featureFlag';
 import { BuyPanel } from '../BuyPanel';
 import { RecoverFunds } from '../RecoverFunds';
 import { TopNavBar } from '../TopNavBar';
@@ -15,16 +18,23 @@ import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
 import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
+  const pathname = usePathname();
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
-  const [{ tab }, setQueryParams] = useArbQueryParams();
+  const [{ tab }] = useArbQueryParams();
   const showBuyPanel = isOnrampEnabled();
 
-  const setSelectedTab = useCallback(
-    (index: number) => {
-      setQueryParams({ tab: index });
-    },
-    [setQueryParams],
-  );
+  const selectedTab = useMemo(() => {
+    if (showBuyPanel) {
+      // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
+      // because we use /buy and don't use ?tab=buy
+      // so we need to hardcode to return 0 rather than `tab`
+      if (pathname === PathnameEnum.BUY) {
+        return 0;
+      }
+      return tab;
+    }
+    return Math.max(0, tab - 1);
+  }, [showBuyPanel, tab, pathname]);
 
   useBalanceUpdater();
 
@@ -39,22 +49,23 @@ export function MainContent() {
       <RecoverFunds />
 
       <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 sm:pt-6">
-        <Tab.Group as={Fragment} selectedIndex={tab} onChange={setSelectedTab}>
+        <TabGroup manual as={Fragment} selectedIndex={selectedTab} onChange={() => {}}>
           <TopNavBar />
-          <Tab.Panels className="flex w-full items-center justify-center">
+
+          <TabPanels className="flex w-full items-center justify-center">
             {showBuyPanel && (
-              <Tab.Panel className="w-full sm:max-w-[600px]">
+              <TabPanel className="w-full sm:max-w-[600px]">
                 <BuyPanel />
-              </Tab.Panel>
+              </TabPanel>
             )}
-            <Tab.Panel className="w-full sm:max-w-[600px]">
+            <TabPanel className="w-full sm:max-w-[600px]">
               <TransferPanel />
-            </Tab.Panel>
-            <Tab.Panel className="w-full md:px-4">
+            </TabPanel>
+            <TabPanel className="w-full md:px-4">
               <TransactionHistory />
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tab.Group>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </div>
 
       {/* Settings panel */}
