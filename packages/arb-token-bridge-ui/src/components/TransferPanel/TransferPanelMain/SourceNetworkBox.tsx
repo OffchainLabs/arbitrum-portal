@@ -9,7 +9,6 @@ import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsB
 import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals';
 import { useSetInputAmount } from '../../../hooks/TransferPanel/useSetInputAmount';
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { useBalances } from '../../../hooks/useBalances';
 import { useMode } from '../../../hooks/useMode';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
@@ -69,7 +68,6 @@ const Input1 = React.memo(() => {
   const { maxAmount } = useMaxAmount();
   const decimals = useSelectedTokenDecimals();
   const { errorMessages } = useTransferReadiness();
-  const { ethParentBalance } = useBalances();
   const [selectedToken] = useSelectedToken();
 
   const isMaxAmount = amount === AmountQueryParamEnum.MAX;
@@ -107,7 +105,7 @@ const Input1 = React.memo(() => {
       ...override.source,
       logoSrc: override.source.logoURI,
     };
-  }, [networks.sourceChain.id, ethParentBalance, selectedToken]);
+  }, [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id]);
 
   return (
     <TransferPanelMainInput

@@ -30,6 +30,7 @@ import { getOrbitChains } from '../../util/orbitChainsList';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
+import { PoPDisabledDialog } from './PoPDisabledDialog';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
@@ -276,6 +277,8 @@ export function TransferPanelMain() {
       {isCustomMainnetChain && <CustomMainnetChainWarning />}
 
       <TransferDisabledDialog />
+
+      <PoPDisabledDialog />
     </div>
   );
 }

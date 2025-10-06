@@ -64,7 +64,6 @@ import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
 import { useDialog } from '../common/Dialog';
 import { DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { ExternalLink } from '../common/ExternalLink';
-import { NoteBox } from '../common/NoteBox';
 import { errorToast, warningToast } from '../common/atoms/Toast';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import { getAmountLoss } from './HighSlippageWarningDialog';
@@ -1280,11 +1279,6 @@ export function TransferPanel() {
   return (
     <>
       <DialogWrapper {...dialogProps} />
-
-      <NoteBox variant="warning" className="mb-4 mx-auto">
-        The chains PoP Apex and PoP Boss have been deprecated. Please contact the Proof of Play team
-        directly for withdrawal support.
-      </NoteBox>
 
       <div
         className={twMerge(

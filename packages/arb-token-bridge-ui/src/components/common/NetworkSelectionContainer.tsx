@@ -30,6 +30,7 @@ import { Button } from './Button';
 import { Dialog, useDialog } from './Dialog';
 import { DialogProps } from './Dialog2';
 import { NetworkImage } from './NetworkImage';
+import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
@@ -259,6 +260,7 @@ function AddCustomOrbitChainButton({
 }
 
 export function NetworksPanel({
+  type = 'source',
   chainIds,
   selectedChainId,
   onNetworkRowClick,
@@ -266,6 +268,7 @@ export function NetworksPanel({
   showSearch = true,
   showFooter = true,
 }: {
+  type?: 'source' | 'destination';
   chainIds: ChainId[];
   selectedChainId: ChainId;
   onNetworkRowClick: (value: Chain) => void;
@@ -295,14 +298,18 @@ export function NetworksPanel({
     const moreNetworks = chainIds.filter(
       (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
     );
-    const orbitNetworks = chainIds.filter((chainId) => isNetwork(chainId).isOrbitChain);
+    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
+    const orbitNetworks = [
+      ...chainIds.filter((chainId) => isNetwork(chainId).isOrbitChain),
+      ...proofOfPlayNetworks,
+    ];
 
     return {
       core: coreNetworks,
       more: moreNetworks,
       orbit: orbitNetworks,
     };
-  }, [debouncedNetworkSearched, chainIds]);
+  }, [debouncedNetworkSearched, chainIds, isTestnetMode, type]);
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
@@ -378,6 +385,21 @@ export function NetworksPanel({
             chainGroup={chainGroupInfo.orbit}
             style={style}
             isConnected={isConnected}
+          />
+        );
+      }
+
+      if (
+        networkOrChainTypeName === (70700 as ChainId) ||
+        networkOrChainTypeName === (70701 as ChainId)
+      ) {
+        // PoP Apex, PoP Boss
+        return (
+          <NetworkRowPoP
+            chainId={networkOrChainTypeName}
+            style={style}
+            isSelected={networkOrChainTypeName === selectedChainId}
+            close={close}
           />
         );
       }
@@ -508,6 +530,7 @@ export const NetworkSelectionContainer = React.memo(
           <SearchPanel>
             <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
               <NetworksPanel
+                type={isSource ? 'source' : 'destination'}
                 chainIds={supportedChainIds}
                 selectedChainId={selectedChainId}
                 close={() => props.onClose(false)}
