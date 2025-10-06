@@ -322,6 +322,7 @@ export const ChainsTable = () => {
 
           // Determine token type for filtering (ETH or OTHER)
           const gasTokenType = gasToken.toUpperCase() === 'ETH' ? 'ETH' : 'OTHER';
+
           // Handle data availability, replacing '-' with meaningful value
           let dataAvailability = orbitChain.chain?.type || 'Unknown';
           if (dataAvailability === '-') dataAvailability = 'Unknown';

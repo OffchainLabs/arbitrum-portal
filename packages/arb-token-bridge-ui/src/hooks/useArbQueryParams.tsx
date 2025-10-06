@@ -157,6 +157,7 @@ export const queryParamProviderOptions = {
     theme: withDefault(ThemeParam, defaultTheme), // theme customization
   },
 } as const satisfies QueryParamOptions;
+
 export function ArbQueryParamProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryParamProvider adapter={NextAdapterApp} options={queryParamProviderOptions}>
