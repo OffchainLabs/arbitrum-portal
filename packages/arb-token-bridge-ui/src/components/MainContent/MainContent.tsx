@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Fragment, useMemo } from 'react';
 
 import { PathnameEnum } from '@/bridge/constants';
-import { isBuyFeatureEnabled } from '@/bridge/util/queryParamUtils';
+import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
@@ -21,7 +21,7 @@ export function MainContent() {
   const pathname = usePathname();
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
   const [{ tab, disabledFeatures }] = useArbQueryParams();
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures });
+  const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
 
   const selectedTab = useMemo(() => {
     if (showBuyPanel) {

@@ -15,7 +15,7 @@ import { twMerge } from 'tailwind-merge';
 import { PathnameEnum } from '@/bridge/constants';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { isBuyFeatureEnabled } from '../../util/queryParamUtils';
+import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { Button } from '../common/Button';
 import { Transition } from '../common/Transition';
 
@@ -49,7 +49,7 @@ export const WidgetModeDropdown = () => {
   const isBridgeTab = pathname === PathnameEnum.EMBED;
   const [{ disabledFeatures }] = useArbQueryParams();
 
-  const showBuyPanel = isBuyFeatureEnabled({ disabledFeatures });
+  const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
 
   if (!showBuyPanel) {
     // If buy panel is not enabled, just show the bridge button without dropdown
