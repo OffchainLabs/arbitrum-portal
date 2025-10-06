@@ -505,7 +505,6 @@ export const sanitizeTokenQueryParam = ({
 export const isBuyFeatureEnabled = ({
   disabledFeatures = [],
 }: { disabledFeatures?: string[] } = {}) => {
-  // Buy feature is enabled if onramp is enabled in .env, and buy is not disabled in the query params
   return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.BUY);
 };
 
