@@ -25,7 +25,7 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
       )}
     >
       <div className="flex items-start justify-center gap-4">
-        <div className="shrink-0">
+        <div className="shrink-0 rounded-md overflow-hidden">
           <Image src={service.logo} alt={service.name} width={48} height={48} />
         </div>
         <div className="flex flex-col gap-1">
