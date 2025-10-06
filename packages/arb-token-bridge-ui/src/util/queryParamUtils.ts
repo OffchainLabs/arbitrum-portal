@@ -39,6 +39,7 @@ export enum DisabledFeatures {
   TX_HISTORY = 'tx-history',
   NETWORK_SELECTION = 'network-selection',
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains',
+  ONRAMP = 'onramp',
 }
 
 export const tabToIndex = {
@@ -499,6 +500,10 @@ export const sanitizeTokenQueryParam = ({
   }
 
   return tokenLowercased;
+};
+
+export const isOnrampFeatureEnabled = ({ disabledFeatures }: { disabledFeatures: string[] }) => {
+  return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.ONRAMP);
 };
 
 export const sanitizeTabQueryParam = (tab: string | string[] | null | undefined): string => {

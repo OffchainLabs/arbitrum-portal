@@ -4,7 +4,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '../../types/ChainId';
 import { isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
-import { sanitizeTabQueryParam, sanitizeTokenQueryParam } from '../../util/queryParamUtils';
+import {
+  isOnrampFeatureEnabled,
+  sanitizeTabQueryParam,
+  sanitizeTokenQueryParam,
+} from '../../util/queryParamUtils';
 import {
   AmountQueryParam,
   ChainParam,
@@ -475,6 +479,35 @@ describe('DisabledFeaturesParam', () => {
       expect(DisabledFeaturesParam.decode('disabledFeatures=')).toEqual([]);
       expect(DisabledFeaturesParam.decode('?disabledFeatures=')).toEqual([]);
       expect(DisabledFeaturesParam.decode('randomInvalidValue')).toEqual([]);
+    });
+  });
+});
+
+describe.sequential('Onramp Feature Disabled Tests', () => {
+  afterAll(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  describe('isOnrampFeatureEnabled', () => {
+    it('should return true when onramp is enabled and onramp is not disabled', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: [] })).toBe(true);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: ['batch-transfers'] })).toBe(true);
+    });
+
+    it('should return false when onramp is disabled', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(false);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: [] })).toBe(false);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp'] })).toBe(false);
+    });
+
+    it('should return false when onramp is disabled via query param', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp'] })).toBe(false);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp', 'batch-transfers'] })).toBe(
+        false,
+      );
     });
   });
 });

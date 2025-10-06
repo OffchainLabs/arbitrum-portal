@@ -19,7 +19,6 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
-import { isOnrampEnabled } from '@/bridge/util/featureFlag';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
@@ -55,6 +54,7 @@ import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
@@ -106,9 +106,11 @@ const networkConnectionWarningToast = () =>
 export function TransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
-  const [{ amount, amount2, destinationAddress, token: tokenFromSearchParams }, setQueryParams] =
-    useArbQueryParams();
-  const showBuyPanel = isOnrampEnabled();
+  const [
+    { amount, amount2, destinationAddress, token: tokenFromSearchParams, disabledFeatures },
+    setQueryParams,
+  ] = useArbQueryParams();
+  const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   const pathname = usePathname();
   const { embedMode } = useMode();
   const [importTokenModalStatus, setImportTokenModalStatus] = useState<ImportTokenModalStatus>(

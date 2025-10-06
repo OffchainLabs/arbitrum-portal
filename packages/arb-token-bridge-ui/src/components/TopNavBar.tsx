@@ -7,9 +7,9 @@ import React, { PropsWithChildren, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { PathnameEnum } from '../constants';
+import { useArbQueryParams } from '../hooks/useArbQueryParams';
 import { useMode } from '../hooks/useMode';
-import { isOnrampEnabled } from '../util/featureFlag';
-import { TabParamEnum } from '../util/queryParamUtils';
+import { TabParamEnum, isOnrampFeatureEnabled } from '../util/queryParamUtils';
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
 
 function StyledTab({
@@ -52,7 +52,8 @@ StyledTab.displayName = 'StyledTab';
 
 export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo();
-  const showBuyPanel = isOnrampEnabled();
+  const [{ disabledFeatures }] = useArbQueryParams();
+  const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   const { embedMode } = useMode();
   const pathname = usePathname();
   const isBuyTab = pathname === PathnameEnum.BUY;
