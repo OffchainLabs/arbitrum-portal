@@ -40,10 +40,19 @@ export const AppSidebar = () => {
         setActiveMenu('Arcade');
         break;
       case '/chains/ecosystem':
-        setActiveMenu('Ecosystem');
+        setActiveMenu('Chain Navigator');
         break;
       case '/chains/metrics':
-        setActiveMenu('Metrics');
+        setActiveMenu('Chain Stats');
+        break;
+      case '/learn':
+        setActiveMenu('Learn');
+        break;
+      case '/build':
+        setActiveMenu('Build & Monitor');
+        break;
+      case '/community':
+        setActiveMenu('Community');
         break;
       default:
         setActiveMenu('');
