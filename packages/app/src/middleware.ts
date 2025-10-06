@@ -34,8 +34,8 @@ export function middleware(req: NextRequest) {
 
   // Redirect /?tab=buy to /bridge/buy and keep query params (without tab)
   if (url.searchParams.get('tab') === 'buy') {
+    url.pathname = PathnameEnum.BUY;
     url.searchParams.delete('tab');
-    url.pathname = isOnrampEnabled ? PathnameEnum.BUY : PathnameEnum.BRIDGE;
     return NextResponse.redirect(url, 308);
   }
 
