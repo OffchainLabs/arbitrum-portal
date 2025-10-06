@@ -505,7 +505,9 @@ describe.sequential('Onramp Feature Disabled Tests', () => {
     it('should return false when onramp is disabled via query param', () => {
       vi.mocked(isOnrampEnabled).mockReturnValue(true);
       expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp'] })).toBe(false);
-      expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp', 'batch-transfers'] })).toBe(false);
+      expect(isOnrampFeatureEnabled({ disabledFeatures: ['onramp', 'batch-transfers'] })).toBe(
+        false,
+      );
     });
   });
 });
