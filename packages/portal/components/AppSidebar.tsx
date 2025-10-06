@@ -45,6 +45,15 @@ export const AppSidebar = () => {
       case '/chains/metrics':
         setActiveMenu('Chain Stats');
         break;
+      case '/learn':
+        setActiveMenu('Learn');
+        break;
+      case '/build':
+        setActiveMenu('Build & Monitor');
+        break;
+      case '/community':
+        setActiveMenu('Community');
+        break;
       default:
         setActiveMenu('');
         break;
