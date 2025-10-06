@@ -4,7 +4,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '../../types/ChainId';
 import { isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
-import { sanitizeTabQueryParam, sanitizeTokenQueryParam } from '../../util/queryParamUtils';
+import {
+  isBuyFeatureEnabled,
+  sanitizeTabQueryParam,
+  sanitizeTokenQueryParam,
+} from '../../util/queryParamUtils';
 import {
   AmountQueryParam,
   ChainParam,
@@ -475,6 +479,39 @@ describe('DisabledFeaturesParam', () => {
       expect(DisabledFeaturesParam.decode('disabledFeatures=')).toEqual([]);
       expect(DisabledFeaturesParam.decode('?disabledFeatures=')).toEqual([]);
       expect(DisabledFeaturesParam.decode('randomInvalidValue')).toEqual([]);
+    });
+  });
+});
+
+describe.sequential('Buy Feature Disabled Tests', () => {
+  afterAll(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  describe('isBuyFeatureEnabled', () => {
+    it('should return true when onramp is enabled and buy is not disabled', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['batch-transfers'] })).toBe(true);
+    });
+
+    it('should return false when onramp is disabled', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: [] })).toBe(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false);
+    });
+
+    it('should return false when buy is disabled via query param', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy'] })).toBe(false);
+      expect(isBuyFeatureEnabled({ disabledFeatures: ['buy', 'batch-transfers'] })).toBe(false);
+    });
+
+    it('should work with default empty object', () => {
+      vi.mocked(isOnrampEnabled).mockReturnValue(true);
+      expect(isBuyFeatureEnabled()).toBe(true);
+      expect(isBuyFeatureEnabled({})).toBe(true);
     });
   });
 });

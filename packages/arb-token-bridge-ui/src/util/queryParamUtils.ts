@@ -39,6 +39,7 @@ export enum DisabledFeatures {
   TX_HISTORY = 'tx-history',
   NETWORK_SELECTION = 'network-selection',
   TRANSFERS_TO_NON_ARBITRUM_CHAINS = 'transfers-to-non-arbitrum-chains',
+  BUY = 'buy',
 }
 
 export const tabToIndex = {
@@ -499,6 +500,13 @@ export const sanitizeTokenQueryParam = ({
   }
 
   return tokenLowercased;
+};
+
+export const isBuyFeatureEnabled = ({
+  disabledFeatures = [],
+}: { disabledFeatures?: string[] } = {}) => {
+  // Buy feature is enabled if onramp is enabled in .env, and buy is not disabled in the query params
+  return isOnrampEnabled() && !disabledFeatures.includes(DisabledFeatures.BUY);
 };
 
 export const sanitizeTabQueryParam = (tab: string | string[] | null | undefined): string => {

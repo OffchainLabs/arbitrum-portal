@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { PathnameEnum } from '@/bridge/constants';
-import { isOnrampEnabled } from '@/bridge/util/featureFlag';
+import { isBuyFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
-  const isBuyDisabledInSearchParams = url.searchParams.get('disabledFeatures')?.includes('buy');
+
+  const disabledFeaturesParam = url.searchParams.getAll('disabledFeatures');
+  const isBuyEnabled = isBuyFeatureEnabled({ disabledFeatures: disabledFeaturesParam });
 
   // Redirect /?mode=embed to /bridge/embed and keep query params (without mode)
   if (url.searchParams.get('mode') === 'embed') {
@@ -16,10 +18,7 @@ export function middleware(req: NextRequest) {
 
   // In embed mode, when buy is disabled
   // Redirect /bridge/embed/buy to /bridge/embed and keep query params (without tab)
-  if (
-    url.pathname === PathnameEnum.EMBED_BUY &&
-    (!isOnrampEnabled() || isBuyDisabledInSearchParams)
-  ) {
+  if (url.pathname === PathnameEnum.EMBED_BUY && !isBuyEnabled) {
     url.pathname = PathnameEnum.EMBED;
     url.searchParams.delete('tab');
     return NextResponse.redirect(url, 308);
@@ -27,17 +26,25 @@ export function middleware(req: NextRequest) {
 
   // In normal mode, when buy is disabled
   // Redirect /bridge/buy to /bridge and keep query params
-  if (url.pathname === PathnameEnum.BUY && (!isOnrampEnabled() || isBuyDisabledInSearchParams)) {
+  if (url.pathname === PathnameEnum.BUY && !isBuyEnabled) {
     url.pathname = '/bridge';
     url.searchParams.set('tab', 'bridge');
     return NextResponse.redirect(url, 308);
   }
 
   // Redirect /?tab=buy to /bridge/buy and keep query params (without tab)
+  // for backwards compatibility if still using buy tab
   if (url.searchParams.get('tab') === 'buy') {
-    url.pathname = PathnameEnum.BUY;
-    url.searchParams.delete('tab');
-    return NextResponse.redirect(url, 308);
+    if (isBuyEnabled) {
+      url.pathname = PathnameEnum.BUY;
+      url.searchParams.delete('tab');
+      return NextResponse.redirect(url, 308);
+    } else {
+      // If buy is disabled, redirect to bridge
+      url.pathname = PathnameEnum.BRIDGE;
+      url.searchParams.delete('tab');
+      return NextResponse.redirect(url, 308);
+    }
   }
 
   return NextResponse.next();
