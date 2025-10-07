@@ -19,7 +19,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/app/*": ["./packages/portal/app/*"],
+      "@/app/*": ["./packages/app/*"],
       "@/common/*": ["./packages/portal/common/*"],
       "@/components/*": ["./packages/portal/components/*"],
       "@/hooks/*": ["./packages/portal/hooks/*"],
