@@ -7,8 +7,6 @@ import 'tippy.js/themes/light.css';
 
 import { PORTAL_DOMAIN } from '@/bridge/constants';
 
-import '../../../styles/bridge.css';
-
 export const metadata: Metadata = {
   metadataBase: new URL(PORTAL_DOMAIN),
   icons: {

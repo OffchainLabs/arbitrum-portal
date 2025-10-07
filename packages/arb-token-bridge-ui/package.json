@@ -61,8 +61,6 @@
     "prebuild": "yarn generateDenylist",
     "test": "vitest --config vitest.config.ts --watch",
     "test:ci": "vitest --config vitest.config.ts --run",
-    "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/styles/tailwind.css -o ../app/src/styles/bridge.css --minify",
-    "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/styles/tailwind.css -o ../app/src/styles/bridge.css --watch",
     "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
     "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
     "generateOpenGraphImages:core": "yarn generateOpenGraphImages --core",
