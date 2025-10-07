@@ -68,12 +68,12 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
   const disabled = isLoadingAccountType || isNetworkSwapBlocked;
 
   return (
-    <div className="z-[1] flex h-4 w-full items-center justify-center lg:h-1">
+    <div className="z-[1] flex h-4 w-full items-center justify-center lg:h-2">
       <Button
         type="button"
         variant="tertiary"
         className={twMerge(
-          'group relative flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-gray-1 bg-gray-9 p-1',
+          'group relative flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-gray-1 bg-gray-9 p-1',
           theme.primaryCtaColor ? 'bg-primary-cta' : '',
           disabled && 'pointer-events-none',
         )}
@@ -97,9 +97,9 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
         {...props}
       >
         {isNetworkSwapBlocked ? (
-          <ArrowDownIcon className="h-4 w-4 stroke-2 text-white" />
+          <ArrowDownIcon className="h-5 w-5 stroke-2 text-white" />
         ) : (
-          <ArrowsUpDownIcon className="h-4 w-4 stroke-2 text-white transition duration-300 group-hover:rotate-180 group-hover:opacity-80" />
+          <ArrowsUpDownIcon className="h-5 w-5 stroke-2 text-white transition duration-300 group-hover:rotate-180 group-hover:opacity-80" />
         )}
       </Button>
     </div>
@@ -179,10 +179,8 @@ export function NetworkContainer({
           borderColor: theme.networkThemeOverrideColor,
         }}
       >
-        <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-3 opacity-50" />
-        <div className="relative space-y-3.5 bg-contain bg-no-repeat p-3 sm:flex-row">
-          {children}
-        </div>
+        <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
+        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">{children}</div>
       </div>
     </div>
   );
