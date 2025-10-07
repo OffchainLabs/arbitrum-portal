@@ -1,13 +1,7 @@
-import dynamic from 'next/dynamic';
-
 import { ArbitrumWebsiteNotionCmsRow } from '@/common/types';
 import { CalendarCard } from '@/components/CalendarCard';
-import { LoadingPlaceholderCarousel } from '@/components/Carousel/LoadingPlaceholderCarousel';
 
-const Carousel = dynamic(() => import('@/components/Carousel/Carousel'), {
-  ssr: false,
-  loading: LoadingPlaceholderCarousel,
-});
+import Carousel from '../Carousel/Carousel';
 
 export const CommunityEvents = ({
   calendarEvents,

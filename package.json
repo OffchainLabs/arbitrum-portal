@@ -46,6 +46,9 @@
   ],
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@headlessui/react": "^2.2.8",
+    "@headlessui/tailwindcss": "^0.2.2",
+    "@heroicons/react": "^2.2.0",
     "@offchainlabs/eslint-config-typescript": "0.2.2",
     "@offchainlabs/prettier-config": "0.3.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",

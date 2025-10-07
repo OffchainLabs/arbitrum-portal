@@ -33,9 +33,9 @@ function getSubgraphClient(chainId: number) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chainId: string } },
+  { params }: { params: Promise<{ chainId: string }> },
 ): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
-  const { chainId } = params;
+  const { chainId } = await params;
 
   try {
     const subgraphClient = getSubgraphClient(Number(chainId));
