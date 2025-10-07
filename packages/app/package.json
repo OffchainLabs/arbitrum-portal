@@ -16,14 +16,12 @@
     "tailwindcss": "^3.4.0"
   },
   "scripts": {
-    "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build:all",
+    "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
     "dev": "next dev",
-    "prebuild": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build:all",
+    "prebuild": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
     "build": "next build",
     "start": "next start",
     "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --minify",
-    "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --watch",
-    "css:build:all": "yarn css:build && yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
-    "css:watch:all": "yarn css:watch && yarn workspace arb-token-bridge-ui css:watch & yarn workspace portal css:watch"
+    "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --watch"
   }
 }

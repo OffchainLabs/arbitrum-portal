@@ -15,7 +15,7 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
   const { isConnected } = useAccount();
 
   return (
-    <div className="flex h-8 flex-row items-center justify-between text-lg">
+    <div className="flex h-10 flex-row items-center justify-between text-lg">
       <WidgetModeDropdown />
 
       <div className="flex flex-row gap-2 text-sm">
@@ -25,15 +25,15 @@ export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
         {isConnected && (
           <Button
             variant="secondary"
-            className="h-8 p-2 text-white"
+            className="h-10 p-[10px] text-white"
             onClick={() => openDialog('widget_transaction_history')}
           >
             <SafeImage
-              height={18}
-              width={18}
+              height={16}
+              width={16}
               alt="Tx history logo"
               src="/images/WidgetTxHistoryIcon.svg"
-              fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
+              fallback={<div className="h-4 w-4 min-w-3 rounded-full bg-gray-dark/70" />}
             />
           </Button>
         )}

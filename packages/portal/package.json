@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "css:build": "tailwindcss -c ./tailwind.config.js -i ./globals.css -o ../app/src/styles/portal.css --minify",
-    "css:watch": "tailwindcss -c ./tailwind.config.js -i ./globals.css -o ../app/src/styles/portal.css --watch",
     "ts-node-with-config": "ts-node --project scripts/tsconfig.json",
     "notion:generate": "yarn ts-node-with-config scripts/generate.ts",
     "notion:generate:orbit": "yarn ts-node-with-config scripts/generateOrbit.ts",
