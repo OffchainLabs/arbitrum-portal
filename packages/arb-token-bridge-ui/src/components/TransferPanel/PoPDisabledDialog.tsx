@@ -48,7 +48,10 @@ export function PoPDisabledDialog() {
           The chains Proof of Play Apex and Proof of Play Boss have been deprecated.
           <br />
           Please{' '}
-          <ExternalLink className="underline" href="https://proofofplay.helpshift.com/hc/en/">
+          <ExternalLink
+            className="underline"
+            href="https://proofofplay.helpshift.com/hc/en/3-shiba-story-go/contact-us/"
+          >
             contact the Proof of Play team
           </ExternalLink>{' '}
           directly for withdrawal support.
