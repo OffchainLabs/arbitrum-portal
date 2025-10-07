@@ -45,7 +45,7 @@ export const WidgetModeDropdown = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.EMBED_BUY;
+  const isBuyTab = pathname.startsWith(PathnameEnum.EMBED_BUY);
   const isBridgeTab = pathname === PathnameEnum.EMBED;
   const [{ disabledFeatures }] = useArbQueryParams();
 

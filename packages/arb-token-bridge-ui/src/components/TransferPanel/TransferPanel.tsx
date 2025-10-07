@@ -1259,7 +1259,7 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
-    if (pathname === PathnameEnum.EMBED_BUY && showBuyPanel) {
+    if (pathname.startsWith(PathnameEnum.EMBED_BUY) && showBuyPanel) {
       return <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />;
     }
 
