@@ -25,9 +25,9 @@
   },
   "scripts": {
     "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "prebuild": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
-    "build": "next build",
+    "build": "next build --turbopack",
     "start": "next start",
     "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --minify",
     "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --watch",

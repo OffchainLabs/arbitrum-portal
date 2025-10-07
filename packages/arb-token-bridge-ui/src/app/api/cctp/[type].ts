@@ -68,7 +68,7 @@ export type Response =
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { type: string } },
+  { params }: { params: Promise<{ type: string }> },
 ): Promise<NextResponse<Response>> {
   try {
     const { searchParams } = new URL(request.url);
@@ -76,7 +76,7 @@ export async function GET(
     const l1ChainIdString = searchParams.get('l1ChainId') || '1';
     const pageNumber = searchParams.get('pageNumber') || '0';
     const pageSize = searchParams.get('pageSize') || '10';
-    const type = params.type;
+    const type = (await params).type;
     const l1ChainId = parseInt(l1ChainIdString, 10);
 
     if (typeof type !== 'string' || (type !== 'deposits' && type !== 'withdrawals')) {
