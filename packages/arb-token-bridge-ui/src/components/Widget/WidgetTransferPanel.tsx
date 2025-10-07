@@ -39,7 +39,7 @@ export function WidgetTransferPanel({
 
       <div
         className={twMerge(
-          'relative m-auto flex w-full flex-col gap-4 rounded-lg bg-transparent p-4 text-white',
+          'relative m-auto flex w-full flex-col gap-4 rounded-lg bg-transparent p-4 text-white h-screen overflow-auto',
         )}
       >
         <WidgetHeaderRow openDialog={openDialog} />
