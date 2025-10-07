@@ -1,18 +1,12 @@
-import dynamic from 'next/dynamic';
 import { PropsWithChildren } from 'react';
 
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
 import { getProjectDetailsById } from '@/common/projects';
 import { EntityType } from '@/common/types';
 
-import { LoadingPlaceholderCarousel } from './Carousel/LoadingPlaceholderCarousel';
+import Carousel from './Carousel/Carousel';
 import { OrbitItemBox } from './OrbitItemBox';
 import { ProjectItemBox } from './ProjectItemBox';
-
-const Carousel = dynamic(() => import('@/components/Carousel/Carousel'), {
-  ssr: false,
-  loading: LoadingPlaceholderCarousel,
-});
 
 const TitleWrapper = ({
   title,
