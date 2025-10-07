@@ -128,7 +128,7 @@ function BuyPanelNetworkButton({
   const selectedChainId = useBuyPanelStore((state) => state.selectedChainId);
 
   return (
-    <Button variant="secondary" onClick={onClick} className="border-[#333333]">
+    <Button variant="secondary" onClick={onClick} className="border-gray-8">
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage chainId={selectedChainId} className="h-4 w-4 p-[2px]" size={20} />
         {getNetworkName(selectedChainId)}

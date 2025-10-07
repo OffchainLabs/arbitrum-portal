@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
+import { Slug } from 'packages/app/src/utils/bridgePageUtils';
 import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
+
+import { PathnameEnum } from '@/bridge/constants';
 
 import { addOrbitChainsToArbitrumSDK } from '../../../../../initialization';
 import BridgePageWrapper from '../../BridgePageWrapper';
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
-  params: { slug: string };
+  params: { slug: Slug };
 };
 
 export const metadata: Metadata = {
@@ -23,7 +26,7 @@ export default async function BridgeBuyOnrampServicePage({ searchParams, params 
    */
   if (searchParams.sanitized !== 'true') {
     addOrbitChainsToArbitrumSDK();
-    await sanitizeAndRedirect(searchParams, `/bridge/buy/${params.slug}`);
+    await sanitizeAndRedirect(searchParams, `${PathnameEnum.BUY}/${params.slug}`);
   }
 
   return (

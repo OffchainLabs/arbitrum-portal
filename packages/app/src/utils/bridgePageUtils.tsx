@@ -1,14 +1,14 @@
+import { onrampServices } from '@/bridge/components/BuyPanel/utils';
 import { PathnameEnum } from '@/bridge/constants';
 
 import { addOrbitChainsToArbitrumSDK } from '../initialization';
 import { sanitizeAndRedirect } from './sanitizeAndRedirect';
 
+export type Slug = (typeof onrampServices)[number]['slug'];
+
 export interface BridgePageProps {
   searchParams: { [key: string]: string | string[] | undefined };
-  redirectPath:
-    | PathnameEnum
-    | `${PathnameEnum.BUY}/${string}`
-    | `${PathnameEnum.EMBED_BUY}/${string} `;
+  redirectPath: PathnameEnum | `${PathnameEnum.BUY}/${Slug}` | `${PathnameEnum.EMBED_BUY}/${Slug}`;
 }
 
 export async function initializeBridgePage({ searchParams, redirectPath }: BridgePageProps) {

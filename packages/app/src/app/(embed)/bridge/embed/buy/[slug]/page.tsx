@@ -1,15 +1,19 @@
+import { Slug } from 'packages/app/src/utils/bridgePageUtils';
+
+import { PathnameEnum } from '@/bridge/constants';
+
 import EmbedPageWrapper from '../../EmbedPageWrapper';
 
 type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
-  params: { slug: string };
+  params: { slug: Slug };
 };
 
 export default async function EmbeddedBuyOnrampServicePage({ searchParams, params }: Props) {
   return (
     <EmbedPageWrapper
       searchParams={searchParams}
-      redirectPath={`/bridge/embed/buy/${params.slug} `}
+      redirectPath={`${PathnameEnum.EMBED_BUY}/${params.slug}`}
     />
   );
 }
