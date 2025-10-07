@@ -5,7 +5,6 @@ const path = require('path');
 /**
  * @type {import('next').NextConfig}
  **/
-
 module.exports = {
   distDir: 'build',
   productionBrowserSourceMaps: true,
