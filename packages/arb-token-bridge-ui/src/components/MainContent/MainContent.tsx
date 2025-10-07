@@ -48,17 +48,17 @@ export function MainContent() {
     <>
       <RecoverFunds />
 
-      <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 sm:pt-6">
+      <div className="main-panel mx-auto flex w-full flex-col items-center gap-4 sm:pt-6">
         <TabGroup manual as={Fragment} selectedIndex={selectedTab} onChange={() => {}}>
           <TopNavBar />
 
           <TabPanels className="flex w-full items-center justify-center">
             {showBuyPanel && (
-              <TabPanel className="w-full sm:max-w-[600px]">
+              <TabPanel className="w-full sm:max-w-[580px]">
                 <BuyPanel />
               </TabPanel>
             )}
-            <TabPanel className="w-full sm:max-w-[600px]">
+            <TabPanel className="w-full sm:max-w-[580px]">
               <TransferPanel />
             </TabPanel>
             <TabPanel className="w-full md:px-4">

@@ -11,11 +11,11 @@ export function HeaderConnectWalletButton() {
             onClick={openConnectModal}
             type="button"
             className={twMerge(
-              'arb-hover flex w-full flex-row items-center border border-primary-cta bg-primary-cta px-[12px] py-2 text-white',
-              'sm:min-w-[198px] sm:rounded sm:bg-primary-cta sm:py-1 sm:pl-2 sm:pr-3 sm:text-base sm:font-normal',
+              'arb-hover flex w-full flex-row items-center border border-primary-cta bg-primary-cta px-3 py-3 text-white',
+              'sm:min-w-[188px] sm:rounded sm:bg-primary-cta sm:py-1 sm:pl-2 sm:pr-3 sm:text-base sm:font-normal',
             )}
           >
-            <PlusCircleIcon className="mr-3 h-[24px] w-[24px] stroke-1 sm:h-8 sm:w-8" />
+            <PlusCircleIcon className="mr-3 h-6 w-6 stroke-1 sm:h-10 sm:w-10" />
             Connect Wallet
           </button>
         </div>

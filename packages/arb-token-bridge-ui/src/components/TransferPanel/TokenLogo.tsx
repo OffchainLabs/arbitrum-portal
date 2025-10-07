@@ -52,7 +52,7 @@ export const TokenLogo = ({
     <SafeImage
       src={src}
       alt="Token logo"
-      className={twMerge('h-4 w-4 shrink-0', className)}
+      className={twMerge('h-[20px] w-[20px] shrink-0', className)}
       fallback={fallback}
     />
   );

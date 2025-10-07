@@ -67,7 +67,7 @@ export function TopNavBar() {
   return (
     <TabList
       className={twMerge(
-        'grid w-full max-w-[600px] bg-white/20 p-[8px] text-white md:rounded',
+        'grid w-full max-w-[580px] bg-white/20 p-[8px] text-white md:rounded',
         showBuyPanel ? 'grid-cols-3' : 'grid-cols-2',
       )}
     >
@@ -94,7 +94,7 @@ export function TopNavBar() {
       >
         <Image src="/icons/history.svg" width={24} height={24} alt="history icon" />
         Txn History{' '}
-        <span className={twMerge('h-3 w-3 shrink-0 rounded-full', colorClassName.light)} />
+        <span className={twMerge('h-4 w-4 shrink-0 rounded-full', colorClassName.light)} />
       </StyledTab>
     </TabList>
   );

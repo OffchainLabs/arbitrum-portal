@@ -119,7 +119,7 @@ const RouteAmount = ({
   return (
     <div className="flex min-w-36 flex-col gap-1">
       <div className="flex flex-col gap-1 text-lg">
-        <div className="flex flex-row items-center gap-[15px]">
+        <div className="flex flex-row items-center gap-3">
           <TokenLogo
             className="h-8 w-8 min-w-8"
             srcOverride={'logoURI' in token ? token.logoURI : null}
@@ -139,7 +139,7 @@ const RouteAmount = ({
         </div>
 
         {isBatchTransferSupported && Number(amount2) > 0 && (
-          <div className="flex flex-row items-center gap-[15px] text-base">
+          <div className="flex flex-row items-center gap-3 text-base">
             <TokenLogo
               className="h-8 w-8 min-w-8"
               srcOverride={null}
@@ -194,8 +194,8 @@ const RouteBridge = ({ bridge, bridgeIconURI }: RouteBridgeProps) => (
       width={15}
       height={15}
       alt="bridge"
-      className="max-h-3 max-w-3 rounded-full"
-      fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
+      className="max-h-[15px] max-w-[15px] rounded-full"
+      fallback={<div className="h-[15px] w-[15px] min-w-[15px] rounded-full bg-gray-dark/70" />}
     />
     <div className="truncate">
       <span className="ml-1 whitespace-nowrap">{bridge}</span>
@@ -230,7 +230,7 @@ const RouteFees = ({
             width={14}
             height={14}
             alt="gas"
-            fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
+            fallback={<div className="h-4 w-4 min-w-4 rounded-full bg-gray-dark/70" />}
           />
           <span className="ml-1">
             {isLoadingGasEstimate ? (
@@ -270,7 +270,7 @@ const RouteFees = ({
               width={18}
               height={18}
               alt="bridge fee"
-              fallback={<div className="h-3 w-3 min-w-3 rounded-full bg-gray-dark/70" />}
+              fallback={<div className="h-4 w-4 min-w-4 rounded-full bg-gray-dark/70" />}
             />
             <div className="flex flex-row items-center gap-1">
               <span>
@@ -353,7 +353,7 @@ export const Route = React.memo(
     return (
       <button
         className={twMerge(
-          'relative flex max-w-[calc(100vw_-_40px)] flex-col gap-[15px] rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
+          'relative flex max-w-[calc(100vw_-_40px)] flex-col gap-3 rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
           'focus-visible:!outline-none',
           'focus-within:bg-[#ffffff36] hover:bg-[#ffffff36]',
           !isDisabled && selected && 'border-primary-cta',
