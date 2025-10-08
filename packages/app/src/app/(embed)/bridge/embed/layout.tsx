@@ -5,5 +5,5 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 
 export default function EmbedLayout(props: PropsWithChildren) {
-  return <div className="bg-widget-background">{props.children}</div>;
+  return <div className="bg-widget-background h-screen">{props.children}</div>;
 }
