@@ -30,6 +30,7 @@ import { Button } from './Button';
 import { Dialog, useDialog } from './Dialog';
 import { DialogProps } from './Dialog2';
 import { NetworkImage } from './NetworkImage';
+import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
@@ -259,6 +260,7 @@ function AddCustomOrbitChainButton({
 }
 
 export function NetworksPanel({
+  type = 'source',
   chainIds,
   selectedChainId,
   onNetworkRowClick,
@@ -266,6 +268,7 @@ export function NetworksPanel({
   showSearch = true,
   showFooter = true,
 }: {
+  type?: 'source' | 'destination';
   chainIds: ChainId[];
   selectedChainId: ChainId;
   onNetworkRowClick: (value: Chain) => void;
@@ -284,8 +287,19 @@ export function NetworksPanel({
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
+    const proofOfPlayNetworks =
+      !isTestnetMode && type === 'source'
+        ? [70700, 70701] // PoP Apex, PoP Boss
+        : [];
+
     if (_networkSearched) {
-      return chainIds.filter((chainId) => {
+      return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
+        if (chainId === (70700 as ChainId) || chainId === (70701 as ChainId)) {
+          const popName =
+            chainId === (70700 as ChainId) ? 'Proof of Play Apex' : 'Proof of Play Boss';
+          return popName.toLowerCase().includes(_networkSearched);
+        }
+
         const networkName = getBridgeUiConfigForChain(chainId).network.name.toLowerCase();
         return networkName.includes(_networkSearched);
       });
@@ -295,14 +309,16 @@ export function NetworksPanel({
     const moreNetworks = chainIds.filter(
       (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
     );
-    const orbitNetworks = chainIds.filter((chainId) => isNetwork(chainId).isOrbitChain);
+    const orbitNetworks = chainIds
+      .filter((chainId) => isNetwork(chainId).isOrbitChain)
+      .concat(proofOfPlayNetworks);
 
     return {
       core: coreNetworks,
       more: moreNetworks,
       orbit: orbitNetworks,
     };
-  }, [debouncedNetworkSearched, chainIds]);
+  }, [debouncedNetworkSearched, chainIds, isTestnetMode, type]);
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
@@ -378,6 +394,20 @@ export function NetworksPanel({
             chainGroup={chainGroupInfo.orbit}
             style={style}
             isConnected={isConnected}
+          />
+        );
+      }
+
+      if (
+        networkOrChainTypeName === (70700 as ChainId) ||
+        networkOrChainTypeName === (70701 as ChainId)
+      ) {
+        // PoP Apex, PoP Boss
+        return (
+          <NetworkRowPoP
+            chainId={networkOrChainTypeName}
+            style={style}
+            isSelected={networkOrChainTypeName === selectedChainId}
           />
         );
       }
@@ -508,6 +538,7 @@ export const NetworkSelectionContainer = React.memo(
           <SearchPanel>
             <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
               <NetworksPanel
+                type={isSource ? 'source' : 'destination'}
                 chainIds={supportedChainIds}
                 selectedChainId={selectedChainId}
                 close={() => props.onClose(false)}

@@ -10,6 +10,7 @@ import { RecoverFundsDialog } from '../RecoverFunds';
 import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/CustomDestinationAddressConfirmationDialog';
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
+import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
@@ -56,7 +57,8 @@ export type DialogType =
   | 'recover_funds'
   | 'source_network_selection'
   | 'destination_network_selection'
-  | 'buy_panel_network_selection';
+  | 'buy_panel_network_selection'
+  | 'pop_disabled';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
@@ -152,6 +154,8 @@ export function DialogWrapper(props: DialogProps) {
       return <NetworkSelectionContainer {...commonProps} type="destination" />;
     case 'buy_panel_network_selection':
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
+    case 'pop_disabled':
+      return <PoPDisabledDialog {...commonProps} />;
     default:
       return null;
   }
