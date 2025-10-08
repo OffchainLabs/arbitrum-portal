@@ -209,14 +209,7 @@ describe('Transforms', () => {
       expect(savedImagePath).toBeTruthy();
       console.log(`Image downloaded and saved to: ${savedImagePath}`);
 
-      const fullSavePath = path.join(
-        process.cwd(),
-        '..',
-        '..',
-        'app',
-        'public',
-        savedImagePath,
-      );
+      const fullSavePath = path.join(process.cwd(), '..', '..', 'app', 'public', savedImagePath);
       expect(fs.existsSync(fullSavePath)).toBe(true);
 
       const stats = fs.statSync(fullSavePath);
@@ -319,14 +312,7 @@ Test Chain
 
 const saveImageLocally = (imageBuffer: Buffer, fileName: string, fileExtension: string): string => {
   const imageSavePath = `images/${fileName}${fileExtension}`;
-  const fullSavePath = path.join(
-    process.cwd(),
-    '..',
-    '..',
-    'app',
-    'public',
-    imageSavePath,
-  );
+  const fullSavePath = path.join(process.cwd(), '..', '..', 'app', 'public', imageSavePath);
 
   // Create directories if they don't exist
   const dirs = path.dirname(fullSavePath);
