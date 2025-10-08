@@ -8,39 +8,35 @@
     "fetch:data": "yarn node scripts/fetch-data.js"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.2",
+    "@heroicons/react": "^2.2.0",
+    "@offchainlabs/cobalt": "^0.5.0",
+    "@rehooks/local-storage": "^2.4.5",
+    "@tippyjs/react": "^4.2.6",
+    "dayjs": "^1.11.13",
     "flickity": "2.3.0",
     "fuse.js": "^6.6.2",
+    "next-query-params": "^5.1.0",
+    "posthog-js": "^1.273.0",
+    "query-string": "^9.1.1",
     "react-countdown": "^2.3.5",
     "react-countup": "^6.5.3",
     "react-flickity-component": "^4.0.6",
-    "react-lazyload": "^3.2.0"
+    "react-lazyload": "^3.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-use": "^17.6.0",
+    "tailwind-merge": "^3.2.0",
+    "use-query-params": "^2.2.1",
+    "zustand": "^4.3.9"
   },
   "devDependencies": {
-    "@types/react-lazyload": "^3.2.0"
-  },
-  "peerDependencies": {
-    "@headlessui/react": "*",
-    "@headlessui/tailwindcss": "*",
-    "@heroicons/react": "*",
-    "@offchainlabs/cobalt": "*",
-    "@rehooks/local-storage": "*",
-    "@tippyjs/react": "*",
-    "@types/react": "*",
-    "@types/react-dom": "*",
-    "autoprefixer": "*",
-    "dayjs": "*",
-    "next": "*",
-    "next-query-params": "*",
-    "postcss": "*",
-    "posthog-js": "*",
-    "query-string": "*",
-    "react": "*",
-    "react-dom": "*",
-    "react-use": "*",
-    "tailwind-merge": "*",
-    "tailwindcss": "*",
-    "typescript": "*",
-    "use-query-params": "*",
-    "zustand": "*"
+    "@headlessui/tailwindcss": "^0.2.2",
+    "@types/react-lazyload": "^3.2.0",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.10",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.16"
   }
 }
