@@ -205,7 +205,7 @@ function getCoreChainImage(from: Chain, to: Chain) {
 async function getOrbitChainImage(orbitChain: Chain) {
   const chainConfig = getBridgeUiConfigForChain(orbitChain);
   const isSvg = chainConfig.network.logo.endsWith('.svg');
-  const logoFileBuffer = fs.readFileSync(`./public${chainConfig.network.logo}`);
+  const logoFileBuffer = fs.readFileSync(`../app/public${chainConfig.network.logo}`);
 
   console.log(`Generating image for ${orbitChain}`);
 
@@ -316,7 +316,7 @@ async function generateSvg(chainsOrOrbitChain: Chain | { from: Chain; to: Chain 
   const file = isOrbitChain
     ? `${chainsOrOrbitChain}.jpg`
     : `${chainsOrOrbitChain.from}-to-${chainsOrOrbitChain.to}.jpg`;
-  const filePath = `./public/images/__auto-generated/open-graph/${file}`;
+  const filePath = `../app/public/images/__auto-generated/open-graph/${file}`;
 
   await sharp(Buffer.from(svg)).jpeg({ quality: 90, mozjpeg: true }).toFile(filePath);
 
