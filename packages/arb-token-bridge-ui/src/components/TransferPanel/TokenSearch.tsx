@@ -157,7 +157,7 @@ function TokensPanel({
   onTokenSelected,
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
-}): JSX.Element {
+}): React.JSX.Element {
   const { address: walletAddress } = useAccount();
   const {
     app: {
