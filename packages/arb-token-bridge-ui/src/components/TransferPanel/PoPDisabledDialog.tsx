@@ -1,50 +1,20 @@
-import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import React from 'react';
 
 import { ExternalLink } from '@/components/ExternalLink';
 
-import { Dialog } from '../common/Dialog';
+import { Dialog, DialogProps } from '../common/Dialog';
 
-export const usePoPDisabledDialogVisibilityStore = create<{
-  isPoPDisabledDialogVisible: boolean;
-  showPoPDisabledDialog: () => void;
-  closePoPDisabledDialog: () => void;
-}>((set) => ({
-  isPoPDisabledDialogVisible: false,
-  showPoPDisabledDialog: () => {
-    set(() => ({
-      isPoPDisabledDialogVisible: true,
-    }));
-  },
-  closePoPDisabledDialog: () => {
-    set(() => ({
-      isPoPDisabledDialogVisible: false,
-    }));
-  },
-}));
-
-export function PoPDisabledDialog() {
-  const { isPoPDisabledDialogVisible, closePoPDisabledDialog } =
-    usePoPDisabledDialogVisibilityStore(
-      (state) => ({
-        isPoPDisabledDialogVisible: state.isPoPDisabledDialogVisible,
-        closePoPDisabledDialog: state.closePoPDisabledDialog,
-      }),
-      shallow,
-    );
-
-  const onClose = () => {
-    closePoPDisabledDialog();
-  };
-
+export const PoPDisabledDialog = (props: DialogProps) => {
   return (
     <Dialog
-      closeable
+      {...props}
       title="Proof of Play Not Supported"
-      cancelButtonProps={{ className: 'hidden' }}
       actionButtonTitle="Close"
-      isOpen={isPoPDisabledDialogVisible}
-      onClose={onClose}
+      isFooterHidden
+      isOpen={props.isOpen}
+      onClose={() => {
+        props.onClose(false);
+      }}
     >
       <div className="flex flex-col space-y-4 py-4">
         <p>
@@ -62,4 +32,4 @@ export function PoPDisabledDialog() {
       </div>
     </Dialog>
   );
-}
+};

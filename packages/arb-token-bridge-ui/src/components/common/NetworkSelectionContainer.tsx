@@ -408,7 +408,6 @@ export function NetworksPanel({
             chainId={networkOrChainTypeName}
             style={style}
             isSelected={networkOrChainTypeName === selectedChainId}
-            close={close}
           />
         );
       }
