@@ -1,10 +1,11 @@
 import { create } from 'zustand';
+import { shallow } from 'zustand/shallow';
 
 import { ExternalLink } from '@/components/ExternalLink';
 
 import { Dialog } from '../common/Dialog';
 
-export const usePoPDisabledDialogVisibility = create<{
+export const usePoPDisabledDialogVisibilityStore = create<{
   isPoPDisabledDialogVisible: boolean;
   showPoPDisabledDialog: () => void;
   closePoPDisabledDialog: () => void;
@@ -23,12 +24,14 @@ export const usePoPDisabledDialogVisibility = create<{
 }));
 
 export function PoPDisabledDialog() {
-  const { isPoPDisabledDialogVisible, closePoPDisabledDialog } = usePoPDisabledDialogVisibility(
-    (state) => ({
-      isPoPDisabledDialogVisible: state.isPoPDisabledDialogVisible,
-      closePoPDisabledDialog: state.closePoPDisabledDialog,
-    }),
-  );
+  const { isPoPDisabledDialogVisible, closePoPDisabledDialog } =
+    usePoPDisabledDialogVisibilityStore(
+      (state) => ({
+        isPoPDisabledDialogVisible: state.isPoPDisabledDialogVisible,
+        closePoPDisabledDialog: state.closePoPDisabledDialog,
+      }),
+      shallow,
+    );
 
   const onClose = () => {
     closePoPDisabledDialog();

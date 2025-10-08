@@ -287,8 +287,19 @@ export function NetworksPanel({
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
+    const proofOfPlayNetworks =
+      !isTestnetMode && type === 'source'
+        ? [70700, 70701] // PoP Apex, PoP Boss
+        : [];
+
     if (_networkSearched) {
-      return chainIds.filter((chainId) => {
+      return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
+        if (chainId === (70700 as ChainId) || chainId === (70701 as ChainId)) {
+          const popName =
+            chainId === (70700 as ChainId) ? 'Proof of Play Apex' : 'Proof of Play Boss';
+          return popName.toLowerCase().includes(_networkSearched);
+        }
+
         const networkName = getBridgeUiConfigForChain(chainId).network.name.toLowerCase();
         return networkName.includes(_networkSearched);
       });
@@ -298,11 +309,9 @@ export function NetworksPanel({
     const moreNetworks = chainIds.filter(
       (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
     );
-    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
-    const orbitNetworks = [
-      ...chainIds.filter((chainId) => isNetwork(chainId).isOrbitChain),
-      ...proofOfPlayNetworks,
-    ];
+    const orbitNetworks = chainIds
+      .filter((chainId) => isNetwork(chainId).isOrbitChain)
+      .concat(proofOfPlayNetworks);
 
     return {
       core: coreNetworks,

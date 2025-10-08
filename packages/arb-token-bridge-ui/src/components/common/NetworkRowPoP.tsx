@@ -2,10 +2,11 @@ import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { CSSProperties } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { shallow } from 'zustand/shallow';
 
 import { ChainId } from '@/bridge/types/ChainId';
 
-import { usePoPDisabledDialogVisibility } from '../TransferPanel/PoPDisabledDialog';
+import { usePoPDisabledDialogVisibilityStore } from '../TransferPanel/PoPDisabledDialog';
 
 export function NetworkRowPoP({
   chainId,
@@ -19,10 +20,13 @@ export function NetworkRowPoP({
   close: (focusableElement?: HTMLElement) => void;
 }) {
   const chainName = chainId === (70700 as ChainId) ? 'Proof of Play Apex' : 'Proof of Play Boss';
-  const { showPoPDisabledDialog } = usePoPDisabledDialogVisibility((state) => ({
-    showPoPDisabledDialog: state.showPoPDisabledDialog,
-    closePoPDisabledDialog: state.closePoPDisabledDialog,
-  }));
+  const { showPoPDisabledDialog } = usePoPDisabledDialogVisibilityStore(
+    (state) => ({
+      showPoPDisabledDialog: state.showPoPDisabledDialog,
+      closePoPDisabledDialog: state.closePoPDisabledDialog,
+    }),
+    shallow,
+  );
 
   function handleClick() {
     showPoPDisabledDialog();
