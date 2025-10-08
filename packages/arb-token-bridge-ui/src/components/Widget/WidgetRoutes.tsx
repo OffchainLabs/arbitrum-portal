@@ -13,7 +13,7 @@ export const WidgetRoutes = () => {
   }
 
   return (
-    <div className="flex max-h-[170px] flex-grow flex-col gap-3 overflow-y-auto overflow-x-hidden">
+    <div className="flex flex-grow flex-col gap-3 overflow-y-auto overflow-x-hidden min-[850px]:max-h-[170px] max-h-unset max-[850px]:mb-[130px]">
       <Routes />
     </div>
   );
