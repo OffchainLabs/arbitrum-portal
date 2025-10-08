@@ -438,7 +438,7 @@ export function TokenRow({
   onTokenSelected,
   token,
   isDestination = false,
-}: TokenRowProps): JSX.Element {
+}: TokenRowProps): React.JSX.Element {
   const {
     name: tokenName,
     symbol: tokenSymbol,

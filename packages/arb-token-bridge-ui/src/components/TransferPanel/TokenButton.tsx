@@ -20,7 +20,7 @@ export type TokenButtonOptions = {
   disabled?: boolean;
 };
 
-export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.Element {
+export function TokenButton({ options }: { options?: TokenButtonOptions }): React.JSX.Element {
   const [selectedToken] = useSelectedToken();
   const disabled = options?.disabled ?? false;
 

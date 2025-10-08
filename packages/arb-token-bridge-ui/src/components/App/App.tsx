@@ -22,7 +22,7 @@ declare global {
   }
 }
 
-const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
+const ArbTokenBridgeStoreSyncWrapper = (): React.JSX.Element | null => {
   const actions = useActions();
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, parentChainProvider } =
