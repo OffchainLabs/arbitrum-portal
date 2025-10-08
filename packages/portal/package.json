@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "flickity": "2.3.0",
-    "framer-motion": "^10.12.4",
     "fuse.js": "^6.6.2",
     "react-countdown": "^2.3.5",
     "react-countup": "^6.5.3",
