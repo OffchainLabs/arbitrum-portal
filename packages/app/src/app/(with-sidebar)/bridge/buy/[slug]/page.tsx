@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
-import { Slug, initializeBridgePage } from 'packages/app/src/utils/bridgePageUtils';
-import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
+import { Slug } from 'packages/app/src/utils/bridgePageUtils';
 
 import { PathnameEnum } from '@/bridge/constants';
 
-import { addOrbitChainsToArbitrumSDK } from '../../../../../initialization';
 import BridgePageWrapper from '../../BridgePageWrapper';
 
 type Props = {
