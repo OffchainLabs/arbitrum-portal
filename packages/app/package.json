@@ -4,16 +4,24 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@arbitrum/sdk": "^4.0.3",
+    "@rainbow-me/rainbowkit": "^2.2.4",
+    "dayjs": "^1.11.13",
     "next": "^14.2.32",
+    "posthog-js": "^1.273.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tippy.js": "^6.3.7",
-    "use-query-params": "^2.2.1",
-    "@rainbow-me/rainbowkit": "^2.2.4",
-    "react-toastify": "^9.1.1"
+    "react-toastify": "^9.1.1",
+    "tailwind-merge": "^3.2.0",
+    "tippy.js": "^6.3.7"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.0"
+    "@headlessui/tailwindcss": "^0.2.2",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.10",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.16"
   },
   "scripts": {
     "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build:all",
@@ -23,7 +31,7 @@
     "start": "next start",
     "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --minify",
     "css:watch": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --watch",
-    "css:build:all": "yarn css:build && yarn workspace arb-token-bridge-ui css:build & yarn workspace portal css:build",
-    "css:watch:all": "yarn css:watch && yarn workspace arb-token-bridge-ui css:watch & yarn workspace portal css:watch"
+    "css:build:all": "yarn css:build && yarn workspace arb-token-bridge-ui css:build && yarn workspace portal css:build",
+    "css:watch:all": "yarn css:watch && yarn workspace arb-token-bridge-ui css:watch && yarn workspace portal css:watch"
   }
 }

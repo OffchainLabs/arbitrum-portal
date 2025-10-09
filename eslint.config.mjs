@@ -148,5 +148,6 @@ export default [
     '**/.next/',
     '.github/',
     '**/cypress/',
+    '**/next-env.d.ts',
   ]),
 ];

@@ -1,87 +1,87 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Validation Functions > tokenBridgeSchema > should throw for invalid tokenBridge objects 1`] = `
-"[
+[ZodError: [
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"parentCustomGateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "parentCustomGateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"parentErc20Gateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "parentErc20Gateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"parentWeth\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "parentWeth"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"parentWethGateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "parentWethGateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"childCustomGateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "childCustomGateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"childErc20Gateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "childErc20Gateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"childWeth\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "childWeth"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [
-      \\"childWethGateway\\"
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "childWethGateway"
     ],
-    \\"message\\": \\"Required\\"
+    "message": "Required"
   },
   {
-    \\"code\\": \\"custom\\",
-    \\"message\\": \\"Invalid Ethereum address\\",
-    \\"path\\": [
-      \\"childGatewayRouter\\"
+    "code": "custom",
+    "message": "Invalid Ethereum address",
+    "path": [
+      "childGatewayRouter"
     ]
   }
-]"
+]]
 `;
 
 exports[`Validation Functions > tokenBridgeSchema > should validate correct tokenBridge objects 1`] = `

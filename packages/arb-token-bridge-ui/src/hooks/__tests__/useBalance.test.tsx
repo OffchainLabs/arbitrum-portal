@@ -5,7 +5,7 @@ import { BigNumber } from 'ethers';
 import React from 'react';
 import { PropsWithChildren } from 'react';
 import { SWRConfig } from 'swr';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useBalance } from '../useBalance';
 
@@ -25,6 +25,10 @@ describe.sequential('useBalance', () => {
     vi.mock('../../token-bridge-sdk/utils', () => ({
       getProviderForChainId: () => provider,
     }));
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
   });
 
   it('getter returns null for undefined walletAddress', async () => {
