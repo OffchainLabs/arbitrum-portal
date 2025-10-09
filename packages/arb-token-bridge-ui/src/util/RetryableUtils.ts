@@ -1,6 +1,5 @@
 import {
   ParentToChildMessageWriter as IParentToChildMessageWriter,
-  ParentToChildMessageStatus,
   ParentTransactionReceipt,
 } from '@arbitrum/sdk';
 import { Provider } from '@ethersproject/abstract-provider';
@@ -8,9 +7,8 @@ import { Signer } from '@ethersproject/abstract-signer';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import dayjs from 'dayjs';
 
-import { MergedTransaction, TeleporterMergedTransaction } from '../state/app/state';
+import { MergedTransaction } from '../state/app/state';
 import { normalizeTimestamp } from '../state/app/utils';
-import { isTeleportTx } from '../types/Transactions';
 
 type GetRetryableTicketParams = {
   parentChainTxHash: string;
@@ -102,37 +100,6 @@ export const getRetryableTicketExpiration = async ({
   };
 };
 
-// utilities for teleporter transactions
-export const l1L2RetryableRequiresRedeem = (tx: TeleporterMergedTransaction) => {
-  return tx.l1ToL2MsgData?.status === ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD;
-};
-
-export const l2ForwarderRetryableRequiresRedeem = (tx: TeleporterMergedTransaction) => {
-  return typeof tx.l2ToL3MsgData?.l2ForwarderRetryableTxID !== 'undefined';
-};
-
-export const firstRetryableLegRequiresRedeem = (tx: TeleporterMergedTransaction) => {
-  return l1L2RetryableRequiresRedeem(tx) || l2ForwarderRetryableRequiresRedeem(tx);
-};
-
-export const secondRetryableLegForTeleportRequiresRedeem = (tx: TeleporterMergedTransaction) => {
-  return (
-    !l2ForwarderRetryableRequiresRedeem(tx) &&
-    tx.l2ToL3MsgData?.status === ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD
-  );
-};
-
 export const getChainIdForRedeemingRetryable = (tx: MergedTransaction) => {
-  // which chain id needs to be connected to, to redeem the retryable ticket
-  if (isTeleportTx(tx) && firstRetryableLegRequiresRedeem(tx)) {
-    // in teleport, unless it's the final retryable being redeemed, we need to connect to the l2 chain
-    if (!tx.l2ToL3MsgData) {
-      throw Error(`Could not find destination chain id for redeeming retryable for ${tx.txId}`);
-    }
-
-    // else, return the destination chain
-    return tx.l2ToL3MsgData.l2ChainId;
-  }
-
   return tx.childChainId;
 };

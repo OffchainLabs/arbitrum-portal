@@ -503,16 +503,8 @@ function isBlockNumberReferenceNetwork(chain: {
   );
 }
 
-export const TELEPORT_ALLOWLIST: { [id: number]: number[] } = {
-  [ChainId.Ethereum]: [1380012617, 55244], // Rari, Superposition
-  [ChainId.Sepolia]: [1918988905], // RARI Testnet
-};
-
 export function getChildChainIds(chain: ArbitrumNetwork | BlockNumberReferenceNetwork) {
-  const childChainIds = [
-    ...getChildrenForNetwork(chain.chainId).map((chain) => chain.chainId),
-    ...(TELEPORT_ALLOWLIST[chain.chainId] ?? []), // for considering teleport (L1-L3 transfers) we will get the L3 children of the chain, if present
-  ];
+  const childChainIds = getChildrenForNetwork(chain.chainId).map((chain) => chain.chainId);
   return Array.from(new Set(childChainIds));
 }
 

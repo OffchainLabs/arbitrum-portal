@@ -2,7 +2,6 @@ import { ParentToChildMessageStatus } from '@arbitrum/sdk';
 import { BigNumber } from 'ethers';
 
 import { AssetType } from '../hooks/arbTokenBridge.types';
-import { MergedTransaction, TeleporterMergedTransaction } from '../state/app/state';
 
 export type TxnStatus = 'pending' | 'success' | 'failure' | 'confirmed';
 
@@ -27,14 +26,6 @@ export interface ParentToChildMessageData {
   retryableCreationTxID: string;
   childTxId?: string;
   fetchingUpdate: boolean;
-}
-
-export interface L2ToL3MessageData {
-  status: ParentToChildMessageStatus;
-  retryableCreationTxID?: string;
-  l2ForwarderRetryableTxID?: string;
-  l3TxID?: string;
-  l2ChainId: number;
 }
 
 export type ChildToParentMessageData = {
@@ -69,18 +60,4 @@ export interface Transaction extends TransactionBase {
   parentChainId: number;
   childChainId: number;
   nonce?: number;
-}
-
-export interface TeleporterTransaction extends Transaction {
-  /** note: in contrast to general deposits which use `parentToChildMsgData`,
-   * Teleport transfers still follow L1/L2/L3 terminology, so we have `l1ToL2MsgData` and `l2ToL3MsgData` */
-
-  l1ToL2MsgData: ParentToChildMessageData;
-  l2ToL3MsgData: L2ToL3MessageData;
-}
-
-export function isTeleportTx(
-  tx: Transaction | MergedTransaction,
-): tx is TeleporterTransaction | TeleporterMergedTransaction {
-  return (tx as TeleporterTransaction).l2ToL3MsgData !== undefined;
 }

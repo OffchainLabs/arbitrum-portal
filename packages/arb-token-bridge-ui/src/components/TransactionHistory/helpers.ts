@@ -18,18 +18,15 @@ import {
   LayerZeroTransaction,
   LifiMergedTransaction,
   MergedTransaction,
-  TeleporterMergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
 import { getDepositStatus, isCustomDestinationAddressTx } from '../../state/app/utils';
 import { getBlockBeforeConfirmation } from '../../state/cctpState';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
-import { isTeleportTx } from '../../types/Transactions';
 import { SimplifiedRouteType } from '../../util/AnalyticsUtils';
 import { getAttestationHashAndMessageFromReceipt } from '../../util/cctp/getAttestationHashAndMessageFromReceipt';
 import {
-  fetchTeleporterDepositStatusData,
   getParentToChildMessageDataFromParentTxHash,
   isEthDepositMessage,
 } from '../../util/deposits/helpers';
@@ -590,26 +587,6 @@ export async function getUpdatedLifiTransfer(
   };
 }
 
-export async function getUpdatedTeleportTransfer(
-  tx: TeleporterMergedTransaction,
-): Promise<TeleporterMergedTransaction> {
-  const { status, timestampResolved, l1ToL2MsgData, l2ToL3MsgData } =
-    await fetchTeleporterDepositStatusData(tx);
-
-  const updatedTx = {
-    ...tx,
-    status,
-    timestampResolved,
-    l1ToL2MsgData,
-    l2ToL3MsgData,
-  };
-
-  return {
-    ...updatedTx,
-    depositStatus: getDepositStatus(updatedTx),
-  };
-}
-
 function getTxDurationInMinutes(tx: MergedTransaction) {
   const { parentChainId } = tx;
   const { isEthereumMainnet, isEthereumMainnetOrTestnet, isTestnet } = isNetwork(parentChainId);
@@ -658,10 +635,6 @@ export function getDestinationNetworkTxId(tx: MergedTransaction) {
 
   if (tx.isCctp) {
     return tx.cctpData?.receiveMessageTransactionHash;
-  }
-
-  if (isTeleportTx(tx)) {
-    return tx.l2ToL3MsgData?.l3TxID;
   }
 
   if (isLifiTransfer(tx)) {

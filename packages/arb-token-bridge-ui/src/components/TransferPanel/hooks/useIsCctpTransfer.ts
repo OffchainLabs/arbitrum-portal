@@ -12,14 +12,10 @@ import { isNetwork } from '../../../util/networks';
 export const useIsCctpTransfer = function () {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChain, isDepositMode, isTeleportMode } = useNetworksRelationship(networks);
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const { isArbitrumOne, isArbitrumSepolia } = isNetwork(childChain.id);
 
   if (!selectedToken) {
-    return false;
-  }
-
-  if (isTeleportMode) {
     return false;
   }
 

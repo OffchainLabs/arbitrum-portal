@@ -10,7 +10,6 @@ import {
 } from '../../hooks/arbTokenBridge.types';
 import {
   ChildToParentMessageData,
-  L2ToL3MessageData,
   ParentToChildMessageData,
   TxnType,
 } from '../../types/Transactions';
@@ -90,13 +89,6 @@ export interface LifiMergedTransaction
   destinationStatus: WithdrawalStatus;
 }
 
-export interface TeleporterMergedTransaction extends BaseMergedTransaction {
-  /** note: in contrast to general deposits which use `parentToChildMsgData`,
-   * Teleport transfers still follow L1/L2/L3 terminology, so we have `l1ToL2MsgData` and `l2ToL3MsgData` */
-  l1ToL2MsgData?: ParentToChildMessageData;
-  l2ToL3MsgData: L2ToL3MessageData;
-}
-
 /*
  * LayerZero API returns LayerZeroTransaction` without `asset` and `value`.
  * `updateAdditionalLayerZeroData()` fills these gaps, returning `MergedTransaction` for tx history.
@@ -109,7 +101,6 @@ export interface LayerZeroTransaction extends Omit<BaseMergedTransaction, 'isOft
 export type MergedTransaction =
   | BaseMergedTransaction
   | LifiMergedTransaction
-  | TeleporterMergedTransaction
   | LayerZeroTransaction;
 
 export interface WarningTokens {

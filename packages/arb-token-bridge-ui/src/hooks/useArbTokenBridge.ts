@@ -9,7 +9,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { Chain } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { CommonAddress } from '../util/CommonAddressUtils';
@@ -18,7 +17,6 @@ import {
   fetchErc20Data,
   getL1ERC20Address,
   getL2ERC20Address,
-  getL3ERC20Address,
   isValidErc20,
   l1TokenIsDisabled,
 } from '../util/TokenUtils';
@@ -292,28 +290,11 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
       // looks like l1 address was provided
       l1Address = lowercasedErc20L1orL2Address;
 
-      // while deriving the child-chain address, it can be a teleport transfer too, in that case derive L3 address from L1 address
-      // else, derive the L2 address from L1 address OR L3 address from L2 address
-      if (
-        isValidTeleportChainPair({
-          sourceChainId: l1.network.id,
-          destinationChainId: l2.network.id,
-        })
-      ) {
-        // this can be a bit hard to follow, but it will resolve when we have code-wide better naming for variables
-        // here `l2Address` actually means `childChainAddress`, and `l2.provider` is actually being used as a child-chain-provider, which in this case will be L3
-        l2Address = await getL3ERC20Address({
-          erc20L1Address: l1Address,
-          l1Provider: l1.provider,
-          l3Provider: l2.provider, // in case of teleport transfer, the l2.provider being used here is actually the l3 provider
-        });
-      } else {
-        l2Address = await getL2ERC20Address({
-          erc20L1Address: l1Address,
-          l1Provider: l1.provider,
-          l2Provider: l2.provider,
-        });
-      }
+      l2Address = await getL2ERC20Address({
+        erc20L1Address: l1Address,
+        l1Provider: l1.provider,
+        l2Provider: l2.provider,
+      });
     }
 
     const bridgeTokensToAdd: ContractStorage<ERC20BridgeToken> = {};

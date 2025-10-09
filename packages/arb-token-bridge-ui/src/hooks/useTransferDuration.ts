@@ -1,7 +1,5 @@
 import dayjs, { Dayjs } from 'dayjs';
 
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
-
 import { isLifiTransfer } from '../components/TransactionHistory/helpers';
 import { MergedTransaction } from '../state/app/state';
 import { useRemainingTimeCctp } from '../state/cctpState';
@@ -45,22 +43,11 @@ type UseTransferDurationResult = {
 export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationResult => {
   const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx);
 
-  const { sourceChainId, destinationChainId, isCctp, childChainId, isOft } = tx;
+  const { isCctp, childChainId, isOft } = tx;
   const { isTestnet, isOrbitChain } = isNetwork(childChainId);
 
   const standardDepositDuration = getStandardDepositDuration(isTestnet);
   const orbitDepositDuration = getOrbitDepositDuration(isTestnet);
-
-  if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
-    // Deposit only
-    return {
-      approximateDurationInMinutes: standardDepositDuration + orbitDepositDuration,
-      estimatedMinutesLeft: getRemainingMinutes({
-        createdAt: tx.createdAt,
-        totalDuration: standardDepositDuration + orbitDepositDuration,
-      }),
-    };
-  }
 
   if (isLifiTransfer(tx)) {
     const durationMinutes = (tx.durationMs || 15_000) / (60 * 1_000);

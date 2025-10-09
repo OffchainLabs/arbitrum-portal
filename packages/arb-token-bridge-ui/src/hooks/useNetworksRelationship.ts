@@ -2,8 +2,6 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { useMemo } from 'react';
 import { Chain } from 'wagmi/chains';
 
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
-
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import { isDepositMode } from '../util/isDepositMode';
@@ -15,7 +13,6 @@ type UseNetworksRelationshipState = {
   parentChain: Chain;
   parentChainProvider: StaticJsonRpcProvider;
   isDepositMode: boolean;
-  isTeleportMode: boolean;
   /** true if route is supported through lifi (regardless of selected token)  */
   isLifi: boolean;
 };
@@ -27,11 +24,6 @@ export function useNetworksRelationship({
 }: UseNetworksState): UseNetworksRelationshipState {
   return useMemo(() => {
     const _isDepositMode = isDepositMode({
-      sourceChainId: sourceChain.id,
-      destinationChainId: destinationChain.id,
-    });
-
-    const isTeleportMode = isValidTeleportChainPair({
       sourceChainId: sourceChain.id,
       destinationChainId: destinationChain.id,
     });
@@ -49,7 +41,6 @@ export function useNetworksRelationship({
         parentChain: destinationChain,
         parentChainProvider: destinationChainProvider,
         isDepositMode: false,
-        isTeleportMode: false,
         isLifi,
       };
     }
@@ -62,7 +53,6 @@ export function useNetworksRelationship({
         parentChain: sourceChain,
         parentChainProvider: sourceChainProvider,
         isDepositMode: true,
-        isTeleportMode: false,
         isLifi,
       };
     }
@@ -74,7 +64,6 @@ export function useNetworksRelationship({
         parentChain: sourceChain,
         parentChainProvider: sourceChainProvider,
         isDepositMode: _isDepositMode,
-        isTeleportMode,
         isLifi,
       };
     }
@@ -85,7 +74,6 @@ export function useNetworksRelationship({
       parentChain: destinationChain,
       parentChainProvider: destinationChainProvider,
       isDepositMode: _isDepositMode,
-      isTeleportMode,
       isLifi,
     };
   }, [sourceChain, destinationChain, destinationChainProvider, sourceChainProvider]);

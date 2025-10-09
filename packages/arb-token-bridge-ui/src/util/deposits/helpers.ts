@@ -1,8 +1,6 @@
 import {
-  Erc20L1L3DepositStatus,
   EthDepositMessage,
   EthDepositMessageStatus,
-  EthL1L3DepositStatus,
   ParentToChildMessageReader,
   ParentToChildMessageReaderClassic,
   ParentToChildMessageStatus,
@@ -13,19 +11,8 @@ import { utils } from 'ethers';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { normalizeTimestamp } from '../../state/app/utils';
-import {
-  fetchTeleportStatusFromTxId,
-  getL2ConfigForTeleport,
-  isValidTeleportChainPair,
-} from '../../token-bridge-sdk/teleport';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
-import {
-  L2ToL3MessageData,
-  ParentToChildMessageData,
-  TeleporterTransaction,
-  Transaction,
-  TxnStatus,
-} from '../../types/Transactions';
+import { Transaction, TxnStatus } from '../../types/Transactions';
 import { fetchErc20Data } from '../TokenUtils';
 
 export function isEthDepositMessage(
@@ -34,9 +21,7 @@ export function isEthDepositMessage(
   return !('retryableCreationId' in message);
 }
 
-export const updateAdditionalDepositData = async (
-  depositTx: Transaction,
-): Promise<Transaction | TeleporterTransaction> => {
+export const updateAdditionalDepositData = async (depositTx: Transaction): Promise<Transaction> => {
   const parentProvider = getProviderForChainId(depositTx.parentChainId);
   const childProvider = getProviderForChainId(depositTx.childChainId);
 
@@ -60,35 +45,6 @@ export const updateAdditionalDepositData = async (
   depositTx.timestampCreated = timestampCreated;
 
   const { isClassic } = depositTx; // isClassic is known before-hand from subgraphs
-
-  // The order of checks is critical here:
-  // 1. For teleport transactions, there may not be a `parentToChildMsg` event emitted
-  // 2. Therefore, we must first check if this is a teleport transaction and if yes, proceed with fetching teleport specific status data
-  // 3. Only after confirming it's not a teleport, we proceed with standard parent-child message checks
-  if (
-    isValidTeleportChainPair({
-      // Note: We use `isValidTeleportChainPair()` instead of `isTeleportTx()` here
-      // because we don't have `l2ToL3MsgData` available yet at this point
-      sourceChainId: depositTx.parentChainId, // In deposit tx flow, parent chain is source and child chain is destination
-      destinationChainId: depositTx.childChainId,
-    })
-  ) {
-    const { status, timestampResolved, l1ToL2MsgData, l2ToL3MsgData } =
-      await fetchTeleporterDepositStatusData({
-        ...depositTx,
-        txId: depositTx.txID,
-        sourceChainId: depositTx.parentChainId,
-        destinationChainId: depositTx.childChainId,
-      });
-
-    return {
-      ...depositTx,
-      status,
-      timestampResolved,
-      l1ToL2MsgData,
-      l2ToL3MsgData,
-    };
-  }
 
   const { parentToChildMsg } = await getParentToChildMessageDataFromParentTxHash({
     depositTxId: depositTx.txID,
@@ -405,165 +361,6 @@ const updateClassicDepositStatusData = async ({
 
   return completeDepositTx;
 };
-
-async function getTimestampResolved(
-  destinationChainProvider: Provider,
-  l3TxHash: string | undefined,
-) {
-  if (typeof l3TxHash === 'undefined') {
-    return;
-  }
-  return await destinationChainProvider
-    .getTransactionReceipt(l3TxHash)
-    .then((tx) => tx.blockNumber)
-    .then((blockNumber) => destinationChainProvider.getBlock(blockNumber))
-    .then((block) => normalizeTimestamp(block.timestamp));
-}
-
-export async function fetchTeleporterDepositStatusData({
-  assetType,
-  sourceChainId,
-  destinationChainId,
-  txId,
-}: {
-  assetType: AssetType;
-  sourceChainId: number;
-  destinationChainId: number;
-  txId: string;
-}): Promise<{
-  status?: TxnStatus;
-  timestampResolved?: string;
-  l1ToL2MsgData?: ParentToChildMessageData;
-  l2ToL3MsgData: L2ToL3MessageData;
-}> {
-  const isNativeCurrencyTransfer = assetType === AssetType.ETH;
-  const sourceChainProvider = getProviderForChainId(sourceChainId);
-  const destinationChainProvider = getProviderForChainId(destinationChainId);
-  const { l2ChainId } = await getL2ConfigForTeleport({
-    destinationChainProvider,
-  });
-
-  function isEthTeleport(
-    status: EthL1L3DepositStatus | Erc20L1L3DepositStatus,
-  ): status is EthL1L3DepositStatus {
-    return isNativeCurrencyTransfer;
-  }
-
-  try {
-    const depositStatus = await fetchTeleportStatusFromTxId({
-      txId,
-      sourceChainProvider,
-      destinationChainProvider,
-      isNativeCurrencyTransfer,
-    });
-    const l2ToL3MsgData: L2ToL3MessageData = {
-      status: ParentToChildMessageStatus.NOT_YET_CREATED,
-      l2ChainId,
-    };
-    const l2Retryable = isEthTeleport(depositStatus)
-      ? depositStatus.l2Retryable
-      : depositStatus.l1l2TokenBridgeRetryable;
-    const l2ForwarderFactoryRetryable = isEthTeleport(depositStatus)
-      ? null
-      : depositStatus.l2ForwarderFactoryRetryable;
-    const l3Retryable = isEthTeleport(depositStatus)
-      ? depositStatus.l3Retryable
-      : depositStatus.l2l3TokenBridgeRetryable;
-
-    // extract the l2 transaction details, if any
-    const l1l2Redeem = await l2Retryable.getSuccessfulRedeem();
-    const l1ToL2MsgData: ParentToChildMessageData = {
-      status: await l2Retryable.status(),
-      childTxId:
-        l1l2Redeem && l1l2Redeem.status === ParentToChildMessageStatus.REDEEMED
-          ? l1l2Redeem.childTxReceipt.transactionHash
-          : undefined,
-      fetchingUpdate: false,
-      retryableCreationTxID: l2Retryable.retryableCreationId,
-    };
-
-    // in case the forwarder retryable has failed, add it to the `l2ToL3MsgData`, else leave it undefined
-    // note: having `l2ForwarderRetryableTxID` in the `l2ToL3MsgData` will mean that it needs redemption
-    if (
-      !depositStatus.completed &&
-      l2ForwarderFactoryRetryable &&
-      (await l2ForwarderFactoryRetryable.status()) ===
-        ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD
-    ) {
-      return {
-        status: l2Retryable ? 'success' : 'failure',
-        timestampResolved: undefined,
-        l1ToL2MsgData,
-        l2ToL3MsgData: {
-          ...l2ToL3MsgData,
-          status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
-          l2ForwarderRetryableTxID: l2ForwarderFactoryRetryable.retryableCreationId,
-        },
-      };
-    } else if (l3Retryable) {
-      // extract the l3 transaction details, if any
-      const l2L3Redeem = await l3Retryable.getSuccessfulRedeem();
-      const l3TxID =
-        l2L3Redeem && l2L3Redeem.status === ParentToChildMessageStatus.REDEEMED
-          ? l2L3Redeem.childTxReceipt.transactionHash
-          : undefined;
-      const timestampResolved = String(
-        await getTimestampResolved(destinationChainProvider, l3TxID),
-      );
-
-      // extract the new L2 tx details if we find that `l2ForwarderFactoryRetryable` has been redeemed manually
-      // the new l2TxId will be helpful to get l2L3 redemption details while redeeming
-      if (l2ForwarderFactoryRetryable) {
-        const l2ForwarderRedeem = await l2ForwarderFactoryRetryable.getSuccessfulRedeem();
-        if (l2ForwarderRedeem.status === ParentToChildMessageStatus.REDEEMED) {
-          return {
-            status: l2Retryable ? 'success' : 'failure',
-            timestampResolved,
-            l1ToL2MsgData: {
-              ...l1ToL2MsgData,
-              childTxId: l2ForwarderRedeem.childTxReceipt.transactionHash,
-            },
-            l2ToL3MsgData: {
-              ...l2ToL3MsgData,
-              l3TxID,
-              status: await l3Retryable.status(),
-              retryableCreationTxID: l3Retryable.retryableCreationId,
-            },
-          };
-        }
-      }
-
-      return {
-        status: l2Retryable ? 'success' : 'failure',
-        timestampResolved,
-        l1ToL2MsgData,
-        l2ToL3MsgData: {
-          ...l2ToL3MsgData,
-          status: await l3Retryable.status(),
-          l3TxID,
-          retryableCreationTxID: l3Retryable.retryableCreationId,
-        },
-      };
-    }
-
-    return {
-      status: l2Retryable ? 'success' : 'failure',
-      timestampResolved: undefined,
-      l1ToL2MsgData,
-      l2ToL3MsgData,
-    };
-  } catch (error) {
-    // in case fetching teleport status fails (happens sometimes when you fetch before l1 confirmation), return the default data
-    console.log('Error fetching status for teleporter tx', txId);
-    return {
-      status: 'pending',
-      l2ToL3MsgData: {
-        status: ParentToChildMessageStatus.NOT_YET_CREATED,
-        l2ChainId,
-      },
-    };
-  }
-}
 
 export const getParentToChildMessageDataFromParentTxHash = async ({
   depositTxId,

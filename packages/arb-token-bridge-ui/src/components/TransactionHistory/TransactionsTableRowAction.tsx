@@ -5,16 +5,10 @@ import { useAccount } from 'wagmi';
 import { GET_HELP_LINK } from '../../constants';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
 import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
-import { useRedeemTeleporter } from '../../hooks/useRedeemTeleporter';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
-import {
-  DepositStatus,
-  MergedTransaction,
-  TeleporterMergedTransaction,
-} from '../../state/app/state';
+import { DepositStatus, MergedTransaction } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
 import { useClaimCctp } from '../../state/cctpState';
-import { isTeleportTx } from '../../types/Transactions';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { formatAmount } from '../../util/NumberUtils';
@@ -50,7 +44,7 @@ export function TransactionsTableRowAction({
   isError,
   type,
 }: {
-  tx: MergedTransaction | TeleporterMergedTransaction;
+  tx: MergedTransaction;
   isError: boolean;
   type: 'deposits' | 'withdrawals';
 }) {
@@ -69,13 +63,7 @@ export function TransactionsTableRowAction({
 
   const { claim, isClaiming } = useClaimWithdrawal(tx);
   const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming: isRetryableRedeeming } = useRedeemRetryable(tx, searchedAddress);
-  const { redeem: teleporterRedeem, isRedeeming: isTeleporterRedeeming } = useRedeemTeleporter(
-    tx,
-    searchedAddress,
-  );
-
-  const isRedeeming = isRetryableRedeeming || isTeleporterRedeeming;
+  const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
   const chainIdForRedeemingRetryable = getChainIdForRedeemingRetryable(tx);
 
@@ -89,11 +77,7 @@ export function TransactionsTableRowAction({
         await switchChainAsync({ chainId: chainIdForRedeemingRetryable });
       }
 
-      if (isTeleportTx(tx)) {
-        await teleporterRedeem();
-      } else {
-        await redeem();
-      }
+      await redeem();
     } catch (error: any) {
       if (isUserRejectedError(error)) {
         return;
@@ -101,12 +85,10 @@ export function TransactionsTableRowAction({
       errorToast(`Can't retry the deposit: ${error?.message ?? error}`);
     }
   }, [
-    tx,
     isConnectedToCorrectNetworkForAction,
     chainIdForRedeemingRetryable,
     redeem,
     switchChainAsync,
-    teleporterRedeem,
   ]);
 
   const handleClaim = useCallback(async () => {
