@@ -200,8 +200,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     layout: { isTransferring },
   } = useAppContextState();
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,

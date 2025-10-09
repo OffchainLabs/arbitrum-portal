@@ -62,15 +62,6 @@ const subgraphs = {
     selfHostedSubgraph: '',
     theGraphNetworkSubgraphId: 'AaUuKWWuQbCXbvRkXpVDEpw9B7oVicYrovNyMLPZtLPw',
   },
-  // Teleport Sepolia
-  'teleporter-sepolia': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '6AwhH4JF8Ss5ZFf12azD13D1nNhuNzLnjH56irYqA7fD',
-  },
-  'teleporter-ethereum': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: 'GEVHWg3FLKvWivMhqkeVrQVt4WCN6cWnsvdf6MpNrHpg',
-  },
 } as const;
 
 function createApolloClient(uri: string) {
@@ -135,21 +126,6 @@ export function getCctpSubgraphClient(chainId: number) {
 
     default:
       throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
-  }
-}
-
-export function getTeleporterSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.Ethereum:
-      return createTheGraphNetworkClient(
-        subgraphs['teleporter-ethereum'].theGraphNetworkSubgraphId,
-      );
-
-    case ChainId.Sepolia:
-      return createTheGraphNetworkClient(subgraphs['teleporter-sepolia'].theGraphNetworkSubgraphId);
-
-    default:
-      throw new Error(`[getTeleporterSubgraphClient] unsupported chain: ${chainId}`);
   }
 }
 
