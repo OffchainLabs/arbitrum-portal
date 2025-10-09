@@ -58,8 +58,11 @@ function MoonPayTile() {
         <div className="relative flex flex-col items-center justify-center">
           <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
           <p className="mt-2 text-lg">MoonPay</p>
-          <p className="mt-1 text-sm">PayPal, Debit Card, Apple Pay</p>
+          <p className="mt-1 text-xs text-white/60">Pay using PayPal, Apple Pay & more</p>
         </div>
+        <span className="mt-2 py-2 relative w-[200px] bg-white/10 rounded-lg text-sm text-white flex items-center justify-center">
+          Buy now
+        </span>
       </Button>
     </Link>
   );
