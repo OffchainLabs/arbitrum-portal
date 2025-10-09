@@ -3,7 +3,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
 import { Fragment, useMemo } from 'react';
 
-import { PathnameEnum } from '@/bridge/constants';
+import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -28,7 +28,7 @@ export function MainContent() {
       // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
       // because we use /buy and don't use ?tab=buy
       // so we need to hardcode to return 0 rather than `tab`
-      if (pathname.startsWith(PathnameEnum.BUY)) {
+      if (isBridgeBuyOrSubpages(pathname)) {
         return 0;
       }
       return tab;

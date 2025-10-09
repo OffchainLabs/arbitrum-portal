@@ -3,7 +3,7 @@ import { ExclamationCircleIcon } from '@heroicons/react/24/solid';
 import { BigNumber, utils } from 'ethers';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import React, { PropsWithChildren, memo, useMemo } from 'react';
+import React, { PropsWithChildren, memo, useEffect, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -154,9 +154,9 @@ const BalanceWrapper = memo(function BalanceWrapper() {
     if (!balanceState || !showPriceInUsd) {
       return null;
     }
-    return formatUSD(ethToUSD(Number(utils.formatEther(BigNumber.from(balanceState.value)))));
+    return ethToUSD(Number(utils.formatEther(BigNumber.from(balanceState.value))));
   }, [balanceState, ethToUSD, showPriceInUsd]);
-  const isBalanceLessThan15Usd = Number(balanceInUsd?.replaceAll(/[$<]/g, '')) < 15;
+  const isBalanceLessThan15Usd = Number(balanceInUsd) < 15;
   const [dialogProps, openDialog] = useDialog2();
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection');
@@ -193,7 +193,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
         {!isLoadingBalance && (balanceError || typeof balanceState === 'undefined') && (
           <span className="text-error">Failed to load balance.</span>
         )}
-        {balanceState && showPriceInUsd && <span className="text-white/50">{balanceInUsd}</span>}
+        {balanceInUsd && <span className="text-white/50">{formatUSD(balanceInUsd)}</span>}
       </p>
 
       {isBalanceLessThan15Usd && (

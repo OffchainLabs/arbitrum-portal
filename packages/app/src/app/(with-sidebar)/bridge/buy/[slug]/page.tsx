@@ -30,6 +30,9 @@ export default async function BridgeBuyOnrampServicePage({ searchParams, params 
   }
 
   return (
-    <BridgePageWrapper searchParams={searchParams} redirectPath={`/bridge/buy/${params.slug}`} />
+    <BridgePageWrapper
+      searchParams={searchParams}
+      redirectPath={`${PathnameEnum.BUY}/${params.slug}`}
+    />
   );
 }

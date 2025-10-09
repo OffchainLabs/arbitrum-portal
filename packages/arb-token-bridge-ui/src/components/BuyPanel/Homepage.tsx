@@ -24,7 +24,6 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
         className={twMerge(
           'relative flex w-full flex-col items-center justify-center rounded-md bg-gray-9 p-4 overflow-hidden',
         )}
-        onClick={() => {}}
       >
         <span className="mx-auto flex h-8 w-8 items-center justify-center overflow-hidden rounded-md">
           <Image src={logo} alt={name} width={40} height={40} />
