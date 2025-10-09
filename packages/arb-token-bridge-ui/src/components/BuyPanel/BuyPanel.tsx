@@ -3,7 +3,7 @@ import { ExclamationCircleIcon } from '@heroicons/react/24/solid';
 import { BigNumber, utils } from 'ethers';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import React, { PropsWithChildren, memo, useEffect, useMemo } from 'react';
+import React, { PropsWithChildren, memo, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
 import { useAccount, useBalance } from 'wagmi';

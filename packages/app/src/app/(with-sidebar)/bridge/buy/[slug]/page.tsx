@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Slug } from 'packages/app/src/utils/bridgePageUtils';
+import { Slug, initializeBridgePage } from 'packages/app/src/utils/bridgePageUtils';
 import { sanitizeAndRedirect } from 'packages/app/src/utils/sanitizeAndRedirect';
 
 import { PathnameEnum } from '@/bridge/constants';
@@ -19,16 +19,6 @@ export const metadata: Metadata = {
 };
 
 export default async function BridgeBuyOnrampServicePage({ searchParams, params }: Props) {
-  /**
-   * This code is run on every query param change,
-   * we don't want to sanitize every query param change.
-   * It should only be executed once per user per session.
-   */
-  if (searchParams.sanitized !== 'true') {
-    addOrbitChainsToArbitrumSDK();
-    await sanitizeAndRedirect(searchParams, `${PathnameEnum.BUY}/${params.slug}`);
-  }
-
   return (
     <BridgePageWrapper
       searchParams={searchParams}
