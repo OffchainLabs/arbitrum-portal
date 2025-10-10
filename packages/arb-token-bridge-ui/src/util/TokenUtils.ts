@@ -11,7 +11,7 @@ import { constants } from 'ethers';
 
 import { defaultErc20Decimals } from '../defaults';
 import { ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
-import { getL2ConfigForTeleport, isValidTeleportChainPair } from '../token-bridge-sdk/teleport';
+import { getL2ConfigForTeleport } from '../token-bridge-sdk/teleport';
 import { getBridger, getChainIdFromProvider } from '../token-bridge-sdk/utils';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressUtils';
@@ -455,14 +455,6 @@ export async function isGatewayRegistered({
   parentChainProvider: Provider;
   childChainProvider: Provider;
 }): Promise<boolean> {
-  // for teleport transfers - we will need to check for 2 gateway registrations - 1 for L1-L2 and then for L2-L3 transfer
-  // for now, we are returning true since we are limiting the tokens to teleport, but we will expand this once we expand the allowList
-  const sourceChainId = await getChainIdFromProvider(parentChainProvider);
-  const destinationChainId = await getChainIdFromProvider(childChainProvider);
-  if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
-    return true;
-  }
-
   const erc20Bridger = await Erc20Bridger.fromProvider(childChainProvider);
 
   return erc20Bridger.isRegistered({
