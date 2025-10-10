@@ -8,7 +8,18 @@ import { Provider } from '@ethersproject/providers';
 
 import { getAccountType } from '../util/AccountUtils';
 import { addressIsSmartContract } from '../util/AddressUtils';
+import { TELEPORT_ALLOWLIST } from '../util/networks';
 import { getChainIdFromProvider, getProviderForChainId } from './utils';
+
+export const isValidTeleportChainPair = ({
+  sourceChainId,
+  destinationChainId,
+}: {
+  sourceChainId: number;
+  destinationChainId: number;
+}) => {
+  return !!TELEPORT_ALLOWLIST[sourceChainId]?.includes(destinationChainId);
+};
 
 export const getL2ConfigForTeleport = async ({
   destinationChainProvider,
