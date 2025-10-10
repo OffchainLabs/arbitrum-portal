@@ -85,7 +85,6 @@ import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
-import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -847,12 +846,6 @@ export function TransferPanel() {
 
     if (!signer) {
       throw new Error(signerUndefinedError);
-    }
-
-    // SC Teleport transfers aren't enabled yet. Safety check, shouldn't be able to get here.
-    if (isSmartContractWallet && isTeleportMode) {
-      console.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
-      return;
     }
 
     const childChainName = getNetworkName(childChain.id);

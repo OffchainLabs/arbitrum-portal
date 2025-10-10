@@ -6,10 +6,17 @@ import { IRollupCore__factory } from '@arbitrum/sdk/dist/lib/abi/factories/IRoll
 import { L1GatewayRouter__factory } from '@arbitrum/sdk/dist/lib/abi/factories/L1GatewayRouter__factory';
 import { Provider } from '@ethersproject/providers';
 
+import { ChainId } from '../types/ChainId';
 import { getAccountType } from '../util/AccountUtils';
 import { addressIsSmartContract } from '../util/AddressUtils';
-import { TELEPORT_ALLOWLIST } from '../util/networks';
 import { getChainIdFromProvider, getProviderForChainId } from './utils';
+
+// Teleport is deprecated for new transfers, but we keep this allowlist
+// for historical transaction detection and status fetching
+const TELEPORT_ALLOWLIST: { [id: number]: number[] } = {
+  [ChainId.Ethereum]: [1380012617, 55244], // Rari, Superposition
+  [ChainId.Sepolia]: [1918988905], // RARI Testnet
+};
 
 export const isValidTeleportChainPair = ({
   sourceChainId,

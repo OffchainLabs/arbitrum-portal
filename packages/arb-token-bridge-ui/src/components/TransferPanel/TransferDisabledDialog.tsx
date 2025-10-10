@@ -5,16 +5,13 @@ import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { getL2ConfigForTeleport } from '../../token-bridge-sdk/teleport';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
-import { getNetworkName } from '../../util/networks';
 import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
@@ -22,7 +19,6 @@ import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdr
 export function isDisabledCanonicalTransfer({
   selectedToken,
   isDepositMode,
-  isTeleportMode,
   parentChainId,
   childChainId,
   isSelectedTokenWithdrawOnly,
@@ -30,7 +26,6 @@ export function isDisabledCanonicalTransfer({
 }: {
   selectedToken: ERC20BridgeToken | null;
   isDepositMode: boolean;
-  isTeleportMode: boolean;
   parentChainId: ChainId;
   childChainId: ChainId;
   isSelectedTokenWithdrawOnly: boolean | undefined;
@@ -41,13 +36,6 @@ export function isDisabledCanonicalTransfer({
   }
 
   if (isTransferDisabledToken(selectedToken.address, childChainId)) {
-    return true;
-  }
-
-  if (
-    isTeleportMode &&
-    !isTeleportEnabledToken(selectedToken.address, parentChainId, childChainId)
-  ) {
     return true;
   }
 
@@ -77,8 +65,7 @@ export function isDisabledCanonicalTransfer({
 
 export function TransferDisabledDialog() {
   const [networks] = useNetworks();
-  const { isDepositMode, isTeleportMode, parentChain, childChain } =
-    useNetworksRelationship(networks);
+  const { isDepositMode, parentChain, childChain } = useNetworksRelationship(networks);
   const [selectedToken, setSelectedToken] = useSelectedToken();
   // for tracking local state and prevent flickering with async URL params updating
   const [selectedTokenAddressLocalValue, setSelectedTokenAddressLocalValue] = useState<
@@ -90,20 +77,6 @@ export function TransferDisabledDialog() {
     erc20L1Address: selectedToken?.address,
     chainId: networks.sourceChain.id,
   });
-  const [l2ChainIdForTeleport, setL2ChainIdForTeleport] = useState<number | undefined>();
-
-  useEffect(() => {
-    const updateL2ChainIdForTeleport = async () => {
-      if (!isTeleportMode) {
-        return;
-      }
-      const { l2ChainId } = await getL2ConfigForTeleport({
-        destinationChainProvider: networks.destinationChainProvider,
-      });
-      setL2ChainIdForTeleport(l2ChainId);
-    };
-    updateL2ChainIdForTeleport();
-  }, [isTeleportMode, networks.destinationChainProvider]);
 
   const shouldShowDialog = useMemo(() => {
     if (
@@ -128,7 +101,6 @@ export function TransferDisabledDialog() {
     return isDisabledCanonicalTransfer({
       selectedToken,
       isDepositMode,
-      isTeleportMode,
       parentChainId: parentChain.id,
       childChainId: childChain.id,
       isSelectedTokenWithdrawOnly,
@@ -139,17 +111,12 @@ export function TransferDisabledDialog() {
     isDepositMode,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    isTeleportMode,
     parentChain.id,
     selectedToken,
     selectedTokenAddressLocalValue,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
   ]);
-
-  const sourceChainName = getNetworkName(networks.sourceChain.id);
-  const destinationChainName = getNetworkName(networks.destinationChain.id);
-  const l2ChainIdForTeleportName = l2ChainIdForTeleport
-    ? getNetworkName(l2ChainIdForTeleport)
-    : null;
 
   const isGHO =
     selectedToken &&
@@ -185,58 +152,27 @@ export function TransferDisabledDialog() {
       onClose={onClose}
     >
       <div className="flex flex-col space-y-4 py-4">
-        {isTeleportMode ? (
-          // teleport transfer disabled content if token is not in the allowlist
-          <>
-            <p>
-              Unfortunately, <span className="font-medium">{unsupportedToken}</span> is not yet
-              supported for direct {sourceChainName} to {destinationChainName} transfers.
-            </p>
-            {l2ChainIdForTeleportName && (
-              <p>
-                To bridge <span className="font-medium">{unsupportedToken}</span>:
-                <li>
-                  First bridge from {sourceChainName} to {l2ChainIdForTeleportName}.
-                </li>
-                <li>
-                  Then bridge from {l2ChainIdForTeleportName} to {destinationChainName}.
-                </li>
-              </p>
-            )}
-            <p>
-              For more information please contact us on{' '}
-              <ExternalLink href="https://discord.com/invite/ZpZuw7p" className="underline">
-                Discord
-              </ExternalLink>{' '}
-              and reach out in #support for assistance.
-            </p>
-          </>
-        ) : (
-          // canonical transfer disabled content for all other cases
-          <>
-            <p>
-              Unfortunately, <span className="font-medium">{unsupportedToken}</span> has a custom
-              bridge solution that is incompatible with the canonical Arbitrum bridge.
-            </p>
-            {isGHO && (
-              <p>
-                Please use the{' '}
-                <ExternalLink
-                  className="underline hover:opacity-70"
-                  href="https://app.transporter.io/?from=mainnet&tab=token&to=arbitrum&token=GHO"
-                >
-                  CCIP bridge for GHO
-                </ExternalLink>{' '}
-                instead.
-              </p>
-            )}
-            <p>
-              For more information please contact{' '}
-              <span className="font-medium">{unsupportedToken}</span>
-              &apos;s developer team directly or explore their docs.
-            </p>
-          </>
+        <p>
+          Unfortunately, <span className="font-medium">{unsupportedToken}</span> has a custom bridge
+          solution that is incompatible with the canonical Arbitrum bridge.
+        </p>
+        {isGHO && (
+          <p>
+            Please use the{' '}
+            <ExternalLink
+              className="underline hover:opacity-70"
+              href="https://app.transporter.io/?from=mainnet&tab=token&to=arbitrum&token=GHO"
+            >
+              CCIP bridge for GHO
+            </ExternalLink>{' '}
+            instead.
+          </p>
         )}
+        <p>
+          For more information please contact{' '}
+          <span className="font-medium">{unsupportedToken}</span>
+          &apos;s developer team directly or explore their docs.
+        </p>
       </div>
     </Dialog>
   );
