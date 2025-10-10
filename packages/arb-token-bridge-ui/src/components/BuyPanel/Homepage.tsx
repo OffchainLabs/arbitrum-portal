@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import MoonPay from '@/images/onramp/moonpay.svg';
 
 import { Button } from '../common/Button';
@@ -18,6 +19,9 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
     <Link
       href={{ pathname: `${pathname}/${slug}`, query: searchParams.toString() }}
       className="relative col-span-1 flex h-full w-full last-of-type:col-span-2 md:last-of-type:col-span-1"
+      onClick={() => {
+        trackEvent('Onramp Service Click', { service: name });
+      }}
     >
       <Button
         variant="tertiary"
@@ -46,6 +50,9 @@ function MoonPayTile() {
     <Link
       href={{ pathname: `${pathname}/moonpay`, query: searchParams.toString() }}
       className={twMerge('relative col-span-2 flex h-full w-full flex-col md:col-span-3')}
+      onClick={() => {
+        trackEvent('Onramp Service Click', { service: 'MoonPay' });
+      }}
     >
       <Button
         variant="tertiary"
@@ -72,9 +79,7 @@ export function Homepage() {
   const router = useRouter();
 
   const allOnrampOnClick = useCallback(() => {
-    router.push(
-      '/projects?chains=arbitrum-one_arbitrum-nova_apechain_cheese_degen_ebi-xyz_pop-apex_reya_sanko_xai_xchain&subcategories=fiat-on-ramp',
-    );
+    router.push('/projects?subcategories=fiat-on-ramp');
   }, [router]);
 
   return (
