@@ -3,30 +3,32 @@
 import { SortOptions } from './types';
 
 export type ServerSideAppProps = {
-  params: {
+  params: Promise<{
     categorySlug?: string;
     searchSlug?: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     categories?: string; // [legacy]: used to identify old urls so that we can redirect them to updated paths
     subcategories?: string;
     chains?: string;
     project?: string;
     orbitChain?: string;
     sortBy?: SortOptions;
-  };
+  }>;
 };
 
-export const getServerSideAppParams = (props: ServerSideAppProps) => {
-  const selectedCategory = props?.params.categorySlug || 'all';
-  const selectedSubcategories = props?.searchParams.subcategories?.split('_') || [];
-  const selectedChains = props?.searchParams.chains?.split('_') || [];
+export const getServerSideAppParams = async (props: ServerSideAppProps) => {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
+  const selectedCategory = params.categorySlug || 'all';
+  const selectedSubcategories = searchParams.subcategories?.split('_') || [];
+  const selectedChains = searchParams.chains?.split('_') || [];
 
-  const selectedProject = props?.searchParams.project;
-  const searchString = decodeURIComponent(props?.params.searchSlug || '');
-  const legacyCategories = props?.searchParams.categories;
-  const selectedOrbitChain = props?.searchParams.orbitChain;
-  const selectedSort = props?.searchParams.sortBy;
+  const selectedProject = searchParams.project;
+  const searchString = decodeURIComponent(params.searchSlug || '');
+  const legacyCategories = searchParams.categories;
+  const selectedOrbitChain = searchParams.orbitChain;
+  const selectedSort = searchParams.sortBy;
 
   return {
     selectedCategory,
