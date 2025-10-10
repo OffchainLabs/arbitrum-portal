@@ -6,7 +6,7 @@ export type TooltipProps = {
   content?: React.ReactNode;
 };
 
-export function Tooltip({ show = true, content, children }: TooltipProps): JSX.Element {
+export function Tooltip({ show = true, content, children }: TooltipProps): React.JSX.Element {
   if (!show) {
     return <>{children}</>;
   }
@@ -18,7 +18,7 @@ export function Tooltip({ show = true, content, children }: TooltipProps): JSX.E
       placement="bottom"
       duration={[200, 50]}
       interactive={true}
-      appendTo={() => document.body}
+      appendTo={document.body}
     >
       <div>{children}</div>
     </Tippy>

@@ -345,7 +345,7 @@ function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
   );
 }
 
-export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.Element {
+export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): React.JSX.Element {
   const {
     name: tokenName,
     symbol: tokenSymbol,
