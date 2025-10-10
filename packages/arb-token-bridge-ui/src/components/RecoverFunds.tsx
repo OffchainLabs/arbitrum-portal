@@ -12,9 +12,9 @@ import { getBaseFee } from '@arbitrum/sdk/dist/lib/utils/lib';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Signer, constants } from 'ethers';
 import { isAddress, parseEther } from 'ethers/lib/utils';
-import { useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
-import { Column, Table, TableCellRenderer } from 'react-virtualized';
+import { Column, Table } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -217,6 +217,7 @@ async function filterLostFundsWithoutEnoughGas({
   return balance;
 }
 
+type LostFundRow = [ChainId, BigNumber, NativeCurrency];
 export function useFundsOnAliasedAddress({
   address,
   isTestnet,
@@ -247,9 +248,9 @@ export function useFundsOnAliasedAddress({
             balance,
             address,
           });
-          return [chainId, balanceFiltered, nativeCurrency] as const;
+          return [chainId, balanceFiltered, nativeCurrency] as const satisfies LostFundRow;
         } catch (error) {
-          return [chainId, constants.Zero, nativeCurrency] as const;
+          return [chainId, constants.Zero, nativeCurrency] as const satisfies LostFundRow;
         }
       });
 
@@ -260,10 +261,13 @@ export function useFundsOnAliasedAddress({
     },
   );
 }
-
-const TokenColumn: TableCellRenderer = ({ rowData }) => {
-  const [, balance, nativeCurrency] = rowData;
-
+const TokenColumn = ({
+  balance,
+  nativeCurrency,
+}: {
+  balance: BigNumber;
+  nativeCurrency: NativeCurrency;
+}) => {
   return (
     <span className="flex h-12 items-center align-middle">
       <SafeImage
@@ -294,7 +298,7 @@ export function RecoverFunds() {
   return (
     <>
       <DialogWrapper {...dialogProps} />
-      <NoteBox className="m-auto w-[600px] sm:pt-6">
+      <NoteBox className="m-auto w-[600px]">
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
@@ -361,8 +365,7 @@ export const useRecoverFundsTransactionsStore = create<RecoverFundsTransactionsS
   ),
 );
 
-const ActionColumn: TableCellRenderer = ({ rowData }) => {
-  const [chainId, balance]: [ChainId, BigNumber, NativeCurrency] = rowData;
+const ActionColumn = ({ chainId, balance }: { chainId: ChainId; balance: BigNumber }) => {
   const { address } = useAccount();
   const [isLoading, setIsLoading] = useState(false);
   const [destinationAddress, setDestinationAddress] = useState<string | undefined>(undefined);
@@ -532,6 +535,10 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
   );
 };
 
+const Header = ({ label }: { label: ReactNode }) => (
+  <div className="mx:4 flex w-full border-b border-white/30 text-white">{label}</div>
+);
+
 export function RecoverFundsDialog(props: UseDialogProps) {
   const { address } = useAccount();
   const [{ sourceChain }] = useNetworks();
@@ -555,14 +562,10 @@ export function RecoverFundsDialog(props: UseDialogProps) {
       <Table
         width={665}
         height={500}
-        rowHeight={60}
+        rowHeight={65}
         rowCount={lostFunds.length}
         headerHeight={52}
-        headerRowRenderer={(props) => (
-          <div className="mx:4 flex w-full border-b border-white/30 text-white">
-            {props.columns}
-          </div>
-        )}
+        headerRowRenderer={({ columns }) => <Header label={columns} />}
         rowGetter={({ index }) => lostFunds[index]}
         overscanRowCount={5}
         rowRenderer={({ columns, index, rowData }) => {
@@ -583,41 +586,72 @@ export function RecoverFundsDialog(props: UseDialogProps) {
         }}
       >
         <Column
+          flexGrow={0}
+          flexShrink={0}
           label={
             <div className="h-full w-[180px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
               TOKEN
             </div>
           }
-          cellRenderer={(props) => <TokenColumn {...props} />}
+          headerRenderer={({ label }) => {
+            return <Header label={label} />;
+          }}
+          cellDataGetter={({ rowData }: { rowData: LostFundRow }) => ({
+            balance: rowData[1],
+            nativeCurrency: rowData[2],
+          })}
+          cellRenderer={({ cellData }) => (
+            <TokenColumn balance={cellData.balance} nativeCurrency={cellData.nativeCurrency} />
+          )}
           dataKey="balance"
           width={180}
         />
         <Column
+          flexGrow={0}
+          flexShrink={0}
           label={
             <div className="h-full w-[140px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
               CHAIN
             </div>
           }
-          cellRenderer={({ rowData }) => (
+          headerRenderer={({ label }) => {
+            return <Header label={label} />;
+          }}
+          cellDataGetter={({ rowData }: { rowData: LostFundRow }) => rowData[0]}
+          cellRenderer={({ cellData }) => (
             <div className="flex h-12 items-center align-middle">
-              <NetworkImage chainId={rowData[0]} className="h-5 w-5" />
+              <NetworkImage chainId={cellData} className="h-5 w-5" />
 
-              <span className="ml-1 text-sm">{getNetworkName(rowData[0])}</span>
+              <span className="ml-1 text-sm">{getNetworkName(cellData)}</span>
             </div>
           )}
           dataKey="chainId"
           width={140}
         />
         <Column
+          flexGrow={0}
+          flexShrink={0}
           label={
             <div className="h-full w-[345px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
               DESTINATION ADDRESS
             </div>
           }
-          cellRenderer={(props) => <ActionColumn {...props} key={props.rowData[0]} />}
+          headerRenderer={({ label }) => {
+            return <Header label={label} />;
+          }}
+          cellDataGetter={({ rowData }: { rowData: LostFundRow }) => ({
+            chainId: rowData[0],
+            balance: rowData[1],
+          })}
+          cellRenderer={({ cellData }) => (
+            <ActionColumn
+              chainId={cellData.chainId}
+              balance={cellData.balance}
+              key={cellData.chainId}
+            />
+          )}
           dataKey="destinationAddress"
           width={345}
-          flexShrink={0}
         />
       </Table>
     </Dialog>

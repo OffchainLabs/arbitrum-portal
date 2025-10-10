@@ -65,6 +65,8 @@ const TableHeader = ({ children, className }: PropsWithChildren<{ className?: st
   </div>
 );
 
+const noop = () => null;
+
 export const LoadMoreButton = (props: ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
     <button {...props} className="arb-hover text-xs" aria-label="Load More Transactions">
@@ -255,31 +257,51 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           label="time"
           dataKey="time"
           width={139}
+          flexGrow={0}
+          flexShrink={0}
           headerRenderer={() => <TableHeader>TIME</TableHeader>}
+          cellDataGetter={noop}
+          cellRenderer={noop}
         />
         <Column
           label="token"
           dataKey="token"
           width={141}
+          flexGrow={0}
+          flexShrink={0}
           headerRenderer={() => <TableHeader>TOKEN</TableHeader>}
+          cellDataGetter={noop}
+          cellRenderer={noop}
         />
         <Column
           label="from"
           dataKey="from"
           width={142}
+          flexGrow={0}
+          flexShrink={0}
           headerRenderer={() => <TableHeader>FROM</TableHeader>}
+          cellDataGetter={noop}
+          cellRenderer={noop}
         />
         <Column
           label="to"
           dataKey="to"
           width={137}
+          flexGrow={0}
+          flexShrink={0}
           headerRenderer={() => <TableHeader>TO</TableHeader>}
+          cellDataGetter={noop}
+          cellRenderer={noop}
         />
         <Column
           label="status"
           dataKey="status"
           width={100}
+          flexGrow={0}
+          flexShrink={0}
           headerRenderer={() => <TableHeader>STATUS</TableHeader>}
+          cellDataGetter={noop}
+          cellRenderer={noop}
         />
       </Table>
     </ContentWrapper>
