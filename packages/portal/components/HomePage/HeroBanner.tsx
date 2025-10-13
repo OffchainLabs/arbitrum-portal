@@ -43,10 +43,10 @@ export const HeroBanner = () => {
       <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-[#491BCA] from-[65%] to-transparent md:from-[35%] lg:bg-gradient-to-r lg:to-[90%]" />
 
       <div className="absolute left-[-30px] top-[-10px] flex h-full min-w-[600px] scale-110 flex-wrap gap-2 lg:left-auto lg:right-[-50px]">
-        {projectsToHighlight.map((project, index) => {
+        {projectsToHighlight.map((project) => {
           return (
             <Image
-              key={`${project.slug}-${index}`}
+              key={project.slug}
               alt={`${project.title} logo`}
               src={project.images.logoUrl}
               width={60}

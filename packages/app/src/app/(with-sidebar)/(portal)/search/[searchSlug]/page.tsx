@@ -6,12 +6,12 @@ import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getS
 import { FullPageSearchResults } from '@/portal/components/FullPageSearchResults';
 
 // Generate server-side metadata for this page
-export function generateMetadata(props: ServerSideAppProps): Promise<Metadata> {
+export function generateMetadata(props: ServerSideAppProps): Metadata {
   return getMetaData(props);
 }
 
-export default async function SearchPage(props: ServerSideAppProps) {
-  const { searchString } = await getServerSideAppParams(props);
+export default function SearchPage(props: ServerSideAppProps) {
+  const { searchString } = getServerSideAppParams(props);
 
   const searchResults = getSearchResults(searchString);
 

@@ -3,12 +3,17 @@
 /**
  * @type {import('next').NextConfig}
  **/
+
 module.exports = {
   distDir: 'build',
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
   experimental: {
     externalDir: true,
+  },
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    return config;
   },
   images: {
     remotePatterns: [

@@ -17,8 +17,8 @@ const metadataContent = {
 };
 
 // Generate server-side metadata for this page
-export async function generateMetadata(props: ServerSideAppProps): Promise<Metadata> {
-  const { selectedOrbitChain } = await getServerSideAppParams(props);
+export function generateMetadata(props: ServerSideAppProps): Metadata {
+  const { selectedOrbitChain } = getServerSideAppParams(props);
 
   const entitySlug = selectedOrbitChain || '';
 

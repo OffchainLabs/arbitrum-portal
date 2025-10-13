@@ -21,7 +21,7 @@ export const TokenLogo = ({
 }: {
   srcOverride?: string | null;
   className?: string;
-  fallback?: React.JSX.Element;
+  fallback?: JSX.Element;
 }) => {
   const [selectedToken] = useSelectedToken();
   const tokensFromLists = useTokensFromLists();

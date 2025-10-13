@@ -29,7 +29,7 @@ type TableData = {
   onClick?: (data: { value: any }) => void;
 }[];
 
-const Table = ({ id, data }: { id: string; data: TableData }) => {
+const Table = ({ key, data }: { key: string; data: TableData }) => {
   const [showCopied, setShowCopied] = useState<string | boolean>(false);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const Table = ({ id, data }: { id: string; data: TableData }) => {
 
         return (
           <Element
-            key={`${id}-${index}`}
+            key={`${key}-${index}`}
             className={twMerge(
               'group col-span-4 grid grid-cols-4',
               isActionable && 'cursor-pointer',
@@ -205,7 +205,7 @@ export const OrbitChainDetailsTable = ({ orbitChain }: { orbitChain: OrbitChain 
       {table1Data.length > 0 && (
         <>
           <div className="box-content overflow-hidden rounded-md border border-[#5B5B5B]">
-            <Table id="table1" data={table1Data} />
+            <Table key="table1" data={table1Data} />
           </div>
           <br />
         </>
@@ -213,7 +213,7 @@ export const OrbitChainDetailsTable = ({ orbitChain }: { orbitChain: OrbitChain 
 
       {table2Data.length > 0 && (
         <div className="box-content overflow-hidden rounded-md border border-[#5B5B5B]">
-          <Table id="table2" data={table2Data} />
+          <Table key="table2" data={table2Data} />
         </div>
       )}
     </Card>
