@@ -192,8 +192,8 @@ export function TransferPanel() {
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
     setQueryParams({
       tab: tabToIndex[TabParamEnum.TX_HISTORY],
-      amount: '0',
-      amount2: '0',
+      amount: '',
+      amount2: '',
     });
   }, [setQueryParams]);
 
@@ -1154,8 +1154,8 @@ export function TransferPanel() {
     setTransferring(false);
     clearRoute();
     setQueryParams({
-      amount: '0',
-      amount2: '0',
+      amount: '',
+      amount2: '',
     });
 
     await (sourceChainTransaction as TransactionResponse).wait();
