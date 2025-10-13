@@ -18,7 +18,7 @@ export function StatusBadge({
   children,
   className,
   ...props
-}: StatusBadgeProps): React.JSX.Element {
+}: StatusBadgeProps): JSX.Element {
   return (
     <div
       className={twMerge(

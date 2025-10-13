@@ -8,7 +8,7 @@ export function ArbTokenBridgeStoreSync({
   tokenBridgeParams,
 }: {
   tokenBridgeParams: TokenBridgeParams;
-}): React.JSX.Element {
+}): JSX.Element {
   const actions = useActions();
   const arbTokenBridge = useArbTokenBridge(tokenBridgeParams);
 

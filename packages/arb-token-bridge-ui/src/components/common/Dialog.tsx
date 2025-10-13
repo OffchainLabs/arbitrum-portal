@@ -1,7 +1,6 @@
 import { DialogBackdrop, Dialog as HeadlessUIDialog } from '@headlessui/react';
 import { ChevronLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useCallback, useRef, useState } from 'react';
-import React from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { useMode } from '../../hooks/useMode';
@@ -46,7 +45,7 @@ type UseDialogParams = {
 
 export function useDialog(params?: UseDialogParams): UseDialogResult {
   const resolveRef =
-    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>(null);
+    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>();
 
   // Whether the dialog is currently open
   const [isOpen, setIsOpen] = useState(params?.defaultIsOpen ?? false);
@@ -66,7 +65,7 @@ export function useDialog(params?: UseDialogParams): UseDialogResult {
 
   const closeDialog = useCallback((confirmed: boolean, onCloseData?: unknown) => {
     if (typeof resolveRef.current !== 'undefined') {
-      resolveRef.current?.([confirmed, onCloseData]);
+      resolveRef.current([confirmed, onCloseData]);
     }
 
     setIsOpen(false);
@@ -78,7 +77,7 @@ export function useDialog(params?: UseDialogParams): UseDialogResult {
 export type DialogProps = {
   isOpen: boolean;
   closeable?: boolean;
-  title?: string | React.JSX.Element;
+  title?: string | JSX.Element;
   initialFocus?: React.MutableRefObject<HTMLElement | null>;
   cancelButtonProps?: Partial<ButtonProps>;
   actionButtonProps?: Partial<ButtonProps>;

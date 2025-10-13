@@ -35,10 +35,10 @@ export function generateMetadata(): Metadata {
 }
 
 type OptionalArcadePageParams = {
-  searchParams: Promise<{
+  searchParams: {
     arcadeWeekIndex?: string;
     project?: string;
-  }>;
+  };
 };
 
 // With respect to Arcade, get the current week number, so that we can show the plan accordingly
@@ -87,8 +87,8 @@ const getCurrentWeekIndex = (hardCodedWeekIndex?: number) => {
   return currentWeekIndex;
 };
 
-export default async function ArcadePage(params: OptionalArcadePageParams) {
-  const currentWeekIndex = getCurrentWeekIndex(Number((await params.searchParams).arcadeWeekIndex));
+export default function ArcadePage(params: OptionalArcadePageParams) {
+  const currentWeekIndex = getCurrentWeekIndex(Number(params.searchParams.arcadeWeekIndex));
 
   const isBeforeArcade = currentWeekIndex < 0;
   const isDuringArcade = currentWeekIndex >= 0 && currentWeekIndex < ARCADE_WEEKLY_PLAN.length;
