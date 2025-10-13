@@ -2,7 +2,7 @@ import { PathnameEnum } from '@/bridge/constants';
 
 import EmbedPageWrapper from './EmbedPageWrapper';
 
-export default async function EmbededPage({
+export default function EmbededPage({
   searchParams,
 }: {
   searchParams: {

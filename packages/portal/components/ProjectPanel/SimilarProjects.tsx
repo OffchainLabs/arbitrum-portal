@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import React from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { CHAINS, getChainSlugFromTitle } from '@/common/chains';
@@ -68,7 +69,7 @@ export const SimilarProjects = ({
       {/* <hr className="border-white/40" /> */}
       <div className="flex flex-col gap-4" onClick={similarProjectsClicked}>
         {similarProjects.map((project, index) => (
-          <>
+          <React.Fragment key={project.slug}>
             <ProjectItemBox
               key={`similar-${project.id}`}
               lazyload={false}
@@ -77,7 +78,7 @@ export const SimilarProjects = ({
               displayMode="compact"
             />
             {index < similarProjects.length - 1 && <hr className="border-white/20" />}
-          </>
+          </React.Fragment>
         ))}
       </div>
     </div>
