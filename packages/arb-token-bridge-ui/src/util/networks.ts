@@ -508,8 +508,14 @@ export const TELEPORT_ALLOWLIST: { [id: number]: number[] } = {
   [ChainId.Sepolia]: [1918988905], // RARI Testnet
 };
 
-export function getChildChainIds(chain: ArbitrumNetwork | BlockNumberReferenceNetwork) {
-  const childChainIds = [...getChildrenForNetwork(chain.chainId).map((chain) => chain.chainId)];
+export function getChildChainIds(
+  chain: ArbitrumNetwork | BlockNumberReferenceNetwork,
+  { includeTeleport }: { includeTeleport: boolean } = { includeTeleport: false },
+) {
+  const childChainIds = [
+    ...getChildrenForNetwork(chain.chainId).map((chain) => chain.chainId),
+    ...(includeTeleport ? (TELEPORT_ALLOWLIST[chain.chainId] ?? []) : []), // for considering teleport (L1-L3 transfers) we will get the L3 children of the chain, if present
+  ];
   return Array.from(new Set(childChainIds));
 }
 
