@@ -7,20 +7,20 @@ import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getS
 import { CategoryPageBanner } from '@/portal/components/CategoryPageBanner';
 import { CategoryPageDescription } from '@/portal/components/CategoryPageDescription';
 import { Projects } from '@/portal/components/Projects';
-import { getFilteredProjects } from '@/portal/hooks/useFilteredProjects';
+import { useFilteredProjects } from '@/portal/hooks/useFilteredProjects';
 
 // Generate server-side metadata for this page
-export function generateMetadata(props: ServerSideAppProps): Promise<Metadata> {
+export function generateMetadata(props: ServerSideAppProps): Metadata {
   return getMetaData(props);
 }
 
-export default async function Page(props: ServerSideAppProps) {
+export default function Page(props: ServerSideAppProps) {
   const { selectedCategory, selectedSubcategories, selectedChains, selectedSort } =
-    await getServerSideAppParams(props);
+    getServerSideAppParams(props);
 
   const categoryMetaData = getCategoryDetailsById(selectedCategory);
 
-  const projects = getFilteredProjects({
+  const projects = useFilteredProjects({
     selectedCategory,
     selectedSubcategories,
     selectedChains,

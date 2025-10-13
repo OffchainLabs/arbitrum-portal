@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 
-import { SearchParamsProps } from '@/app/src/types';
 import { PORTAL_DOMAIN, PathnameEnum } from '@/bridge/constants';
 import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
 import { isNetwork } from '@/bridge/util/networks';
 
 import BridgePageWrapper from './BridgePageWrapper';
 
-export async function generateMetadata(props: SearchParamsProps): Promise<Metadata> {
-  const searchParams = await props.searchParams;
+type Props = {
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sourceChainSlug = (
     typeof searchParams.sourceChain === 'string' ? searchParams.sourceChain : 'ethereum'
   ) as ChainKeyQueryParam;
@@ -68,7 +70,6 @@ export async function generateMetadata(props: SearchParamsProps): Promise<Metada
   };
 }
 
-export default async function BridgePage(props: SearchParamsProps) {
-  const searchParams = await props.searchParams;
+export default async function BridgePage({ searchParams }: Props) {
   return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BRIDGE} />;
 }

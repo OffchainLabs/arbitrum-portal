@@ -4,35 +4,25 @@ import { filterByChains, filterBySubcategories } from '@/common/projectFilters';
 import { PROJECTS } from '@/common/projects';
 import { FullProject } from '@/common/types';
 
-export type GetFilteredProjectsParams = {
+type Props = {
   selectedCategory: string;
   selectedSubcategories: string[];
   selectedChains: string[];
-};
-
-export const getFilteredProjects = ({
-  selectedCategory,
-  selectedSubcategories,
-  selectedChains,
-}: GetFilteredProjectsParams): FullProject[] => {
-  const filteredProjectsByChains = filterByChains(PROJECTS, selectedChains);
-
-  return filterBySubcategories(filteredProjectsByChains, selectedCategory, selectedSubcategories);
 };
 
 export function useFilteredProjects({
   selectedCategory,
   selectedSubcategories,
   selectedChains,
-}: GetFilteredProjectsParams) {
+}: Props) {
+  const filteredProjectsByChains = useMemo(
+    () => filterByChains(PROJECTS, selectedChains),
+    [selectedChains],
+  );
+
   const filteredItems: FullProject[] = useMemo(
-    () =>
-      getFilteredProjects({
-        selectedCategory,
-        selectedSubcategories,
-        selectedChains,
-      }),
-    [selectedCategory, selectedSubcategories, selectedChains],
+    () => filterBySubcategories(filteredProjectsByChains, selectedCategory, selectedSubcategories),
+    [filteredProjectsByChains, selectedCategory, selectedSubcategories],
   );
 
   return filteredItems;

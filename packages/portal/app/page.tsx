@@ -21,8 +21,8 @@ const metadataContent = {
 };
 
 // Generate server-side metadata for this page
-export async function generateMetadata(props: ServerSideAppProps): Promise<Metadata> {
-  const { selectedProject, selectedOrbitChain } = await getServerSideAppParams(props);
+export function generateMetadata(props: ServerSideAppProps): Metadata {
+  const { selectedProject, selectedOrbitChain } = getServerSideAppParams(props);
 
   const entityType = selectedProject ? EntityType.Project : EntityType.OrbitChain;
 
@@ -51,8 +51,8 @@ export async function generateMetadata(props: ServerSideAppProps): Promise<Metad
   };
 }
 
-export default async function Home(props: ServerSideAppProps) {
-  const { legacyCategories } = await getServerSideAppParams(props);
+export default function Home(props: ServerSideAppProps) {
+  const { legacyCategories } = getServerSideAppParams(props);
   // if found the deprecated url's of the format /?categories=defi, redirect them to /projects/defi
   if (legacyCategories) {
     redirect(`/projects/${legacyCategories}`);

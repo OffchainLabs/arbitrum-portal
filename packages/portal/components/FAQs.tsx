@@ -1,6 +1,6 @@
 'use client';
 
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
+import { Disclosure } from '@headlessui/react';
 import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -23,17 +23,17 @@ export const FAQs = ({ content }: { content: FAQ[] }) => {
           <Disclosure>
             {({ open }) => (
               <>
-                <DisclosureButton className="flex w-full items-start justify-between text-left text-xl lg:items-center">
+                <Disclosure.Button className="flex w-full items-start justify-between text-left text-xl lg:items-center">
                   {c.q}
                   {open ? (
                     <MinusIcon className="h-6 w-6 shrink-0" />
                   ) : (
                     <PlusIcon className="h-6 w-6 shrink-0" />
                   )}
-                </DisclosureButton>
-                <DisclosurePanel>
+                </Disclosure.Button>
+                <Disclosure.Panel>
                   <div className="relative z-10 pr-[30px] pt-2 opacity-70 lg:pr-[150px]">{c.a}</div>
-                </DisclosurePanel>
+                </Disclosure.Panel>
               </>
             )}
           </Disclosure>
