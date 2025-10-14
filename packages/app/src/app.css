@@ -28,8 +28,11 @@ html {
 
 body {
   background-color: black;
-  font-weight: 300;
   @apply min-h-screen;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* react error overlay hidden in dev mode while testing network switches which trow errors */
