@@ -1,0 +1,96 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`mapSourceTokensToTransferTokens > For other chain, map WETH to WETH and ETH to ETH 1`] = `
+[
+  {
+    "address": "0x0000000000000000000000000000000000000002",
+    "chainId": 1,
+    "decimals": 18,
+    "destinationToken": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "chainId": 55244,
+      "decimals": 18,
+      "name": "Token",
+      "priceUSD": "1",
+      "symbol": "WETH",
+    },
+    "name": "Token",
+    "priceUSD": "1",
+    "symbol": "WETH",
+  },
+  {
+    "address": "0x0000000000000000000000000000000000000002",
+    "chainId": 1,
+    "decimals": 18,
+    "destinationToken": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "chainId": 55244,
+      "decimals": 18,
+      "name": "Token",
+      "priceUSD": "1",
+      "symbol": "ETH",
+    },
+    "name": "Token",
+    "priceUSD": "1",
+    "symbol": "ETH",
+  },
+]
+`;
+
+exports[`mapSourceTokensToTransferTokens > from ApeChain to ArbitrumOne, withdraw WETH to WETH 1`] = `
+[
+  {
+    "address": "0x0000000000000000000000000000000000000002",
+    "chainId": 33139,
+    "decimals": 18,
+    "destinationToken": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "chainId": 42161,
+      "decimals": 18,
+      "name": "Token",
+      "priceUSD": "1",
+      "symbol": "WETH",
+    },
+    "name": "Token",
+    "priceUSD": "1",
+    "symbol": "WETH",
+  },
+]
+`;
+
+exports[`mapSourceTokensToTransferTokens > maps ETH deposits into ApeChain to WETH destination token 1`] = `
+[
+  {
+    "address": "0x0000000000000000000000000000000000000001",
+    "chainId": 42161,
+    "decimals": 18,
+    "destinationToken": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "chainId": 33139,
+      "decimals": 18,
+      "name": "Token",
+      "priceUSD": "1",
+      "symbol": "WETH",
+    },
+    "name": "Token",
+    "priceUSD": "1",
+    "symbol": "ETH",
+  },
+  {
+    "address": "0x0000000000000000000000000000000000000001",
+    "chainId": 42161,
+    "decimals": 18,
+    "destinationToken": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "chainId": 33139,
+      "decimals": 18,
+      "name": "Token",
+      "priceUSD": "1",
+      "symbol": "WETH",
+    },
+    "name": "Token",
+    "priceUSD": "1",
+    "symbol": "WETH",
+  },
+]
+`;
