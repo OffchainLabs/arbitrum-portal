@@ -5,14 +5,19 @@
   "private": true,
   "dependencies": {
     "@arbitrum/sdk": "^4.0.3",
+    "@radix-ui/react-slot": "^1.2.3",
     "@rainbow-me/rainbowkit": "^2.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
+    "lucide-react": "^0.545.0",
     "next": "^14.2.32",
     "posthog-js": "^1.273.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-toastify": "^9.1.1",
     "tailwind-merge": "^3.2.0",
+    "tailwindcss-animate": "^1.0.7",
     "tippy.js": "^6.3.7"
   },
   "devDependencies": {
