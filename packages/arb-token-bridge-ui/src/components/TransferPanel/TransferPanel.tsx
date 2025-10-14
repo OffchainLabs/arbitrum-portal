@@ -1287,15 +1287,19 @@ export function TransferPanel() {
         )}
       >
         <TransferPanelMain />
-        x
+
         <ReceiveFundsHeader />
+
         <Routes />
+
         <ToSConfirmationCheckbox />
+
         {isConnected ? (
           <MoveFundsButton onClick={moveFundsButtonOnClick} />
         ) : (
           <ConnectWalletButton />
         )}
+
         {isTokenAlreadyImported === false && tokenFromSearchParams && (
           <TokenImportDialog
             {...tokenImportDialogProps}
@@ -1303,6 +1307,7 @@ export function TransferPanel() {
             tokenAddress={tokenFromSearchParams}
           />
         )}
+
         {showSmartContractWalletTooltip && (
           <Tippy
             placement="bottom-end"
