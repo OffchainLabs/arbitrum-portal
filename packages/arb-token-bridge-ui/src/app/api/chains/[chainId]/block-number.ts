@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse, connection } from 'next/server';
+import { unstable_noStore } from 'next/cache';
+import { NextRequest, NextResponse } from 'next/server';
 
 import {
   getL1SubgraphClient,
@@ -35,8 +36,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { chainId: string } },
 ): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
-  await connection();
-
+  unstable_noStore();
   const { chainId } = params;
 
   try {
@@ -60,7 +60,6 @@ export async function GET(
           }
         }
       `,
-      fetchPolicy: 'no-cache',
     });
 
     return NextResponse.json(
