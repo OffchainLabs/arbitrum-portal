@@ -104,6 +104,7 @@ describe('Batch Deposit', () => {
 
     context('should show gas estimations and summary', () => {
       cy.typeAmount(ERC20AmountToSend);
+      cy.wait(5_000);
       cy.typeAmount2(nativeCurrencyAmountToSend);
       cy.findGasFeeSummary(zeroToLessThanOneEth);
     });
@@ -200,6 +201,7 @@ describe('Batch Deposit', () => {
 
     context('should show gas estimations and summary', () => {
       cy.typeAmount(ERC20AmountToSend);
+      cy.wait(5_000);
       cy.typeAmount2(nativeCurrencyAmountToSend);
       cy.findGasFeeSummary(zeroToLessThanOneEth);
     });
