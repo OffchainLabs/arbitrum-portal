@@ -58,6 +58,7 @@ export async function GET(
           }
         }
       `,
+      fetchPolicy: 'no-cache',
     });
 
     return NextResponse.json(
