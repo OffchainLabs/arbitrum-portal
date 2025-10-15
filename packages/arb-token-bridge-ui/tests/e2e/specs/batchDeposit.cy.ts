@@ -134,6 +134,9 @@ describe('Batch Deposit', () => {
         duration: 'a few seconds ago',
         ...txData,
       });
+
+      cy.wait(120_000);
+
       cy.switchToTransferPanelTab();
     });
 
