@@ -14,9 +14,6 @@ describe('Transaction History', () => {
     // open tx history panel
     context('open transactions history panel', () => {
       cy.switchToTransactionHistoryTab('pending');
-      cy.wait(30_000);
-      cy.findByLabelText('Load More Transactions').click();
-      cy.wait(30_000);
       cy.findAllByTestId(CLAIMABLE_ROW_IDENTIFIER).its('length').should('be.gt', 0);
     });
   });
@@ -34,7 +31,6 @@ describe('Transaction History', () => {
     context('open transactions history panel', () => {
       cy.switchToTransactionHistoryTab('settled');
       cy.findByLabelText('Load More Transactions').click();
-      cy.wait(20_000);
       cy.findAllByTestId(DEPOSIT_ROW_IDENTIFIER).its('length').should('be.gt', 0);
     });
   });
