@@ -48,8 +48,7 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Action Buttons - Only show on opportunities tabs */}
-          {(pathname === '/earn/opportunities/my' ||
-            pathname === '/earn/opportunities') && (
+          {(pathname === '/earn/opportunities/my' || pathname === '/earn/opportunities') && (
             <div className="flex gap-2">
               <button className="flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-[#262626] transition-colors hover:bg-[#2b2b2b]">
                 <Search className="h-[22px] w-[22px]" />
