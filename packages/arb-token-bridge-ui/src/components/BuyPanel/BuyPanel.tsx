@@ -128,7 +128,7 @@ function BuyPanelNetworkButton({
   const selectedChainId = useBuyPanelStore((state) => state.selectedChainId);
 
   return (
-    <Button variant="secondary" onClick={onClick} className="border-gray-8">
+    <Button variant="secondary" onClick={onClick} className="border-white/30">
       <div className="flex flex-nowrap items-center gap-1 text-lg leading-[1.1]">
         <NetworkImage chainId={selectedChainId} className="h-4 w-4 p-[2px]" size={20} />
         {getNetworkName(selectedChainId)}
@@ -193,7 +193,11 @@ const BalanceWrapper = memo(function BalanceWrapper() {
         {!isLoadingBalance && (balanceError || typeof balanceState === 'undefined') && (
           <span className="text-error">Failed to load balance.</span>
         )}
-        {balanceInUsd && <span className="text-white/50">{formatUSD(balanceInUsd)}</span>}
+        {balanceInUsd !== null && balanceInUsd !== 0 && (
+          <span className="text-white/50">
+            {balanceInUsd} {formatUSD(balanceInUsd)}
+          </span>
+        )}
       </p>
 
       {isBalanceLessThan15Usd && (
@@ -242,7 +246,7 @@ export function BuyPanel() {
   return (
     <div
       className={twMerge(
-        'bg-gray-1 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
+        'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
         embedMode && 'mx-auto max-w-[540px]',
       )}
     >

@@ -2,7 +2,7 @@
   <defs>
     <pattern id="dotPattern" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
       <rect width="7" height="7" fill="transparent"/>
-      <rect x="2" y="2" width="3" height="3" fill="#353535"/>
+      <rect x="2" y="2" width="3" height="3" fill="#ffffff33"/>
     </pattern>
   </defs>
   

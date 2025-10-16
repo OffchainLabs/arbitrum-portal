@@ -20,7 +20,7 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
   return (
     <div
       className={twMerge(
-        'relative bg-gray-1 rounded-md border border-gray-8 px-5 pt-14  pb-6 text-white -mx-4 md:mx-0 w-[calc(100%_+_40px)] md:w-full',
+        'relative bg-white/10 rounded-md border border-white/30 px-5 pt-14  pb-6 text-white -mx-4 md:mx-0 w-[calc(100%_+_40px)] md:w-full',
         embedMode && 'mx-auto max-w-[540px]',
       )}
     >
@@ -40,7 +40,7 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
         <Button
           variant="primary"
           className={twMerge(
-            'bg-white text-black w-full mt-6',
+            'bg-white border-white text-black w-full mt-6',
             '[&>div>span]:flex [&>div>span]:flex-row [&>div>span]:justify-center [&>div>span]:items-center [&>div>span]:gap-2',
           )}
         >
