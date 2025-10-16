@@ -16,7 +16,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
   return (
     <div
       className={twMerge(
-        'bg-white/30 relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-4 pt-5 text-white md:rounded-lg',
+        'bg-gray-8 relative flex h-full w-full flex-col items-center justify-center overflow-hidden p-4 pt-5 text-white md:rounded-lg',
         embedMode && 'bg-widget-background',
       )}
     >
