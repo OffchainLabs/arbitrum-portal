@@ -128,14 +128,10 @@ describe('Batch Deposit', () => {
     context('deposit should complete successfully', () => {
       cy.selectTransactionsPanelTab('settled');
 
-      cy.findTransactionInTransactionHistory(txData);
-
       cy.findTransactionInTransactionHistory({
         duration: 'a few seconds ago',
         ...txData,
       });
-
-      cy.wait(120_000);
 
       cy.switchToTransferPanelTab();
     });
@@ -230,9 +226,6 @@ describe('Batch Deposit', () => {
 
     context('deposit should complete successfully', () => {
       cy.selectTransactionsPanelTab('settled');
-
-      cy.findTransactionInTransactionHistory(txData);
-
       cy.findTransactionInTransactionHistory({
         duration: 'a few seconds ago',
         ...txData,
