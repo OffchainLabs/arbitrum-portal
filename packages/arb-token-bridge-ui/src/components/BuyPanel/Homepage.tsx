@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { useMode } from '@/bridge/hooks/useMode';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import MoonPay from '@/images/onramp/moonpay.svg';
 
@@ -46,7 +45,6 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
 function MoonPayTile() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { embedMode } = useMode();
 
   return (
     <Link
@@ -62,13 +60,7 @@ function MoonPayTile() {
           'relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white',
         )}
       >
-        <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md"></div>
-        <div
-          className={twMerge(
-            'absolute left-1/2 top-[40px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse',
-            embedMode && 'bg-eclipseWidget',
-          )}
-        ></div>
+        <div className="absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md moonpay-ellipse"></div>
         <div className="relative flex flex-col items-center justify-center">
           <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
           <p className="mt-2 text-lg">MoonPay</p>

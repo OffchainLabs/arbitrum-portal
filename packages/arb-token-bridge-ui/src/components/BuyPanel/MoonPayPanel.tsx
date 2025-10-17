@@ -20,13 +20,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
         embedMode && 'bg-widget-background',
       )}
     >
-      <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-      <div
-        className={twMerge(
-          'bg-eclipse absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2',
-          embedMode && 'bg-eclipseWidget',
-        )}
-      ></div>
+      <div className="moonpay-ellipse absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] moonpay-ellipse"></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
         <SafeImage
           src="/images/onramp/moonpay.svg"

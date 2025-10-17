@@ -10,9 +10,6 @@ module.exports = {
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',
         highlight:
           'linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 75%, rgba(255, 255, 255, 0))',
-        eclipse: 'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
-        eclipseWidget:
-          'radial-gradient(ellipse 550px 200px at center, var(--color-widget-background, #191919) 70%, transparent 70%)',
       },
       colors: {
         // ACTION
