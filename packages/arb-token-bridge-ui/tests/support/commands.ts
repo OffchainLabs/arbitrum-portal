@@ -343,7 +343,7 @@ export function clickClaimButton(amountToClaim: string) {
 }
 
 export function selectRoute(type: 'arbitrum' | 'oftV2' | 'cctp') {
-  cy.findByLabelText(`Route ${type}`).should('be.visible').click();
+  cy.findByLabelText(`Route ${type}`).scrollIntoView().should('be.visible').click();
 }
 
 Cypress.Commands.addAll({

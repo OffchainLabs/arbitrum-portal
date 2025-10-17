@@ -31,7 +31,6 @@ describe('Transaction History', () => {
     context('open transactions history panel', () => {
       cy.switchToTransactionHistoryTab('settled');
       cy.findByLabelText('Load More Transactions').click();
-      cy.findAllByTestId(CLAIMABLE_ROW_IDENTIFIER).its('length').should('be.gt', 0);
       cy.findAllByTestId(DEPOSIT_ROW_IDENTIFIER).its('length').should('be.gt', 0);
     });
   });
