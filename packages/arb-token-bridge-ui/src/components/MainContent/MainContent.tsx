@@ -20,21 +20,18 @@ import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 export function MainContent() {
   const pathname = usePathname();
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
-  const [{ tab, disabledFeatures }] = useArbQueryParams();
+  const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
 
   const selectedTab = useMemo(() => {
-    if (showBuyPanel) {
-      // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
-      // because we use /buy and don't use ?tab=buy
-      // so we need to hardcode to return 0 rather than `tab`
-      if (pathname === PathnameEnum.BUY) {
-        return 0;
-      }
-      return tab;
+    if (pathname === PathnameEnum.BUY) {
+      return 0;
     }
-    return Math.max(0, tab - 1);
-  }, [showBuyPanel, tab, pathname]);
+    if (pathname === PathnameEnum.TX_HISTORY) {
+      return showBuyPanel ? 2 : 1;
+    }
+    return showBuyPanel ? 1 : 0;
+  }, [showBuyPanel, pathname]);
 
   useBalanceUpdater();
 

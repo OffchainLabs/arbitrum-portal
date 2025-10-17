@@ -8,8 +8,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { PathnameEnum } from '../constants';
 import { useArbQueryParams } from '../hooks/useArbQueryParams';
-import { useMode } from '../hooks/useMode';
-import { TabParamEnum, isOnrampFeatureEnabled } from '../util/queryParamUtils';
+import { isOnrampFeatureEnabled } from '../util/queryParamUtils';
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
 
 function StyledTab({
@@ -25,14 +24,13 @@ function StyledTab({
   }>) {
   const pathname = usePathname();
   const isBuyTab = pathname === PathnameEnum.BUY;
-  const { embedMode } = useMode();
 
   return (
     <Tab
       as={Link}
       href={
         href ?? {
-          pathname: embedMode ? PathnameEnum.EMBED : PathnameEnum.BRIDGE,
+          pathname: PathnameEnum.BRIDGE,
           query: hrefQuery,
         }
       }
@@ -54,7 +52,6 @@ export function TopNavBar() {
   const { colorClassName } = useTransactionReminderInfo();
   const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
-  const { embedMode } = useMode();
   const pathname = usePathname();
   const isBuyTab = pathname === PathnameEnum.BUY;
   const searchParams = useSearchParams();
@@ -74,7 +71,7 @@ export function TopNavBar() {
       {showBuyPanel && (
         <StyledTab
           href={{
-            pathname: embedMode ? PathnameEnum.EMBED_BUY : PathnameEnum.BUY,
+            pathname: PathnameEnum.BUY,
             query: searchParamsWithoutTab.toString(),
           }}
           className={isBuyTab ? 'bg-black/75' : ''}
@@ -90,7 +87,10 @@ export function TopNavBar() {
       </StyledTab>
       <StyledTab
         aria-label="Switch to Transaction History Tab"
-        hrefQuery={`${searchParamsWithoutTab.toString()}&tab=${TabParamEnum.TX_HISTORY}`}
+        href={{
+          pathname: PathnameEnum.TX_HISTORY,
+          query: searchParamsWithoutTab.toString(),
+        }}
       >
         <Image src="/icons/history.svg" width={24} height={24} alt="history icon" />
         Txn History{' '}
