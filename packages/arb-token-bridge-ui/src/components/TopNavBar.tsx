@@ -9,6 +9,7 @@ import { twMerge } from 'tailwind-merge';
 import { PathnameEnum } from '../constants';
 import { useArbQueryParams } from '../hooks/useArbQueryParams';
 import { useMode } from '../hooks/useMode';
+import { isBridgeBuyOrSubpages } from '../util/pathnameUtils';
 import { TabParamEnum, isOnrampFeatureEnabled } from '../util/queryParamUtils';
 import { useTransactionReminderInfo } from './TransactionHistory/useTransactionReminderInfo';
 
@@ -24,7 +25,7 @@ function StyledTab({
     hrefQuery?: string;
   }>) {
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.BUY;
+  const isBuyTab = isBridgeBuyOrSubpages(pathname);
   const { embedMode } = useMode();
 
   return (
@@ -56,7 +57,7 @@ export function TopNavBar() {
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   const { embedMode } = useMode();
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.BUY;
+  const isBuyTab = isBridgeBuyOrSubpages(pathname);
   const searchParams = useSearchParams();
 
   const searchParamsWithoutTab = useMemo(() => {

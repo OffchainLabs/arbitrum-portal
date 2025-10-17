@@ -130,6 +130,9 @@ type AnalyticsEventMap = {
     chainId: ChainId;
     balanceToRecover: string;
   };
+  'Onramp Service Click': {
+    service: string;
+  };
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;

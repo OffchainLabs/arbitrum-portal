@@ -5,7 +5,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { BuyPanelNetworkSelectionContainer } from '../BuyPanel';
+import { BuyPanelNetworkSelectionContainer } from '../BuyPanel/BuyPanel';
 import { RecoverFundsDialog } from '../RecoverFunds';
 import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/CustomDestinationAddressConfirmationDialog';
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';

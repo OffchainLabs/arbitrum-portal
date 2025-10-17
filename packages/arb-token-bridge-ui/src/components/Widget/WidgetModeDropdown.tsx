@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { PathnameEnum } from '@/bridge/constants';
+import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
@@ -45,7 +46,7 @@ export const WidgetModeDropdown = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const isBuyTab = pathname === PathnameEnum.EMBED_BUY;
+  const isBuyTab = isEmbeddedBridgeBuyOrSubpages(pathname);
   const isBridgeTab = pathname === PathnameEnum.EMBED;
   const [{ disabledFeatures }] = useArbQueryParams();
 
