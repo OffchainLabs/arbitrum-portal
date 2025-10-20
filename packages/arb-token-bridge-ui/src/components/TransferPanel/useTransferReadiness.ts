@@ -41,7 +41,7 @@ import {
 export const DISABLED_CHAIN_IDS: number[] = [];
 
 // withdraw-only chains (will also display error message in the transfer panel)
-const WITHDRAW_ONLY_CHAIN_IDS: number[] = [98865]; // Plume Legacy
+const WITHDRAW_ONLY_CHAIN_IDS: number[] = [];
 
 type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage;
