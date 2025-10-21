@@ -194,9 +194,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
           <span className="text-error">Failed to load balance.</span>
         )}
         {balanceInUsd !== null && balanceInUsd !== 0 && (
-          <span className="text-white/50">
-            {balanceInUsd} {formatUSD(balanceInUsd)}
-          </span>
+          <span className="text-white/50">({formatUSD(balanceInUsd)})</span>
         )}
       </p>
 
