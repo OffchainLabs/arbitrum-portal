@@ -452,48 +452,6 @@
       }
     },
     {
-      "chainId": 10058111,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0x37d3139024D017C2152849B154F2631E2F2C8560",
-        "inbox": "0x21092752C8BB70b8043379a00dCB9aCdA2302181",
-        "outbox": "0xb07b44B3D5C7df02905B9c156Ba44b5762f7b268",
-        "rollup": "0x49B3Bb2c0E54F548F17473d7669b14E009Da407c",
-        "sequencerInbox": "0x627C3Eac80782493B3a633F09C82F510ad710A2D"
-      },
-      "explorerUrl": "https://spotlight-mainnet.explorer.alchemy.com",
-      "rpcUrl": "https://spotlight-mainnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Spotlight Mainnet",
-      "slug": "spotlight-mainnet",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x443E16416b49Ad675F7E4F00CbA3916F5564DEf3",
-        "parentErc20Gateway": "0xaB24881b11c1c7eb6b9C22288eDB12B67defCEb9",
-        "parentGatewayRouter": "0xf50201e8963A07cEF57f58C56C2349b10B487091",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0x44a9a5C2416702BeDC562f8023f19Bc1D732bE94",
-        "childCustomGateway": "0x4aF09A0bD7657cC027D9F3592d092FdEF6D72895",
-        "childErc20Gateway": "0x88fe5E5D022871120F57463b2a979e7478435628",
-        "childGatewayRouter": "0x29c413c7e9f13fC6ee43D43A021A28319412FB90",
-        "childMultiCall": "0x0877A4e5265A8A0E84E60441E63361435d3edC00",
-        "childProxyAdmin": "0x1067df41b7fE8Ef5221eE514b0461f617311f3e5",
-        "childWeth": "0x0203A44796263b86f22Eb8F20C7A2FEc18eB4f53",
-        "childWethGateway": "0xbB5a4466199fc2C63be4749D42D4fb4cD6F890d7"
-      },
-      "bridgeUiConfig": {
-        "color": "#F3C34D",
-        "network": {
-          "name": "Spotlight Mainnet",
-          "logo": "/images/SpotlightLogo.svg",
-          "description": ""
-        }
-      }
-    },
-    {
       "chainId": 41923,
       "confirmPeriodBlocks": 45818,
       "ethBridge": {
@@ -1613,48 +1571,6 @@
       }
     },
     {
-      "chainId": 10058112,
-      "confirmPeriodBlocks": 150,
-      "ethBridge": {
-        "bridge": "0x213Ee94CcA491114D5B0d0205bf39Cca3Cac8c0E",
-        "inbox": "0x697e423bE474d5F8Cfc137e25FA7126d78f739F0",
-        "outbox": "0x24fc7a378b414b3C696C534ecf46c9ec851B4Ced",
-        "rollup": "0x9aB882E957FE252eD5B51c2e563dE4d5aF7F403A",
-        "sequencerInbox": "0x82cCD1Ca341c0D182914D3523cF30e20eCB6500C"
-      },
-      "explorerUrl": "https://spotlight-sepolia.explorer.alchemy.com",
-      "rpcUrl": "https://spotlight-sepolia.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "Spotlight Sepolia",
-      "slug": "spotlight-sepolia",
-      "parentChainId": 421614,
-      "tokenBridge": {
-        "parentCustomGateway": "0x2F3DfA444d5Fb39EF0DBa72C1bDE63b57Cb09CbE",
-        "parentErc20Gateway": "0x1e6db0611edE41aC803143150cA97DB669779554",
-        "parentGatewayRouter": "0x670208A92c54b6c2dfce8A2F8Dd987c7fB5F7412",
-        "parentMultiCall": "0xce1CAd780c529e66e3aa6D952a1ED9A6447791c1",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x980B62Da83eFf3D4576C647993b0c1D7faf17c73",
-        "parentWethGateway": "0xE6BbbF315D6F8bE7D80d7024f96dE5a9624eD7e2",
-        "childCustomGateway": "0x2f22b5A9506057DCEa319b8D91DC33e8Ab168922",
-        "childErc20Gateway": "0xcA3911f6Fd9AF0f32F5071C3358AD8Af0FDA7548",
-        "childGatewayRouter": "0x2C8A8631bdA3Bb10718B51A621863336E94aeC78",
-        "childMultiCall": "0x64088415e4b28355Dea0736aDfD537DD99cf74A5",
-        "childProxyAdmin": "0xf5025153F164168F80e87960939448636E1ceF5f",
-        "childWeth": "0x4F2A7641aBc8Fb1Df44Ab61C7d17F6cA7Bc6C529",
-        "childWethGateway": "0x8B81dA74fdcedD8384Da34Fe12cf89b6dE15e7cb"
-      },
-      "bridgeUiConfig": {
-        "color": "#F3C34D",
-        "network": {
-          "name": "Spotlight Sepolia",
-          "logo": "/images/SpotlightLogo.svg",
-          "description": ""
-        }
-      }
-    },
-    {
       "chainId": 79479957,
       "confirmPeriodBlocks": 25,
       "ethBridge": {
@@ -2210,54 +2126,6 @@
           "name": "HPP Sepolia",
           "logo": "/images/HPPSepolia_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
-        }
-      }
-    },
-    {
-      "chainId": 393,
-      "confirmPeriodBlocks": 64,
-      "ethBridge": {
-        "bridge": "0xB8f043Bb9e63174548660F152d4FAD563Ce8a038",
-        "inbox": "0xb2B13E2bBfE28f7d20a0aa18b0602b978806679D",
-        "outbox": "0x8706f4852437a6AB78a312d5bdAe3da79304f1B8",
-        "rollup": "0x4C6ffC9604C5b6C5803BD3d87c0236b1270F7E86",
-        "sequencerInbox": "0x686F8dfB1eAcbcdD78946E13f91E04Dd1f181fd5"
-      },
-      "nativeToken": "0x4fAa7bddB947790C5d585d2E1B8a59aA39a1a4DB",
-      "explorerUrl": "https://explorer.nexus.xyz/",
-      "rpcUrl": "https://nexus-new.rpc.caldera.xyz/http",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "Nexus Devnet",
-      "slug": "nexus-devnet",
-      "parentChainId": 11155111,
-      "tokenBridge": {
-        "parentCustomGateway": "0x793ac23ba3dbd28AA5290c1ea067D8e52B363FBb",
-        "parentErc20Gateway": "0x94c1496B31D78459874740e636a05BfcE6B7e04a",
-        "parentGatewayRouter": "0x1f3C407456432d8b81d0a7452df3Cd5E9DE48320",
-        "parentMultiCall": "0xBE575090EA0706FD4785a483120A8A8654005178",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x95dcc58A140aaAA1b29651859d3CCF22038240b6",
-        "childErc20Gateway": "0x52FCDdF698E71c0F8771Ec6Ef70777C80B9Ea4A1",
-        "childGatewayRouter": "0xd3FC9B4C6d4f1425d97062c8b6b5CFC4B84f5Ebb",
-        "childMultiCall": "0x00119847032ff6D0f833b1aa23Da5FC5B114E6Fb",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#000000",
-        "network": {
-          "name": "Nexus Devnet",
-          "logo": "/images/NexusDevnet_Logo.png",
-          "description": "Innovation at the intersection of artificial intelligence, blockchain, and zero knowledge."
-        },
-        "nativeTokenData": {
-          "name": "Nexus",
-          "symbol": "NEX",
-          "logoUrl": "/images/NexusDevnet_NativeTokenLogo.png"
         }
       }
     },
