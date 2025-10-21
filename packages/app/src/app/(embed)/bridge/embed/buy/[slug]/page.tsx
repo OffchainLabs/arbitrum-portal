@@ -9,7 +9,7 @@ type Props = {
   params: { slug: Slug };
 };
 
-export default async function EmbeddedBuyOnrampServicePage({ searchParams, params }: Props) {
+export default function EmbeddedBuyOnrampServicePage({ searchParams, params }: Props) {
   return (
     <EmbedPageWrapper
       searchParams={searchParams}

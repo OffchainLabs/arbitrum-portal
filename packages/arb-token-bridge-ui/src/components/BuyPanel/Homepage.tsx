@@ -18,26 +18,19 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
   return (
     <Link
       href={{ pathname: `${pathname}/${slug}`, query: searchParams.toString() }}
-      className="relative col-span-1 flex h-full w-full last-of-type:col-span-2 md:last-of-type:col-span-1"
+      className="relative col-span-1 flex h-full w-full last-of-type:col-span-2 md:last-of-type:col-span-1 flex-col items-center justify-center rounded-md bg-white/5 p-4 overflow-hidden hover:opacity-80"
       onClick={() => {
         trackEvent('Onramp Service Click', { service: name });
       }}
     >
-      <Button
-        variant="tertiary"
-        className={twMerge(
-          'relative flex w-full flex-col items-center justify-center rounded-md bg-white/5 p-4 overflow-hidden',
-        )}
-      >
-        <span className="mx-auto flex h-8 w-8 items-center justify-center overflow-hidden rounded-md">
-          <Image src={logo} alt={name} width={40} height={40} />
-        </span>
-        <p className="mt-2 text-lg">{name}</p>
+      <span className="mx-auto flex h-8 w-8 items-center justify-center overflow-hidden rounded-md">
+        <Image src={logo} alt={name} width={40} height={40} />
+      </span>
+      <p className="mt-2 text-lg">{name}</p>
 
-        <span className="absolute right-3 top-3 rounded-full bg-white/10 p-[6px]">
-          <ArrowUpRightIcon className="h-[12px] w-[12px] stroke-2" />
-        </span>
-      </Button>
+      <span className="absolute right-3 top-3 rounded-full bg-white/10 p-[6px]">
+        <ArrowUpRightIcon className="h-[12px] w-[12px] stroke-2" />
+      </span>
     </Link>
   );
 }

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "On-ramp directly to Arbitrum with one of several third party providers. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum's security model. Arbitrum is a Layer 2 Optimistic Rollup.",
 };
 
-export default async function BridgeBuyOnrampServicePage({ searchParams, params }: Props) {
+export default function BridgeBuyOnrampServicePage({ searchParams, params }: Props) {
   return (
     <BridgePageWrapper
       searchParams={searchParams}

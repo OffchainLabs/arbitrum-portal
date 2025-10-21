@@ -26,7 +26,7 @@ export const onrampServices = [
     name: 'Coinbase Pay',
     slug: 'coinbase-pay',
     logo: '/images/onramp/coinbase.webp',
-    link: 'https://login.coinbase.com/signin?client_id=258660e1-9cfe-4202-9eda-d3beedb3e118&oauth_challenge=851bae2a-c907-413d-9a12-71c1dfaa5d4f',
+    link: 'https://login.coinbase.com',
     chains: [ChainId.Ethereum, ChainId.ArbitrumOne],
   },
   {
