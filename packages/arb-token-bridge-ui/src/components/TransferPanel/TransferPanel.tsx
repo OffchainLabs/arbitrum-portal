@@ -25,7 +25,6 @@ import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
-import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
@@ -172,8 +171,6 @@ export function TransferPanel() {
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());
 
-  const { setAmount, setAmount2 } = useSetInputAmount();
-
   const latestDestinationAddress = useLatest(destinationAddress);
 
   const [dialogProps, openDialog] = useDialog2();
@@ -193,13 +190,13 @@ export function TransferPanel() {
 
   const { handleError } = useError();
 
-  const switchToTransactionHistoryTab = useCallback(
-    () =>
-      setQueryParams({
-        tab: tabToIndex[TabParamEnum.TX_HISTORY],
-      }),
-    [setQueryParams],
-  );
+  const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+    setQueryParams({
+      tab: tabToIndex[TabParamEnum.TX_HISTORY],
+      amount: '',
+      amount2: '',
+    });
+  }, [setQueryParams]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
@@ -213,12 +210,6 @@ export function TransferPanel() {
     setSelectedToken(null);
     setImportTokenModalStatus(ImportTokenModalStatus.CLOSED);
     tokenImportDialogProps.onClose(false);
-  }
-
-  function clearAmountInput() {
-    // clear amount input on transfer panel
-    setAmount('');
-    setAmount2('');
   }
 
   const isTokenAlreadyImported = useMemo(() => {
@@ -513,9 +504,8 @@ export function TransferPanel() {
       };
 
       addPendingTransaction(newTransfer);
-      switchToTransactionHistoryTab();
       setTransferring(false);
-      clearAmountInput();
+      resetAmountAndSwitchToTransactionHistoryTab();
       clearRoute();
     } catch (e) {
     } finally {
@@ -638,9 +628,10 @@ export function TransferPanel() {
         tag: selectedRoute,
       });
 
+      resetAmountAndSwitchToTransactionHistoryTab();
+
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we cannot show Lifi tx history for SCW
-        switchToTransactionHistoryTab();
         setTimeout(() => {
           highlightTransactionHistoryDisclaimer();
         }, 100);
@@ -682,10 +673,8 @@ export function TransferPanel() {
         };
         addPendingTransaction(newTransfer);
         addLifiTransactionToCache(newTransfer);
-        switchToTransactionHistoryTab();
       }
 
-      clearAmountInput();
       clearRoute();
     } catch (error) {
       if (isUserRejectedError(error)) {
@@ -785,8 +774,7 @@ export function TransferPanel() {
         destinationChain: getNetworkName(networks.destinationChain.id),
       });
 
-      switchToTransactionHistoryTab();
-      clearAmountInput();
+      resetAmountAndSwitchToTransactionHistoryTab();
 
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we don't cannot show OFT tx history
@@ -1159,12 +1147,17 @@ export function TransferPanel() {
     if (embedMode) {
       openDialog('widget_transaction_history');
     } else {
-      switchToTransactionHistoryTab();
+      setQueryParams({
+        tab: tabToIndex[TabParamEnum.TX_HISTORY],
+      });
     }
 
     setTransferring(false);
     clearRoute();
-    clearAmountInput();
+    setQueryParams({
+      amount: '',
+      amount2: '',
+    });
 
     await (sourceChainTransaction as TransactionResponse).wait();
 
