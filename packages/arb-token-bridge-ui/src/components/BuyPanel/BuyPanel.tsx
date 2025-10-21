@@ -222,41 +222,48 @@ function OnrampDisclaimer() {
   );
 }
 
+const allOnrampServices = onrampServices.map((service) => service.slug);
+
 function OnrampServicePanel() {
   const pathname = usePathname();
   const onrampService = pathname.split('/').pop();
-  const allOnrampServices = onrampServices.map((service) => service.slug);
 
-  switch (onrampService) {
-    case 'moonpay':
-      if (!isMoonPayEnabled) {
-        return null;
-      }
-      return <MoonPayPanel />;
-    case allOnrampServices.find((service) => service === onrampService):
-      return <LinkoutOnrampPanel serviceSlug={onrampService!} />;
-    default:
-      return <Homepage />;
+  if (onrampService === 'moonpay') {
+    if (!isMoonPayEnabled) {
+      return null;
+    }
+    return <MoonPayPanel />;
   }
+
+  if (
+    typeof onrampService !== 'undefined' &&
+    (allOnrampServices as string[]).includes(onrampService)
+  ) {
+    return <LinkoutOnrampPanel serviceSlug={onrampService} />;
+  }
+
+  return <Homepage />;
 }
 
 export function BuyPanel() {
   const { embedMode } = useMode();
 
   return (
-    <div
-      className={twMerge(
-        'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
-        embedMode && 'mx-auto max-w-[540px]',
-      )}
-    >
-      <BalanceWrapper />
+    <div className={embedMode ? '' : 'bg-black'}>
+      <div
+        className={twMerge(
+          'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
+          embedMode && 'mx-auto max-w-[540px]',
+        )}
+      >
+        <BalanceWrapper />
 
-      <OnRampProviders>
-        <OnrampServicePanel />
-      </OnRampProviders>
+        <OnRampProviders>
+          <OnrampServicePanel />
+        </OnRampProviders>
 
-      <OnrampDisclaimer />
+        <OnrampDisclaimer />
+      </div>
     </div>
   );
 }
