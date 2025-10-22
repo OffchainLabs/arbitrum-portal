@@ -27,11 +27,11 @@ const rainbowkitTheme = merge(darkTheme(), {
 //
 // https://github.com/orgs/WalletConnect/discussions/2733
 // https://github.com/wagmi-dev/references/blob/main/packages/connectors/src/walletConnect.ts#L114
-const searchParams = new URLSearchParams(window.location.search);
+const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 const targetChainKey = searchParams.get('sourceChain');
 
 const integratorId =
-  window.location.pathname === '/bridge/embed'
+  typeof window !== 'undefined' && window.location.pathname === '/bridge/embed'
     ? LIFI_INTEGRATOR_IDS.EMBED
     : LIFI_INTEGRATOR_IDS.NORMAL;
 
@@ -40,11 +40,13 @@ const wagmiConfig = getProps(targetChainKey);
 // Clear cache for everything related to WalletConnect v2.
 //
 // TODO: Remove this once the fix for the infinite loop / memory leak is identified.
-Object.keys(localStorage).forEach((key) => {
-  if (key === 'wagmi.requestedChains' || key === 'wagmi.store' || key.startsWith('wc@2')) {
-    localStorage.removeItem(key);
-  }
-});
+if (typeof window !== 'undefined') {
+  Object.keys(localStorage).forEach((key) => {
+    if (key === 'wagmi.requestedChains' || key === 'wagmi.store' || key.startsWith('wc@2')) {
+      localStorage.removeItem(key);
+    }
+  });
+}
 
 interface AppProvidersProps {
   children: ReactNode;
