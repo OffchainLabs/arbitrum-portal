@@ -2,6 +2,8 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import React, { PropsWithChildren, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { useMode } from '../../../hooks/useMode';
+
 type SearchPanelTableProps = {
   searchInputPlaceholder: string;
   searchInputValue: string;
@@ -29,6 +31,7 @@ export const SearchPanelTable = ({
   showSearch,
 }: PropsWithChildren<SearchPanelTableProps>) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const { embedMode } = useMode();
 
   useEffect(() => {
     if (inputRef.current) {
@@ -59,8 +62,9 @@ export const SearchPanelTable = ({
       )}
       <div
         className={twMerge(
-          'sm:shadow-search-panel h-[calc(100vh_-_200px)] min-h-[180px] rounded md:h-[calc(100vh_-_390px)]',
+          'sm:shadow-search-panel h-[calc(100vh_-_200px)] rounded',
           isDialog ? 'md:max-h-[700px]' : 'md:max-h-[400px]',
+          embedMode ? 'h-[calc(100vh_-_150px)]' : 'md:h-[calc(100vh_-_390px)] min-h-[180px]',
         )}
         data-cy={dataCy}
       >

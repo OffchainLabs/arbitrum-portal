@@ -665,19 +665,21 @@ export function TokenSearch(props: UseDialogProps) {
           <>
             <TokensPanel onTokenSelected={selectToken} />
 
-            <div className="flex justify-start pt-4">
-              {isFetchingTokenLists ? (
-                <SearchPanel.LoaderWithMessage loadingMessage="Fetching Tokens..." />
-              ) : (
-                <button
-                  className="flex cursor-pointer items-center gap-2 text-sm"
-                  onClick={() => setActivePanel(Panel.SECONDARY)}
-                >
-                  Manage token lists
-                  <ArrowRightIcon className="h-3 w-3" />
-                </button>
-              )}
-            </div>
+            {!embedMode && (
+              <div className="flex justify-start pt-4">
+                {isFetchingTokenLists ? (
+                  <SearchPanel.LoaderWithMessage loadingMessage="Fetching Tokens..." />
+                ) : (
+                  <button
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                    onClick={() => setActivePanel(Panel.SECONDARY)}
+                  >
+                    Manage token lists
+                    <ArrowRightIcon className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -685,16 +687,18 @@ export function TokenSearch(props: UseDialogProps) {
           <>
             <TokenListsPanel />
 
-            <button
-              className="flex cursor-pointer items-center gap-2 text-sm"
-              onClick={(event) => {
-                setActivePanel(Panel.MAIN);
-                event.preventDefault();
-              }}
-            >
-              <ArrowLeftIcon className="h-3 w-3" />
-              Back to Select Token
-            </button>
+            {!embedMode && (
+              <button
+                className="flex cursor-pointer items-center gap-2 text-sm"
+                onClick={(event) => {
+                  setActivePanel(Panel.MAIN);
+                  event.preventDefault();
+                }}
+              >
+                <ArrowLeftIcon className="h-3 w-3" />
+                Back to Select Token
+              </button>
+            )}
           </>
         )}
       </div>

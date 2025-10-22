@@ -39,7 +39,7 @@ export const CATEGORIES: SearchableData<Category>[] = categoriesJson.content
   .map((categoryFromNotion) => {
     const category = {
       ...categoryFromNotion,
-      subcategories: categoryFromNotion.subcategories as Subcategory[], // assert the type coz inference from JSON is throwing error
+      subcategories: categoryFromNotion.subcategories as unknown as Subcategory[], // assert the type coz inference from JSON is throwing error
     };
 
     return {
