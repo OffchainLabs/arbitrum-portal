@@ -4,7 +4,6 @@ import { twMerge } from 'tailwind-merge';
 
 import { useMode } from '@/bridge/hooks/useMode';
 
-import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { BackButton } from './BackButton';
 import { onrampServices } from './utils';
@@ -36,17 +35,15 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
           </p>
         </div>
       </div>
-      <ExternalLink href={service.link} className="block">
-        <Button
-          variant="primary"
-          className={twMerge(
-            'bg-white border-white text-black w-full mt-6',
-            '[&>div>span]:flex [&>div>span]:flex-row [&>div>span]:justify-center [&>div>span]:items-center [&>div>span]:gap-2',
-          )}
-        >
-          <span>Buy or transfer with {service.name}</span>
-          <ArrowUpRightIcon className="h-3 w-3" />
-        </Button>
+      <ExternalLink
+        href={service.link}
+        className={twMerge(
+          'bg-white border-white text-black w-full mt-6',
+          'flex flex-row justify-center items-center gap-2 p-2 rounded hover:bg-white/80',
+        )}
+      >
+        <span>Buy or transfer with {service.name}</span>
+        <ArrowUpRightIcon className="h-3 w-3" />
       </ExternalLink>
       <BackButton />
     </div>
