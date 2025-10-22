@@ -18,7 +18,7 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
   return (
     <Link
       href={{ pathname: `${pathname}/${slug}`, query: searchParams.toString() }}
-      className="relative col-span-1 flex h-full w-full last-of-type:col-span-2 md:last-of-type:col-span-1 flex-col items-center justify-center rounded-md bg-white/5 p-4 overflow-hidden hover:opacity-80"
+      className="relative col-span-1 flex h-full w-full flex-col items-center justify-center rounded-md bg-white/5 p-4 overflow-hidden hover:opacity-80"
       onClick={() => {
         trackEvent('Onramp Service Click', { service: name });
       }}
