@@ -104,6 +104,7 @@ describe('Batch Deposit', () => {
 
     context('should show gas estimations and summary', () => {
       cy.typeAmount(ERC20AmountToSend);
+      cy.wait(5_000);
       cy.typeAmount2(nativeCurrencyAmountToSend);
       cy.findGasFeeSummary(zeroToLessThanOneEth);
     });
@@ -127,12 +128,11 @@ describe('Batch Deposit', () => {
     context('deposit should complete successfully', () => {
       cy.selectTransactionsPanelTab('settled');
 
-      cy.findTransactionInTransactionHistory(txData);
-
       cy.findTransactionInTransactionHistory({
         duration: 'a few seconds ago',
         ...txData,
       });
+
       cy.switchToTransferPanelTab();
     });
 
@@ -200,6 +200,7 @@ describe('Batch Deposit', () => {
 
     context('should show gas estimations and summary', () => {
       cy.typeAmount(ERC20AmountToSend);
+      cy.wait(5_000);
       cy.typeAmount2(nativeCurrencyAmountToSend);
       cy.findGasFeeSummary(zeroToLessThanOneEth);
     });
@@ -225,9 +226,6 @@ describe('Batch Deposit', () => {
 
     context('deposit should complete successfully', () => {
       cy.selectTransactionsPanelTab('settled');
-
-      cy.findTransactionInTransactionHistory(txData);
-
       cy.findTransactionInTransactionHistory({
         duration: 'a few seconds ago',
         ...txData,
