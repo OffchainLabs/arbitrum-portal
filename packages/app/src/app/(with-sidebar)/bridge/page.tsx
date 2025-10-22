@@ -10,7 +10,7 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+export function generateMetadata({ searchParams }: Props): Metadata {
   const sourceChainSlug = (
     typeof searchParams.sourceChain === 'string' ? searchParams.sourceChain : 'ethereum'
   ) as ChainKeyQueryParam;
@@ -70,6 +70,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-export default async function BridgePage({ searchParams }: Props) {
+export default function BridgePage({ searchParams }: Props) {
   return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BRIDGE} />;
 }
