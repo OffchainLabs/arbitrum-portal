@@ -198,3 +198,8 @@ input:focus-visible {
     display: none;
   }
 }
+
+.moonpay-ellipse {
+  mask-image: radial-gradient(ellipse 550px 200px at bottom, transparent 70%, black 70%);
+  -webkit-mask-image: radial-gradient(ellipse 550px 200px at bottom, transparent 70%, black 70%);
+}

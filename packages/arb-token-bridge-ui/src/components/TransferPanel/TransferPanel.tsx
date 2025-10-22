@@ -19,10 +19,11 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { DOCS_DOMAIN, GET_HELP_LINK, PathnameEnum } from '../../constants';
+import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -1252,7 +1253,7 @@ export function TransferPanel() {
   };
 
   if (embedMode) {
-    if (pathname === PathnameEnum.EMBED_BUY && showBuyPanel) {
+    if (isEmbeddedBridgeBuyOrSubpages(pathname) && showBuyPanel) {
       return <WidgetBuyPanel openDialog={openDialog} dialogProps={dialogProps} />;
     }
 
