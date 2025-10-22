@@ -42,12 +42,6 @@ export const onrampServices = [
     link: 'https://buy.simplex.com',
   },
   {
-    name: 'Kado',
-    slug: 'kado',
-    logo: '/images/onramp/kado.webp',
-    link: 'https://swapped.com/',
-  },
-  {
     name: 'Alchemy Pay',
     slug: 'alchemy-pay',
     logo: '/images/onramp/alchemy_pay.webp',
