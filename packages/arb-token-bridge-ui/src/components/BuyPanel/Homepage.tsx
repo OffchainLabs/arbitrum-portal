@@ -43,7 +43,7 @@ function MoonPayTile() {
     <Link
       href={{ pathname: `${pathname}/moonpay`, query: searchParams.toString() }}
       className={twMerge(
-        'relative col-span-2 flex h-full w-full flex-col md:col-span-3 items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white',
+        'relative col-span-2 flex h-full w-full flex-col md:col-span-3 items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white hover:opacity-80',
       )}
       onClick={() => {
         trackEvent('Onramp Service Click', { service: 'MoonPay' });
