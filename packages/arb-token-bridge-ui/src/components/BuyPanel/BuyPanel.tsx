@@ -1,7 +1,9 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ExclamationCircleIcon } from '@heroicons/react/24/solid';
 import { BigNumber, utils } from 'ethers';
 import dynamic from 'next/dynamic';
-import React, { PropsWithChildren, memo, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import React, { PropsWithChildren, memo, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -10,69 +12,26 @@ import { shallow } from 'zustand/shallow';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { useETHPrice } from '../hooks/useETHPrice';
-import { useMode } from '../hooks/useMode';
-import { useNativeCurrency } from '../hooks/useNativeCurrency';
-import { ChainId } from '../types/ChainId';
-import { getAPIBaseUrl } from '../util';
-import { formatAmount, formatUSD } from '../util/NumberUtils';
-import { isOnrampEnabled, isOnrampServiceEnabled } from '../util/featureFlag';
-import { getNetworkName } from '../util/networks';
-import { TokenLogoFallback } from './TransferPanel/TokenInfo';
-import { Button } from './common/Button';
-import { Dialog } from './common/Dialog';
-import { DialogProps, DialogWrapper, useDialog2 } from './common/Dialog2';
-import { NetworkImage } from './common/NetworkImage';
-import { NetworksPanel } from './common/NetworkSelectionContainer';
-import { SafeImage } from './common/SafeImage';
-import { SearchPanel } from './common/SearchPanel/SearchPanel';
-import { Loader } from './common/atoms/Loader';
-
-function MoonPaySkeleton({ children }: PropsWithChildren) {
-  const { embedMode } = useMode();
-
-  return (
-    <div
-      className={twMerge(
-        'relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gray-8 p-4 pt-5 text-white md:rounded-lg',
-        embedMode && 'bg-widget-background',
-      )}
-    >
-      <div className="absolute left-0 top-0 h-[120px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
-      <div
-        className={twMerge(
-          'absolute left-1/2 top-[55px] h-[282px] w-[602px] shrink-0 -translate-x-1/2 bg-eclipse',
-          embedMode && 'bg-eclipseWidget',
-        )}
-      ></div>
-      <div className="relative mb-4 flex flex-col items-center justify-center">
-        <SafeImage
-          src="/images/onramp/moonpay.svg"
-          alt="MoonPay"
-          width={embedMode ? 45 : 65}
-          height={embedMode ? 45 : 65}
-          fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
-        />
-        <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>MoonPay</p>
-        <p className={twMerge('mt-1 text-xl', embedMode && 'text-sm')}>
-          PayPal, Debit Card, Apple Pay
-        </p>
-      </div>
-      <div
-        className={twMerge(
-          'relative h-full min-h-[600px] w-full',
-          '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
-          '[&_iframe]:rounded-xl',
-        )}
-      >
-        {children}
-      </div>
-      <p className={twMerge('mt-4 text-center text-sm text-gray-4', embedMode && 'text-xs')}>
-        On-Ramps are not directly endorsed by Arbitrum. Please use at your own risk.
-      </p>
-    </div>
-  );
-}
+import { useETHPrice } from '../../hooks/useETHPrice';
+import { useMode } from '../../hooks/useMode';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { ChainId } from '../../types/ChainId';
+import { formatAmount, formatUSD } from '../../util/NumberUtils';
+import { isOnrampEnabled, isOnrampServiceEnabled } from '../../util/featureFlag';
+import { getNetworkName } from '../../util/networks';
+import { TokenLogoFallback } from '../TransferPanel/TokenInfo';
+import { Button } from '../common/Button';
+import { Dialog } from '../common/Dialog';
+import { DialogProps, DialogWrapper, useDialog2 } from '../common/Dialog2';
+import { NetworkImage } from '../common/NetworkImage';
+import { NetworksPanel } from '../common/NetworkSelectionContainer';
+import { SafeImage } from '../common/SafeImage';
+import { SearchPanel } from '../common/SearchPanel/SearchPanel';
+import { Loader } from '../common/atoms/Loader';
+import { Homepage } from './Homepage';
+import { LinkoutOnrampPanel } from './LinkoutOnrampPanel';
+import { MoonPayPanel, MoonPaySkeleton } from './MoonPayPanel';
+import { onrampServices } from './utils';
 
 const MoonPayProvider = dynamic(
   () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayProvider),
@@ -179,7 +138,6 @@ function BuyPanelNetworkButton({
   );
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 const BalanceWrapper = memo(function BalanceWrapper() {
   const { address, isConnected } = useAccount();
   const { ethToUSD } = useETHPrice();
@@ -192,6 +150,13 @@ const BalanceWrapper = memo(function BalanceWrapper() {
     error: balanceError,
   } = useBalance({ chainId: selectedChainId, address });
   const showPriceInUsd = nativeCurrency.symbol.toLowerCase() === 'eth';
+  const balanceInUsd = useMemo(() => {
+    if (!balanceState || !showPriceInUsd) {
+      return null;
+    }
+    return ethToUSD(Number(utils.formatEther(BigNumber.from(balanceState.value))));
+  }, [balanceState, ethToUSD, showPriceInUsd]);
+  const isBalanceLessThan15Usd = Number(balanceInUsd) < 15;
   const [dialogProps, openDialog] = useDialog2();
   const openBuyPanelNetworkSelectionDialog = () => {
     openDialog('buy_panel_network_selection');
@@ -228,72 +193,75 @@ const BalanceWrapper = memo(function BalanceWrapper() {
         {!isLoadingBalance && (balanceError || typeof balanceState === 'undefined') && (
           <span className="text-error">Failed to load balance.</span>
         )}
-        {balanceState && showPriceInUsd && (
-          <span className="text-white/70">
-            ({formatUSD(ethToUSD(Number(utils.formatEther(BigNumber.from(balanceState.value)))))})
-          </span>
+        {balanceInUsd !== null && balanceInUsd !== 0 && (
+          <span className="text-white/50">({formatUSD(balanceInUsd)})</span>
         )}
       </p>
+
+      {isBalanceLessThan15Usd && (
+        <p className="text-sm p-2 rounded-sm bg-white/10 flex gap-2 items-center justify-center leading-none">
+          <ExclamationCircleIcon className="w-3 h-3" />
+          <span>Low wallet balance</span>
+        </p>
+      )}
 
       <DialogWrapper {...dialogProps} />
     </div>
   );
 });
 
-const MoonPayPanel = memo(function MoonPayPanel() {
-  const { address } = useAccount();
-  const showMoonPay = isOnrampServiceEnabled('moonpay');
-
-  const handleGetSignature = useCallback(async (widgetUrl: string): Promise<string> => {
-    const response = await fetch(`${getAPIBaseUrl()}/api/moonpay`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url: widgetUrl }),
-    });
-    const { signature } = await response.json();
-    return signature;
-  }, []);
-
-  if (!showMoonPay) {
-    return null;
-  }
-
-  const MoonPayBuyWidget = dynamic(
-    () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayBuyWidget),
-    {
-      ssr: false,
-    },
-  );
+function OnrampDisclaimer() {
+  const { embedMode } = useMode();
 
   return (
-    <MoonPaySkeleton>
-      <MoonPayBuyWidget
-        variant="embedded"
-        walletAddress={address}
-        baseCurrencyCode="usd"
-        defaultCurrencyCode="eth"
-        onUrlSignatureRequested={handleGetSignature}
-        visible
-      />
-    </MoonPaySkeleton>
+    <p className={twMerge('text-gray-4 mt-auto pt-4 text-center text-sm', embedMode && 'text-xs')}>
+      On-Ramps are not endorsed by Arbitrum. Please use at your own risk.
+    </p>
   );
-});
+}
+
+const allOnrampServices = onrampServices.map((service) => service.slug);
+
+function OnrampServicePanel() {
+  const pathname = usePathname();
+  const onrampService = pathname.split('/').pop();
+
+  if (onrampService === 'moonpay') {
+    if (!isMoonPayEnabled) {
+      return null;
+    }
+    return <MoonPayPanel />;
+  }
+
+  if (
+    typeof onrampService !== 'undefined' &&
+    (allOnrampServices as string[]).includes(onrampService)
+  ) {
+    return <LinkoutOnrampPanel serviceSlug={onrampService} />;
+  }
+
+  return <Homepage />;
+}
 
 export function BuyPanel() {
   const { embedMode } = useMode();
 
   return (
-    <div
-      className={twMerge(
-        'w-full overflow-hidden rounded-lg pb-8 text-white sm:max-w-[600px]',
-        embedMode && 'mx-auto max-w-[540px]',
-      )}
-    >
-      <OnRampProviders>
-        <MoonPayPanel />
-      </OnRampProviders>
+    <div className={embedMode ? '' : 'bg-black'}>
+      <div
+        className={twMerge(
+          'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
+          embedMode && 'mx-auto max-w-[540px]',
+        )}
+      >
+        <BalanceWrapper />
+
+        <OnRampProviders>
+          <OnrampServicePanel />
+        </OnRampProviders>
+
+        <OnrampDisclaimer />
+      </div>
     </div>
   );
 }

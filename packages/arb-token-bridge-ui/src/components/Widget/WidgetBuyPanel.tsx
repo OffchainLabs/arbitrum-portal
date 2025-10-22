@@ -1,6 +1,6 @@
 import { twMerge } from 'tailwind-merge';
 
-import { BuyPanel } from '../BuyPanel';
+import { BuyPanel } from '../BuyPanel/BuyPanel';
 import { DialogProps, DialogWrapper, OpenDialogFunction } from '../common/Dialog2';
 import { WidgetHeaderRow } from './WidgetHeaderRow';
 

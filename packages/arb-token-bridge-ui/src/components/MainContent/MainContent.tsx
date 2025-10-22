@@ -3,12 +3,12 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
 import { Fragment, useMemo } from 'react';
 
-import { PathnameEnum } from '@/bridge/constants';
+import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
-import { BuyPanel } from '../BuyPanel';
+import { BuyPanel } from '../BuyPanel/BuyPanel';
 import { RecoverFunds } from '../RecoverFunds';
 import { TopNavBar } from '../TopNavBar';
 import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
@@ -28,7 +28,7 @@ export function MainContent() {
       // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
       // because we use /buy and don't use ?tab=buy
       // so we need to hardcode to return 0 rather than `tab`
-      if (pathname === PathnameEnum.BUY) {
+      if (isBridgeBuyOrSubpages(pathname)) {
         return 0;
       }
       return tab;
@@ -52,7 +52,7 @@ export function MainContent() {
         <TabGroup manual as={Fragment} selectedIndex={selectedTab} onChange={() => {}}>
           <TopNavBar />
 
-          <TabPanels className="flex w-full items-center justify-center">
+          <TabPanels className="flex w-full items-center justify-center mb-8 md:mb-16 px-2">
             {showBuyPanel && (
               <TabPanel className="w-full sm:max-w-[600px]">
                 <BuyPanel />
