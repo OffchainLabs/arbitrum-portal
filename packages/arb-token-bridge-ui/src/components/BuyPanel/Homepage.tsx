@@ -42,27 +42,22 @@ function MoonPayTile() {
   return (
     <Link
       href={{ pathname: `${pathname}/moonpay`, query: searchParams.toString() }}
-      className={twMerge('relative col-span-2 flex h-full w-full flex-col md:col-span-3')}
+      className={twMerge(
+        'relative col-span-2 flex h-full w-full flex-col md:col-span-3 items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white',
+      )}
       onClick={() => {
         trackEvent('Onramp Service Click', { service: 'MoonPay' });
       }}
     >
-      <Button
-        variant="tertiary"
-        className={twMerge(
-          'relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white',
-        )}
-      >
-        <div className="absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md moonpay-ellipse"></div>
-        <div className="relative flex flex-col items-center justify-center">
-          <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
-          <p className="mt-2 text-lg">MoonPay</p>
-          <p className="mt-1 text-xs text-white/60">Pay using PayPal, Apple Pay & more</p>
-        </div>
-        <span className="mt-2 py-2 relative w-[200px] bg-white/10 rounded-lg text-sm text-white flex items-center justify-center">
-          Buy now
-        </span>
-      </Button>
+      <div className="absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md moonpay-ellipse"></div>
+      <div className="relative flex flex-col items-center justify-center">
+        <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
+        <p className="mt-2 text-lg">MoonPay</p>
+        <p className="mt-1 text-xs text-white/60">Pay using PayPal, Apple Pay & more</p>
+      </div>
+      <span className="mt-2 py-2 relative w-[200px] bg-white/10 rounded-lg text-sm text-white flex items-center justify-center">
+        Buy now
+      </span>
     </Link>
   );
 }
