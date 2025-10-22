@@ -21,8 +21,7 @@
     "paths": {
       "@/app/*": ["./packages/portal/app/*"],
       "@/common/*": ["./packages/portal/common/*"],
-      "@/components/*": ["./packages/app/src/components/*"],
-      "@/lib/*": ["./packages/app/src/lib/*"],
+      "@/components/*": ["./packages/portal/components/*"],
       "@/hooks/*": ["./packages/portal/hooks/*"],
       "@/bridge/*": ["./packages/arb-token-bridge-ui/src/*"],
       "@/portal/*": ["./packages/portal/*"],

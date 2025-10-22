@@ -10,15 +10,8 @@ module.exports = {
     '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
   ],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  plugins: [require('@headlessui/tailwindcss'), require("tailwindcss-animate")],
+  plugins: [require('@headlessui/tailwindcss')],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       backgroundImage: {
         gradient:
@@ -29,41 +22,6 @@ module.exports = {
         eclipse: 'radial-gradient(ellipse 550px 200px at center, #262626 70%, transparent 70%)',
       },
       colors: {
-        // shadcn/ui colors
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-
         // ACTION
         'error': '#CD0000',
         'blue-link': '#1366C1',
@@ -162,9 +120,6 @@ module.exports = {
         8: '2rem',
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
         DEFAULT: 'var(--border-radius, 10px)',
       },
       borderWidth: {

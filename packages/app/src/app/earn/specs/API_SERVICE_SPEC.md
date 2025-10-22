@@ -19,6 +19,7 @@ This document outlines the API architecture for the Arbitrum Portal Earn feature
 ## Architecture Overview
 
 ### Stack
+
 - **Backend**: Next.js API Routes (App Router)
 - **External API**: Vaults.fyi API v2
 - **Network Filter**: Arbitrum (primary), with option to expand
@@ -26,6 +27,7 @@ This document outlines the API architecture for the Arbitrum Portal Earn feature
 - **Type Safety**: TypeScript with Zod validation
 
 ### Data Flow
+
 ```
 User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
                       ↓
@@ -43,9 +45,11 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 1. Opportunities (Discovery)
 
 #### `GET /api/earn/opportunities`
+
 **Purpose**: Fetch all available vault opportunities on Arbitrum for discovery page with advanced filtering, sorting, and search.
 
 **Query Parameters**:
+
 - `search` (optional): Search query (searches vault name, protocol, asset symbol)
 - `chains[]` (optional): Array of chain filters (e.g., `["arbitrum", "arbitrum-nova"]`)
 - `types[]` (optional): Array of opportunity types (e.g., `["Lend", "Liquid Staking"]`)
@@ -61,22 +65,24 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 - `perPage` (optional): Items per page (default: 50, max: 100)
 
 **Filter Logic**:
+
 - Within same category (OR): `tokens[]=ETH&tokens[]=WBTC` → vaults with ETH OR WBTC
 - Across categories (AND): `types[]=Lend&protocols[]=aave-v3` → Lend vaults AND Aave protocol
 - Search combines with filters using AND
 
 **Response**:
+
 ```typescript
 {
   opportunities: Array<{
-    id: string;                    // Composite: `${network}-${vaultAddress}`
-    vault: string;                 // Vault name
-    vaultAddress: string;          // Contract address
-    type: "Lend" | "Liquid Staking" | "Fixed Yield";
-    apy: number | null;            // For Lend/Liquid Staking
-    fixedApy: number | null;       // For Fixed Yield
-    tvl: number;                   // Total Value Locked in USD
-    liquidity: string | null;      // For Fixed Yield
+    id: string; // Composite: `${network}-${vaultAddress}`
+    vault: string; // Vault name
+    vaultAddress: string; // Contract address
+    type: 'Lend' | 'Liquid Staking' | 'Fixed Yield';
+    apy: number | null; // For Lend/Liquid Staking
+    fixedApy: number | null; // For Fixed Yield
+    tvl: number; // Total Value Locked in USD
+    liquidity: string | null; // For Fixed Yield
     network: {
       name: string;
       chainId: number;
@@ -94,9 +100,9 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
       logo?: string;
       priceUsd: number;
     };
-    badge?: string;                // Special labels
+    badge?: string; // Special labels
     risk?: {
-      score: number;               // 0-100
+      score: number; // 0-100
       category: string;
     };
   }>;
@@ -105,11 +111,12 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
     totalPages: number;
     totalItems: number;
     itemsPerPage: number;
-  };
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/detailed-vaults` with `network=arbitrum` filter
 - Fetch all pages and aggregate (with caching)
 - Transform tags to opportunity types
@@ -122,12 +129,15 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 1b. Filter Metadata
 
 #### `GET /api/earn/filters/metadata`
+
 **Purpose**: Get available filter options with counts for the filter UI.
 
 **Query Parameters**:
+
 - `chain` (optional): Pre-filter for a specific chain (default: "arbitrum")
 
 **Response**:
+
 ```typescript
 {
   availableFilters: {
@@ -171,6 +181,7 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ```
 
 **Vaults.fyi Mapping**:
+
 - Aggregate data from `GET /v2/detailed-vaults` response
 - Count unique values per filter category
 - Cache aggressively (15 min TTL)
@@ -180,26 +191,30 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 2. User Positions
 
 #### `GET /api/earn/positions/{userAddress}`
+
 **Purpose**: Fetch user's active positions across all vaults.
 
 **Path Parameters**:
+
 - `userAddress`: Ethereum address (0x...)
 
 **Query Parameters**:
+
 - `network` (optional): Network filter (default: "arbitrum")
 - `minValue` (optional): Minimum position value in USD (default: 1)
 
 **Response**:
+
 ```typescript
 {
   positions: Array<{
     id: string;
     vault: string;
     vaultAddress: string;
-    type: "Lend" | "Liquid Staking" | "Fixed Yield";
+    type: 'Lend' | 'Liquid Staking' | 'Fixed Yield';
     apy: number;
     deposited: {
-      amount: number;              // In asset units
+      amount: number; // In asset units
       token: string;
       usdValue: number;
     };
@@ -216,24 +231,25 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
       name: string;
       logo?: string;
     };
-    currentValue: number;          // Current position value in USD
-    entryPrice: number;            // Entry price per share
-    currentPrice: number;          // Current price per share
+    currentValue: number; // Current position value in USD
+    entryPrice: number; // Entry price per share
+    currentPrice: number; // Current price per share
   }>;
   summary: {
-    totalPositions: number;        // Total USD value
-    totalEarnings: number;         // Total earnings USD
-    netApy: number;                // Weighted average APY
+    totalPositions: number; // Total USD value
+    totalEarnings: number; // Total earnings USD
+    netApy: number; // Weighted average APY
     breakdown: {
-      fixedYield: number;          // Percentage
-      lending: number;             // Percentage
-      liquidStaking: number;       // Percentage
-    };
-  };
+      fixedYield: number; // Percentage
+      lending: number; // Percentage
+      liquidStaking: number; // Percentage
+    }
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/portfolio/positions/{userAddress}` with `allowedNetworks=["arbitrum"]`
 - Fetch detailed vault info for each position
 - Calculate weighted APY based on position sizes
@@ -244,13 +260,16 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 3. Opportunity Detail
 
 #### `GET /api/earn/opportunities/{network}/{vaultAddress}`
+
 **Purpose**: Get comprehensive details for a specific vault/opportunity.
 
 **Path Parameters**:
+
 - `network`: Network name (e.g., "arbitrum")
 - `vaultAddress`: Vault contract address
 
 **Response**:
+
 ```typescript
 {
   opportunity: {
@@ -317,6 +336,7 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/detailed-vaults/{network}/{vaultAddress}`
 - Use `GET /v2/historical/{network}/{vaultAddress}` for TVL history
 - Use `GET /v2/detailed-vaults/{network}/{vaultAddress}/apy` for APY breakdown
@@ -328,14 +348,17 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 4. Position Detail
 
 #### `GET /api/earn/positions/{userAddress}/{network}/{vaultAddress}`
+
 **Purpose**: Get detailed information about a user's specific position.
 
 **Path Parameters**:
+
 - `userAddress`: User's Ethereum address
 - `network`: Network name
 - `vaultAddress`: Vault contract address
 
 **Response**:
+
 ```typescript
 {
   position: {
@@ -345,25 +368,25 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
       amount: number;
       token: string;
       usdValue: number;
-      timestamp: number;           // Entry timestamp
-    };
+      timestamp: number; // Entry timestamp
+    }
     currentValue: {
       amount: number;
       usdValue: number;
-    };
+    }
     earnings: {
-      realized: number;            // Claimed rewards in USD
-      unrealized: number;          // Pending rewards in USD
+      realized: number; // Claimed rewards in USD
+      unrealized: number; // Pending rewards in USD
       total: number;
       percentage: number;
-    };
+    }
     apy: {
       current: number;
-      average: number;             // Since entry
-    };
+      average: number; // Since entry
+    }
     history: Array<{
       timestamp: number;
-      action: "deposit" | "withdraw" | "claim";
+      action: 'deposit' | 'withdraw' | 'claim';
       amount: number;
       txHash: string;
     }>;
@@ -379,12 +402,13 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
         usdValue: number;
         timestamp: number;
       }>;
-    };
-  };
+    }
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/portfolio/positions/{userAddress}/{network}/{vaultAddress}`
 - Use `GET /v2/portfolio/total-returns/{userAddress}/{network}/{vaultAddress}`
 - Use `GET /v2/portfolio/events/{userAddress}/{network}/{vaultAddress}` for history
@@ -394,23 +418,29 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 5. Best Opportunities
 
 #### `GET /api/earn/recommendations/{userAddress}`
+
 **Purpose**: Get personalized vault recommendations based on user's idle assets.
 
 **Path Parameters**:
+
 - `userAddress`: User's Ethereum address
 
 **Query Parameters**:
+
 - `network` (optional): Network filter (default: "arbitrum")
 
 **Response**:
+
 ```typescript
 {
   recommendations: Array<{
-    opportunity: { /* Same as opportunity detail */ };
-    reason: string;                // Why this is recommended
-    potentialYield: number;        // Estimated annual yield in USD
-    riskLevel: "low" | "medium" | "high";
-    matchScore: number;            // 0-100
+    opportunity: {
+      /* Same as opportunity detail */
+    };
+    reason: string; // Why this is recommended
+    potentialYield: number; // Estimated annual yield in USD
+    riskLevel: 'low' | 'medium' | 'high';
+    matchScore: number; // 0-100
   }>;
   idleAssets: Array<{
     token: string;
@@ -421,6 +451,7 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/portfolio/idle-assets/{userAddress}`
 - Use `GET /v2/portfolio/best-deposit-options/{userAddress}`
 - Calculate match scores based on risk tolerance and asset composition
@@ -430,18 +461,22 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 6. Historical Data
 
 #### `GET /api/earn/opportunities/{network}/{vaultAddress}/history`
+
 **Purpose**: Get historical performance data for charts.
 
 **Path Parameters**:
+
 - `network`: Network name
 - `vaultAddress`: Vault contract address
 
 **Query Parameters**:
+
 - `metric`: "apy" | "tvl" | "sharePrice"
 - `interval`: "1day" | "7day" | "30day" | "90day" | "1year" | "all"
 - `resolution`: "hourly" | "daily" | "weekly" (default: auto based on interval)
 
 **Response**:
+
 ```typescript
 {
   data: Array<{
@@ -454,11 +489,12 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
     resolution: string;
     firstDataPoint: number;
     lastDataPoint: number;
-  };
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/historical/{network}/{vaultAddress}/apy`
 - Use `GET /v2/historical/{network}/{vaultAddress}/tvl`
 - Use `GET /v2/historical/{network}/{vaultAddress}/sharePrice`
@@ -469,59 +505,64 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 7. Transaction Context
 
 #### `GET /api/earn/transactions/context/{userAddress}/{network}/{vaultAddress}`
+
 **Purpose**: Get transaction context for deposit/withdraw actions.
 
 **Path Parameters**:
+
 - `userAddress`: User's Ethereum address
 - `network`: Network name
 - `vaultAddress`: Vault contract address
 
 **Query Parameters**:
+
 - `action`: "deposit" | "withdraw"
 
 **Response**:
+
 ```typescript
 {
   context: {
     vaultAddress: string;
     userAddress: string;
-    action: "deposit" | "withdraw";
+    action: 'deposit' | 'withdraw';
     asset: {
       address: string;
       symbol: string;
       decimals: number;
-      balance: number;             // User's balance
-    };
+      balance: number; // User's balance
+    }
     vault: {
       shareToken: {
         address: string;
         symbol: string;
         decimals: number;
-        balance: number;           // User's vault shares
-      };
-      exchangeRate: number;        // Asset per share
+        balance: number; // User's vault shares
+      }
+      exchangeRate: number; // Asset per share
       limits: {
         minAmount: number;
         maxAmount: number;
-      };
-    };
+      }
+    }
     allowance: {
-      current: number;             // Current allowance
-      required: boolean;           // If approval needed
-    };
+      current: number; // Current allowance
+      required: boolean; // If approval needed
+    }
     fees: {
       deposit: number;
       withdrawal: number;
       gas: {
-        estimated: number;         // In wei
+        estimated: number; // In wei
         usdValue: number;
-      };
-    };
-  };
+      }
+    }
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/transactions/context/{userAddress}/{network}/{vaultAddress}`
 
 ---
@@ -529,38 +570,43 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 8. Transaction Preparation
 
 #### `GET /api/earn/transactions/{action}/{userAddress}/{network}/{vaultAddress}`
+
 **Purpose**: Get transaction data for execution.
 
 **Path Parameters**:
+
 - `action`: "deposit" | "withdraw"
 - `userAddress`: User's Ethereum address
 - `network`: Network name
 - `vaultAddress`: Vault contract address
 
 **Query Parameters**:
+
 - `amount`: Amount in asset units (string to preserve precision)
 
 **Response**:
+
 ```typescript
 {
   transactions: Array<{
-    to: string;                    // Contract address
-    data: string;                  // Encoded transaction data
-    value: string;                 // ETH value (if needed)
-    description: string;           // Human-readable description
+    to: string; // Contract address
+    data: string; // Encoded transaction data
+    value: string; // ETH value (if needed)
+    description: string; // Human-readable description
     gasLimit: string;
   }>;
   summary: {
     action: string;
     amount: number;
-    expectedOutput: number;        // Expected shares/assets
-    priceImpact: number;           // Percentage
-    totalFees: number;             // In USD
-  };
+    expectedOutput: number; // Expected shares/assets
+    priceImpact: number; // Percentage
+    totalFees: number; // In USD
+  }
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/transactions/{action}/{userAddress}/{network}/{vaultAddress}`
 
 ---
@@ -568,12 +614,15 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 9. Educational Content
 
 #### `GET /api/earn/education`
+
 **Purpose**: Fetch educational resources and tutorials.
 
 **Query Parameters**:
+
 - `category` (optional): "intro" | "advanced" | "blog"
 
 **Response**:
+
 ```typescript
 {
   content: Array<{
@@ -581,15 +630,16 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
     title: string;
     description: string;
     category: string;
-    difficulty: "beginner" | "intermediate" | "advanced";
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
     thumbnail?: string;
     url?: string;
-    readTime?: number;             // Minutes
+    readTime?: number; // Minutes
   }>;
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Static content or CMS integration
 - Could use `GET /v2/tags` to categorize content
 
@@ -598,9 +648,11 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ### 10. Networks & Assets
 
 #### `GET /api/earn/networks`
+
 **Purpose**: Get supported networks.
 
 **Response**:
+
 ```typescript
 {
   networks: Array<{
@@ -616,16 +668,20 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/networks`
 - Filter for Arbitrum + other supported networks
 
 #### `GET /api/earn/assets`
+
 **Purpose**: Get supported assets.
 
 **Query Parameters**:
+
 - `network` (optional): Filter by network
 
 **Response**:
+
 ```typescript
 {
   assets: Array<{
@@ -636,12 +692,13 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
     logo?: string;
     priceUsd: number;
     network: string;
-    group: "ETH" | "USD" | "BTC" | "OTHER";
+    group: 'ETH' | 'USD' | 'BTC' | 'OTHER';
   }>;
 }
 ```
 
 **Vaults.fyi Mapping**:
+
 - Use `GET /v2/assets` with network filter
 
 ---
@@ -649,6 +706,7 @@ User Browser → Next.js API Routes → Service Layer → Vaults.fyi API
 ## Service Layer
 
 ### File Structure
+
 ```
 packages/app/src/
 ├── lib/
@@ -702,73 +760,105 @@ packages/app/src/
 ### Core Services
 
 #### VaultsService (`vaults.service.ts`)
+
 **Responsibilities**:
+
 - Wrapper around Vaults.fyi API client
 - Handle authentication (API key injection)
 - Request/response logging
 - Error normalization
 
 **Methods**:
+
 ```typescript
 class VaultsService {
-  async getVaults(params: GetVaultsParams): Promise<VaultsResponse>
-  async getDetailedVault(network: string, address: string): Promise<DetailedVault>
-  async getDetailedVaults(params: GetDetailedVaultsParams): Promise<DetailedVaultsResponse>
-  async getHistoricalData(network: string, address: string, metric: string): Promise<HistoricalData>
-  async getUserPositions(userAddress: string, params: PositionsParams): Promise<PositionsResponse>
-  async getTransactionContext(params: TxContextParams): Promise<TransactionContext>
-  async getTransactionData(params: TxDataParams): Promise<TransactionData>
+  async getVaults(params: GetVaultsParams): Promise<VaultsResponse>;
+  async getDetailedVault(network: string, address: string): Promise<DetailedVault>;
+  async getDetailedVaults(params: GetDetailedVaultsParams): Promise<DetailedVaultsResponse>;
+  async getHistoricalData(
+    network: string,
+    address: string,
+    metric: string,
+  ): Promise<HistoricalData>;
+  async getUserPositions(userAddress: string, params: PositionsParams): Promise<PositionsResponse>;
+  async getTransactionContext(params: TxContextParams): Promise<TransactionContext>;
+  async getTransactionData(params: TxDataParams): Promise<TransactionData>;
 }
 ```
 
 #### OpportunitiesService (`opportunities.service.ts`)
+
 **Responsibilities**:
+
 - Fetch and transform opportunities
 - Apply Arbitrum-specific filtering
 - Categorize by type (Lend, Liquid Staking, Fixed Yield)
 - Sort and paginate
 
 **Methods**:
+
 ```typescript
 class OpportunitiesService {
-  async getOpportunities(filters: OpportunityFilters): Promise<OpportunitiesResponse>
-  async getOpportunityDetail(network: string, address: string): Promise<OpportunityDetail>
-  async getOpportunityHistory(network: string, address: string, params: HistoryParams): Promise<HistoricalData>
-  private categorizeOpportunity(vault: DetailedVault): OpportunityType
-  private calculateRiskScore(vault: DetailedVault): RiskScore
+  async getOpportunities(filters: OpportunityFilters): Promise<OpportunitiesResponse>;
+  async getOpportunityDetail(network: string, address: string): Promise<OpportunityDetail>;
+  async getOpportunityHistory(
+    network: string,
+    address: string,
+    params: HistoryParams,
+  ): Promise<HistoricalData>;
+  private categorizeOpportunity(vault: DetailedVault): OpportunityType;
+  private calculateRiskScore(vault: DetailedVault): RiskScore;
 }
 ```
 
 #### PositionsService (`positions.service.ts`)
+
 **Responsibilities**:
+
 - Fetch user positions
 - Calculate portfolio summary
 - Compute earnings and APY
 - Aggregate position data
 
 **Methods**:
+
 ```typescript
 class PositionsService {
-  async getUserPositions(userAddress: string, filters?: PositionFilters): Promise<UserPositionsResponse>
-  async getPositionDetail(userAddress: string, network: string, vaultAddress: string): Promise<PositionDetail>
-  async getPortfolioSummary(userAddress: string): Promise<PortfolioSummary>
-  private calculateWeightedApy(positions: Position[]): number
-  private calculateBreakdown(positions: Position[]): BreakdownPercentages
+  async getUserPositions(
+    userAddress: string,
+    filters?: PositionFilters,
+  ): Promise<UserPositionsResponse>;
+  async getPositionDetail(
+    userAddress: string,
+    network: string,
+    vaultAddress: string,
+  ): Promise<PositionDetail>;
+  async getPortfolioSummary(userAddress: string): Promise<PortfolioSummary>;
+  private calculateWeightedApy(positions: Position[]): number;
+  private calculateBreakdown(positions: Position[]): BreakdownPercentages;
 }
 ```
 
 #### TransactionsService (`transactions.service.ts`)
+
 **Responsibilities**:
+
 - Prepare transaction context
 - Build transaction data
 - Calculate fees and slippage
 
 **Methods**:
+
 ```typescript
 class TransactionsService {
-  async getTransactionContext(userAddress: string, network: string, vaultAddress: string, action: TxAction): Promise<TxContext>
-  async prepareTransaction(params: PrepareTxParams): Promise<PreparedTransaction>
-  async estimateGas(tx: Transaction): Promise<GasEstimate>
+  async getTransactionContext(
+    userAddress: string,
+    network: string,
+    vaultAddress: string,
+    action: TxAction,
+  ): Promise<TxContext>;
+  async prepareTransaction(params: PrepareTxParams): Promise<PreparedTransaction>;
+  async estimateGas(tx: Transaction): Promise<GasEstimate>;
 }
 ```
 
@@ -780,7 +870,7 @@ class TransactionsService {
 
 ```typescript
 // Opportunity Types
-type OpportunityType = "Lend" | "Liquid Staking" | "Fixed Yield";
+type OpportunityType = 'Lend' | 'Liquid Staking' | 'Fixed Yield';
 
 interface Opportunity {
   id: string;
@@ -835,12 +925,12 @@ interface AssetInfo {
   decimals: number;
   logo?: string;
   priceUsd: number;
-  group: "ETH" | "USD" | "BTC" | "EURO" | "OTHER";
+  group: 'ETH' | 'USD' | 'BTC' | 'EURO' | 'OTHER';
 }
 
 interface RiskInfo {
-  score: number;        // 0-100
-  category: "low" | "medium" | "high";
+  score: number; // 0-100
+  category: 'low' | 'medium' | 'high';
   factors?: Array<{
     category: string;
     score: number;
@@ -882,7 +972,9 @@ interface PortfolioSummary {
 
 ```typescript
 // lib/api/vaults-client.ts
-import { createClient } from '@vaults.fyi/sdk'; // If SDK exists, or custom implementation
+import { createClient } from '@vaults.fyi/sdk';
+
+// If SDK exists, or custom implementation
 
 const vaultsClient = createClient({
   baseUrl: process.env.VAULTS_API_URL || 'https://api.vaults.fyi',
@@ -896,6 +988,7 @@ export default vaultsClient;
 ```
 
 ### Environment Variables
+
 ```bash
 VAULTS_API_URL=https://api.vaults.fyi
 VAULTS_API_KEY=<your-api-key>
@@ -903,12 +996,15 @@ VAULTS_API_CACHE_TTL=300 # 5 minutes
 ```
 
 ### Rate Limiting
+
 - Implement request queuing for high-traffic scenarios
 - Cache aggressively to reduce API calls
 - Use batch endpoints where possible
 
 ### Error Handling
+
 Map Vaults.fyi error codes to user-friendly messages:
+
 - `401` → "API authentication failed"
 - `403` → "API quota exceeded"
 - `404` → "Vault not found"
@@ -977,18 +1073,19 @@ export class CacheService {
 ### Next.js Cache Integration
 
 ```typescript
-// Use Next.js native caching
-export const revalidate = 300; // 5 minutes
-
+// 5 minutes
 // Or unstable_cache for more control
 import { unstable_cache } from 'next/cache';
+
+// Use Next.js native caching
+export const revalidate = 300; // 5 minutes
 
 const getCachedOpportunities = unstable_cache(
   async (network: string) => {
     return await opportunitiesService.getOpportunities({ network });
   },
   ['opportunities'],
-  { revalidate: 300, tags: ['opportunities'] }
+  { revalidate: 300, tags: ['opportunities'] },
 );
 ```
 
@@ -1003,7 +1100,7 @@ class VaultsAPIError extends Error {
   constructor(
     public statusCode: number,
     public errorId?: string,
-    message?: string
+    message?: string,
   ) {
     super(message);
   }
@@ -1045,18 +1142,18 @@ export async function GET(request: Request) {
     if (error instanceof VaultsAPIError) {
       return NextResponse.json(
         { error: 'External API error', message: error.message, errorId: error.errorId },
-        { status: error.statusCode }
+        { status: error.statusCode },
       );
     }
     if (error instanceof ValidationError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { error: 'Internal server error', message: 'An unexpected error occurred' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -1067,6 +1164,7 @@ export async function GET(request: Request) {
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure
+
 - [ ] Set up API client and authentication
 - [ ] Implement base service classes
 - [ ] Create data models and validators
@@ -1074,6 +1172,7 @@ export async function GET(request: Request) {
 - [ ] Implement error handling
 
 ### Phase 2: Opportunities & Discovery
+
 - [ ] `GET /api/earn/opportunities`
 - [ ] `GET /api/earn/opportunities/{network}/{vaultAddress}`
 - [ ] Opportunity transformers
@@ -1081,6 +1180,7 @@ export async function GET(request: Request) {
 - [ ] Frontend integration
 
 ### Phase 3: User Positions
+
 - [ ] `GET /api/earn/positions/{userAddress}`
 - [ ] `GET /api/earn/positions/{userAddress}/{network}/{vaultAddress}`
 - [ ] Portfolio summary calculations
@@ -1088,6 +1188,7 @@ export async function GET(request: Request) {
 - [ ] Frontend integration
 
 ### Phase 4: Transactions
+
 - [ ] `GET /api/earn/transactions/context/{...}`
 - [ ] `GET /api/earn/transactions/{action}/{...}`
 - [ ] Transaction preparation logic
@@ -1095,6 +1196,7 @@ export async function GET(request: Request) {
 - [ ] Frontend integration with wallet
 
 ### Phase 5: Advanced Features
+
 - [ ] `GET /api/earn/recommendations/{userAddress}`
 - [ ] Historical data endpoints
 - [ ] Educational content
@@ -1172,20 +1274,21 @@ export async function GET(request: Request) {
 
 ### Vaults.fyi Endpoint Summary
 
-| Endpoint | Purpose | Cache TTL | Priority |
-|----------|---------|-----------|----------|
-| `/v2/vaults` | List all vaults | 15 min | High |
-| `/v2/detailed-vaults` | Detailed vault info | 5 min | High |
-| `/v2/detailed-vaults/{network}/{vault}` | Single vault detail | 5 min | High |
-| `/v2/portfolio/positions/{user}` | User positions | 2 min | High |
-| `/v2/historical/{network}/{vault}` | Historical data | 1 hour | Medium |
-| `/v2/transactions/context/{...}` | Transaction context | None | High |
-| `/v2/networks` | Networks list | 24 hours | Low |
-| `/v2/assets` | Assets list | 1 hour | Medium |
+| Endpoint                                | Purpose             | Cache TTL | Priority |
+| --------------------------------------- | ------------------- | --------- | -------- |
+| `/v2/vaults`                            | List all vaults     | 15 min    | High     |
+| `/v2/detailed-vaults`                   | Detailed vault info | 5 min     | High     |
+| `/v2/detailed-vaults/{network}/{vault}` | Single vault detail | 5 min     | High     |
+| `/v2/portfolio/positions/{user}`        | User positions      | 2 min     | High     |
+| `/v2/historical/{network}/{vault}`      | Historical data     | 1 hour    | Medium   |
+| `/v2/transactions/context/{...}`        | Transaction context | None      | High     |
+| `/v2/networks`                          | Networks list       | 24 hours  | Low      |
+| `/v2/assets`                            | Assets list         | 1 hour    | Medium   |
 
 ### Type Categorization Rules
 
 Map Vaults.fyi tags to opportunity types:
+
 - **Lend**: Tags include "lending", "borrow", "supply"
 - **Liquid Staking**: Tags include "staking", "liquid", "LST"
 - **Fixed Yield**: Tags include "fixed", "term", "maturity"
@@ -1193,6 +1296,7 @@ Map Vaults.fyi tags to opportunity types:
 ### Network Priority
 
 For Arbitrum Portal:
+
 1. **Primary**: Arbitrum (chainId: 42161)
 2. **Secondary**: Arbitrum Nova, Arbitrum Sepolia (testnet)
 3. **Future**: Cross-chain opportunities (mainnet, optimism, base)
