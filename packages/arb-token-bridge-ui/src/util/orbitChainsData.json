@@ -1291,7 +1291,8 @@
           "name": "xUSD",
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPMainnet_Logo.png"
-        }
+        },
+        "fastWithdrawalTime": 3600000
       }
     },
     {
@@ -2268,7 +2269,8 @@
           "name": "xUSD",
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPRopsten_NativeTokenLogo.png"
-        }
+        },
+        "fastWithdrawalTime": 3600000
       }
     }
   ]
