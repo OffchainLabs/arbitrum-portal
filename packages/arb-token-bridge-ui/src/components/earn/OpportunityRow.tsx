@@ -15,13 +15,13 @@ export function OpportunityRow({ opportunity, showDepositedEarnings = true }: Op
   const router = useRouter();
 
   const handleRowClick = () => {
-    router.push(`/earn/market/${opportunity.id}`);
+    router.push(`/earn/opportunity/${opportunity.id}`);
   };
 
   return (
     <tr
       onClick={handleRowClick}
-      className="group cursor-pointer bg-white/10 transition-colors hover:bg-white/20 mb-2"
+      className="group cursor-pointer hover:bg-default-black-hover transition-colors mb-2 h-[40px] rounded-md overflow-hidden p-2"
     >
       {/* Name */}
       <td className="py-5 pl-6 pr-4">

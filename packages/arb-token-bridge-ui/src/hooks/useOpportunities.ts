@@ -40,12 +40,9 @@ export function useOpportunities(): UseOpportunitiesResult {
 /**
  * Hook to fetch user opportunities with position details using SWR
  */
-export function useUserOpportunities(
-  userAddress: string | null,
-  allowedNetworks: string[],
-): UseOpportunitiesResult {
+export function useUserOpportunities(userAddress: string | null): UseOpportunitiesResult {
   const { data, error, isLoading, mutate } = useSWR(
-    userAddress ? ['userOpportunities', userAddress, allowedNetworks] : null,
+    userAddress ? ['userOpportunities', userAddress] : null,
     async () => {
       if (!userAddress) return [];
 

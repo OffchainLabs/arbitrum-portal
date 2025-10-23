@@ -5,16 +5,9 @@ import { useAccount } from 'wagmi';
 import { useUserOpportunities } from '../../hooks/useOpportunities';
 import { PositionsTable } from './PositionsTable';
 
-interface MyPositionsPageProps {
-  allowedNetworks?: string[];
-}
-
-export function MyPositionsPage({ allowedNetworks = ['arbitrum'] }: MyPositionsPageProps) {
+export function MyPositionsPage() {
   const { address, isConnected } = useAccount();
-  const { opportunities, isLoading, error } = useUserOpportunities(
-    address || null,
-    allowedNetworks,
-  );
+  const { opportunities, isLoading, error } = useUserOpportunities(address || null);
 
   // Not connected state
   if (!isConnected) {

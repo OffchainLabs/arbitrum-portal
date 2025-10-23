@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 
+import { Card } from '../../../../portal/components/Card';
 import { OpportunityTableRow } from '../../types/vaults';
 import { OpportunityRow } from './OpportunityRow';
 
@@ -43,7 +44,7 @@ export function MarketOpportunitiesTable({ opportunities }: MarketOpportunitiesT
   };
 
   return (
-    <div className="space-y-8">
+    <Card className="space-y-8">
       {categoryOrder.map((category) => {
         const categoryOpportunities = groupedOpportunities[category];
         if (!categoryOpportunities || categoryOpportunities.length === 0) {
@@ -100,6 +101,6 @@ export function MarketOpportunitiesTable({ opportunities }: MarketOpportunitiesT
           </div>
         );
       })}
-    </div>
+    </Card>
   );
 }

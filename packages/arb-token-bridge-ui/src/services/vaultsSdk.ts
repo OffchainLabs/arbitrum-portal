@@ -55,6 +55,20 @@ export async function getUserPositions({
 }
 
 /**
+ * Fetch a single vault by address and network using the SDK
+ */
+export async function getVault(vaultAddress: string, network: string): Promise<DetailedVault> {
+  const response = await vaultsSdk.getVault({
+    path: {
+      network: network as any, // SDK expects specific network names
+      vaultAddress,
+    },
+  });
+
+  return response;
+}
+
+/**
  * Transform a vault to an opportunity row
  */
 export function transformVaultToOpportunity(
