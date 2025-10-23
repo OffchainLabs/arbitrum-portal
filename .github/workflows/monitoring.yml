@@ -24,7 +24,7 @@ jobs:
       - name: Checkout repositories
         uses: actions/checkout@v4
         with:
-          repository: OffchainLabs/arbitrum-token-bridge
+          repository: OffchainLabs/arbitrum-portal
 
       - name: Setup Node 22
         uses: actions/setup-node@v5
