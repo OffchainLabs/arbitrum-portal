@@ -1291,9 +1291,9 @@
           "name": "xUSD",
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPMainnet_Logo.png"
-        }
-      },
-      "fastWithdrawalTime": 3600000
+        },
+        "fastWithdrawalTime": 3600000
+      }
     },
     {
       "chainId": 869,
@@ -2269,9 +2269,9 @@
           "name": "xUSD",
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPRopsten_NativeTokenLogo.png"
-        }
-      },
-      "fastWithdrawalTime": 3600000
+        },
+        "fastWithdrawalTime": 3600000
+      }
     }
   ]
 }
