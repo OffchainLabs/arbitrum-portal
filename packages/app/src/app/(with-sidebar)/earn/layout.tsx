@@ -1,9 +1,9 @@
 'use client';
 
-import '@rainbow-me/rainbowkit/styles.css';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Button } from 'arb-token-bridge-ui/src/components/common/Button';
+import '@rainbow-me/rainbowkit/styles.css';
 import { AppProviders } from 'arb-token-bridge-ui/src/components/App/AppProviders';
+import { Button } from 'arb-token-bridge-ui/src/components/common/Button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

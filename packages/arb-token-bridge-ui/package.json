@@ -21,6 +21,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@uniswap/token-lists": "^1.0.0-beta.34",
     "@unstoppabledomains/resolution": "^8.3.3",
+    "@vaultsfyi/sdk": "^2.1.3",
     "ajv": "^8.17.1",
     "ajv-formats": "^2.1.1",
     "apollo-link-timeout": "^5.0.2",
