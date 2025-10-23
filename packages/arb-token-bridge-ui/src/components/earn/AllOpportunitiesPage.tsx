@@ -1,10 +1,10 @@
 'use client';
 
-import { useOpportunities } from '../../hooks/useOpportunities';
+import { useAllOpportunities } from '../../hooks/earn';
 import { MarketOpportunitiesTable } from './MarketOpportunitiesTable';
 
 export function AllOpportunitiesPage() {
-  const { opportunities, isLoading, error } = useOpportunities();
+  const { opportunities, isLoading, error } = useAllOpportunities();
 
   // Loading state
   if (isLoading) {

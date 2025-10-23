@@ -1,11 +1,11 @@
 import useSWR from 'swr';
 
-import { getVault } from '../services/vaultsSdk';
+import { getVault } from '../../services/vaultsSdk';
 
 /**
  * Hook to fetch a single vault by ID using SWR
  */
-export function useVault(vaultAddress: string, network: string = 'mainnet') {
+export function useVaultDetails(vaultAddress: string, network: string = 'mainnet') {
   const { data, error, isLoading, mutate } = useSWR(
     vaultAddress ? ['vault', vaultAddress, network] : null,
     async () => {

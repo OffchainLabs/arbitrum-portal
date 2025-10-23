@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import { Card } from '@/components/Card';
 
-import { useVault } from '../../hooks/useVault';
+import { useVaultDetails } from '../../hooks/earn';
 import { SafeImage } from '../common/SafeImage';
 
 interface OpportunityDetailPageProps {
@@ -13,7 +13,7 @@ interface OpportunityDetailPageProps {
 }
 
 export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPageProps) {
-  const { vault, isLoading, error } = useVault(opportunityId, 'mainnet');
+  const { vault, isLoading, error } = useVaultDetails(opportunityId, 'mainnet');
 
   if (isLoading) {
     return (

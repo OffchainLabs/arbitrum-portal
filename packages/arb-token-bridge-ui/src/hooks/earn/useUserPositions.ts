@@ -1,12 +1,13 @@
 import useSWR from 'swr';
 
-import { getAllVaults, getUserPositions, transformVaultToOpportunity } from '../services/vaultsSdk';
-import { OpportunityTableRow } from '../types/vaults';
+import {
+  getAllVaults,
+  getUserPositions,
+  transformVaultToOpportunity,
+} from '../../services/vaultsSdk';
+import { OpportunityTableRow } from '../../types/vaults';
 
-// Re-export the interface from types
-export type { OpportunityTableRow } from '../types/vaults';
-
-interface UseOpportunitiesResult {
+interface UseUserPositionsResult {
   opportunities: OpportunityTableRow[];
   isLoading: boolean;
   error: string | null;
@@ -14,35 +15,14 @@ interface UseOpportunitiesResult {
 }
 
 /**
- * Hook to fetch all available opportunities using SWR
- */
-export function useOpportunities(): UseOpportunitiesResult {
-  const { data, error, isLoading, mutate } = useSWR(
-    ['opportunities'],
-    async () => {
-      const vaults = await getAllVaults({ perPage: 50 });
-      return vaults.map((vault) => transformVaultToOpportunity(vault));
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    },
-  );
-
-  return {
-    opportunities: data || [],
-    isLoading,
-    error: error?.message || null,
-    refetch: () => mutate(),
-  };
-}
-
-/**
  * Hook to fetch user opportunities with position details using SWR
  */
-export function useUserOpportunities(userAddress: string | null): UseOpportunitiesResult {
+export function useUserPositions(
+  userAddress: string | null,
+  allowedNetworks: string[] = ['arbitrum', 'mainnet'],
+): UseUserPositionsResult {
   const { data, error, isLoading, mutate } = useSWR(
-    userAddress ? ['userOpportunities', userAddress] : null,
+    userAddress ? ['userOpportunities', userAddress, allowedNetworks] : null,
     async () => {
       if (!userAddress) return [];
 

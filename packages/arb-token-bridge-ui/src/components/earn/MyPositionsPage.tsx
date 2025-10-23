@@ -2,12 +2,16 @@
 
 import { useAccount } from 'wagmi';
 
-import { useUserOpportunities } from '../../hooks/useOpportunities';
+import { useUserPositions } from '../../hooks/earn';
+import { PortfolioSummaryCards } from './PortfolioSummaryCards';
 import { PositionsTable } from './PositionsTable';
 
 export function MyPositionsPage() {
   const { address, isConnected } = useAccount();
-  const { opportunities, isLoading, error } = useUserOpportunities(address || null);
+  const { opportunities, isLoading, error } = useUserPositions(address || null, [
+    'arbitrum',
+    'mainnet',
+  ]);
 
   // Not connected state
   if (!isConnected) {
@@ -48,9 +52,10 @@ export function MyPositionsPage() {
     );
   }
 
-  // Show positions table
+  // Show positions table with summary cards
   return (
-    <div>
+    <div className="space-y-6">
+      <PortfolioSummaryCards opportunities={opportunities} />
       <PositionsTable positions={opportunities} />
     </div>
   );

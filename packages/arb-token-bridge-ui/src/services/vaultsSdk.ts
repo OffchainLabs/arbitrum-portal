@@ -69,6 +69,35 @@ export async function getVault(vaultAddress: string, network: string): Promise<D
 }
 
 /**
+ * Fetch total returns for a specific user and vault
+ */
+export async function getUserVaultTotalReturns(
+  userAddress: string,
+  network: string,
+  vaultAddress: string,
+): Promise<{
+  address: string;
+  assetCaip: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  assetLogo?: string;
+  assetPriceInUsd?: string;
+  assetGroup: string;
+  returnsNative: string;
+}> {
+  const response = await vaultsSdk.getUserVaultTotalReturns({
+    path: {
+      userAddress,
+      network: network as any,
+      vaultAddress,
+    },
+  });
+
+  return response;
+}
+
+/**
  * Transform a vault to an opportunity row
  */
 export function transformVaultToOpportunity(
