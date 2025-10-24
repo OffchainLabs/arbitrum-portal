@@ -55,34 +55,6 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   return null;
 }
 
-/**
- * Normalizes USDC tokens:
- * - Drops USDC.e on chains that have native USDC (Arbitrum, Base, Ethereum)
- * - Remaps USDC.e to USDC on ApeChain and Superposition
- * - Keeps all other tokens unchanged
- */
-export function handleUSDC(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey | null {
-  if (token.coinKey !== CoinKey.USDCe) {
-    return token;
-  }
-
-  // Drop USDC.e on chains that have native USDC.
-  if (
-    token.chainId === LiFiChainId.ARB ||
-    token.chainId === LiFiChainId.BAS ||
-    token.chainId === LiFiChainId.ETH
-  ) {
-    return null;
-  }
-
-  // Remap USDC.e to USDC
-  if (token.chainId === LiFiChainId.APE || token.chainId === LiFiChainId.SUP) {
-    return { ...token, coinKey: CoinKey.USDC };
-  }
-
-  return token;
-}
-
 export interface LifiTokenRegistry {
   tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
@@ -113,11 +85,8 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
         if (!tokenWithCoinKey) return acc;
 
-        const normalizedToken = handleUSDC(tokenWithCoinKey);
-        if (!normalizedToken) return acc;
-
-        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-        acc.push(normalizedToken);
+        tokensGroupedByCoinKey[tokenWithCoinKey.coinKey] ??= tokenWithCoinKey;
+        acc.push(tokenWithCoinKey);
         return acc;
       },
       [],
