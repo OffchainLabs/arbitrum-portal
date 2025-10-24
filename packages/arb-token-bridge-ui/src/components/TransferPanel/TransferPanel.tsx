@@ -1,6 +1,6 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
-import { getStepTransaction } from '@lifi/sdk';
+import { ChainId, getStepTransaction } from '@lifi/sdk';
 import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
@@ -617,9 +617,36 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
+      let assetType: AssetType;
+      let tokenSymbol: string;
+      if (selectedToken) {
+        if (addressesEqual(selectedToken.address, constants.AddressZero)) {
+          // Zero address on Ape, means ETH token
+          assetType = AssetType.ETH;
+          tokenSymbol = 'ETH';
+        } else {
+          assetType = AssetType.ERC20;
+          tokenSymbol = selectedToken.symbol;
+        }
+      } else {
+        // No selected token: native token
+        // If one of the transfer include ApeChain, then transfer is still an ERC20 transfer
+        if (
+          networks.sourceChain.id === ChainId.APE ||
+          networks.destinationChain.id === ChainId.APE
+        ) {
+          assetType = AssetType.ERC20;
+          tokenSymbol = 'APE';
+        } else {
+          assetType = AssetType.ETH;
+          tokenSymbol = 'ETH';
+        }
+      }
+
+      // const tokenSymbol = selectedToken ? selectedToken.symbol : 'ETH';
       trackEvent('Lifi Transfer', {
-        tokenSymbol: selectedToken?.symbol || 'ETH',
-        assetType: selectedToken ? AssetType.ERC20 : AssetType.ETH,
+        tokenSymbol,
+        assetType,
         accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),

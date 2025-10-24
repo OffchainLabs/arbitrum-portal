@@ -148,6 +148,15 @@ describe('getTokenOverride', () => {
     symbol: 'ETH',
     type: 'ERC20',
   };
+  const ape = {
+    address: CommonAddress.ArbitrumOne.APE,
+    decimals: 18,
+    listIds: new Set(),
+    logoURI: '/images/ApeTokenLogo.svg',
+    name: 'ApeCoin',
+    symbol: 'APE',
+    type: 'ERC20',
+  };
 
   it('For transfers including ApeChain, returns WETH on ApeChain, Ether on the other chain', () => {
     const apeToArbOverride = getTokenOverride({
@@ -185,16 +194,46 @@ describe('getTokenOverride', () => {
     expect(mainnetToApeOverride.destination).toEqual(eth);
   });
 
-  it("Don't override native token for ApeChain", () => {
+  it('For transfers including APE on ApeChain, returns the ERC20 address on the other chain', () => {
     const arbToApeOverride = getTokenOverride({
       fromToken: undefined,
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.ApeChain,
     });
 
-    // No override, default to null (Ape on ApeChain)
-    expect(arbToApeOverride.source).toEqual(null);
+    // Override on source chain to ERC20, default to null (Ape on ApeChain)
+    expect(arbToApeOverride.source).toEqual(ape);
     expect(arbToApeOverride.destination).toEqual(null);
+
+    const apeToArbOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    // Override on destination chain to ERC20, default to null (Ape on ApeChain)
+    expect(apeToArbOverride.source).toEqual(null);
+    expect(apeToArbOverride.destination).toEqual(ape);
+  });
+
+  it('For transfers on chain with custom fee token, returns null', () => {
+    const arbToXaiOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: 660279, // Xai
+    });
+
+    expect(arbToXaiOverride.source).toEqual(null);
+    expect(arbToXaiOverride.destination).toEqual(null);
+
+    const xaiToArbOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: 660279, // Xai
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(xaiToArbOverride.source).toEqual(null);
+    expect(xaiToArbOverride.destination).toEqual(null);
   });
 
   it('For transfers including Superposition returns USDCe on Superposition', () => {

@@ -118,6 +118,36 @@ function getUsdc(chainId: number) {
   );
 }
 
+const apeToken = {
+  symbol: 'APE',
+  name: 'ApeCoin',
+  decimals: 18,
+  logoURI: '/images/ApeTokenLogo.svg',
+  type: TokenType.ERC20,
+  listIds: new Set<string>(),
+} as const;
+
+function getApe(chainId: number) {
+  return (
+    {
+      [ChainId.Ethereum]: {
+        ...apeToken,
+        address: CommonAddress.Ethereum.APE,
+      },
+      [ChainId.ArbitrumOne]: {
+        ...apeToken,
+        address: CommonAddress.ArbitrumOne.APE,
+      },
+      [ChainId.Superposition]: null,
+      [ChainId.ApeChain]: null,
+      [ChainId.Base]: {
+        ...apeToken,
+        address: CommonAddress.Base.APE,
+      },
+    }[chainId] || null
+  );
+}
+
 /** Returns source and destination token for current token on (source,destination) */
 export function getTokenOverride({
   fromToken,
@@ -127,15 +157,10 @@ export function getTokenOverride({
   fromToken: string | undefined;
   sourceChainId: number;
   destinationChainId: number;
-}):
-  | {
-      source: ERC20BridgeToken;
-      destination: ERC20BridgeToken;
-    }
-  | {
-      source: null;
-      destination: null;
-    } {
+}): {
+  source: ERC20BridgeToken | null;
+  destination: ERC20BridgeToken | null;
+} {
   // Eth on ApeChain
   if (addressesEqual(fromToken, constants.AddressZero)) {
     if (sourceChainId === ChainId.ApeChain) {
@@ -167,6 +192,24 @@ export function getTokenOverride({
         },
       };
     }
+  }
+
+  // Ape on ApeChain
+  if (
+    (!fromToken && sourceChainId === ChainId.ApeChain) ||
+    (!fromToken && destinationChainId === ChainId.ApeChain)
+  ) {
+    if (sourceChainId === ChainId.ApeChain) {
+      return {
+        source: null,
+        destination: getApe(destinationChainId) ? getApe(destinationChainId) : null,
+      };
+    }
+
+    return {
+      source: getApe(sourceChainId) ? getApe(sourceChainId) : null,
+      destination: null,
+    };
   }
 
   // Native token on non-ETH chain
