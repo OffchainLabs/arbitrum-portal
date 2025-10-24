@@ -1,6 +1,4 @@
-import { TokenList, schema } from '@uniswap/token-lists';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { TokenList } from '@uniswap/token-lists';
 import axios from 'axios';
 import { ImageProps } from 'next/image';
 
@@ -9,12 +7,13 @@ import CMCLogo from '@/images/lists/cmc.png';
 import CoinGeckoLogo from '@/images/lists/coinGecko.svg';
 import UniswapLogo from '@/images/lists/uniswap.png';
 
+import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { isLifiEnabled } from './featureFlag';
 import orbitChainsData from './orbitChainsData.json';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
+export const LIFI_TRANSFER_LIST_ID = 'lifi-token-list';
 
 export interface BridgeTokenList {
   // string is required here to avoid duplicates when mapping orbit chains to tokenlists
@@ -25,37 +24,8 @@ export interface BridgeTokenList {
   isDefault: boolean;
   isArbitrumTokenTokenList?: boolean;
   logoURI: ImageProps['src'];
-  isValid?: boolean;
+  parentChainID?: number; // For LiFi token lists, stores the parent chain ID
 }
-
-const lifiTokenLists: BridgeTokenList[] = isLifiEnabled()
-  ? [
-      {
-        id: '33139_lifi',
-        originChainID: ChainId.ApeChain,
-        url: 'tokenLists/33139_lifi.json',
-        name: 'Ape Lifi List',
-        isDefault: true,
-        logoURI: '/images/ApeChainLogo.svg',
-      },
-      {
-        id: '42161_lifi',
-        originChainID: ChainId.Superposition,
-        url: 'tokenLists/55244_lifi.json',
-        name: 'Superposition Lifi List',
-        isDefault: true,
-        logoURI: '/images/SuperpositionLogo.svg',
-      },
-      {
-        id: '42161_lifi',
-        originChainID: ChainId.ArbitrumOne,
-        url: 'tokenLists/42161_lifi.json',
-        name: 'ArbitrumOne Lifi List',
-        isDefault: true,
-        logoURI: '/images/ArbitrumLogo.svg',
-      },
-    ]
-  : [];
 
 export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
   {
@@ -154,7 +124,6 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
     isDefault: true,
     logoURI: '/images/XaiLogo.svg',
   },
-  ...lifiTokenLists,
   // For all orbit chains,
   ...orbitChainsData.mainnet.concat(orbitChainsData.testnet).reduce((acc, chain) => {
     // Only include arbified native token list for L3 settling to ArbOne
@@ -180,6 +149,18 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
 
     return acc;
   }, [] as BridgeTokenList[]),
+  // LiFi token lists for cross-chain transfers
+  ...Object.entries(lifiDestinationChainIds).flatMap(([parentChainId, childChainIds]) =>
+    childChainIds.map((childChainId) => ({
+      id: LIFI_TRANSFER_LIST_ID,
+      originChainID: Number(childChainId),
+      parentChainID: Number(parentChainId),
+      url: `/api/crosschain-transfers/lifi/tokens?parentChainId=${parentChainId}&childChainId=${childChainId}`,
+      name: `LiFi Transfer Tokens`,
+      isDefault: true,
+      logoURI: ArbitrumLogo,
+    })),
+  ),
 ];
 
 export const listIdsToNames: { [key: string]: string } = {};
@@ -188,35 +169,60 @@ BRIDGE_TOKEN_LISTS.forEach((bridgeTokenList) => {
   listIdsToNames[bridgeTokenList.id] = bridgeTokenList.name;
 });
 
+export const getBridgeTokenListsForNetworks = ({
+  childChainId,
+  parentChainId,
+}: {
+  childChainId: number;
+  parentChainId: number;
+}): BridgeTokenList[] => {
+  return BRIDGE_TOKEN_LISTS.filter((bridgeTokenList) => {
+    if (bridgeTokenList.isArbitrumTokenTokenList) {
+      return true;
+    }
+
+    if (bridgeTokenList.parentChainID !== undefined) {
+      return (
+        bridgeTokenList.parentChainID === parentChainId &&
+        bridgeTokenList.originChainID === childChainId
+      );
+    }
+
+    return bridgeTokenList.originChainID === childChainId;
+  });
+};
+
+export const getDefaultBridgeTokenLists = ({
+  childChainId,
+  parentChainId,
+}: {
+  childChainId: number;
+  parentChainId: number;
+}): BridgeTokenList[] => {
+  return getBridgeTokenListsForNetworks({ childChainId, parentChainId }).filter(
+    (bridgeTokenList) => bridgeTokenList.isDefault,
+  );
+};
+
 export interface TokenListWithId extends TokenList {
   l2ChainId: string;
   bridgeTokenListId: string;
-  isValid?: boolean;
 }
-
-export const validateTokenList = (tokenList: TokenList) => {
-  const ajv = new Ajv();
-  addFormats(ajv);
-  // https://github.com/OffchainLabs/arbitrum-token-lists/blob/master/src/lib/validateTokenList.ts#L10
-  schema.properties.tokens.maxItems = 15_000;
-  const validate = ajv.compile(schema);
-
-  return validate(tokenList);
-};
 
 export const addBridgeTokenListToBridge = (
   bridgeTokenList: BridgeTokenList,
   arbTokenBridge: ArbTokenBridge,
 ) => {
-  fetchTokenListFromURL(bridgeTokenList.url).then(({ isValid, data: tokenList }) => {
-    if (!isValid) return;
+  fetchTokenListFromURL(bridgeTokenList.url).then(({ data: tokenList }) => {
+    if (!tokenList) {
+      return;
+    }
 
-    arbTokenBridge.token.addTokensFromList(tokenList!, bridgeTokenList.id);
+    arbTokenBridge.token.addTokensFromList(tokenList, bridgeTokenList.id);
   });
 };
 
 export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
-  isValid: boolean;
   data: TokenList | undefined;
 }> {
   try {
@@ -226,21 +232,9 @@ export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
       },
     });
 
-    const isValid = validateTokenList(data);
-
-    const tokenList = BRIDGE_TOKEN_LISTS.find((list) => list.url === tokenListURL);
-
-    if (tokenList) {
-      tokenList.isValid = isValid;
-    }
-
-    if (!isValid) {
-      console.warn('Token List Invalid', data);
-    }
-
-    return { isValid, data };
+    return { data };
   } catch (error) {
     console.warn('Token List URL Invalid', tokenListURL);
-    return { isValid: false, data: undefined };
+    return { data: undefined };
   }
 }
