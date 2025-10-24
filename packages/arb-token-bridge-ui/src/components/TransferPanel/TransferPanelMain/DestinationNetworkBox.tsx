@@ -61,7 +61,7 @@ function BalanceRow({
     }
 
     return nativeCurrency.logoUrl;
-  }, [nativeCurrency.logoUrl, parentErc20Address, tokensFromLists, tokensFromUser]);
+  }, [logoOverride, nativeCurrency.logoUrl, parentErc20Address, tokensFromLists, tokensFromUser]);
 
   const symbol = useMemo(() => {
     if (symbolOverride) {

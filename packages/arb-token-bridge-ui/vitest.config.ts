@@ -20,6 +20,7 @@ export default defineConfig({
       '@/images': path.resolve(__dirname, '../app/public/images'),
       '@/icons': path.resolve(__dirname, '../app/public/icons'),
       '@/token-bridge-sdk': path.resolve(__dirname, './src/token-bridge-sdk'),
+      '@/bridge': path.resolve(__dirname, './src'),
     },
   },
 });
