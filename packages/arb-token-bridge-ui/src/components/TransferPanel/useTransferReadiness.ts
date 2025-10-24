@@ -25,6 +25,7 @@ import {
 import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
 import { useAppContextState } from '../App/AppContext';
+import { useTokensFromLists } from './TokenSearchUtils';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { RouteContext, RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
@@ -226,6 +227,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
+  const tokensFromLists = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))
@@ -369,8 +371,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
         isLifiEnabled() &&
         isValidLifiTransfer({
           sourceChainId: networks.sourceChain.id,
-          fromToken: isDepositMode ? selectedToken.address : selectedToken.l2Address,
+          fromToken: selectedToken.address,
           destinationChainId: networks.destinationChain.id,
+          tokensFromLists,
         });
 
       if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
@@ -684,29 +687,33 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
   }, [
-    amount,
-    amount2,
-    isTransferring,
-    destinationAddressError,
+    gasSummary,
+    selectedRoute,
     isSmartContractWallet,
-    selectedToken,
     isDepositMode,
     ethL1BalanceFloat,
     ethL2BalanceFloat,
     selectedTokenL1BalanceFloat,
     selectedTokenL2BalanceFloat,
     customFeeTokenL1BalanceFloat,
+    amount2,
     nativeCurrency.isCustom,
     nativeCurrency.symbol,
-    gasSummary,
+    amount,
+    isTransferring,
     childChain.id,
-    parentChain.id,
-    networks.sourceChain.name,
+    childChain.name,
     isTeleportMode,
+    destinationAddressError,
+    selectedToken,
+    tosAccepted,
+    networks.sourceChain.name,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    parentChain.id,
+    tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    childChain.name,
-    selectedRoute,
     selectedRouteContext,
   ]);
 }

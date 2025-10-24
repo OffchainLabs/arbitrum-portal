@@ -1,6 +1,7 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
 
+import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import {
   ChainKeyQueryParam,
@@ -437,11 +438,38 @@ export function sanitizeNullSelectedToken({
     return undefined;
   }
 
+  const isLifiChainPair = isLifiTransfer({ sourceChainId, destinationChainId });
+
+  if (isLifiEnabled() && isLifiChainPair) {
+    // If an ERC20 token is selected for LiFi transfer, return it directly
+    if (erc20ParentAddress) {
+      return erc20ParentAddress;
+    }
+
+    // When transferring FROM ApeChain, default to ETH (AddressZero)
+    if (sourceChainId === ChainId.ApeChain) {
+      return constants.AddressZero;
+    }
+
+    // When transferring TO ApeChain from Base or Superposition, default to ETH (AddressZero)
+    if (
+      destinationChainId === ChainId.ApeChain &&
+      (sourceChainId === ChainId.Base || sourceChainId === ChainId.Superposition)
+    ) {
+      return constants.AddressZero;
+    }
+
+    // All other LiFi pairs: default to null (native token of destination chain)
+    return null;
+  }
+
   try {
     const destinationChain = getArbitrumNetwork(destinationChainId);
 
-    // If the destination chain has a custom fee token, and selectedToken is null,
-    // return native token for deposit from the parent chain, ETH otherwise
+    /**
+     * If the destination chain has a custom fee token, and selectedToken is null,
+     * return native token for deposit from the parent chain, ETH otherwise
+     */
     if (destinationChain.nativeToken && !erc20ParentAddress) {
       if (sourceChainId === destinationChain.parentChainId) {
         return erc20ParentAddress;
@@ -478,9 +506,7 @@ export const sanitizeTokenQueryParam = ({
       erc20ParentAddress: tokenLowercased || null,
     });
 
-    if (sanitizedTokenAddress) {
-      return sanitizedTokenAddress;
-    }
+    return sanitizedTokenAddress;
   }
   if (!destinationChainId) {
     return tokenLowercased;

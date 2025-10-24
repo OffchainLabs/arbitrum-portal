@@ -157,7 +157,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return nativeCurrency.name;
-  }, [token, nativeCurrency.name, chainId]);
+  }, [overrideToken, token, nativeCurrency.name, chainId]);
 
   const symbol = useMemo(() => {
     if (overrideToken) {
@@ -171,7 +171,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return nativeCurrency.symbol;
-  }, [token, nativeCurrency.symbol, chainId]);
+  }, [overrideToken, token, nativeCurrency.symbol, chainId]);
 
   const logoURI = useMemo(() => {
     if (overrideToken) {
@@ -182,7 +182,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return token.logoURI;
-  }, [token, nativeCurrency]);
+  }, [overrideToken, token, nativeCurrency.logoUrl]);
 
   const balance = useBalanceOnSourceChain(token);
 
