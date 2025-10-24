@@ -117,14 +117,14 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
-  it('ArbitrumOne to ApeChain with Ape should return false', () => {
+  it('ArbitrumOne to ApeChain with Ape should return true', () => {
     expect(
       isValidLifiTransfer({
         fromToken: undefined,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.ApeChain,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
