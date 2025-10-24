@@ -18,7 +18,7 @@ function getDestinationWithSanitizedQueryParams(
     sourceChainId: number;
     destinationChainId: number;
     experiments: string | undefined;
-    token: string | undefined;
+    token: string | undefined | null;
     tab: string;
     disabledFeatures: string[] | undefined;
   },
