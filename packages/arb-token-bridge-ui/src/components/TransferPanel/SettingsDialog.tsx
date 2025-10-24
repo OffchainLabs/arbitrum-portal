@@ -12,12 +12,12 @@ import { shallow } from 'zustand/shallow';
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { isDepositMode as isDepositModeUtil } from '../../util/isDepositMode';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { SafeImage } from '../common/SafeImage';
 import { Loader } from '../common/atoms/Loader';
+import { useTokensFromLists } from './TokenSearchUtils';
 import { defaultSlippage, useLifiSettingsStore } from './hooks/useLifiSettingsStore';
 
 function useTools() {
@@ -110,11 +110,8 @@ function Tools({
 export const SettingsDialog = React.memo((props: UseDialogProps) => {
   const { data: tools, isLoading: isLoadingTools } = useTools();
   const [networks] = useNetworks();
-  const isDepositMode = isDepositModeUtil({
-    sourceChainId: networks.sourceChain.id,
-    destinationChainId: networks.destinationChain.id,
-  });
   const [selectedToken] = useSelectedToken();
+  const tokensFromLists = useTokensFromLists();
   const { slippage, setSlippage, storeDisabledBridges, setDisabledBridgesToStore } =
     useLifiSettingsStore(
       (state) => ({
@@ -130,9 +127,15 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
       isValidLifiTransfer({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-        fromToken: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
+        fromToken: selectedToken?.address,
+        tokensFromLists,
       }),
-    [selectedToken, networks.sourceChain.id, networks.destinationChain.id],
+    [
+      networks.sourceChain.id,
+      networks.destinationChain.id,
+      selectedToken?.address,
+      tokensFromLists,
+    ],
   );
   const [slippageValue, setSlippageValue] = useState(slippage);
   const [disabledBridges, setDisabledBridges] = useState(storeDisabledBridges);

@@ -173,10 +173,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           if (!obj['bridgeInfo']) return false;
           return Object.keys(obj['bridgeInfo'])
             .map((key) => obj['bridgeInfo'][key])
-            .every(
-              (e) =>
-                e && 'tokenAddress' in e && 'originBridgeAddress' in e && 'destBridgeAddress' in e,
-            );
+            .every((e) => e && 'tokenAddress' in e);
         };
         if (!isExtensions(extensions)) {
           return null;
