@@ -8,23 +8,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const tabs = [
-  { name: 'My Positions', href: '/earn/my' },
+  { name: 'Your Holdings', href: '/earn/your-holdings' },
   { name: 'Market', href: '/earn/market' },
-  { name: 'Learn', href: '/earn/learn' },
 ];
 
 export default function EarnLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const isActiveTab = (href: string) => {
-    if (href === '/earn/my') {
-      return pathname === '/earn/my';
+    if (href === '/earn/your-holdings') {
+      return pathname === '/earn/your-holdings';
     }
     if (href === '/earn/market') {
       return pathname === '/earn/market' || pathname.startsWith('/earn/market/');
-    }
-    if (href === '/earn/learn') {
-      return pathname === '/earn/learn';
     }
     return false;
   };
