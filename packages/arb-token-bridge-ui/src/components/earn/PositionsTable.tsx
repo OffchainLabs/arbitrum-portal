@@ -1,6 +1,7 @@
 'use client';
 
-import { OpportunityTableRow } from '../../types/vaults';
+import { OpportunityTableRow } from 'arb-token-bridge-ui/src/types/vaults';
+
 import { OpportunityRow } from './OpportunityRow';
 
 interface PositionsTableProps {

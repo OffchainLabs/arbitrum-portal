@@ -1,15 +1,17 @@
 'use client';
 
+import { Button } from 'arb-token-bridge-ui/src/components/common/Button';
+import { useActions } from 'arb-token-bridge-ui/src/hooks/earn/useActions';
+import { useVaultTransaction } from 'arb-token-bridge-ui/src/hooks/earn/useVaultTransaction';
+import { useVaultTransactionContext } from 'arb-token-bridge-ui/src/hooks/earn/useVaultTransactionContext';
+import { DetailedVault } from 'arb-token-bridge-ui/src/types/vaults';
+import { formatAmount } from 'arb-token-bridge-ui/src/util/NumberUtils';
 import { BigNumber, utils } from 'ethers';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 
-import { useActions } from '../../hooks/earn/useActions';
-import { useVaultTransaction } from '../../hooks/earn/useVaultTransaction';
-import { useVaultTransactionContext } from '../../hooks/earn/useVaultTransactionContext';
-import { DetailedVault } from '../../types/vaults';
-import { formatAmount } from '../../util/NumberUtils';
-import { Button } from '../common/Button';
+import { Card } from '../../../../portal/components/Card';
 
 interface VaultActionPanelProps {
   vault: DetailedVault;
@@ -97,7 +99,6 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
 
   // LP Token data (for withdrawals)
   const lpTokenDecimals = lpToken?.decimals || 18;
-  const lpTokenSymbol = lpToken?.symbol || vault.lpToken?.symbol || 'LP';
   const lpTokenBalanceRaw = BigNumber.from(lpToken?.balanceNative ?? '0');
   const lpTokenBalance = Number(utils.formatUnits(lpTokenBalanceRaw, lpTokenDecimals));
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
@@ -172,7 +173,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   const currentBalance = selectedAction === 'supply' ? assetBalance : lpTokenBalance;
   const currentBalanceRaw = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
   const currentDecimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
-  const currentSymbol = selectedAction === 'supply' ? assetSymbol : lpTokenSymbol;
+  const currentSymbol = selectedAction === 'supply' ? assetSymbol : assetSymbol;
   const currentUsdValue = selectedAction === 'supply' ? assetUsdValue : lpTokenUsdValue;
 
   const isAmountValid = amount && parseFloat(amount) > 0 && parseFloat(amount) <= currentBalance;
@@ -196,7 +197,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   // If context is loading, show loading state
   if (contextLoading) {
     return (
-      <div className="bg-[#191919] rounded-[10px] flex flex-col gap-5 p-5">
+      <div className="bg-[#191919] rounded-sm flex flex-col gap-4 p-4">
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-white"></div>
           <span className="ml-3 text-gray-400">Loading transaction context...</span>
@@ -206,49 +207,30 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   }
 
   return (
-    <div className="bg-[#191919] rounded-[10px] flex flex-col gap-5 p-5">
+    <Card className="bg-[#191919] rounded-lg flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-white">Your supply</h3>
-        <div className="opacity-50 size-3">
-          <svg width="12.5" height="12.5" viewBox="0 0 12.5 12.5" fill="none">
-            <path
-              d="M6.25 0C2.798 0 0 2.798 0 6.25c0 3.452 2.798 6.25 6.25 6.25 3.452 0 6.25-2.798 6.25-6.25C12.5 2.798 9.702 0 6.25 0zm0 11.458c-2.874 0-5.208-2.334-5.208-5.208S3.376 1.042 6.25 1.042 11.458 3.376 11.458 6.25 9.124 11.458 6.25 11.458z"
-              fill="white"
-            />
-            <path
-              d="M6.25 4.167c-.345 0-.625.28-.625.625v2.916c0 .345.28.625.625.625s.625-.28.625-.625V4.792c0-.345-.28-.625-.625-.625zM6.25 8.333c-.345 0-.625.28-.625.625v.417c0 .345.28.625.625.625s.625-.28.625-.625v-.417c0-.345-.28-.625-.625-.625z"
-              fill="white"
-            />
-          </svg>
-        </div>
       </div>
 
       {/* Position Value Card */}
-      <div className="bg-[#212121] rounded-[10px] flex flex-col pb-[38px] pt-[10px] px-[15px]">
-        <div className="flex flex-col gap-2 mb-[-28px]">
+      <div className="bg-[#212121] rounded-lg flex flex-col p-4">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#999999]">Position Value</span>
-            <Button
-              variant="secondary"
-              onClick={handleMaxClick}
-              className="px-[10px] py-0 h-5 text-[10px]"
-            >
-              MAX
-            </Button>
+            <span className="text-xs font-medium text-[#999999]">Position Value</span>
           </div>
           <div className="flex flex-col gap-2">
             <div className="text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px]">
               {formatAmount(lpTokenBalanceRaw, {
                 decimals: lpTokenDecimals,
-                symbol: lpTokenSymbol,
+                symbol: assetSymbol,
               })}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#999999]">${lpTokenUsdValue.toFixed(2)} USD</span>
+              <span className="text-xs text-[#999999]">${lpTokenUsdValue.toFixed(2)} USD</span>
               {lpToken?.pctChange !== null && lpToken?.pctChange !== undefined && (
                 <span
-                  className={`text-sm ${lpToken.pctChange >= 0 ? 'text-[#96d18e]' : 'text-red-400'}`}
+                  className={`text-xs ${lpToken.pctChange >= 0 ? 'text-[#96d18e]' : 'text-red-400'}`}
                 >
                   {lpToken.pctChange >= 0 ? '+' : ''}
                   {Math.abs(lpToken.pctChange).toFixed(0)}%
@@ -260,17 +242,17 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Current APR */}
-      <div className="flex justify-between items-center py-2">
-        <span className="text-sm font-medium text-white">Current APR</span>
-        <span className="text-sm font-medium text-white">{currentApr}</span>
+      <div className="flex justify-between items-center py-[8px]">
+        <span className="text-xs font-medium text-white">Current APR</span>
+        <span className="text-xs font-medium text-[#96d18e]">{currentApr}</span>
       </div>
 
       {/* Action Tabs */}
-      <div className="bg-white/5 rounded-[10px] flex gap-[2px] p-[2px]">
+      <div className="bg-white/5 rounded-lg flex gap-[2px] p-[2px]">
         {hasDeposit && (
           <button
             onClick={() => setSelectedAction('supply')}
-            className={`flex-1 rounded-[10px] px-6 py-[18px] text-sm font-medium text-white transition-all ${
+            className={`flex-1 rounded-lg px-[24px] py-[18px] text-xs font-medium text-white transition-all ${
               selectedAction === 'supply'
                 ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
                 : 'bg-white/5 opacity-70'
@@ -282,7 +264,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
         {hasRedeem && (
           <button
             onClick={() => setSelectedAction('withdraw')}
-            className={`flex-1 rounded-[10px] px-6 py-[18px] text-sm font-medium text-white transition-all ${
+            className={`flex-1 rounded-lg px-[24px] py-[18px] text-xs font-medium text-white transition-all ${
               selectedAction === 'withdraw'
                 ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
                 : 'bg-white/5 opacity-70'
@@ -294,34 +276,47 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Amount to allocate */}
-      <div className="bg-[#212121] rounded-[10px] flex flex-col pb-[38px] pt-[10px] px-[15px]">
-        <div className="flex flex-col gap-2 mb-[-28px]">
+      <div className="bg-[#212121] rounded-lg flex flex-col pb-[38px] pt-[10px] px-[15px]">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#999999]">Amount to allocate</span>
+            <span className="text-xs font-medium text-[#999999]">
+              Amount to {selectedAction === 'supply' ? 'supply' : 'withdraw'}
+            </span>
             <Button
               variant="secondary"
               onClick={handleMaxClick}
-              className="px-[10px] py-0 h-5 text-[10px]"
+              className="px-[10px] py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
             >
               MAX
             </Button>
           </div>
           <div className="flex items-center justify-between">
             <input
+              id={`${selectedAction}-amount`}
+              name={`${selectedAction}-amount`}
+              aria-label={`${selectedAction}-amount`}
               type="number"
               placeholder="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="flex-1 bg-transparent text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-500 focus:outline-none h-[34px]"
+              className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none h-[34px]"
             />
-            <div className="bg-[#333333] rounded-[10px] flex gap-1 items-center px-[10px] py-[5px]">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-xs text-white font-bold">Ξ</span>
-              </div>
-              <span className="text-lg font-medium text-white">{currentSymbol}</span>
+            <div className="bg-[#333333] rounded-lg flex gap-1 items-center px-[10px] py-[5px]">
+              {vault?.asset?.assetLogo ? (
+                <Image
+                  src={vault.asset.assetLogo}
+                  alt={`${currentSymbol} logo`}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-blue-600" />
+              )}
+              <span className="text-sm font-medium text-white">{assetSymbol}</span>
             </div>
           </div>
-          <div className="flex items-center justify-between text-sm text-[#999999]">
+          <div className="flex items-center justify-between text-xs text-[#999999]">
             <span>
               {(() => {
                 const amt = parseFloat(amount || '0');
@@ -334,17 +329,17 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
               Balance:{' '}
               {formatAmount(currentBalanceRaw, {
                 decimals: currentDecimals,
-                symbol: currentSymbol,
+                symbol: assetSymbol,
               })}
             </span>
           </div>
         </div>
         {isAmountExceedsBalance && (
-          <div className="mt-2 text-sm text-red-400">
+          <div className="mt-2 text-xs text-red-400">
             Insufficient balance. You have{' '}
             {formatAmount(currentBalanceRaw, {
               decimals: currentDecimals,
-              symbol: currentSymbol,
+              symbol: assetSymbol,
             })}{' '}
             available.
           </div>
@@ -352,14 +347,14 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Transaction Steps */}
-      {actions && actions.length > 1 && txState !== 'idle' && (
+      {actions && actions.length > 1 && !actionsLoading && (
         <div className="mb-6">
           <h4 className="text-white mb-3">Transaction Steps</h4>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             {actions.map((_, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
                   index < currentActionIndex
                     ? 'bg-green-600 text-white'
                     : index === currentActionIndex
@@ -387,22 +382,22 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       {/* Transaction Details */}
       <div className="flex flex-col gap-3 pt-3">
         <div className="flex items-center">
-          <span className="text-sm text-white/50">Transaction Details</span>
+          <span className="text-xs text-white/50">Transaction Details</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-[#737373]">APY</span>
-          <span className="text-sm text-white">{currentApr}</span>
+          <span className="text-xs text-[#737373]">APY</span>
+          <span className="text-xs text-white">{currentApr}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-[#737373]">Transaction Cost</span>
-          <span className="text-sm text-white">{estimatedTxCostUsd}</span>
+          <span className="text-xs text-[#737373]">Transaction Cost</span>
+          <span className="text-xs text-white">{estimatedTxCostUsd}</span>
         </div>
       </div>
 
       {/* Error Display */}
       {txError && (
-        <div className="p-3 bg-red-900/50 border border-red-500 rounded-lg">
-          <p className="text-red-400 text-sm">{txError}</p>
+        <div className="p-3 bg-red-900/50 border border-red-400 rounded-lg">
+          <p className="text-red-400 text-xs">{txError}</p>
         </div>
       )}
 
@@ -412,7 +407,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
           variant="primary"
           onClick={handleTransaction}
           disabled={!isAmountValid || isExecuting || actionsLoading}
-          className="w-full py-5 rounded-[15px] bg-[#325ee6] border-[#163db6] text-base"
+          className="w-full py-4 rounded-lg bg-[#325ee6] border-[#163db6] text-base"
         >
           {isExecuting ? (
             <div className="flex items-center gap-2">
@@ -428,6 +423,6 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
           )}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

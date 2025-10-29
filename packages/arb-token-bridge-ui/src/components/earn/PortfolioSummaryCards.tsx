@@ -1,7 +1,7 @@
 'use client';
 
-import { usePortfolioMetrics } from '../../hooks/earn';
-import { OpportunityTableRow } from '../../types/vaults';
+import { usePortfolioMetrics } from 'arb-token-bridge-ui/src/hooks/earn';
+import { OpportunityTableRow } from 'arb-token-bridge-ui/src/types/vaults';
 
 interface PortfolioSummaryCardsProps {
   opportunities: OpportunityTableRow[];

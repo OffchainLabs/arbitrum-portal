@@ -6,8 +6,8 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx}',
     // Cobalt
     '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
-    // Common components
-    '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
+    // Bridge components
+    '../arb-token-bridge-ui/src/components/**/*.{js,ts,jsx,tsx}',
   ],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],

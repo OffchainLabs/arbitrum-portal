@@ -31,6 +31,11 @@ module.exports = {
         hostname: 'portal-data.arbitrum.io',
         port: '',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.vaults.fyi',
+        port: '',
+      },
     ],
   },
   async headers() {

@@ -1,12 +1,12 @@
 'use client';
 
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { SafeImage } from 'arb-token-bridge-ui/src/components/common/SafeImage';
+import { useVaultDetails } from 'arb-token-bridge-ui/src/hooks/earn';
 import Link from 'next/link';
 
 import { Card } from '@/components/Card';
 
-import { useVaultDetails } from '../../hooks/earn';
-import { SafeImage } from '../common/SafeImage';
 import { VaultActionPanel } from './VaultActionPanel';
 
 interface OpportunityDetailPageProps {

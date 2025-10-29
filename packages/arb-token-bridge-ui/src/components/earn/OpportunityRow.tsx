@@ -1,10 +1,9 @@
 'use client';
 
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { SafeImage } from 'arb-token-bridge-ui/src/components/common/SafeImage';
+import { OpportunityTableRow } from 'arb-token-bridge-ui/src/types/vaults';
 import { useRouter } from 'next/navigation';
-
-import { OpportunityTableRow } from '../../types/vaults';
-import { SafeImage } from '../common/SafeImage';
 
 interface OpportunityRowProps {
   opportunity: OpportunityTableRow;
