@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useAccount } from 'wagmi';
 
 import { Card } from '../../../../portal/components/Card';
+import { useActions } from '../../hooks/earn/useActions';
+import { useVaultTransaction } from '../../hooks/earn/useVaultTransaction';
 import { useVaultTransactionContext } from '../../hooks/earn/useVaultTransactionContext';
 import { DetailedVault } from '../../types/vaults';
 import { formatAmount } from '../../util/NumberUtils';
@@ -62,15 +64,22 @@ interface VaultActionPanelProps {
 // }
 
 type ActionType = 'supply' | 'withdraw';
+type TxState = 'idle' | 'loading' | 'success';
 
 export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   const { address: walletAddress } = useAccount();
 
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>('supply');
+  const [txState, setTxState] = useState<TxState>('idle');
+  const [txError, setTxError] = useState<string | null>(null);
 
   // Fetch transaction context
-  const { transactionContext, isLoading: contextLoading } = useVaultTransactionContext(
+  const {
+    transactionContext,
+    isLoading: contextLoading,
+    refetch: refetchContext,
+  } = useVaultTransactionContext(
     walletAddress || null,
     vault.network?.name || 'arbitrum',
     vault.address,
@@ -93,6 +102,36 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   const lpTokenBalanceRaw = BigNumber.from(lpToken?.balanceNative ?? '0');
   const lpTokenBalance = Number(utils.formatUnits(lpTokenBalanceRaw, lpTokenDecimals));
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
+
+  // Convert amount to raw units for API call
+  const amountInRawUnits =
+    amount && parseFloat(amount) > 0
+      ? utils
+          .parseUnits(amount, selectedAction === 'supply' ? assetDecimals : lpTokenDecimals)
+          .toString()
+      : '0';
+
+  // Fetch actions for the selected action
+  const { actions, isLoading: actionsLoading } = useActions({
+    action: selectedAction === 'supply' ? 'deposit' : 'redeem',
+    userAddress: walletAddress || null,
+    vault,
+    amount: amountInRawUnits,
+    assetAddress: selectedAction === 'supply' ? asset?.address : undefined,
+  });
+
+  // Transaction execution hook
+  const { executeTx, isBatchSupported, currentActionIndex, isExecuting } = useVaultTransaction(
+    actions,
+    amount,
+    () => {
+      setTxState('success');
+      // Refetch context to get updated balances
+      refetchContext();
+    },
+  );
+
+  console.log('xxx', { executeTx, isBatchSupported, currentActionIndex, isExecuting });
 
   // Check available actions
   const hasDeposit = (transactionContext as any)?.depositSteps?.some((step: any) =>
@@ -139,6 +178,23 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   const currentUsdValue = selectedAction === 'supply' ? assetUsdValue : lpTokenUsdValue;
 
   const isAmountValid = amount && parseFloat(amount) > 0 && parseFloat(amount) <= currentBalance;
+  const isAmountExceedsBalance = amount && parseFloat(amount) > currentBalance;
+
+  // Handle transaction execution
+  const handleTransaction = async () => {
+    console.log('xxx', { isAmountValid, actions, actionsLoading });
+    if (!isAmountValid || !actions || actions.length === 0) return;
+
+    setTxState('loading');
+    setTxError(null);
+
+    try {
+      await executeTx();
+    } catch (error) {
+      setTxState('idle');
+      setTxError(error instanceof Error ? error.message : 'Transaction failed');
+    }
+  };
 
   // If context is loading, show basic supply form
   if (contextLoading) {
@@ -257,7 +313,51 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
             })}
           </span>
         </div>
+
+        {isAmountExceedsBalance && (
+          <div className="mt-2 text-sm text-red-400">
+            Insufficient balance. You have{' '}
+            {formatAmount(currentBalanceRaw, {
+              decimals: currentDecimals,
+              symbol: currentSymbol,
+            })}{' '}
+            available.
+          </div>
+        )}
       </div>
+
+      {/* Transaction Steps */}
+      {actions && actions.length > 1 && txState !== 'idle' && (
+        <div className="mb-6">
+          <h4 className="text-white mb-3">Transaction Steps</h4>
+          <div className="flex gap-2">
+            {actions.map((_, index) => (
+              <div
+                key={index}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  index < currentActionIndex
+                    ? 'bg-green-600 text-white'
+                    : index === currentActionIndex
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-600 text-gray-300'
+                }`}
+              >
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                  {index + 1}
+                </div>
+                <span className="capitalize">
+                  {index === actions.length - 1
+                    ? selectedAction
+                    : actions[index]?.name || `Step ${index + 1}`}
+                </span>
+                {index === currentActionIndex && isExecuting && (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Transaction Details */}
       <div className="mb-6">
@@ -274,14 +374,32 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
         </div>
       </div>
 
+      {/* Error Display */}
+      {txError && (
+        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg">
+          <p className="text-red-400 text-sm">{txError}</p>
+        </div>
+      )}
+
       {/* Action Button */}
       <Button
         variant="primary"
-        onClick={() => {}}
-        disabled={!isAmountValid}
+        onClick={handleTransaction}
+        disabled={!isAmountValid || isExecuting || actionsLoading}
         className="w-full py-3"
       >
-        {selectedAction === 'supply' ? 'Supply' : 'Withdraw'}
+        {isExecuting ? (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            {isBatchSupported
+              ? 'Executing...'
+              : `Step ${currentActionIndex + 1} of ${actions?.length || 0}...`}
+          </div>
+        ) : txState === 'success' ? (
+          'Transaction Complete'
+        ) : (
+          `${selectedAction === 'supply' ? 'Supply' : 'Withdraw'}`
+        )}
       </Button>
     </div>
   );

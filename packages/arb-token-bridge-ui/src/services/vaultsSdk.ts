@@ -79,6 +79,45 @@ export async function getTransactionsContext({
 }
 
 /**
+ * Get available actions for a vault interaction
+ */
+export async function getActions({
+  action,
+  userAddress,
+  network,
+  vaultAddress,
+  amount,
+  assetAddress,
+  simulate = false,
+  all = false,
+}: {
+  action: 'deposit' | 'redeem';
+  userAddress: string;
+  network: string;
+  vaultAddress: string;
+  amount: string;
+  assetAddress?: string;
+  simulate?: boolean;
+  all?: boolean;
+}) {
+  const response = await vaultsSdk.getActions({
+    path: {
+      action,
+      userAddress,
+      network: network as any,
+      vaultAddress,
+    },
+    query: {
+      ...(assetAddress && { assetAddress }),
+      amount,
+      simulate,
+      all,
+    },
+  });
+  return response;
+}
+
+/**
  * Fetch a single vault by address and network using the SDK
  */
 export async function getVault(
