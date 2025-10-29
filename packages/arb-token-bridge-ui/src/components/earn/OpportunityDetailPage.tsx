@@ -58,137 +58,135 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
   const tvlUsd = parseFloat(vault.tvl?.usd || '0');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back Navigation */}
       <Link
         href="/earn/market"
-        className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors"
+        className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors"
       >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Back to Market
+        <ArrowLeftIcon className="h-5 w-5" />
+        Back
       </Link>
 
+      {/* Header Row */}
+      <div className="flex items-center gap-2">
+        <div className="text-lg text-white font-medium">{vault.name}</div>
+        <div className="text-xs text-white bg-white/10 rounded px-2 py-1">Lending</div>
+      </div>
+
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left Column - Opportunity Details */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Opportunity Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Opportunity Card */}
-            <Card className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="flex items-center gap-3">
+            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+              <span className="text-xs text-white/50 leading-none">Token</span>
+              <div className="flex items-center gap-2">
                 <SafeImage
                   src={vault.asset.assetLogo || ''}
                   alt={vault.asset.symbol}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   className="rounded-full"
                 />
-                <div>
-                  <div className="text-sm font-medium text-white">{vault.asset.symbol}</div>
-                  <div className="text-xs text-gray-400">{vault.name}</div>
-                </div>
+                <span className="text-base font-medium text-white leading-none">
+                  {vault.asset.symbol}
+                </span>
               </div>
             </Card>
 
             {/* Protocol Card */}
-            <Card className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="flex items-center gap-3">
+            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+              <span className="text-xs text-white/50 leading-none">Protocol</span>
+              <div className="flex items-center gap-2">
                 <SafeImage
                   src={vault.protocol.protocolLogo || ''}
                   alt={vault.protocol.name}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   className="rounded-full"
                 />
-                <div>
-                  <div className="text-sm font-medium text-white">{protocolName}</div>
-                  <div className="text-xs text-gray-400">Protocol</div>
-                </div>
+                <span className="text-base font-medium text-white leading-none">
+                  {protocolName}
+                </span>
               </div>
             </Card>
 
             {/* TVL Card */}
-            <Card className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="text-sm font-medium text-white">${(tvlUsd / 1e6).toFixed(1)}M</div>
-              <div className="text-xs text-gray-400">TVL</div>
+            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+              <span className="text-xs text-white/50 leading-none">TVL</span>
+              <div className="text-base font-medium text-white">${(tvlUsd / 1e6).toFixed(1)}M</div>
             </Card>
 
             {/* Stakers Card */}
-            <Card className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="text-sm font-medium text-white">
+            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+              <span className="text-xs text-white/50 leading-none">Utilization Rate</span>
+              <div className="text-base font-medium text-white">
                 {vault.holdersData?.totalCount
                   ? `${(vault.holdersData.totalCount / 1000).toFixed(0)}k`
                   : '-'}
               </div>
-              <div className="text-xs text-gray-400">Stakers</div>
             </Card>
           </div>
 
           {/* Token Price & Graph Section */}
-          <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-6">
+          <div className="rounded-lg bg-[#191919] p-4">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex space-x-1">
-                <button className="px-3 py-1 text-sm bg-gray-800 text-white rounded">
+              <div className="flex items-center bg-white/5 rounded-lg p-1 gap-2">
+                <button className="px-3 py-1 text-xs rounded bg-white text-black">
                   Token Price
                 </button>
-                <button className="px-3 py-1 text-sm text-gray-400 hover:text-white rounded">
-                  APY
-                </button>
-                <button className="px-3 py-1 text-sm text-gray-400 hover:text-white rounded">
-                  TVL
-                </button>
+                <button className="px-3 py-1 text-xs rounded text-white">APY</button>
+                <button className="px-3 py-1 text-xs rounded text-white">TVL</button>
               </div>
             </div>
 
             {/* Price Display */}
             <div className="mb-4">
-              <div className="text-3xl font-bold text-white">
+              <div className="text-2xl text-white font-medium">
                 ${parseFloat(vault.asset.assetPriceInUsd || '0').toFixed(2)}
               </div>
-              <div className="text-sm text-gray-400">-2.64%</div>
+              <div className="inline-flex items-center gap-2 rounded bg-[#96d18e0d] text-[#96d18e] px-3 py-1 text-xs font-bold">
+                +2.64%
+              </div>
             </div>
 
             {/* Placeholder Graph */}
-            <div className="h-64 bg-gray-800 rounded-lg flex items-center justify-center mb-4">
+            <div className="h-64 bg-black/20 rounded-lg flex items-center justify-center mb-4">
               <div className="text-gray-500">Price Chart Placeholder</div>
             </div>
 
             {/* Time Range Selectors */}
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 text-sm bg-gray-800 text-white rounded">1d</button>
-              <button className="px-3 py-1 text-sm text-gray-400 hover:text-white rounded">
-                7d
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-400 hover:text-white rounded">
-                1M
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-400 hover:text-white rounded">
-                1Y
-              </button>
+            <div className="flex items-center bg-white/5 rounded-lg p-1 gap-1 w-48 ml-auto">
+              <button className="px-3 py-1 text-xs rounded bg-white text-black">1D</button>
+              <button className="px-3 py-1 text-xs rounded text-white">7D</button>
+              <button className="px-3 py-1 text-xs rounded text-white">1M</button>
+              <button className="px-3 py-1 text-xs rounded text-white">1Y</button>
             </div>
           </div>
 
           {/* Rolling APRs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="text-sm text-gray-400 mb-1">7 day rolling APR</div>
-              <div className="text-lg font-semibold text-white">{(apy7day * 100).toFixed(1)}%</div>
+            <div className="rounded-lg bg-[#191919] p-4">
+              <div className="text-xs text-white/50 mb-1">Max LTV</div>
+              <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
             </div>
-            <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="text-sm text-gray-400 mb-1">15 day rolling APR</div>
-              <div className="text-lg font-semibold text-white">{(apy7day * 100).toFixed(1)}%</div>
+            <div className="rounded-lg bg-[#191919] p-4">
+              <div className="text-xs text-white/50 mb-1">Liquidation Threshold</div>
+              <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
             </div>
-            <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
-              <div className="text-sm text-gray-400 mb-1">30 day rolling APR</div>
-              <div className="text-lg font-semibold text-white">{(apy30day * 100).toFixed(1)}%</div>
+            <div className="rounded-lg bg-[#191919] p-4">
+              <div className="text-xs text-white/50 mb-1">Supply Market Cap</div>
+              <div className="text-base font-medium text-white">{(apy30day * 100).toFixed(1)}%</div>
             </div>
           </div>
 
           {/* About Section */}
-          <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-6">
-            <h3 className="text-lg font-semibold text-white mb-3">About {vault.name}</h3>
-            <p className="text-gray-400 leading-relaxed">
+          <div className="rounded-lg bg-[#191919] p-4">
+            <h3 className="text-base font-medium text-white mb-3">About Lending</h3>
+            <p className="text-sm text-white/50 leading-relaxed">
               {vault.description ||
                 `This is a ${vault.name} opportunity on ${networkName}. Users can earn yield by participating in this protocol.`}
             </p>
@@ -196,7 +194,7 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
         </div>
 
         {/* Right Column - Supply/Transaction */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <VaultActionPanel vault={vault} />
         </div>
       </div>
