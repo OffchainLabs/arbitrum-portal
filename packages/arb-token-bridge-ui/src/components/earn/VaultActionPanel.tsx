@@ -210,7 +210,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
     <Card className="bg-[#191919] rounded-lg flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-white">Your supply</h3>
+        <h3 className="text-base font-medium text-white">Your position</h3>
       </div>
 
       {/* Position Value Card */}
@@ -242,7 +242,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Current APR */}
-      <div className="flex justify-between items-center py-[8px]">
+      <div className="flex justify-between items-center">
         <span className="text-xs font-medium text-white">Current APR</span>
         <span className="text-xs font-medium text-[#96d18e]">{currentApr}</span>
       </div>
@@ -252,7 +252,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
         {hasDeposit && (
           <button
             onClick={() => setSelectedAction('supply')}
-            className={`flex-1 rounded-lg px-[24px] py-[18px] text-xs font-medium text-white transition-all ${
+            className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
               selectedAction === 'supply'
                 ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
                 : 'bg-white/5 opacity-70'
@@ -264,7 +264,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
         {hasRedeem && (
           <button
             onClick={() => setSelectedAction('withdraw')}
-            className={`flex-1 rounded-lg px-[24px] py-[18px] text-xs font-medium text-white transition-all ${
+            className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
               selectedAction === 'withdraw'
                 ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
                 : 'bg-white/5 opacity-70'
@@ -276,7 +276,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Amount to allocate */}
-      <div className="bg-[#212121] rounded-lg flex flex-col pb-[38px] pt-[10px] px-[15px]">
+      <div className="bg-[#212121] rounded-lg flex flex-col p-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[#999999]">
@@ -380,9 +380,9 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       )}
 
       {/* Transaction Details */}
-      <div className="flex flex-col gap-3 pt-3">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center">
-          <span className="text-xs text-white/50">Transaction Details</span>
+          <span className="text-xs text-white">Transaction Details</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#737373]">APY</span>
@@ -402,12 +402,12 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       )}
 
       {/* Submit Button */}
-      <div className="pt-8">
+      <div className="">
         <Button
           variant="primary"
           onClick={handleTransaction}
           disabled={!isAmountValid || isExecuting || actionsLoading}
-          className="w-full py-4 rounded-lg bg-[#325ee6] border-[#163db6] text-base"
+          className="w-full py-3 rounded-lg bg-[#325ee6] border-[#163db6] text-base"
         >
           {isExecuting ? (
             <div className="flex items-center gap-2">
