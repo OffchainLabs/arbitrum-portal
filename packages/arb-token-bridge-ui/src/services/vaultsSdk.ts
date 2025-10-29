@@ -96,7 +96,7 @@ export async function getActions({
   network: string;
   vaultAddress: string;
   amount: string;
-  assetAddress?: string;
+  assetAddress: string;
   simulate?: boolean;
   all?: boolean;
 }) {
@@ -108,7 +108,7 @@ export async function getActions({
       vaultAddress,
     },
     query: {
-      ...(assetAddress && { assetAddress }),
+      assetAddress,
       amount,
       simulate,
       all,

@@ -23,7 +23,7 @@ export function useActions({
   userAddress: string | null;
   vault: DetailedVault;
   amount: string;
-  assetAddress?: string;
+  assetAddress: string;
   simulate?: boolean;
   all?: boolean;
 }): UseActionsResult {

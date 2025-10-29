@@ -4,7 +4,6 @@ import { BigNumber, utils } from 'ethers';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 
-import { Card } from '../../../../portal/components/Card';
 import { useActions } from '../../hooks/earn/useActions';
 import { useVaultTransaction } from '../../hooks/earn/useVaultTransaction';
 import { useVaultTransactionContext } from '../../hooks/earn/useVaultTransactionContext';
@@ -117,7 +116,8 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
     userAddress: walletAddress || null,
     vault,
     amount: amountInRawUnits,
-    assetAddress: selectedAction === 'supply' ? asset?.address : undefined,
+    assetAddress:
+      selectedAction === 'supply' ? asset?.address || vault.asset.address : vault.asset.address,
   });
 
   // Transaction execution hook
@@ -130,8 +130,6 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       refetchContext();
     },
   );
-
-  console.log('xxx', { executeTx, isBatchSupported, currentActionIndex, isExecuting });
 
   // Check available actions
   const hasDeposit = (transactionContext as any)?.depositSteps?.some((step: any) =>
@@ -182,7 +180,6 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
 
   // Handle transaction execution
   const handleTransaction = async () => {
-    console.log('xxx', { isAmountValid, actions, actionsLoading });
     if (!isAmountValid || !actions || actions.length === 0) return;
 
     setTxState('loading');
@@ -196,10 +193,10 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
     }
   };
 
-  // If context is loading, show basic supply form
+  // If context is loading, show loading state
   if (contextLoading) {
     return (
-      <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-6">
+      <div className="bg-[#191919] rounded-[10px] flex flex-col gap-5 p-5">
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-white"></div>
           <span className="ml-3 text-gray-400">Loading transaction context...</span>
@@ -209,111 +206,139 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-900/50 flex flex-col gap-4 p-4">
-      <Card>
-        {/* Your supply section */}
-        <div className="flex items-center gap-2 mb-6">
-          <h3 className="text-lg font-semibold text-white">Your supply</h3>
+    <div className="bg-[#191919] rounded-[10px] flex flex-col gap-5 p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-white">Your supply</h3>
+        <div className="opacity-50 size-3">
+          <svg width="12.5" height="12.5" viewBox="0 0 12.5 12.5" fill="none">
+            <path
+              d="M6.25 0C2.798 0 0 2.798 0 6.25c0 3.452 2.798 6.25 6.25 6.25 3.452 0 6.25-2.798 6.25-6.25C12.5 2.798 9.702 0 6.25 0zm0 11.458c-2.874 0-5.208-2.334-5.208-5.208S3.376 1.042 6.25 1.042 11.458 3.376 11.458 6.25 9.124 11.458 6.25 11.458z"
+              fill="white"
+            />
+            <path
+              d="M6.25 4.167c-.345 0-.625.28-.625.625v2.916c0 .345.28.625.625.625s.625-.28.625-.625V4.792c0-.345-.28-.625-.625-.625zM6.25 8.333c-.345 0-.625.28-.625.625v.417c0 .345.28.625.625.625s.625-.28.625-.625v-.417c0-.345-.28-.625-.625-.625z"
+              fill="white"
+            />
+          </svg>
         </div>
+      </div>
 
-        {/* Position Value */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Position Value</span>
-          </div>
+      {/* Position Value Card */}
+      <div className="bg-[#212121] rounded-[10px] flex flex-col pb-[38px] pt-[10px] px-[15px]">
+        <div className="flex flex-col gap-2 mb-[-28px]">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-semibold text-white">
-                {formatAmount(lpTokenBalanceRaw, {
-                  decimals: lpTokenDecimals,
-                  symbol: lpTokenSymbol,
-                })}
-              </div>
-              <div className="text-sm text-gray-400">${lpTokenUsdValue.toFixed(2)} USD</div>
+            <span className="text-sm font-medium text-[#999999]">Position Value</span>
+            <Button
+              variant="secondary"
+              onClick={handleMaxClick}
+              className="px-[10px] py-0 h-5 text-[10px]"
+            >
+              MAX
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px]">
+              {formatAmount(lpTokenBalanceRaw, {
+                decimals: lpTokenDecimals,
+                symbol: lpTokenSymbol,
+              })}
             </div>
-            {lpToken?.pctChange !== null && lpToken?.pctChange !== undefined && (
-              <div
-                className={`text-sm font-medium ${lpToken.pctChange >= 0 ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {lpToken.pctChange >= 0 ? '+' : ''}
-                {Math.abs(lpToken.pctChange).toFixed(0)}%
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#999999]">${lpTokenUsdValue.toFixed(2)} USD</span>
+              {lpToken?.pctChange !== null && lpToken?.pctChange !== undefined && (
+                <span
+                  className={`text-sm ${lpToken.pctChange >= 0 ? 'text-[#96d18e]' : 'text-red-400'}`}
+                >
+                  {lpToken.pctChange >= 0 ? '+' : ''}
+                  {Math.abs(lpToken.pctChange).toFixed(0)}%
+                </span>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Current APR */}
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-white">Current APR</span>
-          <span className="text-white">{currentApr}</span>
-        </div>
-      </Card>
+      {/* Current APR */}
+      <div className="flex justify-between items-center py-2">
+        <span className="text-sm font-medium text-white">Current APR</span>
+        <span className="text-sm font-medium text-white">{currentApr}</span>
+      </div>
 
       {/* Action Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="bg-white/5 rounded-[10px] flex gap-[2px] p-[2px]">
         {hasDeposit && (
-          <Button
-            variant={selectedAction === 'supply' ? 'primary' : 'secondary'}
+          <button
             onClick={() => setSelectedAction('supply')}
-            className="px-4 py-2"
+            className={`flex-1 rounded-[10px] px-6 py-[18px] text-sm font-medium text-white transition-all ${
+              selectedAction === 'supply'
+                ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
+                : 'bg-white/5 opacity-70'
+            }`}
           >
             Supply
-          </Button>
+          </button>
         )}
         {hasRedeem && (
-          <Button
-            variant={selectedAction === 'withdraw' ? 'primary' : 'secondary'}
+          <button
             onClick={() => setSelectedAction('withdraw')}
-            className="px-4 py-2"
+            className={`flex-1 rounded-[10px] px-6 py-[18px] text-sm font-medium text-white transition-all ${
+              selectedAction === 'withdraw'
+                ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
+                : 'bg-white/5 opacity-70'
+            }`}
           >
             Withdraw
-          </Button>
+          </button>
         )}
       </div>
 
       {/* Amount to allocate */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm text-gray-400">Amount to allocate</label>
-          <Button variant="secondary" onClick={handleMaxClick} className="px-2 py-1 text-xs">
-            MAX
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-3 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg mb-2">
-          <input
-            type="number"
-            placeholder="0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="flex-1 bg-transparent text-white placeholder-gray-500 focus:outline-none text-2xl"
-          />
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-              <span className="text-xs text-white font-bold">Ξ</span>
+      <div className="bg-[#212121] rounded-[10px] flex flex-col pb-[38px] pt-[10px] px-[15px]">
+        <div className="flex flex-col gap-2 mb-[-28px]">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-[#999999]">Amount to allocate</span>
+            <Button
+              variant="secondary"
+              onClick={handleMaxClick}
+              className="px-[10px] py-0 h-5 text-[10px]"
+            >
+              MAX
+            </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <input
+              type="number"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="flex-1 bg-transparent text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-500 focus:outline-none h-[34px]"
+            />
+            <div className="bg-[#333333] rounded-[10px] flex gap-1 items-center px-[10px] py-[5px]">
+              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                <span className="text-xs text-white font-bold">Ξ</span>
+              </div>
+              <span className="text-lg font-medium text-white">{currentSymbol}</span>
             </div>
-            <span className="text-white font-medium">{currentSymbol}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-[#999999]">
+            <span>
+              {(() => {
+                const amt = parseFloat(amount || '0');
+                if (!amt || !isFinite(amt)) return '$0.00 USD';
+                const perUnitUsd = currentBalance > 0 ? currentUsdValue / currentBalance : 0;
+                return `$${(amt * perUnitUsd).toFixed(2)} USD`;
+              })()}
+            </span>
+            <span>
+              Balance:{' '}
+              {formatAmount(currentBalanceRaw, {
+                decimals: currentDecimals,
+                symbol: currentSymbol,
+              })}
+            </span>
           </div>
         </div>
-
-        <div className="flex justify-between text-sm text-gray-400">
-          <span>
-            {(() => {
-              const amt = parseFloat(amount || '0');
-              if (!amt || !isFinite(amt)) return '$0.00 USD';
-              const perUnitUsd = currentBalance > 0 ? currentUsdValue / currentBalance : 0;
-              return `$${(amt * perUnitUsd).toFixed(2)} USD`;
-            })()}
-          </span>
-          <span>
-            Balance:{' '}
-            {formatAmount(currentBalanceRaw, {
-              decimals: currentDecimals,
-              symbol: currentSymbol,
-            })}
-          </span>
-        </div>
-
         {isAmountExceedsBalance && (
           <div className="mt-2 text-sm text-red-400">
             Insufficient balance. You have{' '}
@@ -360,47 +385,49 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       )}
 
       {/* Transaction Details */}
-      <div className="mb-6">
-        <h4 className="text-white mb-3">Transaction Details</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">APY</span>
-            <span className="text-white">{currentApr}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Transaction Cost</span>
-            <span className="text-white">{estimatedTxCostUsd}</span>
-          </div>
+      <div className="flex flex-col gap-3 pt-3">
+        <div className="flex items-center">
+          <span className="text-sm text-white/50">Transaction Details</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-[#737373]">APY</span>
+          <span className="text-sm text-white">{currentApr}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-[#737373]">Transaction Cost</span>
+          <span className="text-sm text-white">{estimatedTxCostUsd}</span>
         </div>
       </div>
 
       {/* Error Display */}
       {txError && (
-        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg">
+        <div className="p-3 bg-red-900/50 border border-red-500 rounded-lg">
           <p className="text-red-400 text-sm">{txError}</p>
         </div>
       )}
 
-      {/* Action Button */}
-      <Button
-        variant="primary"
-        onClick={handleTransaction}
-        disabled={!isAmountValid || isExecuting || actionsLoading}
-        className="w-full py-3"
-      >
-        {isExecuting ? (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            {isBatchSupported
-              ? 'Executing...'
-              : `Step ${currentActionIndex + 1} of ${actions?.length || 0}...`}
-          </div>
-        ) : txState === 'success' ? (
-          'Transaction Complete'
-        ) : (
-          `${selectedAction === 'supply' ? 'Supply' : 'Withdraw'}`
-        )}
-      </Button>
+      {/* Submit Button */}
+      <div className="pt-8">
+        <Button
+          variant="primary"
+          onClick={handleTransaction}
+          disabled={!isAmountValid || isExecuting || actionsLoading}
+          className="w-full py-5 rounded-[15px] bg-[#325ee6] border-[#163db6] text-base"
+        >
+          {isExecuting ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {isBatchSupported
+                ? 'Executing...'
+                : `Step ${currentActionIndex + 1} of ${actions?.length || 0}...`}
+            </div>
+          ) : txState === 'success' ? (
+            'Transaction Complete'
+          ) : (
+            `${selectedAction === 'supply' ? 'Supply' : 'Withdraw'}`
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
