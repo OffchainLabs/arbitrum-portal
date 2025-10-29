@@ -8,10 +8,7 @@ import { PositionsTable } from './PositionsTable';
 
 export function MyPositionsPage() {
   const { address, isConnected } = useAccount();
-  const { opportunities, isLoading, error } = useUserPositions(address || null, [
-    'arbitrum',
-    'mainnet',
-  ]);
+  const { opportunities, isLoading, error } = useUserPositions(address || null, ['arbitrum']);
 
   // Not connected state
   if (!isConnected) {

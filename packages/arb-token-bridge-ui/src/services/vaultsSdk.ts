@@ -24,7 +24,8 @@ export async function getAllVaults({
 }): Promise<DetailedVault[]> {
   const response = await vaultsSdk.getAllVaults({
     query: {
-      allowedNetworks: ['arbitrum', 'mainnet'],
+      allowedNetworks: ['arbitrum'],
+      allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'],
       perPage,
     },
   });
@@ -47,7 +48,7 @@ export async function getUserPositions({
       userAddress,
     },
     query: {
-      allowedNetworks: ['arbitrum', 'mainnet'],
+      allowedNetworks: ['arbitrum'],
     },
   });
 
@@ -55,9 +56,35 @@ export async function getUserPositions({
 }
 
 /**
+ * Fetch transaction context for a specific vault interaction
+ */
+export async function getTransactionsContext({
+  userAddress,
+  network,
+  vaultAddress,
+}: {
+  userAddress: string;
+  network: string;
+  vaultAddress: string;
+}) {
+  const response = await vaultsSdk.getTransactionsContext({
+    path: {
+      userAddress,
+      network: network as any,
+      vaultAddress,
+    },
+  });
+
+  return response;
+}
+
+/**
  * Fetch a single vault by address and network using the SDK
  */
-export async function getVault(vaultAddress: string, network: string): Promise<DetailedVault> {
+export async function getVault(
+  vaultAddress: string,
+  network: string = 'arbitrum',
+): Promise<DetailedVault> {
   const response = await vaultsSdk.getVault({
     path: {
       network: network as any, // SDK expects specific network names

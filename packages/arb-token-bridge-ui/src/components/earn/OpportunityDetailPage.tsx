@@ -7,13 +7,14 @@ import { Card } from '@/components/Card';
 
 import { useVaultDetails } from '../../hooks/earn';
 import { SafeImage } from '../common/SafeImage';
+import { VaultActionPanel } from './VaultActionPanel';
 
 interface OpportunityDetailPageProps {
   opportunityId: string;
 }
 
 export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPageProps) {
-  const { vault, isLoading, error } = useVaultDetails(opportunityId, 'mainnet');
+  const { vault, isLoading, error } = useVaultDetails(opportunityId, 'arbitrum');
 
   if (isLoading) {
     return (
@@ -196,62 +197,7 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
 
         {/* Right Column - Supply/Transaction */}
         <div className="space-y-6">
-          <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-lg font-semibold text-white">Supply {vault.asset.symbol}</h3>
-              <div className="w-4 h-4 rounded-full bg-gray-600 flex items-center justify-center">
-                <span className="text-xs text-gray-300">i</span>
-              </div>
-            </div>
-
-            {/* Amount to Allocate */}
-            <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-2">Amount to allocate</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  placeholder="0"
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                />
-                <button className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600">
-                  Max
-                </button>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <select className="px-3 py-1 bg-gray-800 border border-gray-600 rounded text-white text-sm">
-                  <option>{vault.asset.symbol}</option>
-                </select>
-                <div className="text-sm text-gray-400">Balance: 0.064 {vault.asset.symbol}</div>
-              </div>
-            </div>
-
-            {/* Receive */}
-            <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-2">Receive</label>
-              <div className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white">
-                0 {vault.lpToken?.symbol || vault.asset.symbol}
-              </div>
-            </div>
-
-            {/* Transaction Details */}
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Exchange rate</span>
-                <span className="text-white">
-                  1 {vault.lpToken?.symbol || vault.asset.symbol} = 1 {vault.asset.symbol}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Max transaction cost</span>
-                <span className="text-white">$1.14</span>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <button className="w-full py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-              Enter amount
-            </button>
-          </div>
+          <VaultActionPanel vault={vault} />
         </div>
       </div>
     </div>

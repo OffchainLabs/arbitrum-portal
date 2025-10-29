@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWRImmutable from 'swr/immutable';
 
 import { getAllVaults, transformVaultToOpportunity } from '../../services/vaultsSdk';
 import { OpportunityTableRow } from '../../types/vaults';
@@ -14,7 +14,7 @@ interface UseAllOpportunitiesResult {
  * Hook to fetch all available opportunities using SWR
  */
 export function useAllOpportunities(): UseAllOpportunitiesResult {
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWRImmutable(
     ['opportunities'],
     async () => {
       const vaults = await getAllVaults({ perPage: 50 });

@@ -19,7 +19,7 @@ interface UseUserPositionsResult {
  */
 export function useUserPositions(
   userAddress: string | null,
-  allowedNetworks: string[] = ['arbitrum', 'mainnet'],
+  allowedNetworks: string[] = ['arbitrum'],
 ): UseUserPositionsResult {
   const { data, error, isLoading, mutate } = useSWR(
     userAddress ? ['userOpportunities', userAddress, allowedNetworks] : null,
