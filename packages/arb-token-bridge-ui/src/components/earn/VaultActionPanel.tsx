@@ -214,32 +214,34 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Position Value Card */}
-      <div className="bg-[#212121] rounded-lg flex flex-col p-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#999999]">Position Value</span>
-          </div>
+      {lpTokenBalanceRaw.gt(0) && (
+        <div className="bg-[#212121] rounded-lg flex flex-col p-4">
           <div className="flex flex-col gap-2">
-            <div className="text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px]">
-              {formatAmount(lpTokenBalanceRaw, {
-                decimals: lpTokenDecimals,
-                symbol: assetSymbol,
-              })}
-            </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#999999]">${lpTokenUsdValue.toFixed(2)} USD</span>
-              {lpToken?.pctChange !== null && lpToken?.pctChange !== undefined && (
-                <span
-                  className={`text-xs ${lpToken.pctChange >= 0 ? 'text-[#96d18e]' : 'text-red-400'}`}
-                >
-                  {lpToken.pctChange >= 0 ? '+' : ''}
-                  {Math.abs(lpToken.pctChange).toFixed(0)}%
-                </span>
-              )}
+              <span className="text-xs font-medium text-[#999999]">Position Value</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="text-[28px] font-normal text-white/70 leading-[1.15] tracking-[-0.56px]">
+                {formatAmount(lpTokenBalanceRaw, {
+                  decimals: lpTokenDecimals,
+                  symbol: assetSymbol,
+                })}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#999999]">${lpTokenUsdValue.toFixed(2)} USD</span>
+                {lpToken?.pctChange !== null && lpToken?.pctChange !== undefined && (
+                  <span
+                    className={`text-xs ${lpToken.pctChange >= 0 ? 'text-[#96d18e]' : 'text-red-400'}`}
+                  >
+                    {lpToken.pctChange >= 0 ? '+' : ''}
+                    {Math.abs(lpToken.pctChange).toFixed(0)}%
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Current APR */}
       <div className="flex justify-between items-center">
@@ -248,32 +250,34 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
       </div>
 
       {/* Action Tabs */}
-      <div className="bg-white/5 rounded-lg flex gap-[2px] p-[2px]">
-        {hasDeposit && (
-          <button
-            onClick={() => setSelectedAction('supply')}
-            className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
-              selectedAction === 'supply'
-                ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
-                : 'bg-white/5 opacity-70'
-            }`}
-          >
-            Supply
-          </button>
-        )}
-        {hasRedeem && (
-          <button
-            onClick={() => setSelectedAction('withdraw')}
-            className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
-              selectedAction === 'withdraw'
-                ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
-                : 'bg-white/5 opacity-70'
-            }`}
-          >
-            Withdraw
-          </button>
-        )}
-      </div>
+      {(hasDeposit || hasRedeem) && (
+        <div className="bg-white/5 rounded-lg flex gap-[2px] p-[2px]">
+          {hasDeposit && (
+            <button
+              onClick={() => setSelectedAction('supply')}
+              className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
+                selectedAction === 'supply'
+                  ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
+                  : 'bg-white/5 opacity-70'
+              }`}
+            >
+              Supply
+            </button>
+          )}
+          {hasRedeem && (
+            <button
+              onClick={() => setSelectedAction('withdraw')}
+              className={`flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all ${
+                selectedAction === 'withdraw'
+                  ? 'bg-white/10 shadow-[0px_25px_30px_-20px_rgba(0,0,0,0.1)]'
+                  : 'bg-white/5 opacity-70'
+              }`}
+            >
+              Withdraw
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Amount to allocate */}
       <div className="bg-[#212121] rounded-lg flex flex-col p-4">
@@ -334,7 +338,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
             </span>
           </div>
         </div>
-        {isAmountExceedsBalance && (
+        {isAmountExceedsBalance && walletAddress && (
           <div className="mt-2 text-xs text-red-400">
             Insufficient balance. You have{' '}
             {formatAmount(currentBalanceRaw, {

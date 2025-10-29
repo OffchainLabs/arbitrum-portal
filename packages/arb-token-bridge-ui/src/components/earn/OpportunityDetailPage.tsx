@@ -41,12 +41,6 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
     );
   }
 
-  // Format network name
-  const networkName =
-    vault.network.name === 'mainnet'
-      ? 'Ethereum'
-      : vault.network.name.charAt(0).toUpperCase() + vault.network.name.slice(1);
-
   // Format protocol name
   const protocolName = vault.protocol.name.charAt(0).toUpperCase() + vault.protocol.name.slice(1);
 
@@ -184,13 +178,14 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
           </div>
 
           {/* About Section */}
-          <div className="rounded-lg bg-[#191919] p-4">
-            <h3 className="text-base font-medium text-white mb-3">About Lending</h3>
-            <p className="text-sm text-white/50 leading-relaxed">
-              {vault.description ||
-                `This is a ${vault.name} opportunity on ${networkName}. Users can earn yield by participating in this protocol.`}
-            </p>
-          </div>
+          {vault.description && (
+            <div className="rounded-lg bg-[#191919] p-4">
+              <h3 className="text-base font-medium text-white mb-3">
+                Where does the yield come from?
+              </h3>
+              <p className="text-sm text-white/50 leading-relaxed">{vault.description} </p>
+            </div>
+          )}
         </div>
 
         {/* Right Column - Supply/Transaction */}
