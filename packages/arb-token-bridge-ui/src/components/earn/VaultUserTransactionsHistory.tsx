@@ -10,7 +10,7 @@ import { useAccount } from 'wagmi';
 import { Card } from '@/components/Card';
 
 import { initializeDayjs } from '../../../../app/src/initialization';
-import { useVaultHolderEvents } from '../../hooks/earn/useVaultHolderEvents';
+import { useVaultUserTransactionsHistory } from '../../hooks/earn/useVaultUserTransactionsHistory';
 import {
   getStandardizedDate,
   getStandardizedTime,
@@ -22,14 +22,14 @@ import { ExternalLink } from '../common/ExternalLink';
 
 initializeDayjs();
 
-interface VaultUserTransactionsProps {
+interface VaultUserTransactionsHistoryProps {
   vault: DetailedVault;
 }
 
-export function VaultUserTransactions({ vault }: VaultUserTransactionsProps) {
+export function VaultUserTransactionsHistory({ vault }: VaultUserTransactionsHistoryProps) {
   const { address: walletAddress } = useAccount();
 
-  const { events, isLoading, error, refetch } = useVaultHolderEvents(
+  const { events, isLoading, error, refetch } = useVaultUserTransactionsHistory(
     walletAddress || null,
     vault.network.name,
     vault.address,
