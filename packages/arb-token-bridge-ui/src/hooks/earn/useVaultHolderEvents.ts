@@ -1,4 +1,4 @@
-import useSWRImmutable from 'swr/immutable';
+import useSWR from 'swr';
 
 import { type VaultHolderEventsResponse, getVaultHolderEvents } from '../../services/vaultsSdk';
 
@@ -17,11 +17,16 @@ export function useVaultHolderEvents(
   network: string,
   vaultAddress: string,
 ): UseVaultHolderEventsResult {
-  const { data, error, isLoading, mutate } = useSWRImmutable(
+  const { data, error, isLoading, mutate } = useSWR(
     userAddress && vaultAddress ? ['vaultHolderEvents', userAddress, network, vaultAddress] : null,
     async () => {
       if (!userAddress || !vaultAddress) return null;
       return await getVaultHolderEvents({ userAddress, network, vaultAddress });
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: false,
     },
   );
 

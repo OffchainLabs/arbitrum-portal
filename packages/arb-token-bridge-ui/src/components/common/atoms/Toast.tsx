@@ -1,5 +1,16 @@
 import { ToastContainer, toast } from 'react-toastify';
 
+export const successToast = (
+  message: React.ReactNode,
+  {
+    autoClose,
+  }: {
+    autoClose?: number | false | undefined;
+  } = { autoClose: 5000 },
+) => {
+  toast.success(message, { autoClose });
+};
+
 export const errorToast = (
   message: React.ReactNode,
   {

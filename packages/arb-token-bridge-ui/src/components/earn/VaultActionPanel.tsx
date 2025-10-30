@@ -9,9 +9,11 @@ import { formatAmount } from 'arb-token-bridge-ui/src/util/NumberUtils';
 import { BigNumber, utils } from 'ethers';
 import Image from 'next/image';
 import { useState } from 'react';
+import { mutate } from 'swr';
 import { useAccount } from 'wagmi';
 
 import { Card } from '../../../../portal/components/Card';
+import type { VaultHolderEventsResponse } from '../../services/vaultsSdk';
 
 interface VaultActionPanelProps {
   vault: DetailedVault;
@@ -72,7 +74,7 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
 
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>('supply');
-  const [txState, setTxState] = useState<TxState>('idle');
+  const [, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState<string | null>(null);
 
   // Fetch transaction context
@@ -125,10 +127,44 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   const { executeTx, isBatchSupported, currentActionIndex, isExecuting } = useVaultTransaction(
     actions,
     amount,
-    () => {
+    async () => {
       setTxState('success');
+      setAmount('');
       // Refetch context to get updated balances
       refetchContext();
+      // Optimistically prepend to holder events to avoid API lag
+      if (walletAddress) {
+        const key = [
+          'vaultHolderEvents',
+          walletAddress,
+          vault.network?.name || 'arbitrum',
+          vault.address,
+        ] as const;
+
+        mutate(
+          key,
+          (current?: VaultHolderEventsResponse | null) => {
+            if (!current) return current ?? null;
+            const now = Math.floor(Date.now() / 1000);
+            const optimistic = {
+              timestamp: now,
+              blockNumber: '',
+              eventType: selectedAction === 'supply' ? 'deposit' : 'withdrawal',
+              assetAmountNative: amountInRawUnits || '0',
+              sharePrice: 0,
+              lpTokenAmount: '0',
+              transactionHash: 'pending',
+              logIndex: -1,
+            } as VaultHolderEventsResponse['data'][number];
+            return {
+              ...current,
+              data: [optimistic, ...current.data],
+              items: current.items + 1,
+            };
+          },
+          { revalidate: false },
+        );
+      }
     },
   );
 
@@ -420,8 +456,6 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
                 ? 'Executing...'
                 : `Step ${currentActionIndex + 1} of ${actions?.length || 0}...`}
             </div>
-          ) : txState === 'success' ? (
-            'Transaction Complete'
           ) : (
             `${selectedAction === 'supply' ? 'Supply' : 'Withdraw'}`
           )}

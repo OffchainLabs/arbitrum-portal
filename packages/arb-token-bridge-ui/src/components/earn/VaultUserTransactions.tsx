@@ -2,12 +2,14 @@
 
 import { SafeImage } from 'arb-token-bridge-ui/src/components/common/SafeImage';
 import { DetailedVault } from 'arb-token-bridge-ui/src/types/vaults';
+import { formatAmount } from 'arb-token-bridge-ui/src/util/NumberUtils';
 import dayjs from 'dayjs';
 import { utils } from 'ethers';
 import { useAccount } from 'wagmi';
 
 import { Card } from '@/components/Card';
 
+import { initializeDayjs } from '../../../../app/src/initialization';
 import { useVaultHolderEvents } from '../../hooks/earn/useVaultHolderEvents';
 import {
   getStandardizedDate,
@@ -17,6 +19,8 @@ import {
 import { shortenAddress } from '../../util/CommonUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
+
+initializeDayjs();
 
 interface VaultUserTransactionsProps {
   vault: DetailedVault;
@@ -73,9 +77,16 @@ export function VaultUserTransactions({ vault }: VaultUserTransactionsProps) {
               {[...events.data]
                 .sort((a, b) => b.timestamp - a.timestamp)
                 .map((row, idx) => {
-                  const assetAmount = utils.formatUnits(
-                    row.assetAmountNative || '0',
-                    events.asset.decimals,
+                  const assetAmountFormatted = formatAmount(
+                    // row.assetAmountNative is in smallest units
+                    utils
+                      .parseUnits('1', 0)
+                      .mul(0)
+                      .add(row.assetAmountNative || '0'),
+                    {
+                      decimals: events.asset.decimals,
+                      symbol: events.asset.symbol,
+                    },
                   );
                   const txUrl = `${getExplorerUrl(vault.network.chainId)}/tx/${row.transactionHash}`;
 
@@ -90,7 +101,7 @@ export function VaultUserTransactions({ vault }: VaultUserTransactionsProps) {
                           normalizeTimestamp(row.timestamp),
                         )}`}
                       >
-                        {dayjs.unix(row.timestamp).format('h:mm a, MMM D')}
+                        {dayjs.unix(row.timestamp).fromNow()}
                       </td>
                       <td className="py-2 pr-2 capitalize text-white/90">{row.eventType}</td>
                       <td className="py-2 pr-2">
@@ -102,12 +113,7 @@ export function VaultUserTransactions({ vault }: VaultUserTransactionsProps) {
                             height={16}
                             className="rounded-full"
                           />
-                          <span>
-                            {Number(assetAmount).toLocaleString(undefined, {
-                              maximumFractionDigits: 6,
-                            })}{' '}
-                            {events.asset.symbol}
-                          </span>
+                          <span>{assetAmountFormatted}</span>
                         </div>
                       </td>
                       <td className="py-2 pr-2 text-white/60 font-mono">
