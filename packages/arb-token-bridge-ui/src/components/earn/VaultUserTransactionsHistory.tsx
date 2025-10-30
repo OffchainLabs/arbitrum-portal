@@ -40,7 +40,7 @@ export function VaultUserTransactionsHistory({ vault }: VaultUserTransactionsHis
   return (
     <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-medium text-white">Your transactions</h3>
+        <h3 className="text-base font-medium text-white">Your transactions in {vault.name}</h3>
         <button
           className="text-xs text-white/60 hover:text-white"
           onClick={() => refetch()}

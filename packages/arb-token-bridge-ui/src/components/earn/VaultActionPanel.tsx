@@ -245,9 +245,11 @@ export function VaultActionPanel({ vault }: VaultActionPanelProps) {
   return (
     <Card className="bg-[#191919] rounded-lg flex flex-col gap-4 p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-medium text-white">Your position</h3>
-      </div>
+      {lpTokenBalanceRaw.gt(0) && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-medium text-white">Your position</h3>
+        </div>
+      )}
 
       {/* Position Value Card */}
       {lpTokenBalanceRaw.gt(0) && (
