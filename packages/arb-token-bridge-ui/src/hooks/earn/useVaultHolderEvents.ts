@@ -27,6 +27,7 @@ export function useVaultHolderEvents(
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateOnMount: false,
+      errorRetryCount: 2,
     },
   );
 

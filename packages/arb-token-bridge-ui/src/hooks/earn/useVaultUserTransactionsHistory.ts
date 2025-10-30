@@ -20,6 +20,9 @@ export function useVaultUserTransactionsHistory(
       if (!userAddress || !vaultAddress) return null;
       return await getVaultHolderEvents({ userAddress, network, vaultAddress });
     },
+    {
+      errorRetryCount: 2,
+    },
   );
 
   return {

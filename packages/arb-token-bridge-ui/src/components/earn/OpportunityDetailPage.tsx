@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Card } from '@/components/Card';
 
 import { VaultActionPanel } from './VaultActionPanel';
-import { VaultPlaceholderChart } from './VaultPlaceholderChart';
+import { VaultChart } from './VaultChart';
 import { VaultUserTransactionsHistory } from './VaultUserTransactionsHistory';
 
 interface OpportunityDetailPageProps {
@@ -127,7 +127,7 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
             </Card>
           </div>
 
-          <VaultPlaceholderChart vault={vault} />
+          <VaultChart vault={vault} />
 
           {/* Rolling APRs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

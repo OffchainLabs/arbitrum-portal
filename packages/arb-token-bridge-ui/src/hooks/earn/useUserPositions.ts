@@ -50,6 +50,7 @@ export function useUserPositions(
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      errorRetryCount: 2,
     },
   );
 

@@ -20,6 +20,9 @@ export function useVaultTransactionContext(
         vaultAddress,
       });
     },
+    {
+      errorRetryCount: 2,
+    },
   );
 
   return {

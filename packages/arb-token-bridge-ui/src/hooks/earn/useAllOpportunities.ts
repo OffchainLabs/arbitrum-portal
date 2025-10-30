@@ -23,6 +23,7 @@ export function useAllOpportunities(): UseAllOpportunitiesResult {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      errorRetryCount: 2,
     },
   );
 

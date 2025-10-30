@@ -12,6 +12,9 @@ export function useVaultDetails(vaultAddress: string, network: string = 'arbitru
       if (!vaultAddress) return null;
       return await getVault(vaultAddress, network);
     },
+    {
+      errorRetryCount: 2,
+    },
   );
 
   return {

@@ -135,6 +135,55 @@ export async function getVault(
 }
 
 /**
+ * Fetch historical APY/TVL/sharePrice data for a vault
+ */
+export type VaultHistoricalDataResponse = {
+  itemsOnPage: number;
+  nextPage: number;
+  data: Array<{
+    timestamp: number;
+    blockNumber: string;
+    apy: { base: number; reward: number; total: number };
+    tvl: { usd: string; native: string };
+    sharePrice: number;
+  }>;
+};
+
+export async function getVaultHistoricalData({
+  network,
+  vaultAddress,
+  page = 0,
+  perPage = 200,
+  apyInterval = '7day',
+  fromTimestamp,
+  toTimestamp,
+}: {
+  network: string;
+  vaultAddress: string;
+  page?: number;
+  perPage?: number;
+  apyInterval?: '1day' | '7day' | '30day' | string;
+  fromTimestamp?: number;
+  toTimestamp?: number;
+}): Promise<VaultHistoricalDataResponse> {
+  const response = await vaultsSdk.getVaultHistoricalData({
+    path: {
+      network: network as any,
+      vaultAddress,
+    },
+    query: {
+      page,
+      perPage,
+      apyInterval: apyInterval as any,
+      fromTimestamp,
+      toTimestamp,
+    },
+  });
+
+  return response as unknown as VaultHistoricalDataResponse;
+}
+
+/**
  * Fetch total returns for a specific user and vault
  */
 export async function getUserVaultTotalReturns(

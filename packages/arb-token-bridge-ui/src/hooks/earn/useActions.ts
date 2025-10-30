@@ -58,6 +58,7 @@ export function useActions({
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      errorRetryCount: 2,
     },
   );
 
