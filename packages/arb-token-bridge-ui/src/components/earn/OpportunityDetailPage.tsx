@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Card } from '@/components/Card';
 
 import { VaultActionPanel } from './VaultActionPanel';
+import { VaultUserTransactions } from './VaultUserTransactions';
 
 interface OpportunityDetailPageProps {
   opportunityId: string;
@@ -186,6 +187,8 @@ export function OpportunityDetailPage({ opportunityId }: OpportunityDetailPagePr
               <p className="text-sm text-white/50 leading-relaxed">{vault.description} </p>
             </div>
           )}
+
+          <VaultUserTransactions vault={vault} />
         </div>
 
         {/* Right Column - Supply/Transaction */}

@@ -1,0 +1,192 @@
+{
+  "asset": {
+    "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "assetCaip": "eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "decimals": 6,
+    "assetLogo": "https://images.vaults.fyi/tokens/usdc.png",
+    "assetPriceInUsd": "0.9998",
+    "assetGroup": "OTHER"
+  },
+  "lpToken": {
+    "address": "0x724dc807b04555b71ed48a6896b6F41593b8C637",
+    "tokenCaip": "eip155:42161/erc20:0x724dc807b04555b71ed48a6896b6F41593b8C637",
+    "name": "Aave Arbitrum USDCn",
+    "symbol": "aArbUSDCn",
+    "decimals": 6
+  },
+  "data": [
+    {
+      "timestamp": 1761650950,
+      "blockNumber": "394269369",
+      "eventType": "deposit",
+      "assetAmountNative": "8",
+      "sharePrice": 1.1511518717984641,
+      "lpTokenAmount": "7",
+      "transactionHash": "0xed861b077043733ff1747ce5ad73affb0c5bba18b8792db84ccba6fc6253703e",
+      "logIndex": 8
+    },
+    {
+      "timestamp": 1761650994,
+      "blockNumber": "394269545",
+      "eventType": "deposit",
+      "assetAmountNative": "5243",
+      "sharePrice": 1.151151923962865,
+      "lpTokenAmount": "4555",
+      "transactionHash": "0x6be9ae0e5cce4d92757f7ace891d3df574fecfc96c46d5aae899dadc09a15aaf",
+      "logIndex": 4
+    },
+    {
+      "timestamp": 1761653500,
+      "blockNumber": "394279587",
+      "eventType": "withdrawal",
+      "assetAmountNative": "9",
+      "sharePrice": 1.1511549146979752,
+      "lpTokenAmount": "8",
+      "transactionHash": "0xaec4d144f3f9b54433fecf9edbdcfc92997a146f8dff2fbb5e8d8aec071e733e",
+      "logIndex": 2
+    },
+    {
+      "timestamp": 1761733183,
+      "blockNumber": "394598798",
+      "eventType": "deposit",
+      "assetAmountNative": "999",
+      "sharePrice": 1.1512529979642598,
+      "lpTokenAmount": "868",
+      "transactionHash": "0x07c100da170fdeb572ada30fd0d53aac4b01036d91165575b5c186d05aa01ed9",
+      "logIndex": 4
+    },
+    {
+      "timestamp": 1761733326,
+      "blockNumber": "394599370",
+      "eventType": "deposit",
+      "assetAmountNative": "8",
+      "sharePrice": 1.1512531725441046,
+      "lpTokenAmount": "7",
+      "transactionHash": "0x731e106aaf44df7ab63ab578a0e16b2a3c67a414823a281feb9441adcad685ca",
+      "logIndex": 22
+    },
+    {
+      "timestamp": 1761744538,
+      "blockNumber": "394644332",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1512671888481962,
+      "lpTokenAmount": "85",
+      "transactionHash": "0xaba54f3ec7cf3f7cc1a9504ae28288bef47f9b60c11925733de4b6faa7597224",
+      "logIndex": 64
+    },
+    {
+      "timestamp": 1761744627,
+      "blockNumber": "394644692",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1512673014519343,
+      "lpTokenAmount": "85",
+      "transactionHash": "0x52d6dbbc848c6f16a80cb0f1ae3445443f3ea7ed84d4d7b8ba040492d6c0f45a",
+      "logIndex": 3
+    },
+    {
+      "timestamp": 1761745213,
+      "blockNumber": "394647040",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1512680427726059,
+      "lpTokenAmount": "85",
+      "transactionHash": "0x0344cad277bd0a96a71d6527cdf7871f094b3437055ab3316f7bc2031b898854",
+      "logIndex": 8
+    },
+    {
+      "timestamp": 1761745581,
+      "blockNumber": "394648513",
+      "eventType": "withdrawal",
+      "assetAmountNative": "500",
+      "sharePrice": 1.151268507712699,
+      "lpTokenAmount": "435",
+      "transactionHash": "0x51d06888efb1429b9ab5bd625ddc92cb03faa71bced2fd294d2e20a4b475257a",
+      "logIndex": 2
+    },
+    {
+      "timestamp": 1761745732,
+      "blockNumber": "394649119",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1512686984858977,
+      "lpTokenAmount": "85",
+      "transactionHash": "0x6059dad30ee873cdb48f7ea891ba9262f2b564effa244b2f56871c41d44f72aa",
+      "logIndex": 10
+    },
+    {
+      "timestamp": 1761746883,
+      "blockNumber": "394653736",
+      "eventType": "withdrawal",
+      "assetAmountNative": "99",
+      "sharePrice": 1.1512701504176162,
+      "lpTokenAmount": "86",
+      "transactionHash": "0xd74670da1695aae548c18d5c983d8096acb7efe8e3b866af1eca6c5277c5dd18",
+      "logIndex": 29
+    },
+    {
+      "timestamp": 1761809903,
+      "blockNumber": "394906228",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1513496959083491,
+      "lpTokenAmount": "85",
+      "transactionHash": "0xc8f9a23e2b9a9bc06181d61efb070421d658ba30fe44f93542d8cdbeb5af97b5",
+      "logIndex": 4
+    },
+    {
+      "timestamp": 1761809968,
+      "blockNumber": "394906494",
+      "eventType": "withdrawal",
+      "assetAmountNative": "150",
+      "sharePrice": 1.1513497779608057,
+      "lpTokenAmount": "131",
+      "transactionHash": "0x5319765e9d3ab89e8e8ea1c7e27dca627fd8b458b894a057e3e0e2af22c67fa5",
+      "logIndex": 11
+    },
+    {
+      "timestamp": 1761810118,
+      "blockNumber": "394907095",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1513499673119898,
+      "lpTokenAmount": "85",
+      "transactionHash": "0x311ce920077675204133712717755ba2e210ee45f518936a8f47d6719d3d03bb",
+      "logIndex": 3
+    },
+    {
+      "timestamp": 1761810145,
+      "blockNumber": "394907199",
+      "eventType": "withdrawal",
+      "assetAmountNative": "99",
+      "sharePrice": 1.1513500013952576,
+      "lpTokenAmount": "86",
+      "transactionHash": "0x3695678f4bbd23b916f5963d94218075ba3643eb0a151a3785bc59f0557bcf82",
+      "logIndex": 2
+    },
+    {
+      "timestamp": 1761810201,
+      "blockNumber": "394907422",
+      "eventType": "deposit",
+      "assetAmountNative": "97",
+      "sharePrice": 1.1513500720864893,
+      "lpTokenAmount": "85",
+      "transactionHash": "0x507c6c04a104952836449e0cb2454495d44bde41ebd0cbdad9f0394c5963a74f",
+      "logIndex": 6
+    },
+    {
+      "timestamp": 1761810230,
+      "blockNumber": "394907539",
+      "eventType": "withdrawal",
+      "assetAmountNative": "90",
+      "sharePrice": 1.1513501086944753,
+      "lpTokenAmount": "79",
+      "transactionHash": "0x0ab57d79c5abd2cb98e0cf38e03f4641130f95104838f9fb631b7c186a5caccc",
+      "logIndex": 17
+    }
+  ],
+  "items": 17
+}

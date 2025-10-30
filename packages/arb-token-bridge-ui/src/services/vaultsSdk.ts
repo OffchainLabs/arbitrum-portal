@@ -164,6 +164,60 @@ export async function getUserVaultTotalReturns(
 }
 
 /**
+ * Fetch holder events (deposits, withdrawals) for a specific user and vault
+ */
+export type VaultHolderEventsResponse = {
+  asset: {
+    address: string;
+    assetCaip: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+    assetLogo?: string;
+    assetPriceInUsd?: string;
+    assetGroup: string;
+  };
+  lpToken: {
+    address: string;
+    tokenCaip: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+  data: Array<{
+    timestamp: number;
+    blockNumber: string;
+    eventType: 'deposit' | 'withdrawal';
+    assetAmountNative: string;
+    sharePrice: number;
+    lpTokenAmount: string;
+    transactionHash: string;
+    logIndex: number;
+  }>;
+  items: number;
+};
+
+export async function getVaultHolderEvents({
+  userAddress,
+  network,
+  vaultAddress,
+}: {
+  userAddress: string;
+  network: string;
+  vaultAddress: string;
+}): Promise<VaultHolderEventsResponse> {
+  const response = await vaultsSdk.getUserVaultEvents({
+    path: {
+      userAddress,
+      network: network as any,
+      vaultAddress,
+    },
+  });
+
+  return response;
+}
+
+/**
  * Transform a vault to an opportunity row
  */
 export function transformVaultToOpportunity(
