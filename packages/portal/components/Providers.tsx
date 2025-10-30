@@ -1,5 +1,6 @@
 'use client';
 
+import { AppProviders } from 'arb-token-bridge-ui/src/components/App/AppProviders';
 import NextAdapterApp from 'next-query-params/app';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
@@ -33,7 +34,7 @@ export const Providers = ({ children }: PropsWithChildren) => {
           adapter={NextAdapterApp}
           options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
         >
-          {children}
+          <AppProviders>{children}</AppProviders>
         </QueryParamProvider>
       </PostHogProvider>
     </Suspense>

@@ -59,61 +59,79 @@ export function useVaultTransaction(
         throw new Error('Invalid action: missing chainId');
       }
 
-      // Switch chain if needed
-      if (connectedChainId !== txChainId) {
-        await switchChain(wagmiConfig, { chainId: txChainId });
-      }
+      // Utilities
+      const ensureCorrectChain = async () => {
+        if (connectedChainId !== txChainId) {
+          await switchChain(wagmiConfig, { chainId: txChainId });
+        }
+      };
 
-      if (isBatchSupported) {
-        // Execute batch transaction
-        const { id: batchId } = await sendCalls(wagmiConfig, {
-          calls: actions.map((action) => ({
-            to: action.tx.to,
-            data: action.tx.data,
-            value: action.tx.value ? BigInt(action.tx.value) : undefined,
-            chainId: action.tx.chainId,
-          })),
-        });
+      const buildCalls = () =>
+        actions.map((action) => ({
+          to: action.tx.to,
+          data: action.tx.data,
+          value: action.tx.value ? BigInt(action.tx.value) : undefined,
+          chainId: action.tx.chainId,
+        }));
 
-        // Wait for batch completion
-        const waitForBatchCompletion = async () => {
-          let callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
-          while (callsStatus.status === 'pending') {
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            // eslint-disable-next-line no-await-in-loop
-            callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
+      const executeBatch = async () => {
+        await ensureCorrectChain();
+        const { id: batchId } = await sendCalls(wagmiConfig, { calls: buildCalls() });
+        const waitForBatchCompletion = async (): Promise<void> => {
+          const callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
+          if (callsStatus.status === 'pending') {
+            return waitForBatchCompletion();
+          }
+          if (callsStatus.status === 'failure') {
+            // propagate a generic failure to trigger fallback or surfacing
+            throw new Error('Batch calls failed');
           }
         };
         await waitForBatchCompletion();
-
         onTransactionFinished({ txHash: undefined, amount: inputAmount });
-      } else {
-        // Execute sequential transactions
+      };
+
+      const executeSequential = async () => {
+        await ensureCorrectChain();
         let lastTxHash: string | undefined;
-
-        const executeSequential = async () => {
-          for (let i = 0; i < actions.length; i++) {
-            setCurrentActionIndex(i);
-            const tx = actions[i]?.tx;
-            if (!tx) throw new Error(`No transaction found for step ${i}`);
-
-            // eslint-disable-next-line no-await-in-loop
-            const hash = await sendTransaction(wagmiConfig, {
-              to: tx.to,
-              data: tx.data,
-              chainId: tx.chainId,
-              value: tx.value ? BigInt(tx.value) : undefined,
-            });
-
-            // eslint-disable-next-line no-await-in-loop
-            await waitForTransactionReceipt(wagmiConfig, { hash });
-            lastTxHash = hash;
-          }
-        };
-
-        await executeSequential();
+        const runInSequence = actions.reduce<Promise<void>>(async (prev, action, index) => {
+          await prev;
+          setCurrentActionIndex(index);
+          const tx = action?.tx;
+          if (!tx) throw new Error(`No transaction found for step ${index}`);
+          const hash = await sendTransaction(wagmiConfig, {
+            to: tx.to,
+            data: tx.data,
+            chainId: tx.chainId,
+            value: tx.value ? BigInt(tx.value) : undefined,
+          });
+          await waitForTransactionReceipt(wagmiConfig, { hash });
+          lastTxHash = hash;
+        }, Promise.resolve());
+        await runInSequence;
         onTransactionFinished({ txHash: lastTxHash, amount: inputAmount });
+      };
+
+      const isEip7702RelatedError = (e: unknown) => {
+        const err = e as { message?: string; shortMessage?: string };
+        const msg = (err.message ?? '').toLowerCase();
+        const shortMsg = (err.shortMessage ?? '').toLowerCase();
+        const combined = `${msg} ${shortMsg}`;
+        return combined.includes('eip-7702') || combined.includes('7702 not supported');
+      };
+
+      if (isBatchSupported) {
+        try {
+          await executeBatch();
+        } catch (e) {
+          if (isEip7702RelatedError(e)) {
+            await executeSequential();
+          } else {
+            throw e;
+          }
+        }
+      } else {
+        await executeSequential();
       }
     } catch (error) {
       if (

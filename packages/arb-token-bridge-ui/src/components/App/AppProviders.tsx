@@ -27,7 +27,10 @@ const rainbowkitTheme = merge(darkTheme(), {
 //
 // https://github.com/orgs/WalletConnect/discussions/2733
 // https://github.com/wagmi-dev/references/blob/main/packages/connectors/src/walletConnect.ts#L114
-const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+const searchParams =
+  typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
 const targetChainKey = searchParams.get('sourceChain');
 
 const integratorId =
