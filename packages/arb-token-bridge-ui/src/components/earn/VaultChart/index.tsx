@@ -25,40 +25,45 @@ export function VaultChart({ vault }: { vault: DetailedVault }) {
   const [range, setRange] = useState<RangeKey>('7d');
   const [metric, setMetric] = useState<MetricKey>('apy');
 
-  // Single fetch: 1 year daily data, reused across ranges to minimize API calls
-  const baseToTs = dayjs().unix();
-  const baseFromTs = dayjs().subtract(365, 'day').unix();
+  // Fetch only as many weekly points as needed for the selected range.
+  // Avoid dynamic from/to timestamps to improve SWR cache hits across sessions.
+  const perPageForRange: Record<RangeKey, number> = {
+    '7d': 12, // ensure >=2 points
+    '30d': 16, // ensure >=4 points
+    '90d': 24, // ensure >=8 points
+    '1y': 60, // ~52 points
+  };
+
+  // Window bounds: snap to start of day to stabilize keys; weekly granularity means OK.
+  const toTs = dayjs().startOf('day').unix();
+  const fromTs = dayjs.unix(toTs).subtract(RANGE_TO_DAYS[range], 'day').unix();
 
   const { data, isLoading, error } = useVaultHistoricalData({
     network: vault.network.name,
     vaultAddress: vault.address,
-    apyInterval: '1day',
-    fromTimestamp: baseFromTs,
-    toTimestamp: baseToTs,
-    perPage: 500,
+    apyInterval: '7day',
+    fromTimestamp: fromTs,
+    toTimestamp: toTs,
+    perPage: perPageForRange[range],
   });
 
   const apyData = useMemo(() => {
     if (!data?.data) return [] as Array<{ t: string; apyPct: number }>;
-    const sorted = [...data.data]
-      .sort((a: any, b: any) => a.timestamp - b.timestamp)
-      .filter((d: any) => d.timestamp >= dayjs().subtract(RANGE_TO_DAYS[range], 'day').unix());
+    const sorted = [...data.data].sort((a: any, b: any) => a.timestamp - b.timestamp);
     return sorted.map((d: any) => ({
       t: dayjs.unix(d.timestamp).format('MMM D, YYYY'),
       apyPct: (d.apy?.total ?? 0) * 100,
     }));
-  }, [data, range]);
+  }, [data]);
 
   const tvlData = useMemo(() => {
     if (!data?.data) return [] as Array<{ t: string; tvlUsd: number }>;
-    const sorted = [...data.data]
-      .sort((a: any, b: any) => a.timestamp - b.timestamp)
-      .filter((d: any) => d.timestamp >= dayjs().subtract(RANGE_TO_DAYS[range], 'day').unix());
+    const sorted = [...data.data].sort((a: any, b: any) => a.timestamp - b.timestamp);
     return sorted.map((d: any) => ({
       t: dayjs.unix(d.timestamp).format('MMM D, YYYY'),
       tvlUsd: Number(d.tvl.usd || '0'),
     }));
-  }, [data, range]);
+  }, [data]);
 
   return (
     <Card className="rounded-lg bg-[#191919] p-4">

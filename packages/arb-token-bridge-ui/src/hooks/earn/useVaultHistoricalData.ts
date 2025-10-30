@@ -49,7 +49,39 @@ export function useVaultHistoricalData({
       : null,
     async () => {
       if (!vaultAddress || !network) return null;
-      return await getVaultHistoricalData({
+      // localStorage cache (browser only)
+      const cacheKeyParts = [
+        'vaultHistoricalData',
+        network,
+        vaultAddress,
+        apyInterval,
+        fromTimestamp ?? 'null',
+        toTimestamp ?? 'null',
+        String(page),
+        String(perPage),
+      ];
+      const cacheKey = cacheKeyParts.join(':');
+      const now = Date.now();
+      const ttlMs = 6 * 60 * 60 * 1000; // 6 hours
+
+      try {
+        if (typeof window !== 'undefined') {
+          const raw = window.localStorage.getItem(cacheKey);
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              savedAt: number;
+              payload: VaultHistoricalDataResponse;
+            };
+            if (parsed?.savedAt && now - parsed.savedAt < ttlMs && parsed.payload) {
+              return parsed.payload;
+            }
+          }
+        }
+      } catch {
+        // ignore storage errors and fall back to network
+      }
+
+      const response = await getVaultHistoricalData({
         network,
         vaultAddress,
         apyInterval,
@@ -58,6 +90,19 @@ export function useVaultHistoricalData({
         page,
         perPage,
       });
+
+      try {
+        if (typeof window !== 'undefined' && response) {
+          window.localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ savedAt: now, payload: response }),
+          );
+        }
+      } catch {
+        // ignore storage errors
+      }
+
+      return response;
     },
     {
       errorRetryCount: 2,

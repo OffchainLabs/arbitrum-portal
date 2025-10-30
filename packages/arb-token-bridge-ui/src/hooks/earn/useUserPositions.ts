@@ -29,7 +29,11 @@ export function useUserPositions(
       // Fetch user positions and all vaults in parallel
       const [positions, vaults] = await Promise.all([
         getUserPositions({ userAddress }),
-        getAllVaults({ perPage: 50 }),
+        getAllVaults({
+          perPage: 50,
+          minTvl: 1_000_000,
+          allowedAssets: ['USDC', 'USDT', 'ETH', 'WBTC'],
+        }),
       ]);
 
       // Create a map of vault address to vault data

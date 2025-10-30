@@ -18,14 +18,20 @@ export const vaultsSdk = new VaultsSdk({
 export async function getAllVaults({
   // allowedNetworks = [],
   perPage = 50,
+  minTvl = 1_000_000,
+  allowedAssets = ['USDC', 'USDT', 'ETH', 'WBTC'],
 }: {
   // allowedNetworks: string[];
   perPage: number;
+  minTvl?: number;
+  allowedAssets?: string[];
 }): Promise<DetailedVault[]> {
   const response = await vaultsSdk.getAllVaults({
     query: {
       allowedNetworks: ['arbitrum'],
       allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'],
+      minTvl,
+      allowedAssets,
       perPage,
     },
   });
@@ -166,6 +172,8 @@ export async function getVaultHistoricalData({
   fromTimestamp?: number;
   toTimestamp?: number;
 }): Promise<VaultHistoricalDataResponse> {
+  // Enforce weekly-or-coarser granularity to save API credits
+  const enforcedInterval = apyInterval === '1day' ? '7day' : apyInterval;
   const response = await vaultsSdk.getVaultHistoricalData({
     path: {
       network: network as any,
@@ -174,7 +182,7 @@ export async function getVaultHistoricalData({
     query: {
       page,
       perPage,
-      apyInterval: apyInterval as any,
+      apyInterval: enforcedInterval as any,
       fromTimestamp,
       toTimestamp,
     },

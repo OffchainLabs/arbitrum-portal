@@ -17,7 +17,11 @@ export function useAllOpportunities(): UseAllOpportunitiesResult {
   const { data, error, isLoading, mutate } = useSWRImmutable(
     ['opportunities'],
     async () => {
-      const vaults = await getAllVaults({ perPage: 50 });
+      const vaults = await getAllVaults({
+        perPage: 50,
+        minTvl: 1_000_000,
+        allowedAssets: ['USDC', 'USDT', 'ETH', 'WBTC'],
+      });
       return vaults.map((vault) => transformVaultToOpportunity(vault));
     },
     {
