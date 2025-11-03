@@ -48,6 +48,7 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
 
 /**
  * Assigns a custom CoinKey to tokens that don't have one but are configured in CUSTOM_TOKENS.
+ * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
  * Returns null if token has no coinKey and isn't in CUSTOM_TOKENS.
  */
 function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
@@ -58,7 +59,17 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   }
 
   if (token.coinKey) {
-    return token as LifiTokenWithCoinKey;
+    const tokenWithCoinKey = token as LifiTokenWithCoinKey;
+
+    // Normalize USDCe to USDC on chains that use bridged USDC
+    if (
+      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
+      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
+    ) {
+      return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
+    }
+
+    return tokenWithCoinKey;
   }
 
   return null;
