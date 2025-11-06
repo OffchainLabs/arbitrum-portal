@@ -91,48 +91,6 @@
       }
     },
     {
-      "chainId": 4078,
-      "parentChainId": 42161,
-      "confirmPeriodBlocks": 7200,
-      "ethBridge": {
-        "bridge": "0xB0EC3C1368AF7d9C2CAE6B7f8E022Cc14d59D2b1",
-        "inbox": "0x18BB8310E3a3DF4EFcCb6B3E9AeCB8bE6d4af07f",
-        "outbox": "0xD17550876106645988051ffDd31dFc3cDaA29F9c",
-        "rollup": "0xE383D432F039f4377CC9AA003FfaE4c814936864",
-        "sequencerInbox": "0xfb27e42E964F3364630F76D62EB295ae792BD4FA"
-      },
-      "explorerUrl": "https://muster-explorer.alt.technology",
-      "rpcUrl": "https://muster.alt.technology",
-      "name": "Muster",
-      "slug": "muster",
-      "isCustom": true,
-      "isTestnet": false,
-      "tokenBridge": {
-        "parentCustomGateway": "0x6085B32d97be137cC2D6447DcB3BF684C0835D2F",
-        "parentErc20Gateway": "0x6551eF99126253B7a838Cf46340030C8eD5342c2",
-        "parentGatewayRouter": "0x5040981c42fD61219cc567e255129166A840938e",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x37119EAcFBc1c83DDAf80F6705b6B19630C101C4",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0x5e833dd255e2aafFcfB32E874F5e2dFA17A109Ee",
-        "childCustomGateway": "0x9FcC7aC2c40eFD0443D8B641e482F04310F113f6",
-        "childErc20Gateway": "0xFdEb5b89bb8FCA61BF77f205B9F89aC3C5fA5dB8",
-        "childGatewayRouter": "0xDcF4964Dbb526e91CD6354ac3d1247Ce93C21fc4",
-        "childMultiCall": "0xaA6669a609862871ce72c91a93E70F1ef7590271",
-        "childProxyAdmin": "0xf10D50B24eDd74ECF3B6Bc22aE74b7F9843e0fDD",
-        "childWeth": "0x869Bf8814d77106323745758135b999D34C79a87",
-        "childWethGateway": "0xB6145BFd3fA9D270871037238003c66B984787f4"
-      },
-      "bridgeUiConfig": {
-        "color": "#DF62DD",
-        "network": {
-          "name": "Muster Network",
-          "description": "A gaming chain with cheap fees and account abstraction.",
-          "logo": "/images/MusterLogo.svg"
-        }
-      }
-    },
-    {
       "chainId": 94524,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
@@ -502,55 +460,6 @@
       }
     },
     {
-      "chainId": 383353,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0xA337997ab18164Dfe1e8A94E8D912e8d4e2ce173",
-        "inbox": "0x58e3F0ed71ac29501326aeE9564674E43812cc24",
-        "outbox": "0x9bAA9C2c313510D4f3CB2673b2f2603ED45d6eDd",
-        "rollup": "0xb9E6B5AcB523D431f6D136C56d371271456757E7",
-        "sequencerInbox": "0x714d792CB8BFB9F70Cde071904d8743280267ab2"
-      },
-      "nativeToken": "0x05AEa20947A9A376eF50218633BB0a5A05d40A0C",
-      "explorerUrl": "https://fetascan.xyz/",
-      "rpcUrl": "https://rpc.cheesechain.xyz/http",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "CheeseChain",
-      "slug": "cheesechain",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x762AE18EDA279709C106eC76d4b3985366D87C3F",
-        "parentErc20Gateway": "0x4D692d1B2E5Cef2A6092de572231D54D07691aA0",
-        "parentGatewayRouter": "0xA4BD9786c885EB99Cb6C6886d8f9CE8d96cE99F6",
-        "parentMultiCall": "0x909b042B88F587d745dBF52e2569545376f6eAA4",
-        "parentProxyAdmin": "0xB9b62DF4C8F4605E0772d05506203D7bd4d2F968",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x1Dd3e9AbA3A50D071C250356551c774B5F28B567",
-        "childErc20Gateway": "0x8737E402817e5B82B0ED43dC791e4E260e00c9d5",
-        "childGatewayRouter": "0x1E7090DCA131C7DE551becE4eCd2eBD5a37Aff0D",
-        "childMultiCall": "0x36528Af3c5Ef49fDbB87EcB87027c98DeeD57a00",
-        "childProxyAdmin": "0xe63cE9FeF9FC31FfcbD54D1aCfFEAcAf737e2626",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#E07800",
-        "network": {
-          "name": "CheeseChain",
-          "logo": "/images/CheeseChain_Logo.png",
-          "description": "CheeseChain is a user-first L3 changing the model for building in crypto."
-        },
-        "nativeTokenData": {
-          "name": "Cheese",
-          "symbol": "CHEESE",
-          "logoUrl": "/images/CheeseChain_NativeTokenLogo.jpg"
-        },
-        "fastWithdrawalTime": 900000
-      }
-    },
-    {
       "chainId": 88899,
       "confirmPeriodBlocks": 274908,
       "ethBridge": {
@@ -644,54 +553,6 @@
           "logoUrl": "/images/ChainBounty_Logo.svg"
         },
         "fastWithdrawalTime": 3600000
-      }
-    },
-    {
-      "chainId": 668668,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0x9be649C1C1D073536D55db83abA093E8558A962E",
-        "inbox": "0x1BEdFe383749b07A73370496E035c31Fd336509C",
-        "outbox": "0x09E2EF7161c89aAC723f817695629BEBd9914f41",
-        "rollup": "0x65DC757cd6A72332e37FD49382396b9aCee35462",
-        "sequencerInbox": "0xF759d5DD167072D470D08BF65Aef1aD3F8Efc947"
-      },
-      "nativeToken": "0xb8D4554538991977E49E4C5490B92CFE58EF5281",
-      "explorerUrl": "https://conwai.calderaexplorer.xyz/",
-      "rpcUrl": "https://conwai.calderachain.xyz/http",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Conwai",
-      "slug": "conwai",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0xa69A708032931b5f9A79Ce0e7b976F759327a7bD",
-        "parentErc20Gateway": "0x86495D9c9E8Bd8E0b8F52bED8A90d43601d46C07",
-        "parentGatewayRouter": "0xe0a4b93C0f34b04358c8788e54A097D6769fD0eD",
-        "parentMultiCall": "0x411f8A148e448bBe75382d4FFABee0796484f3c6",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x39537559ADD8396CDed00849f611D0feE7A42122",
-        "childErc20Gateway": "0xc4BC8400fF5825a0DD0B5737fa1041Ae77CB5ff6",
-        "childGatewayRouter": "0xe0eFA3089D69ac76737712D925ED0D21e6EbD544",
-        "childMultiCall": "0xfCa388141231b858A8426f298ca77f771e9E3c3A",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#000000",
-        "network": {
-          "name": "Conwai",
-          "logo": "/images/Conwai_Logo.svg",
-          "description": "Layer 3 for the full AI lifecycle."
-        },
-        "nativeTokenData": {
-          "name": "Conwai",
-          "symbol": "CNW",
-          "logoUrl": "/images/Conwai_NativeTokenLogo.svg"
-        }
       }
     },
     {
