@@ -75,6 +75,25 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   return null;
 }
 
+function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  if (token.coinKey === CoinKey.ETH) {
+    token.logoURI = '/images/EthereumLogoRound.svg';
+  }
+
+  switch (token.coinKey) {
+    case CoinKey.ETH: {
+      token.logoURI = '/images/EthereumLogoRound.svg';
+      return token;
+    }
+    case CoinKey.APE: {
+      token.logoURI = '/images/ApeChainLogo.svg';
+      return token;
+    }
+  }
+
+  return token;
+}
+
 export interface LifiTokenRegistry {
   tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
@@ -105,8 +124,10 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
         if (!tokenWithCoinKey) return acc;
 
-        tokensGroupedByCoinKey[tokenWithCoinKey.coinKey] ??= tokenWithCoinKey;
-        acc.push(tokenWithCoinKey);
+        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+
+        tokensGroupedByCoinKey[tokenWithLogoURI.coinKey] ??= tokenWithLogoURI;
+        acc.push(tokenWithLogoURI);
         return acc;
       },
       [],
