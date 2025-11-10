@@ -17,6 +17,7 @@ import { isLifiEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
 import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
+import { useTokensFromLists } from './TokenSearchUtils';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 
 export function isDisabledCanonicalTransfer({
@@ -86,6 +87,7 @@ export function TransferDisabledDialog() {
   >(null);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
+  const tokensFromLists = useTokensFromLists();
   const unsupportedToken = sanitizeTokenSymbol(selectedToken?.symbol ?? '', {
     erc20L1Address: selectedToken?.address,
     chainId: networks.sourceChain.id,
@@ -119,7 +121,8 @@ export function TransferDisabledDialog() {
       isValidLifiTransfer({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-        fromToken: isDepositMode ? selectedToken.address : selectedToken.l2Address,
+        fromToken: selectedToken.address,
+        tokensFromLists,
       })
     ) {
       return false;
@@ -143,6 +146,9 @@ export function TransferDisabledDialog() {
     parentChain.id,
     selectedToken,
     selectedTokenAddressLocalValue,
+    tokensFromLists,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
   ]);
 
   const sourceChainName = getNetworkName(networks.sourceChain.id);
