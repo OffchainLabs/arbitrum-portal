@@ -41,7 +41,7 @@ import {
 export const DISABLED_CHAIN_IDS: number[] = [];
 
 // withdraw-only chains (will also display error message in the transfer panel)
-const WITHDRAW_ONLY_CHAIN_IDS: number[] = [];
+const WITHDRAW_ONLY_CHAIN_IDS: number[] = [4078];
 
 type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage;
