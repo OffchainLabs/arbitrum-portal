@@ -1,14 +1,15 @@
 import { MinusCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
-import { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { shallow } from 'zustand/shallow';
 
-import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
+import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useMode } from '../../../hooks/useMode';
-import { useNetworks } from '../../../hooks/useNetworks';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { LIFI_TRANSFER_LIST_ID } from '../../../util/TokenListUtils';
 import { Button } from '../../common/Button';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { useRouteStore } from '../hooks/useRouteStore';
@@ -59,17 +60,7 @@ export const Routes = React.memo(() => {
 
   const MAX_ROUTES_VISIBLE = embedMode ? 2 : 3;
 
-  const [networks] = useNetworks();
   const [selectedToken] = useSelectedToken();
-  const overrideToken = useMemo(
-    () =>
-      getTokenOverride({
-        sourceChainId: networks.sourceChain.id,
-        fromToken: selectedToken?.address,
-        destinationChainId: networks.destinationChain.id,
-      }),
-    [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
-  );
 
   useEffect(() => {
     setShowHiddenRoutes(false);
@@ -164,13 +155,22 @@ export const Routes = React.memo(() => {
             case 'lifi':
             case 'lifi-fastest':
             case 'lifi-cheapest':
+              const token = (route.data.route as LifiCrosschainTransfersRoute).toAmount.token;
+              const overrideToken = token
+                ? ({
+                    ...token,
+                    type: TokenType.ERC20,
+                    listIds: new Set<string>([LIFI_TRANSFER_LIST_ID]),
+                  } as ERC20BridgeToken)
+                : undefined;
+
               return (
                 <LifiRoute
                   key={`lifi-${index}`}
                   type={route.type}
                   route={route.data.route}
                   tag={tag}
-                  overrideToken={overrideToken.destination || undefined}
+                  overrideToken={overrideToken}
                 />
               );
             case 'arbitrum':

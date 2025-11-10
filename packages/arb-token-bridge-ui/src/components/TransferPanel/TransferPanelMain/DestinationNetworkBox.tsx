@@ -4,22 +4,21 @@ import { useAccount } from 'wagmi';
 
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
-import { useSelectedTokenBalances } from '../../../hooks/TransferPanel/useSelectedTokenBalances';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useBalanceOnDestinationChain } from '../../../hooks/useBalanceOnDestinationChain';
 import { useBalances } from '../../../hooks/useBalances';
+import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
-import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { formatAmount } from '../../../util/NumberUtils';
 import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
 import { isNetwork } from '../../../util/networks';
-import { Button } from '../../common/Button';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { NetworkButton } from '../../common/NetworkSelectionContainer';
-import { SafeImage } from '../../common/SafeImage';
 import { Loader } from '../../common/atoms/Loader';
+import { DestinationTokenButton } from '../DestinationTokenButton';
 import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils';
 import { NetworkContainer } from '../TransferPanelMain';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
@@ -32,12 +31,10 @@ import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 function BalanceRow({
   parentErc20Address,
   balance,
-  logoOverride,
   symbolOverride,
 }: {
   parentErc20Address?: string;
   balance: string | undefined;
-  logoOverride?: string;
   symbolOverride?: string;
 }) {
   const [networks] = useNetworks();
@@ -48,20 +45,6 @@ function BalanceRow({
 
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
-
-  const tokenLogoSrc = useMemo(() => {
-    if (logoOverride) {
-      return logoOverride;
-    }
-
-    if (parentErc20Address) {
-      return (
-        tokensFromLists[parentErc20Address]?.logoURI ?? tokensFromUser[parentErc20Address]?.logoURI
-      );
-    }
-
-    return nativeCurrency.logoUrl;
-  }, [logoOverride, nativeCurrency.logoUrl, parentErc20Address, tokensFromLists, tokensFromUser]);
 
   const symbol = useMemo(() => {
     if (symbolOverride) {
@@ -81,12 +64,7 @@ function BalanceRow({
 
   return (
     <div className="flex flex-col items-end gap-[10px] px-[15px] pr-0">
-      <Button variant="secondary" className="px-[10px] py-[5px] opacity-70" disabled>
-        <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-          <SafeImage src={tokenLogoSrc} alt={`${symbol} logo`} className="h-4 w-4 shrink-0" />
-          <span>{symbol}</span>
-        </div>
-      </Button>
+      <DestinationTokenButton />
       {shouldShowBalance && (
         <div className="flex space-x-1 text-sm text-gray-6">
           <span>Balance: </span>
@@ -108,7 +86,7 @@ function BalancesContainer() {
   const { childChain } = useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
-  const [selectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
@@ -119,22 +97,8 @@ function BalancesContainer() {
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const { isAmount2InputVisible } = useAmount2InputVisibility();
 
-  const { destination } = useMemo(
-    () =>
-      getTokenOverride({
-        destinationChainId: networks.destinationChain.id,
-        fromToken: selectedToken?.address,
-        sourceChainId: networks.sourceChain.id,
-      }),
-    [selectedToken?.address, networks.destinationChain.id, networks.sourceChain.id],
-  );
-
   const nativeCurrencyBalances = useNativeCurrencyBalances();
-  const selectedTokenBalances = useSelectedTokenBalances();
-
-  const selectedTokenOrNativeCurrencyBalance = selectedToken
-    ? selectedTokenBalances.destinationBalance
-    : nativeCurrencyBalances.destinationBalance;
+  const destinationBalance = useBalanceOnDestinationChain(destinationToken);
 
   // For cctp transfer, if no route are selected, display USDC balance on destination chain
   const showNativeUsdcBalance =
@@ -143,7 +107,7 @@ function BalancesContainer() {
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
-      fromToken: selectedToken?.address,
+      fromToken: destinationToken?.address,
       sourceChainId: networks.sourceChain.id,
       destinationChainId: networks.destinationChain.id,
     });
@@ -152,7 +116,7 @@ function BalancesContainer() {
     }
 
     return override.destination;
-  }, [selectedToken, networks]);
+  }, [destinationToken, networks]);
 
   const isShowingBatchedTransfer = isBatchTransferSupported && isAmount2InputVisible;
 
@@ -173,32 +137,31 @@ function BalancesContainer() {
                   ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
                   : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ?? constants.Zero,
                 {
-                  decimals: selectedToken?.decimals,
+                  decimals: destinationToken?.decimals,
                 },
               )}
               symbolOverride="USDC"
             />
           ) : (
             <BalanceRow
-              parentErc20Address={selectedToken?.address}
+              parentErc20Address={destinationToken?.address}
               balance={
-                selectedTokenOrNativeCurrencyBalance
-                  ? formatAmount(selectedTokenOrNativeCurrencyBalance, {
-                      decimals: selectedToken ? selectedToken.decimals : 18,
+                destinationBalance
+                  ? formatAmount(destinationBalance, {
+                      decimals: destinationToken ? destinationToken.decimals : 18,
                     })
                   : undefined
               }
               symbolOverride={
                 tokenOverride
                   ? tokenOverride.symbol
-                  : selectedToken
-                    ? sanitizeTokenSymbol(selectedToken.symbol, {
+                  : destinationToken
+                    ? sanitizeTokenSymbol(destinationToken.symbol, {
                         chainId: networks.destinationChain.id,
-                        erc20L1Address: selectedToken.address,
+                        erc20L1Address: destinationToken.address,
                       })
                     : undefined
               }
-              logoOverride={destination ? destination.logoURI : undefined}
             />
           )}
         </div>

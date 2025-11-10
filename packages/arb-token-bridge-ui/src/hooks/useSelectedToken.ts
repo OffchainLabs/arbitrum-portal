@@ -1,6 +1,6 @@
 import { Provider } from '@ethersproject/providers';
-import { utils } from 'ethers';
-import { useCallback } from 'react';
+import { constants, utils } from 'ethers';
+import { useCallback, useEffect } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -98,32 +98,59 @@ export const useSelectedToken = (): [
           if (sanitizedTokenAddress) {
             return {
               token: sanitizedTokenAddress,
+              destinationToken: sanitizedTokenAddress,
+            };
+          }
+
+          /**
+           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
+           */
+          if (
+            latestQuery.sourceChain === ChainId.ApeChain &&
+            latestQuery.destinationChain === ChainId.Superposition
+          ) {
+            return {
+              token: sanitizeTokenAddress(erc20ParentAddress),
+              destinationToken: constants.AddressZero,
             };
           }
 
           return {
             token: sanitizeTokenAddress(erc20ParentAddress),
+            destinationToken: sanitizeTokenAddress(erc20ParentAddress),
           };
         } catch (error) {
           console.error('Error sanitizing token address:', error);
-          return { token: undefined };
+          return { token: undefined, destinationToken: undefined };
         }
       });
     },
     [setQueryParams],
   );
 
+  const selectedToken = tokenFromSearchParams
+    ? usdcToken ||
+      tokensFromUser[tokenFromSearchParams] ||
+      tokensFromLists[tokenFromSearchParams] ||
+      null
+    : null;
+
+  useEffect(() => {
+    /** On Superposition to ApeChain, if no token is selected, default to null () */
+    if (
+      networks.sourceChain.id === ChainId.Superposition &&
+      networks.destinationChain.id === ChainId.ApeChain &&
+      !selectedToken
+    ) {
+      setSelectedToken(constants.AddressZero);
+    }
+  }, [networks.destinationChain.id, networks.sourceChain.id, selectedToken, setSelectedToken]);
+
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
   }
 
-  return [
-    usdcToken ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null,
-    setSelectedToken,
-  ] as const;
+  return [selectedToken, setSelectedToken] as const;
 };
 
 function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {

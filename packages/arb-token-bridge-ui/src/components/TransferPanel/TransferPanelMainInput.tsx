@@ -72,7 +72,11 @@ function SourceChainTokenBalance({
    * If token is ERC20, show the balance of the selected token
    * If no token is selected, show the child chain native currency balance on source chain
    */
-  const tokenBalance = (() => {
+  const balance = (() => {
+    if (balanceOverride) {
+      return balanceOverride;
+    }
+
     if (addressesEqual(selectedToken?.address, constants.AddressZero)) {
       return selectedTokenBalances.sourceBalance;
     }
@@ -83,9 +87,6 @@ function SourceChainTokenBalance({
 
     return selectedTokenBalances.sourceBalance;
   })();
-
-  const balance =
-    balanceOverride ?? (selectedToken ? tokenBalance : nativeCurrencyBalances.sourceBalance);
 
   const formattedBalance =
     balance !== null

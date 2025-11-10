@@ -1,4 +1,5 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { ERC20 } from '@arbitrum/sdk/dist/lib/abi/ERC20';
 import { constants } from 'ethers';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -43,6 +44,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(ethDeposit).toBe(true);
 
@@ -54,6 +56,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(erc20Deposit).toBe(true);
     });
@@ -67,6 +70,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(erc20Deposit).toBe(false);
     });
@@ -80,6 +84,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(baseDeposit).toBe(false);
     });
@@ -100,6 +105,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           name: 'rDPX',
           listIds: new Set<string>(),
         },
+        isSwap: false,
       });
       expect(deposit).toBe(false);
     });
@@ -113,6 +119,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(apeDeposit).toBe(true);
 
@@ -130,6 +137,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           l2Address: CommonAddress.ApeChain.WETH,
           listIds: new Set<string>(),
         },
+        isSwap: false,
       });
       expect(ethDeposit).toBe(false);
     });
@@ -143,6 +151,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(ethDeposit).toBe(true);
 
@@ -157,6 +166,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           ...usdcToken,
           address: CommonAddress.ArbitrumOne.USDC,
         },
+        isSwap: false,
       });
       expect(usdcDeposit).toBe(true);
     });
@@ -174,6 +184,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           address: CommonAddress.Ethereum.USDC,
           l2Address: CommonAddress.ArbitrumOne['USDC.e'],
         },
+        isSwap: false,
       });
       expect(ethTeleport).toBe(true);
     });
@@ -189,6 +200,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(ethWithdrawal).toBe(true);
 
@@ -200,6 +212,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(erc20Withdrawal).toBe(true);
     });
@@ -213,6 +226,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(erc20Withdrawal).toBe(true);
     });
@@ -226,6 +240,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(baseWithdrawal).toBe(false);
     });
@@ -246,6 +261,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           name: 'FU',
           listIds: new Set<string>(),
         },
+        isSwap: false,
       });
       expect(withdrawal).toBe(false);
     });
@@ -259,6 +275,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(apeWithdraw).toBe(true);
 
@@ -279,6 +296,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           symbol: 'WETH',
           type: TokenType.ERC20,
         },
+        isSwap: false,
       });
       expect(wethWithdraw).toBe(false);
     });
@@ -292,6 +310,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(ethWithdraw).toBe(true);
 
@@ -306,6 +325,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           ...usdcToken,
           address: CommonAddress.ArbitrumOne.USDC,
         },
+        isSwap: false,
       });
       expect(usdcWithdraw).toBe(true);
     });
@@ -321,6 +341,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(teleport).toBe(true);
     });
@@ -333,6 +354,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(teleport).toBe(false);
     });
@@ -352,6 +374,7 @@ describe('isArbitrumCanonicalTransfer', () => {
           name: 'RARI',
           listIds: new Set<string>(),
         },
+        isSwap: false,
       });
       expect(teleport).toBe(true);
     });
@@ -365,6 +388,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: null,
+        isSwap: false,
       });
       expect(ethTeleport).toBe(false);
 
@@ -376,8 +400,56 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSelectedTokenWithdrawOnly: false,
         isSelectedTokenWithdrawOnlyLoading: false,
         selectedToken: usdcToken,
+        isSwap: false,
       });
       expect(erc20Teleport).toBe(false);
+    });
+  });
+
+  describe('for swaps', () => {
+    it('should return false for any swap', () => {
+      const ethDeposit = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: null,
+        isSwap: true,
+      });
+      expect(ethDeposit).toBe(false);
+
+      const erc20Deposit = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: usdcToken,
+        isSwap: true,
+      });
+      expect(erc20Deposit).toBe(false);
+
+      const ethDeposit2 = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.Superposition,
+        parentChainId: ChainId.ArbitrumOne,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Superposition,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          address: constants.AddressZero, // rDPX
+          decimals: 18,
+          symbol: 'ETH',
+          type: TokenType.ERC20,
+          name: 'ETH',
+          listIds: new Set<string>(),
+        },
+        isSwap: false,
+      });
+      expect(ethDeposit2).toBe(true);
     });
   });
 });

@@ -59,44 +59,44 @@ describe('sanitizeNullSelectedToken', () => {
   });
 
   describe('without token (native currency)', () => {
-    it('should return AddressZero for ApeChain → Ethereum without token', () => {
+    it('should return null for ApeChain → Ethereum without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.ApeChain,
         destinationChainId: ChainId.Ethereum,
         erc20ParentAddress: null,
       });
 
-      expect(result).toBe(constants.AddressZero);
+      expect(result).toBe(null);
     });
 
-    it('should return AddressZero for ApeChain → ArbitrumOne without token', () => {
+    it('should return null for ApeChain → ArbitrumOne without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.ApeChain,
         destinationChainId: ChainId.ArbitrumOne,
         erc20ParentAddress: null,
       });
 
-      expect(result).toBe(constants.AddressZero);
+      expect(result).toBe(null);
     });
 
-    it('should return AddressZero for Base → ApeChain without token', () => {
+    it('should return null for Base → ApeChain without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.Base,
         destinationChainId: ChainId.ApeChain,
         erc20ParentAddress: null,
       });
 
-      expect(result).toBe(constants.AddressZero);
+      expect(result).toBe(null);
     });
 
-    it('should return AddressZero for Superposition → ApeChain without token', () => {
+    it('should return null for Superposition → ApeChain without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.Superposition,
         destinationChainId: ChainId.ApeChain,
         erc20ParentAddress: null,
       });
 
-      expect(result).toBe(constants.AddressZero);
+      expect(result).toBe(null);
     });
 
     it('should return null for Ethereum → ApeChain without token', () => {

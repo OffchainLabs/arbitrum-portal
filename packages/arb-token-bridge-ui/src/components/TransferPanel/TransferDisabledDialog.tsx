@@ -1,3 +1,4 @@
+import { constants } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
@@ -8,7 +9,6 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { getL2ConfigForTeleport } from '../../token-bridge-sdk/teleport';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -52,28 +52,15 @@ export function isDisabledCanonicalTransfer({
     return true;
   }
 
-  if (parentChainId === ChainId.ArbitrumOne) {
-    if (
-      childChainId === ChainId.ApeChain &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDC)
-    ) {
-      return true;
-    }
-
-    if (
-      childChainId === ChainId.Superposition &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDT) &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDC)
-    ) {
-      return true;
-    }
-  }
-
-  if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+  if (
+    parentChainId === ChainId.ArbitrumOne &&
+    childChainId === ChainId.ApeChain &&
+    addressesEqual(selectedToken.address, constants.AddressZero)
+  ) {
     return true;
   }
 
-  return false;
+  return !!(isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading);
 }
 
 export function TransferDisabledDialog() {

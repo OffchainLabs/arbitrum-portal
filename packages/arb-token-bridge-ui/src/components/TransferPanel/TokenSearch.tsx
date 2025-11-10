@@ -279,9 +279,21 @@ function TokensPanel({
       }
     }
 
-    // Add native currency if not already included
-    // For chains with custom native tokens, always add it even if AddressZero is present
-    if (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) {
+    /**
+     * Add native currency if not already included
+     * For chains with custom native tokens, always add it even if AddressZero is present
+     *
+     * For lifi chains, the destination chain might not be the direct parent or child chain and might not have the native token.
+     * (e.g., APE token in Superposition for ApeChain <> Superposition transfers)
+     * We still allow token to be selected (it will default to swap)
+     */
+    const isSuperpositionToApeChain =
+      networks.sourceChain.id === ChainId.Superposition &&
+      networks.destinationChain.id === ChainId.ApeChain;
+    if (
+      (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) &&
+      !isSuperpositionToApeChain
+    ) {
       tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
     }
 
@@ -399,12 +411,14 @@ function TokensPanel({
     tokensFromUser,
     tokensFromLists,
     isDepositMode,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    nativeCurrency,
     isArbitrumOne,
     isArbitrumSepolia,
     isParentChainArbitrumOne,
     isParentChainArbitrumSepolia,
     isOrbitChain,
-    nativeCurrency,
     childChain.id,
     getBalance,
   ]);
@@ -481,7 +495,7 @@ function TokensPanel({
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
         return (
           <TokenRow
-            key="TokenRowNativeCurrency"
+            key={`TokenRowNativeCurrency-${walletAddress}`}
             style={virtualizedProps.style}
             onTokenSelected={onTokenSelected}
             token={null}
@@ -491,7 +505,7 @@ function TokensPanel({
 
       return (
         <TokenRow
-          key={address}
+          key={`${address}-${walletAddress}`}
           style={virtualizedProps.style}
           onTokenSelected={onTokenSelected}
           token={token}
@@ -505,7 +519,7 @@ function TokensPanel({
       onTokenSelected,
       usdcToken,
       isOrbitChain,
-      walletAddress, // required for re-rendering the row when wallet address changes / wallet is connected
+      walletAddress,
     ],
   );
 

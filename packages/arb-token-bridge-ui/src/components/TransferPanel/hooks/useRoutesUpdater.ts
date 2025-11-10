@@ -9,6 +9,7 @@ import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
@@ -136,6 +137,7 @@ export function useRoutesUpdater() {
   const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const [selectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
   const tokensFromLists = useTokensFromLists();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
@@ -184,7 +186,7 @@ export function useRoutesUpdater() {
     ],
   );
 
-  const overrideToken = useMemo(
+  const overrideSourceToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: networks.sourceChain.id,
@@ -193,16 +195,28 @@ export function useRoutesUpdater() {
       }),
     [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
   );
+  const overrideDestinationToken = useMemo(
+    () =>
+      getTokenOverride({
+        sourceChainId: networks.sourceChain.id,
+        fromToken: destinationToken?.address,
+        destinationChainId: networks.destinationChain.id,
+      }),
+    [destinationToken?.address, networks.sourceChain.id, networks.destinationChain.id],
+  );
 
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
-    fromToken: overrideToken.source?.address || constants.AddressZero,
+    fromToken: overrideSourceToken.source?.address || constants.AddressZero,
     toAddress: (destinationAddress as Address) || address,
     toChainId: networks.destinationChain.id,
-    toToken: overrideToken.destination?.address || constants.AddressZero,
+    toToken:
+      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
+      overrideDestinationToken.destination?.address ||
+      constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,

@@ -299,6 +299,16 @@ export const TokenQueryParam = {
   },
 };
 
+export const DestinationTokenQueryParam = {
+  encode: (token: string | undefined) => {
+    return token?.toLowerCase();
+  },
+  decode: (token: string | (string | null)[] | null | undefined) => {
+    const tokenStr = token?.toString();
+    return tokenStr?.toLowerCase();
+  },
+};
+
 export const ChainParam = {
   encode: encodeChainQueryParam,
   decode: decodeChainQueryParam,
@@ -446,16 +456,8 @@ export function sanitizeNullSelectedToken({
       return erc20ParentAddress;
     }
 
-    // When transferring FROM ApeChain, default to ETH (AddressZero)
-    if (sourceChainId === ChainId.ApeChain) {
-      return constants.AddressZero;
-    }
-
-    // When transferring TO ApeChain from Base or Superposition, default to ETH (AddressZero)
-    if (
-      destinationChainId === ChainId.ApeChain &&
-      (sourceChainId === ChainId.Base || sourceChainId === ChainId.Superposition)
-    ) {
+    // Superposition doesn't have ApeToken, so we default to AddressZero when going from Superposition to ApeChain
+    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
       return constants.AddressZero;
     }
 

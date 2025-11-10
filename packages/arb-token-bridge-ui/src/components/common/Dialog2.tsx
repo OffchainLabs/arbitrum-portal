@@ -9,6 +9,7 @@ import { BuyPanelNetworkSelectionContainer } from '../BuyPanel/BuyPanel';
 import { RecoverFundsDialog } from '../RecoverFunds';
 import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/CustomDestinationAddressConfirmationDialog';
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
+import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
 import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
@@ -53,6 +54,7 @@ export type DialogType =
   | 'high_slippage_warning'
   | 'widget_transaction_history'
   | 'token_selection'
+  | 'destination_token_selection'
   | 'settings'
   | 'recover_funds'
   | 'source_network_selection'
@@ -144,6 +146,8 @@ export function DialogWrapper(props: DialogProps) {
       return <WidgetTransactionHistory {...commonProps} />;
     case 'token_selection':
       return <TokenSearch {...commonProps} />;
+    case 'destination_token_selection':
+      return <DestinationTokenSearch {...commonProps} />;
     case 'settings':
       return <SettingsDialog {...commonProps} />;
     case 'recover_funds':

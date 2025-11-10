@@ -138,7 +138,12 @@ function getApe(chainId: number) {
         ...apeToken,
         address: CommonAddress.ArbitrumOne.APE,
       },
-      [ChainId.Superposition]: null,
+      [ChainId.Superposition]: {
+        ...ether,
+        address: constants.AddressZero,
+        type: TokenType.ERC20,
+        listIds: new Set<string>(),
+      } as ERC20BridgeToken,
       [ChainId.ApeChain]: null,
       [ChainId.Base]: {
         ...apeToken,
@@ -196,8 +201,8 @@ export function getTokenOverride({
 
   // Ape on ApeChain
   if (
-    (!fromToken && sourceChainId === ChainId.ApeChain) ||
-    (!fromToken && destinationChainId === ChainId.ApeChain)
+    !fromToken &&
+    (sourceChainId === ChainId.ApeChain || destinationChainId === ChainId.ApeChain)
   ) {
     if (sourceChainId === ChainId.ApeChain) {
       return {

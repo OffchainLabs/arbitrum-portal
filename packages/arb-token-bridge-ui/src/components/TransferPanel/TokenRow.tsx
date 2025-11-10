@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
+import { useBalanceOnDestinationChain } from '../../hooks/useBalanceOnDestinationChain';
 import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -124,9 +125,10 @@ interface TokenRowProps {
   style?: React.CSSProperties;
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
   token: ERC20BridgeToken | null;
+  isDestination?: boolean;
 }
 
-function useTokenInfo(token: ERC20BridgeToken | null) {
+function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination: boolean }) {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
     useNetworksRelationship(networks);
@@ -142,8 +144,11 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
       return null;
     }
 
+    if (options?.isDestination) {
+      return override.destination;
+    }
     return override.source;
-  }, [token, networks]);
+  }, [token, networks, options?.isDestination]);
 
   const name = useMemo(() => {
     if (overrideToken) {
@@ -184,7 +189,9 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     return token.logoURI;
   }, [overrideToken, token, nativeCurrency.logoUrl]);
 
-  const balance = useBalanceOnSourceChain(token);
+  const sourceBalance = useBalanceOnSourceChain(token);
+  const destinationBalance = useBalanceOnDestinationChain(token);
+  const balance = options?.isDestination ? destinationBalance : sourceBalance;
 
   const isArbitrumToken = useMemo(() => {
     if (!token) {
@@ -232,15 +239,36 @@ function ArbitrumTokenBadge() {
   );
 }
 
-function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
+function TokenBalance({
+  token,
+  isDestination,
+}: {
+  token: ERC20BridgeToken | null;
+  isDestination: boolean;
+}) {
+  const [networks] = useNetworks();
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
   const { isLoading: isLoadingAccountType } = useAccountType();
-  const { balance, symbol } = useTokenInfo(token);
+  const { balance, symbol } = useTokenInfo(token, { isDestination });
+  const nativeCurrencyOnDestinationChain = useNativeCurrency({
+    provider: networks.destinationChainProvider,
+  });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const nativeCurrencyDecimals = useMemo(() => {
+    if (isDestination) {
+      return nativeCurrencyOnDestinationChain.decimals;
+    }
+
+    return nativeCurrencyDecimalsOnSourceChain;
+  }, [
+    isDestination,
+    nativeCurrencyDecimalsOnSourceChain,
+    nativeCurrencyOnDestinationChain.decimals,
+  ]);
 
   const isArbitrumNativeUSDC =
     isTokenArbitrumOneNativeUSDC(token?.address) ||
@@ -267,8 +295,8 @@ function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
     if (token) {
       return token.decimals;
     }
-    return nativeCurrencyDecimalsOnSourceChain;
-  }, [nativeCurrencyDecimalsOnSourceChain, token]);
+    return nativeCurrencyDecimals;
+  }, [nativeCurrencyDecimals, token]);
 
   if (!tokenIsAddedToTheBridge) {
     return <span className="arb-hover text-sm">Import</span>;
@@ -293,7 +321,13 @@ function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
   );
 }
 
-function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
+function TokenContractLink({
+  token,
+  isDestination = false,
+}: {
+  token: ERC20BridgeToken | null;
+  isDestination?: boolean;
+}) {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
     useNetworksRelationship(networks);
@@ -301,6 +335,26 @@ function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const isCustomFeeTokenRow = token === null && nativeCurrency.isCustom;
+
+  if (isDestination) {
+    if (isCustomFeeTokenRow) {
+      return <BlockExplorerTokenLink chainId={parentChain.id} address={nativeCurrency.address} />;
+    }
+
+    if (!token) {
+      return null;
+    }
+
+    if (addressesEqual(token.address, constants.AddressZero)) {
+      return null;
+    }
+
+    if (typeof token.l2Address !== 'undefined') {
+      return <BlockExplorerTokenLink chainId={childChain.id} address={token.l2Address} />;
+    }
+
+    return null;
+  }
 
   if (isCustomFeeTokenRow && isDepositMode) {
     return <BlockExplorerTokenLink chainId={parentChain.id} address={nativeCurrency.address} />;
@@ -333,14 +387,19 @@ function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
   );
 }
 
-export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.Element {
+export function TokenRow({
+  style,
+  onTokenSelected,
+  token,
+  isDestination = false,
+}: TokenRowProps): JSX.Element {
   const {
     name: tokenName,
     symbol: tokenSymbol,
     logoURI: tokenLogoURI,
     isArbitrumToken,
     isBridgeable: tokenIsBridgeable,
-  } = useTokenInfo(token);
+  } = useTokenInfo(token, { isDestination });
 
   return (
     <button
@@ -367,10 +426,10 @@ export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.
             <span className="text-xs text-white/70">{tokenName}</span>
             {isArbitrumToken && <ArbitrumTokenBadge />}
           </div>
-          <TokenContractLink token={token} />
+          <TokenContractLink token={token} isDestination={isDestination} />
           <TokenListInfo token={token} />
         </div>
-        {tokenIsBridgeable && <TokenBalance token={token} />}
+        {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
       </div>
     </button>
   );
