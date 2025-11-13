@@ -667,12 +667,66 @@ export const useTransactionHistory = (
 
         return [tx, ...currentNewTransactions];
       });
+
+      // Send broadcast notification when transaction is signed
+      if (
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        navigator.serviceWorker.ready
+          .then(registration => {
+            registration.active?.postMessage({
+              type: 'SHOW_NOTIFICATION',
+              payload: {
+                txHash: tx.txId,
+                status: 'BROADCAST',
+                direction: tx.direction,
+                isWithdrawal: tx.isWithdrawal
+              }
+            })
+          })
+          .catch(err =>
+            console.error('Failed to send broadcast notification:', err)
+          )
+      }
     },
     [mutateNewTransactionsData],
   );
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {
+      // Find the old transaction from cache to detect status changes
+      const oldTx = newTransactionsData?.find(tx =>
+        isSameTransaction(tx, newTx)
+      )
+
+      // Notify on status changes
+      if (
+        oldTx &&
+        oldTx.status !== newTx.status &&
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        navigator.serviceWorker.ready
+          .then(registration => {
+            registration.active?.postMessage({
+              type: 'SHOW_NOTIFICATION',
+              payload: {
+                txHash: newTx.txId,
+                status: newTx.status,
+                depositStatus: newTx.depositStatus,
+                direction: newTx.direction,
+                isWithdrawal: newTx.isWithdrawal,
+                isCctp: newTx.isCctp,
+                isLifi: newTx.isLifi
+              }
+            })
+          })
+          .catch(err => console.error('Failed to send notification:', err))
+      }
+
       // check if tx is a new transaction initiated by the user, and update it
       const foundInNewTransactions =
         typeof newTransactionsData?.find((oldTx) => isSameTransaction(oldTx, newTx)) !==
