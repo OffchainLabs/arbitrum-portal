@@ -30,7 +30,7 @@ export const groupChildTokensAndParentTokens = ({
     }
 
     // Some tokens on Lifi are missing logoURIs, so we fallback to the other token's logoURI if available
-    const fallbackLogoURI = token.logoURI ?? childToken.logoURI;
+    const fallbackLogoURI = childToken.logoURI ?? token.logoURI;
     acc.push({
       chainId: childChainId,
       address: childToken.address,
