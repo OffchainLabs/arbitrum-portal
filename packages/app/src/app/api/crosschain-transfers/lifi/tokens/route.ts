@@ -35,52 +35,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   const parentChainId = parseChainParam(searchParams.get('parentChainId'));
   const childChainId = parseChainParam(searchParams.get('childChainId'));
 
-  if (parentChainId === null || childChainId === null) {
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens: [],
-      },
-      {
-        status: 400,
-        headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=60',
-        },
-      },
-    );
-  }
+  const isInvalidChainId = parentChainId === null || childChainId === null;
+  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId!);
+  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId!);
+  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId!]?.includes(childChainId!);
 
-  if (!allowedLifiSourceChainIds.includes(parentChainId)) {
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens: [],
-      },
-      {
-        status: 400,
-        headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=60',
-        },
-      },
-    );
-  }
-
-  if (!allowedLifiDestinationChainIds.includes(childChainId)) {
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens: [],
-      },
-      {
-        status: 400,
-        headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=60',
-        },
-      },
-    );
-  }
-
-  if (!lifiDestinationChainIds[parentChainId]?.includes(childChainId)) {
+  if (isInvalidChainId || isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,
