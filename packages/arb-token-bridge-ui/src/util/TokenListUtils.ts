@@ -10,6 +10,7 @@ import UniswapLogo from '@/images/lists/uniswap.png';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { getNetworkName } from './networks';
 import orbitChainsData from './orbitChainsData.json';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
