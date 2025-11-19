@@ -15,17 +15,28 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
     coinKey: 'ENA',
     addresses: {
-      [ChainId.Ethereum]: '0x57e114B691Db790C35207b2e685D4A43181e6061',
-      [ChainId.Base]: '0x58538e6A46E07434d7E7375Bc268D3cb839C0133',
-      [ChainId.ArbitrumOne]: '0x58538e6A46E07434d7E7375Bc268D3cb839C0133',
+      [ChainId.Ethereum]: '0x57e114b691db790c35207b2e685d4a43181e6061',
+      [ChainId.Base]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
+      [ChainId.ArbitrumOne]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
     },
   },
 ];
+const CUSTOM_TOKEN_LOOKUP = new Map<number, Map<string, CoinKey>>();
+for (const customToken of CUSTOM_TOKENS) {
+  for (const [chainId, address] of Object.entries(customToken.addresses)) {
+    if (address) {
+      const chainIdNum = Number(chainId);
+      const chainMap = CUSTOM_TOKEN_LOOKUP.get(chainIdNum) ?? new Map<string, CoinKey>();
+      chainMap.set(address.toLowerCase(), customToken.coinKey as CoinKey);
+      CUSTOM_TOKEN_LOOKUP.set(chainIdNum, chainMap);
+    }
+  }
+}
 
 const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
   [ChainId.ArbitrumOne]: new Set([
     '0x74885b4d524d497261259b38900f54e6dbad2210', // Old Ape token
-    '0xB9C8F0d3254007eE4b98970b94544e473Cd610EC', // Old QiDao token
+    '0xb9c8f0d3254007ee4b98970b94544e473cd610ec', // Old QiDao token
   ]),
 };
 
@@ -41,11 +52,9 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
  */
 function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
   const normalizedAddress = token.address.toLowerCase();
-  for (const customToken of CUSTOM_TOKENS) {
-    const configuredAddress = customToken.addresses[chainId]?.toLowerCase();
-    if (configuredAddress === normalizedAddress) {
-      return { ...token, coinKey: customToken.coinKey as CoinKey };
-    }
+  const customCoinKey = CUSTOM_TOKEN_LOOKUP.get(chainId)?.get(normalizedAddress);
+  if (customCoinKey) {
+    return { ...token, coinKey: customCoinKey };
   }
 
   if (token.coinKey) {
