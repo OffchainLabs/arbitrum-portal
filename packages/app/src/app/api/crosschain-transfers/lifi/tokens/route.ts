@@ -7,7 +7,7 @@ import {
   lifiDestinationChainIds,
 } from '@/bridge/app/api/crosschain-transfers/constants';
 
-import { mapParentTokensToTokens } from './mapParentTokensToTokens';
+import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from './registry';
 
 export const dynamic = 'force-dynamic';
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
       );
     }
 
-    const tokens = mapParentTokensToTokens({
+    const tokens = groupChildTokensAndParentTokens({
       parentTokens,
       childTokensByCoinKey,
       parentChainId,
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
         },
       },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,
