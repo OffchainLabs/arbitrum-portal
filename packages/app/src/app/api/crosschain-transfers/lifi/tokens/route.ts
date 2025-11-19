@@ -13,13 +13,12 @@ import { getLifiTokenRegistry } from './registry';
 export const dynamic = 'force-dynamic';
 export const revalidate = 60 * 60; // 1 hour
 
-const STATIC_TIMESTAMP = '2025-10-20T00:00:00.000Z';
 const TOKEN_LIST_NAME = 'LiFi Transfer Tokens';
 const TOKEN_LIST_VERSION = { major: 1, minor: 0, patch: 0 };
 
 const BASE_TOKEN_LIST = {
   name: TOKEN_LIST_NAME,
-  timestamp: STATIC_TIMESTAMP,
+  timestamp: new Date().toISOString(),
   version: TOKEN_LIST_VERSION,
   logoURI: '/icons/lifi.svg',
 } as const;
