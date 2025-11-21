@@ -10,7 +10,6 @@ import UniswapLogo from '@/images/lists/uniswap.png';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { getNetworkName } from './networks';
 import orbitChainsData from './orbitChainsData.json';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
@@ -157,7 +156,7 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
       originChainID: Number(childChainId),
       parentChainID: Number(parentChainId),
       url: `/api/crosschain-transfers/lifi/tokens?parentChainId=${parentChainId}&childChainId=${childChainId}`,
-      name: `LiFi ${getNetworkName(Number(childChainId))} Tokens`,
+      name: `LiFi Tokens`,
       isDefault: true,
       logoURI: ArbitrumLogo,
     })),
