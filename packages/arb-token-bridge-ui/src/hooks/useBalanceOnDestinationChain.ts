@@ -1,4 +1,3 @@
-import { log } from 'console';
 import { BigNumber, constants } from 'ethers';
 import { useAccount } from 'wagmi';
 

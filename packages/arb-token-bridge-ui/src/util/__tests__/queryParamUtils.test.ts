@@ -1,11 +1,21 @@
-import { constants } from 'ethers';
-import { describe, expect, it } from 'vitest';
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
+import orbitChainsData from '../orbitChainsData.json';
 import { sanitizeNullSelectedToken } from '../queryParamUtils';
 
 describe('sanitizeNullSelectedToken', () => {
+  beforeAll(() => {
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
+    );
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
+    );
+  });
+
   describe('with ERC20 token', () => {
     it('should return ERC20 address for ApeChain → Ethereum with USDC', () => {
       const result = sanitizeNullSelectedToken({

@@ -1,5 +1,4 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { ERC20 } from '@arbitrum/sdk/dist/lib/abi/ERC20';
 import { constants } from 'ethers';
 import { beforeAll, describe, expect, it } from 'vitest';
 

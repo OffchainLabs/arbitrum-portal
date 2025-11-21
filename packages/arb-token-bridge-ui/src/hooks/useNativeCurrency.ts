@@ -1,14 +1,14 @@
 import { ArbitrumNetwork, EthBridger, getArbitrumNetwork } from '@arbitrum/sdk';
-import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
+import { Provider } from '@ethersproject/providers';
 import useSWRImmutable from 'swr/immutable';
 
 import { ETHER_TOKEN_LOGO, ether } from '../constants';
+import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { getBridgeUiConfigForChain } from '../util/bridgeUiConfig';
-import { rpcURLs } from '../util/networks';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
@@ -45,7 +45,7 @@ export function useNativeCurrency({ provider }: { provider: Provider }): NativeC
   const { data = nativeCurrencyEther } = useSWRImmutable(
     [provider, parentChain.id, 'nativeCurrency'],
     ([_provider, _parentChainId]) =>
-      fetchNativeCurrency({ provider: _provider, parentChainId: _parentChainId }),
+      fetchNativeCurrency({ provider: _provider, parentChainIdFromQueryParam: _parentChainId }),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,
@@ -58,10 +58,10 @@ export function useNativeCurrency({ provider }: { provider: Provider }): NativeC
 
 export async function fetchNativeCurrency({
   provider,
-  parentChainId,
+  parentChainIdFromQueryParam,
 }: {
   provider: Provider;
-  parentChainId?: number;
+  parentChainIdFromQueryParam?: number;
 }): Promise<NativeCurrency> {
   let chain: ArbitrumNetwork;
 
@@ -81,10 +81,9 @@ export async function fetchNativeCurrency({
 
   let address = ethBridger.nativeToken.toLowerCase();
 
-  // This parent chain id, is the canonical parent chain id (e.g., ArbitrumOne for ApeChain)
-  // parent chain id from parameter is the current "parent" chain id from query param
+  /** This parent chain id is the parent chain id from ethBridger (e.g., ArbitrumOne for ApeChain) */
   const canonicalParentChainId = chain.parentChainId;
-  const parentChainProvider = new StaticJsonRpcProvider(rpcURLs[canonicalParentChainId]);
+  const parentChainProvider = getProviderForChainId(canonicalParentChainId);
 
   const { name, symbol, decimals } = await fetchErc20Data({
     address,
@@ -92,15 +91,21 @@ export async function fetchNativeCurrency({
   });
 
   /**
-   * When transferring Ape token from Base or Ethereum, address from ethBridger is incorrect
-   * It should be the address of the Ape token on the source chain
+   * When transferring Ape token from Base or Ethereum, address from ethBridger is the address on Arbitrum One.
+   * It should be the address of the Ape token on the source chain instead
    */
-  if (
-    addressesEqual(address, CommonAddress.ArbitrumOne.APE) &&
-    (parentChainId === ChainId.Base || parentChainId === ChainId.Ethereum) &&
-    (await provider.getNetwork()).chainId === ChainId.ApeChain
-  ) {
-    address = parentChainId === ChainId.Base ? CommonAddress.Base.APE : CommonAddress.Ethereum.APE;
+  const network = await provider.getNetwork();
+  const isApeToken = addressesEqual(address, CommonAddress.ArbitrumOne.APE);
+  const isParentBaseOrEthereum =
+    parentChainIdFromQueryParam === ChainId.Base ||
+    parentChainIdFromQueryParam === ChainId.Ethereum;
+  const isChildApeChain = network.chainId === ChainId.ApeChain;
+
+  if (isApeToken && isParentBaseOrEthereum && isChildApeChain) {
+    address =
+      parentChainIdFromQueryParam === ChainId.Base
+        ? CommonAddress.Base.APE
+        : CommonAddress.Ethereum.APE;
   }
 
   return {

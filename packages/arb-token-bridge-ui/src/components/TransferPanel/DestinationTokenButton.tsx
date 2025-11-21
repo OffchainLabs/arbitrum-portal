@@ -2,7 +2,7 @@ import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosscha
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
 import { useDestinationToken } from '../../hooks/useDestinationToken';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -11,7 +11,9 @@ import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { TokenLogo } from './TokenLogo';
 import { useTokensFromLists } from './TokenSearchUtils';
 
-export function DestinationTokenButton(): JSX.Element {
+export function DestinationTokenButton({
+  tokenInfo,
+}: { tokenInfo?: NativeCurrency } = {}): JSX.Element {
   const destinationToken = useDestinationToken();
   const [networks] = useNetworks();
   const [selectedToken] = useSelectedToken();
@@ -34,20 +36,24 @@ export function DestinationTokenButton(): JSX.Element {
     sourceChainId: networks.sourceChain.id,
   });
 
-  const tokenSymbol = tokenOverride.destination
-    ? sanitizeTokenSymbol(tokenOverride.destination.symbol, {
-        erc20L1Address: tokenOverride.destination.address,
-        chainId: networks.destinationChain.id,
-      })
-    : destinationToken
-      ? destinationToken?.symbol
-      : nativeCurrency.symbol;
+  const tokenSymbol =
+    tokenInfo?.symbol ||
+    (tokenOverride.destination
+      ? sanitizeTokenSymbol(tokenOverride.destination.symbol, {
+          erc20L1Address: tokenOverride.destination.address,
+          chainId: networks.destinationChain.id,
+        })
+      : destinationToken
+        ? destinationToken?.symbol
+        : nativeCurrency.symbol);
 
-  const tokenLogoSrc = tokenOverride.destination
-    ? tokenOverride.destination?.logoURI
-    : destinationToken
-      ? destinationToken?.logoURI
-      : nativeCurrency.logoUrl;
+  const tokenLogoSrc =
+    tokenInfo?.logoUrl ||
+    (tokenOverride.destination
+      ? tokenOverride.destination?.logoURI
+      : destinationToken
+        ? destinationToken?.logoURI
+        : nativeCurrency.logoUrl);
 
   return (
     <>

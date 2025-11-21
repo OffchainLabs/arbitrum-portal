@@ -1,6 +1,7 @@
 import { constants } from 'ethers';
 
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
+import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
@@ -25,15 +26,9 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
+  const isSwapTransfer = useIsSwapTransfer();
 
-  // if destinationToken and selectedToken are the same, return selectedToken directly (regular bridge)
-  if (
-    destinationToken &&
-    selectedToken &&
-    addressesEqual(destinationToken, selectedToken.address)
-  ) {
-    return selectedToken;
-  }
+  if (!isSwapTransfer) return selectedToken;
 
   // Case 1: destinationToken is the zeroAddress -> Return ETH
   // Use getTokenOverride to handle special cases like ApeChain WETH

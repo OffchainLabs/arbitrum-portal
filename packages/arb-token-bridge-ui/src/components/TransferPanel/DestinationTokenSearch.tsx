@@ -149,7 +149,14 @@ function DestinationTokensPanel({
         }
         return bal1.gt(bal2) ? -1 : 1;
       });
-  }, [searchValue, tokensFromLists, nativeCurrency, networks.destinationChain.id, getBalance]);
+  }, [
+    searchValue,
+    tokensFromLists,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    nativeCurrency,
+    getBalance,
+  ]);
 
   const onSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(event.target.value);

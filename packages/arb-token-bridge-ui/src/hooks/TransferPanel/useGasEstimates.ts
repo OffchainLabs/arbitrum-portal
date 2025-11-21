@@ -139,10 +139,7 @@ export function useGasEstimates({
     fromToken: overrideSourceToken.source?.address || constants.AddressZero,
     toAddress: (destinationAddress as Address) || walletAddress,
     toChainId: destinationChain.id,
-    toToken:
-      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
-      overrideDestinationToken.destination?.address ||
-      constants.AddressZero,
+    toToken: overrideDestinationToken.destination?.address || constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,

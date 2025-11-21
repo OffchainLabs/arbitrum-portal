@@ -338,7 +338,7 @@ function TokenContractLink({
 
   if (isDestination) {
     if (isCustomFeeTokenRow) {
-      return <BlockExplorerTokenLink chainId={parentChain.id} address={nativeCurrency.address} />;
+      return null;
     }
 
     if (!token) {

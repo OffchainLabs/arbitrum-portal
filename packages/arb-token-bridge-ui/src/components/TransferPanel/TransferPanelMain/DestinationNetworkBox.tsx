@@ -8,7 +8,7 @@ import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useBalanceOnDestinationChain } from '../../../hooks/useBalanceOnDestinationChain';
 import { useBalances } from '../../../hooks/useBalances';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
@@ -32,10 +32,12 @@ function BalanceRow({
   parentErc20Address,
   balance,
   symbolOverride,
+  tokenInfo,
 }: {
   parentErc20Address?: string;
   balance: string | undefined;
   symbolOverride?: string;
+  tokenInfo?: NativeCurrency;
 }) {
   const [networks] = useNetworks();
   const [{ destinationAddress }] = useArbQueryParams();
@@ -47,6 +49,10 @@ function BalanceRow({
   const tokensFromUser = useTokensFromUser();
 
   const symbol = useMemo(() => {
+    if (tokenInfo) {
+      return tokenInfo.symbol;
+    }
+
     if (symbolOverride) {
       return symbolOverride;
     }
@@ -58,13 +64,20 @@ function BalanceRow({
     }
 
     return nativeCurrency.symbol;
-  }, [symbolOverride, nativeCurrency.symbol, parentErc20Address, tokensFromLists, tokensFromUser]);
+  }, [
+    tokenInfo,
+    symbolOverride,
+    nativeCurrency.symbol,
+    parentErc20Address,
+    tokensFromLists,
+    tokensFromUser,
+  ]);
 
   const shouldShowBalance = !isConnected ? !!destinationAddress : true;
 
   return (
     <div className="flex flex-col items-end gap-[10px] px-[15px] pr-0">
-      <DestinationTokenButton />
+      <DestinationTokenButton tokenInfo={tokenInfo} />
       {shouldShowBalance && (
         <div className="flex space-x-1 text-sm text-gray-6">
           <span>Balance: </span>
@@ -83,11 +96,12 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider } = useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
   const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
+  const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
 
@@ -182,6 +196,7 @@ function BalancesContainer() {
                   ? formatAmount(nativeCurrencyBalances.destinationBalance)
                   : undefined
               }
+              tokenInfo={destinationNativeCurrency}
             />
           </div>
         </>
