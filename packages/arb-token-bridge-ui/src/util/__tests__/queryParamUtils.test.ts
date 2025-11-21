@@ -1,4 +1,5 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { constants } from 'ethers';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
@@ -99,14 +100,15 @@ describe('sanitizeNullSelectedToken', () => {
       expect(result).toBe(null);
     });
 
-    it('should return null for Superposition → ApeChain without token', () => {
+    it('should return the zero address for Superposition → ApeChain without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.Superposition,
         destinationChainId: ChainId.ApeChain,
         erc20ParentAddress: null,
       });
 
-      expect(result).toBe(null);
+      // Superposition doesn't have Ape token, we default to ETH to WETH
+      expect(result).toBe(constants.AddressZero);
     });
 
     it('should return null for Ethereum → ApeChain without token', () => {
