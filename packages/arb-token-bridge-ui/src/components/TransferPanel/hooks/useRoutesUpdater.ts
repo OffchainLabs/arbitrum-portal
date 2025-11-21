@@ -7,7 +7,7 @@ import { shallow } from 'zustand/shallow';
 import { Order } from '../../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../../hooks/useNetworks';
@@ -15,6 +15,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
+import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
 import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
@@ -67,6 +68,7 @@ interface GetEligibleRoutesParams {
   destinationChainId: number;
   selectedToken: ERC20BridgeToken | null;
   isArbitrumCanonicalTransfer: boolean;
+  tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
 
 function getEligibleRoutes({
@@ -78,6 +80,7 @@ function getEligibleRoutes({
   destinationChainId,
   selectedToken,
   isArbitrumCanonicalTransfer,
+  tokensFromLists,
 }: GetEligibleRoutesParams): RouteType[] {
   const { isTestnet } = isNetwork(sourceChainId);
   const isLifiEnabled = isLifiEnabledUtil() && !isTestnet;
@@ -109,9 +112,10 @@ function getEligibleRoutes({
   const isValidLifiRoute =
     isLifiEnabled &&
     isValidLifiTransfer({
-      fromToken: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
+      fromToken: selectedToken?.address,
       sourceChainId: sourceChainId,
       destinationChainId: destinationChainId,
+      tokensFromLists,
     });
 
   if (isValidLifiRoute) {
@@ -132,6 +136,7 @@ export function useRoutesUpdater() {
   const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const [selectedToken] = useSelectedToken();
+  const tokensFromLists = useTokensFromLists();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
@@ -164,6 +169,7 @@ export function useRoutesUpdater() {
         destinationChainId: networks.destinationChain.id,
         selectedToken,
         isArbitrumCanonicalTransfer,
+        tokensFromLists,
       }),
     [
       isOftV2Transfer,
@@ -174,6 +180,7 @@ export function useRoutesUpdater() {
       networks.destinationChain.id,
       selectedToken,
       isArbitrumCanonicalTransfer,
+      tokensFromLists,
     ],
   );
 
@@ -307,7 +314,6 @@ export function useRoutesUpdater() {
       eligibleRouteTypes,
       lifiError,
       isLifiLoading,
-      lifiRoutes,
       slippage,
       disabledExchanges,
       disabledBridges,

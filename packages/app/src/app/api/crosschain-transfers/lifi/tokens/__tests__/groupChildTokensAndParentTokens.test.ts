@@ -174,4 +174,31 @@ describe('groupChildTokensAndParentTokens', () => {
 
     expect(tokens[0]?.logoURI).toBe(childLogo);
   });
+
+  it('maps USDC from parent chains to USDC on ApeChain (normalized from USDCe)', () => {
+    const parentTokens = [buildToken({ coinKey: CoinKey.USDC, chainId: LiFiChainId.ARB })];
+    const childTokensByCoinKey = {
+      // On ApeChain, USDCe tokens are normalized to USDC coinKey in the registry
+      [CoinKey.USDC]: buildToken({
+        chainId: LiFiChainId.APE,
+        coinKey: CoinKey.USDC,
+        symbol: 'USDC.e',
+        name: 'Bridged USDC',
+      }),
+    };
+
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens,
+      childTokensByCoinKey,
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.ApeChain,
+    });
+
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0]).toMatchObject({
+      chainId: ChainId.ApeChain,
+      address: childTokensByCoinKey[CoinKey.USDC].address,
+      symbol: 'USDC.e',
+    });
+  });
 });

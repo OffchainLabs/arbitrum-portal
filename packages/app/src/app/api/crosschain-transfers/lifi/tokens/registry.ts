@@ -48,6 +48,7 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
 
 /**
  * Assigns a custom CoinKey to tokens that don't have one but are configured in CUSTOM_TOKENS.
+ * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
  * Returns null if token has no coinKey and isn't in CUSTOM_TOKENS.
  */
 function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
@@ -58,10 +59,39 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   }
 
   if (token.coinKey) {
-    return token as LifiTokenWithCoinKey;
+    const tokenWithCoinKey = token as LifiTokenWithCoinKey;
+
+    // Normalize USDCe to USDC on chains that use bridged USDC
+    if (
+      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
+      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
+    ) {
+      return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
+    }
+
+    return tokenWithCoinKey;
   }
 
   return null;
+}
+
+function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  if (token.coinKey === CoinKey.ETH) {
+    token.logoURI = '/images/EthereumLogoRound.svg';
+  }
+
+  switch (token.coinKey) {
+    case CoinKey.ETH: {
+      token.logoURI = '/images/EthereumLogoRound.svg';
+      return token;
+    }
+    case CoinKey.APE: {
+      token.logoURI = '/images/ApeChainLogo.svg';
+      return token;
+    }
+  }
+
+  return token;
 }
 
 export interface LifiTokenRegistry {
@@ -94,8 +124,10 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
         if (!tokenWithCoinKey) return acc;
 
-        tokensGroupedByCoinKey[tokenWithCoinKey.coinKey] ??= tokenWithCoinKey;
-        acc.push(tokenWithCoinKey);
+        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+
+        tokensGroupedByCoinKey[tokenWithLogoURI.coinKey] ??= tokenWithLogoURI;
+        acc.push(tokenWithLogoURI);
         return acc;
       },
       [],
