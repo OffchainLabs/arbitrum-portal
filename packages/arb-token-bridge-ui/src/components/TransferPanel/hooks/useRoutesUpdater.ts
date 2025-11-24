@@ -210,10 +210,16 @@ export function useRoutesUpdater() {
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
-    fromToken: overrideSourceToken.source?.address || constants.AddressZero,
+    fromToken:
+      (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
+      overrideSourceToken.source?.address ||
+      constants.AddressZero,
     toAddress: (destinationAddress as Address) || address,
     toChainId: networks.destinationChain.id,
-    toToken: overrideDestinationToken.destination?.address || constants.AddressZero,
+    toToken:
+      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
+      overrideDestinationToken.destination?.address ||
+      constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,

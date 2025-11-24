@@ -225,6 +225,12 @@ export function DestinationTokenSearch(props: UseDialogProps) {
       return;
     }
 
+    // Map native currency to undefined (removed from query param)
+    if (_token.address === constants.AddressZero) {
+      setQueryParams({ destinationToken: undefined });
+      return;
+    }
+
     setQueryParams({ destinationToken: _token.address });
   }
 

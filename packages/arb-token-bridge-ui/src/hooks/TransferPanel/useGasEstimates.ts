@@ -136,10 +136,16 @@ export function useGasEstimates({
     fromAddress: walletAddress,
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
-    fromToken: overrideSourceToken.source?.address || constants.AddressZero,
+    fromToken:
+      (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
+      overrideSourceToken.source?.address ||
+      constants.AddressZero,
     toAddress: (destinationAddress as Address) || walletAddress,
     toChainId: destinationChain.id,
-    toToken: overrideDestinationToken.destination?.address || constants.AddressZero,
+    toToken:
+      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
+      overrideDestinationToken.destination?.address ||
+      constants.AddressZero,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,
