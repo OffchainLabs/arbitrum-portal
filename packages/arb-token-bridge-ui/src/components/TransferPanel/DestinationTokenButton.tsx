@@ -1,3 +1,5 @@
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+
 import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
@@ -69,6 +71,14 @@ export function DestinationTokenButton({
         <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
           <TokenLogo srcOverride={tokenLogoSrc} />
           <span className="font-light">{tokenSymbol}</span>
+          {isLifiTransfer && (
+            <ChevronDownIcon
+              width={12}
+              className={
+                dialogProps.openedDialogType === 'destination_token_selection' ? 'rotate-180' : ''
+              }
+            />
+          )}
         </div>
       </Button>
     </>
