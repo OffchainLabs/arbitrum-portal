@@ -111,6 +111,17 @@ describe('sanitizeNullSelectedToken', () => {
       expect(result).toBe(constants.AddressZero);
     });
 
+    it('should return the zero address for ApeChain → Superposition without token', () => {
+      const result = sanitizeNullSelectedToken({
+        sourceChainId: ChainId.ApeChain,
+        destinationChainId: ChainId.Superposition,
+        erc20ParentAddress: null,
+      });
+
+      // Superposition doesn't have Ape token, we default to ETH to WETH
+      expect(result).toBe(constants.AddressZero);
+    });
+
     it('should return null for Ethereum → ApeChain without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.Ethereum,
