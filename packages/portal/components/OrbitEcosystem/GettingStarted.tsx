@@ -23,7 +23,7 @@ const content = [
   {
     title: 'Bridge to Arbitrum',
     description:
-      "To play a game or use an app on an Orbit chain, you'll need to have funds on that specific chain. Although Orbit chains are their own blockchains, they are built using Arbitrum technology.",
+      'To play a game or use an app on an Arbitrum chain, you’ll need to have funds on that specific chain. Although Arbitrum chains are their own blockchains, they are built using Arbitrum technology.',
     link: BRIDGE_LINK,
     cta: 'Start Bridging',
     image: (
@@ -38,7 +38,7 @@ const content = [
   {
     title: 'What is a Gas Fee Token?',
     description:
-      'Gas tokens are used to power transactions on a blockchain. ETH is the gas token of Arbitrum One and Ethereum. Orbit chains often use their own gas token, although some may also choose ETH.',
+      'Gas tokens are used to pay for transactions on a blockchain. On Ethereum and Arbitrum One, that token is ETH. Many Arbitrum chains use their own gas token, while others opt for ETH.',
     link: 'https://docs.arbitrum.io/launch-orbit-chain/how-tos/customize-deployment-configuration#gas-token',
     cta: 'Learn More',
     gradientOverlay: true,
@@ -52,9 +52,9 @@ const content = [
     ),
   },
   {
-    title: 'What is Orbit?',
+    title: 'What are Arbitrum chains?',
     description:
-      'Orbit chains are custom individual blockchains built using Arbitrum technology. These chains have unique features while maintaining Arbitrum ecosystem compatibility. ',
+      'Arbitrum chains are fully customizable blockchains built with the Arbitrum stack. They can differ in features like fees, tokens, and governance while staying compatible with Arbitrum apps and tooling.',
     link: 'https://docs.arbitrum.io/launch-orbit-chain/orbit-gentle-introduction#whats-orbit',
     cta: 'Learn More',
     gradientOverlay: true,
@@ -92,7 +92,7 @@ const ShowHideSectionButton = ({
       onClick={handleShowSection}
     >
       {showSection ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-      {showSection ? 'Hide' : 'Show Intro to Orbit'}
+      {showSection ? 'Hide' : 'Show Intro to Arbitrum chains'}
     </button>
   );
 };

@@ -86,7 +86,7 @@ export const BuildSection = () => {
           <h3 className="text-lg">Launch Your Own Chain</h3>
         </div>
         <div className="-mt-3 text-sm opacity-70">
-          Leverage a third-party Rollup as a Service (RaaS) provider to take your orbit chain to
+          Leverage a third-party Rollup as a Service (RaaS) provider to take your Arbitrum chain to
           mainnet.
         </div>
         <hr className="border-white/40" />

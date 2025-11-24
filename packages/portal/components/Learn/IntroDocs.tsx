@@ -18,8 +18,8 @@ const docsContent = [
     link: 'https://docs.arbitrum.io/stylus/stylus-gentle-introduction',
   },
   {
-    title: 'About Orbit',
-    description: 'A gentle introduction to Orbit Chains',
+    title: 'About chains',
+    description: 'A gentle introduction to Arbitrum chains',
     className: 'hover:bg-[#12AAFF75] bg-[#12AAFF]',
     bgImage: "url('/images/intro-orbit.webp')",
     link: 'https://docs.arbitrum.io/launch-orbit-chain/orbit-gentle-introduction',
