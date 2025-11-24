@@ -1,4 +1,4 @@
-import { useDebounce } from '@uidotdev/usehooks';
+import { useDeferredValue, useMemo } from 'react';
 import useSWR from 'swr';
 import { Address } from 'viem';
 
@@ -38,27 +38,42 @@ export const useLifiCrossTransfersRoute = ({
   denyExchanges,
   slippage,
 }: UseLifiCrossTransfersRouteParams) => {
-  /** Fetch only after 1 second elapsed since last parameter changed */
-  const queryKey = useDebounce(
-    enabled && fromAmount !== '0'
-      ? ([
-          fromAmount,
-          fromToken,
-          toToken,
-          fromChainId,
-          toChainId,
-          fromAddress,
-          toAddress,
-          denyBridges,
-          denyExchanges,
-          slippage,
-          'useLifiCrossTransfersRoute',
-        ] as const)
-      : null,
-    1 * 1000, // 1 second in miliseconds
+  const key = useMemo(
+    () =>
+      enabled && fromAmount !== '0'
+        ? ([
+            fromAmount,
+            fromToken,
+            toToken,
+            fromChainId,
+            toChainId,
+            fromAddress,
+            toAddress,
+            denyBridges,
+            denyExchanges,
+            slippage,
+            'useLifiCrossTransfersRoute',
+          ] as const)
+        : null,
+    [
+      enabled,
+      fromAmount,
+      fromToken,
+      toToken,
+      fromChainId,
+      toChainId,
+      fromAddress,
+      toAddress,
+      denyBridges,
+      denyExchanges,
+      slippage,
+    ],
   );
 
-  return useSWR(
+  const queryKey = useDeferredValue(key);
+  const isUpdating = key !== queryKey;
+
+  const swrResult = useSWR(
     queryKey,
     async ([
       _fromAmount,
@@ -120,6 +135,12 @@ export const useLifiCrossTransfersRoute = ({
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       shouldRetryOnError: false,
+      keepPreviousData: true,
     },
   );
+
+  return {
+    ...swrResult,
+    isLoading: isUpdating || swrResult.isLoading,
+  };
 };

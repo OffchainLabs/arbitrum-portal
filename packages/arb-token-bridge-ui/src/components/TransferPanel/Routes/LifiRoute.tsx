@@ -1,5 +1,6 @@
 import { utils } from 'ethers';
 import { useCallback, useMemo } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { shallow } from 'zustand/shallow';
 
 import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
@@ -19,10 +20,11 @@ export function LifiRoute({
   tag?: BadgeType | BadgeType[];
   overrideToken?: ERC20BridgeToken | undefined;
 }) {
-  const { selectedRoute, setSelectedRoute } = useRouteStore(
+  const { selectedRoute, setSelectedRoute, isLoading } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
+      isLoading: state.isLoading,
     }),
     shallow,
   );
@@ -54,19 +56,27 @@ export function LifiRoute({
   );
 
   return (
-    <Route
-      type={type}
-      bridge={route.protocolData.tool.name}
-      bridgeIconURI={route.protocolData.tool.logoURI}
-      durationMs={route.durationMs}
-      amountReceived={utils.formatUnits(route.toAmount.amount, route.toAmount.token.decimals)}
-      overrideToken={overrideToken}
-      isLoadingGasEstimate={false}
-      gasCost={gasCost}
-      bridgeFee={bridgeFee}
-      selected={isSelected}
-      onSelectedRouteClick={setSelectedRouteWithContext}
-      tag={tag}
-    />
+    <div
+      className={twMerge(
+        'flex flex-col transition-opacity',
+        isLoading ? 'opacity-50' : 'opacity-100',
+      )}
+    >
+      <Route
+        type={type}
+        bridge={route.protocolData.tool.name}
+        bridgeIconURI={route.protocolData.tool.logoURI}
+        durationMs={route.durationMs}
+        amountReceived={utils.formatUnits(route.toAmount.amount, route.toAmount.token.decimals)}
+        overrideToken={overrideToken}
+        isLoadingGasEstimate={false}
+        gasCost={gasCost}
+        bridgeFee={bridgeFee}
+        selected={isSelected}
+        onSelectedRouteClick={setSelectedRouteWithContext}
+        tag={tag}
+        isDisabled={isLoading}
+      />
+    </div>
   );
 }

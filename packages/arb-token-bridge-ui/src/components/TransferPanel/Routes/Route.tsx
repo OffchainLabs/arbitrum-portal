@@ -4,6 +4,8 @@ import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { addressesEqual } from '@/bridge/util/AddressUtils';
+
 import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
@@ -25,7 +27,6 @@ import { Loader } from '../../common/atoms/Loader';
 import { TokenLogo } from '../TokenLogo';
 import { RouteType, SetRoute } from '../hooks/useRouteStore';
 
-// Types
 export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest';
 export type RouteProps = {
   type: RouteType;
@@ -40,6 +41,7 @@ export type RouteProps = {
   tag?: BadgeType | BadgeType[];
   selected: boolean;
   onSelectedRouteClick: SetRoute;
+  isDisabled?: boolean;
 };
 
 // Badge Components
@@ -317,11 +319,13 @@ export const Route = React.memo(
     selected,
     bridgeFee,
     tag,
+    isDisabled: isDisabledOverride = false,
     onSelectedRouteClick,
   }: RouteProps) => {
     const {
-      layout: { isTransferring: isDisabled },
+      layout: { isTransferring },
     } = useAppContextState();
+    const isDisabled = isDisabledOverride || isTransferring;
     const [networks] = useNetworks();
     const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
     const childNativeCurrency = useNativeCurrency({
@@ -335,7 +339,8 @@ export const Route = React.memo(
     const token = overrideToken || _token || childNativeCurrency;
 
     const { isTestnet } = isNetwork(networks.sourceChain.id);
-    const showUsdValueForReceivedToken = !isTestnet && !('address' in token);
+    const showUsdValueForReceivedToken =
+      !isTestnet && (!('address' in token) || addressesEqual(token.address, constants.AddressZero));
 
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)

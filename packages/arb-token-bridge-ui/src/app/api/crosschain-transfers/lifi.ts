@@ -12,7 +12,8 @@ import {
 import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ether } from '../../../constants';
+import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
 import { isValidLifiTransfer } from './utils';
 
@@ -87,6 +88,20 @@ function sumFee(feeCosts: FeeCost[] | undefined) {
   };
 }
 
+/**
+ * Override token logos for special cases (e.g., ETH)
+ * LiFi returns TrustWallet URLs, but we want to use local logos
+ */
+function overrideTokenLogo(token: Token): Token {
+  if (addressesEqual(token.address, constants.AddressZero)) {
+    return {
+      ...token,
+      logoURI: ETHER_TOKEN_LOGO,
+    };
+  }
+  return token;
+}
+
 function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   route,
   fromAddress,
@@ -109,15 +124,17 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     tags.push(Order.Fastest);
   }
 
-  const gasToken: Token =
+  const gasToken: Token = overrideTokenLogo(
     step.estimate.gasCosts && step.estimate.gasCosts.length > 0
       ? step.estimate.gasCosts[0]!.token
-      : { ...ether, address: constants.AddressZero };
+      : { ...ether, address: constants.AddressZero },
+  );
 
-  const feeToken: Token =
+  const feeToken: Token = overrideTokenLogo(
     step.estimate.feeCosts && step.estimate.feeCosts.length > 0
       ? step.estimate.feeCosts[0]!.token
-      : { ...ether, address: constants.AddressZero };
+      : { ...ether, address: constants.AddressZero },
+  );
 
   return {
     type: 'lifi',
@@ -136,13 +153,13 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.action.fromAmount,
       amountUSD: step.estimate.fromAmountUSD || '0',
-      token: step.action.fromToken,
+      token: overrideTokenLogo(step.action.fromToken),
     },
     toAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.estimate.toAmount,
       amountUSD: step.estimate.toAmountUSD || '0',
-      token: step.action.toToken,
+      token: overrideTokenLogo(step.action.toToken),
     },
     fromAddress,
     toAddress,
