@@ -11,9 +11,9 @@ import { HeroBanner } from '@/portal/components/OrbitEcosystem/HeroBanner';
 import { OrbitChainsListingByCategories } from '@/portal/components/OrbitEcosystem/OrbitChainsListingByCategories';
 
 const metadataContent = {
-  title: 'Arbitrum Orbit — A Universe of Chains',
+  title: 'Arbitrum Chains — A Universe of Chains',
   description:
-    "Discover Orbit Chains: Customizable Solutions Built on Arbitrum's Advanced Blockchain Technology",
+    "Discover Arbitrum Chains: Customizable Solutions Built on Arbitrum's Advanced Blockchain Technology",
 };
 
 // Generate server-side metadata for this page

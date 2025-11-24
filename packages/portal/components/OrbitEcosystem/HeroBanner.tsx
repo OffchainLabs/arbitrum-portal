@@ -9,7 +9,7 @@ export const HeroBanner = () => {
         <Image src={'/images/orbit/orbitLogo.svg'} height={30} width={120} alt="Arbitrum Orbit" />
         <h1 className="text-4xl">A Universe of Chains</h1>
         <div className="text-base">
-          Explore the array of Orbit chains, built with unparalleled customization on
+          Explore the array of Arbitrum chains, built with unparalleled customization on
           Arbitrum&apos;s cutting-edge tech.
         </div>
       </div>

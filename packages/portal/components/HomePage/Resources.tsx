@@ -80,10 +80,8 @@ const Content = () => {
         className="bg-[#0C79B6] hover:bg-[#0C79B680]"
         content={
           <div className="max-w-full md:max-w-[80%]">
-            Arbitrum Orbit.{' '}
-            <span className="opacity-60">
-              Explore projects and chains built on Arbitrum technology.
-            </span>
+            Arbitrum Chains.{' '}
+            <span className="opacity-60">Explore projects built with Arbitrum technology.</span>
           </div>
         }
       />
