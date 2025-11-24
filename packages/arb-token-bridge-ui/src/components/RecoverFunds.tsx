@@ -294,7 +294,7 @@ export function RecoverFunds() {
   return (
     <>
       <DialogWrapper {...dialogProps} />
-      <NoteBox className="m-auto w-[600px] sm:pt-6">
+      <NoteBox className="m-auto w-[600px]">
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
