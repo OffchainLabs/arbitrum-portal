@@ -194,16 +194,6 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     return token.listIds.has(SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID);
   }, [token]);
 
-  const isPotentialFakeArbitrumToken = useMemo(() => {
-    if (!token || isArbitrumToken) {
-      return false;
-    }
-
-    return (
-      token.name.toLowerCase().startsWith('arb') || token.symbol.toLowerCase().startsWith('arb')
-    );
-  }, [token, isArbitrumToken]);
-
   const isBridgeable = useMemo(() => {
     if (!token) {
       return true;
@@ -226,7 +216,6 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     logoURI,
     balance,
     isArbitrumToken,
-    isPotentialFakeArbitrumToken,
     isBridgeable,
   };
 }
