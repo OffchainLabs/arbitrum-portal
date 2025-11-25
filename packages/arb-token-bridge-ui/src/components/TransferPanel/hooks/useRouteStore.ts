@@ -57,6 +57,7 @@ export type RouteStateUpdate = {
   routes: RouteData[];
   hasLowLiquidity: boolean;
   hasModifiedSettings: boolean;
+  context?: RouteContext | undefined;
 };
 
 interface RouteState {

@@ -597,8 +597,8 @@ export function TokenSearch(props: UseDialogProps) {
     }
 
     if (addressesEqual(_token.address, constants.AddressZero)) {
-      // If the token is ETH, we don't need to fetch any data
-      setSelectedToken(_token.address);
+      // Map native currency to null (zero address only used for special chains)
+      setSelectedToken(null);
       return;
     }
 

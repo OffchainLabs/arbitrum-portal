@@ -104,8 +104,7 @@ function BalancesContainer() {
   const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
-
-  const receivedAmount = useReceivedAmount();
+  const { amount: receivedAmount, isLoading } = useReceivedAmount();
 
   const { erc20ChildBalances } = useBalances();
   const isBatchTransferSupported = useIsBatchTransferSupported();
@@ -137,9 +136,13 @@ function BalancesContainer() {
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
       <div className="flex h-full w-full flex-row items-center justify-between">
-        <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
-          {receivedAmount}
-        </div>
+        {isLoading ? (
+          <Loader size="small" color="white" />
+        ) : (
+          <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
+            {receivedAmount}
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           {showNativeUsdcBalance ? (
             <BalanceRow
