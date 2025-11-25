@@ -1,4 +1,4 @@
-import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { constants } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -25,7 +25,6 @@ import {
 import { getNetworkName } from '../../util/networks';
 import { SafeImage } from '../common/SafeImage';
 import { StatusBadge } from '../common/StatusBadge';
-import { Tooltip } from '../common/Tooltip';
 import { Loader } from '../common/atoms/Loader';
 import { TokenLogoFallback } from './TokenInfo';
 import { BlockExplorerTokenLink } from './TokenInfoTooltip';
@@ -351,7 +350,6 @@ export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.
     symbol: tokenSymbol,
     logoURI: tokenLogoURI,
     isArbitrumToken,
-    isPotentialFakeArbitrumToken,
     isBridgeable: tokenIsBridgeable,
   } = useTokenInfo(token);
 
@@ -379,14 +377,6 @@ export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.
             <span className="text-base font-medium leading-none">{tokenSymbol}</span>
             <span className="text-xs text-white/70">{tokenName}</span>
             {isArbitrumToken && <ArbitrumTokenBadge />}
-            {isPotentialFakeArbitrumToken && (
-              <Tooltip content="This token is different from the official Arbitrum token (ARB).">
-                <div className="box-border flex w-max flex-nowrap items-center gap-1 rounded-full border-[1px] border-gray-dark px-1 py-[2px] pr-2 text-sm">
-                  <ExclamationCircleIcon className="h-3 w-3 text-gray-dark" />
-                  <span className="text-xs text-gray-dark">Careful</span>
-                </div>
-              </Tooltip>
-            )}
           </div>
           <TokenContractLink token={token} />
           <TokenListInfo token={token} />
