@@ -329,10 +329,9 @@ function TokenContractLink({
   isDestination?: boolean;
 }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: networks.destinationChainProvider });
 
   const isCustomFeeTokenRow = token === null && nativeCurrency.isCustom;
 

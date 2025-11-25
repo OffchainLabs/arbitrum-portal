@@ -597,8 +597,12 @@ export function TokenSearch(props: UseDialogProps) {
     }
 
     if (addressesEqual(_token.address, constants.AddressZero)) {
-      // Map native currency to null (zero address only used for special chains)
-      setSelectedToken(null);
+      if (networks.destinationChain.id === ChainId.ApeChain) {
+        setSelectedToken(constants.AddressZero);
+      } else {
+        // Map native currency to null for other chains
+        setSelectedToken(null);
+      }
       return;
     }
 

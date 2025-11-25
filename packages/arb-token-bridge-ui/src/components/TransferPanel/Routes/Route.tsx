@@ -319,8 +319,8 @@ export const Route = React.memo(
     selected,
     bridgeFee,
     tag,
-    isDisabled: isDisabledOverride = false,
     onSelectedRouteClick,
+    isDisabled: isDisabledOverride = false,
   }: RouteProps) => {
     const {
       layout: { isTransferring },
@@ -361,6 +361,7 @@ export const Route = React.memo(
           'relative flex max-w-[calc(100vw_-_40px)] flex-col gap-3 rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
           'focus-visible:!outline-none',
           'focus-within:bg-[#ffffff36] hover:bg-[#ffffff36]',
+          isDisabled ? 'opacity-50' : 'opacity-100',
           !isDisabled && selected && 'border-primary-cta',
         )}
         style={

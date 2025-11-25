@@ -137,12 +137,14 @@ export function useGasEstimates({
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
     fromToken:
+      // First condition is necessary to handle token not handled by getTokenOverride
       (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
       overrideSourceToken.source?.address ||
       constants.AddressZero,
     toAddress: (destinationAddress as Address) || walletAddress,
     toChainId: destinationChain.id,
     toToken:
+      // First condition is necessary to handle token not handled by getTokenOverride
       (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
       overrideDestinationToken.destination?.address ||
       constants.AddressZero,

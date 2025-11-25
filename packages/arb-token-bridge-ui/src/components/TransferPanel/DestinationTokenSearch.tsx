@@ -15,6 +15,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
+import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { TokenRow } from './TokenRow';
@@ -115,39 +116,42 @@ function DestinationTokensPanel({
         return true;
       })
       .sort((address1: string, address2: string) => {
-        // Pin native currency to top
-        if (address1 === NATIVE_CURRENCY_IDENTIFIER) {
-          return -1;
+        // lower number = higher priority (top of the panel)
+        const getPriority = (address: string): number => {
+          if (address === NATIVE_CURRENCY_IDENTIFIER) return 0;
+          if (addressesEqual(address, constants.AddressZero)) return 1;
+          if (isTokenNativeUSDC(address)) return 2;
+          if (isTokenUSDT(address)) return 3;
+          if (isTokenWBTC(address)) return 4;
+          return 5;
+        };
+
+        const priority1 = getPriority(address1);
+        const priority2 = getPriority(address2);
+
+        // If priorities are different, sort by priority
+        if (priority1 !== priority2) {
+          return priority1 - priority2;
         }
 
-        // Pin native currency to top
-        if (address2 === NATIVE_CURRENCY_IDENTIFIER) {
-          return 1;
+        // If priorities are the same, sort by balance
+        if (priority1 === 5) {
+          const bal1 = getBalance(address1);
+          const bal2 = getBalance(address2);
+
+          if (!(bal1 || bal2)) {
+            return 0;
+          }
+          if (!bal1) {
+            return 1;
+          }
+          if (!bal2) {
+            return -1;
+          }
+          return bal1.gt(bal2) ? -1 : 1;
         }
 
-        // Pin Ether to top
-        if (addressesEqual(address1, constants.AddressZero)) {
-          return -1;
-        }
-
-        // Pin Ether to top
-        if (addressesEqual(address2, constants.AddressZero)) {
-          return 1;
-        }
-
-        const bal1 = getBalance(address1);
-        const bal2 = getBalance(address2);
-
-        if (!(bal1 || bal2)) {
-          return 0;
-        }
-        if (!bal1) {
-          return 1;
-        }
-        if (!bal2) {
-          return -1;
-        }
-        return bal1.gt(bal2) ? -1 : 1;
+        return 0;
       });
   }, [
     searchValue,
@@ -212,6 +216,7 @@ function DestinationTokensPanel({
 export function DestinationTokenSearch(props: UseDialogProps) {
   const [, setQueryParams] = useArbQueryParams();
   const { embedMode } = useMode();
+  const [networks] = useNetworks();
 
   async function selectToken(_token: ERC20BridgeToken | null) {
     props.onClose(false);
@@ -225,9 +230,13 @@ export function DestinationTokenSearch(props: UseDialogProps) {
       return;
     }
 
-    // Map native currency to undefined (removed from query param)
     if (_token.address === constants.AddressZero) {
-      setQueryParams({ destinationToken: undefined });
+      if (networks.destinationChain.id === ChainId.ApeChain) {
+        setQueryParams({ destinationToken: constants.AddressZero });
+      } else {
+        // Map native currency to undefined for other chains
+        setQueryParams({ destinationToken: undefined });
+      }
       return;
     }
 

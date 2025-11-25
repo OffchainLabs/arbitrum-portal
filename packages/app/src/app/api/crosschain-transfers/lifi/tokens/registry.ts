@@ -20,6 +20,15 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
       [ChainId.ArbitrumOne]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
     },
   },
+  {
+    coinKey: 'USDT',
+    addresses: {
+      [ChainId.Ethereum]: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      [ChainId.Base]: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
+      [ChainId.ArbitrumOne]: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+      [ChainId.ApeChain]: '0x674843C06FF83502ddb4D37c2E09C01cdA38cbc8',
+    },
+  },
 ];
 const CUSTOM_TOKEN_LOOKUP = new Map<number, Map<string, CoinKey>>();
 for (const customToken of CUSTOM_TOKENS) {
@@ -76,10 +85,6 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
 }
 
 function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
-  if (token.coinKey === CoinKey.ETH) {
-    token.logoURI = '/images/EthereumLogoRound.svg';
-  }
-
   switch (token.coinKey) {
     case CoinKey.ETH: {
       token.logoURI = '/images/EthereumLogoRound.svg';

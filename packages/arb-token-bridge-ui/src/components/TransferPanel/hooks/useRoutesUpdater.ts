@@ -100,6 +100,20 @@ function getEligibleRoutes({
 
   if (isOftV2Transfer) {
     eligibleRouteTypes.push('oftV2');
+
+    if (isLifiEnabled) {
+      const isValidLifiRoute = isValidLifiTransfer({
+        fromToken: selectedToken?.address,
+        sourceChainId: sourceChainId,
+        destinationChainId: destinationChainId,
+        tokensFromLists,
+      });
+
+      if (isValidLifiRoute) {
+        eligibleRouteTypes.push('lifi');
+      }
+    }
+
     return eligibleRouteTypes;
   }
 
@@ -217,12 +231,14 @@ export function useRoutesUpdater() {
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
+    // First condition is necessary to handle token not handled by getTokenOverride
     fromToken:
       (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
       overrideSourceToken.source?.address ||
       constants.AddressZero,
     toAddress: (destinationAddress as Address) || address,
     toChainId: networks.destinationChain.id,
+    // First condition is necessary to handle token not handled by getTokenOverride
     toToken:
       (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
       overrideDestinationToken.destination?.address ||
