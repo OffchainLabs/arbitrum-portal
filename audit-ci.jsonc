@@ -56,5 +56,13 @@
     // Reason to ignore: No patch available yet
     // Low severity vulnerability in logging dependency.
     "GHSA-ffrw-9mx8-89p8",
+    // https://github.com/advisories/GHSA-vqpr-j7v3-hqw9
+    // Valibot has a ReDoS vulnerability in `EMOJI_REGEX`
+    // GHSA-vqpr-j7v3-hqw9|arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
+    // GHSA-vqpr-j7v3-hqw9|arb-token-bridge-ui>@lifi/sdk>@bigmi/core>bitcoinjs-lib>valibot
+    // GHSA-vqpr-j7v3-hqw9|arb-token-bridge-ui>@lifi/sdk>@mysten/sui>valibot
+    // GHSA-vqpr-j7v3-hqw9|arb-token-bridge-ui>@lifi/sdk>@mysten/wallet-standard>@mysten/sui>valibot
+    // Reason to ignore: Not used directly. Patched version is a major bump
+    "GHSA-vqpr-j7v3-hqw9",
   ],
 }

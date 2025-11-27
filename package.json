@@ -23,6 +23,8 @@
     "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true yarn test:e2e"
   },
   "resolutions": {
+    "node-forge": "1.3.2",
+    "@types/node-forge": "1.3.14",
     "**/@walletconnect/ethereum-provider": "2.13.1",
     "@octokit/core/@octokit/request-error": "5.1.1",
     "@octokit/core/@octokit/request": "8.4.1",
