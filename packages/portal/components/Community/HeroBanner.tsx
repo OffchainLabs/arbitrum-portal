@@ -2,7 +2,6 @@ import { Card } from '@/components/Card';
 
 export const HeroBanner = () => (
   <Card
-    grainy
     className="relative flex h-[200px] flex-col justify-end p-6 lg:flex-row lg:items-center lg:justify-start lg:p-[50px]"
     style={{
       background:
