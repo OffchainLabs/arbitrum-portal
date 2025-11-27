@@ -17,6 +17,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
+import { shortenAddress } from '../../util/CommonUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -134,7 +135,7 @@ function CustomAddressBanner({
           className="arb-hover underline"
           href={`${getExplorerUrl(network.id)}/address/${customAddress}`}
         >
-          {customAddress}
+          {shortenAddress(customAddress)}
         </ExternalLink>
       </span>
     </div>
