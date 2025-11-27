@@ -2,15 +2,15 @@ import { TokenList } from '@uniswap/token-lists';
 import axios from 'axios';
 import { ImageProps } from 'next/image';
 
-import ArbitrumLogo from '@/images/lists/ArbitrumLogo.png';
-import CMCLogo from '@/images/lists/cmc.png';
-import CoinGeckoLogo from '@/images/lists/coinGecko.svg';
-import UniswapLogo from '@/images/lists/uniswap.png';
-
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
 import orbitChainsData from './orbitChainsData.json';
+
+const ArbitrumLogo = '/images/lists/ArbitrumLogo.png';
+const CMCLogo = '/images/lists/cmc.png';
+const CoinGeckoLogo = '/images/lists/coinGecko.svg';
+const UniswapLogo = '/images/lists/uniswap.png';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
 export const LIFI_TRANSFER_LIST_ID = 'lifi-token-list';
