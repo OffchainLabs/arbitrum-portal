@@ -113,10 +113,6 @@ export const fillCustomDestinationAddress = () => {
     .click();
 
   cy.wait(1_000);
-  cy.findByLabelText('Custom Destination Address Input').scrollIntoView().should('be.disabled');
-
-  // unlock custom destination address input
-  cy.findByLabelText('Custom destination input lock').scrollIntoView().should('be.visible').click();
 
   cy.findByLabelText('Custom Destination Address Input')
     .scrollIntoView()
