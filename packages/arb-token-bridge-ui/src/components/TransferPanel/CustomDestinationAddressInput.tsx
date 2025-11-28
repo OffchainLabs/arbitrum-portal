@@ -76,7 +76,7 @@ export const CustomDestinationAddressInput = () => {
 
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
-  const [inputLocked, setInputLocked] = useState(false);
+  const [inputLocked, setInputLocked] = useState(true);
 
   const isLocked = useMemo(
     () => (!isLoadingAccountType && isSmartContractWallet ? false : inputLocked),
