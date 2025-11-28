@@ -78,6 +78,8 @@ export const CustomDestinationAddressInput = () => {
     !destinationAddressFromQueryParams && accountType !== 'smart-contract-wallet',
   );
 
+  console.log('xxxx', { destinationAddressFromQueryParams, accountType, inputLocked });
+
   const { destinationAddressError: error } = useDestinationAddressError(localDestinationAddress);
 
   const validateAndSubmitDestinationAddress = useCallback(
@@ -170,18 +172,17 @@ export const CustomDestinationAddressInput = () => {
           }}
           aria-label="Custom Destination Address Input"
         />
-        {!isSmartContractWallet && (
-          <button
-            onClick={() => setInputLocked(!inputLocked)}
-            aria-label="Custom destination input lock"
-            className={twMerge(
-              'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
-              !inputLocked && 'group-hover:bg-transparent',
-            )}
-          >
-            {inputLocked ? <LockClosedIcon height={16} /> : <LockOpenIcon height={16} />}
-          </button>
-        )}
+
+        <button
+          onClick={() => setInputLocked(!inputLocked)}
+          aria-label="Custom destination input lock"
+          className={twMerge(
+            'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
+            !inputLocked && 'group-hover:bg-transparent',
+          )}
+        >
+          {inputLocked ? <LockClosedIcon height={16} /> : <LockOpenIcon height={16} />}
+        </button>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
