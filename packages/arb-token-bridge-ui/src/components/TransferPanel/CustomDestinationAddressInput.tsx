@@ -1,7 +1,7 @@
 import { ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid';
 import { isAddress } from 'ethers/lib/utils';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -74,15 +74,14 @@ export const CustomDestinationAddressInput = () => {
     destinationAddressFromQueryParams || '',
   );
 
-  const [inputLocked, setInputLocked] = useState(
-    !destinationAddressFromQueryParams && accountType !== 'smart-contract-wallet',
-  );
+  const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
-  useEffect(() => {
-    if (accountType === 'smart-contract-wallet') {
-      setInputLocked(false);
-    }
-  }, [accountType]);
+  const [inputLocked, setInputLocked] = useState(false);
+
+  const isLocked = useMemo(
+    () => (!isLoadingAccountType && isSmartContractWallet ? false : inputLocked),
+    [isLoadingAccountType, isSmartContractWallet, inputLocked],
+  );
 
   const { destinationAddressError: error } = useDestinationAddressError(localDestinationAddress);
 
@@ -122,8 +121,6 @@ export const CustomDestinationAddressInput = () => {
       }),
   );
 
-  const isSmartContractWallet = accountType === 'smart-contract-wallet';
-
   if (isLoadingAccountType) {
     return null;
   }
@@ -144,7 +141,7 @@ export const CustomDestinationAddressInput = () => {
       <div
         className={twMerge(
           'group my-1 flex h-8 w-full items-center rounded bg-black/50 shadow-input',
-          inputLocked && 'bg-black/20',
+          isLocked && 'bg-black/20',
           error && 'border border-red-400',
           warning && !error && 'border border-yellow-500',
         )}
@@ -160,11 +157,11 @@ export const CustomDestinationAddressInput = () => {
           className={twMerge(
             'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
             error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2',
-            !inputLocked && 'placeholder-white/60',
+            !isLocked && 'placeholder-white/60',
           )}
           placeholder={!address || isSmartContractWallet ? 'Enter Destination Address' : address}
           value={localDestinationAddress}
-          disabled={inputLocked}
+          disabled={isLocked}
           spellCheck={false}
           onChange={(e) => {
             const newValue = e.target.value?.toLowerCase().trim();
@@ -177,18 +174,18 @@ export const CustomDestinationAddressInput = () => {
           aria-label="Custom Destination Address Input"
         />
 
-        <button
-          onClick={() => setInputLocked(!inputLocked)}
-          aria-label="Custom destination input lock"
-          className={twMerge(
-            'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
-            !inputLocked && 'group-hover:bg-transparent',
-            isSmartContractWallet && 'cursor-not-allowed opacity-50',
-          )}
-          disabled={isSmartContractWallet}
-        >
-          {inputLocked ? <LockClosedIcon height={16} /> : <LockOpenIcon height={16} />}
-        </button>
+        {!isSmartContractWallet && (
+          <button
+            onClick={() => setInputLocked(!inputLocked)}
+            aria-label="Custom destination input lock"
+            className={twMerge(
+              'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
+              !isLocked && 'group-hover:bg-transparent',
+            )}
+          >
+            {isLocked ? <LockClosedIcon height={16} /> : <LockOpenIcon height={16} />}
+          </button>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
