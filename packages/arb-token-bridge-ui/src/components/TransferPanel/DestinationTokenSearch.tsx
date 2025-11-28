@@ -230,12 +230,19 @@ export function DestinationTokenSearch(props: UseDialogProps) {
       return;
     }
 
+    /**
+     * When going from chain that have WETH, it maps to ETH and WETH on the destination chain.
+     * In this case, we need to differentiate between ETH (l2Address: zero) and WETH (l2Address: 0x...)
+     */
     if (_token.address === constants.AddressZero) {
       if (networks.destinationChain.id === ChainId.ApeChain) {
         setQueryParams({ destinationToken: constants.AddressZero });
-      } else {
+      } else if (addressesEqual(_token.l2Address, constants.AddressZero)) {
         // Map native currency to undefined for other chains
         setQueryParams({ destinationToken: undefined });
+      } else {
+        // WETH
+        setQueryParams({ destinationToken: constants.AddressZero });
       }
       return;
     }
