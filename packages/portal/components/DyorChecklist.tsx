@@ -177,7 +177,6 @@ export const DyorChecklist = ({
   return (
     <Card
       className={twMerge('relative flex flex-col gap-4 p-6', className)}
-      grainy
       style={{
         background:
           'linear-gradient(163deg, rgba(29,63,112,1) 0%, rgba(91,101,147,1) 26%, rgba(91,53,103,1) 40%, rgba(40,52,115,1) 60%, rgba(126,91,212,1) 84%, rgba(135,64,64,1) 100%)',

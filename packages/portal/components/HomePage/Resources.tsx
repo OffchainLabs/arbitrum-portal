@@ -33,7 +33,6 @@ const ResourceCard = ({
         className,
       )}
       href={href}
-      grainy
     >
       <Image
         alt={name}

@@ -4,12 +4,9 @@ import { Suspense } from 'react';
 import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp';
 import { AppSidebar } from '@/portal/components/AppSidebar';
 
-import Background from '../components/Background';
-
 export default function NotFound() {
   return (
     <>
-      <Background />
       <div className="relative flex">
         <Suspense>
           <AppSidebar />
