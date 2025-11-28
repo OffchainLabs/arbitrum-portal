@@ -63,6 +63,10 @@ export function isValidLifiTransfer({
     return true;
   }
 
+  if (isUsdcToken(fromToken)) {
+    return true;
+  }
+
   const token = tokensFromLists[fromToken.toLowerCase()];
   return token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
 }

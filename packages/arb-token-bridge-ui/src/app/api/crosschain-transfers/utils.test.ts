@@ -1,6 +1,7 @@
 import { constants } from 'ethers';
 import { describe, expect, it, test } from 'vitest';
 
+import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isValidLifiTransfer } from './utils';
@@ -123,6 +124,19 @@ describe('isValidLifiTransfer', () => {
         fromToken: undefined,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.ApeChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows native USDC swaps', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {};
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.ArbitrumOne.USDC,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists,
       }),
     ).toBe(true);
   });
