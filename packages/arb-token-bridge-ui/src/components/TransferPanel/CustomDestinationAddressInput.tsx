@@ -1,7 +1,7 @@
 import { ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid';
 import { isAddress } from 'ethers/lib/utils';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -78,7 +78,11 @@ export const CustomDestinationAddressInput = () => {
     !destinationAddressFromQueryParams && accountType !== 'smart-contract-wallet',
   );
 
-  console.log('xxxx', { destinationAddressFromQueryParams, accountType, inputLocked });
+  useEffect(() => {
+    if (accountType === 'smart-contract-wallet') {
+      setInputLocked(false);
+    }
+  }, [accountType]);
 
   const { destinationAddressError: error } = useDestinationAddressError(localDestinationAddress);
 
