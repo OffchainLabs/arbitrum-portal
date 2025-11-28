@@ -2,7 +2,6 @@ import {
   Erc20Bridger,
   Erc20L1L3Bridger,
   EthBridger,
-  EthL1L3Bridger,
   MultiCaller,
   getArbitrumNetwork,
 } from '@arbitrum/sdk';
@@ -12,7 +11,7 @@ import { constants } from 'ethers';
 
 import { defaultErc20Decimals } from '../defaults';
 import { ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
-import { getL2ConfigForTeleport, isValidTeleportChainPair } from '../token-bridge-sdk/teleport';
+import { getL2ConfigForTeleport } from '../token-bridge-sdk/teleport';
 import { getBridger, getChainIdFromProvider } from '../token-bridge-sdk/utils';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressUtils';
@@ -307,10 +306,6 @@ export async function getL3ERC20Address({
   );
 }
 
-function isErc20Bridger(bridger: Erc20Bridger | Erc20L1L3Bridger): bridger is Erc20Bridger {
-  return typeof (bridger as Erc20Bridger).isDepositDisabled !== 'undefined';
-}
-
 /*
  Retrieves data about whether an ERC-20 token is disabled on the router.
  */
@@ -328,14 +323,13 @@ export async function l1TokenIsDisabled({
     destinationChainId: await getChainIdFromProvider(l2Provider),
   });
 
-  if (erc20Bridger instanceof EthL1L3Bridger || erc20Bridger instanceof EthBridger) {
-    // fail-safe to ensure `l1TokenIsDisabled` is called on the correct bridger-types
+  if (erc20Bridger instanceof EthBridger) {
+    // fail-safe to ensure we're working with Erc20Bridger
     return false;
   }
 
-  return isErc20Bridger(erc20Bridger)
-    ? erc20Bridger.isDepositDisabled(erc20L1Address, l1Provider)
-    : erc20Bridger.l1TokenIsDisabled(erc20L1Address, l1Provider);
+  // erc20Bridger is definitely Erc20Bridger at this point
+  return erc20Bridger.isDepositDisabled(erc20L1Address, l1Provider);
 }
 
 type SanitizeTokenOptions = {
@@ -461,14 +455,6 @@ export async function isGatewayRegistered({
   parentChainProvider: Provider;
   childChainProvider: Provider;
 }): Promise<boolean> {
-  // for teleport transfers - we will need to check for 2 gateway registrations - 1 for L1-L2 and then for L2-L3 transfer
-  // for now, we are returning true since we are limiting the tokens to teleport, but we will expand this once we expand the allowList
-  const sourceChainId = await getChainIdFromProvider(parentChainProvider);
-  const destinationChainId = await getChainIdFromProvider(childChainProvider);
-  if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
-    return true;
-  }
-
   const erc20Bridger = await Erc20Bridger.fromProvider(childChainProvider);
 
   return erc20Bridger.isRegistered({
