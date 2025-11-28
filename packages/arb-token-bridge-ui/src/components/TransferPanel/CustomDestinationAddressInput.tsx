@@ -146,9 +146,8 @@ export const CustomDestinationAddressInput = () => {
 
         <input
           className={twMerge(
-            'h-full w-full bg-transparent text-sm text-white placeholder-gray-dark',
+            'h-full w-full bg-transparent text-sm text-white placeholder-white/60',
             error || (localDestinationAddress && !error) ? 'pl-0' : 'pl-2',
-            'placeholder-white/60',
           )}
           placeholder={!address || isSmartContractWallet ? 'Enter Destination Address' : address}
           value={localDestinationAddress}
