@@ -183,7 +183,9 @@ export const CustomDestinationAddressInput = () => {
           className={twMerge(
             'm-1 cursor-pointer rounded-full p-[6px] group-hover:bg-white/10',
             !inputLocked && 'group-hover:bg-transparent',
+            isSmartContractWallet && 'cursor-not-allowed opacity-50',
           )}
+          disabled={isSmartContractWallet}
         >
           {inputLocked ? <LockClosedIcon height={16} /> : <LockOpenIcon height={16} />}
         </button>
