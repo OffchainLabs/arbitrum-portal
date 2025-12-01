@@ -12,6 +12,8 @@ import {
 import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+
 import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
@@ -89,6 +91,38 @@ function sumFee(feeCosts: FeeCost[] | undefined) {
   };
 }
 
+function isUsdtToken(tokenAddress: string | undefined, chainId: number) {
+  return (
+    (addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT) && chainId === ChainId.Ethereum) ||
+    (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDT) &&
+      chainId === ChainId.ArbitrumOne) ||
+    (addressesEqual(tokenAddress, CommonAddress.ApeChain.USDT) && chainId === ChainId.ApeChain) ||
+    (addressesEqual(tokenAddress, CommonAddress.Base.USDT) && chainId === ChainId.Base)
+  );
+}
+
+function isApeToken(tokenAddress: string | undefined, chainId: number) {
+  return (
+    (addressesEqual(tokenAddress, constants.AddressZero) && chainId === ChainId.ApeChain) ||
+    (addressesEqual(tokenAddress, CommonAddress.Ethereum.APE) && chainId === ChainId.Ethereum) ||
+    (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.APE) &&
+      chainId === ChainId.ArbitrumOne) ||
+    (addressesEqual(tokenAddress, CommonAddress.Base.APE) && chainId === ChainId.Base)
+  );
+}
+
+/** Override token metadata (symbol, name, ...) for special cases (e.g., USDT) */
+function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: string } {
+  if (isUsdtToken(token.address, chainId)) {
+    return {
+      ...token,
+      name: 'USDT',
+      symbol: 'USDT',
+    };
+  }
+  return token;
+}
+
 /**
  * Override token logos for special cases (e.g., ETH)
  * LiFi returns TrustWallet URLs, but we want to use local logos
@@ -106,7 +140,19 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
       logoURI: ETHER_TOKEN_LOGO,
     };
   }
+
+  if (isApeToken(token.address, chainId)) {
+    return {
+      ...token,
+      logoURI: '/images/ApeTokenLogo.svg',
+    };
+  }
+
   return token;
+}
+
+function applyOverrides(token: Token, chainId: number): Token {
+  return overrideTokenLogo(overrideTokenMetadata(token, chainId), chainId);
 }
 
 function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
@@ -131,14 +177,14 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     tags.push(Order.Fastest);
   }
 
-  const gasToken: Token = overrideTokenLogo(
+  const gasToken: Token = applyOverrides(
     step.estimate.gasCosts && step.estimate.gasCosts.length > 0
       ? step.estimate.gasCosts[0]!.token
       : { ...ether, address: constants.AddressZero },
     Number(fromChainId),
   );
 
-  const feeToken: Token = overrideTokenLogo(
+  const feeToken: Token = applyOverrides(
     step.estimate.feeCosts && step.estimate.feeCosts.length > 0
       ? step.estimate.feeCosts[0]!.token
       : { ...ether, address: constants.AddressZero },
@@ -162,13 +208,13 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.action.fromAmount,
       amountUSD: step.estimate.fromAmountUSD || '0',
-      token: overrideTokenLogo(step.action.fromToken, step.action.fromToken.chainId),
+      token: applyOverrides(step.action.fromToken, step.action.fromToken.chainId),
     },
     toAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
       amount: step.estimate.toAmount,
       amountUSD: step.estimate.toAmountUSD || '0',
-      token: overrideTokenLogo(step.action.toToken, step.action.toToken.chainId),
+      token: applyOverrides(step.action.toToken, step.action.toToken.chainId),
     },
     fromAddress,
     toAddress,

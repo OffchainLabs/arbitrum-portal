@@ -15,6 +15,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
@@ -240,6 +241,13 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return null;
     }
 
+    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
+      if (!ethParentBalance) {
+        return null;
+      }
+      return parseFloat(utils.formatEther(ethParentBalance));
+    }
+
     const balance = erc20ParentBalances?.[selectedToken.address.toLowerCase()];
 
     if (!balance) {
@@ -247,11 +255,18 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, erc20ParentBalances]);
+  }, [selectedToken, erc20ParentBalances, ethParentBalance]);
 
   const selectedTokenL2BalanceFloat = useMemo(() => {
     if (!selectedToken) {
       return null;
+    }
+
+    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
+      if (!ethChildBalance) {
+        return null;
+      }
+      return parseFloat(utils.formatEther(ethChildBalance));
     }
 
     const { isOrbitChain } = isNetwork(childChain.id);
@@ -272,7 +287,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, childChain.id, erc20ChildBalances]);
+  }, [selectedToken, childChain.id, erc20ChildBalances, ethChildBalance]);
 
   const customFeeTokenL1BalanceFloat = useMemo(() => {
     if (!nativeCurrency.isCustom) {

@@ -1,6 +1,6 @@
 import { Provider } from '@ethersproject/providers';
 import { constants, utils } from 'ethers';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -87,6 +87,7 @@ export const useSelectedToken = (): [
 
   const setSelectedToken = useCallback(
     (erc20ParentAddress: string | null) => {
+      console.trace();
       return setQueryParams((latestQuery) => {
         try {
           const sanitizedTokenAddress = sanitizeNullSelectedToken({
@@ -134,17 +135,6 @@ export const useSelectedToken = (): [
       tokensFromLists[tokenFromSearchParams] ||
       null
     : null;
-
-  useEffect(() => {
-    /** On Superposition to ApeChain, if no token is selected, default to null () */
-    if (
-      networks.sourceChain.id === ChainId.Superposition &&
-      networks.destinationChain.id === ChainId.ApeChain &&
-      !selectedToken
-    ) {
-      setSelectedToken(constants.AddressZero);
-    }
-  }, [networks.destinationChain.id, networks.sourceChain.id, selectedToken, setSelectedToken]);
 
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;

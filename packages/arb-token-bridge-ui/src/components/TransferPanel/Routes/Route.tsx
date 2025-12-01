@@ -4,6 +4,7 @@ import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 
 import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
@@ -339,8 +340,10 @@ export const Route = React.memo(
     const token = overrideToken || _token || childNativeCurrency;
 
     const { isTestnet } = isNetwork(networks.sourceChain.id);
-    const showUsdValueForReceivedToken =
-      !isTestnet && (!('address' in token) || addressesEqual(token.address, constants.AddressZero));
+    const isEth =
+      (!('address' in token) || addressesEqual(token.address, constants.AddressZero)) &&
+      networks.destinationChain.id !== ChainId.ApeChain;
+    const showUsdValueForReceivedToken = !isTestnet && isEth;
 
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)

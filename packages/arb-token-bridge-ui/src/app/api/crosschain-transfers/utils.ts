@@ -211,12 +211,12 @@ export function getTokenOverride({
     if (sourceChainId === ChainId.ApeChain) {
       return {
         source: null,
-        destination: getApe(destinationChainId) ? getApe(destinationChainId) : null,
+        destination: getApe(destinationChainId),
       };
     }
 
     return {
-      source: getApe(sourceChainId) ? getApe(sourceChainId) : null,
+      source: getApe(sourceChainId),
       destination: null,
     };
   }

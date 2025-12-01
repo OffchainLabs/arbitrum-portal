@@ -1,12 +1,12 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
-import { ChainId, getStepTransaction } from '@lifi/sdk';
+import { getStepTransaction } from '@lifi/sdk';
 import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLatest } from 'react-use';
+import { useLatest, useUpdateEffect } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
@@ -19,6 +19,7 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { ChainId } from '@/bridge/types/ChainId';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -197,6 +198,12 @@ export function TransferPanel() {
       amount2: '',
     });
   }, [setQueryParams]);
+
+  useUpdateEffect(() => {
+    // useUpdateEffect doesn't run on first render
+    // Reset token on source and destination when networks change
+    setSelectedToken(null);
+  }, [networks.sourceChain.id, networks.destinationChain.id, setSelectedToken]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
@@ -617,36 +624,22 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
-      let assetType: AssetType;
-      let tokenSymbol: string;
-      if (selectedToken) {
-        if (addressesEqual(selectedToken.address, constants.AddressZero)) {
-          // Zero address on Ape, means ETH token
-          assetType = AssetType.ETH;
-          tokenSymbol = 'ETH';
-        } else {
-          assetType = AssetType.ERC20;
-          tokenSymbol = selectedToken.symbol;
-        }
-      } else {
-        // No selected token: native token
-        // If one of the transfer include ApeChain, then transfer is still an ERC20 transfer
-        if (
-          networks.sourceChain.id === ChainId.APE ||
-          networks.destinationChain.id === ChainId.APE
-        ) {
-          assetType = AssetType.ERC20;
-          tokenSymbol = 'APE';
-        } else {
-          assetType = AssetType.ETH;
-          tokenSymbol = 'ETH';
-        }
-      }
+      const assetType =
+        addressesEqual(context.fromAmount.token.address, constants.AddressZero) &&
+        networks.sourceChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
+      const destinationAssetType =
+        addressesEqual(context.toAmount.token.address, constants.AddressZero) &&
+        networks.destinationChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
 
-      // const tokenSymbol = selectedToken ? selectedToken.symbol : 'ETH';
       trackEvent('Lifi Transfer', {
-        tokenSymbol,
+        tokenSymbol: context.fromAmount.token.symbol,
         assetType,
+        destinationTokenSymbol: context.toAmount.token.symbol,
+        destinationAssetType,
         accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),

@@ -99,6 +99,18 @@ function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
   return token;
 }
 
+function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  if (token.coinKey === CoinKey.USDT) {
+    return {
+      ...token,
+      symbol: 'USDT',
+      name: 'Tether USD',
+    };
+  }
+
+  return token;
+}
+
 export interface LifiTokenRegistry {
   tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
@@ -130,9 +142,10 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         if (!tokenWithCoinKey) return acc;
 
         const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+        const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
 
-        tokensGroupedByCoinKey[tokenWithLogoURI.coinKey] ??= tokenWithLogoURI;
-        acc.push(tokenWithLogoURI);
+        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+        acc.push(normalizedToken);
         return acc;
       },
       [],

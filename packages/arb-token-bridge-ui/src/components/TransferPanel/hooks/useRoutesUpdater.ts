@@ -240,23 +240,25 @@ export function useRoutesUpdater() {
     [destinationToken?.address, networks.sourceChain.id, networks.destinationChain.id],
   );
 
+  const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
+  const defaultToTokenAddress = isDepositMode
+    ? destinationToken?.l2Address
+    : destinationToken?.address;
+
+  const fromTokenAddress =
+    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+  const toTokenAddress =
+    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
+
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
-    // First condition is necessary to handle token not handled by getTokenOverride
-    fromToken:
-      (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
-      overrideSourceToken.source?.address ||
-      constants.AddressZero,
+    fromToken: fromTokenAddress,
     toAddress: (destinationAddress as Address) || address,
     toChainId: networks.destinationChain.id,
-    // First condition is necessary to handle token not handled by getTokenOverride
-    toToken:
-      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
-      overrideDestinationToken.destination?.address ||
-      constants.AddressZero,
+    toToken: toTokenAddress,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,

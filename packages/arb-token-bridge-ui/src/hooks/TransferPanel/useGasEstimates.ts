@@ -131,23 +131,25 @@ export function useGasEstimates({
     shallow,
   );
 
+  const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
+  const defaultToTokenAddress = isDepositMode
+    ? destinationToken?.l2Address
+    : destinationToken?.address;
+
+  const fromTokenAddress =
+    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+  const toTokenAddress =
+    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
+
   const parameters = {
     enabled: isLifiRouteEligible,
     fromAddress: walletAddress,
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
-    fromToken:
-      // First condition is necessary to handle token not handled by getTokenOverride
-      (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
-      overrideSourceToken.source?.address ||
-      constants.AddressZero,
+    fromToken: fromTokenAddress,
     toAddress: (destinationAddress as Address) || walletAddress,
     toChainId: destinationChain.id,
-    toToken:
-      // First condition is necessary to handle token not handled by getTokenOverride
-      (isDepositMode ? destinationToken?.l2Address : destinationToken?.address) ||
-      overrideDestinationToken.destination?.address ||
-      constants.AddressZero,
+    toToken: toTokenAddress,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,
