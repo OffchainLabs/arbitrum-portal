@@ -1,5 +1,6 @@
 // Projects' database and utility functions
 import projectsJson from '@/public/__auto-generated-projects.json';
+import dripProgramJson from '@/public/__auto-generated-drip-program.json';
 
 import { CATEGORIES, getCategoryFromSubcategory } from './categories';
 import { dayjs } from './dateUtils';
@@ -200,3 +201,68 @@ export const TRENDING_PROJECTS = PROJECTS.filter((project) => project.meta.isTre
 export const getProjectsCountForChain = (chainTitle: string) => {
   return PROJECTS_PER_CHAIN_MAP[chainTitle] ?? 0;
 };
+
+// Live Incentives Types and Functions
+type DripProgramOpportunity = {
+  protocol: {
+    name: string;
+    [key: string]: any;
+  };
+  liveCampaigns: number;
+  [key: string]: any;
+};
+
+type DripProgramResponse = {
+  opportunities: DripProgramOpportunity[];
+};
+
+type DripProgramCompactInfo = Record<
+  string,
+  {
+    liveCampaigns: number;
+    protocol: DripProgramOpportunity['protocol'];
+  }
+>;
+
+/**
+ * Returns the drip program data from the local JSON file
+ */
+export function getDripProgram(): DripProgramResponse {
+  const dripProgram = dripProgramJson as DripProgramResponse;
+
+  if (!Array.isArray(dripProgram.opportunities)) {
+    throw new Error('dripProgram.opportunities is not an array');
+  }
+
+  return dripProgram;
+}
+
+/**
+ * Processes the drip program data into a compact format keyed by project slug
+ * Only includes protocols with active campaigns (liveCampaigns >= 1)
+ */
+export function getDripProgramCompactInfo(
+  dripProgram: DripProgramResponse,
+): DripProgramCompactInfo {
+  return dripProgram.opportunities.reduce((acc, program) => {
+    const name = program.protocol.name.toLowerCase();
+    if (program.liveCampaigns < 1) {
+      return acc;
+    }
+    // Map special cases: 'silo' and 'euler' to their '-finance' variants to match project slugs
+    acc[name === 'silo' || name === 'euler' ? `${name}-finance` : name] = {
+      liveCampaigns: program.liveCampaigns,
+      protocol: program.protocol,
+    };
+    return acc;
+  }, {} as DripProgramCompactInfo);
+}
+
+/**
+ * Returns projects that have live incentives based on the drip program data
+ */
+export function getProjectsWithLiveIncentives(
+  dripProgramCompactInfo: DripProgramCompactInfo,
+): SearchableData<FullProject>[] {
+  return PROJECTS.filter((project) => project.slug in dripProgramCompactInfo);
+}
