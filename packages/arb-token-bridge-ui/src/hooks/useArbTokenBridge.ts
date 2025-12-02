@@ -247,6 +247,10 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
         if (!tokenToAdd) {
           return;
         }
+        const existingToken = oldBridgeTokens?.[tokenToAdd.address];
+        if (!tokenToAdd.l2Address && existingToken?.l2Address) {
+          tokenToAdd.l2Address = existingToken.l2Address;
+        }
         const { address, l2Address } = tokenToAdd;
         if (address) {
           l1Addresses.push(address);
