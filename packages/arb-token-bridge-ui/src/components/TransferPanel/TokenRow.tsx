@@ -3,6 +3,8 @@ import { constants } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -361,6 +363,24 @@ function TokenContractLink({
 
   if (!token) {
     return null;
+  }
+
+  /**
+   * Native USDC and bridged USDC share the same L2 address (CommonAddress.ArbitrumOne.USDC), but L1 address is different
+   * Bridged USDC has L1 address = CommonAddress.ArbitrumOne.USDC
+   * Native USDC has L1 address = CommonAddress.Ethereum.USDC
+   */
+  if (
+    networks.sourceChain.id === ChainId.ArbitrumOne &&
+    isTokenArbitrumOneNativeUSDC(token.l2Address) &&
+    addressesEqual(token.address, CommonAddress.Ethereum.USDC)
+  ) {
+    return (
+      <BlockExplorerTokenLink
+        chainId={networks.sourceChain.id}
+        address={CommonAddress.ArbitrumOne['USDC.e']}
+      />
+    );
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
