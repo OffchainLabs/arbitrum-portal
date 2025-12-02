@@ -382,6 +382,18 @@ function TokenContractLink({
       />
     );
   }
+  if (
+    networks.sourceChain.id === ChainId.ArbitrumSepolia &&
+    isTokenArbitrumSepoliaNativeUSDC(token.l2Address) &&
+    addressesEqual(token.address, CommonAddress.Sepolia.USDC)
+  ) {
+    return (
+      <BlockExplorerTokenLink
+        chainId={networks.sourceChain.id}
+        address={CommonAddress.ArbitrumSepolia['USDC.e']}
+      />
+    );
+  }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
     return null;
