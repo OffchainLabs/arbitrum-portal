@@ -81,6 +81,7 @@ module.exports = {
         lg: '10px',
       },
       backgroundImage: {
+        'live-incentives-gradient': 'linear-gradient(180deg, #99f24e 0%, #08d6f3 100%)',
         'blue-gradient': 'linear-gradient(0deg, #00e5ff 0, #12aaff 0, #00e5ff 100%)',
         'banner-gradient':
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',

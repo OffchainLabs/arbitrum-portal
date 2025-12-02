@@ -4,7 +4,7 @@ import { BookmarkIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkedIcon } from '@heroicons/react/24/solid';
 import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
 
@@ -59,10 +59,13 @@ const BookmarkButton = ({
 
 const ItemContent = ({
   slug,
+  children,
   displayMode,
   analyticsSource,
   onClick,
-}: Pick<ItemBoxProps, 'slug' | 'displayMode' | 'analyticsSource' | 'onClick'>) => {
+}: PropsWithChildren<
+  Pick<ItemBoxProps, 'slug' | 'displayMode' | 'analyticsSource' | 'onClick'>
+>) => {
   const project = getProjectDetailsById(slug);
   const { openEntitySidePanel: openProjectPanel } = useEntitySidePanel(EntityType.Project);
   const posthog = usePostHog();
@@ -115,7 +118,7 @@ const ItemContent = ({
   return (
     <button
       className={twMerge(
-        'relative flex h-full w-full flex-col p-4 hover:opacity-100',
+        'relative flex h-full w-full flex-col p-4 hover:opacity-100 bg-black',
         isSpotlightMode
           ? 'group box-border overflow-hidden rounded-lg border border-white/10 p-0'
           : 'gap-2',
@@ -132,7 +135,7 @@ const ItemContent = ({
       {/* Show cover-pic with the tile if it's a spotlight mode */}
       {isSpotlightMode && images.bannerUrl && (
         <div
-          className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 transition-all duration-300 group-hover:opacity-90 lg:bg-center"
+          className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 group-hover:opacity-90 lg:bg-center"
           style={{ backgroundImage: `url(${images.bannerUrl})` }}
         />
       )}{' '}
@@ -263,6 +266,7 @@ const ItemContent = ({
           </div>
         </div>
       </div>
+      {children}
     </button>
   );
 };
@@ -270,11 +274,12 @@ const ItemContent = ({
 const ItemBoxLayout = ({
   project,
   displayMode = 'normal',
+  children,
   className,
   lazyload = true, // `lazyload` option false will render the card without lazy-loading. eg. in search preview / carousel etc.
   analyticsSource, // source from where this project was rendered - helpful for tracking analytics
   onClick, // optional function that can be passed when project is clicked
-}: Omit<ItemBoxProps, 'slug'> & { project: SearchableData<FullProject> }) => {
+}: PropsWithChildren<Omit<ItemBoxProps, 'slug'> & { project: SearchableData<FullProject> }>) => {
   const isSpotlightMode = displayMode === 'spotlight' || displayMode === 'reward-spotlight';
   const isPreviewMode = displayMode === 'preview';
   const isCompactMode = displayMode === 'compact';
@@ -282,7 +287,7 @@ const ItemBoxLayout = ({
   return (
     <div
       className={twMerge(
-        'h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
+        'relative h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
         project.meta.isLive ? '' : ' opacity-80',
         displayMode === 'bookmarked' && 'lg:h-[160px]',
         isSpotlightMode && 'h-[200px] rounded-lg',
@@ -292,13 +297,20 @@ const ItemBoxLayout = ({
       )}
     >
       {lazyload ? (
-        <LazyLoad height="165px" once offset={100} className={`h-full`}>
+        <LazyLoad
+          height="165px"
+          once
+          offset={100}
+          className={`h-full relative border border-transparent`}
+        >
           <ItemContent
             slug={project.slug}
             displayMode={displayMode}
             analyticsSource={analyticsSource}
             onClick={onClick}
-          />
+          >
+            {children}
+          </ItemContent>
         </LazyLoad>
       ) : (
         <ItemContent
@@ -306,7 +318,9 @@ const ItemBoxLayout = ({
           displayMode={displayMode}
           analyticsSource={analyticsSource}
           onClick={onClick}
-        />
+        >
+          {children}
+        </ItemContent>
       )}
     </div>
   );
@@ -319,7 +333,8 @@ export const ProjectItemBox = ({
   lazyload = true, // `lazyload` option false will render the card without lazy-loading. eg. in search preview / carousel etc.
   analyticsSource, // source from where this project was rendered - helpful for tracking analytics
   onClick, // optional function that can be passed when project is clicked
-}: ItemBoxProps) => {
+  children,
+}: PropsWithChildren<ItemBoxProps>) => {
   const project = getProjectDetailsById(slug);
 
   if (!project) {
@@ -337,12 +352,14 @@ export const ProjectItemBox = ({
           lazyload={lazyload}
           analyticsSource={analyticsSource}
           onClick={onClick}
-        />
+        >
+          {children}
+        </ItemBoxLayout>
         {project.links.website && (
           <Card
             cardType="externalLink"
             href={project.links.website}
-            className="flex flex-row flex-nowrap items-center justify-start gap-2 bg-default-black-hover p-3 hover:bg-default-black-hover/80"
+            className="relative flex flex-row flex-nowrap items-center justify-start gap-2 bg-default-black-hover p-3 hover:bg-default-black-hover/80"
           >
             <Image src={ExternalLinkIcon} alt={`Visit Website`} className="h-4 w-4" />
             Visit Website
@@ -360,6 +377,8 @@ export const ProjectItemBox = ({
       lazyload={lazyload}
       analyticsSource={analyticsSource}
       onClick={onClick}
-    />
+    >
+      {children}
+    </ItemBoxLayout>
   );
 };
