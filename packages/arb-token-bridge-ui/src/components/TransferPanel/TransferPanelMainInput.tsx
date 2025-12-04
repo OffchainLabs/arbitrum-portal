@@ -73,7 +73,7 @@ function SourceChainTokenBalance({
    * If no token is selected, show the child chain native currency balance on source chain
    */
   const balance = (() => {
-    if (balanceOverride) {
+    if (typeof balanceOverride !== 'undefined') {
       return balanceOverride;
     }
 
