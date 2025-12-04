@@ -26,6 +26,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
+import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog, useDialog } from './Dialog';
 import { DialogProps } from './Dialog2';
@@ -471,6 +472,7 @@ export const NetworkSelectionContainer = React.memo(
       type: 'source' | 'destination';
     },
   ) => {
+    const isSwapTransfer = useIsSwapTransfer();
     const [, setSelectedToken] = useSelectedToken();
     const [networks, setNetworks] = useNetworks();
     const [oneNovaTransferDialogProps, openOneNovaTransferDialog] = useDialog();
@@ -499,6 +501,10 @@ export const NetworkSelectionContainer = React.memo(
             sourceChainId: networks.destinationChain.id,
             destinationChainId: networks.sourceChain.id,
           });
+
+          if (isSwapTransfer) {
+            setSelectedToken(null);
+          }
           return;
         }
 
@@ -519,6 +525,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken,
         setQueryParams,
         openOneNovaTransferDialog,
+        isSwapTransfer,
       ],
     );
 

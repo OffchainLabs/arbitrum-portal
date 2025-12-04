@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLatest, useUpdateEffect } from 'react-use';
+import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
@@ -198,12 +198,6 @@ export function TransferPanel() {
       amount2: '',
     });
   }, [setQueryParams]);
-
-  useUpdateEffect(() => {
-    // useUpdateEffect doesn't run on first render
-    // Reset token on source and destination when networks change
-    setSelectedToken(null);
-  }, [networks.sourceChain.id, networks.destinationChain.id, setSelectedToken]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {

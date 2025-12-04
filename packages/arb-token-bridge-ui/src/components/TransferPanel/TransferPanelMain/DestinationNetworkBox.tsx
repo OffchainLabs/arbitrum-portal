@@ -106,7 +106,8 @@ function BalancesContainer() {
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const { amount: receivedAmount, isLoading } = useReceivedAmount();
 
-  const { erc20ChildBalances } = useBalances();
+  const { erc20ChildBalances, erc20ParentBalances } = useBalances();
+  const { isDepositMode } = useNetworksRelationship(networks);
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const { isAmount2InputVisible } = useAmount2InputVisibility();
 
@@ -117,6 +118,26 @@ function BalancesContainer() {
   const showNativeUsdcBalance =
     (isCctpTransfer && (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
     (isCctpTransfer && !selectedRoute);
+
+  const nativeUsdcDestinationBalance = useMemo(() => {
+    if (!showNativeUsdcBalance) return constants.Zero;
+
+    if (isArbitrumOne) {
+      return isDepositMode
+        ? (erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC] ?? constants.Zero)
+        : (erc20ParentBalances?.[CommonAddress.Ethereum.USDC] ?? constants.Zero);
+    } else {
+      return isDepositMode
+        ? (erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC] ?? constants.Zero)
+        : (erc20ParentBalances?.[CommonAddress.Sepolia.USDC] ?? constants.Zero);
+    }
+  }, [
+    showNativeUsdcBalance,
+    isArbitrumOne,
+    isDepositMode,
+    erc20ParentBalances,
+    erc20ChildBalances,
+  ]);
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
@@ -147,16 +168,11 @@ function BalancesContainer() {
           {showNativeUsdcBalance ? (
             <BalanceRow
               parentErc20Address={
-                isArbitrumOne ? CommonAddress.Ethereum.USDC : CommonAddress.ArbitrumOne.USDC
+                isArbitrumOne ? CommonAddress.Ethereum.USDC : CommonAddress.Sepolia.USDC
               }
-              balance={formatAmount(
-                (isArbitrumOne
-                  ? erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC]
-                  : erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC]) ?? constants.Zero,
-                {
-                  decimals: destinationToken?.decimals,
-                },
-              )}
+              balance={formatAmount(nativeUsdcDestinationBalance, {
+                decimals: destinationToken?.decimals,
+              })}
               symbolOverride="USDC"
             />
           ) : (
