@@ -87,7 +87,6 @@ export const useSelectedToken = (): [
 
   const setSelectedToken = useCallback(
     (erc20ParentAddress: string | null) => {
-      console.trace();
       return setQueryParams((latestQuery) => {
         try {
           const sanitizedTokenAddress = sanitizeNullSelectedToken({

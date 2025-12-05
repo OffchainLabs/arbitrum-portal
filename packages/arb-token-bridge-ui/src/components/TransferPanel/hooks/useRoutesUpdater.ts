@@ -14,7 +14,6 @@ import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferR
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { addressesEqual } from '../../../util/AddressUtils';
 import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
 import { useTokensFromLists } from '../TokenSearchUtils';
@@ -77,7 +76,6 @@ interface GetEligibleRoutesParams {
   sourceChainId: number;
   destinationChainId: number;
   selectedToken: ERC20BridgeToken | null;
-  destinationToken: ERC20BridgeToken | null;
   isArbitrumCanonicalTransfer: boolean;
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
@@ -90,7 +88,6 @@ function getEligibleRoutes({
   sourceChainId,
   destinationChainId,
   selectedToken,
-  destinationToken,
   isArbitrumCanonicalTransfer,
   tokensFromLists,
 }: GetEligibleRoutesParams): RouteType[] {
@@ -103,16 +100,6 @@ function getEligibleRoutes({
   }
 
   if (isOftV2Transfer) {
-    // Check if this is a USDT swap (source USDT → different destination token)
-    const sourceTokenAddress = selectedToken?.address;
-    const destTokenAddress = destinationToken?.address;
-    const isUsdtSwap = !addressesEqual(sourceTokenAddress, destTokenAddress);
-
-    // Only add OFT V2 route if NOT a USDT swap
-    if (!isUsdtSwap) {
-      eligibleRouteTypes.push('oftV2');
-    }
-
     if (isLifiEnabled) {
       const isValidLifiRoute = isValidLifiTransfer({
         fromToken: selectedToken?.address,
@@ -203,7 +190,6 @@ export function useRoutesUpdater() {
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
         selectedToken,
-        destinationToken,
         isArbitrumCanonicalTransfer,
         tokensFromLists,
       }),
@@ -215,7 +201,6 @@ export function useRoutesUpdater() {
       networks.sourceChain.id,
       networks.destinationChain.id,
       selectedToken,
-      destinationToken,
       isArbitrumCanonicalTransfer,
       tokensFromLists,
     ],

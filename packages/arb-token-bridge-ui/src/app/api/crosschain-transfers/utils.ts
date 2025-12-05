@@ -204,17 +204,13 @@ export function getTokenOverride({
   }
 
   // Ape on ApeChain
-  if (
-    !fromToken &&
-    (sourceChainId === ChainId.ApeChain || destinationChainId === ChainId.ApeChain)
-  ) {
-    if (sourceChainId === ChainId.ApeChain) {
-      return {
-        source: null,
-        destination: getApe(destinationChainId),
-      };
-    }
-
+  if (!fromToken && sourceChainId === ChainId.ApeChain) {
+    return {
+      source: null,
+      destination: getApe(destinationChainId),
+    };
+  }
+  if (!fromToken && destinationChainId === ChainId.ApeChain) {
     return {
       source: getApe(sourceChainId),
       destination: null,
