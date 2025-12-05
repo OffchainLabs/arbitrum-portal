@@ -83,6 +83,7 @@ import {
 } from './bridgeSdkConversionUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
+import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
@@ -171,6 +172,8 @@ export function TransferPanel() {
   );
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());
+
+  const isSwapTransfer = useIsSwapTransfer();
 
   const latestDestinationAddress = useLatest(destinationAddress);
 
@@ -640,6 +643,7 @@ export function TransferPanel() {
         sourceChain: getNetworkName(networks.sourceChain.id),
         destinationChain: getNetworkName(networks.destinationChain.id),
         tag: selectedRoute,
+        isSwap: isSwapTransfer,
       });
 
       resetAmountAndSwitchToTransactionHistoryTab();

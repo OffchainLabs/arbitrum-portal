@@ -127,6 +127,7 @@ type AnalyticsEventMap = {
     sourceChain: string;
     destinationChain: string;
     tag?: RouteType;
+    isSwap: boolean;
   };
   'Recover funds': {
     chainId: ChainId;
