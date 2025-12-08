@@ -113,157 +113,159 @@ const ItemContent = ({
   };
 
   return (
-    <button
-      className={twMerge(
-        'relative flex h-full w-full flex-col p-4 hover:opacity-100',
-        isSpotlightMode
-          ? 'group box-border overflow-hidden rounded-lg border border-white/10 p-0'
-          : 'gap-2',
-      )}
-      aria-label={`${title} Website`}
-      onClick={handleProjectClick}
-    >
+    <div className="relative h-full w-full transition-opacity hover:opacity-100 group-hover:opacity-100">
       <BookmarkButton
         displayMode={displayMode}
         onClick={handleBookmarkButtonClick}
         isBookmarked={isBookmarked}
         isSpotlightMode={isSpotlightMode}
       />
-      {/* Show cover-pic with the tile if it's a spotlight mode */}
-      {isSpotlightMode && images.bannerUrl && (
-        <div
-          className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 transition-all duration-300 group-hover:opacity-90 lg:bg-center"
-          style={{ backgroundImage: `url(${images.bannerUrl})` }}
-        />
-      )}{' '}
-      {/* Normal project contents */}
-      <div
+      <button
         className={twMerge(
-          'flex w-full flex-row gap-2',
+          'relative flex h-full w-full flex-col p-4',
           isSpotlightMode
-            ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-gradient-to-t from-black/70 to-transparent p-4 transition-all duration-300 group-hover:to-black/50'
-            : '',
-          isPreviewMode ? 'items-center gap-4' : '',
-          isCompactMode ? 'gap-3' : '',
+            ? 'group box-border overflow-hidden rounded-lg border border-white/10 p-0'
+            : 'gap-2',
         )}
+        aria-label={`${title} Website`}
+        onClick={handleProjectClick}
       >
-        {/* Logos */}
-        <div className="flex shrink-0 grow-0 flex-col gap-2 overflow-hidden bg-cover bg-center">
-          {/* Project logo */}
-
+        {/* Show cover-pic with the tile if it's a spotlight mode */}
+        {isSpotlightMode && images.bannerUrl && (
           <div
-            className={twMerge(
-              'relative inline-block max-w-[70px] overflow-hidden rounded-md',
-              isSpotlightMode ? 'h-[45px] w-[45px]' : 'bg-white p-[1px]',
-              isCompactMode ? 'h-[40px] w-[40px]' : '',
-            )}
-          >
-            <div className="[&:hover_span]:opacity-100">
-              <Image
-                alt={`${title} logo`}
-                src={images.logoUrl}
-                width={isCompactMode ? 40 : isSpotlightMode ? 45 : 60}
-                height={isCompactMode ? 40 : isSpotlightMode ? 45 : 60}
-                className="rounded-md"
-              />
-            </div>
+            className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 transition-all duration-300 group-hover:opacity-90 lg:bg-center"
+            style={{ backgroundImage: `url(${images.bannerUrl})` }}
+          />
+        )}{' '}
+        {/* Normal project contents */}
+        <div
+          className={twMerge(
+            'flex w-full flex-row gap-2',
+            isSpotlightMode
+              ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-gradient-to-t from-black/70 to-transparent p-4 transition-all duration-300 group-hover:to-black/50'
+              : '',
+            isPreviewMode ? 'items-center gap-4' : '',
+            isCompactMode ? 'gap-3' : '',
+          )}
+        >
+          {/* Logos */}
+          <div className="flex shrink-0 grow-0 flex-col gap-2 overflow-hidden bg-cover bg-center">
+            {/* Project logo */}
 
-            {project.meta.isArbitrumNative && (
-              <span
-                className={twMerge(
-                  'mt-[1px] flex cursor-help flex-wrap whitespace-break-spaces rounded-md rounded-t-none bg-ocl-blue px-0 py-[5px] text-[10px]',
-                )}
-                style={{
-                  width: isCompactMode ? '40px' : isSpotlightMode ? '45px' : '60px',
-                }}
-              >
-                <Tooltip
-                  content={
-                    <p className="text-xs">
-                      Arbitrum Native - Projects that either operate exclusively on Arbitrum or
-                      launched on Arbitrum as one of their primary deployments.
-                    </p>
-                  }
+            <div
+              className={twMerge(
+                'relative inline-block max-w-[70px] overflow-hidden rounded-md',
+                isSpotlightMode ? 'h-[45px] w-[45px]' : 'bg-white p-[1px]',
+                isCompactMode ? 'h-[40px] w-[40px]' : '',
+              )}
+            >
+              <div className="[&:hover_span]:opacity-100">
+                <Image
+                  alt={`${title} logo`}
+                  src={images.logoUrl}
+                  width={isCompactMode ? 40 : isSpotlightMode ? 45 : 60}
+                  height={isCompactMode ? 40 : isSpotlightMode ? 45 : 60}
+                  className="rounded-md"
+                />
+              </div>
+
+              {project.meta.isArbitrumNative && (
+                <span
+                  className={twMerge(
+                    'mt-[1px] flex cursor-help flex-wrap whitespace-break-spaces rounded-md rounded-t-none bg-ocl-blue px-0 py-[5px] text-[10px]',
+                  )}
+                  style={{
+                    width: isCompactMode ? '40px' : isSpotlightMode ? '45px' : '60px',
+                  }}
                 >
-                  Arbitrum Native
-                </Tooltip>
-              </span>
-            )}
+                  <Tooltip
+                    content={
+                      <p className="text-xs">
+                        Arbitrum Native - Projects that either operate exclusively on Arbitrum or
+                        launched on Arbitrum as one of their primary deployments.
+                      </p>
+                    }
+                  >
+                    Arbitrum Native
+                  </Tooltip>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className={twMerge('relative grow text-left', isSpotlightMode ? 'grow-0' : '')}>
-          <div
-            className={twMerge(
-              'flex flex-col gap-3 px-2',
-              isSpotlightMode || isPreviewMode || isCompactMode ? 'gap-1 px-0' : '',
-            )}
-          >
-            <h5
+          {/* Content */}
+          <div className={twMerge('relative grow text-left', isSpotlightMode ? 'grow-0' : '')}>
+            <div
               className={twMerge(
-                'relative flex items-center gap-2 text-left text-lg font-semibold leading-7',
-                isPreviewMode ? 'text-base' : '',
-                isCompactMode ? 'text-sm' : '',
+                'flex flex-col gap-3 px-2',
+                isSpotlightMode || isPreviewMode || isCompactMode ? 'gap-1 px-0' : '',
               )}
             >
-              {title}
-            </h5>
-            <p
-              className={twMerge(
-                'text-sm opacity-70',
-                isSpotlightMode || isPreviewMode ? 'line-clamp-2 opacity-100' : 'line-clamp-3',
-                isPreviewMode && 'max-w-[90%]',
-                isCompactMode && 'hidden',
-              )}
-            >
-              {displayMode === 'reward-spotlight' && project.liveIncentives?.rewards
-                ? `Claim ARB rewards on ${project.chains[0]} from ${formatOptionalDate(
-                    project.liveIncentives?.startDate ?? null,
-                    'MMM DD',
-                  )}.`
-                : description}
-            </p>
-
-            {displayMode === 'reward-spotlight' && project.liveIncentives?.rewards && (
-              <span className="z-20 mt-2 w-fit rounded-md bg-black p-1 px-2 font-mono text-xs text-white">
-                {project.liveIncentives.rewards / 1000}k ARB Rewards
-              </span>
-            )}
-
-            {!isSpotlightMode && (
+              <h5
+                className={twMerge(
+                  'relative flex items-center gap-2 text-left text-lg font-semibold leading-7',
+                  isPreviewMode ? 'text-base' : '',
+                  isCompactMode ? 'text-sm' : '',
+                )}
+              >
+                {title}
+              </h5>
               <p
                 className={twMerge(
-                  'flex flex-wrap justify-start gap-3 text-center leading-6 text-gray-700',
-                  isPreviewMode ? 'absolute right-0 top-0 font-mono uppercase' : '',
-                  isCompactMode ? 'gap-1' : '',
+                  'text-sm opacity-70',
+                  isSpotlightMode || isPreviewMode ? 'line-clamp-2 opacity-100' : 'line-clamp-3',
+                  isPreviewMode && 'max-w-[90%]',
+                  isCompactMode && 'hidden',
                 )}
               >
-                {!meta.isLive && !isPreviewMode && !isCompactMode && (
-                  <span className="inline-flex items-start justify-start gap-2 break-words rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
-                    Coming Soon
-                  </span>
-                )}
-                {subcategories.slice(0, isPreviewMode ? 1 : 2).map((subcategory) => (
-                  <span
-                    key={subcategory.id}
-                    className={twMerge(
-                      'inline-flex items-start justify-start gap-2 truncate break-words rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
-                      isCompactMode ? 'bg-white/25 text-white' : '',
-                    )}
-                  >
-                    {isPreviewMode
-                      ? subcategory.title.split(' ')[0] // this is to show only the first word of the subcategory in preview mode. eg. 'Infra & Tools (Others)' becomes 'Infra'
-                      : // this is to break the title after /, i.e. Lending/Borrowing, which is considered as one word by CSS
-                        subcategory.title.replaceAll('/', ' / ')}
-                  </span>
-                ))}
+                {displayMode === 'reward-spotlight' && project.liveIncentives?.rewards
+                  ? `Claim ARB rewards on ${project.chains[0]} from ${formatOptionalDate(
+                      project.liveIncentives?.startDate ?? null,
+                      'MMM DD',
+                    )}.`
+                  : description}
               </p>
-            )}
+
+              {displayMode === 'reward-spotlight' && project.liveIncentives?.rewards && (
+                <span className="z-20 mt-2 w-fit rounded-md bg-black p-1 px-2 font-mono text-xs text-white">
+                  {project.liveIncentives.rewards / 1000}k ARB Rewards
+                </span>
+              )}
+
+              {!isSpotlightMode && (
+                <p
+                  className={twMerge(
+                    'flex flex-wrap justify-start gap-3 text-center leading-6 text-gray-700',
+                    isPreviewMode ? 'absolute right-0 top-0 font-mono uppercase' : '',
+                    isCompactMode ? 'gap-1' : '',
+                  )}
+                >
+                  {!meta.isLive && !isPreviewMode && !isCompactMode && (
+                    <span className="inline-flex items-start justify-start gap-2 break-words rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
+                      Coming Soon
+                    </span>
+                  )}
+                  {subcategories.slice(0, isPreviewMode ? 1 : 2).map((subcategory) => (
+                    <span
+                      key={subcategory.id}
+                      className={twMerge(
+                        'inline-flex items-start justify-start gap-2 truncate break-words rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
+                        isCompactMode ? 'bg-white/25 text-white' : '',
+                      )}
+                    >
+                      {isPreviewMode
+                        ? subcategory.title.split(' ')[0] // this is to show only the first word of the subcategory in preview mode. eg. 'Infra & Tools (Others)' becomes 'Infra'
+                        : // this is to break the title after /, i.e. Lending/Borrowing, which is considered as one word by CSS
+                          subcategory.title.replaceAll('/', ' / ')}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 };
 
@@ -282,8 +284,8 @@ const ItemBoxLayout = ({
   return (
     <div
       className={twMerge(
-        'h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
-        project.meta.isLive ? '' : ' opacity-80',
+        'group h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
+        project.meta.isLive ? '' : 'opacity-80',
         displayMode === 'bookmarked' && 'lg:h-[160px]',
         isSpotlightMode && 'h-[200px] rounded-lg',
         isPreviewMode && 'h-fit min-h-[100px]',
