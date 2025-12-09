@@ -9,7 +9,7 @@ import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
 
 import { formatOptionalDate } from '@/common/dateUtils';
-import { getDripProgramCompactInfo, getProjectDetailsById } from '@/common/projects';
+import { getProjectDetailsById, hasLiveIncentives } from '@/common/projects';
 import { EntityCardDisplayMode, EntityType, FullProject, SearchableData } from '@/common/types';
 import { Card } from '@/components/Card';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
@@ -41,7 +41,7 @@ const BookmarkButton = ({
   if (displayMode === 'preview' || displayMode === 'compact') return null;
 
   return (
-    <button
+    <span
       className={twMerge(
         'absolute z-20 rounded-md p-2 hover:bg-white/20',
         isSpotlightMode ? 'right-2 top-2' : 'right-1 top-1',
@@ -53,7 +53,7 @@ const BookmarkButton = ({
       ) : (
         <BookmarkIcon className="h-[16px] w-[16px]" />
       )}
-    </button>
+    </span>
   );
 };
 
@@ -71,8 +71,7 @@ const ItemContent = ({
   const posthog = usePostHog();
   const { isBookmarkedProject, addBookmarkedProject, removeBookmarkedProject } =
     useBookmarkedProjects();
-  const dripProgramCompactInfo = getDripProgramCompactInfo();
-  const hasLiveIncentives = project ? project.slug in dripProgramCompactInfo : false;
+  const projectHasLiveIncentives = hasLiveIncentives(slug);
 
   if (!project) {
     return null;
@@ -210,7 +209,7 @@ const ItemContent = ({
                 isCompactMode ? 'text-sm' : '',
               )}
             >
-              {hasLiveIncentives && !isSpotlightMode && (
+              {projectHasLiveIncentives && !isSpotlightMode && (
                 <Image
                   src="/icons/liveIncentives.svg"
                   alt="Live Incentives"
@@ -291,8 +290,7 @@ const ItemBoxLayout = ({
   const isSpotlightMode = displayMode === 'spotlight' || displayMode === 'reward-spotlight';
   const isPreviewMode = displayMode === 'preview';
   const isCompactMode = displayMode === 'compact';
-  const dripProgramCompactInfo = getDripProgramCompactInfo();
-  const hasLiveIncentives = project ? project.slug in dripProgramCompactInfo : false;
+  const projectHasLiveIncentives = hasLiveIncentives(project.slug);
 
   return (
     <div
@@ -303,7 +301,7 @@ const ItemBoxLayout = ({
         isSpotlightMode && 'h-[200px] rounded-md border border-white/10',
         isPreviewMode && 'h-fit min-h-[100px]',
         isCompactMode && 'h-fit min-h-[50px] bg-transparent',
-        hasLiveIncentives &&
+        projectHasLiveIncentives &&
           'bg-live-incentives-gradient before:absolute before:rounded-md before:top-[1px] before:left-[1px] before:w-[calc(100%_-_2px)] before:h-[calc(100%_-_2px)] before:bg-default-black hover:before:bg-default-black-hover',
         className,
       )}
@@ -315,7 +313,7 @@ const ItemBoxLayout = ({
           offset={100}
           className={twMerge(
             `h-full relative rounded-md overflow-hidden`,
-            hasLiveIncentives && !isSpotlightMode && 'bg-live-incentives-dimmed-gradient',
+            projectHasLiveIncentives && !isSpotlightMode && 'bg-live-incentives-dimmed-gradient',
           )}
         >
           <ItemContent

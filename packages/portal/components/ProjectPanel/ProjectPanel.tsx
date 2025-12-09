@@ -8,7 +8,7 @@ import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
 import { LIVE_INCENTIVES_END_DATE, LIVE_INCENTIVES_START_DATE } from '@/common/constants';
-import { getDripProgramCompactInfo, getProjectDetailsById } from '@/common/projects';
+import { getProjectDetailsById, hasLiveIncentives as hasLiveIncentivesFn } from '@/common/projects';
 import { EntityType } from '@/common/types';
 import { Card } from '@/components/Card';
 import { DyorChecklist } from '@/components/DyorChecklist';
@@ -41,8 +41,7 @@ export const ProjectPanel = () => {
     useBookmarkedProjects();
 
   // Check if project has live incentives
-  const dripProgramCompactInfo = getDripProgramCompactInfo();
-  const hasLiveIncentives = project ? project.slug in dripProgramCompactInfo : false;
+  const hasLiveIncentives = hasLiveIncentivesFn(projectSlug);
   const liveIncentivesEnded = dayjs().isAfter(dayjs(LIVE_INCENTIVES_END_DATE));
 
   // if no project corresponds to the one passed in query params then no need of this dialog
