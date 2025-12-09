@@ -1,23 +1,15 @@
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
 
-import {
-  getDripProgram,
-  getDripProgramCompactInfo,
-  getProjectsWithLiveIncentives,
-} from '@/common/projects';
+import { getDripProgramCompactInfo, getProjectsWithLiveIncentives } from '@/common/projects';
 
 import { LiveIncentivesBadge } from '../LiveIncentivesBadge';
 import { ProjectItemBox } from '../ProjectItemBox';
 import { ResponsiveHorizontalScrollableLayout } from '../ResponsiveHorizontalScrollableLayout';
 
 export function LiveIncentivesProjects() {
-  const dripProgram = getDripProgram();
-  const dripProgramCompactInfo = getDripProgramCompactInfo(dripProgram);
+  const dripProgramCompactInfo = getDripProgramCompactInfo();
   const LIVE_INCENTIVES_PROJECTS = getProjectsWithLiveIncentives(dripProgramCompactInfo);
-
-  console.log('dripProgramCompactInfo:', Object.keys(dripProgramCompactInfo));
-  console.log('LIVE_INCENTIVES_PROJECTS:', LIVE_INCENTIVES_PROJECTS);
 
   return (
     <div className="flex flex-col gap-4">
@@ -35,10 +27,7 @@ export function LiveIncentivesProjects() {
             key={project.slug}
             analyticsSource={'Homepage Trending Projects'}
             displayMode="spotlight"
-            className={twMerge(
-              'max-w-[300px] lg:max-w-none',
-              'before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-live-incentives-gradient before:opacity-70 hover:before:opacity-100 before:transition-opacity before:duration-100',
-            )}
+            className={'max-w-[300px] lg:max-w-none'}
           >
             <LiveIncentivesBadge className="absolute top-3 left-4" />
           </ProjectItemBox>

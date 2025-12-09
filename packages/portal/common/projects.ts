@@ -1,6 +1,6 @@
 // Projects' database and utility functions
-import projectsJson from '@/public/__auto-generated-projects.json';
 import dripProgramJson from '@/public/__auto-generated-drip-program.json';
+import projectsJson from '@/public/__auto-generated-projects.json';
 
 import { CATEGORIES, getCategoryFromSubcategory } from './categories';
 import { dayjs } from './dateUtils';
@@ -37,6 +37,19 @@ export function sortProjects(
   b: ProjectWithSubcategories | FullProject,
   sortBy: SortOptions = SortOptions.ARBITRUM_NATIVE, // by default, keep Arbitrum Native projects first
 ) {
+  const dripProgramCompactInfo = getDripProgramCompactInfo();
+  const hasLiveIncentives = (project: ProjectWithSubcategories | FullProject) =>
+    project.slug in dripProgramCompactInfo;
+
+  if (sortBy === SortOptions.LIVE_INCENTIVE) {
+    if (hasLiveIncentives(a) && !hasLiveIncentives(b)) {
+      return -1;
+    }
+    if (!hasLiveIncentives(a) && hasLiveIncentives(b)) {
+      return 1;
+    }
+  }
+
   // sort by `isArbitrumNative` first if the option is selected
   if (sortBy === SortOptions.ARBITRUM_NATIVE) {
     if (a.meta.isArbitrumNative && !b.meta.isArbitrumNative) {
@@ -241,9 +254,8 @@ export function getDripProgram(): DripProgramResponse {
  * Processes the drip program data into a compact format keyed by project slug
  * Only includes protocols with active campaigns (liveCampaigns >= 1)
  */
-export function getDripProgramCompactInfo(
-  dripProgram: DripProgramResponse,
-): DripProgramCompactInfo {
+export function getDripProgramCompactInfo(): DripProgramCompactInfo {
+  const dripProgram = getDripProgram();
   return dripProgram.opportunities.reduce((acc, program) => {
     const name = program.protocol.name.toLowerCase();
     if (program.liveCampaigns < 1) {

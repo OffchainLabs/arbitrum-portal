@@ -86,9 +86,20 @@ module.exports = {
         'banner-gradient':
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',
         'celebration-gradient': 'linear-gradient(to right, #1B4ADD6F, #E573106F)',
+        'live-incentives-dimmed-gradient':
+          'linear-gradient(180deg, rgba(153, 242, 78, 0.05) 0%, rgba(8, 214, 243, 0.05) 100%)',
       },
       backgroundSize: {
         '1/2': '50%',
+      },
+      animation: {
+        'progress-bar': 'progress-bar 1.2s ease-in-out 1 forwards',
+      },
+      keyframes: {
+        'progress-bar': {
+          '0%': { left: '-100%' },
+          '100%': { left: '0%' },
+        },
       },
     },
   },

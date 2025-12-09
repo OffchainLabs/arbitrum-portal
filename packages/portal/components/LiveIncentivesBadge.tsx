@@ -5,7 +5,7 @@ export function LiveIncentivesBadge({ className }: { className?: string }) {
   return (
     <div
       className={twMerge(
-        'flex items-center gap-1 rounded bg-live-incentives-gradient  px-1.5 py-0.5 text-xs font-semibold z-10',
+        'flex items-center gap-1 rounded bg-live-incentives-gradient px-1.5 py-0.5 text-xs font-semibold z-10',
         className,
       )}
     >
