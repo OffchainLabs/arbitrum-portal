@@ -8,7 +8,6 @@ import { twMerge } from 'tailwind-merge';
 
 import { projectsWithLiveIncentives } from '@/common/projects';
 
-import { LiveIncentivesBadge } from '../LiveIncentivesBadge';
 import { ProjectItemBox } from '../ProjectItemBox';
 
 export function LiveIncentivesProjects() {
@@ -69,9 +68,7 @@ export function LiveIncentivesProjects() {
             displayMode="spotlight"
             className="lg:max-w-[calc(33%_-_0.5rem)] max-w-[296px] ml-3"
             lazyload={false}
-          >
-            <LiveIncentivesBadge className="absolute top-3 left-4" />
-          </ProjectItemBox>
+          />
         ))}
       </Flickity>
     </div>
