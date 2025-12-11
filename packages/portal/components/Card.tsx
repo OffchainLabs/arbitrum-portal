@@ -1,13 +1,10 @@
 'use client';
 
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import Image from 'next/image';
 import Link, { LinkProps as NextLinkProps } from 'next/link';
 import { usePostHog } from 'posthog-js/react';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
-
-import EclipseBottom from '@/public/images/eclipse_bottom.png';
 
 import { ExternalLink } from './ExternalLink';
 
@@ -34,7 +31,6 @@ type CardAnalyticsProps = {
   cardType?: CardType;
   analyticsProps?: AnalyticsProps;
   showExternalLinkArrow?: boolean;
-  grainy?: boolean;
 };
 type CardPropsWithAnalytics = CardProps & CardAnalyticsProps;
 
@@ -42,20 +38,10 @@ const ExternalLinkArrow = () => (
   <ArrowRightIcon className="absolute bottom-4 right-4 hidden h-4 w-4 group-hover:flex" />
 );
 
-const GrainyBackground = () => (
-  <Image
-    src={EclipseBottom}
-    alt="grains"
-    className="absolute left-1/2 top-0 z-0 w-full -translate-x-1/2 rotate-180 opacity-20"
-    aria-hidden
-  />
-);
-
 export const Card = ({
   children,
   cardType = 'div',
   showExternalLinkArrow,
-  grainy = false,
   ...props
 }: PropsWithChildren<CardPropsWithAnalytics>) => {
   const posthog = usePostHog();
@@ -63,7 +49,6 @@ export const Card = ({
   const commonClassName = twMerge(
     'group w-full overflow-hidden rounded-md bg-default-black p-4 text-sm relative transition-colors duration-300',
     props.className,
-    grainy ? 'relative' : '',
   );
 
   const captureEventOnClick = (e: any) => {
@@ -85,14 +70,9 @@ export const Card = ({
     return (
       <Link
         {...cardProps}
-        className={twMerge(
-          'cursor-pointer hover:bg-default-black-hover',
-          grainy && '[&>*]:z-10',
-          commonClassName,
-        )}
+        className={twMerge('cursor-pointer hover:bg-default-black-hover', commonClassName)}
         onClick={captureEventOnClick}
       >
-        {grainy ? <GrainyBackground /> : null}
         {children}
 
         {showExternalLinkArrow && <ExternalLinkArrow />}
@@ -106,10 +86,9 @@ export const Card = ({
     return (
       <ExternalLink
         {...cardProps}
-        className={twMerge('hover:bg-default-black-hover', grainy && '[&>*]:z-10', commonClassName)}
+        className={twMerge('hover:bg-default-black-hover', commonClassName)}
         onClick={captureEventOnClick}
       >
-        {grainy ? <GrainyBackground /> : null}
         {children}
 
         {showExternalLinkArrow && <ExternalLinkArrow />}
@@ -123,10 +102,9 @@ export const Card = ({
     return (
       <button
         {...cardProps}
-        className={twMerge('hover:bg-default-black-hover', grainy && '[&>*]:z-10', commonClassName)}
+        className={twMerge('hover:bg-default-black-hover', commonClassName)}
         onClick={captureEventOnClick}
       >
-        {grainy ? <GrainyBackground /> : null}
         {children}
         {showExternalLinkArrow && <ExternalLinkArrow />}
       </button>
@@ -140,12 +118,10 @@ export const Card = ({
       {...cardProps}
       className={twMerge(
         'w-full overflow-hidden rounded-lg bg-default-black/80 p-4 text-sm',
-        grainy && '[&>*]:z-10',
         cardProps.className,
       )}
       onClick={captureEventOnClick}
     >
-      {grainy ? <GrainyBackground /> : null}
       {children}
       {showExternalLinkArrow && <ExternalLinkArrow />}
     </div>
