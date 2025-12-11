@@ -8,6 +8,7 @@ import { DripCard } from '@/components/DripCard';
 import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
 import { HeroBanner } from '@/components/HomePage/HeroBanner';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
+import { LiveIncentivesProjects } from '@/components/HomePage/LiveIncentivesProjects';
 import { NewProjects } from '@/components/HomePage/NewProjects';
 import { Resources } from '@/components/HomePage/Resources';
 import { TrendingProjects } from '@/components/HomePage/TrendingProjects';
@@ -61,6 +62,8 @@ export default function Home(props: ServerSideAppProps) {
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
       <HeroBanner />
+
+      <LiveIncentivesProjects />
 
       <TrendingProjects />
 

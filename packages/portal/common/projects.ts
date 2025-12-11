@@ -1,4 +1,5 @@
 // Projects' database and utility functions
+import dripProgramJson from '@/public/__auto-generated-drip-program.json';
 import projectsJson from '@/public/__auto-generated-projects.json';
 
 import { CATEGORIES, getCategoryFromSubcategory } from './categories';
@@ -36,6 +37,18 @@ export function sortProjects(
   b: ProjectWithSubcategories | FullProject,
   sortBy: SortOptions = SortOptions.ARBITRUM_NATIVE, // by default, keep Arbitrum Native projects first
 ) {
+  const checkLiveIncentives = (project: ProjectWithSubcategories | FullProject) =>
+    project.slug in DRIP_PROGRAM_COMPACT_INFO;
+
+  if (sortBy === SortOptions.LIVE_INCENTIVE) {
+    if (checkLiveIncentives(a) && !checkLiveIncentives(b)) {
+      return -1;
+    }
+    if (!checkLiveIncentives(a) && checkLiveIncentives(b)) {
+      return 1;
+    }
+  }
+
   // sort by `isArbitrumNative` first if the option is selected
   if (sortBy === SortOptions.ARBITRUM_NATIVE) {
     if (a.meta.isArbitrumNative && !b.meta.isArbitrumNative) {
@@ -200,3 +213,62 @@ export const TRENDING_PROJECTS = PROJECTS.filter((project) => project.meta.isTre
 export const getProjectsCountForChain = (chainTitle: string) => {
   return PROJECTS_PER_CHAIN_MAP[chainTitle] ?? 0;
 };
+
+// Live Incentives Types and Functions
+type DripProgramOpportunity = {
+  protocol: {
+    name: string;
+    [key: string]: any;
+  };
+  liveCampaigns: number;
+  [key: string]: any;
+};
+
+type DripProgramResponse = {
+  opportunities: DripProgramOpportunity[];
+};
+
+type DripProgramCompactInfo = Record<
+  string,
+  {
+    liveCampaigns: number;
+    protocol: DripProgramOpportunity['protocol'];
+  }
+>;
+
+/**
+ * Cached drip program data in compact format keyed by project slug
+ * Only includes protocols with active campaigns (liveCampaigns >= 1)
+ * This is computed once at module load time and reused everywhere
+ */
+export const DRIP_PROGRAM_COMPACT_INFO: DripProgramCompactInfo = (() => {
+  const dripProgram = dripProgramJson as DripProgramResponse;
+
+  return dripProgram.opportunities.reduce((acc, program) => {
+    const name = program.protocol.name.toLowerCase();
+    if (program.liveCampaigns < 1) {
+      return acc;
+    }
+    // Map special cases: 'silo' and 'euler' to their '-finance' variants to match project slugs
+    const projectSlug = name === 'silo' || name === 'euler' ? `${name}-finance` : name;
+
+    // Deduplicate: if the project already exists, aggregate liveCampaigns
+    if (acc[projectSlug]) {
+      acc[projectSlug].liveCampaigns += program.liveCampaigns;
+    } else {
+      acc[projectSlug] = {
+        liveCampaigns: program.liveCampaigns,
+        protocol: program.protocol,
+      };
+    }
+    return acc;
+  }, {} as DripProgramCompactInfo);
+})();
+
+export function hasLiveIncentives(projectSlug: string): boolean {
+  return projectSlug in DRIP_PROGRAM_COMPACT_INFO;
+}
+
+export const projectsWithLiveIncentives = PROJECTS.filter((project) =>
+  hasLiveIncentives(project.slug),
+);
