@@ -225,6 +225,7 @@ export type ArbitrumWebsiteNotionCmsRow = {
 };
 
 export enum SortOptions {
+  LIVE_INCENTIVE = 'live-incentive',
   ARBITRUM_NATIVE = 'arbitrum-native',
   ALPHABETICAL = 'alphabetical',
 }

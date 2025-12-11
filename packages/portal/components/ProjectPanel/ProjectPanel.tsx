@@ -1,12 +1,14 @@
 'use client';
 
-import { BookmarkIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, BookmarkIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkedIcon } from '@heroicons/react/24/solid';
+import dayjs from 'dayjs';
 import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
-import { getProjectDetailsById } from '@/common/projects';
+import { LIVE_INCENTIVES_END_DATE, LIVE_INCENTIVES_START_DATE } from '@/common/constants';
+import { getProjectDetailsById, hasLiveIncentives as hasLiveIncentivesFn } from '@/common/projects';
 import { EntityType } from '@/common/types';
 import { Card } from '@/components/Card';
 import { DyorChecklist } from '@/components/DyorChecklist';
@@ -18,6 +20,7 @@ import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import IconLink from '@/public/images/link.svg';
 
+import { LiveIncentivesBadge } from '../LiveIncentivesBadge';
 import { AuditWidget } from './AuditWidget';
 import { ChainInfoWidget } from './ChainInfoWidget';
 import { DisclaimerWidget } from './DisclaimerWidget';
@@ -36,6 +39,10 @@ export const ProjectPanel = () => {
   const project = getProjectDetailsById(projectSlug);
   const { isBookmarkedProject, addBookmarkedProject, removeBookmarkedProject } =
     useBookmarkedProjects();
+
+  // Check if project has live incentives
+  const hasLiveIncentives = hasLiveIncentivesFn(projectSlug);
+  const liveIncentivesEnded = dayjs().isAfter(dayjs(LIVE_INCENTIVES_END_DATE));
 
   // if no project corresponds to the one passed in query params then no need of this dialog
   if (!project) return null;
@@ -158,6 +165,7 @@ export const ProjectPanel = () => {
                   Coming Soon
                 </span>
               )}
+              {hasLiveIncentives && <LiveIncentivesBadge />}
               {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={`${project.id}-${subcategory.id}`}
@@ -186,6 +194,51 @@ export const ProjectPanel = () => {
             {project.description}
           </div>
         </Card>
+
+        {hasLiveIncentives && (
+          <div
+            className={
+              'relative flex flex-col md:items-center gap-3 md:flex-row bg-gradient-to-b from-[rgba(153,242,78,0.10)] to-[rgba(8,214,243,0.10)] rounded-lg p-4'
+            }
+          >
+            <div className="flex items-center gap-2 font-normal shrink-0">
+              <Image src="/icons/liveIncentives.svg" alt="Live Incentives" width={20} height={20} />
+              <span>Active Incentives Live on {project.title}</span>
+            </div>
+            <div
+              className={twMerge(
+                'relative overflow-hidden h-[5px] w-full bg-white/20 rounded-lg',
+                !liveIncentivesEnded && 'md:max-w-[440px]',
+              )}
+            >
+              <div
+                className="absolute h-full top-0 left-0 rounded bg-gradient-to-r from-[#99F24E] to-[#08D6F3] animate-progress-bar"
+                style={{
+                  width:
+                    ((new Date().getTime() - new Date(LIVE_INCENTIVES_START_DATE).getTime()) /
+                      (new Date(LIVE_INCENTIVES_END_DATE).getTime() -
+                        new Date(LIVE_INCENTIVES_START_DATE).getTime())) *
+                      100 +
+                    '%',
+                }}
+              />
+            </div>
+            {!liveIncentivesEnded && (
+              <div className="flex w-full md:w-fit justify-between ml-auto shrink-0">
+                <span className="md:hidden text-white/50">End Date</span>
+                <span className="shrink-0">
+                  {dayjs(LIVE_INCENTIVES_END_DATE).format('MMM D, YYYY')}
+                </span>
+              </div>
+            )}
+            <ExternalLink
+              className="bg-white/10 rounded-md w-5 h-5 flex items-center justify-center absolute top-5 right-5 md:top-auto md:right-auto md:relative hover:bg-white/20"
+              href={project.links.website ?? ''}
+            >
+              <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+            </ExternalLink>
+          </div>
+        )}
 
         <div className="grid grid-cols-4 gap-4 lg:grid-cols-4">
           <ChainInfoWidget project={project} />

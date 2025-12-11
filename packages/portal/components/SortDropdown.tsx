@@ -1,5 +1,6 @@
 import { Popover } from '@headlessui/react';
 import { ArrowsUpDownIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
@@ -38,6 +39,24 @@ export const SortDropdown = () => {
         {({ close }) => {
           return (
             <div className="flex flex-col gap-2 text-left">
+              <button
+                className={twMerge(
+                  'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-white hover:text-black md:flex',
+                  sortBy === SortOptions.LIVE_INCENTIVE && 'bg-default-black-hover',
+                )}
+                onClick={() => {
+                  setSort(SortOptions.LIVE_INCENTIVE);
+                  close();
+                }}
+              >
+                <Image
+                  src="/icons/liveIncentives.svg"
+                  alt="Live Incentives"
+                  width={12}
+                  height={12}
+                />
+                Live Incentive
+              </button>
               <button
                 className={twMerge(
                   'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-white hover:text-black md:flex',

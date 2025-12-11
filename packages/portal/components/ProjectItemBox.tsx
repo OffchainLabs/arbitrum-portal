@@ -9,13 +9,14 @@ import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
 
 import { formatOptionalDate } from '@/common/dateUtils';
-import { getProjectDetailsById } from '@/common/projects';
+import { getProjectDetailsById, hasLiveIncentives } from '@/common/projects';
 import { EntityCardDisplayMode, EntityType, FullProject, SearchableData } from '@/common/types';
 import { Card } from '@/components/Card';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import ExternalLinkIcon from '@/public/images/link.svg';
 
+import { LiveIncentivesBadge } from './LiveIncentivesBadge';
 import { Tooltip } from './Tooltip';
 
 export type ItemBoxProps = {
@@ -41,7 +42,7 @@ const BookmarkButton = ({
   if (displayMode === 'preview' || displayMode === 'compact') return null;
 
   return (
-    <button
+    <span
       className={twMerge(
         'absolute z-20 rounded-md p-2 hover:bg-white/20',
         isSpotlightMode ? 'right-2 top-2' : 'right-1 top-1',
@@ -53,7 +54,7 @@ const BookmarkButton = ({
       ) : (
         <BookmarkIcon className="h-[16px] w-[16px]" />
       )}
-    </button>
+    </span>
   );
 };
 
@@ -68,6 +69,7 @@ const ItemContent = ({
   const posthog = usePostHog();
   const { isBookmarkedProject, addBookmarkedProject, removeBookmarkedProject } =
     useBookmarkedProjects();
+  const projectHasLiveIncentives = hasLiveIncentives(slug);
 
   if (!project) {
     return null;
@@ -115,10 +117,8 @@ const ItemContent = ({
   return (
     <button
       className={twMerge(
-        'relative flex h-full w-full flex-col p-4 hover:opacity-100',
-        isSpotlightMode
-          ? 'group box-border overflow-hidden rounded-lg border border-white/10 p-0'
-          : 'gap-2',
+        'relative flex h-full w-full flex-col p-4 hover:opacity-100 overflow-hidden rounded-md',
+        isSpotlightMode ? 'group p-0' : 'gap-2',
       )}
       aria-label={`${title} Website`}
       onClick={handleProjectClick}
@@ -132,7 +132,7 @@ const ItemContent = ({
       {/* Show cover-pic with the tile if it's a spotlight mode */}
       {isSpotlightMode && images.bannerUrl && (
         <div
-          className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 transition-all duration-300 group-hover:opacity-90 lg:bg-center"
+          className="absolute top-0 h-full w-full bg-cover bg-top bg-no-repeat opacity-70 lg:bg-center"
           style={{ backgroundImage: `url(${images.bannerUrl})` }}
         />
       )}{' '}
@@ -141,7 +141,7 @@ const ItemContent = ({
         className={twMerge(
           'flex w-full flex-row gap-2',
           isSpotlightMode
-            ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-gradient-to-t from-black/70 to-transparent p-4 transition-all duration-300 group-hover:to-black/50'
+            ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-gradient-to-t from-black/70 to-black/20 p-4 bg-[size:200%] transition-all duration-300 group-hover:bg-bottom bg-top'
             : '',
           isPreviewMode ? 'items-center gap-4' : '',
           isCompactMode ? 'gap-3' : '',
@@ -207,6 +207,14 @@ const ItemContent = ({
                 isCompactMode ? 'text-sm' : '',
               )}
             >
+              {projectHasLiveIncentives && !isSpotlightMode && (
+                <Image
+                  src="/icons/liveIncentives.svg"
+                  alt="Live Incentives"
+                  width={18}
+                  height={18}
+                />
+              )}
               {title}
             </h5>
             <p
@@ -263,6 +271,9 @@ const ItemContent = ({
           </div>
         </div>
       </div>
+      {isSpotlightMode && projectHasLiveIncentives && (
+        <LiveIncentivesBadge className="absolute top-3 left-4" />
+      )}
     </button>
   );
 };
@@ -278,21 +289,32 @@ const ItemBoxLayout = ({
   const isSpotlightMode = displayMode === 'spotlight' || displayMode === 'reward-spotlight';
   const isPreviewMode = displayMode === 'preview';
   const isCompactMode = displayMode === 'compact';
+  const projectHasLiveIncentives = hasLiveIncentives(project.slug);
 
   return (
     <div
       className={twMerge(
-        'h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
+        'relative h-full min-h-[150px] w-full overflow-hidden rounded-md bg-default-black hover:bg-default-black-hover',
         project.meta.isLive ? '' : ' opacity-80',
         displayMode === 'bookmarked' && 'lg:h-[160px]',
-        isSpotlightMode && 'h-[200px] rounded-lg',
+        isSpotlightMode && 'h-[200px] rounded-md border border-white/10',
         isPreviewMode && 'h-fit min-h-[100px]',
         isCompactMode && 'h-fit min-h-[50px] bg-transparent',
+        projectHasLiveIncentives &&
+          'bg-live-incentives-gradient before:absolute before:rounded-md before:top-[1px] before:left-[1px] before:w-[calc(100%_-_2px)] before:h-[calc(100%_-_2px)] before:bg-default-black hover:before:bg-default-black-hover',
         className,
       )}
     >
       {lazyload ? (
-        <LazyLoad height="165px" once offset={100} className={`h-full`}>
+        <LazyLoad
+          height="165px"
+          once
+          offset={100}
+          className={twMerge(
+            `h-full relative rounded-md overflow-hidden`,
+            projectHasLiveIncentives && !isSpotlightMode && 'bg-live-incentives-dimmed-gradient',
+          )}
+        >
           <ItemContent
             slug={project.slug}
             displayMode={displayMode}
@@ -342,7 +364,7 @@ export const ProjectItemBox = ({
           <Card
             cardType="externalLink"
             href={project.links.website}
-            className="flex flex-row flex-nowrap items-center justify-start gap-2 bg-default-black-hover p-3 hover:bg-default-black-hover/80"
+            className="relative flex flex-row flex-nowrap items-center justify-start gap-2 bg-default-black-hover p-3 hover:bg-default-black-hover/80"
           >
             <Image src={ExternalLinkIcon} alt={`Visit Website`} className="h-4 w-4" />
             Visit Website

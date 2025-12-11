@@ -144,7 +144,7 @@
 
 .flickity-prev-next-button {
   position: absolute;
-  top: -2rem;
+  top: -2.7rem;
   border-radius: 5px;
   background: rgb(26 28 29);
   display: flex;
@@ -161,12 +161,12 @@
 
 .flickity-prev-next-button.previous {
   left: unset;
-  right: 45px;
+  right: 55px;
 }
 
 .flickity-prev-next-button.next {
   left: unset;
-  right: 0;
+  right: 10px;
 }
 
 .flickity-prev-next-button .flickity-button-icon {
