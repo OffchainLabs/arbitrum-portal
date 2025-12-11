@@ -11,7 +11,6 @@ export const DripCard = () => {
         background: 'linear-gradient(to bottom, #a6f842, #00daf5)',
       }}
       href="https://arbitrumdrip.com/"
-      grainy
     >
       <div className="z-10 flex h-full w-full flex-col justify-around gap-4">
         <Image

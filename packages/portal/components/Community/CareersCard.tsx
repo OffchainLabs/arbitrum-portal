@@ -7,7 +7,6 @@ export const CareersCard = () => (
     cardType="externalLink"
     className="relative m-1 flex shrink-0 grow-0 flex-col flex-nowrap items-start justify-around bg-[#152C4E] p-4 py-6 text-base hover:bg-[#152C4E80] lg:m-0 lg:h-[160px] lg:min-h-min lg:p-6 lg:text-2xl"
     href="https://jobs.arbitrum.io/"
-    grainy
     analyticsProps={{
       eventName: `Community Page Clicks`,
       eventProperties: {
