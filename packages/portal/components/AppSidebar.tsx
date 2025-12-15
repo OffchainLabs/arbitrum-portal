@@ -30,8 +30,8 @@ export const AppSidebar = () => {
       case '/projects/gaming':
         setActiveMenu('Gaming');
         break;
-      case '/projects/nfts':
-        setActiveMenu('NFTs');
+      case '/projects/consumer':
+        setActiveMenu('Consumer');
         break;
       case '/projects/infra-and-tools':
         setActiveMenu('Infra & Tools');

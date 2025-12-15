@@ -6,7 +6,7 @@ import { Card } from './Card';
 const descriptions: { [id: string]: React.ReactNode } = {
   'defi':
     'DeFi, short for Decentralized Finance, is a way to do financial activities like lending, borrowing, and trading using blockchain technology instead of traditional banks. It uses smart contracts to automate processes and removes the need for intermediaries, making finance more accessible and open to everyone.',
-  'nfts':
+  'consumer':
     'An NFT, short for Non-Fungible Token, is a unique digital asset that is stored on a blockchain and can be used to represent ownership of anything from artwork to music to videos. It is a digital certificate of authenticity that makes it impossible to counterfeit or forge, and it also provides a secure way to track ownership.',
   'bridges-and-on-ramps': (
     <>
