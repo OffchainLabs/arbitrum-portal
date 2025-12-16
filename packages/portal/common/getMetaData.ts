@@ -20,8 +20,8 @@ const categoriesHomePageMeta: { [slug: string]: string } = {
     'Explore DeFi chains on Arbitrum: Unlock fast, low-cost decentralized finance solutions on Ethereum’s leading Layer 2 scaling platform.',
   'gaming':
     'Play Pirate Nation, The Beacon, Farcana, and more on the fastest-growing gaming ecosystem on Ethereum.',
-  'nfts':
-    'Create and trade NFTs seamlessly on Arbitrum’s NFT-focused chains. Enjoy low fees, fast transactions, and scalability on Ethereum Layer 2.',
+  'consumer':
+    'Everyday apps including social, payments, and digital experiences built for real users.',
   'bridges-and-on-ramps':
     'Bridge to Arbitrum, on-ramp fiat, and use a smart contract wallet on the most decentralized L2 on Ethereum.',
   'infra-and-tools':

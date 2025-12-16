@@ -26,7 +26,6 @@ import { ChainInfoWidget } from './ChainInfoWidget';
 import { DisclaimerWidget } from './DisclaimerWidget';
 import { GithubWidget } from './GithubWidget';
 import { LinksWidget } from './LinksWidget';
-import { NFTWidget } from './NFTWidget';
 import { PlatformsWidget } from './PlatformsWidget';
 import { SimilarProjects } from './SimilarProjects';
 import { TeamWidget } from './TeamWidget';
@@ -251,9 +250,6 @@ export const ProjectPanel = () => {
         <div className="flex flex-col flex-nowrap gap-4 lg:flex-row">
           {/* Team and Org details */}
           <TeamWidget project={project} />
-
-          {/* NFT Minting details */}
-          <NFTWidget project={project} />
 
           {/* Code and Github */}
           <GithubWidget project={project} />
