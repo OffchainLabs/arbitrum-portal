@@ -132,6 +132,11 @@ module.exports = {
         destination: '/chains/:path*',
         permanent: true,
       },
+      {
+        source: '/projects/nfts',
+        destination: '/projects?subcategories=nft-collection_nft-marketplace',
+        permanent: true,
+      },
     ];
   },
 };
