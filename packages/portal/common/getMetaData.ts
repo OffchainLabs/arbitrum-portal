@@ -21,7 +21,7 @@ const categoriesHomePageMeta: { [slug: string]: string } = {
   'gaming':
     'Play Pirate Nation, The Beacon, Farcana, and more on the fastest-growing gaming ecosystem on Ethereum.',
   'consumer':
-    'Create and trade NFTs seamlessly on Arbitrum’s NFT-focused chains. Enjoy low fees, fast transactions, and scalability on Ethereum Layer 2.',
+    'Everyday apps including social, payments, and digital experiences built for real users.',
   'bridges-and-on-ramps':
     'Bridge to Arbitrum, on-ramp fiat, and use a smart contract wallet on the most decentralized L2 on Ethereum.',
   'infra-and-tools':
