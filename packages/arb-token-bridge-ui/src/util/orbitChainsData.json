@@ -1327,6 +1327,54 @@
         },
         "fastWithdrawalTime": 180000
       }
+    },
+    {
+      "chainId": 680,
+      "confirmPeriodBlocks": 6000,
+      "ethBridge": {
+        "bridge": "0x546bd55bF4f3F05810f14eea894cEaB8Cb58F1EA",
+        "inbox": "0x76e17330a08C9e4943D9E617109cF1f4ED05Ee83",
+        "outbox": "0x15A2937b7FB92eC2b550B5Ce9bF8ffE92373d2F8",
+        "rollup": "0x1ad4DEDFe0D975D2b547aBD607194750aA7f6310",
+        "sequencerInbox": "0x37C6a6d9986542844D156F852A0047F7592b06fa"
+      },
+      "nativeToken": "0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC",
+      "explorerUrl": "https://explorer.jasmyscan.net",
+      "rpcUrl": "https://jasmychain-mainnet.alt.technology",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "JasmyChain",
+      "slug": "jasmychain",
+      "parentChainId": 1,
+      "tokenBridge": {
+        "parentCustomGateway": "0xBA0B5e6F41BA1826704c0af2043F1148844269dB",
+        "parentErc20Gateway": "0x3569A4F6373E1A482C43cBF41C41B918ffCf68CC",
+        "parentGatewayRouter": "0x07dD4Fc6464FCDeA05516EA38C99DA19a721CEdC",
+        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0xfAbe2F2E24D21C02A943340E66fD8DD6BA06cdb1",
+        "childErc20Gateway": "0x97A41C0cc800F01e3e49be698a3e1ffc7d96aa4A",
+        "childGatewayRouter": "0xB2D4759Ffcce8a981359D6fbC76c5C97248751f9",
+        "childMultiCall": "0x3D3a2c7f1E65D19dc52F96C4EF27B168256D9fE5",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#FF8C00",
+        "network": {
+          "name": "JasmyChain",
+          "logo": "/images/JasmyChain_Logo.jpg",
+          "description": "JasmyChain, built on Arbitrum Orbit, is an Ethereum Layer 2 dedicated to realizing Data Democracy. The system centers on the PDL (Decentralized ID), empowering individuals to manage their Platinum Data and IoT devices. By securely handling the storage, identification, and extension of this data, JasmyChain maximizes individual data value. It also guarantees high-speed, low-cost operations and supports Account Abstraction to build a secure, user-friendly infrastructure for the decentralized data economy."
+        },
+        "nativeTokenData": {
+          "name": "JasmyCoin",
+          "symbol": "JASMY",
+          "logoUrl": "/images/JasmyChain_NativeTokenLogo.jpg"
+        }
+      }
     }
   ],
   "testnet": [
