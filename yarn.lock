@@ -2176,10 +2176,10 @@
   dependencies:
     "@octokit/openapi-types" "^23.0.1"
 
-"@offchainlabs/cobalt@^0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@offchainlabs/cobalt/-/cobalt-0.5.0.tgz#1c2151b2bbb48ddac5a6d5352c04746f1f98a3d3"
-  integrity sha512-JAFaeVuJGXl5gyZdb+FPYoO08y7RVvAvENPewgoyst/jz9vUiPWfN3BDF89+XbiOD85xqYZKTeH+cnknhq0Vow==
+"@offchainlabs/cobalt@^0.5.1":
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/@offchainlabs/cobalt/-/cobalt-0.5.1.tgz#c3324834c9ff42def4277ea18d473ebc25aa5864"
+  integrity sha512-zXcVg+BMStRSYhSqQ8lmdMDiYFH4QO2NbghAEnebl+Ftymb5x1DCPphyDPem9pI400MxF6MFaLEC7IjPA3O8Ww==
 
 "@offchainlabs/eslint-config-typescript@0.2.2":
   version "0.2.2"
