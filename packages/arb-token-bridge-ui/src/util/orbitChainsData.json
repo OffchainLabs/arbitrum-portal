@@ -1339,7 +1339,7 @@
         "sequencerInbox": "0x37C6a6d9986542844D156F852A0047F7592b06fa"
       },
       "nativeToken": "0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC",
-      "explorerUrl": "https://jasmyscan.net",
+      "explorerUrl": "https://explorer.jasmyscan.net",
       "rpcUrl": "https://jasmychain-mainnet.alt.technology",
       "isCustom": true,
       "isTestnet": false,
