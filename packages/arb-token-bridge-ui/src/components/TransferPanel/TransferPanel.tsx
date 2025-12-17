@@ -51,6 +51,7 @@ import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
+import { extractErrorMessage } from '../../util/extractErrorMessage';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { getNetworkName, isNetwork } from '../../util/networks';
@@ -599,9 +600,7 @@ export function TransferPanel() {
             label: 'lifi_approve_token',
             category: 'token_approval',
           });
-          errorToast(
-            `Lifi token approval transaction failed: ${(error as Error)?.message ?? error}`,
-          );
+          errorToast(`Lifi approval transaction failed: ${extractErrorMessage(error)}`);
           return;
         }
       }
@@ -686,7 +685,7 @@ export function TransferPanel() {
         label: 'lifi_transfer',
         category: 'token_transfer',
       });
-      errorToast(`Lifi withdrawal transaction failed: ${(error as Error)?.message ?? error}`);
+      errorToast(`Lifi transaction failed: ${extractErrorMessage(error)}`);
     } finally {
       setTransferring(false);
     }
