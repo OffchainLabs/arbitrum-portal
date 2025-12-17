@@ -3,13 +3,13 @@ import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { unica } from '@/bridge/components/common/Font';
-import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
+import { PORTAL_DOMAIN } from '@/bridge/constants';
 
 import { BodyClassSyncer } from '../components/BodyClassSyncer';
 import '../styles/common.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(PORTAL_DATA_ENDPOINT),
+  metadataBase: new URL(PORTAL_DOMAIN),
   icons: {
     icon: '/logo.png',
   },
