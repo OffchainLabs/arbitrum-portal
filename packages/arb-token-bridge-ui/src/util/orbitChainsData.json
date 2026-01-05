@@ -1427,54 +1427,6 @@
       }
     },
     {
-      "chainId": 53457,
-      "confirmPeriodBlocks": 150,
-      "ethBridge": {
-        "bridge": "0xC0856971702b02A5576219540BD92DAE79a79288",
-        "inbox": "0xD62ef8d8c71d190417C6CE71f65795696C069f09",
-        "outbox": "0xaEB5Fe2f7003881c3a8EBAE9664E8607f3935d53",
-        "rollup": "0x85F14C092e5Be656DCB0027517C70cf31B5DB462",
-        "sequencerInbox": "0x67ad6c79E33eA9e523E0e68961456d0ac7A973Cc"
-      },
-      "nativeToken": "0xAC716E87b0853C0712674e8E3a8435a489F276b4",
-      "explorerUrl": "https://testnet-scan.dodochain.com",
-      "rpcUrl": "https://dodochain-testnet.alt.technology",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "DODOchain Testnet",
-      "slug": "dodochain-testnet",
-      "parentChainId": 421614,
-      "tokenBridge": {
-        "parentCustomGateway": "0xeCa856BE0041184eeda8F2c98896AC4693b168EA",
-        "parentErc20Gateway": "0xf57F874845CD652e69f69f020A4d46F4e427bb43",
-        "parentGatewayRouter": "0xE3661c8313B35BA310Ad89e113561F3C983dC761",
-        "parentMultiCall": "0xce1CAd780c529e66e3aa6D952a1ED9A6447791c1",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x6B8C4aD57806fB4563031B79348bcC4CC3bBa7D5",
-        "childErc20Gateway": "0xBb94635f882f03f7641B742F5e3070e6B5108b71",
-        "childGatewayRouter": "0x14De2d9c4C7F5ad2d134Eb746207653797693C0D",
-        "childMultiCall": "0xF6Fd6C87C4cac9A4BF4b6fF4efa4B06bdbbe5D51",
-        "childProxyAdmin": "0x80C5A0C4004B4130b823AfE8D97aAeA3fBFf3fCc",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#B88B1E",
-        "network": {
-          "name": "DODOchain Testnet",
-          "logo": "/images/DODOchain.png",
-          "description": "An Omni-Trading Layer3 Powered by Arbitrum Orbit."
-        },
-        "nativeTokenData": {
-          "name": "Berd",
-          "symbol": "BERD",
-          "logoUrl": ""
-        }
-      }
-    },
-    {
       "chainId": 1918988905,
       "confirmPeriodBlocks": 64,
       "ethBridge": {
