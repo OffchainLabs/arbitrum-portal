@@ -563,11 +563,19 @@ export function TransferPanel() {
         return;
       }
 
+      const destinationChainErc20Address =
+        tokenOverrides.destination?.address || isDepositMode
+          ? selectedToken?.l2Address
+          : selectedToken?.address;
+      const sourceChainErc20Address =
+        tokenOverrides.source?.address || isDepositMode
+          ? selectedToken?.address
+          : selectedToken?.l2Address;
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,
-        destinationChainErc20Address: tokenOverrides.destination?.address,
-        sourceChainErc20Address: tokenOverrides.source?.address,
+        destinationChainErc20Address,
+        sourceChainErc20Address,
         lifiData: {
           ...context,
           transactionRequest,

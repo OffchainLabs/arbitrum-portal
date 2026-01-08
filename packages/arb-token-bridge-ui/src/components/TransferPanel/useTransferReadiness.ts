@@ -25,6 +25,7 @@ import {
 } from '../../util/TokenUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
+import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
 import { useTokensFromLists } from './TokenSearchUtils';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
@@ -492,10 +493,12 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       );
 
       if (feeToPay > ethBalanceFloat) {
+        // For LiFi routes, fees are paid in the source chain's native currency
+        const sourceChain = getWagmiChain(networks.sourceChain.id);
         return notReady({
           errorMessages: {
             inputAmount1: getInsufficientFundsForGasFeesErrorMessage({
-              asset: nativeCurrency.symbol,
+              asset: sourceChain.nativeCurrency.symbol,
               chain: networks.sourceChain.name,
               balance: formatAmount(ethBalanceFloat),
               requiredBalance: formatAmount(feeToPay),
