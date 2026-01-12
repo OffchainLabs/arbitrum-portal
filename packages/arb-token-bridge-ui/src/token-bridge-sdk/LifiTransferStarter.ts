@@ -7,6 +7,7 @@ import { TransactionRequest } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { fetchErc20Allowance } from '../util/TokenUtils';
+import { isDepositMode } from '../util/isDepositMode';
 import {
   ApproveTokenProps,
   BridgeTransferStarter,
@@ -105,10 +106,13 @@ export class LifiTransferStarter extends BridgeTransferStarter {
   }
 
   public async transferEstimateGas() {
-    // We only use lifi for withdrawal, source chain is the child chain
+    const sourceChainId = await this.getSourceChainId();
+    const destinationChainId = (await this.destinationChainProvider.getNetwork()).chainId;
+    const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
+
     return {
-      estimatedParentChainGas: constants.Zero,
-      estimatedChildChainGas: this.lifiData.gas.amount,
+      estimatedParentChainGas: isDeposit ? this.lifiData.gas.amount : constants.Zero,
+      estimatedChildChainGas: isDeposit ? constants.Zero : this.lifiData.gas.amount,
     };
   }
 
