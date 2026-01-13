@@ -66,6 +66,20 @@ export const RaasProviderGrid = () => {
         link="https://www.gateway.fm/"
         logo="/images/GatewayLogo.png"
       />
+      <RaasProviderCard
+        name="Nodeinfra"
+        description="Supports AnyTrust and Rollup chains"
+        caption="Powering Silicon"
+        link="https://nodeinfra.com/"
+        logo="/images/NodeinfraLogo.png"
+      />
+      <RaasProviderCard
+        name="Unifra"
+        description="Supports Rollup chains"
+        caption="Powering Merlin, B2 and Dogeos"
+        link="https://unifra.io/rollup"
+        logo="/images/UnifraLogo.png"
+      />
     </div>
   );
 };
