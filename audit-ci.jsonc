@@ -64,5 +64,10 @@
     // GHSA-vqpr-j7v3-hqw9|arb-token-bridge-ui>@lifi/sdk>@mysten/wallet-standard>@mysten/sui>valibot
     // Reason to ignore: Not used directly. Patched version is a major bump
     "GHSA-vqpr-j7v3-hqw9",
+    // https://github.com/advisories/GHSA-848j-6mx2-7j84
+    // Elliptic Uses a Cryptographic Primitive with a Risky Implementation
+    // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
+    // Reason to ignore: Low severity vulnerability with no patched version available yet
+    "GHSA-848j-6mx2-7j84",
   ],
 }
