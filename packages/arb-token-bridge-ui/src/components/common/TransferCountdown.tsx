@@ -36,7 +36,8 @@ export function TransferCountdown({
     estimatedMinutesLeft -= getOrbitDepositDuration(isTestnet);
   }
 
-  const isStandardDeposit = !tx.isWithdrawal && !tx.isCctp && !isTeleport && !tx.isOft;
+  const isStandardDeposit =
+    !tx.isWithdrawal && !tx.isCctp && !isTeleport && !tx.isOft && !tx.isLifi;
 
   if (isStandardDeposit) {
     const depositStatus = tx.depositStatus;
