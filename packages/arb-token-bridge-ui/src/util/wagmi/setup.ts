@@ -1,9 +1,4 @@
-import {
-  Chain,
-  connectorsForWallets,
-  getDefaultConfig,
-  getDefaultWallets,
-} from '@rainbow-me/rainbowkit';
+import { Chain, connectorsForWallets, getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { _chains } from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
 import {
   binanceWallet,
@@ -165,10 +160,6 @@ export function getProps(targetChainKey: string | null) {
     ...appInfo,
     chains: getChains(sanitizeTargetChainKey(targetChainKey)),
   });
-
-  const { wallets } = getDefaultWallets();
-
-  console.log('xxxx wallets', wallets);
 
   const connectors = connectorsForWallets(
     [
