@@ -7,6 +7,7 @@ import {
   metaMaskWallet,
   okxWallet,
   rabbyWallet,
+  safeWallet,
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
@@ -165,7 +166,14 @@ export function getProps(targetChainKey: string | null) {
     [
       {
         groupName: 'Popular',
-        wallets: [metaMaskWallet, rabbyWallet, walletConnectWallet, okxWallet, binanceWallet],
+        wallets: [
+          metaMaskWallet,
+          rabbyWallet,
+          safeWallet,
+          walletConnectWallet,
+          okxWallet,
+          binanceWallet,
+        ],
       },
       {
         groupName: 'More',
