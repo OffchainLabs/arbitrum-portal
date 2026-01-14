@@ -1,5 +1,3 @@
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
-
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
@@ -27,10 +25,6 @@ export function isArbitrumCanonicalTransfer({
   selectedToken: ERC20BridgeToken | null;
 }): boolean {
   const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
-  const isTeleportMode = isValidTeleportChainPair({
-    destinationChainId,
-    sourceChainId,
-  });
   const isValidPair = getDestinationChainIds(sourceChainId).includes(destinationChainId);
 
   if (!isValidPair) {
@@ -43,7 +37,6 @@ export function isArbitrumCanonicalTransfer({
       isDepositMode: isDeposit,
       isSelectedTokenWithdrawOnly,
       isSelectedTokenWithdrawOnlyLoading,
-      isTeleportMode,
       parentChainId: parentChainId,
       selectedToken,
     })
