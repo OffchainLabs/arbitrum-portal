@@ -5,7 +5,15 @@ import {
   getDefaultWallets,
 } from '@rainbow-me/rainbowkit';
 import { _chains } from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
-import { okxWallet, rabbyWallet, trustWallet } from '@rainbow-me/rainbowkit/wallets';
+import {
+  binanceWallet,
+  coinbaseWallet,
+  injectedWallet,
+  metaMaskWallet,
+  okxWallet,
+  rabbyWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
 
@@ -160,14 +168,17 @@ export function getProps(targetChainKey: string | null) {
 
   const { wallets } = getDefaultWallets();
 
-  wallets[0]?.wallets.push(okxWallet);
+  console.log('xxxx wallets', wallets);
 
   const connectors = connectorsForWallets(
     [
-      ...wallets,
+      {
+        groupName: 'Popular',
+        wallets: [metaMaskWallet, rabbyWallet, walletConnectWallet, okxWallet, binanceWallet],
+      },
       {
         groupName: 'More',
-        wallets: [trustWallet, rabbyWallet],
+        wallets: [coinbaseWallet, injectedWallet],
       },
     ],
     appInfo,
