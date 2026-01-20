@@ -700,7 +700,7 @@
         "bridge": "0x8620F893F6321C31909e4a58bcEb6948A289e0fD",
         "inbox": "0xe7D7C04885f460e0c58504D617C65ab064A4879D",
         "outbox": "0x74045319D890f0C0CD7914F2DE757F25492331f0",
-        "rollup": "0x45e39B0957FE6eac4Be9B0A02462290A17724a68",
+        "rollup": "0x4ef3463F0Ffc1E9bfe30f72D705C259A0A0cCb56",
         "sequencerInbox": "0xa80dD081B83399614fa0BB497174Bdcb3EF4Efe6"
       },
       "nativeToken": "0xcf5104d094e3864cfcbda43b82e1cefd26a016eb",
@@ -747,7 +747,7 @@
         "bridge": "0xd75a60aFcBC113C1c76e42184663Da141f839053",
         "inbox": "0x46a2f92Fa215eBc734e51b26da3d205de71FA930",
         "outbox": "0xC327F5cDBAAc8879EE8017A0977C9a685A850a4F",
-        "rollup": "0xfcEE41852E5Ec9b907714200B2A3c5b7AC29e7Ae",
+        "rollup": "0xf3B30Fd67211C57e2Cc36D5a41dB28415AF55BB7",
         "sequencerInbox": "0x2fccc2de02Dd598E14403C4151F192d962E646Ba"
       },
       "nativeToken": "0x690F1eEf8AcEaD09Ac695d9111Af081045c6d5b7",
