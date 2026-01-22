@@ -11,11 +11,11 @@ export type CheckboxProps = {
 
 export function Checkbox({ labelClassName, label, ...props }: CheckboxProps) {
   return (
-    <Switch.Group as="div" className="arb-hover flex flex-row items-center space-x-1">
+    <Switch.Group as="div" className="arb-hover flex flex-row items-start space-x-1">
       <Switch
         {...props}
         className={twMerge(
-          'h-3 w-3 flex-shrink-0 rounded-[3px] transition duration-200 ease-in-out',
+          'h-3 w-3 flex-shrink-0 rounded-[3px] transition duration-200 ease-in-out mt-[4px]',
           props.checked
             ? 'border-[1px] border-dark bg-white'
             : 'border-[1px] border-gray-6 bg-dark',

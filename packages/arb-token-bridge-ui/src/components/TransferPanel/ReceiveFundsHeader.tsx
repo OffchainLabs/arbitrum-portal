@@ -46,7 +46,7 @@ export const ReceiveFundsHeader = () => {
     <div
       className={twMerge(
         'flex max-h-8 flex-col gap-3 overflow-hidden transition-all duration-200',
-        showCustomDestinationAddressInput && 'max-h-[180px]',
+        showCustomDestinationAddressInput && 'md:max-h-[180px] max-h-[230px]',
         destinationAddressError && 'max-h-[230px]',
       )}
     >
