@@ -456,11 +456,8 @@ export function sanitizeNullSelectedToken({
       return erc20ParentAddress;
     }
 
-    // Superposition doesn't have ApeToken, so we default to AddressZero when transferring between Superposition and ApeChain
-    if (
-      (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) ||
-      (sourceChainId === ChainId.ApeChain && destinationChainId === ChainId.Superposition)
-    ) {
+    // Superposition doesn't have ApeToken, so we default to AddressZero only when ApeChain is the destination
+    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
       return constants.AddressZero;
     }
 
