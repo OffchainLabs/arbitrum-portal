@@ -32,6 +32,7 @@ export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest';
 export type RouteProps = {
   type: RouteType;
   amountReceived: string;
+  amountReceivedUsd?: string | number | null;
   durationMs: number;
   isLoadingGasEstimate: boolean;
   overrideToken?: ERC20BridgeToken;
@@ -102,6 +103,7 @@ const DelimiterDot = () => <div className="h-1 w-1 rounded-full bg-white" />;
 // Route Amount Component
 type RouteAmountProps = {
   amountReceived: string;
+  amountReceivedUsd: string | number | null;
   token: ERC20BridgeToken | NativeCurrency;
   showUsdValueForReceivedToken: boolean;
   isBatchTransferSupported: boolean;
@@ -111,14 +113,13 @@ type RouteAmountProps = {
 
 const RouteAmount = ({
   amountReceived,
+  amountReceivedUsd,
   token,
   showUsdValueForReceivedToken,
   isBatchTransferSupported,
   amount2,
   childNativeCurrency,
 }: RouteAmountProps) => {
-  const { ethToUSD } = useETHPrice();
-
   return (
     <div className="flex min-w-36 flex-col gap-1">
       <div className="flex flex-col gap-1 text-lg">
@@ -133,9 +134,9 @@ const RouteAmount = ({
               {formatAmount(Number(amountReceived))} {token.symbol}
             </div>
 
-            {showUsdValueForReceivedToken && (
+            {showUsdValueForReceivedToken && amountReceivedUsd !== null && (
               <div className="text-sm tabular-nums text-white/50">
-                {formatUSD(ethToUSD(Number(amountReceived)))}
+                {formatUSD(Number(amountReceivedUsd))}
               </div>
             )}
           </div>
@@ -314,6 +315,7 @@ export const Route = React.memo(
     bridgeIconURI,
     durationMs,
     amountReceived,
+    amountReceivedUsd: amountReceivedUsdProp = null,
     isLoadingGasEstimate,
     overrideToken,
     gasCost,
@@ -336,6 +338,7 @@ export const Route = React.memo(
     const [{ amount2, destinationAddress }] = useArbQueryParams();
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
+    const { ethToUSD } = useETHPrice();
 
     const token = overrideToken || _token || childNativeCurrency;
 
@@ -343,7 +346,15 @@ export const Route = React.memo(
     const isEth =
       (!('address' in token) || addressesEqual(token.address, constants.AddressZero)) &&
       networks.destinationChain.id !== ChainId.ApeChain;
-    const showUsdValueForReceivedToken = !isTestnet && isEth;
+    // useETHPrice and ETH price from lifi are slightly different. We use ETH price from useETHPrice for consistency across the app.
+    const amountReceivedUsd = isTestnet
+      ? null
+      : isEth
+        ? ethToUSD(Number(amountReceived))
+        : amountReceivedUsdProp !== null && amountReceivedUsdProp !== ''
+          ? amountReceivedUsdProp
+          : null;
+    const showUsdValueForReceivedToken = !isTestnet && amountReceivedUsd !== null;
 
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)
@@ -387,6 +398,7 @@ export const Route = React.memo(
         >
           <RouteAmount
             amountReceived={amountReceived}
+            amountReceivedUsd={amountReceivedUsd}
             token={token}
             showUsdValueForReceivedToken={showUsdValueForReceivedToken}
             isBatchTransferSupported={isBatchTransferSupported}
