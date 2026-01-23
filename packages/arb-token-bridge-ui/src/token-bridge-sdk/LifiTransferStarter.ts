@@ -62,7 +62,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     amount,
     owner,
   }: RequiresTokenApprovalProps): Promise<boolean> {
-    if (!this.sourceChainErc20Address) {
+    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
       // If we have no sourceChainErc20Address, we assume we want to send ETH
       return false;
     }
@@ -78,7 +78,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
   }
 
   public async approveToken({ signer, amount }: ApproveTokenProps) {
-    if (!this.sourceChainErc20Address) {
+    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
       return;
     }
 

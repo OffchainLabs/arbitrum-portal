@@ -319,9 +319,12 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     const selectedTokenBalanceFloat = isDepositMode
       ? selectedTokenL1BalanceFloat
       : selectedTokenL2BalanceFloat;
-    const customFeeTokenBalanceFloat = isDepositMode
-      ? customFeeTokenL1BalanceFloat
-      : ethL2BalanceFloat;
+    const isCustomFeeToken = nativeCurrency.isCustom && !isLifiRoute(selectedRoute);
+    const customFeeTokenBalanceFloat = isCustomFeeToken
+      ? isDepositMode
+        ? customFeeTokenL1BalanceFloat
+        : ethL2BalanceFloat
+      : null;
 
     // No error while loading balance
     if (ethBalanceFloat === null) {
@@ -329,7 +332,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     const sendsAmount2 = Number(amount2) > 0;
-    const notEnoughAmount2 = nativeCurrency.isCustom
+    const notEnoughAmount2 = isCustomFeeToken
       ? Number(amount2) > Number(customFeeTokenL1BalanceFloat)
       : Number(amount2) > ethBalanceFloat - (estimatedL1GasFees + estimatedL2GasFees);
 
@@ -433,7 +436,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
     // Custom fee token
-    else if (nativeCurrency.isCustom) {
+    else if (isCustomFeeToken) {
       // No error while loading balance
       if (customFeeTokenBalanceFloat === null) {
         return notReady();
@@ -472,6 +475,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           }),
         },
       });
+    }
+
+    if (!tosAccepted) {
+      return notReady();
     }
 
     /**
@@ -531,10 +538,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           },
         });
       }
-    }
 
-    if (!tosAccepted) {
-      return notReady();
+      return ready();
     }
 
     // The amount entered is enough funds, but now let's include gas costs
@@ -559,7 +564,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       case 'success': {
         if (selectedToken) {
           // If depositing into a custom fee token network, gas is split between ETH and the custom fee token
-          if (nativeCurrency.isCustom && isDepositMode) {
+          if (isCustomFeeToken && isDepositMode) {
             // Still loading custom fee token balance
             if (customFeeTokenL1BalanceFloat === null) {
               return notReady();
@@ -647,7 +652,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           return ready();
         }
 
-        if (nativeCurrency.isCustom && isDepositMode) {
+        if (isCustomFeeToken && isDepositMode) {
           // Deposits of the custom fee token will be paid in ETH, so we have to check if there's enough ETH to cover L1 gas
           // Withdrawals of the custom fee token will be treated same as ETH withdrawals (in the case below)
 

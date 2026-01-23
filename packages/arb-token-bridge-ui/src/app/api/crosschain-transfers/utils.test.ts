@@ -208,6 +208,17 @@ describe('getTokenOverride', () => {
     expect(mainnetToApeOverride.destination).toEqual(eth);
   });
 
+  it('For native ETH transfers on non-ApeChain routes, returns ETH on both sides', () => {
+    const ethToArbOverride = getTokenOverride({
+      fromToken: constants.AddressZero,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(ethToArbOverride.source).toEqual(eth);
+    expect(ethToArbOverride.destination).toEqual(eth);
+  });
+
   it('For transfers including APE on ApeChain, returns the ERC20 address on the other chain', () => {
     const arbToApeOverride = getTokenOverride({
       fromToken: undefined,

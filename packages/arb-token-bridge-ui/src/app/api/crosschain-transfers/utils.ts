@@ -201,6 +201,17 @@ export function getTokenOverride({
         },
       };
     }
+
+    return {
+      source: {
+        ...etherWithLogo,
+        address: constants.AddressZero,
+      },
+      destination: {
+        ...etherWithLogo,
+        address: constants.AddressZero,
+      },
+    };
   }
 
   // Ape on ApeChain

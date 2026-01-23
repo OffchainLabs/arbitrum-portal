@@ -346,7 +346,7 @@ describe('sanitizeTokenQueryParam', () => {
     });
 
     describe('from ApeChain', () => {
-      it('should return null if destination chain has Ape token', () => {
+      it('should return null', () => {
         const resultToArbitrumOne = sanitizeTokenQueryParam({
           sourceChainId: ChainId.ApeChain,
           destinationChainId: ChainId.ArbitrumOne,
@@ -360,15 +360,13 @@ describe('sanitizeTokenQueryParam', () => {
           token: null,
         });
         expect(resultToEthereum).toEqual(null);
-      });
 
-      it('should return AddressZero for other destination chains without APE token', () => {
         const resultToSuperposition = sanitizeTokenQueryParam({
           sourceChainId: ChainId.ApeChain,
           destinationChainId: ChainId.Superposition,
           token: null,
         });
-        expect(resultToSuperposition).toEqual(constants.AddressZero);
+        expect(resultToSuperposition).toEqual(null);
       });
     });
 
