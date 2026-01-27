@@ -67,7 +67,7 @@ export const useAmount2InputVisibility = create<{
 
 const Input1 = React.memo(() => {
   const [networks] = useNetworks();
-  const { isLifi, childChainProvider } = useNetworksRelationship(networks);
+  const { childChainProvider } = useNetworksRelationship(networks);
   const sourceNativeCurrency = useNativeCurrency({
     provider: networks.sourceChainProvider,
   });
@@ -165,7 +165,7 @@ const Input2 = React.memo(() => {
   const { showAmount2Input } = useAmount2InputVisibility();
 
   const [networks] = useNetworks();
-  const { childChainProvider, isLifi } = useNetworksRelationship(networks);
+  const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const tokensFromLists = useTokensFromLists();
   const { ethPrice } = useETHPrice();
