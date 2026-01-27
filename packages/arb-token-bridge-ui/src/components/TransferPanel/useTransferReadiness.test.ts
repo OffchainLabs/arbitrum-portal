@@ -73,7 +73,7 @@ function getMock({
           name: 'ETH',
           logoURI:
             'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-          priceUSD: '3731.44',
+          priceUSD: 3731.44,
         },
         fromAmount: '306838702657301',
         toToken: {
@@ -84,7 +84,7 @@ function getMock({
           name: 'ETH',
           logoURI:
             'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-          priceUSD: '3731.44',
+          priceUSD: 3731.44,
         },
         fromChainId: 1,
         toChainId: 42161,
@@ -115,7 +115,7 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44',
+              priceUSD: 3731.44,
             },
           },
         ],
@@ -138,7 +138,7 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44',
+              priceUSD: 3731.44,
             },
             toChainId: 42161,
             toToken: {
@@ -149,7 +149,7 @@ function getMock({
               name: 'ETH',
               logoURI:
                 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-              priceUSD: '3731.44',
+              priceUSD: 3731.44,
             },
             slippage: 0.005,
             fromAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
@@ -176,7 +176,7 @@ function getMock({
                   name: 'ETH',
                   logoURI:
                     'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                  priceUSD: '3731.44',
+                  priceUSD: 3731.44,
                 },
               },
             ],

@@ -152,7 +152,10 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
 
     for (const tokenData of arbTokenList.tokens) {
       const { address, name, symbol, extensions, decimals, logoURI, chainId } = tokenData;
-
+      const priceUSD =
+        typeof tokenData.extensions?.priceUSD === 'string'
+          ? Number(tokenData.extensions.priceUSD)
+          : tokenData.extensions?.priceUSD;
       if (![l1ChainID, l2ChainID].includes(chainId)) {
         continue;
       }
@@ -198,6 +201,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           decimals,
           logoURI,
           listIds: new Set([listId]),
+          priceUSD,
         };
       }
       // save potentially unbridged L1 tokens:
@@ -211,6 +215,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           decimals,
           logoURI,
           listIds: new Set([listId]),
+          priceUSD,
         });
       }
     }
@@ -250,6 +255,9 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
         const existingToken = oldBridgeTokens?.[tokenToAdd.address];
         if (!tokenToAdd.l2Address && existingToken?.l2Address) {
           tokenToAdd.l2Address = existingToken.l2Address;
+        }
+        if (!tokenToAdd.priceUSD && existingToken?.priceUSD) {
+          tokenToAdd.priceUSD = existingToken.priceUSD;
         }
         const { address, l2Address } = tokenToAdd;
         if (address) {
@@ -337,6 +345,8 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
     }
 
     const l1AddressLowerCased = l1Address.toLowerCase();
+    const existingToken = bridgeTokens?.[l1AddressLowerCased];
+    const priceUSD = existingToken?.priceUSD;
     bridgeTokensToAdd[l1AddressLowerCased] = {
       name,
       type: TokenType.ERC20,
@@ -345,6 +355,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
       l2Address: l2Address?.toLowerCase(),
       decimals,
       listIds: new Set(),
+      priceUSD,
     };
 
     setBridgeTokens((oldBridgeTokens) => {

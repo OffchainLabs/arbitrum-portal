@@ -61,7 +61,6 @@ export function LifiRoute({
       bridgeIconURI={route.protocolData.tool.logoURI}
       durationMs={route.durationMs}
       amountReceived={utils.formatUnits(route.toAmount.amount, route.toAmount.token.decimals)}
-      amountReceivedUsd={route.toAmount.amountUSD}
       overrideToken={overrideToken}
       isLoadingGasEstimate={false}
       gasCost={gasCost}

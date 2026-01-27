@@ -119,18 +119,23 @@ function SourceChainTokenBalance({
   );
 }
 
-const TransferPanelInputField = React.memo((props: React.InputHTMLAttributes<HTMLInputElement>) => {
-  return (
-    <input
-      type="text"
-      inputMode="decimal"
-      placeholder="0"
-      aria-label="Amount input"
-      className="h-full w-full max-w-[250px] bg-transparent px-3 text-xl font-light text-white placeholder:text-gray-300 sm:max-w-[350px] sm:text-3xl"
-      {...props}
-    />
-  );
-});
+const TransferPanelInputField = React.memo(
+  (props: React.InputHTMLAttributes<HTMLInputElement> & { alignTop?: boolean }) => {
+    return (
+      <input
+        type="text"
+        inputMode="decimal"
+        placeholder="0"
+        aria-label="Amount input"
+        className={twMerge(
+          'h-full w-full max-w-[250px] bg-transparent px-3 text-xl font-light text-white placeholder:text-gray-300 sm:max-w-[350px] sm:text-3xl',
+          props.alignTop ? 'pb-6' : 'pb-0',
+        )}
+        {...props}
+      />
+    );
+  },
+);
 
 TransferPanelInputField.displayName = 'TransferPanelInputField';
 
@@ -181,6 +186,7 @@ export type TransferPanelMainInputProps = React.InputHTMLAttributes<HTMLInputEle
   errorMessage?: string | TransferReadinessRichErrorMessage | undefined;
   maxButtonOnClick: React.ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
   value: string;
+  usdValue: string | null;
   options?: AmountInputOptions;
   maxAmount: string | undefined;
   isMaxAmount: boolean;
@@ -196,6 +202,7 @@ export const TransferPanelMainInput = React.memo(
     value,
     isMaxAmount,
     decimals,
+    usdValue,
     options,
     ...rest
   }: TransferPanelMainInputProps) => {
@@ -254,8 +261,16 @@ export const TransferPanelMainInput = React.memo(
     return (
       <>
         <div className="flex flex-row rounded bg-white/10">
-          <div className={twMerge('flex min-h-[96px] grow flex-row items-center justify-between')}>
-            <TransferPanelInputField {...rest} value={localValue} onChange={handleInputChange} />
+          <div className="relative flex min-h-[96px] grow flex-row items-center justify-between">
+            <TransferPanelInputField
+              {...rest}
+              value={localValue}
+              onChange={handleInputChange}
+              alignTop={typeof usdValue === 'string'}
+            />
+            {usdValue && (
+              <div className="absolute bottom-3 left-3 text-xs text-gray-6">{usdValue}</div>
+            )}
             <div className="flex flex-col items-end gap-[10px] px-[15px]">
               <TokenButton options={options} />
               {isConnected && (

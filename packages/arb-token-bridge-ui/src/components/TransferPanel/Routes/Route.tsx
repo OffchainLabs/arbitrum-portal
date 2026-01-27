@@ -19,6 +19,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
+import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
 import { isNetwork } from '../../../util/networks';
 import { useAppContextState } from '../../App/AppContext';
@@ -26,13 +27,13 @@ import { SafeImage } from '../../common/SafeImage';
 import { Tooltip } from '../../common/Tooltip';
 import { Loader } from '../../common/atoms/Loader';
 import { TokenLogo } from '../TokenLogo';
+import { useTokensFromLists } from '../TokenSearchUtils';
 import { RouteType, SetRoute } from '../hooks/useRouteStore';
 
 export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest';
 export type RouteProps = {
   type: RouteType;
   amountReceived: string;
-  amountReceivedUsd?: string | number | null;
   durationMs: number;
   isLoadingGasEstimate: boolean;
   overrideToken?: ERC20BridgeToken;
@@ -108,6 +109,8 @@ type RouteAmountProps = {
   showUsdValueForReceivedToken: boolean;
   isBatchTransferSupported: boolean;
   amount2?: string;
+  amount2Usd: string | number | null;
+  showUsdValueForAmount2: boolean;
   childNativeCurrency: ERC20BridgeToken | NativeCurrency;
 };
 
@@ -118,6 +121,8 @@ const RouteAmount = ({
   showUsdValueForReceivedToken,
   isBatchTransferSupported,
   amount2,
+  amount2Usd,
+  showUsdValueForAmount2,
   childNativeCurrency,
 }: RouteAmountProps) => {
   return (
@@ -149,9 +154,18 @@ const RouteAmount = ({
               srcOverride={null}
               fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
             />
-            {formatAmount(Number(amount2), {
-              symbol: childNativeCurrency.symbol,
-            })}
+            <div className="flex flex-col">
+              <div className="text-base">
+                {formatAmount(Number(amount2), {
+                  symbol: childNativeCurrency.symbol,
+                })}
+              </div>
+              {showUsdValueForAmount2 && amount2Usd !== null && (
+                <div className="text-sm tabular-nums text-white/50">
+                  {formatUSD(Number(amount2Usd))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -315,7 +329,6 @@ export const Route = React.memo(
     bridgeIconURI,
     durationMs,
     amountReceived,
-    amountReceivedUsd: amountReceivedUsdProp = null,
     isLoadingGasEstimate,
     overrideToken,
     gasCost,
@@ -338,23 +351,36 @@ export const Route = React.memo(
     const [{ amount2, destinationAddress }] = useArbQueryParams();
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
-    const { ethToUSD } = useETHPrice();
+    const { ethPrice } = useETHPrice();
+    const tokensFromLists = useTokensFromLists();
 
     const token = overrideToken || _token || childNativeCurrency;
 
     const { isTestnet } = isNetwork(networks.sourceChain.id);
-    const isEth =
-      (!('address' in token) || addressesEqual(token.address, constants.AddressZero)) &&
-      networks.destinationChain.id !== ChainId.ApeChain;
-    // useETHPrice and ETH price from lifi are slightly different. We use ETH price from useETHPrice for consistency across the app.
-    const amountReceivedUsd = isTestnet
-      ? null
-      : isEth
-        ? ethToUSD(Number(amountReceived))
-        : amountReceivedUsdProp !== null && amountReceivedUsdProp !== ''
-          ? amountReceivedUsdProp
-          : null;
+    const nativeCurrencyPrice = childNativeCurrency.isCustom
+      ? tokensFromLists[childNativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+    const selectedTokenForPrice = 'listIds' in token ? token : null;
+    const tokenUsdValue = getUsdValueForAmount({
+      amount: amountReceived,
+      selectedToken: selectedTokenForPrice,
+      nativeCurrency: childNativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+    const amountReceivedUsd = isTestnet ? null : tokenUsdValue;
     const showUsdValueForReceivedToken = !isTestnet && amountReceivedUsd !== null;
+    const amount2Usd =
+      !isTestnet && Number(amount2) > 0
+        ? getUsdValueForAmount({
+            amount: amount2,
+            selectedToken: null,
+            nativeCurrency: childNativeCurrency,
+            nativeCurrencyPrice,
+            tokensFromLists,
+          })
+        : null;
+    const showUsdValueForAmount2 = !isTestnet && amount2Usd !== null;
 
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)
@@ -403,6 +429,8 @@ export const Route = React.memo(
             showUsdValueForReceivedToken={showUsdValueForReceivedToken}
             isBatchTransferSupported={isBatchTransferSupported}
             amount2={amount2}
+            amount2Usd={amount2Usd}
+            showUsdValueForAmount2={showUsdValueForAmount2}
             childNativeCurrency={childNativeCurrency}
           />
 

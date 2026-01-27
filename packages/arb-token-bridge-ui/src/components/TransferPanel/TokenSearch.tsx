@@ -558,7 +558,7 @@ function TokensPanel({
             width={width - 2}
             height={height}
             rowCount={tokensToShow.length}
-            rowHeight={84}
+            rowHeight={96}
             rowRenderer={rowRenderer}
             style={{ minHeight: '180px' }}
           />

@@ -8,11 +8,13 @@ import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useBalanceOnDestinationChain } from '../../../hooks/useBalanceOnDestinationChain';
 import { useBalances } from '../../../hooks/useBalances';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
+import { useETHPrice } from '../../../hooks/useETHPrice';
 import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { formatAmount } from '../../../util/NumberUtils';
+import { formatAmount, formatUSD } from '../../../util/NumberUtils';
+import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
 import { isNetwork } from '../../../util/networks';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
@@ -96,18 +98,20 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider, isDepositMode, isLifi } =
+    useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
   const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
   const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { ethPrice } = useETHPrice();
+  const tokensFromLists = useTokensFromLists();
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
-  const { amount: receivedAmount, isLoading } = useReceivedAmount();
+  const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
 
   const { erc20ChildBalances, erc20ParentBalances } = useBalances();
-  const { isDepositMode } = useNetworksRelationship(networks);
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const { isAmount2InputVisible } = useAmount2InputVisibility();
 
@@ -153,6 +157,50 @@ function BalancesContainer() {
   }, [destinationToken, networks]);
 
   const isShowingBatchedTransfer = isBatchTransferSupported && isAmount2InputVisible;
+  const receivedAmountUsd = useMemo(() => {
+    if (!isLifi) {
+      return null;
+    }
+
+    const nativeCurrencyPrice = destinationNativeCurrency.isCustom
+      ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+    const value = getUsdValueForAmount({
+      amount: receivedAmountRaw,
+      selectedToken: destinationToken,
+      nativeCurrency: destinationNativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+
+    return value ? formatUSD(value) : null;
+  }, [
+    destinationNativeCurrency,
+    destinationToken,
+    ethPrice,
+    isLifi,
+    receivedAmountRaw,
+    tokensFromLists,
+  ]);
+
+  const amount2Usd = useMemo(() => {
+    if (!isLifi) {
+      return null;
+    }
+
+    const nativeCurrencyPrice = destinationNativeCurrency.isCustom
+      ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+    const value = getUsdValueForAmount({
+      amount: amount2,
+      selectedToken: null,
+      nativeCurrency: destinationNativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+
+    return value ? formatUSD(value) : null;
+  }, [amount2, destinationNativeCurrency, ethPrice, isLifi, tokensFromLists]);
 
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
@@ -162,6 +210,7 @@ function BalancesContainer() {
         ) : (
           <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
             {receivedAmount}
+            {receivedAmountUsd && <div className="text-xs text-white/60">{receivedAmountUsd}</div>}
           </div>
         )}
         <div className="flex flex-col gap-1">
@@ -207,6 +256,7 @@ function BalancesContainer() {
           <div className="flex w-full flex-row items-center justify-between">
             <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">
               {amount2 || '0'}
+              {amount2Usd && <div className="text-xs text-white/60">{amount2Usd}</div>}
             </div>
 
             <BalanceRow

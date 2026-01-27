@@ -1,9 +1,11 @@
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import { constants } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { useETHPrice } from '@/bridge/hooks/useETHPrice';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { getUsdValueForAmount } from '@/bridge/util/TokenPriceUtils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
@@ -17,7 +19,7 @@ import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChain
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { formatAmount } from '../../util/NumberUtils';
+import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
@@ -31,6 +33,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { Loader } from '../common/atoms/Loader';
 import { TokenLogoFallback } from './TokenInfo';
 import { BlockExplorerTokenLink } from './TokenInfoTooltip';
+import { useTokensFromLists } from './TokenSearchUtils';
 
 function tokenListIdsToNames(ids: string[]): string {
   return ids.map((tokenListId: string) => listIdsToNames[tokenListId]).join(', ');
@@ -195,6 +198,17 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
   const destinationBalance = useBalanceOnDestinationChain(token);
   const balance = options?.isDestination ? destinationBalance : sourceBalance;
 
+  const decimals = useMemo(() => {
+    if (overrideToken) {
+      return overrideToken.decimals;
+    }
+    if (!token) {
+      return nativeCurrency.decimals;
+    }
+
+    return token.decimals;
+  }, [overrideToken, token, nativeCurrency.decimals]);
+
   const isArbitrumToken = useMemo(() => {
     if (!token) {
       return false;
@@ -226,6 +240,7 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     balance,
     isArbitrumToken,
     isBridgeable,
+    decimals,
   };
 }
 
@@ -310,7 +325,7 @@ function TokenBalance({
   }
 
   return (
-    <span className="flex items-center whitespace-nowrap text-sm text-white/70">
+    <span className="flex items-center whitespace-nowrap text-sm text-white">
       {balance ? (
         formatAmount(balance, {
           decimals,
@@ -430,7 +445,39 @@ export function TokenRow({
     logoURI: tokenLogoURI,
     isArbitrumToken,
     isBridgeable: tokenIsBridgeable,
+    balance,
+    decimals,
   } = useTokenInfo(token, { isDestination });
+  const [networks] = useNetworks();
+  const tokensFromLists = useTokensFromLists();
+  const sourceNativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
+  const destinationNativeCurrency = useNativeCurrency({
+    provider: networks.destinationChainProvider,
+  });
+  const { ethPrice } = useETHPrice();
+  /**
+   * - zero address is ETH
+   * - null token is Ape (if one of the pair is ApeChain)
+   */
+  const isZeroAddressToken = !!token && addressesEqual(token.address, constants.AddressZero);
+  const apeNativeCurrency =
+    networks.sourceChain.id === ChainId.ApeChain ? sourceNativeCurrency : destinationNativeCurrency;
+  const ethNativeCurrency =
+    networks.sourceChain.id === ChainId.ApeChain ? destinationNativeCurrency : sourceNativeCurrency;
+  const nativeCurrencyForUsd = !token ? apeNativeCurrency : ethNativeCurrency;
+  const nativeCurrencyPrice = nativeCurrencyForUsd.isCustom
+    ? tokensFromLists[nativeCurrencyForUsd.address.toLowerCase()]?.priceUSD
+    : ethPrice;
+
+  const priceUSD = getUsdValueForAmount({
+    amount: Number(utils.formatUnits(BigNumber.from(balance), decimals)),
+    nativeCurrency: nativeCurrencyForUsd,
+    nativeCurrencyPrice,
+    tokensFromLists,
+    selectedToken: isZeroAddressToken ? null : token,
+  });
+  const hasTokenListInfo =
+    !!token && !addressesEqual(token.address, constants.AddressZero) && token.listIds.size > 0;
 
   return (
     <button
@@ -451,16 +498,41 @@ export function TokenRow({
           fallback={<TokenLogoFallback />}
         />
 
-        <div className="flex w-full flex-col items-start gap-1 truncate">
-          <div className="flex w-full items-center gap-1">
+        <div
+          className={twMerge(
+            'grid grid-cols-[1fr_auto] gap-[4px] w-full',
+            hasTokenListInfo ? 'grid-rows-3' : 'grid-rows-2',
+          )}
+        >
+          {/* Row 1: Token name + Balance */}
+          <div className="font-medium truncate text-left flex items-center gap-1">
             <span className="text-base font-medium leading-none">{tokenSymbol}</span>
             <span className="text-xs text-white/70">{tokenName}</span>
-            {isArbitrumToken && <ArbitrumTokenBadge />}
+            <span>{isArbitrumToken && <ArbitrumTokenBadge />}</span>
           </div>
-          <TokenContractLink token={token} isDestination={isDestination} />
-          <TokenListInfo token={token} />
+          <div className="ml-auto font-medium tabular-nums">
+            {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
+          </div>
+
+          {/* Row 2: Contract or token list info + USD value */}
+          <div className="text-left flex items-center">
+            {!token || addressesEqual(token.address, constants.AddressZero) ? (
+              <TokenListInfo token={token} />
+            ) : (
+              <TokenContractLink token={token} isDestination={isDestination} />
+            )}
+          </div>
+          <div className="ml-auto text-sm text-white/70 tabular-nums">
+            {typeof priceUSD === 'number' ? formatUSD(priceUSD) : ''}
+          </div>
+
+          {/* Row 3: Token list */}
+          {hasTokenListInfo && (
+            <div className="col-span-2 text-left">
+              <TokenListInfo token={token} />
+            </div>
+          )}
         </div>
-        {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
       </div>
     </button>
   );
