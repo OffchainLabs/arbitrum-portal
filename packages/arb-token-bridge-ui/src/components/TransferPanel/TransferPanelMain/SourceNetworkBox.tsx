@@ -119,10 +119,6 @@ const Input1 = React.memo(() => {
   }, [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id]);
 
   const usdValue = useMemo(() => {
-    if (!isLifi) {
-      return null;
-    }
-
     const nativeCurrency =
       !selectedToken && destinationNativeCurrency.isCustom
         ? destinationNativeCurrency
@@ -144,7 +140,6 @@ const Input1 = React.memo(() => {
     amount,
     destinationNativeCurrency,
     ethPrice,
-    isLifi,
     selectedToken,
     sourceNativeCurrency,
     tokensFromLists,
@@ -231,10 +226,6 @@ const Input2 = React.memo(() => {
   );
 
   const usdValue = useMemo(() => {
-    if (!isLifi) {
-      return null;
-    }
-
     const nativeCurrencyPrice = nativeCurrency.isCustom
       ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
       : ethPrice;
@@ -247,7 +238,7 @@ const Input2 = React.memo(() => {
     });
 
     return value ? formatUSD(value) : null;
-  }, [amount2, ethPrice, isLifi, nativeCurrency, tokensFromLists]);
+  }, [amount2, ethPrice, nativeCurrency, tokensFromLists]);
 
   return (
     <TransferPanelMainInput

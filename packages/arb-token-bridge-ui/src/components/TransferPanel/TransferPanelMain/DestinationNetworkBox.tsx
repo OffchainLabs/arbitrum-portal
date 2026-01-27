@@ -158,10 +158,6 @@ function BalancesContainer() {
 
   const isShowingBatchedTransfer = isBatchTransferSupported && isAmount2InputVisible;
   const receivedAmountUsd = useMemo(() => {
-    if (!isLifi) {
-      return null;
-    }
-
     const nativeCurrencyPrice = destinationNativeCurrency.isCustom
       ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
       : ethPrice;
@@ -174,20 +170,9 @@ function BalancesContainer() {
     });
 
     return value ? formatUSD(value) : null;
-  }, [
-    destinationNativeCurrency,
-    destinationToken,
-    ethPrice,
-    isLifi,
-    receivedAmountRaw,
-    tokensFromLists,
-  ]);
+  }, [destinationNativeCurrency, destinationToken, ethPrice, receivedAmountRaw, tokensFromLists]);
 
   const amount2Usd = useMemo(() => {
-    if (!isLifi) {
-      return null;
-    }
-
     const nativeCurrencyPrice = destinationNativeCurrency.isCustom
       ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
       : ethPrice;
@@ -200,7 +185,7 @@ function BalancesContainer() {
     });
 
     return value ? formatUSD(value) : null;
-  }, [amount2, destinationNativeCurrency, ethPrice, isLifi, tokensFromLists]);
+  }, [amount2, destinationNativeCurrency, ethPrice, tokensFromLists]);
 
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">
