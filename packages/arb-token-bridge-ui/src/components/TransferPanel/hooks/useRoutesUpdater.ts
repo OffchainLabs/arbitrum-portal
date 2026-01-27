@@ -100,6 +100,8 @@ function getEligibleRoutes({
   }
 
   if (isOftV2Transfer) {
+    eligibleRouteTypes.push('oftV2');
+
     if (isLifiEnabled) {
       const isValidLifiRoute = isValidLifiTransfer({
         fromToken: selectedToken?.address,
