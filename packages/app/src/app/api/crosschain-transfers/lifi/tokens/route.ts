@@ -73,7 +73,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
         {
           status: 200,
           headers: {
-            'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=60',
+            'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=0',
           },
         },
       );
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
       {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=0',
         },
       },
     );
