@@ -155,7 +155,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
       const priceUSD =
         typeof tokenData.extensions?.priceUSD === 'string'
           ? Number(tokenData.extensions.priceUSD)
-          : tokenData.extensions?.priceUSD;
+          : undefined;
       if (![l1ChainID, l2ChainID].includes(chainId)) {
         continue;
       }
@@ -346,7 +346,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
 
     const l1AddressLowerCased = l1Address.toLowerCase();
     const existingToken = bridgeTokens?.[l1AddressLowerCased];
-    const priceUSD = existingToken?.priceUSD;
+    const priceUSD = existingToken?.priceUSD || undefined;
     bridgeTokensToAdd[l1AddressLowerCased] = {
       name,
       type: TokenType.ERC20,
