@@ -8,10 +8,10 @@ import {
 } from '@/bridge/app/api/crosschain-transfers/constants';
 
 import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
-import { getLifiTokenRegistry } from './registry';
+import { LIFI_TOKENS_REVALIDATE_SECONDS, getLifiTokenRegistry } from './registry';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 60 * 60; // 1 hour
+export const revalidate = LIFI_TOKENS_REVALIDATE_SECONDS;
 
 const TOKEN_LIST_NAME = 'LiFi Transfer Tokens';
 const TOKEN_LIST_VERSION = { major: 1, minor: 0, patch: 0 };
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
         {
           status: 200,
           headers: {
-            'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+            'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=60',
           },
         },
       );
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
       {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+          'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=60',
         },
       },
     );

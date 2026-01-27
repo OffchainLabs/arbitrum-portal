@@ -192,6 +192,18 @@ export const getBridgeTokenListsForNetworks = ({
   });
 };
 
+export const getLifiTokenListForNetworks = ({
+  childChainId,
+  parentChainId,
+}: {
+  childChainId: number;
+  parentChainId: number;
+}): BridgeTokenList | undefined => {
+  return getBridgeTokenListsForNetworks({ childChainId, parentChainId }).find(
+    (tokenList) => tokenList.id === LIFI_TRANSFER_LIST_ID,
+  );
+};
+
 export const getDefaultBridgeTokenLists = ({
   childChainId,
   parentChainId,

@@ -22,9 +22,7 @@ export function useETHPrice(): UseETHPriceResult {
       .then((res) => Number(res.data.data.amount));
 
   const fetchLifiEthPrice = async (): Promise<number | undefined> => {
-    const url = `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/tokens?parentChainId=${
-      ChainId.Ethereum
-    }&childChainId=${ChainId.ArbitrumOne}`;
+    const url = `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/tokens?parentChainId=${ChainId.Ethereum}&childChainId=${ChainId.ArbitrumOne}`;
     const { data } = await axios.get(url);
     const tokens: {
       address: string;

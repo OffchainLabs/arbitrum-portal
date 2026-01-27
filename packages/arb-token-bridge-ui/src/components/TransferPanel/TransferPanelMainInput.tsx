@@ -120,7 +120,10 @@ function SourceChainTokenBalance({
 }
 
 const TransferPanelInputField = React.memo(
-  (props: React.InputHTMLAttributes<HTMLInputElement> & { alignTop?: boolean }) => {
+  ({
+    alignTop,
+    ...props
+  }: React.InputHTMLAttributes<HTMLInputElement> & { alignTop?: boolean }) => {
     return (
       <input
         type="text"
@@ -129,7 +132,7 @@ const TransferPanelInputField = React.memo(
         aria-label="Amount input"
         className={twMerge(
           'h-full w-full max-w-[250px] bg-transparent px-3 text-xl font-light text-white placeholder:text-gray-300 sm:max-w-[350px] sm:text-3xl',
-          props.alignTop ? 'pb-6' : 'pb-0',
+          alignTop ? 'pb-6' : 'pb-0',
         )}
         {...props}
       />

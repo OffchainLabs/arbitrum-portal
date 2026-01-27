@@ -4,7 +4,7 @@ import { unstable_cache } from 'next/cache';
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 
-export const LIFI_TOKENS_REVALIDATE_SECONDS = 60 * 60;
+export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
 
 type CustomTokenConfig = {
   coinKey: string;

@@ -3,6 +3,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
 import { Fragment, useMemo } from 'react';
 
+import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
@@ -22,6 +23,7 @@ export function MainContent() {
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
   const [{ tab, disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
+  useTokenListPriceUpdater();
 
   const selectedTab = useMemo(() => {
     if (showBuyPanel) {
