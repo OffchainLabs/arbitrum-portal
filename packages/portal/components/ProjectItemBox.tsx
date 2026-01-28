@@ -256,7 +256,7 @@ const ItemContent = ({
                   <span
                     key={subcategory.id}
                     className={twMerge(
-                      'inline-flex items-start justify-start gap-2 truncate break-words rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
+                      'inline-flex items-start justify-start gap-2 truncate break-words rounded-sm bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
                       isCompactMode ? 'bg-white/25 text-white' : '',
                     )}
                   >

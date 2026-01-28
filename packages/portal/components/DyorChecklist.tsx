@@ -256,7 +256,7 @@ export const DyorChecklist = ({
                         htmlFor={check.id}
                         className="group flex cursor-pointer items-start gap-4 rounded-md p-1 px-3 text-left font-light text-white peer-checked:text-white lg:gap-4"
                       >
-                        <span className="mt-[2px] flex items-center justify-center rounded-sm border border-white bg-black p-[3px] lg:p-[1px]">
+                        <span className="mt-[2px] flex items-center justify-center rounded-[3px] border border-white bg-black p-[3px] lg:p-[1px]">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
                         </span>
                         <span className="text-sm">{check.title}</span>
