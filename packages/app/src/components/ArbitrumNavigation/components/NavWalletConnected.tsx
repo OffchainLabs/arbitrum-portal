@@ -11,7 +11,6 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { useDisconnect } from 'wagmi';
-import type { Account, Chain } from 'wagmi';
 
 import { CustomBoringAvatar } from '@/bridge/components/common/CustomBoringAvatar';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
@@ -20,9 +19,20 @@ import { useAccountMenu } from '@/bridge/hooks/useAccountMenu';
 import { getExplorerUrl } from '@/bridge/util/networks';
 
 // NavWalletConnected - Connected wallet display with dropdown
+// Types inferred from ConnectButton.Custom render props
 interface NavWalletConnectedProps {
-  account: Account;
-  chain: Chain;
+  account: {
+    address: string;
+    displayName?: string;
+    displayBalance?: string;
+    ensAvatar?: string | null;
+    ensName?: string | null;
+  };
+  chain: {
+    id: number;
+    name?: string;
+    unsupported?: boolean;
+  };
   openAccountModal: () => void;
 }
 
