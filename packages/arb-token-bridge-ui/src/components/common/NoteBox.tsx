@@ -11,7 +11,7 @@ type NoteBoxProps = PropsWithChildren<{
   className?: string;
 }>;
 
-const iconClassName = 'h-3 w-3 shrink-0 mt-[2px]';
+const iconClassName = 'h-4 w-4 shrink-0 mt-[2px]';
 
 const wrapperClassNames = {
   info: 'bg-cyan text-cyan-dark',

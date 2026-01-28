@@ -168,7 +168,7 @@ export const ProjectPanel = () => {
               {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={`${project.id}-${subcategory.id}`}
-                  className="inline-flex items-start justify-start gap-2 truncate break-words rounded bg-white/25 px-1.5 py-0.5 text-xs font-normal text-white"
+                  className="inline-flex items-start justify-start gap-2 truncate break-words rounded-sm bg-white/25 px-1.5 py-0.5 text-xs font-normal text-white"
                 >
                   {subcategory.title}
                 </span>

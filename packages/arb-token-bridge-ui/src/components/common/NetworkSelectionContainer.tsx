@@ -98,9 +98,9 @@ function ChainTypeInfoRow({
       key={name}
       style={style}
       className={twMerge(
-        'px-4 py-3',
+        'px-5 pt-4 pb-1',
         !isOrbitGroup &&
-          'before:-mt-3 before:mb-3 before:block before:h-[1px] before:w-full before:bg-white/30',
+          'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
         isCoreGroup && 'before:h-[0px]',
       )}
     >
@@ -150,7 +150,7 @@ export function NetworkButton({
         {isSource ? 'From:' : 'To: '}
         <NetworkImage
           chainId={isSource ? networks.sourceChain.id : networks.destinationChain.id}
-          className="h-4 w-4 p-[2px]"
+          className="h-[20px] w-[20px] p-[2px]"
           size={20}
         />
         {getNetworkName(selectedChainId)}
@@ -195,11 +195,11 @@ function NetworkRow({
       type="button"
       aria-label={`Switch to ${network.name}`}
       className={twMerge(
-        'flex h-[40px] w-full items-center gap-4 rounded px-4 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
+        'flex h-10 w-full items-center gap-4 rounded px-5 py-2 text-lg transition-[background] duration-200 hover:bg-white/10',
         isSelected && 'bg-white/20 hover:bg-white/20', // selected row
       )}
     >
-      <NetworkImage chainId={chainId} className="h-4 w-4 p-[2px]" size={20} />
+      <NetworkImage chainId={chainId} className="h-5 w-5 p-[2px]" size={20} />
       <div className={twMerge('flex w-full flex-row items-center justify-between gap-1')}>
         <span className="truncate text-base">{network.name}</span>
 
@@ -215,7 +215,7 @@ function NetworkRow({
           {!isLoadingBalance && balanceError && (
             <Tooltip content="Error fetching balance">
               <div className="flex items-center gap-1">
-                <ExclamationCircleIcon className="h-4 w-4 text-brick" />0{' '}
+                <ExclamationCircleIcon className="h-5 w-5 text-brick" />0{' '}
                 {nativeTokenData?.symbol ?? 'ETH'}
               </div>
             </Tooltip>
@@ -350,7 +350,7 @@ export function NetworksPanel({
       return 0;
     }
     if (typeof rowItemOrChainId === 'string') {
-      return rowItemOrChainId === ChainGroupName.core ? 45 : 115;
+      return rowItemOrChainId === ChainGroupName.core ? 45 : 90;
     }
 
     return 50;
@@ -531,7 +531,7 @@ export const NetworkSelectionContainer = React.memo(
           actionButtonProps={{ hidden: true }}
           isFooterHidden={true}
           className={twMerge(
-            'h-screen overflow-hidden md:h-[calc(100vh_-_175px)] md:max-h-[900px] md:max-w-[500px]',
+            'h-screen overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
             embedMode && 'md:h-full',
           )}
         >

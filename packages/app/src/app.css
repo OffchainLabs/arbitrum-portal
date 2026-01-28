@@ -1,3 +1,5 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700'); */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,6 +22,15 @@
 :root {
   --primary: transparent;
   --secondary: #ffffff30;
+  --toastify-color-error: #cd0000;
+  --toastify-text-color-light: #1a1c1d;
+  --toastify-text-color-info: #1a1c1d;
+  --toastify-text-color-success: #1a1c1d;
+  --toastify-text-color-warning: #1a1c1d;
+  --toastify-text-color-error: #1a1c1d;
+  --toastify-font-family: var(--font-family, var(--font-unica77), Roboto, sans-serif);
+  --toastify-toast-min-height: 44px;
+  --blue-link: #1366c1;
 }
 
 html {
@@ -60,4 +71,98 @@ body > iframe {
   background-color: var(--secondary);
   border-radius: 14px;
   border: 3px solid var(--primary);
+}
+
+*:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline-color: white !important;
+}
+
+.tabular-nums {
+  font-family: var(--font-family, var(--font-unica77), Roboto) !important;
+  font-variant-numeric: var(--font-family, var(--font-unica77), Roboto) !important;
+  --tw-numeric-spacing: 0px;
+}
+
+/*** HIDE NUMBER INPUT STEPS BUTTONS ****/
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+button:focus-visible,
+input:focus-visible {
+  box-sizing: border-box;
+  outline-offset: -2px;
+  outline: 2px solid rgb(0, 95, 204);
+}
+
+/* Toast styles */
+.Toastify__toast-body {
+  padding: 0;
+  padding-bottom: 4px;
+}
+
+.web3modal-modal-lightbox {
+  z-index: 50 !important;
+}
+
+/* Tippy themes */
+.tippy-box[data-theme='orange'] {
+  background-color: #ffeed3;
+  color: #ffeed3;
+}
+
+.tippy-box[data-theme='orange'] > .tippy-arrow {
+  color: inherit;
+}
+
+.tippy-box[data-theme='orange'] > .tippy-content {
+  color: #60461f;
+}
+
+.tippy-box[data-theme~='dark'] {
+  border-radius: 5px;
+  border: 1px solid #777;
+}
+
+/*
+  Custom
+*/
+.arb-hover {
+  @apply focus-visible:ring-gray-4 transition duration-200 hover:opacity-80 focus-visible:ring-2 active:opacity-90 disabled:border-0 disabled:opacity-100;
+}
+
+.hover\:animate-rotate-180:hover {
+  transform: rotate(180deg);
+}
+
+.focus-visible\:animate-rotate-180:focus-visible {
+  transform: rotate(180deg);
+}
+
+@keyframes panelSlideInAnimation {
+  0% {
+    transform: translateX(200%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.moonpay-ellipse {
+  mask-image: radial-gradient(ellipse 550px 200px at bottom, #0000 70%, #000 0);
+  -webkit-mask-image: radial-gradient(ellipse 550px 200px at bottom, #0000 70%, #000 0);
 }

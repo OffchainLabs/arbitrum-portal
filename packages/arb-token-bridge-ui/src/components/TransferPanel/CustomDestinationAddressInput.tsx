@@ -118,7 +118,7 @@ export const CustomDestinationAddressInput = () => {
   }
 
   return (
-    <div className="flex w-full flex-col items-start gap-1 rounded border border-white/10 bg-white/5 p-2 text-white">
+    <div className="flex w-full flex-col items-start gap-1 rounded border border-white/10 bg-white/5 p-3 text-white">
       <p className="text-sm font-light">
         {isSmartContractWallet ? (
           <>

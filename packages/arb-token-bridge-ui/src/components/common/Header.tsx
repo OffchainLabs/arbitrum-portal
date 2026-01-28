@@ -37,7 +37,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
   return (
     <header
       className={twMerge(
-        'sticky top-0 z-10 flex h-12 w-full justify-center bg-black/70 px-4 backdrop-blur sm:relative sm:h-16 sm:px-6 sm:backdrop-blur-none [body.menu-open_&]:fixed',
+        'sticky top-0 z-10 flex h-20 w-full justify-center bg-black/70 px-4 backdrop-blur sm:relative sm:h-20 sm:px-7 sm:backdrop-blur-none [body.menu-open_&]:fixed',
         isTestnet || isExperimentalMode
           ? 'sm:border-b sm:border-white sm:bg-white/20'
           : 'sm:bg-transparent',
@@ -49,7 +49,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
       }}
     >
       <div className="flex w-full items-center justify-end gap-2 text-white">
-        <Image className="mr-auto h-6 w-6 sm:hidden" src={ArbitrumLogoSmall} alt="Arbitrum" />
+        <Image className="mr-auto h-8 w-8 sm:hidden" src={ArbitrumLogoSmall} alt="Arbitrum" />
         {isTestnet && !isExperimentalMode && <span className="grow font-medium">TESTNET MODE</span>}
         {isExperimentalMode && (
           <span className="grow font-medium text-red-500">
