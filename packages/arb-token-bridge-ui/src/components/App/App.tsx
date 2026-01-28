@@ -106,7 +106,7 @@ const AppContent = React.memo(() => {
         // https://github.com/OffchainLabs/config-monorepo/pull/11
         //
 
-        onClose={() => { }}
+        onClose={() => {}}
       />
     );
   }

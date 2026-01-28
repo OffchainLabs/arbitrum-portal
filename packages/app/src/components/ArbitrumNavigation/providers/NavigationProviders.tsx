@@ -3,8 +3,8 @@
 import { createConfig } from '@lifi/sdk';
 import { RainbowKitProvider, Theme, darkTheme } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import NextAdapterApp from 'next-query-params/app';
 import merge from 'lodash-es/merge';
+import NextAdapterApp from 'next-query-params/app';
 import { createOvermind } from 'overmind';
 import { Provider as OvermindProvider } from 'overmind-react';
 import posthog from 'posthog-js';
@@ -14,9 +14,10 @@ import { QueryParamProvider } from 'use-query-params';
 import { WagmiProvider } from 'wagmi';
 
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
+import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { config } from '@/bridge/state';
-import { AppContextProvider } from '@/bridge/components/App/AppContext';
+
 import { getProps } from './wagmi/setup';
 
 // Initialize PostHog
@@ -97,11 +98,12 @@ export function NavigationProviders({ children }: PropsWithChildren) {
       <Suspense>
         <OvermindProvider value={overmind}>
           <PostHogProvider client={posthog}>
-            <QueryParamProvider adapter={NextAdapterApp} options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}>
+            <QueryParamProvider
+              adapter={NextAdapterApp}
+              options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
+            >
               <ArbQueryParamProvider>
-                <QueryClientProvider client={queryClient}>
-                  {children}
-                </QueryClientProvider>
+                <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
               </ArbQueryParamProvider>
             </QueryParamProvider>
           </PostHogProvider>
@@ -114,7 +116,10 @@ export function NavigationProviders({ children }: PropsWithChildren) {
     <Suspense>
       <OvermindProvider value={overmind}>
         <PostHogProvider client={posthog}>
-          <QueryParamProvider adapter={NextAdapterApp} options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}>
+          <QueryParamProvider
+            adapter={NextAdapterApp}
+            options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
+          >
             <ArbQueryParamProvider>
               <WagmiProvider config={wagmiConfig}>
                 <QueryClientProvider client={queryClient}>

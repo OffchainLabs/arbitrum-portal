@@ -1,7 +1,7 @@
 'use client';
 
-import { PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
+import { PropsWithChildren } from 'react';
 
 import { MasterNavbar } from './components/MasterNavbar';
 import { NavigationProviders } from './providers/NavigationProviders';

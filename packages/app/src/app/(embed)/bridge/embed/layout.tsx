@@ -5,7 +5,6 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 
 import { ArbitrumNavigation } from '../../../../components/ArbitrumNavigation';
-
 import '../../../../styles/bridge.css';
 
 export default function EmbedLayout(props: PropsWithChildren) {

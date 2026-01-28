@@ -1,8 +1,7 @@
+import '@rainbow-me/rainbowkit/styles.css';
 import type { Metadata } from 'next';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
-
-import '@rainbow-me/rainbowkit/styles.css';
 
 import { unica } from '@/bridge/components/common/Font';
 import { PORTAL_DOMAIN } from '@/bridge/constants';

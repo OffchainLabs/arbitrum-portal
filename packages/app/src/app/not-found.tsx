@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp';
+
 import { ArbitrumNavigation } from '../components/ArbitrumNavigation';
 
 export default function NotFound() {

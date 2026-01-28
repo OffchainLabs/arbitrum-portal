@@ -25,7 +25,14 @@ export function NavWallet() {
 
   return (
     <ConnectButton.Custom>
-      {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted: buttonMounted }) => {
+      {({
+        account,
+        chain,
+        openAccountModal,
+        openChainModal,
+        openConnectModal,
+        mounted: buttonMounted,
+      }) => {
         const ready = buttonMounted;
         const connected = ready && account && chain;
 
@@ -38,7 +45,13 @@ export function NavWallet() {
         }
 
         if (connected) {
-          return <NavWalletConnected account={account} chain={chain} openAccountModal={openAccountModal} />;
+          return (
+            <NavWalletConnected
+              account={account}
+              chain={chain}
+              openAccountModal={openAccountModal}
+            />
+          );
         }
 
         return <NavWalletDisconnected openConnectModal={openConnectModal} />;
