@@ -161,3 +161,8 @@ input:focus-visible {
     transform: translateX(0%);
   }
 }
+
+.moonpay-ellipse {
+  mask-image: radial-gradient(ellipse 550px 200px at bottom, #0000 70%, #000 0);
+  -webkit-mask-image: radial-gradient(ellipse 550px 200px at bottom, #0000 70%, #000 0);
+}
