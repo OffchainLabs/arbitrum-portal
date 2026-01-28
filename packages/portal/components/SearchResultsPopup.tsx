@@ -2,6 +2,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Fuse from 'fuse.js';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { ENTITY_METADATA, isOrbitChain, isProject } from '@/common/entities';
@@ -98,8 +99,15 @@ export const SearchResultsPopup = ({
   focusIndex: number;
   handleSelection: (item: SearchResult) => void;
 }) => {
+  const pathname = usePathname();
+  const isOnBridgePage = pathname.startsWith('/bridge');
   const noResults = searchString.length >= 2 && !searchResults.length;
   const showMoreResultsButton = searchString.length >= 2 && !noResults;
+
+  // If on bridge page, use portal app version of search URL
+  const searchUrl = isOnBridgePage
+    ? `/search/${encodeURIComponent(searchString)}`
+    : `/search/${searchString}`;
 
   return (
     <div className="absolute top-[50px] z-[100000] flex max-h-[500px] w-full flex-col items-center overflow-auto rounded-md bg-default-black py-4 text-center text-sm text-white/80 shadow-lg lg:max-w-[400px]">
@@ -165,7 +173,7 @@ export const SearchResultsPopup = ({
               'flex w-full flex-col items-center justify-between gap-4 border-b border-white/10 p-4',
               (focusIndex === previewLimit || focusIndex === searchResults.length) && 'bg-white/10',
             )}
-            href={`/search/${searchString}`}
+            href={searchUrl}
           >
             Show all {searchResults.length > 1 ? searchResults.length : ''} results
           </Link>

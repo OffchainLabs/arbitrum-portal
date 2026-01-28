@@ -1,7 +1,7 @@
 'use client';
 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -14,6 +14,7 @@ const PREVIEW_LIMIT = 5; // after this limit, we show "Show all <results> button
 
 export const SitewideSearchBar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     searchString,
     searchResults,
@@ -120,7 +121,14 @@ export const SitewideSearchBar = () => {
     // capture the input analytics
     captureInputAnalytics();
 
-    router.push(`/search/${searchString}`, { scroll: true });
+    // If user is on bridge page, redirect to portal app version of search
+    const isOnBridgePage = pathname.startsWith('/bridge');
+    if (isOnBridgePage) {
+      // Redirect to portal app version (remove /bridge prefix)
+      router.push(`/search/${encodeURIComponent(searchString)}`, { scroll: true });
+    } else {
+      router.push(`/search/${searchString}`, { scroll: true });
+    }
   };
 
   return (
