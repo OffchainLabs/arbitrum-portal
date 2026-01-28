@@ -4,8 +4,6 @@ module.exports = {
     // Page/Layout
     './src/app/**/*.{js,ts,jsx,tsx}',
     './src/components/**/*.{js,ts,jsx,tsx}',
-    // Cobalt
-    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
     // Common components
     '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
   ],

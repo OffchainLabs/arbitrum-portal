@@ -152,7 +152,5 @@ module.exports = {
     '../app/src/app/not-found.tsx',
     '../app/src/app/layout.tsx',
     '../app/src/app/restricted/page.tsx',
-    // Cobalt
-    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
   ],
 };

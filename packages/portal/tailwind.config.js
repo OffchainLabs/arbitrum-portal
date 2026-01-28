@@ -8,8 +8,6 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx}',
     // Page/Layout
     '../app/src/app/(with-sidebar)/(portal)/**/*.{js,ts,jsx,tsx}',
-    // Cobalt
-    '../../node_modules/@offchainlabs/cobalt/**/*.{js,ts,jsx,tsx}',
   ],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
