@@ -9,7 +9,7 @@ import { createOvermind } from 'overmind';
 import { Provider as OvermindProvider } from 'overmind-react';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
-import { PropsWithChildren, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
+import { PropsWithChildren, Suspense, useEffect, useMemo, useState } from 'react';
 import { QueryParamProvider } from 'use-query-params';
 import { WagmiProvider } from 'wagmi';
 

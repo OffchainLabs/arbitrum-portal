@@ -8,7 +8,10 @@ import { NavWallet } from './NavWallet';
 // MasterNavbar component - Top horizontal navigation bar
 export function MasterNavbar() {
   return (
-    <nav className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-gray-8 bg-gray-1 px-6 py-3">
+    <nav
+      id="sticky-top-bar"
+      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-gray-8 bg-gray-1 px-6 py-3"
+    >
       {/* Left section: Logo + Search */}
       <div className="flex items-center gap-3">
         <NavLogo />

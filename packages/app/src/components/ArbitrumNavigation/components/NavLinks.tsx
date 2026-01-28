@@ -8,7 +8,7 @@ import type { NavLink } from '../types';
 
 const navLinks: NavLink[] = [
   { label: 'Home', route: '/' },
-  { label: 'Bridge', route: '/bridge' },
+  { label: 'Swap', route: '/bridge' },
   { label: 'Explore', route: '/projects' },
   { label: 'Build', route: '/build' },
 ];

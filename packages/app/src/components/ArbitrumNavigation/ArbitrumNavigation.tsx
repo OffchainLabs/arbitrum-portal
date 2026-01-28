@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { PropsWithChildren } from 'react';
 
 import { MasterNavbar } from './components/MasterNavbar';
+import { SideNav } from './components/SideNav';
 import { NavigationProviders } from './providers/NavigationProviders';
 
 // ArbitrumNavigation - Main frame component that wraps the entire app
@@ -18,7 +19,10 @@ export function ArbitrumNavigation({ children }: PropsWithChildren) {
     <NavigationProviders>
       <div className="flex min-h-screen flex-col">
         {!isEmbedMode && <MasterNavbar />}
-        <main className="flex-1">{children}</main>
+        <div className="flex flex-1">
+          {!isEmbedMode && <SideNav />}
+          <main className="flex-1">{children}</main>
+        </div>
       </div>
     </NavigationProviders>
   );

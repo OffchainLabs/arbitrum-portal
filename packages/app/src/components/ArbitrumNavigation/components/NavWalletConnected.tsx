@@ -36,7 +36,7 @@ interface NavWalletConnectedProps {
   openAccountModal: () => void;
 }
 
-export function NavWalletConnected({ account, chain, openAccountModal }: NavWalletConnectedProps) {
+export function NavWalletConnected({ account, chain }: NavWalletConnectedProps) {
   // Use useAccountMenu hook for ENS/UD data and setQueryParams (safe because ConnectButton.Custom only renders within WagmiProvider)
   const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams } = useAccountMenu();
   const { disconnect } = useDisconnect();

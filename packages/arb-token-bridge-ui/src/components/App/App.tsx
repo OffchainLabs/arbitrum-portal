@@ -1,5 +1,4 @@
 import axios from 'axios';
-import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -11,7 +10,6 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTheme } from '../../hooks/useTheme';
 import { useActions } from '../../state';
 import { MainContent } from '../MainContent/MainContent';
-import { Loader } from '../common/atoms/Loader';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
 import { BlockedDialog } from './BlockedDialog';

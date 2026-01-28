@@ -1,12 +1,17 @@
 'use client';
 
-import { ArrowSmallLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowSmallLeftIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { SUBMIT_ORBIT_CHAIN_LINK, SUBMIT_PROJECT_LINK } from '@/common/constants';
 
 import { CategoriesPanel } from './CategoriesPanel';
 import { CategoryDropdown } from './CategoryDropdown';
 import { CategoryDropdownButton } from './CategoryDropdownButton';
+import { ExternalLink } from './ExternalLink';
 import { NetworkDropdown } from './NetworkDropdown';
 import { SidePanel } from './SidePanel';
 import { SortDropdown } from './SortDropdown';
@@ -14,6 +19,8 @@ import { SortDropdown } from './SortDropdown';
 export const ProjectsFilterBar = () => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const isOrbitPage = pathname.includes('orbit');
 
   const openPanel = () => {
     setIsSidePanelOpen(true);
@@ -40,8 +47,9 @@ export const ProjectsFilterBar = () => {
   }, []);
 
   return (
-    <nav className="z-100 w-full py-2 xl:sticky xl:top-[15px] xl:z-[100] xl:ml-[418px] xl:mt-[-72px] xl:w-[450px]">
+    <nav className="z-100 w-full py-2">
       <div className="flex w-full items-center justify-between">
+        {/* Left side: Filter buttons */}
         <ul className="flex w-full items-center gap-4 text-center lg:w-auto lg:flex-row">
           <li className="hidden lg:block">
             <CategoryDropdown />
@@ -56,6 +64,18 @@ export const ProjectsFilterBar = () => {
             <SortDropdown />
           </li>
         </ul>
+        {/* Right side: Add your project button */}
+        <div className="flex items-center">
+          <ExternalLink
+            href={isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK}
+            className={twMerge(
+              'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-default-black-hover md:flex',
+            )}
+          >
+            <PlusCircleIcon className="h-4 w-4" />
+            {isOrbitPage ? 'Add your Orbit Chain' : 'Add your project'}
+          </ExternalLink>
+        </div>
       </div>
 
       <SidePanel isOpen={isSidePanelOpen} onClose={closePanel} className="w-full bg-default-black">
