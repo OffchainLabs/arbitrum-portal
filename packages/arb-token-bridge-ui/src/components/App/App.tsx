@@ -11,7 +11,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTheme } from '../../hooks/useTheme';
 import { useActions } from '../../state';
 import { MainContent } from '../MainContent/MainContent';
-import { Header, HeaderAccountOrConnectWalletButton } from '../common/Header';
+import { Header } from '../common/Header';
 import { Loader } from '../common/atoms/Loader';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
@@ -107,16 +107,14 @@ const AppContent = React.memo(() => {
         // https://github.com/OffchainLabs/config-monorepo/pull/11
         //
 
-        onClose={() => {}}
+        onClose={() => { }}
       />
     );
   }
 
   return (
     <>
-      <Header>
-        <HeaderAccountOrConnectWalletButton />
-      </Header>
+      <Header />
       <TokenListSyncer />
       <ArbTokenBridgeStoreSyncWrapper />
       <MainContent />
@@ -126,22 +124,7 @@ const AppContent = React.memo(() => {
 
 AppContent.displayName = 'AppContent';
 
-const AppProviders = dynamic(() => import('./AppProviders').then((mod) => mod.AppProviders), {
-  ssr: false, // use-query-params provider doesn't support SSR
-  loading: () => (
-    <div className="bg-black-500 flex h-screen w-full items-center justify-center">
-      <div className="h-12 w-full lg:h-16" />
-      <div className="fixed inset-0 m-auto h-[44px] w-[44px]">
-        <Loader size="large" color="white" />
-      </div>
-    </div>
-  ),
-});
-
+// AppProviders removed - NavigationProviders (in ArbitrumNavigation) now provides all providers
 export default function App() {
-  return (
-    <AppProviders>
-      <AppContent />
-    </AppProviders>
-  );
+  return <AppContent />;
 }

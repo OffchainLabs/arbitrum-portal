@@ -8,6 +8,7 @@ import {
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import { type Account, type Chain } from '@rainbow-me/rainbowkit';
+import { usePathname } from 'next/navigation';
 import { useDisconnect } from 'wagmi';
 import { useCopyToClipboard } from 'react-use';
 import { useState } from 'react';
@@ -25,11 +26,20 @@ interface NavWalletConnectedProps {
 }
 
 export function NavWalletConnected({ account, chain, openAccountModal }: NavWalletConnectedProps) {
-  // Use useAccountMenu hook for ENS/UD data (safe because ConnectButton.Custom only renders within WagmiProvider)
-  const { address, accountShort, ensName, ensAvatar, udInfo } = useAccountMenu();
+  // Use useAccountMenu hook for ENS/UD data and setQueryParams (safe because ConnectButton.Custom only renders within WagmiProvider)
+  const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams } = useAccountMenu();
   const { disconnect } = useDisconnect();
   const [, copyToClipboard] = useCopyToClipboard();
   const [showCopied, setShowCopied] = useState(false);
+  const pathname = usePathname();
+
+  // Only show Settings on /bridge route
+  const isBridgeRoute = pathname.startsWith('/bridge');
+
+  // Open bridge settings sidebar
+  const handleSettingsClick = () => {
+    setQueryParams({ settingsOpen: true });
+  };
 
   // Use account from hook if available, otherwise fallback to prop
   const displayAddress = address || account.address;
@@ -83,13 +93,15 @@ export function NavWalletConnected({ account, chain, openAccountModal }: NavWall
                 </ExternalLink>
               )}
 
-              {/* Account settings (opens RainbowKit modal) */}
-              <button
-                onClick={openAccountModal}
-                className="flex items-center gap-2 rounded px-3 py-2 text-sm text-white transition-colors hover:bg-gray-8"
-              >
-                <span>Account Settings</span>
-              </button>
+              {/* Bridge settings (opens bridge settings sidebar) - Only visible on /bridge route */}
+              {isBridgeRoute && (
+                <button
+                  onClick={handleSettingsClick}
+                  className="flex items-center gap-2 rounded px-3 py-2 text-sm text-white transition-colors hover:bg-gray-8"
+                >
+                  <span>Settings</span>
+                </button>
+              )}
 
               {/* Disconnect */}
               <button
