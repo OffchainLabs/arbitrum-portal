@@ -6,7 +6,6 @@ import { twMerge } from 'tailwind-merge';
 import { unica } from '@/bridge/components/common/Font';
 import { PORTAL_DOMAIN } from '@/bridge/constants';
 
-import { BodyClassSyncer } from '../components/BodyClassSyncer';
 import '../styles/common.css';
 
 export const metadata: Metadata = {
@@ -19,10 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body className={twMerge('relative bg-black text-white', unica.variable)}>
-        {children}
-        <BodyClassSyncer />
-      </body>
+      <body className={twMerge('relative bg-black text-white', unica.variable)}>{children}</body>
     </html>
   );
 }

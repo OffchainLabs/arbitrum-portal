@@ -142,7 +142,7 @@ export const SitewideSearchBar = () => {
       >
         <MagnifyingGlassIcon className="h-4 w-4 shrink-0 grow-0" />
         <input
-          className="h-full w-full grow border-transparent bg-transparent font-light outline-none outline-0"
+          className="h-full w-full grow border-transparent bg-transparent font-light outline-none outline-0 px-2"
           placeholder="Search projects, chains, and more"
           value={searchString}
           onChange={handleInputChange}

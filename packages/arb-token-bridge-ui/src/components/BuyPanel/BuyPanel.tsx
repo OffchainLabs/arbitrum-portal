@@ -94,7 +94,7 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
         actionButtonProps={{ hidden: true }}
         isFooterHidden={true}
         className={twMerge(
-          'h-screen overflow-hidden md:h-[calc(100vh_-_175px)] md:max-h-[900px] md:max-w-[500px]',
+          'h-screen overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
           embedMode && 'md:h-full',
         )}
       >
@@ -250,7 +250,7 @@ export function BuyPanel() {
     <div className={embedMode ? '' : 'bg-black'}>
       <div
         className={twMerge(
-          'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[600px] min-h-[600px] flex flex-col',
+          'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[580px] min-h-[580px] flex flex-col',
           embedMode && 'mx-auto max-w-[540px]',
         )}
       >
