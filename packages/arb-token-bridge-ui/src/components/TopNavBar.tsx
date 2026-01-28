@@ -81,12 +81,12 @@ export function TopNavBar() {
           className={isBuyTab ? 'bg-black/75' : ''}
           aria-label="Switch to Buy Tab"
         >
-          <WalletIcon className="h-3 w-3" />
+          <WalletIcon className="h-4 w-4" />
           Buy
         </StyledTab>
       )}
       <StyledTab aria-label="Switch to Bridge Tab" hrefQuery={searchParamsWithoutTab.toString()}>
-        <PaperAirplaneIcon className="h-3 w-3" />
+        <PaperAirplaneIcon className="h-4 w-4" />
         Bridge
       </StyledTab>
       <StyledTab
@@ -95,7 +95,7 @@ export function TopNavBar() {
       >
         <Image src="/icons/history.svg" width={24} height={24} alt="history icon" />
         Txn History{' '}
-        <span className={twMerge('h-4 w-4 shrink-0 rounded-full', colorClassName.light)} />
+        <span className={twMerge('h-2 w-2 shrink-0 rounded-full', colorClassName.light)} />
       </StyledTab>
     </TabList>
   );
