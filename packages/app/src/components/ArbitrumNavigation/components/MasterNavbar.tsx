@@ -10,7 +10,7 @@ export function MasterNavbar() {
   return (
     <nav
       id="sticky-top-bar"
-      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-gray-8 bg-gray-1 px-6 py-3"
+      className="fixed top-0 left-0 right-0 z-50 flex h-14 w-full items-center justify-between border-b border-gray-8 bg-gray-1 px-6"
     >
       {/* Left section: Logo + Search */}
       <div className="flex items-center gap-3">

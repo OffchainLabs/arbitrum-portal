@@ -21,7 +21,10 @@ export function ArbitrumNavigation({ children }: PropsWithChildren) {
         {!isEmbedMode && <MasterNavbar />}
         <div className="flex flex-1">
           {!isEmbedMode && <SideNav />}
-          <main className="flex-1">{children}</main>
+          {/* Main content area with padding to account for fixed navbars */}
+          <main className={`flex-1 ${!isEmbedMode ? 'pt-14 pl-16' : ''}`}>
+            {children}
+          </main>
         </div>
       </div>
     </NavigationProviders>

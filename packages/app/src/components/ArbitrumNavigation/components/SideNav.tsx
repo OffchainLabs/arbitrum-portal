@@ -131,14 +131,14 @@ export function SideNav() {
   // If no items (Home route), show empty state
   if (items.length === 0) {
     return (
-      <aside className="w-16 border-r border-gray-8 bg-gray-1 p-4">
+      <aside className="fixed left-0 top-14 bottom-0 z-40 w-16 border-r border-gray-8 bg-gray-1 p-4">
         {/* Empty state for Home route */}
       </aside>
     );
   }
 
   return (
-    <aside className="w-16 border-r border-gray-8 bg-gray-1 p-4">
+    <aside className="fixed left-0 top-14 bottom-0 z-40 w-16 border-r border-gray-8 bg-gray-1 p-4 overflow-y-auto">
       <nav className="flex flex-col gap-2">
         {items.map((item) => {
           const isActive = getActiveSideNavItem(item);
