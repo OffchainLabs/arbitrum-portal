@@ -118,7 +118,8 @@ export function SideNav() {
       return pathname.startsWith('/bookmarks');
     }
     if (item.href === '/learn') {
-      return pathname.startsWith('/learn');
+      // Dev-tools should be active for both /learn and /build routes
+      return pathname.startsWith('/learn') || pathname.startsWith('/build');
     }
     if (item.href === '/community') {
       return pathname.startsWith('/community');

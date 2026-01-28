@@ -7,6 +7,8 @@ import { HeroBanner } from '@/portal/components/Learn/HeroBanner';
 import { IntroDocs } from '@/portal/components/Learn/IntroDocs';
 import { LearnStats } from '@/portal/components/Learn/LearnStats';
 
+import { DevToolsTabs } from '../../../../components/ArbitrumNavigation/components/DevToolsTabs';
+
 const metadataContent = {
   title: 'Learn about Arbitrum',
   description: 'Nitro, Orbit, Stylus, One, Nova - learn what makes all of this tech so impressive',
@@ -51,6 +53,7 @@ export default async function LearnPage() {
 
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <DevToolsTabs />
       <HeroBanner />
 
       <LearnStats />

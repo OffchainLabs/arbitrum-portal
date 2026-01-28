@@ -6,6 +6,8 @@ import { Explorers } from '@/portal/components/Build/Explorers';
 import { HeroBanner } from '@/portal/components/Build/HeroBanner';
 import { NetworkStatus } from '@/portal/components/Build/NetworkStatus';
 
+import { DevToolsTabs } from '../../../../components/ArbitrumNavigation/components/DevToolsTabs';
+
 const metadataContent = {
   title: 'Build with Arbitrum',
   description: 'Get your hands dirty and jump into technical docs and tutorials',
@@ -50,6 +52,7 @@ export default async function BuildPage() {
 
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <DevToolsTabs />
       <HeroBanner />
 
       <BuildSection />
