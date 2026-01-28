@@ -11,7 +11,6 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTheme } from '../../hooks/useTheme';
 import { useActions } from '../../state';
 import { MainContent } from '../MainContent/MainContent';
-import { Header } from '../common/Header';
 import { Loader } from '../common/atoms/Loader';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
@@ -114,7 +113,6 @@ const AppContent = React.memo(() => {
 
   return (
     <>
-      <Header />
       <TokenListSyncer />
       <ArbTokenBridgeStoreSyncWrapper />
       <MainContent />
