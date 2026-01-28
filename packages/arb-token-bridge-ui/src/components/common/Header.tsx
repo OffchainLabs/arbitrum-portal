@@ -49,7 +49,7 @@ export function Header({ children }: { children?: React.ReactNode }) {
       }}
     >
       <div className="flex w-full items-center justify-end gap-2 text-white">
-        <Image className="mr-auto h-10 w-10 sm:hidden" src={ArbitrumLogoSmall} alt="Arbitrum" />
+        <Image className="mr-auto h-8 w-8 sm:hidden" src={ArbitrumLogoSmall} alt="Arbitrum" />
         {isTestnet && !isExperimentalMode && <span className="grow font-medium">TESTNET MODE</span>}
         {isExperimentalMode && (
           <span className="grow font-medium text-red-500">
