@@ -131,15 +131,16 @@ export function SideNav() {
   // If no items (Home route), show empty state
   if (items.length === 0) {
     return (
-      <aside className="fixed left-0 top-14 bottom-0 z-40 w-16 border-r border-gray-8 bg-gray-1 p-4">
+      <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm">
         {/* Empty state for Home route */}
       </aside>
     );
   }
 
   return (
-    <aside className="fixed left-0 top-14 bottom-0 z-40 w-16 border-r border-gray-8 bg-gray-1 p-4 overflow-y-auto">
-      <nav className="flex flex-col gap-2">
+    <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      {/* Padding matches top navbar px-6 (24px) to align with logo */}
+      <nav className="flex flex-col gap-2 py-6 px-2">
         {items.map((item) => {
           const isActive = getActiveSideNavItem(item);
           const Icon = item.icon;
@@ -147,14 +148,21 @@ export function SideNav() {
           const content = (
             <div
               className={twMerge(
-                'flex flex-col items-center gap-2 rounded-lg p-3 transition-colors',
-                isActive
-                  ? 'bg-gray-8 text-white'
-                  : 'text-white/70 hover:bg-gray-8/50 hover:text-white',
+                'flex flex-col items-center gap-1 rounded-md transition-colors p-1 py-2',
+                isActive ? 'cursor-default' : ' hover:bg-white/20 opacity-50',
               )}
             >
-              <Icon className="h-6 w-6" />
-              <span className="text-sm font-medium">{item.label}</span>
+              <Icon
+                className={twMerge('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-gray-5')}
+              />
+              <span
+                className={twMerge(
+                  'text-xs text-center',
+                  isActive ? 'font-semibold text-white' : 'font-light text-white',
+                )}
+              >
+                {item.label}
+              </span>
             </div>
           );
 

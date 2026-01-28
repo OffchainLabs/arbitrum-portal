@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import ArbitrumLogoSmall from '@/images/ArbitrumLogo.svg';
 
@@ -10,16 +9,11 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { isExperimentalModeEnabled } from '../../util';
 import { isNetwork } from '../../util/networks';
-import { AppMobileSidebar } from '../Sidebar/AppMobileSidebar';
-import { HeaderAccountPopover } from './HeaderAccountPopover';
 import { HeaderConnectWalletButton } from './HeaderConnectWalletButton';
 
 export function HeaderAccountOrConnectWalletButton() {
-  const { isConnected } = useAccount();
-
-  if (isConnected) {
-    return <HeaderAccountPopover />;
-  }
+  // Wallet connection is now handled by ArbitrumNavigation
+  // This component is kept for backward compatibility
   return <HeaderConnectWalletButton />;
 }
 
@@ -58,7 +52,6 @@ export function Header({ children }: { children?: React.ReactNode }) {
         )}
         <div className="hidden sm:flex">{children}</div>
       </div>
-      <AppMobileSidebar />
     </header>
   );
 }

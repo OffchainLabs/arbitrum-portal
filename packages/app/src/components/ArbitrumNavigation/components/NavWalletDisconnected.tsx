@@ -10,7 +10,7 @@ export function NavWalletDisconnected({ openConnectModal }: NavWalletDisconnecte
     <button
       onClick={openConnectModal}
       type="button"
-      className="rounded-lg border border-gray-8 bg-gray-8 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-8/80"
+      className="rounded-md bg-gray-8 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-8/80"
     >
       Connect Wallet
     </button>

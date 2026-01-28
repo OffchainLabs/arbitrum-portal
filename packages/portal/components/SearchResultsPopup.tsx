@@ -110,7 +110,7 @@ export const SearchResultsPopup = ({
     : `/search/${searchString}`;
 
   return (
-    <div className="absolute top-[50px] z-[100000] flex max-h-[500px] w-full flex-col items-center overflow-auto rounded-md bg-default-black py-4 text-center text-sm text-white/80 shadow-lg lg:max-w-[400px]">
+    <div className="flex max-h-[500px] w-full flex-col items-center overflow-auto rounded-md bg-default-black py-4 text-center text-sm text-white/80 shadow-lg">
       <div className="relative h-full w-full">
         {/* minimum character limit message */}
         {searchString.length < 2 && !searchResults.length ? 'Enter at least 2 characters' : null}
