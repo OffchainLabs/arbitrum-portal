@@ -4,14 +4,20 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { sideNavItems } from '../config/navConfig';
-import { useActiveRoute } from '../hooks/useActiveRoute';
+import { sideNavItems } from '../../config/navConfig';
+import { useActiveRoute } from '../../hooks/useActiveRoute';
 
-export function SideNav() {
+// SideNavMobile component - Horizontal tabs at top for mobile
+export function SideNavMobile() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const items = activeRoute ? sideNavItems[activeRoute] || [] : [];
+
+  // If no items (Home route), don't render
+  if (items.length === 0) {
+    return null;
+  }
 
   // Determine active side nav item based on current pathname and query params
   const getActiveSideNavItem = (item: (typeof items)[0]): boolean => {
@@ -55,41 +61,20 @@ export function SideNav() {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
-  // If no items (Home route), show empty state
-  if (items.length === 0) {
-    return (
-      <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm">
-        {/* Empty state for Home route */}
-      </aside>
-    );
-  }
-
   return (
-    <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      {/* Padding matches top navbar px-6 (24px) to align with logo */}
-      <nav className="flex flex-col gap-2 py-6 px-2">
+    <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden pt-0">
+      <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[40px] w-full justify-between">
         {items.map((item) => {
           const isActive = getActiveSideNavItem(item);
-          const Icon = item.icon;
 
           const content = (
             <div
               className={twMerge(
-                'flex flex-col items-center gap-1 rounded-md transition-colors p-1 py-2',
-                isActive ? 'cursor-default' : ' hover:bg-white/20 opacity-50',
+                'rounded-md px-4 h-full text-sm transition-colors flex items-center justify-center whitespace-nowrap min-h-[44px] touch-manipulation',
+                isActive ? 'bg-white/10 text-white' : 'bg-transparent text-white/70',
               )}
             >
-              <Icon
-                className={twMerge('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-gray-5')}
-              />
-              <span
-                className={twMerge(
-                  'text-xs text-center',
-                  isActive ? 'font-semibold text-white' : 'font-light text-white',
-                )}
-              >
-                {item.label}
-              </span>
+              {item.label}
             </div>
           );
 
@@ -108,12 +93,12 @@ export function SideNav() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className="block">
+            <Link key={item.href} href={item.href} className="w-full block">
               {content}
             </Link>
           );
         })}
-      </nav>
-    </aside>
+      </div>
+    </nav>
   );
 }

@@ -3,15 +3,8 @@
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
+import { masterNavLinks } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
-import type { NavLink } from '../types';
-
-const navLinks: NavLink[] = [
-  { label: 'Home', route: '/' },
-  { label: 'Bridge', route: '/bridge' },
-  { label: 'Explore', route: '/projects' },
-  { label: 'Build', route: '/build' },
-];
 
 // NavLinks component - Navigation links (Home, Bridge, Explore, Build)
 export function NavLinks() {
@@ -19,7 +12,7 @@ export function NavLinks() {
 
   return (
     <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[40px]">
-      {navLinks.map((link) => {
+      {masterNavLinks.map((link) => {
         const isActive = activeRoute === link.route;
 
         return (

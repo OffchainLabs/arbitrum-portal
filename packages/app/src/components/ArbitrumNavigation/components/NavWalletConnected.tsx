@@ -98,9 +98,13 @@ export function NavWalletConnected({ account, chain }: NavWalletConnectedProps) 
         <>
           <Popover.Button className="flex items-center gap-2 rounded-md bg-gray-8 px-3 py-2 text-sm text-white transition-colors hover:bg-gray-8/80 ui-open:bg-gray-8/90">
             <Avatar />
-            <span className="text-sm">{displayName}</span>
+            <span className="text-sm hidden md:block">{displayName}</span>
             <ChevronDownIcon
-              className={twMerge(ICON_CLASSES, 'transition-transform', open && 'rotate-180')}
+              className={twMerge(
+                ICON_CLASSES,
+                'transition-transform hidden md:block',
+                open && 'rotate-180',
+              )}
             />
           </Popover.Button>
 

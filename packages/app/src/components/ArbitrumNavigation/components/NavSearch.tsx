@@ -1,7 +1,7 @@
 'use client';
 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -10,11 +10,15 @@ import { SearchResult } from '@/portal/common/getSearchResults';
 import { SearchResultsPopup } from '@/portal/components/SearchResultsPopup';
 import { useSearch } from '@/portal/hooks/useSearch';
 
+import { shouldExpandSearchOnMobile } from '../config/navConfig';
+
 const PREVIEW_LIMIT = 5;
 
 // Expandable search component - starts as icon button, expands to input when clicked/focused
+// On mobile: expanded on Projects/Chains/My Apps pages, collapsed elsewhere
 export function NavSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     searchString,
     searchResults,
@@ -27,17 +31,38 @@ export function NavSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [focusIndex, setFocusIndex] = useState<number>(-1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // On mobile, check if search should be expanded by default
+  const shouldExpandOnMobile = shouldExpandSearchOnMobile(pathname);
 
   const showSearchResultsPopup = isSearchPage ? searchString !== searchStringInUrl : searchString;
 
   const pageSize = Math.min(searchResults.length + 1, PREVIEW_LIMIT + 1);
 
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Expand when search string has value
+  // On mobile: also expand if on Projects/Chains/My Apps pages
   useEffect(() => {
     if (searchString) {
       setIsExpanded(true);
+    } else if (isMobile && shouldExpandOnMobile) {
+      setIsExpanded(true);
+    } else if (isMobile && !shouldExpandOnMobile && !searchString) {
+      // On mobile non-search pages, collapse if search string is empty
+      setIsExpanded(false);
     }
-  }, [searchString]);
+  }, [searchString, isMobile, shouldExpandOnMobile]);
 
   // Focus input when expanded
   useEffect(() => {
@@ -60,6 +85,11 @@ export function NavSearch() {
       // Check if focus moved to popup or input
       const activeElement = document.activeElement;
       if (activeElement?.closest('[data-search-popup]') || activeElement === inputRef.current) {
+        return;
+      }
+
+      // On mobile: keep expanded if on Projects/Chains/My Apps pages
+      if (isMobile && shouldExpandOnMobile) {
         return;
       }
 
@@ -118,13 +148,13 @@ export function NavSearch() {
   };
 
   return (
-    <div className="relative">
+    <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
       {/* Search container - expands/contracts with animation */}
       <div
         className={twMerge(
           'flex items-center gap-2 rounded-md bg-gray-8 transition-all duration-300 ease-in-out h-[40px]',
           isExpanded
-            ? 'w-[400px] border-0 px-3 py-0'
+            ? 'w-full md:w-[400px] border-0 px-3 py-0' // Full width on mobile when expanded
             : 'h-10 w-10 cursor-pointer items-center justify-center border-0 p-0 hover:bg-gray-8/80',
         )}
         onClick={() => !isExpanded && setIsExpanded(true)}
@@ -150,7 +180,7 @@ export function NavSearch() {
       {showSearchResultsPopup && isExpanded && (
         <div
           data-search-popup
-          className="absolute left-0 top-full z-[100000] mt-2 w-full lg:w-[400px]"
+          className="absolute left-0 top-full z-[100000] mt-2 w-full md:w-full lg:w-[400px]"
         >
           <SearchResultsPopup
             searchString={searchString}

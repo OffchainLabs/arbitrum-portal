@@ -22,10 +22,11 @@ This document outlines the implementation plan for creating a new `<ArbitrumNavi
 | 12    | PortalPage Removal        | ✅ Complete | 1 hour    | Phase 11     |
 | 13    | Side Navigation (SubNav)  | ✅ Complete | 3-4 hours | Phase 12     |
 | 14    | Route Highlighting        | ✅ Complete | 1 hour    | Phase 13     |
+| 15    | Mobile Responsiveness     | ⏳ Pending  | 4-6 hours | Phase 14     |
 
-**Total Estimated Time**: ~20-25 hours (all phases complete)
+**Total Estimated Time**: ~24-31 hours (all phases complete)
 
-**Current Status**: All planned phases (1-14) are **COMPLETE** ✅
+**Current Status**: Phases 1-14 are **COMPLETE** ✅, Phase 15 is **PENDING** ⏳
 
 ## Architecture Philosophy
 
@@ -83,18 +84,24 @@ app/
 
 ```
 packages/app/src/components/ArbitrumNavigation/
-├── ArbitrumNavigation.tsx          # Main frame component
+├── ArbitrumNavigation.tsx          # Main frame component (conditionally renders desktop/mobile)
+├── config/
+│   └── navConfig.ts               # Shared navigation config (Phase 15)
 ├── providers/
 │   ├── NavigationProviders.tsx   # Consolidated providers wrapper
 │   └── wagmi/
 │       └── setup.ts               # Wagmi config (moved from bridge)
 ├── components/
-│   ├── MasterNavbar.tsx           # Top horizontal navbar
-│   │   ├── NavLogo.tsx            # Logo + link to "/"
-│   │   ├── NavSearch.tsx          # Search icon (placeholder)
-│   │   ├── NavLinks.tsx           # Home, Bridge, Explore, Build
-│   │   └── NavWallet.tsx          # Wallet connection dropdown
-│   └── SubNavbar.tsx              # Left sidebar (Phase 2)
+│   ├── MasterNavbar.tsx           # Desktop: Top horizontal navbar
+│   ├── SideNav.tsx                # Desktop: Left sidebar
+│   ├── mobile/
+│   │   ├── MasterNavbarMobile.tsx # Mobile: Top navbar (logo + search + wallet)
+│   │   ├── SideNavMobile.tsx      # Mobile: Horizontal tabs at top
+│   │   └── BottomNav.tsx          # Mobile: Bottom navigation bar
+│   ├── NavLogo.tsx                # Shared: Logo + link to "/"
+│   ├── NavSearch.tsx              # Shared: Search component
+│   ├── NavLinks.tsx               # Desktop: Navigation links
+│   └── NavWallet.tsx              # Shared: Wallet connection dropdown
 ├── hooks/
 │   ├── useActiveRoute.ts          # Active route detection
 │   └── useWalletMenu.ts           # Wallet menu logic
@@ -888,11 +895,96 @@ This approach allows for:
 
 ---
 
+## Phase 15: Mobile Responsiveness
+
+**Goal**: Make navigation fully responsive for mobile devices based on Figma design.
+
+**Architecture Decision**: Create separate mobile versions of top-level organizational components instead of morphing the same components. Atomic child components (NavSearch, NavWallet, NavLogo, etc.) remain shared.
+
+**Deliverables**:
+
+- [ ] **Shared Navigation Config**:
+  - Create `config/navConfig.ts` (or similar) with shared navigation structure
+  - Define master nav items (Home, Bridge, Explore, Build)
+  - Define side nav items per section (Bridge: Bridge/Txns/Buy, Explore: Projects/Chains/My Apps, Build: Dev-tools/Connect/Help)
+  - Export config for use in both desktop and mobile components
+- [ ] **Mobile Component Structure**:
+  - Create `components/mobile/MasterNavbarMobile.tsx` - Separate mobile version
+  - Create `components/mobile/SideNavMobile.tsx` - Separate mobile version (tabs)
+  - Create `components/mobile/BottomNav.tsx` - Bottom navigation bar component
+  - Keep atomic components shared: `NavSearch`, `NavWallet`, `NavLogo`, etc.
+- [ ] **Master Navbar Mobile Layout** (`MasterNavbarMobile.tsx`):
+  - Top section: Logo + Search + Wallet (all at top)
+  - Logo stays at top left
+  - Wallet button stays at top right
+  - Search bar behavior:
+    - **Projects/Chains/My Apps pages**: Expanded at top
+    - **Home/Bridge/Build pages**: Collapsed (icon button), expands on tap/click
+- [ ] **Bottom Navigation Bar** (`BottomNav.tsx`):
+  - Fixed at bottom on mobile screens (`< md` breakpoint)
+  - Contains all 4 master nav items: Home, Bridge, Explore, Build
+  - Styling matches Figma design (refer to selected design)
+  - Bottom menu bar pattern similar to phone's bottom menu bar
+- [ ] **SideNav Mobile Layout** (`SideNavMobile.tsx`):
+  - Convert side nav items to horizontal tabs at top
+  - **All sections get tabs**:
+    - **Bridge section**: Bridge, Txns, Buy tabs
+    - **Explore section**: Projects, Chains, My Apps tabs
+    - **Build section**: Dev-tools, Connect, Help tabs
+  - Tab/button group design similar to desktop master nav links (elegant, consistent styling)
+  - Tabs appear below top navbar, above content
+- [ ] **Responsive Breakpoints**:
+  - Use `md:` breakpoint (768px) to switch between mobile and desktop
+  - Desktop: Show `MasterNavbar` + `SideNav` (existing components)
+  - Mobile: Show `MasterNavbarMobile` + `SideNavMobile` + `BottomNav`
+  - Update `ArbitrumNavigation` to conditionally render based on screen size
+- [ ] **Touch-Friendly Interactions**:
+  - Adequate touch target sizes (minimum 44x44px)
+  - Proper spacing between interactive elements
+  - Smooth animations and transitions
+
+**Acceptance Criteria**:
+
+- ✅ Shared navigation config created and used by both desktop and mobile components
+- ✅ Separate mobile components created (MasterNavbarMobile, SideNavMobile, BottomNav)
+- ✅ Atomic components (NavSearch, NavWallet, NavLogo) remain shared
+- ✅ Logo and wallet button stay at top on mobile
+- ✅ Bottom nav bar fixed at bottom with all 4 items (Home, Bridge, Explore, Build)
+- ✅ Search bar expanded at top on Projects/Chains/My Apps pages
+- ✅ Search bar collapsed (icon) on Home/Bridge/Build pages, expands on tap/click
+- ✅ Side nav items convert to horizontal tabs at top for all sections
+- ✅ Bridge section shows: Bridge, Txns, Buy tabs
+- ✅ Explore section shows: Projects, Chains, My Apps tabs
+- ✅ Build section shows: Dev-tools, Connect, Help tabs
+- ✅ Tab styling matches desktop master nav links design
+- ✅ Layout responsive across all screen sizes (breakpoint: `md:` = 768px)
+- ✅ Touch targets meet accessibility standards (44x44px minimum)
+- ✅ No layout regressions on desktop
+- ✅ Smooth transitions between mobile and desktop layouts
+
+**Status**: ⏳ **PENDING**
+
+**Estimated Time**: 4-6 hours
+
+**Dependencies**: Phase 14
+
+**Notes**:
+
+- **Architecture**: Separate mobile components instead of conditional styling in same components
+- **Shared Config**: Create `config/navConfig.ts` to avoid duplication between desktop/mobile
+- **Atomic Components**: NavSearch, NavWallet, NavLogo remain shared (used in both desktop and mobile)
+- **Breakpoint**: `md:` (768px) - mobile below, desktop above
+- **Design Reference**: Figma design selected by user
+- **Bottom Nav**: Fixed at bottom, contains all master nav items
+- **Search Behavior**: Expanded on Projects/Chains/My Apps, collapsed on other pages
+
+---
+
 ## Open Questions / Decisions Needed
 
 1. **Logo Asset**: Use `/images/arbitrum-logo-white-no-text.svg` for navbar logo ✅
 2. **Sub-navbar Design**: ✅ Completed - checked Figma design and implemented
-3. **Mobile Design**: Mobile responsiveness deferred (separate design) - **Future Phase**
+3. **Mobile Design**: ⏳ Phase 15 - Mobile responsiveness requirements defined (pending implementation)
 4. **Search Functionality**: ✅ Complete - `SitewideSearchBar` integrated
 5. **Provider Conflicts**: ✅ Verified - no conflicts (completed in Phase 3)
 6. **shadcn Setup**: ✅ Already configured
@@ -904,7 +996,7 @@ This approach allows for:
 
 ## Completed Phases Summary
 
-All phases (1-14) are now **COMPLETE**. The ArbitrumNavigation component is fully functional with:
+Phases 1-14 are now **COMPLETE**. The ArbitrumNavigation component is fully functional on desktop with:
 
 - ✅ Master navbar with logo, search, navigation links, and wallet connection
 - ✅ Side navigation that changes based on active route
@@ -914,6 +1006,8 @@ All phases (1-14) are now **COMPLETE**. The ArbitrumNavigation component is full
 - ✅ PortalPage wrapper removed
 - ✅ HeaderDropdown functionality migrated
 
+**Next**: Phase 15 (Mobile Responsiveness) - Pending implementation
+
 ## Next Steps / Future Enhancements
 
 ### Immediate (Optional Polish)
@@ -922,13 +1016,13 @@ All phases (1-14) are now **COMPLETE**. The ArbitrumNavigation component is full
 2. **Icon Refinement**: Verify side nav icons match Figma design exactly (may need custom icons)
 3. **Styling Refinements**: Fine-tune spacing, colors, and hover states to match Figma exactly
 
-### Future Phases
+### Current Phase
 
-1. **Mobile Responsiveness** (Phase 15 - Future):
-   - Mobile menu/hamburger for master navbar
-   - Collapsible side navigation for mobile
-   - Responsive layout adjustments
-   - Touch-friendly interactions
+1. **Mobile Responsiveness** (Phase 15 - In Progress):
+   - Master nav elements fixed at bottom on mobile (bottom menu bar pattern)
+   - Side nav items convert to horizontal tabs at top
+   - Search bar expanded at top, only on Projects/Chains/My Apps pages
+   - Touch-friendly interactions and responsive breakpoints
 
 2. **Additional Features** (Future):
    - Search enhancements (recent searches, suggestions)

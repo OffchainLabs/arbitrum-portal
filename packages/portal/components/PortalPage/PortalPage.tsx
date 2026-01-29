@@ -7,7 +7,7 @@
 export const PortalPage = ({ children }: { children: React.ReactNode }) => {
   // Content wrapper styles preserved for backward compatibility during migration
   return (
-    <div className="relative mx-auto flex w-full max-w-[1153px] flex-col gap-4 px-6 pb-[160px] lg:gap-6">
+    <div className="relative mx-auto flex w-full max-w-[1153px] flex-col gap-4 px-4 pb-[160px] lg:gap-6">
       {children}
     </div>
   );

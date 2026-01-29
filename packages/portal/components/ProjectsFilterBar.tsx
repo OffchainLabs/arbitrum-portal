@@ -69,7 +69,7 @@ export const ProjectsFilterBar = () => {
           <ExternalLink
             href={isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK}
             className={twMerge(
-              'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-default-black-hover md:flex',
+              'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 px-4 text-sm no-underline hover:bg-default-black-hover bg-default-black md:flex',
             )}
           >
             <PlusCircleIcon className="h-4 w-4" />

@@ -250,7 +250,7 @@ export function BuyPanel() {
     <div className={embedMode ? '' : 'bg-black'}>
       <div
         className={twMerge(
-          'bg-white/10 rounded-md border border-white/30 px-6 py-7 pb-8 text-white w-full sm:max-w-[580px] min-h-[580px] flex flex-col',
+          'bg-white/10 rounded-md border-none px-6 py-7 pb-8 text-white w-full sm:max-w-[580px] min-h-[580px] flex flex-col',
           embedMode && 'mx-auto max-w-[540px]',
         )}
       >
