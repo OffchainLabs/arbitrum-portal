@@ -41,6 +41,7 @@ export interface SideNavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   external?: boolean;
+  ariaLabel?: string;
 }
 
 // Side nav items organized by top-level route
@@ -51,16 +52,19 @@ export const sideNavItems: Record<string, SideNavItem[]> = {
       label: 'Bridge',
       href: '/bridge',
       icon: CircleStackIcon,
+      ariaLabel: 'Switch to Bridge Tab',
     },
     {
       label: 'Txns',
       href: '/bridge?tab=tx_history',
       icon: CircleStackIcon,
+      ariaLabel: 'Switch to Transaction History Tab',
     },
     {
       label: 'Buy',
       href: '/bridge/buy',
       icon: HandRaisedIcon,
+      ariaLabel: 'Switch to Buy Tab',
     },
   ],
   '/projects': [

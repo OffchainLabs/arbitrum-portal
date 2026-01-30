@@ -81,6 +81,7 @@ export function SideNavMobile() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex-shrink-0"
+                aria-label={item.ariaLabel}
               >
                 {content}
               </a>
@@ -88,7 +89,12 @@ export function SideNavMobile() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className="flex-1 flex-shrink-0">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex-1 flex-shrink-0"
+              aria-label={item.ariaLabel}
+            >
               {content}
             </Link>
           );

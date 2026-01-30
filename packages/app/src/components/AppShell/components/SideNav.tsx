@@ -95,6 +95,7 @@ export function SideNav() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full block"
+                aria-label={item.ariaLabel}
               >
                 {content}
               </a>
@@ -102,7 +103,12 @@ export function SideNav() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className="w-full block">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="w-full block"
+              aria-label={item.ariaLabel}
+            >
               {content}
             </Link>
           );
