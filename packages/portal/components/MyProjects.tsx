@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
+import { PageHeading } from '@/app-components/ArbitrumNavigation';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useDyorProjects } from '@/hooks/useDyorProjects';
@@ -30,6 +31,7 @@ export const MyProjects = () => {
 
   return (
     <>
+      <PageHeading>My Apps</PageHeading>
       <Card
         className="relative mb-4 flex h-[100px] flex-row items-center justify-between text-2xl lg:px-10 lg:text-3xl"
         style={{

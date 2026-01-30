@@ -28,7 +28,8 @@
       "@/token-bridge-sdk/*": ["./packages/arb-token-bridge-ui/src/token-bridge-sdk/*"],
       "@/icons/*": ["./packages/app/public/icons/*"],
       "@/images/*": ["./packages/app/public/images/*"],
-      "@/public/*": ["./packages/app/public/*"]
+      "@/public/*": ["./packages/app/public/*"],
+      "@/app-components/*": ["./packages/app/src/components/*"]
     },
     "types": [
       "dayjs/plugin/relativeTime",

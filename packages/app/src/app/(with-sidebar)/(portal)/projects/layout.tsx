@@ -1,3 +1,4 @@
+import { PageHeading } from '@/app-components/ArbitrumNavigation';
 import { ProjectsCountByFilters } from '@/portal/components/ProjectsCountByFilters';
 import { ProjectsFilterBar } from '@/portal/components/ProjectsFilterBar';
 
@@ -8,6 +9,7 @@ export default function ProjectsListPageLayout({
 }) {
   return (
     <>
+      <PageHeading>Projects</PageHeading>
       <ProjectsFilterBar />
 
       <ProjectsCountByFilters />

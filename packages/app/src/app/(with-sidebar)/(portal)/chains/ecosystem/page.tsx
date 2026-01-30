@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 
+import { PageHeading } from '@/app-components/ArbitrumNavigation';
 import { getEntityMetaData } from '@/portal/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getServerSideAppParams';
 import { spotlightOrbitChains } from '@/portal/common/orbitChains';
@@ -48,6 +49,7 @@ export function generateMetadata(props: ServerSideAppProps): Metadata {
 export default function OrbitPage() {
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <PageHeading>Chains</PageHeading>
       <HeroBanner />
 
       <GettingStarted />

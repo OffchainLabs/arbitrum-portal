@@ -65,7 +65,7 @@ export const ProjectsFilterBar = () => {
           </li>
         </ul>
         {/* Right side: Add your project button */}
-        <div className="flex items-center">
+        <div className="items-center hidden lg:flex">
           <ExternalLink
             href={isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK}
             className={twMerge(

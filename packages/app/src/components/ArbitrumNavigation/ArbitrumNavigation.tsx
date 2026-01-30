@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { MasterNavbar } from './components/MasterNavbar';
 import { SideNav } from './components/SideNav';
@@ -34,7 +35,9 @@ export function ArbitrumNavigation({ children }: PropsWithChildren) {
             </div>
           </>
         )}
-        <div className="flex flex-1 flex-col md:flex-row md:pt-[100px]">
+        <div
+          className={(twMerge('flex flex-1 flex-col md:flex-row'), isEmbedMode ? '' : 'md:pt-[100px]')}
+        >
           {!isEmbedMode && (
             <>
               {/* Desktop Side Nav */}
