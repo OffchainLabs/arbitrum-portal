@@ -62,15 +62,15 @@ export function SideNavMobile() {
   };
 
   return (
-    <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden pt-0">
-      <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[40px] w-full justify-between">
+    <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden">
+      <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[44px] w-full overflow-x-auto">
         {items.map((item) => {
           const isActive = getActiveSideNavItem(item);
 
           const content = (
             <div
               className={twMerge(
-                'rounded-md px-4 h-full text-sm transition-colors flex items-center justify-center whitespace-nowrap min-h-[44px] touch-manipulation',
+                'rounded-md px-4 h-full text-sm transition-colors flex items-center justify-center whitespace-nowrap min-h-[44px] w-full touch-manipulation',
                 isActive ? 'bg-white/10 text-white' : 'bg-transparent text-white/70',
               )}
             >
@@ -85,7 +85,7 @@ export function SideNavMobile() {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="flex-1 flex-shrink-0"
               >
                 {content}
               </a>
@@ -93,7 +93,7 @@ export function SideNavMobile() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className="w-full block">
+            <Link key={item.href} href={item.href} className="flex-1 flex-shrink-0">
               {content}
             </Link>
           );

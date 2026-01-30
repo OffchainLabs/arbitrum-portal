@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
+import { PageHeading } from '../../../../app/src/components/ArbitrumNavigation';
 import { MergedTransaction } from '../../state/app/state';
 import { TransactionHistorySearchBar } from './TransactionHistorySearchBar';
 import { TransactionHistorySearchResults } from './TransactionHistorySearchResults';
-import { PageHeading } from '../../../../app/src/components/ArbitrumNavigation';
 
 type TxDetailsStore = {
   tx: MergedTransaction | null;

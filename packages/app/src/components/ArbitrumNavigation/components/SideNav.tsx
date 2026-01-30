@@ -100,7 +100,7 @@ export function SideNav() {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="w-full block"
               >
                 {content}
               </a>
@@ -108,7 +108,7 @@ export function SideNav() {
           }
 
           return (
-            <Link key={item.href} href={item.href} className="block">
+            <Link key={item.href} href={item.href} className="w-full block">
               {content}
             </Link>
           );

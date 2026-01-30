@@ -7,7 +7,7 @@ import { HeroBanner } from '@/portal/components/Learn/HeroBanner';
 import { IntroDocs } from '@/portal/components/Learn/IntroDocs';
 import { LearnStats } from '@/portal/components/Learn/LearnStats';
 
-import { DevToolsTabs } from '../../../../components/ArbitrumNavigation/components/DevToolsTabs';
+import { DevToolsTabs } from '../_components/DevToolsTabs';
 
 const metadataContent = {
   title: 'Learn about Arbitrum',

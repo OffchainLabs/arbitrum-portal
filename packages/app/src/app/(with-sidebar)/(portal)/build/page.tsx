@@ -6,7 +6,7 @@ import { Explorers } from '@/portal/components/Build/Explorers';
 import { HeroBanner } from '@/portal/components/Build/HeroBanner';
 import { NetworkStatus } from '@/portal/components/Build/NetworkStatus';
 
-import { DevToolsTabs } from '../../../../components/ArbitrumNavigation/components/DevToolsTabs';
+import { DevToolsTabs } from '../_components/DevToolsTabs';
 
 const metadataContent = {
   title: 'Build with Arbitrum',
