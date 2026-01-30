@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
-import { masterNavLinks } from '../config/navConfig';
+import { navLinks } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 
 export function NavLinks() {
@@ -11,7 +11,7 @@ export function NavLinks() {
 
   return (
     <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[40px]">
-      {masterNavLinks.map((link) => {
+      {navLinks.map((link) => {
         const isActive = activeRoute === link.route;
 
         return (

@@ -3,15 +3,15 @@
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
-import { masterNavLinksWithIcons } from '../../config/navConfig';
+import { navLinksWithIcons } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 
-export function BottomNav() {
+export function NavMobile() {
   const activeRoute = useActiveRoute();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 w-full items-center justify-around border-t border-gray-8 bg-black/80 backdrop-blur-sm md:hidden">
-      {masterNavLinksWithIcons.map((link) => {
+      {navLinksWithIcons.map((link) => {
         const isActive = activeRoute === link.route;
         const Icon = link.icon;
 

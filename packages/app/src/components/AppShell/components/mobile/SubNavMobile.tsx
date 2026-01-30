@@ -4,20 +4,20 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { sideNavItems } from '../../config/navConfig';
+import { subNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 
-export function SideNavMobile() {
+export function SubNavMobile() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const items = activeRoute ? sideNavItems[activeRoute] || [] : [];
+  const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
   if (items.length === 0) {
     return null;
   }
 
-  const getActiveSideNavItem = (item: (typeof items)[0]): boolean => {
+  const getActiveSubNavItem = (item: (typeof items)[0]): boolean => {
     if (item.external) return false;
 
     if (activeRoute === '/bridge') {
@@ -60,7 +60,7 @@ export function SideNavMobile() {
     <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden">
       <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[44px] w-full overflow-x-auto">
         {items.map((item) => {
-          const isActive = getActiveSideNavItem(item);
+          const isActive = getActiveSubNavItem(item);
 
           const content = (
             <div

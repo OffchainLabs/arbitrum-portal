@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { sideNavItems } from '../config/navConfig';
+import { subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 
-export function SideNav() {
+export function SubNav() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const items = activeRoute ? sideNavItems[activeRoute] || [] : [];
+  const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
-  const getActiveSideNavItem = (item: (typeof items)[0]): boolean => {
+  const getActiveSubNavItem = (item: (typeof items)[0]): boolean => {
     if (item.external) return false;
 
     if (activeRoute === '/bridge') {
@@ -63,7 +63,7 @@ export function SideNav() {
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
       <nav className="flex flex-col gap-2 py-6 px-2">
         {items.map((item) => {
-          const isActive = getActiveSideNavItem(item);
+          const isActive = getActiveSubNavItem(item);
           const Icon = item.icon;
 
           const content = (

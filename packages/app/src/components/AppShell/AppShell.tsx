@@ -4,11 +4,11 @@ import { usePathname } from 'next/navigation';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { MasterNavbar } from './components/MasterNavbar';
-import { SideNav } from './components/SideNav';
-import { BottomNav } from './components/mobile/BottomNav';
-import { MasterNavbarMobile } from './components/mobile/MasterNavbarMobile';
-import { SideNavMobile } from './components/mobile/SideNavMobile';
+import { Nav } from './components/Nav';
+import { SubNav } from './components/SubNav';
+import { NavHeaderMobile } from './components/mobile/NavHeaderMobile';
+import { NavMobile } from './components/mobile/NavMobile';
+import { SubNavMobile } from './components/mobile/SubNavMobile';
 import { AppProviders } from './providers/AppProviders';
 
 export function AppShell({ children }: PropsWithChildren) {
@@ -21,10 +21,10 @@ export function AppShell({ children }: PropsWithChildren) {
         {!isEmbedMode && (
           <>
             <div className="hidden md:block">
-              <MasterNavbar />
+              <Nav />
             </div>
             <div className="md:hidden">
-              <MasterNavbarMobile />
+              <NavHeaderMobile />
             </div>
           </>
         )}
@@ -34,10 +34,10 @@ export function AppShell({ children }: PropsWithChildren) {
           {!isEmbedMode && (
             <>
               <div className="hidden md:block">
-                <SideNav />
+                <SubNav />
               </div>
               <div className="md:hidden pt-[66px]">
-                <SideNavMobile />
+                <SubNavMobile />
               </div>
             </>
           )}
@@ -45,7 +45,7 @@ export function AppShell({ children }: PropsWithChildren) {
         </div>
         {!isEmbedMode && (
           <div className="md:hidden">
-            <BottomNav />
+            <NavMobile />
           </div>
         )}
       </div>
