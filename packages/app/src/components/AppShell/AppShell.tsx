@@ -34,10 +34,7 @@ export function AppShell({ children }: PropsWithChildren) {
           </>
         )}
         <div
-          className={twMerge(
-            'flex flex-1 flex-col md:flex-row',
-            !isEmbedMode && 'md:pt-[100px]',
-          )}
+          className={twMerge('flex flex-1 flex-col md:flex-row', !isEmbedMode && 'md:pt-[100px]')}
         >
           {!isEmbedMode && (
             <>

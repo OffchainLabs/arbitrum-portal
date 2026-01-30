@@ -1,8 +1,7 @@
 import Image from 'next/image';
 
-import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp';
-
 import { AppShell } from '@/app-components/AppShell';
+import FixingSpaceship from '@/images/arbinaut-fixing-spaceship.webp';
 
 export default function NotFound() {
   return (
