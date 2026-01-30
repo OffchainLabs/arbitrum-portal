@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-import { PageHeading } from '../../../../app/src/components/ArbitrumNavigation';
 import { MergedTransaction } from '../../state/app/state';
 import { TransactionHistorySearchBar } from './TransactionHistorySearchBar';
 import { TransactionHistorySearchResults } from './TransactionHistorySearchResults';
