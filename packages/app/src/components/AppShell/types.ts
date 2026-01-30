@@ -1,4 +1,4 @@
-// Type definitions for ArbitrumNavigation component
+// Type definitions for AppShell component
 
 export type NavRoute = '/' | '/bridge' | '/projects' | '/build';
 

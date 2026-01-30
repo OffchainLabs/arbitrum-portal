@@ -4,13 +4,11 @@ import { createConfig } from '@lifi/sdk';
 import { RainbowKitProvider, Theme, darkTheme } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import merge from 'lodash-es/merge';
-import NextAdapterApp from 'next-query-params/app';
 import { createOvermind } from 'overmind';
 import { Provider as OvermindProvider } from 'overmind-react';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { PropsWithChildren, Suspense, useEffect, useMemo, useState } from 'react';
-import { QueryParamProvider } from 'use-query-params';
 import { WagmiProvider } from 'wagmi';
 
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
@@ -47,22 +45,21 @@ const rainbowkitTheme = merge(darkTheme(), {
 
 // Wagmi config setup - use a function to get config on client-side only
 function getWagmiConfig() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
+  if (typeof window === 'undefined') return null;
   const searchParams = new URLSearchParams(window.location.search);
   const targetChainKey = searchParams.get('sourceChain') || null;
   return getProps(targetChainKey);
 }
 
-const integratorId =
-  typeof window !== 'undefined' && window.location.pathname === '/bridge/embed'
-    ? LIFI_INTEGRATOR_IDS.EMBED
-    : LIFI_INTEGRATOR_IDS.NORMAL;
-
-// Clear WalletConnect cache
+// Initialize LiFi config
 if (typeof window !== 'undefined') {
+  const integratorId =
+    window.location.pathname === '/bridge/embed'
+      ? LIFI_INTEGRATOR_IDS.EMBED
+      : LIFI_INTEGRATOR_IDS.NORMAL;
+  createConfig({ integrator: integratorId });
+
+  // Clear WalletConnect cache
   Object.keys(localStorage).forEach((key) => {
     if (key === 'wagmi.requestedChains' || key === 'wagmi.store' || key.startsWith('wc@2')) {
       localStorage.removeItem(key);
@@ -72,14 +69,9 @@ if (typeof window !== 'undefined') {
 
 const queryClient = new QueryClient();
 
-// Initialize LiFi config
-if (typeof window !== 'undefined') {
-  createConfig({ integrator: integratorId });
-}
-
-// NavigationProviders - Consolidated providers wrapper
-// Phase 3: All providers added
-export function NavigationProviders({ children }: PropsWithChildren) {
+// AppProviders - Consolidated app-level providers wrapper
+// Provides all necessary providers for both Bridge and Portal apps
+export function AppProviders({ children }: PropsWithChildren) {
   const overmind = useMemo(() => createOvermind(config), []);
   const [wagmiConfig, setWagmiConfig] = useState<ReturnType<typeof getWagmiConfig>>(null);
 
@@ -91,47 +83,28 @@ export function NavigationProviders({ children }: PropsWithChildren) {
     }
   }, []);
 
-  // If wagmi config is not available (SSR or not yet loaded), return children without wallet providers
-  // NavWallet component handles this with its own mounted check
-  if (!wagmiConfig) {
-    return (
-      <Suspense>
-        <OvermindProvider value={overmind}>
-          <PostHogProvider client={posthog}>
-            <QueryParamProvider
-              adapter={NextAdapterApp}
-              options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
-            >
-              <ArbQueryParamProvider>
-                <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-              </ArbQueryParamProvider>
-            </QueryParamProvider>
-          </PostHogProvider>
-        </OvermindProvider>
-      </Suspense>
-    );
-  }
-
-  return (
-    <Suspense>
-      <OvermindProvider value={overmind}>
-        <PostHogProvider client={posthog}>
-          <QueryParamProvider
-            adapter={NextAdapterApp}
-            options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
-          >
-            <ArbQueryParamProvider>
-              <WagmiProvider config={wagmiConfig}>
-                <QueryClientProvider client={queryClient}>
-                  <RainbowKitProvider theme={rainbowkitTheme}>
-                    <AppContextProvider>{children}</AppContextProvider>
-                  </RainbowKitProvider>
-                </QueryClientProvider>
-              </WagmiProvider>
-            </ArbQueryParamProvider>
-          </QueryParamProvider>
-        </PostHogProvider>
-      </OvermindProvider>
-    </Suspense>
+  // Base provider tree (always rendered)
+  // Matches old bridge provider order exactly, with PostHogProvider added for portal
+  // Note: ArbQueryParamProvider wraps QueryParamProvider, so portal's useQueryParams will work
+  const baseProviders = (
+    <OvermindProvider value={overmind}>
+      <PostHogProvider client={posthog}>
+        <ArbQueryParamProvider>
+          {wagmiConfig ? (
+            <WagmiProvider config={wagmiConfig}>
+              <QueryClientProvider client={queryClient}>
+                <RainbowKitProvider theme={rainbowkitTheme}>
+                  <AppContextProvider>{children}</AppContextProvider>
+                </RainbowKitProvider>
+              </QueryClientProvider>
+            </WagmiProvider>
+          ) : (
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          )}
+        </ArbQueryParamProvider>
+      </PostHogProvider>
+    </OvermindProvider>
   );
+
+  return <Suspense>{baseProviders}</Suspense>;
 }

@@ -3,14 +3,14 @@ import { PropsWithChildren } from 'react';
 import { SiteBanner } from '@/bridge/components/common/SiteBanner';
 import { Toast } from '@/bridge/components/common/atoms/Toast';
 
-import { ArbitrumNavigation } from '../../components/ArbitrumNavigation';
+import { AppShell } from '@/app-components/AppShell';
 
 export default function WithSidebarLayout({ children }: PropsWithChildren) {
   return (
-    <ArbitrumNavigation>
+    <AppShell>
       <SiteBanner />
       {children}
       <Toast />
-    </ArbitrumNavigation>
+    </AppShell>
   );
 }

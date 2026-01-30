@@ -4,12 +4,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 
-import { ArbitrumNavigation } from '../../../../components/ArbitrumNavigation';
+import { AppShell } from '@/app-components/AppShell';
 
 export default function EmbedLayout(props: PropsWithChildren) {
   return (
-    <ArbitrumNavigation>
+    <AppShell>
       <div className="bg-widget-background h-screen">{props.children}</div>
-    </ArbitrumNavigation>
+    </AppShell>
   );
 }

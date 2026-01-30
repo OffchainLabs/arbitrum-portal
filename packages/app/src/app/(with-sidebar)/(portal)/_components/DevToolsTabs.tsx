@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { PageHeading } from '@/app-components/ArbitrumNavigation/components/PageHeading';
+import { PageHeading } from '@/app-components/AppShell';
 
 const tabs = [
   { href: '/learn', label: 'Learn', pathMatch: '/learn' },

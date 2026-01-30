@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 
-import { PageHeading } from '@/app-components/ArbitrumNavigation';
+import { PageHeading } from '@/app-components/AppShell';
 import { getEntityMetaData } from '@/portal/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getServerSideAppParams';
 import { spotlightOrbitChains } from '@/portal/common/orbitChains';

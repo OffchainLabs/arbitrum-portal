@@ -1,4 +1,4 @@
-import { PageHeading } from '@/app-components/ArbitrumNavigation';
+import { PageHeading } from '@/app-components/AppShell';
 import { ProjectsCountByFilters } from '@/portal/components/ProjectsCountByFilters';
 import { ProjectsFilterBar } from '@/portal/components/ProjectsFilterBar';
 
