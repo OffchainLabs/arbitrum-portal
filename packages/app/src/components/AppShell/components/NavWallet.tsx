@@ -6,8 +6,6 @@ import { useEffect, useState } from 'react';
 import { NavWalletConnected } from './NavWalletConnected';
 import { NavWalletDisconnected } from './NavWalletDisconnected';
 
-// NavWallet component - Wallet connection dropdown
-// Only renders when mounted (client-side) to avoid SSR issues
 export function NavWallet() {
   const [mounted, setMounted] = useState(false);
 

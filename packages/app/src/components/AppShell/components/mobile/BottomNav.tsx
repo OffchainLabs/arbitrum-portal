@@ -6,8 +6,6 @@ import { twMerge } from 'tailwind-merge';
 import { masterNavLinksWithIcons } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 
-// BottomNav component - Fixed bottom navigation bar for mobile
-// Pixel perfect match to Figma design
 export function BottomNav() {
   const activeRoute = useActiveRoute();
 

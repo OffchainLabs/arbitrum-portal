@@ -100,10 +100,8 @@ export const sideNavItems: Record<string, SideNavItem[]> = {
   ],
 };
 
-// Routes where search bar should be expanded on mobile
 export const mobileSearchExpandedRoutes = ['/projects', '/chains', '/bookmarks'];
 
-// Check if current route should have expanded search on mobile
 export function shouldExpandSearchOnMobile(pathname: string): boolean {
   return mobileSearchExpandedRoutes.some((route) => pathname.startsWith(route));
 }

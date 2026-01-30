@@ -5,8 +5,6 @@ import { NavLogo } from './NavLogo';
 import { NavSearch } from './NavSearch';
 import { NavWallet } from './NavWallet';
 
-// MasterNavbar component - Top horizontal navigation bar
-// Translucent background with backdrop blur for modern glass effect
 export function MasterNavbar() {
   return (
     <nav

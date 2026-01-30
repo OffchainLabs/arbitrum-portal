@@ -12,7 +12,7 @@ import { isNetwork } from '../../util/networks';
 import { HeaderConnectWalletButton } from './HeaderConnectWalletButton';
 
 export function HeaderAccountOrConnectWalletButton() {
-  // Wallet connection is now handled by ArbitrumNavigation
+  // Wallet connection is now handled by AppShell
   // This component is kept for backward compatibility
   return <HeaderConnectWalletButton />;
 }

@@ -18,7 +18,6 @@ import { config } from '@/bridge/state';
 
 import { getProps } from './wagmi/setup';
 
-// Initialize PostHog
 if (typeof window !== 'undefined' && typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
@@ -33,7 +32,6 @@ if (typeof window !== 'undefined' && typeof process.env.NEXT_PUBLIC_POSTHOG_KEY 
   });
 }
 
-// RainbowKit theme
 const rainbowkitTheme = merge(darkTheme(), {
   colors: {
     accentColor: 'var(--blue-link)',
@@ -43,7 +41,6 @@ const rainbowkitTheme = merge(darkTheme(), {
   },
 } as Theme);
 
-// Wagmi config setup - use a function to get config on client-side only
 function getWagmiConfig() {
   if (typeof window === 'undefined') return null;
   const searchParams = new URLSearchParams(window.location.search);
@@ -51,7 +48,6 @@ function getWagmiConfig() {
   return getProps(targetChainKey);
 }
 
-// Initialize LiFi config
 if (typeof window !== 'undefined') {
   const integratorId =
     window.location.pathname === '/bridge/embed'
@@ -59,7 +55,6 @@ if (typeof window !== 'undefined') {
       : LIFI_INTEGRATOR_IDS.NORMAL;
   createConfig({ integrator: integratorId });
 
-  // Clear WalletConnect cache
   Object.keys(localStorage).forEach((key) => {
     if (key === 'wagmi.requestedChains' || key === 'wagmi.store' || key.startsWith('wc@2')) {
       localStorage.removeItem(key);
@@ -69,13 +64,10 @@ if (typeof window !== 'undefined') {
 
 const queryClient = new QueryClient();
 
-// AppProviders - Consolidated app-level providers wrapper
-// Provides all necessary providers for both Bridge and Portal apps
 export function AppProviders({ children }: PropsWithChildren) {
   const overmind = useMemo(() => createOvermind(config), []);
   const [wagmiConfig, setWagmiConfig] = useState<ReturnType<typeof getWagmiConfig>>(null);
 
-  // Get wagmi config on client-side only
   useEffect(() => {
     const config = getWagmiConfig();
     if (config) {
@@ -83,9 +75,6 @@ export function AppProviders({ children }: PropsWithChildren) {
     }
   }, []);
 
-  // Base provider tree (always rendered)
-  // Matches old bridge provider order exactly, with PostHogProvider added for portal
-  // Note: ArbQueryParamProvider wraps QueryParamProvider, so portal's useQueryParams will work
   const baseProviders = (
     <OvermindProvider value={overmind}>
       <PostHogProvider client={posthog}>

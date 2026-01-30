@@ -11,11 +11,6 @@ import { MasterNavbarMobile } from './components/mobile/MasterNavbarMobile';
 import { SideNavMobile } from './components/mobile/SideNavMobile';
 import { AppProviders } from './providers/AppProviders';
 
-// AppShell - Main app shell component that wraps the entire application
-// Includes app-level providers and navigation UI
-// Hides navigation UI in embed mode but keeps providers
-// Conditionally renders desktop or mobile navigation based on screen size
-
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const isEmbedMode = pathname.startsWith('/bridge/embed');

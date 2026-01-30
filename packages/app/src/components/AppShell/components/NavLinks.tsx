@@ -6,7 +6,6 @@ import { twMerge } from 'tailwind-merge';
 import { masterNavLinks } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 
-// NavLinks component - Navigation links (Home, Bridge, Explore, Build)
 export function NavLinks() {
   const activeRoute = useActiveRoute();
 

@@ -120,7 +120,7 @@ const AppContent = React.memo(() => {
 
 AppContent.displayName = 'AppContent';
 
-// AppProviders removed - NavigationProviders (in ArbitrumNavigation) now provides all providers
+// AppProviders removed - AppProviders (in AppShell) now provides all providers
 export default function App() {
   return <AppContent />;
 }

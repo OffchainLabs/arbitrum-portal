@@ -4,8 +4,6 @@ import { NavLogo } from '../NavLogo';
 import { NavSearch } from '../NavSearch';
 import { NavWallet } from '../NavWallet';
 
-// MasterNavbarMobile component - Top navbar for mobile (logo on left, search + wallet on right)
-// When search is expanded, it takes full width between logo and wallet
 export function MasterNavbarMobile() {
   return (
     <nav

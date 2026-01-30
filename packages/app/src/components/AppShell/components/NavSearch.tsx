@@ -14,8 +14,6 @@ import { shouldExpandSearchOnMobile } from '../config/navConfig';
 
 const PREVIEW_LIMIT = 5;
 
-// Expandable search component - starts as icon button, expands to input when clicked/focused
-// On mobile: expanded on Projects/Chains/My Apps pages, collapsed elsewhere
 export function NavSearch() {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,15 +30,12 @@ export function NavSearch() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const [isMobile, setIsMobile] = useState(false);
-
-  // On mobile, check if search should be expanded by default
   const shouldExpandOnMobile = shouldExpandSearchOnMobile(pathname);
 
   const showSearchResultsPopup = isSearchPage ? searchString !== searchStringInUrl : searchString;
 
   const pageSize = Math.min(searchResults.length + 1, PREVIEW_LIMIT + 1);
 
-  // Detect mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768); // md breakpoint
@@ -51,20 +46,16 @@ export function NavSearch() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Expand when search string has value
-  // On mobile: also expand if on Projects/Chains/My Apps pages
   useEffect(() => {
     if (searchString) {
       setIsExpanded(true);
     } else if (isMobile && shouldExpandOnMobile) {
       setIsExpanded(true);
     } else if (isMobile && !shouldExpandOnMobile && !searchString) {
-      // On mobile non-search pages, collapse if search string is empty
       setIsExpanded(false);
     }
   }, [searchString, isMobile, shouldExpandOnMobile]);
 
-  // Focus input when expanded
   useEffect(() => {
     if (isExpanded && inputRef.current) {
       inputRef.current.focus();
@@ -80,20 +71,16 @@ export function NavSearch() {
   };
 
   const handleBlur = () => {
-    // Use setTimeout to allow click events on popup to register first
     setTimeout(() => {
-      // Check if focus moved to popup or input
       const activeElement = document.activeElement;
       if (activeElement?.closest('[data-search-popup]') || activeElement === inputRef.current) {
         return;
       }
 
-      // On mobile: keep expanded if on Projects/Chains/My Apps pages
       if (isMobile && shouldExpandOnMobile) {
         return;
       }
 
-      // Collapse only if search string is empty
       if (!searchString) {
         setIsExpanded(false);
       }

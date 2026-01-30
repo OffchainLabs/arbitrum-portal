@@ -13,11 +13,9 @@ export function SideNav() {
   const searchParams = useSearchParams();
   const items = activeRoute ? sideNavItems[activeRoute] || [] : [];
 
-  // Determine active side nav item based on current pathname and query params
   const getActiveSideNavItem = (item: (typeof items)[0]): boolean => {
     if (item.external) return false;
 
-    // Special handling for bridge routes
     if (activeRoute === '/bridge') {
       if (item.href === '/bridge?tab=tx_history') {
         return pathname === '/bridge' && searchParams.get('tab') === 'tx_history';
@@ -34,7 +32,6 @@ export function SideNav() {
       }
     }
 
-    // For other routes, check if pathname starts with item href
     if (item.href === '/projects') {
       return pathname === '/projects' || pathname.startsWith('/projects/');
     }
@@ -55,12 +52,9 @@ export function SideNav() {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   };
 
-  // If no items (Home route), show empty state
   if (items.length === 0) {
     return (
-      <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm">
-        {/* Empty state for Home route */}
-      </aside>
+      <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm"></aside>
     );
   }
 

@@ -7,23 +7,19 @@ import { twMerge } from 'tailwind-merge';
 import { sideNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 
-// SideNavMobile component - Horizontal tabs at top for mobile
 export function SideNavMobile() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const items = activeRoute ? sideNavItems[activeRoute] || [] : [];
 
-  // If no items (Home route), don't render
   if (items.length === 0) {
     return null;
   }
 
-  // Determine active side nav item based on current pathname and query params
   const getActiveSideNavItem = (item: (typeof items)[0]): boolean => {
     if (item.external) return false;
 
-    // Special handling for bridge routes
     if (activeRoute === '/bridge') {
       if (item.href === '/bridge?tab=tx_history') {
         return pathname === '/bridge' && searchParams.get('tab') === 'tx_history';
@@ -40,7 +36,6 @@ export function SideNavMobile() {
       }
     }
 
-    // For other routes, check if pathname starts with item href
     if (item.href === '/projects') {
       return pathname === '/projects' || pathname.startsWith('/projects/');
     }
