@@ -7,12 +7,12 @@ const program = new Command();
 
 program
   .name('orbit-scripts')
-  .description('CLI for Orbit chain management scripts')
+  .description('CLI for Arbitrum chain management scripts')
   .version('1.0.0');
 
 program
   .command('add-orbit-chain <targetJsonPath>')
-  .description('Add a new Orbit chain')
+  .description('Add a new Arbitrum chain')
   .action((targetJsonPath) => {
     addOrbitChain(targetJsonPath).catch((error) => {
       console.error(`Error in addOrbitChain: ${error}`);

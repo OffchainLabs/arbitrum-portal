@@ -171,7 +171,7 @@
         "network": {
           "name": "Sanko",
           "logo": "/images/SankoLogo.png",
-          "description": "Sanko Mainnet is an Orbit L3 chain - home to SankoPets and much more."
+          "description": "Sanko Mainnet is an L3 Arbitrum Chain - home to SankoPets and much more."
         },
         "nativeTokenData": {
           "name": "DMT",
@@ -449,7 +449,7 @@
         "network": {
           "name": "Edu Chain",
           "logo": "/images/EduChainLogo.png",
-          "description": "EDU Chain, developed by Open Campus, is the first blockchain for education, designed for consumer-facing education apps and on-chain education finance. It's a Layer 3 platform built on Arbitrum Orbit that’s home to dApps spanning learning, DeFi, education finance, AI, gaming, SocialFi, recruitment, and more."
+          "description": "EDU Chain, developed by Open Campus, is the first blockchain for education, designed for consumer-facing education apps and on-chain education finance. It's a Layer 3 Arbitrum Chain that’s home to dApps spanning learning, DeFi, education finance, AI, gaming, SocialFi, recruitment, and more."
         },
         "nativeTokenData": {
           "name": "EDU",
@@ -641,7 +641,7 @@
         "network": {
           "name": "BirdLayer",
           "logo": "/images/BirdLayer_Logo.png",
-          "description": "Birdlayer - an Omni-Trading Layer3 platform using Arbitrum Orbit, connecting EVM and non-EVM ecosystems for seamless trading."
+          "description": "Birdlayer - an Omni-Trading Layer3 platform using Arbitrum Chain, connecting EVM and non-EVM ecosystems for seamless trading."
         }
       }
     },
@@ -1602,7 +1602,7 @@
         "network": {
           "name": "Pivotal Testnet",
           "logo": "/images/PivotalTestnet_Logo.svg",
-          "description": "Pivotal is a Bitcoin Secured Network, secured by Babylon's Bitcoin Staking Protocol and built on Arbitrum Orbit."
+          "description": "Pivotal is a Bitcoin Secured Network, secured by Babylon's Bitcoin Staking Protocol and an Arbitrum Chain."
         },
         "nativeTokenData": {
           "name": "USDC",
