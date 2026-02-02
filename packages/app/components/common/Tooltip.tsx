@@ -18,7 +18,7 @@ export const TooltipProvider = TooltipPrimitive.Provider;
 export function Tooltip({
   show = true,
   content,
-  wrapperClassName = 'w-max',
+  wrapperClassName = 'inline-block',
   tooltipProps,
   contentProps,
   children,
@@ -34,7 +34,7 @@ export function Tooltip({
   return (
     <TooltipPrimitive.Root {...tooltipProps}>
       <TooltipPrimitive.Trigger asChild>
-        <div className={wrapperClassName}>{children}</div>
+        <span className={twMerge('inline-block', wrapperClassName)}>{children}</span>
       </TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
