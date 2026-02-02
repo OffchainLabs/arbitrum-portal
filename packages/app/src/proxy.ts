@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PathnameEnum } from '@/bridge/constants';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const url = req.nextUrl;
 
   const disabledFeaturesParam = url.searchParams.getAll('disabledFeatures');

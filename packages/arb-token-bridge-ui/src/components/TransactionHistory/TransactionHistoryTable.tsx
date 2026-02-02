@@ -8,9 +8,10 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { Column, Table } from 'react-virtualized';
+import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -18,7 +19,6 @@ import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransacti
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
-import { Tooltip } from '../common/Tooltip';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';
@@ -64,6 +64,9 @@ const TableHeader = ({ children, className }: PropsWithChildren<{ className?: st
     {children}
   </div>
 );
+
+const tableCellDataGetter: TableCellDataGetter = ({ rowData, dataKey }) => rowData?.[dataKey];
+const tableCellRenderer = () => null;
 
 export const LoadMoreButton = (props: ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
@@ -255,36 +258,48 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           label="time"
           dataKey="time"
           width={100}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>TIME</TableHeader>}
         />
         <Column
           label="token"
           dataKey="token"
           width={140}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>FROM TOKEN</TableHeader>}
         />
         <Column
           label="to-token"
           dataKey="to-token"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>TO TOKEN</TableHeader>}
         />
         <Column
           label="from"
           dataKey="from"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>FROM</TableHeader>}
         />
         <Column
           label="to"
           dataKey="to"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>TO</TableHeader>}
         />
         <Column
           label="status"
           dataKey="status"
           width={90}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
           headerRenderer={() => <TableHeader>STATUS</TableHeader>}
         />
       </Table>
