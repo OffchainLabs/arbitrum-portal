@@ -585,22 +585,18 @@ export function RecoverFundsDialog(props: UseDialogProps) {
         }}
       >
         <Column
-          label={
-            <div className="h-full w-[180px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              TOKEN
-            </div>
-          }
+          headerRenderer={() => <>TOKEN</>}
+          width={180}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
           cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <TokenColumn {...props} />}
           dataKey="balance"
-          width={180}
+          flexGrow={0}
+          flexShrink={1}
         />
         <Column
-          label={
-            <div className="h-full w-[140px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              CHAIN
-            </div>
-          }
+          headerRenderer={() => <>CHAIN</>}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
           cellDataGetter={tableCellDataGetter}
           cellRenderer={({ rowData }) => (
             <div className="flex h-12 items-center align-middle">
@@ -611,18 +607,18 @@ export function RecoverFundsDialog(props: UseDialogProps) {
           )}
           dataKey="chainId"
           width={140}
+          flexGrow={0}
+          flexShrink={1}
         />
         <Column
-          label={
-            <div className="h-full w-[345px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              DESTINATION ADDRESS
-            </div>
-          }
+          headerRenderer={() => <>DESTINATION ADDRESS</>}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
           cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <ActionColumn {...props} key={props.rowData[0]} />}
           dataKey="destinationAddress"
           width={345}
           flexShrink={0}
+          flexGrow={0}
         />
       </Table>
     </Dialog>
