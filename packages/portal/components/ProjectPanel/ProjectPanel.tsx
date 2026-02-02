@@ -15,6 +15,7 @@ import { Card } from '@/components/Card';
 import { DyorChecklist } from '@/components/DyorChecklist';
 import { ExternalLink } from '@/components/ExternalLink';
 import { SidePanel } from '@/components/SidePanel';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';

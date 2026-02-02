@@ -10,7 +10,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection';
 import { useAccountType } from '../../hooks/useAccountType';

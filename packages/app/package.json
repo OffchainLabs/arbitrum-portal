@@ -6,6 +6,7 @@
   "dependencies": {
     "@arbitrum/sdk": "^4.0.4",
     "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@reown/appkit-adapter-wagmi": "^1.8.19",
     "@reown/appkit": "^1.8.19",
     "@tanstack/react-query": "^5.63.0",
@@ -23,7 +24,8 @@
     "react": "^19.2.0",
     "recharts": "^3.3.0",
     "swr": "^2.3.3",
-    "tailwind-merge": "^3.2.0",
+    "tailwind-merge": "^3.4.0",
+    "tippy.js": "^6.3.7",
     "viem": "^2.45.0",
     "wagmi": "^2.19.5",
     "zod": "^3.24.3",
