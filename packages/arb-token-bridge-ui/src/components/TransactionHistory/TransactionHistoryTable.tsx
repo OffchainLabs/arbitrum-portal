@@ -260,6 +260,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           width={139}
           cellDataGetter={tableCellDataGetter}
           cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TIME</TableHeader>}
         />
         <Column
@@ -268,6 +270,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           width={141}
           cellDataGetter={tableCellDataGetter}
           cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TOKEN</TableHeader>}
         />
         <Column
@@ -276,6 +280,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           width={142}
           cellDataGetter={tableCellDataGetter}
           cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>FROM</TableHeader>}
         />
         <Column
@@ -284,6 +290,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           width={137}
           cellDataGetter={tableCellDataGetter}
           cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TO</TableHeader>}
         />
         <Column
@@ -292,6 +300,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           width={100}
           cellDataGetter={tableCellDataGetter}
           cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>STATUS</TableHeader>}
         />
       </Table>
