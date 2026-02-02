@@ -1,13 +1,14 @@
 import { PropsWithChildren } from 'react';
 
 import { OrbitChainPanel } from '@/portal/components/OrbitChainPanel/OrbitChainPanel';
-import { PortalPage } from '@/portal/components/PortalPage/PortalPage';
 import { ProjectPanel } from '@/portal/components/ProjectPanel';
 
 export default function PortalLayout({ children }: PropsWithChildren) {
   return (
     <>
-      <PortalPage>{children}</PortalPage>
+      <div className="relative mx-auto flex w-full max-w-[1153px] flex-col gap-4 px-4 pb-[160px] lg:gap-6">
+        {children}
+      </div>
       <OrbitChainPanel />
       <ProjectPanel />
     </>
