@@ -89,10 +89,10 @@ export const getEntityMetaData = (entityType: EntityType, entitySlug: string): M
   };
 };
 
-export function getMetaData(props: ServerSideAppProps): Metadata {
+export async function getMetaData(props: ServerSideAppProps): Promise<Metadata> {
   // read route params
   const { selectedCategory, selectedProject, selectedChains, searchString, selectedOrbitChain } =
-    getServerSideAppParams(props);
+    await getServerSideAppParams(props);
   const projectDetails = getProjectDetailsById(selectedProject || ''); // details of a single project selected
   const categoryDetails = getCategoryDetailsById(selectedCategory); // details of a single category selected
   const orbitChainDetails = getOrbitChainDetailsById(selectedOrbitChain || ''); // details of orbit chain panel, if open

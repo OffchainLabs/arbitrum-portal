@@ -7,6 +7,7 @@ import { Provider as OvermindProvider } from 'overmind-react';
 import { ReactNode, useMemo } from 'react';
 import { WagmiProvider } from 'wagmi';
 
+import { TooltipProvider } from '@/app/components/common/Tooltip';
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { ArbQueryParamProvider } from '../../hooks/useArbQueryParams';
@@ -62,7 +63,9 @@ export function AppProviders({ children }: AppProvidersProps) {
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider theme={rainbowkitTheme}>
-              <AppContextProvider>{children}</AppContextProvider>
+              <TooltipProvider delayDuration={0}>
+                <AppContextProvider>{children}</AppContextProvider>
+              </TooltipProvider>
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>

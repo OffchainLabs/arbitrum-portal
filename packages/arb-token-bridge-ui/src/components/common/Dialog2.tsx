@@ -62,7 +62,7 @@ export type DialogType =
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
-    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>();
+    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>(null);
 
   // Whether the dialog is currently open
   const [openedDialogType, setOpenedDialogType] = useState<DialogType | null>(null);
@@ -79,7 +79,7 @@ export function useDialog2(): UseDialogResult {
 
   const closeDialog = useCallback((confirmed: boolean, onCloseData?: unknown) => {
     if (typeof resolveRef.current !== 'undefined') {
-      resolveRef.current([confirmed, onCloseData]);
+      resolveRef.current?.([confirmed, onCloseData]);
     }
 
     setOpenedDialogType(null);
