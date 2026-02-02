@@ -1,18 +1,29 @@
-import {
-  ArrowsRightLeftIcon,
-  CircleStackIcon,
-  CodeBracketIcon,
-  GlobeAltIcon,
-  HandRaisedIcon,
-  HomeIcon,
-  QuestionMarkCircleIcon,
-  Squares2X2Icon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import { ComponentType } from 'react';
 
 import { GET_HELP_LINK } from '@/portal/common/constants';
 
 import type { NavLink, NavRoute } from '../types';
+
+function createIconComponent(src: string, alt: string): ComponentType<{ className?: string }> {
+  return function Icon({ className }: { className?: string }) {
+    return <Image src={src} alt={alt} width={24} height={24} className={className} />;
+  };
+}
+
+// Navigation icons
+const HomeIcon = createIconComponent('/icons/navigation/home.svg', 'Home');
+const BridgeIcon = createIconComponent('/icons/navigation/bridge.svg', 'Bridge');
+const ExploreIcon = createIconComponent('/icons/navigation/explore.svg', 'Explore');
+const BuildIcon = createIconComponent('/icons/navigation/build.svg', 'Build');
+const TransactionsIcon = createIconComponent('/icons/navigation/transactions.svg', 'Transactions');
+const BuyIcon = createIconComponent('/icons/navigation/buy.svg', 'Buy');
+const ProjectsIcon = createIconComponent('/icons/navigation/projects.svg', 'Projects');
+const ChainsIcon = createIconComponent('/icons/navigation/chains.svg', 'Chains');
+const MyAppsIcon = createIconComponent('/icons/navigation/my-apps.svg', 'My Apps');
+const DevToolsIcon = createIconComponent('/icons/navigation/devtools.svg', 'Dev Tools');
+const ConnectIcon = createIconComponent('/icons/navigation/connect.svg', 'Connect');
+const HelpIcon = createIconComponent('/icons/navigation/help.svg', 'Help');
 
 // Sub nav item interface
 export interface SubNavItem {
@@ -42,24 +53,24 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/bridge': {
     label: 'Bridge',
     route: '/bridge',
-    icon: ArrowsRightLeftIcon,
+    icon: BridgeIcon,
     subNavItems: [
       {
         label: 'Bridge',
         href: '/bridge',
-        icon: CircleStackIcon,
+        icon: BridgeIcon,
         ariaLabel: 'Switch to Bridge Tab',
       },
       {
         label: 'Txns',
         href: '/bridge?tab=tx_history',
-        icon: CircleStackIcon,
+        icon: TransactionsIcon,
         ariaLabel: 'Switch to Transaction History Tab',
       },
       {
         label: 'Buy',
         href: '/bridge/buy',
-        icon: HandRaisedIcon,
+        icon: BuyIcon,
         ariaLabel: 'Switch to Buy Tab',
       },
     ],
@@ -67,44 +78,44 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/projects': {
     label: 'Explore',
     route: '/projects',
-    icon: GlobeAltIcon,
+    icon: ExploreIcon,
     subNavItems: [
       {
         label: 'Projects',
         href: '/projects',
-        icon: Squares2X2Icon,
+        icon: ProjectsIcon,
       },
       {
         label: 'Chains',
         href: '/chains/ecosystem',
-        icon: CircleStackIcon,
+        icon: ChainsIcon,
       },
       {
         label: 'My Apps',
         href: '/bookmarks',
-        icon: UserCircleIcon,
+        icon: MyAppsIcon,
       },
     ],
   },
   '/build': {
     label: 'Build',
     route: '/build',
-    icon: CodeBracketIcon,
+    icon: BuildIcon,
     subNavItems: [
       {
         label: 'Dev-tools',
         href: '/learn',
-        icon: CodeBracketIcon,
+        icon: DevToolsIcon,
       },
       {
         label: 'Connect',
         href: '/community',
-        icon: HandRaisedIcon,
+        icon: ConnectIcon,
       },
       {
         label: 'Help',
         href: GET_HELP_LINK,
-        icon: QuestionMarkCircleIcon,
+        icon: HelpIcon,
         external: true,
       },
     ],
