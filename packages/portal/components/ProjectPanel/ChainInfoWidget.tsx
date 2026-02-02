@@ -5,7 +5,7 @@ import { getChainDetailsById, getChainSlugFromTitle } from '@/common/chains';
 import { EntityType, FullProject } from '@/common/types';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 
-import { Tooltip } from '../Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
   const { openEntitySidePanel: openOrbitChainPanel } = useEntitySidePanel(EntityType.OrbitChain);
