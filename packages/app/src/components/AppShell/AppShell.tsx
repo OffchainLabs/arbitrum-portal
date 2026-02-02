@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -9,7 +10,13 @@ import { SubNav } from './components/SubNav';
 import { NavHeaderMobile } from './components/mobile/NavHeaderMobile';
 import { NavMobile } from './components/mobile/NavMobile';
 import { SubNavMobile } from './components/mobile/SubNavMobile';
-import { AppProviders } from './providers/AppProviders';
+
+const AppProviders = dynamic(
+  () => import('./providers/AppProviders').then((mod) => mod.AppProviders),
+  {
+    ssr: false, // use-query-params provider doesn't support SSR
+  },
+);
 
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
