@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { subNavItems } from '../../config/navConfig';
+import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 
 export function SubNavMobile() {
@@ -17,50 +18,11 @@ export function SubNavMobile() {
     return null;
   }
 
-  const getActiveSubNavItem = (item: (typeof items)[0]): boolean => {
-    if (item.external) return false;
-
-    if (activeRoute === '/bridge') {
-      if (item.href === '/bridge?tab=tx_history') {
-        return pathname === '/bridge' && searchParams.get('tab') === 'tx_history';
-      }
-      if (item.href === '/bridge/buy') {
-        return pathname.startsWith('/bridge/buy');
-      }
-      if (item.href === '/bridge') {
-        return (
-          pathname === '/bridge' &&
-          !pathname.startsWith('/bridge/buy') &&
-          searchParams.get('tab') !== 'tx_history'
-        );
-      }
-    }
-
-    if (item.href === '/projects') {
-      return pathname === '/projects' || pathname.startsWith('/projects/');
-    }
-    if (item.href === '/chains/ecosystem') {
-      return pathname.startsWith('/chains/ecosystem');
-    }
-    if (item.href === '/bookmarks') {
-      return pathname.startsWith('/bookmarks');
-    }
-    if (item.href === '/learn') {
-      // Dev-tools should be active for both /learn and /build routes
-      return pathname.startsWith('/learn') || pathname.startsWith('/build');
-    }
-    if (item.href === '/community') {
-      return pathname.startsWith('/community');
-    }
-
-    return pathname === item.href || pathname.startsWith(`${item.href}/`);
-  };
-
   return (
     <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden">
       <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[44px] w-full overflow-x-auto">
         {items.map((item) => {
-          const isActive = getActiveSubNavItem(item);
+          const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);
           const Icon = item.icon;
 
           const content = (

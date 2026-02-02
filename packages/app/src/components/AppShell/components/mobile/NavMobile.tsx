@@ -25,10 +25,8 @@ export function NavMobile() {
               isActive && 'rounded-xl mx-0.5',
             )}
           >
-            {/* Active state background - dark blue-grey with rounded corners matching Figma */}
             {isActive && <div className="absolute inset-0 rounded-xl bg-gray-8/90 -z-10" />}
 
-            {/* Icon - white line-art style */}
             <Icon
               className={twMerge(
                 'h-5 w-5 shrink-0 transition-colors stroke-[1.5]',
@@ -36,7 +34,6 @@ export function NavMobile() {
               )}
             />
 
-            {/* Label - small text below icon */}
             <span
               className={twMerge(
                 'text-[10px] leading-[12px] transition-colors tracking-tight',

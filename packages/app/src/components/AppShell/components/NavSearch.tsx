@@ -136,12 +136,11 @@ export function NavSearch() {
 
   return (
     <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
-      {/* Search container - expands/contracts with animation */}
       <div
         className={twMerge(
           'flex items-center gap-2 rounded-md bg-gray-8 transition-all duration-300 ease-in-out h-[40px]',
           isExpanded
-            ? 'w-full md:w-[400px] border-0 px-3 py-0' // Full width on mobile when expanded
+            ? 'w-full md:w-[400px] border-0 px-3 py-0'
             : 'h-10 w-10 cursor-pointer items-center justify-center border-0 p-0 hover:bg-gray-8/80',
         )}
         onClick={() => !isExpanded && setIsExpanded(true)}
@@ -163,7 +162,6 @@ export function NavSearch() {
         )}
       </div>
 
-      {/* Search results popup */}
       {showSearchResultsPopup && isExpanded && (
         <div
           data-search-popup
