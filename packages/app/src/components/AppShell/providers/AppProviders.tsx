@@ -7,6 +7,7 @@ import { PostHogProvider } from 'posthog-js/react';
 import { PropsWithChildren } from 'react';
 import { WagmiProvider } from 'wagmi';
 
+import { TooltipProvider } from '@/app/components/common/Tooltip';
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';

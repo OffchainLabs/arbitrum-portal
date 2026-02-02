@@ -14,7 +14,7 @@ import { BigNumber, Signer, constants } from 'ethers';
 import { isAddress, parseEther } from 'ethers/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
-import { Column, Table, TableCellRenderer } from 'react-virtualized';
+import { Column, Table, TableCellDataGetter, TableCellRenderer } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -22,7 +22,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useError } from '../hooks/useError';
@@ -276,6 +276,8 @@ const TokenColumn: TableCellRenderer = ({ rowData }) => {
     </span>
   );
 };
+
+const tableCellDataGetter: TableCellDataGetter = ({ rowData, dataKey }) => rowData?.[dataKey];
 
 export function RecoverFunds() {
   const { address } = useAccount();
@@ -580,6 +582,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               TOKEN
             </div>
           }
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <TokenColumn {...props} />}
           dataKey="balance"
           width={180}
@@ -590,6 +593,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               CHAIN
             </div>
           }
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={({ rowData }) => (
             <div className="flex h-12 items-center align-middle">
               <NetworkImage chainId={rowData[0]} className="h-5 w-5" />
@@ -606,6 +610,7 @@ export function RecoverFundsDialog(props: UseDialogProps) {
               DESTINATION ADDRESS
             </div>
           }
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <ActionColumn {...props} key={props.rowData[0]} />}
           dataKey="destinationAddress"
           width={345}

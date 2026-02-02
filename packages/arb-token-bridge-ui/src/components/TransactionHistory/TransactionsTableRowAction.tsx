@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAccount } from 'wagmi';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { GET_HELP_LINK } from '../../constants';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
