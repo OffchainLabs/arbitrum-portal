@@ -61,14 +61,16 @@ export function SubNavMobile() {
       <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[44px] w-full overflow-x-auto">
         {items.map((item) => {
           const isActive = getActiveSubNavItem(item);
+          const Icon = item.icon;
 
           const content = (
             <div
               className={twMerge(
-                'rounded-md px-4 h-full text-sm transition-colors flex items-center justify-center whitespace-nowrap min-h-[44px] w-full touch-manipulation',
+                'rounded-md px-4 h-full text-sm transition-colors flex items-center gap-2 justify-center whitespace-nowrap min-h-[44px] w-full touch-manipulation',
                 isActive ? 'bg-white/10 text-white' : 'bg-transparent text-white/70',
               )}
             >
+              <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </div>
           );
