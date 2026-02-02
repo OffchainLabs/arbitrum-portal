@@ -21,7 +21,7 @@ import { getConfirmationTime } from '../../../util/WithdrawalUtils';
 import { isNetwork } from '../../../util/networks';
 import { useAppContextState } from '../../App/AppContext';
 import { SafeImage } from '../../common/SafeImage';
-import { Tooltip } from '../../common/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { Loader } from '../../common/atoms/Loader';
 import { TokenLogo } from '../TokenLogo';
 import { useTokensFromLists } from '../TokenSearchUtils';

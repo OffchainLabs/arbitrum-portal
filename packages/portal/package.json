@@ -9,7 +9,7 @@
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.2.0",
     "@rehooks/local-storage": "^2.4.5",
-    "@tippyjs/react": "^4.2.6",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "dayjs": "^1.11.13",
     "flickity": "2.3.0",
     "fuse.js": "^6.6.2",

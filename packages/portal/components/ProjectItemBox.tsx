@@ -17,7 +17,7 @@ import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import ExternalLinkIcon from '@/public/images/link.svg';
 
 import { LiveIncentivesBadge } from './LiveIncentivesBadge';
-import { Tooltip } from './Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 export type ItemBoxProps = {
   slug: string;

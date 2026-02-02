@@ -9,7 +9,7 @@ import { shallow } from 'zustand/shallow';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { Button } from '../common/Button';
-import { Tooltip } from '../common/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 export enum TransactionHistorySearchError {
   INVALID_ADDRESS = 'That doesn’t seem to be a valid address, please try again.',
@@ -89,8 +89,8 @@ export function TransactionHistorySearchBar() {
         <Tooltip
           content="Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction."
           wrapperClassName="h-full w-full"
-          tippyProps={{
-            hideOnClick: false,
+          contentProps={{
+            onPointerDownOutside: (event) => event.preventDefault(),
           }}
         >
           <input

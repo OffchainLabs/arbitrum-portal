@@ -23,7 +23,7 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { Button } from '../common/Button';
-import { Tooltip } from '../common/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';

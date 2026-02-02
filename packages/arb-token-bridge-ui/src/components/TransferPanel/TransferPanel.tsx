@@ -1,7 +1,6 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
 import { getStepTransaction } from '@lifi/sdk';
-import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
@@ -11,6 +10,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
@@ -1327,7 +1327,36 @@ export function TransferPanel() {
 
         <ToSConfirmationCheckbox />
 
-        {isConnected ? (
+        {showSmartContractWalletTooltip ? (
+          <Tooltip
+            content={
+              <div className="flex flex-col">
+                <span>
+                  <b>To continue, please approve tx on your smart contract wallet.</b>
+                </span>
+                <span>If you have k of n signers, then k of n will need to sign.</span>
+              </div>
+            }
+            wrapperClassName="w-full"
+            tooltipProps={{
+              open: showSmartContractWalletTooltip,
+              onOpenChange: setShowSmartContractWalletTooltip,
+            }}
+            contentProps={{
+              side: 'bottom',
+              align: 'center',
+              className: 'max-w-none rounded-[5px] bg-[#ffeed3] px-3 py-2 text-sm text-[#60461f]',
+              onPointerDownOutside: () => setShowSmartContractWalletTooltip(false),
+              onEscapeKeyDown: () => setShowSmartContractWalletTooltip(false),
+            }}
+          >
+            {isConnected ? (
+              <MoveFundsButton onClick={moveFundsButtonOnClick} />
+            ) : (
+              <ConnectWalletButton />
+            )}
+          </Tooltip>
+        ) : isConnected ? (
           <MoveFundsButton onClick={moveFundsButtonOnClick} />
         ) : (
           <ConnectWalletButton />
@@ -1339,27 +1368,6 @@ export function TransferPanel() {
             onClose={closeWithResetTokenImportDialog}
             tokenAddress={tokenFromSearchParams}
           />
-        )}
-
-        {showSmartContractWalletTooltip && (
-          <Tippy
-            placement="bottom-end"
-            maxWidth="auto"
-            onClickOutside={() => setShowSmartContractWalletTooltip(false)}
-            theme="orange"
-            visible={showSmartContractWalletTooltip}
-            content={
-              <div className="flex flex-col">
-                <span>
-                  <b>To continue, please approve tx on your smart contract wallet.</b>
-                </span>
-                <span>If you have k of n signers, then k of n will need to sign.</span>
-              </div>
-            }
-          >
-            {/* Override margin coming from Tippy that causes layout disruptions */}
-            <div className="!m-0" />
-          </Tippy>
         )}
       </div>
     </>
