@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
-import { PageHeading } from '@/app-components/AppShell';
+import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useDyorProjects } from '@/hooks/useDyorProjects';

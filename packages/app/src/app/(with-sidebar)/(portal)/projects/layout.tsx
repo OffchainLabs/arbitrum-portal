@@ -1,4 +1,4 @@
-import { PageHeading } from '@/app-components/AppShell';
+import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import { ProjectsCountByFilters } from '@/portal/components/ProjectsCountByFilters';
 import { ProjectsFilterBar } from '@/portal/components/ProjectsFilterBar';
 

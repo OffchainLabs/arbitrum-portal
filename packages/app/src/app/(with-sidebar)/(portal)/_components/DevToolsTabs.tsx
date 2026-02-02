@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
-import { PageHeading } from '@/app-components/AppShell';
+import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 
 const tabs = [
   { href: '/learn', label: 'Learn', pathMatch: '/learn' },

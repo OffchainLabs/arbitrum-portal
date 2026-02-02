@@ -5,8 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { subNavItems } from '../../config/navConfig';
-import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
+import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
 
 export function SubNavMobile() {
   const activeRoute = useActiveRoute();

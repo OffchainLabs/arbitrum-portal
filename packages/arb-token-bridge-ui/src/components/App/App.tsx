@@ -120,7 +120,6 @@ const AppContent = React.memo(() => {
 
 AppContent.displayName = 'AppContent';
 
-// AppProviders removed - AppProviders (in AppShell) now provides all providers
 export default function App() {
   return <AppContent />;
 }
