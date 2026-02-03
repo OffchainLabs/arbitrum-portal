@@ -73,13 +73,17 @@ function sumGasCosts(gasCosts: GasCost[] | undefined) {
     amountUSD: result.amountUSD.toString(),
   };
 }
+
 function sumFee(feeCosts: FeeCost[] | undefined) {
   const result =
     (feeCosts || []).reduce(
       ({ amount, amountUSD }, fee) => {
+        if (fee.included) {
+          return { amount, amountUSD };
+        }
         return {
-          amount: fee.included ? amount : amount.add(BigNumber.from(fee.amount)),
-          amountUSD: fee.included ? amountUSD : amountUSD + Number(fee.amountUSD),
+          amount: amount.add(BigNumber.from(fee.amount)),
+          amountUSD: amountUSD + Number(fee.amountUSD),
         };
       },
       { amount: constants.Zero, amountUSD: 0 },
@@ -90,7 +94,6 @@ function sumFee(feeCosts: FeeCost[] | undefined) {
     amountUSD: result.amountUSD.toString(),
   };
 }
-
 function isUsdtToken(tokenAddress: string | undefined, chainId: number) {
   return (
     (addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT) && chainId === ChainId.Ethereum) ||
@@ -177,6 +180,8 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     tags.push(Order.Fastest);
   }
 
+  const nonIncludedFeeCosts = step.estimate.feeCosts?.filter((fee) => !fee.included);
+
   const gasToken: Token = applyOverrides(
     step.estimate.gasCosts && step.estimate.gasCosts.length > 0
       ? step.estimate.gasCosts[0]!.token
@@ -185,8 +190,8 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   );
 
   const feeToken: Token = applyOverrides(
-    step.estimate.feeCosts && step.estimate.feeCosts.length > 0
-      ? step.estimate.feeCosts[0]!.token
+    nonIncludedFeeCosts && nonIncludedFeeCosts.length > 0
+      ? nonIncludedFeeCosts[0]!.token
       : { ...ether, address: constants.AddressZero },
     Number(fromChainId),
   );
