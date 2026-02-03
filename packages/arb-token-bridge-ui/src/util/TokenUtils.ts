@@ -379,6 +379,12 @@ export const isTokenNativeUSDC = (tokenAddress: string | undefined) => {
 export const isTokenEthereumUSDT = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT);
 
+export const isTokenArbitrumOneUSDT = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDT);
+
+export const isTokenUSDT = (tokenAddress: string | undefined) =>
+  isTokenEthereumUSDT(tokenAddress) || isTokenArbitrumOneUSDT(tokenAddress);
+
 // get the exact token symbol for a particular chain
 export function sanitizeTokenSymbol(tokenSymbol: string, options: SanitizeTokenOptions) {
   if (!options.erc20L1Address) {
