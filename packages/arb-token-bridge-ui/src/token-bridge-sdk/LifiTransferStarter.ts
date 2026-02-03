@@ -121,17 +121,19 @@ export class LifiTransferStarter extends BridgeTransferStarter {
       throw new Error('LifiTransferStarter is missing transaction request.');
     }
 
-    const tx = await sendTransaction(wagmiConfig, {
-      to: this.lifiData.transactionRequest.to as Address,
-      data: this.lifiData.transactionRequest.data as Address,
-      value: BigInt(this.lifiData.transactionRequest.value),
+    const { to, data, value } = this.lifiData.transactionRequest;
+    const txHash = await sendTransaction(wagmiConfig, {
+      to: to as Address,
+      data: data as Address,
+      value: BigInt(value),
     });
+    const fullTx = await this.sourceChainProvider.getTransaction(txHash);
 
     return {
       transferType: this.transferType,
       status: 'pending',
       sourceChainProvider: this.sourceChainProvider,
-      sourceChainTransaction: { hash: tx },
+      sourceChainTransaction: fullTx ?? { hash: txHash },
       destinationChainProvider: this.destinationChainProvider,
     };
   }

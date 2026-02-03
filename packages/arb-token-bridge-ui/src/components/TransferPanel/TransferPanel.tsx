@@ -702,6 +702,20 @@ export function TransferPanel() {
       }
 
       clearRoute();
+
+      if (transfer?.sourceChainTransaction?.wait) {
+        await transfer.sourceChainTransaction.wait();
+
+        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+
+        if (selectedToken) {
+          token.updateTokenData(selectedToken.address);
+        }
+
+        if (nativeCurrency.isCustom) {
+          await updateErc20ParentBalances([nativeCurrency.address]);
+        }
+      }
     } catch (error) {
       if (isUserRejectedError(error)) {
         return;

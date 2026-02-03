@@ -113,7 +113,9 @@ export function isTxPending(tx: MergedTransaction) {
   if (isLifiTransfer(tx)) {
     if (
       tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE
+      tx.destinationStatus === WithdrawalStatus.FAILURE ||
+      tx.status === WithdrawalStatus.REFUNDED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
     ) {
       return false;
     }
@@ -162,7 +164,10 @@ export function isTxFailed(tx: MergedTransaction): boolean {
 
   if (isLifiTransfer(tx)) {
     return (
-      tx.status === WithdrawalStatus.FAILURE || tx.destinationStatus === WithdrawalStatus.FAILURE
+      tx.status === WithdrawalStatus.FAILURE ||
+      tx.destinationStatus === WithdrawalStatus.FAILURE ||
+      tx.status === WithdrawalStatus.REFUNDED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
     );
   }
 
@@ -551,7 +556,12 @@ export async function getUpdatedCctpTransfer(tx: MergedTransaction): Promise<Mer
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
 ): Promise<MergedTransaction> {
-  if (tx.status === WithdrawalStatus.FAILURE || tx.destinationStatus === WithdrawalStatus.FAILURE) {
+  if (
+    tx.status === WithdrawalStatus.FAILURE ||
+    tx.destinationStatus === WithdrawalStatus.FAILURE ||
+    tx.status === WithdrawalStatus.REFUNDED ||
+    tx.destinationStatus === WithdrawalStatus.REFUNDED
+  ) {
     return tx;
   }
 
@@ -571,8 +581,8 @@ export async function getUpdatedLifiTransfer(
    */
   if (statusResponse.status === 'DONE') {
     if (statusResponse.substatus === 'REFUNDED') {
-      sourceStatus = WithdrawalStatus.FAILURE;
-      destinationStatus = WithdrawalStatus.FAILURE;
+      sourceStatus = WithdrawalStatus.REFUNDED;
+      destinationStatus = WithdrawalStatus.REFUNDED;
       showLifiRefundToastOnce(tx);
     } else {
       sourceStatus = WithdrawalStatus.CONFIRMED;

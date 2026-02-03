@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import dayjs from 'dayjs';
 import { BigNumber, constants } from 'ethers';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { shallow } from 'zustand/shallow';
 
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
@@ -68,7 +68,10 @@ function createMockedLifiTransaction({
   };
 }
 
-describe('useLifiMergedTransactionCacheStore', () => {
+describe.sequential('useLifiMergedTransactionCacheStore', () => {
+  beforeEach(() => {
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+  });
   it('should return undefined by default', async () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
@@ -134,6 +137,46 @@ describe('useLifiMergedTransactionCacheStore', () => {
       expect(resultAfterChanges.current.transactions[customDestinationAddress]).toEqual([
         differentDestinationTransaction,
       ]);
+    });
+  });
+
+  it('should update cached transaction for sender and destination address', async () => {
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const customDestinationAddress = '0x7503Aad60fd0d205702b0Dcd945a1b36c42101b3';
+    const { result } = renderHook(() =>
+      useLifiMergedTransactionCacheStore(
+        (state) => ({
+          addTransaction: state.addTransaction,
+          updateTransaction: state.updateTransaction,
+          transactions: state.transactions,
+        }),
+        shallow,
+      ),
+    );
+
+    const originalTransaction = createMockedLifiTransaction({
+      hash: '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c',
+      sender: walletAddress,
+      destinationAddress: customDestinationAddress,
+    });
+
+    await act(async () => {
+      result.current.addTransaction(originalTransaction);
+    });
+
+    const updatedTransaction = {
+      ...originalTransaction,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+    };
+
+    await act(async () => {
+      result.current.updateTransaction(updatedTransaction);
+    });
+
+    await waitFor(() => {
+      expect(result.current.transactions[walletAddress]).toEqual([updatedTransaction]);
+      expect(result.current.transactions[customDestinationAddress]).toEqual([updatedTransaction]);
     });
   });
 });
