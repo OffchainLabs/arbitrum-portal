@@ -4,9 +4,6 @@ import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { ChainId } from '@/bridge/types/ChainId';
-import { addressesEqual } from '@/bridge/util/AddressUtils';
-
 import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
