@@ -57,7 +57,7 @@ export function CategorySelector({ config, selectedId, title }: CategorySelector
                 />
                 <div
                   className={twMerge(
-                    'z-20 skew-x-[23deg] lg:px-2 p-0 text-sm opacity-80 lg:text-lg',
+                    'z-20 skew-x-[23deg] lg:px-2 p-0 text-sm opacity-80 lg:text-base',
                     isFirst && 'lg:ml-[20px] ml-[30px]',
                     isSelected && 'font-bold opacity-100',
                   )}

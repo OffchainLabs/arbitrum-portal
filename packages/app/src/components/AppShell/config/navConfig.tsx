@@ -131,12 +131,6 @@ export const subNavItems: Record<string, SubNavItem[]> = Object.fromEntries(
   Object.entries(NAV_CONFIG).map(([route, config]) => [route, config.subNavItems]),
 );
 
-export const mobileSearchExpandedRoutes = ['/projects', '/chains', '/bookmarks'];
-
-export function shouldExpandSearchOnMobile(pathname: string): boolean {
-  return mobileSearchExpandedRoutes.some((route) => pathname.startsWith(route));
-}
-
 // Navbar height constants (in pixels)
 export const NAVBAR_HEIGHTS = {
   DESKTOP: 66, // Desktop navbar height

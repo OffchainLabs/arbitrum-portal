@@ -2,7 +2,7 @@
 
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -11,13 +11,10 @@ import { SearchResult } from '@/portal/common/getSearchResults';
 import { SearchResultsPopup } from '@/portal/components/SearchResultsPopup';
 import { useSearch } from '@/portal/hooks/useSearch';
 
-import { shouldExpandSearchOnMobile } from '../config/navConfig';
-
 const PREVIEW_LIMIT = 5;
 
 export function NavSearch() {
   const router = useRouter();
-  const pathname = usePathname();
   const {
     searchString,
     searchResults,
@@ -31,7 +28,6 @@ export function NavSearch() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [focusIndex, setFocusIndex] = useState<number>(-1);
   const [isMobile, setIsMobile] = useState(false);
-  const shouldExpandOnMobile = shouldExpandSearchOnMobile(pathname);
 
   const showSearchResultsPopup = isSearchPage ? searchString !== searchStringInUrl : searchString;
 
@@ -50,12 +46,10 @@ export function NavSearch() {
   useEffect(() => {
     if (searchString) {
       setIsExpanded(true);
-    } else if (isMobile && shouldExpandOnMobile) {
-      setIsExpanded(true);
-    } else if (isMobile && !shouldExpandOnMobile && !searchString) {
+    } else if (isMobile && !searchString) {
       setIsExpanded(false);
     }
-  }, [searchString, isMobile, shouldExpandOnMobile]);
+  }, [searchString, isMobile]);
 
   useEffect(() => {
     if (isExpanded && inputRef.current) {
@@ -75,10 +69,6 @@ export function NavSearch() {
     setTimeout(() => {
       const activeElement = document.activeElement;
       if (activeElement?.closest('[data-search-popup]') || activeElement === inputRef.current) {
-        return;
-      }
-
-      if (isMobile && shouldExpandOnMobile) {
         return;
       }
 

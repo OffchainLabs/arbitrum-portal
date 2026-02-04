@@ -50,7 +50,7 @@ export const ProjectsFilterBar = () => {
     <nav className="z-100 w-full py-2">
       <div className="flex w-full items-center justify-between">
         {/* Left side: Filter buttons */}
-        <ul className="flex w-full items-center gap-4 text-center lg:w-auto lg:flex-row">
+        <ul className="flex w-full items-center gap-2 lg:gap-4 text-center lg:w-auto lg:flex-row">
           <li className="hidden lg:block">
             <CategoryDropdown />
           </li>
