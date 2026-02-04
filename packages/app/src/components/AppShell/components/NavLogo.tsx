@@ -6,7 +6,7 @@ export function NavLogo() {
   return (
     <Link
       href="/"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-8 transition-opacity hover:opacity-80"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-neutral-25 transition-opacity hover:opacity-80"
     >
       <Image
         src="/images/ArbitrumLogo.svg"

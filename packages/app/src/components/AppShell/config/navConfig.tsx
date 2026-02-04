@@ -91,8 +91,8 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
     icon: createIcon('/icons/navigation/build.svg', 'Build'),
     subNavItems: [
       {
-        label: 'Dev-tools',
-        href: '/learn',
+        href: '/build',
+        label: 'Tools',
         icon: createIcon('/icons/navigation/devtools.svg', 'Dev Tools'),
       },
       {
@@ -141,6 +141,7 @@ export function shouldExpandSearchOnMobile(pathname: string): boolean {
 export const NAVBAR_HEIGHTS = {
   DESKTOP: 66, // Desktop navbar height
   MOBILE: 56, // Mobile navbar header height (h-14 = 3.5rem = 56px)
+  MOBILE_BOTTOM: 90, // Mobile bottom navigation height (h-[90px])
   BANNER: 32, // Site banner height
   SUBNAV_MOBILE: 60, // SubNavMobile height (44px content + 16px padding)
   DESKTOP_SPACING: 34, // Additional spacing for desktop content padding
@@ -176,4 +177,8 @@ export const getMobileContentPadding = (isBannerVisible: boolean): number => {
   return isBannerVisible
     ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE
     : NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE;
+};
+
+export const getMobileContentBottomPadding = (): number => {
+  return NAVBAR_HEIGHTS.MOBILE_BOTTOM;
 };

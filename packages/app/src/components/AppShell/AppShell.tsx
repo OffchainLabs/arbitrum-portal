@@ -12,7 +12,11 @@ import { SubNav } from './components/SubNav';
 import { NavHeaderMobile } from './components/mobile/NavHeaderMobile';
 import { NavMobile } from './components/mobile/NavMobile';
 import { SubNavMobile } from './components/mobile/SubNavMobile';
-import { getDesktopContentPadding, getMobileContentPadding } from './config/navConfig';
+import {
+  getDesktopContentPadding,
+  getMobileContentBottomPadding,
+  getMobileContentPadding,
+} from './config/navConfig';
 
 const AppProviders = dynamic(
   () => import('./providers/AppProviders').then((mod) => mod.AppProviders),
@@ -28,6 +32,7 @@ export function AppShell({ children }: PropsWithChildren) {
 
   const desktopPaddingTop = getDesktopContentPadding(isBannerVisible);
   const mobilePaddingTop = getMobileContentPadding(isBannerVisible);
+  const mobilePaddingBottom = getMobileContentBottomPadding();
 
   return (
     <AppProviders>
@@ -49,7 +54,9 @@ export function AppShell({ children }: PropsWithChildren) {
             !isEmbedMode
               ? {
                   paddingTop: `${mobilePaddingTop}px`,
+                  paddingBottom: `${mobilePaddingBottom}px`,
                   ['--desktop-padding-top' as string]: `${desktopPaddingTop}px`,
+                  ['--mobile-padding-bottom' as string]: `${mobilePaddingBottom}px`,
                 }
               : undefined
           }
@@ -61,6 +68,12 @@ export function AppShell({ children }: PropsWithChildren) {
                 @media (min-width: 768px) {
                   [data-content-wrapper="true"] {
                     padding-top: var(--desktop-padding-top) !important;
+                    padding-bottom: 0 !important;
+                  }
+                }
+                @media (max-width: 767px) {
+                  [data-content-wrapper="true"] {
+                    padding-bottom: var(--mobile-padding-bottom) !important;
                   }
                 }
               `,

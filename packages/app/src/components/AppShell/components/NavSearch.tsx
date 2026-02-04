@@ -1,5 +1,6 @@
 'use client';
 
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
@@ -134,14 +135,19 @@ export function NavSearch() {
     router.push(`/search/${searchString}`, { scroll: true });
   };
 
+  const handleClear = () => {
+    setSearchString('');
+    inputRef.current?.focus();
+  };
+
   return (
     <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
       <div
         className={twMerge(
-          'flex items-center gap-2 rounded-md bg-neutral-100 transition-all duration-300 ease-in-out',
+          'flex items-center gap-2 rounded-md bg-neutral-25 transition-all duration-300 ease-in-out',
           isExpanded
-            ? 'w-full md:w-[400px] border-0 px-3 py-0'
-            : 'w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-gray-8/80',
+            ? 'w-full md:w-[400px] border-0 px-3 py-0 bg-neutral-100'
+            : 'w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-neutral-25/80',
         )}
         style={{ height: '40px' }}
         onClick={() => !isExpanded && setIsExpanded(true)}
@@ -154,18 +160,30 @@ export function NavSearch() {
           className="shrink-0"
         />
         {isExpanded && (
-          <input
-            ref={inputRef}
-            type="text"
-            className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
-            placeholder="Search projects, chains, and more"
-            value={searchString}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            style={{ outline: 'none', boxShadow: 'none' }}
-          />
+          <>
+            <input
+              ref={inputRef}
+              type="text"
+              className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
+              placeholder="Search projects, chains, and more"
+              value={searchString}
+              onChange={handleInputChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              style={{ outline: 'none', boxShadow: 'none' }}
+            />
+            {searchString && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="shrink-0 text-white transition-opacity cursor-pointer bg-white/5 rounded-sm p-1 hover:bg-white/10"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="h-3 w-3" />
+              </button>
+            )}
+          </>
         )}
       </div>
 

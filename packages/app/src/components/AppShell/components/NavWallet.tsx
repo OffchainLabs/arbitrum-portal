@@ -22,7 +22,7 @@ import { useAccountMenu } from '@/bridge/hooks/useAccountMenu';
 import { getExplorerUrl } from '@/bridge/util/networks';
 
 const MENU_ITEM_BUTTON_CLASSES =
-  'opacity-70 hover:opacity-100 flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-white cursor-pointer transition-colors hover:bg-gray-8/50 focus:bg-gray-8/50 w-full';
+  'opacity-70 hover:opacity-100 flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-white cursor-pointer transition-colors hover:bg-neutral-25/50 focus:bg-neutral-25/50 w-full';
 const ICON_CLASSES = 'h-4 w-4 shrink-0';
 const AVATAR_CLASSES = 'h-6 w-6 rounded-full shrink-0';
 
@@ -86,7 +86,7 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
     <Popover className="relative">
       {({ open }) => (
         <>
-          <Popover.Button className="flex items-center gap-2 rounded-md bg-gray-8 px-3 py-2 text-sm text-white transition-colors hover:bg-gray-8/80 ui-open:bg-gray-8/90">
+          <Popover.Button className="flex items-center gap-2 rounded-md bg-neutral-25 px-3 py-2 text-sm text-white transition-colors hover:bg-neutral-25/80 ui-open:bg-neutral-25/90">
             <Avatar />
             <span className="text-sm hidden md:block">{displayName}</span>
             <ChevronDownIcon
@@ -172,7 +172,7 @@ export function NavWallet() {
   if (!mounted) {
     return (
       <div className="flex items-center">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-8" />
+        <div className="h-10 w-24 animate-pulse rounded-lg bg-neutral-25" />
       </div>
     );
   }
@@ -186,7 +186,7 @@ export function NavWallet() {
         if (!ready) {
           return (
             <div className="flex items-center">
-              <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-8" />
+              <div className="h-10 w-24 animate-pulse rounded-lg bg-neutral-25" />
             </div>
           );
         }

@@ -10,7 +10,7 @@ export function NavMobile() {
   const activeRoute = useActiveRoute();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 w-full items-center justify-around border-t border-gray-8 bg-black/80 backdrop-blur-sm md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-sm md:hidden">
       {navLinksWithIcons.map((link) => {
         const isActive = activeRoute === link.route;
         const Icon = link.icon;
@@ -20,16 +20,21 @@ export function NavMobile() {
             key={link.route}
             href={link.route}
             prefetch={true}
-            className={twMerge(
-              'flex flex-1 flex-col items-center justify-center gap-1.5 px-1 py-2 transition-all duration-200 min-h-[44px] touch-manipulation relative',
-              isActive && 'rounded-xl mx-0.5',
-            )}
+            className="flex flex-1 flex-col items-center rounded justify-center gap-2 transition-all duration-200 h-full touch-manipulation relative"
           >
-            {isActive && <div className="absolute inset-0 rounded-xl bg-gray-8/90 -z-10" />}
+            {isActive && (
+              <div
+                className="absolute inset-0 rounded-[10px] -z-10"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at center bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%), rgba(255,255,255,0.1)',
+                }}
+              />
+            )}
 
             <Icon
               className={twMerge(
-                'h-5 w-5 shrink-0 transition-colors stroke-[1.5]',
+                'h-8 w-8 shrink-0 transition-colors stroke-2',
                 isActive ? 'text-white' : 'text-white/70',
               )}
             />

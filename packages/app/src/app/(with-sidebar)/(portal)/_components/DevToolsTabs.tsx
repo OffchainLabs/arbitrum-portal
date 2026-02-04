@@ -7,8 +7,8 @@ import { twMerge } from 'tailwind-merge';
 import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 
 const tabs = [
-  { href: '/learn', label: 'Learn', pathMatch: '/learn' },
   { href: '/build', label: 'Build & Monitor', pathMatch: '/build' },
+  { href: '/learn', label: 'Stats & Docs', pathMatch: '/learn' },
 ] as const;
 
 export function DevToolsTabs() {
@@ -18,7 +18,7 @@ export function DevToolsTabs() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeading>Dev-Tools</PageHeading>
+      <PageHeading>Tools</PageHeading>
 
       {/* Mobile */}
       <div className="flex items-center w-full md:hidden py-4">
