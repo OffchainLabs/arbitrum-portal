@@ -26,14 +26,14 @@ export const ProjectsCategorySelector = () => {
 
     const categoryOptions: CategorySelectorOption[] = CATEGORIES.map((category) => ({
       id: category.slug,
-      label: category.title,
+      label: category.slug === 'bridges-and-on-ramps' ? 'Bridges' : category.title,
       imageUrl: `/images/orbit/${category.slug}.webp`,
       onClick: () => {
         router.push(`/projects/${category.slug}`);
       },
     }));
 
-    return [allOption, ...categoryOptions].filter((option) => option.id !== 'bridges-and-on-ramps');
+    return [allOption, ...categoryOptions];
   }, [router]);
 
   return isSmallScreen ? null : (
