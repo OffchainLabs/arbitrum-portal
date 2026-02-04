@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
+import { ExternalLink } from '@/portal/components/ExternalLink';
+
 import { subNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
@@ -39,16 +41,14 @@ export function SubNavMobile() {
 
           if (item.external) {
             return (
-              <a
+              <ExternalLink
                 key={item.href}
                 href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="flex-1 flex-shrink-0"
                 aria-label={item.ariaLabel}
               >
                 {content}
-              </a>
+              </ExternalLink>
             );
           }
 

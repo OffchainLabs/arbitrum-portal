@@ -32,7 +32,7 @@ export const useEntitySidePanel = (entityType: EntityType) => {
       queryParams.set(queryParamKey, entitySlug);
 
       // If user is on bridge page, redirect to portal app version (/) instead
-      const isOnBridgePage = pathname.startsWith('/bridge');
+      const isOnBridgePage = pathname.startsWith('/bridge/');
       if (isOnBridgePage) {
         // Redirect to portal app root with query params
         const portalUrl = `/?${queryParams.toString()}`;

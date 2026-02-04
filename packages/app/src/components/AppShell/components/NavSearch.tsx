@@ -121,7 +121,7 @@ export function NavSearch() {
     setFocusIndex(-1);
   }, [searchResults]);
 
-  const handleSelection = (item: SearchResult): void => {
+  const handleSelection = (item: SearchResult) => {
     captureInputAnalytics();
     handleSearchResultSelection(item, () => {
       setSearchString('');

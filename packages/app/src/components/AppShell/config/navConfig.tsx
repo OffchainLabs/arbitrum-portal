@@ -1,29 +1,17 @@
 import Image from 'next/image';
-import { ComponentType } from 'react';
 
 import { GET_HELP_LINK } from '@/portal/common/constants';
 
 import type { NavLink, NavRoute } from '../types';
 
-function createIconComponent(src: string, alt: string): ComponentType<{ className?: string }> {
-  return function Icon({ className }: { className?: string }) {
-    return <Image src={src} alt={alt} width={24} height={24} className={className} />;
-  };
+// Helper to create icon component
+function createIcon(src: string, alt: string): React.ComponentType<{ className?: string }> {
+  const Icon = ({ className }: { className?: string }) => (
+    <Image src={src} alt={alt} width={24} height={24} className={className} />
+  );
+  Icon.displayName = alt;
+  return Icon;
 }
-
-// Navigation icons
-const HomeIcon = createIconComponent('/icons/navigation/home.svg', 'Home');
-const BridgeIcon = createIconComponent('/icons/navigation/bridge.svg', 'Bridge');
-const ExploreIcon = createIconComponent('/icons/navigation/explore.svg', 'Explore');
-const BuildIcon = createIconComponent('/icons/navigation/build.svg', 'Build');
-const TransactionsIcon = createIconComponent('/icons/navigation/transactions.svg', 'Transactions');
-const BuyIcon = createIconComponent('/icons/navigation/buy.svg', 'Buy');
-const ProjectsIcon = createIconComponent('/icons/navigation/projects.svg', 'Projects');
-const ChainsIcon = createIconComponent('/icons/navigation/chains.svg', 'Chains');
-const MyAppsIcon = createIconComponent('/icons/navigation/my-apps.svg', 'My Apps');
-const DevToolsIcon = createIconComponent('/icons/navigation/devtools.svg', 'Dev Tools');
-const ConnectIcon = createIconComponent('/icons/navigation/connect.svg', 'Connect');
-const HelpIcon = createIconComponent('/icons/navigation/help.svg', 'Help');
 
 // Sub nav item interface
 export interface SubNavItem {
@@ -47,30 +35,30 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/': {
     label: 'Home',
     route: '/',
-    icon: HomeIcon,
+    icon: createIcon('/icons/navigation/home.svg', 'Home'),
     subNavItems: [],
   },
   '/bridge': {
     label: 'Bridge',
     route: '/bridge',
-    icon: BridgeIcon,
+    icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
     subNavItems: [
       {
         label: 'Bridge',
         href: '/bridge',
-        icon: BridgeIcon,
+        icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
         ariaLabel: 'Switch to Bridge Tab',
       },
       {
         label: 'Txns',
         href: '/bridge?tab=tx_history',
-        icon: TransactionsIcon,
+        icon: createIcon('/icons/navigation/transactions.svg', 'Transactions'),
         ariaLabel: 'Switch to Transaction History Tab',
       },
       {
         label: 'Buy',
         href: '/bridge/buy',
-        icon: BuyIcon,
+        icon: createIcon('/icons/navigation/buy.svg', 'Buy'),
         ariaLabel: 'Switch to Buy Tab',
       },
     ],
@@ -78,44 +66,44 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/projects': {
     label: 'Explore',
     route: '/projects',
-    icon: ExploreIcon,
+    icon: createIcon('/icons/navigation/explore.svg', 'Explore'),
     subNavItems: [
       {
         label: 'Projects',
         href: '/projects',
-        icon: ProjectsIcon,
+        icon: createIcon('/icons/navigation/projects.svg', 'Projects'),
       },
       {
         label: 'Chains',
         href: '/chains/ecosystem',
-        icon: ChainsIcon,
+        icon: createIcon('/icons/navigation/chains.svg', 'Chains'),
       },
       {
         label: 'My Apps',
         href: '/bookmarks',
-        icon: MyAppsIcon,
+        icon: createIcon('/icons/navigation/my-apps.svg', 'My Apps'),
       },
     ],
   },
   '/build': {
     label: 'Build',
     route: '/build',
-    icon: BuildIcon,
+    icon: createIcon('/icons/navigation/build.svg', 'Build'),
     subNavItems: [
       {
         label: 'Dev-tools',
         href: '/learn',
-        icon: DevToolsIcon,
+        icon: createIcon('/icons/navigation/devtools.svg', 'Dev Tools'),
       },
       {
         label: 'Connect',
         href: '/community',
-        icon: ConnectIcon,
+        icon: createIcon('/icons/navigation/connect.svg', 'Connect'),
       },
       {
         label: 'Help',
         href: GET_HELP_LINK,
-        icon: HelpIcon,
+        icon: createIcon('/icons/navigation/help.svg', 'Help'),
         external: true,
       },
     ],

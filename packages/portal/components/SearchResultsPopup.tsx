@@ -100,7 +100,7 @@ export const SearchResultsPopup = ({
   handleSelection: (item: SearchResult) => void;
 }) => {
   const pathname = usePathname();
-  const isOnBridgePage = pathname.startsWith('/bridge');
+  const isOnBridgePage = pathname.startsWith('/bridge/');
   const noResults = searchString.length >= 2 && !searchResults.length;
   const showMoreResultsButton = searchString.length >= 2 && !noResults;
 

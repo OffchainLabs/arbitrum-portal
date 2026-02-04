@@ -122,7 +122,7 @@ export const SitewideSearchBar = () => {
     captureInputAnalytics();
 
     // If user is on bridge page, redirect to portal app version of search - because search feature is only accessible in the portal app
-    const isOnBridgePage = pathname.startsWith('/bridge');
+    const isOnBridgePage = pathname.startsWith('/bridge/');
     if (isOnBridgePage) {
       // Redirect to portal app version (remove /bridge prefix)
       router.push(`/search/${encodeURIComponent(searchString)}`, { scroll: true });
