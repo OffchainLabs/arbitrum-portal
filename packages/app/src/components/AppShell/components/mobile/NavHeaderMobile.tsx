@@ -1,5 +1,3 @@
-'use client';
-
 import { NavLogo } from '../NavLogo';
 import { NavSearch } from '../NavSearch';
 import { NavWallet } from '../NavWallet';
