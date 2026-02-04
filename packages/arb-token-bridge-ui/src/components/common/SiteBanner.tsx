@@ -1,7 +1,7 @@
 'use client';
 
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 import { ArbitrumStatusResponse } from '@/bridge/app/api/status';
 
@@ -54,43 +54,79 @@ function isComponentOperational({ status }: { status: string }) {
   return status === 'OPERATIONAL';
 }
 
+// Helper functions to check incident banners
+function getShowArbiscanOneIncidentBanner(arbitrumStatus: ArbitrumStatusResponse): boolean {
+  return arbitrumStatus.content.components.some(
+    (component) => isComponentArbiscanOne(component) && !isComponentOperational(component),
+  );
+}
+
+function getShowArbiscanNovaIncidentBanner(arbitrumStatus: ArbitrumStatusResponse): boolean {
+  return arbitrumStatus.content.components.some(
+    (component) => isComponentArbiscanNova(component) && !isComponentOperational(component),
+  );
+}
+
+function getShowInfoBanner(children?: React.ReactNode, expiryDate?: string): boolean {
+  if (!children) return false;
+  if (!expiryDate) return true;
+  return dayjs.utc().isBefore(dayjs(expiryDate).utc(true));
+}
+
+async function fetchArbitrumStatus(): Promise<ArbitrumStatusResponse> {
+  const response = await fetch(`${getAPIBaseUrl()}/api/status`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await response.json();
+  return data.data as ArbitrumStatusResponse;
+}
+
+function useArbitrumStatus() {
+  const { data, error } = useSWR<ArbitrumStatusResponse>(
+    `${getAPIBaseUrl()}/api/status`,
+    fetchArbitrumStatus,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
+    },
+  );
+
+  if (error) {
+    console.error('Error fetching Arbitrum status:', error);
+    return { content: { components: [] } };
+  }
+
+  return data || { content: { components: [] } };
+}
+
+export function useSiteBannerVisible({
+  children,
+  expiryDate,
+}: {
+  children?: React.ReactNode;
+  expiryDate?: string;
+}): boolean {
+  const arbitrumStatus = useArbitrumStatus();
+
+  const showArbiscanOneIncidentBanner = getShowArbiscanOneIncidentBanner(arbitrumStatus);
+  const showArbiscanNovaIncidentBanner = getShowArbiscanNovaIncidentBanner(arbitrumStatus);
+  const showInfoBanner = getShowInfoBanner(children, expiryDate);
+
+  return showArbiscanOneIncidentBanner || showArbiscanNovaIncidentBanner || showInfoBanner;
+}
+
 export const SiteBanner = ({
   children,
   expiryDate, // date in utc
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { expiryDate?: string }) => {
-  const [arbitrumStatus, setArbitrumStatus] = useState<ArbitrumStatusResponse>({
-    content: { components: [] },
-  });
+  const arbitrumStatus = useArbitrumStatus();
 
-  useEffect(() => {
-    const updateArbitrumStatus = async () => {
-      try {
-        const response = await fetch(`${getAPIBaseUrl()}/api/status`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        setArbitrumStatus((await response.json()).data as ArbitrumStatusResponse);
-      } catch (e) {
-        // error fetching status
-        console.error(e);
-      }
-    };
-    updateArbitrumStatus();
-  }, []);
-
-  // show incident-banner if there is an active incident
-  const showArbiscanOneIncidentBanner = arbitrumStatus.content.components.some(
-    (component) => isComponentArbiscanOne(component) && !isComponentOperational(component),
-  );
-  const showArbiscanNovaIncidentBanner = arbitrumStatus.content.components.some(
-    (component) => isComponentArbiscanNova(component) && !isComponentOperational(component),
-  );
-
-  // show info-banner till expiry date if provided
-  const showInfoBanner =
-    !!children &&
-    (!expiryDate || (expiryDate && dayjs.utc().isBefore(dayjs(expiryDate).utc(true))));
+  const showArbiscanOneIncidentBanner = getShowArbiscanOneIncidentBanner(arbitrumStatus);
+  const showArbiscanNovaIncidentBanner = getShowArbiscanNovaIncidentBanner(arbitrumStatus);
+  const showInfoBanner = getShowInfoBanner(children, expiryDate);
 
   if (showArbiscanOneIncidentBanner) {
     return <SiteBannerArbiscanIncident type="arbitrum-one" />;

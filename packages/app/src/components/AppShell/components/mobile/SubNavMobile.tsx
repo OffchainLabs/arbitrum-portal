@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
+import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { ExternalLink } from '@/portal/components/ExternalLink';
 
+import { getSubNavMobileTopPosition } from '../../config/navConfig';
 import { subNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
@@ -14,6 +16,7 @@ export function SubNavMobile() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isBannerVisible = useSiteBannerVisible({});
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
   if (items.length === 0) {
@@ -21,7 +24,9 @@ export function SubNavMobile() {
   }
 
   return (
-    <nav className="sticky top-14 z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden">
+    <nav
+      className={`sticky z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden ${getSubNavMobileTopPosition(isBannerVisible)}`}
+    >
       <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[44px] w-full overflow-x-auto">
         {items.map((item) => {
           const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);

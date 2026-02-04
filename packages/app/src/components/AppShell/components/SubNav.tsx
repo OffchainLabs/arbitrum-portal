@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
+import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
+
+import { getSubNavTopPosition } from '../config/navConfig';
 import { subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../utils/getActiveSubNavItem';
@@ -12,16 +15,23 @@ export function SubNav() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isBannerVisible = useSiteBannerVisible({});
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
+
+  const topPosition = getSubNavTopPosition(isBannerVisible);
 
   if (items.length === 0) {
     return (
-      <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm"></aside>
+      <aside
+        className={`fixed left-0 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm ${topPosition}`}
+      ></aside>
     );
   }
 
   return (
-    <aside className="fixed left-0 top-14 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <aside
+      className={`fixed left-0 bottom-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto ${topPosition}`}
+    >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
       <nav className="flex flex-col gap-2 py-6 px-2">
         {items.map((item) => {

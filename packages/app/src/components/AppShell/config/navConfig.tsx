@@ -136,3 +136,49 @@ export const mobileSearchExpandedRoutes = ['/projects', '/chains', '/bookmarks']
 export function shouldExpandSearchOnMobile(pathname: string): boolean {
   return mobileSearchExpandedRoutes.some((route) => pathname.startsWith(route));
 }
+
+// Navbar height constants (in pixels)
+export const NAVBAR_HEIGHTS = {
+  DESKTOP: 66, // Desktop navbar height
+  MOBILE: 56, // Mobile navbar header height (h-14 = 3.5rem = 56px)
+  BANNER: 32, // Site banner height
+  SUBNAV_MOBILE: 60, // SubNavMobile height (44px content + 16px padding)
+  DESKTOP_SPACING: 34, // Additional spacing for desktop content padding
+} as const;
+
+// Pre-computed Tailwind classes for navbar heights
+export const NAVBAR_HEIGHT_CLASSES = {
+  DESKTOP: `h-[${NAVBAR_HEIGHTS.DESKTOP}px]`,
+  MOBILE: 'h-14', // Using Tailwind's h-14 instead of h-[56px] for consistency
+} as const;
+
+// Computed positions (Nav + Banner combinations)
+export const getSubNavTopPosition = (isBannerVisible: boolean): string => {
+  const top = isBannerVisible
+    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.DESKTOP
+    : NAVBAR_HEIGHTS.DESKTOP;
+  return `top-[${top}px]`;
+};
+
+export const getSubNavMobileTopPosition = (isBannerVisible: boolean): string => {
+  if (isBannerVisible) {
+    const top = NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE;
+    return `top-[${top}px]`;
+  }
+  return 'top-14'; // Using Tailwind's top-14 instead of top-[56px]
+};
+
+// Computed padding for content area
+export const getDesktopContentPadding = (isBannerVisible: boolean): string => {
+  const padding = isBannerVisible
+    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.DESKTOP + NAVBAR_HEIGHTS.DESKTOP_SPACING
+    : NAVBAR_HEIGHTS.DESKTOP + NAVBAR_HEIGHTS.DESKTOP_SPACING;
+  return `md:pt-[${padding}px]`;
+};
+
+export const getMobileContentPadding = (isBannerVisible: boolean): string => {
+  const padding = isBannerVisible
+    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE
+    : NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE;
+  return `pt-[${padding}px]`;
+};
