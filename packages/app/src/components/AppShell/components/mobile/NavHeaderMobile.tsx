@@ -21,7 +21,7 @@ export function NavHeaderMobile() {
           <NavLogo />
         </div>
 
-        <div className="flex flex-1 items-center min-w-0">
+        <div className="flex flex-1 items-center min-w-0 w-full justify-end">
           <NavSearch />
         </div>
 

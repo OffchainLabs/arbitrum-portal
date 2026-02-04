@@ -152,12 +152,9 @@ export const NAVBAR_HEIGHT_CLASSES = {
   MOBILE: 'h-14', // Using Tailwind's h-14 instead of h-[56px] for consistency
 } as const;
 
-// Computed positions (Nav + Banner combinations)
-export const getSubNavTopPosition = (isBannerVisible: boolean): string => {
-  const top = isBannerVisible
-    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.DESKTOP
-    : NAVBAR_HEIGHTS.DESKTOP;
-  return `top-[${top}px]`;
+// Computed positions (Nav + Banner combinations) - returns pixel values
+export const getSubNavTopPosition = (isBannerVisible: boolean): number => {
+  return isBannerVisible ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.DESKTOP : NAVBAR_HEIGHTS.DESKTOP;
 };
 
 export const getSubNavMobileTopPosition = (isBannerVisible: boolean): string => {
@@ -168,17 +165,15 @@ export const getSubNavMobileTopPosition = (isBannerVisible: boolean): string => 
   return 'top-14'; // Using Tailwind's top-14 instead of top-[56px]
 };
 
-// Computed padding for content area
-export const getDesktopContentPadding = (isBannerVisible: boolean): string => {
-  const padding = isBannerVisible
+// Computed padding for content area (returns pixel values)
+export const getDesktopContentPadding = (isBannerVisible: boolean): number => {
+  return isBannerVisible
     ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.DESKTOP + NAVBAR_HEIGHTS.DESKTOP_SPACING
     : NAVBAR_HEIGHTS.DESKTOP + NAVBAR_HEIGHTS.DESKTOP_SPACING;
-  return `md:pt-[${padding}px]`;
 };
 
-export const getMobileContentPadding = (isBannerVisible: boolean): string => {
-  const padding = isBannerVisible
+export const getMobileContentPadding = (isBannerVisible: boolean): number => {
+  return isBannerVisible
     ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE
     : NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE;
-  return `pt-[${padding}px]`;
 };

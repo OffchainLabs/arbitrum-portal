@@ -1,6 +1,6 @@
 import { SiteBanner } from '@/bridge/components/common/SiteBanner';
 
-import { NAVBAR_HEIGHT_CLASSES } from '../config/navConfig';
+import { NAVBAR_HEIGHTS } from '../config/navConfig';
 import { NavLinks } from './NavLinks';
 import { NavLogo } from './NavLogo';
 import { NavSearch } from './NavSearch';
@@ -11,9 +11,10 @@ export function Nav() {
     <nav id="sticky-top-bar" className="fixed top-0 left-0 right-0 z-50 flex flex-col w-full">
       <SiteBanner />
       <div
-        className={`flex ${NAVBAR_HEIGHT_CLASSES.DESKTOP} w-full items-center justify-between border-0 bg-black/70 backdrop-blur-sm px-4`}
+        className="flex w-full items-center justify-between border-0 bg-black/70 backdrop-blur-sm px-4"
+        style={{ height: `${NAVBAR_HEIGHTS.DESKTOP}px` }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <NavLogo />
           <NavSearch />
         </div>

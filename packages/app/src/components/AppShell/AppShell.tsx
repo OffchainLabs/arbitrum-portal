@@ -43,12 +43,30 @@ export function AppShell({ children }: PropsWithChildren) {
           </>
         )}
         <div
-          className={twMerge(
-            'flex flex-1 flex-col md:flex-row',
-            !isEmbedMode && desktopPaddingTop,
-            !isEmbedMode && mobilePaddingTop,
-          )}
+          className="flex flex-1 flex-col md:flex-row"
+          data-content-wrapper="true"
+          style={
+            !isEmbedMode
+              ? {
+                  paddingTop: `${mobilePaddingTop}px`,
+                  ['--desktop-padding-top' as string]: `${desktopPaddingTop}px`,
+                }
+              : undefined
+          }
         >
+          {!isEmbedMode && (
+            <style
+              dangerouslySetInnerHTML={{
+                __html: `
+                @media (min-width: 768px) {
+                  [data-content-wrapper="true"] {
+                    padding-top: var(--desktop-padding-top) !important;
+                  }
+                }
+              `,
+              }}
+            />
+          )}
           {!isEmbedMode && (
             <>
               <div className="hidden md:block">

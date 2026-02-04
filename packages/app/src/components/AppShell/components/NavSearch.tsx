@@ -138,11 +138,12 @@ export function NavSearch() {
     <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
       <div
         className={twMerge(
-          'flex items-center gap-2 rounded-md bg-gray-8 transition-all duration-300 ease-in-out h-[40px]',
+          'flex items-center gap-2 rounded-md bg-neutral-100 transition-all duration-300 ease-in-out',
           isExpanded
             ? 'w-full md:w-[400px] border-0 px-3 py-0'
-            : 'h-10 w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-gray-8/80',
+            : 'w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-gray-8/80',
         )}
+        style={{ height: '40px' }}
         onClick={() => !isExpanded && setIsExpanded(true)}
       >
         <Image

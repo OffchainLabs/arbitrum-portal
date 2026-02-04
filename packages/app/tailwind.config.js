@@ -142,6 +142,7 @@ module.exports = {
         // NEW DESIGN LANGUAGE COLORS
         'neutral-25': '#0F0F0F',
         'neutral-50': '#191919',
+        'neutral-100': '#212121',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],
