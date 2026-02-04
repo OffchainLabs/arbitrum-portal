@@ -87,6 +87,7 @@ export function useGasEstimates({
   const { isDepositMode } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
   const destinationToken = useDestinationToken();
+  const destinationTokenForGas = destinationToken ?? selectedToken;
   const [{ destinationAddress }] = useArbQueryParams();
   const { address: walletAddress } = useAccount();
   const balance = useBalanceOnSourceChain(selectedToken);
@@ -117,10 +118,10 @@ export function useGasEstimates({
     () =>
       getTokenOverride({
         sourceChainId: sourceChain.id,
-        fromToken: destinationToken?.address,
+        fromToken: destinationTokenForGas?.address,
         destinationChainId: destinationChain.id,
       }),
-    [destinationToken?.address, sourceChain.id, destinationChain.id],
+    [destinationTokenForGas?.address, sourceChain.id, destinationChain.id],
   );
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
     (state) => ({
@@ -133,8 +134,8 @@ export function useGasEstimates({
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const defaultToTokenAddress = isDepositMode
-    ? destinationToken?.l2Address
-    : destinationToken?.address;
+    ? destinationTokenForGas?.l2Address
+    : destinationTokenForGas?.address;
 
   const fromTokenAddress =
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
