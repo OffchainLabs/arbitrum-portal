@@ -388,8 +388,7 @@ function getIsArbitrumChain(chainId: ChainId) {
   try {
     return !!getArbitrumNetwork(chainId).parentChainId;
   } catch (error) {
-    // Fallback: check if chain is in orbitChains list
-    return !!orbitChains[chainId];
+    return false;
   }
 }
 

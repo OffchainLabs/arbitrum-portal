@@ -1,13 +1,23 @@
 /**
  * @vitest-environment node
  */
-import { describe, expect, it } from 'vitest';
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import { isWithdrawOnlyToken } from '../WithdrawOnlyUtils';
+import { orbitMainnets } from '../orbitChainsList';
 
 const networkTestTimeout = 10000;
+
+beforeAll(() => {
+  const xaiChain = orbitMainnets[660279];
+  if (!xaiChain) {
+    throw new Error('Could not find Xai chain in the Orbit chains list.');
+  }
+  registerCustomArbitrumNetwork(xaiChain);
+});
 
 describe('isWithdrawOnlyToken', () => {
   const orbitChainId = 660279; // Xai
