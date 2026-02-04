@@ -1,5 +1,3 @@
-// tokens that can't be bridged to Arbitrum (maybe coz they have their native protocol bridges and custom implementation or they are being discontinued)
-// the UI doesn't let users deposit such tokens. If bridged already, these can only be withdrawn.
 import axios from 'axios';
 import { ethers } from 'ethers';
 
@@ -291,20 +289,12 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
   ],
 };
 
-// Cache for OFT token data: address map and symbol set per chain
 type OFTCache = {
-  addressMap: Map<string, Map<string, string>>; // chainName -> address -> symbol
-  symbolSet: Map<string, Set<string>>; // chainName -> Set<symbol>
+  addressMap: Map<string, Map<string, string>>;
+  symbolSet: Map<string, Set<string>>;
 };
 let oftAddressesCache: OFTCache | null = null;
 
-/**
- * Fetches LayerZero's OFT metadata and creates maps of OFT token addresses and symbols indexed by chain name.
- * The API response is indexed by token symbol, with deployments per chain.
- * We create two indexes:
- * 1. addressMap: Map<chainName, Map<address, symbol>> for O(1) address lookup
- * 2. symbolSet: Map<chainName, Set<symbol>> for O(1) symbol existence check
- */
 async function fetchOFTAddressesMap(): Promise<OFTCache> {
   if (oftAddressesCache) {
     return oftAddressesCache;
@@ -318,22 +308,18 @@ async function fetchOFTAddressesMap(): Promise<OFTCache> {
   const chainAddressMap = new Map<string, Map<string, string>>();
   const chainSymbolSet = new Map<string, Set<string>>();
 
-  // Iterate through all token symbols
   for (const tokenSymbol in metadata) {
     const tokenEntries = metadata[tokenSymbol];
     if (!Array.isArray(tokenEntries)) continue;
 
-    // Iterate through each token entry (usually just one per symbol)
     for (const tokenEntry of tokenEntries) {
       const deployments = tokenEntry.deployments;
       if (!deployments) continue;
 
-      // Iterate through all chain deployments
       for (const chainName in deployments) {
         const deployment = deployments[chainName];
         if (!deployment) continue;
 
-        // Initialize Maps/Sets for this chain if they don't exist
         let chainAddressMapForChain = chainAddressMap.get(chainName);
         if (!chainAddressMapForChain) {
           chainAddressMapForChain = new Map<string, string>();
@@ -346,15 +332,13 @@ async function fetchOFTAddressesMap(): Promise<OFTCache> {
           chainSymbolSet.set(chainName, chainSymbolSetForChain);
         }
 
-        // Add symbol to the set for this chain
         chainSymbolSetForChain.add(tokenSymbol);
 
-        // Add the OFT address with symbol
         if (deployment.address) {
           chainAddressMapForChain.set(deployment.address.toLowerCase(), tokenSymbol);
         }
 
-        // For OFT_ADAPTER types, also add the innerTokenAddress with symbol
+        // OFT_ADAPTER wraps existing tokens, so we need to map the inner token address too
         if (deployment.type === 'OFT_ADAPTER' && deployment.innerTokenAddress) {
           chainAddressMapForChain.set(deployment.innerTokenAddress.toLowerCase(), tokenSymbol);
         }
@@ -370,15 +354,6 @@ async function fetchOFTAddressesMap(): Promise<OFTCache> {
   return oftAddressesCache;
 }
 
-/**
- * Fetches LayerZero's off-chain metadata to identify OFT tokens.
- * Only flags tokens that have OFT implementations on BOTH the parent (source) and child (destination) chains.
- * This ensures we only block tokens where an OFT counterpart exists on the destination chain.
- * @param parentChainErc20Address
- * @param parentChainId
- * @param childChainId
- * @returns {oft: boolean, symbol: string | null} - object indicating if token is OFT and its symbol for debugging
- */
 async function isLayerZeroTokenViaAPI(
   parentChainErc20Address: string,
   parentChainId: number,
@@ -396,12 +371,10 @@ async function isLayerZeroTokenViaAPI(
   const childChainName = chainIdToLzName[childChainId];
 
   if (!parentChainName) {
-    // We can't check via the API if the chain is not supported
     throw new Error(`No LayerZero chain name for chain ID ${parentChainId}`);
   }
 
   if (!childChainName) {
-    // If child chain is not supported, we can't verify OFT on both chains
     return { oft: false, symbol: null };
   }
 
@@ -411,14 +384,13 @@ async function isLayerZeroTokenViaAPI(
     const childChainSymbolSet = oftCache.symbolSet.get(childChainName);
 
     if (!parentChainAddressMap || !childChainSymbolSet) {
-      // If either chain is not found in the API response, assume not an OFT token
       return { oft: false, symbol: null };
     }
 
     const lowercasedAddress = parentChainErc20Address.toLowerCase();
     const parentSymbol = parentChainAddressMap.get(lowercasedAddress);
 
-    // Only block if token exists on BOTH parent and child chains
+    // Only block if OFT exists on BOTH parent and child chains
     if (parentSymbol && childChainSymbolSet.has(parentSymbol)) {
       return {
         oft: true,
@@ -428,24 +400,16 @@ async function isLayerZeroTokenViaAPI(
 
     return { oft: false, symbol: null };
   } catch (error) {
-    // If API fails, throw error to trigger fallback to on-chain check
     throw new Error(`Failed to fetch LayerZero OFT metadata: ${error}`);
   }
 }
 
-/**
- * Checks if a token is an OFT token by querying the oftVersion function on the token contract.
- * @param parentChainErc20Address
- * @param parentChainId
- * @returns {oft: boolean, symbol: string | null} - object indicating if token is OFT and its symbol (null for on-chain check)
- */
 async function isLayerZeroTokenOnChain(
   parentChainErc20Address: string,
   parentChainId: number,
 ): Promise<{ oft: boolean; symbol: string | null }> {
   try {
     const parentProvider = getProviderForChainId(parentChainId);
-    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/592625b9e5967643853476445ffe0e777360b906/packages/layerzero-v2/evm/oapp/contracts/oft/OFT.sol#L37
     const layerZeroTokenOftContract = new ethers.Contract(
       parentChainErc20Address,
       ['function oftVersion() external pure virtual returns (bytes4 interfaceId, uint64 version)'],
@@ -454,22 +418,13 @@ async function isLayerZeroTokenOnChain(
     const _isLayerZeroToken = await layerZeroTokenOftContract.oftVersion();
     return {
       oft: !!_isLayerZeroToken,
-      symbol: null, // On-chain check doesn't provide symbol info
+      symbol: null,
     };
   } catch (error) {
-    // Assuming error means it's not an OFT token
     return { oft: false, symbol: null };
   }
 }
 
-/**
- * Checks if a token is an OFT token by first trying the API check and then falling back to the on-chain check.
- * Only flags tokens that have OFT implementations on BOTH parent and child chains.
- * @param parentChainErc20Address
- * @param parentChainId
- * @param childChainId
- * @returns {oft: boolean, symbol: string | null} - object indicating if token is OFT and its symbol for debugging
- */
 async function isLayerZeroToken(
   parentChainErc20Address: string,
   parentChainId: number,
@@ -490,17 +445,10 @@ async function isLayerZeroToken(
       `Error checking LayerZero API for ${parentChainErc20Address} on chain ${parentChainId}. Falling back to on-chain check.`,
       e,
     );
-    // Fallback to on-chain check in case of API error
-    // Note: On-chain check can't verify child chain, so we return false to be safe
     return isLayerZeroTokenOnChain(parentChainErc20Address, parentChainId);
   }
 }
 
-/**
- *
- * @param erc20L1Address
- * @param childChainId
- */
 export async function isWithdrawOnlyToken({
   parentChainErc20Address,
   parentChainId,
@@ -510,7 +458,6 @@ export async function isWithdrawOnlyToken({
   parentChainId: number;
   childChainId: number;
 }) {
-  // disable USDC.e deposits for Orbit chains
   if (
     (isTokenArbitrumOneUSDCe(parentChainErc20Address) ||
       isTokenArbitrumSepoliaUSDCe(parentChainErc20Address)) &&
@@ -527,8 +474,8 @@ export async function isWithdrawOnlyToken({
     return true;
   }
 
+  // USDT is bridged via OFT but we allow it due to OftV2 integration
   if (!isTokenUSDT(parentChainErc20Address)) {
-    // USDT is a special case - it's bridged via OFT, but we still want to allow transfers coz of our OftV2 Integration
     const layerZeroResult = await isLayerZeroToken(
       parentChainErc20Address,
       parentChainId,
