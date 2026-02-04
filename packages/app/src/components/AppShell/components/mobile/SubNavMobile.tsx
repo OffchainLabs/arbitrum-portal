@@ -25,7 +25,7 @@ export function SubNavMobile() {
 
   return (
     <nav
-      className={`sticky z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 md:hidden overflow-hidden ${getSubNavMobileTopPosition(isBannerVisible)}`}
+      className={`sticky z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 pt-0 md:hidden overflow-hidden ${getSubNavMobileTopPosition(isBannerVisible)}`}
     >
       <div className="flex items-center gap-2 bg-neutral-25 rounded-md w-full overflow-hidden p-[2px]">
         {items.map((item) => {

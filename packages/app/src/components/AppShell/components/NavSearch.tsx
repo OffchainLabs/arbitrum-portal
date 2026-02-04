@@ -165,7 +165,7 @@ export function NavSearch() {
               ref={inputRef}
               type="text"
               className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
-              placeholder="Search projects, chains, and more"
+              placeholder="Search categories, projects, chains, and more"
               value={searchString}
               onChange={handleInputChange}
               onFocus={handleFocus}

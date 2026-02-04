@@ -143,6 +143,7 @@ module.exports = {
         'neutral-25': '#0F0F0F',
         'neutral-50': '#191919',
         'neutral-100': '#212121',
+        'neutral-200': '#333333',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],

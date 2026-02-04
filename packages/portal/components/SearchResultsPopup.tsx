@@ -170,7 +170,7 @@ export const SearchResultsPopup = ({
         {showMoreResultsButton ? (
           <Link
             className={twMerge(
-              'flex w-full flex-col items-center justify-between gap-4 border-b border-white/10 p-4',
+              'flex w-full flex-col items-center justify-between gap-4 p-4',
               (focusIndex === previewLimit || focusIndex === searchResults.length) && 'bg-white/10',
             )}
             href={searchUrl}
