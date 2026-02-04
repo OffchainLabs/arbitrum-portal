@@ -1,5 +1,4 @@
-// tokens that can't be bridged to Arbitrum (maybe coz they have their native protocol bridges and custom implementation or they are being discontinued)
-// the UI doesn't let users deposit such tokens. If bridged already, these can only be withdrawn.
+import axios from 'axios';
 import { ethers } from 'ethers';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -7,7 +6,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { ChainId } from '../types/ChainId';
 import { isNetwork } from '../util/networks';
 import { CommonAddress } from './CommonAddressUtils';
-import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe } from './TokenUtils';
+import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe, isTokenUSDT } from './TokenUtils';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -259,6 +258,12 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
       l1Address: '0x607f4c5bb672230e8672085532f7e901544a7375',
       l2Address: '0xe575586566b02a16338c199c23ca6d295d794e66',
     },
+    {
+      symbol: 'pyUSD',
+      l2CustomAddr: '0xfab5891ed867a1195303251912013b92c4fc3a1d',
+      l1Address: '0xa2c323fe5a74adffad2bf3e007e36bb029606444',
+      l2Address: '0x327006c8712fe0abdbbd55b7999db39b0967342e',
+    },
   ],
   [ChainId.ArbitrumNova]: [],
   // Plume
@@ -284,29 +289,166 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
   ],
 };
 
-async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: number) {
-  const parentProvider = getProviderForChainId(parentChainId);
+type OFTCache = {
+  addressMap: Map<string, Map<string, string>>;
+  symbolSet: Map<string, Set<string>>;
+};
+let oftAddressesCache: OFTCache | null = null;
 
-  // https://github.com/LayerZero-Labs/LayerZero-v2/blob/592625b9e5967643853476445ffe0e777360b906/packages/layerzero-v2/evm/oapp/contracts/oft/OFT.sol#L37
-  const layerZeroTokenOftContract = new ethers.Contract(
-    parentChainErc20Address,
-    ['function oftVersion() external pure virtual returns (bytes4 interfaceId, uint64 version)'],
-    parentProvider,
+async function fetchOFTAddressesMap(): Promise<OFTCache> {
+  if (oftAddressesCache) {
+    return oftAddressesCache;
+  }
+
+  const response = await axios.get(
+    'https://metadata.layerzero-api.com/v1/metadata/experiment/ofts/list?chainNames=ethereum,arbitrum,base',
   );
+  const metadata = response.data;
+
+  const chainAddressMap = new Map<string, Map<string, string>>();
+  const chainSymbolSet = new Map<string, Set<string>>();
+
+  for (const tokenSymbol in metadata) {
+    const tokenEntries = metadata[tokenSymbol];
+    if (!Array.isArray(tokenEntries)) continue;
+
+    for (const tokenEntry of tokenEntries) {
+      const deployments = tokenEntry.deployments;
+      if (!deployments) continue;
+
+      for (const chainName in deployments) {
+        const deployment = deployments[chainName];
+        if (!deployment) continue;
+
+        let chainAddressMapForChain = chainAddressMap.get(chainName);
+        if (!chainAddressMapForChain) {
+          chainAddressMapForChain = new Map<string, string>();
+          chainAddressMap.set(chainName, chainAddressMapForChain);
+        }
+
+        let chainSymbolSetForChain = chainSymbolSet.get(chainName);
+        if (!chainSymbolSetForChain) {
+          chainSymbolSetForChain = new Set<string>();
+          chainSymbolSet.set(chainName, chainSymbolSetForChain);
+        }
+
+        chainSymbolSetForChain.add(tokenSymbol);
+
+        if (deployment.address) {
+          chainAddressMapForChain.set(deployment.address.toLowerCase(), tokenSymbol);
+        }
+
+        // OFT_ADAPTER wraps existing tokens, so we need to map the inner token address too
+        if (deployment.type === 'OFT_ADAPTER' && deployment.innerTokenAddress) {
+          chainAddressMapForChain.set(deployment.innerTokenAddress.toLowerCase(), tokenSymbol);
+        }
+      }
+    }
+  }
+
+  oftAddressesCache = {
+    addressMap: chainAddressMap,
+    symbolSet: chainSymbolSet,
+  };
+
+  return oftAddressesCache;
+}
+
+async function isLayerZeroTokenViaAPI(
+  parentChainErc20Address: string,
+  parentChainId: number,
+  childChainId: number,
+): Promise<{ oft: boolean; symbol: string | null }> {
+  const chainIdToLzName: Record<number, string | undefined> = {
+    [ChainId.Ethereum]: 'ethereum',
+    [ChainId.ArbitrumOne]: 'arbitrum',
+    [ChainId.ArbitrumNova]: 'nova',
+    [ChainId.Sepolia]: 'ethereum-sepolia',
+    [ChainId.ArbitrumSepolia]: 'arbitrum-sepolia',
+  };
+
+  const parentChainName = chainIdToLzName[parentChainId];
+  const childChainName = chainIdToLzName[childChainId];
+
+  if (!parentChainName) {
+    throw new Error(`No LayerZero chain name for chain ID ${parentChainId}`);
+  }
+
+  if (!childChainName) {
+    return { oft: false, symbol: null };
+  }
 
   try {
-    const _isLayerZeroToken = await layerZeroTokenOftContract.oftVersion();
-    return !!_isLayerZeroToken;
+    const oftCache = await fetchOFTAddressesMap();
+    const parentChainAddressMap = oftCache.addressMap.get(parentChainName);
+    const childChainSymbolSet = oftCache.symbolSet.get(childChainName);
+
+    if (!parentChainAddressMap || !childChainSymbolSet) {
+      return { oft: false, symbol: null };
+    }
+
+    const lowercasedAddress = parentChainErc20Address.toLowerCase();
+    const parentSymbol = parentChainAddressMap.get(lowercasedAddress);
+
+    // Only block if OFT exists on BOTH parent and child chains
+    if (parentSymbol && childChainSymbolSet.has(parentSymbol)) {
+      return {
+        oft: true,
+        symbol: parentSymbol,
+      };
+    }
+
+    return { oft: false, symbol: null };
   } catch (error) {
-    return false;
+    throw new Error(`Failed to fetch LayerZero OFT metadata: ${error}`);
   }
 }
 
-/**
- *
- * @param erc20L1Address
- * @param childChainId
- */
+async function isLayerZeroTokenOnChain(
+  parentChainErc20Address: string,
+  parentChainId: number,
+): Promise<{ oft: boolean; symbol: string | null }> {
+  try {
+    const parentProvider = getProviderForChainId(parentChainId);
+    const layerZeroTokenOftContract = new ethers.Contract(
+      parentChainErc20Address,
+      ['function oftVersion() external pure virtual returns (bytes4 interfaceId, uint64 version)'],
+      parentProvider,
+    );
+    const _isLayerZeroToken = await layerZeroTokenOftContract.oftVersion();
+    return {
+      oft: !!_isLayerZeroToken,
+      symbol: null,
+    };
+  } catch (error) {
+    return { oft: false, symbol: null };
+  }
+}
+
+async function isLayerZeroToken(
+  parentChainErc20Address: string,
+  parentChainId: number,
+  childChainId: number,
+): Promise<{ oft: boolean; symbol: string | null }> {
+  try {
+    const result = await isLayerZeroTokenViaAPI(
+      parentChainErc20Address,
+      parentChainId,
+      childChainId,
+    );
+    if (result.oft) {
+      return result;
+    }
+    return { oft: false, symbol: null };
+  } catch (e) {
+    console.error(
+      `Error checking LayerZero API for ${parentChainErc20Address} on chain ${parentChainId}. Falling back to on-chain check.`,
+      e,
+    );
+    return isLayerZeroTokenOnChain(parentChainErc20Address, parentChainId);
+  }
+}
+
 export async function isWithdrawOnlyToken({
   parentChainErc20Address,
   parentChainId,
@@ -316,7 +458,6 @@ export async function isWithdrawOnlyToken({
   parentChainId: number;
   childChainId: number;
 }) {
-  // disable USDC.e deposits for Orbit chains
   if (
     (isTokenArbitrumOneUSDCe(parentChainErc20Address) ||
       isTokenArbitrumSepoliaUSDCe(parentChainErc20Address)) &&
@@ -333,8 +474,16 @@ export async function isWithdrawOnlyToken({
     return true;
   }
 
-  if (await isLayerZeroToken(parentChainErc20Address, parentChainId)) {
-    return true;
+  // USDT is bridged via OFT but we allow it due to OftV2 integration
+  if (!isTokenUSDT(parentChainErc20Address)) {
+    const layerZeroResult = await isLayerZeroToken(
+      parentChainErc20Address,
+      parentChainId,
+      childChainId,
+    );
+    if (layerZeroResult.oft) {
+      return true;
+    }
   }
 
   return false;
