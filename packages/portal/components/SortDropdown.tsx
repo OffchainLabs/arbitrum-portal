@@ -7,13 +7,6 @@ import { twMerge } from 'tailwind-merge';
 import { SortOptions } from '@/common/types';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 
-function scrollToProjectsList() {
-  const projectsList = document.querySelector('.projects-list');
-  if (projectsList) {
-    projectsList.scrollIntoView();
-  }
-}
-
 export const SortDropdown = () => {
   const [{ sortBy }, setQueryParams] = useArbQueryParams();
   const posthog = usePostHog();
@@ -21,7 +14,6 @@ export const SortDropdown = () => {
   const setSort = (sort: SortOptions) => {
     setQueryParams({ sortBy: sort });
     posthog?.capture('Sort Dropdown Click', { sort });
-    scrollToProjectsList();
   };
 
   return (
