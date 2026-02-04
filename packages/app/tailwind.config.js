@@ -138,6 +138,10 @@ module.exports = {
         'atmosphere-blue': '#152C4E',
         'widget-background': 'var(--color-widget-background, #191919)',
         'primary-cta': 'var(--color-primary-cta, #325EE6)',
+
+        // NEW DESIGN LANGUAGE COLORS
+        'neutral-25': '#0F0F0F',
+        'neutral-50': '#191919',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],

@@ -1,6 +1,6 @@
 'use client';
 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
@@ -141,11 +141,17 @@ export function NavSearch() {
           'flex items-center gap-2 rounded-md bg-gray-8 transition-all duration-300 ease-in-out h-[40px]',
           isExpanded
             ? 'w-full md:w-[400px] border-0 px-3 py-0'
-            : 'h-10 w-10 cursor-pointer items-center justify-center border-0 p-0 hover:bg-gray-8/80',
+            : 'h-10 w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-gray-8/80',
         )}
         onClick={() => !isExpanded && setIsExpanded(true)}
       >
-        <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-white" />
+        <Image
+          src="/icons/navigation/search.svg"
+          alt="Search"
+          width={16}
+          height={16}
+          className="shrink-0"
+        />
         {isExpanded && (
           <input
             ref={inputRef}

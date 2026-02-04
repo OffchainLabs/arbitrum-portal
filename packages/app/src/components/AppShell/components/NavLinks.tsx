@@ -10,7 +10,7 @@ export function NavLinks() {
   const activeRoute = useActiveRoute();
 
   return (
-    <div className="flex items-center gap-2 bg-gray-8/50 rounded-md h-[40px]">
+    <div className="flex items-center gap-2 bg-neutral-25 rounded-md h-[40px]">
       {navLinks.map((link) => {
         const isActive = activeRoute === link.route;
 
@@ -20,10 +20,8 @@ export function NavLinks() {
             href={link.route}
             prefetch={true}
             className={twMerge(
-              'rounded-md px-4 h-full text-sm transition-colors flex items-center justify-center',
-              isActive
-                ? 'bg-white/10 text-white'
-                : 'bg-transparent text-white/70 hover:bg-gray-8/50 hover:text-white',
+              'rounded-md px-4 h-full text-sm text-white transition-colors flex items-center justify-center',
+              isActive ? 'bg-white/10 text-white' : 'bg-transparent hover:opacity-50',
             )}
           >
             {link.label}
