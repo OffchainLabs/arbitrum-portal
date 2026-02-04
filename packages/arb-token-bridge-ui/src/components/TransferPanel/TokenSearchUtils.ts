@@ -68,6 +68,24 @@ function tokenListsToSearchableTokenStorage(
   l1ChainId: string,
   l2ChainId: string,
 ): ContractStorage<ERC20BridgeToken> {
+  console.log('[token-lists] loaded', {
+    l1ChainId,
+    l2ChainId,
+    listCount: tokenLists.length,
+    listNames: tokenLists.map((t) => t.name),
+    totalTokens: tokenLists.reduce((sum, list) => sum + list.tokens.length, 0),
+    uniCount: tokenLists.reduce((count, list) => {
+      return (
+        count +
+        list.tokens.filter((token) => {
+          const name = token.name?.toLowerCase() ?? '';
+          const symbol = token.symbol?.toLowerCase() ?? '';
+          return symbol === 'uni' || name.includes('uniswap');
+        }).length
+      );
+    }, 0),
+  });
+
   return tokenLists.reduce((acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
     tokenList.tokens.forEach((token) => {
       const address = token.address.toLowerCase();

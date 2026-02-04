@@ -24,11 +24,16 @@ function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<T
       return true;
     });
 
-    Promise.all(
+    Promise.allSettled(
       requestListArray.map((bridgeTokenList) => fetchTokenListFromURL(bridgeTokenList.url)),
     ).then((responses) => {
       const tokenListsWithBridgeTokenListId = responses.reduce<TokenListWithId[]>(
-        (acc, { data }, index) => {
+        (acc, response, index) => {
+          if (response.status !== 'fulfilled') {
+            return acc;
+          }
+
+          const { data } = response.value;
           if (!data) {
             return acc;
           }

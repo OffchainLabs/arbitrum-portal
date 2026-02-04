@@ -87,7 +87,10 @@ export function getTransactionType(tx: Transfer): SimplifiedRouteType {
 
 export function isTxCompleted(tx: MergedTransaction): boolean {
   if (isLifiTransfer(tx)) {
-    return tx.destinationStatus === WithdrawalStatus.CONFIRMED;
+    return (
+      tx.destinationStatus === WithdrawalStatus.CONFIRMED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
+    );
   }
   if (tx.isCctp) {
     return typeof tx.cctpData?.receiveMessageTransactionHash === 'string';
