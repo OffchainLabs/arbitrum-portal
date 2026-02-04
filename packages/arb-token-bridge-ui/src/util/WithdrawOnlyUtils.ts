@@ -260,6 +260,12 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
       l1Address: '0x607f4c5bb672230e8672085532f7e901544a7375',
       l2Address: '0xe575586566b02a16338c199c23ca6d295d794e66',
     },
+    {
+      symbol: 'pyUSD',
+      l2CustomAddr: '0xfab5891ed867a1195303251912013b92c4fc3a1d',
+      l1Address: '0xa2c323fe5a74adffad2bf3e007e36bb029606444',
+      l2Address: '0x327006c8712fe0abdbbd55b7999db39b0967342e',
+    },
   ],
   [ChainId.ArbitrumNova]: [],
   // Plume
