@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi';
 
 import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
 import { addressesEqual } from '../util/AddressUtils';
+import { useArbQueryParams } from './useArbQueryParams';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
 import { isNetwork } from '../util/networks';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
@@ -16,6 +17,7 @@ import { useNetworksRelationship } from './useNetworksRelationship';
  */
 export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): BigNumber | null {
   const { address: walletAddress } = useAccount();
+  const [{ destinationAddress }] = useArbQueryParams();
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
   const { isOrbitChain: isDestinationOrbitChain } = isNetwork(networks.destinationChain.id);
@@ -26,7 +28,10 @@ export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): Bi
   const {
     erc20: [erc20DestinationChainBalances],
     eth: [ethDestinationChainBalance],
-  } = useBalance({ chainId: networks.destinationChain.id, walletAddress });
+  } = useBalance({
+    chainId: networks.destinationChain.id,
+    walletAddress: destinationAddress || walletAddress,
+  });
 
   const nativeCurrencyBalances = useNativeCurrencyBalances();
 
