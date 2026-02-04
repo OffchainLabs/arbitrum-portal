@@ -49,14 +49,40 @@ describe('isWithdrawOnlyToken', () => {
   });
 
   it(
-    'should block deposits for a non-USDT LayerZero token',
+    'should block deposits for ENA token (has OFT on both Ethereum and Arbitrum)',
     async () => {
       const result = await isWithdrawOnlyToken({
-        parentChainErc20Address: '0x57e114b691db790c35207b2e685d4a43181e6061', // ENA
+        parentChainErc20Address: '0x57e114b691db790c35207b2e685d4a43181e6061', // ENA innerTokenAddress on Ethereum
         parentChainId: ChainId.Ethereum,
         childChainId: ChainId.ArbitrumOne,
       });
       expect(result).toBe(true);
+    },
+    { timeout: networkTestTimeout },
+  );
+
+  it(
+    'should allow deposits for DAI token (has OFT only on Ethereum, not on Arbitrum)',
+    async () => {
+      const result = await isWithdrawOnlyToken({
+        parentChainErc20Address: '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI innerTokenAddress on Ethereum
+        parentChainId: ChainId.Ethereum,
+        childChainId: ChainId.ArbitrumOne,
+      });
+      expect(result).toBe(false);
+    },
+    { timeout: networkTestTimeout },
+  );
+
+  it(
+    'should allow deposits for ARB token (no OFT implementation)',
+    async () => {
+      const result = await isWithdrawOnlyToken({
+        parentChainErc20Address: '0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1', // ARB token on Ethereum
+        parentChainId: ChainId.Ethereum,
+        childChainId: ChainId.ArbitrumOne,
+      });
+      expect(result).toBe(false);
     },
     { timeout: networkTestTimeout },
   );
