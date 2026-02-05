@@ -60,7 +60,7 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
       },
       {
         label: 'Buy',
-        href: '/bridge/buy',
+        href: '/bridge/buy?sourceChain=arbitrum-one&destinationChain=ethereum&sanitized=true',
         icon: createIcon('/icons/navigation/buy.svg', 'Buy'),
         ariaLabel: 'Switch to Buy Tab',
       },
