@@ -29,10 +29,14 @@ export function getActiveSubNavItem(
     return pathname === '/projects' || pathname.startsWith('/projects/');
   }
   if (item.href === '/chains/ecosystem') {
-    return pathname.startsWith('/chains/ecosystem');
+    return pathname.startsWith('/chains');
   }
   if (item.href === '/bookmarks') {
     return pathname.startsWith('/bookmarks');
+  }
+  if (item.href === '/build') {
+    // Tools subnav should be active for both /build and /learn routes
+    return pathname.startsWith('/build') || pathname.startsWith('/learn');
   }
   if (item.href === '/learn') {
     // Dev-tools should be active for both /learn and /build routes

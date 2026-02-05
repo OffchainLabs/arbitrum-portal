@@ -31,7 +31,7 @@ export function SubNav() {
 
   return (
     <aside
-      className="fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto"
+      className="sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto"
       style={{ top: `${topPosition}px`, bottom: 0 }}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}

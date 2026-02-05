@@ -5,20 +5,21 @@ import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
+import type { TabConfig } from '@/portal/common/pageTabConfig';
 
-const tabs = [
-  { href: '/build', label: 'Build & Monitor', pathMatch: '/build' },
-  { href: '/learn', label: 'Stats & Docs', pathMatch: '/learn' },
-] as const;
+interface PageTabsProps {
+  title: string;
+  tabs: readonly TabConfig[];
+}
 
-export function DevToolsTabs() {
+export function PageTabs({ title, tabs }: PageTabsProps) {
   const pathname = usePathname();
 
   const isActive = (pathMatch: string) => pathname.startsWith(pathMatch);
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeading>Tools</PageHeading>
+      <PageHeading>{title}</PageHeading>
 
       {/* Mobile */}
       <div className="flex items-center w-full md:hidden py-4">

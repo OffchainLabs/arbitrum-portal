@@ -16,6 +16,8 @@ export default function ProjectsListPageLayout({
 
       <ProjectsFilterBar />
 
+      <hr className="opacity-10 hidden lg:block" />
+
       <ProjectsCountByFilters />
 
       {children}

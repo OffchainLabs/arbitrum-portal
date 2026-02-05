@@ -10,7 +10,7 @@ export function NavLinks() {
   const activeRoute = useActiveRoute();
 
   return (
-    <div className="flex items-center gap-2 bg-neutral-25 rounded-md" style={{ height: '40px' }}>
+    <div className="flex items-center gap-1.5 bg-neutral-25 rounded-md" style={{ height: '40px' }}>
       {navLinks.map((link) => {
         const isActive = activeRoute === link.route;
 

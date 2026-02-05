@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { chainsTabs } from '@/portal/common/pageTabConfig';
 import { Card } from '@/portal/components/Card';
 import { ChainStats } from '@/portal/components/ChainsMetrics/ChainStats';
 import { ChainsTable } from '@/portal/components/ChainsMetrics/ChainsTable';
@@ -31,6 +33,8 @@ export function generateMetadata(): Metadata {
 export default function ChainsMetricsPage() {
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <PageTabs title="Chains" tabs={chainsTabs} />
+
       {/* Header banner */}
       <Card className="relative flex h-[120px] items-center bg-[#1B4ADD] p-4 lg:p-8">
         <h1 className="z-20 text-2xl">Arbitrum Chain Stats</h1>

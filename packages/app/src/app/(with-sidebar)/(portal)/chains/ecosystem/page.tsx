@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 
-import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
+import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
 import { getEntityMetaData } from '@/portal/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getServerSideAppParams';
 import { spotlightOrbitChains } from '@/portal/common/orbitChains';
+import { chainsTabs } from '@/portal/common/pageTabConfig';
 import { EntityType } from '@/portal/common/types';
 import { CommunitySpotlight } from '@/portal/components/CommunitySpotlight';
 import { FastWithdrawalAnnouncement } from '@/portal/components/FastWithdrawalAnnouncement';
@@ -49,7 +50,8 @@ export function generateMetadata(props: ServerSideAppProps): Metadata {
 export default function OrbitPage() {
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
-      <PageHeading>Chains</PageHeading>
+      <PageTabs title="Chains" tabs={chainsTabs} />
+
       <HeroBanner />
 
       <GettingStarted />

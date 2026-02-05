@@ -13,7 +13,7 @@ import { DiscordIcon, GithubIcon, TwitterXIcon } from './SvgIcons';
 
 export const SocialsFooter = () => {
   return (
-    <div className="mx-auto w-full max-w-[1153px] px-6 pb-6 mb-[100px]">
+    <div className="mx-auto w-full max-w-[1153px] px-6 pb-6">
       <hr className="mb-6 border-2 border-white/50" />
       <div className="mb-6 flex flex-nowrap items-center justify-between gap-4 text-xl">
         Get Connected

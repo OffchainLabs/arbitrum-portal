@@ -86,7 +86,7 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
     <Popover className="relative">
       {({ open }) => (
         <>
-          <Popover.Button className="flex items-center gap-2 rounded-md bg-neutral-25 px-3 py-2 text-sm text-white transition-colors hover:bg-neutral-25/80 ui-open:bg-neutral-25/90">
+          <Popover.Button className="flex items-center gap-2 rounded-md bg-neutral-25 px-2 py-2 text-sm text-white transition-colors hover:bg-neutral-25/80 ui-open:bg-neutral-25/90">
             <Avatar />
             <span className="text-sm hidden md:block">{displayName}</span>
             <ChevronDownIcon
