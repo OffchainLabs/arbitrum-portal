@@ -17,7 +17,7 @@ export function NavLinks() {
         return (
           <Link
             key={link.route}
-            href={link.route}
+            href={link.href}
             prefetch={true}
             className={twMerge(
               'rounded-md px-4 h-full text-sm text-white transition-colors flex items-center justify-center',

@@ -26,6 +26,7 @@ export interface SubNavItem {
 export interface NavConfigItem {
   label: string;
   route: NavRoute;
+  href: string;
   icon: React.ComponentType<{ className?: string }>;
   subNavItems: SubNavItem[];
 }
@@ -35,23 +36,25 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/': {
     label: 'Home',
     route: '/',
+    href: '/',
     icon: createIcon('/icons/navigation/home.svg', 'Home'),
     subNavItems: [],
   },
   '/bridge': {
     label: 'Bridge',
     route: '/bridge',
+    href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
     icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
     subNavItems: [
       {
         label: 'Bridge',
-        href: '/bridge',
+        href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
         icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
         ariaLabel: 'Switch to Bridge Tab',
       },
       {
         label: 'Txns',
-        href: '/bridge?tab=tx_history',
+        href: '/bridge?tab=tx_history&sourceChain=ethereum&destinationChain=arbitrum-one&sanitized=true',
         icon: createIcon('/icons/navigation/transactions.svg', 'Transactions'),
         ariaLabel: 'Switch to Transaction History Tab',
       },
@@ -66,6 +69,7 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/projects': {
     label: 'Explore',
     route: '/projects',
+    href: '/projects',
     icon: createIcon('/icons/navigation/explore.svg', 'Explore'),
     subNavItems: [
       {
@@ -88,6 +92,7 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/build': {
     label: 'Build',
     route: '/build',
+    href: '/build',
     icon: createIcon('/icons/navigation/build.svg', 'Build'),
     subNavItems: [
       {
@@ -110,9 +115,10 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   },
 };
 
-export const navLinks: NavLink[] = Object.values(NAV_CONFIG).map(({ label, route }) => ({
+export const navLinks: NavLink[] = Object.values(NAV_CONFIG).map(({ label, route, href }) => ({
   label,
   route,
+  href,
 }));
 
 export interface NavLinkWithIcon extends NavLink {
@@ -120,9 +126,10 @@ export interface NavLinkWithIcon extends NavLink {
 }
 
 export const navLinksWithIcons: NavLinkWithIcon[] = Object.values(NAV_CONFIG).map(
-  ({ label, route, icon }) => ({
+  ({ label, route, href, icon }) => ({
     label,
     route,
+    href,
     icon,
   }),
 );
