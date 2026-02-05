@@ -12,7 +12,9 @@ const SiteBannerArbiscanIncident = ({ type }: { type: 'arbitrum-one' | 'arbitrum
   const isArbitrumOne = type === 'arbitrum-one';
 
   const chainName = isArbitrumOne ? 'Arbitrum One' : 'Arbitrum Nova';
-  const explorerUrl = isArbitrumOne ? 'https://arbiscan.io/' : 'https://nova.arbiscan.io/';
+  const explorerUrl = isArbitrumOne
+    ? 'https://arbiscan.io/'
+    : 'https://arbitrum-nova.blockscout.com/';
   const explorerTitle = isArbitrumOne ? 'Arbiscan' : 'Nova Arbiscan';
   const alternativeExplorerUrl = isArbitrumOne ? 'https://www.oklink.com/arbitrum' : false;
 

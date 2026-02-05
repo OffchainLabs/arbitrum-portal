@@ -115,8 +115,8 @@ export const arbitrumNova: Chain = {
     },
   },
   blockExplorers: {
-    etherscan: { name: 'Arbiscan', url: 'https://nova.arbiscan.io' },
-    default: { name: 'Arbiscan', url: 'https://nova.arbiscan.io' },
+    etherscan: { name: 'Arbiscan', url: 'https://arbitrum-nova.blockscout.com' },
+    default: { name: 'Arbiscan', url: 'https://arbitrum-nova.blockscout.com' },
   },
 };
 

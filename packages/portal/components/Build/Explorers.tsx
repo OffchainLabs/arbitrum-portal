@@ -10,7 +10,7 @@ const blockExplorerCards = [
   },
   {
     title: 'Arbitrum Nova Block Explorer',
-    link: 'https://nova.arbiscan.io/',
+    link: 'https://arbitrum-nova.blockscout.com/',
     image: '/images/explorer-arb-nova.webp',
   },
   {
