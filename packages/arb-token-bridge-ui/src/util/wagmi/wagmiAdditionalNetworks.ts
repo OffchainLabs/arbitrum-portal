@@ -1,6 +1,8 @@
 import { Chain } from '@rainbow-me/rainbowkit';
 import { sepolia as sepoliaDefault } from 'viem/chains';
 
+import { NOVA_EXPLORER_URL } from '@/common/constants';
+
 import { ether } from '../../constants';
 import { NativeCurrencyBase } from '../../hooks/useNativeCurrency';
 import { ChainId } from '../../types/ChainId';
@@ -115,8 +117,8 @@ export const arbitrumNova: Chain = {
     },
   },
   blockExplorers: {
-    etherscan: { name: 'Arbiscan', url: 'https://arbitrum-nova.blockscout.com' },
-    default: { name: 'Arbiscan', url: 'https://arbitrum-nova.blockscout.com' },
+    etherscan: { name: 'Arbiscan', url: NOVA_EXPLORER_URL },
+    default: { name: 'Arbiscan', url: NOVA_EXPLORER_URL },
   },
 };
 

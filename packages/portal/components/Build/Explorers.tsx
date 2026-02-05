@@ -1,5 +1,6 @@
 import Image from 'next/image';
 
+import { NOVA_EXPLORER_URL } from '@/common/constants';
 import { Card } from '@/components/Card';
 
 const blockExplorerCards = [
@@ -10,7 +11,7 @@ const blockExplorerCards = [
   },
   {
     title: 'Arbitrum Nova Block Explorer',
-    link: 'https://arbitrum-nova.blockscout.com/',
+    link: NOVA_EXPLORER_URL,
     image: '/images/explorer-arb-nova.webp',
   },
   {
