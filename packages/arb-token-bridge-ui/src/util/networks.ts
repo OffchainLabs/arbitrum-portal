@@ -7,8 +7,6 @@ import {
 } from '@arbitrum/sdk';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
-import { NOVA_EXPLORER_URL } from '@/common/constants';
-
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
@@ -273,7 +271,7 @@ export const explorerUrls: { [chainId: number]: string } = {
   // L1 Testnets
   [ChainId.Sepolia]: 'https://sepolia.etherscan.io',
   // L2
-  [ChainId.ArbitrumNova]: NOVA_EXPLORER_URL,
+  [ChainId.ArbitrumNova]: 'https://arbitrum-nova.blockscout.com',
   [ChainId.ArbitrumOne]: 'https://arbiscan.io',
   [ChainId.Base]: 'https://basescan.org',
   // L2 Testnets

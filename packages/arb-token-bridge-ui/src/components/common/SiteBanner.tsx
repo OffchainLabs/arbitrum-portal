@@ -18,13 +18,13 @@ const SiteBannerNovaArbiscan = () => {
             className="arb-hover underline"
             href="https://forum.arbitrum.foundation/t/updated-tooling-for-arbitrum-nova-in-2026/30430"
           >
-            Nova Arbiscan is no longer in use
+            Nova Arbiscan has been discontinued
           </ExternalLink>
-          . Arbitrum Nova is still live and running. Use the{' '}
+          . Please use
           <ExternalLink className="arb-hover underline" href={NOVA_EXPLORER_URL}>
             Blockscout explorer
           </ExternalLink>{' '}
-          instead.
+          for Arbitrum Nova.
         </p>
       </div>
     </div>
