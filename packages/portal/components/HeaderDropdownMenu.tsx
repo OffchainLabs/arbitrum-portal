@@ -53,7 +53,7 @@ export const HeaderDropdownMenu = () => {
                 onClick={() => close()}
               >
                 <PlusCircleIcon className="h-4 w-4" />
-                {isOrbitPage ? 'Add your Orbit Chain' : 'Add your project'}
+                {isOrbitPage ? 'Add your Arbitrum Chain' : 'Add your project'}
               </ExternalLink>
             </div>
           );

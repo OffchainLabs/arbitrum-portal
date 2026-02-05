@@ -60,7 +60,7 @@ const content = [
     gradientOverlay: true,
     image: (
       <Image
-        alt="What is Orbit?"
+        alt="What is Arbitrum Chain?"
         src="/images/getting-started-3.webp"
         layout="fill"
         objectFit="cover"
@@ -80,7 +80,9 @@ const ShowHideSectionButton = ({
 
   const handleShowSection = () => {
     setShowSection(!showSection);
-    posthog?.capture(`Orbit Page - ${showSection ? 'Hide' : 'Show'} Getting Started Section`);
+    posthog?.capture(
+      `Arbitrum Chain Page - ${showSection ? 'Hide' : 'Show'} Getting Started Section`,
+    );
   };
 
   return (

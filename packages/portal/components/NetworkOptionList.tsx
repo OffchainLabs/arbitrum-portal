@@ -17,7 +17,7 @@ export const NetworkOptionList = () => {
           <hr className="opacity-20" />
 
           <div className="flex flex-col">
-            <span className="p-2 opacity-50">Orbit Chains</span>
+            <span className="p-2 opacity-50">Arbitrum Chains</span>
             {ORBIT_NETWORKS_IN_FILTERS.map((network) => (
               <NetworkOption network={network} key={network.slug} />
             ))}
