@@ -20,7 +20,7 @@ const SiteBannerNovaArbiscan = () => {
           >
             Nova Arbiscan has been discontinued
           </ExternalLink>
-          . Please use
+          . Please use{' '}
           <ExternalLink className="arb-hover underline" href={NOVA_EXPLORER_URL}>
             Blockscout explorer
           </ExternalLink>{' '}
