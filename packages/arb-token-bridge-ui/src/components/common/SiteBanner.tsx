@@ -4,9 +4,32 @@ import dayjs from 'dayjs';
 import useSWR from 'swr';
 
 import { ArbitrumStatusResponse } from '@/bridge/app/api/status';
+import { NOVA_EXPLORER_URL } from '@/portal/common/constants';
 
 import { getAPIBaseUrl } from '../../util';
 import { ExternalLink } from './ExternalLink';
+
+const SiteBannerNovaArbiscan = () => {
+  return (
+    <div className="bg-orange-dark px-4 py-[8px] text-center text-sm font-normal text-white">
+      <div className="w-full">
+        <p>
+          <ExternalLink
+            className="arb-hover underline"
+            href="https://forum.arbitrum.foundation/t/updated-tooling-for-arbitrum-nova-in-2026/30430"
+          >
+            Nova Arbiscan has been discontinued
+          </ExternalLink>
+          . Please use{' '}
+          <ExternalLink className="arb-hover underline" href={NOVA_EXPLORER_URL}>
+            Blockscout explorer
+          </ExternalLink>{' '}
+          for Arbitrum Nova.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const SiteBannerArbiscanIncident = ({ type }: { type: 'arbitrum-one' | 'arbitrum-nova' }) => {
   const isArbitrumOne = type === 'arbitrum-one';
@@ -14,7 +37,9 @@ const SiteBannerArbiscanIncident = ({ type }: { type: 'arbitrum-one' | 'arbitrum
   const chainName = isArbitrumOne ? 'Arbitrum One' : 'Arbitrum Nova';
   const explorerUrl = isArbitrumOne ? 'https://arbiscan.io/' : 'https://nova.arbiscan.io/';
   const explorerTitle = isArbitrumOne ? 'Arbiscan' : 'Nova Arbiscan';
-  const alternativeExplorerUrl = isArbitrumOne ? 'https://www.oklink.com/arbitrum' : false;
+  const alternativeExplorerUrl = isArbitrumOne
+    ? 'https://www.oklink.com/arbitrum'
+    : NOVA_EXPLORER_URL;
 
   return (
     <div className="bg-orange-dark px-4 py-[8px] text-center text-sm font-normal text-white">
@@ -133,7 +158,7 @@ export const SiteBanner = ({
   }
 
   if (showArbiscanNovaIncidentBanner) {
-    return <SiteBannerArbiscanIncident type="arbitrum-nova" />;
+    return <SiteBannerNovaArbiscan />;
   }
 
   if (!showInfoBanner) {

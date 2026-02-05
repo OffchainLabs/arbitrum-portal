@@ -271,7 +271,7 @@ export const explorerUrls: { [chainId: number]: string } = {
   // L1 Testnets
   [ChainId.Sepolia]: 'https://sepolia.etherscan.io',
   // L2
-  [ChainId.ArbitrumNova]: 'https://nova.arbiscan.io',
+  [ChainId.ArbitrumNova]: 'https://arbitrum-nova.blockscout.com',
   [ChainId.ArbitrumOne]: 'https://arbiscan.io',
   [ChainId.Base]: 'https://basescan.org',
   // L2 Testnets
