@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
-import { useWindowSize } from 'react-use';
 
 import { CategorySelector, CategorySelectorOption } from '@/app-components/CategorySelector';
 import { CATEGORIES } from '@/common/categories';
@@ -11,8 +10,6 @@ import { useSelectedCategory } from '@/hooks/useSelectedCategory';
 export const ProjectsCategorySelector = () => {
   const router = useRouter();
   const { selectedCategory } = useSelectedCategory();
-  const { width } = useWindowSize();
-  const isSmallScreen = width < 768;
 
   const categoryConfig: CategorySelectorOption[] = useMemo(() => {
     const allOption: CategorySelectorOption = {
@@ -36,7 +33,9 @@ export const ProjectsCategorySelector = () => {
     return [allOption, ...categoryOptions];
   }, [router]);
 
-  return isSmallScreen ? null : (
-    <CategorySelector config={categoryConfig} selectedId={selectedCategory} />
+  return (
+    <div className="hidden md:block">
+      <CategorySelector config={categoryConfig} selectedId={selectedCategory} />
+    </div>
   );
 };

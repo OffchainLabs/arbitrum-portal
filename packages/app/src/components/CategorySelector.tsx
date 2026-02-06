@@ -48,10 +48,9 @@ export function CategorySelector({ config, selectedId, title }: CategorySelector
                 <Image
                   src={option.imageUrl}
                   fill
-                  style={{ objectFit: 'contain' }}
                   alt={option.label}
                   className={twMerge(
-                    'skew-x-[23deg] scale-[2.3] opacity-30 grayscale group-hover:grayscale-0',
+                    'object-contain skew-x-[23deg] scale-[2.3] opacity-30 grayscale group-hover:grayscale-0',
                     isSelected && 'opacity-70 grayscale-0',
                   )}
                 />

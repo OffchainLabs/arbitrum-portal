@@ -134,12 +134,11 @@ export function NavSearch() {
     <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
       <div
         className={twMerge(
-          'flex items-center gap-2 rounded-md bg-neutral-25 transition-all duration-300 ease-in-out',
+          'flex items-center gap-2 rounded-md bg-neutral-25 transition-all duration-300 ease-in-out h-10',
           isExpanded
             ? 'w-full md:w-[400px] border-0 px-3 py-0 bg-neutral-100'
             : 'w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-neutral-25/80',
         )}
-        style={{ height: '40px' }}
         onClick={() => !isExpanded && setIsExpanded(true)}
       >
         <Image
@@ -154,14 +153,13 @@ export function NavSearch() {
             <input
               ref={inputRef}
               type="text"
-              className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
+              className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none"
               placeholder="Search categories, projects, chains, and more"
               value={searchString}
               onChange={handleInputChange}
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              style={{ outline: 'none', boxShadow: 'none' }}
             />
             {searchString && (
               <button

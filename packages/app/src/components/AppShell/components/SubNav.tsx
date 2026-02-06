@@ -23,16 +23,16 @@ export function SubNav() {
   if (items.length === 0) {
     return (
       <aside
-        className="fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm"
-        style={{ top: `${topPosition}px`, bottom: 0 }}
+        className="fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0"
+        style={{ top: `${topPosition}px` }}
       ></aside>
     );
   }
 
   return (
     <aside
-      className="sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto"
-      style={{ top: `${topPosition}px`, bottom: 0 }}
+      className="sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0"
+      style={{ top: `${topPosition}px` }}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
       <nav className="flex flex-col gap-2 py-6 px-2">
