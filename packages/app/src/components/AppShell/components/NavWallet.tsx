@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { useDisconnect } from 'wagmi';
@@ -163,24 +163,10 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
 }
 
 export function NavWallet() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="flex items-center">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-neutral-25" />
-      </div>
-    );
-  }
-
   return (
     <ConnectButton.Custom>
-      {({ account, chain, openConnectModal, mounted: buttonMounted }) => {
-        const ready = buttonMounted;
+      {({ account, chain, openConnectModal, mounted }) => {
+        const ready = mounted;
         const connected = ready && account && chain;
 
         if (!ready) {
