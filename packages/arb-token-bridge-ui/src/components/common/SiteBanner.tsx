@@ -132,7 +132,7 @@ export function useSiteBannerVisible({
 }: {
   children?: React.ReactNode;
   expiryDate?: string;
-}): boolean {
+} = {}): boolean {
   const arbitrumStatus = useArbitrumStatus();
 
   const showArbiscanOneIncidentBanner = getShowArbiscanOneIncidentBanner(arbitrumStatus);

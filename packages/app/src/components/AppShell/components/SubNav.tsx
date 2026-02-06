@@ -15,7 +15,7 @@ export function SubNav() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isBannerVisible = useSiteBannerVisible({});
+  const isBannerVisible = useSiteBannerVisible();
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
   const topPosition = getSubNavTopPosition(isBannerVisible);

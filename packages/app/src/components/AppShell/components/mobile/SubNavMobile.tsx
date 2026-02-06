@@ -16,7 +16,7 @@ export function SubNavMobile() {
   const activeRoute = useActiveRoute();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isBannerVisible = useSiteBannerVisible({});
+  const isBannerVisible = useSiteBannerVisible();
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
   if (items.length === 0) {

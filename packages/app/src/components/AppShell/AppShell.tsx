@@ -24,14 +24,49 @@ const AppProviders = dynamic(
   },
 );
 
-export function AppShell({ children }: PropsWithChildren) {
-  const pathname = usePathname();
-  const isEmbedMode = pathname.startsWith('/bridge/embed');
-  const isBannerVisible = useSiteBannerVisible({});
+interface AppShellPaddingWrapperProps extends PropsWithChildren {
+  isEmbedMode: boolean;
+}
 
+function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrapperProps) {
+  const isBannerVisible = useSiteBannerVisible();
   const desktopPaddingTop = getDesktopContentPadding(isBannerVisible);
   const mobilePaddingTop = getMobileContentPadding(isBannerVisible);
   const mobilePaddingBottom = getMobileContentBottomPadding();
+
+  if (isEmbedMode) {
+    return <div className="flex flex-1 flex-col md:flex-row">{children}</div>;
+  }
+
+  return (
+    <>
+      {/* Mobile wrapper */}
+      <div
+        className="flex flex-1 flex-col md:hidden"
+        style={{
+          paddingTop: `${mobilePaddingTop}px`,
+          paddingBottom: `${mobilePaddingBottom}px`,
+        }}
+      >
+        {children}
+      </div>
+
+      {/* Desktop wrapper */}
+      <div
+        className="hidden md:flex flex-1 flex-col md:flex-row"
+        style={{
+          paddingTop: `${desktopPaddingTop}px`,
+        }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
+export function AppShell({ children }: PropsWithChildren) {
+  const pathname = usePathname();
+  const isEmbedMode = pathname.startsWith('/bridge/embed');
 
   return (
     <AppProviders>
@@ -46,39 +81,7 @@ export function AppShell({ children }: PropsWithChildren) {
             </div>
           </>
         )}
-        <div
-          className="flex flex-1 flex-col md:flex-row"
-          data-content-wrapper="true"
-          style={
-            !isEmbedMode
-              ? {
-                  paddingTop: `${mobilePaddingTop}px`,
-                  paddingBottom: `${mobilePaddingBottom}px`,
-                  ['--desktop-padding-top' as string]: `${desktopPaddingTop}px`,
-                  ['--mobile-padding-bottom' as string]: `${mobilePaddingBottom}px`,
-                }
-              : undefined
-          }
-        >
-          {!isEmbedMode && (
-            <style
-              dangerouslySetInnerHTML={{
-                __html: `
-                @media (min-width: 768px) {
-                  [data-content-wrapper="true"] {
-                    padding-top: var(--desktop-padding-top) !important;
-                    padding-bottom: 0 !important;
-                  }
-                }
-                @media (max-width: 767px) {
-                  [data-content-wrapper="true"] {
-                    padding-bottom: var(--mobile-padding-bottom) !important;
-                  }
-                }
-              `,
-              }}
-            />
-          )}
+        <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
           {!isEmbedMode && (
             <>
               <div className="hidden md:block">
@@ -90,7 +93,7 @@ export function AppShell({ children }: PropsWithChildren) {
             </>
           )}
           <main className="flex-1">{children}</main>
-        </div>
+        </AppShellPaddingWrapper>
         {!isEmbedMode && (
           <div className="md:hidden">
             <NavMobile />

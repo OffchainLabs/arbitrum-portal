@@ -1,5 +1,3 @@
-'use client';
-
 import { SiteBanner } from '@/bridge/components/common/SiteBanner';
 
 import { NAVBAR_HEIGHT_CLASSES } from '../../config/navConfig';

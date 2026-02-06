@@ -144,8 +144,8 @@ export const NAVBAR_HEIGHTS = {
   MOBILE: 56, // Mobile navbar header height (h-14 = 3.5rem = 56px)
   MOBILE_BOTTOM: 90, // Mobile bottom navigation height (h-[90px])
   BANNER: 32, // Site banner height
-  SUBNAV_MOBILE: 60, // SubNavMobile height (44px content + 16px padding)
-  DESKTOP_SPACING: 34, // Additional spacing for desktop content padding
+  MOBILE_SPACING: 30, // Additional spacing for mobile content padding
+  DESKTOP_SPACING: 30, // Additional spacing for desktop content padding
 } as const;
 
 // Pre-computed Tailwind classes for navbar heights
@@ -176,8 +176,8 @@ export const getDesktopContentPadding = (isBannerVisible: boolean): number => {
 
 export const getMobileContentPadding = (isBannerVisible: boolean): number => {
   return isBannerVisible
-    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE
-    : NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.SUBNAV_MOBILE;
+    ? NAVBAR_HEIGHTS.BANNER + NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.MOBILE_SPACING
+    : NAVBAR_HEIGHTS.MOBILE + NAVBAR_HEIGHTS.MOBILE_SPACING;
 };
 
 export const getMobileContentBottomPadding = (): number => {
