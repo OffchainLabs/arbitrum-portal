@@ -80,13 +80,19 @@ function isComponentOperational({ status }: { status: string }) {
 }
 
 // Helper functions to check incident banners
-function getShowArbiscanOneIncidentBanner(arbitrumStatus: ArbitrumStatusResponse): boolean {
+function getShowArbiscanOneIncidentBanner(
+  arbitrumStatus: ArbitrumStatusResponse | null | undefined,
+): boolean {
+  if (!arbitrumStatus?.content?.components) return false;
   return arbitrumStatus.content.components.some(
     (component) => isComponentArbiscanOne(component) && !isComponentOperational(component),
   );
 }
 
-function getShowArbiscanNovaIncidentBanner(arbitrumStatus: ArbitrumStatusResponse): boolean {
+function getShowArbiscanNovaIncidentBanner(
+  arbitrumStatus: ArbitrumStatusResponse | null | undefined,
+): boolean {
+  if (!arbitrumStatus?.content?.components) return false;
   return arbitrumStatus.content.components.some(
     (component) => isComponentArbiscanNova(component) && !isComponentOperational(component),
   );
@@ -103,43 +109,39 @@ async function fetchArbitrumStatus(): Promise<ArbitrumStatusResponse> {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Arbitrum status: ${response.status}`);
+  }
+
   const data = await response.json();
+
+  if (!data?.data) {
+    throw new Error('Invalid response format from status API');
+  }
+
   return data.data as ArbitrumStatusResponse;
 }
 
 function useArbitrumStatus() {
-  const { data, error } = useSWR<ArbitrumStatusResponse>(
-    `${getAPIBaseUrl()}/api/status`,
-    fetchArbitrumStatus,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-    },
-  );
-
-  if (error) {
-    console.error('Error fetching Arbitrum status:', error);
-    return { content: { components: [] } };
-  }
-
-  return data || { content: { components: [] } };
+  return useSWR<ArbitrumStatusResponse>(`${getAPIBaseUrl()}/api/status`, fetchArbitrumStatus, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
+  });
 }
 
-export function useSiteBannerVisible({
-  children,
-  expiryDate,
-}: {
-  children?: React.ReactNode;
-  expiryDate?: string;
-} = {}): boolean {
-  const arbitrumStatus = useArbitrumStatus();
+export function useSiteBannerVisible(): boolean {
+  const { data: arbitrumStatus, error } = useArbitrumStatus();
+
+  if (error) {
+    return false;
+  }
 
   const showArbiscanOneIncidentBanner = getShowArbiscanOneIncidentBanner(arbitrumStatus);
   const showArbiscanNovaIncidentBanner = getShowArbiscanNovaIncidentBanner(arbitrumStatus);
-  const showInfoBanner = getShowInfoBanner(children, expiryDate);
 
-  return showArbiscanOneIncidentBanner || showArbiscanNovaIncidentBanner || showInfoBanner;
+  return showArbiscanOneIncidentBanner || showArbiscanNovaIncidentBanner;
 }
 
 export const SiteBanner = ({
@@ -147,7 +149,11 @@ export const SiteBanner = ({
   expiryDate, // date in utc
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { expiryDate?: string }) => {
-  const arbitrumStatus = useArbitrumStatus();
+  const { data: arbitrumStatus, error } = useArbitrumStatus();
+
+  if (error) {
+    return null;
+  }
 
   const showArbiscanOneIncidentBanner = getShowArbiscanOneIncidentBanner(arbitrumStatus);
   const showArbiscanNovaIncidentBanner = getShowArbiscanNovaIncidentBanner(arbitrumStatus);
