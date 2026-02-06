@@ -1,7 +1,7 @@
 'use client';
 
 import { usePostHog } from 'posthog-js/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { CategorySelector, CategorySelectorOption } from '@/app-components/CategorySelector';
 import { CATEGORIES } from '@/common/categories';
@@ -14,24 +14,34 @@ const ORBIT_CATEGORIES = [{ id: 'all', slug: 'all', title: 'All' }, ...CATEGORIE
 
 type CategoryKeys = (typeof ORBIT_CATEGORIES)[number]['slug'];
 
+const categoryConfig: Omit<CategorySelectorOption, 'onClick'>[] = ORBIT_CATEGORIES.map(
+  (category) => ({
+    id: category.slug,
+    label: category.title,
+    imageUrl: `/images/orbit/${category.slug}.webp`,
+  }),
+);
+
 export const OrbitChainsListingByCategories = () => {
   const posthog = usePostHog();
   const [selectedCategory, setSelectedCategory] = useState<CategoryKeys>('all');
 
-  const handleCategoryClick = (slug: CategoryKeys) => {
-    const scrollPosition = window.scrollY; // Capture current scroll position
+  const handleCategoryClick = useCallback(
+    (slug: CategoryKeys) => {
+      const scrollPosition = window.scrollY;
 
-    setSelectedCategory(slug);
+      setSelectedCategory(slug);
 
-    // Restore scroll position after state update
-    setTimeout(() => {
-      window.scrollTo(0, scrollPosition);
-    }, 0);
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 0);
 
-    posthog?.capture('Orbit Category Filter Change', {
-      category: slug,
-    });
-  };
+      posthog?.capture('Orbit Category Filter Change', {
+        category: slug,
+      });
+    },
+    [posthog],
+  );
 
   const orbitChainsToShow = useMemo(() => {
     if (selectedCategory === 'all') return ORBIT_CHAINS;
@@ -39,17 +49,19 @@ export const OrbitChainsListingByCategories = () => {
     return orbitChainsGroupedByCategorySlug[selectedCategory] ?? [];
   }, [selectedCategory]);
 
-  const categoryConfig: CategorySelectorOption[] = ORBIT_CATEGORIES.map((category) => ({
-    id: category.slug,
-    label: category.title,
-    imageUrl: `/images/orbit/${category.slug}.webp`,
-    onClick: () => handleCategoryClick(category.slug),
-  }));
+  const categoryConfigWithClick: CategorySelectorOption[] = useMemo(
+    () =>
+      categoryConfig.map((config) => ({
+        ...config,
+        onClick: () => handleCategoryClick(config.id as CategoryKeys),
+      })),
+    [handleCategoryClick],
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <CategorySelector
-        config={categoryConfig}
+        config={categoryConfigWithClick}
         selectedId={selectedCategory}
         title="Browse by Category"
       />
