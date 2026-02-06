@@ -1,67 +1,53 @@
-import Image from 'next/image';
-
 import { GET_HELP_LINK } from '@/portal/common/constants';
 
 import type { NavLink, NavRoute } from '../types';
 
-// Helper to create icon component
-function createIcon(src: string, alt: string): React.ComponentType<{ className?: string }> {
-  const Icon = ({ className }: { className?: string }) => (
-    <Image src={src} alt={alt} width={24} height={24} className={className} />
-  );
-  Icon.displayName = alt;
-  return Icon;
-}
-
-// Sub nav item interface
 export interface SubNavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  imgSrc: string;
   external?: boolean;
   ariaLabel?: string;
 }
 
-// Navigation config item interface
 export interface NavConfigItem {
   label: string;
   route: NavRoute;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  imgSrc: string;
   subNavItems: SubNavItem[];
 }
 
-// Consolidated navigation configuration
 export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/': {
     label: 'Home',
     route: '/',
     href: '/',
-    icon: createIcon('/icons/navigation/home.svg', 'Home'),
+    imgSrc: '/icons/navigation/home.svg',
     subNavItems: [],
   },
   '/bridge': {
     label: 'Bridge',
     route: '/bridge',
     href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
-    icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
+    imgSrc: '/icons/navigation/bridge.svg',
     subNavItems: [
       {
         label: 'Bridge',
         href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
-        icon: createIcon('/icons/navigation/bridge.svg', 'Bridge'),
+        imgSrc: '/icons/navigation/bridge.svg',
         ariaLabel: 'Switch to Bridge Tab',
       },
       {
         label: 'Txns',
         href: '/bridge?tab=tx_history&sourceChain=ethereum&destinationChain=arbitrum-one&sanitized=true',
-        icon: createIcon('/icons/navigation/transactions.svg', 'Transactions'),
+        imgSrc: '/icons/navigation/transactions.svg',
         ariaLabel: 'Switch to Transaction History Tab',
       },
       {
         label: 'Buy',
         href: '/bridge/buy?sourceChain=arbitrum-one&destinationChain=ethereum&sanitized=true',
-        icon: createIcon('/icons/navigation/buy.svg', 'Buy'),
+        imgSrc: '/icons/navigation/buy.svg',
         ariaLabel: 'Switch to Buy Tab',
       },
     ],
@@ -70,22 +56,22 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
     label: 'Explore',
     route: '/projects',
     href: '/projects',
-    icon: createIcon('/icons/navigation/explore.svg', 'Explore'),
+    imgSrc: '/icons/navigation/explore.svg',
     subNavItems: [
       {
         label: 'Projects',
         href: '/projects',
-        icon: createIcon('/icons/navigation/projects.svg', 'Projects'),
+        imgSrc: '/icons/navigation/projects.svg',
       },
       {
         label: 'Chains',
         href: '/chains/ecosystem',
-        icon: createIcon('/icons/navigation/chains.svg', 'Chains'),
+        imgSrc: '/icons/navigation/chains.svg',
       },
       {
         label: 'My Apps',
         href: '/bookmarks',
-        icon: createIcon('/icons/navigation/my-apps.svg', 'My Apps'),
+        imgSrc: '/icons/navigation/my-apps.svg',
       },
     ],
   },
@@ -93,22 +79,22 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
     label: 'Build',
     route: '/build',
     href: '/build',
-    icon: createIcon('/icons/navigation/build.svg', 'Build'),
+    imgSrc: '/icons/navigation/build.svg',
     subNavItems: [
       {
         href: '/build',
         label: 'Tools',
-        icon: createIcon('/icons/navigation/devtools.svg', 'Dev Tools'),
+        imgSrc: '/icons/navigation/devtools.svg',
       },
       {
         label: 'Connect',
         href: '/community',
-        icon: createIcon('/icons/navigation/connect.svg', 'Connect'),
+        imgSrc: '/icons/navigation/connect.svg',
       },
       {
         label: 'Help',
         href: GET_HELP_LINK,
-        icon: createIcon('/icons/navigation/help.svg', 'Help'),
+        imgSrc: '/icons/navigation/help.svg',
         external: true,
       },
     ],
@@ -122,15 +108,15 @@ export const navLinks: NavLink[] = Object.values(NAV_CONFIG).map(({ label, route
 }));
 
 export interface NavLinkWithIcon extends NavLink {
-  icon: React.ComponentType<{ className?: string }>;
+  imgSrc: string;
 }
 
 export const navLinksWithIcons: NavLinkWithIcon[] = Object.values(NAV_CONFIG).map(
-  ({ label, route, href, icon }) => ({
+  ({ label, route, href, imgSrc }) => ({
     label,
     route,
     href,
-    icon,
+    imgSrc,
   }),
 );
 

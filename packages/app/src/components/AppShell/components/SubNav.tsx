@@ -1,13 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
-import { getSubNavTopPosition } from '../config/navConfig';
-import { subNavItems } from '../config/navConfig';
+import { getSubNavTopPosition, subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../utils/getActiveSubNavItem';
 
@@ -38,7 +38,6 @@ export function SubNav() {
       <nav className="flex flex-col gap-2 py-6 px-2">
         {items.map((item) => {
           const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);
-          const Icon = item.icon;
 
           const content = (
             <div
@@ -47,7 +46,11 @@ export function SubNav() {
                 isActive ? 'cursor-default' : ' hover:bg-white/20 opacity-50',
               )}
             >
-              <Icon
+              <Image
+                src={item.imgSrc}
+                alt={item.label}
+                width={20}
+                height={20}
                 className={twMerge('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-gray-5')}
               />
               <span

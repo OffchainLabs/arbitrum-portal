@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
@@ -13,7 +14,6 @@ export function NavMobile() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-sm md:hidden">
       {navLinksWithIcons.map((link) => {
         const isActive = activeRoute === link.route;
-        const Icon = link.icon;
 
         return (
           <Link
@@ -32,7 +32,11 @@ export function NavMobile() {
               />
             )}
 
-            <Icon
+            <Image
+              src={link.imgSrc}
+              alt={link.label}
+              width={32}
+              height={32}
               className={twMerge(
                 'h-8 w-8 shrink-0 transition-colors stroke-2',
                 isActive ? 'text-white' : 'text-white/70',

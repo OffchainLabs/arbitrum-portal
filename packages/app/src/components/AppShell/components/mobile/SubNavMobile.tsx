@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
@@ -7,8 +8,7 @@ import { twMerge } from 'tailwind-merge';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { ExternalLink } from '@/portal/components/ExternalLink';
 
-import { getSubNavMobileTopPosition } from '../../config/navConfig';
-import { subNavItems } from '../../config/navConfig';
+import { getSubNavMobileTopPosition, subNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
 
@@ -30,7 +30,6 @@ export function SubNavMobile() {
       <div className="flex items-center gap-2 bg-neutral-25 rounded-md w-full overflow-hidden p-0.5">
         {items.map((item) => {
           const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);
-          const Icon = item.icon;
 
           const content = (
             <div
@@ -40,7 +39,13 @@ export function SubNavMobile() {
               )}
               style={{ minHeight: '44px' }}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Image
+                src={item.imgSrc}
+                alt={item.label}
+                width={16}
+                height={16}
+                className="h-4 w-4 shrink-0"
+              />
               {item.label}
             </div>
           );
