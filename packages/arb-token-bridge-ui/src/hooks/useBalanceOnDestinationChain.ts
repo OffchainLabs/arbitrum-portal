@@ -3,10 +3,10 @@ import { useAccount } from 'wagmi';
 
 import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
 import { addressesEqual } from '../util/AddressUtils';
-import { useArbQueryParams } from './useArbQueryParams';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
 import { isNetwork } from '../util/networks';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
+import { useArbQueryParams } from './useArbQueryParams';
 import { useBalance } from './useBalance';
 import { useNativeCurrency } from './useNativeCurrency';
 import { useNetworks } from './useNetworks';

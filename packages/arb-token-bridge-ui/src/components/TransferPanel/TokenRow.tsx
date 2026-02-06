@@ -476,8 +476,7 @@ export function TokenRow({
     tokensFromLists,
     selectedToken: isZeroAddressToken ? null : token,
   });
-  const hasTokenListInfo =
-    !!token && !addressesEqual(token.address, constants.AddressZero);
+  const hasTokenListInfo = !!token && !addressesEqual(token.address, constants.AddressZero);
 
   return (
     <button
