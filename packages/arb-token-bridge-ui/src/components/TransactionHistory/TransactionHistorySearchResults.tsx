@@ -85,14 +85,6 @@ export function TransactionHistorySearchResults() {
     [transactions],
   );
 
-  console.log('[tx-history] grouped counts', {
-    total: transactions.length,
-    pending: groupedTransactions.pending.length,
-    settled: groupedTransactions.settled.length,
-    claimable: groupedTransactions.claimable.length,
-    failed: groupedTransactions.failed.length,
-  });
-
   const pendingTransactions = [
     ...groupedTransactions.failed,
     ...groupedTransactions.pending,

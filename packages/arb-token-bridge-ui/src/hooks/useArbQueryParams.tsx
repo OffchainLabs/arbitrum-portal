@@ -150,7 +150,6 @@ export const useArbQueryParams = () => {
     ]
   */
   const [queryParams, setQueryParams] = useQueryParams<ArbQueryParamConfigMap>();
-  console.log('[query-params] state', queryParams);
 
   const debouncedSetQueryParams = useCallback(
     (updates: SetQueryParamsParameters, { debounce }: { debounce?: boolean } = {}) =>
