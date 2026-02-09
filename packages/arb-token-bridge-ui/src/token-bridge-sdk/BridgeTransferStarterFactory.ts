@@ -3,10 +3,8 @@ import {
   BridgeTransferStarterPropsWithChainIds,
 } from './BridgeTransferStarter';
 import { Erc20DepositStarter } from './Erc20DepositStarter';
-import { Erc20TeleportStarter } from './Erc20TeleportStarter';
 import { Erc20WithdrawalStarter } from './Erc20WithdrawalStarter';
 import { EthDepositStarter } from './EthDepositStarter';
-import { EthTeleportStarter } from './EthTeleportStarter';
 import { EthWithdrawalStarter } from './EthWithdrawalStarter';
 import { LifiTransferStarter } from './LifiTransferStarter';
 import { OftV2TransferStarter } from './OftV2TransferStarter';
@@ -55,7 +53,6 @@ export class BridgeTransferStarterFactory {
       isDeposit: isCanonicalDeposit,
       isNativeCurrencyTransfer,
       isSupported,
-      isTeleport,
       isWithdrawal: isCanonicalWithdrawal,
     } = getBridgeTransferProperties(props);
 
@@ -85,13 +82,6 @@ export class BridgeTransferStarterFactory {
 
     if (isOft.isValid) {
       return withCache(cacheKey, new OftV2TransferStarter(initProps));
-    }
-
-    if (isTeleport) {
-      if (isNativeCurrencyTransfer) {
-        return withCache(cacheKey, new EthTeleportStarter(initProps));
-      }
-      return withCache(cacheKey, new Erc20TeleportStarter(initProps));
     }
 
     if (isCanonicalDeposit) {

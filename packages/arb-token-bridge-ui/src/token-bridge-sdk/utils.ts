@@ -1,10 +1,4 @@
-import {
-  Erc20Bridger,
-  Erc20L1L3Bridger,
-  EthBridger,
-  EthL1L3Bridger,
-  getArbitrumNetwork,
-} from '@arbitrum/sdk';
+import { Erc20Bridger, EthBridger } from '@arbitrum/sdk';
 import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Signer } from 'ethers';
 
@@ -14,7 +8,6 @@ import { isDepositMode } from '../util/isDepositMode';
 import { isNetwork, rpcURLs } from '../util/networks';
 import { BridgeTransferStarterPropsWithChainIds } from './BridgeTransferStarter';
 import { EnhancedProvider } from './EnhancedProvider';
-import { isValidTeleportChainPair } from './teleport';
 
 export const getAddressFromSigner = async (signer: Signer) => {
   const address = await signer.getAddress();
@@ -48,11 +41,6 @@ export const getBridgeTransferProperties = (props: BridgeTransferStarterPropsWit
     (isSourceChainOrbit && isDestinationChainArbitrum) || // l3 orbit chains to l1
     (isSourceChainOrbit && isDestinationChainBase); // l3 orbit chain to Base l2
 
-  const isTeleport = isValidTeleportChainPair({
-    sourceChainId,
-    destinationChainId,
-  });
-
   const isLifi = isValidLifiTransfer({
     sourceChainId,
     destinationChainId,
@@ -65,8 +53,7 @@ export const getBridgeTransferProperties = (props: BridgeTransferStarterPropsWit
     isDeposit,
     isWithdrawal,
     isNativeCurrencyTransfer,
-    isTeleport,
-    isSupported: isDeposit || isWithdrawal || isTeleport || isLifi,
+    isSupported: isDeposit || isWithdrawal || isLifi,
     isLifi,
   };
 };
@@ -79,7 +66,6 @@ export function percentIncrease(num: BigNumber, increase: BigNumber): BigNumber 
 // We cannot hardcode Erc20Bridger anymore in code, especially while dealing with tokens
 // this function returns the Bridger matching the set providers
 export const getBridger = async ({
-  sourceChainId,
   destinationChainId,
   isNativeCurrencyTransfer = false,
 }: {
@@ -88,14 +74,6 @@ export const getBridger = async ({
   isNativeCurrencyTransfer?: boolean;
 }) => {
   const destinationChainProvider = getProviderForChainId(destinationChainId);
-
-  if (isValidTeleportChainPair({ sourceChainId, destinationChainId })) {
-    const l3Network = getArbitrumNetwork(destinationChainId);
-
-    return isNativeCurrencyTransfer
-      ? new EthL1L3Bridger(l3Network)
-      : new Erc20L1L3Bridger(l3Network);
-  }
 
   return isNativeCurrencyTransfer
     ? EthBridger.fromProvider(destinationChainProvider)

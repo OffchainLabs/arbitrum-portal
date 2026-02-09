@@ -133,7 +133,7 @@ function getMultiChainFetchList(): ChainPair[] {
   return getChains().flatMap((chain) => {
     // We only grab child chains because we don't want duplicates and we need the parent chain
     // Although the type is correct here we default to an empty array for custom networks backwards compatibility
-    const childChainIds = getChildChainIds(chain);
+    const childChainIds = getChildChainIds(chain, { includeTeleport: true }); // we only want to consider teleport for tx history to preserve historical data
 
     const isParentChain = childChainIds.length > 0;
 

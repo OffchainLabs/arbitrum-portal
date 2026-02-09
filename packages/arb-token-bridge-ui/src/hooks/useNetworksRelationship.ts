@@ -2,8 +2,6 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { useMemo } from 'react';
 import { Chain } from 'wagmi/chains';
 
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
-
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import { isDepositMode } from '../util/isDepositMode';
@@ -31,11 +29,7 @@ export function useNetworksRelationship({
       destinationChainId: destinationChain.id,
     });
 
-    const isTeleportMode = isValidTeleportChainPair({
-      sourceChainId: sourceChain.id,
-      destinationChainId: destinationChain.id,
-    });
-
+    const isTeleportMode = false;
     const isLifi = isLifiTransfer({
       sourceChainId: sourceChain.id,
       destinationChainId: destinationChain.id,
