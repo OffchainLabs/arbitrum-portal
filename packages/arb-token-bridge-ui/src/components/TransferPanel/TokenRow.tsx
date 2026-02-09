@@ -31,8 +31,8 @@ import { getNetworkName } from '../../util/networks';
 import { SafeImage } from '../common/SafeImage';
 import { StatusBadge } from '../common/StatusBadge';
 import { Loader } from '../common/atoms/Loader';
+import { BlockExplorerTokenLink } from './BlockExplorerTokenLink';
 import { TokenLogoFallback } from './TokenInfo';
-import { BlockExplorerTokenLink } from './TokenInfoTooltip';
 import { useTokensFromLists } from './TokenSearchUtils';
 
 function tokenListIdsToNames(ids: string[]): string {
