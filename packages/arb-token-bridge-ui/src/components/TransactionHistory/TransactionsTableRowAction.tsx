@@ -2,6 +2,8 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useCallback } from 'react';
 import { useAccount } from 'wagmi';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
+
 import { GET_HELP_LINK } from '../../constants';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
 import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
@@ -23,7 +25,6 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { Button } from '../common/Button';
-import { Tooltip } from '@/app/components/common/Tooltip';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';

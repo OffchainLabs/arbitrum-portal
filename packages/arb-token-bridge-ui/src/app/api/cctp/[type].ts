@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import {
   getCctpSubgraphClient,
@@ -67,7 +67,7 @@ export type Response =
     };
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ type: string }> },
 ): Promise<NextResponse<Response>> {
   try {
