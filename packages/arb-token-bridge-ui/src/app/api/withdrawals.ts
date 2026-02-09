@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import {
   getL2SubgraphClient,
@@ -14,7 +14,7 @@ type WithdrawalResponse = {
   message?: string; // in case of any error
 };
 
-export async function GET(request: NextRequest): Promise<NextResponse<WithdrawalResponse>> {
+export async function GET(request: Request): Promise<NextResponse<WithdrawalResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     if (isIndexerApiExperimentEnabled(request)) {

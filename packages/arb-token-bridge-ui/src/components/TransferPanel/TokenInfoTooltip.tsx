@@ -1,4 +1,4 @@
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -9,7 +9,6 @@ import { shortenAddress } from '../../util/CommonUtils';
 import { isTokenNativeUSDC } from '../../util/TokenUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
-import { Tooltip } from '@/app/components/common/Tooltip';
 import { TokenLogo } from './TokenLogo';
 
 export function BlockExplorerTokenLink({
