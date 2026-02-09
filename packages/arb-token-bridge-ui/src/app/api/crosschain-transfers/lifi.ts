@@ -10,7 +10,7 @@ import {
   getRoutes,
 } from '@lifi/sdk';
 import { BigNumber, constants, utils } from 'ethers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
@@ -283,14 +283,14 @@ export type LifiParams = QueryParams & {
   denyExchanges?: string[];
 };
 
-function getIntegratorId(request: NextRequest): string {
+function getIntegratorId(request: Request): string {
   const referer = request.headers.get('referer');
   const isEmbedMode = referer && referer.includes('/bridge/embed');
   return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
 }
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
   const integratorId = getIntegratorId(request);
 
