@@ -33,11 +33,28 @@ import {
   getParentToChildMessageDataFromParentTxHash,
   isEthDepositMessage,
 } from '../../util/deposits/helpers';
-import { getL1BlockTime, isNetwork } from '../../util/networks';
+import { getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
 import { getOutgoingMessageState } from '../../util/withdrawals/helpers';
+import { warningToast } from '../common/atoms/Toast';
 
 const PARENT_CHAIN_TX_DETAILS_OF_CLAIM_TX = 'arbitrum:bridge:claim:parent:tx:details';
 const DEPOSITS_LOCAL_STORAGE_KEY = 'arbitrum:bridge:deposits';
+const LIFI_REFUND_TOAST_KEY_PREFIX = 'arbitrum:bridge:lifi:refund:';
+
+function showLifiRefundToastOnce(tx: LifiMergedTransaction) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const storageKey = `${LIFI_REFUND_TOAST_KEY_PREFIX}${tx.txId}`;
+  if (window.localStorage.getItem(storageKey)) {
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, '1');
+  const networkName = getNetworkName(tx.destinationChainId);
+  warningToast(`Tokens refunded on ${networkName}`);
+}
 
 function isDeposit(tx: MergedTransaction): boolean {
   return !tx.isWithdrawal;
@@ -70,7 +87,10 @@ export function getTransactionType(tx: Transfer): SimplifiedRouteType {
 
 export function isTxCompleted(tx: MergedTransaction): boolean {
   if (isLifiTransfer(tx)) {
-    return tx.destinationStatus === WithdrawalStatus.CONFIRMED;
+    return (
+      tx.destinationStatus === WithdrawalStatus.CONFIRMED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
+    );
   }
   if (tx.isCctp) {
     return typeof tx.cctpData?.receiveMessageTransactionHash === 'string';
@@ -96,7 +116,9 @@ export function isTxPending(tx: MergedTransaction) {
   if (isLifiTransfer(tx)) {
     if (
       tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE
+      tx.destinationStatus === WithdrawalStatus.FAILURE ||
+      tx.status === WithdrawalStatus.REFUNDED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
     ) {
       return false;
     }
@@ -145,7 +167,10 @@ export function isTxFailed(tx: MergedTransaction): boolean {
 
   if (isLifiTransfer(tx)) {
     return (
-      tx.status === WithdrawalStatus.FAILURE || tx.destinationStatus === WithdrawalStatus.FAILURE
+      tx.status === WithdrawalStatus.FAILURE ||
+      tx.destinationStatus === WithdrawalStatus.FAILURE ||
+      tx.status === WithdrawalStatus.REFUNDED ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
     );
   }
 
@@ -534,7 +559,12 @@ export async function getUpdatedCctpTransfer(tx: MergedTransaction): Promise<Mer
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
 ): Promise<MergedTransaction> {
-  if (tx.status === WithdrawalStatus.FAILURE || tx.destinationStatus === WithdrawalStatus.FAILURE) {
+  if (
+    tx.status === WithdrawalStatus.FAILURE ||
+    tx.destinationStatus === WithdrawalStatus.FAILURE ||
+    tx.status === WithdrawalStatus.REFUNDED ||
+    tx.destinationStatus === WithdrawalStatus.REFUNDED
+  ) {
     return tx;
   }
 
@@ -553,8 +583,14 @@ export async function getUpdatedLifiTransfer(
    * See https://docs.li.fi/li.fi-api/li.fi-api/status-of-a-transaction#the-different-statuses-and-what-they-mean
    */
   if (statusResponse.status === 'DONE') {
-    sourceStatus = WithdrawalStatus.CONFIRMED;
-    destinationStatus = WithdrawalStatus.CONFIRMED;
+    if (statusResponse.substatus === 'REFUNDED') {
+      sourceStatus = WithdrawalStatus.REFUNDED;
+      destinationStatus = WithdrawalStatus.REFUNDED;
+      showLifiRefundToastOnce(tx);
+    } else {
+      sourceStatus = WithdrawalStatus.CONFIRMED;
+      destinationStatus = WithdrawalStatus.CONFIRMED;
+    }
     if ('txHash' in statusResponse.receiving) {
       destinationTxId = statusResponse.receiving.txHash;
     }

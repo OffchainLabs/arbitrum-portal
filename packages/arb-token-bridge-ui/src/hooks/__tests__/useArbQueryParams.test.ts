@@ -1,9 +1,11 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { constants } from 'ethers';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
-import { isOnrampEnabled } from '../../util/featureFlag';
+import { isLifiEnabled, isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
+import orbitChainsData from '../../util/orbitChainsData.json';
 import {
   isOnrampFeatureEnabled,
   sanitizeTabQueryParam,
@@ -20,6 +22,7 @@ import { createMockOrbitChain } from './helpers';
 
 vi.mock('../../util/featureFlag', () => ({
   isOnrampEnabled: vi.fn(),
+  isLifiEnabled: vi.fn(),
 }));
 
 describe('AmountQueryParam custom encoder and decoder', () => {
@@ -286,6 +289,10 @@ describe.sequential('TabParam custom encoder and decoder', () => {
 });
 
 describe('sanitizeTokenQueryParam', () => {
+  beforeAll(() => {
+    vi.mocked(isLifiEnabled).mockReturnValue(true);
+  });
+
   describe('when `token=eth` is defined', () => {
     const xaiChainId = 660279;
 
@@ -325,6 +332,98 @@ describe('sanitizeTokenQueryParam', () => {
         token: 'eth',
       });
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('with LiFi chain pairs and no token specified', () => {
+    beforeAll(() => {
+      registerCustomArbitrumNetwork(
+        orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
+      );
+      registerCustomArbitrumNetwork(
+        orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
+      );
+    });
+
+    describe('from ApeChain', () => {
+      it('should return null', () => {
+        const resultToArbitrumOne = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.ArbitrumOne,
+          token: null,
+        });
+        expect(resultToArbitrumOne).toEqual(null);
+
+        const resultToEthereum = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.Ethereum,
+          token: null,
+        });
+        expect(resultToEthereum).toEqual(null);
+
+        const resultToSuperposition = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.Superposition,
+          token: null,
+        });
+        expect(resultToSuperposition).toEqual(null);
+      });
+    });
+
+    describe('to ApeChain', () => {
+      it('should return AddressZero for source chains without APE token', () => {
+        const resultFromSuperposition = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.Superposition,
+          destinationChainId: ChainId.ApeChain,
+          token: null,
+        });
+        expect(resultFromSuperposition).toEqual(constants.AddressZero);
+      });
+
+      it('should return APE token (null) from other chains', () => {
+        const resultFromBase = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.ApeChain,
+          token: null,
+        });
+        expect(resultFromBase).toEqual(null);
+
+        const resultFromEthereum = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ApeChain,
+          token: null,
+        });
+        expect(resultFromEthereum).toEqual(null);
+
+        const resultFromArbitrumOne = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ApeChain,
+          token: null,
+        });
+        expect(resultFromArbitrumOne).toEqual(null);
+      });
+    });
+
+    describe('Edge cases', () => {
+      it('should preserve specified token address when token is provided', () => {
+        const testAddress = '0x1234567890abcdef1234567890abcdef12345678';
+        const result = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.ArbitrumOne,
+          token: testAddress,
+        });
+        expect(result).toEqual(testAddress.toLowerCase());
+      });
+
+      it('should preserve specified token address for other LiFi pairs', () => {
+        const testAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
+        const result = sanitizeTokenQueryParam({
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.Superposition,
+          token: testAddress,
+        });
+        expect(result).toEqual(testAddress.toLowerCase());
+      });
     });
   });
 });

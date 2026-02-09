@@ -1,3 +1,4 @@
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
 import { useMemo } from 'react';
 
@@ -76,6 +77,10 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
             <>
               <TokenLogo srcOverride={options?.logoSrc} />
               <span className="font-light">{tokenSymbol}</span>
+              <ChevronDownIcon
+                width={12}
+                className={dialogProps.openedDialogType === 'token_selection' ? 'rotate-180' : ''}
+              />
             </>
           )}
         </div>

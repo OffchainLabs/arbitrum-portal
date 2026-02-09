@@ -99,7 +99,7 @@ export const useForceFetchReceived = create<ForceFetchReceivedStore>((set) => ({
 
 function getTransactionTimestamp(tx: Transfer) {
   if (isLifiTransfer(tx)) {
-    return tx.createdAt ?? 0;
+    return normalizeTimestamp(tx.createdAt ?? 0);
   }
 
   if (isCctpTransfer(tx)) {
@@ -512,6 +512,9 @@ export const useTransactionHistory = (
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
 
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
+  const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
+    (state) => state.updateTransaction,
+  );
   const { connector } = useAccount();
   // max number of transactions mapped in parallel
   const MAX_BATCH_SIZE = 3;
@@ -685,6 +688,9 @@ export const useTransactionHistory = (
             return { ...(isSameTransaction(oldTx, newTx) ? newTx : oldTx) };
           }),
         );
+        if (isLifiTransfer(newTx)) {
+          updateLifiTransactionInCache(newTx);
+        }
         return;
       }
 
@@ -725,10 +731,13 @@ export const useTransactionHistory = (
           ...prevTxPages.slice(pageNumberToUpdate + 1),
         ];
 
+        if (isLifiTransfer(newTx)) {
+          updateLifiTransactionInCache(newTx);
+        }
         return newTxPages;
       }, false);
     },
-    [mutateNewTransactionsData, mutateTxPages, newTransactionsData],
+    [mutateNewTransactionsData, mutateTxPages, newTransactionsData, updateLifiTransactionInCache],
   );
 
   const updatePendingTransaction = useCallback(

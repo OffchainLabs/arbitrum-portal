@@ -4,7 +4,7 @@ import { unstable_cache } from 'next/cache';
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 
-export const LIFI_TOKENS_REVALIDATE_SECONDS = 60 * 60;
+export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
 
 type CustomTokenConfig = {
   coinKey: string;
@@ -18,6 +18,15 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
       [ChainId.Ethereum]: '0x57e114b691db790c35207b2e685d4a43181e6061',
       [ChainId.Base]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
       [ChainId.ArbitrumOne]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
+    },
+  },
+  {
+    coinKey: 'USDT',
+    addresses: {
+      [ChainId.Ethereum]: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      [ChainId.Base]: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
+      [ChainId.ArbitrumOne]: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+      [ChainId.ApeChain]: '0x674843C06FF83502ddb4D37c2E09C01cdA38cbc8',
     },
   },
 ];
@@ -48,6 +57,7 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
 
 /**
  * Assigns a custom CoinKey to tokens that don't have one but are configured in CUSTOM_TOKENS.
+ * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
  * Returns null if token has no coinKey and isn't in CUSTOM_TOKENS.
  */
 function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
@@ -58,10 +68,47 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   }
 
   if (token.coinKey) {
-    return token as LifiTokenWithCoinKey;
+    const tokenWithCoinKey = token as LifiTokenWithCoinKey;
+
+    // Normalize USDCe to USDC on chains that use bridged USDC
+    if (
+      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
+      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
+    ) {
+      return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
+    }
+
+    return tokenWithCoinKey;
   }
 
   return null;
+}
+
+function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  switch (token.coinKey) {
+    case CoinKey.ETH: {
+      token.logoURI = '/images/EthereumLogoRound.svg';
+      return token;
+    }
+    case CoinKey.APE: {
+      token.logoURI = '/images/ApeChainLogo.svg';
+      return token;
+    }
+  }
+
+  return token;
+}
+
+function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  if (token.coinKey === CoinKey.USDT) {
+    return {
+      ...token,
+      symbol: 'USDT',
+      name: 'Tether USD',
+    };
+  }
+
+  return token;
 }
 
 export interface LifiTokenRegistry {
@@ -94,8 +141,11 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
         if (!tokenWithCoinKey) return acc;
 
-        tokensGroupedByCoinKey[tokenWithCoinKey.coinKey] ??= tokenWithCoinKey;
-        acc.push(tokenWithCoinKey);
+        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+        const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
+
+        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+        acc.push(normalizedToken);
         return acc;
       },
       [],
