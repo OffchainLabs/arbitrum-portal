@@ -89,8 +89,13 @@ export function TransactionHistorySearchBar() {
         <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-[7px] h-3 w-3" />
         <Tooltip
           content="Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction."
-          wrapperClassName="h-full w-full"
+          wrapperClassName="block h-full w-full"
           contentProps={{
+            className: 'w-auto whitespace-normal break-words',
+            style: {
+              // Limit the tooltip width to 80% of the input width
+              maxWidth: 'calc(var(--radix-popper-anchor-width) * 0.8)',
+            },
             onPointerDownOutside: (event) => event.preventDefault(),
           }}
         >
