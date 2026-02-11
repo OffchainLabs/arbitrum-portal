@@ -23,7 +23,6 @@ export default defineConfig({
       '@/portal': path.resolve(__dirname, '../portal'),
       '@/token-bridge-sdk': path.resolve(__dirname, './src/token-bridge-sdk'),
       '@/bridge': path.resolve(__dirname, './src'),
-      '@/common': path.resolve(__dirname, '../portal/common'),
     },
   },
 });
