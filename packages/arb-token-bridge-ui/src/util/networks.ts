@@ -101,6 +101,18 @@ export type ChainWithRpcUrl = ArbitrumNetwork & {
   nativeTokenData?: Erc20Data;
 };
 
+function getAvailableLocalStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
+  if (
+    typeof localStorage === 'undefined' ||
+    typeof localStorage.getItem !== 'function' ||
+    typeof localStorage.setItem !== 'function'
+  ) {
+    return null;
+  }
+
+  return localStorage;
+}
+
 export function getBlockNumberReferenceChainIdByChainId({ chainId }: { chainId: number }): number {
   // the chain provided is an L1 chain or Base chain, so we can return early
   if (isBlockNumberReferenceNetwork({ chainId })) {
@@ -134,9 +146,10 @@ export function getBlockNumberReferenceChainIdByChainId({ chainId }: { chainId: 
 }
 
 export function getCustomChainsFromLocalStorage(): ChainWithRpcUrl[] {
-  if (typeof localStorage === 'undefined') return []; // required so that it does not fail test-runners
+  const storage = getAvailableLocalStorage();
+  if (!storage) return []; // required so that it does not fail outside browser runtime
 
-  const customChainsFromLocalStorage = localStorage.getItem(customChainLocalStorageKey);
+  const customChainsFromLocalStorage = storage.getItem(customChainLocalStorageKey);
 
   if (!customChainsFromLocalStorage) {
     return [];
@@ -171,6 +184,9 @@ export function getCustomChainFromLocalStorageById(chainId: ChainId) {
 }
 
 export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
+  const storage = getAvailableLocalStorage();
+  if (!storage) return;
+
   const customChains = getCustomChainsFromLocalStorage();
 
   if (customChains.findIndex((chain) => chain.chainId === newCustomChain.chainId) > -1) {
@@ -180,15 +196,18 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
 
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
-  localStorage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
+  const storage = getAvailableLocalStorage();
+  if (!storage) return;
+
   const newCustomChains = getCustomChainsFromLocalStorage().filter(
     (chain) => chain.chainId !== chainId,
   );
 
-  localStorage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
 }
 
 export const supportedCustomOrbitParentChains = [

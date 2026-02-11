@@ -3,7 +3,7 @@ export function onDisconnectHandler() {
     return;
   }
 
-  if (typeof localStorage === 'undefined') {
+  if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
     return;
   }
 
