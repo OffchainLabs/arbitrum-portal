@@ -27,7 +27,7 @@ function DestinationTokensPanel({
   onTokenSelected,
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
-}): JSX.Element {
+}): React.JSX.Element {
   const { address: walletAddress } = useAccount();
   const [networks] = useNetworks();
   const { isDepositMode, childChainProvider } = useNetworksRelationship(networks);

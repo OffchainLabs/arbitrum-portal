@@ -7,6 +7,8 @@ import { Suspense } from 'react';
 import { PropsWithChildren } from 'react';
 import { QueryParamProvider } from 'use-query-params';
 
+import { TooltipProvider } from '@/app/components/common/Tooltip';
+
 if (typeof window !== 'undefined' && typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
@@ -33,7 +35,7 @@ export const Providers = ({ children }: PropsWithChildren) => {
           adapter={NextAdapterApp}
           options={{ updateType: 'replaceIn', removeDefaultsFromUrl: true }}
         >
-          {children}
+          <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
         </QueryParamProvider>
       </PostHogProvider>
     </Suspense>
