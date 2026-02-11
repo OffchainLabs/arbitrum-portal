@@ -42,7 +42,7 @@ export function Tooltip({
           {...contentProps}
           className={twMerge(
             contentProps?.className,
-            'tooltip-animated z-50 min-w-0 max-w-[300px] bg-gray-8 overflow-hidden rounded-[5px] px-2 py-1 text-sm leading-5 border border-[#777] whitespace-normal break-words',
+            'tooltip-animated z-[1102] min-w-0 max-w-[300px] bg-gray-8 overflow-hidden rounded-[5px] px-2 py-1 text-sm leading-5 border border-[#777] whitespace-normal break-words',
           )}
         >
           {content}
