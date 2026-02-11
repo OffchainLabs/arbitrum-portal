@@ -1,59 +1,98 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { useIsCctpTransfer } from './useIsCctpTransfer';
 
-const mocks = vi.hoisted(() => {
+const mocks = vi.hoisted(() => ({
+  queryParams: {} as {
+    sourceChain?: number;
+    destinationChain?: number;
+    token?: string;
+    destinationToken?: string;
+  },
+  setQueryParams: vi.fn(),
+  useArbQueryParams: vi.fn(),
+}));
+
+vi.mock('../../../hooks/useArbQueryParams', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../hooks/useArbQueryParams')>();
   return {
-    useSelectedToken: vi.fn(),
-    useNetworks: vi.fn(),
-    useArbQueryParams: vi.fn(),
+    ...actual,
+    useArbQueryParams: mocks.useArbQueryParams,
   };
 });
 
-vi.mock('../../../hooks/useSelectedToken', () => ({
-  useSelectedToken: mocks.useSelectedToken,
+vi.mock('../../../hooks/useDisabledFeatures', () => ({
+  useDisabledFeatures: () => ({
+    isFeatureDisabled: () => false,
+  }),
 }));
 
-vi.mock('../../../hooks/useNetworks', () => ({
-  useNetworks: mocks.useNetworks,
-}));
-
-vi.mock('../../../hooks/useArbQueryParams', () => ({
-  useArbQueryParams: mocks.useArbQueryParams,
-}));
-
-const defaultToken = { address: '0xToken' };
-
-const setNetworks = ({
-  sourceChainId,
-  destinationChainId,
-}: {
-  sourceChainId: ChainId;
-  destinationChainId: ChainId;
-}) => {
-  mocks.useNetworks.mockReturnValue([
-    {
-      sourceChain: { id: sourceChainId },
-      sourceChainProvider: {},
-      destinationChain: { id: destinationChainId },
-      destinationChainProvider: {},
-    },
-  ]);
-};
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  mocks.useSelectedToken.mockReturnValue([defaultToken]);
-  mocks.useArbQueryParams.mockReturnValue([{ destinationToken: defaultToken.address }, vi.fn()]);
-  setNetworks({ sourceChainId: ChainId.Ethereum, destinationChainId: ChainId.ArbitrumOne });
+vi.mock('../../../util/networks', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../util/networks')>();
+  return {
+    ...actual,
+    getCustomChainsFromLocalStorage: () => [],
+  };
 });
 
+vi.mock('../../../token-bridge-sdk/utils', () => ({
+  getProviderForChainId: () => ({}),
+}));
+
+vi.mock('../../../util/wagmi/getWagmiChain', () => ({
+  getWagmiChain: (chainId: number) => ({ id: chainId }),
+}));
+
+vi.mock('../TokenSearchUtils', () => ({
+  useTokensFromLists: () => {
+    const token = mocks.queryParams.token;
+    if (!token) {
+      return {};
+    }
+    return {
+      [token]: {
+        address: token,
+        decimals: 6,
+        symbol: 'MOCK',
+        name: 'Mock Token',
+        type: TokenType.ERC20,
+        listIds: new Set<string>(['1']),
+      },
+    };
+  },
+  useTokensFromUser: () => ({}),
+}));
+
 describe('useIsCctpTransfer', () => {
+  const setQueryParams = (overrides: Partial<typeof mocks.queryParams>) => {
+    mocks.queryParams = { ...mocks.queryParams, ...overrides };
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mocks.queryParams = {
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      token: '0xNotUsdc',
+      destinationToken: '0xNotUsdc',
+    };
+    mocks.setQueryParams = vi.fn();
+
+    mocks.useArbQueryParams.mockImplementation(() => [mocks.queryParams, mocks.setQueryParams]);
+  });
+
   it('returns false when swap transfer is enabled', () => {
-    mocks.useArbQueryParams.mockReturnValue([{ destinationToken: '0xDifferent' }, vi.fn()]);
+    setQueryParams({
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      token: '0xNotUsdc',
+      destinationToken: '0xDifferent',
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -61,7 +100,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns false when no token is selected', () => {
-    mocks.useSelectedToken.mockReturnValue([null]);
+    setQueryParams({
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      token: undefined,
+      destinationToken: undefined,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -69,8 +113,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns false when teleport mode is active', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.Ethereum.USDC }]);
-    setNetworks({ sourceChainId: ChainId.Ethereum, destinationChainId: ChainId.Superposition });
+    setQueryParams({
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.Superposition,
+      token: CommonAddress.Ethereum.USDC,
+      destinationToken: CommonAddress.Ethereum.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -78,8 +126,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns true for deposit of mainnet USDC to Arbitrum One', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.Ethereum.USDC }]);
-    setNetworks({ sourceChainId: ChainId.Ethereum, destinationChainId: ChainId.ArbitrumOne });
+    setQueryParams({
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      token: CommonAddress.Ethereum.USDC,
+      destinationToken: CommonAddress.Ethereum.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -87,8 +139,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns true for deposit of Sepolia USDC to Arbitrum Sepolia', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.Sepolia.USDC }]);
-    setNetworks({ sourceChainId: ChainId.Sepolia, destinationChainId: ChainId.ArbitrumSepolia });
+    setQueryParams({
+      sourceChain: ChainId.Sepolia,
+      destinationChain: ChainId.ArbitrumSepolia,
+      token: CommonAddress.Sepolia.USDC,
+      destinationToken: CommonAddress.Sepolia.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -96,8 +152,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns true for withdrawal of Arbitrum One native USDC', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.ArbitrumOne.USDC }]);
-    setNetworks({ sourceChainId: ChainId.ArbitrumOne, destinationChainId: ChainId.Ethereum });
+    setQueryParams({
+      sourceChain: ChainId.ArbitrumOne,
+      destinationChain: ChainId.Ethereum,
+      token: CommonAddress.ArbitrumOne.USDC,
+      destinationToken: CommonAddress.ArbitrumOne.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -105,8 +165,12 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns true for withdrawal of Arbitrum Sepolia native USDC', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.ArbitrumSepolia.USDC }]);
-    setNetworks({ sourceChainId: ChainId.ArbitrumSepolia, destinationChainId: ChainId.Sepolia });
+    setQueryParams({
+      sourceChain: ChainId.ArbitrumSepolia,
+      destinationChain: ChainId.Sepolia,
+      token: CommonAddress.ArbitrumSepolia.USDC,
+      destinationToken: CommonAddress.ArbitrumSepolia.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
@@ -114,14 +178,25 @@ describe('useIsCctpTransfer', () => {
   });
 
   it('returns false when token does not match any CCTP criteria', () => {
+    setQueryParams({
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      token: '0xNotUsdc',
+      destinationToken: '0xNotUsdc',
+    });
+
     const { result } = renderHook(() => useIsCctpTransfer());
 
     expect(result.current).toBe(false);
   });
 
   it('returns false for non-Arbitrum networks even when token matches', () => {
-    mocks.useSelectedToken.mockReturnValue([{ address: CommonAddress.Ethereum.USDC }]);
-    setNetworks({ sourceChainId: ChainId.Base, destinationChainId: ChainId.Ethereum });
+    setQueryParams({
+      sourceChain: ChainId.ArbitrumNova,
+      destinationChain: ChainId.Ethereum,
+      token: CommonAddress.Ethereum.USDC,
+      destinationToken: CommonAddress.Ethereum.USDC,
+    });
 
     const { result } = renderHook(() => useIsCctpTransfer());
 
