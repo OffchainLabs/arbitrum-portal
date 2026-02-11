@@ -15,7 +15,7 @@ import { useTokensFromLists } from './TokenSearchUtils';
 
 export function DestinationTokenButton({
   tokenInfo,
-}: { tokenInfo?: NativeCurrency } = {}): JSX.Element {
+}: { tokenInfo?: NativeCurrency } = {}): React.JSX.Element {
   const destinationToken = useDestinationToken();
   const [networks] = useNetworks();
   const [selectedToken] = useSelectedToken();
