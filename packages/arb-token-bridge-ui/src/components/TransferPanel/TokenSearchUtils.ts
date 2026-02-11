@@ -76,6 +76,7 @@ function tokenListsToSearchableTokenStorage(
 
       if (stringifiedChainId === l1ChainId) {
         // The address is from an L1 token
+        const priceUSD = token.extensions?.priceUSD as number;
         if (typeof accAddress === 'undefined') {
           // First time encountering the token through its L1 address
           acc[address] = {
@@ -83,6 +84,7 @@ function tokenListsToSearchableTokenStorage(
             type: TokenType.ERC20,
             l2Address: undefined,
             listIds: new Set(),
+            priceUSD,
           };
         } else {
           // Token was already added to the map through its L2 token
@@ -90,6 +92,9 @@ function tokenListsToSearchableTokenStorage(
             ...accAddress,
             address,
           };
+          if (!acc[address]!.priceUSD && priceUSD) {
+            acc[address]!.priceUSD = priceUSD;
+          }
         }
 
         // acc[address] was defined in the if/else above
@@ -110,6 +115,7 @@ function tokenListsToSearchableTokenStorage(
         const l1Bridge = bridgeInfo[l1ChainId];
         if (l1Bridge) {
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
+          const priceUSD = token.extensions?.priceUSD as number;
 
           if (!addressOnL1) {
             return;
@@ -126,10 +132,14 @@ function tokenListsToSearchableTokenStorage(
               l2Address: address,
               decimals: token.decimals,
               listIds: new Set(),
+              priceUSD,
             };
           } else {
             // The token's L1 address is already on the list, just fill in its L2 address
             acc[addressOnL1]!.l2Address = address;
+            if (!acc[addressOnL1]!.priceUSD && priceUSD) {
+              acc[addressOnL1]!.priceUSD = priceUSD;
+            }
           }
 
           // acc[address] was defined in the if/else above

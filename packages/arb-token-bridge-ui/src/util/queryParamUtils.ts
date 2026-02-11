@@ -1,6 +1,7 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
 
+import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import {
   ChainKeyQueryParam,
@@ -298,6 +299,16 @@ export const TokenQueryParam = {
   },
 };
 
+export const DestinationTokenQueryParam = {
+  encode: (token: string | undefined) => {
+    return token?.toLowerCase();
+  },
+  decode: (token: string | (string | null)[] | null | undefined) => {
+    const tokenStr = token?.toString();
+    return tokenStr?.toLowerCase();
+  },
+};
+
 export const ChainParam = {
   encode: encodeChainQueryParam,
   decode: decodeChainQueryParam,
@@ -437,11 +448,30 @@ export function sanitizeNullSelectedToken({
     return undefined;
   }
 
+  const isLifiChainPair = isLifiTransfer({ sourceChainId, destinationChainId });
+
+  if (isLifiEnabled() && isLifiChainPair) {
+    // If an ERC20 token is selected for LiFi transfer, return it directly
+    if (erc20ParentAddress) {
+      return erc20ParentAddress;
+    }
+
+    // Superposition doesn't have ApeToken, so we default to AddressZero only when ApeChain is the destination
+    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
+      return constants.AddressZero;
+    }
+
+    // All other LiFi pairs: default to null (native token of destination chain)
+    return null;
+  }
+
   try {
     const destinationChain = getArbitrumNetwork(destinationChainId);
 
-    // If the destination chain has a custom fee token, and selectedToken is null,
-    // return native token for deposit from the parent chain, ETH otherwise
+    /**
+     * If the destination chain has a custom fee token, and selectedToken is null,
+     * return native token for deposit from the parent chain, ETH otherwise
+     */
     if (destinationChain.nativeToken && !erc20ParentAddress) {
       if (sourceChainId === destinationChain.parentChainId) {
         return erc20ParentAddress;
@@ -478,9 +508,7 @@ export const sanitizeTokenQueryParam = ({
       erc20ParentAddress: tokenLowercased || null,
     });
 
-    if (sanitizedTokenAddress) {
-      return sanitizedTokenAddress;
-    }
+    return sanitizedTokenAddress;
   }
   if (!destinationChainId) {
     return tokenLowercased;

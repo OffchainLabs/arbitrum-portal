@@ -25,10 +25,10 @@ import { addressesEqual } from '../../util/AddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
 import {
-  BRIDGE_TOKEN_LISTS,
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
   addBridgeTokenListToBridge,
+  getBridgeTokenListsForNetworks,
 } from '../../util/TokenListUtils';
 import {
   fetchErc20Data,
@@ -116,28 +116,27 @@ function TokenListRow({ tokenList }: { tokenList: BridgeTokenList }) {
 
 function TokenListsPanel() {
   const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const listsToShow: BridgeTokenList[] = useMemo(() => {
-    return BRIDGE_TOKEN_LISTS.filter((tokenList) => {
-      if (!tokenList.isValid) {
-        return false;
-      }
-
+    return getBridgeTokenListsForNetworks({
+      childChainId: childChain.id,
+      parentChainId: parentChain.id,
+    }).filter((tokenList) => {
       // Don't show the Arbitrum Token token list, because it's special and can't be disabled
       if (tokenList.isArbitrumTokenTokenList) {
         return false;
       }
 
-      return tokenList.originChainID === childChain.id;
+      return true;
     });
-  }, [childChain.id]);
+  }, [childChain.id, parentChain.id]);
 
   return (
     <>
       <div className="flex flex-col gap-6 rounded-md border border-gray-dark p-6 text-white">
         {listsToShow.map((tokenList) => (
-          <TokenListRow key={tokenList.id} tokenList={tokenList} />
+          <TokenListRow key={`${tokenList.id}-${tokenList.parentChainID}`} tokenList={tokenList} />
         ))}
         {listsToShow.length === 0 && (
           <span className="text-sm leading-relaxed">
@@ -260,7 +259,7 @@ function TokensPanel({
 
   const tokensToShow = useMemo(() => {
     const tokenSearch = newToken.trim().toLowerCase();
-    const tokenAddresses = [...Object.keys(tokensFromUser), ...Object.keys(tokensFromLists)];
+    const tokenAddresses = Object.keys(tokensFromUser).concat(Object.keys(tokensFromLists));
 
     if (!isDepositMode) {
       // L2 to L1 withdrawals
@@ -281,34 +280,19 @@ function TokensPanel({
     }
 
     /**
-     * Disable native currency for transfer from ApeChain to Ethereum, Base and Superposition
-     * And vice versa
-     */
-    const lifiChains = [ChainId.Ethereum, ChainId.Base, ChainId.Superposition];
-    const isTransferringFromApe =
-      networks.sourceChain.id === ChainId.ApeChain &&
-      lifiChains.includes(networks.destinationChain.id);
-    const isTransferringToApe =
-      networks.destinationChain.id === ChainId.ApeChain &&
-      lifiChains.includes(networks.sourceChain.id);
-
-    /**
-     * Disable Ape token for ApeChain transfers from/to Ethereum, Base and Superposition
-     * Allow Ape token AND ethereum for transfers from/to Arbitrum One
+     * Add native currency if not already included
+     * For chains with custom native tokens, always add it even if AddressZero is present
      *
-     * For other chains, always show native currency
+     * For lifi chains, the destination chain might not be the direct parent or child chain and might not have the native token.
+     * (e.g., APE token in Superposition for ApeChain <> Superposition transfers)
+     * We still allow token to be selected (it will default to swap)
      */
+    const isSuperpositionToApeChain =
+      networks.sourceChain.id === ChainId.Superposition &&
+      networks.destinationChain.id === ChainId.ApeChain;
     if (
-      !isTransferringFromApe &&
-      !isTransferringToApe &&
-      !tokenAddresses.includes(constants.AddressZero)
-    ) {
-      tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    } else if (
-      (networks.sourceChain.id === ChainId.ApeChain &&
-        networks.destinationChain.id === ChainId.ArbitrumOne) ||
-      (networks.destinationChain.id === ChainId.ApeChain &&
-        networks.sourceChain.id === ChainId.ArbitrumOne)
+      (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) &&
+      !isSuperpositionToApeChain
     ) {
       tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
     }
@@ -337,6 +321,18 @@ function TokensPanel({
 
         // If the token on the list is used as a custom fee token, we remove the duplicate
         if (nativeCurrency.isCustom && addressesEqual(address, nativeCurrency.address)) {
+          return false;
+        }
+
+        /**
+         * Lifi token lists contain both WETH and ETH token on parent chain mapped to WETH on ApeChain.
+         * This check is for ApeChain token row to only show WETH.
+         */
+        if (
+          childChain.id === ChainId.ApeChain &&
+          !isDepositMode &&
+          addressesEqual(address, constants.AddressZero)
+        ) {
           return false;
         }
 
@@ -411,19 +407,20 @@ function TokensPanel({
         return bal1.gt(bal2) ? -1 : 1;
       });
   }, [
-    networks,
     newToken,
     tokensFromUser,
     tokensFromLists,
     isDepositMode,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    nativeCurrency,
     isArbitrumOne,
     isArbitrumSepolia,
     isParentChainArbitrumOne,
     isParentChainArbitrumSepolia,
     isOrbitChain,
-    nativeCurrency,
+    childChain.id,
     getBalance,
-    walletAddress, // required for re-rendering the row when wallet address changes / wallet is connected
   ]);
 
   const storeNewToken = async () => {
@@ -498,7 +495,7 @@ function TokensPanel({
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
         return (
           <TokenRow
-            key="TokenRowNativeCurrency"
+            key={`TokenRowNativeCurrency-${walletAddress}`}
             style={virtualizedProps.style}
             onTokenSelected={onTokenSelected}
             token={null}
@@ -508,7 +505,7 @@ function TokensPanel({
 
       return (
         <TokenRow
-          key={address}
+          key={`${address}-${walletAddress}`}
           style={virtualizedProps.style}
           onTokenSelected={onTokenSelected}
           token={token}
@@ -522,7 +519,7 @@ function TokensPanel({
       onTokenSelected,
       usdcToken,
       isOrbitChain,
-      walletAddress, // required for re-rendering the row when wallet address changes / wallet is connected
+      walletAddress,
     ],
   );
 
@@ -561,7 +558,7 @@ function TokensPanel({
             width={width - 2}
             height={height}
             rowCount={tokensToShow.length}
-            rowHeight={84}
+            rowHeight={96}
             rowRenderer={rowRenderer}
             style={{ minHeight: '180px' }}
           />
@@ -600,8 +597,12 @@ export function TokenSearch(props: UseDialogProps) {
     }
 
     if (addressesEqual(_token.address, constants.AddressZero)) {
-      // If the token is ETH, we don't need to fetch any data
-      setSelectedToken(_token.address);
+      if (networks.destinationChain.id === ChainId.ApeChain) {
+        setSelectedToken(constants.AddressZero);
+      } else {
+        // Map native currency to null for other chains
+        setSelectedToken(null);
+      }
       return;
     }
 

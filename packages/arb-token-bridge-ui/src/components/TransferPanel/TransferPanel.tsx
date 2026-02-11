@@ -19,6 +19,7 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { ChainId } from '@/bridge/types/ChainId';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -82,6 +83,7 @@ import {
 } from './bridgeSdkConversionUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
+import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
@@ -170,6 +172,8 @@ export function TransferPanel() {
   );
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());
+
+  const isSwapTransfer = useIsSwapTransfer();
 
   const latestDestinationAddress = useLatest(destinationAddress);
 
@@ -559,11 +563,19 @@ export function TransferPanel() {
         return;
       }
 
+      const destinationChainErc20Address =
+        tokenOverrides.destination?.address || isDepositMode
+          ? selectedToken?.l2Address
+          : selectedToken?.address;
+      const sourceChainErc20Address =
+        tokenOverrides.source?.address || isDepositMode
+          ? selectedToken?.address
+          : selectedToken?.l2Address;
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,
-        destinationChainErc20Address: tokenOverrides.destination?.address,
-        sourceChainErc20Address: tokenOverrides.source?.address,
+        destinationChainErc20Address,
+        sourceChainErc20Address,
         lifiData: {
           ...context,
           transactionRequest,
@@ -617,15 +629,29 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
+      const assetType =
+        addressesEqual(context.fromAmount.token.address, constants.AddressZero) &&
+        networks.sourceChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
+      const destinationAssetType =
+        addressesEqual(context.toAmount.token.address, constants.AddressZero) &&
+        networks.destinationChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
+
       trackEvent('Lifi Transfer', {
-        tokenSymbol: selectedToken?.symbol || 'ETH',
-        assetType: selectedToken ? AssetType.ERC20 : AssetType.ETH,
+        tokenSymbol: context.fromAmount.token.symbol,
+        assetType,
+        destinationTokenSymbol: context.toAmount.token.symbol,
+        destinationAssetType,
         accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
         destinationChain: getNetworkName(networks.destinationChain.id),
         tag: selectedRoute,
+        isSwap: isSwapTransfer,
       });
 
       resetAmountAndSwitchToTransactionHistoryTab();
@@ -676,6 +702,20 @@ export function TransferPanel() {
       }
 
       clearRoute();
+
+      if (transfer?.sourceChainTransaction?.wait) {
+        await transfer.sourceChainTransaction.wait();
+
+        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+
+        if (selectedToken) {
+          token.updateTokenData(selectedToken.address);
+        }
+
+        if (nativeCurrency.isCustom) {
+          await updateErc20ParentBalances([nativeCurrency.address]);
+        }
+      }
     } catch (error) {
       if (isUserRejectedError(error)) {
         return;

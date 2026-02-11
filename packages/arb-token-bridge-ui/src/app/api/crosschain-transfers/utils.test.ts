@@ -1,6 +1,7 @@
 import { constants } from 'ethers';
 import { describe, expect, it, test } from 'vitest';
 
+import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isValidLifiTransfer } from './utils';
@@ -117,14 +118,27 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
-  it('ArbitrumOne to ApeChain with Ape should return false', () => {
+  it('ArbitrumOne to ApeChain with Ape should return true', () => {
     expect(
       isValidLifiTransfer({
         fromToken: undefined,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.ApeChain,
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it('allows native USDC swaps', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {};
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.ArbitrumOne.USDC,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists,
+      }),
+    ).toBe(true);
   });
 });
 
@@ -146,6 +160,15 @@ describe('getTokenOverride', () => {
     logoURI: '/images/EthereumLogoRound.svg',
     name: 'Ether',
     symbol: 'ETH',
+    type: 'ERC20',
+  };
+  const ape = {
+    address: CommonAddress.ArbitrumOne.APE,
+    decimals: 18,
+    listIds: new Set(),
+    logoURI: '/images/ApeTokenLogo.svg',
+    name: 'ApeCoin',
+    symbol: 'APE',
     type: 'ERC20',
   };
 
@@ -185,16 +208,57 @@ describe('getTokenOverride', () => {
     expect(mainnetToApeOverride.destination).toEqual(eth);
   });
 
-  it("Don't override native token for ApeChain", () => {
+  it('For native ETH transfers on non-ApeChain routes, returns ETH on both sides', () => {
+    const ethToArbOverride = getTokenOverride({
+      fromToken: constants.AddressZero,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(ethToArbOverride.source).toEqual(eth);
+    expect(ethToArbOverride.destination).toEqual(eth);
+  });
+
+  it('For transfers including APE on ApeChain, returns the ERC20 address on the other chain', () => {
     const arbToApeOverride = getTokenOverride({
       fromToken: undefined,
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.ApeChain,
     });
 
-    // No override, default to null (Ape on ApeChain)
-    expect(arbToApeOverride.source).toEqual(null);
+    // Override on source chain to ERC20, default to null (Ape on ApeChain)
+    expect(arbToApeOverride.source).toEqual(ape);
     expect(arbToApeOverride.destination).toEqual(null);
+
+    const apeToArbOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    // Override on destination chain to ERC20, default to null (Ape on ApeChain)
+    expect(apeToArbOverride.source).toEqual(null);
+    expect(apeToArbOverride.destination).toEqual(ape);
+  });
+
+  it('For transfers on chain with custom fee token, returns null', () => {
+    const arbToXaiOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: 660279, // Xai
+    });
+
+    expect(arbToXaiOverride.source).toEqual(null);
+    expect(arbToXaiOverride.destination).toEqual(null);
+
+    const xaiToArbOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: 660279, // Xai
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(xaiToArbOverride.source).toEqual(null);
+    expect(xaiToArbOverride.destination).toEqual(null);
   });
 
   it('For transfers including Superposition returns USDCe on Superposition', () => {

@@ -71,6 +71,7 @@ export interface BridgeToken {
   logoURI?: string;
   listIds: Set<string>; // no listID indicates added by user
   isL2Native?: boolean;
+  priceUSD?: number;
 }
 
 export interface ERC20BridgeToken extends BridgeToken {

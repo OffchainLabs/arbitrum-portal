@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { TabParamEnum, isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
@@ -20,6 +21,7 @@ export function MainContent() {
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
   const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
+  useTokenListPriceUpdater();
 
   useBalanceUpdater();
 
