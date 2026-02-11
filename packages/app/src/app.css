@@ -168,7 +168,8 @@ input:focus-visible {
   --tooltip-translate-y: 0px;
 }
 
-.tooltip-animated[data-state='delayed-open'] {
+.tooltip-animated[data-state='delayed-open'],
+.tooltip-animated[data-state='instant-open'] {
   animation: tooltipIn 120ms ease-out;
 }
 
