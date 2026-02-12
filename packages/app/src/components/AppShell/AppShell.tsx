@@ -10,7 +10,6 @@ import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { Nav } from './components/Nav';
 import { NavLinks } from './components/NavLinks';
 import { SubNav } from './components/SubNav';
-import { SubNavMobile } from './components/mobile/SubNavMobile';
 
 const AppProviders = dynamic(
   () => import('./providers/AppProviders').then((mod) => mod.AppProviders),
