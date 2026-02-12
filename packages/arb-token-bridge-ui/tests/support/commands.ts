@@ -265,7 +265,8 @@ export function findTransactionInTransactionHistory({
   const parsedAmount = amount.toString().replace(/\./g, '\\.');
 
   const rowId = new RegExp(
-    `(claimable|deposit)-row-[0-9xabcdef]*-${parsedAmount}${symbol}${amount2 && symbol2 ? `-${amount2}${symbol2}` : ''
+    `(claimable|deposit)-row-[0-9xabcdef]*-${parsedAmount}${symbol}${
+      amount2 && symbol2 ? `-${amount2}${symbol2}` : ''
     }`,
   );
 
