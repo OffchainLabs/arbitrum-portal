@@ -1,9 +1,8 @@
 'use client';
 
-import { useMediaQuery } from '@uidotdev/usehooks';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
@@ -29,12 +28,34 @@ interface AppShellPaddingWrapperProps extends PropsWithChildren {
   isEmbedMode: boolean;
 }
 
+function useIsMobileLayout(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
+    };
+
+    setIsMobile(mediaQuery.matches);
+
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
+  return isMobile;
+}
+
 function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrapperProps) {
   const isBannerVisible = useSiteBannerVisible();
   const desktopPaddingTop = getDesktopContentPadding(isBannerVisible);
   const mobilePaddingTop = getMobileContentPadding(isBannerVisible);
   const mobilePaddingBottom = getMobileContentBottomPadding();
-  const isMobile = useMediaQuery('(max-width : 768px)');
+  const isMobile = useIsMobileLayout();
 
   if (isEmbedMode) {
     return <div className="flex flex-1 flex-col md:flex-row">{children}</div>;
@@ -56,17 +77,38 @@ function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrappe
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const isEmbedMode = pathname.startsWith('/bridge/embed');
-  const isMobile = useMediaQuery('(max-width : 768px)');
 
   return (
     <AppProviders>
       <div className="flex min-h-screen flex-col">
-        {!isEmbedMode && (isMobile ? <NavHeaderMobile /> : <Nav />)}
+        {!isEmbedMode && (
+          <>
+            <div className="hidden md:block">
+              <Nav />
+            </div>
+            <div className="md:hidden">
+              <NavHeaderMobile />
+            </div>
+          </>
+        )}
         <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
-          {!isEmbedMode && (isMobile ? <SubNavMobile /> : <SubNav />)}
+          {!isEmbedMode && (
+            <>
+              <div className="hidden md:block">
+                <SubNav />
+              </div>
+              <div className="md:hidden">
+                <SubNavMobile />
+              </div>
+            </>
+          )}
           <main className="flex-1">{children}</main>
         </AppShellPaddingWrapper>
-        {!isEmbedMode && isMobile && <NavMobile />}
+        {!isEmbedMode && (
+          <div className="md:hidden">
+            <NavMobile />
+          </div>
+        )}
       </div>
     </AppProviders>
   );
