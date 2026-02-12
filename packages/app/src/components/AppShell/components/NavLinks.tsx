@@ -1,9 +1,9 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
-import Image from 'next/image';
 
 import { navLinksWithIcons } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
@@ -28,8 +28,9 @@ export function NavLinks() {
             href={link.href}
             prefetch={true}
             className={twMerge(
-              'rounded-md px-4 h-full text-sm text-white transition-colors flex items-center justify-center',
-              isActive ? 'bg-white/10 text-white' : 'bg-transparent hover:opacity-50',
+              'flex flex-1 flex-col items-center rounded justify-center gap-2 transition-all duration-200 h-full touch-manipulation relative',
+              'md:rounded-md md:px-4 md:flex-row md:touch-auto md:flex-initial',
+              isActive ? 'bg-white/10' : 'bg-transparent hover:opacity-50',
             )}
           >
             {isActive && (

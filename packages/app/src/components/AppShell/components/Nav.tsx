@@ -1,6 +1,5 @@
 import { SiteBanner } from '@/bridge/components/common/SiteBanner';
 
-import { NavLinks } from './NavLinks';
 import { NavLogo } from './NavLogo';
 import { NavSearch } from './NavSearch';
 import { NavWallet } from './NavWallet';
@@ -15,11 +14,7 @@ export function Nav() {
           <NavSearch />
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <NavLinks />
-        </div>
-
-        <div className="flex items-center">
+        <div className="flex items-center md:w-full justify-end">
           <NavWallet />
         </div>
       </div>

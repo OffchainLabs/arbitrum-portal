@@ -46,7 +46,12 @@ export function SubNav() {
       data-banner={isBannerVisible ? 'true' : undefined}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
-      <nav className="flex flex-col gap-2 py-6 px-2">
+      <nav
+        className={twMerge(
+          'flex md:flex-col gap-2 p-0.5 bg-neutral-25 rounded-md',
+          'md:rounded-none md:bg-transparent md:py-6 md:px-2',
+        )}
+      >
         {items.map((item) => {
           const isActive = getIsActiveSubNavItem(item, activeRoute, pathname, searchParams);
 
@@ -64,12 +69,16 @@ export function SubNav() {
                 alt={item.label}
                 width={20}
                 height={20}
-                className={twMerge('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-gray-5')}
+                className={twMerge(
+                  'h-4 w-4 md:h-5 md:w-5 shrink-0',
+                  isActive ? 'text-white' : 'text-gray-5',
+                )}
               />
               <span
                 className={twMerge(
-                  'text-xs text-center',
-                  isActive ? 'font-semibold text-white' : 'font-light text-white',
+                  'text-sm text-center',
+                  'md:text-xs',
+                  isActive ? 'font-semibold text-white' : 'md:font-light text-white',
                 )}
               >
                 {item.label}
