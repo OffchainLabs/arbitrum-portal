@@ -155,7 +155,7 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
     <button
       onClick={openConnectModal}
       type="button"
-      className="rounded-md bg-primary-cta px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-cta/80"
+      className="rounded-md bg-primary-cta px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-cta/80 whitespace-nowrap"
     >
       Connect Wallet
     </button>

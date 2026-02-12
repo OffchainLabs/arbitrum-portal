@@ -14,8 +14,8 @@ export function NavLinks() {
     <div
       className={twMerge(
         'fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-sm',
-        'gap-1.5 bg-neutral-25 rounded-md',
-        'md:top-2 md:left-1/2 md:-translate-x-1/2 md:w-fit md:h-10 md:p-0.5 md:justify-normal',
+        'gap-1.5 md:bg-neutral-25 rounded-md',
+        'md:top-3 md:left-1/2 md:-translate-x-1/2 md:w-fit md:h-10 md:p-0 md:justify-normal',
       )}
     >
       {navLinksWithIcons.map((link) => {
@@ -48,7 +48,7 @@ export function NavLinks() {
               width={32}
               height={32}
               className={twMerge(
-                'h-8 w-8 shrink-0 transition-colors stroke-2',
+                'h-8 w-8 shrink-0 transition-colors stroke-2 text-white',
                 isActive ? 'text-white' : 'text-white/70',
                 'md:hidden',
               )}
@@ -56,8 +56,7 @@ export function NavLinks() {
 
             <span
               className={twMerge(
-                'text-[10px] leading-[12px] transition-colors tracking-tight',
-                isActive ? 'font-semibold text-white' : 'font-normal text-white/70',
+                'text-[10px] leading-[12px] transition-colors tracking-tight text-white',
                 'md:text-sm',
               )}
             >
