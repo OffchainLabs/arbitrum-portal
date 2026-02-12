@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { PropsWithChildren, useEffect, useState } from 'react';
+import { PropsWithChildren } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
@@ -11,11 +12,6 @@ import { SubNav } from './components/SubNav';
 import { NavHeaderMobile } from './components/mobile/NavHeaderMobile';
 import { NavMobile } from './components/mobile/NavMobile';
 import { SubNavMobile } from './components/mobile/SubNavMobile';
-import {
-  getDesktopContentPadding,
-  getMobileContentBottomPadding,
-  getMobileContentPadding,
-} from './config/navConfig';
 
 const AppProviders = dynamic(
   () => import('./providers/AppProviders').then((mod) => mod.AppProviders),
@@ -28,47 +24,24 @@ interface AppShellPaddingWrapperProps extends PropsWithChildren {
   isEmbedMode: boolean;
 }
 
-function useIsMobileLayout(): boolean {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches);
-    };
-
-    setIsMobile(mediaQuery.matches);
-
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
-
-  return isMobile;
-}
+const contentPaddingClasses = twMerge(
+  'flex flex-1 flex-col md:flex-row',
+  'pt-[calc(theme(navbar.mobile)+theme(navbar.spacing))]',
+  'data-[banner=true]:pt-[calc(theme(navbar.mobile)+theme(navbar.banner)+theme(navbar.spacing))]',
+  'md:pt-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
+  'data-[banner=true]:md:pt-[calc(theme(navbar.desktop)+theme(navbar.banner)+theme(navbar.spacing))]',
+  'pb-[theme(navbar.mobileBottom)] md:pb-0',
+);
 
 function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrapperProps) {
   const isBannerVisible = useSiteBannerVisible();
-  const desktopPaddingTop = getDesktopContentPadding(isBannerVisible);
-  const mobilePaddingTop = getMobileContentPadding(isBannerVisible);
-  const mobilePaddingBottom = getMobileContentBottomPadding();
-  const isMobile = useIsMobileLayout();
 
   if (isEmbedMode) {
     return <div className="flex flex-1 flex-col md:flex-row">{children}</div>;
   }
 
   return (
-    <div
-      className="flex flex-1 flex-col md:flex-row"
-      style={{
-        paddingTop: `${isMobile ? mobilePaddingTop : desktopPaddingTop}px`,
-        paddingBottom: isMobile ? `${mobilePaddingBottom}px` : undefined,
-      }}
-    >
+    <div className={contentPaddingClasses} data-banner={isBannerVisible ? 'true' : undefined}>
       {children}
     </div>
   );

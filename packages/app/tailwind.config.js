@@ -36,6 +36,13 @@ module.exports = {
       xl: '1280px',
     },
     extend: {
+      navbar: {
+        desktop: '66px',
+        mobile: '56px',
+        mobileBottom: '90px',
+        banner: '32px',
+        spacing: '30px',
+      },
       aspectRatio: {
         '3/1': '3 / 1',
       },

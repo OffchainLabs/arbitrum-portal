@@ -7,7 +7,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
-import { getSubNavTopPosition, subNavItems } from '../config/navConfig';
+import { subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../utils/getActiveSubNavItem';
 
@@ -18,21 +18,30 @@ export function SubNav() {
   const isBannerVisible = useSiteBannerVisible();
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
-  const topPosition = getSubNavTopPosition(isBannerVisible);
+  const subNavTopClasses = twMerge(
+    'top-[theme(navbar.desktop)]',
+    'data-[banner=true]:top-[calc(theme(navbar.desktop)+theme(navbar.banner))]',
+  );
 
   if (items.length === 0) {
     return (
       <aside
-        className="fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0"
-        style={{ top: `${topPosition}px` }}
-      ></aside>
+        className={twMerge(
+          'fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0',
+          subNavTopClasses,
+        )}
+        data-banner={isBannerVisible ? 'true' : undefined}
+      />
     );
   }
 
   return (
     <aside
-      className="sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0"
-      style={{ top: `${topPosition}px` }}
+      className={twMerge(
+        'sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0',
+        subNavTopClasses,
+      )}
+      data-banner={isBannerVisible ? 'true' : undefined}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
       <nav className="flex flex-col gap-2 py-6 px-2">

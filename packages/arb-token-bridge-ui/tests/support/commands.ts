@@ -194,13 +194,13 @@ export function findSelectTokenButton(text: string): Cypress.Chainable<JQuery<HT
 
 export function switchToTransferPanelTab() {
   cy.wait(1_000);
-  return cy.findByLabelText('Switch to Bridge Tab').click();
+  return cy.findAllByLabelText('Switch to Bridge Tab').filter(':visible').first().click();
 }
 
 export function switchToTransactionHistoryTab(tab: 'pending' | 'settled') {
   cy.log(`opening transactions panel on ${tab}`);
 
-  cy.findByLabelText('Switch to Transaction History Tab').click();
+  cy.findAllByLabelText('Switch to Transaction History Tab').filter(':visible').first().click();
 
   cy.selectTransactionsPanelTab(tab);
 

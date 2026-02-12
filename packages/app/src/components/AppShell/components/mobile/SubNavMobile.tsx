@@ -8,7 +8,7 @@ import { twMerge } from 'tailwind-merge';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { ExternalLink } from '@/portal/components/ExternalLink';
 
-import { getSubNavMobileTopPosition, subNavItems } from '../../config/navConfig';
+import { subNavItems } from '../../config/navConfig';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import { getActiveSubNavItem } from '../../utils/getActiveSubNavItem';
 
@@ -23,9 +23,18 @@ export function SubNavMobile() {
     return null;
   }
 
+  const subNavMobileTopClasses = twMerge(
+    'top-[theme(navbar.mobile)]',
+    'data-[banner=true]:top-[calc(theme(navbar.mobile)+theme(navbar.banner))]',
+  );
+
   return (
     <nav
-      className={`sticky z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 pt-0 md:hidden overflow-hidden ${getSubNavMobileTopPosition(isBannerVisible)}`}
+      className={twMerge(
+        'sticky z-40 flex w-full items-center gap-2 border-none bg-black/70 backdrop-blur-sm p-4 pt-0 md:hidden overflow-hidden',
+        subNavMobileTopClasses,
+      )}
+      data-banner={isBannerVisible ? 'true' : undefined}
     >
       <div className="flex items-center gap-2 bg-neutral-25 rounded-md w-full overflow-hidden p-0.5">
         {items.map((item) => {
