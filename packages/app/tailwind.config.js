@@ -38,9 +38,10 @@ module.exports = {
     extend: {
       navbar: {
         desktop: '66px',
-        mobile: '56px',
+        mobile: '66px',
         mobileBottom: '90px',
-        banner: '32px',
+        bannerDesktop: '32px',
+        bannerMobile: '56px',
         spacing: '30px',
       },
       aspectRatio: {

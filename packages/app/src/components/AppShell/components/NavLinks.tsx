@@ -4,11 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
+import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
+
 import { navLinksWithIcons } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 
 export function NavLinks() {
   const activeRoute = useActiveRoute();
+  const isBannerVisible = useSiteBannerVisible();
 
   return (
     <div
@@ -16,6 +19,7 @@ export function NavLinks() {
         'fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-sm',
         'gap-1.5 md:bg-neutral-25 rounded-md',
         'md:top-3 md:left-1/2 md:-translate-x-1/2 md:w-fit md:h-10 md:p-0 md:justify-normal',
+        isBannerVisible && 'md:top-12',
       )}
     >
       {navLinksWithIcons.map((link) => {

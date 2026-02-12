@@ -21,7 +21,8 @@ export function SubNav() {
 
   const subNavTopClasses = twMerge(
     'top-[theme(navbar.desktop)]',
-    'data-[banner=true]:top-[calc(theme(navbar.desktop)+theme(navbar.banner))]',
+    'data-[banner=true]:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop))]',
+    'data-[banner=true]:top-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile))]',
   );
 
   if (items.length === 0) {
@@ -40,7 +41,7 @@ export function SubNav() {
     <aside
       className={twMerge(
         'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4',
-        'md:sticky lg:fixed md:w-[72px] md:px-0 md:mb-0',
+        'md:fixed md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
       data-banner={isBannerVisible ? 'true' : undefined}

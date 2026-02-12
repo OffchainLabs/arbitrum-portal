@@ -10,6 +10,6 @@ export const toolsTabs: readonly TabConfig[] = [
 ] as const;
 
 export const chainsTabs: readonly TabConfig[] = [
-  { href: '/chains/ecosystem', label: 'Navigator', pathMatch: '/chains/ecosystem' },
+  { href: '/chains/ecosystem', label: 'Chain Navigator', pathMatch: '/chains/ecosystem' },
   { href: '/chains/metrics', label: 'Stats', pathMatch: '/chains/metrics' },
 ] as const;

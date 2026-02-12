@@ -24,11 +24,11 @@ interface AppShellPaddingWrapperProps extends PropsWithChildren {
 
 const contentPaddingClasses = twMerge(
   'flex flex-1 flex-col md:flex-row',
-  'pt-[calc(theme(navbar.mobile)+theme(navbar.spacing))]',
-  'data-[banner=true]:pt-[calc(theme(navbar.mobile)+theme(navbar.banner)+theme(navbar.spacing))]',
-  'md:pt-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
-  'data-[banner=true]:md:pt-[calc(theme(navbar.desktop)+theme(navbar.banner)+theme(navbar.spacing))]',
-  'pb-[theme(navbar.mobileBottom)] md:pb-0',
+  'pt-[calc(theme(navbar.mobile)+theme(navbar.spacing))]', // padding-top: mobile (no banner)
+  'data-[banner=true]:pt-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile)+theme(navbar.spacing))]', // padding-top: mobile (banner visible)
+  'md:pt-[calc(theme(navbar.desktop)+theme(navbar.spacing))]', // padding-top: desktop (no banner)
+  'data-[banner=true]:md:pt-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]', // padding-top: desktop (banner visible)
+  'pb-[theme(navbar.mobileBottom)] md:pb-0', // padding-bottom: mobile bottom nav height; desktop none
 );
 
 function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrapperProps) {

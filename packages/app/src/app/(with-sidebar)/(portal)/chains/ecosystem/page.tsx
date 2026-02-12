@@ -7,7 +7,6 @@ import { spotlightOrbitChains } from '@/portal/common/orbitChains';
 import { chainsTabs } from '@/portal/common/pageTabConfig';
 import { EntityType } from '@/portal/common/types';
 import { CommunitySpotlight } from '@/portal/components/CommunitySpotlight';
-import { FastWithdrawalAnnouncement } from '@/portal/components/FastWithdrawalAnnouncement';
 import { GettingStarted } from '@/portal/components/OrbitEcosystem/GettingStarted';
 import { HeroBanner } from '@/portal/components/OrbitEcosystem/HeroBanner';
 import { OrbitChainsListingByCategories } from '@/portal/components/OrbitEcosystem/OrbitChainsListingByCategories';
@@ -55,8 +54,6 @@ export default function OrbitPage() {
       <HeroBanner />
 
       <GettingStarted />
-
-      <FastWithdrawalAnnouncement />
 
       <CommunitySpotlight
         title="Chain Spotlight"
