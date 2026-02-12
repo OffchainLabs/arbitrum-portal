@@ -4,7 +4,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
-
 import { navLinksWithIcons } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 

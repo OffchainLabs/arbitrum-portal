@@ -10,7 +10,7 @@ import { ExternalLink } from '@/portal/components/ExternalLink';
 
 import { subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
-import { getIsActiveSubNavItem } from '../utils/getActiveSubNavItem';
+import { getIsActiveSubNavItem } from '../utils/getIsActiveSubNavItem';
 
 export function SubNav() {
   const activeRoute = useActiveRoute();
