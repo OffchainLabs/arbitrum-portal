@@ -1,5 +1,6 @@
 'use client';
 
+import { useMediaQuery } from '@uidotdev/usehooks';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { PropsWithChildren } from 'react';
@@ -33,34 +34,22 @@ function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrappe
   const desktopPaddingTop = getDesktopContentPadding(isBannerVisible);
   const mobilePaddingTop = getMobileContentPadding(isBannerVisible);
   const mobilePaddingBottom = getMobileContentBottomPadding();
+  const isMobile = useMediaQuery('(max-width : 768px)');
 
   if (isEmbedMode) {
     return <div className="flex flex-1 flex-col md:flex-row">{children}</div>;
   }
 
   return (
-    <>
-      {/* Mobile wrapper */}
-      <div
-        className="flex flex-1 flex-col md:hidden"
-        style={{
-          paddingTop: `${mobilePaddingTop}px`,
-          paddingBottom: `${mobilePaddingBottom}px`,
-        }}
-      >
-        {children}
-      </div>
-
-      {/* Desktop wrapper */}
-      <div
-        className="hidden md:flex flex-1 flex-col md:flex-row"
-        style={{
-          paddingTop: `${desktopPaddingTop}px`,
-        }}
-      >
-        {children}
-      </div>
-    </>
+    <div
+      className="flex flex-1 flex-col md:flex-row"
+      style={{
+        paddingTop: `${isMobile ? mobilePaddingTop : desktopPaddingTop}px`,
+        paddingBottom: isMobile ? `${mobilePaddingBottom}px` : undefined,
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
