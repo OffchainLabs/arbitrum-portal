@@ -9,7 +9,7 @@ function parseHref(href: string): { pathname: string; searchParams: URLSearchPar
   };
 }
 
-export function getActiveSubNavItem(
+export function getIsActiveSubNavItem(
   item: SubNavItem,
   activeRoute: NavRoute | null,
   pathname: string,
