@@ -27,7 +27,7 @@ export function SubNav() {
     return (
       <aside
         className={twMerge(
-          'fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0',
+          'left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0 hidden',
           subNavTopClasses,
         )}
         data-banner={isBannerVisible ? 'true' : undefined}
@@ -38,21 +38,29 @@ export function SubNav() {
   return (
     <aside
       className={twMerge(
-        'sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0',
+        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4',
+        'md:sticky lg:fixed md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
       data-banner={isBannerVisible ? 'true' : undefined}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
-      <nav className="flex flex-col gap-2 py-6 px-2">
+      <nav
+        className={twMerge(
+          'flex md:flex-col gap-2 p-0.5 bg-neutral-25 rounded-md',
+          'md:rounded-none md:bg-transparent md:py-6 md:px-2',
+        )}
+      >
         {items.map((item) => {
           const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);
 
           const content = (
             <div
               className={twMerge(
-                'flex flex-col items-center gap-1 rounded-md transition-colors p-1 py-2',
-                isActive ? 'cursor-default' : ' hover:bg-white/20 opacity-50',
+                'flex items-center gap-2 rounded-md transition-colors p-1 py-2 min-h-[44px] justify-center',
+                'md:flex-col md:min-h-0',
+                isActive ? 'bg-white/5 text-white' : 'bg-transparent text-white',
+                isActive ? 'md:bg-transparent cursor-default' : ' hover:bg-white/20 md:opacity-50',
               )}
             >
               <Image
@@ -60,12 +68,16 @@ export function SubNav() {
                 alt={item.label}
                 width={20}
                 height={20}
-                className={twMerge('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-gray-5')}
+                className={twMerge(
+                  'h-4 w-4 md:h-5 md:w-5 shrink-0',
+                  isActive ? 'text-white' : 'text-gray-5',
+                )}
               />
               <span
                 className={twMerge(
-                  'text-xs text-center',
-                  isActive ? 'font-semibold text-white' : 'font-light text-white',
+                  'text-sm text-center',
+                  'md:text-xs',
+                  isActive ? 'font-semibold text-white' : 'md:font-light text-white',
                 )}
               >
                 {item.label}
