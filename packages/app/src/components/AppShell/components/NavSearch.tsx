@@ -153,7 +153,8 @@ export function NavSearch() {
             <input
               ref={inputRef}
               type="text"
-              className="h-full w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none"
+              name="portal-search"
+              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none"
               placeholder="Search categories, projects, chains, and more"
               value={searchString}
               onChange={handleInputChange}

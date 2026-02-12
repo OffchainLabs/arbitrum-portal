@@ -6,10 +6,11 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
+import { ExternalLink } from '@/portal/components/ExternalLink';
 
 import { subNavItems } from '../config/navConfig';
 import { useActiveRoute } from '../hooks/useActiveRoute';
-import { getActiveSubNavItem } from '../utils/getActiveSubNavItem';
+import { getIsActiveSubNavItem } from '../utils/getActiveSubNavItem';
 
 export function SubNav() {
   const activeRoute = useActiveRoute();
@@ -52,7 +53,7 @@ export function SubNav() {
         )}
       >
         {items.map((item) => {
-          const isActive = getActiveSubNavItem(item, activeRoute, pathname, searchParams);
+          const isActive = getIsActiveSubNavItem(item, activeRoute, pathname, searchParams);
 
           const content = (
             <div
@@ -87,16 +88,14 @@ export function SubNav() {
 
           if (item.external) {
             return (
-              <a
+              <ExternalLink
                 key={item.href}
                 href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="w-full block"
                 aria-label={item.ariaLabel}
               >
                 {content}
-              </a>
+              </ExternalLink>
             );
           }
 
