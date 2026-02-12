@@ -29,24 +29,24 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   '/bridge': {
     label: 'Bridge',
     route: '/bridge',
-    href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
+    href: '/bridge',
     imgSrc: '/icons/navigation/bridge.svg',
     subNavItems: [
       {
         label: 'Bridge',
-        href: '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&sanitized=true',
+        href: '/bridge',
         imgSrc: '/icons/navigation/bridge.svg',
         ariaLabel: 'Switch to Bridge Tab',
       },
       {
         label: 'Txns',
-        href: '/bridge?tab=tx_history&sourceChain=ethereum&destinationChain=arbitrum-one&sanitized=true',
+        href: '/bridge?tab=tx_history',
         imgSrc: '/icons/navigation/transactions.svg',
         ariaLabel: 'Switch to Transaction History Tab',
       },
       {
         label: 'Buy',
-        href: '/bridge/buy?sourceChain=arbitrum-one&destinationChain=ethereum&sanitized=true',
+        href: '/bridge/buy',
         imgSrc: '/icons/navigation/buy.svg',
         ariaLabel: 'Switch to Buy Tab',
       },
