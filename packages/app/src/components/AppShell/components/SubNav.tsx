@@ -9,6 +9,7 @@ import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { ExternalLink } from '@/portal/components/ExternalLink';
 
 import { subNavItems } from '../config/navConfig';
+import { getBridgeLinkWithPreservedQueryParams } from '../utils/getBridgeLinkWithPreservedQueryParams';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { getIsActiveSubNavItem } from '../utils/getIsActiveSubNavItem';
 
@@ -55,6 +56,10 @@ export function SubNav() {
       >
         {items.map((item) => {
           const isActive = getIsActiveSubNavItem(item, activeRoute, pathname, searchParams);
+          const href =
+            activeRoute === '/bridge' && !item.external
+              ? getBridgeLinkWithPreservedQueryParams(item, searchParams)
+              : item.href;
 
           const content = (
             <div
@@ -91,7 +96,7 @@ export function SubNav() {
             return (
               <ExternalLink
                 key={item.href}
-                href={item.href}
+                href={href}
                 className="w-full block"
                 aria-label={item.ariaLabel}
               >
@@ -103,7 +108,7 @@ export function SubNav() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               className="w-full block"
               aria-label={item.ariaLabel}
             >
