@@ -27,7 +27,7 @@ export function SubNav() {
     return (
       <aside
         className={twMerge(
-          'fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0',
+          'left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0 hidden',
           subNavTopClasses,
         )}
         data-banner={isBannerVisible ? 'true' : undefined}
@@ -38,7 +38,8 @@ export function SubNav() {
   return (
     <aside
       className={twMerge(
-        'sticky lg:fixed left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0',
+        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4',
+        'md:sticky lg:fixed md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
       data-banner={isBannerVisible ? 'true' : undefined}
@@ -51,8 +52,10 @@ export function SubNav() {
           const content = (
             <div
               className={twMerge(
-                'flex flex-col items-center gap-1 rounded-md transition-colors p-1 py-2',
-                isActive ? 'cursor-default' : ' hover:bg-white/20 opacity-50',
+                'flex items-center gap-2 rounded-md transition-colors p-1 py-2 min-h-[44px] justify-center',
+                'md:flex-col md:min-h-0',
+                isActive ? 'bg-white/5 text-white' : 'bg-transparent text-white',
+                isActive ? 'md:bg-transparent cursor-default' : ' hover:bg-white/20 md:opacity-50',
               )}
             >
               <Image
