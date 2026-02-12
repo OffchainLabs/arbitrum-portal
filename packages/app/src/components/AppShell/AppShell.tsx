@@ -56,38 +56,17 @@ function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrappe
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const isEmbedMode = pathname.startsWith('/bridge/embed');
+  const isMobile = useMediaQuery('(max-width : 768px)');
 
   return (
     <AppProviders>
       <div className="flex min-h-screen flex-col">
-        {!isEmbedMode && (
-          <>
-            <div className="hidden md:block">
-              <Nav />
-            </div>
-            <div className="md:hidden">
-              <NavHeaderMobile />
-            </div>
-          </>
-        )}
+        {!isEmbedMode && (isMobile ? <NavHeaderMobile /> : <Nav />)}
         <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
-          {!isEmbedMode && (
-            <>
-              <div className="hidden md:block">
-                <SubNav />
-              </div>
-              <div className="md:hidden">
-                <SubNavMobile />
-              </div>
-            </>
-          )}
+          {!isEmbedMode && (isMobile ? <SubNavMobile /> : <SubNav />)}
           <main className="flex-1">{children}</main>
         </AppShellPaddingWrapper>
-        {!isEmbedMode && (
-          <div className="md:hidden">
-            <NavMobile />
-          </div>
-        )}
+        {!isEmbedMode && isMobile && <NavMobile />}
       </div>
     </AppProviders>
   );
