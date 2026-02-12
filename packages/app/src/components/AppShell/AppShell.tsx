@@ -8,9 +8,8 @@ import { twMerge } from 'tailwind-merge';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
 import { Nav } from './components/Nav';
+import { NavLinks } from './components/NavLinks';
 import { SubNav } from './components/SubNav';
-import { NavHeaderMobile } from './components/mobile/NavHeaderMobile';
-import { NavMobile } from './components/mobile/NavMobile';
 import { SubNavMobile } from './components/mobile/SubNavMobile';
 
 const AppProviders = dynamic(
@@ -56,32 +55,14 @@ export function AppShell({ children }: PropsWithChildren) {
       <div className="flex min-h-screen flex-col">
         {!isEmbedMode && (
           <>
-            <div className="hidden md:block">
-              <Nav />
-            </div>
-            <div className="md:hidden">
-              <NavHeaderMobile />
-            </div>
+            <Nav />
+            <NavLinks />
           </>
         )}
         <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
-          {!isEmbedMode && (
-            <>
-              <div className="hidden md:block">
-                <SubNav />
-              </div>
-              <div className="md:hidden">
-                <SubNavMobile />
-              </div>
-            </>
-          )}
+          {!isEmbedMode && <SubNav />}
           <main className="flex-1">{children}</main>
         </AppShellPaddingWrapper>
-        {!isEmbedMode && (
-          <div className="md:hidden">
-            <NavMobile />
-          </div>
-        )}
       </div>
     </AppProviders>
   );
