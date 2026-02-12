@@ -36,6 +36,9 @@ export function NavLinks() {
     };
 
     update();
+    const ro = new ResizeObserver(update);
+    ro.observe(container);
+    return () => ro.disconnect();
   }, [activeIndex]);
 
   return (

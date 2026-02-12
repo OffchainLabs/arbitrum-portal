@@ -22,8 +22,8 @@ export function SubNav() {
 
   const subNavTopClasses = twMerge(
     'top-[theme(navbar.desktop)]',
-    'data-[banner=true]:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop))]',
-    'data-[banner=true]:top-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile))]',
+    isBannerVisible && 'top-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile))]',
+    isBannerVisible && 'md:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop))]',
   );
 
   if (items.length === 0) {
@@ -33,7 +33,6 @@ export function SubNav() {
           'left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0 hidden',
           subNavTopClasses,
         )}
-        data-banner={isBannerVisible ? 'true' : undefined}
       />
     );
   }
@@ -45,7 +44,6 @@ export function SubNav() {
         'md:sticky md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
-      data-banner={isBannerVisible ? 'true' : undefined}
     >
       {/* Padding matches top navbar px-6 (24px) to align with logo */}
       <nav
