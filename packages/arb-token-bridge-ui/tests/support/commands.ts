@@ -194,13 +194,13 @@ export function findSelectTokenButton(text: string): Cypress.Chainable<JQuery<HT
 
 export function switchToTransferPanelTab() {
   cy.wait(1_000);
-  return cy.findAllByLabelText('Switch to Bridge Tab').filter(':visible').first().click();
+  return cy.findAllByLabelText('Switch to Bridge Tab').click();
 }
 
 export function switchToTransactionHistoryTab(tab: 'pending' | 'settled') {
   cy.log(`opening transactions panel on ${tab}`);
 
-  cy.findAllByLabelText('Switch to Transaction History Tab').filter(':visible').first().click();
+  cy.findAllByLabelText('Switch to Transaction History Tab').click();
 
   cy.selectTransactionsPanelTab(tab);
 
@@ -265,8 +265,7 @@ export function findTransactionInTransactionHistory({
   const parsedAmount = amount.toString().replace(/\./g, '\\.');
 
   const rowId = new RegExp(
-    `(claimable|deposit)-row-[0-9xabcdef]*-${parsedAmount}${symbol}${
-      amount2 && symbol2 ? `-${amount2}${symbol2}` : ''
+    `(claimable|deposit)-row-[0-9xabcdef]*-${parsedAmount}${symbol}${amount2 && symbol2 ? `-${amount2}${symbol2}` : ''
     }`,
   );
 
