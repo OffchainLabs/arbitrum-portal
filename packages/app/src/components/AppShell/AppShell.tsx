@@ -34,8 +34,10 @@ function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrappe
     'pb-[theme(navbar.mobileBottom)] md:pb-0',
     !isBannerVisible && 'pt-[calc(theme(navbar.mobile)+theme(navbar.spacing))]',
     !isBannerVisible && 'md:pt-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
-    isBannerVisible && 'pt-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile)+theme(navbar.spacing))]',
-    isBannerVisible && 'md:pt-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
+    isBannerVisible &&
+      'pt-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile)+theme(navbar.spacing))]',
+    isBannerVisible &&
+      'md:pt-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
   );
 
   return <div className={contentPaddingClasses}>{children}</div>;
