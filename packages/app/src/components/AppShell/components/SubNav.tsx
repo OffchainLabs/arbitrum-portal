@@ -9,8 +9,8 @@ import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { ExternalLink } from '@/portal/components/ExternalLink';
 
 import { subNavItems } from '../config/navConfig';
-import { getBridgeLinkWithPreservedQueryParams } from '../utils/getBridgeLinkWithPreservedQueryParams';
 import { useActiveRoute } from '../hooks/useActiveRoute';
+import { getBridgeLinkWithPreservedQueryParams } from '../utils/getBridgeLinkWithPreservedQueryParams';
 import { getIsActiveSubNavItem } from '../utils/getIsActiveSubNavItem';
 
 export function SubNav() {
@@ -106,12 +106,7 @@ export function SubNav() {
           }
 
           return (
-            <Link
-              key={item.href}
-              href={href}
-              className="w-full block"
-              aria-label={item.ariaLabel}
-            >
+            <Link key={item.href} href={href} className="w-full block" aria-label={item.ariaLabel}>
               {content}
             </Link>
           );
