@@ -40,8 +40,8 @@ export function SubNav() {
   return (
     <aside
       className={twMerge(
-        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4',
-        'md:fixed md:w-[72px] md:px-0 md:mb-0',
+        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4 h-full',
+        'md:sticky md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
       data-banner={isBannerVisible ? 'true' : undefined}
@@ -50,7 +50,7 @@ export function SubNav() {
       <nav
         className={twMerge(
           'flex md:flex-col gap-2 p-0.5 bg-neutral-25 rounded-md',
-          'md:rounded-none md:bg-transparent md:py-6 md:px-2',
+          'md:rounded-none md:bg-transparent md:py-6 md:px-2 md:pt-0',
         )}
       >
         {items.map((item) => {
