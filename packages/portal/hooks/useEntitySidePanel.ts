@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
 import { ENTITY_METADATA } from '@/common/entities';
@@ -17,6 +17,7 @@ import { EntityType } from '@/common/types';
 
 export const useEntitySidePanel = (entityType: EntityType) => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const openEntitySidePanel = useCallback(
     (entitySlug: string) => {
@@ -29,10 +30,19 @@ export const useEntitySidePanel = (entityType: EntityType) => {
       const queryParams = new URLSearchParams(sanitizedUrl?.split('?')[1]);
 
       queryParams.set(queryParamKey, entitySlug);
-      const newURL = `${baseUrl}?${queryParams.toString()}`;
-      router.push(newURL, { scroll: false });
+
+      // If user is on bridge page, redirect to portal app version (/) instead
+      const isOnBridgePage = pathname.startsWith('/bridge');
+      if (isOnBridgePage) {
+        // Redirect to portal app root with query params
+        const portalUrl = `/?${queryParams.toString()}`;
+        router.push(portalUrl, { scroll: false });
+      } else {
+        const newURL = `${baseUrl}?${queryParams.toString()}`;
+        router.push(newURL, { scroll: false });
+      }
     },
-    [router, entityType],
+    [router, entityType, pathname],
   );
   const closeEntitySidePanel = useCallback(() => {
     const queryParamKey = ENTITY_METADATA[entityType].queryParamKey;

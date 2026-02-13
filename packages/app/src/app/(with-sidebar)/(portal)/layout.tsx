@@ -1,18 +1,16 @@
 import { PropsWithChildren } from 'react';
 
-import { MobileHeader } from '@/portal/components/MobileHeader';
 import { OrbitChainPanel } from '@/portal/components/OrbitChainPanel/OrbitChainPanel';
-import { PortalPage } from '@/portal/components/PortalPage/PortalPage';
 import { ProjectPanel } from '@/portal/components/ProjectPanel';
-import { Providers } from '@/portal/components/Providers';
 
 export default function PortalLayout({ children }: PropsWithChildren) {
   return (
-    <Providers>
-      <MobileHeader />
-      <PortalPage>{children}</PortalPage>
+    <>
+      <div className="relative mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 lg:gap-6 mb-24">
+        {children}
+      </div>
       <OrbitChainPanel />
       <ProjectPanel />
-    </Providers>
+    </>
   );
 }

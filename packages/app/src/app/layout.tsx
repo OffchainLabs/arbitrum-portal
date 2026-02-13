@@ -1,3 +1,4 @@
+import '@rainbow-me/rainbowkit/styles.css';
 import type { Metadata } from 'next';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';

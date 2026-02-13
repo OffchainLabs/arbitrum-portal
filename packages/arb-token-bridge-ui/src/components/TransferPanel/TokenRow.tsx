@@ -1,11 +1,16 @@
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import { constants } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
+
+import { useETHPrice } from '@/bridge/hooks/useETHPrice';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { getUsdValueForAmount } from '@/bridge/util/TokenPriceUtils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
+import { useBalanceOnDestinationChain } from '../../hooks/useBalanceOnDestinationChain';
 import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -14,7 +19,7 @@ import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChain
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { formatAmount } from '../../util/NumberUtils';
+import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
@@ -28,6 +33,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { Loader } from '../common/atoms/Loader';
 import { TokenLogoFallback } from './TokenInfo';
 import { BlockExplorerTokenLink } from './TokenInfoTooltip';
+import { useTokensFromLists } from './TokenSearchUtils';
 
 function tokenListIdsToNames(ids: string[]): string {
   return ids.map((tokenListId: string) => listIdsToNames[tokenListId]).join(', ');
@@ -124,9 +130,10 @@ interface TokenRowProps {
   style?: React.CSSProperties;
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
   token: ERC20BridgeToken | null;
+  isDestination?: boolean;
 }
 
-function useTokenInfo(token: ERC20BridgeToken | null) {
+function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination: boolean }) {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
     useNetworksRelationship(networks);
@@ -142,8 +149,11 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
       return null;
     }
 
+    if (options?.isDestination) {
+      return override.destination;
+    }
     return override.source;
-  }, [token, networks]);
+  }, [token, networks, options?.isDestination]);
 
   const name = useMemo(() => {
     if (overrideToken) {
@@ -157,7 +167,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return nativeCurrency.name;
-  }, [token, nativeCurrency.name, chainId]);
+  }, [overrideToken, token, nativeCurrency.name, chainId]);
 
   const symbol = useMemo(() => {
     if (overrideToken) {
@@ -171,7 +181,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return nativeCurrency.symbol;
-  }, [token, nativeCurrency.symbol, chainId]);
+  }, [overrideToken, token, nativeCurrency.symbol, chainId]);
 
   const logoURI = useMemo(() => {
     if (overrideToken) {
@@ -182,9 +192,22 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     }
 
     return token.logoURI;
-  }, [token, nativeCurrency]);
+  }, [overrideToken, token, nativeCurrency.logoUrl]);
 
-  const balance = useBalanceOnSourceChain(token);
+  const sourceBalance = useBalanceOnSourceChain(token);
+  const destinationBalance = useBalanceOnDestinationChain(token);
+  const balance = options?.isDestination ? destinationBalance : sourceBalance;
+
+  const decimals = useMemo(() => {
+    if (overrideToken) {
+      return overrideToken.decimals;
+    }
+    if (!token) {
+      return nativeCurrency.decimals;
+    }
+
+    return token.decimals;
+  }, [overrideToken, token, nativeCurrency.decimals]);
 
   const isArbitrumToken = useMemo(() => {
     if (!token) {
@@ -217,6 +240,7 @@ function useTokenInfo(token: ERC20BridgeToken | null) {
     balance,
     isArbitrumToken,
     isBridgeable,
+    decimals,
   };
 }
 
@@ -232,15 +256,36 @@ function ArbitrumTokenBadge() {
   );
 }
 
-function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
+function TokenBalance({
+  token,
+  isDestination,
+}: {
+  token: ERC20BridgeToken | null;
+  isDestination: boolean;
+}) {
+  const [networks] = useNetworks();
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
   const { isLoading: isLoadingAccountType } = useAccountType();
-  const { balance, symbol } = useTokenInfo(token);
+  const { balance, symbol } = useTokenInfo(token, { isDestination });
+  const nativeCurrencyOnDestinationChain = useNativeCurrency({
+    provider: networks.destinationChainProvider,
+  });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const nativeCurrencyDecimals = useMemo(() => {
+    if (isDestination) {
+      return nativeCurrencyOnDestinationChain.decimals;
+    }
+
+    return nativeCurrencyDecimalsOnSourceChain;
+  }, [
+    isDestination,
+    nativeCurrencyDecimalsOnSourceChain,
+    nativeCurrencyOnDestinationChain.decimals,
+  ]);
 
   const isArbitrumNativeUSDC =
     isTokenArbitrumOneNativeUSDC(token?.address) ||
@@ -267,8 +312,8 @@ function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
     if (token) {
       return token.decimals;
     }
-    return nativeCurrencyDecimalsOnSourceChain;
-  }, [nativeCurrencyDecimalsOnSourceChain, token]);
+    return nativeCurrencyDecimals;
+  }, [nativeCurrencyDecimals, token]);
 
   if (!tokenIsAddedToTheBridge) {
     return <span className="arb-hover text-sm">Import</span>;
@@ -280,7 +325,7 @@ function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
   }
 
   return (
-    <span className="flex items-center whitespace-nowrap text-sm text-white/70">
+    <span className="flex items-center whitespace-nowrap text-sm text-white">
       {balance ? (
         formatAmount(balance, {
           decimals,
@@ -293,14 +338,39 @@ function TokenBalance({ token }: { token: ERC20BridgeToken | null }) {
   );
 }
 
-function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
+function TokenContractLink({
+  token,
+  isDestination = false,
+}: {
+  token: ERC20BridgeToken | null;
+  isDestination?: boolean;
+}) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: networks.destinationChainProvider });
 
   const isCustomFeeTokenRow = token === null && nativeCurrency.isCustom;
+
+  if (isDestination) {
+    if (isCustomFeeTokenRow) {
+      return null;
+    }
+
+    if (!token) {
+      return null;
+    }
+
+    if (addressesEqual(token.address, constants.AddressZero)) {
+      return null;
+    }
+
+    if (typeof token.l2Address !== 'undefined') {
+      return <BlockExplorerTokenLink chainId={childChain.id} address={token.l2Address} />;
+    }
+
+    return null;
+  }
 
   if (isCustomFeeTokenRow && isDepositMode) {
     return <BlockExplorerTokenLink chainId={parentChain.id} address={nativeCurrency.address} />;
@@ -308,6 +378,36 @@ function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
 
   if (!token) {
     return null;
+  }
+
+  /**
+   * Native USDC and bridged USDC share the same L2 address (CommonAddress.ArbitrumOne.USDC), but L1 address is different
+   * Bridged USDC has L1 address = CommonAddress.ArbitrumOne.USDC
+   * Native USDC has L1 address = CommonAddress.Ethereum.USDC
+   */
+  if (
+    networks.sourceChain.id === ChainId.ArbitrumOne &&
+    isTokenArbitrumOneNativeUSDC(token.l2Address) &&
+    addressesEqual(token.address, CommonAddress.Ethereum.USDC)
+  ) {
+    return (
+      <BlockExplorerTokenLink
+        chainId={networks.sourceChain.id}
+        address={CommonAddress.ArbitrumOne['USDC.e']}
+      />
+    );
+  }
+  if (
+    networks.sourceChain.id === ChainId.ArbitrumSepolia &&
+    isTokenArbitrumSepoliaNativeUSDC(token.l2Address) &&
+    addressesEqual(token.address, CommonAddress.Sepolia.USDC)
+  ) {
+    return (
+      <BlockExplorerTokenLink
+        chainId={networks.sourceChain.id}
+        address={CommonAddress.ArbitrumSepolia['USDC.e']}
+      />
+    );
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
@@ -333,14 +433,50 @@ function TokenContractLink({ token }: { token: ERC20BridgeToken | null }) {
   );
 }
 
-export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.Element {
+export function TokenRow({
+  style,
+  onTokenSelected,
+  token,
+  isDestination = false,
+}: TokenRowProps): JSX.Element {
   const {
     name: tokenName,
     symbol: tokenSymbol,
     logoURI: tokenLogoURI,
     isArbitrumToken,
     isBridgeable: tokenIsBridgeable,
-  } = useTokenInfo(token);
+    balance,
+    decimals,
+  } = useTokenInfo(token, { isDestination });
+  const [networks] = useNetworks();
+  const tokensFromLists = useTokensFromLists();
+  const sourceNativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
+  const destinationNativeCurrency = useNativeCurrency({
+    provider: networks.destinationChainProvider,
+  });
+  const { ethPrice } = useETHPrice();
+  /**
+   * - zero address is ETH
+   * - null token is Ape (if one of the pair is ApeChain)
+   */
+  const isZeroAddressToken = !!token && addressesEqual(token.address, constants.AddressZero);
+  const apeNativeCurrency =
+    networks.sourceChain.id === ChainId.ApeChain ? sourceNativeCurrency : destinationNativeCurrency;
+  const ethNativeCurrency =
+    networks.sourceChain.id === ChainId.ApeChain ? destinationNativeCurrency : sourceNativeCurrency;
+  const nativeCurrencyForUsd = !token ? apeNativeCurrency : ethNativeCurrency;
+  const nativeCurrencyPrice = nativeCurrencyForUsd.isCustom
+    ? tokensFromLists[nativeCurrencyForUsd.address.toLowerCase()]?.priceUSD
+    : ethPrice;
+
+  const priceUSD = getUsdValueForAmount({
+    amount: Number(utils.formatUnits(BigNumber.from(balance), decimals)),
+    nativeCurrency: nativeCurrencyForUsd,
+    nativeCurrencyPrice,
+    tokensFromLists,
+    selectedToken: isZeroAddressToken ? null : token,
+  });
+  const hasTokenListInfo = !!token && !addressesEqual(token.address, constants.AddressZero);
 
   return (
     <button
@@ -361,16 +497,41 @@ export function TokenRow({ style, onTokenSelected, token }: TokenRowProps): JSX.
           fallback={<TokenLogoFallback />}
         />
 
-        <div className="flex w-full flex-col items-start gap-1 truncate">
-          <div className="flex w-full items-center gap-1">
+        <div
+          className={twMerge(
+            'grid grid-cols-[1fr_auto] gap-[4px] w-full',
+            hasTokenListInfo ? 'grid-rows-3' : 'grid-rows-2',
+          )}
+        >
+          {/* Row 1: Token name + Balance */}
+          <div className="font-medium truncate text-left flex items-center gap-1">
             <span className="text-base font-medium leading-none">{tokenSymbol}</span>
             <span className="text-xs text-white/70">{tokenName}</span>
-            {isArbitrumToken && <ArbitrumTokenBadge />}
+            <span>{isArbitrumToken && <ArbitrumTokenBadge />}</span>
           </div>
-          <TokenContractLink token={token} />
-          <TokenListInfo token={token} />
+          <div className="ml-auto font-medium tabular-nums">
+            {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
+          </div>
+
+          {/* Row 2: Contract or token list info + USD value */}
+          <div className="text-left flex items-center">
+            {!token || addressesEqual(token.address, constants.AddressZero) ? (
+              <TokenListInfo token={token} />
+            ) : (
+              <TokenContractLink token={token} isDestination={isDestination} />
+            )}
+          </div>
+          <div className="ml-auto text-sm text-white/70 tabular-nums">
+            {typeof priceUSD === 'number' ? formatUSD(priceUSD) : ''}
+          </div>
+
+          {/* Row 3: Token list */}
+          {hasTokenListInfo && (
+            <div className="col-span-2 text-left">
+              <TokenListInfo token={token} />
+            </div>
+          )}
         </div>
-        {tokenIsBridgeable && <TokenBalance token={token} />}
       </div>
     </button>
   );

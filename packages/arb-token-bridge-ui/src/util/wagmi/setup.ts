@@ -183,10 +183,42 @@ export function getProps(targetChainKey: string | null) {
     appInfo,
   );
 
-  const transports = Object.keys(rpcURLs).reduce(
-    (acc, chainId) => {
-      const chainIdNumber = Number(chainId);
-      acc[chainIdNumber] = http(rpcURLs[chainIdNumber]);
+  // Ensure all chains in chainList have RPC URLs for WalletConnect
+  // Use custom RPC URL if available, otherwise fall back to chain's default RPC URLs
+  //
+  // In the old setup, AppProviders was dynamically loaded only on the /bridge route via BridgeClient.tsx.
+  // BridgeClient.tsx calls addOrbitChainsToArbitrumSDK() before loading App, ensuring orbit chains
+  // are initialized before AppProviders runs getProps(). However, in the new setup, AppProviders
+  // is loaded in AppShell.tsx for all routes, so orbit chains may not be initialized when getProps()
+  // is called on non-bridge routes.
+  // Additionally, WalletConnect v2 requires RPC URLs for ALL chains
+  // in the chainList, not just those in rpcURLs. The original code only included chains from rpcURLs
+  // in transports, which caused WalletConnect to fail with "Cannot destructure property 'value' of
+  // 'undefined'" when it tried to extract RPC URLs for orbit chains that weren't in transports.
+  // This fix ensures all chains in chainList have RPC URLs by:
+  // 1. Using custom RPC URLs from rpcURLs if available
+  // 2. Falling back to chain's default RPC URLs from chain.rpcUrls.default (handles both array
+  //    and object formats, as orbit chains use object format)
+  const transports = chainList.reduce(
+    (acc, chain) => {
+      const rpcUrl = rpcURLs[chain.id];
+      if (rpcUrl) {
+        acc[chain.id] = http(rpcUrl);
+      } else if (chain.rpcUrls && chain.rpcUrls.default) {
+        // Handle both array and object formats for rpcUrls.default
+        if (Array.isArray(chain.rpcUrls.default) && chain.rpcUrls.default.length > 0) {
+          const defaultRpcUrl = chain.rpcUrls.default[0].http?.[0];
+          if (defaultRpcUrl) {
+            acc[chain.id] = http(defaultRpcUrl);
+          }
+        } else if (!Array.isArray(chain.rpcUrls.default)) {
+          // Handle object format (used by orbit chains)
+          const defaultRpcUrl = chain.rpcUrls.default.http?.[0];
+          if (defaultRpcUrl) {
+            acc[chain.id] = http(defaultRpcUrl);
+          }
+        }
+      }
       return acc;
     },
     {} as Record<number, ReturnType<typeof http>>,

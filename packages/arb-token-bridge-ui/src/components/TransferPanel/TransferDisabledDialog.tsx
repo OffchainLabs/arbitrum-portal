@@ -1,3 +1,4 @@
+import { constants } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
@@ -8,7 +9,6 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { getL2ConfigForTeleport } from '../../token-bridge-sdk/teleport';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -17,6 +17,7 @@ import { isLifiEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
 import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
+import { useTokensFromLists } from './TokenSearchUtils';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 
 export function isDisabledCanonicalTransfer({
@@ -51,28 +52,15 @@ export function isDisabledCanonicalTransfer({
     return true;
   }
 
-  if (parentChainId === ChainId.ArbitrumOne) {
-    if (
-      childChainId === ChainId.ApeChain &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDC)
-    ) {
-      return true;
-    }
-
-    if (
-      childChainId === ChainId.Superposition &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDT) &&
-      !addressesEqual(selectedToken.address, CommonAddress.ArbitrumOne.USDC)
-    ) {
-      return true;
-    }
-  }
-
-  if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+  if (
+    parentChainId === ChainId.ArbitrumOne &&
+    childChainId === ChainId.ApeChain &&
+    addressesEqual(selectedToken.address, constants.AddressZero)
+  ) {
     return true;
   }
 
-  return false;
+  return !!(isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading);
 }
 
 export function TransferDisabledDialog() {
@@ -86,6 +74,7 @@ export function TransferDisabledDialog() {
   >(null);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
+  const tokensFromLists = useTokensFromLists();
   const unsupportedToken = sanitizeTokenSymbol(selectedToken?.symbol ?? '', {
     erc20L1Address: selectedToken?.address,
     chainId: networks.sourceChain.id,
@@ -119,7 +108,8 @@ export function TransferDisabledDialog() {
       isValidLifiTransfer({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-        fromToken: isDepositMode ? selectedToken.address : selectedToken.l2Address,
+        fromToken: selectedToken.address,
+        tokensFromLists,
       })
     ) {
       return false;
@@ -143,6 +133,9 @@ export function TransferDisabledDialog() {
     parentChain.id,
     selectedToken,
     selectedTokenAddressLocalValue,
+    tokensFromLists,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
   ]);
 
   const sourceChainName = getNetworkName(networks.sourceChain.id);

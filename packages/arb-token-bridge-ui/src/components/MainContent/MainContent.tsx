@@ -1,16 +1,14 @@
-import { TabGroup, TabPanel, TabPanels } from '@headlessui/react';
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { usePathname } from 'next/navigation';
-import { Fragment, useMemo } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 
+import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
+import { TabParamEnum, isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
 import { BuyPanel } from '../BuyPanel/BuyPanel';
 import { RecoverFunds } from '../RecoverFunds';
-import { TopNavBar } from '../TopNavBar';
 import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
 import { TransferPanel } from '../TransferPanel/TransferPanel';
 import { SettingsDialog } from '../common/SettingsDialog';
@@ -19,22 +17,11 @@ import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
-  const [{ tab, disabledFeatures }] = useArbQueryParams();
+  const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
-
-  const selectedTab = useMemo(() => {
-    if (showBuyPanel) {
-      // `tab` from useArbQueryParams will never be 0 when showBuyPanel is true
-      // because we use /buy and don't use ?tab=buy
-      // so we need to hardcode to return 0 rather than `tab`
-      if (isBridgeBuyOrSubpages(pathname)) {
-        return 0;
-      }
-      return tab;
-    }
-    return Math.max(0, tab - 1);
-  }, [showBuyPanel, tab, pathname]);
+  useTokenListPriceUpdater();
 
   useBalanceUpdater();
 
@@ -44,28 +31,30 @@ export function MainContent() {
     return <TransferPanel />;
   }
 
+  // Determine which content to show based on route and query params
+  const isBuyPage = showBuyPanel && isBridgeBuyOrSubpages(pathname);
+  const isTxHistory = searchParams.get('tab') === TabParamEnum.TX_HISTORY;
+
   return (
     <>
       <RecoverFunds />
 
-      <div className="main-panel mx-auto flex w-full flex-col items-center gap-4 sm:pt-6">
-        <TabGroup manual as={Fragment} selectedIndex={selectedTab} onChange={() => {}}>
-          <TopNavBar />
-
-          <TabPanels className="flex w-full items-center justify-center mb-8 md:mb-16 px-2">
-            {showBuyPanel && (
-              <TabPanel className="w-full sm:max-w-[580px]">
-                <BuyPanel />
-              </TabPanel>
-            )}
-            <TabPanel className="w-full sm:max-w-[580px]">
-              <TransferPanel />
-            </TabPanel>
-            <TabPanel className="w-full md:px-4">
+      <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 md:ml-[-36px]">
+        <div className="flex w-full items-center justify-center mb-8 md:mb-16 px-4">
+          {isBuyPage ? (
+            <div className="w-full sm:max-w-[600px]">
+              <BuyPanel />
+            </div>
+          ) : isTxHistory ? (
+            <div className="w-full md:px-4">
               <TransactionHistory />
-            </TabPanel>
-          </TabPanels>
-        </TabGroup>
+            </div>
+          ) : (
+            <div className="w-full sm:max-w-[600px]">
+              <TransferPanel />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Settings panel */}

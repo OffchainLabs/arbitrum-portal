@@ -15,6 +15,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
@@ -24,7 +25,9 @@ import {
 } from '../../util/TokenUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
+import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
+import { useTokensFromLists } from './TokenSearchUtils';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { RouteContext, RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
@@ -226,6 +229,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
+  const tokensFromLists = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))
@@ -238,6 +242,13 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return null;
     }
 
+    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
+      if (!ethParentBalance) {
+        return null;
+      }
+      return parseFloat(utils.formatEther(ethParentBalance));
+    }
+
     const balance = erc20ParentBalances?.[selectedToken.address.toLowerCase()];
 
     if (!balance) {
@@ -245,11 +256,18 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, erc20ParentBalances]);
+  }, [selectedToken, erc20ParentBalances, ethParentBalance]);
 
   const selectedTokenL2BalanceFloat = useMemo(() => {
     if (!selectedToken) {
       return null;
+    }
+
+    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
+      if (!ethChildBalance) {
+        return null;
+      }
+      return parseFloat(utils.formatEther(ethChildBalance));
     }
 
     const { isOrbitChain } = isNetwork(childChain.id);
@@ -270,7 +288,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, childChain.id, erc20ChildBalances]);
+  }, [selectedToken, childChain.id, erc20ChildBalances, ethChildBalance]);
 
   const customFeeTokenL1BalanceFloat = useMemo(() => {
     if (!nativeCurrency.isCustom) {
@@ -301,9 +319,12 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     const selectedTokenBalanceFloat = isDepositMode
       ? selectedTokenL1BalanceFloat
       : selectedTokenL2BalanceFloat;
-    const customFeeTokenBalanceFloat = isDepositMode
-      ? customFeeTokenL1BalanceFloat
-      : ethL2BalanceFloat;
+    const isCustomFeeToken = nativeCurrency.isCustom && !isLifiRoute(selectedRoute);
+    const customFeeTokenBalanceFloat = isCustomFeeToken
+      ? isDepositMode
+        ? customFeeTokenL1BalanceFloat
+        : ethL2BalanceFloat
+      : null;
 
     // No error while loading balance
     if (ethBalanceFloat === null) {
@@ -311,7 +332,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     const sendsAmount2 = Number(amount2) > 0;
-    const notEnoughAmount2 = nativeCurrency.isCustom
+    const notEnoughAmount2 = isCustomFeeToken
       ? Number(amount2) > Number(customFeeTokenL1BalanceFloat)
       : Number(amount2) > ethBalanceFloat - (estimatedL1GasFees + estimatedL2GasFees);
 
@@ -369,8 +390,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
         isLifiEnabled() &&
         isValidLifiTransfer({
           sourceChainId: networks.sourceChain.id,
-          fromToken: isDepositMode ? selectedToken.address : selectedToken.l2Address,
+          fromToken: selectedToken.address,
           destinationChainId: networks.destinationChain.id,
+          tokensFromLists,
         });
 
       if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
@@ -414,7 +436,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
     // Custom fee token
-    else if (nativeCurrency.isCustom) {
+    else if (isCustomFeeToken) {
       // No error while loading balance
       if (customFeeTokenBalanceFloat === null) {
         return notReady();
@@ -455,6 +477,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       });
     }
 
+    if (!tosAccepted) {
+      return notReady();
+    }
+
     /**
      * Lifi: Prevent bridging if the total of bridge fee, gas fee and amount are greater than the user's balance
      * This check needs to be after ERC20 check.
@@ -474,10 +500,12 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       );
 
       if (feeToPay > ethBalanceFloat) {
+        // For LiFi routes, fees are paid in the source chain's native currency
+        const sourceChain = getWagmiChain(networks.sourceChain.id);
         return notReady({
           errorMessages: {
             inputAmount1: getInsufficientFundsForGasFeesErrorMessage({
-              asset: nativeCurrency.symbol,
+              asset: sourceChain.nativeCurrency.symbol,
               chain: networks.sourceChain.name,
               balance: formatAmount(ethBalanceFloat),
               requiredBalance: formatAmount(feeToPay),
@@ -510,10 +538,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           },
         });
       }
-    }
 
-    if (!tosAccepted) {
-      return notReady();
+      return ready();
     }
 
     // The amount entered is enough funds, but now let's include gas costs
@@ -538,7 +564,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       case 'success': {
         if (selectedToken) {
           // If depositing into a custom fee token network, gas is split between ETH and the custom fee token
-          if (nativeCurrency.isCustom && isDepositMode) {
+          if (isCustomFeeToken && isDepositMode) {
             // Still loading custom fee token balance
             if (customFeeTokenL1BalanceFloat === null) {
               return notReady();
@@ -626,7 +652,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           return ready();
         }
 
-        if (nativeCurrency.isCustom && isDepositMode) {
+        if (isCustomFeeToken && isDepositMode) {
           // Deposits of the custom fee token will be paid in ETH, so we have to check if there's enough ETH to cover L1 gas
           // Withdrawals of the custom fee token will be treated same as ETH withdrawals (in the case below)
 
@@ -684,29 +710,33 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
   }, [
-    amount,
-    amount2,
-    isTransferring,
-    destinationAddressError,
+    gasSummary,
+    selectedRoute,
     isSmartContractWallet,
-    selectedToken,
     isDepositMode,
     ethL1BalanceFloat,
     ethL2BalanceFloat,
     selectedTokenL1BalanceFloat,
     selectedTokenL2BalanceFloat,
     customFeeTokenL1BalanceFloat,
+    amount2,
     nativeCurrency.isCustom,
     nativeCurrency.symbol,
-    gasSummary,
+    amount,
+    isTransferring,
     childChain.id,
-    parentChain.id,
-    networks.sourceChain.name,
+    childChain.name,
     isTeleportMode,
+    destinationAddressError,
+    selectedToken,
+    tosAccepted,
+    networks.sourceChain.name,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    parentChain.id,
+    tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    childChain.name,
-    selectedRoute,
     selectedRouteContext,
   ]);
 }

@@ -149,11 +149,17 @@ export function useSelectedTokenBalances(): Balances {
       destinationBalance: parentBalance,
     };
   }, [
+    selectedToken,
     erc20ParentBalances,
     erc20ChildBalances,
     isEthereumArbitrumOnePair,
     isSepoliaArbSepoliaPair,
-    selectedToken,
     isDepositMode,
+    sourceNativeCurrency.isCustom,
+    destinationNativeCurrency.isCustom,
+    ethSourceBalance,
+    erc20SourceBalances,
+    ethDestinationBalance,
+    erc20DestinationBalances,
   ]);
 }

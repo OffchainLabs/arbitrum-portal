@@ -16,6 +16,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
+import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
 import { isNetwork } from '../../../util/networks';
 import { useAppContextState } from '../../App/AppContext';
@@ -23,9 +24,9 @@ import { SafeImage } from '../../common/SafeImage';
 import { Tooltip } from '../../common/Tooltip';
 import { Loader } from '../../common/atoms/Loader';
 import { TokenLogo } from '../TokenLogo';
+import { useTokensFromLists } from '../TokenSearchUtils';
 import { RouteType, SetRoute } from '../hooks/useRouteStore';
 
-// Types
 export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest';
 export type RouteProps = {
   type: RouteType;
@@ -40,6 +41,7 @@ export type RouteProps = {
   tag?: BadgeType | BadgeType[];
   selected: boolean;
   onSelectedRouteClick: SetRoute;
+  isDisabled?: boolean;
 };
 
 // Badge Components
@@ -99,23 +101,27 @@ const DelimiterDot = () => <div className="h-1 w-1 rounded-full bg-white" />;
 // Route Amount Component
 type RouteAmountProps = {
   amountReceived: string;
+  amountReceivedUsd: string | number | null;
   token: ERC20BridgeToken | NativeCurrency;
   showUsdValueForReceivedToken: boolean;
   isBatchTransferSupported: boolean;
   amount2?: string;
+  amount2Usd: string | number | null;
+  showUsdValueForAmount2: boolean;
   childNativeCurrency: ERC20BridgeToken | NativeCurrency;
 };
 
 const RouteAmount = ({
   amountReceived,
+  amountReceivedUsd,
   token,
   showUsdValueForReceivedToken,
   isBatchTransferSupported,
   amount2,
+  amount2Usd,
+  showUsdValueForAmount2,
   childNativeCurrency,
 }: RouteAmountProps) => {
-  const { ethToUSD } = useETHPrice();
-
   return (
     <div className="flex min-w-36 flex-col gap-1">
       <div className="flex flex-col gap-1 text-lg">
@@ -130,9 +136,9 @@ const RouteAmount = ({
               {formatAmount(Number(amountReceived))} {token.symbol}
             </div>
 
-            {showUsdValueForReceivedToken && (
+            {showUsdValueForReceivedToken && amountReceivedUsd !== null && (
               <div className="text-sm tabular-nums text-white/50">
-                {formatUSD(ethToUSD(Number(amountReceived)))}
+                {formatUSD(Number(amountReceivedUsd))}
               </div>
             )}
           </div>
@@ -145,9 +151,18 @@ const RouteAmount = ({
               srcOverride={null}
               fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
             />
-            {formatAmount(Number(amount2), {
-              symbol: childNativeCurrency.symbol,
-            })}
+            <div className="flex flex-col">
+              <div className="text-base">
+                {formatAmount(Number(amount2), {
+                  symbol: childNativeCurrency.symbol,
+                })}
+              </div>
+              {showUsdValueForAmount2 && amount2Usd !== null && (
+                <div className="text-sm tabular-nums text-white/50">
+                  {formatUSD(Number(amount2Usd))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -318,10 +333,12 @@ export const Route = React.memo(
     bridgeFee,
     tag,
     onSelectedRouteClick,
+    isDisabled: isDisabledOverride = false,
   }: RouteProps) => {
     const {
-      layout: { isTransferring: isDisabled },
+      layout: { isTransferring },
     } = useAppContextState();
+    const isDisabled = isDisabledOverride || isTransferring;
     const [networks] = useNetworks();
     const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
     const childNativeCurrency = useNativeCurrency({
@@ -331,11 +348,36 @@ export const Route = React.memo(
     const [{ amount2, destinationAddress }] = useArbQueryParams();
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
+    const { ethPrice } = useETHPrice();
+    const tokensFromLists = useTokensFromLists();
 
     const token = overrideToken || _token || childNativeCurrency;
 
     const { isTestnet } = isNetwork(networks.sourceChain.id);
-    const showUsdValueForReceivedToken = !isTestnet && !('address' in token);
+    const nativeCurrencyPrice = childNativeCurrency.isCustom
+      ? tokensFromLists[childNativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+    const selectedTokenForPrice = 'listIds' in token ? token : null;
+    const tokenUsdValue = getUsdValueForAmount({
+      amount: amountReceived,
+      selectedToken: selectedTokenForPrice,
+      nativeCurrency: childNativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+    const amountReceivedUsd = isTestnet ? null : tokenUsdValue;
+    const showUsdValueForReceivedToken = !isTestnet && amountReceivedUsd !== null;
+    const amount2Usd =
+      !isTestnet && Number(amount2) > 0
+        ? getUsdValueForAmount({
+            amount: amount2,
+            selectedToken: null,
+            nativeCurrency: childNativeCurrency,
+            nativeCurrencyPrice,
+            tokensFromLists,
+          })
+        : null;
+    const showUsdValueForAmount2 = !isTestnet && amount2Usd !== null;
 
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)
@@ -356,6 +398,7 @@ export const Route = React.memo(
           'relative flex max-w-[calc(100vw_-_40px)] flex-col gap-3 rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
           'focus-visible:!outline-none',
           'focus-within:bg-[#ffffff36] hover:bg-[#ffffff36]',
+          isDisabled ? 'opacity-50' : 'opacity-100',
           !isDisabled && selected && 'border-primary-cta',
         )}
         style={
@@ -378,10 +421,13 @@ export const Route = React.memo(
         >
           <RouteAmount
             amountReceived={amountReceived}
+            amountReceivedUsd={amountReceivedUsd}
             token={token}
             showUsdValueForReceivedToken={showUsdValueForReceivedToken}
             isBatchTransferSupported={isBatchTransferSupported}
             amount2={amount2}
+            amount2Usd={amount2Usd}
+            showUsdValueForAmount2={showUsdValueForAmount2}
             childNativeCurrency={childNativeCurrency}
           />
 

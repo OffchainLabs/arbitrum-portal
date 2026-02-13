@@ -1,25 +1,13 @@
-import { PropsWithChildren, Suspense } from 'react';
+import { PropsWithChildren } from 'react';
 
-import { SiteBanner } from '@/bridge/components/common/SiteBanner';
+import { AppShell } from '@/app-components/AppShell/AppShell';
 import { Toast } from '@/bridge/components/common/atoms/Toast';
-import { AppSidebar } from '@/portal/components/AppSidebar';
 
 export default function WithSidebarLayout({ children }: PropsWithChildren) {
   return (
-    <>
-      <div className="relative flex">
-        <Suspense>
-          <AppSidebar />
-        </Suspense>
-
-        <div className="relative flex w-full flex-col">
-          <SiteBanner />
-
-          {children}
-        </div>
-
-        <Toast />
-      </div>
-    </>
+    <AppShell>
+      {children}
+      <Toast />
+    </AppShell>
   );
 }

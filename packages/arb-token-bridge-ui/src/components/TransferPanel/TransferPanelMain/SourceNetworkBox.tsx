@@ -9,18 +9,22 @@ import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsB
 import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals';
 import { useSetInputAmount } from '../../../hooks/TransferPanel/useSetInputAmount';
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useETHPrice } from '../../../hooks/useETHPrice';
 import { useMode } from '../../../hooks/useMode';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
+import { formatUSD } from '../../../util/NumberUtils';
+import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getNetworkName } from '../../../util/networks';
 import { Button } from '../../common/Button';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { ExternalLink } from '../../common/ExternalLink';
 import { NetworkButton } from '../../common/NetworkSelectionContainer';
 import { LifiSettingsButton } from '../LifiSettingsButton';
+import { useTokensFromLists } from '../TokenSearchUtils';
 import { NetworkContainer } from '../TransferPanelMain';
 import { TransferPanelMainInput } from '../TransferPanelMainInput';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
@@ -63,12 +67,19 @@ export const useAmount2InputVisibility = create<{
 
 const Input1 = React.memo(() => {
   const [networks] = useNetworks();
+  const { childChainProvider } = useNetworksRelationship(networks);
+  const sourceNativeCurrency = useNativeCurrency({
+    provider: networks.sourceChainProvider,
+  });
+  const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { ethPrice } = useETHPrice();
   const [{ amount }] = useArbQueryParams();
   const { setAmount } = useSetInputAmount();
   const { maxAmount } = useMaxAmount();
   const decimals = useSelectedTokenDecimals();
   const { errorMessages } = useTransferReadiness();
   const [selectedToken] = useSelectedToken();
+  const tokensFromLists = useTokensFromLists();
 
   const isMaxAmount = amount === AmountQueryParamEnum.MAX;
 
@@ -107,11 +118,39 @@ const Input1 = React.memo(() => {
     };
   }, [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id]);
 
+  const usdValue = useMemo(() => {
+    const nativeCurrency =
+      !selectedToken && destinationNativeCurrency.isCustom
+        ? destinationNativeCurrency
+        : sourceNativeCurrency;
+    const nativeCurrencyPrice = nativeCurrency.isCustom
+      ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+
+    const value = getUsdValueForAmount({
+      amount,
+      selectedToken,
+      nativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+
+    return value ? formatUSD(value) : null;
+  }, [
+    amount,
+    destinationNativeCurrency,
+    ethPrice,
+    selectedToken,
+    sourceNativeCurrency,
+    tokensFromLists,
+  ]);
+
   return (
     <TransferPanelMainInput
       maxButtonOnClick={maxButtonOnClick}
       errorMessage={errorMessages?.inputAmount1}
       value={isMaxAmount ? '' : amount}
+      usdValue={usdValue}
       onChange={handleAmountChange}
       maxAmount={maxAmount}
       isMaxAmount={isMaxAmount}
@@ -128,6 +167,8 @@ const Input2 = React.memo(() => {
   const [networks] = useNetworks();
   const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const tokensFromLists = useTokensFromLists();
+  const { ethPrice } = useETHPrice();
   const [{ amount2 }] = useArbQueryParams();
   const { setAmount2 } = useSetInputAmount();
   const { maxAmount2 } = useMaxAmount();
@@ -184,11 +225,27 @@ const Input2 = React.memo(() => {
     ],
   );
 
+  const usdValue = useMemo(() => {
+    const nativeCurrencyPrice = nativeCurrency.isCustom
+      ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
+      : ethPrice;
+    const value = getUsdValueForAmount({
+      amount: amount2,
+      selectedToken: null,
+      nativeCurrency,
+      nativeCurrencyPrice,
+      tokensFromLists,
+    });
+
+    return value ? formatUSD(value) : null;
+  }, [amount2, ethPrice, nativeCurrency, tokensFromLists]);
+
   return (
     <TransferPanelMainInput
       maxButtonOnClick={amount2MaxButtonOnClick}
       errorMessage={errorMessages?.inputAmount2}
       value={amount2}
+      usdValue={usdValue}
       onChange={handleAmount2Change}
       options={tokenButtonOptionsAmount2}
       maxAmount={maxAmount2}

@@ -1,12 +1,9 @@
-import Image from 'next/image';
-
 import { Card } from '@/components/Card';
 
 export const HeroBanner = () => {
   return (
-    <Card className="relative flex h-[300px] flex-col justify-end bg-[#1B4ADD] p-6 lg:flex-row lg:items-center lg:justify-start lg:p-[50px]">
+    <Card className="relative flex flex-col justify-end bg-[#1B4ADD] p-6 lg:p-12 lg:flex-row lg:items-center lg:justify-start">
       <div className="z-20 flex shrink-0 flex-col gap-2 lg:max-w-sm lg:gap-6">
-        <Image src={'/images/orbit/orbitLogo.svg'} height={30} width={120} alt="Arbitrum Chain" />
         <h1 className="text-4xl">A Universe of Chains</h1>
         <div className="text-base">
           Explore the array of Arbitrum chains, built with unparalleled customization on

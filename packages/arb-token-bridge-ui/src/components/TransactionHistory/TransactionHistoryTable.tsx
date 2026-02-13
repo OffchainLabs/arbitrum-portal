@@ -254,31 +254,37 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
         <Column
           label="time"
           dataKey="time"
-          width={139}
+          width={100}
           headerRenderer={() => <TableHeader>TIME</TableHeader>}
         />
         <Column
           label="token"
           dataKey="token"
-          width={141}
-          headerRenderer={() => <TableHeader>TOKEN</TableHeader>}
+          width={140}
+          headerRenderer={() => <TableHeader>FROM TOKEN</TableHeader>}
+        />
+        <Column
+          label="to-token"
+          dataKey="to-token"
+          width={120}
+          headerRenderer={() => <TableHeader>TO TOKEN</TableHeader>}
         />
         <Column
           label="from"
           dataKey="from"
-          width={142}
+          width={120}
           headerRenderer={() => <TableHeader>FROM</TableHeader>}
         />
         <Column
           label="to"
           dataKey="to"
-          width={137}
+          width={120}
           headerRenderer={() => <TableHeader>TO</TableHeader>}
         />
         <Column
           label="status"
           dataKey="status"
-          width={100}
+          width={90}
           headerRenderer={() => <TableHeader>STATUS</TableHeader>}
         />
       </Table>

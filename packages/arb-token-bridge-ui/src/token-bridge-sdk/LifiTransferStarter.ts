@@ -7,6 +7,7 @@ import { TransactionRequest } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { fetchErc20Allowance } from '../util/TokenUtils';
+import { isDepositMode } from '../util/isDepositMode';
 import {
   ApproveTokenProps,
   BridgeTransferStarter,
@@ -61,7 +62,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     amount,
     owner,
   }: RequiresTokenApprovalProps): Promise<boolean> {
-    if (!this.sourceChainErc20Address) {
+    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
       // If we have no sourceChainErc20Address, we assume we want to send ETH
       return false;
     }
@@ -77,7 +78,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
   }
 
   public async approveToken({ signer, amount }: ApproveTokenProps) {
-    if (!this.sourceChainErc20Address) {
+    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
       return;
     }
 
@@ -105,10 +106,13 @@ export class LifiTransferStarter extends BridgeTransferStarter {
   }
 
   public async transferEstimateGas() {
-    // We only use lifi for withdrawal, source chain is the child chain
+    const sourceChainId = await this.getSourceChainId();
+    const destinationChainId = (await this.destinationChainProvider.getNetwork()).chainId;
+    const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
+
     return {
-      estimatedParentChainGas: constants.Zero,
-      estimatedChildChainGas: this.lifiData.gas.amount,
+      estimatedParentChainGas: isDeposit ? this.lifiData.gas.amount : constants.Zero,
+      estimatedChildChainGas: isDeposit ? constants.Zero : this.lifiData.gas.amount,
     };
   }
 
@@ -117,17 +121,19 @@ export class LifiTransferStarter extends BridgeTransferStarter {
       throw new Error('LifiTransferStarter is missing transaction request.');
     }
 
-    const tx = await sendTransaction(wagmiConfig, {
-      to: this.lifiData.transactionRequest.to as Address,
-      data: this.lifiData.transactionRequest.data as Address,
-      value: BigInt(this.lifiData.transactionRequest.value),
+    const { to, data, value } = this.lifiData.transactionRequest;
+    const txHash = await sendTransaction(wagmiConfig, {
+      to: to as Address,
+      data: data as Address,
+      value: BigInt(value),
     });
+    const fullTx = await this.sourceChainProvider.getTransaction(txHash);
 
     return {
       transferType: this.transferType,
       status: 'pending',
       sourceChainProvider: this.sourceChainProvider,
-      sourceChainTransaction: { hash: tx },
+      sourceChainTransaction: fullTx ?? { hash: txHash },
       destinationChainProvider: this.destinationChainProvider,
     };
   }

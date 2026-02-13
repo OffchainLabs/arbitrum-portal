@@ -6,6 +6,7 @@ import { LifiMergedTransaction } from '../state/app/state';
 interface LifiMergedTransactionCacheState {
   transactions: Record<string, LifiMergedTransaction[]>;
   addTransaction: (tx: LifiMergedTransaction) => void;
+  updateTransaction: (tx: LifiMergedTransaction) => void;
 }
 export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCacheState>()(
   persist(
@@ -27,6 +28,31 @@ export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCa
               : {}),
           },
         }));
+      },
+      updateTransaction: (tx) => {
+        const sender = tx.sender;
+        if (!sender) {
+          return;
+        }
+
+        function updateForAddress(transactions: LifiMergedTransaction[]) {
+          return transactions.map((existing) =>
+            existing.txId === tx.txId ? { ...existing, ...tx } : existing,
+          );
+        }
+
+        set((state) => {
+          return {
+            transactions: {
+              [sender]: updateForAddress(state.transactions[sender] || []),
+              ...(tx.destination && tx.destination !== sender
+                ? {
+                    [tx.destination]: updateForAddress(state.transactions[tx.destination] || []),
+                  }
+                : {}),
+            },
+          };
+        });
       },
     }),
     {

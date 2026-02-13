@@ -111,10 +111,13 @@ export const TransactionDetailsContent = ({
     return null;
   }
 
-  const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
-    erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId,
-  });
+  const tokenSymbol = isLifiTransfer(tx)
+    ? tx.fromAmount.token.symbol
+    : sanitizeTokenSymbol(tx.asset, {
+        erc20L1Address: tx.tokenAddress,
+        chainId: tx.sourceChainId,
+      });
+  const tokenLogoSrc = isLifiTransfer(tx) ? tx.fromAmount.token.logoURI : undefined;
 
   const showPriceInUsd = !isNetwork(tx.parentChainId).isTestnet && tx.asset === ether.symbol;
 
@@ -141,7 +144,18 @@ export const TransactionDetailsContent = ({
           </div>
           <div className="flex flex-col space-y-1">
             <div className="flex items-center space-x-2">
-              <TransactionsTableTokenImage tx={tx} />
+              {tokenLogoSrc ? (
+                <SafeImage
+                  alt={`${tokenSymbol} logo`}
+                  src={tokenLogoSrc}
+                  width={20}
+                  height={20}
+                  className="h-5 w-5"
+                  fallback={<div className="h-5 w-5 rounded-full bg-white/20" />}
+                />
+              ) : (
+                <TransactionsTableTokenImage tx={tx} />
+              )}
               <span>
                 {formatAmount(Number(tx.value), {
                   symbol: tokenSymbol,

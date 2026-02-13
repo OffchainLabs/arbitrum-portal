@@ -33,7 +33,7 @@ import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
-import { useUpdateUSDCTokenData } from './TransferPanelMain/hooks';
+import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 
 export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
@@ -41,6 +41,8 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
   const [{ theme }] = useArbQueryParams();
 
   const [networks, setNetworks] = useNetworks();
+  const [, setSelectedToken] = useSelectedToken();
+  const isSwapTransfer = useIsSwapTransfer();
 
   const { isFeatureDisabled } = useDisabledFeatures();
 
@@ -92,6 +94,10 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             sourceChainId: networks.destinationChain.id,
             destinationChainId: networks.sourceChain.id,
           });
+
+          if (isSwapTransfer) {
+            setSelectedToken(null);
+          }
         }}
         aria-label="Switch Networks"
         {...props}
@@ -260,8 +266,6 @@ export function TransferPanelMain() {
     // This will not include custom chains
     return !getOrbitChains().some((_chain) => _chain.chainId === childChain.id);
   }, [parentChain, childChain]);
-
-  useUpdateUSDCTokenData();
 
   return (
     <div className={twMerge('flex flex-col lg:gap-y-1', embedMode && 'pb-0')}>
