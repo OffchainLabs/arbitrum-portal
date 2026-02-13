@@ -49,7 +49,7 @@ export function useTokenListPriceUpdater({
       }
 
       if (arbTokenBridgeLoaded) {
-        arbTokenBridgeRef.current.token.addTokensFromList(data, LIFI_TRANSFER_LIST_ID);
+        arbTokenBridgeRef.current.token?.addTokensFromList(data, LIFI_TRANSFER_LIST_ID);
       }
 
       return current.map((tokenList) => {

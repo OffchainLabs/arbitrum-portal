@@ -4,6 +4,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 
+import { AppShell } from '@/app-components/AppShell/AppShell';
+
 export default function EmbedLayout(props: PropsWithChildren) {
-  return <div className="bg-widget-background h-screen">{props.children}</div>;
+  return (
+    <AppShell>
+      <div className="bg-widget-background h-screen">{props.children}</div>
+    </AppShell>
+  );
 }

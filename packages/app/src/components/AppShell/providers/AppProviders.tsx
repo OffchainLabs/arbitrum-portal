@@ -4,15 +4,31 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import merge from 'lodash-es/merge';
 import { createOvermind } from 'overmind';
 import { Provider as OvermindProvider } from 'overmind-react';
-import { ReactNode, useMemo } from 'react';
+import posthog from 'posthog-js';
+import { PostHogProvider } from 'posthog-js/react';
+import { PropsWithChildren, useMemo } from 'react';
 import { WagmiProvider } from 'wagmi';
 
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
+import { AppContextProvider } from '@/bridge/components/App/AppContext';
+import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
+import { config } from '@/bridge/state';
 
-import { ArbQueryParamProvider } from '../../hooks/useArbQueryParams';
-import { config } from '../../state';
-import { getProps } from '../../util/wagmi/setup';
-import { AppContextProvider } from './AppContext';
+import { getProps } from './wagmi/setup';
+
+if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    api_host: 'https://app.posthog.com',
+    loaded: (posthog) => {
+      if (process.env.NODE_ENV !== 'production') {
+        posthog.debug();
+      }
+    },
+    persistence: 'memory',
+    autocapture: false,
+    disable_session_recording: true,
+  });
+}
 
 const rainbowkitTheme = merge(darkTheme(), {
   colors: {
@@ -46,27 +62,26 @@ Object.keys(localStorage).forEach((key) => {
   }
 });
 
-interface AppProvidersProps {
-  children: ReactNode;
-}
-
 const queryClient = new QueryClient();
 
 createConfig({ integrator: integratorId });
-export function AppProviders({ children }: AppProvidersProps) {
+
+export function AppProviders({ children }: PropsWithChildren) {
   const overmind = useMemo(() => createOvermind(config), []);
 
   return (
     <OvermindProvider value={overmind}>
-      <ArbQueryParamProvider>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider theme={rainbowkitTheme}>
-              <AppContextProvider>{children}</AppContextProvider>
-            </RainbowKitProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
-      </ArbQueryParamProvider>
+      <PostHogProvider client={posthog}>
+        <ArbQueryParamProvider>
+          <WagmiProvider config={wagmiConfig}>
+            <QueryClientProvider client={queryClient}>
+              <RainbowKitProvider theme={rainbowkitTheme}>
+                <AppContextProvider>{children}</AppContextProvider>
+              </RainbowKitProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
+        </ArbQueryParamProvider>
+      </PostHogProvider>
     </OvermindProvider>
   );
 }

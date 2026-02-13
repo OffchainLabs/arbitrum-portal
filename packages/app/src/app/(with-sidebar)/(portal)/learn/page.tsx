@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { toolsTabs } from '@/portal/common/pageTabConfig';
 import { Blog } from '@/portal/common/types';
 import { AdvancedDocs } from '@/portal/components/Learn/AdvancedDocs';
 import { Blogs } from '@/portal/components/Learn/Blogs';
@@ -51,6 +53,7 @@ export default async function LearnPage() {
 
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <PageTabs title="Tools" tabs={toolsTabs} />
       <HeroBanner />
 
       <LearnStats />

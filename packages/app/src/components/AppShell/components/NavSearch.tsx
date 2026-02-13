@@ -1,0 +1,195 @@
+'use client';
+
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
+import { useEffect, useRef, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
+
+import { SearchResult } from '@/portal/common/getSearchResults';
+import { SearchResultsPopup } from '@/portal/components/SearchResultsPopup';
+import { useSearch } from '@/portal/hooks/useSearch';
+
+const PREVIEW_LIMIT = 5;
+
+export function NavSearch() {
+  const router = useRouter();
+  const {
+    searchString,
+    searchResults,
+    setSearchString,
+    isSearchPage,
+    handleSearchResultSelection,
+    searchStringInUrl,
+  } = useSearch();
+  const posthog = usePostHog();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [focusIndex, setFocusIndex] = useState<number>(-1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const showSearchResultsPopup = isSearchPage ? searchString !== searchStringInUrl : searchString;
+
+  const pageSize = Math.min(searchResults.length + 1, PREVIEW_LIMIT + 1);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (searchString) {
+      setIsExpanded(true);
+    } else if (isMobile && !searchString) {
+      setIsExpanded(false);
+    }
+  }, [searchString, isMobile]);
+
+  useEffect(() => {
+    if (isExpanded && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isExpanded]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchString(event.target.value);
+  };
+
+  const handleFocus = () => {
+    setIsExpanded(true);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      if (activeElement?.closest('[data-search-popup]') || activeElement === inputRef.current) {
+        return;
+      }
+
+      if (!searchString) {
+        setIsExpanded(false);
+      }
+    }, 200);
+  };
+
+  const captureInputAnalytics = () => {
+    if (searchString.length) {
+      posthog?.capture('Search Queries', {
+        Input: searchString,
+      });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!searchResults.length) return;
+
+    if (e.key === 'Tab' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusIndex(focusIndex === pageSize - 1 ? -1 : focusIndex + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusIndex(focusIndex === -1 ? pageSize - 1 : focusIndex - 1);
+    } else if (e.key === 'Enter') {
+      if (focusIndex >= pageSize - 1 || focusIndex === -1) {
+        handleShowAllResults();
+      } else if (searchResults[focusIndex]) {
+        handleSelection(searchResults[focusIndex].item);
+      }
+    } else if (e.key === 'Escape' && !isSearchPage) {
+      setSearchString('');
+      setIsExpanded(false);
+      inputRef.current?.blur();
+    }
+  };
+
+  useEffect(() => {
+    setFocusIndex(-1);
+  }, [searchResults]);
+
+  const handleSelection = (item: SearchResult) => {
+    captureInputAnalytics();
+    handleSearchResultSelection(item, () => {
+      setSearchString('');
+      setIsExpanded(false);
+    });
+  };
+
+  const handleShowAllResults = () => {
+    captureInputAnalytics();
+    router.push(`/search/${searchString}`, { scroll: true });
+  };
+
+  const handleClear = () => {
+    setSearchString('');
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div className={twMerge('relative', isExpanded ? 'w-full md:w-auto' : 'w-auto md:w-auto')}>
+      <div
+        className={twMerge(
+          'flex items-center gap-2 rounded-md bg-neutral-25 transition-all duration-300 ease-in-out h-10',
+          isExpanded
+            ? 'w-full md:w-[400px] border-0 px-3 py-0 bg-neutral-100'
+            : 'w-10 cursor-pointer items-center justify-start border-0 px-3 hover:bg-neutral-25/80',
+        )}
+        onClick={() => !isExpanded && setIsExpanded(true)}
+      >
+        <Image
+          src="/icons/navigation/search.svg"
+          alt="Search"
+          width={16}
+          height={16}
+          className="shrink-0"
+        />
+        {isExpanded && (
+          <>
+            <input
+              ref={inputRef}
+              type="text"
+              name="portal-search"
+              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none"
+              placeholder="Search categories, projects, chains, and more"
+              value={searchString}
+              onChange={handleInputChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+            />
+            {searchString && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="shrink-0 text-white transition-opacity cursor-pointer bg-white/5 rounded-sm p-1 hover:bg-white/10"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="h-3 w-3" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {showSearchResultsPopup && isExpanded && (
+        <div
+          data-search-popup
+          className="absolute left-0 top-full z-[100000] mt-2 w-full md:w-full lg:w-[400px]"
+        >
+          <SearchResultsPopup
+            searchString={searchString}
+            searchResults={searchResults}
+            previewLimit={PREVIEW_LIMIT}
+            focusIndex={focusIndex}
+            handleSelection={handleSelection}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
