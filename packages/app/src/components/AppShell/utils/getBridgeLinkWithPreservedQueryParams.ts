@@ -2,6 +2,8 @@ import type { SubNavItem } from '../config/navConfig';
 
 const BRIDGE_PARAMS_TO_PRESERVE = [
   'sourceChain',
+  'amount',
+  'amount2',
   'destinationChain',
   'experiments',
   'token',
