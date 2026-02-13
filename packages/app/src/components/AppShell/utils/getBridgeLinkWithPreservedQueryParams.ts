@@ -1,6 +1,15 @@
 import type { SubNavItem } from '../config/navConfig';
 
-const BRIDGE_PARAMS_TO_PRESERVE = ['sourceChain', 'destinationChain'] as const;
+const BRIDGE_PARAMS_TO_PRESERVE = [
+  'sourceChain',
+  'destinationChain',
+  'experiments',
+  'token',
+  'destinationToken',
+  'disabledFeatures',
+  'destinationAddress',
+  'sanitized',
+] as const;
 
 export function getBridgeLinkWithPreservedQueryParams(
   item: SubNavItem,
