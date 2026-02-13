@@ -69,7 +69,10 @@ const zChainId = z
   .number()
   .int()
   .positive()
-  .refine((chainId) => !Object.values(ChainId).includes(chainId), 'Invalid custom Orbit chain ID')
+  .refine(
+    (chainId) => !Object.values(ChainId).includes(chainId),
+    'Invalid custom Arbitrum chain ID',
+  )
   .refine((chainId) => !getCustomChainFromLocalStorageById(chainId), 'Custom chain already added');
 
 const zParentChainId = z
@@ -228,7 +231,7 @@ export const AddCustomChain = () => {
 
       const customChain = await mapOrbitConfigToOrbitChain(data);
       const nativeToken = await fetchNativeToken(data);
-      // Orbit config has been validated and will be added to the custom list after page refreshes
+      // Arbitrum Chain config has been validated and will be added to the custom list after page refreshes
       // let's still try to add it here to handle eventual errors
       registerCustomArbitrumNetwork(customChain);
       saveCustomChainToLocalStorage({ ...customChain, ...nativeToken });
@@ -246,7 +249,7 @@ export const AddCustomChain = () => {
       <div className="mb-4 flex flex-col items-stretch gap-2 lg:flex-row">
         <textarea
           onChange={(e) => setChainJson(e.target.value)}
-          placeholder={`Paste the JSON configuration from the 'outputInfo.json' file that's generated at the end of the custom Orbit chain deployment.
+          placeholder={`Paste the JSON configuration from the 'outputInfo.json' file that's generated at the end of the custom Arbitrum chain deployment.
 `}
           className="h-auto min-h-[200px] w-full rounded border border-gray-dark bg-dark p-4 font-mono text-xs font-light text-white placeholder:text-white/70"
         />
@@ -327,12 +330,12 @@ export const AddCustomChain = () => {
       {/* Custom chain list */}
       {customChains.length > 0 && !addingChain && (
         <div>
-          <div className="heading mb-4 text-lg">Live Orbit Chains</div>
+          <div className="heading mb-4 text-lg">Live Arbitrum Chains</div>
           <table className="w-full text-left">
             <thead className="border-b border-gray-dark">
               <tr>
-                <th className="pb-1 text-xs font-normal">ORBIT CHAIN</th>
-                <th className="pb-1 text-xs font-normal">ORBIT CHAIN ID</th>
+                <th className="pb-1 text-xs font-normal">ARBITRUM CHAIN</th>
+                <th className="pb-1 text-xs font-normal">ARBITRUM CHAIN ID</th>
                 <th className="pb-1 text-xs font-normal">PARENT CHAIN</th>
                 <th className="pb-1 text-xs font-normal">PARENT CHAIN ID</th>
                 <th className="pb-1 text-xs font-normal"></th>

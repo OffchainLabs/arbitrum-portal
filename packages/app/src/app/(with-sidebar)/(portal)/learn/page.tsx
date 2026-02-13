@@ -11,7 +11,7 @@ import { LearnStats } from '@/portal/components/Learn/LearnStats';
 
 const metadataContent = {
   title: 'Learn about Arbitrum',
-  description: 'Nitro, Orbit, Stylus, One, Nova - learn what makes all of this tech so impressive',
+  description: 'Nitro, Chains, Stylus, One, Nova - learn what makes all of this tech so impressive',
 };
 
 // Generate server-side metadata for this page

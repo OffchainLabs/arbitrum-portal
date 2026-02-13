@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as core from '@actions/core';
 
 import {
@@ -10,7 +9,7 @@ import {
 } from './transforms';
 
 /**
- * Main function to add an Orbit chain
+ * Main function to add an Arbitrum chain
  * @param targetJsonPath Path to the target JSON file
  */
 export async function addOrbitChain(targetJsonPath: string): Promise<void> {

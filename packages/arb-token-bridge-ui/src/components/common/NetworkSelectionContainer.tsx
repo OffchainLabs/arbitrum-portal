@@ -43,7 +43,7 @@ type NetworkType = 'core' | 'more' | 'orbit';
 enum ChainGroupName {
   core = 'Core Chains',
   more = 'More Chains',
-  orbit = 'Orbit Chains',
+  orbit = 'Arbitrum Chains',
 }
 
 type ChainGroupInfo = {
@@ -73,7 +73,7 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
       <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
         <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
         <span>
-          Independent projects using Arbitrum technology. Orbit chains have varying degrees of
+          Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
           decentralization. <span className="font-semibold">Bridge at your own risk.</span>
         </span>
       </p>
@@ -255,7 +255,7 @@ function AddCustomOrbitChainButton({
 
   return (
     <button className="arb-hover text-sm underline" onClick={openSettingsPanel}>
-      <span>Add Custom Orbit Chain</span>
+      <span>Add Custom Arbitrum Chain</span>
     </button>
   );
 }

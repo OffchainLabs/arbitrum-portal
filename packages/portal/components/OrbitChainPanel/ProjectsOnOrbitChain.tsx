@@ -22,7 +22,7 @@ export const ProjectsOnOrbitChain = ({ orbitChainSlug }: { orbitChainSlug: strin
             key={`${orbitChainSlug}-${project.id}`}
             lazyload={false}
             slug={project.slug}
-            analyticsSource="Projects on Orbit Chain"
+            analyticsSource="Projects on Arbitrum Chain"
           />
         ))}
       </div>
