@@ -2205,6 +2205,54 @@
           "description": "Robinhood Chain is a permissionless, Ethereum-compatible Layer-2 blockchain built to support a new era of onchain financial infrastructure — one that brings traditional markets, crypto, and real-world assets together on a fast, efficient, and open network."
         }
       }
+    },
+    {
+      "chainId": 20011,
+      "confirmPeriodBlocks": 50,
+      "ethBridge": {
+        "bridge": "0x263Dc6ef1dd4Cdc59401FeabB54745c727dF7DcC",
+        "inbox": "0xb3afb785362DdeB3E8becBb3690f4CBc29C964c3",
+        "outbox": "0x53b5a758f6e30B9D95Eeb780dC1Bb6D76911fB81",
+        "rollup": "0xB275B72De5cecF91fe3036B4CA7D544Fd29eAb72",
+        "sequencerInbox": "0x7c0C7D6f73eAFafC129D203c2bB3779D577d4f07"
+      },
+      "nativeToken": "0xDF773a5C874994932Cdd38023A6eFdb81570b19d",
+      "explorerUrl": "https://explorer.testnet.mandalachain.io",
+      "rpcUrl": "https://rpc1-testnet.mandalachain.io",
+      "isCustom": true,
+      "isTestnet": true,
+      "name": "Mandala Chain Testnet",
+      "slug": "mandala-chain-testnet",
+      "parentChainId": 11155111,
+      "tokenBridge": {
+        "parentCustomGateway": "0x4cE0C68E9D2b452B644261Db3FC47E6e4Cfc4e71",
+        "parentErc20Gateway": "0x4d1e961Bf6F71b4c830B966102b267b67F6d4B40",
+        "parentGatewayRouter": "0x1B6dA416496a1fA271C0A2aae786d61606f7Fbc6",
+        "parentMultiCall": "0x73465577E9FD7Cd585E4270F23A9eBa99B92b6eD",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0xb22ce00e058424219eFaf38869C61d8ecDf3ceAb",
+        "childErc20Gateway": "0xE290AE1366dA433aFD07A162a82314dE67f8E1b0",
+        "childGatewayRouter": "0x076eFA6B1a545fdFC23DB5378194f88126DBb0aE",
+        "childMultiCall": "0x351a9e85c01F34e08f3833151Fb776286Da13Cb0",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#2535e4",
+        "network": {
+          "name": "Mandala Chain Testnet",
+          "logo": "/images/MandalaTestnet_Logo.svg",
+          "description": "Mandala Chain provides compliant, modular, sovereign chain infrastructure to drive tomorrow's intelligent economies."
+        },
+        "nativeTokenData": {
+          "name": "MandalaChainTest",
+          "symbol": "KPGT",
+          "logoUrl": "/images/MandalaTestnet_NativeTokenLogo.svg"
+        }
+      }
     }
   ]
 }
