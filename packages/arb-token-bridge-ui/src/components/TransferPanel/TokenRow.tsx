@@ -1,5 +1,5 @@
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import { BigNumber, constants, utils } from 'ethers';
+import { constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -469,13 +469,17 @@ export function TokenRow({
     ? tokensFromLists[nativeCurrencyForUsd.address.toLowerCase()]?.priceUSD
     : ethPrice;
 
-  const priceUSD = getUsdValueForAmount({
-    amount: Number(utils.formatUnits(BigNumber.from(balance), decimals)),
-    nativeCurrency: nativeCurrencyForUsd,
-    nativeCurrencyPrice,
-    tokensFromLists,
-    selectedToken: isZeroAddressToken ? null : token,
-  });
+  const amountForPriceUSD = balance === null ? null : Number(utils.formatUnits(balance, decimals));
+  const priceUSD =
+    amountForPriceUSD === null
+      ? null
+      : getUsdValueForAmount({
+          amount: amountForPriceUSD,
+          nativeCurrency: nativeCurrencyForUsd,
+          nativeCurrencyPrice,
+          tokensFromLists,
+          selectedToken: isZeroAddressToken ? null : token,
+        });
   const hasTokenListInfo = !!token && !addressesEqual(token.address, constants.AddressZero);
 
   return (

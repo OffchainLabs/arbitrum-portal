@@ -12,7 +12,7 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    config.externals.push('pino-pretty', 'pino', 'lokijs', 'encoding');
     return config;
   },
   images: {
