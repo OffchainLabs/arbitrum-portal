@@ -36,10 +36,9 @@ export function MainContent() {
   const isTxHistory = searchParams.get('tab') === TabParamEnum.TX_HISTORY;
 
   return (
-    <>
-      <RecoverFunds />
-
+    <>  
       <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 md:ml-[-36px]">
+        <RecoverFunds />
         <div className="flex w-full items-center justify-center mb-8 md:mb-16 px-4">
           {isBuyPage ? (
             <div className="w-full sm:max-w-[600px]">
