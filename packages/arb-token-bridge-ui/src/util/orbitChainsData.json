@@ -1422,6 +1422,55 @@
           "logoUrl": "/images/PanaxMainnet_NativeTokenLogo.svg"
         }
       }
+    },
+    {
+      "chainId": 7869,
+      "confirmPeriodBlocks": 40320,
+      "ethBridge": {
+        "bridge": "0x53b168016aA2E3469B5D76315311aAC4Ce0020DB",
+        "inbox": "0x7d4509336b154C17Df80D03A19C051ddAcdA2e7f",
+        "outbox": "0xc0dd0a059a8a948B7737D00bfC9024475C791259",
+        "rollup": "0x9f3dC4D1f6c6D9F2273d8b497E460E6E727210e8",
+        "sequencerInbox": "0x903Af716AA8C7C27Fd785F453D5a59C20E06bDeC"
+      },
+      "nativeToken": "0x429F0d8233e517f9acf6F0C8293BF35804063a83",
+      "explorerUrl": "https://explorer-v2.powerloom.network/",
+      "rpcUrl": "https://rpc-v2.powerloom.network",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "Powerloom Mainnet V2",
+      "slug": "powerloom-mainnet-v2",
+      "parentChainId": 1,
+      "tokenBridge": {
+        "parentCustomGateway": "0x74a49376E7e78442853a16f29afCD90b564758d6",
+        "parentErc20Gateway": "0x46D9ff7ED3049798B406be811FE68b75B208f81A",
+        "parentGatewayRouter": "0x8b4b4328455615fCb7aaE14460cfa90767B1df55",
+        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x48bcD9586DDdfa2248B21ba44647295a17967fb0",
+        "childErc20Gateway": "0x0E455D223e55Da7B34cB1E4cFD16D260Ed6278Da",
+        "childGatewayRouter": "0x7C2D8B0ac4b708C8315C6591847aa95990d11DE7",
+        "childMultiCall": "0x6E7500088eeF8A435AA30AbfF379C3cbd5400aA5",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#55E794",
+        "network": {
+          "name": "Powerloom Mainnet V2",
+          "logo": "/images/PowerloomMainnetV2_Logo.svg",
+          "description": "Powerloom Mainnet is the Layer-2 chain supporting Powerloom’s composable data network where devs, orgs, and end-users get access to ready-to-consume, affordable, and verifiable onchain datasets. It serves as the platform for generating and validating billions for ‘snapshots’ daily, i.e., the fundamental unit of Powerloom’s data markets and composed datasets."
+        },
+        "nativeTokenData": {
+          "name": "Powerloom Token",
+          "symbol": "POWER",
+          "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
+        },
+        "fastWithdrawalTime": 86400000
+      }
     }
   ],
   "testnet": [
