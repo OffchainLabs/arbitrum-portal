@@ -2244,13 +2244,13 @@
         "color": "#2535e4",
         "network": {
           "name": "Mandala Chain Testnet",
-          "logo": "/images/MandalaTestnet_Logo.svg",
-          "description": "Mandala Chain provides compliant, modular, sovereign chain infrastructure to drive tomorrow's intelligent economies."
+          "logo": "/images/MandalaChainTestnet_Logo.svg",
+          "description": "Mandala Chain provides compliant, modular, sovereign chain infrastructure to drive tomorrow’s intelligent economies."
         },
         "nativeTokenData": {
           "name": "MandalaChainTest",
           "symbol": "KPGT",
-          "logoUrl": "/images/MandalaTestnet_NativeTokenLogo.svg"
+          "logoUrl": "/images/MandalaChainTestnet_NativeTokenLogo.svg"
         }
       }
     }
