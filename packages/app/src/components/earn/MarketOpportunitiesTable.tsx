@@ -26,6 +26,98 @@ type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
 
+interface TableHeaderProps {
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'apy' | 'tvl') => void;
+}
+
+function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
+  const isApyActive = sortColumn === 'apy';
+  const isTvlActive = sortColumn === 'tvl';
+  return (
+    <div className="hidden md:flex gap-4 items-center pt-4 px-4 pb-0">
+      <div className="w-[150px] shrink-0">
+        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Name</p>
+      </div>
+      <div className="w-[146px] shrink-0">
+        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Token</p>
+      </div>
+      <div className="flex-1 flex gap-2 items-center min-w-0">
+        <button
+          onClick={() => onSort('apy')}
+          className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
+        >
+          <p
+            className={`text-xs whitespace-nowrap ${
+              isApyActive ? 'font-bold text-white' : 'font-semibold text-white opacity-50'
+            }`}
+          >
+            APY
+          </p>
+          {isApyActive &&
+            (sortDirection === 'asc' ? (
+              <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
+            ) : (
+              <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
+            ))}
+        </button>
+      </div>
+      <div className="flex-1 flex gap-2.5 items-center min-w-0">
+        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
+          Your Holdings
+        </p>
+      </div>
+      <div className="flex-1 flex gap-2.5 items-center min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
+            Estd. Earnings
+          </p>
+          <Tooltip
+            content={
+              <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
+                <p className="text-xs text-white leading-relaxed">
+                  Estimated earnings are calculated using current APY rates. Actual earnings may
+                  vary and are not guaranteed, as APY rates can change over time.
+                </p>
+              </div>
+            }
+            tippyProps={{ placement: 'top' }}
+          >
+            <div className="flex items-center justify-center cursor-pointer">
+              <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
+            </div>
+          </Tooltip>
+        </div>
+      </div>
+      <div className="w-[116px] shrink-0 flex gap-2 items-center">
+        <button
+          onClick={() => onSort('tvl')}
+          className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
+        >
+          <p
+            className={`text-xs whitespace-nowrap ${
+              isTvlActive ? 'font-bold text-white' : 'font-normal text-white opacity-50'
+            }`}
+          >
+            TVL
+          </p>
+          {isTvlActive &&
+            (sortDirection === 'asc' ? (
+              <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
+            ) : (
+              <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
+            ))}
+        </button>
+      </div>
+      <div className="flex-1 flex gap-2 items-center min-w-0">
+        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Protocol</p>
+      </div>
+      <div className="w-[42px] shrink-0"></div>
+    </div>
+  );
+}
+
 export function OpportunitiesTable({
   opportunities,
   groupByCategory = false,
@@ -60,7 +152,7 @@ export function OpportunitiesTable({
         setSortDirection('desc');
       }
     },
-    [sortColumn, sortDirection],
+    [sortColumn],
   );
 
   // Group opportunities by category value (not display name)
@@ -145,94 +237,6 @@ export function OpportunitiesTable({
     });
   }, [opportunities, groupByCategory, sortColumn, sortDirection]);
 
-  // Render table header
-  const renderTableHeader = () => {
-    const isApyActive = sortColumn === 'apy';
-    const isTvlActive = sortColumn === 'tvl';
-
-    return (
-      <div className="hidden md:flex gap-4 items-center pt-4 px-4 pb-0">
-        <div className="w-[150px] shrink-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Name</p>
-        </div>
-        <div className="w-[146px] shrink-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Token</p>
-        </div>
-        <div className="flex-1 flex gap-2 items-center min-w-0">
-          <button
-            onClick={() => handleSort('apy')}
-            className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
-          >
-            <p
-              className={`text-xs whitespace-nowrap ${
-                isApyActive ? 'font-bold text-white' : 'font-semibold text-white opacity-50'
-              }`}
-            >
-              APY
-            </p>
-            {isApyActive &&
-              (sortDirection === 'asc' ? (
-                <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
-              ) : (
-                <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-              ))}
-          </button>
-        </div>
-        <div className="flex-1 flex gap-2.5 items-center min-w-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
-            Your Holdings
-          </p>
-        </div>
-        <div className="flex-1 flex gap-2.5 items-center min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
-              Estd. Earnings
-            </p>
-            <Tooltip
-              content={
-                <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
-                  <p className="text-xs text-white leading-relaxed">
-                    Estimated earnings are calculated using current APY rates. Actual earnings may
-                    vary and are not guaranteed, as APY rates can change over time.
-                  </p>
-                </div>
-              }
-              tippyProps={{ placement: 'top' }}
-            >
-              <div className="flex items-center justify-center cursor-pointer">
-                <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
-              </div>
-            </Tooltip>
-          </div>
-        </div>
-        <div className="w-[116px] shrink-0 flex gap-2 items-center">
-          <button
-            onClick={() => handleSort('tvl')}
-            className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
-          >
-            <p
-              className={`text-xs whitespace-nowrap ${
-                isTvlActive ? 'font-bold text-white' : 'font-normal text-white opacity-50'
-              }`}
-            >
-              TVL
-            </p>
-            {isTvlActive &&
-              (sortDirection === 'asc' ? (
-                <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
-              ) : (
-                <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-              ))}
-          </button>
-        </div>
-        <div className="flex-1 flex gap-2 items-center min-w-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Protocol</p>
-        </div>
-        <div className="w-[42px] shrink-0"></div>
-      </div>
-    );
-  };
-
   if (groupByCategory && groupedOpportunities) {
     return (
       <div className="flex flex-col gap-8">
@@ -300,7 +304,11 @@ export function OpportunitiesTable({
                 {/* Desktop Table */}
                 <div className="hidden md:flex overflow-x-auto">
                   <div className="flex flex-col gap-1 min-w-[900px] w-full">
-                    {renderTableHeader()}
+                    <TableHeader
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
                     {displayedOpportunities.map((opportunity) => (
                       <OpportunityRow key={opportunity.id} opportunity={opportunity} />
                     ))}
@@ -327,7 +335,11 @@ export function OpportunitiesTable({
         {/* Desktop Table */}
         <div className="hidden md:flex overflow-x-auto">
           <div className="flex flex-col gap-1 min-w-[900px] w-full">
-            {renderTableHeader()}
+            <TableHeader
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
             {sortedOpportunities.map((opportunity) => (
               <OpportunityRow key={opportunity.id} opportunity={opportunity} />
             ))}
