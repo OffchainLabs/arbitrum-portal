@@ -3,6 +3,7 @@ import {
   useLocalStorageSWR,
 } from '@/app-lib/swr/useLocalStorageSWR';
 import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
+import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
 export interface StandardOpportunityApi {
   id: string;
@@ -57,19 +58,6 @@ const fetcher = async (key: string | readonly unknown[]): Promise<OpportunitiesR
   return response.json();
 };
 
-function formatApyFallback(raw: number): string {
-  if (raw < 0.01) return `${raw.toFixed(4)}%`;
-  if (raw < 1) return `${raw.toFixed(3)}%`;
-  return `${raw.toFixed(2)}%`;
-}
-function formatTvlFallback(raw: number): string {
-  if (raw >= 1e12) return `$${(raw / 1e12).toFixed(1)}T`;
-  if (raw >= 1e9) return `$${(raw / 1e9).toFixed(1)}B`;
-  if (raw >= 1e6) return `$${(raw / 1e6).toFixed(1)}M`;
-  if (raw >= 1e3) return `$${(raw / 1e3).toFixed(1)}K`;
-  return `$${raw.toFixed(2)}`;
-}
-
 function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
   const m = opp.metrics;
   return {
@@ -79,13 +67,13 @@ function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
     token: opp.token,
     tokenIcon: opp.tokenIcon ?? '',
     tokenNetwork: opp.tokenNetwork ?? opp.network,
-    apy: opp.apyFormatted ?? formatApyFallback(m?.rawApy ?? 0),
+    apy: opp.apyFormatted ?? formatPercentage(m?.rawApy ?? 0),
     apyBreakdown: m?.apyBreakdown,
     deposited: m?.deposited ?? '-',
     depositedUsd: m?.depositedUsd ?? '-',
     earnings: m?.earnings ?? '-',
     earningsUsd: m?.earningsUsd ?? '-',
-    tvl: opp.tvlFormatted ?? formatTvlFallback(m?.rawTvl ?? 0),
+    tvl: opp.tvlFormatted ?? formatTVL(m?.rawTvl ?? 0),
     protocol: opp.protocol,
     protocolIcon: opp.protocolIcon ?? '',
     vaultAddress: opp.vaultAddress,

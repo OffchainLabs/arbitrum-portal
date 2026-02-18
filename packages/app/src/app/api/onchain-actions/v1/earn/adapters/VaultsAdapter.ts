@@ -1,9 +1,9 @@
 import { formatUnits } from 'viem';
 
 import type { DetailedVault } from '@/app-types/earn/vaults';
-import { formatAmount } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
-import { DEFAULT_ALLOWED_ASSETS, formatAPY, formatTVL, vaultsSdk } from '../lib/vaultsSdk';
+import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
   HISTORICAL_VENDOR_TTL_SECONDS,
@@ -486,7 +486,7 @@ export class VaultsAdapter implements VendorAdapter {
       tokenIcon: vault.asset?.assetLogo || '',
       tokenNetwork: networkName,
       protocolIcon: vault.protocol?.protocolLogo || '',
-      apyFormatted: formatAPY(apyPercentage),
+      apyFormatted: formatPercentage(apyPercentage),
       tvlFormatted: formatTVL(tvlUsd),
       lend: {
         assetSymbol: vault.asset?.symbol,

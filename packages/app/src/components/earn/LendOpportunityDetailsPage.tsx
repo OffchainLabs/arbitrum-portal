@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import type { StandardOpportunityDetail } from '@/app-hooks/earn/useOpportunityDetails';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { formatCompactNumber, formatTVL } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 
 import { ActionPanelPlaceholder } from './ActionPanelPlaceholder';
@@ -42,7 +43,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Token</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
@@ -59,7 +60,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Protocol</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
@@ -76,28 +77,18 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">TVL</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
-                {tvlUsd >= 1e12
-                  ? `$${(tvlUsd / 1e12).toFixed(1)}T`
-                  : tvlUsd >= 1e9
-                    ? `$${(tvlUsd / 1e9).toFixed(1)}B`
-                    : tvlUsd >= 1e6
-                      ? `$${(tvlUsd / 1e6).toFixed(1)}M`
-                      : tvlUsd >= 1e3
-                        ? `$${(tvlUsd / 1e3).toFixed(1)}K`
-                        : `$${tvlUsd.toFixed(2)}`}
+                {formatTVL(tvlUsd)}
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
+            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Stakers</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
                 {opportunity.stakersCount != null
-                  ? opportunity.stakersCount >= 1000
-                    ? `${(opportunity.stakersCount / 1000).toFixed(1)}k`
-                    : opportunity.stakersCount.toString()
+                  ? formatCompactNumber(opportunity.stakersCount)
                   : '-'}
               </div>
             </Card>
@@ -106,23 +97,17 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           <ChartPlaceholder label="APY history" />
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-lg bg-[#191919] p-4">
+            <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">7d APY</div>
               <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
             </div>
-            <div className="rounded-lg bg-[#191919] p-4">
+            <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">30d APY</div>
               <div className="text-base font-medium text-white">{(apy30day * 100).toFixed(1)}%</div>
             </div>
-            <div className="rounded-lg bg-[#191919] p-4 col-span-2 lg:col-span-1">
+            <div className="rounded-lg bg-gray-1 p-4 col-span-2 lg:col-span-1">
               <div className="text-xs text-white/50 mb-1">TVL (Total Value Locked)</div>
-              <div className="text-base font-medium text-white">
-                {tvlUsd.toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  maximumFractionDigits: 0,
-                })}
-              </div>
+              <div className="text-base font-medium text-white">{formatTVL(tvlUsd)}</div>
             </div>
           </div>
 

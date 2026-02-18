@@ -92,29 +92,3 @@ export const DEFAULT_ALLOWED_ASSETS = [
   'WBTC',
   'ARB',
 ] as const;
-
-export function formatTVL(tvl: number): string {
-  if (tvl >= 1e12) {
-    return `$${(tvl / 1e12).toFixed(1)}T`;
-  }
-  if (tvl >= 1e9) {
-    return `$${(tvl / 1e9).toFixed(1)}B`;
-  }
-  if (tvl >= 1e6) {
-    return `$${(tvl / 1e6).toFixed(1)}M`;
-  }
-  if (tvl >= 1e3) {
-    return `$${(tvl / 1e3).toFixed(1)}K`;
-  }
-  return `$${tvl.toFixed(2)}`;
-}
-
-export function formatAPY(apy: number): string {
-  if (apy < 0.01) {
-    return `${apy.toFixed(4)}%`;
-  }
-  if (apy < 1) {
-    return `${apy.toFixed(3)}%`;
-  }
-  return `${apy.toFixed(2)}%`;
-}

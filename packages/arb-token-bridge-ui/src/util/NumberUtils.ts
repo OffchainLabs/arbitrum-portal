@@ -17,6 +17,32 @@ export function formatUSD(value: number) {
   return `$${formattedValue}`;
 }
 
+const formatTvlCompact = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+export function formatTVL(tvl: number): string {
+  return formatTvlCompact.format(tvl);
+}
+
+const formatCompact = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+export function formatCompactNumber(n: number): string {
+  return formatCompact.format(n);
+}
+
+export function formatPercentage(value: number): string {
+  if (value < 0.01) return `${value.toFixed(4)}%`;
+  if (value < 1) return `${value.toFixed(3)}%`;
+  return `${value.toFixed(2)}%`;
+}
+
 export enum MaximumFractionDigits {
   None = 0,
   Short = 1,
