@@ -52,6 +52,13 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
       },
     ],
   },
+  '/earn': {
+    label: 'Earn',
+    route: '/earn',
+    href: '/earn',
+    imgSrc: '/icons/navigation/earn.svg',
+    subNavItems: [],
+  },
   '/projects': {
     label: 'Explore',
     route: '/projects',

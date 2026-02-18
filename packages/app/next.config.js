@@ -12,7 +12,7 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
     return config;
   },
   images: {
@@ -29,6 +29,26 @@ module.exports = {
       {
         protocol: 'https',
         hostname: 'portal-data.arbitrum.io',
+        port: '',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.vaults.fyi',
+        port: '',
+      },
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        port: '',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        port: '',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.coingecko.com',
         port: '',
       },
     ],
