@@ -1,11 +1,11 @@
 import { VaultsSdk } from '@vaultsfyi/sdk';
 
-if (!process.env.NEXT_PUBLIC_VAULTS_FYI_API_KEY) {
-  throw new Error('NEXT_PUBLIC_VAULTS_FYI_API_KEY is not set');
+if (!process.env.VAULTS_FYI_API_KEY) {
+  throw new Error('VAULTS_FYI_API_KEY is not set');
 }
 
 export const vaultsSdk = new VaultsSdk({
-  apiKey: process.env.NEXT_PUBLIC_VAULTS_FYI_API_KEY,
+  apiKey: process.env.VAULTS_FYI_API_KEY,
 });
 
 export const DEFAULT_ALLOWED_ASSETS = [

@@ -9,9 +9,9 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { category?: string };
+  searchParams: { category?: OpportunityCategory };
 }): Promise<Metadata> {
-  const category = searchParams.category as OpportunityCategory | undefined;
+  const category = searchParams.category;
   if (!category) {
     return {
       title: 'Earn - Opportunity',
@@ -42,17 +42,11 @@ export default function OpportunityDetailPageRoute({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { category?: string };
+  searchParams: { category?: OpportunityCategory };
 }) {
-  return (
-    <OpportunityDetailPage
-      opportunityId={params.id}
-      category={
-        searchParams.category &&
-        OPPORTUNITY_CATEGORIES.includes(searchParams.category as OpportunityCategory)
-          ? (searchParams.category as OpportunityCategory)
-          : undefined
-      }
-    />
-  );
+  const category =
+    searchParams.category && OPPORTUNITY_CATEGORIES.includes(searchParams.category)
+      ? searchParams.category
+      : undefined;
+  return <OpportunityDetailPage opportunityId={params.id} category={category} />;
 }

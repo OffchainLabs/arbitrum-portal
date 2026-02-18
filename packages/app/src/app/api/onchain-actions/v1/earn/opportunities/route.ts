@@ -8,25 +8,48 @@ import {
   StandardOpportunity,
 } from '../types';
 
-// Enable route-level caching with 1 hour revalidation
+const MAX_PER_PAGE = 100;
+const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
+
 export const revalidate = 3600;
+
+function parsePositiveInt(value: string | null, defaultVal: number, max?: number): number {
+  if (value === null) return defaultVal;
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0 || !Number.isInteger(parsed)) return defaultVal;
+  return max !== undefined ? Math.min(parsed, max) : parsed;
+}
+
+function parseNonNegativeNumber(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) || parsed < 0 ? undefined : parsed;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-
     const categoryParam = searchParams.get('category');
     const category = categoryParam as OpportunityCategory | null;
+    const orderBy = (searchParams.get('orderBy') as 'rawApy' | 'rawTvl' | undefined) ?? 'rawApy';
+
+    const rawPerPage = searchParams.get('perPage');
+    const perPage = parsePositiveInt(rawPerPage, 50, MAX_PER_PAGE);
+    const rawPage = searchParams.get('page');
+    const page = parsePositiveInt(rawPage, 0);
+
+    const minTvl = parseNonNegativeNumber(searchParams.get('minTvl'));
+    const minApy = parseNonNegativeNumber(searchParams.get('minApy'));
+
     const filters: OpportunityFilters = {
       network: searchParams.get('network') || 'arbitrum',
-      minTvl: searchParams.get('minTvl') ? Number(searchParams.get('minTvl')) : undefined,
-      minApy: searchParams.get('minApy') ? Number(searchParams.get('minApy')) : undefined,
-      perPage: searchParams.get('perPage') ? Number(searchParams.get('perPage')) : 50,
-      page: searchParams.get('page') ? Number(searchParams.get('page')) : 0,
+      minTvl,
+      minApy,
+      perPage,
+      page,
     };
 
     const router = new CategoryRouter();
-
     let opportunities: StandardOpportunity[] = [];
 
     if (category) {
@@ -34,66 +57,39 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           {
             opportunities: [],
-            pagination: { page: filters.page!, perPage: filters.perPage!, total: 0 },
+            pagination: { page, perPage, total: 0 },
             vendors: [],
             categories: [],
           },
-          { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' } },
+          { headers: CACHE_HEADERS },
         );
       }
       const adapter = router.routeToAdapter(category);
       opportunities = await adapter.getOpportunities(filters);
     } else {
       const adapters = router.getAllAdapters();
-      // Use Promise.allSettled to handle partial failures gracefully
       const results = await Promise.allSettled(
         adapters.map((adapter) => adapter.getOpportunities(filters)),
       );
-      // Collect successful results and log errors
-      const successfulResults: StandardOpportunity[] = [];
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          successfulResults.push(...result.value);
-        } else {
-          const adapter = adapters[index];
-          if (adapter) {
-            console.error(
-              `Failed to fetch opportunities from ${adapter.vendor} adapter:`,
-              result.reason,
-            );
-          } else {
-            console.error(
-              `Failed to fetch opportunities from adapter at index ${index}:`,
-              result.reason,
-            );
-          }
-        }
-      });
-      opportunities = successfulResults;
+      for (const result of results) {
+        if (result.status === 'fulfilled') opportunities.push(...result.value);
+      }
     }
 
-    opportunities.sort((a, b) => (b.metrics.rawApy ?? 0) - (a.metrics.rawApy ?? 0));
+    const sortKey = orderBy === 'rawTvl' ? 'rawTvl' : 'rawApy';
+    opportunities.sort((a, b) => (b.metrics[sortKey] ?? 0) - (a.metrics[sortKey] ?? 0));
 
-    const start = filters.page! * filters.perPage!;
-    const end = start + filters.perPage!;
-    const paginated = opportunities.slice(start, end);
+    const start = page * perPage;
+    const paginated = opportunities.slice(start, start + perPage);
 
     const result = {
       opportunities: paginated,
-      pagination: {
-        page: filters.page!,
-        perPage: filters.perPage!,
-        total: opportunities.length,
-      },
+      pagination: { page, perPage, total: opportunities.length },
       vendors: Array.from(new Set(opportunities.map((o) => o.vendor))),
       categories: Array.from(new Set(opportunities.map((o) => o.category))),
     };
 
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600',
-      },
-    });
+    return NextResponse.json(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     return NextResponse.json(

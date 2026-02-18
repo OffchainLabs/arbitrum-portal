@@ -1,16 +1,22 @@
 import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { OpportunityCategory, StandardUserPosition } from '../types';
+import { OpportunityCategory, StandardUserPosition, Vendor } from '../types';
+
+const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
 
 function calculatePositionsSummary(positions: StandardUserPosition[]) {
-  const byCategory = {
+  const byCategory: Record<
+    string,
+    { count: number; valueUsdNumber: number; weightedApySum: number }
+  > = {
     [OpportunityCategory.Lend]: { count: 0, valueUsdNumber: 0, weightedApySum: 0 },
   };
 
-  const byVendor = {
-    vaults: { count: 0, valueUsdNumber: 0 },
+  const byVendor: Record<string, { count: number; valueUsdNumber: number }> = {
+    [Vendor.Vaults]: { count: 0, valueUsdNumber: 0 },
   };
 
   let totalValueUsdNumber = 0;
@@ -18,37 +24,46 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   let weightedApySum = 0;
 
   for (const position of positions) {
-    // Handle NaN, undefined, or null values
     const valueUsdNumber = Number(position.valueUsdNumber) || 0;
-    if (!isFinite(valueUsdNumber) || valueUsdNumber < 0) {
-      continue; // Skip invalid values
-    }
+    if (!isFinite(valueUsdNumber) || valueUsdNumber < 0) continue;
 
-    // Get APY from position or opportunity metadata
-    const apy = position.apy ?? position.opportunity.apy ?? 0;
+    const apy = position.opportunity?.apy ?? position.apy ?? 0;
     const apyNumber = Number(apy) || 0;
     if (isFinite(apyNumber) && apyNumber >= 0) {
-      // Estimated Earnings = position value * APY (expected earnings if maintained for 1 year)
       estimatedEarningsUsdNumber += valueUsdNumber * (apyNumber / 100);
-      // Weighted APY sum for calculating weighted mean
       weightedApySum += apyNumber * valueUsdNumber;
-      // Category-specific weighted APY sum
-      byCategory[position.category].weightedApySum += apyNumber * valueUsdNumber;
     }
 
     totalValueUsdNumber += valueUsdNumber;
 
-    byCategory[position.category].count++;
-    byCategory[position.category].valueUsdNumber += valueUsdNumber;
+    const catKey = position.category;
+    if (!byCategory[catKey]) {
+      byCategory[catKey] = { count: 0, valueUsdNumber: 0, weightedApySum: 0 };
+    }
+    const cat = byCategory[catKey]!;
+    cat.count++;
+    cat.valueUsdNumber += valueUsdNumber;
+    if (isFinite(apyNumber) && apyNumber >= 0) {
+      cat.weightedApySum += apyNumber * valueUsdNumber;
+    }
 
-    byVendor[position.vendor].count++;
-    byVendor[position.vendor].valueUsdNumber += valueUsdNumber;
+    const vendorKey = position.vendor;
+    if (!byVendor[vendorKey]) {
+      byVendor[vendorKey] = { count: 0, valueUsdNumber: 0 };
+    }
+    const vendor = byVendor[vendorKey]!;
+    vendor.count++;
+    vendor.valueUsdNumber += valueUsdNumber;
   }
 
   // Net APY = weighted mean of all positions' APY's by their $ value
   const netApy = totalValueUsdNumber > 0 ? weightedApySum / totalValueUsdNumber : 0;
 
-  const lendCat = byCategory[OpportunityCategory.Lend];
+  const lendCat = byCategory[OpportunityCategory.Lend] ?? {
+    count: 0,
+    valueUsdNumber: 0,
+    weightedApySum: 0,
+  };
   const categoryApy = {
     lend: lendCat.valueUsdNumber > 0 ? lendCat.weightedApySum / lendCat.valueUsdNumber : 0,
   };
@@ -74,18 +89,21 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     categoryApy,
     byCategory: {
       [OpportunityCategory.Lend]: {
-        count: byCategory[OpportunityCategory.Lend].count,
-        valueUsd: `$${byCategory[OpportunityCategory.Lend].valueUsdNumber.toFixed(2)}`,
-        valueUsdNumber: byCategory[OpportunityCategory.Lend].valueUsdNumber,
+        count: lendCat.count,
+        valueUsd: `$${lendCat.valueUsdNumber.toFixed(2)}`,
+        valueUsdNumber: lendCat.valueUsdNumber,
       },
     },
-    byVendor: {
-      vaults: {
-        count: byVendor.vaults.count,
-        valueUsd: `$${byVendor.vaults.valueUsdNumber.toFixed(2)}`,
-        valueUsdNumber: byVendor.vaults.valueUsdNumber,
-      },
-    },
+    byVendor: Object.fromEntries(
+      Object.entries(byVendor).map(([k, v]) => [
+        k,
+        {
+          count: v.count,
+          valueUsd: `$${v.valueUsdNumber.toFixed(2)}`,
+          valueUsdNumber: v.valueUsdNumber,
+        },
+      ]),
+    ) as Record<Vendor, { count: number; valueUsd: string; valueUsdNumber: number }>,
   };
 }
 
@@ -103,8 +121,30 @@ export async function GET(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (!isAddress(userAddress)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_USER_ADDRESS',
+            message: 'userAddress must be a valid Ethereum address',
+          },
+        },
+        { status: 400 },
+      );
+    }
+    if (network && !ALLOWED_NETWORKS.includes(network as (typeof ALLOWED_NETWORKS)[number])) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_NETWORK',
+            message: `network must be one of: ${ALLOWED_NETWORKS.join(', ')}`,
+          },
+        },
+        { status: 400 },
+      );
+    }
 
-    const cacheKey = `positions:${userAddress}:${category || 'all'}:${network}`;
+    const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${network}`;
 
     const getCachedPositions = unstable_cache(
       async () => {
@@ -113,11 +153,9 @@ export async function GET(request: NextRequest) {
         const errors: Array<{ category: string; error: string }> = [];
 
         if (category) {
-          // Fetch positions from specific category adapter
           try {
             const adapter = router.routeToAdapter(category);
-            const positions = await adapter.getUserPositions(userAddress, network);
-            allPositions = positions;
+            allPositions = await adapter.getUserPositions(userAddress, network);
           } catch (error) {
             errors.push({
               category,

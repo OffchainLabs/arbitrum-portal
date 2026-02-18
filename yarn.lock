@@ -501,14 +501,6 @@
     chance "^1.1.4"
     core-js "^3.6.4"
 
-"@duneanalytics/client-sdk@^0.2.4":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@duneanalytics/client-sdk/-/client-sdk-0.2.5.tgz#45812710cf26f76cf2fa52551e5f4f68aa8ed9ff"
-  integrity sha512-ftE9sLIuzcxX0g9nhOA0pN/uxTvPwa88CVXpgU2sSRGnN43Kb5ZuaexetVNcNidapdIV95bWW+VpnoSvpMJUXw==
-  dependencies:
-    deprecated "^0.0.2"
-    loglevel "^1.8.0"
-
 "@ecies/ciphers@^0.2.2":
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/@ecies/ciphers/-/ciphers-0.2.2.tgz#82a15b10a6e502b63fb30915d944b2eaf3ff17ff"
@@ -7090,11 +7082,6 @@ depd@~1.1.2:
   resolved "https://registry.yarnpkg.com/depd/-/depd-1.1.2.tgz#9bcd52e14c097763e749b274c4346ed2e560b5a9"
   integrity sha512-7emPTl6Dpo6JRXOXjLRxck+FlLRX5847cLKEn00PLAgc3g2hTZZgr+e4c2v6QpSmLeFP3n5yUo7ft6avBK/5jQ==
 
-deprecated@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/deprecated/-/deprecated-0.0.2.tgz#bc9dcf9bce9174fcf9090cf1295131c439c682fd"
-  integrity sha512-vt7tvBJtDu1pmn8HTUc/Q3lSkrgah4Tl5IbbBzqu33jcPQlihAGAO9yD4ubfhFh/xyXD+HbUX1Dg6PwnARWxag==
-
 deprecation@^2.0.0:
   version "2.3.1"
   resolved "https://registry.npmjs.org/deprecation/-/deprecation-2.3.1.tgz"
@@ -10603,11 +10590,6 @@ log-update@^4.0.0:
     cli-cursor "^3.1.0"
     slice-ansi "^4.0.0"
     wrap-ansi "^6.2.0"
-
-loglevel@^1.8.0:
-  version "1.9.2"
-  resolved "https://registry.yarnpkg.com/loglevel/-/loglevel-1.9.2.tgz#c2e028d6c757720107df4e64508530db6621ba08"
-  integrity sha512-HgMmCqIJSAKqo68l0rS2AanEWfkxaZ5wNiEFb5ggm08lDs9Xl2KxBlX3PTcaD2chBM1gXAYf491/M2Rv8Jwayg==
 
 loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"

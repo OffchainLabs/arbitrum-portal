@@ -51,6 +51,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
                   width={20}
                   height={20}
                   className="rounded-full"
+                  fallback={<span className="w-5 h-5 rounded-full bg-white/10 shrink-0" />}
                 />
                 <span className="text-base font-medium text-white leading-none">
                   {opportunity.assetSymbol ?? opportunity.token}
@@ -67,6 +68,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
                   width={20}
                   height={20}
                   className="rounded-full"
+                  fallback={<span className="w-5 h-5 rounded-full bg-white/10 shrink-0" />}
                 />
                 <span className="text-base font-medium text-white leading-none">
                   {protocolName}
@@ -77,15 +79,25 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
               <span className="text-xs text-white/50 leading-none">TVL</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
-                ${(tvlUsd / 1e6).toFixed(1)}M
+                {tvlUsd >= 1e12
+                  ? `$${(tvlUsd / 1e12).toFixed(1)}T`
+                  : tvlUsd >= 1e9
+                    ? `$${(tvlUsd / 1e9).toFixed(1)}B`
+                    : tvlUsd >= 1e6
+                      ? `$${(tvlUsd / 1e6).toFixed(1)}M`
+                      : tvlUsd >= 1e3
+                        ? `$${(tvlUsd / 1e3).toFixed(1)}K`
+                        : `$${tvlUsd.toFixed(2)}`}
               </div>
             </Card>
 
             <Card className="rounded-lg flex flex-col gap-3 bg-[#191919] p-4">
-              <span className="text-xs text-white/50 leading-none">Utilization Rate</span>
+              <span className="text-xs text-white/50 leading-none">Stakers</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
                 {opportunity.stakersCount != null
-                  ? `${(opportunity.stakersCount / 1000).toFixed(0)}k`
+                  ? opportunity.stakersCount >= 1000
+                    ? `${(opportunity.stakersCount / 1000).toFixed(1)}k`
+                    : opportunity.stakersCount.toString()
                   : '-'}
               </div>
             </Card>
@@ -95,21 +107,27 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded-lg bg-[#191919] p-4">
-              <div className="text-xs text-white/50 mb-1">Max LTV</div>
+              <div className="text-xs text-white/50 mb-1">7d APY</div>
               <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
             </div>
             <div className="rounded-lg bg-[#191919] p-4">
-              <div className="text-xs text-white/50 mb-1">Liquidation Threshold</div>
-              <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
+              <div className="text-xs text-white/50 mb-1">30d APY</div>
+              <div className="text-base font-medium text-white">{(apy30day * 100).toFixed(1)}%</div>
             </div>
             <div className="rounded-lg bg-[#191919] p-4 col-span-2 lg:col-span-1">
-              <div className="text-xs text-white/50 mb-1">Supply Market Cap</div>
-              <div className="text-base font-medium text-white">{(apy30day * 100).toFixed(1)}%</div>
+              <div className="text-xs text-white/50 mb-1">TVL (Total Value Locked)</div>
+              <div className="text-base font-medium text-white">
+                {tvlUsd.toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                  maximumFractionDigits: 0,
+                })}
+              </div>
             </div>
           </div>
 
           {opportunity.description && (
-            <div className="rounded-lg bg-[#191919] p-4">
+            <div className="rounded-lg bg-gray-1 p-4">
               <h3 className="text-base font-medium text-white mb-3">
                 Where does the yield come from?
               </h3>

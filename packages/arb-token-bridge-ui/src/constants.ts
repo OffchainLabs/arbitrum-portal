@@ -4,7 +4,7 @@ export const TOS_LOCALSTORAGE_KEY = 'arbitrum:bridge:tos-v' + TOS_VERSION;
 
 export const EARN_TOS_VERSION = 1;
 
-export const EARN_TOS_LOCALSTORAGE_KEY = 'arbitrum:earn:tos-v' + EARN_TOS_VERSION;
+export const EARN_TOS_LOCALSTORAGE_KEY = 'earn:tos-v' + EARN_TOS_VERSION;
 
 const SUPPORT_LINK_BASE = 'https://support.arbitrum.io';
 

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { OPPORTUNITY_CATEGORIES, OpportunityCategory, StandardOpportunity } from '@/earn-api/types';
+import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/earn-api/types';
 
-// Enable route-level caching with 1 hour revalidation
+const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
+
 export const revalidate = 3600;
 
 export async function GET(
@@ -13,9 +15,32 @@ export async function GET(
   try {
     const searchParams = request.nextUrl.searchParams;
     const category = params.category as OpportunityCategory;
-    const network = searchParams.get('network') || 'arbitrum';
+    const network = (searchParams.get('network') ||
+      'arbitrum') as (typeof ALLOWED_NETWORKS)[number];
     const opportunityId = params.id;
 
+    if (!ALLOWED_NETWORKS.includes(network)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_NETWORK',
+            message: `network must be one of: ${ALLOWED_NETWORKS.join(', ')}`,
+          },
+        },
+        { status: 400 },
+      );
+    }
+    if (!opportunityId || !isAddress(opportunityId)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_OPPORTUNITY_ID',
+            message: 'opportunity id must be a valid Ethereum address',
+          },
+        },
+        { status: 400 },
+      );
+    }
     if (!OPPORTUNITY_CATEGORIES.includes(category)) {
       return NextResponse.json(
         {
@@ -30,10 +55,7 @@ export async function GET(
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
-    const opportunity: StandardOpportunity = await adapter.getOpportunityDetails(
-      opportunityId,
-      network,
-    );
+    const opportunity = await adapter.getOpportunityDetails(opportunityId, network);
 
     return NextResponse.json(opportunity, {
       headers: {

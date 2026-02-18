@@ -24,11 +24,11 @@ export function AllOpportunitiesPage() {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
-  } = useAllOpportunities({ minTvl: 5000000 });
+  } = useAllOpportunities({ minTvl: 5_000_000 });
 
   // Fetch user positions if wallet is connected (for enriching opportunities)
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(
-    isConnected ? address || null : null,
+    isConnected ? (address ?? null) : null,
     ['arbitrum'],
   );
 
@@ -60,11 +60,11 @@ export function AllOpportunitiesPage() {
         depositedUsd: positionData.depositedUsd,
         earnings: positionData.earnings,
         earningsUsd: positionData.earningsUsd,
-      } as OpportunityTableRow;
+      } satisfies OpportunityTableRow;
     });
   }, [allOpportunities, positionsMap, isConnected]);
 
-  const isLoading = opportunitiesLoading || (isConnected && positionsLoading);
+  const isLoading = opportunitiesLoading || (isConnected ? positionsLoading : false);
   const error = opportunitiesError;
 
   // Loading state
