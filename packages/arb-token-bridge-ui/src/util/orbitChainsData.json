@@ -1420,7 +1420,8 @@
           "name": "Panax",
           "symbol": "PAX",
           "logoUrl": "/images/PanaxMainnet_NativeTokenLogo.svg"
-        }
+        },
+        "fastWithdrawalTime": 900000
       }
     },
     {
