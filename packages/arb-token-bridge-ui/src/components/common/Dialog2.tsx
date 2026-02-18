@@ -62,7 +62,8 @@ export type DialogType =
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
   | 'pop_disabled'
-  | 'one_nova_transfer';
+  | 'one_nova_transfer'
+  | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =

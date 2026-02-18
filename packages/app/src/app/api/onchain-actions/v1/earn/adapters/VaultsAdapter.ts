@@ -96,8 +96,6 @@ export class VaultsAdapter implements VendorAdapter {
   ): Promise<HistoricalData> {
     const network = this.resolveNetwork(chainId);
     const toTimestamp = Math.floor(Date.now() / 1000);
-
-    // Map UI range to Vaults.fyi time window + granularity
     let fromTimestamp: number;
     let granularity: '1hour' | '1day' | '1week';
 

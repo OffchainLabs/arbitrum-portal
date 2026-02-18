@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 
 import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { EarnToSPopupDialog } from '@/app-components/earn/EarnToSPopupDialog';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import type { TabConfig } from '@/portal/common/pageTabConfig';
 
@@ -23,6 +24,10 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
   const isDetailPage = typeof pathname === 'string' && EARN_DETAIL_PAGE_REGEX.test(pathname);
 
   const showHeader = !isDetailPage;
+  const isEarnTos = dialogProps.openedDialogType === 'earn_tos';
+  const bridgeDialogProps = isEarnTos
+    ? { ...dialogProps, openedDialogType: null as typeof dialogProps.openedDialogType }
+    : dialogProps;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -38,7 +43,8 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
           ))}
         <div className="flex flex-1 flex-col gap-8 lg:gap-12 lg:mt-4">{children}</div>
       </div>
-      <DialogWrapper {...dialogProps} />
+      <DialogWrapper {...bridgeDialogProps} />
+      {isEarnTos && <EarnToSPopupDialog {...dialogProps} isOpen={true} />}
     </div>
   );
 }

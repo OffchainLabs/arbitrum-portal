@@ -3,8 +3,12 @@ import type { VaultsSdk } from '@vaultsfyi/sdk';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
+export { OpportunityCategory };
+
 export enum Vendor {
   Vaults = 'vaults',
+  LiFi = 'lifi',
+  Pendle = 'pendle',
 }
 
 export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
@@ -75,6 +79,21 @@ export interface StandardOpportunityLendDetail {
   apy30day?: number;
   apy7day?: number;
 }
+
+export interface StandardOpportunityFixedYieldDetail {
+  pt: string;
+  detailsTvlUsd: number;
+  detailsImpliedApy: number;
+  expiry?: string;
+  detailsUnderlyingApy?: number;
+  detailsLiquidityUsd?: number;
+  detailsTradingVolumeUsd?: number;
+  ptTokenIcon?: string;
+  underlyingAsset?: string;
+  sySupplyCap?: number | null;
+  syCurrentSupply?: number;
+}
+
 export interface StandardOpportunityBase {
   id: string;
   vendor: Vendor;
@@ -95,10 +114,25 @@ export interface StandardOpportunityLend extends StandardOpportunityBase {
   lend: StandardOpportunityLendDetail;
 }
 
-export type StandardOpportunity = StandardOpportunityLend;
+export interface StandardOpportunityLiquidStaking extends StandardOpportunityBase {
+  category: OpportunityCategory.LiquidStaking;
+}
+
+export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
+  category: OpportunityCategory.FixedYield;
+  fixedYield: StandardOpportunityFixedYieldDetail;
+}
+
+export type StandardOpportunity =
+  | StandardOpportunityLend
+  | StandardOpportunityLiquidStaking
+  | StandardOpportunityFixedYield;
 
 export type VaultsOpportunity = StandardOpportunityLend & { vendor: Vendor.Vaults };
+export type LiFiOpportunity = StandardOpportunityLiquidStaking & { vendor: Vendor.LiFi };
+export type PendleOpportunity = StandardOpportunityFixedYield & { vendor: Vendor.Pendle };
 
+// Vendor-specific response types
 type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
 export type VaultsTransactionContextResponse = Awaited<
   ReturnType<VaultsSdkInstance['getTransactionsContext']>
@@ -109,6 +143,8 @@ export type VaultsAction = VaultsActionsResponse extends { actions: infer A }
     ? T
     : never
   : never;
+export type LiFiQuoteResponse = unknown;
+export type PendleConvertRouteResponse = unknown;
 
 export interface StandardTokenContextItem {
   decimals: number;
@@ -173,8 +209,26 @@ export type LendAvailableActions = AvailableActions & {
   transactionContext: StandardTransactionContext;
 };
 
+export type LiquidStakingAvailableActions = AvailableActions & {
+  vendor: Vendor.LiFi;
+  transactionContext: null;
+};
+
+export type FixedYieldAvailableActions = AvailableActions & {
+  vendor: Vendor.Pendle;
+  transactionContext: null;
+};
+
 export type LendTransactionQuoteResponse = TransactionQuoteResponse & {
   vendor: Vendor.Vaults;
+};
+
+export type LiquidStakingTransactionQuoteResponse = TransactionQuoteResponse & {
+  vendor: Vendor.LiFi;
+};
+
+export type FixedYieldTransactionQuoteResponse = TransactionQuoteResponse & {
+  vendor: Vendor.Pendle;
 };
 
 export interface HistoricalDataPoint {
