@@ -79,7 +79,7 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
                 <p className="text-xs text-white/50 leading-none">APY</p>
                 <p className="text-2xl font-semibold text-white leading-tight">{opportunity.apy}</p>
               </div>
-              <div className="shrink-0 bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+              <div className="shrink-0 bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20">
                 <ChevronRightIcon className="h-4 w-4 text-white" />
               </div>
             </div>

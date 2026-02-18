@@ -65,7 +65,6 @@ export function AllOpportunitiesPage() {
   }, [allOpportunities, positionsMap, isConnected]);
 
   const isLoading = opportunitiesLoading || (isConnected ? positionsLoading : false);
-  const error = opportunitiesError;
 
   // Loading state
   if (isLoading) {
@@ -73,10 +72,10 @@ export function AllOpportunitiesPage() {
   }
 
   // Error state
-  if (error) {
+  if (opportunitiesError) {
     return (
       <div className="rounded border-error bg-error/20 p-8 text-center">
-        <p className="text-error">Failed to load opportunities: {error}</p>
+        <p className="text-error">Failed to load opportunities: {opportunitiesError}</p>
       </div>
     );
   }

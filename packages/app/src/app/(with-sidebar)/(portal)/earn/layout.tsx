@@ -8,6 +8,9 @@ import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import type { TabConfig } from '@/portal/common/pageTabConfig';
 
+const EARN_DETAIL_PAGE_REGEX =
+  /^\/earn\/(opportunity\/[^/]+\/0x[0-9a-fA-F]+|market\/0x[0-9a-fA-F]+)$/;
+
 const earnTabs: TabConfig[] = [
   { href: '/earn/market', label: 'Opportunities', pathMatch: '/earn/market' },
   { href: '/earn/your-holdings', label: 'Your Holdings', pathMatch: '/earn/your-holdings' },
@@ -18,9 +21,7 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
   const [dialogProps] = useDialog2();
   const { isConnected } = useAccount();
 
-  const isDetailPage =
-    (pathname.startsWith('/earn/market/') && pathname !== '/earn/market') ||
-    pathname.startsWith('/earn/opportunity/');
+  const isDetailPage = typeof pathname === 'string' && EARN_DETAIL_PAGE_REGEX.test(pathname);
 
   const showHeader = !isDetailPage;
 
