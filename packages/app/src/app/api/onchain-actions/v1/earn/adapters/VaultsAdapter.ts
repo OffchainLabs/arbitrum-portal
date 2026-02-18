@@ -49,7 +49,7 @@ export class VaultsAdapter implements VendorAdapter {
     const response = await vaultsSdk.getAllVaults({
       query: {
         allowedNetworks: filters.network ? ([filters.network] as VaultsNetwork[]) : undefined,
-        allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] as VaultsProtocol[],
+        allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] satisfies VaultsProtocol[],
         minTvl: filters.minTvl,
         allowedAssets: [...DEFAULT_ALLOWED_ASSETS],
         perPage: filters.perPage || 50,

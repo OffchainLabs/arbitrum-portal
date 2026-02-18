@@ -113,6 +113,11 @@ module.exports = {
         'arb-arcade': '#ba2d26',
         'stylus-pink': '#F62674',
 
+        // EARN category colors
+        'earn-lend': '#4970e9',
+        'earn-fixed-yield': '#b759e6',
+        'earn-liquid-staking': '#f6851b',
+
         // NEUTRAL (GRAYS)
         'gray-1': '#191919',
         'gray-2': '#E5E5E5',

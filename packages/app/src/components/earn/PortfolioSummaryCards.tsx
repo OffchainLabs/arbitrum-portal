@@ -6,8 +6,17 @@ import { useState } from 'react';
 import { usePortfolioMetrics } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
+import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { ChartPlaceholder } from './ChartPlaceholder';
+
+function formatPercentage(value: number) {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+}
+
+const TYPE_ORDER: Array<{ type: 'Lending'; color: string }> = [
+  { type: 'Lending', color: '#4970e9' },
+];
 
 interface PortfolioSummaryCardsProps {
   opportunities: OpportunityTableRow[];
@@ -37,19 +46,6 @@ export function PortfolioSummaryCards({
 
   // Use API-provided total value if available, otherwise fall back to calculated value
   const totalValue = totalValueUsdNumber !== undefined ? totalValueUsdNumber : summary.totalValue;
-
-  const formatUSD = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
 
   // Use API-provided earnings values based on timeframe
   const displayEarnings =
@@ -82,9 +78,6 @@ export function PortfolioSummaryCards({
   };
   const totalValueForProgress = totalValue || 1;
   const lendingWidth = (summary.valueByType.Lending / totalValueForProgress) * 100;
-  const typeOrder: Array<{ type: 'Lending'; color: string }> = [
-    { type: 'Lending', color: '#4970e9' },
-  ];
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
@@ -112,7 +105,7 @@ export function PortfolioSummaryCards({
           </div>
           {/* Legend - matches progress bar order */}
           <div className="flex gap-3">
-            {typeOrder.map(({ type, color }) => {
+            {TYPE_ORDER.map(({ type, color }) => {
               const value = summary.valueByType[type];
               if (value === 0) return null;
               return (
@@ -212,7 +205,7 @@ export function PortfolioSummaryCards({
             {/* Category APY Breakdown */}
             {categoryApy && (
               <div className="flex flex-col gap-2 mt-2">
-                {typeOrder.map(({ type, color }) => {
+                {TYPE_ORDER.map(({ type, color }) => {
                   const apy = type === 'Lending' ? categoryApy.lend : undefined;
                   // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                   if (apy === undefined || apy === null || !isFinite(apy)) return null;
@@ -312,7 +305,7 @@ export function PortfolioSummaryCards({
           {/* Category APY Breakdown */}
           {categoryApy && (
             <div className="flex flex-col gap-2 mt-2">
-              {typeOrder.map(({ type, color }) => {
+              {TYPE_ORDER.map(({ type, color }) => {
                 const apy = type === 'Lending' ? categoryApy.lend : undefined;
                 // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                 if (apy === undefined || apy === null || !isFinite(apy)) return null;

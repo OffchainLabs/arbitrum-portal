@@ -13,9 +13,10 @@ interface OpportunityRowProps {
   opportunity: OpportunityTableRow;
 }
 
-// Type colors matching Figma design
-const typeColors: Record<string, string> = {
-  lend: '#4970e9',
+const CATEGORY_INDICATOR_CLASS: Record<string, string> = {
+  'lend': 'bg-earn-lend border-earn-lend/10',
+  'fixed-yield': 'bg-earn-fixed-yield border-earn-fixed-yield/10',
+  'liquid-staking': 'bg-earn-liquid-staking border-earn-liquid-staking/10',
 };
 
 // Reusable gradient SparklesIcon component
@@ -54,32 +55,20 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
     router.push(`/earn/opportunity/${opportunity.category}/${opportunity.id}`);
   };
 
-  const categoryColor = typeColors[opportunity.category] || '#191919';
-
-  // Convert hex to rgba for border color with 10% opacity
-  const hexToRgba = (hex: string, alpha: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
+  const categoryClass =
+    CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleRowClick}
-      className="group cursor-pointer bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors"
+      className="group cursor-pointer bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
     >
       {/* Name with Category Color Indicator */}
       <div className="w-[150px] shrink-0">
         <div className="flex items-center gap-2.5">
           {/* Category color indicator */}
-          <div
-            className="w-2.5 h-2.5 rounded border-2 shrink-0"
-            style={{
-              backgroundColor: categoryColor,
-              borderColor: hexToRgba(categoryColor, 0.1), // 10% opacity
-            }}
-          />
+          <div className={`w-2.5 h-2.5 rounded border-2 shrink-0 ${categoryClass}`} />
           <div className="flex flex-col gap-0.5">
             <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
               {opportunity.name}
@@ -225,16 +214,15 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
           width={24}
           height={24}
           className="shrink-0 object-contain rounded"
-          style={{ objectFit: 'contain' }}
         />
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap capitalize">
           {opportunity.protocol}
         </p>
       </div>
 
-      <div className="bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20">
-        <ChevronRightIcon className="h-4 w-4 text-white " />
+      <div className="bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20 shrink-0">
+        <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
-    </div>
+    </button>
   );
 }

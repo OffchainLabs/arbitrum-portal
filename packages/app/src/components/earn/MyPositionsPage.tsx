@@ -78,7 +78,7 @@ export function MyPositionsPage() {
           depositedUsd: positionData.depositedUsd,
           earnings: positionData.earnings,
           earningsUsd: positionData.earningsUsd,
-        } as OpportunityTableRow;
+        } satisfies OpportunityTableRow;
       });
   }, [allOpportunities, opportunityIds, positionsMap]);
 

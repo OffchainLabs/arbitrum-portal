@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   OpportunityCategory,
@@ -37,7 +37,7 @@ export function OpportunitiesTable({
   const [sortColumn, setSortColumn] = useState<SortColumn>('tvl');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  const toggleCategory = (category: OpportunityCategory) => {
+  const toggleCategory = useCallback((category: OpportunityCategory) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(category)) {
@@ -47,18 +47,21 @@ export function OpportunitiesTable({
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleSort = (column: 'apy' | 'tvl') => {
-    if (sortColumn === column) {
-      // Toggle direction if clicking the same column
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      // Set new column and default to descending
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
+  const handleSort = useCallback(
+    (column: 'apy' | 'tvl') => {
+      if (sortColumn === column) {
+        // Toggle direction if clicking the same column
+        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        // Set new column and default to descending
+        setSortColumn(column);
+        setSortDirection('desc');
+      }
+    },
+    [sortColumn, sortDirection],
+  );
 
   // Group opportunities by category value (not display name)
   const groupedOpportunities = useMemo(() => {
@@ -68,17 +71,9 @@ export function OpportunitiesTable({
 
     const groups: Partial<GroupedOpportunities> = {};
 
-    // Group by category value
     opportunities.forEach((opportunity) => {
       const category = opportunity.category;
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      // TypeScript knows groups[category] exists after the check above
-      const group = groups[category];
-      if (group) {
-        group.push(opportunity);
-      }
+      groups[category] = (groups[category] ?? []).concat(opportunity);
     });
 
     // Sort each group based on current sort state

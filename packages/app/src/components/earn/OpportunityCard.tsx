@@ -1,7 +1,7 @@
 'use client';
 
 import { SparklesIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
@@ -12,51 +12,30 @@ interface OpportunityCardProps {
   opportunity: OpportunityTableRow;
 }
 
-// Type colors matching Figma design
-const typeColors: Record<string, string> = {
-  'lend': '#4970e9',
-  'fixed-yield': '#b759e6',
-  'liquid-staking': '#f6851b',
+const CATEGORY_INDICATOR_CLASS: Record<string, string> = {
+  'lend': 'bg-earn-lend border-earn-lend/10',
+  'fixed-yield': 'bg-earn-fixed-yield border-earn-fixed-yield/10',
+  'liquid-staking': 'bg-earn-liquid-staking border-earn-liquid-staking/10',
 };
 
+function formatUsdValue(usdString: string): string {
+  if (!usdString || usdString === '-') return '-';
+  const cleaned = usdString.replace(/[$,]/g, '');
+  const numValue = parseFloat(cleaned);
+  return isNaN(numValue) ? usdString : formatUSD(numValue);
+}
+
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
-  const router = useRouter();
-
-  const handleCardClick = () => {
-    router.push(`/earn/opportunity/${opportunity.category}/${opportunity.id}`);
-  };
-
-  // Convert hex to rgba for border color with 10% opacity
-  const hexToRgba = (hex: string, alpha: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
-
-  // Format USD values
-  const formatUsdValue = (usdString: string): string => {
-    if (!usdString || usdString === '-') return '-';
-    const cleaned = usdString.replace(/[$,]/g, '');
-    const numValue = parseFloat(cleaned);
-    return isNaN(numValue) ? usdString : formatUSD(numValue);
-  };
-
-  const categoryColor = typeColors[opportunity.category] || '#191919';
+  const categoryClass =
+    CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
 
   return (
-    <div
-      onClick={handleCardClick}
-      className="group cursor-pointer bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover"
+    <Link
+      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+      className="group cursor-pointer bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
     >
       <div className="flex items-center gap-2.5">
-        <div
-          className="w-3 h-3 rounded-[5px] border-2 shrink-0"
-          style={{
-            backgroundColor: categoryColor,
-            borderColor: hexToRgba(categoryColor, 0.1),
-          }}
-        />
+        <div className={`w-3 h-3 rounded-[5px] border-2 shrink-0 ${categoryClass}`} />
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
       </div>
 
@@ -151,7 +130,6 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
                 width={24}
                 height={24}
                 className="shrink-0 object-contain"
-                style={{ objectFit: 'contain' }}
               />
               <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">
                 {opportunity.protocol}
@@ -195,6 +173,6 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

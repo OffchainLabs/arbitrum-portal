@@ -2,7 +2,7 @@
 
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useMemo } from 'react';
 
 import { OpportunityTableRow, getCategoryDisplayName } from '@/app-types/earn/vaults';
@@ -14,8 +14,6 @@ interface BestOpportunitiesShowcaseProps {
 }
 
 export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesShowcaseProps) {
-  const router = useRouter();
-
   const bestOpportunities = useMemo(() => {
     const categoryOpportunities = opportunities.filter((opp) => opp.category === 'lend');
     if (categoryOpportunities.length === 0) return [];
@@ -27,31 +25,26 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
     return null;
   }
 
-  const handleCardClick = (opportunity: OpportunityTableRow) => {
-    router.push(`/earn/opportunity/${opportunity.category}/${opportunity.id}`);
-  };
-
   return (
     <div className="hidden lg:grid lg:grid-cols-3 gap-4">
       {bestOpportunities.map((opportunity) => {
         const categoryDisplayName = getCategoryDisplayName(opportunity.category);
 
         return (
-          <div
+          <Link
             key={opportunity.id}
-            onClick={() => handleCardClick(opportunity)}
-            className="group cursor-pointer bg-neutral-100 rounded p-4 flex flex-col gap-4 hover:bg-default-black-hover transition-colors relative justify-between"
+            href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+            className="group cursor-pointer bg-neutral-100 rounded p-4 flex flex-col gap-4 hover:bg-default-black-hover transition-colors relative justify-between no-underline"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="shrink-0">
+                <div className="shrink-0 w-10 h-10">
                   <SafeImage
                     src={opportunity.tokenIcon}
                     alt={opportunity.token}
                     width={40}
                     height={40}
-                    className="shrink-0 object-contain rounded max-w-[40px] max-h-[40px]"
-                    style={{ objectFit: 'contain' }}
+                    className="shrink-0 object-contain rounded w-10 h-10"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -65,7 +58,7 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
               </div>
               <Tooltip
                 content={
-                  <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
+                  <div className="p-2 bg-neutral-100 rounded max-w-xs">
                     <p className="text-xs text-white leading-relaxed">
                       This opportunity has the highest total value locked (TVL) in its category,
                       making it one of the most popular choices.
@@ -90,7 +83,7 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
                 <ChevronRightIcon className="h-4 w-4 text-white" />
               </div>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>
