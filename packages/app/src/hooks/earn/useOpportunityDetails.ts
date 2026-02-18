@@ -2,7 +2,7 @@ import {
   EARN_API_CACHE_SCHEMA_VERSION,
   useLocalStorageSWR,
 } from '@/app-lib/swr/useLocalStorageSWR';
-import type { OpportunityCategory } from '@/earn-api/types';
+import type { OpportunityCategory } from '@/app-types/earn/vaults';
 
 export interface StandardOpportunityDetail {
   id: string;

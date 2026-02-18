@@ -7,10 +7,21 @@ export type GetPositionsResponse = Awaited<ReturnType<VaultsSdkInstance['getPosi
 export type DetailedVault = GetAllVaultsResponse['data'][0];
 export type UserPosition = GetPositionsResponse['data'][0];
 
-export type OpportunityCategory = 'lend';
+export enum OpportunityCategory {
+  Lend = 'lend',
+  LiquidStaking = 'liquid-staking',
+  FixedYield = 'fixed-yield',
+}
+
+export const OPPORTUNITY_CATEGORIES: OpportunityCategory[] = [OpportunityCategory.Lend];
 
 export function getCategoryDisplayName(category: OpportunityCategory): string {
-  return category === 'lend' ? 'Lending' : category;
+  const displayNames: Record<OpportunityCategory, string> = {
+    [OpportunityCategory.Lend]: 'Lending',
+    [OpportunityCategory.LiquidStaking]: 'Liquid Staking',
+    [OpportunityCategory.FixedYield]: 'Fixed Yield',
+  };
+  return displayNames[category] ?? category;
 }
 
 export interface OpportunityTableRow {

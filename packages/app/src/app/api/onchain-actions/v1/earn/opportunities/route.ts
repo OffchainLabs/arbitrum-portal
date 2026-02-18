@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
+
 import { CategoryRouter } from '../CategoryRouter';
-import {
-  OPPORTUNITY_CATEGORIES,
-  OpportunityCategory,
-  OpportunityFilters,
-  StandardOpportunity,
-} from '../types';
+import { OpportunityFilters, StandardOpportunity } from '../types';
 
 const MAX_PER_PAGE = 100;
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };

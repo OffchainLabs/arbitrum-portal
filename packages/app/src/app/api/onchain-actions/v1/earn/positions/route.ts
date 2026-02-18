@@ -2,8 +2,10 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { isAddress } from 'viem';
 
+import { OpportunityCategory } from '@/app-types/earn/vaults';
+
 import { CategoryRouter } from '../CategoryRouter';
-import { OpportunityCategory, StandardUserPosition, Vendor } from '../types';
+import { StandardUserPosition, Vendor } from '../types';
 
 const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
 

@@ -3,7 +3,7 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
@@ -12,10 +12,10 @@ interface OpportunityCardProps {
   opportunity: OpportunityTableRow;
 }
 
-const CATEGORY_INDICATOR_CLASS: Record<string, string> = {
-  'lend': 'bg-earn-lend border-earn-lend/10',
-  'fixed-yield': 'bg-earn-fixed-yield border-earn-fixed-yield/10',
-  'liquid-staking': 'bg-earn-liquid-staking border-earn-liquid-staking/10',
+const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
+  [OpportunityCategory.Lend]: 'bg-earn-lend border-earn-lend/10',
+  [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield border-earn-fixed-yield/10',
+  [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
 };
 
 function formatUsdValue(usdString: string): string {

@@ -193,11 +193,15 @@ export function OpportunitiesTable({
     return groups;
   }, [opportunities, groupByCategory, sortColumn, sortDirection]);
 
-  const categoryOrder: OpportunityCategory[] = ['lend'];
+  const categoryOrder: OpportunityCategory[] = [OpportunityCategory.Lend];
 
   const getCategoryDescription = (category: OpportunityCategory): string => {
     const descriptions: Record<OpportunityCategory, string> = {
-      lend: 'Lend your tokens to borrowers and earn interest. Your tokens are used as collateral and you receive regular interest payments.',
+      [OpportunityCategory.Lend]:
+        'Lend your tokens to borrowers and earn interest. Your tokens are used as collateral and you receive regular interest payments.',
+      [OpportunityCategory.LiquidStaking]:
+        'Stake your assets in liquid staking protocols and earn yield.',
+      [OpportunityCategory.FixedYield]: 'Earn fixed or stable yield from structured products.',
     };
     return descriptions[category];
   };

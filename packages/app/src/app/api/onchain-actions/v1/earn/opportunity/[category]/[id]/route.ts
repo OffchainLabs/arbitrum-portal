@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAddress } from 'viem';
 
+import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/earn-api/types';
 
 const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
 

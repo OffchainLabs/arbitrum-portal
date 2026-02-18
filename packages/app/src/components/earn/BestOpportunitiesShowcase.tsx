@@ -5,7 +5,11 @@ import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
-import { OpportunityTableRow, getCategoryDisplayName } from '@/app-types/earn/vaults';
+import {
+  OpportunityCategory,
+  OpportunityTableRow,
+  getCategoryDisplayName,
+} from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 
@@ -15,7 +19,9 @@ interface BestOpportunitiesShowcaseProps {
 
 export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesShowcaseProps) {
   const bestOpportunities = useMemo(() => {
-    const categoryOpportunities = opportunities.filter((opp) => opp.category === 'lend');
+    const categoryOpportunities = opportunities.filter(
+      (opp) => opp.category === OpportunityCategory.Lend,
+    );
     if (categoryOpportunities.length === 0) return [];
     const best = [...categoryOpportunities].sort((a, b) => b.rawTvl - a.rawTvl)[0];
     return best ? [best] : [];

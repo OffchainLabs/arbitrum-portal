@@ -1,5 +1,7 @@
+import { OpportunityCategory } from '@/app-types/earn/vaults';
+
 import { VaultsAdapter } from './adapters/VaultsAdapter';
-import { OpportunityCategory, VendorAdapter } from './types';
+import type { VendorAdapter } from './types';
 
 export class CategoryRouter {
   private readonly lendAdapter: VendorAdapter;

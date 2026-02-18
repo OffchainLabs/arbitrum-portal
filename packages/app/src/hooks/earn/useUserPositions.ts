@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 
 import { useLocalStorageSWR } from '@/app-lib/swr/useLocalStorageSWR';
+import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 interface StandardUserPosition {
   opportunityId: string;
-  category: 'lend';
+  category: OpportunityCategory;
   vendor: 'vaults';
   network: string;
   amount: string;
@@ -28,6 +29,21 @@ interface StandardUserPosition {
   isExpired?: boolean;
 }
 
+const DEFAULT_BY_CATEGORY: Record<
+  OpportunityCategory,
+  { count: number; valueUsd: string; valueUsdNumber: number }
+> = {
+  [OpportunityCategory.Lend]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
+  [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
+  [OpportunityCategory.FixedYield]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
+};
+
+const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
+  [OpportunityCategory.Lend]: 0,
+  [OpportunityCategory.LiquidStaking]: 0,
+  [OpportunityCategory.FixedYield]: 0,
+};
+
 interface UserPositionsResponse {
   userAddress: string;
   positions: StandardUserPosition[];
@@ -40,9 +56,11 @@ interface UserPositionsResponse {
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
-  categoryApy: { lend: number };
+  categoryApy: Partial<Record<OpportunityCategory, number>>;
   summary: {
-    byCategory: { lend: { count: number; valueUsd: string; valueUsdNumber: number } };
+    byCategory: Partial<
+      Record<OpportunityCategory, { count: number; valueUsd: string; valueUsdNumber: number }>
+    >;
     byVendor: { vaults: { count: number; valueUsd: string; valueUsdNumber: number } };
   };
   cachedAt?: number;
@@ -86,7 +104,7 @@ interface UseUserPositionsResult {
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
-  categoryApy: { lend: number };
+  categoryApy: Record<OpportunityCategory, number>;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -170,10 +188,12 @@ export function useUserPositions(
       opportunityIds.add(position.opportunityId.toLowerCase());
     }
 
+    const byCategory = { ...DEFAULT_BY_CATEGORY, ...rawData.summary.byCategory };
+    const categoryApy = { ...DEFAULT_CATEGORY_APY, ...rawData.categoryApy };
     return {
       positionsMap,
       opportunityIds,
-      summary: rawData.summary,
+      summary: { byCategory, byVendor: rawData.summary.byVendor },
       totalValueUsd: rawData.totalValueUsd,
       totalValueUsdNumber: rawData.totalValueUsdNumber,
       estimatedEarningsUsd: rawData.estimatedEarningsUsd,
@@ -183,17 +203,19 @@ export function useUserPositions(
       estimatedEarningsYearlyPercentage: rawData.estimatedEarningsYearlyPercentage,
       estimatedEarningsMonthlyPercentage: rawData.estimatedEarningsMonthlyPercentage,
       netApy: rawData.netApy,
-      categoryApy: rawData.categoryApy,
+      categoryApy,
     };
   }, [rawData]);
+
+  const defaultSummary = {
+    byCategory: DEFAULT_BY_CATEGORY,
+    byVendor: { vaults: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 } } as const,
+  };
 
   return {
     positionsMap: data?.positionsMap || new Map(),
     opportunityIds: data?.opportunityIds || new Set(),
-    summary: data?.summary || {
-      byCategory: { lend: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 } },
-      byVendor: { vaults: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 } },
-    },
+    summary: data?.summary || defaultSummary,
     totalValueUsd: data?.totalValueUsd || '$0.00',
     totalValueUsdNumber: data?.totalValueUsdNumber || 0,
     estimatedEarningsUsd: data?.estimatedEarningsUsd || '$0.00',
@@ -203,7 +225,7 @@ export function useUserPositions(
     estimatedEarningsYearlyPercentage: data?.estimatedEarningsYearlyPercentage || 0,
     estimatedEarningsMonthlyPercentage: data?.estimatedEarningsMonthlyPercentage || 0,
     netApy: data?.netApy || 0,
-    categoryApy: data?.categoryApy || { lend: 0 },
+    categoryApy: data?.categoryApy || DEFAULT_CATEGORY_APY,
     isLoading,
     error: error?.message || null,
     refetch: () => mutate(),

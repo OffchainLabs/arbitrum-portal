@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 import { OpportunityDetailPage } from '@/app-components/earn/OpportunityDetailPage';
+import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/earn-api/types';
 
 export async function generateMetadata({
   params,

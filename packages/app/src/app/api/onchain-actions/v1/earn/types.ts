@@ -1,10 +1,6 @@
 import type { VaultsSdk } from '@vaultsfyi/sdk';
 
-export enum OpportunityCategory {
-  Lend = 'lend',
-}
-
-export const OPPORTUNITY_CATEGORIES: OpportunityCategory[] = [OpportunityCategory.Lend];
+import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 export enum Vendor {
   Vaults = 'vaults',

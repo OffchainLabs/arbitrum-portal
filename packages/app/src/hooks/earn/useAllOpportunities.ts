@@ -7,7 +7,7 @@ import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
 export interface StandardOpportunityApi {
   id: string;
-  category: 'lend' | 'liquid-staking' | 'fixed-yield';
+  category: OpportunityCategory;
   vendor: 'vaults' | 'lifi' | 'pendle';
   network: string;
   protocol: string;

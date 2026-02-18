@@ -1,6 +1,6 @@
 import { formatUnits } from 'viem';
 
-import type { DetailedVault } from '@/app-types/earn/vaults';
+import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { formatAmount, formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
@@ -10,7 +10,6 @@ import {
   HistoricalData,
   HistoricalDataPoint,
   type HistoricalTimeRange,
-  OpportunityCategory,
   OpportunityFilters,
   StandardOpportunity,
   StandardTokenContextItem,
