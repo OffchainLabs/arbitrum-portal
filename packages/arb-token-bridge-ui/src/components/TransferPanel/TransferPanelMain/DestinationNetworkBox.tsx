@@ -84,9 +84,8 @@ function BalanceRow({
         <div className="flex space-x-1 text-sm text-gray-6">
           <span>Balance: </span>
           <span
-            aria-label={`${symbol} balance amount on ${
-              isDepositMode ? 'childChain' : 'parentChain'
-            }`}
+            aria-label={`${symbol} balance amount on ${isDepositMode ? 'childChain' : 'parentChain'
+              }`}
           >
             {balance ? balance : <Loader wrapperClass="ml-2" size="small" color="white" />}
           </span>
@@ -214,8 +213,8 @@ function BalancesContainer() {
               balance={
                 destinationBalance
                   ? formatAmount(destinationBalance, {
-                      decimals: destinationToken ? destinationToken.decimals : 18,
-                    })
+                    decimals: destinationToken ? destinationToken.decimals : 18,
+                  })
                   : undefined
               }
               symbolOverride={
@@ -223,9 +222,9 @@ function BalancesContainer() {
                   ? tokenOverride.symbol
                   : destinationToken
                     ? sanitizeTokenSymbol(destinationToken.symbol, {
-                        chainId: networks.destinationChain.id,
-                        erc20L1Address: destinationToken.address,
-                      })
+                      chainId: networks.destinationChain.id,
+                      erc20L1Address: destinationToken.address,
+                    })
                     : undefined
               }
             />
@@ -262,8 +261,12 @@ export function DestinationNetworkBox() {
   const [networks] = useNetworks();
   const [{ destinationAddress }] = useArbQueryParams();
   const [dialogProps, openDialog] = useDialog2();
-  const openDestinationNetworkSelectionDialog = () => {
-    openDialog('destination_network_selection');
+  const openDestinationNetworkSelectionDialog = async () => {
+    const waitForInput = openDialog('destination_network_selection');
+    const [, data] = await waitForInput();
+    if (data === 'one_nova_transfer') {
+      openDialog('one_nova_transfer');
+    }
   };
 
   return (

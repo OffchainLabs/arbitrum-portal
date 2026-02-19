@@ -210,11 +210,11 @@ const Input2 = React.memo(() => {
       disabled: true,
       balance: nativeCurrencyBalances.sourceBalance
         ? Number(
-            utils.formatUnits(
-              nativeCurrencyBalances.sourceBalance,
-              nativeCurrencyDecimalsOnSourceChain,
-            ),
-          )
+          utils.formatUnits(
+            nativeCurrencyBalances.sourceBalance,
+            nativeCurrencyDecimalsOnSourceChain,
+          ),
+        )
         : undefined,
       logoSrc: null,
     }),
@@ -263,8 +263,12 @@ export function SourceNetworkBox() {
   const [selectedToken] = useSelectedToken();
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const [dialogProps, openDialog] = useDialog2();
-  const openSourceNetworkSelectionDialog = () => {
-    openDialog('source_network_selection');
+  const openSourceNetworkSelectionDialog = async () => {
+    const waitForInput = openDialog('source_network_selection');
+    const [, data] = await waitForInput();
+    if (data === 'one_nova_transfer') {
+      openDialog('one_nova_transfer');
+    }
   };
   const { isAmount2InputVisible } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();

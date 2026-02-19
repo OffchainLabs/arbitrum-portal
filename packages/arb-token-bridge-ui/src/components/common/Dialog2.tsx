@@ -22,6 +22,7 @@ import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithd
 import { WithdrawalConfirmationDialog } from '../TransferPanel/WithdrawalConfirmationDialog';
 import { WidgetTransactionHistory } from '../Widget/WidgetTransactionHistory';
 import { NetworkSelectionContainer } from './NetworkSelectionContainer';
+import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 
 /**
  * Returns a promise which resolves to an array [boolean, unknown] value,
@@ -60,7 +61,8 @@ export type DialogType =
   | 'source_network_selection'
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
-  | 'pop_disabled';
+  | 'pop_disabled'
+  | 'one_nova_transfer';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
@@ -160,6 +162,8 @@ export function DialogWrapper(props: DialogProps) {
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
     case 'pop_disabled':
       return <PoPDisabledDialog {...commonProps} />;
+    case 'one_nova_transfer':
+      return <OneNovaTransferDialog {...commonProps} />
     default:
       return null;
   }

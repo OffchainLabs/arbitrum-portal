@@ -24,11 +24,10 @@ import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
-import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
-import { Dialog, useDialog } from './Dialog';
+import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
 import { NetworkImage } from './NetworkImage';
 import { NetworkRowPoP } from './NetworkRowPoP';
@@ -101,7 +100,7 @@ function ChainTypeInfoRow({
       className={twMerge(
         'px-5 pt-4 pb-1',
         !isOrbitGroup &&
-          'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
+        'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
         isCoreGroup && 'before:h-[0px]',
       )}
     >
@@ -475,10 +474,8 @@ export const NetworkSelectionContainer = React.memo(
     const isSwapTransfer = useIsSwapTransfer();
     const [, setSelectedToken] = useSelectedToken();
     const [networks, setNetworks] = useNetworks();
-    const [oneNovaTransferDialogProps, openOneNovaTransferDialog] = useDialog();
     const [, setQueryParams] = useArbQueryParams();
     const { embedMode } = useMode();
-
     const isSource = props.type === 'source';
 
     const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
@@ -492,7 +489,7 @@ export const NetworkSelectionContainer = React.memo(
         const pairedChain = isSource ? 'destinationChain' : 'sourceChain';
 
         if (shouldOpenOneNovaDialog([value.id, networks[pairedChain].id])) {
-          openOneNovaTransferDialog();
+          props.onClose(false, 'one_nova_transfer');
           return;
         }
 
@@ -524,7 +521,7 @@ export const NetworkSelectionContainer = React.memo(
         setNetworks,
         setSelectedToken,
         setQueryParams,
-        openOneNovaTransferDialog,
+        props,
         isSwapTransfer,
       ],
     );
@@ -554,7 +551,6 @@ export const NetworkSelectionContainer = React.memo(
             </SearchPanel.MainPage>
           </SearchPanel>
         </Dialog>
-        <OneNovaTransferDialog {...oneNovaTransferDialogProps} />
       </>
     );
   },

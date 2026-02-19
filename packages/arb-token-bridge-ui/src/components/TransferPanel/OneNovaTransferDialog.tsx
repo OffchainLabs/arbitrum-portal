@@ -63,9 +63,8 @@ export function OneNovaTransferDialog(props: UseDialogProps) {
   const destinationNetworkSlug =
     selectedDestinationChainId === ChainId.ArbitrumOne ? 'arbitrum' : 'nova';
 
-  const bridgeDeepLink = `https://app.hop.exchange/#/send?sourceNetwork=${sourceNetworkSlug}&destNetwork=${destinationNetworkSlug}&token=${
-    selectedToken?.symbol || ether.symbol
-  }&amount=${amount}`;
+  const bridgeDeepLink = `https://app.hop.exchange/#/send?sourceNetwork=${sourceNetworkSlug}&destNetwork=${destinationNetworkSlug}&token=${selectedToken?.symbol || ether.symbol
+    }&amount=${amount}`;
 
   // only enable Hop for now
   const fastBridgeList: FastBridgeInfo[] = [
