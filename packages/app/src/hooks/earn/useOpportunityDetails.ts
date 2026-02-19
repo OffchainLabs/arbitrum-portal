@@ -145,7 +145,7 @@ export function useOpportunityDetails(
 ): UseOpportunityDetailsResult {
   const REVALIDATE_INTERVAL = 24 * 60 * 60 * 1000;
 
-  const { data, error, isLoading, mutate } = useLocalStorageSWR<StandardOpportunityDetail>(
+  const { data, error, isLoading, mutate, ...rest } = useLocalStorageSWR<StandardOpportunityDetail>(
     opportunityId && category
       ? ['opportunity-details', opportunityId, category, network, EARN_API_CACHE_SCHEMA_VERSION]
       : null,
@@ -174,5 +174,6 @@ export function useOpportunityDetails(
     isLoading,
     error: error?.message ?? null,
     refetch: () => mutate(),
+    ...rest,
   };
 }

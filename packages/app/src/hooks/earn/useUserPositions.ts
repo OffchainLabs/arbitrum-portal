@@ -89,12 +89,12 @@ export function useUserPositions(
   userAddress: string | null,
   allowedNetworks: string[] = ['arbitrum'],
 ): UseUserPositionsResult {
-  // Cache the raw API response, then transform it
   const {
     data: rawData,
     error,
     isLoading,
     mutate,
+    ...rest
   } = useLocalStorageSWR<UserPositionsResponse>(
     userAddress ? ['userPositions', userAddress, allowedNetworks.join(',')] : null,
     async () => {
@@ -185,5 +185,6 @@ export function useUserPositions(
     isLoading,
     error: error?.message || null,
     refetch: () => mutate(),
+    ...rest,
   };
 }

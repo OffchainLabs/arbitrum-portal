@@ -97,7 +97,7 @@ export function useAllOpportunities(filters?: {
 
   const REVALIDATE_INTERVAL = 12 * 60 * 60 * 1000;
 
-  const { data, error, isLoading, mutate } = useLocalStorageSWR<OpportunitiesResponse>(
+  const { data, error, isLoading, mutate, ...rest } = useLocalStorageSWR<OpportunitiesResponse>(
     [url, EARN_API_CACHE_SCHEMA_VERSION],
     fetcher,
     {
@@ -116,5 +116,6 @@ export function useAllOpportunities(filters?: {
     isLoading,
     error: error?.message ?? null,
     refetch: () => mutate(),
+    ...rest,
   };
 }
