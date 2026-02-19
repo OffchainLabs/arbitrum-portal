@@ -250,7 +250,7 @@ export function OpportunitiesTable({
           return (
             <div key={category}>
               {/* Category Header */}
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between top-[60px] sticky bg-black/70 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-semibold text-white">
                     {getCategoryDisplayName(category)}
