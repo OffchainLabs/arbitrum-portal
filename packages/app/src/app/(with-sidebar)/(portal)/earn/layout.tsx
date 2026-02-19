@@ -29,7 +29,7 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
       <div className="mx-auto flex w-full flex-1 flex-col">
         {showHeader &&
           (isConnected ? (
-            <PageTabs title="Earn" tabs={earnTabs} />
+            <PageTabs title="Earn" tabs={earnTabs} className="pt-0" />
           ) : (
             <div className="flex flex-col gap-4">
               <PageHeading>Earn</PageHeading>
