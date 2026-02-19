@@ -1,7 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useAccountEffect } from 'wagmi';
 
 import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
@@ -18,14 +19,22 @@ import { YourHoldingsPageSkeleton } from './YourHoldingsPageSkeleton';
  * This ensures consistency between the "All Markets" and "Your Holdings" views.
  */
 export function MyPositionsPage() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
+
+  // Redirect when the user explicitly disconnects while on this page
+  useAccountEffect({
+    onDisconnect() {
+      router.replace('/earn/market');
+    },
+  });
 
   // Fetch all opportunities (base data)
   const {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
-  } = useAllOpportunities({ minTvl: 5000000 });
+  } = useAllOpportunities({ minTvl: 5_000_000 });
 
   // Fetch user positions (position-specific data to merge)
   const {
@@ -76,13 +85,8 @@ export function MyPositionsPage() {
   const isLoading = opportunitiesLoading || positionsLoading;
   const error = opportunitiesError || positionsError;
 
-  // Not connected state
   if (!isConnected) {
-    return (
-      <div className="rounded border border-neutral-200 bg-neutral-50 p-8 text-center">
-        <p className="text-gray-5">Connect your wallet to see your positions.</p>
-      </div>
-    );
+    return <YourHoldingsEmptyState opportunities={[]} />;
   }
 
   // Loading state
