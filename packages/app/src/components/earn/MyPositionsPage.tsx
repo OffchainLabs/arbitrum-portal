@@ -54,7 +54,8 @@ export function MyPositionsPage() {
       })
       .map((opp) => {
         const positionData =
-          positionsMap.get(opp.id) || (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
+          positionsMap.get(opp.id) ||
+          (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
 
         if (!positionData) {
           // Should not happen due to filter above, but safe fallback

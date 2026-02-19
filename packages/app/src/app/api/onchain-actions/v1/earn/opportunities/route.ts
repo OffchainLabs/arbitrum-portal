@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { parseValidQueryNumber } from '@/app-lib/parseValidQueryNumber';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
 import { OpportunityFilters, StandardOpportunity } from '../types';
 
+const MIN_PER_PAGE = 1;
 const MAX_PER_PAGE = 100;
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
 
 export const revalidate = 3600;
-
-function parsePositiveInt(value: string | null, defaultVal: number, max?: number): number {
-  if (value === null) return defaultVal;
-  const parsed = Number(value);
-  if (Number.isNaN(parsed) || parsed < 0 || !Number.isInteger(parsed)) return defaultVal;
-  return max !== undefined ? Math.min(parsed, max) : parsed;
-}
-
-function parseNonNegativeNumber(value: string | null): number | undefined {
-  if (value === null) return undefined;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) || parsed < 0 ? undefined : parsed;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,13 +19,17 @@ export async function GET(request: NextRequest) {
     const category = categoryParam as OpportunityCategory | null;
     const orderBy = (searchParams.get('orderBy') as 'rawApy' | 'rawTvl' | undefined) ?? 'rawApy';
 
-    const rawPerPage = searchParams.get('perPage');
-    const perPage = parsePositiveInt(rawPerPage, 50, MAX_PER_PAGE);
-    const rawPage = searchParams.get('page');
-    const page = parsePositiveInt(rawPage, 0);
-
-    const minTvl = parseNonNegativeNumber(searchParams.get('minTvl'));
-    const minApy = parseNonNegativeNumber(searchParams.get('minApy'));
+    const perPage =
+      parseValidQueryNumber(searchParams.get('perPage'), {
+        default: 50,
+        min: MIN_PER_PAGE,
+        max: MAX_PER_PAGE,
+        integer: true,
+      }) ?? 50;
+    const page =
+      parseValidQueryNumber(searchParams.get('page'), { default: 0, min: 0, integer: true }) ?? 0;
+    const minTvl = parseValidQueryNumber(searchParams.get('minTvl'), { min: 0 });
+    const minApy = parseValidQueryNumber(searchParams.get('minApy'), { min: 0 });
 
     const filters: OpportunityFilters = {
       network: searchParams.get('network') || 'arbitrum',

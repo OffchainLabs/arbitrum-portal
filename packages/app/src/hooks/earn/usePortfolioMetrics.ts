@@ -34,10 +34,7 @@ export function usePortfolioMetrics(
       };
     }
 
-    const totalValue = opportunities.reduce(
-      (sum, opp) => sum + (opp.depositedUsd ?? 0),
-      0,
-    );
+    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.depositedUsd ?? 0), 0);
 
     const totalEarnings =
       estimatedEarningsUsdNumber !== undefined
