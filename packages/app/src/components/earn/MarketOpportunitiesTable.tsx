@@ -355,12 +355,3 @@ export function OpportunitiesTable({
 
   return null;
 }
-
-// Export MarketOpportunitiesTable for backward compatibility
-export function MarketOpportunitiesTable({
-  opportunities,
-}: {
-  opportunities: OpportunityTableRow[];
-}) {
-  return <OpportunitiesTable opportunities={opportunities} groupByCategory={true} />;
-}

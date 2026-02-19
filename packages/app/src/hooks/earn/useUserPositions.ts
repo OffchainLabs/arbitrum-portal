@@ -140,14 +140,14 @@ export function useUserPositions(
         position.estimatedEarningsUsd ??
         (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
 
-      positionsMap.set(position.opportunityId.toLowerCase(), {
+      positionsMap.set(position.opportunityId, {
         deposited: position.amountFormatted,
         valueUsd: position.valueUsd,
         estimatedEarningsUsd,
         earnings: '-',
       });
 
-      opportunityIds.add(position.opportunityId.toLowerCase());
+      opportunityIds.add(position.opportunityId);
     }
 
     const byCategory = { ...DEFAULT_BY_CATEGORY, ...rawData.summary.byCategory };

@@ -373,8 +373,9 @@ export class VaultsAdapter implements VendorAdapter {
       const apy = position.apy?.total ? position.apy.total * 100 : undefined;
       const estimatedEarningsUsd = apy && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
 
+      const addressLower = position.address.toLowerCase();
       return {
-        opportunityId: position.address,
+        opportunityId: addressLower,
         category: OpportunityCategory.Lend,
         vendor: Vendor.Vaults,
         network: position.network?.name || network,
@@ -388,7 +389,7 @@ export class VaultsAdapter implements VendorAdapter {
         apy,
         estimatedEarningsUsd,
         opportunity: {
-          id: position.address,
+          id: addressLower,
           name: position.name || 'Unknown Vault',
           protocol: position.protocol?.name || 'Unknown',
           apy,
@@ -457,14 +458,15 @@ export class VaultsAdapter implements VendorAdapter {
     const networkName = vault.network?.name || '';
     const protocolName = vault.protocol?.name || '';
 
+    const addressLower = vault.address.toLowerCase();
     return {
-      id: vault.address,
+      id: addressLower,
       category: OpportunityCategory.Lend,
       vendor: Vendor.Vaults,
       network: networkName,
       protocol: protocolName,
       token: vault.asset?.symbol || '',
-      vaultAddress: vault.address,
+      vaultAddress: addressLower,
       metrics: {
         rawApy: apyPercentage,
         rawTvl: tvlUsd,

@@ -48,24 +48,14 @@ export function MyPositionsPage() {
   const opportunitiesWithPositions = useMemo(() => {
     return allOpportunities
       .filter((opp) => {
-        // Match by opportunity ID (case-insensitive)
-        // For vaults: opp.id is vault address, opp.vaultAddress is also vault address
-        // For Pendle: opp.id is market address
-        // For LiFi: opp.id is token address (wstETH, weETH)
-        const oppId = opp.id.toLowerCase();
-        const vaultAddress = opp.vaultAddress?.toLowerCase();
-
-        // Check if this opportunity has a position
-        return opportunityIds.has(oppId) || (vaultAddress && opportunityIds.has(vaultAddress));
+        return (
+          opportunityIds.has(opp.id) ||
+          (opp.vaultAddress !== undefined && opportunityIds.has(opp.vaultAddress))
+        );
       })
       .map((opp) => {
-        // Find position data by opportunity ID or vault address
-        const oppId = opp.id.toLowerCase();
-        const vaultAddress = opp.vaultAddress?.toLowerCase();
-
-        // Get position data (should always exist due to filter above)
         const positionData =
-          positionsMap.get(oppId) || (vaultAddress ? positionsMap.get(vaultAddress) : undefined);
+          positionsMap.get(opp.id) || (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
 
         if (!positionData) {
           // Should not happen due to filter above, but safe fallback

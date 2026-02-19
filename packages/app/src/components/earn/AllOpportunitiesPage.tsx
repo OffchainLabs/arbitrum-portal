@@ -8,7 +8,7 @@ import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
-import { MarketOpportunitiesTable } from './MarketOpportunitiesTable';
+import { OpportunitiesTable } from './MarketOpportunitiesTable';
 import { MarketPageSkeleton } from './MarketPageSkeleton';
 
 /**
@@ -42,12 +42,9 @@ export function AllOpportunitiesPage() {
 
     // Merge position data onto opportunities (don't filter - show all opportunities)
     return allOpportunities.map((opp) => {
-      const oppId = opp.id.toLowerCase();
-      const vaultAddress = opp.vaultAddress?.toLowerCase();
-
-      // Get position data if user has a position in this opportunity
       const positionData =
-        positionsMap.get(oppId) || (vaultAddress ? positionsMap.get(vaultAddress) : undefined);
+        positionsMap.get(opp.id) ||
+        (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
 
       if (!positionData) {
         // No position - return opportunity as-is (with default "-" for deposited/earnings)
@@ -94,7 +91,7 @@ export function AllOpportunitiesPage() {
   return (
     <div className="flex flex-col gap-8">
       <BestOpportunitiesShowcase opportunities={enrichedOpportunities} />
-      <MarketOpportunitiesTable opportunities={enrichedOpportunities} />
+      <OpportunitiesTable opportunities={enrichedOpportunities} groupByCategory />
     </div>
   );
 }
