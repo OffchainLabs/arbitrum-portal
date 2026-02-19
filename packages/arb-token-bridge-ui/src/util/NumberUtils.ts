@@ -2,11 +2,11 @@ import { BigNumber, utils } from 'ethers';
 
 export function formatUSD(value: number) {
   if (value === 0) {
-    return `$0.00`;
+    return `$0.00 USD`;
   }
 
   if (value > 0 && value < 0.01) {
-    return `< $0.01`;
+    return `< $0.01 USD`;
   }
 
   const formattedValue = value.toLocaleString(undefined, {
@@ -14,18 +14,18 @@ export function formatUSD(value: number) {
     maximumFractionDigits: 2,
   });
 
-  return `$${formattedValue}`;
+  return `$${formattedValue} USD`;
 }
 
-const formatTvlCompact = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
-
 export function formatTVL(tvl: number): string {
-  return formatTvlCompact.format(tvl);
+  return (
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(tvl) + ' USD'
+  );
 }
 
 const formatCompact = new Intl.NumberFormat('en-US', {

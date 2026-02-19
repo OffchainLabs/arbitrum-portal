@@ -7,7 +7,7 @@ import { CategoryRouter } from '../CategoryRouter';
 import { OpportunityFilters, StandardOpportunity } from '../types';
 
 const MIN_PER_PAGE = 1;
-const MAX_PER_PAGE = 100;
+const MAX_PER_PAGE = 50;
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
 
 export const revalidate = 3600;
