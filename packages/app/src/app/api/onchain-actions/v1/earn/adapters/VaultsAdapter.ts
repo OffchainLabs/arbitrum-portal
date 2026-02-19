@@ -454,6 +454,13 @@ export class VaultsAdapter implements VendorAdapter {
     const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
     const apyDecimal = apyData?.total ?? 0;
     const apyPercentage = apyDecimal * 100;
+    const apyBreakdown = apyData
+      ? {
+          base: apyData.base * 100,
+          reward: apyData.reward * 100,
+          total: apyData.total * 100,
+        }
+      : undefined;
     const tvlUsd = parseFloat(vault.tvl?.usd || '0');
     const networkName = vault.network?.name || '';
     const protocolName = vault.protocol?.name || '';
@@ -474,6 +481,7 @@ export class VaultsAdapter implements VendorAdapter {
         depositedUsd: null,
         earnings: null,
         earningsUsd: null,
+        apyBreakdown,
       },
       name: vault.name,
       tokenIcon: vault.asset?.assetLogo || '',

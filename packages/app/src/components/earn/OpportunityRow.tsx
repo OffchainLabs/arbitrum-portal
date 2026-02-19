@@ -1,7 +1,7 @@
 'use client';
 
 import { ChartBarIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { SparklesIcon } from '@heroicons/react/24/solid';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
@@ -18,35 +18,6 @@ const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield border-earn-fixed-yield/10',
   [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
 };
-
-// Reusable gradient SparklesIcon component
-interface GradientSparklesIconProps {
-  size?: number;
-  className?: string;
-}
-
-function GradientSparklesIcon({ size = 4, className = '' }: GradientSparklesIconProps) {
-  const sizePx = `${size * 4}px`; // Convert Tailwind size (3.5 = 14px, 5 = 20px)
-  const sparklesMaskUrl =
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z'/%3E%3C/svg%3E\") no-repeat center/contain";
-
-  return (
-    <div className={`relative ${className}`} style={{ width: sizePx, height: sizePx }}>
-      <div
-        className="absolute inset-0 bg-gradient-to-r from-[#325ee6] to-[#96d18e]"
-        style={{
-          mask: sparklesMaskUrl,
-          WebkitMask: sparklesMaskUrl,
-        }}
-      />
-      <SparklesIcon
-        className="absolute inset-0 text-transparent pointer-events-none"
-        style={{ width: sizePx, height: sizePx }}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
 
 export function OpportunityRow({ opportunity }: OpportunityRowProps) {
   const router = useRouter();
@@ -136,7 +107,13 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
                   {opportunity.apyBreakdown.reward > 0 && (
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1.5">
-                        <GradientSparklesIcon size={4} />
+                        <Image
+                          src="/images/sparkles.svg"
+                          alt="Sparkles"
+                          width={16}
+                          height={16}
+                          aria-hidden
+                        />
                         <span className="text-xs text-white opacity-70">Rewards</span>
                       </div>
                       <span className="text-xs font-medium bg-gradient-to-r from-[#325ee6] to-[#96d18e] bg-clip-text text-transparent">
@@ -155,8 +132,8 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
             }
             tippyProps={{ placement: 'top' }}
           >
-            <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full">
-              <GradientSparklesIcon size={6} />
+            <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full p-0.5">
+              <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />
             </div>
           </Tooltip>
         )}
