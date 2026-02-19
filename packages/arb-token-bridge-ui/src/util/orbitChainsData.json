@@ -1767,8 +1767,8 @@
         "sequencerInbox": "0xbCa991f1831bE1F1E7e5576d5F84A645e70F3E4d"
       },
       "nativeToken": "0x4C1746A800D224393fE2470C70A35717eD4eA5F1",
-      "explorerUrl": "https://testnet-explorer.plumenetwork.xyz",
-      "rpcUrl": "https://testnet-rpc.plumenetwork.xyz",
+      "explorerUrl": "https://testnet-explorer.plume.org",
+      "rpcUrl": "https://testnet-rpc.plume.org",
       "isCustom": true,
       "isTestnet": true,
       "name": "Plume Testnet",
