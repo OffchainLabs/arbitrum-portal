@@ -8,8 +8,7 @@ import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import type { TabConfig } from '@/portal/common/pageTabConfig';
 
-const EARN_DETAIL_PAGE_REGEX =
-  /^\/earn\/(opportunity\/[^/]+\/0x[0-9a-fA-F]+|market\/0x[0-9a-fA-F]+)$/;
+const EARN_DETAIL_PAGE_REGEX = /^\/earn\/opportunity\/[^/]+\/0x[0-9a-fA-F]+$/;
 
 const earnTabs: TabConfig[] = [
   { href: '/earn/market', label: 'Opportunities', pathMatch: '/earn/market' },
