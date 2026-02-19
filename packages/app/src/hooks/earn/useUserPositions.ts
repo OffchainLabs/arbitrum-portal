@@ -10,15 +10,13 @@ interface StandardUserPosition {
   network: string;
   amount: string;
   amountFormatted: string;
-  valueUsd: string;
-  valueUsdNumber: number;
+  valueUsd: number;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
   apy?: number;
-  estimatedEarningsUsd?: string;
-  estimatedEarningsUsdNumber?: number;
+  estimatedEarningsUsd?: number;
   opportunity: {
     id: string;
     name: string;
@@ -29,13 +27,10 @@ interface StandardUserPosition {
   isExpired?: boolean;
 }
 
-const DEFAULT_BY_CATEGORY: Record<
-  OpportunityCategory,
-  { count: number; valueUsd: string; valueUsdNumber: number }
-> = {
-  [OpportunityCategory.Lend]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
-  [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
-  [OpportunityCategory.FixedYield]: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 },
+const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
+  [OpportunityCategory.Lend]: { count: 0, valueUsd: 0 },
+  [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: 0 },
+  [OpportunityCategory.FixedYield]: { count: 0, valueUsd: 0 },
 };
 
 const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
@@ -47,60 +42,36 @@ const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
 interface UserPositionsResponse {
   userAddress: string;
   positions: StandardUserPosition[];
-  totalValueUsd: string;
-  totalValueUsdNumber: number;
-  estimatedEarningsUsd: string;
-  estimatedEarningsUsdNumber: number;
-  estimatedEarningsMonthlyUsd: string;
-  estimatedEarningsMonthlyUsdNumber: number;
+  totalValueUsd: number;
+  estimatedEarningsUsd: number;
+  estimatedEarningsMonthlyUsd: number;
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
   categoryApy: Partial<Record<OpportunityCategory, number>>;
   summary: {
-    byCategory: Partial<
-      Record<OpportunityCategory, { count: number; valueUsd: string; valueUsdNumber: number }>
-    >;
-    byVendor: { vaults: { count: number; valueUsd: string; valueUsdNumber: number } };
+    byCategory: Partial<Record<OpportunityCategory, { count: number; valueUsd: number }>>;
+    byVendor: { vaults: { count: number; valueUsd: number } };
   };
   cachedAt?: number;
   expiresAt?: number;
   errors?: Array<{ category: string; error: string }>;
 }
 
-/**
- * Position data that can be merged onto opportunities
- */
 export interface UserPositionData {
-  deposited: string; // Formatted amount: "1,234.56 USDC"
-  depositedUsd: string; // USD value: "$1,234.56"
-  earnings: string; // Formatted APY or earnings: "3.5%"
-  earningsUsd: string; // Estimated earnings: "$43.21"
-  valueUsdNumber: number; // For calculations
-  estimatedEarningsUsdNumber?: number; // For calculations
+  deposited: string;
+  valueUsd: number;
+  estimatedEarningsUsd: number;
+  earnings: string;
 }
 
 interface UseUserPositionsResult {
-  /**
-   * Map of opportunityId -> position data
-   * Use this to enrich opportunities from useAllOpportunities
-   */
   positionsMap: Map<string, UserPositionData>;
-  /**
-   * Set of opportunity IDs where user has positions
-   * Use this to filter opportunities
-   */
   opportunityIds: Set<string>;
-  /**
-   * Summary statistics
-   */
   summary: UserPositionsResponse['summary'];
-  totalValueUsd: string;
-  totalValueUsdNumber: number;
-  estimatedEarningsUsd: string;
-  estimatedEarningsUsdNumber: number;
-  estimatedEarningsMonthlyUsd: string;
-  estimatedEarningsMonthlyUsdNumber: number;
+  totalValueUsd: number;
+  estimatedEarningsUsd: number;
+  estimatedEarningsMonthlyUsd: number;
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
@@ -164,25 +135,16 @@ export function useUserPositions(
     const opportunityIds = new Set<string>();
 
     for (const position of rawData.positions) {
-      // Calculate estimated earnings: position value * APY (for 1 year)
       const apy = position.apy || position.opportunity.apy || 0;
-      const estimatedEarningsUsdNumber =
-        position.estimatedEarningsUsdNumber !== undefined
-          ? position.estimatedEarningsUsdNumber
-          : position.valueUsdNumber > 0 && apy > 0
-            ? (position.valueUsdNumber * apy) / 100
-            : 0;
+      const estimatedEarningsUsd =
+        position.estimatedEarningsUsd ??
+        (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
 
       positionsMap.set(position.opportunityId.toLowerCase(), {
         deposited: position.amountFormatted,
-        depositedUsd: position.valueUsd,
-        earnings: '-', // No longer showing percentage, only dollar amount
-        earningsUsd:
-          estimatedEarningsUsdNumber > 0
-            ? position.estimatedEarningsUsd || `$${estimatedEarningsUsdNumber.toFixed(2)}`
-            : '-',
-        valueUsdNumber: position.valueUsdNumber,
-        estimatedEarningsUsdNumber,
+        valueUsd: position.valueUsd,
+        estimatedEarningsUsd,
+        earnings: '-',
       });
 
       opportunityIds.add(position.opportunityId.toLowerCase());
@@ -195,11 +157,8 @@ export function useUserPositions(
       opportunityIds,
       summary: { byCategory, byVendor: rawData.summary.byVendor },
       totalValueUsd: rawData.totalValueUsd,
-      totalValueUsdNumber: rawData.totalValueUsdNumber,
       estimatedEarningsUsd: rawData.estimatedEarningsUsd,
-      estimatedEarningsUsdNumber: rawData.estimatedEarningsUsdNumber,
       estimatedEarningsMonthlyUsd: rawData.estimatedEarningsMonthlyUsd,
-      estimatedEarningsMonthlyUsdNumber: rawData.estimatedEarningsMonthlyUsdNumber,
       estimatedEarningsYearlyPercentage: rawData.estimatedEarningsYearlyPercentage,
       estimatedEarningsMonthlyPercentage: rawData.estimatedEarningsMonthlyPercentage,
       netApy: rawData.netApy,
@@ -209,22 +168,19 @@ export function useUserPositions(
 
   const defaultSummary = {
     byCategory: DEFAULT_BY_CATEGORY,
-    byVendor: { vaults: { count: 0, valueUsd: '$0.00', valueUsdNumber: 0 } } as const,
+    byVendor: { vaults: { count: 0, valueUsd: 0 } } as const,
   };
 
   return {
     positionsMap: data?.positionsMap || new Map(),
     opportunityIds: data?.opportunityIds || new Set(),
     summary: data?.summary || defaultSummary,
-    totalValueUsd: data?.totalValueUsd || '$0.00',
-    totalValueUsdNumber: data?.totalValueUsdNumber || 0,
-    estimatedEarningsUsd: data?.estimatedEarningsUsd || '$0.00',
-    estimatedEarningsUsdNumber: data?.estimatedEarningsUsdNumber || 0,
-    estimatedEarningsMonthlyUsd: data?.estimatedEarningsMonthlyUsd || '$0.00',
-    estimatedEarningsMonthlyUsdNumber: data?.estimatedEarningsMonthlyUsdNumber || 0,
-    estimatedEarningsYearlyPercentage: data?.estimatedEarningsYearlyPercentage || 0,
-    estimatedEarningsMonthlyPercentage: data?.estimatedEarningsMonthlyPercentage || 0,
-    netApy: data?.netApy || 0,
+    totalValueUsd: data?.totalValueUsd ?? 0,
+    estimatedEarningsUsd: data?.estimatedEarningsUsd ?? 0,
+    estimatedEarningsMonthlyUsd: data?.estimatedEarningsMonthlyUsd ?? 0,
+    estimatedEarningsYearlyPercentage: data?.estimatedEarningsYearlyPercentage ?? 0,
+    estimatedEarningsMonthlyPercentage: data?.estimatedEarningsMonthlyPercentage ?? 0,
+    netApy: data?.netApy ?? 0,
     categoryApy: data?.categoryApy || DEFAULT_CATEGORY_APY,
     isLoading,
     error: error?.message || null,

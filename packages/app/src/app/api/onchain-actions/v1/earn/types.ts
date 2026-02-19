@@ -180,15 +180,13 @@ export interface StandardUserPosition {
   network: string;
   amount: string;
   amountFormatted: string;
-  valueUsd: string;
-  valueUsdNumber: number;
+  valueUsd: number;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
   apy?: number;
-  estimatedEarningsUsd?: string;
-  estimatedEarningsUsdNumber?: number;
+  estimatedEarningsUsd?: number;
   opportunity: {
     id: string;
     name: string;
@@ -202,12 +200,9 @@ export interface StandardUserPosition {
 export interface UserPositionsResponse {
   userAddress: string;
   positions: StandardUserPosition[];
-  totalValueUsd: string;
-  totalValueUsdNumber: number;
-  estimatedEarningsUsd: string;
-  estimatedEarningsUsdNumber: number;
-  estimatedEarningsMonthlyUsd: string;
-  estimatedEarningsMonthlyUsdNumber: number;
+  totalValueUsd: number;
+  estimatedEarningsUsd: number;
+  estimatedEarningsMonthlyUsd: number;
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
@@ -215,11 +210,8 @@ export interface UserPositionsResponse {
     lend: number;
   };
   summary: {
-    byCategory: Record<
-      OpportunityCategory,
-      { count: number; valueUsd: string; valueUsdNumber: number }
-    >;
-    byVendor: Record<Vendor, { count: number; valueUsd: string; valueUsdNumber: number }>;
+    byCategory: Record<OpportunityCategory, { count: number; valueUsd: number }>;
+    byVendor: Record<Vendor, { count: number; valueUsd: number }>;
   };
   cachedAt?: number;
   expiresAt?: number;

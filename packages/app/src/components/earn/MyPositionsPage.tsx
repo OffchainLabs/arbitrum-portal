@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 
 import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { OpportunitiesTable } from './MarketOpportunitiesTable';
 import { PortfolioSummaryCards } from './PortfolioSummaryCards';
@@ -31,13 +32,13 @@ export function MyPositionsPage() {
   const {
     positionsMap,
     opportunityIds,
-    estimatedEarningsUsdNumber,
-    estimatedEarningsMonthlyUsdNumber,
+    estimatedEarningsUsd,
+    estimatedEarningsMonthlyUsd,
     estimatedEarningsYearlyPercentage,
     estimatedEarningsMonthlyPercentage,
     netApy,
     categoryApy,
-    totalValueUsdNumber,
+    totalValueUsd,
     isLoading: positionsLoading,
     error: positionsError,
   } = useUserPositions(address || null, ['arbitrum']);
@@ -71,13 +72,15 @@ export function MyPositionsPage() {
           return opp;
         }
 
-        // Merge position data onto opportunity
         return {
           ...opp,
           deposited: positionData.deposited,
-          depositedUsd: positionData.depositedUsd,
+          depositedUsd: formatUSD(positionData.valueUsd),
           earnings: positionData.earnings,
-          earningsUsd: positionData.earningsUsd,
+          earningsUsd:
+            positionData.estimatedEarningsUsd > 0
+              ? formatUSD(positionData.estimatedEarningsUsd)
+              : '-',
         } satisfies OpportunityTableRow;
       });
   }, [allOpportunities, opportunityIds, positionsMap]);
@@ -114,13 +117,13 @@ export function MyPositionsPage() {
       <div className="flex flex-col gap-4">
         <PortfolioSummaryCards
           opportunities={opportunitiesWithPositions}
-          estimatedEarningsUsdNumber={estimatedEarningsUsdNumber}
-          estimatedEarningsMonthlyUsdNumber={estimatedEarningsMonthlyUsdNumber}
+          estimatedEarningsUsd={estimatedEarningsUsd}
+          estimatedEarningsMonthlyUsd={estimatedEarningsMonthlyUsd}
           estimatedEarningsYearlyPercentage={estimatedEarningsYearlyPercentage}
           estimatedEarningsMonthlyPercentage={estimatedEarningsMonthlyPercentage}
           netApy={netApy}
           categoryApy={categoryApy}
-          totalValueUsdNumber={totalValueUsdNumber}
+          totalValueUsd={totalValueUsd}
         />
         <YourHoldingsEmptyState opportunities={allOpportunities} />
       </div>
@@ -132,13 +135,13 @@ export function MyPositionsPage() {
     <div className="flex flex-col gap-6">
       <PortfolioSummaryCards
         opportunities={opportunitiesWithPositions}
-        estimatedEarningsUsdNumber={estimatedEarningsUsdNumber}
-        estimatedEarningsMonthlyUsdNumber={estimatedEarningsMonthlyUsdNumber}
+        estimatedEarningsUsd={estimatedEarningsUsd}
+        estimatedEarningsMonthlyUsd={estimatedEarningsMonthlyUsd}
         estimatedEarningsYearlyPercentage={estimatedEarningsYearlyPercentage}
         estimatedEarningsMonthlyPercentage={estimatedEarningsMonthlyPercentage}
         netApy={netApy}
         categoryApy={categoryApy}
-        totalValueUsdNumber={totalValueUsdNumber}
+        totalValueUsd={totalValueUsd}
       />
       <OpportunitiesTable opportunities={opportunitiesWithPositions} groupByCategory={false} />
     </div>

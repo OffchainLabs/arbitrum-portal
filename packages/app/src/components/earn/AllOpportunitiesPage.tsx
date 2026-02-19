@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 
 import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 import { MarketOpportunitiesTable } from './MarketOpportunitiesTable';
@@ -53,13 +54,15 @@ export function AllOpportunitiesPage() {
         return opp;
       }
 
-      // Merge position data onto opportunity
       return {
         ...opp,
         deposited: positionData.deposited,
-        depositedUsd: positionData.depositedUsd,
+        depositedUsd: formatUSD(positionData.valueUsd),
         earnings: positionData.earnings,
-        earningsUsd: positionData.earningsUsd,
+        earningsUsd:
+          positionData.estimatedEarningsUsd > 0
+            ? formatUSD(positionData.estimatedEarningsUsd)
+            : '-',
       } satisfies OpportunityTableRow;
     });
   }, [allOpportunities, positionsMap, isConnected]);

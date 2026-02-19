@@ -19,7 +19,7 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
           <div className="w-24 h-24 shrink-0" aria-hidden="true">
             <Image
               src="/images/diamond-empty-state.svg"
-              alt=""
+              alt="Empty state diamond"
               width={96}
               height={96}
               className="w-full h-full object-contain"

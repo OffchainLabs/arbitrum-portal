@@ -367,34 +367,26 @@ export class VaultsAdapter implements VendorAdapter {
         symbol: assetSymbol, // Use underlying asset symbol (USDC) instead of LP token symbol (hyperUSDC)
       });
 
-      // Extract USD value from lpToken (actual position value)
-      const valueUsdString = position.lpToken?.balanceUsd || '$0';
-      const valueUsdNumber = parseFloat(valueUsdString.replace(/[^0-9.-]/g, '') || '0');
-
-      // Calculate estimated earnings (APY-based, if available)
+      const valueUsd = parseFloat(
+        (position.lpToken?.balanceUsd || '0').replace(/[^0-9.-]/g, '') || '0',
+      );
       const apy = position.apy?.total ? position.apy.total * 100 : undefined;
-      const estimatedEarningsUsdNumber =
-        apy && valueUsdNumber > 0 ? (valueUsdNumber * apy) / 100 : undefined; // Annual earnings
-      const estimatedEarningsUsd = estimatedEarningsUsdNumber
-        ? `$${estimatedEarningsUsdNumber.toFixed(2)}`
-        : undefined;
+      const estimatedEarningsUsd = apy && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
 
       return {
-        opportunityId: position.address, // Vault address
+        opportunityId: position.address,
         category: OpportunityCategory.Lend,
         vendor: Vendor.Vaults,
         network: position.network?.name || network,
-        amount: lpTokenBalanceNative, // Raw LP token balance (for calculations)
-        amountFormatted, // Display formatted as underlying asset (e.g., "0.0001 USDC")
-        valueUsd: valueUsdString,
-        valueUsdNumber,
-        tokenAddress: assetAddress, // Underlying asset address
-        tokenSymbol: assetSymbol, // Underlying asset symbol (e.g., "USDC")
-        tokenDecimals: assetDecimals, // Underlying asset decimals
-        tokenIcon: position.asset?.assetLogo, // Use underlying asset icon for display
+        amount: lpTokenBalanceNative,
+        amountFormatted,
+        valueUsd,
+        tokenAddress: assetAddress,
+        tokenSymbol: assetSymbol,
+        tokenDecimals: assetDecimals,
+        tokenIcon: position.asset?.assetLogo,
         apy,
         estimatedEarningsUsd,
-        estimatedEarningsUsdNumber,
         opportunity: {
           id: position.address,
           name: position.name || 'Unknown Vault',

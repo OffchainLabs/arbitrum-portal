@@ -20,38 +20,36 @@ const TYPE_ORDER: Array<{ type: 'Lending'; color: string }> = [
 
 interface PortfolioSummaryCardsProps {
   opportunities: OpportunityTableRow[];
-  estimatedEarningsUsdNumber?: number;
-  estimatedEarningsMonthlyUsdNumber?: number;
+  estimatedEarningsUsd?: number;
+  estimatedEarningsMonthlyUsd?: number;
   estimatedEarningsYearlyPercentage?: number;
   estimatedEarningsMonthlyPercentage?: number;
   netApy?: number;
   categoryApy?: { lend: number };
-  totalValueUsdNumber?: number; // API-provided total value for consistent calculations
+  totalValueUsd?: number;
 }
 
 type EarningsTimeframe = 'month' | 'year';
 
 export function PortfolioSummaryCards({
   opportunities,
-  estimatedEarningsUsdNumber,
-  estimatedEarningsMonthlyUsdNumber,
+  estimatedEarningsUsd,
+  estimatedEarningsMonthlyUsd,
   estimatedEarningsYearlyPercentage,
   estimatedEarningsMonthlyPercentage,
   netApy,
   categoryApy,
-  totalValueUsdNumber,
+  totalValueUsd,
 }: PortfolioSummaryCardsProps) {
   const [earningsTimeframe, setEarningsTimeframe] = useState<EarningsTimeframe>('year');
-  const summary = usePortfolioMetrics(opportunities, estimatedEarningsUsdNumber, netApy);
+  const summary = usePortfolioMetrics(opportunities, estimatedEarningsUsd, netApy);
 
-  // Use API-provided total value if available, otherwise fall back to calculated value
-  const totalValue = totalValueUsdNumber !== undefined ? totalValueUsdNumber : summary.totalValue;
+  const totalValue = totalValueUsd !== undefined ? totalValueUsd : summary.totalValue;
 
-  // Use API-provided earnings values based on timeframe
   const displayEarnings =
     earningsTimeframe === 'month'
-      ? (estimatedEarningsMonthlyUsdNumber ?? (summary.totalEarnings || 0) / 12)
-      : (estimatedEarningsUsdNumber ?? (summary.totalEarnings || 0));
+      ? (estimatedEarningsMonthlyUsd ?? (summary.totalEarnings || 0) / 12)
+      : (estimatedEarningsUsd ?? (summary.totalEarnings || 0));
 
   // Use API-provided percentage values based on timeframe
   const earningsPercentage =

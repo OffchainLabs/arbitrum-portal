@@ -10,81 +10,72 @@ import { StandardUserPosition, Vendor } from '../types';
 const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
 
 function calculatePositionsSummary(positions: StandardUserPosition[]) {
-  const byCategory: Record<
-    string,
-    { count: number; valueUsdNumber: number; weightedApySum: number }
-  > = {
-    [OpportunityCategory.Lend]: { count: 0, valueUsdNumber: 0, weightedApySum: 0 },
+  const byCategory: Record<string, { count: number; valueUsd: number; weightedApySum: number }> = {
+    [OpportunityCategory.Lend]: { count: 0, valueUsd: 0, weightedApySum: 0 },
   };
 
-  const byVendor: Record<string, { count: number; valueUsdNumber: number }> = {
-    [Vendor.Vaults]: { count: 0, valueUsdNumber: 0 },
+  const byVendor: Record<string, { count: number; valueUsd: number }> = {
+    [Vendor.Vaults]: { count: 0, valueUsd: 0 },
   };
 
-  let totalValueUsdNumber = 0;
-  let estimatedEarningsUsdNumber = 0;
+  let totalValueUsd = 0;
+  let estimatedEarningsUsd = 0;
   let weightedApySum = 0;
 
   for (const position of positions) {
-    const valueUsdNumber = Number(position.valueUsdNumber) || 0;
-    if (!isFinite(valueUsdNumber) || valueUsdNumber < 0) continue;
+    const valueUsd = Number(position.valueUsd) || 0;
+    if (!isFinite(valueUsd) || valueUsd < 0) continue;
 
     const apy = position.opportunity?.apy ?? position.apy ?? 0;
     const apyNumber = Number(apy) || 0;
     if (isFinite(apyNumber) && apyNumber >= 0) {
-      estimatedEarningsUsdNumber += valueUsdNumber * (apyNumber / 100);
-      weightedApySum += apyNumber * valueUsdNumber;
+      estimatedEarningsUsd += valueUsd * (apyNumber / 100);
+      weightedApySum += apyNumber * valueUsd;
     }
 
-    totalValueUsdNumber += valueUsdNumber;
+    totalValueUsd += valueUsd;
 
     const catKey = position.category;
     if (!byCategory[catKey]) {
-      byCategory[catKey] = { count: 0, valueUsdNumber: 0, weightedApySum: 0 };
+      byCategory[catKey] = { count: 0, valueUsd: 0, weightedApySum: 0 };
     }
     const cat = byCategory[catKey]!;
     cat.count++;
-    cat.valueUsdNumber += valueUsdNumber;
+    cat.valueUsd += valueUsd;
     if (isFinite(apyNumber) && apyNumber >= 0) {
-      cat.weightedApySum += apyNumber * valueUsdNumber;
+      cat.weightedApySum += apyNumber * valueUsd;
     }
 
     const vendorKey = position.vendor;
     if (!byVendor[vendorKey]) {
-      byVendor[vendorKey] = { count: 0, valueUsdNumber: 0 };
+      byVendor[vendorKey] = { count: 0, valueUsd: 0 };
     }
     const vendor = byVendor[vendorKey]!;
     vendor.count++;
-    vendor.valueUsdNumber += valueUsdNumber;
+    vendor.valueUsd += valueUsd;
   }
 
-  // Net APY = weighted mean of all positions' APY's by their $ value
-  const netApy = totalValueUsdNumber > 0 ? weightedApySum / totalValueUsdNumber : 0;
+  const netApy = totalValueUsd > 0 ? weightedApySum / totalValueUsd : 0;
 
   const lendCat = byCategory[OpportunityCategory.Lend] ?? {
     count: 0,
-    valueUsdNumber: 0,
+    valueUsd: 0,
     weightedApySum: 0,
   };
   const categoryApy = {
-    lend: lendCat.valueUsdNumber > 0 ? lendCat.weightedApySum / lendCat.valueUsdNumber : 0,
+    lend: lendCat.valueUsd > 0 ? lendCat.weightedApySum / lendCat.valueUsd : 0,
   };
 
-  // Calculate monthly earnings (yearly / 12)
-  const estimatedEarningsMonthlyUsdNumber = estimatedEarningsUsdNumber / 12;
-
-  // Calculate percentages
+  const estimatedEarningsMonthlyUsd = estimatedEarningsUsd / 12;
   const estimatedEarningsYearlyPercentage =
-    totalValueUsdNumber > 0 ? (estimatedEarningsUsdNumber / totalValueUsdNumber) * 100 : 0;
+    totalValueUsd > 0 ? (estimatedEarningsUsd / totalValueUsd) * 100 : 0;
   const estimatedEarningsMonthlyPercentage =
-    totalValueUsdNumber > 0 ? (estimatedEarningsMonthlyUsdNumber / totalValueUsdNumber) * 100 : 0;
+    totalValueUsd > 0 ? (estimatedEarningsMonthlyUsd / totalValueUsd) * 100 : 0;
 
   return {
-    totalValueUsdNumber,
-    estimatedEarningsUsd: `$${estimatedEarningsUsdNumber.toFixed(2)}`,
-    estimatedEarningsUsdNumber,
-    estimatedEarningsMonthlyUsd: `$${estimatedEarningsMonthlyUsdNumber.toFixed(2)}`,
-    estimatedEarningsMonthlyUsdNumber,
+    totalValueUsd,
+    estimatedEarningsUsd,
+    estimatedEarningsMonthlyUsd,
     estimatedEarningsYearlyPercentage,
     estimatedEarningsMonthlyPercentage,
     netApy,
@@ -92,20 +83,12 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     byCategory: {
       [OpportunityCategory.Lend]: {
         count: lendCat.count,
-        valueUsd: `$${lendCat.valueUsdNumber.toFixed(2)}`,
-        valueUsdNumber: lendCat.valueUsdNumber,
+        valueUsd: lendCat.valueUsd,
       },
     },
     byVendor: Object.fromEntries(
-      Object.entries(byVendor).map(([k, v]) => [
-        k,
-        {
-          count: v.count,
-          valueUsd: `$${v.valueUsdNumber.toFixed(2)}`,
-          valueUsdNumber: v.valueUsdNumber,
-        },
-      ]),
-    ) as Record<Vendor, { count: number; valueUsd: string; valueUsdNumber: number }>,
+      Object.entries(byVendor).map(([k, v]) => [k, { count: v.count, valueUsd: v.valueUsd }]),
+    ) as Record<Vendor, { count: number; valueUsd: number }>,
   };
 }
 
@@ -191,18 +174,18 @@ export async function GET(request: NextRequest) {
         return {
           userAddress,
           positions: allPositions,
-          totalValueUsd: `$${summary.totalValueUsdNumber.toFixed(2)}`,
-          totalValueUsdNumber: summary.totalValueUsdNumber,
+          totalValueUsd: summary.totalValueUsd,
           estimatedEarningsUsd: summary.estimatedEarningsUsd,
-          estimatedEarningsUsdNumber: summary.estimatedEarningsUsdNumber,
           estimatedEarningsMonthlyUsd: summary.estimatedEarningsMonthlyUsd,
-          estimatedEarningsMonthlyUsdNumber: summary.estimatedEarningsMonthlyUsdNumber,
           estimatedEarningsYearlyPercentage: summary.estimatedEarningsYearlyPercentage,
           estimatedEarningsMonthlyPercentage: summary.estimatedEarningsMonthlyPercentage,
           netApy: summary.netApy,
           categoryApy: summary.categoryApy,
-          summary,
-          errors: errors.length > 0 ? errors : undefined, // Include errors if any
+          summary: {
+            byCategory: summary.byCategory,
+            byVendor: summary.byVendor,
+          },
+          errors: errors.length > 0 ? errors : undefined,
         };
       },
       [cacheKey],
