@@ -42,7 +42,7 @@ module.exports = {
         mobileBottom: '90px',
         bannerDesktop: '32px',
         bannerMobile: '56px',
-        spacing: '30px',
+        spacing: '15px',
       },
       aspectRatio: {
         '3/1': '3 / 1',
