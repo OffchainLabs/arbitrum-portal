@@ -30,6 +30,10 @@ export function LiveIncentivesProjects() {
     [setIsReady, isReady],
   );
 
+  if (projectsWithLiveIncentives.length === 0) {
+    return null
+  }
+
   const carouselOptions: FlickityOptions = {
     draggable: isDraggable,
     cellAlign: 'left',
