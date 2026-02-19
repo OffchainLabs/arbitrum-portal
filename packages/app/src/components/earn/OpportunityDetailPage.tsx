@@ -8,23 +8,11 @@ import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
 
 interface OpportunityDetailPageProps {
   opportunityId: string;
-  category?: OpportunityCategory;
+  category: OpportunityCategory;
 }
 
 export function OpportunityDetailPage({ opportunityId, category }: OpportunityDetailPageProps) {
-  const { data, isLoading, error } = useOpportunityDetails(
-    opportunityId,
-    category ?? OpportunityCategory.Lend,
-    'arbitrum',
-  );
-
-  if (!category) {
-    return (
-      <div className="rounded border-error bg-error/20 p-8 text-center">
-        <p className="text-error">Category is required. Please provide category query parameter.</p>
-      </div>
-    );
-  }
+  const { data, isLoading, error } = useOpportunityDetails(opportunityId, category, 'arbitrum');
 
   if (isLoading) {
     return <OpportunityDetailPageSkeleton />;

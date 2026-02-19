@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 import { OpportunityDetailPage } from '@/app-components/earn/OpportunityDetailPage';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
@@ -34,14 +35,10 @@ export default function OpportunityDetailPageRoute({
 }: {
   params: { category: string; id: string };
 }) {
-  return (
-    <OpportunityDetailPage
-      opportunityId={params.id}
-      category={
-        OPPORTUNITY_CATEGORIES.includes(params.category as OpportunityCategory)
-          ? (params.category as OpportunityCategory)
-          : undefined
-      }
-    />
-  );
+  const category = params.category as OpportunityCategory;
+  if (!OPPORTUNITY_CATEGORIES.includes(category)) {
+    return notFound();
+  }
+
+  return <OpportunityDetailPage opportunityId={params.id} category={category} />;
 }
