@@ -1,8 +1,10 @@
+import { isAddress } from 'viem';
+
 import {
   EARN_API_CACHE_SCHEMA_VERSION,
   useLocalStorageSWR,
 } from '@/app-lib/swr/useLocalStorageSWR';
-import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
 export interface StandardOpportunityDetail {
   id: string;
@@ -139,14 +141,20 @@ interface UseOpportunityDetailsResult {
 }
 
 export function useOpportunityDetails(
-  opportunityId: string | null,
+  opportunityId: string,
   category: OpportunityCategory,
   network: string = 'arbitrum',
 ): UseOpportunityDetailsResult {
   const REVALIDATE_INTERVAL = 24 * 60 * 60 * 1000;
 
+  const isValid =
+    opportunityId &&
+    category &&
+    isAddress(opportunityId) &&
+    OPPORTUNITY_CATEGORIES.includes(category);
+
   const { data, error, isLoading, mutate, ...rest } = useLocalStorageSWR<StandardOpportunityDetail>(
-    opportunityId && category
+    isValid
       ? ['opportunity-details', opportunityId, category, network, EARN_API_CACHE_SCHEMA_VERSION]
       : null,
     async () => {

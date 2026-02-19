@@ -7,7 +7,7 @@ import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
-import { OpportunitiesTable } from './MarketOpportunitiesTable';
+import { OpportunitiesTable } from './OpportunitiesTable';
 import { MarketPageSkeleton } from './MarketPageSkeleton';
 
 /**

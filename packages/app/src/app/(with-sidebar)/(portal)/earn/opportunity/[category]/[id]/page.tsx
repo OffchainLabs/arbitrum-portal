@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { isAddress } from 'viem';
 
 import { OpportunityDetailPage } from '@/app-components/earn/OpportunityDetailPage';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
@@ -10,6 +11,12 @@ export async function generateMetadata({
 }: {
   params: { category: string; id: string };
 }): Promise<Metadata> {
+  if (!isAddress(params.id)) {
+    return {
+      title: 'Earn - Opportunity',
+    };
+  }
+
   try {
     const category = params.category as OpportunityCategory;
     if (OPPORTUNITY_CATEGORIES.includes(category)) {
@@ -35,6 +42,10 @@ export default function OpportunityDetailPageRoute({
 }: {
   params: { category: string; id: string };
 }) {
+  if (!isAddress(params.id)) {
+    return notFound();
+  }
+
   const category = params.category as OpportunityCategory;
   if (!OPPORTUNITY_CATEGORIES.includes(category)) {
     return notFound();

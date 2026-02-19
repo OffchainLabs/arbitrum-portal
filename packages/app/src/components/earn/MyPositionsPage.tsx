@@ -6,7 +6,7 @@ import { useAccount } from 'wagmi';
 import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 
-import { OpportunitiesTable } from './MarketOpportunitiesTable';
+import { OpportunitiesTable } from './OpportunitiesTable';
 import { PortfolioSummaryCards } from './PortfolioSummaryCards';
 import { YourHoldingsEmptyState } from './YourHoldingsEmptyState';
 import { YourHoldingsPageSkeleton } from './YourHoldingsPageSkeleton';

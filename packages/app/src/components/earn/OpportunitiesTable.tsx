@@ -55,12 +55,15 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
           >
             APY
           </p>
-          {isApyActive &&
-            (sortDirection === 'asc' ? (
+          {isApyActive ? (
+            sortDirection === 'asc' ? (
               <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
             ) : (
               <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-            ))}
+            )
+          ) : (
+            <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
+          )}
         </button>
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
@@ -102,12 +105,15 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
           >
             TVL
           </p>
-          {isTvlActive &&
-            (sortDirection === 'asc' ? (
+          {isTvlActive ? (
+            sortDirection === 'asc' ? (
               <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
             ) : (
               <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-            ))}
+            )
+          ) : (
+            <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
+          )}
         </button>
       </div>
       <div className="flex-1 flex gap-2 items-center min-w-0">
