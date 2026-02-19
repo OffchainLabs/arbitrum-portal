@@ -31,7 +31,7 @@ export function LiveIncentivesProjects() {
   );
 
   if (projectsWithLiveIncentives.length === 0) {
-    return null
+    return null;
   }
 
   const carouselOptions: FlickityOptions = {
