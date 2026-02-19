@@ -16,10 +16,10 @@ export interface StandardOpportunityApi {
   metrics: {
     rawApy: number;
     rawTvl: number;
-    deposited: string;
-    depositedUsd: string;
-    earnings: string;
-    earningsUsd: string;
+    deposited: string | null;
+    depositedUsd: string | null;
+    earnings: string | null;
+    earningsUsd: string | null;
     maturityDate?: string;
     apyBreakdown?: { base: number; reward: number; total: number };
   };
@@ -58,6 +58,12 @@ const fetcher = async (key: string | readonly unknown[]): Promise<OpportunitiesR
   return response.json();
 };
 
+function parseUsdMetric(s: string | null | undefined): number | null {
+  if (s == null || s === '') return null;
+  const n = parseFloat(s);
+  return Number.isNaN(n) ? null : n;
+}
+
 function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
   const m = opp.metrics;
   return {
@@ -69,10 +75,10 @@ function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
     tokenNetwork: opp.tokenNetwork ?? opp.network,
     apy: opp.apyFormatted ?? formatPercentage(m?.rawApy ?? 0),
     apyBreakdown: m?.apyBreakdown,
-    deposited: m?.deposited ?? '-',
-    depositedUsd: m?.depositedUsd ?? '-',
-    earnings: m?.earnings ?? '-',
-    earningsUsd: m?.earningsUsd ?? '-',
+    deposited: m?.deposited ?? null,
+    depositedUsd: parseUsdMetric(m?.depositedUsd),
+    earnings: m?.earnings ?? null,
+    earningsUsd: parseUsdMetric(m?.earningsUsd),
     tvl: opp.tvlFormatted ?? formatTVL(m?.rawTvl ?? 0),
     protocol: opp.protocol,
     protocolIcon: opp.protocolIcon ?? '',

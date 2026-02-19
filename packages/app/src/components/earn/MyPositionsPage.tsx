@@ -5,7 +5,6 @@ import { useAccount } from 'wagmi';
 
 import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { OpportunitiesTable } from './MarketOpportunitiesTable';
 import { PortfolioSummaryCards } from './PortfolioSummaryCards';
@@ -65,12 +64,10 @@ export function MyPositionsPage() {
         return {
           ...opp,
           deposited: positionData.deposited,
-          depositedUsd: formatUSD(positionData.valueUsd),
+          depositedUsd: positionData.valueUsd,
           earnings: positionData.earnings,
           earningsUsd:
-            positionData.estimatedEarningsUsd > 0
-              ? formatUSD(positionData.estimatedEarningsUsd)
-              : '-',
+            positionData.estimatedEarningsUsd > 0 ? positionData.estimatedEarningsUsd : null,
         } satisfies OpportunityTableRow;
       });
   }, [allOpportunities, opportunityIds, positionsMap]);

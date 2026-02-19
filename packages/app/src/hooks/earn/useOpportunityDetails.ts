@@ -20,10 +20,10 @@ export interface StandardOpportunityDetail {
   protocol: string;
   protocolIcon: string;
   vaultAddress: string;
-  deposited: string;
-  depositedUsd: string;
-  earnings: string;
-  earningsUsd: string;
+  deposited: string | null;
+  depositedUsd: string | null;
+  earnings: string | null;
+  earningsUsd: string | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
   assetSymbol?: string;
@@ -61,10 +61,10 @@ interface ApiOpportunityResponse {
   metrics: {
     rawApy: number;
     rawTvl: number;
-    deposited: string;
-    depositedUsd: string;
-    earnings: string;
-    earningsUsd: string;
+    deposited: string | null;
+    depositedUsd: string | null;
+    earnings: string | null;
+    earningsUsd: string | null;
     maturityDate?: string;
     apyBreakdown?: { base: number; reward: number; total: number };
   };

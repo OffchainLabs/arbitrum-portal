@@ -37,10 +37,10 @@ export interface OpportunityTableRow {
     reward: number;
     total: number;
   };
-  deposited: string;
-  depositedUsd: string;
-  earnings: string;
-  earningsUsd: string;
+  deposited: string | null;
+  depositedUsd: number | null;
+  earnings: string | null;
+  earningsUsd: number | null;
   tvl: string;
   protocol: string;
   protocolIcon: string;

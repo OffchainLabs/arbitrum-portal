@@ -16,13 +16,6 @@ const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
 };
 
-function formatUsdValue(usdString: string): string {
-  if (!usdString || usdString === '-') return '-';
-  const cleaned = usdString.replace(/[$,]/g, '');
-  const numValue = parseFloat(cleaned);
-  return isNaN(numValue) ? usdString : formatUSD(numValue);
-}
-
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const categoryClass =
     CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
@@ -140,9 +133,9 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
           <div className="flex-1 bg-neutral-100 rounded p-3 flex flex-col gap-2">
             <p className="text-xs text-white opacity-50 leading-none">Estd. Earnings</p>
             <div className="flex flex-col gap-1">
-              {opportunity.earningsUsd !== '-' && opportunity.earningsUsd ? (
+              {opportunity.earningsUsd != null ? (
                 <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">
-                  {formatUsdValue(opportunity.earningsUsd)}
+                  {formatUSD(opportunity.earningsUsd)}
                 </p>
               ) : (
                 <p className="text-lg text-gray-5 leading-[1.35] tracking-[-0.36px]">-</p>
@@ -153,14 +146,14 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
           <div className="flex-1 bg-neutral-100 rounded p-3 flex flex-col gap-2">
             <p className="text-xs text-white opacity-50 leading-none">Your Holdings</p>
             <div className="flex flex-col gap-1">
-              {opportunity.deposited !== '-' ? (
+              {opportunity.deposited != null ? (
                 <>
                   <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">
                     {opportunity.deposited}
                   </p>
-                  {opportunity.depositedUsd !== '-' && (
+                  {opportunity.depositedUsd != null && (
                     <p className="text-xs text-white opacity-50 leading-none">
-                      {formatUsdValue(opportunity.depositedUsd)}
+                      {formatUSD(opportunity.depositedUsd)}
                     </p>
                   )}
                 </>

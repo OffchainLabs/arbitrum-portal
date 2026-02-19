@@ -164,19 +164,14 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
 
       {/* Your Holdings */}
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        {opportunity.deposited !== '-' ? (
+        {opportunity.deposited != null ? (
           <>
             <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
               {opportunity.deposited}
             </p>
-            {opportunity.depositedUsd !== '-' && (
+            {opportunity.depositedUsd != null && (
               <p className="text-xs text-white opacity-50 leading-none">
-                {(() => {
-                  // Parse and format USD value to ensure consistent formatting
-                  const usdValue = opportunity.depositedUsd.replace(/[$,]/g, '');
-                  const numValue = parseFloat(usdValue);
-                  return isNaN(numValue) ? opportunity.depositedUsd : formatUSD(numValue);
-                })()}
+                {formatUSD(opportunity.depositedUsd)}
               </p>
             )}
           </>
@@ -186,13 +181,9 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
       </div>
 
       <div className="flex-1 flex items-center min-w-0">
-        {opportunity.earningsUsd !== '-' && opportunity.earningsUsd ? (
+        {opportunity.earningsUsd != null ? (
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
-            {(() => {
-              const usdValue = opportunity.earningsUsd.replace(/[$,]/g, '');
-              const numValue = parseFloat(usdValue);
-              return isNaN(numValue) ? opportunity.earningsUsd : formatUSD(numValue);
-            })()}
+            {formatUSD(opportunity.earningsUsd)}
           </p>
         ) : (
           <p className="text-sm text-gray-5">-</p>

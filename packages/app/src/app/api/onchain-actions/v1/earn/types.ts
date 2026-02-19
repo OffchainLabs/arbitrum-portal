@@ -17,10 +17,12 @@ export interface OpportunityFilters {
 export interface StandardOpportunityMetrics {
   rawApy: number;
   rawTvl: number;
-  deposited: string;
-  depositedUsd: string;
-  earnings: string;
-  earningsUsd: string;
+  deposited: string | null;
+  /** Raw numeric value or null. No $ or locale formatting. */
+  depositedUsd: string | null;
+  earnings: string | null;
+  /** Raw numeric value or null. No $ or locale formatting. */
+  earningsUsd: string | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
 }

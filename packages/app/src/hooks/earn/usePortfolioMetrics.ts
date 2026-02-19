@@ -34,38 +34,25 @@ export function usePortfolioMetrics(
       };
     }
 
-    // Helper function to safely parse USD strings (handles '-', empty strings, and formatted values)
-    const parseUsdString = (usdString: string): number => {
-      if (!usdString || usdString === '-') return 0;
-      const cleaned = usdString.replace(/[$,]/g, '');
-      const parsed = parseFloat(cleaned);
-      return isNaN(parsed) ? 0 : parsed;
-    };
+    const totalValue = opportunities.reduce(
+      (sum, opp) => sum + (opp.depositedUsd ?? 0),
+      0,
+    );
 
-    // Calculate total value from deposited USD amounts
-    const totalValue = opportunities.reduce((sum, opp) => {
-      const depositedUsd = parseUsdString(opp.depositedUsd);
-      return sum + depositedUsd;
-    }, 0);
-
-    // Use API-provided estimated earnings if available, otherwise calculate from opportunities
     const totalEarnings =
       estimatedEarningsUsdNumber !== undefined
         ? estimatedEarningsUsdNumber
-        : opportunities.reduce((sum, opp) => {
-            const earningsUsd = parseUsdString(opp.earningsUsd);
-            return sum + earningsUsd;
-          }, 0);
+        : opportunities.reduce((sum, opp) => sum + (opp.earningsUsd ?? 0), 0);
 
     // Use API-provided net APY if available, otherwise calculate weighted average APY
     const calculatedNetApy =
       netApy !== undefined
         ? netApy
         : (() => {
-            const weightedApySum = opportunities.reduce((sum, opp) => {
-              const depositedUsd = parseUsdString(opp.depositedUsd);
-              return sum + opp.rawApy * depositedUsd;
-            }, 0);
+            const weightedApySum = opportunities.reduce(
+              (sum, opp) => sum + opp.rawApy * (opp.depositedUsd ?? 0),
+              0,
+            );
             return totalValue > 0 ? weightedApySum / totalValue : 0;
           })();
 
@@ -80,7 +67,7 @@ export function usePortfolioMetrics(
 
     const valueByType = opportunities.reduce(
       (acc, opp) => {
-        const depositedUsd = parseUsdString(opp.depositedUsd);
+        const depositedUsd = opp.depositedUsd ?? 0;
         const displayName = getCategoryDisplayName(opp.category);
         if (displayName === 'Lending') acc.Lending = (acc.Lending || 0) + depositedUsd;
         return acc;

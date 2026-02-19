@@ -206,14 +206,6 @@ export function OpportunitiesTable({
     return descriptions[category];
   };
 
-  // Helper function to parse USD string to number for sorting
-  const parseUsdValue = (usdString: string): number => {
-    if (!usdString || usdString === '-') return 0;
-    const cleaned = usdString.replace(/[$,]/g, '');
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
-  };
-
   // Sort opportunities by deposited USD value (Your Holdings) if not grouped
   const sortedOpportunities = useMemo(() => {
     if (groupByCategory) return null;
@@ -234,9 +226,8 @@ export function OpportunitiesTable({
     }
 
     return [...opportunities].sort((a, b) => {
-      const aValue = parseUsdValue(a.depositedUsd);
-      const bValue = parseUsdValue(b.depositedUsd);
-      // Sort by deposited USD descending (largest positions first)
+      const aValue = a.depositedUsd ?? 0;
+      const bValue = b.depositedUsd ?? 0;
       return bValue - aValue;
     });
   }, [opportunities, groupByCategory, sortColumn, sortDirection]);
