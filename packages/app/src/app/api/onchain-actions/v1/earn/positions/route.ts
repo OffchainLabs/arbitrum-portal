@@ -39,20 +39,24 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     if (!byCategory[catKey]) {
       byCategory[catKey] = { count: 0, valueUsd: 0, weightedApySum: 0 };
     }
-    const cat = byCategory[catKey]!;
-    cat.count++;
-    cat.valueUsd += valueUsd;
-    if (isFinite(apyNumber) && apyNumber >= 0) {
-      cat.weightedApySum += apyNumber * valueUsd;
+    const cat = byCategory[catKey];
+    if (cat) {
+      cat.count++;
+      cat.valueUsd += valueUsd;
+      if (isFinite(apyNumber) && apyNumber >= 0) {
+        cat.weightedApySum += apyNumber * valueUsd;
+      }
     }
 
     const vendorKey = position.vendor;
     if (!byVendor[vendorKey]) {
       byVendor[vendorKey] = { count: 0, valueUsd: 0 };
     }
-    const vendor = byVendor[vendorKey]!;
-    vendor.count++;
-    vendor.valueUsd += valueUsd;
+    const vendor = byVendor[vendorKey];
+    if (vendor) {
+      vendor.count++;
+      vendor.valueUsd += valueUsd;
+    }
   }
 
   const netApy = totalValueUsd > 0 ? weightedApySum / totalValueUsd : 0;
