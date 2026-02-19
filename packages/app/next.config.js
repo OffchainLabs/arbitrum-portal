@@ -157,6 +157,11 @@ module.exports = {
         destination: '/projects?subcategories=nft-collection_nft-marketplace',
         permanent: true,
       },
+      {
+        source: '/earn',
+        destination: '/earn/market',
+        permanent: false,
+      },
     ];
   },
 };
