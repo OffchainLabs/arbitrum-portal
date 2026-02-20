@@ -41,7 +41,10 @@ interface EarnTransactionHistoryTableProps {
  */
 function parseAmountToRawUnits(formattedAmount: string, decimals: number = 18): string {
   // Remove the symbol part (everything after the last space)
-  const amountPart = formattedAmount.split(' ')[0];
+  // This preserves prefixes like "< " and handles amounts without symbols
+  const trimmed = formattedAmount.trim();
+  const lastSpaceIndex = trimmed.lastIndexOf(' ');
+  const amountPart = lastSpaceIndex === -1 ? trimmed : trimmed.slice(0, lastSpaceIndex).trim();
 
   // Handle empty or undefined amountPart
   if (!amountPart) {
@@ -316,7 +319,7 @@ export function EarnTransactionHistoryTable({
                           </p>
                         </div>
                         <p className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap">
-                          {row.assetAmount} {row.assetSymbol}
+                          {row.assetAmount}
                         </p>
                       </div>
                     </div>

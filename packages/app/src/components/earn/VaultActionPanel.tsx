@@ -118,9 +118,12 @@ export function VaultActionPanel({
           .toString()
       : '0';
 
-  // Get chainId from transactionQuote when available, otherwise use a fallback
-  // We need this early for balance fetching, but it depends on quote which we'll fetch conditionally
-  const fallbackChainId = ChainId.ArbitrumOne; // Default fallback
+  // Derive chainId from vault network for balance fetching
+  const networkChainId = useMemo(() => {
+    const networkName = vault.network?.name;
+    if (networkName === 'mainnet' || networkName === 'ethereum') return 1 as ChainId;
+    return ChainId.ArbitrumOne;
+  }, [vault.network?.name]);
 
   // Fetch onchain balances for asset and lpToken (needed for balance check)
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
@@ -128,13 +131,13 @@ export function VaultActionPanel({
 
   const { balance: assetBalanceOnchain, refetch: refetchAssetBalance } = useTokenBalance({
     tokenAddress: assetTokenAddress,
-    chainId: fallbackChainId,
+    chainId: networkChainId,
     enabled: isConnected && !!walletAddress && !!assetTokenAddress,
   });
 
   const { balance: lpTokenBalanceOnchain, refetch: refetchLpTokenBalance } = useTokenBalance({
     tokenAddress: lpTokenAddress,
-    chainId: fallbackChainId,
+    chainId: networkChainId,
     enabled: isConnected && !!walletAddress && !!lpTokenAddress,
   });
 
@@ -180,13 +183,13 @@ export function VaultActionPanel({
       (!isConnected || !amountExceedsBalance),
   });
 
-  // Get chainId from transactionQuote when available, otherwise use a fallback
+  // Get chainId from transactionQuote when available, otherwise derive from vault network
   const fallbackChainIdFromQuote = useMemo(() => {
     if (transactionQuote?.transactionSteps && transactionQuote.transactionSteps.length > 0) {
-      return transactionQuote.transactionSteps[0]?.chainId || ChainId.ArbitrumOne;
+      return transactionQuote.transactionSteps[0]?.chainId || networkChainId;
     }
-    return ChainId.ArbitrumOne; // ArbitrumOne as default fallback
-  }, [transactionQuote]);
+    return networkChainId;
+  }, [transactionQuote, networkChainId]);
 
   // Build transaction calls from transaction quote
   const chainId = useMemo(() => {
@@ -203,7 +206,7 @@ export function VaultActionPanel({
   // Fetch native ETH balance for gas fee validation
   const { balance: nativeBalance } = useTokenBalance({
     tokenAddress: null, // null for native ETH
-    chainId: fallbackChainIdFromQuote || fallbackChainId,
+    chainId: fallbackChainIdFromQuote || networkChainId,
     enabled: isConnected && !!walletAddress && chainId !== 0,
   });
 

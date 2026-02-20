@@ -33,20 +33,11 @@ export interface TransactionDetails {
 }
 
 /**
- * Fetch ETH price in USD (simplified - uses CoinGecko API)
+ * Static ETH price fallback for USD conversion.
+ * Avoids client-side third-party API calls (privacy/reliability concerns).
+ * Prefer wiring to a server-side price source when available.
  */
-async function fetchEthPrice(): Promise<number> {
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
-    );
-    const data = await response.json();
-    return data.ethereum?.usd || 3000; // Fallback to $3000 if API fails
-  } catch (error) {
-    console.error('Failed to fetch ETH price:', error);
-    return 3000; // Fallback price
-  }
-}
+const ETH_PRICE_FALLBACK = 3000;
 
 /**
  * Hook to manage transaction details popup
@@ -154,10 +145,7 @@ export function EarnTransactionDetailsPopup({
         const feeEth = utils.formatEther(feeWei);
         const feeEthFormatted = parseFloat(feeEth).toFixed(6);
 
-        // Get ETH price (simplified - could be improved with an API)
-        // For now, using a reasonable default or fetching from an API
-        const ethPriceUsd = await fetchEthPrice();
-        const feeUsd = (parseFloat(feeEth) * ethPriceUsd).toFixed(2);
+        const feeUsd = (parseFloat(feeEth) * ETH_PRICE_FALLBACK).toFixed(2);
 
         setNetworkFee({
           amount: `~${feeEthFormatted} ETH`,

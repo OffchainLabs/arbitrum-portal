@@ -75,33 +75,38 @@ export function useEarnTransactionExecution({
           onTransactionSubmitted({ txHash: undefined, amount: inputAmount });
         }
 
-        const waitForBatchCompletion = async (): Promise<string> => {
+        const MAX_POLL_ATTEMPTS = 120; // ~2 minutes at 1s intervals
+        let batchTxHash: string | undefined;
+
+        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+          // eslint-disable-next-line no-await-in-loop
           const callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
-          if (callsStatus.status === 'pending') {
-            // Wait 1 second before polling again to avoid excessive API calls
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            return waitForBatchCompletion();
-          }
+
           if (callsStatus.status === 'failure') {
             throw new Error('Batch calls failed');
           }
-          // Get transaction hash from receipts array
-          // For batched transactions, receipts contains the bundled transaction receipt(s)
-          // The receipt should have a 'hash' property (standard viem transaction receipt property)
-          const receipt = callsStatus.receipts?.[0];
-          if (!receipt) {
-            throw new Error('Batch completed but no receipt found');
-          }
-          // Access hash property (standard in viem TransactionReceipt)
-          // Type assertion needed as WalletCallReceipt type may not expose hash directly
-          const txHash = receipt.transactionHash;
-          if (!txHash) {
-            throw new Error('Batch completed but transaction hash not found in receipt');
-          }
-          return txHash;
-        };
 
-        const batchTxHash = await waitForBatchCompletion();
+          if (callsStatus.status !== 'pending') {
+            const receipt = callsStatus.receipts?.[0];
+            if (!receipt) {
+              throw new Error('Batch completed but no receipt found');
+            }
+            const txHash = receipt.transactionHash;
+            if (!txHash) {
+              throw new Error('Batch completed but transaction hash not found in receipt');
+            }
+            batchTxHash = txHash;
+            break;
+          }
+
+          // Wait 1 second before polling again
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        if (!batchTxHash) {
+          throw new Error('Batch transaction timed out');
+        }
         onTransactionFinished({ txHash: batchTxHash, amount: inputAmount });
       };
 
