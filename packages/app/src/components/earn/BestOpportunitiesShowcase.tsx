@@ -40,7 +40,7 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
           <Link
             key={opportunity.id}
             href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
-            className="group cursor-pointer bg-neutral-100 rounded p-4 flex flex-col gap-4 hover:bg-default-black-hover transition-colors relative justify-between no-underline"
+            className="group bg-neutral-100 rounded p-4 flex flex-col gap-4 hover:bg-default-black-hover transition-colors relative justify-between no-underline"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">

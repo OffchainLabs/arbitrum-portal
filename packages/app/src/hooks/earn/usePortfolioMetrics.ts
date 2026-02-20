@@ -43,15 +43,14 @@ export function usePortfolioMetrics(
 
     // Use API-provided net APY if available, otherwise calculate weighted average APY
     const calculatedNetApy =
-      netApy !== undefined
-        ? netApy
-        : (() => {
-            const weightedApySum = opportunities.reduce(
-              (sum, opp) => sum + opp.rawApy * (opp.depositedUsd ?? 0),
-              0,
-            );
-            return totalValue > 0 ? weightedApySum / totalValue : 0;
-          })();
+      netApy ??
+      (() => {
+        const weightedApySum = opportunities.reduce(
+          (sum, opp) => sum + opp.rawApy * (opp.depositedUsd ?? 0),
+          0,
+        );
+        return totalValue > 0 ? weightedApySum / totalValue : 0;
+      })();
 
     const positionsByType = opportunities.reduce(
       (acc, opp) => {

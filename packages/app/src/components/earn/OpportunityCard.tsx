@@ -1,7 +1,7 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
+import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
@@ -10,12 +10,6 @@ interface OpportunityCardProps {
   opportunity: OpportunityTableRow;
 }
 
-const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
-  [OpportunityCategory.Lend]: 'bg-earn-lend border-earn-lend/10',
-  [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield border-earn-fixed-yield/10',
-  [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
-};
-
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const categoryClass =
     CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
@@ -23,7 +17,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   return (
     <Link
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
-      className="group cursor-pointer bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
+      className="group bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-3 h-3 rounded-[5px] border-2 shrink-0 ${categoryClass}`} />

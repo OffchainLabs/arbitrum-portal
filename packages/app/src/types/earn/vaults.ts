@@ -24,6 +24,12 @@ export function getCategoryDisplayName(category: OpportunityCategory): string {
   return displayNames[category] ?? category;
 }
 
+export const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
+  [OpportunityCategory.Lend]: 'bg-earn-lend border-earn-lend/10',
+  [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield border-earn-fixed-yield/10',
+  [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
+};
+
 export interface OpportunityTableRow {
   id: string;
   name: string;

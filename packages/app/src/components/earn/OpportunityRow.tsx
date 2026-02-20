@@ -1,10 +1,8 @@
-'use client';
-
 import { ChartBarIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
+import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
@@ -13,27 +11,14 @@ interface OpportunityRowProps {
   opportunity: OpportunityTableRow;
 }
 
-const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
-  [OpportunityCategory.Lend]: 'bg-earn-lend border-earn-lend/10',
-  [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield border-earn-fixed-yield/10',
-  [OpportunityCategory.LiquidStaking]: 'bg-earn-liquid-staking border-earn-liquid-staking/10',
-};
-
 export function OpportunityRow({ opportunity }: OpportunityRowProps) {
-  const router = useRouter();
-
-  const handleRowClick = () => {
-    router.push(`/earn/opportunity/${opportunity.category}/${opportunity.id}`);
-  };
-
   const categoryClass =
     CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
 
   return (
-    <button
-      type="button"
-      onClick={handleRowClick}
-      className="group cursor-pointer bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
+    <Link
+      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+      className="group bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
     >
       {/* Name with Category Color Indicator */}
       <div className="w-[150px] shrink-0">
@@ -191,6 +176,6 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
       <div className="bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20 shrink-0">
         <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
-    </button>
+    </Link>
   );
 }

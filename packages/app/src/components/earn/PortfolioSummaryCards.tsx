@@ -4,7 +4,11 @@ import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
 import { usePortfolioMetrics } from '@/app-hooks/earn';
-import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import {
+  CATEGORY_INDICATOR_CLASS,
+  OpportunityCategory,
+  OpportunityTableRow,
+} from '@/app-types/earn/vaults';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
@@ -14,8 +18,8 @@ function formatPercentage(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 
-const TYPE_ORDER: Array<{ type: 'Lending'; color: string }> = [
-  { type: 'Lending', color: '#4970e9' },
+const TYPE_ORDER: Array<{ type: 'Lending'; category: OpportunityCategory }> = [
+  { type: 'Lending', category: OpportunityCategory.Lend },
 ];
 
 interface PortfolioSummaryCardsProps {
@@ -96,21 +100,20 @@ export function PortfolioSummaryCards({
           <div className="relative h-2 bg-default-black-hover rounded-[5px] overflow-hidden w-full">
             {lendingWidth > 0 && (
               <div
-                className="absolute h-2 bg-[#4970e9] left-0 top-0"
+                className="absolute h-2 bg-earn-lend left-0 top-0"
                 style={{ width: `${lendingWidth}%` }}
               />
             )}
           </div>
           {/* Legend - matches progress bar order */}
           <div className="flex gap-3">
-            {TYPE_ORDER.map(({ type, color }) => {
+            {TYPE_ORDER.map(({ type, category }) => {
               const value = summary.valueByType[type];
               if (value === 0) return null;
               return (
                 <div key={type} className="flex items-center gap-2">
                   <div
-                    className="w-2 h-2 rounded-[5px] shrink-0"
-                    style={{ backgroundColor: color }}
+                    className={`w-2 h-2 rounded-[5px] shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
                   />
                   <p className="text-xs font-medium text-white opacity-80 whitespace-nowrap">
                     {type}
@@ -203,7 +206,7 @@ export function PortfolioSummaryCards({
             {/* Category APY Breakdown */}
             {categoryApy && (
               <div className="flex flex-col gap-2 mt-2">
-                {TYPE_ORDER.map(({ type, color }) => {
+                {TYPE_ORDER.map(({ type, category }) => {
                   const apy = type === 'Lending' ? categoryApy.lend : undefined;
                   // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                   if (apy === undefined || apy === null || !isFinite(apy)) return null;
@@ -211,8 +214,7 @@ export function PortfolioSummaryCards({
                     <div key={type} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-2 h-2 rounded shrink-0"
-                          style={{ backgroundColor: color }}
+                          className={`w-2 h-2 rounded shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
                         />
                         <p className="text-xs text-white opacity-80">{type}</p>
                       </div>
@@ -303,7 +305,7 @@ export function PortfolioSummaryCards({
           {/* Category APY Breakdown */}
           {categoryApy && (
             <div className="flex flex-col gap-2 mt-2">
-              {TYPE_ORDER.map(({ type, color }) => {
+              {TYPE_ORDER.map(({ type, category }) => {
                 const apy = type === 'Lending' ? categoryApy.lend : undefined;
                 // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                 if (apy === undefined || apy === null || !isFinite(apy)) return null;
@@ -311,8 +313,7 @@ export function PortfolioSummaryCards({
                   <div key={type} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-2 h-2 rounded shrink-0"
-                        style={{ backgroundColor: color }}
+                        className={`w-2 h-2 rounded shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
                       />
                       <p className="text-xs text-white opacity-80">{type}</p>
                     </div>
