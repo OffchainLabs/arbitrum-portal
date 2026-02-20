@@ -11,7 +11,6 @@ Arbitrum Portal is a Next.js monorepo containing the Arbitrum ecosystem homepage
 - **`packages/app/`** — Main Next.js 14 app that orchestrates routing to both portal and bridge
 - **`packages/arb-token-bridge-ui/`** — Token bridge interface for moving assets between Arbitrum chains
 - **`packages/portal/`** — Ecosystem homepage (projects, chains, resources)
-- **`packages/components/`** — Shared UI components
 - **`packages/scripts/`** — Build and data-fetching scripts
 
 ## Common Commands
