@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import denylist from '@/public/__auto-generated-denylist.json';
 
 const ONE_WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
 ): Promise<NextResponse<{ data: boolean | undefined; message?: string }>> {
   try {
     const { searchParams } = new URL(request.url);

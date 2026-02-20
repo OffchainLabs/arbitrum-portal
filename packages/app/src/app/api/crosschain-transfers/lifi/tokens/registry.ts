@@ -4,8 +4,6 @@ import { unstable_cache } from 'next/cache';
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 
-export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
-
 type CustomTokenConfig = {
   coinKey: string;
   addresses: Partial<Record<number, string>>;
@@ -159,5 +157,5 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
 };
 
 export const getLifiTokenRegistry = unstable_cache(fetchRegistry, ['lifi-token-registry'], {
-  revalidate: LIFI_TOKENS_REVALIDATE_SECONDS,
+  revalidate: 30,
 });

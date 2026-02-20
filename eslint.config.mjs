@@ -1,25 +1,18 @@
-import { FlatCompat } from '@eslint/eslintrc';
+import offchainBase from '@offchainlabs/eslint-config-typescript/base';
+import offchainNext from '@offchainlabs/eslint-config-typescript/next';
 import tsParser from '@typescript-eslint/parser';
+import jestPlugin from 'eslint-plugin-jest';
 import zustandRules from 'eslint-plugin-zustand-rules';
 import { globalIgnores } from 'eslint/config';
-import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const require = createRequire(import.meta.url);
-const jestPlugin = require('eslint-plugin-jest');
-
 const disabledJestRules = Object.fromEntries(
   Object.keys(jestPlugin?.configs?.recommended?.rules ?? {}).map((rule) => [rule, 'off']),
 );
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  resolvePluginsRelativeTo: __dirname,
-});
 
 // Shared configuration objects
 const sharedLanguageOptions = {
@@ -79,11 +72,9 @@ const mainRules = {
   ],
 };
 
-export default [
-  ...compat.extends(
-    '@offchainlabs/eslint-config-typescript/base',
-    '@offchainlabs/eslint-config-typescript/next',
-  ),
+const config = [
+  ...offchainBase,
+  ...offchainNext,
   {
     settings: {
       next: {
@@ -151,3 +142,5 @@ export default [
     '**/next-env.d.ts',
   ]),
 ];
+
+export default config;

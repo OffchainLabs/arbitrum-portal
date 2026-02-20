@@ -11,7 +11,7 @@ import { ExternalLink } from './ExternalLink';
 // Our card component can act as a Next-Link / External Link / Button or a simple div
 export type CardType = 'link' | 'externalLink' | 'button' | 'div';
 
-type AnalyticsProps = {
+export type AnalyticsProps = {
   eventName: string;
   eventProperties?: { [property: string]: string };
 };
@@ -82,7 +82,7 @@ export const Card = ({
 
   // Card that can also act as an external link
   if (cardType === 'externalLink') {
-    const cardProps = props as ExternalLinkProps;
+    const { analyticsProps, ...cardProps } = props as ExternalLinkProps & CardAnalyticsProps;
     return (
       <ExternalLink
         {...cardProps}

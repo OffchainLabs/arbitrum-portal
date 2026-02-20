@@ -14,7 +14,7 @@ import { BigNumber, Signer, constants } from 'ethers';
 import { isAddress, parseEther } from 'ethers/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
-import { Column, Table, TableCellRenderer } from 'react-virtualized';
+import { Column, Table, TableCellDataGetter, TableCellRenderer } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -22,6 +22,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useError } from '../hooks/useError';
@@ -44,7 +45,6 @@ import { DialogWrapper, useDialog2 } from './common/Dialog2';
 import { NetworkImage } from './common/NetworkImage';
 import { NoteBox } from './common/NoteBox';
 import { SafeImage } from './common/SafeImage';
-import { Tooltip } from './common/Tooltip';
 import { Loader } from './common/atoms/Loader';
 import { errorToast } from './common/atoms/Toast';
 
@@ -277,6 +277,8 @@ const TokenColumn: TableCellRenderer = ({ rowData }) => {
   );
 };
 
+const tableCellDataGetter: TableCellDataGetter = ({ rowData, dataKey }) => rowData?.[dataKey];
+
 export function RecoverFunds() {
   const { address } = useAccount();
   const [{ sourceChain }] = useNetworks();
@@ -301,8 +303,8 @@ export function RecoverFunds() {
             <Tooltip
               wrapperClassName="inline arb-hover underline cursor-help"
               content={getAliasedAddress(address)}
-              tippyProps={{
-                hideOnClick: false,
+              contentProps={{
+                onPointerDownOutside: (event) => event.preventDefault(),
               }}
             >
               {shortenAddress(getAliasedAddress(address))}
@@ -311,8 +313,8 @@ export function RecoverFunds() {
             <Tooltip
               wrapperClassName="inline arb-hover underline cursor-help"
               content={address}
-              tippyProps={{
-                hideOnClick: false,
+              contentProps={{
+                onPointerDownOutside: (event) => event.preventDefault(),
               }}
             >
               {shortenAddress(address)}
@@ -583,21 +585,19 @@ export function RecoverFundsDialog(props: UseDialogProps) {
         }}
       >
         <Column
-          label={
-            <div className="h-full w-[180px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              TOKEN
-            </div>
-          }
+          headerRenderer={() => <>TOKEN</>}
+          width={180}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <TokenColumn {...props} />}
           dataKey="balance"
-          width={180}
+          flexGrow={0}
+          flexShrink={1}
         />
         <Column
-          label={
-            <div className="h-full w-[140px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              CHAIN
-            </div>
-          }
+          headerRenderer={() => <>CHAIN</>}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={({ rowData }) => (
             <div className="flex h-12 items-center align-middle">
               <NetworkImage chainId={rowData[0]} className="h-5 w-5" />
@@ -607,17 +607,18 @@ export function RecoverFundsDialog(props: UseDialogProps) {
           )}
           dataKey="chainId"
           width={140}
+          flexGrow={0}
+          flexShrink={1}
         />
         <Column
-          label={
-            <div className="h-full w-[345px] pb-2 pt-4 text-left text-sm font-normal md:w-full">
-              DESTINATION ADDRESS
-            </div>
-          }
+          headerRenderer={() => <>DESTINATION ADDRESS</>}
+          headerClassName="h-full w-full pb-2 pt-4 text-left text-sm font-normal"
+          cellDataGetter={tableCellDataGetter}
           cellRenderer={(props) => <ActionColumn {...props} key={props.rowData[0]} />}
           dataKey="destinationAddress"
           width={345}
           flexShrink={0}
+          flexGrow={0}
         />
       </Table>
     </Dialog>

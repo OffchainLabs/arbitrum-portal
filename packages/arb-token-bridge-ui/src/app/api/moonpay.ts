@@ -1,5 +1,5 @@
 import { MoonPay } from '@moonpay/moonpay-node';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import { isOnrampServiceEnabled } from '../../util/featureFlag';
 
@@ -7,7 +7,7 @@ const moonPayApiKey = process.env.MOONPAY_SK;
 
 const isMoonPayEnabled = isOnrampServiceEnabled('moonpay');
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   if (!isMoonPayEnabled) {
     return NextResponse.json({ message: 'MoonPay is not supported' }, { status: 404 });
   }

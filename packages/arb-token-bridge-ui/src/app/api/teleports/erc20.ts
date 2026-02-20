@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import {
   getSourceFromSubgraphClient,
@@ -13,7 +13,7 @@ type Erc20TeleportResponse = {
   message?: string; // in case of any error
 };
 
-export async function GET(request: NextRequest): Promise<NextResponse<Erc20TeleportResponse>> {
+export async function GET(request: Request): Promise<NextResponse<Erc20TeleportResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const sender = searchParams.get('sender') || undefined;

@@ -1,11 +1,4 @@
-import dynamic from 'next/dynamic';
-
-const MyProjects = dynamic(
-  () => import('@/portal/components/MyProjects').then((mod) => mod.MyProjects),
-  {
-    ssr: false,
-  },
-);
+import { MyProjects } from '@/portal/components/MyProjects';
 
 export default function Page() {
   return <MyProjects />;

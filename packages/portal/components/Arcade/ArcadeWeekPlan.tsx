@@ -1,17 +1,13 @@
 import { LockClosedIcon } from '@heroicons/react/24/outline';
-import dynamic from 'next/dynamic';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { formatDate, parseDateInEasternTime } from '@/common/dateUtils';
 import { ARCADE_LOCKED_PROJECT_DETAILS, getProjectDetailsById } from '@/common/projects';
+import Countdown from '@/components/Countdown';
 
 import { ArcadeProjectWithMissionLink } from './ArcadeProjectWithMissionLink';
 import { ArcadeWeeklyPlan } from './plans';
-
-const Countdown = dynamic(() => import('@/components/Countdown'), {
-  ssr: false,
-});
 
 export const ArcadeLabel = ({ children }: PropsWithChildren) => {
   return <div className="mt-3 text-lg text-white">{children}</div>;

@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import {
   getL1SubgraphClient,
@@ -24,7 +24,7 @@ type EthDepositsToCustomDestinationResponse = {
 };
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
 ): Promise<NextResponse<EthDepositsToCustomDestinationResponse>> {
   try {
     const { searchParams } = new URL(request.url);
