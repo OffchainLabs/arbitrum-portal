@@ -267,7 +267,9 @@ export function SourceNetworkBox() {
     const waitForInput = openDialog('source_network_selection');
     const [, data] = await waitForInput();
     if (data === 'one_nova_transfer') {
-      openDialog('one_nova_transfer');
+      const waitForNovaInput = openDialog('one_nova_transfer');
+      await waitForNovaInput();
+      openSourceNetworkSelectionDialog();
     }
   };
   const { isAmount2InputVisible } = useAmount2InputVisibility();
