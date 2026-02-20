@@ -1,7 +1,5 @@
-import {
-  EARN_API_CACHE_SCHEMA_VERSION,
-  useLocalStorageSWR,
-} from '@/app-lib/swr/useLocalStorageSWR';
+import useSWRImmutable from 'swr/immutable';
+
 import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
@@ -103,16 +101,10 @@ export function useAllOpportunities(filters?: {
 
   const REVALIDATE_INTERVAL = 12 * 60 * 60 * 1000;
 
-  const { data, error, isLoading, mutate, ...rest } = useLocalStorageSWR<OpportunitiesResponse>(
-    [url, EARN_API_CACHE_SCHEMA_VERSION],
+  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<OpportunitiesResponse>(
+    url,
     fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      refreshInterval: REVALIDATE_INTERVAL,
-      errorRetryCount: 2,
-    },
+    { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
   );
 
   const opportunities: OpportunityTableRow[] = data?.opportunities.map(toTableRow) ?? [];

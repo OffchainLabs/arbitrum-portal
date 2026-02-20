@@ -1,9 +1,6 @@
+import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
-import {
-  EARN_API_CACHE_SCHEMA_VERSION,
-  useLocalStorageSWR,
-} from '@/app-lib/swr/useLocalStorageSWR';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
 export interface StandardOpportunityDetail {
@@ -153,10 +150,8 @@ export function useOpportunityDetails(
     isAddress(opportunityId) &&
     OPPORTUNITY_CATEGORIES.includes(category);
 
-  const { data, error, isLoading, mutate, ...rest } = useLocalStorageSWR<StandardOpportunityDetail>(
-    isValid
-      ? ['opportunity-details', opportunityId, category, network, EARN_API_CACHE_SCHEMA_VERSION]
-      : null,
+  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<StandardOpportunityDetail>(
+    isValid ? ['opportunity-details', opportunityId, category, network] : null,
     async () => {
       const params = new URLSearchParams({ network });
       const response = await fetch(
@@ -168,13 +163,7 @@ export function useOpportunityDetails(
       const api = (await response.json()) as ApiOpportunityResponse;
       return flattenOpportunity(api);
     },
-    {
-      refreshInterval: REVALIDATE_INTERVAL,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      errorRetryCount: 2,
-    },
+    { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
   );
 
   return {

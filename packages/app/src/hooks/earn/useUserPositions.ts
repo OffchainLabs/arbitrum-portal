@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
+import useSWRImmutable from 'swr/immutable';
 
-import { useLocalStorageSWR } from '@/app-lib/swr/useLocalStorageSWR';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 interface StandardUserPosition {
@@ -95,17 +95,16 @@ export function useUserPositions(
     isLoading,
     mutate,
     ...rest
-  } = useLocalStorageSWR<UserPositionsResponse>(
+  } = useSWRImmutable<UserPositionsResponse>(
     userAddress ? ['userPositions', userAddress, allowedNetworks.join(',')] : null,
     async () => {
       if (!userAddress) {
         throw new Error('User address is required');
       }
 
-      // Use the standardized positions endpoint
       const params = new URLSearchParams({
         userAddress,
-        network: allowedNetworks[0] || 'arbitrum', // Currently only supports arbitrum
+        network: allowedNetworks[0] || 'arbitrum',
       });
 
       const response = await fetch(`/api/onchain-actions/v1/earn/positions?${params.toString()}`);
@@ -115,15 +114,7 @@ export function useUserPositions(
 
       return (await response.json()) as UserPositionsResponse;
     },
-    {
-      // Conservative: 24 hours, Aggressive: 12 hours
-      // Using 12 hours (43200000ms) as default
-      refreshInterval: 12 * 60 * 60 * 1000, // 12 hours
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false, // Don't auto-refetch on reconnect - respect cache
-      revalidateIfStale: false, // Don't revalidate if stale - only on interval or manual
-      errorRetryCount: 2,
-    },
+    { refreshInterval: 12 * 60 * 60 * 1000, errorRetryCount: 2 },
   );
 
   // Transform raw API response to Map/Set (happens on every render, but data is cached)
