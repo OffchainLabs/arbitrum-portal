@@ -86,7 +86,7 @@ export function MyPositionsPage() {
   const error = opportunitiesError || positionsError;
 
   if (!isConnected) {
-    return <YourHoldingsEmptyState opportunities={[]} />;
+    return <YourHoldingsEmptyState />;
   }
 
   // Loading state

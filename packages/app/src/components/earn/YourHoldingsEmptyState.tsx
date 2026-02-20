@@ -10,7 +10,7 @@ import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 
 interface YourHoldingsEmptyStateProps {
-  opportunities: OpportunityTableRow[];
+  opportunities?: OpportunityTableRow[];
 }
 
 export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyStateProps) {
@@ -62,7 +62,7 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
       </div>
 
       {/* Opportunity Showcase */}
-      <BestOpportunitiesShowcase opportunities={opportunities} />
+      {opportunities && <BestOpportunitiesShowcase opportunities={opportunities} />}
     </div>
   );
 }
