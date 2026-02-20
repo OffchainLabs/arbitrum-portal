@@ -19,6 +19,7 @@ export interface EarnTransactionHistoryRow {
   eventType: string;
   assetAmount: string;
   assetSymbol: string;
+  decimals?: number;
   assetLogo?: string;
   chainId: number;
   chainName: string;
@@ -113,14 +114,14 @@ export function EarnTransactionHistoryTable({
     };
     const action = actionMap[row.eventType.toLowerCase()] || row.eventType.toLowerCase();
 
-    // Parse amount to raw units (default to 18 decimals)
-    const amountRaw = parseAmountToRawUnits(row.assetAmount, 18);
+    const decimals = row.decimals ?? 18;
+    const amountRaw = parseAmountToRawUnits(row.assetAmount, decimals);
 
     const transactionDetails: TransactionDetails = {
       action,
       amount: amountRaw,
       tokenSymbol: row.assetSymbol,
-      decimals: 18, // Default, could be improved by storing decimals in transaction history
+      decimals,
       assetLogo: row.assetLogo,
       txHash: row.transactionHash,
       chainId: row.chainId,

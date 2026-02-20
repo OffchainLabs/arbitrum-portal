@@ -68,6 +68,7 @@ export function useEarnTransactionHistory(
       eventType: tx.eventType,
       assetAmount: tx.assetAmount,
       assetSymbol: tx.assetSymbol,
+      decimals: tx.decimals,
       assetLogo: tx.assetLogo,
       chainId: tx.chainId,
       chainName: tx.chainName,

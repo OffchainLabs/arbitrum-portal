@@ -280,6 +280,7 @@ export function VaultActionPanel({
           eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
           assetAmount: formattedAmount,
           assetSymbol: assetSymbol ?? '',
+          decimals: assetDecimals,
           assetLogo: vault.asset?.assetLogo,
           chainId: txChainId,
           chainName: txChainName,

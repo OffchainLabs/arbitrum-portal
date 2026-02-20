@@ -17,10 +17,12 @@ export function EarnActionTabs({ tabs, selectedAction, onActionChange }: EarnAct
   if (!tabs || tabs.length === 0 || tabs.length === 1) return null;
 
   return (
-    <div className="bg-white/5 rounded-lg flex gap-0.5 p-0.5">
+    <div role="tablist" className="bg-white/5 rounded-lg flex gap-0.5 p-0.5">
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          role="tab"
+          aria-selected={selectedAction === tab.id}
           onClick={() => onActionChange(tab.id)}
           className={twMerge(
             'flex-1 rounded-lg p-4 py-3 text-xs font-medium text-white transition-all',

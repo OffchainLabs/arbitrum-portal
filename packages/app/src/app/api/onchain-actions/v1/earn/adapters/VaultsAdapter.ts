@@ -401,6 +401,7 @@ export class VaultsAdapter implements VendorAdapter {
           eventType,
           assetAmount: amountFormatted,
           assetSymbol: response.asset.symbol,
+          decimals,
           assetLogo: response.asset.assetLogo,
           chainId,
           chainName: network === 'arbitrum' ? 'Arbitrum One' : network,
