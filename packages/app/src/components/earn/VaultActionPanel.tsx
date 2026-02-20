@@ -267,7 +267,7 @@ export function VaultActionPanel({
         networkFee: estimatedTxCostUsd
           ? {
               amount: estimatedTxCostUsd.eth,
-              usd: estimatedTxCostUsd.usd,
+              usd: estimatedTxCostUsd.usd ?? '',
             }
           : undefined,
         opportunityName: vault.name ?? 'Lend',

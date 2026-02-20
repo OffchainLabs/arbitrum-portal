@@ -200,8 +200,7 @@ export function useEarnGasEstimate({
           // Convert to ETH and fetch USD price
           const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
           const ethPrice = await fetchEthPriceUsd();
-          const usd =
-            ethPrice != null ? `$${(totalGasCostEth * ethPrice).toFixed(2)} USD` : null;
+          const usd = ethPrice != null ? `$${(totalGasCostEth * ethPrice).toFixed(2)} USD` : null;
 
           setOnchainGasEstimate({
             eth: totalGasCostEth.toFixed(6),

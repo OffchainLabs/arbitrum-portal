@@ -155,7 +155,8 @@ export function EarnTransactionDetailsPopup({
         const feeEthFormatted = parseFloat(feeEth).toFixed(6);
 
         const ethPrice = await fetchEthPriceUsd();
-        const feeUsd = ethPrice != null ? `$${(parseFloat(feeEth) * ethPrice).toFixed(2)} USD` : null;
+        const feeUsd =
+          ethPrice != null ? `$${(parseFloat(feeEth) * ethPrice).toFixed(2)} USD` : null;
 
         setNetworkFee({
           amount: `~${feeEthFormatted} ETH`,
