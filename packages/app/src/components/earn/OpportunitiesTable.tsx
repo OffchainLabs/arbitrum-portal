@@ -26,6 +26,49 @@ type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
 
+interface SortableColumnHeaderProps {
+  column: 'apy' | 'tvl';
+  label: string;
+  isActive: boolean;
+  sortDirection: SortDirection;
+  onSort: (column: 'apy' | 'tvl') => void;
+  inactiveLabelClass?: string;
+}
+
+function SortableColumnHeader({
+  column,
+  label,
+  isActive,
+  sortDirection,
+  onSort,
+  inactiveLabelClass = 'font-semibold',
+}: SortableColumnHeaderProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
+    >
+      <p
+        className={`text-xs whitespace-nowrap ${
+          isActive ? 'font-bold text-white' : `${inactiveLabelClass} text-white opacity-50`
+        }`}
+      >
+        {label}
+      </p>
+      {isActive ? (
+        sortDirection === 'asc' ? (
+          <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
+        ) : (
+          <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
+        )
+      ) : (
+        <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
+      )}
+    </button>
+  );
+}
+
 interface TableHeaderProps {
   sortColumn: SortColumn;
   sortDirection: SortDirection;
@@ -33,8 +76,6 @@ interface TableHeaderProps {
 }
 
 function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
-  const isApyActive = sortColumn === 'apy';
-  const isTvlActive = sortColumn === 'tvl';
   return (
     <div className="hidden md:flex gap-4 items-center pt-4 px-4 pb-0">
       <div className="w-[150px] shrink-0">
@@ -44,27 +85,13 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
         <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Token</p>
       </div>
       <div className="flex-1 flex gap-2 items-center min-w-0">
-        <button
-          onClick={() => onSort('apy')}
-          className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
-        >
-          <p
-            className={`text-xs whitespace-nowrap ${
-              isApyActive ? 'font-bold text-white' : 'font-semibold text-white opacity-50'
-            }`}
-          >
-            APY
-          </p>
-          {isApyActive ? (
-            sortDirection === 'asc' ? (
-              <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
-            ) : (
-              <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-            )
-          ) : (
-            <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
-          )}
-        </button>
+        <SortableColumnHeader
+          column="apy"
+          label="APY"
+          isActive={sortColumn === 'apy'}
+          sortDirection={sortDirection}
+          onSort={onSort}
+        />
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
         <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
@@ -94,27 +121,14 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
         </div>
       </div>
       <div className="w-[116px] shrink-0 flex gap-2 items-center">
-        <button
-          onClick={() => onSort('tvl')}
-          className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
-        >
-          <p
-            className={`text-xs whitespace-nowrap ${
-              isTvlActive ? 'font-bold text-white' : 'font-normal text-white opacity-50'
-            }`}
-          >
-            TVL
-          </p>
-          {isTvlActive ? (
-            sortDirection === 'asc' ? (
-              <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
-            ) : (
-              <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
-            )
-          ) : (
-            <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
-          )}
-        </button>
+        <SortableColumnHeader
+          column="tvl"
+          label="TVL"
+          isActive={sortColumn === 'tvl'}
+          sortDirection={sortDirection}
+          onSort={onSort}
+          inactiveLabelClass="font-normal"
+        />
       </div>
       <div className="flex-1 flex gap-2 items-center min-w-0">
         <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Protocol</p>
