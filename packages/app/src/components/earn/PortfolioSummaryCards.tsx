@@ -179,7 +179,7 @@ export function PortfolioSummaryCards({
           </p>
           <div className="flex flex-col gap-3">
             <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
-              +{formatUSD(displayEarnings)}
+              {formatUSD(displayEarnings)}
             </p>
             <p className="text-xs">
               {formatPercentage(earningsPercentage)} by {getTargetDate()}
@@ -280,7 +280,7 @@ export function PortfolioSummaryCards({
         </p>
         <div className="flex flex-col gap-3">
           <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
-            +{formatUSD(displayEarnings)}
+            {formatUSD(displayEarnings)}
           </p>
           <p className="text-xs">
             {formatPercentage(earningsPercentage)} by {getTargetDate()}
