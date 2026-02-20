@@ -21,7 +21,7 @@ export function EarnTransactionDetailsSection({ details }: EarnTransactionDetail
       </div>
       {details.map((detail, index) => (
         <div key={index} className="flex items-center justify-between">
-          <span className="text-xs text-[#737373]">{detail.label}</span>
+          <span className="text-xs text-white/40">{detail.label}</span>
           <span className="text-xs text-white">{detail.value}</span>
         </div>
       ))}

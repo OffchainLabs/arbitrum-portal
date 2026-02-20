@@ -28,9 +28,9 @@ export function EarnReceiveAmountSection({
   outputBalance,
 }: EarnReceiveAmountSectionProps) {
   return (
-    <div className="bg-[#212121] rounded-lg flex flex-col p-4">
+    <div className="bg-neutral-100 rounded-lg flex flex-col p-4">
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-[#999999]">{label}</span>
+        <span className="text-xs font-medium text-white/50">{label}</span>
         <div className="flex items-center justify-between gap-2">
           {isLoading ? (
             <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function EarnReceiveAmountSection({
           )}
         </div>
         {(usdValue || outputBalance) && (
-          <div className="flex items-center justify-between text-xs text-[#999999]">
+          <div className="flex items-center justify-between text-xs text-white/50">
             <span>{usdValue || '$0.00 USD'}</span>
             {outputBalance && <span>Balance: {outputBalance}</span>}
           </div>

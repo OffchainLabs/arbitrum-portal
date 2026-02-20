@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
-import type { OpportunityCategory } from '@/earn-api/types';
+import type { OpportunityCategory } from '@/app-types/earn/vaults';
 
 export interface TransactionStep {
   step: number;

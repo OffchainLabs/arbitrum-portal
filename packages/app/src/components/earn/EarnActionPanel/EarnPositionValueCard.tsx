@@ -1,4 +1,4 @@
-'use client';
+import { twMerge } from 'tailwind-merge';
 
 export interface PositionValue {
   amount: string;
@@ -18,11 +18,14 @@ export function EarnPositionValueCard({
 }: EarnPositionValueCardProps) {
   return (
     <div
-      className={`bg-[#212121] rounded-lg flex flex-col p-4 ${hideOnMobile ? 'hidden lg:flex' : ''}`}
+      className={twMerge(
+        'bg-neutral-100 rounded-lg flex flex-col p-4',
+        hideOnMobile && 'hidden lg:flex',
+      )}
     >
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-[#999999]">
+          <span className="text-xs font-medium text-white/50">
             {positionValue.label || 'Position Value'}
           </span>
         </div>
@@ -32,9 +35,9 @@ export function EarnPositionValueCard({
           </div>
           {positionValue.usdValue && (
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#999999]">{positionValue.usdValue}</span>
+              <span className="text-xs text-white/50">{positionValue.usdValue}</span>
               {positionValue.status && (
-                <span className="text-xs text-[#999999]">{positionValue.status}</span>
+                <span className="text-xs text-white/50">{positionValue.status}</span>
               )}
             </div>
           )}

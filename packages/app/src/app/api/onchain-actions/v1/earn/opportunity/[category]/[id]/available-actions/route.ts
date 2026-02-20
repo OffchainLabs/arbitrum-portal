@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
 import { AvailableActions, OPPORTUNITY_CATEGORIES, OpportunityCategory } from '../../../../types';
@@ -36,12 +37,12 @@ export async function GET(
       );
     }
 
-    if (!userAddress) {
+    if (!userAddress || !isAddress(userAddress)) {
       return NextResponse.json(
         {
           error: {
-            code: 'USER_ADDRESS_REQUIRED',
-            message: 'userAddress query parameter is required',
+            code: 'INVALID_USER_ADDRESS',
+            message: 'userAddress must be a valid Ethereum address',
           },
         },
         { status: 400 },

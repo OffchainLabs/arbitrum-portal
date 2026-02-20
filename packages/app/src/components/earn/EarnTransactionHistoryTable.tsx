@@ -4,6 +4,7 @@ import { ArrowTopRightOnSquareIcon, ChevronRightIcon } from '@heroicons/react/24
 import dayjs from 'dayjs';
 import { utils } from 'ethers';
 import { useMemo } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
@@ -251,7 +252,7 @@ export function EarnTransactionHistoryTable({
       </div>
 
       {/* Mobile View */}
-      <div className="flex md:hidden flex-col gap-[10px]">
+      <div className="flex md:hidden flex-col gap-2.5">
         {Object.entries(groupedByDate)
           .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
           .map(([dateKey, dateRows], groupIndex) => {
@@ -261,12 +262,13 @@ export function EarnTransactionHistoryTable({
             const isFirstGroup = groupIndex === 0;
 
             return (
-              <div key={dateKey} className="flex flex-col gap-[4px]">
+              <div key={dateKey} className="flex flex-col gap-1">
                 {/* Date Header */}
                 <div
-                  className={`flex items-center ${
-                    isFirstGroup ? 'pb-[5px] pt-4' : 'h-[28px] py-4'
-                  }`}
+                  className={twMerge(
+                    'flex items-center',
+                    isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
+                  )}
                 >
                   <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
                 </div>
@@ -280,7 +282,7 @@ export function EarnTransactionHistoryTable({
                     <div
                       key={`${row.transactionHash}-${idx}`}
                       onClick={() => handleRowClick(row)}
-                      className="bg-[#191919] rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-[2px] cursor-pointer hover:bg-[#222222] transition-colors"
+                      className="bg-gray-1 rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-[#222222] transition-colors"
                     >
                       {/* Top Row: Event Type and Transaction Hash */}
                       <div className="flex items-center justify-between w-full">

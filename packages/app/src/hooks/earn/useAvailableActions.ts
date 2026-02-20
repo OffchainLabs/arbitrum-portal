@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 
-import type { OpportunityCategory } from '@/earn-api/types';
+import type { OpportunityCategory } from '@/app-types/earn/vaults';
 import type { AvailableActions as ApiAvailableActions } from '@/earn-api/types';
 
 export type AvailableActions = ApiAvailableActions;

@@ -22,12 +22,12 @@ import {
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTokenBalance } from '@/app-hooks/earn/useTokenBalance';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount, normalizeAmountForParseUnits } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import { OpportunityCategory } from '@/earn-api/types';
 import type { StandardTransactionHistory } from '@/earn-api/types';
 
 import {
@@ -416,7 +416,7 @@ export function VaultActionPanel({
   }
 
   return (
-    <Card className="bg-[#191919] rounded-lg flex flex-col gap-4 p-4">
+    <Card className="bg-gray-1 rounded-lg flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">

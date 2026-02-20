@@ -1,9 +1,9 @@
 import type { VaultsSdk } from '@vaultsfyi/sdk';
 
-import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
-export { OpportunityCategory };
+export { OpportunityCategory, OPPORTUNITY_CATEGORIES };
 
 export enum Vendor {
   Vaults = 'vaults',

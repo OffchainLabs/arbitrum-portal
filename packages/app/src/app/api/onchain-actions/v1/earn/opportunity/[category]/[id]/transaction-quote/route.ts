@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
 import {
@@ -52,6 +53,18 @@ export async function POST(
           error: {
             code: 'INVALID_REQUEST',
             message: 'action, amount, and userAddress are required',
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!isAddress(userAddress)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_USER_ADDRESS',
+            message: 'userAddress must be a valid Ethereum address',
           },
         },
         { status: 400 },

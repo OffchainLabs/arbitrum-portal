@@ -3,6 +3,7 @@
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { useCallback, useEffect, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
 import { Checkbox } from '@/bridge/components/common/Checkbox';
@@ -87,7 +88,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
     >
       <div className="flex flex-col items-start gap-[27px] py-4 w-full">
         {/* Popup Body */}
-        <div className="flex flex-col items-start gap-[20px] w-full">
+        <div className="flex flex-col items-start gap-5 w-full">
           {/* Warning Icon */}
           <div className="flex items-center justify-center w-[63px] h-[63px] rounded-full bg-white/5">
             <ExclamationTriangleIcon className="w-[31.5px] h-[31.5px] text-[#CCB069]" />
@@ -126,7 +127,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
         </div>
 
         {/* Checkbox */}
-        <div className="flex items-center gap-[10px] w-full">
+        <div className="flex items-center gap-2.5 w-full">
           <Checkbox
             checked={isChecked}
             onChange={setIsChecked}
@@ -139,21 +140,17 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col gap-[10px] w-full">
+        <div className="flex flex-col gap-2.5 w-full">
           {/* Proceed Button */}
           <button
             onClick={handleConfirm}
             disabled={!isChecked}
-            className={`
-              flex items-center justify-center gap-1 px-[15px] py-[20px] rounded-[15px] w-full
-              text-[16px] font-medium text-center
-              transition-opacity
-              ${
-                isChecked
-                  ? 'bg-white text-black hover:opacity-90 cursor-pointer'
-                  : 'bg-white/50 text-black cursor-not-allowed opacity-50'
-              }
-            `}
+            className={twMerge(
+              'flex items-center justify-center gap-1 px-[15px] py-5 rounded-[15px] w-full text-[16px] font-medium text-center transition-opacity',
+              isChecked
+                ? 'bg-white text-black hover:opacity-90 cursor-pointer'
+                : 'bg-white/50 text-black cursor-not-allowed opacity-50',
+            )}
           >
             Proceed
           </button>
@@ -161,7 +158,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           {/* Go Back Button */}
           <button
             onClick={handleCancel}
-            className="flex items-center justify-center gap-1 px-[15px] py-[20px] rounded-[15px] w-full text-[16px] font-medium text-white text-center border-none bg-transparent hover:bg-white/10 transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 px-[15px] py-5 rounded-[15px] w-full text-[16px] font-medium text-white text-center border-none bg-transparent hover:bg-white/10 transition-colors cursor-pointer"
           >
             Go back
           </button>

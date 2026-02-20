@@ -4,6 +4,7 @@ import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
 import { BigNumber, utils } from 'ethers';
 import { useCallback, useEffect, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { usePublicClient } from 'wagmi';
 
 import { Dialog } from '@/bridge/components/common/Dialog';
@@ -266,7 +267,7 @@ export function EarnTransactionDetailsPopup({
             </div>
 
             {/* Amount Display */}
-            <div className="flex flex-col gap-[6px] items-center justify-center w-full">
+            <div className="flex flex-col gap-1.5 items-center justify-center w-full">
               <div className="text-[36px] font-medium text-white text-center tracking-[0.72px]">
                 {formattedAmount}
               </div>
@@ -282,9 +283,10 @@ export function EarnTransactionDetailsPopup({
         {/* Completed State */}
         {!isLoading && (
           <div
-            className={`flex flex-col gap-[20px] w-full transition-all duration-500 ${
-              showSuccessAnimation ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
+            className={twMerge(
+              'flex flex-col gap-5 w-full transition-all duration-500',
+              showSuccessAnimation ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
+            )}
           >
             {/* Asset Logo and Amount Section */}
             <div className="flex flex-col gap-2 items-center w-full py-6">
@@ -310,19 +312,19 @@ export function EarnTransactionDetailsPopup({
               )}
 
               {/* Amount Display */}
-              <div className="flex flex-col gap-[6px] items-center justify-center w-full">
+              <div className="flex flex-col gap-1.5 items-center justify-center w-full">
                 <div className="text-3xl font-medium text-white text-center">{formattedAmount}</div>
               </div>
             </div>
 
             {/* Transaction Details Box */}
-            <div className="bg-[#212121] flex flex-col gap-[8px] items-start p-[16px] rounded-[10px] w-full">
+            <div className="bg-gray-1 flex flex-col gap-2 items-start p-4 rounded-[10px] w-full">
               {/* Network */}
-              <div className="flex h-[25px] items-center justify-between px-0 py-[8px] w-full">
+              <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                 <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                   Network
                 </span>
-                <div className="flex gap-[8px] items-center justify-end">
+                <div className="flex gap-2 items-center justify-end">
                   <NetworkImage chainId={chainId} className="h-[21px] w-[21px]" />
                   <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
                     {networkName}
@@ -331,7 +333,7 @@ export function EarnTransactionDetailsPopup({
               </div>
 
               {/* Date */}
-              <div className="flex h-[25px] items-center justify-between px-0 py-[8px] w-full">
+              <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                 <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                   Date
                 </span>
@@ -342,11 +344,11 @@ export function EarnTransactionDetailsPopup({
 
               {/* Protocol */}
               {transactionDetails.protocolName && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-[8px] w-full">
+                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                   <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                     Protocol
                   </span>
-                  <div className="flex gap-[8px] items-center justify-end">
+                  <div className="flex gap-2 items-center justify-end">
                     {transactionDetails.protocolLogo && (
                       <img
                         src={transactionDetails.protocolLogo}
@@ -363,7 +365,7 @@ export function EarnTransactionDetailsPopup({
 
               {/* Network Fee */}
               {displayNetworkFee && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-[8px] w-full">
+                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                   <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                     Network Fee
                   </span>
@@ -373,7 +375,7 @@ export function EarnTransactionDetailsPopup({
                 </div>
               )}
               {isFetchingFee && !displayNetworkFee && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-[8px] w-full">
+                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                   <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                     Network Fee
                   </span>
@@ -390,7 +392,7 @@ export function EarnTransactionDetailsPopup({
                 onClick={() => {
                   window.open(`${explorerUrl}/tx/${txHash}`, '_blank');
                 }}
-                className="bg-[#404040] flex items-center justify-center px-[15px] py-[10px] h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
+                className="bg-[#404040] flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
               >
                 View on {explorerName}
               </button>

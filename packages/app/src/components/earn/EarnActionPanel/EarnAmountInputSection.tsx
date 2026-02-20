@@ -41,14 +41,14 @@ export function EarnAmountInputSection({
   decimals = 18, // Default to 18 decimals if not provided
 }: EarnAmountInputSectionProps) {
   return (
-    <div className="bg-[#212121] rounded-lg flex flex-col p-4">
+    <div className="bg-neutral-100 rounded-lg flex flex-col p-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-[#999999]">{label}</span>
+          <span className="text-xs font-medium text-white/50">{label}</span>
           <Button
             variant="secondary"
             onClick={onMaxClick}
-            className="px-[10px] py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
+            className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
           >
             MAX
           </Button>
@@ -63,7 +63,7 @@ export function EarnAmountInputSection({
             decimals={decimals}
           />
           {inputTokenSelector || (
-            <div className="bg-[#333333] rounded-lg flex gap-1 items-center px-[10px] py-[5px]">
+            <div className="bg-[#333333] rounded-lg flex gap-1 items-center px-2.5 py-[5px]">
               {inputToken.logoUrl ? (
                 // disable Next image optimization because image is dynamic
                 // eslint-disable-next-line @next/next/no-img-element
@@ -82,7 +82,7 @@ export function EarnAmountInputSection({
           )}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-[#999999]">
+        <div className="flex items-center justify-between text-xs text-white/50">
           <span>
             {(() => {
               const amt = parseFloat(amount || '0');

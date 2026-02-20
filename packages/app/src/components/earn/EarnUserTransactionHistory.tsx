@@ -2,16 +2,17 @@
 
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { EarnTransactionHistoryTable } from '@/app-components/earn/EarnTransactionHistoryTable';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
+import { OpportunityCategory } from '@/app-types/earn/vaults';
 import {
   getStandardizedDate,
   getStandardizedTime,
   normalizeTimestamp,
 } from '@/bridge/state/app/utils';
-import { OpportunityCategory } from '@/earn-api/types';
 
 import { initializeDayjs } from '../../initialization';
 import { useEarnTransactionDetails } from './EarnTransactionDetailsPopup';
@@ -197,9 +198,10 @@ export function EarnUserTransactionHistory({
                       <button
                         key={pageNum}
                         onClick={() => handlePageClick(pageNum)}
-                        className={`px-2 py-1 text-sm font-medium transition-colors ${
-                          isActive ? 'text-white' : 'text-white/50 hover:text-white/70'
-                        }`}
+                        className={twMerge(
+                          'px-2 py-1 text-sm font-medium transition-colors',
+                          isActive ? 'text-white' : 'text-white/50 hover:text-white/70',
+                        )}
                         aria-label={`Page ${pageNum}`}
                         aria-current={isActive ? 'page' : undefined}
                       >

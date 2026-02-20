@@ -16,11 +16,11 @@ export function EarnGasEstimateDisplay({
   fallback = '-',
 }: EarnGasEstimateDisplayProps) {
   if (isLoading) {
-    return <span className="text-xs text-[#737373]">Loading...</span>;
+    return <span className="text-xs text-white/40">Loading...</span>;
   }
 
   if (error) {
-    return <span className="text-xs text-[#737373]">{fallback}</span>;
+    return <span className="text-xs text-white/40">{fallback}</span>;
   }
 
   if (!estimate) {
