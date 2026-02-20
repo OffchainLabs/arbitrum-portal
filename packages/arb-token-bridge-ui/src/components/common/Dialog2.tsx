@@ -11,6 +11,7 @@ import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/Cus
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
+import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
@@ -60,7 +61,8 @@ export type DialogType =
   | 'source_network_selection'
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
-  | 'pop_disabled';
+  | 'pop_disabled'
+  | 'one_nova_transfer';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
@@ -160,6 +162,8 @@ export function DialogWrapper(props: DialogProps) {
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
     case 'pop_disabled':
       return <PoPDisabledDialog {...commonProps} />;
+    case 'one_nova_transfer':
+      return <OneNovaTransferDialog {...commonProps} />;
     default:
       return null;
   }

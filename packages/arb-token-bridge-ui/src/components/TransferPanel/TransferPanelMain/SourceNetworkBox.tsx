@@ -263,8 +263,14 @@ export function SourceNetworkBox() {
   const [selectedToken] = useSelectedToken();
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const [dialogProps, openDialog] = useDialog2();
-  const openSourceNetworkSelectionDialog = () => {
-    openDialog('source_network_selection');
+  const openSourceNetworkSelectionDialog = async () => {
+    const waitForInput = openDialog('source_network_selection');
+    const [, data] = await waitForInput();
+    if (data === 'one_nova_transfer') {
+      const waitForNovaInput = openDialog('one_nova_transfer');
+      await waitForNovaInput();
+      openSourceNetworkSelectionDialog();
+    }
   };
   const { isAmount2InputVisible } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();
