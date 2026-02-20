@@ -100,7 +100,7 @@ function ChainTypeInfoRow({
       className={twMerge(
         'px-5 pt-4 pb-1',
         !isOrbitGroup &&
-        'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
+          'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
         isCoreGroup && 'before:h-[0px]',
       )}
     >
@@ -515,15 +515,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken(null);
         setQueryParams({ destinationAddress: undefined });
       },
-      [
-        isSource,
-        networks,
-        setNetworks,
-        setSelectedToken,
-        setQueryParams,
-        props,
-        isSwapTransfer,
-      ],
+      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, props, isSwapTransfer],
     );
 
     return (

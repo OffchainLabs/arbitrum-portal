@@ -84,8 +84,9 @@ function BalanceRow({
         <div className="flex space-x-1 text-sm text-gray-6">
           <span>Balance: </span>
           <span
-            aria-label={`${symbol} balance amount on ${isDepositMode ? 'childChain' : 'parentChain'
-              }`}
+            aria-label={`${symbol} balance amount on ${
+              isDepositMode ? 'childChain' : 'parentChain'
+            }`}
           >
             {balance ? balance : <Loader wrapperClass="ml-2" size="small" color="white" />}
           </span>
@@ -213,8 +214,8 @@ function BalancesContainer() {
               balance={
                 destinationBalance
                   ? formatAmount(destinationBalance, {
-                    decimals: destinationToken ? destinationToken.decimals : 18,
-                  })
+                      decimals: destinationToken ? destinationToken.decimals : 18,
+                    })
                   : undefined
               }
               symbolOverride={
@@ -222,9 +223,9 @@ function BalancesContainer() {
                   ? tokenOverride.symbol
                   : destinationToken
                     ? sanitizeTokenSymbol(destinationToken.symbol, {
-                      chainId: networks.destinationChain.id,
-                      erc20L1Address: destinationToken.address,
-                    })
+                        chainId: networks.destinationChain.id,
+                        erc20L1Address: destinationToken.address,
+                      })
                     : undefined
               }
             />

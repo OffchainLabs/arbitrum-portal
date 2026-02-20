@@ -210,11 +210,11 @@ const Input2 = React.memo(() => {
       disabled: true,
       balance: nativeCurrencyBalances.sourceBalance
         ? Number(
-          utils.formatUnits(
-            nativeCurrencyBalances.sourceBalance,
-            nativeCurrencyDecimalsOnSourceChain,
-          ),
-        )
+            utils.formatUnits(
+              nativeCurrencyBalances.sourceBalance,
+              nativeCurrencyDecimalsOnSourceChain,
+            ),
+          )
         : undefined,
       logoSrc: null,
     }),

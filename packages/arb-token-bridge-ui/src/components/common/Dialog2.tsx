@@ -11,6 +11,7 @@ import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/Cus
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
+import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
@@ -22,7 +23,6 @@ import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithd
 import { WithdrawalConfirmationDialog } from '../TransferPanel/WithdrawalConfirmationDialog';
 import { WidgetTransactionHistory } from '../Widget/WidgetTransactionHistory';
 import { NetworkSelectionContainer } from './NetworkSelectionContainer';
-import { OneNovaTransferDialog } from '../TransferPanel/OneNovaTransferDialog';
 
 /**
  * Returns a promise which resolves to an array [boolean, unknown] value,
@@ -163,7 +163,7 @@ export function DialogWrapper(props: DialogProps) {
     case 'pop_disabled':
       return <PoPDisabledDialog {...commonProps} />;
     case 'one_nova_transfer':
-      return <OneNovaTransferDialog {...commonProps} />
+      return <OneNovaTransferDialog {...commonProps} />;
     default:
       return null;
   }
