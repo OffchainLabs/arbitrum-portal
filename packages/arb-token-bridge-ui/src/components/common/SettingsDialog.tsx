@@ -6,6 +6,7 @@ import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { statsLocalStorageKey } from '../MainContent/ArbitrumStats';
 import { AddCustomChain } from './AddCustomChain';
 import { ExternalLink } from './ExternalLink';
+import { NotificationOptIn } from './NotificationOptIn';
 import { SidePanel } from './SidePanel';
 import { Switch } from './atoms/Switch';
 
@@ -55,6 +56,12 @@ export const SettingsDialog = () => {
             checked={!!isArbitrumStatsVisible}
             onChange={isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats}
           />
+        </div>
+
+        {/* Browser Notifications */}
+        <div className="w-full">
+          <SectionTitle>Notifications</SectionTitle>
+          <NotificationOptIn />
         </div>
 
         {/* Add custom chain */}
