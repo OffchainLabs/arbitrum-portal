@@ -268,7 +268,7 @@ export function DestinationNetworkBox() {
     if (data === 'one_nova_transfer') {
       const waitForNovaInput = openDialog('one_nova_transfer');
       await waitForNovaInput();
-      openDestinationNetworkSelectionDialog();
+      return await openDestinationNetworkSelectionDialog();
     }
   };
 

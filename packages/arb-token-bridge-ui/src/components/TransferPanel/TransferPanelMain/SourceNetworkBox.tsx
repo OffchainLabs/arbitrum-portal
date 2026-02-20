@@ -269,7 +269,7 @@ export function SourceNetworkBox() {
     if (data === 'one_nova_transfer') {
       const waitForNovaInput = openDialog('one_nova_transfer');
       await waitForNovaInput();
-      openSourceNetworkSelectionDialog();
+      return await openSourceNetworkSelectionDialog();
     }
   };
   const { isAmount2InputVisible } = useAmount2InputVisibility();

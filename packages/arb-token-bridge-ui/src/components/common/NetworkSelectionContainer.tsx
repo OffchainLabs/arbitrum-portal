@@ -476,6 +476,7 @@ export const NetworkSelectionContainer = React.memo(
     const [networks, setNetworks] = useNetworks();
     const [, setQueryParams] = useArbQueryParams();
     const { embedMode } = useMode();
+    const { onClose } = props;
     const isSource = props.type === 'source';
 
     const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
@@ -489,7 +490,7 @@ export const NetworkSelectionContainer = React.memo(
         const pairedChain = isSource ? 'destinationChain' : 'sourceChain';
 
         if (shouldOpenOneNovaDialog([value.id, networks[pairedChain].id])) {
-          props.onClose(false, 'one_nova_transfer');
+          onClose(false, 'one_nova_transfer');
           return;
         }
 
@@ -515,7 +516,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken(null);
         setQueryParams({ destinationAddress: undefined });
       },
-      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, props, isSwapTransfer],
+      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, onClose, isSwapTransfer],
     );
 
     return (
