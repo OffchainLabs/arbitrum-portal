@@ -15,7 +15,7 @@ interface UseEarnGasEstimateParams {
 
 export interface GasEstimate {
   eth: string; // Gas cost in ETH (e.g., "0.001234")
-  usd: string; // Gas cost in USD (e.g., "$1.23 USD")
+  usd: string | null; // Gas cost in USD (e.g., "$1.23 USD"), null if price fetch fails
 }
 
 export interface UseEarnGasEstimateResult {
@@ -24,7 +24,21 @@ export interface UseEarnGasEstimateResult {
   error: Error | null;
 }
 
-const ETH_PRICE_FALLBACK = 3000;
+/**
+ * Fetch ETH price in USD from CoinGecko. Returns null on failure.
+ */
+async function fetchEthPriceUsd(): Promise<number | null> {
+  try {
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+    );
+    const data = await response.json();
+    const price = data.ethereum?.usd;
+    return typeof price === 'number' && price > 0 ? price : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Hook to estimate gas costs for transaction steps
@@ -183,13 +197,15 @@ export function useEarnGasEstimate({
             return;
           }
 
-          // Convert to ETH and USD (using static fallback price to avoid third-party API dependency)
+          // Convert to ETH and fetch USD price
           const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
-          const totalGasCostUsd = totalGasCostEth * ETH_PRICE_FALLBACK;
+          const ethPrice = await fetchEthPriceUsd();
+          const usd =
+            ethPrice != null ? `$${(totalGasCostEth * ethPrice).toFixed(2)} USD` : null;
 
           setOnchainGasEstimate({
             eth: totalGasCostEth.toFixed(6),
-            usd: `$${totalGasCostUsd.toFixed(2)} USD`,
+            usd,
           });
           setIsLoading(false);
         } catch (err) {
@@ -238,20 +254,26 @@ export function useEarnGasEstimate({
     setIsLoading(true);
     setError(null);
 
-    const cost = parseFloat(apiEstimate.replace('$', '').replace(' USD', ''));
-    if (isNaN(cost)) {
-      setApiGasEstimate(null);
+    const processApiEstimate = async () => {
+      const cost = parseFloat(apiEstimate.replace('$', '').replace(' USD', ''));
+      if (isNaN(cost)) {
+        setApiGasEstimate(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // For API estimates, we have USD already — fetch ETH price to derive ETH amount
+      const ethPrice = await fetchEthPriceUsd();
+      const estimatedEth = ethPrice != null ? cost / ethPrice : null;
+
+      setApiGasEstimate({
+        eth: estimatedEth != null ? estimatedEth.toFixed(6) : '—',
+        usd: `$${cost.toFixed(2)} USD`,
+      });
       setIsLoading(false);
-      return;
-    }
+    };
 
-    const estimatedEth = cost / ETH_PRICE_FALLBACK;
-
-    setApiGasEstimate({
-      eth: estimatedEth.toFixed(6),
-      usd: `$${cost.toFixed(2)} USD`,
-    });
-    setIsLoading(false);
+    processApiEstimate();
   }, [apiEstimate, onchainGasEstimate]);
 
   // Return onchain estimate if available, otherwise fallback to API estimate

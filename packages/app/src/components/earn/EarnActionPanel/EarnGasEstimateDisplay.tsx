@@ -27,5 +27,5 @@ export function EarnGasEstimateDisplay({
     return <span className="text-xs text-white">{fallback}</span>;
   }
 
-  return <span className="text-xs text-white">{estimate.usd}</span>;
+  return <span className="text-xs text-white">{estimate.usd ?? `~${estimate.eth} ETH`}</span>;
 }

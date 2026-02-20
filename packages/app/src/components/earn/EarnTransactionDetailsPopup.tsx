@@ -33,11 +33,20 @@ export interface TransactionDetails {
 }
 
 /**
- * Static ETH price fallback for USD conversion.
- * Avoids client-side third-party API calls (privacy/reliability concerns).
- * Prefer wiring to a server-side price source when available.
+ * Fetch ETH price in USD from CoinGecko. Returns null on failure.
  */
-const ETH_PRICE_FALLBACK = 3000;
+async function fetchEthPriceUsd(): Promise<number | null> {
+  try {
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+    );
+    const data = await response.json();
+    const price = data.ethereum?.usd;
+    return typeof price === 'number' && price > 0 ? price : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Hook to manage transaction details popup
@@ -145,11 +154,12 @@ export function EarnTransactionDetailsPopup({
         const feeEth = utils.formatEther(feeWei);
         const feeEthFormatted = parseFloat(feeEth).toFixed(6);
 
-        const feeUsd = (parseFloat(feeEth) * ETH_PRICE_FALLBACK).toFixed(2);
+        const ethPrice = await fetchEthPriceUsd();
+        const feeUsd = ethPrice != null ? `$${(parseFloat(feeEth) * ethPrice).toFixed(2)} USD` : null;
 
         setNetworkFee({
           amount: `~${feeEthFormatted} ETH`,
-          usd: `$${feeUsd} USD`,
+          usd: feeUsd ?? '',
         });
       } catch (error) {
         console.error('Failed to fetch network fee:', error);
@@ -358,7 +368,8 @@ export function EarnTransactionDetailsPopup({
                     Network Fee
                   </span>
                   <span className="text-[14px] text-white leading-[17px] tracking-[0.14px]">
-                    {displayNetworkFee.amount} ({displayNetworkFee.usd})
+                    {displayNetworkFee.amount}
+                    {displayNetworkFee.usd ? ` (${displayNetworkFee.usd})` : ''}
                   </span>
                 </div>
               )}
