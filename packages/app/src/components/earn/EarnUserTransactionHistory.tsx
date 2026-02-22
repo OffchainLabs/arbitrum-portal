@@ -16,7 +16,7 @@ import {
 import { type EarnNetwork } from '@/earn-api/types';
 
 import { initializeDayjs } from '../../initialization';
-import { useEarnTransactionDetails } from './EarnTransactionDetailsPopup';
+import { useEarnDialogs } from './EarnDialogsProvider';
 
 initializeDayjs();
 
@@ -74,8 +74,7 @@ export function EarnUserTransactionHistory({
 }: EarnUserTransactionHistoryProps) {
   const { address: walletAddress } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);
-  const { showTransactionDetails, EarnTransactionDetailsPopupComponent } =
-    useEarnTransactionDetails();
+  const { showTransactionDetails } = useEarnDialogs();
 
   const { transactions, isLoading, error } = useEarnTransactionHistory(
     category,
@@ -119,7 +118,6 @@ export function EarnUserTransactionHistory({
 
   return (
     <div className="flex flex-col gap-4">
-      <EarnTransactionDetailsPopupComponent />
       {/* Header */}
       <div className="flex items-center">
         <h3 className="text-[18px] font-medium text-white tracking-[-0.36px]">

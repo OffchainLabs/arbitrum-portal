@@ -3,7 +3,7 @@
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
 import { BigNumber, utils } from 'ethers';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { usePublicClient } from 'wagmi';
 
@@ -32,60 +32,6 @@ export interface TransactionDetails {
     usd?: string;
   };
   opportunityName?: string; // e.g., "Liquid Staked ETH"
-}
-
-/**
- * Hook to manage transaction details popup
- * @returns Object with `showTransactionDetails` function, `markAsCompleted` function, and popup component
- */
-export function useEarnTransactionDetails() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const showTransactionDetails = useCallback(
-    (details: TransactionDetails, isCompleted: boolean = false) => {
-      setTransactionDetails(details);
-      // If transaction already has a hash, it's completed (historical transaction)
-      setIsLoading(!isCompleted && !details.txHash);
-      setIsOpen(true);
-    },
-    [],
-  );
-
-  const markAsCompleted = useCallback(
-    (txHash?: string) => {
-      setIsLoading(false);
-      if (transactionDetails) {
-        setTransactionDetails({ ...transactionDetails, txHash });
-      }
-    },
-    [transactionDetails],
-  );
-
-  const closeDialog = useCallback(() => {
-    setIsOpen(false);
-    // Reset state after a short delay to allow animation to complete
-    setTimeout(() => {
-      setTransactionDetails(null);
-      setIsLoading(true);
-    }, 300);
-  }, []);
-
-  return {
-    showTransactionDetails,
-    markAsCompleted,
-    transactionDetails,
-    isLoading,
-    EarnTransactionDetailsPopupComponent: () => (
-      <EarnTransactionDetailsPopup
-        isOpen={isOpen}
-        onClose={closeDialog}
-        transactionDetails={transactionDetails}
-        isLoading={isLoading}
-      />
-    ),
-  };
 }
 
 interface EarnTransactionDetailsPopupProps {

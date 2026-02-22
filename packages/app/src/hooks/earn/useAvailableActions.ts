@@ -4,27 +4,14 @@ import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
 import {
-  type AvailableActions as ApiAvailableActions,
+  type AvailableActions,
   type EarnNetwork,
-  Vendor,
+  type FixedYieldAvailableActions,
+  type LendAvailableActions,
+  type LiquidStakingAvailableActions,
 } from '@/earn-api/types';
 
-export type AvailableActions = ApiAvailableActions;
-
-export type LendAvailableActions = AvailableActions & {
-  vendor: Vendor.Vaults;
-  transactionContext: NonNullable<AvailableActions['transactionContext']>;
-};
-
-export type LiquidStakingAvailableActions = AvailableActions & {
-  vendor: Vendor.LiFi;
-  transactionContext: null;
-};
-
-export type FixedYieldAvailableActions = AvailableActions & {
-  vendor: Vendor.Pendle;
-  transactionContext: null;
-};
+export type { FixedYieldAvailableActions, LendAvailableActions, LiquidStakingAvailableActions };
 
 export interface UseAvailableActionsParams {
   opportunityId: string | null;
@@ -47,8 +34,6 @@ export interface UseAvailableActionsResult {
  * Returns available actions and vendor-specific context:
  * - For Vaults (lend): Full transaction context including deposit/redeem steps, claimable rewards
  * - For other categories: Minimal context (just available actions)
- *
- * Note: Balances are fetched client-side via direct contract calls (useTokenBalance, useETHBalance)
  */
 export function useAvailableActions(params: UseAvailableActionsParams): UseAvailableActionsResult {
   const { opportunityId, category, userAddress, network = 'arbitrum' } = params;

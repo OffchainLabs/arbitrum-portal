@@ -1,7 +1,7 @@
 'use client';
 
 import { BigNumber, utils } from 'ethers';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
 import {
@@ -30,15 +30,13 @@ import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
 import { type EarnNetwork, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
 
-import {
-  EarnActionSubmitButton,
-  EarnActionTabs,
-  EarnAmountInputSection,
-  EarnErrorDisplay,
-  EarnGasEstimateDisplay,
-  EarnPositionValueCard,
-  EarnTransactionDetailsSection,
-} from './EarnActionPanel';
+import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
+import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
+import { EarnAmountInputSection } from './EarnActionPanel/EarnAmountInputSection';
+import { EarnErrorDisplay } from './EarnActionPanel/EarnErrorDisplay';
+import { EarnGasEstimateDisplay } from './EarnActionPanel/EarnGasEstimateDisplay';
+import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
+import { EarnTransactionDetailsSection } from './EarnActionPanel/EarnTransactionDetailsSection';
 import { EarnActionPanelSkeleton } from './EarnActionPanelSkeleton';
 import { useEarnDialogs } from './EarnDialogsProvider';
 
@@ -218,23 +216,21 @@ export function VaultActionPanel({
   const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
 
-  const buildCalls = useMemo(() => {
-    return (): TransactionCall[] => {
-      if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
-        throw new Error('No transaction steps found');
-      }
-      return transactionQuote.transactionSteps.map((step: TransactionStep, index: number) => {
-        // Validate required fields
-        validateTransactionStep(step, index);
+  const buildCalls = useCallback((): TransactionCall[] => {
+    if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
+      throw new Error('No transaction steps found');
+    }
 
-        return {
-          to: step.to as `0x${string}`,
-          data: step.data as `0x${string}`,
-          value: step.value ? BigInt(step.value) : undefined,
-          chainId: step.chainId,
-        };
-      });
-    };
+    return transactionQuote.transactionSteps.map((step: TransactionStep, index: number) => {
+      validateTransactionStep(step, index);
+
+      return {
+        to: step.to as `0x${string}`,
+        data: step.data as `0x${string}`,
+        value: step.value ? BigInt(step.value) : undefined,
+        chainId: step.chainId,
+      };
+    });
   }, [transactionQuote]);
 
   const { executeTx, isExecuting } = useEarnTransactionExecution({

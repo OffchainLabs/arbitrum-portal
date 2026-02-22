@@ -15,7 +15,6 @@ interface EarnDialogsContextValue {
 
   // Transaction details dialog
   showTransactionDetails: (details: TransactionDetails, isCompleted?: boolean) => void;
-  markAsCompleted: (txHash?: string) => void;
 }
 
 const EarnDialogsContext = createContext<EarnDialogsContextValue | null>(null);
@@ -74,16 +73,6 @@ export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
     [],
   );
 
-  const markAsCompleted = useCallback(
-    (txHash?: string) => {
-      setTxDetailsIsLoading(false);
-      if (transactionDetails) {
-        setTransactionDetails({ ...transactionDetails, txHash });
-      }
-    },
-    [transactionDetails],
-  );
-
   const closeTxDetailsDialog = useCallback(() => {
     setTxDetailsIsOpen(false);
     setTimeout(() => {
@@ -96,9 +85,8 @@ export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
     () => ({
       checkAndShowToS,
       showTransactionDetails,
-      markAsCompleted,
     }),
-    [checkAndShowToS, showTransactionDetails, markAsCompleted],
+    [checkAndShowToS, showTransactionDetails],
   );
 
   return (
