@@ -21,7 +21,7 @@ interface OpportunitiesTableProps {
 
 type GroupedOpportunities = Record<OpportunityCategory, OpportunityTableRow[]>;
 
-type SortColumn = 'apy' | 'holdings' | 'tvl' | null;
+type SortColumn = 'apy' | 'holdings' | 'projectedEarnings' | 'tvl' | null;
 type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
@@ -101,10 +101,14 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
         />
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
-            Projected Earnings
-          </p>
+        <div className="flex items-center gap-2">
+          <SortableColumnHeader
+            column="projectedEarnings"
+            label="Projected Earnings"
+            isActive={sortColumn === 'projectedEarnings'}
+            sortDirection={sortDirection}
+            onSort={onSort}
+          />
           <Tooltip
             content={
               <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
@@ -224,6 +228,9 @@ export function OpportunitiesTable({
             if (sortColumn === 'holdings') {
               return compareMetric(a.depositedUsd, b.depositedUsd);
             }
+            if (sortColumn === 'projectedEarnings') {
+              return compareMetric(a.earningsUsd, b.earningsUsd);
+            }
             return compareMetric(a.rawTvl, b.rawTvl);
           });
         }
@@ -257,6 +264,9 @@ export function OpportunitiesTable({
         }
         if (sortColumn === 'holdings') {
           return compareMetric(a.depositedUsd, b.depositedUsd);
+        }
+        if (sortColumn === 'projectedEarnings') {
+          return compareMetric(a.earningsUsd, b.earningsUsd);
         }
         return compareMetric(a.rawTvl, b.rawTvl);
       });
