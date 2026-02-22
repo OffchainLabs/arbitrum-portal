@@ -16,12 +16,12 @@ interface LendOpportunityDetailsPageProps {
 
 export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetailsPageProps) {
   const protocolName =
-    (opportunity.protocolName ?? opportunity.protocol).charAt(0).toUpperCase() +
-    (opportunity.protocolName ?? opportunity.protocol).slice(1);
+    (opportunity.lend?.protocolName ?? opportunity.protocol).charAt(0).toUpperCase() +
+    (opportunity.lend?.protocolName ?? opportunity.protocol).slice(1);
 
-  const apy30day = (opportunity.apy30day ?? 0) / 100;
-  const apy7day = (opportunity.apy7day ?? 0) / 100;
-  const tvlUsd = opportunity.tvlUsd ?? 0;
+  const apy30day = opportunity.lend?.apy30day ?? 0;
+  const apy7day = opportunity.lend?.apy7day ?? 0;
+  const tvlUsd = opportunity.lend?.tvlUsd ?? 0;
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
@@ -45,15 +45,15 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <span className="text-xs text-white/50 leading-none">Token</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.assetLogo || ''}
-                  alt={opportunity.assetSymbol ?? opportunity.token}
+                  src={opportunity.lend?.assetLogo || ''}
+                  alt={opportunity.lend?.assetSymbol ?? opportunity.token}
                   width={20}
                   height={20}
                   className="rounded-full"
                   fallback={<span className="w-5 h-5 rounded-full bg-white/10 shrink-0" />}
                 />
                 <span className="text-base font-medium text-white leading-none">
-                  {opportunity.assetSymbol ?? opportunity.token}
+                  {opportunity.lend?.assetSymbol ?? opportunity.token}
                 </span>
               </div>
             </Card>
@@ -62,8 +62,8 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <span className="text-xs text-white/50 leading-none">Protocol</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.protocolLogo || ''}
-                  alt={opportunity.protocolName ?? opportunity.protocol}
+                  src={opportunity.lend?.protocolLogo || ''}
+                  alt={opportunity.lend?.protocolName ?? opportunity.protocol}
                   width={20}
                   height={20}
                   className="rounded-full"
@@ -85,8 +85,8 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Stakers</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
-                {opportunity.stakersCount != null
-                  ? formatCompactNumber(opportunity.stakersCount)
+                {opportunity.lend?.stakersCount != null
+                  ? formatCompactNumber(opportunity.lend.stakersCount)
                   : '-'}
               </div>
             </Card>
@@ -97,11 +97,11 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">7d APY</div>
-              <div className="text-base font-medium text-white">{(apy7day * 100).toFixed(1)}%</div>
+              <div className="text-base font-medium text-white">{apy7day.toFixed(1)}%</div>
             </div>
             <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">30d APY</div>
-              <div className="text-base font-medium text-white">{(apy30day * 100).toFixed(1)}%</div>
+              <div className="text-base font-medium text-white">{apy30day.toFixed(1)}%</div>
             </div>
             <div className="rounded-lg bg-gray-1 p-4 col-span-2 lg:col-span-1">
               <div className="text-xs text-white/50 mb-1">TVL (Total Value Locked)</div>
@@ -109,12 +109,14 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             </div>
           </div>
 
-          {opportunity.description && (
+          {opportunity.lend?.description && (
             <div className="rounded-lg bg-gray-1 p-4">
               <h3 className="text-base font-medium text-white mb-3">
                 Where does the yield come from?
               </h3>
-              <p className="text-sm text-white/50 leading-relaxed">{opportunity.description}</p>
+              <p className="text-sm text-white/50 leading-relaxed">
+                {opportunity.lend.description}
+              </p>
             </div>
           )}
 

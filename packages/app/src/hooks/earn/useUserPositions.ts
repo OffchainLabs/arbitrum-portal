@@ -2,30 +2,7 @@ import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-
-interface StandardUserPosition {
-  opportunityId: string;
-  category: OpportunityCategory;
-  vendor: 'vaults';
-  network: string;
-  amount: string;
-  amountFormatted: string;
-  valueUsd: number;
-  tokenAddress: string;
-  tokenSymbol: string;
-  tokenDecimals: number;
-  tokenIcon?: string;
-  apy?: number;
-  estimatedEarningsUsd?: number;
-  opportunity: {
-    id: string;
-    name: string;
-    protocol: string;
-    apy?: number;
-    tvl?: number;
-  };
-  isExpired?: boolean;
-}
+import { type EarnNetwork, type UserPositionsResponse } from '@/earn-api/types';
 
 const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
   [OpportunityCategory.Lend]: { count: 0, valueUsd: 0 },
@@ -38,25 +15,6 @@ const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
   [OpportunityCategory.LiquidStaking]: 0,
   [OpportunityCategory.FixedYield]: 0,
 };
-
-interface UserPositionsResponse {
-  userAddress: string;
-  positions: StandardUserPosition[];
-  totalValueUsd: number;
-  estimatedEarningsUsd: number;
-  estimatedEarningsMonthlyUsd: number;
-  estimatedEarningsYearlyPercentage: number;
-  estimatedEarningsMonthlyPercentage: number;
-  netApy: number;
-  categoryApy: Partial<Record<OpportunityCategory, number>>;
-  summary: {
-    byCategory: Partial<Record<OpportunityCategory, { count: number; valueUsd: number }>>;
-    byVendor: { vaults: { count: number; valueUsd: number } };
-  };
-  cachedAt?: number;
-  expiresAt?: number;
-  errors?: Array<{ category: string; error: string }>;
-}
 
 export interface UserPositionData {
   deposited: string;
@@ -87,11 +45,10 @@ interface UseUserPositionsResult {
  */
 export function useUserPositions(
   userAddress: string | null,
-  allowedNetworks: string[] = ['arbitrum'],
+  allowedNetworks: EarnNetwork[] = ['arbitrum'],
 ): UseUserPositionsResult {
-  const swrKey = userAddress
-    ? (['userPositions', userAddress, allowedNetworks[0] || 'arbitrum'] as const)
-    : null;
+  const primaryNetwork = allowedNetworks[0] ?? 'arbitrum';
+  const swrKey = userAddress ? ([userAddress, primaryNetwork, 'userPositions'] as const) : null;
 
   const {
     data: rawData,
@@ -101,7 +58,7 @@ export function useUserPositions(
     ...rest
   } = useSWRImmutable<UserPositionsResponse>(
     swrKey,
-    async ([, keyUserAddress, network]: readonly [string, string, string]) => {
+    async ([keyUserAddress, network]: readonly [string, string, string]) => {
       const params = new URLSearchParams({
         userAddress: keyUserAddress,
         network,
@@ -126,7 +83,7 @@ export function useUserPositions(
     const opportunityIds = new Set<string>();
 
     for (const position of rawData.positions) {
-      const apy = position.apy || position.opportunity.apy || 0;
+      const apy = position.opportunity.apy || 0;
       const estimatedEarningsUsd =
         position.estimatedEarningsUsd ??
         (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
@@ -159,7 +116,7 @@ export function useUserPositions(
 
   const defaultSummary = {
     byCategory: DEFAULT_BY_CATEGORY,
-    byVendor: { vaults: { count: 0, valueUsd: 0 } } as const,
+    byVendor: {},
   };
 
   return {

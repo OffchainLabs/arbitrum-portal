@@ -3,7 +3,8 @@
 import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
-import { useAllOpportunities, useUserPositions } from '@/app-hooks/earn';
+import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
+import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';

@@ -2,7 +2,12 @@ import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
-import { ALLOWED_HISTORICAL_RANGES, type HistoricalTimeRange } from '../types';
+import {
+  ALLOWED_HISTORICAL_RANGES,
+  EARN_NETWORKS,
+  type EarnNetwork,
+  type HistoricalTimeRange,
+} from '../types';
 
 export class ValidationError extends Error {
   readonly code: string;
@@ -15,9 +20,6 @@ export class ValidationError extends Error {
     this.status = status;
   }
 }
-
-export const ALLOWED_EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
-export type EarnNetwork = (typeof ALLOWED_EARN_NETWORKS)[number];
 
 export function parseOpportunityCategory(rawValue: string | null): OpportunityCategory {
   if (!rawValue) {
@@ -48,10 +50,10 @@ export function parseEarnNetwork(rawValue: string | null, fallback: EarnNetwork 
     return fallback;
   }
 
-  if (!ALLOWED_EARN_NETWORKS.includes(rawValue as EarnNetwork)) {
+  if (!EARN_NETWORKS.includes(rawValue as EarnNetwork)) {
     throw new ValidationError(
       'INVALID_NETWORK',
-      `network must be one of: ${ALLOWED_EARN_NETWORKS.join(', ')}`,
+      `network must be one of: ${EARN_NETWORKS.join(', ')}`,
     );
   }
 

@@ -6,8 +6,11 @@ export enum Vendor {
   Vaults = 'vaults',
 }
 
+export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
+export type EarnNetwork = (typeof EARN_NETWORKS)[number];
+
 export interface OpportunityFilters {
-  network?: string;
+  network?: EarnNetwork;
   minTvl?: number;
   minApy?: number;
   perPage?: number;
@@ -53,8 +56,6 @@ export interface StandardOpportunityBase {
   tokenIcon?: string;
   tokenNetwork?: string;
   protocolIcon?: string;
-  apyFormatted?: string;
-  tvlFormatted?: string;
 }
 
 export interface StandardOpportunityLend extends StandardOpportunityBase {
@@ -92,7 +93,7 @@ export interface StandardTransactionContext {
 
 export interface AvailableActions {
   opportunityId: string;
-  vendor: string;
+  vendor: Vendor;
   userAddress: string;
   availableActions: string[];
   transactionContext: StandardTransactionContext | null;
@@ -109,7 +110,7 @@ export interface TransactionQuoteRequest {
   simulate?: boolean;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
-  network?: string;
+  network?: EarnNetwork;
 }
 
 export interface TransactionStep {
@@ -124,8 +125,8 @@ export interface TransactionStep {
 
 export interface TransactionQuoteResponse {
   opportunityId: string;
-  vendor: string;
-  action: string;
+  vendor: Vendor;
+  action: TransactionQuoteRequest['action'];
   canExecute: boolean;
   estimatedGas: string;
   estimatedGasUsd: string;
@@ -187,7 +188,6 @@ export interface StandardUserPosition {
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
-  apy?: number;
   estimatedEarningsUsd?: number;
   opportunity: {
     id: string;
@@ -208,12 +208,10 @@ export interface UserPositionsResponse {
   estimatedEarningsYearlyPercentage: number;
   estimatedEarningsMonthlyPercentage: number;
   netApy: number;
-  categoryApy: {
-    lend: number;
-  };
+  categoryApy: Record<OpportunityCategory, number>;
   summary: {
     byCategory: Record<OpportunityCategory, { count: number; valueUsd: number }>;
-    byVendor: Record<Vendor, { count: number; valueUsd: number }>;
+    byVendor: Record<string, { count: number; valueUsd: number }>;
   };
   cachedAt?: number;
   expiresAt?: number;

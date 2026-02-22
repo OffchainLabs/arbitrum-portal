@@ -1,6 +1,6 @@
 'use client';
 
-import { useOpportunityDetails } from '@/app-hooks/earn';
+import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';

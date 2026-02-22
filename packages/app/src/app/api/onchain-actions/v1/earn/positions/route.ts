@@ -12,8 +12,17 @@ import {
 } from '../lib/validation';
 import { StandardUserPosition, Vendor } from '../types';
 
+const ALL_CATEGORIES: readonly OpportunityCategory[] = [
+  OpportunityCategory.Lend,
+  OpportunityCategory.LiquidStaking,
+  OpportunityCategory.FixedYield,
+];
+
 function calculatePositionsSummary(positions: StandardUserPosition[]) {
-  const byCategory: Record<string, { count: number; valueUsd: number; weightedApySum: number }> = {
+  const byCategory: Record<
+    OpportunityCategory,
+    { count: number; valueUsd: number; weightedApySum: number }
+  > = {
     [OpportunityCategory.Lend]: { count: 0, valueUsd: 0, weightedApySum: 0 },
     [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: 0, weightedApySum: 0 },
     [OpportunityCategory.FixedYield]: { count: 0, valueUsd: 0, weightedApySum: 0 },
@@ -31,7 +40,7 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     const valueUsd = Number(position.valueUsd) || 0;
     if (!isFinite(valueUsd) || valueUsd < 0) continue;
 
-    const apy = position.opportunity?.apy ?? position.apy ?? 0;
+    const apy = position.opportunity?.apy ?? 0;
     const apyNumber = Number(apy) || 0;
     if (isFinite(apyNumber) && apyNumber >= 0) {
       estimatedEarningsUsd += valueUsd * (apyNumber / 100);
@@ -40,17 +49,11 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 
     totalValueUsd += valueUsd;
 
-    const catKey = position.category;
-    if (!byCategory[catKey]) {
-      byCategory[catKey] = { count: 0, valueUsd: 0, weightedApySum: 0 };
-    }
-    const cat = byCategory[catKey];
-    if (cat) {
-      cat.count++;
-      cat.valueUsd += valueUsd;
-      if (isFinite(apyNumber) && apyNumber >= 0) {
-        cat.weightedApySum += apyNumber * valueUsd;
-      }
+    const categoryStats = byCategory[position.category];
+    categoryStats.count++;
+    categoryStats.valueUsd += valueUsd;
+    if (isFinite(apyNumber) && apyNumber >= 0) {
+      categoryStats.weightedApySum += apyNumber * valueUsd;
     }
 
     const vendorKey = position.vendor;
@@ -66,14 +69,21 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 
   const netApy = totalValueUsd > 0 ? weightedApySum / totalValueUsd : 0;
 
-  const lendCat = byCategory[OpportunityCategory.Lend] ?? {
-    count: 0,
-    valueUsd: 0,
-    weightedApySum: 0,
-  };
-  const categoryApy = {
-    lend: lendCat.valueUsd > 0 ? lendCat.weightedApySum / lendCat.valueUsd : 0,
-  };
+  const categoryApy = Object.fromEntries(
+    ALL_CATEGORIES.map((category) => {
+      const categoryStats = byCategory[category];
+      const apy =
+        categoryStats.valueUsd > 0 ? categoryStats.weightedApySum / categoryStats.valueUsd : 0;
+      return [category, apy];
+    }),
+  ) as Record<OpportunityCategory, number>;
+
+  const byCategorySummary = Object.fromEntries(
+    ALL_CATEGORIES.map((category) => {
+      const categoryStats = byCategory[category];
+      return [category, { count: categoryStats.count, valueUsd: categoryStats.valueUsd }];
+    }),
+  ) as Record<OpportunityCategory, { count: number; valueUsd: number }>;
 
   const estimatedEarningsMonthlyUsd = estimatedEarningsUsd / 12;
   const estimatedEarningsYearlyPercentage =
@@ -89,15 +99,10 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     estimatedEarningsMonthlyPercentage,
     netApy,
     categoryApy,
-    byCategory: {
-      [OpportunityCategory.Lend]: {
-        count: lendCat.count,
-        valueUsd: lendCat.valueUsd,
-      },
-    },
+    byCategory: byCategorySummary,
     byVendor: Object.fromEntries(
       Object.entries(byVendor).map(([k, v]) => [k, { count: v.count, valueUsd: v.valueUsd }]),
-    ) as Record<Vendor, { count: number; valueUsd: number }>,
+    ),
   };
 }
 

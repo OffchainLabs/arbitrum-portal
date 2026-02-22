@@ -386,7 +386,6 @@ export class VaultsAdapter implements VendorAdapter {
         tokenSymbol: assetSymbol,
         tokenDecimals: assetDecimals,
         tokenIcon: position.asset?.assetLogo,
-        apy,
         estimatedEarningsUsd,
         opportunity: {
           id: addressLower,

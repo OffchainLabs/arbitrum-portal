@@ -2,32 +2,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
-
-export interface StandardOpportunityApi {
-  id: string;
-  category: OpportunityCategory;
-  vendor: 'vaults' | 'lifi' | 'pendle';
-  network: string;
-  protocol: string;
-  token: string;
-  vaultAddress: string;
-  metrics: {
-    rawApy: number;
-    rawTvl: number;
-    deposited: string | null;
-    depositedUsd: string | null;
-    earnings: string | null;
-    earningsUsd: string | null;
-    maturityDate?: string;
-    apyBreakdown?: { base: number; reward: number; total: number };
-  };
-  name?: string;
-  tokenIcon?: string;
-  tokenNetwork?: string;
-  protocolIcon?: string;
-  apyFormatted?: string;
-  tvlFormatted?: string;
-}
+import { type EarnNetwork, type StandardOpportunity } from '@/earn-api/types';
 
 interface UseAllOpportunitiesResult {
   opportunities: OpportunityTableRow[];
@@ -37,7 +12,7 @@ interface UseAllOpportunitiesResult {
 }
 
 interface OpportunitiesResponse {
-  opportunities: StandardOpportunityApi[];
+  opportunities: StandardOpportunity[];
   pagination: {
     page: number;
     perPage: number;
@@ -62,7 +37,7 @@ function parseUsdMetric(s: string | null | undefined): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
+function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
   return {
     id: opp.id,
@@ -88,7 +63,7 @@ function toTableRow(opp: StandardOpportunityApi): OpportunityTableRow {
 }
 
 export function useAllOpportunities(filters?: {
-  network?: string;
+  network?: EarnNetwork;
   minTvl?: number;
   minApy?: number;
 }): UseAllOpportunitiesResult {

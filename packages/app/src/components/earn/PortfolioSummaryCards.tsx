@@ -3,7 +3,7 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
-import { usePortfolioMetrics } from '@/app-hooks/earn';
+import { usePortfolioMetrics } from '@/app-hooks/earn/usePortfolioMetrics';
 import {
   CATEGORY_INDICATOR_CLASS,
   OpportunityCategory,
@@ -29,7 +29,7 @@ interface PortfolioSummaryCardsProps {
   estimatedEarningsYearlyPercentage?: number;
   estimatedEarningsMonthlyPercentage?: number;
   netApy?: number;
-  categoryApy?: { lend: number };
+  categoryApy?: Partial<Record<OpportunityCategory, number>>;
   totalValueUsd?: number;
 }
 
@@ -207,7 +207,7 @@ export function PortfolioSummaryCards({
             {categoryApy && (
               <div className="flex flex-col gap-2 mt-2">
                 {TYPE_ORDER.map(({ type, category }) => {
-                  const apy = type === 'Lending' ? categoryApy.lend : undefined;
+                  const apy = categoryApy[category];
                   // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                   if (apy === undefined || apy === null || !isFinite(apy)) return null;
                   return (
@@ -306,7 +306,7 @@ export function PortfolioSummaryCards({
           {categoryApy && (
             <div className="flex flex-col gap-2 mt-2">
               {TYPE_ORDER.map(({ type, category }) => {
-                const apy = type === 'Lending' ? categoryApy.lend : undefined;
+                const apy = categoryApy[category];
                 // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                 if (apy === undefined || apy === null || !isFinite(apy)) return null;
                 return (
