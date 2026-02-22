@@ -198,7 +198,7 @@ export interface StandardUserPosition {
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
-  estimatedEarningsUsd?: number;
+  projectedEarningsUsd?: number;
   opportunity: {
     id: string;
     name: string;
@@ -213,10 +213,10 @@ export interface UserPositionsResponse {
   userAddress: string;
   positions: StandardUserPosition[];
   totalValueUsd: number;
-  estimatedEarningsUsd: number;
-  estimatedEarningsMonthlyUsd: number;
-  estimatedEarningsYearlyPercentage: number;
-  estimatedEarningsMonthlyPercentage: number;
+  projectedEarningsUsd: number;
+  projectedEarningsMonthlyUsd: number;
+  projectedEarningsYearlyPercentage: number;
+  projectedEarningsMonthlyPercentage: number;
   netApy: number;
   categoryApy: Record<OpportunityCategory, number>;
   summary: {

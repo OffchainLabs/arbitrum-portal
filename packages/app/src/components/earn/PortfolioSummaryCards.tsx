@@ -25,10 +25,10 @@ const TYPE_ORDER: Array<{ type: 'Lending'; category: OpportunityCategory }> = [
 
 interface PortfolioSummaryCardsProps {
   opportunities: OpportunityTableRow[];
-  estimatedEarningsUsd?: number;
-  estimatedEarningsMonthlyUsd?: number;
-  estimatedEarningsYearlyPercentage?: number;
-  estimatedEarningsMonthlyPercentage?: number;
+  projectedEarningsUsd?: number;
+  projectedEarningsMonthlyUsd?: number;
+  projectedEarningsYearlyPercentage?: number;
+  projectedEarningsMonthlyPercentage?: number;
   netApy?: number;
   categoryApy?: Partial<Record<OpportunityCategory, number>>;
   totalValueUsd?: number;
@@ -38,28 +38,28 @@ type EarningsTimeframe = 'month' | 'year';
 
 export function PortfolioSummaryCards({
   opportunities,
-  estimatedEarningsUsd,
-  estimatedEarningsMonthlyUsd,
-  estimatedEarningsYearlyPercentage,
-  estimatedEarningsMonthlyPercentage,
+  projectedEarningsUsd,
+  projectedEarningsMonthlyUsd,
+  projectedEarningsYearlyPercentage,
+  projectedEarningsMonthlyPercentage,
   netApy,
   categoryApy,
   totalValueUsd,
 }: PortfolioSummaryCardsProps) {
   const [earningsTimeframe, setEarningsTimeframe] = useState<EarningsTimeframe>('year');
-  const summary = usePortfolioMetrics(opportunities, estimatedEarningsUsd, netApy);
+  const summary = usePortfolioMetrics(opportunities, projectedEarningsUsd, netApy);
 
   const totalValue = totalValueUsd !== undefined ? totalValueUsd : summary.totalValue;
 
   const displayEarnings =
     earningsTimeframe === 'month'
-      ? (estimatedEarningsMonthlyUsd ?? (summary.totalEarnings || 0) / 12)
-      : (estimatedEarningsUsd ?? (summary.totalEarnings || 0));
+      ? (projectedEarningsMonthlyUsd ?? (summary.totalEarnings || 0) / 12)
+      : (projectedEarningsUsd ?? (summary.totalEarnings || 0));
 
   const earningsPercentage =
     earningsTimeframe === 'month'
-      ? (estimatedEarningsMonthlyPercentage ?? 0)
-      : (estimatedEarningsYearlyPercentage ?? 0);
+      ? (projectedEarningsMonthlyPercentage ?? 0)
+      : (projectedEarningsYearlyPercentage ?? 0);
 
   const getTargetDate = () => {
     const now = new Date();
@@ -129,13 +129,13 @@ export function PortfolioSummaryCards({
         <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-3 relative">
           <div className="flex flex-row justify-between items-center gap-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium text-white opacity-80">Estimated Earnings</p>
+              <p className="text-sm font-medium text-white opacity-80">Projected Earnings</p>
               <Tooltip
                 content={
                   <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
                     <p className="text-xs text-white leading-relaxed">
-                      Estimated earnings are calculated using current APY rates. Actual earnings may
-                      vary and are not guaranteed, as APY rates can change over time.
+                      Projected earnings are annualized estimates based on current APY rates. Actual
+                      earnings may vary and are not guaranteed, as APY rates can change over time.
                     </p>
                   </div>
                 }
@@ -185,7 +185,7 @@ export function PortfolioSummaryCards({
           </div>
 
           <div className="hidden lg:block">
-            <ChartPlaceholder label="Estimated earnings" />
+            <ChartPlaceholder label="Projected earnings" />
           </div>
         </div>
 
@@ -229,13 +229,13 @@ export function PortfolioSummaryCards({
       <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col gap-3 relative">
         <div className="flex flex-row justify-between items-center gap-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium text-white opacity-80">Estimated Earnings</p>
+            <p className="text-sm font-medium text-white opacity-80">Projected Earnings</p>
             <Tooltip
               content={
                 <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
                   <p className="text-xs text-white leading-relaxed">
-                    Estimated earnings are calculated using current APY rates. Actual earnings may
-                    vary and are not guaranteed, as APY rates can change over time.
+                    Projected earnings are annualized estimates based on current APY rates. Actual
+                    earnings may vary and are not guaranteed, as APY rates can change over time.
                   </p>
                 </div>
               }
@@ -284,7 +284,7 @@ export function PortfolioSummaryCards({
           </p>
         </div>
 
-        <ChartPlaceholder label="Estimated earnings" />
+        <ChartPlaceholder label="Projected earnings" />
       </div>
 
       <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col justify-between">

@@ -45,7 +45,7 @@ export function AllOpportunitiesPage() {
         depositedUsd: positionData.valueUsd,
         earnings: positionData.earnings,
         earningsUsd:
-          positionData.estimatedEarningsUsd > 0 ? positionData.estimatedEarningsUsd : null,
+          positionData.projectedEarningsUsd > 0 ? positionData.projectedEarningsUsd : null,
       } satisfies OpportunityTableRow;
     });
   }, [allOpportunities, positionsMap, isConnected]);

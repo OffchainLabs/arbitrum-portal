@@ -99,14 +99,14 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
         <div className="flex items-center gap-1.5">
           <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
-            Estd. Earnings
+            Projected Earnings
           </p>
           <Tooltip
             content={
               <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
                 <p className="text-xs text-white leading-relaxed">
-                  Estimated earnings are calculated using current APY rates. Actual earnings may
-                  vary and are not guaranteed, as APY rates can change over time.
+                  Projected earnings are annualized estimates based on current APY rates. Actual
+                  earnings may vary and are not guaranteed, as APY rates can change over time.
                 </p>
               </div>
             }

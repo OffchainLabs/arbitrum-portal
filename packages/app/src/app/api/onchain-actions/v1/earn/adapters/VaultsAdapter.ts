@@ -370,7 +370,7 @@ export class VaultsAdapter implements VendorAdapter {
         (position.lpToken?.balanceUsd || '0').replace(/[^0-9.-]/g, '') || '0',
       );
       const apy = position.apy?.total ? position.apy.total * 100 : undefined;
-      const estimatedEarningsUsd = apy && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
+      const projectedEarningsUsd = apy && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
 
       const addressLower = position.address.toLowerCase();
       return {
@@ -385,7 +385,7 @@ export class VaultsAdapter implements VendorAdapter {
         tokenSymbol: assetSymbol,
         tokenDecimals: lpTokenDecimals,
         tokenIcon: position.asset?.assetLogo,
-        estimatedEarningsUsd,
+        projectedEarningsUsd,
         opportunity: {
           id: addressLower,
           name: position.name || 'Unknown Vault',

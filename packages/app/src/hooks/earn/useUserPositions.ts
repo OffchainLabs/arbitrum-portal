@@ -21,7 +21,7 @@ const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
 export interface UserPositionData {
   deposited: string;
   valueUsd: number;
-  estimatedEarningsUsd: number;
+  projectedEarningsUsd: number;
   earnings: string;
 }
 
@@ -30,10 +30,10 @@ interface UseUserPositionsResult {
   opportunityIds: Set<string>;
   summary: UserPositionsResponse['summary'];
   totalValueUsd: number;
-  estimatedEarningsUsd: number;
-  estimatedEarningsMonthlyUsd: number;
-  estimatedEarningsYearlyPercentage: number;
-  estimatedEarningsMonthlyPercentage: number;
+  projectedEarningsUsd: number;
+  projectedEarningsMonthlyUsd: number;
+  projectedEarningsYearlyPercentage: number;
+  projectedEarningsMonthlyPercentage: number;
   netApy: number;
   categoryApy: Record<OpportunityCategory, number>;
   isLoading: boolean;
@@ -80,8 +80,8 @@ export function useUserPositions(
 
     for (const position of rawData.positions) {
       const apy = position.opportunity.apy || 0;
-      const estimatedEarningsUsd =
-        position.estimatedEarningsUsd ??
+      const projectedEarningsUsd =
+        position.projectedEarningsUsd ??
         (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
       const deposited = formatAmount(BigNumber.from(position.amount), {
         decimals: position.tokenDecimals,
@@ -91,7 +91,7 @@ export function useUserPositions(
       positionsMap.set(position.opportunityId, {
         deposited,
         valueUsd: position.valueUsd,
-        estimatedEarningsUsd,
+        projectedEarningsUsd,
         earnings: '-',
       });
 
@@ -105,10 +105,10 @@ export function useUserPositions(
       opportunityIds,
       summary: { byCategory, byVendor: rawData.summary.byVendor },
       totalValueUsd: rawData.totalValueUsd,
-      estimatedEarningsUsd: rawData.estimatedEarningsUsd,
-      estimatedEarningsMonthlyUsd: rawData.estimatedEarningsMonthlyUsd,
-      estimatedEarningsYearlyPercentage: rawData.estimatedEarningsYearlyPercentage,
-      estimatedEarningsMonthlyPercentage: rawData.estimatedEarningsMonthlyPercentage,
+      projectedEarningsUsd: rawData.projectedEarningsUsd,
+      projectedEarningsMonthlyUsd: rawData.projectedEarningsMonthlyUsd,
+      projectedEarningsYearlyPercentage: rawData.projectedEarningsYearlyPercentage,
+      projectedEarningsMonthlyPercentage: rawData.projectedEarningsMonthlyPercentage,
       netApy: rawData.netApy,
       categoryApy,
     };
@@ -124,10 +124,10 @@ export function useUserPositions(
     opportunityIds: data?.opportunityIds || new Set(),
     summary: data?.summary || defaultSummary,
     totalValueUsd: data?.totalValueUsd ?? 0,
-    estimatedEarningsUsd: data?.estimatedEarningsUsd ?? 0,
-    estimatedEarningsMonthlyUsd: data?.estimatedEarningsMonthlyUsd ?? 0,
-    estimatedEarningsYearlyPercentage: data?.estimatedEarningsYearlyPercentage ?? 0,
-    estimatedEarningsMonthlyPercentage: data?.estimatedEarningsMonthlyPercentage ?? 0,
+    projectedEarningsUsd: data?.projectedEarningsUsd ?? 0,
+    projectedEarningsMonthlyUsd: data?.projectedEarningsMonthlyUsd ?? 0,
+    projectedEarningsYearlyPercentage: data?.projectedEarningsYearlyPercentage ?? 0,
+    projectedEarningsMonthlyPercentage: data?.projectedEarningsMonthlyPercentage ?? 0,
     netApy: data?.netApy ?? 0,
     categoryApy: data?.categoryApy || DEFAULT_CATEGORY_APY,
     isLoading,

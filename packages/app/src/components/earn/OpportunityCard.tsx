@@ -125,7 +125,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
         <div className="flex gap-1">
           <div className="flex-1 bg-neutral-100 rounded p-3 flex flex-col gap-2">
-            <p className="text-xs text-white opacity-50 leading-none">Estd. Earnings</p>
+            <p className="text-xs text-white opacity-50 leading-none">Projected Earnings</p>
             <div className="flex flex-col gap-1">
               {opportunity.earningsUsd != null ? (
                 <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">

@@ -33,7 +33,7 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   };
 
   let totalValueUsd = 0;
-  let estimatedEarningsUsd = 0;
+  let projectedEarningsUsd = 0;
   let weightedApySum = 0;
 
   for (const position of positions) {
@@ -43,7 +43,7 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     const apy = position.opportunity?.apy ?? 0;
     const apyNumber = Number(apy) || 0;
     if (isFinite(apyNumber) && apyNumber >= 0) {
-      estimatedEarningsUsd += valueUsd * (apyNumber / 100);
+      projectedEarningsUsd += valueUsd * (apyNumber / 100);
       weightedApySum += apyNumber * valueUsd;
     }
 
@@ -85,18 +85,18 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
     }),
   ) as Record<OpportunityCategory, { count: number; valueUsd: number }>;
 
-  const estimatedEarningsMonthlyUsd = estimatedEarningsUsd / 12;
-  const estimatedEarningsYearlyPercentage =
-    totalValueUsd > 0 ? (estimatedEarningsUsd / totalValueUsd) * 100 : 0;
-  const estimatedEarningsMonthlyPercentage =
-    totalValueUsd > 0 ? (estimatedEarningsMonthlyUsd / totalValueUsd) * 100 : 0;
+  const projectedEarningsMonthlyUsd = projectedEarningsUsd / 12;
+  const projectedEarningsYearlyPercentage =
+    totalValueUsd > 0 ? (projectedEarningsUsd / totalValueUsd) * 100 : 0;
+  const projectedEarningsMonthlyPercentage =
+    totalValueUsd > 0 ? (projectedEarningsMonthlyUsd / totalValueUsd) * 100 : 0;
 
   return {
     totalValueUsd,
-    estimatedEarningsUsd,
-    estimatedEarningsMonthlyUsd,
-    estimatedEarningsYearlyPercentage,
-    estimatedEarningsMonthlyPercentage,
+    projectedEarningsUsd,
+    projectedEarningsMonthlyUsd,
+    projectedEarningsYearlyPercentage,
+    projectedEarningsMonthlyPercentage,
     netApy,
     categoryApy,
     byCategory: byCategorySummary,
@@ -165,10 +165,10 @@ export async function GET(request: NextRequest) {
           userAddress,
           positions: allPositions,
           totalValueUsd: summary.totalValueUsd,
-          estimatedEarningsUsd: summary.estimatedEarningsUsd,
-          estimatedEarningsMonthlyUsd: summary.estimatedEarningsMonthlyUsd,
-          estimatedEarningsYearlyPercentage: summary.estimatedEarningsYearlyPercentage,
-          estimatedEarningsMonthlyPercentage: summary.estimatedEarningsMonthlyPercentage,
+          projectedEarningsUsd: summary.projectedEarningsUsd,
+          projectedEarningsMonthlyUsd: summary.projectedEarningsMonthlyUsd,
+          projectedEarningsYearlyPercentage: summary.projectedEarningsYearlyPercentage,
+          projectedEarningsMonthlyPercentage: summary.projectedEarningsMonthlyPercentage,
           netApy: summary.netApy,
           categoryApy: summary.categoryApy,
           summary: {

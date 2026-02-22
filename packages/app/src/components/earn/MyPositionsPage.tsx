@@ -32,10 +32,10 @@ export function MyPositionsPage() {
   const {
     positionsMap,
     opportunityIds,
-    estimatedEarningsUsd,
-    estimatedEarningsMonthlyUsd,
-    estimatedEarningsYearlyPercentage,
-    estimatedEarningsMonthlyPercentage,
+    projectedEarningsUsd,
+    projectedEarningsMonthlyUsd,
+    projectedEarningsYearlyPercentage,
+    projectedEarningsMonthlyPercentage,
     netApy,
     categoryApy,
     totalValueUsd,
@@ -66,7 +66,7 @@ export function MyPositionsPage() {
           depositedUsd: positionData.valueUsd,
           earnings: positionData.earnings,
           earningsUsd:
-            positionData.estimatedEarningsUsd > 0 ? positionData.estimatedEarningsUsd : null,
+            positionData.projectedEarningsUsd > 0 ? positionData.projectedEarningsUsd : null,
         } satisfies OpportunityTableRow;
       });
   }, [allOpportunities, opportunityIds, positionsMap]);
@@ -95,10 +95,10 @@ export function MyPositionsPage() {
       <div className="flex flex-col gap-4">
         <PortfolioSummaryCards
           opportunities={opportunitiesWithPositions}
-          estimatedEarningsUsd={estimatedEarningsUsd}
-          estimatedEarningsMonthlyUsd={estimatedEarningsMonthlyUsd}
-          estimatedEarningsYearlyPercentage={estimatedEarningsYearlyPercentage}
-          estimatedEarningsMonthlyPercentage={estimatedEarningsMonthlyPercentage}
+          projectedEarningsUsd={projectedEarningsUsd}
+          projectedEarningsMonthlyUsd={projectedEarningsMonthlyUsd}
+          projectedEarningsYearlyPercentage={projectedEarningsYearlyPercentage}
+          projectedEarningsMonthlyPercentage={projectedEarningsMonthlyPercentage}
           netApy={netApy}
           categoryApy={categoryApy}
           totalValueUsd={totalValueUsd}
@@ -112,10 +112,10 @@ export function MyPositionsPage() {
     <div className="flex flex-col gap-6">
       <PortfolioSummaryCards
         opportunities={opportunitiesWithPositions}
-        estimatedEarningsUsd={estimatedEarningsUsd}
-        estimatedEarningsMonthlyUsd={estimatedEarningsMonthlyUsd}
-        estimatedEarningsYearlyPercentage={estimatedEarningsYearlyPercentage}
-        estimatedEarningsMonthlyPercentage={estimatedEarningsMonthlyPercentage}
+        projectedEarningsUsd={projectedEarningsUsd}
+        projectedEarningsMonthlyUsd={projectedEarningsMonthlyUsd}
+        projectedEarningsYearlyPercentage={projectedEarningsYearlyPercentage}
+        projectedEarningsMonthlyPercentage={projectedEarningsMonthlyPercentage}
         netApy={netApy}
         categoryApy={categoryApy}
         totalValueUsd={totalValueUsd}

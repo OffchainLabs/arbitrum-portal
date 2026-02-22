@@ -14,7 +14,7 @@ interface PortfolioMetrics {
 
 export function usePortfolioMetrics(
   opportunities: OpportunityTableRow[],
-  estimatedEarningsUsdNumber?: number,
+  projectedEarningsUsdNumber?: number,
   netApy?: number,
 ): PortfolioMetrics {
   return useMemo(() => {
@@ -33,8 +33,8 @@ export function usePortfolioMetrics(
     const totalValue = opportunities.reduce((sum, opp) => sum + (opp.depositedUsd ?? 0), 0);
 
     const totalEarnings =
-      estimatedEarningsUsdNumber !== undefined
-        ? estimatedEarningsUsdNumber
+      projectedEarningsUsdNumber !== undefined
+        ? projectedEarningsUsdNumber
         : opportunities.reduce((sum, opp) => sum + (opp.earningsUsd ?? 0), 0);
 
     const calculatedNetApy =
@@ -77,5 +77,5 @@ export function usePortfolioMetrics(
       valueByType,
       earningsPercentChange,
     };
-  }, [opportunities, estimatedEarningsUsdNumber, netApy]);
+  }, [opportunities, projectedEarningsUsdNumber, netApy]);
 }
