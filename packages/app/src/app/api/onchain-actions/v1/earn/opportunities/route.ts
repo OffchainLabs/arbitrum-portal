@@ -1,9 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { parseValidQueryNumber } from '@/app-lib/parseValidQueryNumber';
-import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
+import {
+  ValidationError,
+  parseEarnNetwork,
+  parseOptionalNumber,
+  parseOptionalOpportunityCategory,
+} from '../lib/validation';
 import { OpportunityFilters, StandardOpportunity } from '../types';
 
 const MIN_PER_PAGE = 1;
@@ -12,27 +18,57 @@ const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-rev
 
 export const revalidate = 3600;
 
+export function OPTIONS(request: NextRequest) {
+  return optionsResponse(request);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const categoryParam = searchParams.get('category');
-    const category = categoryParam as OpportunityCategory | null;
-    const orderBy = (searchParams.get('orderBy') as 'rawApy' | 'rawTvl' | undefined) ?? 'rawApy';
+    assertCorsOriginAllowed(request);
 
-    const perPage =
-      parseValidQueryNumber(searchParams.get('perPage'), {
-        default: 50,
-        min: MIN_PER_PAGE,
-        max: MAX_PER_PAGE,
-        integer: true,
-      }) ?? 50;
-    const page =
-      parseValidQueryNumber(searchParams.get('page'), { default: 0, min: 0, integer: true }) ?? 0;
-    const minTvl = parseValidQueryNumber(searchParams.get('minTvl'), { min: 0 });
-    const minApy = parseValidQueryNumber(searchParams.get('minApy'), { min: 0 });
+    const searchParams = request.nextUrl.searchParams;
+    const category = parseOptionalOpportunityCategory(searchParams.get('category'));
+    const orderByParam = searchParams.get('orderBy');
+    const orderBy: 'rawApy' | 'rawTvl' = orderByParam === 'rawTvl' ? 'rawTvl' : 'rawApy';
+    if (orderByParam && orderByParam !== 'rawApy' && orderByParam !== 'rawTvl') {
+      throw new ValidationError('INVALID_ORDER_BY', 'orderBy must be one of: rawApy, rawTvl');
+    }
+
+    const perPageRaw = searchParams.get('perPage');
+    const parsedPerPage = parseValidQueryNumber(perPageRaw, {
+      default: 50,
+      min: MIN_PER_PAGE,
+      max: MAX_PER_PAGE,
+      integer: true,
+    });
+    if (perPageRaw !== null && parsedPerPage === undefined) {
+      throw new ValidationError(
+        'INVALID_PER_PAGE',
+        `perPage must be an integer between ${MIN_PER_PAGE} and ${MAX_PER_PAGE}`,
+      );
+    }
+    const perPage = parsedPerPage ?? 50;
+
+    const pageRaw = searchParams.get('page');
+    const parsedPage = parseValidQueryNumber(pageRaw, { default: 0, min: 0, integer: true });
+    if (pageRaw !== null && parsedPage === undefined) {
+      throw new ValidationError('INVALID_PAGE', 'page must be an integer >= 0');
+    }
+    const page = parsedPage ?? 0;
+
+    const minTvl = parseOptionalNumber(searchParams.get('minTvl'), {
+      field: 'minTvl',
+      code: 'INVALID_MIN_TVL',
+      min: 0,
+    });
+    const minApy = parseOptionalNumber(searchParams.get('minApy'), {
+      field: 'minApy',
+      code: 'INVALID_MIN_APY',
+      min: 0,
+    });
 
     const filters: OpportunityFilters = {
-      network: searchParams.get('network') || 'arbitrum',
+      network: parseEarnNetwork(searchParams.get('network')),
       minTvl,
       minApy,
       perPage,
@@ -43,17 +79,6 @@ export async function GET(request: NextRequest) {
     let opportunities: StandardOpportunity[] = [];
 
     if (category) {
-      if (!OPPORTUNITY_CATEGORIES.includes(category)) {
-        return NextResponse.json(
-          {
-            opportunities: [],
-            pagination: { page, perPage, total: 0 },
-            vendors: [],
-            categories: [],
-          },
-          { headers: CACHE_HEADERS },
-        );
-      }
       const adapter = router.routeToAdapter(category);
       opportunities = await adapter.getOpportunities(filters);
     } else {
@@ -79,17 +104,12 @@ export async function GET(request: NextRequest) {
       categories: Array.from(new Set(opportunities.map((o) => o.category))),
     };
 
-    return NextResponse.json(result, { headers: CACHE_HEADERS });
+    return jsonResponse(request, result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
-    return NextResponse.json(
-      {
-        error: {
-          code: 'OPPORTUNITIES_FETCH_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(request, error, {
+      code: 'OPPORTUNITIES_FETCH_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
+    });
   }
 }

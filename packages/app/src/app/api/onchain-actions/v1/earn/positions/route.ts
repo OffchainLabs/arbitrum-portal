@@ -1,21 +1,28 @@
 import { unstable_cache } from 'next/cache';
-import { NextRequest, NextResponse } from 'next/server';
-import { isAddress } from 'viem';
+import { NextRequest } from 'next/server';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
+import {
+  assertAddress,
+  parseEarnNetwork,
+  parseOptionalOpportunityCategory,
+} from '../lib/validation';
 import { StandardUserPosition, Vendor } from '../types';
-
-const ALLOWED_NETWORKS = ['arbitrum', 'mainnet'] as const;
 
 function calculatePositionsSummary(positions: StandardUserPosition[]) {
   const byCategory: Record<string, { count: number; valueUsd: number; weightedApySum: number }> = {
     [OpportunityCategory.Lend]: { count: 0, valueUsd: 0, weightedApySum: 0 },
+    [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: 0, weightedApySum: 0 },
+    [OpportunityCategory.FixedYield]: { count: 0, valueUsd: 0, weightedApySum: 0 },
   };
 
   const byVendor: Record<string, { count: number; valueUsd: number }> = {
     [Vendor.Vaults]: { count: 0, valueUsd: 0 },
+    [Vendor.LiFi]: { count: 0, valueUsd: 0 },
+    [Vendor.Pendle]: { count: 0, valueUsd: 0 },
   };
 
   let totalValueUsd = 0;
@@ -96,42 +103,18 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   };
 }
 
+export function OPTIONS(request: NextRequest) {
+  return optionsResponse(request);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userAddress = searchParams.get('userAddress');
-    const categoryParam = searchParams.get('category');
-    const category = categoryParam as OpportunityCategory | null;
-    const network = searchParams.get('network') || 'arbitrum';
+    assertCorsOriginAllowed(request);
 
-    if (!userAddress) {
-      return NextResponse.json(
-        { error: { code: 'MISSING_USER_ADDRESS', message: 'userAddress is required' } },
-        { status: 400 },
-      );
-    }
-    if (!isAddress(userAddress)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_USER_ADDRESS',
-            message: 'userAddress must be a valid Ethereum address',
-          },
-        },
-        { status: 400 },
-      );
-    }
-    if (network && !ALLOWED_NETWORKS.includes(network as (typeof ALLOWED_NETWORKS)[number])) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_NETWORK',
-            message: `network must be one of: ${ALLOWED_NETWORKS.join(', ')}`,
-          },
-        },
-        { status: 400 },
-      );
-    }
+    const searchParams = request.nextUrl.searchParams;
+    const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
+    const category = parseOptionalOpportunityCategory(searchParams.get('category'));
+    const network = parseEarnNetwork(searchParams.get('network'));
 
     const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${network}`;
 
@@ -201,21 +184,16 @@ export async function GET(request: NextRequest) {
 
     const result = await getCachedPositions();
 
-    return NextResponse.json(result, {
+    return jsonResponse(request, result, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
       },
     });
   } catch (error) {
     console.error('Error fetching positions:', error);
-    return NextResponse.json(
-      {
-        error: {
-          code: 'POSITIONS_FETCH_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch positions',
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(request, error, {
+      code: 'POSITIONS_FETCH_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to fetch positions',
+    });
   }
 }
