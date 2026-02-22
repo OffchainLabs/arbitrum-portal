@@ -199,7 +199,6 @@ export interface TransactionQuoteResponse {
   estimatedGas: string;
   estimatedGasUsd: string;
   receiveAmount?: string;
-  receiveAmountFormatted?: string;
   priceImpact?: number;
   transactionSteps: TransactionStep[];
 }
