@@ -1,6 +1,7 @@
 'use client';
 
 import { useDebounce } from '@uidotdev/usehooks';
+import { BigNumber } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -36,6 +37,80 @@ export interface UseTransactionQuoteResult {
   refetch: () => void;
 }
 
+type TransactionQuoteKey = readonly [
+  string,
+  OpportunityCategory,
+  TransactionQuoteRequest['action'],
+  string,
+  string,
+  string | undefined,
+  string | undefined,
+  number,
+  boolean,
+  EarnNetwork,
+  string | undefined,
+  string | undefined,
+  'transaction-quote',
+];
+
+function buildTransactionQuoteKey(params: {
+  opportunityId: string;
+  category: OpportunityCategory;
+  action: TransactionQuoteRequest['action'];
+  userAddress: string;
+  amount: string;
+  inputTokenAddress?: string;
+  outputTokenAddress?: string;
+  slippage: number;
+  simulate: boolean;
+  network: EarnNetwork;
+  rolloverTargetOpportunityId?: string;
+  rolloverAmount?: string;
+}): TransactionQuoteKey {
+  const {
+    opportunityId,
+    category,
+    action,
+    userAddress,
+    amount,
+    inputTokenAddress,
+    outputTokenAddress,
+    slippage,
+    simulate,
+    network,
+    rolloverTargetOpportunityId,
+    rolloverAmount,
+  } = params;
+
+  return [
+    opportunityId,
+    category,
+    action,
+    userAddress,
+    amount,
+    inputTokenAddress,
+    outputTokenAddress,
+    slippage,
+    simulate,
+    network,
+    rolloverTargetOpportunityId,
+    rolloverAmount,
+    'transaction-quote',
+  ] as const;
+}
+
+function isPositiveRawAmount(rawAmount: string): boolean {
+  if (!/^\d+$/.test(rawAmount)) {
+    return false;
+  }
+
+  try {
+    return BigNumber.from(rawAmount).gt(0);
+  } catch {
+    return false;
+  }
+}
+
 export function useTransactionQuote(params: UseTransactionQuoteParams): UseTransactionQuoteResult {
   const {
     opportunityId,
@@ -54,16 +129,16 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   } = params;
 
   const debouncedAmount = useDebounce(amount, 500);
-  const debouncedAmountNum = parseFloat(debouncedAmount);
+  const hasPositiveAmount = isPositiveRawAmount(debouncedAmount);
 
   const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(
-    enabled && opportunityId && category && userAddress && debouncedAmount && debouncedAmountNum > 0
-      ? [
+    enabled && opportunityId && category && userAddress && hasPositiveAmount
+      ? buildTransactionQuoteKey({
           opportunityId,
           category,
           action,
           userAddress,
-          debouncedAmount,
+          amount: debouncedAmount,
           inputTokenAddress,
           outputTokenAddress,
           slippage,
@@ -71,43 +146,22 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           network,
           rolloverTargetOpportunityId,
           rolloverAmount,
-          'transaction-quote',
-        ]
+        })
       : null,
-    async (key): Promise<TransactionQuoteResponse> => {
-      if (!debouncedAmount || !userAddress) {
-        throw new Error('Missing amount or user address');
-      }
-
-      const [
-        keyOpportunityId,
-        keyCategory,
-        keyAction,
-        keyUserAddress,
-        keyDebouncedAmount,
-        keyInputTokenAddress,
-        keyOutputTokenAddress,
-        keySlippage,
-        keySimulate,
-        keyNetwork,
-        keyRolloverTargetOpportunityId,
-        keyRolloverAmount,
-      ] = key as readonly [
-        string,
-        OpportunityCategory,
-        TransactionQuoteRequest['action'],
-        string,
-        string,
-        string | undefined,
-        string | undefined,
-        number,
-        boolean,
-        EarnNetwork,
-        string | undefined,
-        string | undefined,
-        string,
-      ];
-
+    async ([
+      keyOpportunityId,
+      keyCategory,
+      keyAction,
+      keyUserAddress,
+      keyDebouncedAmount,
+      keyInputTokenAddress,
+      keyOutputTokenAddress,
+      keySlippage,
+      keySimulate,
+      keyNetwork,
+      keyRolloverTargetOpportunityId,
+      keyRolloverAmount,
+    ]: TransactionQuoteKey): Promise<TransactionQuoteResponse> => {
       const response = await fetch(
         `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/transaction-quote`,
         {

@@ -88,7 +88,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
       return (await response.json()) as AvailableActionsByCategory[C];
     },
     {
-      refreshInterval: REFRESH_INTERVAL, // Refetch every 5 minutes
+      refreshInterval: REFRESH_INTERVAL,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       errorRetryCount: 2,

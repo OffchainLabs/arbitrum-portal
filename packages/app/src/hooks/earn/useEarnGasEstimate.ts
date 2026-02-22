@@ -30,7 +30,7 @@ function parseApiEstimateUsd(apiEstimate?: string): number | null {
     return null;
   }
 
-  const parsed = parseFloat(apiEstimate);
+  const parsed = parseFloat(apiEstimate.replace(/[^0-9.-]/g, ''));
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -89,14 +89,8 @@ export function useEarnGasEstimate({
           return;
         }
 
-        const approvalStepIndices = new Set(
-          chainSteps
-            .map((s, idx) => (s.type === 'approval' ? idx : -1))
-            .filter((idx) => idx !== -1),
-        );
-
         const gasEstimates = await Promise.all(
-          chainSteps.map(async (step, stepIndex) => {
+          chainSteps.map(async (step) => {
             if (step.type === 'approval') {
               try {
                 const [gasLimit, gasPrice] = await Promise.all([
@@ -119,10 +113,6 @@ export function useEarnGasEstimate({
               }
             }
 
-            const hasApprovalBefore = Array.from(approvalStepIndices).some(
-              (approvalIdx) => approvalIdx < stepIndex,
-            );
-
             try {
               const [gasLimit, gasPrice] = await Promise.all([
                 estimateGas(wagmiConfig, {
@@ -141,12 +131,7 @@ export function useEarnGasEstimate({
               return { step, cost };
             } catch (err) {
               const isAllowanceError = isAllowanceRelatedError(err);
-
-              if (isAllowanceError && hasApprovalBefore) {
-                return { step, cost: BigNumber.from(0) };
-              }
-
-              if (isAllowanceError && !hasApprovalBefore) {
+              if (isAllowanceError) {
                 return { step, cost: BigNumber.from(0) };
               }
 
