@@ -22,12 +22,14 @@ type ApiOpportunityResponse = StandardOpportunity;
 
 function toOpportunityDetail(api: ApiOpportunityResponse): StandardOpportunityDetail {
   const m = api.metrics;
+  const apy = typeof m.rawApy === 'number' && Number.isFinite(m.rawApy) ? m.rawApy : null;
+  const tvl = typeof m.rawTvl === 'number' && Number.isFinite(m.rawTvl) ? m.rawTvl : null;
 
   return {
     ...api,
     ui: {
-      apy: formatPercentage(m.rawApy ?? 0),
-      tvl: formatTVL(m.rawTvl ?? 0),
+      apy: apy !== null ? formatPercentage(apy) : '—',
+      tvl: tvl !== null ? formatTVL(tvl) : '—',
       deposited: m.deposited,
       depositedUsd: m.depositedUsd,
       earnings: m.earnings,

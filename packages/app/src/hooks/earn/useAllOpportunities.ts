@@ -28,8 +28,17 @@ function parseUsdMetric(s: string | null | undefined): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+function parseMetricNumber(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  return value;
+}
+
 function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
+  const rawApy = parseMetricNumber(m?.rawApy);
+  const rawTvl = parseMetricNumber(m?.rawTvl);
   return {
     id: opp.id,
     name: opp.name ?? opp.id,
@@ -37,18 +46,18 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     token: opp.token,
     tokenIcon: opp.tokenIcon ?? '',
     tokenNetwork: opp.tokenNetwork ?? opp.network,
-    apy: formatPercentage(m?.rawApy ?? 0),
+    apy: rawApy !== null ? formatPercentage(rawApy) : '—',
     apyBreakdown: m?.apyBreakdown,
     deposited: m?.deposited ?? null,
     depositedUsd: parseUsdMetric(m?.depositedUsd),
     earnings: m?.earnings ?? null,
     earningsUsd: parseUsdMetric(m?.earningsUsd),
-    tvl: formatTVL(m?.rawTvl ?? 0),
+    tvl: rawTvl !== null ? formatTVL(rawTvl) : '—',
     protocol: opp.protocol,
     protocolIcon: opp.protocolIcon ?? '',
     vaultAddress: opp.vaultAddress,
-    rawApy: m?.rawApy ?? 0,
-    rawTvl: m?.rawTvl ?? 0,
+    rawApy,
+    rawTvl,
     maturityDate: m?.maturityDate,
   };
 }

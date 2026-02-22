@@ -139,18 +139,33 @@ export function OpportunitiesTable({
   opportunities,
   groupByCategory = false,
 }: OpportunitiesTableProps) {
+  const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
+  const [sortColumn, setSortColumn] = useState<SortColumn>('tvl');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const compareMetric = useCallback(
+    (aValue: number | null, bValue: number | null) => {
+      if (aValue === null && bValue === null) {
+        return 0;
+      }
+      if (aValue === null) {
+        return 1;
+      }
+      if (bValue === null) {
+        return -1;
+      }
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    },
+    [sortDirection],
+  );
+
   const visibleOpportunities = useMemo(
     () =>
       groupByCategory
-        ? opportunities.filter((opportunity) => opportunity.rawApy > 0)
+        ? opportunities.filter((opportunity) => (opportunity.rawApy ?? 0) > 0)
         : opportunities,
     [groupByCategory, opportunities],
   );
-
-  const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
-
-  const [sortColumn, setSortColumn] = useState<SortColumn>('tvl');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const toggleCategory = useCallback((category: OpportunityCategory) => {
     setExpandedCategories((prev) => {
@@ -194,15 +209,10 @@ export function OpportunitiesTable({
         let sorted = group;
         if (sortColumn) {
           sorted = [...group].sort((a, b) => {
-            let comparison = 0;
-
             if (sortColumn === 'apy') {
-              comparison = a.rawApy - b.rawApy;
-            } else if (sortColumn === 'tvl') {
-              comparison = a.rawTvl - b.rawTvl;
+              return compareMetric(a.rawApy, b.rawApy);
             }
-
-            return sortDirection === 'asc' ? comparison : -comparison;
+            return compareMetric(a.rawTvl, b.rawTvl);
           });
         }
         groups[category] = sorted;
@@ -210,7 +220,7 @@ export function OpportunitiesTable({
     });
 
     return groups;
-  }, [visibleOpportunities, groupByCategory, sortColumn, sortDirection]);
+  }, [visibleOpportunities, groupByCategory, sortColumn, compareMetric]);
 
   const categoryOrder: OpportunityCategory[] = [OpportunityCategory.Lend];
 
@@ -230,15 +240,10 @@ export function OpportunitiesTable({
 
     if (sortColumn) {
       return [...opportunities].sort((a, b) => {
-        let comparison = 0;
-
         if (sortColumn === 'apy') {
-          comparison = a.rawApy - b.rawApy;
-        } else if (sortColumn === 'tvl') {
-          comparison = a.rawTvl - b.rawTvl;
+          return compareMetric(a.rawApy, b.rawApy);
         }
-
-        return sortDirection === 'asc' ? comparison : -comparison;
+        return compareMetric(a.rawTvl, b.rawTvl);
       });
     }
 
@@ -247,7 +252,7 @@ export function OpportunitiesTable({
       const bValue = b.depositedUsd ?? 0;
       return bValue - aValue;
     });
-  }, [opportunities, groupByCategory, sortColumn, sortDirection]);
+  }, [opportunities, groupByCategory, sortColumn, compareMetric]);
 
   if (groupByCategory && groupedOpportunities) {
     return (

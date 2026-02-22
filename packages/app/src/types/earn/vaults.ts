@@ -51,7 +51,7 @@ export interface OpportunityTableRow {
   protocol: string;
   protocolIcon: string;
   vaultAddress: string;
-  rawApy: number;
-  rawTvl: number;
+  rawApy: number | null;
+  rawTvl: number | null;
   maturityDate?: string;
 }

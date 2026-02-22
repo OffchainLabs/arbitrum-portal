@@ -41,7 +41,7 @@ export function usePortfolioMetrics(
       netApy ??
       (() => {
         const weightedApySum = opportunities.reduce(
-          (sum, opp) => sum + opp.rawApy * (opp.depositedUsd ?? 0),
+          (sum, opp) => sum + (opp.rawApy ?? 0) * (opp.depositedUsd ?? 0),
           0,
         );
         return totalValue > 0 ? weightedApySum / totalValue : 0;

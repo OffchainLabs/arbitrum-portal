@@ -11,12 +11,11 @@ export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesSh
     .filter((opp) => opp.category === OpportunityCategory.Lend)
     .reduce<OpportunityTableRow | null>(
       (bestOpportunity, currentOpportunity) =>
-        !bestOpportunity || currentOpportunity.rawTvl > bestOpportunity.rawTvl
+        !bestOpportunity || (currentOpportunity.rawTvl ?? 0) > (bestOpportunity.rawTvl ?? 0)
           ? currentOpportunity
           : bestOpportunity,
       null,
     );
-
   if (!best) {
     return null;
   }

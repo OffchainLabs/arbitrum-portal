@@ -28,8 +28,8 @@ export interface OpportunityFilters {
 }
 
 export interface StandardOpportunityMetrics {
-  rawApy: number;
-  rawTvl: number;
+  rawApy: number | null;
+  rawTvl: number | null;
   deposited: string | null;
   /** Raw numeric value or null. No $ or locale formatting. */
   depositedUsd: string | null;
