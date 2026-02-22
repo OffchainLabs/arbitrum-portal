@@ -8,6 +8,16 @@ export enum Vendor {
 
 export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
 export type EarnNetwork = (typeof EARN_NETWORKS)[number];
+export const EARN_TRANSACTION_ACTIONS = [
+  'deposit',
+  'redeem',
+  'swap',
+  'enter',
+  'exit',
+  'rollover',
+  'claim',
+] as const;
+export type EarnTransactionAction = (typeof EARN_TRANSACTION_ACTIONS)[number];
 
 export interface OpportunityFilters {
   network?: EarnNetwork;
@@ -95,13 +105,13 @@ export interface AvailableActions {
   opportunityId: string;
   vendor: Vendor;
   userAddress: string;
-  availableActions: string[];
+  availableActions: EarnTransactionAction[];
   transactionContext: StandardTransactionContext | null;
 }
 
 export interface TransactionQuoteRequest {
   category: OpportunityCategory;
-  action: 'deposit' | 'redeem' | 'swap' | 'enter' | 'exit' | 'rollover' | 'claim';
+  action: EarnTransactionAction;
   amount: string;
   userAddress: string;
   inputTokenAddress?: string;
