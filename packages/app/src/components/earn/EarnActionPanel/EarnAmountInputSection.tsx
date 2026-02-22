@@ -26,7 +26,7 @@ interface EarnAmountInputSectionProps {
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
-  decimals?: number; // Token decimals for input validation
+  decimals?: number;
 }
 
 export function EarnAmountInputSection({
@@ -42,7 +42,7 @@ export function EarnAmountInputSection({
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
-  decimals = 18, // Default to 18 decimals if not provided
+  decimals = 18,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
   const parsedBalanceFromLabel = Number(currentBalance.replace(/[^0-9.]/g, ''));
@@ -51,9 +51,11 @@ export function EarnAmountInputSection({
   const perUnitUsd =
     currentBalanceNumeric > 0 && currentUsdValue != null
       ? currentUsdValue / currentBalanceNumeric
-      : 0;
+      : null;
   const currentInputUsdValue =
-    Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber * perUnitUsd : 0;
+    perUnitUsd != null
+      ? Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd
+      : null;
 
   return (
     <div className="bg-neutral-100 rounded-lg flex flex-col p-4">
@@ -97,7 +99,7 @@ export function EarnAmountInputSection({
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">
-          <span>{formatUSD(currentInputUsdValue)}</span>
+          <span>{currentInputUsdValue != null ? `~${formatUSD(currentInputUsdValue)}` : '—'}</span>
           {isConnected && <span>Balance: {currentBalance}</span>}
         </div>
       </div>
