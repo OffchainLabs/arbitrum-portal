@@ -89,6 +89,10 @@ export function useUserPositions(
   userAddress: string | null,
   allowedNetworks: string[] = ['arbitrum'],
 ): UseUserPositionsResult {
+  const swrKey = userAddress
+    ? (['userPositions', userAddress, allowedNetworks[0] || 'arbitrum'] as const)
+    : null;
+
   const {
     data: rawData,
     error,
@@ -96,15 +100,11 @@ export function useUserPositions(
     mutate,
     ...rest
   } = useSWRImmutable<UserPositionsResponse>(
-    userAddress ? ['userPositions', userAddress, allowedNetworks.join(',')] : null,
-    async () => {
-      if (!userAddress) {
-        throw new Error('User address is required');
-      }
-
+    swrKey,
+    async ([, keyUserAddress, network]: readonly [string, string, string]) => {
       const params = new URLSearchParams({
-        userAddress,
-        network: allowedNetworks[0] || 'arbitrum',
+        userAddress: keyUserAddress,
+        network,
       });
 
       const response = await fetch(`/api/onchain-actions/v1/earn/positions?${params.toString()}`);
