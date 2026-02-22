@@ -1,17 +1,17 @@
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-import type { StandardOpportunityDetail } from '@/app-hooks/earn/useOpportunityDetails';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatCompactNumber, formatTVL } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
+import type { StandardOpportunityLend } from '@/earn-api/types';
 
 import { ActionPanelPlaceholder } from './ActionPanelPlaceholder';
 import { ChartPlaceholder } from './ChartPlaceholder';
 import { TransactionHistoryPlaceholder } from './TransactionHistoryPlaceholder';
 
 interface LendOpportunityDetailsPageProps {
-  opportunity: StandardOpportunityDetail;
+  opportunity: StandardOpportunityLend;
 }
 
 export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetailsPageProps) {

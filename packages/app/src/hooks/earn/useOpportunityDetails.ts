@@ -2,44 +2,10 @@ import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 import { type EarnNetwork, type StandardOpportunity } from '@/earn-api/types';
 
-type OpportunityUiMetrics = {
-  apy: string;
-  tvl: string;
-  deposited: string | null;
-  depositedUsd: string | null;
-  earnings: string | null;
-  earningsUsd: string | null;
-};
-
-export type StandardOpportunityDetail = StandardOpportunity & {
-  ui: OpportunityUiMetrics;
-};
-
-type ApiOpportunityResponse = StandardOpportunity;
-
-function toOpportunityDetail(api: ApiOpportunityResponse): StandardOpportunityDetail {
-  const m = api.metrics;
-  const apy = typeof m.rawApy === 'number' && Number.isFinite(m.rawApy) ? m.rawApy : null;
-  const tvl = typeof m.rawTvl === 'number' && Number.isFinite(m.rawTvl) ? m.rawTvl : null;
-
-  return {
-    ...api,
-    ui: {
-      apy: apy !== null ? formatPercentage(apy) : '—',
-      tvl: tvl !== null ? formatTVL(tvl) : '—',
-      deposited: m.deposited,
-      depositedUsd: m.depositedUsd,
-      earnings: m.earnings,
-      earningsUsd: m.earningsUsd,
-    },
-  };
-}
-
 interface UseOpportunityDetailsResult {
-  data: StandardOpportunityDetail | null;
+  data: StandardOpportunity | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -58,7 +24,7 @@ export function useOpportunityDetails(
     isAddress(opportunityId) &&
     OPPORTUNITY_CATEGORIES.includes(category);
 
-  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<StandardOpportunityDetail>(
+  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<StandardOpportunity>(
     isValid ? ([opportunityId, category, network, 'opportunity-details'] as const) : null,
     async ([keyOpportunityId, keyCategory, keyNetwork]: readonly [
       string,
@@ -73,8 +39,7 @@ export function useOpportunityDetails(
       if (!response.ok) {
         throw new Error(`Failed to fetch opportunity details: ${response.statusText}`);
       }
-      const api = (await response.json()) as ApiOpportunityResponse;
-      return toOpportunityDetail(api);
+      return (await response.json()) as StandardOpportunity;
     },
     { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
   );

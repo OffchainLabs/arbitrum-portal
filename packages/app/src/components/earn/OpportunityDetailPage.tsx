@@ -52,5 +52,13 @@ export function OpportunityDetailPage({ opportunityId, category }: OpportunityDe
     );
   }
 
+  if (data.category !== OpportunityCategory.Lend) {
+    return (
+      <div className="rounded border-error bg-error/20 p-8 text-center">
+        <p className="text-error">Unsupported category: {data.category}</p>
+      </div>
+    );
+  }
+
   return <LendOpportunityDetailsPage opportunity={data} />;
 }
