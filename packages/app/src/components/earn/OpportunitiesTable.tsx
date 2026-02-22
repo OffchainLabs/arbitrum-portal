@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   OpportunityCategory,
@@ -21,17 +21,17 @@ interface OpportunitiesTableProps {
 
 type GroupedOpportunities = Record<OpportunityCategory, OpportunityTableRow[]>;
 
-type SortColumn = 'apy' | 'tvl' | null;
+type SortColumn = 'apy' | 'holdings' | 'tvl' | null;
 type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
 
 interface SortableColumnHeaderProps {
-  column: 'apy' | 'tvl';
+  column: NonNullable<SortColumn>;
   label: string;
   isActive: boolean;
   sortDirection: SortDirection;
-  onSort: (column: 'apy' | 'tvl') => void;
+  onSort: (column: NonNullable<SortColumn>) => void;
 }
 
 function SortableColumnHeader({
@@ -70,7 +70,7 @@ function SortableColumnHeader({
 interface TableHeaderProps {
   sortColumn: SortColumn;
   sortDirection: SortDirection;
-  onSort: (column: 'apy' | 'tvl') => void;
+  onSort: (column: NonNullable<SortColumn>) => void;
 }
 
 function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
@@ -92,9 +92,13 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
         />
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
-        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">
-          Your Holdings
-        </p>
+        <SortableColumnHeader
+          column="holdings"
+          label="Your Holdings"
+          isActive={sortColumn === 'holdings'}
+          sortDirection={sortDirection}
+          onSort={onSort}
+        />
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
         <div className="flex items-center gap-1.5">
@@ -140,8 +144,13 @@ export function OpportunitiesTable({
   groupByCategory = false,
 }: OpportunitiesTableProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
-  const [sortColumn, setSortColumn] = useState<SortColumn>('tvl');
+  const [sortColumn, setSortColumn] = useState<SortColumn>(groupByCategory ? 'tvl' : 'holdings');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  useEffect(() => {
+    setSortColumn(groupByCategory ? 'tvl' : 'holdings');
+    setSortDirection('desc');
+  }, [groupByCategory]);
 
   const compareMetric = useCallback(
     (aValue: number | null, bValue: number | null) => {
@@ -180,7 +189,7 @@ export function OpportunitiesTable({
   }, []);
 
   const handleSort = useCallback(
-    (column: 'apy' | 'tvl') => {
+    (column: NonNullable<SortColumn>) => {
       if (sortColumn === column) {
         setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
       } else {
@@ -212,6 +221,9 @@ export function OpportunitiesTable({
             if (sortColumn === 'apy') {
               return compareMetric(a.rawApy, b.rawApy);
             }
+            if (sortColumn === 'holdings') {
+              return compareMetric(a.depositedUsd, b.depositedUsd);
+            }
             return compareMetric(a.rawTvl, b.rawTvl);
           });
         }
@@ -242,6 +254,9 @@ export function OpportunitiesTable({
       return [...opportunities].sort((a, b) => {
         if (sortColumn === 'apy') {
           return compareMetric(a.rawApy, b.rawApy);
+        }
+        if (sortColumn === 'holdings') {
+          return compareMetric(a.depositedUsd, b.depositedUsd);
         }
         return compareMetric(a.rawTvl, b.rawTvl);
       });
