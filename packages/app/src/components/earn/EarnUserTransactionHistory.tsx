@@ -15,10 +15,7 @@ import {
 } from '@/bridge/state/app/utils';
 import { type EarnNetwork } from '@/earn-api/types';
 
-import { initializeDayjs } from '../../initialization';
 import { useEarnDialogs } from './EarnDialogsProvider';
-
-initializeDayjs();
 
 function getDateStr(timestamp: number): string {
   if (timestamp === 0) return '';

@@ -14,6 +14,7 @@ import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { config } from '@/bridge/state';
 
+import { initializeDayjs } from '../../../initialization';
 import { getProps } from './wagmi/setup';
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
@@ -65,6 +66,7 @@ Object.keys(localStorage).forEach((key) => {
 const queryClient = new QueryClient();
 
 createConfig({ integrator: integratorId });
+initializeDayjs();
 
 export function AppProviders({ children }: PropsWithChildren) {
   const overmind = useMemo(() => createOvermind(config), []);

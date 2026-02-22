@@ -2,7 +2,8 @@
 
 import { BigNumber, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAccount } from 'wagmi';
+import { type Address, getAddress } from 'viem';
+import { useAccount, useBalance } from 'wagmi';
 
 import { getEarnRequestNetwork } from '@/app-hooks/earn/getEarnRequestNetwork';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
@@ -18,7 +19,6 @@ import {
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
-import { useTokenBalance } from '@/app-hooks/earn/useTokenBalance';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
@@ -55,6 +55,19 @@ interface VaultActionPanelProps {
 
 type ActionType = 'supply' | 'withdraw';
 type TxState = 'idle' | 'loading' | 'success';
+const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
+  if (!tokenAddress || tokenAddress === NATIVE_TOKEN_ADDRESS) {
+    return undefined;
+  }
+
+  try {
+    return getAddress(tokenAddress);
+  } catch {
+    return undefined;
+  }
+}
 
 export function VaultActionPanel({
   vault,
@@ -124,17 +137,53 @@ export function VaultActionPanel({
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
   const lpTokenAddress = lpToken?.address ?? null;
 
-  const { balance: assetBalanceOnchain, refetch: refetchAssetBalance } = useTokenBalance({
-    tokenAddress: assetTokenAddress,
+  const normalizedAssetTokenAddress = useMemo(
+    () => normalizeTokenAddress(assetTokenAddress),
+    [assetTokenAddress],
+  );
+  const normalizedLpTokenAddress = useMemo(
+    () => normalizeTokenAddress(lpTokenAddress),
+    [lpTokenAddress],
+  );
+  const isAssetNativeBalance = !assetTokenAddress || assetTokenAddress === NATIVE_TOKEN_ADDRESS;
+  const shouldFetchAssetBalance =
+    isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
+  const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
+
+  const { data: assetBalanceData, refetch: refetchAssetBalance } = useBalance({
+    address: shouldFetchAssetBalance ? walletAddress : undefined,
     chainId: networkChainId,
-    enabled: isConnected && !!walletAddress && !!assetTokenAddress,
+    token: isAssetNativeBalance ? undefined : normalizedAssetTokenAddress,
+    query: {
+      enabled: shouldFetchAssetBalance,
+      retry: 2,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 15_000,
+    },
   });
 
-  const { balance: lpTokenBalanceOnchain, refetch: refetchLpTokenBalance } = useTokenBalance({
-    tokenAddress: lpTokenAddress,
+  const { data: lpTokenBalanceData, refetch: refetchLpTokenBalance } = useBalance({
+    address: shouldFetchLpTokenBalance ? walletAddress : undefined,
     chainId: networkChainId,
-    enabled: isConnected && !!walletAddress && !!lpTokenAddress,
+    token: normalizedLpTokenAddress,
+    query: {
+      enabled: shouldFetchLpTokenBalance,
+      retry: 2,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 15_000,
+    },
   });
+
+  const assetBalanceOnchain = useMemo(
+    () => (assetBalanceData ? BigNumber.from(assetBalanceData.value.toString()) : null),
+    [assetBalanceData],
+  );
+  const lpTokenBalanceOnchain = useMemo(
+    () => (lpTokenBalanceData ? BigNumber.from(lpTokenBalanceData.value.toString()) : null),
+    [lpTokenBalanceData],
+  );
 
   // Use onchain balances when available, fallback to transaction context balances
   const assetBalanceRaw = assetBalanceOnchain || BigNumber.from(asset?.balanceNative ?? '0');
@@ -197,11 +246,22 @@ export function VaultActionPanel({
   }, [transactionQuote]);
 
   // Fetch native ETH balance for gas fee validation
-  const { balance: nativeBalance } = useTokenBalance({
-    tokenAddress: null, // null for native ETH
+  const shouldFetchNativeBalance = isConnected && !!walletAddress && chainId !== 0;
+  const { data: nativeBalanceData } = useBalance({
+    address: shouldFetchNativeBalance ? walletAddress : undefined,
     chainId: fallbackChainIdFromQuote || networkChainId,
-    enabled: isConnected && !!walletAddress && chainId !== 0,
+    query: {
+      enabled: shouldFetchNativeBalance,
+      retry: 2,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 15_000,
+    },
   });
+  const nativeBalance = useMemo(
+    () => (nativeBalanceData ? BigNumber.from(nativeBalanceData.value.toString()) : null),
+    [nativeBalanceData],
+  );
 
   // USD value from transaction context (can be cached, doesn't need onchain fetch)
   const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
@@ -232,8 +292,8 @@ export function VaultActionPanel({
       setAmount('');
       refetchContext();
       // Refetch onchain balances after transaction
-      refetchAssetBalance();
-      refetchLpTokenBalance();
+      void refetchAssetBalance();
+      void refetchLpTokenBalance();
 
       // Extract transaction details for popup and history
       const timestamp = Math.floor(Date.now() / 1000);
