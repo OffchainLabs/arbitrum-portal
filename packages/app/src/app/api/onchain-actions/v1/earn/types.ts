@@ -143,8 +143,6 @@ export type VaultsAction = VaultsActionsResponse extends { actions: infer A }
     ? T
     : never
   : never;
-export type LiFiQuoteResponse = unknown;
-export type PendleConvertRouteResponse = unknown;
 
 export interface StandardTokenContextItem {
   decimals: number;

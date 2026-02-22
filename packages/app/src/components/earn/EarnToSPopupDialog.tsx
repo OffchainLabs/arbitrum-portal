@@ -1,60 +1,13 @@
 'use client';
 
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { useLocalStorage } from '@uidotdev/usehooks';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
 import { Checkbox } from '@/bridge/components/common/Checkbox';
 import { Dialog } from '@/bridge/components/common/Dialog';
-import { DialogProps, DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
+import { DialogProps } from '@/bridge/components/common/Dialog2';
 import { ExternalLink } from '@/components/ExternalLink';
-
-/**
- * Hook to check if Earn ToS has been accepted and show popup if needed
- * @returns Object with `checkAndShowToS` function that returns a promise resolving to whether ToS was accepted
- */
-export function useEarnToS() {
-  const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
-  const [dialogProps, openDialog] = useDialog2();
-
-  const checkAndShowToS = useCallback(async (): Promise<boolean> => {
-    // If already accepted, return true immediately
-    if (tosAccepted) {
-      return true;
-    }
-
-    // Show popup and wait for user response
-    const waitForInput = openDialog('earn_tos');
-
-    const [confirmed, onCloseData] = await waitForInput();
-
-    // Check if checkbox was checked when confirmed
-    if (
-      confirmed &&
-      onCloseData &&
-      typeof onCloseData === 'object' &&
-      'tosAccepted' in onCloseData
-    ) {
-      setTosAccepted(true);
-      return true;
-    }
-
-    return false;
-  }, [tosAccepted, openDialog, setTosAccepted]);
-
-  return {
-    checkAndShowToS,
-    isToSAccepted: tosAccepted,
-    EarnToSPopupComponent: () =>
-      dialogProps.openedDialogType === 'earn_tos' ? (
-        <EarnToSPopupDialog {...dialogProps} isOpen />
-      ) : (
-        <DialogWrapper {...dialogProps} />
-      ),
-  };
-}
 
 export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
   const [isChecked, setIsChecked] = useState(false);
@@ -84,7 +37,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       title=""
       closeable={true}
       isFooterHidden={true}
-      className="!border-0 md:!max-w-[400px]"
+      className="!border-0 min-h-screen md:min-h-0 md:!max-w-[400px]"
     >
       <div className="flex flex-col items-start gap-[27px] py-4 w-full">
         {/* Popup Body */}
@@ -112,12 +65,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
               To learn more about the protocols we support and how we chose them, please visit our{' '}
               <ExternalLink
                 href="https://arbitrum.io/tos"
-                className="arb-hover cursor-pointer underline text-white/70"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  event.preventDefault();
-                  window.open('https://arbitrum.io/tos', '_blank');
-                }}
+                className="arb-hover underline text-white/70"
               >
                 terms of service page
               </ExternalLink>

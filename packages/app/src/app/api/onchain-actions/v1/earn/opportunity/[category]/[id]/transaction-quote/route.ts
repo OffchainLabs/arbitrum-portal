@@ -29,35 +29,41 @@ export async function POST(
   try {
     assertCorsOriginAllowed(request);
 
-    const body = (await request.json()) as TransactionQuoteRequest;
-    const category = parseOpportunityCategory(params.category);
+    const parsedRequest = (await request.json()) as TransactionQuoteRequest;
+    const pathCategory = parseOpportunityCategory(params.category);
 
     // Ensure category in body matches path param
-    if (body.category && body.category !== category) {
+    if (parsedRequest.category && parsedRequest.category !== pathCategory) {
       throw new ValidationError(
         'CATEGORY_MISMATCH',
-        `Category in path (${category}) does not match category in body (${body.category})`,
+        `Category in path (${pathCategory}) does not match category in body (${parsedRequest.category})`,
       );
     }
 
-    const action = body.action;
+    const action = parsedRequest.action;
     if (!action) {
       throw new ValidationError('MISSING_ACTION', 'action is required');
     }
-    const amount = assertPositiveNumberString(body.amount, 'amount');
-    const userAddress = assertAddress(body.userAddress ?? null, 'userAddress');
-    const network = parseEarnNetwork(body.network ?? null);
+    const amount = assertPositiveNumberString(parsedRequest.amount, 'amount');
+    const userAddress = assertAddress(parsedRequest.userAddress ?? null, 'userAddress');
+    const network = parseEarnNetwork(parsedRequest.network ?? null);
     const opportunityId = assertAddress(params.id, 'opportunityId');
-    const inputTokenAddress = assertOptionalAddress(body.inputTokenAddress, 'inputTokenAddress');
-    const outputTokenAddress = assertOptionalAddress(body.outputTokenAddress, 'outputTokenAddress');
+    const inputTokenAddress = assertOptionalAddress(
+      parsedRequest.inputTokenAddress,
+      'inputTokenAddress',
+    );
+    const outputTokenAddress = assertOptionalAddress(
+      parsedRequest.outputTokenAddress,
+      'outputTokenAddress',
+    );
 
     const router = new CategoryRouter();
-    const adapter = router.routeToAdapter(category);
+    const adapter = router.routeToAdapter(pathCategory);
     const quote = await adapter.getTransactionQuote(
       opportunityId,
       {
-        ...body,
-        category,
+        ...parsedRequest,
+        category: pathCategory,
         action,
         amount,
         userAddress,
