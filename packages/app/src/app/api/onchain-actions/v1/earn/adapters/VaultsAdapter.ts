@@ -353,12 +353,11 @@ export class VaultsAdapter implements VendorAdapter {
       // Use lpToken balance (actual position balance)
       const lpTokenBalanceNative = position.lpToken?.balanceNative || '0';
       const lpTokenBalanceBigInt = BigInt(lpTokenBalanceNative);
-      const lpTokenDecimals = position.lpToken?.decimals || 18;
+      const lpTokenDecimals = position.lpToken?.decimals ?? 18;
 
       // Use underlying asset symbol for display (better UX - shows USDC instead of hyperUSDC)
       const assetSymbol = position.asset?.symbol || '';
       const assetAddress = position.asset?.address || '';
-      const assetDecimals = position.asset?.decimals || 18;
 
       // Format LP token balance but display with underlying asset symbol
       const formattedAmount = formatUnits(lpTokenBalanceBigInt, lpTokenDecimals);
@@ -384,7 +383,7 @@ export class VaultsAdapter implements VendorAdapter {
         valueUsd,
         tokenAddress: assetAddress,
         tokenSymbol: assetSymbol,
-        tokenDecimals: assetDecimals,
+        tokenDecimals: lpTokenDecimals,
         tokenIcon: position.asset?.assetLogo,
         estimatedEarningsUsd,
         opportunity: {
