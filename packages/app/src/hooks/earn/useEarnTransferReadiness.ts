@@ -2,16 +2,21 @@ import { BigNumber, utils } from 'ethers';
 import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
+import {
+  getInsufficientFundsErrorMessage,
+  getInsufficientFundsForGasFeesErrorMessage,
+} from '@/bridge/components/TransferPanel/useTransferReadinessUtils';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getNetworkName } from '@/bridge/util/networks';
 
 import { useEarnGasEstimate } from './useEarnGasEstimate';
-import {
-  EarnTransferReadinessRichErrorMessage,
-  getInsufficientFundsErrorMessage,
-  getInsufficientFundsForGasFeesErrorMessage,
-} from './useEarnTransferReadinessUtils';
 import type { TransactionStep } from './useTransactionQuote';
+
+export enum EarnTransferReadinessRichErrorMessage {
+  GAS_ESTIMATION_FAILURE = 'Gas estimation failed. Please try again.',
+  INSUFFICIENT_BALANCE = 'Insufficient balance.',
+  INSUFFICIENT_GAS_BALANCE = 'Insufficient balance for gas fees.',
+}
 
 export interface UseEarnTransferReadinessParams {
   amount: string;
