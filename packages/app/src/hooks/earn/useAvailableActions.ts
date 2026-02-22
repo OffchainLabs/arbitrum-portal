@@ -1,3 +1,5 @@
+'use client';
+
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -56,20 +58,26 @@ export function useAvailableActions(params: UseAvailableActionsParams): UseAvail
 
   const { data, error, isLoading, mutate } = useSWRImmutable<AvailableActions>(
     opportunityId && category && userAddress
-      ? ['available-actions', opportunityId, category, userAddress, network]
+      ? ([opportunityId, category, userAddress, network, 'available-actions'] as const)
       : null,
-    async () => {
-      if (!userAddress) {
+    async ([keyOpportunityId, keyCategory, keyUserAddress, keyNetwork]: readonly [
+      string,
+      OpportunityCategory,
+      string,
+      EarnNetwork,
+      string,
+    ]) => {
+      if (!keyUserAddress) {
         throw new Error('userAddress is required');
       }
 
       const queryParams = new URLSearchParams({
-        userAddress,
-        network,
+        userAddress: keyUserAddress,
+        network: keyNetwork,
       });
 
       const response = await fetch(
-        `/api/onchain-actions/v1/earn/opportunity/${category}/${opportunityId}/available-actions?${queryParams.toString()}`,
+        `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/available-actions?${queryParams.toString()}`,
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch available actions: ${response.statusText}`);

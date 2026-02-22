@@ -1,20 +1,16 @@
+'use client';
+
 import { mutate } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
 import { EarnTransactionHistoryRow } from '@/app-components/earn/EarnTransactionHistoryTable';
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
-import { StandardTransactionHistory } from '@/earn-api/types';
-
-export interface TransactionHistoryResponse {
-  opportunityId: string;
-  category: OpportunityCategory;
-  vendor: string;
-  userAddress: string;
-  transactions: StandardTransactionHistory[];
-  total: number;
-  cachedAt?: number;
-  expiresAt?: number;
-}
+import type {
+  EarnNetwork,
+  StandardTransactionHistory,
+  TransactionHistoryResponse,
+  Vendor,
+} from '@/earn-api/types';
 
 type UseEarnTransactionHistoryResult = {
   transactions: EarnTransactionHistoryRow[];
@@ -30,22 +26,28 @@ export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
   userAddress: string | null,
-  network: string = 'arbitrum',
+  network: EarnNetwork = 'arbitrum',
 ): UseEarnTransactionHistoryResult {
   const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
     userAddress && opportunityId
-      ? (['earn-transactions', category, opportunityId, userAddress, network] as const)
+      ? ([category, opportunityId, userAddress, network, 'earn-transactions'] as const)
       : null,
-    async () => {
-      if (!userAddress || !opportunityId) return null;
+    async ([keyCategory, keyOpportunityId, keyUserAddress, keyNetwork]: readonly [
+      OpportunityCategory,
+      string,
+      string,
+      EarnNetwork,
+      string,
+    ]) => {
+      if (!keyUserAddress || !keyOpportunityId) return null;
 
       const params = new URLSearchParams({
-        userAddress,
-        network,
+        userAddress: keyUserAddress,
+        network: keyNetwork,
       });
 
       const response = await fetch(
-        `/api/onchain-actions/v1/earn/opportunity/${category}/${opportunityId}/transactions?${params.toString()}`,
+        `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/transactions?${params.toString()}`,
       );
 
       if (!response.ok) {
@@ -66,7 +68,7 @@ export function useEarnTransactionHistory(
     data?.transactions.map((tx: StandardTransactionHistory) => ({
       timestamp: tx.timestamp,
       eventType: tx.eventType,
-      assetAmount: tx.assetAmount,
+      assetAmountRaw: tx.assetAmountRaw,
       assetSymbol: tx.assetSymbol,
       decimals: tx.decimals,
       assetLogo: tx.assetLogo,
@@ -93,13 +95,13 @@ export async function addTransactionToHistory(params: {
   category: OpportunityCategory;
   opportunityId: string;
   userAddress: string;
-  network: string;
-  vendor: string;
+  network: EarnNetwork;
+  vendor: Vendor;
   transaction: StandardTransactionHistory;
 }): Promise<void> {
   const { category, opportunityId, userAddress, network, vendor, transaction } = params;
 
-  const historyKey = ['earn-transactions', category, opportunityId, userAddress, network] as const;
+  const historyKey = [category, opportunityId, userAddress, network, 'earn-transactions'] as const;
 
   await mutate(
     historyKey,

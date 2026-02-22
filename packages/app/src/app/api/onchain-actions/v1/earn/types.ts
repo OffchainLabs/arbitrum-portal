@@ -306,7 +306,7 @@ export interface UserPositionsResponse {
 export interface StandardTransactionHistory {
   timestamp: number;
   eventType: string;
-  assetAmount: string;
+  assetAmountRaw: string;
   assetSymbol: string;
   decimals?: number;
   assetLogo?: string;

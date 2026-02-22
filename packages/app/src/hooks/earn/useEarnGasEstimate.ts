@@ -24,20 +24,13 @@ export interface UseEarnGasEstimateResult {
   error: Error | null;
 }
 
-/**
- * Fetch ETH price in USD from CoinGecko. Returns null on failure.
- */
-async function fetchEthPriceUsd(): Promise<number | null> {
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
-    );
-    const data = await response.json();
-    const price = data.ethereum?.usd;
-    return typeof price === 'number' && price > 0 ? price : null;
-  } catch {
+function parseApiEstimateUsd(apiEstimate?: string): number | null {
+  if (!apiEstimate) {
     return null;
   }
+
+  const parsed = parseFloat(apiEstimate.replace('$', '').replace(' USD', ''));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /**
@@ -197,10 +190,10 @@ export function useEarnGasEstimate({
             return;
           }
 
-          // Convert to ETH and fetch USD price
+          // Convert to ETH and reuse API-provided USD estimate when available.
           const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
-          const ethPrice = await fetchEthPriceUsd();
-          const usd = ethPrice != null ? `$${(totalGasCostEth * ethPrice).toFixed(2)} USD` : null;
+          const apiEstimateUsd = parseApiEstimateUsd(apiEstimate);
+          const usd = apiEstimateUsd != null ? `$${apiEstimateUsd.toFixed(2)} USD` : null;
 
           setOnchainGasEstimate({
             eth: totalGasCostEth.toFixed(6),
@@ -238,7 +231,7 @@ export function useEarnGasEstimate({
         debounceTimerRef.current = null;
       }
     };
-  }, [transactionSteps, walletAddress, publicClient, chainId, wagmiConfig, enabled]);
+  }, [transactionSteps, walletAddress, publicClient, chainId, wagmiConfig, enabled, apiEstimate]);
 
   // Handle API estimate fallback
   useEffect(() => {
@@ -261,12 +254,8 @@ export function useEarnGasEstimate({
         return;
       }
 
-      // For API estimates, we have USD already — fetch ETH price to derive ETH amount
-      const ethPrice = await fetchEthPriceUsd();
-      const estimatedEth = ethPrice != null ? cost / ethPrice : null;
-
       setApiGasEstimate({
-        eth: estimatedEth != null ? estimatedEth.toFixed(6) : '—',
+        eth: '—',
         usd: `$${cost.toFixed(2)} USD`,
       });
       setIsLoading(false);

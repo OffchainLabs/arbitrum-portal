@@ -1,42 +1,29 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import type {
+  EarnNetwork,
+  TransactionQuoteRequest,
+  TransactionQuoteResponse,
+  TransactionStep,
+} from '@/earn-api/types';
 
-export interface TransactionStep {
-  step: number;
-  type: 'approval' | 'transaction';
-  to: string;
-  data: string;
-  value?: string;
-  chainId: number;
-  description?: string;
-}
-
-export interface TransactionQuoteResponse {
-  opportunityId: string;
-  vendor: string;
-  action: string;
-  canExecute: boolean;
-  estimatedGas: string;
-  estimatedGasUsd: string;
-  receiveAmount?: string;
-  receiveAmountFormatted?: string;
-  priceImpact?: number;
-  transactionSteps: TransactionStep[];
-}
+export type { TransactionQuoteResponse, TransactionStep };
 
 export interface UseTransactionQuoteParams {
   opportunityId: string | null;
   category: OpportunityCategory;
-  action: 'deposit' | 'redeem' | 'swap' | 'enter' | 'exit' | 'rollover' | 'claim';
+  action: TransactionQuoteRequest['action'];
   amount: string;
   userAddress: string | null;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;
   simulate?: boolean;
-  network?: string;
+  network?: EarnNetwork;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
   enabled?: boolean; // Whether to fetch (default: true)
@@ -100,7 +87,6 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(
     enabled && opportunityId && category && userAddress && debouncedAmount && debouncedAmountNum > 0
       ? [
-          'transaction-quote',
           opportunityId,
           category,
           action,
@@ -113,31 +99,62 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           network,
           rolloverTargetOpportunityId,
           rolloverAmount,
+          'transaction-quote',
         ]
       : null,
-    async (): Promise<TransactionQuoteResponse> => {
+    async (key): Promise<TransactionQuoteResponse> => {
       if (!debouncedAmount || !userAddress) {
         throw new Error('Missing amount or user address');
       }
+
+      const [
+        keyOpportunityId,
+        keyCategory,
+        keyAction,
+        keyUserAddress,
+        keyDebouncedAmount,
+        keyInputTokenAddress,
+        keyOutputTokenAddress,
+        keySlippage,
+        keySimulate,
+        keyNetwork,
+        keyRolloverTargetOpportunityId,
+        keyRolloverAmount,
+      ] = key as readonly [
+        string,
+        OpportunityCategory,
+        TransactionQuoteRequest['action'],
+        string,
+        string,
+        string | undefined,
+        string | undefined,
+        number,
+        boolean,
+        EarnNetwork,
+        string | undefined,
+        string | undefined,
+        string,
+      ];
+
       const response = await fetch(
-        `/api/onchain-actions/v1/earn/opportunity/${category}/${opportunityId}/transaction-quote`,
+        `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/transaction-quote`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            category,
-            action,
-            amount: debouncedAmount,
-            userAddress,
-            inputTokenAddress,
-            outputTokenAddress,
-            slippage,
-            simulate,
-            network,
-            rolloverTargetOpportunityId,
-            rolloverAmount,
+            category: keyCategory,
+            action: keyAction,
+            amount: keyDebouncedAmount,
+            userAddress: keyUserAddress,
+            inputTokenAddress: keyInputTokenAddress,
+            outputTokenAddress: keyOutputTokenAddress,
+            slippage: keySlippage,
+            simulate: keySimulate,
+            network: keyNetwork,
+            rolloverTargetOpportunityId: keyRolloverTargetOpportunityId,
+            rolloverAmount: keyRolloverAmount,
           }),
         },
       );

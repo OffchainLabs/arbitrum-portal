@@ -2,13 +2,14 @@
 
 import { ArrowTopRightOnSquareIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
-import { utils } from 'ethers';
+import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { shortenAddress } from '@/bridge/util/CommonUtils';
+import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
 
@@ -17,7 +18,7 @@ import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 export interface EarnTransactionHistoryRow {
   timestamp: number;
   eventType: string;
-  assetAmount: string;
+  assetAmountRaw: string;
   assetSymbol: string;
   decimals?: number;
   assetLogo?: string;
@@ -36,56 +37,13 @@ interface EarnTransactionHistoryTableProps {
   protocolLogo?: string;
 }
 
-/**
- * Parse formatted amount string (e.g., "1,234.56 USDC", "< 0.0001 weETH") and convert to raw units
- * Returns amount in raw units (wei) as a string
- */
-function parseAmountToRawUnits(formattedAmount: string, decimals: number = 18): string {
-  // Remove the symbol part (everything after the last space)
-  // This preserves prefixes like "< " and handles amounts without symbols
-  const trimmed = formattedAmount.trim();
-  const lastSpaceIndex = trimmed.lastIndexOf(' ');
-  const amountPart = lastSpaceIndex === -1 ? trimmed : trimmed.slice(0, lastSpaceIndex).trim();
-
-  // Handle empty or undefined amountPart
-  if (!amountPart) {
-    return '0';
-  }
-
-  // Handle "<" prefix for very small amounts (e.g., "< 0.0001", "< 0.00001")
-  const hasLessThanPrefix = amountPart.startsWith('<');
-  // Remove "<", commas, and trim whitespace
-  const numericPart = amountPart.replace(/[<,]/g, '').trim();
-
-  // Parse the numeric value
-  let numericAmount = parseFloat(numericPart);
-
-  if (isNaN(numericAmount) || numericAmount <= 0) {
-    // If we have a "<" prefix but parsing failed, use a very small non-zero value
-    if (hasLessThanPrefix) {
-      // Use 1 wei (smallest non-zero value) to ensure it doesn't display as 0
-      return '1';
-    }
-    return '0';
-  }
-
-  // For amounts with "<" prefix, use half the threshold value
-  // This ensures the value is small enough to still display as "< threshold" when reformatted
-  if (hasLessThanPrefix) {
-    numericAmount = numericAmount * 0.5;
-  }
-
-  // Convert to raw units with proper precision
-  // Use a high precision to avoid rounding errors for very small amounts
-  const precision = Math.max(decimals + 2, 20); // Extra precision to avoid rounding
-  const fixedAmount = numericAmount.toFixed(precision);
-
-  try {
-    return utils.parseUnits(fixedAmount, decimals).toString();
-  } catch (error) {
-    // If parsing fails (e.g., value too small), return minimum non-zero value
-    return '1';
-  }
+function formatHistoryAmount(row: EarnTransactionHistoryRow): string {
+  const rawAmount = row.assetAmountRaw || '0';
+  const decimals = row.decimals ?? 18;
+  return formatAmount(BigNumber.from(rawAmount), {
+    decimals,
+    symbol: row.assetSymbol,
+  });
 }
 
 export function EarnTransactionHistoryTable({
@@ -115,7 +73,7 @@ export function EarnTransactionHistoryTable({
     const action = actionMap[row.eventType.toLowerCase()] || row.eventType.toLowerCase();
 
     const decimals = row.decimals ?? 18;
-    const amountRaw = parseAmountToRawUnits(row.assetAmount, decimals);
+    const amountRaw = row.assetAmountRaw || '0';
 
     const transactionDetails: TransactionDetails = {
       action,
@@ -215,7 +173,7 @@ export function EarnTransactionHistoryTable({
                 )}
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap truncate">
-                    {row.assetAmount}
+                    {formatHistoryAmount(row)}
                   </p>
                   <div className="flex items-center gap-1.5">
                     <SafeImage
@@ -320,7 +278,7 @@ export function EarnTransactionHistoryTable({
                           </p>
                         </div>
                         <p className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap">
-                          {row.assetAmount}
+                          {formatHistoryAmount(row)}
                         </p>
                       </div>
                     </div>

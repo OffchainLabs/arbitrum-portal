@@ -387,19 +387,14 @@ export class VaultsAdapter implements VendorAdapter {
 
     return response.data
       .map((event) => {
-        const amountNative = BigInt(event.assetAmountNative || '0');
         const decimals = response.asset.decimals || 18;
-        const amountFormatted = formatAmount(Number(formatUnits(amountNative, decimals)), {
-          decimals,
-          symbol: response.asset.symbol,
-        });
 
         const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
 
         return {
           timestamp: event.timestamp,
           eventType,
-          assetAmount: amountFormatted,
+          assetAmountRaw: event.assetAmountNative || '0',
           assetSymbol: response.asset.symbol,
           decimals,
           assetLogo: response.asset.assetLogo,

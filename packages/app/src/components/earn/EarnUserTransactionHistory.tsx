@@ -13,6 +13,7 @@ import {
   getStandardizedTime,
   normalizeTimestamp,
 } from '@/bridge/state/app/utils';
+import { type EarnNetwork } from '@/earn-api/types';
 
 import { initializeDayjs } from '../../initialization';
 import { useEarnTransactionDetails } from './EarnTransactionDetailsPopup';
@@ -53,7 +54,7 @@ interface EarnUserTransactionHistoryProps {
   category: OpportunityCategory;
   opportunityId: string;
   opportunityName: string;
-  network?: string;
+  network?: EarnNetwork;
   protocolName?: string;
   protocolLogo?: string;
 }

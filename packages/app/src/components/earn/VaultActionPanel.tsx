@@ -28,7 +28,7 @@ import { formatAmount, normalizeAmountForParseUnits } from '@/bridge/util/Number
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import type { EarnNetwork, StandardTransactionHistory } from '@/earn-api/types';
+import { type EarnNetwork, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
 
 import {
   EarnActionSubmitButton,
@@ -252,10 +252,6 @@ export function VaultActionPanel({
       const timestamp = Math.floor(Date.now() / 1000);
       const txChainId = chainId || 0;
       const txChainName = getNetworkName(txChainId);
-      const formattedAmount = formatAmount(BigNumber.from(amountInRawUnits || '0'), {
-        decimals: assetDecimals,
-        symbol: assetSymbol,
-      });
 
       const transactionDetails = {
         action: selectedAction === 'supply' ? 'supply' : 'withdraw',
@@ -282,7 +278,7 @@ export function VaultActionPanel({
         const newTransaction: StandardTransactionHistory = {
           timestamp,
           eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
-          assetAmount: formattedAmount,
+          assetAmountRaw: amountInRawUnits || '0',
           assetSymbol: assetSymbol ?? '',
           decimals: assetDecimals,
           assetLogo: vault.asset?.assetLogo,
@@ -296,7 +292,7 @@ export function VaultActionPanel({
           opportunityId: vault.address,
           userAddress: walletAddress,
           network: requestNetwork,
-          vendor: 'vaults',
+          vendor: Vendor.Vaults,
           transaction: newTransaction,
         });
       }
