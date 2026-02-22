@@ -32,7 +32,6 @@ interface SortableColumnHeaderProps {
   isActive: boolean;
   sortDirection: SortDirection;
   onSort: (column: 'apy' | 'tvl') => void;
-  inactiveLabelClass?: string;
 }
 
 function SortableColumnHeader({
@@ -41,7 +40,6 @@ function SortableColumnHeader({
   isActive,
   sortDirection,
   onSort,
-  inactiveLabelClass = 'font-semibold',
 }: SortableColumnHeaderProps) {
   return (
     <button
@@ -51,7 +49,7 @@ function SortableColumnHeader({
     >
       <p
         className={`text-xs whitespace-nowrap ${
-          isActive ? 'font-bold text-white' : `${inactiveLabelClass} text-white opacity-50`
+          isActive ? 'font-bold text-white' : 'font-semibold text-white opacity-50'
         }`}
       >
         {label}
@@ -127,7 +125,6 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
           isActive={sortColumn === 'tvl'}
           sortDirection={sortDirection}
           onSort={onSort}
-          inactiveLabelClass="font-normal"
         />
       </div>
       <div className="flex-1 flex gap-2 items-center min-w-0">

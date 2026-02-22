@@ -58,10 +58,10 @@ export function useUserPositions(
     ...rest
   } = useSWRImmutable<UserPositionsResponse>(
     swrKey,
-    async ([keyUserAddress, network]: readonly [string, string, string]) => {
+    async ([keyUserAddress, keyNetwork]: readonly [string, EarnNetwork, 'userPositions']) => {
       const params = new URLSearchParams({
         userAddress: keyUserAddress,
-        network,
+        network: keyNetwork,
       });
 
       const response = await fetch(`/api/onchain-actions/v1/earn/positions?${params.toString()}`);

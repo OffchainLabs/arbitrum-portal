@@ -34,6 +34,16 @@ export function OpportunityDetailPage({ opportunityId, category }: OpportunityDe
     );
   }
 
+  if (data.category !== category) {
+    return (
+      <div className="rounded border-error bg-error/20 p-8 text-center">
+        <p className="text-error">
+          Opportunity category mismatch: expected {category}, got {data.category}.
+        </p>
+      </div>
+    );
+  }
+
   if (category !== OpportunityCategory.Lend) {
     return (
       <div className="rounded border-error bg-error/20 p-8 text-center">

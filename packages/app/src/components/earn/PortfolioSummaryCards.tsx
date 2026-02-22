@@ -2,6 +2,7 @@
 
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { usePortfolioMetrics } from '@/app-hooks/earn/usePortfolioMetrics';
 import {
@@ -113,7 +114,10 @@ export function PortfolioSummaryCards({
               return (
                 <div key={type} className="flex items-center gap-2">
                   <div
-                    className={`w-2 h-2 rounded-[5px] shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
+                    className={twMerge(
+                      'w-2 h-2 rounded-[5px] shrink-0',
+                      CATEGORY_INDICATOR_CLASS[category],
+                    )}
                   />
                   <p className="text-xs font-medium text-white opacity-80 whitespace-nowrap">
                     {type}
@@ -214,7 +218,10 @@ export function PortfolioSummaryCards({
                     <div key={type} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-2 h-2 rounded shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
+                          className={twMerge(
+                            'w-2 h-2 rounded shrink-0',
+                            CATEGORY_INDICATOR_CLASS[category],
+                          )}
                         />
                         <p className="text-xs text-white opacity-80">{type}</p>
                       </div>
@@ -313,7 +320,10 @@ export function PortfolioSummaryCards({
                   <div key={type} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-2 h-2 rounded shrink-0 ${CATEGORY_INDICATOR_CLASS[category]}`}
+                        className={twMerge(
+                          'w-2 h-2 rounded shrink-0',
+                          CATEGORY_INDICATOR_CLASS[category],
+                        )}
                       />
                       <p className="text-xs text-white opacity-80">{type}</p>
                     </div>
