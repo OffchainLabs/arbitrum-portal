@@ -50,15 +50,7 @@ export function OpportunityDetailPage({
     );
   }
 
-  if (category !== OpportunityCategory.Lend) {
-    return (
-      <div className="rounded border-error bg-error/20 p-8 text-center">
-        <p className="text-error">Unknown category: {category}</p>
-      </div>
-    );
-  }
-
-  if (data.category !== OpportunityCategory.Lend) {
+  if (data.category !== OpportunityCategory.Lend || !('lend' in data)) {
     return (
       <div className="rounded border-error bg-error/20 p-8 text-center">
         <p className="text-error">Unsupported category: {data.category}</p>
