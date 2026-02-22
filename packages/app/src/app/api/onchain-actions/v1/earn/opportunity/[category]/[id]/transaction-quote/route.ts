@@ -1,12 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAddress } from 'viem';
+import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
 import {
-  OPPORTUNITY_CATEGORIES,
-  OpportunityCategory,
-  TransactionQuoteRequest,
-} from '../../../../types';
+  assertCorsOriginAllowed,
+  errorResponse,
+  jsonResponse,
+  optionsResponse,
+} from '../../../../lib/http';
+import {
+  ValidationError,
+  assertAddress,
+  assertOptionalAddress,
+  assertPositiveNumberString,
+  parseEarnNetwork,
+  parseOpportunityCategory,
+} from '../../../../lib/validation';
+import { TransactionQuoteRequest } from '../../../../types';
 
 /**
  * Get transaction quote - "How do I execute this?"
@@ -18,99 +27,61 @@ export async function POST(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
-    const body = (await request.json()) as TransactionQuoteRequest;
-    const { action, amount, userAddress } = body;
-    const category = params.category as OpportunityCategory;
+    assertCorsOriginAllowed(request);
 
-    if (!OPPORTUNITY_CATEGORIES.includes(category)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_CATEGORY',
-            message: `Invalid category: ${category}. Must be one of: ${OPPORTUNITY_CATEGORIES.join(', ')}`,
-          },
-        },
-        { status: 400 },
-      );
-    }
+    const body = (await request.json()) as TransactionQuoteRequest;
+    const category = parseOpportunityCategory(params.category);
 
     // Ensure category in body matches path param
     if (body.category && body.category !== category) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'CATEGORY_MISMATCH',
-            message: `Category in path (${category}) does not match category in body (${body.category})`,
-          },
-        },
-        { status: 400 },
+      throw new ValidationError(
+        'CATEGORY_MISMATCH',
+        `Category in path (${category}) does not match category in body (${body.category})`,
       );
     }
 
-    if (!action || !amount || !userAddress) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_REQUEST',
-            message: 'action, amount, and userAddress are required',
-          },
-        },
-        { status: 400 },
-      );
+    const action = body.action;
+    if (!action) {
+      throw new ValidationError('MISSING_ACTION', 'action is required');
     }
-
-    if (!isAddress(userAddress)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_USER_ADDRESS',
-            message: 'userAddress must be a valid Ethereum address',
-          },
-        },
-        { status: 400 },
-      );
-    }
-
-    const network = body.network || 'arbitrum';
-    const opportunityId = params.id;
+    const amount = assertPositiveNumberString(body.amount, 'amount');
+    const userAddress = assertAddress(body.userAddress ?? null, 'userAddress');
+    const network = parseEarnNetwork(body.network ?? null);
+    const opportunityId = assertAddress(params.id, 'opportunityId');
+    const inputTokenAddress = assertOptionalAddress(body.inputTokenAddress, 'inputTokenAddress');
+    const outputTokenAddress = assertOptionalAddress(body.outputTokenAddress, 'outputTokenAddress');
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
-    const quote = await adapter.getTransactionQuote(opportunityId, { ...body, category }, network);
+    const quote = await adapter.getTransactionQuote(
+      opportunityId,
+      {
+        ...body,
+        category,
+        action,
+        amount,
+        userAddress,
+        inputTokenAddress,
+        outputTokenAddress,
+      },
+      network,
+    );
 
     // No caching - transaction quote is dynamic based on amount and user state
-    return NextResponse.json(quote, {
+    return jsonResponse(request, quote, {
       headers: {
         'Cache-Control': 'no-store',
       },
     });
   } catch (error) {
     console.error('Error preparing transaction:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Failed to get transaction quote';
-
-    // Determine status code based on error type
-    // Validation errors (amount too low, invalid input, etc.) should be 400
-    // Server errors (API failures, network issues, etc.) should be 500
-    const isValidationError =
-      errorMessage.includes('too small') ||
-      errorMessage.includes('too low') ||
-      errorMessage.includes('minimum') ||
-      errorMessage.includes('must be greater') ||
-      errorMessage.includes('required') ||
-      errorMessage.includes('Invalid') ||
-      errorMessage.includes('invalid');
-
-    const statusCode = isValidationError ? 400 : 500;
-
-    return NextResponse.json(
-      {
-        error: {
-          code: 'TRANSACTION_QUOTE_ERROR',
-          message: errorMessage,
-        },
-      },
-      { status: statusCode },
-    );
+    return errorResponse(request, error, {
+      code: 'TRANSACTION_QUOTE_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to get transaction quote',
+    });
   }
+}
+
+export function OPTIONS(request: NextRequest) {
+  return optionsResponse(request);
 }

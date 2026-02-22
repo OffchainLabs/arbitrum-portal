@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
 import type { AvailableActions as ApiAvailableActions } from '@/earn-api/types';
@@ -50,7 +50,7 @@ export function useAvailableActions(params: UseAvailableActionsParams): UseAvail
   // 5 minutes refresh interval
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-  const { data, error, isLoading, mutate } = useSWR<AvailableActions>(
+  const { data, error, isLoading, mutate } = useSWRImmutable<AvailableActions>(
     opportunityId && category && userAddress
       ? ['available-actions', opportunityId, category, userAddress, network]
       : null,

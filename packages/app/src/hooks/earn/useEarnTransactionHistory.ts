@@ -84,7 +84,7 @@ export function useEarnTransactionHistory(
 
 /**
  * Utility function to add a transaction to the transaction history cache
- * Performs optimistic update to both SWR cache and localStorage
+ * Performs optimistic update to the in-memory SWR cache
  *
  * @param params - Parameters for adding transaction to history
  * @returns Promise that resolves when the cache has been updated

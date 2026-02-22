@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import useSWR from 'swr';
+import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
 
@@ -97,7 +97,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   const debouncedAmount = useDebounce(amount, 500);
   const debouncedAmountNum = parseFloat(debouncedAmount);
 
-  const { data, error, isLoading, mutate } = useSWR<TransactionQuoteResponse>(
+  const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(
     enabled && opportunityId && category && userAddress && debouncedAmount && debouncedAmountNum > 0
       ? [
           'transaction-quote',

@@ -1,9 +1,19 @@
 import { unstable_cache } from 'next/cache';
-import { NextRequest, NextResponse } from 'next/server';
-import { isAddress } from 'viem';
+import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { AvailableActions, OPPORTUNITY_CATEGORIES, OpportunityCategory } from '../../../../types';
+import {
+  assertCorsOriginAllowed,
+  errorResponse,
+  jsonResponse,
+  optionsResponse,
+} from '../../../../lib/http';
+import {
+  assertAddress,
+  parseEarnNetwork,
+  parseOpportunityCategory,
+} from '../../../../lib/validation';
+import { AvailableActions } from '../../../../types';
 
 /**
  * Get available actions - "What can I do?"
@@ -21,36 +31,13 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
+    assertCorsOriginAllowed(request);
+
     const searchParams = request.nextUrl.searchParams;
-    const category = params.category as OpportunityCategory;
-    const userAddress = searchParams.get('userAddress');
-
-    if (!OPPORTUNITY_CATEGORIES.includes(category)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_CATEGORY',
-            message: `Invalid category: ${category}. Must be one of: ${OPPORTUNITY_CATEGORIES.join(', ')}`,
-          },
-        },
-        { status: 400 },
-      );
-    }
-
-    if (!userAddress || !isAddress(userAddress)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_USER_ADDRESS',
-            message: 'userAddress must be a valid Ethereum address',
-          },
-        },
-        { status: 400 },
-      );
-    }
-
-    const network = searchParams.get('network') || 'arbitrum';
-    const opportunityId = params.id;
+    const category = parseOpportunityCategory(params.category);
+    const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
+    const network = parseEarnNetwork(searchParams.get('network'));
+    const opportunityId = assertAddress(params.id, 'opportunityId');
 
     const cacheKey = `available-actions:${category}:${network}:${opportunityId}:${userAddress}`;
 
@@ -71,21 +58,20 @@ export async function GET(
 
     const availableActions: AvailableActions = await getCachedAvailableActions();
 
-    return NextResponse.json(availableActions, {
+    return jsonResponse(request, availableActions, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
       },
     });
   } catch (error) {
     console.error('Error fetching available actions:', error);
-    return NextResponse.json(
-      {
-        error: {
-          code: 'AVAILABLE_ACTIONS_FETCH_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch available actions',
-        },
-      },
-      { status: 500 },
-    );
+    return errorResponse(request, error, {
+      code: 'AVAILABLE_ACTIONS_FETCH_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to fetch available actions',
+    });
   }
+}
+
+export function OPTIONS(request: NextRequest) {
+  return optionsResponse(request);
 }

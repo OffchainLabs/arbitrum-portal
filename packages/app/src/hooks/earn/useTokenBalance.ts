@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
-import useSWR from 'swr';
+import useSWRImmutable from 'swr/immutable';
 import { Address, PublicClient, getAddress } from 'viem';
 import { useAccount, usePublicClient } from 'wagmi';
 
@@ -98,7 +98,7 @@ export function useTokenBalance({
   const shouldFetch = enabled && !!walletAddress && isConnected;
   const swrKey = shouldFetch ? getTokenBalanceKey(walletAddress, tokenAddress, chainId) : null;
 
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWRImmutable(
     swrKey,
     async (key) => {
       if (!walletAddress || !publicClient) return null;
