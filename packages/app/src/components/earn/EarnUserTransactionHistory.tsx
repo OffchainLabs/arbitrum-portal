@@ -19,6 +19,36 @@ import { useEarnTransactionDetails } from './EarnTransactionDetailsPopup';
 
 initializeDayjs();
 
+function getDateStr(timestamp: number): string {
+  if (timestamp === 0) return '';
+  return getStandardizedDate(normalizeTimestamp(timestamp));
+}
+
+function getTimeStr(timestamp: number): string {
+  if (timestamp === 0) return '\u2014';
+  return getStandardizedTime(normalizeTimestamp(timestamp));
+}
+
+/**
+ * Generate page numbers with ellipsis for pagination.
+ * Returns an array of page numbers and 'ellipsis' strings.
+ */
+function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (currentPage <= 2) {
+    return [1, 2, 3, 'ellipsis', totalPages];
+  }
+
+  if (currentPage >= totalPages - 1) {
+    return [1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages];
+}
+
 interface EarnUserTransactionHistoryProps {
   category: OpportunityCategory;
   opportunityId: string;
@@ -67,16 +97,6 @@ export function EarnUserTransactionHistory({
     }
   }, [transactions.length, totalPages, currentPage]);
 
-  const getDateStr = (timestamp: number) => {
-    if (timestamp === 0) return '';
-    return getStandardizedDate(normalizeTimestamp(timestamp));
-  };
-
-  const getTimeStr = (timestamp: number) => {
-    if (timestamp === 0) return '—';
-    return getStandardizedTime(normalizeTimestamp(timestamp));
-  };
-
   const handlePrevious = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
@@ -91,44 +111,6 @@ export function EarnUserTransactionHistory({
 
   const handlePageClick = (page: number) => {
     setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 2) {
-        // Show 1, 2, 3, ..., last
-        for (let i = 1; i <= 3; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 1) {
-        // Show 1, ..., last-2, last-1, last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - 2; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        // Show 1, ..., current-1, current, current+1, ..., last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
   };
 
   if (!walletAddress) return null;
@@ -184,7 +166,7 @@ export function EarnUserTransactionHistory({
 
                 {/* Page numbers */}
                 <div className="flex items-center gap-3">
-                  {getPageNumbers().map((page, idx) => {
+                  {getPageNumbers(currentPage, totalPages).map((page, idx) => {
                     if (page === 'ellipsis') {
                       return (
                         <span key={`ellipsis-${idx}`} className="px-2 text-white/50">

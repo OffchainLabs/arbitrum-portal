@@ -236,7 +236,7 @@ export function EarnTransactionHistoryTable({
               <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
                 <ExternalLink
                   href={txUrl}
-                  className="flex items-center gap-1 opacity-50 min-w-0"
+                  className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity min-w-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate">

@@ -29,7 +29,7 @@ export function formatTransactionError(
   defaultMessage: string = 'Transaction failed',
 ): string {
   // Handle user rejection errors first
-  if (error instanceof UserRejectedRequestError) {
+  if (isUserRejectedError(error)) {
     return 'Transaction rejected';
   }
 

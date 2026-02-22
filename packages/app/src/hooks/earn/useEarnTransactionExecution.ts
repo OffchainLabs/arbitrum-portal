@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { type Address, type Hex, UserRejectedRequestError } from 'viem';
-import { useChainId, useConfig } from 'wagmi';
+import { type Address, type Hex } from 'viem';
+import { useAccount, useConfig } from 'wagmi';
 import {
   getCallsStatus,
   sendCalls,
@@ -10,6 +10,7 @@ import {
 } from 'wagmi/actions';
 
 import { useIsTxBatchingSupported } from '@/app-hooks/useIsTxBatchingSupported';
+import { isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 
 export interface TransactionCall {
   to: Address;
@@ -45,7 +46,7 @@ export function useEarnTransactionExecution({
   inputAmount,
 }: EarnTransactionExecutionOptions): UseEarnTransactionExecutionResult {
   const wagmiConfig = useConfig();
-  const connectedChainId = useChainId();
+  const { chainId: connectedChainId } = useAccount();
   const isBatchSupported = useIsTxBatchingSupported(chainId);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -176,10 +177,7 @@ export function useEarnTransactionExecution({
         await executeSequential();
       }
     } catch (error) {
-      if (
-        error instanceof UserRejectedRequestError ||
-        (error as { shortMessage?: string })?.shortMessage === 'User rejected the request.'
-      ) {
+      if (isUserRejectedError(error)) {
         // User rejected, silently ignore
         return;
       }

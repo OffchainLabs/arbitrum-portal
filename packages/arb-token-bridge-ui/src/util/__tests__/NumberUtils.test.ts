@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount } from '../NumberUtils';
+import { formatAmount, normalizeAmountForParseUnits } from '../NumberUtils';
 
 describe('formatAmount', () => {
   describe('for short token symbol', () => {
@@ -142,5 +142,45 @@ describe('formatAmount', () => {
       expect(getResultFromNumber(123456789012345678.901234)).toBe('123,456.8T LONGTOKEN');
       expect(getResultFromNumber(1234567890123456789.012345)).toBe('1,234,567.9T LONGTOKEN');
     });
+  });
+});
+
+describe('normalizeAmountForParseUnits', () => {
+  it('should return "0" for empty or zero values', () => {
+    expect(normalizeAmountForParseUnits('', 18)).toBe('0');
+    expect(normalizeAmountForParseUnits('0', 18)).toBe('0');
+    expect(normalizeAmountForParseUnits('-1', 18)).toBe('0');
+  });
+
+  it('should return the amount unchanged when there is no decimal point', () => {
+    expect(normalizeAmountForParseUnits('100', 18)).toBe('100');
+    expect(normalizeAmountForParseUnits('1', 6)).toBe('1');
+  });
+
+  it('should return the integer part when decimal point has no fractional digits', () => {
+    expect(normalizeAmountForParseUnits('100.', 18)).toBe('100');
+  });
+
+  it('should keep fractional part when within decimals limit', () => {
+    expect(normalizeAmountForParseUnits('1.5', 18)).toBe('1.5');
+    expect(normalizeAmountForParseUnits('1.123456', 18)).toBe('1.123456');
+    expect(normalizeAmountForParseUnits('1.123456', 6)).toBe('1.123456');
+  });
+
+  it('should truncate fractional part to the specified decimals', () => {
+    expect(normalizeAmountForParseUnits('1.1234567', 6)).toBe('1.123456');
+    expect(normalizeAmountForParseUnits('1.123456789012345678901', 18)).toBe(
+      '1.123456789012345678',
+    );
+    expect(normalizeAmountForParseUnits('0.123456789', 4)).toBe('0.1234');
+  });
+
+  it('should handle 0 decimals by returning only the integer part', () => {
+    expect(normalizeAmountForParseUnits('1.999', 0)).toBe('1');
+  });
+
+  it('should handle very small amounts', () => {
+    expect(normalizeAmountForParseUnits('0.000001', 18)).toBe('0.000001');
+    expect(normalizeAmountForParseUnits('0.000001', 4)).toBe('0.0000');
   });
 });

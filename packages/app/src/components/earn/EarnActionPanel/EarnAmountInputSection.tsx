@@ -63,7 +63,7 @@ export function EarnAmountInputSection({
             decimals={decimals}
           />
           {inputTokenSelector || (
-            <div className="bg-[#333333] rounded-lg flex gap-1 items-center px-2.5 py-[5px]">
+            <div className="rounded-lg flex gap-1 items-center px-2.5 py-[5px]">
               {inputToken.logoUrl ? (
                 // disable Next image optimization because image is dynamic
                 // eslint-disable-next-line @next/next/no-img-element
