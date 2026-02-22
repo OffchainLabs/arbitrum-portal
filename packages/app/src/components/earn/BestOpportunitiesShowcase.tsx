@@ -1,5 +1,3 @@
-'use client';
-
 import { OpportunityCategory, OpportunityTableRow } from '@/app-types/earn/vaults';
 
 import { BestOpportunityCard } from './BestOpportunityCard';
