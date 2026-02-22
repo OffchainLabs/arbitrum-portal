@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount, normalizeAmountForParseUnits } from '../NumberUtils';
+import { formatAmount, normalizeAmountForParseUnits, truncateExtraDecimals } from '../NumberUtils';
 
 describe('formatAmount', () => {
   describe('for short token symbol', () => {
@@ -182,5 +182,19 @@ describe('normalizeAmountForParseUnits', () => {
   it('should handle very small amounts', () => {
     expect(normalizeAmountForParseUnits('0.000001', 18)).toBe('0.000001');
     expect(normalizeAmountForParseUnits('0.000001', 4)).toBe('0.0000');
+  });
+});
+
+describe('truncateExtraDecimals', () => {
+  it('should return amount unchanged when no decimal point is present', () => {
+    expect(truncateExtraDecimals('100', 6)).toBe('100');
+  });
+
+  it('should truncate decimal places when exceeding max decimals', () => {
+    expect(truncateExtraDecimals('1.2345678', 4)).toBe('1.2345');
+  });
+
+  it('should return integer part when max decimals is 0', () => {
+    expect(truncateExtraDecimals('1.999', 0)).toBe('1');
   });
 });

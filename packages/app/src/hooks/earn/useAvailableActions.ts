@@ -1,5 +1,6 @@
 'use client';
 
+import type { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -25,12 +26,15 @@ export interface UseAvailableActionsParams<C extends OpportunityCategory> {
   network?: EarnNetwork;
 }
 
-export interface UseAvailableActionsResult<C extends OpportunityCategory> {
+export type UseAvailableActionsResult<C extends OpportunityCategory> = Omit<
+  SWRResponse<AvailableActionsByCategory[C], Error>,
+  'data' | 'error'
+> & {
   data: AvailableActionsByCategory[C] | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-}
+};
 
 type AvailableActionsKey<C extends OpportunityCategory> = readonly [
   'available-actions',
@@ -69,7 +73,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
   // 5 minutes refresh interval
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-  const { data, error, isLoading, mutate } = useSWRImmutable<AvailableActionsByCategory[C]>(
+  const swrResponse = useSWRImmutable<AvailableActionsByCategory[C]>(
     swrKey,
     async ([
       ,
@@ -100,7 +104,11 @@ export function useAvailableActions<C extends OpportunityCategory>(
     },
   );
 
+  const { data, error, isLoading, mutate, ...restSWR } = swrResponse;
+
   return {
+    ...restSWR,
+    mutate,
     data: data ?? null,
     isLoading,
     error: error?.message || null,

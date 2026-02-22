@@ -35,13 +35,13 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       isOpen={props.isOpen}
       onClose={handleCancel}
       title=""
-      closeable={true}
-      isFooterHidden={true}
-      className="!border-0 !h-screen !max-h-[100dvh] !rounded-none md:!h-auto md:!max-w-[400px] md:!rounded"
+      closeable
+      isFooterHidden
+      className="!border-0 !h-[100dvh] !min-h-[100dvh] !max-h-[100dvh] !rounded-none md:!h-auto md:!min-h-0 md:!max-w-[400px] md:!rounded"
     >
-      <div className="flex h-full flex-col gap-6 py-4 w-full">
+      <div className="flex h-full w-full flex-col gap-6 py-4">
         {/* Popup Body */}
-        <div className="flex flex-1 flex-col items-start gap-5 w-full">
+        <div className="flex w-full flex-1 flex-col items-start gap-5">
           {/* Warning Icon */}
           <div className="flex items-center justify-center w-[63px] h-[63px] rounded-full bg-white/5">
             <ExclamationTriangleIcon className="w-[31.5px] h-[31.5px] text-[#CCB069]" />
@@ -75,7 +75,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
         </div>
 
         {/* Checkbox */}
-        <div className="flex items-center gap-2.5 w-full">
+        <div className="flex w-full items-center gap-2.5">
           <Checkbox
             checked={isChecked}
             onChange={setIsChecked}
@@ -88,7 +88,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
         </div>
 
         {/* Buttons */}
-        <div className="mt-auto flex flex-col gap-2.5 w-full pb-2">
+        <div className="mt-auto flex w-full flex-col gap-2.5 pb-2">
           {/* Proceed Button */}
           <button
             type="button"

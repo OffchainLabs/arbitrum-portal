@@ -151,13 +151,18 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
 };
 
 export const truncateExtraDecimals = (amount: string, decimals: number) => {
+  const wholePart = amount.split('.')[0] ?? '';
   const decimalPart = amount.split('.')[1];
 
   if (typeof decimalPart === 'undefined') {
     return amount;
   }
 
-  return `${amount.split('.')[0]}.${decimalPart.slice(0, decimals)}`;
+  if (decimals <= 0) {
+    return wholePart;
+  }
+
+  return `${wholePart}.${decimalPart.slice(0, decimals)}`;
 };
 
 /**
@@ -168,13 +173,12 @@ export const truncateExtraDecimals = (amount: string, decimals: number) => {
  * @returns Normalized amount string safe for parseUnits
  */
 export const normalizeAmountForParseUnits = (amount: string, decimals: number): string => {
-  if (!amount || parseFloat(amount) <= 0) return '0';
-  const parts = amount.split('.');
-  if (parts.length === 1) return amount; // No decimal point
-  const integerPart = parts[0] ?? '';
-  const fractionalPart = parts[1];
-  if (!fractionalPart) return integerPart;
-  // Truncate fractional part to max decimals
-  const normalizedFractional = fractionalPart.slice(0, decimals);
-  return normalizedFractional ? `${integerPart}.${normalizedFractional}` : integerPart;
+  const parsedAmount = Number(amount);
+  if (!amount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+    return '0';
+  }
+
+  const trimmedAmount = amount.trim();
+  const truncated = truncateExtraDecimals(trimmedAmount, Math.max(0, decimals));
+  return truncated.endsWith('.') ? truncated.slice(0, -1) : truncated;
 };

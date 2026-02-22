@@ -65,7 +65,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching transaction history:', error);
     return errorResponse(request, error, {
       code: 'TRANSACTION_HISTORY_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch transaction history',

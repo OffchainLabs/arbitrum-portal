@@ -118,9 +118,7 @@ export function VaultActionPanel({
       : '0';
 
   // Derive chainId from vault network for balance fetching
-  const networkChainId = useMemo(() => {
-    return requestNetwork === 'mainnet' ? ChainId.Ethereum : ChainId.ArbitrumOne;
-  }, [requestNetwork]);
+  const networkChainId = requestNetwork === 'mainnet' ? ChainId.Ethereum : ChainId.ArbitrumOne;
 
   // Fetch onchain balances for asset and lpToken (needed for balance check)
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
@@ -143,9 +141,7 @@ export function VaultActionPanel({
   const lpTokenBalanceRaw = lpTokenBalanceOnchain || BigNumber.from(lpToken?.balanceNative ?? '0');
 
   // Calculate current balance for the selected action (needed for balance check)
-  const currentBalanceForQuote = useMemo(() => {
-    return selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
-  }, [selectedAction, assetBalanceRaw, lpTokenBalanceRaw]);
+  const currentBalanceForQuote = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
 
   const currentDecimalsForQuote = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
 
