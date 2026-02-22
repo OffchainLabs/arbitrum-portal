@@ -247,8 +247,8 @@ export function useEarnGasEstimate({
     setError(null);
 
     const processApiEstimate = async () => {
-      const cost = parseFloat(apiEstimate.replace('$', '').replace(' USD', ''));
-      if (isNaN(cost)) {
+      const cost = parseApiEstimateUsd(apiEstimate);
+      if (cost == null) {
         setApiGasEstimate(null);
         setIsLoading(false);
         return;

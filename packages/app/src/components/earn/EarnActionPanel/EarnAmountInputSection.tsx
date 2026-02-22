@@ -3,6 +3,8 @@
 import { ReactNode } from 'react';
 
 import { Button } from '@/bridge/components/common/Button';
+import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from '../EarnActionPanelInput';
 
@@ -19,6 +21,7 @@ interface EarnAmountInputSectionProps {
   inputToken: TokenDisplay;
   inputTokenSelector?: ReactNode;
   currentBalance: string;
+  currentBalanceAmount?: number;
   currentUsdValue?: number;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
@@ -34,12 +37,24 @@ export function EarnAmountInputSection({
   inputToken,
   inputTokenSelector,
   currentBalance,
+  currentBalanceAmount,
   currentUsdValue,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
   decimals = 18, // Default to 18 decimals if not provided
 }: EarnAmountInputSectionProps) {
+  const amountNumber = Number(amount);
+  const parsedBalanceFromLabel = Number(currentBalance.replace(/[^0-9.]/g, ''));
+  const currentBalanceNumeric =
+    currentBalanceAmount ?? (Number.isFinite(parsedBalanceFromLabel) ? parsedBalanceFromLabel : 0);
+  const perUnitUsd =
+    currentBalanceNumeric > 0 && currentUsdValue != null
+      ? currentUsdValue / currentBalanceNumeric
+      : 0;
+  const currentInputUsdValue =
+    Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber * perUnitUsd : 0;
+
   return (
     <div className="bg-neutral-100 rounded-lg flex flex-col p-4">
       <div className="flex flex-col gap-2">
@@ -65,14 +80,13 @@ export function EarnAmountInputSection({
           {inputTokenSelector || (
             <div className="rounded-lg flex gap-1 items-center px-2.5 py-[5px]">
               {inputToken.logoUrl ? (
-                // disable Next image optimization because image is dynamic
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <SafeImage
                   src={inputToken.logoUrl}
                   alt={`${inputToken.symbol} logo`}
                   width={20}
                   height={20}
-                  className="rounded-full"
+                  className="rounded-full shrink-0"
+                  fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
                 />
               ) : (
                 <div className="w-5 h-5 rounded-full bg-blue-600" />
@@ -83,17 +97,7 @@ export function EarnAmountInputSection({
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">
-          <span>
-            {(() => {
-              const amt = parseFloat(amount || '0');
-              if (!amt || !isFinite(amt)) return '$0.00 USD';
-              const perUnitUsd =
-                currentBalance && parseFloat(currentBalance) > 0 && currentUsdValue
-                  ? currentUsdValue / parseFloat(currentBalance)
-                  : 0;
-              return `$${(amt * perUnitUsd).toFixed(2)} USD`;
-            })()}
-          </span>
+          <span>{formatUSD(currentInputUsdValue)}</span>
           {isConnected && <span>Balance: {currentBalance}</span>}
         </div>
       </div>

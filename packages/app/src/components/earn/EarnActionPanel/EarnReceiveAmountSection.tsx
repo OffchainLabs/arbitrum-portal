@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import { ReactNode } from 'react';
 
@@ -48,7 +46,7 @@ export function EarnReceiveAmountSection({
             />
           )}
           {tokenSelector || (
-            <div className="bg-[#333333] rounded-lg flex gap-2 items-center px-4 py-2">
+            <div className="bg-gray-1 rounded-lg flex gap-2 items-center px-4 py-2">
               {token.logoUrl ? (
                 <Image
                   src={token.logoUrl}

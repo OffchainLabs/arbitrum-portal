@@ -1,5 +1,3 @@
-'use client';
-
 interface EarnErrorDisplayProps {
   error: string | null | undefined;
 }

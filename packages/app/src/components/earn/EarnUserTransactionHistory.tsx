@@ -83,6 +83,7 @@ export function EarnUserTransactionHistory({
     walletAddress || null,
     network,
   );
+  const hasTransactions = transactions.length > 0;
 
   const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE);
   const paginatedTransactions = useMemo(() => {
@@ -134,11 +135,11 @@ export function EarnUserTransactionHistory({
 
       {error && <div className="text-xs text-red-400">Failed to load: {error}</div>}
 
-      {!isLoading && !error && transactions.length === 0 && (
+      {!isLoading && !error && !hasTransactions && (
         <div className="text-xs text-white/50">No transactions found.</div>
       )}
 
-      {!isLoading && !error && transactions.length > 0 && (
+      {!isLoading && !error && hasTransactions && (
         <>
           <EarnTransactionHistoryTable
             rows={paginatedTransactions}

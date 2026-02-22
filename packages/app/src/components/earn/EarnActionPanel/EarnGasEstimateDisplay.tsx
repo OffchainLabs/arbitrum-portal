@@ -1,5 +1,3 @@
-'use client';
-
 import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
 
 interface EarnGasEstimateDisplayProps {

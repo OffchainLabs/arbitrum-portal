@@ -9,10 +9,12 @@ import { usePublicClient } from 'wagmi';
 
 import { Dialog } from '@/bridge/components/common/Dialog';
 import { NetworkImage } from '@/bridge/components/common/NetworkImage';
+import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { explorerUrls, getNetworkName } from '@/bridge/util/networks';
+import { ExternalLink } from '@/components/ExternalLink';
 
 export interface TransactionDetails {
   action: string; // 'supply', 'withdraw', 'enter', 'exit', 'buy', 'sell'
@@ -27,25 +29,9 @@ export interface TransactionDetails {
   protocolLogo?: string;
   networkFee?: {
     amount: string;
-    usd: string;
+    usd?: string;
   };
   opportunityName?: string; // e.g., "Liquid Staked ETH"
-}
-
-/**
- * Fetch ETH price in USD from CoinGecko. Returns null on failure.
- */
-async function fetchEthPriceUsd(): Promise<number | null> {
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
-    );
-    const data = await response.json();
-    const price = data.ethereum?.usd;
-    return typeof price === 'number' && price > 0 ? price : null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -116,7 +102,7 @@ export function EarnTransactionDetailsPopup({
   isLoading,
 }: EarnTransactionDetailsPopupProps) {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [networkFee, setNetworkFee] = useState<{ amount: string; usd: string } | null>(null);
+  const [networkFee, setNetworkFee] = useState<{ amount: string; usd?: string } | null>(null);
   const [isFetchingFee, setIsFetchingFee] = useState(false);
   const chainId = transactionDetails?.chainId || ChainId.ArbitrumOne;
   const publicClient = usePublicClient({ chainId });
@@ -151,16 +137,11 @@ export function EarnTransactionDetailsPopup({
         }
 
         const feeWei = gasUsed.mul(effectiveGasPrice);
-        const feeEth = utils.formatEther(feeWei);
-        const feeEthFormatted = parseFloat(feeEth).toFixed(6);
-
-        const ethPrice = await fetchEthPriceUsd();
-        const feeUsd =
-          ethPrice != null ? `$${(parseFloat(feeEth) * ethPrice).toFixed(2)} USD` : null;
+        const feeEth = Number(utils.formatEther(feeWei));
+        const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
 
         setNetworkFee({
           amount: `~${feeEthFormatted} ETH`,
-          usd: feeUsd ?? '',
         });
       } catch (error) {
         console.error('Failed to fetch network fee:', error);
@@ -292,10 +273,15 @@ export function EarnTransactionDetailsPopup({
               {/* Asset Logo with Tick Animation */}
               {transactionDetails.assetLogo ? (
                 <div className="relative shrink-0 size-[46px]">
-                  <img
+                  <SafeImage
                     src={transactionDetails.assetLogo}
                     alt={transactionDetails.tokenSymbol}
                     className="absolute inset-0 max-w-none object-50%-50% object-cover rounded-full size-full"
+                    width={46}
+                    height={46}
+                    fallback={
+                      <div className="absolute inset-0 rounded-full bg-white/10 size-full" />
+                    }
                   />
                   {/* Tick Animation Overlay */}
                   {showSuccessAnimation && (
@@ -349,10 +335,13 @@ export function EarnTransactionDetailsPopup({
                   </span>
                   <div className="flex gap-2 items-center justify-end">
                     {transactionDetails.protocolLogo && (
-                      <img
+                      <SafeImage
                         src={transactionDetails.protocolLogo}
                         alt={transactionDetails.protocolName}
                         className="h-[21px] w-[21px] rounded-full"
+                        width={21}
+                        height={21}
+                        fallback={<div className="h-[21px] w-[21px] rounded-full bg-white/10" />}
                       />
                     )}
                     <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
@@ -388,14 +377,12 @@ export function EarnTransactionDetailsPopup({
 
             {/* View on Explorer Button - Only show when txHash is available */}
             {txHash && (
-              <button
-                onClick={() => {
-                  window.open(`${explorerUrl}/tx/${txHash}`, '_blank');
-                }}
+              <ExternalLink
+                href={`${explorerUrl}/tx/${txHash}`}
                 className="bg-[#404040] flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
               >
                 View on {explorerName}
-              </button>
+              </ExternalLink>
             )}
           </div>
         )}

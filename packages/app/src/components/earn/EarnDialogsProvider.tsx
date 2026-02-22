@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocalStorage } from '@uidotdev/usehooks';
+import { useLocalStorage } from '@rehooks/local-storage';
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';

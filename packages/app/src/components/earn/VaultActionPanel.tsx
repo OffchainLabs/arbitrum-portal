@@ -267,7 +267,7 @@ export function VaultActionPanel({
         networkFee: estimatedTxCostUsd
           ? {
               amount: estimatedTxCostUsd.eth,
-              usd: estimatedTxCostUsd.usd ?? '',
+              usd: estimatedTxCostUsd.usd ?? undefined,
             }
           : undefined,
         opportunityName: vault.name ?? 'Lend',
@@ -351,8 +351,9 @@ export function VaultActionPanel({
 
   const currentBalanceRaw = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
   const currentDecimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
-  const currentSymbol = selectedAction === 'supply' ? assetSymbol : assetSymbol;
+  const currentSymbol = assetSymbol;
   const currentUsdValue = selectedAction === 'supply' ? assetUsdValue : lpTokenUsdValue;
+  const currentBalanceAmount = Number(utils.formatUnits(currentBalanceRaw, currentDecimals));
 
   // Use unified transfer readiness hook
   const transferReadiness = useEarnTransferReadiness({
@@ -455,6 +456,7 @@ export function VaultActionPanel({
           logoUrl: vault?.asset?.assetLogo,
         }}
         currentBalance={currentBalanceFormatted}
+        currentBalanceAmount={currentBalanceAmount}
         currentUsdValue={currentUsdValue}
         isAmountExceedsBalance={isAmountExceedsBalance}
         isConnected={isConnected}

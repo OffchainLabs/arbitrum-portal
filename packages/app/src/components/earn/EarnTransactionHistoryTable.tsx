@@ -197,7 +197,10 @@ export function EarnTransactionHistoryTable({
                   className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity min-w-0"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate">
+                  <p
+                    className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate hover:text-white"
+                    title={row.transactionHash}
+                  >
                     {shortenAddress(row.transactionHash)}
                   </p>
                   <ArrowTopRightOnSquareIcon className="h-4 w-4 text-white shrink-0" />
@@ -256,7 +259,10 @@ export function EarnTransactionHistoryTable({
                           className="flex items-center gap-1 opacity-50 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <p className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap font-mono">
+                          <p
+                            className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap font-mono hover:text-white"
+                            title={row.transactionHash}
+                          >
                             {shortenAddress(row.transactionHash)}
                           </p>
                           <ArrowTopRightOnSquareIcon className="h-4 w-4 text-white shrink-0" />
