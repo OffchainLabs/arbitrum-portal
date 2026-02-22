@@ -11,15 +11,20 @@ import {
   ValidationError,
   assertAddress,
   assertOptionalAddress,
+  assertOptionalBoolean,
+  assertOptionalFiniteNumber,
+  assertOptionalString,
+  assertPlainObject,
   assertPositiveNumberString,
+  assertString,
   parseEarnNetwork,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import {
-  EARN_TRANSACTION_ACTIONS,
-  type EarnTransactionAction,
-  type TransactionQuoteRequest,
-} from '../../../../types';
+import { EARN_TRANSACTION_ACTIONS, type EarnTransactionAction } from '../../../../types';
+
+function isEarnTransactionAction(value: string): value is EarnTransactionAction {
+  return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
+}
 
 /**
  * Get transaction quote - "How do I execute this?"
@@ -33,26 +38,38 @@ export async function POST(
   try {
     assertCorsOriginAllowed(request);
 
-    const requestBody = await request.json().catch(() => {
+    const parsedJson = await request.json().catch(() => {
       throw new ValidationError('INVALID_JSON', 'Request body must be valid JSON');
     });
-    if (!requestBody || typeof requestBody !== 'object' || Array.isArray(requestBody)) {
-      throw new ValidationError('INVALID_BODY', 'Request body must be an object');
-    }
+    const parsedRequest = assertPlainObject(parsedJson);
 
-    const parsedRequest = requestBody as Partial<TransactionQuoteRequest>;
-    const {
-      action: rawAction,
-      amount: rawAmount,
-      category: bodyCategory,
-      network: rawNetwork,
-      userAddress: rawUserAddress,
-      inputTokenAddress: rawInputTokenAddress,
-      outputTokenAddress: rawOutputTokenAddress,
-      slippage,
-      simulate,
-    } = parsedRequest;
+    const rawAction = assertString(parsedRequest.action, 'action');
+    const rawAmount = assertString(parsedRequest.amount, 'amount');
+    const bodyCategoryRaw = assertOptionalString(parsedRequest.category, 'category');
+    const rawNetwork = assertOptionalString(parsedRequest.network, 'network');
+    const rawUserAddress = assertString(parsedRequest.userAddress, 'userAddress');
+    const rawInputTokenAddress = assertOptionalString(
+      parsedRequest.inputTokenAddress,
+      'inputTokenAddress',
+    );
+    const rawOutputTokenAddress = assertOptionalString(
+      parsedRequest.outputTokenAddress,
+      'outputTokenAddress',
+    );
+    const rawRolloverTargetOpportunityId = assertOptionalString(
+      parsedRequest.rolloverTargetOpportunityId,
+      'rolloverTargetOpportunityId',
+    );
+    const rawRolloverAmount = assertOptionalString(parsedRequest.rolloverAmount, 'rolloverAmount');
+    const slippage = assertOptionalFiniteNumber(parsedRequest.slippage, {
+      field: 'slippage',
+      min: 0,
+      max: 100,
+    });
+    const simulate = assertOptionalBoolean(parsedRequest.simulate, 'simulate');
+
     const pathCategory = parseOpportunityCategory(params.category);
+    const bodyCategory = bodyCategoryRaw ? parseOpportunityCategory(bodyCategoryRaw) : undefined;
 
     // Ensure category in body matches path param
     if (bodyCategory && bodyCategory !== pathCategory) {
@@ -62,58 +79,43 @@ export async function POST(
       );
     }
 
-    if (!rawAction) {
-      throw new ValidationError('MISSING_ACTION', 'action is required');
-    }
-
-    if (!EARN_TRANSACTION_ACTIONS.includes(rawAction)) {
+    if (!isEarnTransactionAction(rawAction)) {
       throw new ValidationError(
         'INVALID_ACTION',
         `action must be one of: ${EARN_TRANSACTION_ACTIONS.join(', ')}`,
       );
     }
-    const action = rawAction as EarnTransactionAction;
+    const action = rawAction;
 
-    if (typeof rawAmount !== 'string') {
-      throw new ValidationError('INVALID_AMOUNT', 'amount must be a string');
-    }
     const amount = assertPositiveNumberString(rawAmount, 'amount');
-    const userAddress = assertAddress(rawUserAddress ?? null, 'userAddress');
+    const userAddress = assertAddress(rawUserAddress, 'userAddress');
     const network = parseEarnNetwork(rawNetwork ?? null);
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
     const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
-
-    if (slippage !== undefined) {
-      if (
-        typeof slippage !== 'number' ||
-        !Number.isFinite(slippage) ||
-        slippage < 0 ||
-        slippage > 100
-      ) {
-        throw new ValidationError(
-          'INVALID_SLIPPAGE',
-          'slippage must be a number between 0 and 100',
-        );
-      }
-    }
-
-    if (simulate !== undefined && typeof simulate !== 'boolean') {
-      throw new ValidationError('INVALID_SIMULATE', 'simulate must be a boolean');
-    }
+    const rolloverTargetOpportunityId = assertOptionalAddress(
+      rawRolloverTargetOpportunityId,
+      'rolloverTargetOpportunityId',
+    );
+    const rolloverAmount = rawRolloverAmount
+      ? assertPositiveNumberString(rawRolloverAmount, 'rolloverAmount')
+      : undefined;
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(pathCategory);
     const quote = await adapter.getTransactionQuote(
       opportunityId,
       {
-        ...parsedRequest,
         category: pathCategory,
         action,
         amount,
         userAddress,
         inputTokenAddress,
         outputTokenAddress,
+        slippage,
+        simulate,
+        rolloverTargetOpportunityId,
+        rolloverAmount,
       },
       network,
     );
