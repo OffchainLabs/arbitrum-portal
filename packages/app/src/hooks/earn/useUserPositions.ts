@@ -41,10 +41,6 @@ interface UseUserPositionsResult {
   refetch: () => void;
 }
 
-/**
- * Hook to fetch user positions (Lend / Vaults) using the standardized API
- * Returns position data that can be merged with opportunities from useAllOpportunities
- */
 export function useUserPositions(
   userAddress: string | null,
   allowedNetworks: EarnNetwork[] = ['arbitrum'],
@@ -76,11 +72,9 @@ export function useUserPositions(
     { refreshInterval: 12 * 60 * 60 * 1000, errorRetryCount: 2 },
   );
 
-  // Transform raw API response to Map/Set (happens on every render, but data is cached)
   const data = useMemo(() => {
     if (!rawData) return null;
 
-    // Create a map of opportunityId -> position data
     const positionsMap = new Map<string, UserPositionData>();
     const opportunityIds = new Set<string>();
 

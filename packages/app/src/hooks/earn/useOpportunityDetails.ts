@@ -26,7 +26,6 @@ function toOpportunityDetail(api: ApiOpportunityResponse): StandardOpportunityDe
   return {
     ...api,
     ui: {
-      // Keep formatting in UI hooks to avoid API opinionated display strings.
       apy: formatPercentage(m.rawApy ?? 0),
       tvl: formatTVL(m.rawTvl ?? 0),
       deposited: m.deposited,

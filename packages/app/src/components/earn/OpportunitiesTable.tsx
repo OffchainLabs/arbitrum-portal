@@ -147,10 +147,8 @@ export function OpportunitiesTable({
     [groupByCategory, opportunities],
   );
 
-  // Track which categories are expanded (using category values, not display names)
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
 
-  // Track sort state - default to TVL descending (prioritize stable, high-TVL vaults)
   const [sortColumn, setSortColumn] = useState<SortColumn>('tvl');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -169,10 +167,8 @@ export function OpportunitiesTable({
   const handleSort = useCallback(
     (column: 'apy' | 'tvl') => {
       if (sortColumn === column) {
-        // Toggle direction if clicking the same column
         setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
       } else {
-        // Set new column and default to descending
         setSortColumn(column);
         setSortDirection('desc');
       }
@@ -180,7 +176,6 @@ export function OpportunitiesTable({
     [sortColumn],
   );
 
-  // Group opportunities by category value (not display name)
   const groupedOpportunities = useMemo(() => {
     if (!groupByCategory) {
       return null;
@@ -193,7 +188,6 @@ export function OpportunitiesTable({
       groups[category] = (groups[category] ?? []).concat(opportunity);
     });
 
-    // Sort each group based on current sort state
     (Object.keys(groups) as OpportunityCategory[]).forEach((category) => {
       const group = groups[category];
       if (group) {
@@ -231,11 +225,9 @@ export function OpportunitiesTable({
     return descriptions[category];
   };
 
-  // Sort opportunities by deposited USD value (Your Holdings) if not grouped
   const sortedOpportunities = useMemo(() => {
     if (groupByCategory) return null;
 
-    // If sorting by APY or TVL, use that; otherwise sort by deposited USD
     if (sortColumn) {
       return [...opportunities].sort((a, b) => {
         let comparison = 0;
@@ -274,7 +266,6 @@ export function OpportunitiesTable({
 
           return (
             <div key={category}>
-              {/* Category Header */}
               <div className="mb-4 flex items-center justify-between top-[60px] sticky bg-black/70 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-semibold text-white">
@@ -296,7 +287,6 @@ export function OpportunitiesTable({
                   </Tooltip>
                 </div>
 
-                {/* View More/Less Toggle */}
                 {hasMore && (
                   <div className="flex justify-end">
                     <Button onClick={() => toggleCategory(category)} variant="tertiary">
@@ -313,15 +303,12 @@ export function OpportunitiesTable({
                 )}
               </div>
 
-              {/* Opportunities Table */}
               <div>
-                {/* Mobile Cards */}
                 <div className="flex flex-col gap-1 md:hidden">
                   {displayedOpportunities.map((opportunity) => (
                     <OpportunityCard key={opportunity.id} opportunity={opportunity} />
                   ))}
                 </div>
-                {/* Desktop Table */}
                 <div className="hidden md:flex overflow-x-auto">
                   <div className="flex flex-col gap-1 min-w-[900px] w-full">
                     <TableHeader
@@ -342,17 +329,14 @@ export function OpportunitiesTable({
     );
   }
 
-  // Render ungrouped view (Your Holdings)
   if (sortedOpportunities) {
     return (
       <div>
-        {/* Mobile Cards */}
         <div className="flex flex-col gap-1 md:hidden">
           {sortedOpportunities.map((opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
           ))}
         </div>
-        {/* Desktop Table */}
         <div className="hidden md:flex overflow-x-auto">
           <div className="flex flex-col gap-1 min-w-[900px] w-full">
             <TableHeader

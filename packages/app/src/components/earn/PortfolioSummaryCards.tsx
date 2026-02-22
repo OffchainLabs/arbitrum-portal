@@ -56,13 +56,11 @@ export function PortfolioSummaryCards({
       ? (estimatedEarningsMonthlyUsd ?? (summary.totalEarnings || 0) / 12)
       : (estimatedEarningsUsd ?? (summary.totalEarnings || 0));
 
-  // Use API-provided percentage values based on timeframe
   const earningsPercentage =
     earningsTimeframe === 'month'
       ? (estimatedEarningsMonthlyPercentage ?? 0)
       : (estimatedEarningsYearlyPercentage ?? 0);
 
-  // Calculate target date based on timeframe
   const getTargetDate = () => {
     const now = new Date();
     const targetDate = new Date(now);
@@ -84,7 +82,6 @@ export function PortfolioSummaryCards({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
-      {/* Your Holdings Card - Full width on mobile, flex-1 on desktop */}
       <div className="w-full lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -106,7 +103,6 @@ export function PortfolioSummaryCards({
               />
             )}
           </div>
-          {/* Legend - matches progress bar order */}
           <div className="flex gap-3">
             {TYPE_ORDER.map(({ type, category }) => {
               const value = summary.valueByType[type];
@@ -129,9 +125,7 @@ export function PortfolioSummaryCards({
         </div>
       </div>
 
-      {/* Estimated Earnings and Net APY Cards - Side by side on mobile, separate on desktop */}
       <div className="flex lg:flex-row flex-col gap-4 w-full lg:hidden">
-        {/* Estimated Earnings Card */}
         <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-3 relative">
           <div className="flex flex-row justify-between items-center gap-1">
             <div className="flex items-center gap-1.5">
@@ -195,7 +189,6 @@ export function PortfolioSummaryCards({
           </div>
         </div>
 
-        {/* Average APY Card */}
         <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col justify-between">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
@@ -207,12 +200,10 @@ export function PortfolioSummaryCards({
             <p className="text-[28px] font-medium text-white tracking-[-0.56px] whitespace-nowrap">
               {formatPercentage(summary.netApy)}
             </p>
-            {/* Category APY Breakdown */}
             {categoryApy && (
               <div className="flex flex-col gap-2 mt-2">
                 {TYPE_ORDER.map(({ type, category }) => {
                   const apy = categoryApy[category];
-                  // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                   if (apy === undefined || apy === null || !isFinite(apy)) return null;
                   return (
                     <div key={type} className="flex items-center justify-between gap-2">
@@ -235,7 +226,6 @@ export function PortfolioSummaryCards({
         </div>
       </div>
 
-      {/* Desktop: Estimated Earnings Card - Separate card */}
       <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col gap-3 relative">
         <div className="flex flex-row justify-between items-center gap-1">
           <div className="flex items-center gap-1.5">
@@ -297,7 +287,6 @@ export function PortfolioSummaryCards({
         <ChartPlaceholder label="Estimated earnings" />
       </div>
 
-      {/* Desktop: Average APY Card - Separate card */}
       <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col justify-between">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -309,12 +298,10 @@ export function PortfolioSummaryCards({
           <p className="text-[28px] font-medium text-white tracking-[-0.56px] whitespace-nowrap">
             {formatPercentage(summary.netApy)}
           </p>
-          {/* Category APY Breakdown */}
           {categoryApy && (
             <div className="flex flex-col gap-2 mt-2">
               {TYPE_ORDER.map(({ type, category }) => {
                 const apy = categoryApy[category];
-                // Show if APY exists and is a valid number (even if 0, as long as there are positions)
                 if (apy === undefined || apy === null || !isFinite(apy)) return null;
                 return (
                   <div key={type} className="flex items-center justify-between gap-2">

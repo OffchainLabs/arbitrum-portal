@@ -13,31 +13,22 @@ import { PortfolioSummaryCards } from './PortfolioSummaryCards';
 import { YourHoldingsEmptyState } from './YourHoldingsEmptyState';
 import { YourHoldingsPageSkeleton } from './YourHoldingsPageSkeleton';
 
-/**
- * MyPositionsPage - Displays user's positions across all vendors
- *
- * Uses useAllOpportunities as the base and enriches with position data from useUserPositions.
- * This ensures consistency between the "All Markets" and "Your Holdings" views.
- */
 export function MyPositionsPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
 
-  // Redirect when the user explicitly disconnects while on this page
   useAccountEffect({
     onDisconnect() {
       router.replace('/earn/market');
     },
   });
 
-  // Fetch all opportunities (base data)
   const {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
   } = useAllOpportunities({ minTvl: 5_000_000 });
 
-  // Fetch user positions (position-specific data to merge)
   const {
     positionsMap,
     opportunityIds,
@@ -52,8 +43,6 @@ export function MyPositionsPage() {
     error: positionsError,
   } = useUserPositions(address || null, ['arbitrum']);
 
-  // Merge opportunities with position data
-  // Filter to only opportunities where user has positions
   const opportunitiesWithPositions = useMemo(() => {
     return allOpportunities
       .filter((opp) => {
@@ -68,7 +57,6 @@ export function MyPositionsPage() {
           (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
 
         if (!positionData) {
-          // Should not happen due to filter above, but safe fallback
           return opp;
         }
 
@@ -90,12 +78,10 @@ export function MyPositionsPage() {
     return <YourHoldingsEmptyState />;
   }
 
-  // Loading state
   if (isLoading) {
     return <YourHoldingsPageSkeleton />;
   }
 
-  // Error state
   if (error) {
     return (
       <div className="rounded border-error bg-error/20 p-8 text-center">
@@ -104,7 +90,6 @@ export function MyPositionsPage() {
     );
   }
 
-  // Empty state
   if (opportunitiesWithPositions.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -123,7 +108,6 @@ export function MyPositionsPage() {
     );
   }
 
-  // Show positions table with summary cards
   return (
     <div className="flex flex-col gap-6">
       <PortfolioSummaryCards

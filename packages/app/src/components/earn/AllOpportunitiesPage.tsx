@@ -11,43 +11,31 @@ import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 import { MarketPageSkeleton } from './MarketPageSkeleton';
 import { OpportunitiesTable } from './OpportunitiesTable';
 
-/**
- * AllOpportunitiesPage - Displays all available opportunities
- *
- * When wallet is connected, enriches opportunities with user position data
- * so users can see their deposited amounts and earnings in the "All Markets" view.
- */
 export function AllOpportunitiesPage() {
   const { address, isConnected } = useAccount();
 
-  // Fetch all opportunities (base data)
   const {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
   } = useAllOpportunities({ minTvl: 5_000_000 });
 
-  // Fetch user positions if wallet is connected (for enriching opportunities)
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(
     isConnected ? (address ?? null) : null,
     ['arbitrum'],
   );
 
-  // Enrich opportunities with position data when wallet is connected
   const enrichedOpportunities = useMemo(() => {
     if (!isConnected || positionsMap.size === 0) {
-      // No wallet connected or no positions - return opportunities as-is
       return allOpportunities;
     }
 
-    // Merge position data onto opportunities (don't filter - show all opportunities)
     return allOpportunities.map((opp) => {
       const positionData =
         positionsMap.get(opp.id) ||
         (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
 
       if (!positionData) {
-        // No position - return opportunity as-is (with default "-" for deposited/earnings)
         return opp;
       }
 
@@ -64,12 +52,10 @@ export function AllOpportunitiesPage() {
 
   const isLoading = opportunitiesLoading || (isConnected ? positionsLoading : false);
 
-  // Loading state
   if (isLoading) {
     return <MarketPageSkeleton />;
   }
 
-  // Error state
   if (opportunitiesError) {
     return (
       <div className="rounded border-error bg-error/20 p-8 text-center">

@@ -12,10 +12,6 @@ interface PortfolioMetrics {
   earningsPercentChange?: number;
 }
 
-/**
- * Hook to calculate portfolio metrics from user opportunities
- * If API-provided estimatedEarningsUsdNumber and netApy are provided, they will be used instead of calculating
- */
 export function usePortfolioMetrics(
   opportunities: OpportunityTableRow[],
   estimatedEarningsUsdNumber?: number,
@@ -41,7 +37,6 @@ export function usePortfolioMetrics(
         ? estimatedEarningsUsdNumber
         : opportunities.reduce((sum, opp) => sum + (opp.earningsUsd ?? 0), 0);
 
-    // Use API-provided net APY if available, otherwise calculate weighted average APY
     const calculatedNetApy =
       netApy ??
       (() => {
@@ -71,7 +66,6 @@ export function usePortfolioMetrics(
       { Lending: 0 },
     );
 
-    // Calculate earnings percent change (simplified - can be enhanced with historical data)
     const earningsPercentChange = totalValue > 0 ? (totalEarnings / totalValue) * 100 : 0;
 
     return {
