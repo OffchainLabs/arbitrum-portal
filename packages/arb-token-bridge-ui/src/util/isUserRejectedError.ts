@@ -6,13 +6,22 @@ import { UserRejectedRequestError } from 'viem';
  *
  * Filtering of userRejectedError sent to sentry is done in _app.tsx
  */
-export function isUserRejectedError(error: any) {
+export function isUserRejectedError(error: unknown) {
+  const candidate = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+  };
+
+  const hasUserCancelledMessage =
+    typeof candidate.message === 'string' && /User Cancelled/.test(candidate.message);
+
   return (
-    error?.code === 4001 ||
-    error?.code === 'ACTION_REJECTED' ||
-    error?.message?.match(/User Cancelled/) ||
+    candidate.code === 4001 ||
+    candidate.code === 'ACTION_REJECTED' ||
+    hasUserCancelledMessage ||
     error instanceof UserRejectedRequestError ||
-    error?.details === 'MetaMask Tx Signature: User denied transaction signature.'
+    candidate.details === 'MetaMask Tx Signature: User denied transaction signature.'
   );
 }
 
