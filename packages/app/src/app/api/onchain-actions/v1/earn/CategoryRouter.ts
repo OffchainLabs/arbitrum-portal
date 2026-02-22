@@ -1,6 +1,7 @@
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { VaultsAdapter } from './adapters/VaultsAdapter';
+import { ValidationError } from './lib/validation';
 import type { VendorAdapter } from './types';
 
 export class CategoryRouter {
@@ -12,7 +13,11 @@ export class CategoryRouter {
 
   routeToAdapter(category: OpportunityCategory): VendorAdapter {
     if (category !== OpportunityCategory.Lend) {
-      throw new Error(`Unknown category: ${category}`);
+      throw new ValidationError(
+        'UNSUPPORTED_CATEGORY',
+        `Category "${category}" is not supported in this phase. Supported categories: ${OpportunityCategory.Lend}`,
+        501,
+      );
     }
     return this.lendAdapter;
   }

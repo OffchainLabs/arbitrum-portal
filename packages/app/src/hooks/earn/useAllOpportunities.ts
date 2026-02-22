@@ -22,15 +22,6 @@ interface OpportunitiesResponse {
   categories: string[];
 }
 
-const fetcher = async (key: string | readonly unknown[]): Promise<OpportunitiesResponse> => {
-  const url = typeof key === 'string' ? key : String(key[0] || '');
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Failed to fetch opportunities');
-  }
-  return response.json();
-};
-
 function parseUsdMetric(s: string | null | undefined): number | null {
   if (s == null || s === '') return null;
   const n = parseFloat(s);
@@ -67,18 +58,29 @@ export function useAllOpportunities(filters?: {
   minTvl?: number;
   minApy?: number;
 }): UseAllOpportunitiesResult {
-  const params = new URLSearchParams();
-  if (filters?.network) params.set('network', filters.network);
-  if (filters?.minTvl) params.set('minTvl', filters.minTvl.toString());
-  if (filters?.minApy) params.set('minApy', filters.minApy.toString());
-
-  const url = `/api/onchain-actions/v1/earn/opportunities?${params.toString()}`;
-
   const REVALIDATE_INTERVAL = 12 * 60 * 60 * 1000;
 
   const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<OpportunitiesResponse>(
-    url,
-    fetcher,
+    [
+      'earn-opportunities',
+      filters?.network ?? null,
+      filters?.minTvl ?? null,
+      filters?.minApy ?? null,
+    ] as const,
+    async ([, network, minTvl, minApy]) => {
+      const params = new URLSearchParams();
+      if (network) params.set('network', network);
+      if (minTvl != null) params.set('minTvl', String(minTvl));
+      if (minApy != null) params.set('minApy', String(minApy));
+
+      const queryString = params.toString();
+      const url = `/api/onchain-actions/v1/earn/opportunities${queryString ? `?${queryString}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch opportunities: ${response.statusText}`);
+      }
+      return (await response.json()) as OpportunitiesResponse;
+    },
     { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
   );
 

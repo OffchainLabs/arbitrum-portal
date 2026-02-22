@@ -142,6 +142,14 @@ export function OpportunitiesTable({
   opportunities,
   groupByCategory = false,
 }: OpportunitiesTableProps) {
+  const visibleOpportunities = useMemo(
+    () =>
+      groupByCategory
+        ? opportunities.filter((opportunity) => opportunity.rawApy > 0)
+        : opportunities,
+    [groupByCategory, opportunities],
+  );
+
   // Track which categories are expanded (using category values, not display names)
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
 
@@ -183,7 +191,7 @@ export function OpportunitiesTable({
 
     const groups: Partial<GroupedOpportunities> = {};
 
-    opportunities.forEach((opportunity) => {
+    visibleOpportunities.forEach((opportunity) => {
       const category = opportunity.category;
       groups[category] = (groups[category] ?? []).concat(opportunity);
     });
@@ -211,7 +219,7 @@ export function OpportunitiesTable({
     });
 
     return groups;
-  }, [opportunities, groupByCategory, sortColumn, sortDirection]);
+  }, [visibleOpportunities, groupByCategory, sortColumn, sortDirection]);
 
   const categoryOrder: OpportunityCategory[] = [OpportunityCategory.Lend];
 

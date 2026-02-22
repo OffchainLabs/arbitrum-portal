@@ -3,7 +3,6 @@
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
-import { useMemo } from 'react';
 
 import {
   OpportunityCategory,
@@ -18,14 +17,11 @@ interface BestOpportunitiesShowcaseProps {
 }
 
 export function BestOpportunitiesShowcase({ opportunities }: BestOpportunitiesShowcaseProps) {
-  const bestOpportunities = useMemo(() => {
-    const categoryOpportunities = opportunities.filter(
-      (opp) => opp.category === OpportunityCategory.Lend,
-    );
-    if (categoryOpportunities.length === 0) return [];
-    const best = [...categoryOpportunities].sort((a, b) => b.rawTvl - a.rawTvl)[0];
-    return best ? [best] : [];
-  }, [opportunities]);
+  const categoryOpportunities = opportunities.filter(
+    (opp) => opp.category === OpportunityCategory.Lend,
+  );
+  const best = categoryOpportunities.sort((a, b) => b.rawTvl - a.rawTvl)[0];
+  const bestOpportunities = best ? [best] : [];
 
   if (bestOpportunities.length === 0) {
     return null;
