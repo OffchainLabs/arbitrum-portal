@@ -67,7 +67,12 @@ export function useAllOpportunities(filters?: {
       filters?.minTvl ?? null,
       filters?.minApy ?? null,
     ] as const,
-    async ([, network, minTvl, minApy]) => {
+    async ([, network, minTvl, minApy]: readonly [
+      string,
+      EarnNetwork | null,
+      number | null,
+      number | null,
+    ]) => {
       const params = new URLSearchParams();
       if (network) params.set('network', network);
       if (minTvl != null) params.set('minTvl', String(minTvl));
