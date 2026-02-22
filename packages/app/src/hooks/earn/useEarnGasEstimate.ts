@@ -1,22 +1,22 @@
+import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';
 import { useConfig, usePublicClient } from 'wagmi';
 import { estimateGas } from 'wagmi/actions';
 
-import { useDebouncedValue } from './useDebouncedValue';
 import type { TransactionStep } from './useTransactionQuote';
 
 interface UseEarnGasEstimateParams {
   transactionSteps: TransactionStep[] | undefined;
   chainId: number;
   walletAddress: string | undefined;
-  apiEstimate?: string; // Optional API-provided estimate (e.g., estimatedGasUsd from transactionQuote)
-  enabled?: boolean; // Whether to enable onchain estimation
+  apiEstimate?: string;
+  enabled?: boolean;
 }
 
 export interface GasEstimate {
-  eth: string; // Gas cost in ETH (e.g., "0.001234")
-  usd: string | null; // Raw numeric USD value string (e.g., "1.23")
+  eth: string;
+  usd: string | null;
 }
 
 export interface UseEarnGasEstimateResult {
@@ -43,13 +43,6 @@ function isAllowanceRelatedError(err: unknown): boolean {
   );
 }
 
-/**
- * Hook to estimate gas costs for transaction steps
- * Uses onchain estimation with API fallback for consistent gas cost display
- *
- * @param params - Parameters for gas estimation
- * @returns Gas estimate result with estimate, loading state, and error
- */
 export function useEarnGasEstimate({
   transactionSteps,
   chainId,
@@ -63,10 +56,8 @@ export function useEarnGasEstimate({
   const [apiGasEstimate, setApiGasEstimate] = useState<GasEstimate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const debouncedTransactionSteps = useDebouncedValue(transactionSteps, 300);
+  const debouncedTransactionSteps = useDebounce(transactionSteps, 300);
 
-  // Estimate gas onchain for more accurate costs
-  // Debounce to prevent RPC overload when transactionSteps change frequently
   useEffect(() => {
     if (
       !enabled ||
@@ -88,7 +79,6 @@ export function useEarnGasEstimate({
     let isCancelled = false;
     const estimateGasCosts = async () => {
       try {
-        // Filter steps for the target chain
         const chainSteps = debouncedTransactionSteps.filter((step) => step.chainId === chainId);
 
         if (chainSteps.length === 0) {
@@ -99,7 +89,6 @@ export function useEarnGasEstimate({
           return;
         }
 
-        // Check if there are approval steps before transaction steps
         const approvalStepIndices = new Set(
           chainSteps
             .map((s, idx) => (s.type === 'approval' ? idx : -1))
@@ -108,7 +97,6 @@ export function useEarnGasEstimate({
 
         const gasEstimates = await Promise.all(
           chainSteps.map(async (step, stepIndex) => {
-            // For approval steps, always estimate (they don't require prior approval)
             if (step.type === 'approval') {
               try {
                 const [gasLimit, gasPrice] = await Promise.all([
@@ -131,7 +119,6 @@ export function useEarnGasEstimate({
               }
             }
 
-            // For transaction steps in a bundle, estimate assuming approvals are already granted
             const hasApprovalBefore = Array.from(approvalStepIndices).some(
               (approvalIdx) => approvalIdx < stepIndex,
             );
@@ -156,7 +143,6 @@ export function useEarnGasEstimate({
               const isAllowanceError = isAllowanceRelatedError(err);
 
               if (isAllowanceError && hasApprovalBefore) {
-                // In a bundle, the approval executes first — return zero to trigger API fallback
                 return { step, cost: BigNumber.from(0) };
               }
 
@@ -169,7 +155,6 @@ export function useEarnGasEstimate({
           }),
         );
 
-        // Only sum gas costs for non-approval steps (the actual bundle payload)
         const transactionStepEstimates = gasEstimates.filter(
           ({ step }) => step.type !== 'approval',
         );
@@ -179,8 +164,6 @@ export function useEarnGasEstimate({
           BigNumber.from(0),
         );
 
-        // If we couldn't estimate gas for any transaction steps (all returned zero due to allowance errors),
-        // don't set onchain estimate - fall back to API estimate instead
         const hasValidEstimate = transactionStepEstimates.some(({ cost }) => !cost.isZero());
 
         if (!hasValidEstimate && transactionStepEstimates.length > 0) {
@@ -191,7 +174,6 @@ export function useEarnGasEstimate({
           return;
         }
 
-        // Convert to ETH and reuse API-provided USD estimate when available.
         const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
         const apiEstimateUsd = parseApiEstimateUsd(apiEstimate);
         const usd = apiEstimateUsd != null ? apiEstimateUsd.toFixed(2) : null;
@@ -207,7 +189,6 @@ export function useEarnGasEstimate({
         const isAllowanceError = isAllowanceRelatedError(err);
 
         if (isAllowanceError) {
-          // Allowance errors are expected when approvals haven't been granted
           if (!isCancelled) {
             setOnchainGasEstimate(null);
             setIsLoading(false);
@@ -238,7 +219,6 @@ export function useEarnGasEstimate({
     apiEstimate,
   ]);
 
-  // Handle API estimate fallback
   useEffect(() => {
     if (!apiEstimate || onchainGasEstimate) {
       setApiGasEstimate(null);
@@ -269,7 +249,6 @@ export function useEarnGasEstimate({
     processApiEstimate();
   }, [apiEstimate, onchainGasEstimate]);
 
-  // Return onchain estimate if available, otherwise fallback to API estimate
   const finalEstimate = onchainGasEstimate || apiGasEstimate || null;
 
   return {

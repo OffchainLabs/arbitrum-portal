@@ -12,7 +12,6 @@ import { ExternalLink } from '@/components/ExternalLink';
 export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
   const [isChecked, setIsChecked] = useState(false);
 
-  // Reset checkbox when dialog opens
   useEffect(() => {
     if (props.isOpen) {
       setIsChecked(false);
@@ -40,19 +39,15 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       className="!border-0 !h-[100dvh] !min-h-[100dvh] !max-h-[100dvh] !rounded-none md:!h-auto md:!min-h-0 md:!max-w-[400px] md:!rounded"
     >
       <div className="flex h-full w-full flex-col gap-6 py-4">
-        {/* Popup Body */}
         <div className="flex w-full flex-1 flex-col items-start gap-5">
-          {/* Warning Icon */}
           <div className="flex items-center justify-center w-[63px] h-[63px] rounded-full bg-white/5">
             <ExclamationTriangleIcon className="w-[31.5px] h-[31.5px] text-[#CCB069]" />
           </div>
 
-          {/* Title */}
           <h2 className="text-[28px] font-medium text-white leading-normal">
             Please acknowledge before proceeding
           </h2>
 
-          {/* Disclaimer Text */}
           <div className="flex flex-col gap-0 text-[14px] text-white/70 leading-[1.35] tracking-[-0.28px] w-full">
             <p className="mb-0">
               The Arbitrum Portal is only a front-end interface for interacting with existing smart
@@ -74,7 +69,6 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           </div>
         </div>
 
-        {/* Checkbox */}
         <div className="flex w-full items-center gap-2.5">
           <Checkbox
             checked={isChecked}
@@ -87,9 +81,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           />
         </div>
 
-        {/* Buttons */}
         <div className="mt-auto flex w-full flex-col gap-2.5 pb-2">
-          {/* Proceed Button */}
           <button
             type="button"
             onClick={handleConfirm}
@@ -104,7 +96,6 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
             Proceed
           </button>
 
-          {/* Go Back Button */}
           <button
             type="button"
             onClick={handleCancel}

@@ -86,18 +86,15 @@ export function VaultActionPanel({
     [vault.network?.name],
   );
 
-  // Update selectedAction when initialAction changes
   useEffect(() => {
     setSelectedAction(initialAction);
   }, [initialAction]);
 
-  // Reset amount and error when action changes
   useEffect(() => {
     setAmount('');
     setTxError(null);
   }, [selectedAction]);
 
-  // Fetch available actions and transaction context
   const {
     data: availableActions,
     isLoading: contextLoading,
@@ -130,10 +127,8 @@ export function VaultActionPanel({
           .toString()
       : '0';
 
-  // Derive chainId from vault network for balance fetching
   const networkChainId = requestNetwork === 'mainnet' ? ChainId.Ethereum : ChainId.ArbitrumOne;
 
-  // Fetch onchain balances for asset and lpToken (needed for balance check)
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
   const lpTokenAddress = lpToken?.address ?? null;
 
@@ -185,16 +180,13 @@ export function VaultActionPanel({
     [lpTokenBalanceData],
   );
 
-  // Use onchain balances when available, fallback to transaction context balances
   const assetBalanceRaw = assetBalanceOnchain || BigNumber.from(asset?.balanceNative ?? '0');
   const lpTokenBalanceRaw = lpTokenBalanceOnchain || BigNumber.from(lpToken?.balanceNative ?? '0');
 
-  // Calculate current balance for the selected action (needed for balance check)
   const currentBalanceForQuote = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
 
   const currentDecimalsForQuote = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
 
-  // Check if amount exceeds balance (only when wallet is connected)
   const amountExceedsBalance = useMemo(
     () =>
       checkAmountExceedsBalance(
@@ -207,9 +199,6 @@ export function VaultActionPanel({
     [amount, currentBalanceForQuote, currentDecimalsForQuote, isConnected, walletAddress],
   );
 
-  // Fetch transaction quote (replaces useActions)
-  // When wallet is connected, don't fetch quote if amount exceeds balance
-  // When wallet is not connected, allow fetching quote
   const { data: transactionQuote, isLoading: transactionQuoteLoading } = useTransactionQuote({
     opportunityId: vault.address,
     category: OpportunityCategory.Lend,
@@ -225,7 +214,6 @@ export function VaultActionPanel({
       (!isConnected || !amountExceedsBalance),
   });
 
-  // Get chainId from transactionQuote when available, otherwise derive from vault network
   const fallbackChainIdFromQuote = useMemo(() => {
     if (transactionQuote?.transactionSteps && transactionQuote.transactionSteps.length > 0) {
       return transactionQuote.transactionSteps[0]?.chainId || networkChainId;
@@ -233,7 +221,6 @@ export function VaultActionPanel({
     return networkChainId;
   }, [transactionQuote, networkChainId]);
 
-  // Build transaction calls from transaction quote
   const chainId = useMemo(() => {
     if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
       return 0;
@@ -245,7 +232,6 @@ export function VaultActionPanel({
     return txChainId;
   }, [transactionQuote]);
 
-  // Fetch native ETH balance for gas fee validation
   const shouldFetchNativeBalance = isConnected && !!walletAddress && chainId !== 0;
   const { data: nativeBalanceData } = useBalance({
     address: shouldFetchNativeBalance ? walletAddress : undefined,
@@ -263,7 +249,6 @@ export function VaultActionPanel({
     [nativeBalanceData],
   );
 
-  // USD value from transaction context (can be cached, doesn't need onchain fetch)
   const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
 
@@ -291,11 +276,9 @@ export function VaultActionPanel({
       setTxState('success');
       setAmount('');
       refetchContext();
-      // Refetch onchain balances after transaction
       void refetchAssetBalance();
       void refetchLpTokenBalance();
 
-      // Extract transaction details for popup and history
       const timestamp = Math.floor(Date.now() / 1000);
       const txChainId = chainId || 0;
       const txChainName = getNetworkName(txChainId);
@@ -320,7 +303,6 @@ export function VaultActionPanel({
         opportunityName: vault.name ?? 'Lend',
       };
 
-      // Add transaction to history cache (optimistic update)
       if (walletAddress && txHash) {
         const newTransaction: StandardTransactionHistory = {
           timestamp,
@@ -344,7 +326,6 @@ export function VaultActionPanel({
         });
       }
 
-      // Show transaction details popup after receipt is confirmed (with tick animation)
       showTransactionDetails(transactionDetails, true);
     },
     inputAmount: amount,
@@ -352,7 +333,6 @@ export function VaultActionPanel({
 
   const hasRedeem = availableActions?.availableActions?.includes('redeem') ?? false;
 
-  // Check if user has a position (LP token balance > 0)
   const hasPosition = lpTokenBalanceRaw.gt(0);
 
   const actionTabs = useEarnActionTabs({
@@ -375,7 +355,6 @@ export function VaultActionPanel({
     return '—';
   })();
 
-  // Use unified gas estimation hook
   const {
     estimate: estimatedTxCostUsd,
     isLoading: isGasEstimateLoading,
@@ -402,7 +381,6 @@ export function VaultActionPanel({
   const currentUsdValue = selectedAction === 'supply' ? assetUsdValue : lpTokenUsdValue;
   const currentBalanceAmount = Number(utils.formatUnits(currentBalanceRaw, currentDecimals));
 
-  // Use unified transfer readiness hook
   const transferReadiness = useEarnTransferReadiness({
     amount,
     amountBalance: currentBalanceRaw,
@@ -433,10 +411,9 @@ export function VaultActionPanel({
       return;
     }
 
-    // Check ToS before proceeding (hook validates but doesn't show popup)
     const tosAccepted = await checkAndShowToS();
     if (!tosAccepted) {
-      return; // User didn't accept ToS or closed the popup
+      return;
     }
 
     setTxState('loading');
@@ -447,8 +424,6 @@ export function VaultActionPanel({
     } catch (error) {
       setTxState('idle');
       setTxError(formatTransactionError(error));
-      // Close popup on error - user can see error in the panel
-      // The popup will remain in loading state, but we could add error handling here if needed
     }
   };
 
@@ -464,19 +439,17 @@ export function VaultActionPanel({
   }, [lpTokenBalanceRaw, lpTokenDecimals, assetSymbol, lpTokenUsdValue]);
 
   if (!availableActions && contextLoading) {
-    return <EarnActionPanelSkeleton />; // show skeleton for the first time the panel is rendered
+    return <EarnActionPanelSkeleton />;
   }
 
   return (
     <Card className="bg-gray-1 rounded-lg flex flex-col gap-4 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">
           {selectedAction === 'supply' ? 'Supply' : 'Withdraw'} {assetSymbol}
         </h3>
       </div>
 
-      {/* Position Value Card */}
       {positionValue &&
         (hidePositionOnMobile ? (
           <div className="hidden lg:flex">
@@ -486,7 +459,6 @@ export function VaultActionPanel({
           <EarnPositionValueCard positionValue={positionValue} />
         ))}
 
-      {/* Action Tabs */}
       <EarnActionTabs
         tabs={actionTabs}
         selectedAction={selectedAction}
@@ -497,7 +469,6 @@ export function VaultActionPanel({
         }}
       />
 
-      {/* Amount Input Section */}
       <EarnAmountInputSection
         amount={amount}
         onAmountChange={setAmount}
@@ -522,7 +493,6 @@ export function VaultActionPanel({
         }
       />
 
-      {/* Transaction Details */}
       <EarnTransactionDetailsSection
         details={[
           { label: 'APY', value: currentApr },
@@ -539,10 +509,8 @@ export function VaultActionPanel({
         ]}
       />
 
-      {/* Error Display - Only show transaction errors, not validation errors */}
       <EarnErrorDisplay error={txError || null} />
 
-      {/* Submit Button */}
       <EarnActionSubmitButton
         label={
           transactionQuoteLoading

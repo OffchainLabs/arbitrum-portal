@@ -53,14 +53,6 @@ function buildAvailableActionsKey<C extends OpportunityCategory>(
   return ['available-actions', category, opportunityId, userAddress, network] as const;
 }
 
-/**
- * Unified hook to fetch available actions by opportunity ID and category
- * Returns category-specific action contracts with typed transaction context.
- *
- * Returns available actions and vendor-specific context:
- * - For Vaults (lend): Full transaction context including deposit/redeem steps, claimable rewards
- * - For other categories: Minimal context (just available actions)
- */
 export function useAvailableActions<C extends OpportunityCategory>(
   params: UseAvailableActionsParams<C>,
 ): UseAvailableActionsResult<C> {
@@ -70,8 +62,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
       ? buildAvailableActionsKey(category, opportunityId, userAddress, network)
       : null;
 
-  // 5 minutes refresh interval
-  const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  const REFRESH_INTERVAL = 5 * 60 * 1000;
 
   const swrResponse = useSWRImmutable<AvailableActionsByCategory[C]>(
     swrKey,

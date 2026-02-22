@@ -27,10 +27,6 @@ function getTimeStr(timestamp: number): string {
   return getStandardizedTime(normalizeTimestamp(timestamp));
 }
 
-/**
- * Generate page numbers with ellipsis for pagination.
- * Returns an array of page numbers and 'ellipsis' strings.
- */
 function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -147,9 +143,6 @@ function PaginationControls({ currentPage, totalPages, onPageChange }: Paginatio
   );
 }
 
-/**
- * Unified transaction history component for all earn opportunities (Vaults, Liquid Staking, Pendle)
- */
 export function EarnUserTransactionHistory({
   category,
   opportunityId,
@@ -177,7 +170,6 @@ export function EarnUserTransactionHistory({
     return transactions.slice(startIndex, endIndex);
   }, [transactions, currentPage]);
 
-  // Keep pagination valid when upstream data changes.
   useEffect(() => {
     if (currentPage !== 1 && (totalPages === 0 || currentPage > totalPages)) {
       setCurrentPage(1);
@@ -190,7 +182,6 @@ export function EarnUserTransactionHistory({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
       <div className="flex items-center">
         <h3 className="text-[18px] font-medium text-white tracking-[-0.36px]">
           Your transactions for {opportunityName}

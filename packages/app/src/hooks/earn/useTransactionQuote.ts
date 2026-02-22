@@ -1,5 +1,6 @@
 'use client';
 
+import { useDebounce } from '@uidotdev/usehooks';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -9,8 +10,6 @@ import type {
   TransactionQuoteResponse,
   TransactionStep,
 } from '@/earn-api/types';
-
-import { useDebouncedValue } from './useDebouncedValue';
 
 export type { TransactionQuoteResponse, TransactionStep };
 
@@ -27,7 +26,7 @@ export interface UseTransactionQuoteParams {
   network?: EarnNetwork;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
-  enabled?: boolean; // Whether to fetch (default: true)
+  enabled?: boolean;
 }
 
 export interface UseTransactionQuoteResult {
@@ -37,14 +36,6 @@ export interface UseTransactionQuoteResult {
   refetch: () => void;
 }
 
-/**
- * Unified hook to get transaction quote by opportunity ID and category
- * Replaces useActions, useLiquidStakingSwap, usePendleConvertRoute
- *
- * Returns standardized transaction steps ready for execution
- * Purpose: "How do I execute this?" - Get transaction steps for specific action/amount
- * Note: This hook does NOT execute transactions - execution happens client-side via wagmi
- */
 export function useTransactionQuote(params: UseTransactionQuoteParams): UseTransactionQuoteResult {
   const {
     opportunityId,
@@ -62,8 +53,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
     enabled = true,
   } = params;
 
-  // Debounce amount to prevent API calls on every keystroke (500ms delay)
-  const debouncedAmount = useDebouncedValue(amount, 500);
+  const debouncedAmount = useDebounce(amount, 500);
   const debouncedAmountNum = parseFloat(debouncedAmount);
 
   const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(
@@ -142,7 +132,6 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       );
 
       if (!response.ok) {
-        // Try to parse error response body for detailed error message
         let errorMessage = `Failed to get transaction quote: ${response.statusText}`;
         try {
           const errorData = await response.json();
@@ -151,9 +140,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           } else if (errorData?.message) {
             errorMessage = errorData.message;
           }
-        } catch {
-          // If JSON parsing fails, use default error message
-        }
+        } catch {}
         throw new Error(errorMessage);
       }
 
