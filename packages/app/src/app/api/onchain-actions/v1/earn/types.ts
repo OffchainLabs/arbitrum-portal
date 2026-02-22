@@ -115,11 +115,11 @@ export interface StandardOpportunityLend extends StandardOpportunityBase {
 }
 
 export interface StandardOpportunityLiquidStaking extends StandardOpportunityBase {
-  category: OpportunityCategory.LiquidStaking;
+  category: typeof OpportunityCategory.LiquidStaking;
 }
 
 export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
-  category: OpportunityCategory.FixedYield;
+  category: typeof OpportunityCategory.FixedYield;
   fixedYield: StandardOpportunityFixedYieldDetail;
 }
 
@@ -134,15 +134,12 @@ export type PendleOpportunity = StandardOpportunityFixedYield & { vendor: Vendor
 
 // Vendor-specific response types
 type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
-export type VaultsTransactionContextResponse = Awaited<
-  ReturnType<VaultsSdkInstance['getTransactionsContext']>
->;
-export type VaultsActionsResponse = Awaited<ReturnType<VaultsSdkInstance['getActions']>>;
-export type VaultsAction = VaultsActionsResponse extends { actions: infer A }
-  ? A extends readonly (infer T)[]
-    ? T
-    : never
-  : never;
+export type VaultsAction =
+  Awaited<ReturnType<VaultsSdkInstance['getActions']>> extends { actions: infer A }
+    ? A extends readonly (infer T)[]
+      ? T
+      : never
+    : never;
 
 export interface StandardTokenContextItem {
   decimals: number;
@@ -251,6 +248,10 @@ export interface HistoricalData {
   expiresAt: number;
 }
 
+export interface HistoricalDataRequestOptions {
+  assetSymbol?: string;
+}
+
 export const HISTORICAL_VENDOR_TTL_SECONDS = 86400 as const;
 
 export const ALLOWED_HISTORICAL_RANGES: readonly HistoricalTimeRange[] = [
@@ -332,6 +333,7 @@ export interface VendorAdapter {
     id: string,
     range: HistoricalTimeRange,
     chainId: EarnChainId,
+    options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData>;
   getAvailableActions(
     id: string,

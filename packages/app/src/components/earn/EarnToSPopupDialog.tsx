@@ -37,11 +37,11 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       title=""
       closeable={true}
       isFooterHidden={true}
-      className="!border-0 min-h-screen md:min-h-0 md:!max-w-[400px]"
+      className="!border-0 !h-screen !max-h-[100dvh] !rounded-none md:!h-auto md:!max-w-[400px] md:!rounded"
     >
-      <div className="flex flex-col items-start gap-[27px] py-4 w-full">
+      <div className="flex h-full flex-col gap-6 py-4 w-full">
         {/* Popup Body */}
-        <div className="flex flex-col items-start gap-5 w-full">
+        <div className="flex flex-1 flex-col items-start gap-5 w-full">
           {/* Warning Icon */}
           <div className="flex items-center justify-center w-[63px] h-[63px] rounded-full bg-white/5">
             <ExclamationTriangleIcon className="w-[31.5px] h-[31.5px] text-[#CCB069]" />
@@ -88,9 +88,10 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col gap-2.5 w-full">
+        <div className="mt-auto flex flex-col gap-2.5 w-full pb-2">
           {/* Proceed Button */}
           <button
+            type="button"
             onClick={handleConfirm}
             disabled={!isChecked}
             className={twMerge(
@@ -105,6 +106,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
 
           {/* Go Back Button */}
           <button
+            type="button"
             onClick={handleCancel}
             className="flex items-center justify-center gap-1 px-[15px] py-5 rounded-[15px] w-full text-[16px] font-medium text-white text-center border-none bg-transparent hover:bg-white/10 transition-colors cursor-pointer"
           >
