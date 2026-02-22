@@ -1,22 +1,26 @@
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
-import type { AvailableActions as ApiAvailableActions } from '@/earn-api/types';
+import {
+  type AvailableActions as ApiAvailableActions,
+  type EarnNetwork,
+  Vendor,
+} from '@/earn-api/types';
 
 export type AvailableActions = ApiAvailableActions;
 
 export type LendAvailableActions = AvailableActions & {
-  vendor: 'vaults';
+  vendor: Vendor.Vaults;
   transactionContext: NonNullable<AvailableActions['transactionContext']>;
 };
 
 export type LiquidStakingAvailableActions = AvailableActions & {
-  vendor: 'lifi';
+  vendor: Vendor.LiFi;
   transactionContext: null;
 };
 
 export type FixedYieldAvailableActions = AvailableActions & {
-  vendor: 'pendle';
+  vendor: Vendor.Pendle;
   transactionContext: null;
 };
 
@@ -24,7 +28,7 @@ export interface UseAvailableActionsParams {
   opportunityId: string | null;
   category: OpportunityCategory;
   userAddress: string | null;
-  network?: string;
+  network?: EarnNetwork;
 }
 
 export interface UseAvailableActionsResult {

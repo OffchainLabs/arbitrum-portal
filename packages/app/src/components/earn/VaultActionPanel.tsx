@@ -28,7 +28,7 @@ import { formatAmount, normalizeAmountForParseUnits } from '@/bridge/util/Number
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import type { StandardTransactionHistory } from '@/earn-api/types';
+import type { EarnNetwork, StandardTransactionHistory } from '@/earn-api/types';
 
 import {
   EarnActionSubmitButton,
@@ -72,6 +72,12 @@ export function VaultActionPanel({
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
   const [, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState<string | null>(null);
+  const requestNetwork: EarnNetwork = useMemo(() => {
+    const networkName = vault.network?.name?.toLowerCase() ?? '';
+    return networkName.includes('mainnet') || networkName.includes('ethereum')
+      ? 'mainnet'
+      : 'arbitrum';
+  }, [vault.network?.name]);
 
   // Update selectedAction when initialAction changes
   useEffect(() => {
@@ -93,7 +99,7 @@ export function VaultActionPanel({
     opportunityId: vault.address,
     category: OpportunityCategory.Lend,
     userAddress: walletAddress || null,
-    network: vault.network?.name || 'arbitrum',
+    network: requestNetwork,
   });
 
   const lendActions = availableActions as LendAvailableActions | null;
@@ -120,10 +126,8 @@ export function VaultActionPanel({
 
   // Derive chainId from vault network for balance fetching
   const networkChainId = useMemo(() => {
-    const networkName = vault.network?.name;
-    if (networkName === 'mainnet' || networkName === 'ethereum') return 1 as ChainId;
-    return ChainId.ArbitrumOne;
-  }, [vault.network?.name]);
+    return requestNetwork === 'mainnet' ? ChainId.Ethereum : ChainId.ArbitrumOne;
+  }, [requestNetwork]);
 
   // Fetch onchain balances for asset and lpToken (needed for balance check)
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
@@ -176,7 +180,7 @@ export function VaultActionPanel({
     userAddress: walletAddress || null,
     inputTokenAddress:
       selectedAction === 'supply' ? asset?.address || vault.asset?.address : vault.asset?.address,
-    network: vault.network?.name || 'arbitrum',
+    network: requestNetwork,
     enabled:
       amountInRawUnits !== '0' &&
       parseFloat(amountInRawUnits) > 0 &&
@@ -291,7 +295,7 @@ export function VaultActionPanel({
           category: OpportunityCategory.Lend,
           opportunityId: vault.address,
           userAddress: walletAddress,
-          network: vault.network?.name || 'arbitrum',
+          network: requestNetwork,
           vendor: 'vaults',
           transaction: newTransaction,
         });
