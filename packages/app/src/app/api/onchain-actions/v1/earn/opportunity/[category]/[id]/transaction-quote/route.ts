@@ -15,7 +15,11 @@ import {
   parseEarnNetwork,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import { TransactionQuoteRequest } from '../../../../types';
+import {
+  EARN_TRANSACTION_ACTIONS,
+  type EarnTransactionAction,
+  type TransactionQuoteRequest,
+} from '../../../../types';
 
 /**
  * Get transaction quote - "How do I execute this?"
@@ -29,33 +33,74 @@ export async function POST(
   try {
     assertCorsOriginAllowed(request);
 
-    const parsedRequest = (await request.json()) as TransactionQuoteRequest;
+    const requestBody = await request.json().catch(() => {
+      throw new ValidationError('INVALID_JSON', 'Request body must be valid JSON');
+    });
+    if (!requestBody || typeof requestBody !== 'object' || Array.isArray(requestBody)) {
+      throw new ValidationError('INVALID_BODY', 'Request body must be an object');
+    }
+
+    const parsedRequest = requestBody as Partial<TransactionQuoteRequest>;
+    const {
+      action: rawAction,
+      amount: rawAmount,
+      category: bodyCategory,
+      network: rawNetwork,
+      userAddress: rawUserAddress,
+      inputTokenAddress: rawInputTokenAddress,
+      outputTokenAddress: rawOutputTokenAddress,
+      slippage,
+      simulate,
+    } = parsedRequest;
     const pathCategory = parseOpportunityCategory(params.category);
 
     // Ensure category in body matches path param
-    if (parsedRequest.category && parsedRequest.category !== pathCategory) {
+    if (bodyCategory && bodyCategory !== pathCategory) {
       throw new ValidationError(
         'CATEGORY_MISMATCH',
-        `Category in path (${pathCategory}) does not match category in body (${parsedRequest.category})`,
+        `Category in path (${pathCategory}) does not match category in body (${bodyCategory})`,
       );
     }
 
-    const action = parsedRequest.action;
-    if (!action) {
+    if (!rawAction) {
       throw new ValidationError('MISSING_ACTION', 'action is required');
     }
-    const amount = assertPositiveNumberString(parsedRequest.amount, 'amount');
-    const userAddress = assertAddress(parsedRequest.userAddress ?? null, 'userAddress');
-    const network = parseEarnNetwork(parsedRequest.network ?? null);
+
+    if (!EARN_TRANSACTION_ACTIONS.includes(rawAction)) {
+      throw new ValidationError(
+        'INVALID_ACTION',
+        `action must be one of: ${EARN_TRANSACTION_ACTIONS.join(', ')}`,
+      );
+    }
+    const action = rawAction as EarnTransactionAction;
+
+    if (typeof rawAmount !== 'string') {
+      throw new ValidationError('INVALID_AMOUNT', 'amount must be a string');
+    }
+    const amount = assertPositiveNumberString(rawAmount, 'amount');
+    const userAddress = assertAddress(rawUserAddress ?? null, 'userAddress');
+    const network = parseEarnNetwork(rawNetwork ?? null);
     const opportunityId = assertAddress(params.id, 'opportunityId');
-    const inputTokenAddress = assertOptionalAddress(
-      parsedRequest.inputTokenAddress,
-      'inputTokenAddress',
-    );
-    const outputTokenAddress = assertOptionalAddress(
-      parsedRequest.outputTokenAddress,
-      'outputTokenAddress',
-    );
+    const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
+    const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
+
+    if (slippage !== undefined) {
+      if (
+        typeof slippage !== 'number' ||
+        !Number.isFinite(slippage) ||
+        slippage < 0 ||
+        slippage > 100
+      ) {
+        throw new ValidationError(
+          'INVALID_SLIPPAGE',
+          'slippage must be a number between 0 and 100',
+        );
+      }
+    }
+
+    if (simulate !== undefined && typeof simulate !== 'boolean') {
+      throw new ValidationError('INVALID_SIMULATE', 'simulate must be a boolean');
+    }
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(pathCategory);

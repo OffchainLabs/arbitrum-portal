@@ -34,6 +34,15 @@ function parseApiEstimateUsd(apiEstimate?: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isAllowanceRelatedError(err: unknown): boolean {
+  const errorMessage = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+  return (
+    errorMessage.includes('allowance') ||
+    errorMessage.includes('transfer amount exceeds allowance') ||
+    errorMessage.includes('erc20: transfer amount exceeds allowance')
+  );
+}
+
 /**
  * Hook to estimate gas costs for transaction steps
  * Uses onchain estimation with API fallback for consistent gas cost display
@@ -144,12 +153,7 @@ export function useEarnGasEstimate({
               );
               return { step, cost };
             } catch (err) {
-              const errorMessage =
-                err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
-              const isAllowanceError =
-                errorMessage.includes('allowance') ||
-                errorMessage.includes('transfer amount exceeds allowance') ||
-                errorMessage.includes('erc20: transfer amount exceeds allowance');
+              const isAllowanceError = isAllowanceRelatedError(err);
 
               if (isAllowanceError && hasApprovalBefore) {
                 // In a bundle, the approval executes first — return zero to trigger API fallback
@@ -200,12 +204,7 @@ export function useEarnGasEstimate({
           setIsLoading(false);
         }
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
-        const isAllowanceError =
-          errorMessage.includes('allowance') ||
-          errorMessage.includes('transfer amount exceeds allowance') ||
-          errorMessage.includes('erc20: transfer amount exceeds allowance');
+        const isAllowanceError = isAllowanceRelatedError(err);
 
         if (isAllowanceError) {
           // Allowance errors are expected when approvals haven't been granted

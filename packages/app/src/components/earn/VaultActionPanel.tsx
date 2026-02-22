@@ -22,7 +22,7 @@ import { useTokenBalance } from '@/app-hooks/earn/useTokenBalance';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount, normalizeAmountForParseUnits } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatUSD, normalizeAmountForParseUnits } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
@@ -403,7 +403,7 @@ export function VaultActionPanel({
         decimals: lpTokenDecimals,
         symbol: assetSymbol,
       }),
-      usdValue: `$${lpTokenUsdValue.toFixed(2)} USD`,
+      usdValue: formatUSD(lpTokenUsdValue),
     };
   }, [lpTokenBalanceRaw, lpTokenDecimals, assetSymbol, lpTokenUsdValue]);
 
@@ -421,9 +421,14 @@ export function VaultActionPanel({
       </div>
 
       {/* Position Value Card */}
-      {positionValue && (
-        <EarnPositionValueCard positionValue={positionValue} hideOnMobile={hidePositionOnMobile} />
-      )}
+      {positionValue &&
+        (hidePositionOnMobile ? (
+          <div className="hidden lg:flex">
+            <EarnPositionValueCard positionValue={positionValue} />
+          </div>
+        ) : (
+          <EarnPositionValueCard positionValue={positionValue} />
+        ))}
 
       {/* Action Tabs */}
       <EarnActionTabs

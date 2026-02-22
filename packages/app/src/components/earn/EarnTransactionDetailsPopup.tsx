@@ -20,7 +20,7 @@ export interface TransactionDetails {
   action: string; // 'supply', 'withdraw', 'enter', 'exit', 'buy', 'sell'
   amount: string; // Amount in raw units (wei/smallest unit)
   tokenSymbol: string;
-  decimals?: number; // Token decimals (defaults to 18 if not provided)
+  decimals: number; // Token decimals in raw-unit formatting
   assetLogo?: string; // Asset/token logo to display
   txHash?: string;
   chainId?: number;
@@ -70,6 +70,14 @@ function formatUsdRaw(usdRaw?: string): string | null {
   }
 
   return formatUSD(parsed);
+}
+
+function safeBigNumberFromAmount(amount: string): BigNumber {
+  try {
+    return BigNumber.from(amount || '0');
+  } catch {
+    return BigNumber.from(0);
+  }
 }
 
 export function EarnTransactionDetailsPopup({
@@ -125,12 +133,8 @@ export function EarnTransactionDetailsPopup({
   const formattedNetworkFeeUsd = formatUsdRaw(displayNetworkFee?.usd);
   const explorerName = getExplorerName(chainId);
 
-  // Get token decimals (default to 18 if not provided)
-  // Ensure consistent formatting with detail pages and transaction history table
-  const tokenDecimals = transactionDetails.decimals ?? 18;
-
-  // Convert amount string to BigNumber for formatting
-  const amountBigNumber = BigNumber.from(transactionDetails.amount || '0');
+  const tokenDecimals = transactionDetails.decimals;
+  const amountBigNumber = safeBigNumberFromAmount(transactionDetails.amount);
 
   // Format amount consistently with detail pages and transaction history table
   const formattedAmount = formatAmount(amountBigNumber, {

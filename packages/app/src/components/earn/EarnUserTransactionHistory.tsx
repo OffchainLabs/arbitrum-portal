@@ -67,6 +67,26 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void;
 }
 
+type TransactionHistoryViewState = 'loading' | 'error' | 'empty' | 'table';
+
+function getViewState(params: {
+  isLoading: boolean;
+  error: string | null;
+  hasTransactions: boolean;
+}): TransactionHistoryViewState {
+  const { isLoading, error, hasTransactions } = params;
+  if (isLoading) {
+    return 'loading';
+  }
+  if (error) {
+    return 'error';
+  }
+  if (!hasTransactions) {
+    return 'empty';
+  }
+  return 'table';
+}
+
 function PaginationControls({ currentPage, totalPages, onPageChange }: PaginationControlsProps) {
   if (totalPages <= 1) {
     return null;
@@ -160,19 +180,16 @@ export function EarnUserTransactionHistory({
     return transactions.slice(startIndex, endIndex);
   }, [transactions, currentPage]);
 
-  // Reset to page 1 when transactions change
+  // Keep pagination valid when upstream data changes.
   useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
+    if (currentPage !== 1 && (totalPages === 0 || currentPage > totalPages)) {
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
 
   if (!walletAddress) return null;
 
-  const showLoading = isLoading;
-  const showError = !isLoading && !!error;
-  const showEmpty = !isLoading && !error && !hasTransactions;
-  const showTable = !isLoading && !error && hasTransactions;
+  const viewState = getViewState({ isLoading, error, hasTransactions });
 
   return (
     <div className="flex flex-col gap-4">
@@ -183,17 +200,17 @@ export function EarnUserTransactionHistory({
         </h3>
       </div>
 
-      {showLoading && (
+      {viewState === 'loading' && (
         <div className="flex items-center justify-center py-6 text-white/60 text-sm">
           Loading transactions...
         </div>
       )}
 
-      {showError && <div className="text-xs text-red-400">Failed to load: {error}</div>}
+      {viewState === 'error' && <div className="text-xs text-red-400">Failed to load: {error}</div>}
 
-      {showEmpty && <div className="text-xs text-white/50">No transactions found.</div>}
+      {viewState === 'empty' && <div className="text-xs text-white/50">No transactions found.</div>}
 
-      {showTable && (
+      {viewState === 'table' && (
         <>
           <EarnTransactionHistoryTable
             rows={paginatedTransactions}

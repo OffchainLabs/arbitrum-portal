@@ -149,7 +149,7 @@ function DesktopHistoryRow({
           chainId={row.chainId}
           transactionHash={row.transactionHash}
           className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity min-w-0"
-          textClassName="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate hover:text-white"
+          textClassName="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate hover:text-white hover:underline"
         />
       </div>
 
@@ -180,7 +180,7 @@ function MobileHistoryRow({
           chainId={row.chainId}
           transactionHash={row.transactionHash}
           className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity shrink-0"
-          textClassName="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap font-mono hover:text-white"
+          textClassName="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap font-mono hover:text-white hover:underline"
         />
       </div>
 
@@ -276,9 +276,9 @@ export function EarnTransactionHistoryTable({
       </div>
 
       <div className="hidden md:flex flex-col gap-1">
-        {rows.map((row, index) => (
+        {rows.map((row) => (
           <DesktopHistoryRow
-            key={`${row.transactionHash}-${index}`}
+            key={`${row.transactionHash}-${row.timestamp}`}
             row={row}
             getDateStr={getDateStr}
             getTimeStr={getTimeStr}
@@ -307,9 +307,9 @@ export function EarnTransactionHistoryTable({
                   <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
                 </div>
 
-                {dateRows.map((row, index) => (
+                {dateRows.map((row) => (
                   <MobileHistoryRow
-                    key={`${row.transactionHash}-${index}`}
+                    key={`${row.transactionHash}-${row.timestamp}`}
                     row={row}
                     onClick={() => handleRowClick(row)}
                   />
