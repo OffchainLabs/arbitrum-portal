@@ -34,6 +34,13 @@ export interface UseEarnTransactionExecutionResult {
   isExecuting: boolean;
 }
 
+const MAX_BATCH_POLL_ATTEMPTS = 120; // ~2 minutes at 1s intervals
+const POLL_INTERVAL_MS = 1000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function useEarnTransactionExecution({
   chainId,
   buildCalls,
@@ -58,24 +65,16 @@ export function useEarnTransactionExecution({
         }
       };
 
-      const executeBatch = async () => {
-        await ensureCorrectChain();
-        const calls = await Promise.resolve(buildCalls());
-
+      const getCallsOrThrow = async () => {
+        const calls = await buildCalls();
         if (calls.length === 0) {
           throw new Error('No calls to execute');
         }
+        return calls;
+      };
 
-        const { id: batchId } = await sendCalls(wagmiConfig, { calls });
-
-        if (onTransactionSubmitted) {
-          onTransactionSubmitted({ txHash: undefined, amount: inputAmount });
-        }
-
-        const MAX_POLL_ATTEMPTS = 120; // ~2 minutes at 1s intervals
-        let batchTxHash: string | undefined;
-
-        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      const waitForBatchTxHash = async (batchId: string) => {
+        for (let attempt = 0; attempt < MAX_BATCH_POLL_ATTEMPTS; attempt++) {
           // eslint-disable-next-line no-await-in-loop
           const callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
 
@@ -92,27 +91,33 @@ export function useEarnTransactionExecution({
             if (!txHash) {
               throw new Error('Batch completed but transaction hash not found in receipt');
             }
-            batchTxHash = txHash;
-            break;
+            return txHash;
           }
 
           // eslint-disable-next-line no-await-in-loop
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await sleep(POLL_INTERVAL_MS);
         }
 
-        if (!batchTxHash) {
-          throw new Error('Batch transaction timed out');
+        throw new Error('Batch transaction timed out');
+      };
+
+      const executeBatch = async () => {
+        await ensureCorrectChain();
+        const calls = await getCallsOrThrow();
+
+        const { id: batchId } = await sendCalls(wagmiConfig, { calls });
+
+        if (onTransactionSubmitted) {
+          onTransactionSubmitted({ txHash: undefined, amount: inputAmount });
         }
+
+        const batchTxHash = await waitForBatchTxHash(batchId);
         onTransactionFinished({ txHash: batchTxHash, amount: inputAmount });
       };
 
       const executeSequential = async () => {
         await ensureCorrectChain();
-        const calls = await Promise.resolve(buildCalls());
-
-        if (calls.length === 0) {
-          throw new Error('No calls to execute');
-        }
+        const calls = await getCallsOrThrow();
 
         let lastTxHash: string | undefined;
 
