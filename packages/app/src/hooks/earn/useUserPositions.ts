@@ -1,7 +1,9 @@
+import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { formatAmount } from '@/bridge/util/NumberUtils';
 import { type EarnNetwork, type UserPositionsResponse } from '@/earn-api/types';
 
 const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
@@ -87,9 +89,13 @@ export function useUserPositions(
       const estimatedEarningsUsd =
         position.estimatedEarningsUsd ??
         (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
+      const deposited = formatAmount(BigNumber.from(position.amount), {
+        decimals: position.tokenDecimals,
+        symbol: position.tokenSymbol,
+      });
 
       positionsMap.set(position.opportunityId, {
-        deposited: position.amountFormatted,
+        deposited,
         valueUsd: position.valueUsd,
         estimatedEarningsUsd,
         earnings: '-',
