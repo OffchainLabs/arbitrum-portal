@@ -116,14 +116,8 @@ export function useEarnTransactionExecution({
 
         let lastTxHash: string | undefined;
 
-        for (let index = 0; index < calls.length; index++) {
+        for (const [index, currentCall] of calls.entries()) {
           setCurrentActionIndex(index);
-          const call = calls[index];
-          if (!call) {
-            throw new Error(`No call found at index ${index}`);
-          }
-
-          const currentCall = call;
 
           // eslint-disable-next-line no-await-in-loop
           const hash = await sendTransaction(wagmiConfig, {
