@@ -43,7 +43,7 @@ export interface StandardOpportunityMetrics {
 export interface StandardOpportunityLendDetail {
   protocolName: string;
   networkName: string;
-  tvlUsd: number;
+  tvlUsd?: number;
   assetSymbol?: string;
   assetLogo?: string;
   assetAddress?: string;

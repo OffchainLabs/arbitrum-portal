@@ -1,7 +1,5 @@
 import { NextRequest } from 'next/server';
 
-import { parseValidQueryNumber } from '@/app-lib/parseValidQueryNumber';
-
 import { CategoryRouter } from '../CategoryRouter';
 import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
@@ -34,27 +32,22 @@ export async function GET(request: NextRequest) {
       throw new ValidationError('INVALID_ORDER_BY', 'orderBy must be one of: rawApy, rawTvl');
     }
 
-    const perPageRaw = searchParams.get('perPage');
-    const parsedPerPage = parseValidQueryNumber(perPageRaw, {
-      default: 50,
-      min: MIN_PER_PAGE,
-      max: MAX_PER_PAGE,
-      integer: true,
-    });
-    if (perPageRaw !== null && parsedPerPage === undefined) {
-      throw new ValidationError(
-        'INVALID_PER_PAGE',
-        `perPage must be an integer between ${MIN_PER_PAGE} and ${MAX_PER_PAGE}`,
-      );
-    }
-    const perPage = parsedPerPage ?? 50;
+    const perPage =
+      parseOptionalNumber(searchParams.get('perPage'), {
+        field: 'perPage',
+        code: 'INVALID_PER_PAGE',
+        min: MIN_PER_PAGE,
+        max: MAX_PER_PAGE,
+        integer: true,
+      }) ?? 50;
 
-    const pageRaw = searchParams.get('page');
-    const parsedPage = parseValidQueryNumber(pageRaw, { default: 0, min: 0, integer: true });
-    if (pageRaw !== null && parsedPage === undefined) {
-      throw new ValidationError('INVALID_PAGE', 'page must be an integer >= 0');
-    }
-    const page = parsedPage ?? 0;
+    const page =
+      parseOptionalNumber(searchParams.get('page'), {
+        field: 'page',
+        code: 'INVALID_PAGE',
+        min: 0,
+        integer: true,
+      }) ?? 0;
 
     const minTvl = parseOptionalNumber(searchParams.get('minTvl'), {
       field: 'minTvl',

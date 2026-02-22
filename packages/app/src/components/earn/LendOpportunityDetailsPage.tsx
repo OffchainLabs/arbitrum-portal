@@ -19,9 +19,11 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
     (opportunity.lend?.protocolName ?? opportunity.protocol).charAt(0).toUpperCase() +
     (opportunity.lend?.protocolName ?? opportunity.protocol).slice(1);
 
-  const apy30day = opportunity.lend?.apy30day ?? 0;
-  const apy7day = opportunity.lend?.apy7day ?? 0;
-  const tvlUsd = opportunity.lend?.tvlUsd ?? 0;
+  const apy30day = opportunity.lend?.apy30day;
+  const apy7day = opportunity.lend?.apy7day;
+  const tvlUsd = opportunity.lend?.tvlUsd;
+  const formattedTvl =
+    typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatTVL(tvlUsd) : '—';
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
@@ -78,7 +80,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">TVL</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
-                {formatTVL(tvlUsd)}
+                {formattedTvl}
               </div>
             </Card>
 
@@ -97,15 +99,23 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">7d APY</div>
-              <div className="text-base font-medium text-white">{apy7day.toFixed(1)}%</div>
+              <div className="text-base font-medium text-white">
+                {typeof apy7day === 'number' && Number.isFinite(apy7day)
+                  ? `${apy7day.toFixed(1)}%`
+                  : '—'}
+              </div>
             </div>
             <div className="rounded-lg bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">30d APY</div>
-              <div className="text-base font-medium text-white">{apy30day.toFixed(1)}%</div>
+              <div className="text-base font-medium text-white">
+                {typeof apy30day === 'number' && Number.isFinite(apy30day)
+                  ? `${apy30day.toFixed(1)}%`
+                  : '—'}
+              </div>
             </div>
             <div className="rounded-lg bg-gray-1 p-4 col-span-2 lg:col-span-1">
               <div className="text-xs text-white/50 mb-1">TVL (Total Value Locked)</div>
-              <div className="text-base font-medium text-white">{formatTVL(tvlUsd)}</div>
+              <div className="text-base font-medium text-white">{formattedTvl}</div>
             </div>
           </div>
 

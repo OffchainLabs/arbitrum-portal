@@ -44,6 +44,22 @@ export type VaultsActionType = 'deposit' | 'redeem';
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
 
+  private toOptionalPercentage(rawValue: number | null | undefined): number | null {
+    if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+      return null;
+    }
+    return rawValue * 100;
+  }
+
+  private toOptionalNumber(rawValue: string | null | undefined): number | null {
+    if (rawValue == null) {
+      return null;
+    }
+
+    const parsed = Number(rawValue);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
     const response = await vaultsSdk.getAllVaults({
       query: {
@@ -61,9 +77,10 @@ export class VaultsAdapter implements VendorAdapter {
     if (filters.minApy) {
       filtered = filtered.filter((vault) => {
         const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
-        const apyDecimal = apyData?.total ?? 0;
-        const apyPercentage = apyDecimal * 100;
-        return filters.minApy !== undefined && apyPercentage >= filters.minApy;
+        const apyPercentage = this.toOptionalPercentage(apyData?.total);
+        return (
+          apyPercentage !== null && filters.minApy !== undefined && apyPercentage >= filters.minApy
+        );
       });
     }
 
@@ -450,8 +467,7 @@ export class VaultsAdapter implements VendorAdapter {
 
   private transformToStandard(vault: DetailedVault): StandardOpportunity {
     const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
-    const apyDecimal = apyData?.total ?? 0;
-    const apyPercentage = apyDecimal * 100;
+    const apyPercentage = this.toOptionalPercentage(apyData?.total);
     const apyBreakdown = apyData
       ? {
           base: apyData.base * 100,
@@ -459,7 +475,7 @@ export class VaultsAdapter implements VendorAdapter {
           total: apyData.total * 100,
         }
       : undefined;
-    const tvlUsd = parseFloat(vault.tvl?.usd || '0');
+    const tvlUsd = this.toOptionalNumber(vault.tvl?.usd);
     const networkName = vault.network?.name || '';
     const protocolName = vault.protocol?.name || '';
 
@@ -496,7 +512,7 @@ export class VaultsAdapter implements VendorAdapter {
         stakersCount: vault.holdersData?.totalCount,
         apy30day: vault.apy?.['30day']?.total ? vault.apy['30day'].total * 100 : undefined,
         apy7day: vault.apy?.['7day']?.total ? vault.apy['7day'].total * 100 : undefined,
-        tvlUsd,
+        tvlUsd: tvlUsd ?? undefined,
       },
     };
   }
