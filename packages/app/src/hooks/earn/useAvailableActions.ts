@@ -27,6 +27,23 @@ export interface UseAvailableActionsResult {
   refetch: () => void;
 }
 
+type AvailableActionsKey = readonly [
+  'available-actions',
+  OpportunityCategory,
+  string,
+  string,
+  EarnNetwork,
+];
+
+function buildAvailableActionsKey(
+  category: OpportunityCategory,
+  opportunityId: string,
+  userAddress: string,
+  network: EarnNetwork,
+): AvailableActionsKey {
+  return ['available-actions', category, opportunityId, userAddress, network] as const;
+}
+
 /**
  * Unified hook to fetch available actions by opportunity ID and category
  * Replaces useVaultTransactionContext
@@ -37,25 +54,17 @@ export interface UseAvailableActionsResult {
  */
 export function useAvailableActions(params: UseAvailableActionsParams): UseAvailableActionsResult {
   const { opportunityId, category, userAddress, network = 'arbitrum' } = params;
+  const swrKey =
+    opportunityId && category && userAddress
+      ? buildAvailableActionsKey(category, opportunityId, userAddress, network)
+      : null;
 
   // 5 minutes refresh interval
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
   const { data, error, isLoading, mutate } = useSWRImmutable<AvailableActions>(
-    opportunityId && category && userAddress
-      ? ([opportunityId, category, userAddress, network, 'available-actions'] as const)
-      : null,
-    async ([keyOpportunityId, keyCategory, keyUserAddress, keyNetwork]: readonly [
-      string,
-      OpportunityCategory,
-      string,
-      EarnNetwork,
-      string,
-    ]) => {
-      if (!keyUserAddress) {
-        throw new Error('userAddress is required');
-      }
-
+    swrKey,
+    async ([, keyCategory, keyOpportunityId, keyUserAddress, keyNetwork]: AvailableActionsKey) => {
       const queryParams = new URLSearchParams({
         userAddress: keyUserAddress,
         network: keyNetwork,

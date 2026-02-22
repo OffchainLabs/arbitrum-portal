@@ -18,6 +18,23 @@ type UseEarnTransactionHistoryResult = {
   error: string | null;
 };
 
+type EarnTransactionHistoryKey = readonly [
+  'earn-transactions',
+  OpportunityCategory,
+  string,
+  string,
+  EarnNetwork,
+];
+
+function buildEarnTransactionHistoryKey(
+  category: OpportunityCategory,
+  opportunityId: string,
+  userAddress: string,
+  network: EarnNetwork,
+): EarnTransactionHistoryKey {
+  return ['earn-transactions', category, opportunityId, userAddress, network] as const;
+}
+
 /**
  * Hook to fetch transaction history for a specific opportunity
  * User-specific, should invalidate when user makes an earn transaction
@@ -28,17 +45,20 @@ export function useEarnTransactionHistory(
   userAddress: string | null,
   network: EarnNetwork = 'arbitrum',
 ): UseEarnTransactionHistoryResult {
-  const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
+  const historyKey =
     userAddress && opportunityId
-      ? ([category, opportunityId, userAddress, network, 'earn-transactions'] as const)
-      : null,
-    async ([keyCategory, keyOpportunityId, keyUserAddress, keyNetwork]: readonly [
-      OpportunityCategory,
-      string,
-      string,
-      EarnNetwork,
-      string,
-    ]) => {
+      ? buildEarnTransactionHistoryKey(category, opportunityId, userAddress, network)
+      : null;
+
+  const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
+    historyKey,
+    async ([
+      ,
+      keyCategory,
+      keyOpportunityId,
+      keyUserAddress,
+      keyNetwork,
+    ]: EarnTransactionHistoryKey) => {
       if (!keyUserAddress || !keyOpportunityId) return null;
 
       const params = new URLSearchParams({
@@ -101,7 +121,7 @@ export async function addTransactionToHistory(params: {
 }): Promise<void> {
   const { category, opportunityId, userAddress, network, vendor, transaction } = params;
 
-  const historyKey = [category, opportunityId, userAddress, network, 'earn-transactions'] as const;
+  const historyKey = buildEarnTransactionHistoryKey(category, opportunityId, userAddress, network);
 
   await mutate(
     historyKey,

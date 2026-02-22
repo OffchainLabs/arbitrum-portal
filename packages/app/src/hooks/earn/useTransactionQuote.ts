@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -10,6 +9,8 @@ import type {
   TransactionQuoteResponse,
   TransactionStep,
 } from '@/earn-api/types';
+
+import { useDebouncedValue } from './useDebouncedValue';
 
 export type { TransactionQuoteResponse, TransactionStep };
 
@@ -34,25 +35,6 @@ export interface UseTransactionQuoteResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-}
-
-/**
- * Debounce hook to delay API calls until user stops typing
- */
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }
 
 /**
@@ -81,7 +63,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   } = params;
 
   // Debounce amount to prevent API calls on every keystroke (500ms delay)
-  const debouncedAmount = useDebounce(amount, 500);
+  const debouncedAmount = useDebouncedValue(amount, 500);
   const debouncedAmountNum = parseFloat(debouncedAmount);
 
   const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(

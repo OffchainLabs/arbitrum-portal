@@ -61,6 +61,75 @@ interface EarnUserTransactionHistoryProps {
 
 const ITEMS_PER_PAGE = 5;
 
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PaginationControls({ currentPage, totalPages, onPageChange }: PaginationControlsProps) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
+  return (
+    <div className="flex items-center justify-center pt-2">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
+          disabled={!canGoPrevious}
+          className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+          aria-label="Previous page"
+        >
+          <ArrowLeftIcon className="h-4 w-4 text-white" />
+        </button>
+
+        <div className="flex items-center gap-3">
+          {getPageNumbers(currentPage, totalPages).map((page, idx) => {
+            if (page === 'ellipsis') {
+              return (
+                <span key={`ellipsis-${idx}`} className="px-2 text-white/50">
+                  ...
+                </span>
+              );
+            }
+
+            const pageNum = page as number;
+            const isActive = pageNum === currentPage;
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={twMerge(
+                  'px-2 py-1 text-sm font-medium transition-colors',
+                  isActive ? 'text-white' : 'text-white/50 hover:text-white/70',
+                )}
+                aria-label={`Page ${pageNum}`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => canGoNext && onPageChange(currentPage + 1)}
+          disabled={!canGoNext}
+          className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+          aria-label="Next page"
+        >
+          <ArrowRightIcon className="h-4 w-4 text-white" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Unified transaction history component for all earn opportunities (Vaults, Liquid Staking, Pendle)
  */
@@ -96,25 +165,14 @@ export function EarnUserTransactionHistory({
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [transactions.length, totalPages, currentPage]);
-
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePageClick = (page: number) => {
-    setCurrentPage(page);
-  };
+  }, [currentPage, totalPages]);
 
   if (!walletAddress) return null;
+
+  const showLoading = isLoading;
+  const showError = !isLoading && !!error;
+  const showEmpty = !isLoading && !error && !hasTransactions;
+  const showTable = !isLoading && !error && hasTransactions;
 
   return (
     <div className="flex flex-col gap-4">
@@ -125,19 +183,17 @@ export function EarnUserTransactionHistory({
         </h3>
       </div>
 
-      {isLoading && (
+      {showLoading && (
         <div className="flex items-center justify-center py-6 text-white/60 text-sm">
           Loading transactions...
         </div>
       )}
 
-      {error && <div className="text-xs text-red-400">Failed to load: {error}</div>}
+      {showError && <div className="text-xs text-red-400">Failed to load: {error}</div>}
 
-      {!isLoading && !error && !hasTransactions && (
-        <div className="text-xs text-white/50">No transactions found.</div>
-      )}
+      {showEmpty && <div className="text-xs text-white/50">No transactions found.</div>}
 
-      {!isLoading && !error && hasTransactions && (
+      {showTable && (
         <>
           <EarnTransactionHistoryTable
             rows={paginatedTransactions}
@@ -148,63 +204,11 @@ export function EarnUserTransactionHistory({
             protocolName={protocolName}
             protocolLogo={protocolLogo}
           />
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center pt-2">
-              {/* Pagination controls */}
-              <div className="flex items-center gap-2">
-                {/* Previous arrow */}
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentPage === 1}
-                  className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-                  aria-label="Previous page"
-                >
-                  <ArrowLeftIcon className="h-4 w-4 text-white" />
-                </button>
-
-                {/* Page numbers */}
-                <div className="flex items-center gap-3">
-                  {getPageNumbers(currentPage, totalPages).map((page, idx) => {
-                    if (page === 'ellipsis') {
-                      return (
-                        <span key={`ellipsis-${idx}`} className="px-2 text-white/50">
-                          ...
-                        </span>
-                      );
-                    }
-                    const pageNum = page as number;
-                    const isActive = pageNum === currentPage;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageClick(pageNum)}
-                        className={twMerge(
-                          'px-2 py-1 text-sm font-medium transition-colors',
-                          isActive ? 'text-white' : 'text-white/50 hover:text-white/70',
-                        )}
-                        aria-label={`Page ${pageNum}`}
-                        aria-current={isActive ? 'page' : undefined}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Next arrow */}
-                <button
-                  onClick={handleNext}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-                  aria-label="Next page"
-                >
-                  <ArrowRightIcon className="h-4 w-4 text-white" />
-                </button>
-              </div>
-            </div>
-          )}
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </div>
