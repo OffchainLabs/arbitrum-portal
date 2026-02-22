@@ -2,6 +2,7 @@ import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
+import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 
 export interface StandardOpportunityDetail {
   id: string;
@@ -115,8 +116,9 @@ function flattenOpportunity(api: ApiOpportunityResponse): StandardOpportunityDet
     protocol: api.protocol,
     protocolIcon: api.protocolIcon ?? '',
     vaultAddress: api.vaultAddress,
-    apy: api.apyFormatted ?? `${(m.rawApy ?? 0).toFixed(2)}%`,
-    tvl: api.tvlFormatted ?? `$${(m.rawTvl ?? 0).toLocaleString()}`,
+    // Keep formatting in UI hooks to avoid API opinionated display strings.
+    apy: formatPercentage(m.rawApy ?? 0),
+    tvl: formatTVL(m.rawTvl ?? 0),
     rawApy: m.rawApy,
     rawTvl: m.rawTvl,
     deposited: m.deposited,

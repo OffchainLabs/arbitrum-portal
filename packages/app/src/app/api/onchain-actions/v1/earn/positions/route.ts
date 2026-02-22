@@ -21,8 +21,6 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 
   const byVendor: Record<string, { count: number; valueUsd: number }> = {
     [Vendor.Vaults]: { count: 0, valueUsd: 0 },
-    [Vendor.LiFi]: { count: 0, valueUsd: 0 },
-    [Vendor.Pendle]: { count: 0, valueUsd: 0 },
   };
 
   let totalValueUsd = 0;
