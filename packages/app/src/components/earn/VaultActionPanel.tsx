@@ -4,10 +4,8 @@ import { BigNumber, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
-import {
-  type LendAvailableActions,
-  useAvailableActions,
-} from '@/app-hooks/earn/useAvailableActions';
+import { getEarnRequestNetwork } from '@/app-hooks/earn/getEarnRequestNetwork';
+import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
 import {
@@ -70,12 +68,10 @@ export function VaultActionPanel({
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
   const [, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState<string | null>(null);
-  const requestNetwork: EarnNetwork = useMemo(() => {
-    const networkName = vault.network?.name?.toLowerCase() ?? '';
-    return networkName.includes('mainnet') || networkName.includes('ethereum')
-      ? 'mainnet'
-      : 'arbitrum';
-  }, [vault.network?.name]);
+  const requestNetwork: EarnNetwork = useMemo(
+    () => getEarnRequestNetwork(vault.network?.name),
+    [vault.network?.name],
+  );
 
   // Update selectedAction when initialAction changes
   useEffect(() => {
@@ -100,8 +96,7 @@ export function VaultActionPanel({
     network: requestNetwork,
   });
 
-  const lendActions = availableActions as LendAvailableActions | null;
-  const transactionContext = lendActions?.transactionContext;
+  const transactionContext = availableActions?.transactionContext;
   const asset = transactionContext?.asset;
   const lpToken = transactionContext?.lpToken;
 

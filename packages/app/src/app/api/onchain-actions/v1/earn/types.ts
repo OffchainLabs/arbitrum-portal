@@ -306,7 +306,7 @@ export interface StandardTransactionHistory {
   eventType: string;
   assetAmountRaw: string;
   assetSymbol: string;
-  decimals?: number;
+  decimals: number;
   assetLogo?: string;
   chainId: number;
   chainName: string;

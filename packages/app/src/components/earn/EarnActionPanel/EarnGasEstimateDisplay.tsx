@@ -1,4 +1,5 @@
 import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface EarnGasEstimateDisplayProps {
   estimate: GasEstimate | null;
@@ -25,5 +26,8 @@ export function EarnGasEstimateDisplay({
     return <span className="text-xs text-white">{fallback}</span>;
   }
 
-  return <span className="text-xs text-white">{estimate.usd ?? `~${estimate.eth} ETH`}</span>;
+  const usdValue = estimate.usd ? Number(estimate.usd) : null;
+  const formattedUsd = usdValue != null && Number.isFinite(usdValue) ? formatUSD(usdValue) : null;
+
+  return <span className="text-xs text-white">{formattedUsd ?? `~${estimate.eth} ETH`}</span>;
 }

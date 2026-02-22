@@ -2,18 +2,18 @@
 
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
-import { BigNumber, utils } from 'ethers';
+import { BigNumber } from 'ethers';
 import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { usePublicClient } from 'wagmi';
 
+import { useEarnTransactionNetworkFee } from '@/app-hooks/earn/useEarnTransactionNetworkFee';
 import { Dialog } from '@/bridge/components/common/Dialog';
 import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount } from '@/bridge/util/NumberUtils';
-import { explorerUrls, getNetworkName } from '@/bridge/util/networks';
+import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
+import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
 
 export interface TransactionDetails {
@@ -41,6 +41,37 @@ interface EarnTransactionDetailsPopupProps {
   isLoading: boolean;
 }
 
+function getExplorerName(chainId: number): string {
+  const url = getExplorerUrl(chainId);
+  if (url.includes('arbiscan.io')) {
+    if (url.includes('nova')) return 'Nova Arbiscan';
+    if (url.includes('sepolia')) return 'Sepolia Arbiscan';
+    return 'Arbiscan';
+  }
+  if (url.includes('basescan.org')) {
+    if (url.includes('sepolia')) return 'Sepolia Basescan';
+    return 'Basescan';
+  }
+  if (url.includes('etherscan.io')) {
+    if (url.includes('sepolia')) return 'Sepolia Etherscan';
+    return 'Etherscan';
+  }
+  return 'Explorer';
+}
+
+function formatUsdRaw(usdRaw?: string): string | null {
+  if (!usdRaw) {
+    return null;
+  }
+
+  const parsed = Number(usdRaw);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return formatUSD(parsed);
+}
+
 export function EarnTransactionDetailsPopup({
   isOpen,
   onClose,
@@ -48,59 +79,14 @@ export function EarnTransactionDetailsPopup({
   isLoading,
 }: EarnTransactionDetailsPopupProps) {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [networkFee, setNetworkFee] = useState<{ amount: string; usd?: string } | null>(null);
-  const [isFetchingFee, setIsFetchingFee] = useState(false);
   const chainId = transactionDetails?.chainId || ChainId.ArbitrumOne;
-  const publicClient = usePublicClient({ chainId });
-
-  // Fetch network fee from transaction receipt
-  useEffect(() => {
-    const fetchNetworkFee = async () => {
-      if (!transactionDetails?.txHash || !publicClient || transactionDetails.networkFee) {
-        // Use provided fee if available, or skip if no txHash/client
-        if (transactionDetails?.networkFee) {
-          setNetworkFee(transactionDetails.networkFee);
-        }
-        return;
-      }
-
-      setIsFetchingFee(true);
-      try {
-        const receipt = await publicClient.getTransactionReceipt({
-          hash: transactionDetails.txHash as `0x${string}`,
-        });
-
-        // Calculate fee: gasUsed * effectiveGasPrice
-        const gasUsed = BigNumber.from(receipt.gasUsed.toString());
-        const effectiveGasPrice = receipt.effectiveGasPrice
-          ? BigNumber.from(receipt.effectiveGasPrice.toString())
-          : null;
-
-        if (!effectiveGasPrice) {
-          // If no effectiveGasPrice, we can't calculate fee accurately
-          setIsFetchingFee(false);
-          return;
-        }
-
-        const feeWei = gasUsed.mul(effectiveGasPrice);
-        const feeEth = Number(utils.formatEther(feeWei));
-        const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
-
-        setNetworkFee({
-          amount: `~${feeEthFormatted} ETH`,
-        });
-      } catch (error) {
-        console.error('Failed to fetch network fee:', error);
-        // Don't show fee if fetch fails
-      } finally {
-        setIsFetchingFee(false);
-      }
-    };
-
-    if (isOpen && !isLoading && transactionDetails) {
-      fetchNetworkFee();
-    }
-  }, [isOpen, isLoading, transactionDetails, publicClient]);
+  const { networkFee, isFetchingFee } = useEarnTransactionNetworkFee({
+    isOpen,
+    isLoading,
+    chainId,
+    txHash: transactionDetails?.txHash,
+    providedNetworkFee: transactionDetails?.networkFee,
+  });
 
   // Animate to success state when loading completes
   useEffect(() => {
@@ -124,7 +110,7 @@ export function EarnTransactionDetailsPopup({
     return null;
   }
 
-  const explorerUrl = explorerUrls[chainId] || 'https://arbiscan.io';
+  const explorerUrl = getExplorerUrl(chainId);
   const networkName = getNetworkName(chainId);
   const txHash = transactionDetails.txHash;
   const opportunityName = transactionDetails.opportunityName || 'Transaction';
@@ -135,26 +121,8 @@ export function EarnTransactionDetailsPopup({
     : dayjs().format('MMM D, YYYY h:mm A');
 
   // Use provided network fee or fetched fee
-  const displayNetworkFee = transactionDetails.networkFee || networkFee;
-
-  // Get explorer name based on chainId
-  const getExplorerName = (chainId: number): string => {
-    const url = explorerUrls[chainId] || explorerUrls[ChainId.ArbitrumOne] || 'https://arbiscan.io';
-    if (url.includes('arbiscan.io')) {
-      if (url.includes('nova')) return 'Nova Arbiscan';
-      if (url.includes('sepolia')) return 'Sepolia Arbiscan';
-      return 'Arbiscan';
-    }
-    if (url.includes('basescan.org')) {
-      if (url.includes('sepolia')) return 'Sepolia Basescan';
-      return 'Basescan';
-    }
-    if (url.includes('etherscan.io')) {
-      if (url.includes('sepolia')) return 'Sepolia Etherscan';
-      return 'Etherscan';
-    }
-    return 'Explorer';
-  };
+  const displayNetworkFee = networkFee;
+  const formattedNetworkFeeUsd = formatUsdRaw(displayNetworkFee?.usd);
   const explorerName = getExplorerName(chainId);
 
   // Get token decimals (default to 18 if not provided)
@@ -305,7 +273,7 @@ export function EarnTransactionDetailsPopup({
                   </span>
                   <span className="text-[14px] text-white leading-[17px] tracking-[0.14px]">
                     {displayNetworkFee.amount}
-                    {displayNetworkFee.usd ? ` (${displayNetworkFee.usd})` : ''}
+                    {formattedNetworkFeeUsd ? ` (${formattedNetworkFeeUsd})` : ''}
                   </span>
                 </div>
               )}

@@ -16,7 +16,7 @@ interface UseEarnGasEstimateParams {
 
 export interface GasEstimate {
   eth: string; // Gas cost in ETH (e.g., "0.001234")
-  usd: string | null; // Gas cost in USD (e.g., "$1.23 USD"), null if price fetch fails
+  usd: string | null; // Raw numeric USD value string (e.g., "1.23")
 }
 
 export interface UseEarnGasEstimateResult {
@@ -30,7 +30,7 @@ function parseApiEstimateUsd(apiEstimate?: string): number | null {
     return null;
   }
 
-  const parsed = parseFloat(apiEstimate.replace('$', '').replace(' USD', ''));
+  const parsed = parseFloat(apiEstimate);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -190,7 +190,7 @@ export function useEarnGasEstimate({
         // Convert to ETH and reuse API-provided USD estimate when available.
         const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
         const apiEstimateUsd = parseApiEstimateUsd(apiEstimate);
-        const usd = apiEstimateUsd != null ? `$${apiEstimateUsd.toFixed(2)} USD` : null;
+        const usd = apiEstimateUsd != null ? apiEstimateUsd.toFixed(2) : null;
 
         if (!isCancelled) {
           setOnchainGasEstimate({
@@ -262,7 +262,7 @@ export function useEarnGasEstimate({
 
       setApiGasEstimate({
         eth: '—',
-        usd: `$${cost.toFixed(2)} USD`,
+        usd: cost.toFixed(2),
       });
       setIsLoading(false);
     };
