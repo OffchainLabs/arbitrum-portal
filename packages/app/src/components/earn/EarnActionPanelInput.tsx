@@ -24,12 +24,10 @@ export function EarnActionPanelInput({
   onChange,
   placeholder = '0',
   className,
-  decimals = 18, // Default to 18 decimals if not provided
+  decimals = 18,
 }: EarnActionPanelInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    // Apply the same sanitization logic as TransferPanelMainInput
-    // First truncate decimals, then sanitize (removes invalid chars, leading zeros, etc.)
     const sanitizedValue = sanitizeAmountQueryParam(truncateExtraDecimals(inputValue, decimals));
     onChange(sanitizedValue);
   };

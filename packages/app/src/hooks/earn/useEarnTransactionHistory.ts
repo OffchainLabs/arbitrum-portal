@@ -35,10 +35,6 @@ function buildEarnTransactionHistoryKey(
   return ['earn-transactions', category, opportunityId, userAddress, network] as const;
 }
 
-/**
- * Hook to fetch transaction history for a specific opportunity
- * User-specific, should invalidate when user makes an earn transaction
- */
 export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
@@ -104,13 +100,6 @@ export function useEarnTransactionHistory(
   };
 }
 
-/**
- * Utility function to add a transaction to the transaction history cache
- * Performs optimistic update to the in-memory SWR cache
- *
- * @param params - Parameters for adding transaction to history
- * @returns Promise that resolves when the cache has been updated
- */
 export async function addTransactionToHistory(params: {
   category: OpportunityCategory;
   opportunityId: string;

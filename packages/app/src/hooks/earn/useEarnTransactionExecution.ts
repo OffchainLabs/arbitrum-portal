@@ -34,10 +34,6 @@ export interface UseEarnTransactionExecutionResult {
   isExecuting: boolean;
 }
 
-/**
- * Shared hook for executing Earn transactions with batch/sequential support
- * Handles chain switching, EIP-7702 fallback, and user rejection
- */
 export function useEarnTransactionExecution({
   chainId,
   buildCalls,
@@ -100,7 +96,6 @@ export function useEarnTransactionExecution({
             break;
           }
 
-          // Wait 1 second before polling again
           // eslint-disable-next-line no-await-in-loop
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
@@ -128,7 +123,6 @@ export function useEarnTransactionExecution({
             throw new Error(`No call found at index ${index}`);
           }
 
-          // TypeScript: call is guaranteed to be defined after the check above
           const currentCall = call;
 
           // eslint-disable-next-line no-await-in-loop
@@ -139,10 +133,8 @@ export function useEarnTransactionExecution({
             value: currentCall.value,
           });
 
-          // Always update lastTxHash with the current transaction hash
           lastTxHash = hash;
 
-          // Call onTransactionSubmitted only for the last transaction
           if (onTransactionSubmitted && index === calls.length - 1) {
             onTransactionSubmitted({ txHash: hash, amount: inputAmount });
           }
@@ -151,7 +143,6 @@ export function useEarnTransactionExecution({
           await waitForTransactionReceipt(wagmiConfig, { hash });
         }
 
-        // Ensure we always pass the hash (should be set if we got here)
         onTransactionFinished({ txHash: lastTxHash, amount: inputAmount });
       };
 
@@ -178,7 +169,6 @@ export function useEarnTransactionExecution({
       }
     } catch (error) {
       if (isUserRejectedError(error)) {
-        // User rejected, silently ignore
         return;
       }
       throw error;

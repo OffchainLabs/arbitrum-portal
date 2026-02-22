@@ -10,10 +10,8 @@ import { EarnToSPopupDialog } from './EarnToSPopupDialog';
 import { EarnTransactionDetailsPopup, TransactionDetails } from './EarnTransactionDetailsPopup';
 
 interface EarnDialogsContextValue {
-  // ToS dialog
   checkAndShowToS: () => Promise<boolean>;
 
-  // Transaction details dialog
   showTransactionDetails: (details: TransactionDetails, isCompleted?: boolean) => void;
 }
 
@@ -32,16 +30,13 @@ interface EarnDialogsProviderProps {
 }
 
 export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
-  // ToS dialog state
   const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
   const [tosDialogProps, tosOpenDialog] = useDialog2();
 
-  // Transaction details dialog state
   const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
 
-  // ToS dialog handler
   const checkAndShowToS = useCallback(async (): Promise<boolean> => {
     if (tosAccepted) {
       return true;
@@ -63,7 +58,6 @@ export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
     return false;
   }, [tosAccepted, tosOpenDialog, setTosAccepted]);
 
-  // Transaction details handlers
   const showTransactionDetails = useCallback(
     (details: TransactionDetails, isCompleted: boolean = false) => {
       setTransactionDetails(details);
@@ -92,7 +86,6 @@ export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
   return (
     <EarnDialogsContext.Provider value={value}>
       {children}
-      {/* Render dialogs at provider level - they won't re-render when children update */}
       {tosDialogProps.openedDialogType === 'earn_tos' ? (
         <EarnToSPopupDialog {...tosDialogProps} isOpen />
       ) : (

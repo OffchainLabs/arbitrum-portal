@@ -15,10 +15,6 @@ interface UseEarnActionTabsParams {
   setSelectedAction: (action: string) => void;
 }
 
-/**
- * Hook to manage action tabs for earn action panels
- * Handles building tabs array and ensuring selected action is valid
- */
 export function useEarnActionTabs({
   primaryAction,
   secondaryAction,
@@ -34,7 +30,6 @@ export function useEarnActionTabs({
     return tabs;
   }, [primaryAction, secondaryAction, hasSecondaryAction]);
 
-  // Ensure selectedAction is valid - switch to first available tab if current is invalid
   useEffect(() => {
     const availableTabIds = actionTabs.map((tab) => tab.id);
     if (availableTabIds.length > 0 && !availableTabIds.includes(selectedAction)) {
