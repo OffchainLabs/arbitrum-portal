@@ -195,6 +195,7 @@ export interface TransactionQuoteResponse {
   action: TransactionQuoteRequest['action'];
   canExecute: boolean;
   estimatedGas: string;
+  /** Raw numeric USD value as string (no currency symbol or unit suffix). */
   estimatedGasUsd: string;
   receiveAmount?: string;
   priceImpact?: number;

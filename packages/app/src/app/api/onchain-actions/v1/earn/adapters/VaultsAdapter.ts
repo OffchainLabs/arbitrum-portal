@@ -49,6 +49,14 @@ export class VaultsAdapter implements VendorAdapter {
     throw new Error(`Unsupported vault network: ${networkName ?? 'undefined'}`);
   }
 
+  private normalizeUsdValue(rawValue: string | undefined): string {
+    if (!rawValue) {
+      return '0';
+    }
+    const parsed = parseFloat(rawValue.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed.toString() : '0';
+  }
+
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
     const network = filters.chainId ? getEarnNetworkFromChainId(filters.chainId) : undefined;
     const response = await vaultsSdk.getAllVaults({
@@ -304,7 +312,7 @@ export class VaultsAdapter implements VendorAdapter {
       'estimatedGas' in actionsResponse && typeof actionsResponse.estimatedGas === 'string'
         ? actionsResponse.estimatedGas
         : '0';
-    const estimatedGasUsd =
+    const estimatedGasUsdRaw =
       'estimatedGasUsd' in actionsResponse && typeof actionsResponse.estimatedGasUsd === 'string'
         ? actionsResponse.estimatedGasUsd
         : '0';
@@ -315,7 +323,7 @@ export class VaultsAdapter implements VendorAdapter {
       action,
       canExecute: transactionSteps.length > 0,
       estimatedGas,
-      estimatedGasUsd,
+      estimatedGasUsd: this.normalizeUsdValue(estimatedGasUsdRaw),
       transactionSteps,
     };
   }
