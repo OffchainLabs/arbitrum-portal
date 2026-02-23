@@ -280,12 +280,31 @@ export function VaultActionPanel({
       const timestamp = Math.floor(Date.now() / 1000);
       const txChainId = chainId || 0;
       const txChainName = getNetworkName(txChainId);
+      const quoteReceiveAmount = transactionQuote?.receiveAmount;
+      const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
+      const historyAmountRaw: string = hasReceiveAmount
+        ? quoteReceiveAmount || amountInRawUnits || '0'
+        : amountInRawUnits || '0';
+      const historyTokenSymbol: string = hasReceiveAmount
+        ? selectedAction === 'supply'
+          ? (lpToken?.symbol ?? assetSymbol ?? '')
+          : (assetSymbol ?? '')
+        : selectedAction === 'supply'
+          ? (assetSymbol ?? '')
+          : (lpToken?.symbol ?? assetSymbol ?? '');
+      const historyTokenDecimals = hasReceiveAmount
+        ? selectedAction === 'supply'
+          ? lpTokenDecimals
+          : assetDecimals
+        : selectedAction === 'supply'
+          ? assetDecimals
+          : lpTokenDecimals;
 
       const transactionDetails = {
         action: selectedAction === 'supply' ? 'supply' : 'withdraw',
-        amount: amountInRawUnits || '0',
-        tokenSymbol: assetSymbol ?? '',
-        decimals: assetDecimals,
+        amount: historyAmountRaw,
+        tokenSymbol: historyTokenSymbol,
+        decimals: historyTokenDecimals,
         assetLogo: vault.asset?.assetLogo,
         chainId: txChainId,
         txHash: txHash ?? '',
@@ -305,9 +324,9 @@ export function VaultActionPanel({
         const newTransaction: StandardTransactionHistory = {
           timestamp,
           eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
-          assetAmountRaw: amountInRawUnits || '0',
-          assetSymbol: assetSymbol ?? '',
-          decimals: assetDecimals,
+          assetAmountRaw: historyAmountRaw,
+          assetSymbol: historyTokenSymbol,
+          decimals: historyTokenDecimals,
           assetLogo: vault.asset?.assetLogo,
           chainId: txChainId,
           chainName: txChainName,
