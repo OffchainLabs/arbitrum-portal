@@ -2,12 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import {
-  assertCorsOriginAllowed,
-  errorResponse,
-  jsonResponse,
-  optionsResponse,
-} from '../../../../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/http';
 import {
   assertAddress,
   parseEarnChainId,
@@ -20,8 +15,6 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
-    assertCorsOriginAllowed(request);
-
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
@@ -48,20 +41,20 @@ export async function GET(
 
     const availableActions: AvailableActions = await getCachedAvailableActions();
 
-    return jsonResponse(request, availableActions, {
+    return jsonResponse(availableActions, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
       },
     });
   } catch (error) {
     console.error('Error fetching available actions:', error);
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'AVAILABLE_ACTIONS_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch available actions',
     });
   }
 }
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }

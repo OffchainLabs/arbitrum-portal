@@ -63,8 +63,6 @@ export function useAvailableActions<C extends OpportunityCategory>(
       ? buildAvailableActionsKey(category, opportunityId, userAddress, chainId)
       : null;
 
-  const REFRESH_INTERVAL = 5 * 60 * 1000;
-
   const swrResponse = useSWRImmutable<AvailableActionsByCategory[C]>(
     swrKey,
     async ([
@@ -89,7 +87,6 @@ export function useAvailableActions<C extends OpportunityCategory>(
       return (await response.json()) as AvailableActionsByCategory[C];
     },
     {
-      refreshInterval: REFRESH_INTERVAL,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       errorRetryCount: 2,

@@ -1,12 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import {
-  assertCorsOriginAllowed,
-  errorResponse,
-  jsonResponse,
-  optionsResponse,
-} from '../../../../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/http';
 import {
   ValidationError,
   assertAddress,
@@ -35,8 +30,6 @@ export async function POST(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
-    assertCorsOriginAllowed(request);
-
     const parsedJson = await request.json().catch(() => {
       throw new ValidationError('INVALID_JSON', 'Request body must be valid JSON');
     });
@@ -125,20 +118,20 @@ export async function POST(
       network,
     );
 
-    return jsonResponse(request, quote, {
+    return jsonResponse(quote, {
       headers: {
         'Cache-Control': 'no-store',
       },
     });
   } catch (error) {
     console.error('Error preparing transaction:', error);
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'TRANSACTION_QUOTE_ERROR',
       message: error instanceof Error ? error.message : 'Failed to get transaction quote',
     });
   }
 }
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }

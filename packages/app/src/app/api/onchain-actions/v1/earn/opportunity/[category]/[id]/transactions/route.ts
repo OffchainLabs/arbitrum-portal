@@ -2,12 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import {
-  assertCorsOriginAllowed,
-  errorResponse,
-  jsonResponse,
-  optionsResponse,
-} from '@/earn-api/lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/http';
 import {
   assertAddress,
   parseEarnChainId,
@@ -20,8 +15,6 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
-    assertCorsOriginAllowed(request);
-
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
@@ -57,19 +50,19 @@ export async function GET(
       total: transactions.length,
     };
 
-    return jsonResponse(request, response, {
+    return jsonResponse(response, {
       headers: {
         'Cache-Control': 'private, no-cache, no-store, must-revalidate',
       },
     });
   } catch (error) {
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'TRANSACTION_HISTORY_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch transaction history',
     });
   }
 }
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }
