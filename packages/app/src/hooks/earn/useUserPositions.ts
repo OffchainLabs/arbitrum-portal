@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { OpportunityCategory, normalizeOpportunityCategory } from '@/app-types/earn/vaults';
+import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type UserPositionsResponse } from '@/earn-api/types';
@@ -81,10 +81,9 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
   }
 
   const byCategory = { ...DEFAULT_BY_CATEGORY };
-  for (const [rawCategory, summaryEntry] of Object.entries(rawData.summary.byCategory)) {
-    const category = normalizeOpportunityCategory(rawCategory);
-    if (!category || !summaryEntry) continue;
-
+  for (const category of OPPORTUNITY_CATEGORIES) {
+    const summaryEntry = rawData.summary.byCategory[category];
+    if (!summaryEntry) continue;
     byCategory[category] = {
       count: summaryEntry.count,
       valueUsd: summaryEntry.valueUsd,
@@ -92,9 +91,9 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
   }
 
   const categoryApy = { ...DEFAULT_CATEGORY_APY };
-  for (const [rawCategory, rawApy] of Object.entries(rawData.categoryApy)) {
-    const category = normalizeOpportunityCategory(rawCategory);
-    if (!category || rawApy === undefined || rawApy === null || !isFinite(rawApy)) continue;
+  for (const category of OPPORTUNITY_CATEGORIES) {
+    const rawApy = rawData.categoryApy[category];
+    if (rawApy === undefined || rawApy === null || !isFinite(rawApy)) continue;
     categoryApy[category] = rawApy;
   }
 
