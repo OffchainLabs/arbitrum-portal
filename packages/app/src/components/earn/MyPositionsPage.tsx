@@ -47,15 +47,19 @@ export function MyPositionsPage() {
   const opportunitiesWithPositions = useMemo(() => {
     return allOpportunities
       .filter((opp) => {
+        const opportunityId = opp.id.toLowerCase();
+        const vaultAddress = opp.vaultAddress?.toLowerCase();
         return (
-          opportunityIds.has(opp.id) ||
-          (opp.vaultAddress !== undefined && opportunityIds.has(opp.vaultAddress))
+          opportunityIds.has(opportunityId) ||
+          (vaultAddress !== undefined && opportunityIds.has(vaultAddress))
         );
       })
       .map((opp) => {
+        const opportunityId = opp.id.toLowerCase();
+        const vaultAddress = opp.vaultAddress?.toLowerCase();
         const positionData =
-          positionsMap.get(opp.id) ||
-          (opp.vaultAddress ? positionsMap.get(opp.vaultAddress) : undefined);
+          positionsMap.get(opportunityId) ||
+          (vaultAddress ? positionsMap.get(vaultAddress) : undefined);
 
         if (!positionData) {
           return opp;

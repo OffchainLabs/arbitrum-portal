@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { OpportunityCategory, normalizeOpportunityCategory } from '@/app-types/earn/vaults';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { type EarnNetwork, type UserPositionsResponse } from '@/earn-api/types';
 
@@ -79,6 +79,7 @@ export function useUserPositions(
     const opportunityIds = new Set<string>();
 
     for (const position of rawData.positions) {
+      const normalizedOpportunityId = position.opportunityId.toLowerCase();
       const apy = position.opportunity.apy || 0;
       const projectedEarningsUsd =
         position.projectedEarningsUsd ??
@@ -88,18 +89,34 @@ export function useUserPositions(
         symbol: position.tokenSymbol,
       });
 
-      positionsMap.set(position.opportunityId, {
+      positionsMap.set(normalizedOpportunityId, {
         deposited,
         valueUsd: position.valueUsd,
         projectedEarningsUsd,
         projectedEarnings: '-',
       });
 
-      opportunityIds.add(position.opportunityId);
+      opportunityIds.add(normalizedOpportunityId);
     }
 
-    const byCategory = { ...DEFAULT_BY_CATEGORY, ...rawData.summary.byCategory };
-    const categoryApy = { ...DEFAULT_CATEGORY_APY, ...rawData.categoryApy };
+    const byCategory = { ...DEFAULT_BY_CATEGORY };
+    for (const [rawCategory, summaryEntry] of Object.entries(rawData.summary.byCategory)) {
+      const category = normalizeOpportunityCategory(rawCategory);
+      if (!category || !summaryEntry) continue;
+
+      byCategory[category] = {
+        count: summaryEntry.count,
+        valueUsd: summaryEntry.valueUsd,
+      };
+    }
+
+    const categoryApy = { ...DEFAULT_CATEGORY_APY };
+    for (const [rawCategory, rawApy] of Object.entries(rawData.categoryApy)) {
+      const category = normalizeOpportunityCategory(rawCategory);
+      if (!category || rawApy === undefined || rawApy === null || !isFinite(rawApy)) continue;
+      categoryApy[category] = rawApy;
+    }
+
     return {
       positionsMap,
       opportunityIds,

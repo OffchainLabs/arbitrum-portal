@@ -24,6 +24,36 @@ export function getCategoryDisplayName(category: OpportunityCategory): string {
   return displayNames[category] ?? category;
 }
 
+export function normalizeOpportunityCategory(
+  category: string | null | undefined,
+): OpportunityCategory | null {
+  if (!category) {
+    return null;
+  }
+
+  const normalized = category.toLowerCase().trim().replace(/\s+/g, '-');
+
+  if (normalized === OpportunityCategory.Lend || normalized === 'lending') {
+    return OpportunityCategory.Lend;
+  }
+  if (
+    normalized === OpportunityCategory.LiquidStaking ||
+    normalized === 'liquid_staking' ||
+    normalized === 'liquidstaking'
+  ) {
+    return OpportunityCategory.LiquidStaking;
+  }
+  if (
+    normalized === OpportunityCategory.FixedYield ||
+    normalized === 'fixed_yield' ||
+    normalized === 'fixedyield'
+  ) {
+    return OpportunityCategory.FixedYield;
+  }
+
+  return null;
+}
+
 export const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.Lend]: 'bg-earn-lend',
   [OpportunityCategory.FixedYield]: 'bg-earn-fixed-yield',
