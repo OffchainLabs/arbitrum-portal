@@ -1,20 +1,26 @@
-import { BigNumber, utils } from 'ethers';
+import { BigNumber } from 'ethers';
 
 import type { TransactionStep } from './useTransactionQuote';
 
 export function checkAmountExceedsBalance(
-  amount: string,
+  amountRaw: string,
   balance: BigNumber,
-  decimals: number,
   isConnected: boolean,
   walletAddress: string | undefined,
 ): boolean {
-  if (!isConnected || !walletAddress || !amount || parseFloat(amount) <= 0) {
+  if (!isConnected || !walletAddress || amountRaw === '0') {
     return false;
   }
-  const amountNum = parseFloat(amount);
-  const balanceFloat = parseFloat(utils.formatUnits(balance, decimals));
-  return amountNum > balanceFloat;
+
+  if (!/^\d+$/.test(amountRaw)) {
+    return false;
+  }
+
+  try {
+    return BigNumber.from(amountRaw).gt(balance);
+  } catch {
+    return false;
+  }
 }
 
 export function validateTransactionStep(step: TransactionStep, index: number): void {

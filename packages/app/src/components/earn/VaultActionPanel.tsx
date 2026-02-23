@@ -185,18 +185,15 @@ export function VaultActionPanel({
 
   const currentBalanceForQuote = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
 
-  const currentDecimalsForQuote = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
-
   const amountExceedsBalance = useMemo(
     () =>
       checkAmountExceedsBalance(
-        amount,
+        amountInRawUnits,
         currentBalanceForQuote,
-        currentDecimalsForQuote,
         isConnected,
         walletAddress,
       ),
-    [amount, currentBalanceForQuote, currentDecimalsForQuote, isConnected, walletAddress],
+    [amountInRawUnits, currentBalanceForQuote, isConnected, walletAddress],
   );
 
   const { data: transactionQuote, isLoading: transactionQuoteLoading } = useTransactionQuote({

@@ -81,17 +81,20 @@ export function useEarnTransactionHistory(
   );
 
   const transactions: EarnTransactionHistoryRow[] =
-    data?.transactions.map((tx: StandardTransactionHistory) => ({
-      timestamp: tx.timestamp,
-      eventType: tx.eventType,
-      assetAmountRaw: tx.assetAmountRaw,
-      assetSymbol: tx.assetSymbol,
-      decimals: tx.decimals,
-      assetLogo: tx.assetLogo,
-      chainId: tx.chainId,
-      chainName: tx.chainName,
-      transactionHash: tx.transactionHash,
-    })) || [];
+    data?.transactions
+      .slice()
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .map((tx: StandardTransactionHistory) => ({
+        timestamp: tx.timestamp,
+        eventType: tx.eventType,
+        assetAmountRaw: tx.assetAmountRaw,
+        assetSymbol: tx.assetSymbol,
+        decimals: tx.decimals,
+        assetLogo: tx.assetLogo,
+        chainId: tx.chainId,
+        chainName: tx.chainName,
+        transactionHash: tx.transactionHash,
+      })) || [];
 
   return {
     transactions,
@@ -125,6 +128,18 @@ export async function addTransactionToHistory(params: {
           total: 1,
         };
       }
+
+      const alreadyExists = current.transactions.some(
+        (existingTx) =>
+          existingTx.transactionHash === transaction.transactionHash &&
+          existingTx.eventType === transaction.eventType &&
+          existingTx.timestamp === transaction.timestamp,
+      );
+
+      if (alreadyExists) {
+        return current;
+      }
+
       return {
         ...current,
         transactions: [transaction, ...current.transactions],

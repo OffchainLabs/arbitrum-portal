@@ -214,6 +214,8 @@ export function EarnTransactionHistoryTable({
   protocolName,
   protocolLogo,
 }: EarnTransactionHistoryTableProps) {
+  const sortedRows = useMemo(() => [...rows].sort((a, b) => b.timestamp - a.timestamp), [rows]);
+
   const handleRowClick = (row: EarnTransactionHistoryRow) => {
     if (!onRowClick) return;
 
@@ -237,7 +239,7 @@ export function EarnTransactionHistoryTable({
 
   const groupedByDate = useMemo(() => {
     const groups: Record<string, EarnTransactionHistoryRow[]> = {};
-    rows.forEach((row) => {
+    sortedRows.forEach((row) => {
       const normalizedTs = normalizeTimestamp(row.timestamp);
       const dateKey = dayjs(normalizedTs).format('YYYY-MM-DD');
       if (!groups[dateKey]) {
@@ -246,14 +248,14 @@ export function EarnTransactionHistoryTable({
       groups[dateKey].push(row);
     });
     return groups;
-  }, [rows]);
+  }, [sortedRows]);
 
   const getFullDateStr = (timestamp: number) => {
     const normalizedTs = normalizeTimestamp(timestamp);
     return dayjs(normalizedTs).format('MMMM D, YYYY');
   };
 
-  if (rows.length === 0) {
+  if (sortedRows.length === 0) {
     return null;
   }
 
@@ -276,7 +278,7 @@ export function EarnTransactionHistoryTable({
       </div>
 
       <div className="hidden md:flex flex-col gap-1">
-        {rows.map((row) => (
+        {sortedRows.map((row) => (
           <DesktopHistoryRow
             key={`${row.transactionHash}-${row.timestamp}`}
             row={row}
