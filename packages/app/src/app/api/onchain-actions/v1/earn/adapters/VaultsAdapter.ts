@@ -22,6 +22,7 @@ import {
   VaultsAction,
   Vendor,
   VendorAdapter,
+  getEarnNetworkFromChainId,
 } from '../types';
 
 export type VaultsNetwork = 'mainnet' | 'arbitrum';
@@ -50,9 +51,10 @@ export class VaultsAdapter implements VendorAdapter {
   }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
+    const network = filters.chainId ? getEarnNetworkFromChainId(filters.chainId) : undefined;
     const response = await vaultsSdk.getAllVaults({
       query: {
-        allowedNetworks: filters.network ? ([filters.network] as VaultsNetwork[]) : undefined,
+        allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
         allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] satisfies VaultsProtocol[],
         minTvl: filters.minTvl,
         allowedAssets: [...DEFAULT_ALLOWED_ASSETS],

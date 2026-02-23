@@ -7,6 +7,7 @@ import { useAccount, useAccountEffect } from 'wagmi';
 import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 
 import { OpportunitiesTable } from './OpportunitiesTable';
 import { PortfolioSummaryCards } from './PortfolioSummaryCards';
@@ -42,7 +43,7 @@ export function MyPositionsPage() {
     totalValueUsd,
     isLoading: positionsLoading,
     error: positionsError,
-  } = useUserPositions(address || null, ['arbitrum']);
+  } = useUserPositions(address || null, [ChainId.ArbitrumOne]);
 
   const opportunitiesWithPositions = useMemo(() => {
     return allOpportunities

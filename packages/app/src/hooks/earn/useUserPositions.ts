@@ -3,8 +3,9 @@ import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityCategory, normalizeOpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
-import { type EarnNetwork, type UserPositionsResponse } from '@/earn-api/types';
+import { type EarnChainId, type UserPositionsResponse } from '@/earn-api/types';
 
 const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
   [OpportunityCategory.Lend]: { count: 0, valueUsd: 0 },
@@ -113,10 +114,10 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
 
 export function useUserPositions(
   userAddress: string | null,
-  allowedNetworks: EarnNetwork[] = ['arbitrum'],
+  allowedChainIds: EarnChainId[] = [ChainId.ArbitrumOne],
 ): UseUserPositionsResult {
-  const primaryNetwork = allowedNetworks[0] ?? 'arbitrum';
-  const swrKey = userAddress ? ([userAddress, primaryNetwork, 'userPositions'] as const) : null;
+  const primaryChainId = allowedChainIds[0] ?? ChainId.ArbitrumOne;
+  const swrKey = userAddress ? ([userAddress, primaryChainId, 'userPositions'] as const) : null;
 
   const {
     data: rawData,
@@ -126,10 +127,10 @@ export function useUserPositions(
     ...rest
   } = useSWRImmutable<UserPositionsResponse>(
     swrKey,
-    async ([keyUserAddress, keyNetwork]: readonly [string, EarnNetwork, 'userPositions']) => {
+    async ([keyUserAddress, keyChainId]: readonly [string, EarnChainId, 'userPositions']) => {
       const params = new URLSearchParams({
         userAddress: keyUserAddress,
-        network: keyNetwork,
+        chainId: String(keyChainId),
       });
 
       const response = await fetch(`/api/onchain-actions/v1/earn/positions?${params.toString()}`);

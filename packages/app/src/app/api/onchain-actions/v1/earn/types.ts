@@ -1,6 +1,7 @@
 import type { VaultsSdk } from '@vaultsfyi/sdk';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 
 export enum Vendor {
   Vaults = 'vaults',
@@ -8,6 +9,24 @@ export enum Vendor {
 
 export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
 export type EarnNetwork = (typeof EARN_NETWORKS)[number];
+export const EARN_CHAIN_IDS = [ChainId.ArbitrumOne, ChainId.Ethereum] as const;
+export type EarnChainId = (typeof EARN_CHAIN_IDS)[number];
+export const EARN_NETWORK_TO_CHAIN_ID: Record<EarnNetwork, EarnChainId> = {
+  arbitrum: ChainId.ArbitrumOne,
+  mainnet: ChainId.Ethereum,
+};
+export const EARN_CHAIN_ID_TO_NETWORK: Record<EarnChainId, EarnNetwork> = {
+  [ChainId.ArbitrumOne]: 'arbitrum',
+  [ChainId.Ethereum]: 'mainnet',
+};
+
+export function getEarnNetworkFromChainId(chainId: EarnChainId): EarnNetwork {
+  return EARN_CHAIN_ID_TO_NETWORK[chainId];
+}
+
+export function getEarnChainIdFromNetwork(network: EarnNetwork): EarnChainId {
+  return EARN_NETWORK_TO_CHAIN_ID[network];
+}
 export const EARN_TRANSACTION_ACTIONS = [
   'deposit',
   'redeem',
@@ -20,7 +39,7 @@ export const EARN_TRANSACTION_ACTIONS = [
 export type EarnTransactionAction = (typeof EARN_TRANSACTION_ACTIONS)[number];
 
 export interface OpportunityFilters {
-  network?: EarnNetwork;
+  chainId?: EarnChainId;
   minTvl?: number;
   minApy?: number;
   perPage?: number;
@@ -119,7 +138,7 @@ export interface TransactionQuoteRequest {
   simulate?: boolean;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
-  network?: EarnNetwork;
+  chainId?: EarnChainId;
 }
 
 export interface TransactionStep {

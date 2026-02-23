@@ -2,7 +2,8 @@ import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { type EarnNetwork, type StandardOpportunity } from '@/earn-api/types';
+import { ChainId } from '@/bridge/types/ChainId';
+import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 interface UseOpportunityDetailsResult {
   data: StandardOpportunity | null;
@@ -14,7 +15,7 @@ interface UseOpportunityDetailsResult {
 export function useOpportunityDetails(
   opportunityId: string,
   category: OpportunityCategory,
-  network: EarnNetwork = 'arbitrum',
+  chainId: EarnChainId = ChainId.ArbitrumOne,
 ): UseOpportunityDetailsResult {
   const REVALIDATE_INTERVAL = 24 * 60 * 60 * 1000;
 
@@ -25,14 +26,14 @@ export function useOpportunityDetails(
     OPPORTUNITY_CATEGORIES.includes(category);
 
   const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<StandardOpportunity>(
-    isValid ? ([opportunityId, category, network, 'opportunity-details'] as const) : null,
-    async ([keyOpportunityId, keyCategory, keyNetwork]: readonly [
+    isValid ? ([opportunityId, category, chainId, 'opportunity-details'] as const) : null,
+    async ([keyOpportunityId, keyCategory, keyChainId]: readonly [
       string,
       OpportunityCategory,
-      EarnNetwork,
+      EarnChainId,
       string,
     ]) => {
-      const params = new URLSearchParams({ network: keyNetwork });
+      const params = new URLSearchParams({ chainId: String(keyChainId) });
       const response = await fetch(
         `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}?${params.toString()}`,
       );

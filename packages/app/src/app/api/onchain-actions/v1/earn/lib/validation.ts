@@ -2,11 +2,12 @@ import { isAddress } from 'viem';
 import { z } from 'zod';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 
 import {
   ALLOWED_HISTORICAL_RANGES,
-  EARN_NETWORKS,
-  type EarnNetwork,
+  EARN_CHAIN_IDS,
+  type EarnChainId,
   type HistoricalTimeRange,
 } from '../types';
 
@@ -35,14 +36,13 @@ const opportunityCategorySchema = z
   )
   .transform((value) => value as OpportunityCategory);
 
-const earnNetworkSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .refine((value): value is EarnNetwork => EARN_NETWORKS.includes(value as EarnNetwork), {
-    message: `Must be one of: ${EARN_NETWORKS.join(', ')}`,
+const earnChainIdSchema = z.coerce
+  .number()
+  .int()
+  .refine((value): value is EarnChainId => EARN_CHAIN_IDS.includes(value as EarnChainId), {
+    message: `Must be one of: ${EARN_CHAIN_IDS.join(', ')}`,
   })
-  .transform((value) => value as EarnNetwork);
+  .transform((value) => value as EarnChainId);
 
 const historicalRangeSchema = z
   .string()
@@ -110,17 +110,20 @@ export function parseOptionalOpportunityCategory(
   return parseOpportunityCategory(rawValue);
 }
 
-export function parseEarnNetwork(rawValue: string | null, fallback: EarnNetwork = 'arbitrum') {
+export function parseEarnChainId(
+  rawValue: string | null,
+  fallback: EarnChainId = ChainId.ArbitrumOne,
+) {
   const normalized = normalizeQueryValue(rawValue);
   if (!normalized) {
     return fallback;
   }
 
-  const parsed = earnNetworkSchema.safeParse(normalized);
+  const parsed = earnChainIdSchema.safeParse(normalized);
   if (!parsed.success) {
     throw new ValidationError(
-      'INVALID_NETWORK',
-      `network must be one of: ${EARN_NETWORKS.join(', ')}`,
+      'INVALID_CHAIN_ID',
+      `chainId must be one of: ${EARN_CHAIN_IDS.join(', ')}`,
     );
   }
 

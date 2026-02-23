@@ -6,7 +6,7 @@ import {
   normalizeOpportunityCategory,
 } from '@/app-types/earn/vaults';
 import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
-import { type EarnNetwork, type StandardOpportunity } from '@/earn-api/types';
+import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 interface UseAllOpportunitiesResult {
   opportunities: OpportunityTableRow[];
@@ -70,7 +70,7 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
 }
 
 export function useAllOpportunities(filters?: {
-  network?: EarnNetwork;
+  chainId?: EarnChainId;
   minTvl?: number;
   minApy?: number;
 }): UseAllOpportunitiesResult {
@@ -79,18 +79,18 @@ export function useAllOpportunities(filters?: {
   const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<OpportunitiesResponse>(
     [
       'earn-opportunities',
-      filters?.network ?? null,
+      filters?.chainId ?? null,
       filters?.minTvl ?? null,
       filters?.minApy ?? null,
     ] as const,
-    async ([, network, minTvl, minApy]: readonly [
+    async ([, chainId, minTvl, minApy]: readonly [
       string,
-      EarnNetwork | null,
+      EarnChainId | null,
       number | null,
       number | null,
     ]) => {
       const params = new URLSearchParams();
-      if (network) params.set('network', network);
+      if (chainId) params.set('chainId', String(chainId));
       if (minTvl != null) params.set('minTvl', String(minTvl));
       if (minApy != null) params.set('minApy', String(minApy));
 

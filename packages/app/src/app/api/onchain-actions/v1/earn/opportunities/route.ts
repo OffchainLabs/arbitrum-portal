@@ -4,7 +4,7 @@ import { CategoryRouter } from '../CategoryRouter';
 import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
   ValidationError,
-  parseEarnNetwork,
+  parseEarnChainId,
   parseOptionalNumber,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     });
 
     const filters: OpportunityFilters = {
-      network: parseEarnNetwork(searchParams.get('network')),
+      chainId: parseEarnChainId(searchParams.get('chainId')),
       minTvl,
       minApy,
       perPage,

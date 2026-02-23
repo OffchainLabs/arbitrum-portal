@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi';
 import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 import { MarketPageSkeleton } from './MarketPageSkeleton';
@@ -22,7 +23,7 @@ export function AllOpportunitiesPage() {
 
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(
     isConnected ? (address ?? null) : null,
-    ['arbitrum'],
+    [ChainId.ArbitrumOne],
   );
 
   const enrichedOpportunities = useMemo(() => {

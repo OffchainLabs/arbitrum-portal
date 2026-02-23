@@ -7,10 +7,10 @@ import { CategoryRouter } from '../CategoryRouter';
 import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
   assertAddress,
-  parseEarnNetwork,
+  parseEarnChainId,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
-import { StandardUserPosition, Vendor } from '../types';
+import { StandardUserPosition, Vendor, getEarnNetworkFromChainId } from '../types';
 
 const ALL_CATEGORIES: readonly OpportunityCategory[] = [
   OpportunityCategory.Lend,
@@ -117,9 +117,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
-    const network = parseEarnNetwork(searchParams.get('network'));
+    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const network = getEarnNetworkFromChainId(chainId);
 
-    const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${network}`;
+    const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${chainId}`;
 
     const getCachedPositions = unstable_cache(
       async () => {

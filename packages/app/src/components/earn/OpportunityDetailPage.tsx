@@ -2,6 +2,7 @@
 
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
 import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
@@ -12,7 +13,11 @@ interface OpportunityDetailPageProps {
 }
 
 export function OpportunityDetailPage({ opportunityId, category }: OpportunityDetailPageProps) {
-  const { data, isLoading, error } = useOpportunityDetails(opportunityId, category, 'arbitrum');
+  const { data, isLoading, error } = useOpportunityDetails(
+    opportunityId,
+    category,
+    ChainId.ArbitrumOne,
+  );
 
   if (isLoading) {
     return <OpportunityDetailPageSkeleton />;
