@@ -26,7 +26,7 @@ export function EarnReceiveAmountSection({
   outputBalance,
 }: EarnReceiveAmountSectionProps) {
   return (
-    <div className="bg-neutral-100 rounded-lg flex flex-col p-4">
+    <div className="bg-neutral-100 rounded flex flex-col p-4">
       <div className="flex flex-col gap-2">
         <span className="text-xs font-medium text-white/50">{label}</span>
         <div className="flex items-center justify-between gap-2">
@@ -46,7 +46,7 @@ export function EarnReceiveAmountSection({
             />
           )}
           {tokenSelector || (
-            <div className="bg-gray-1 rounded-lg flex gap-2 items-center px-4 py-2">
+            <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
               {token.logoUrl ? (
                 <Image
                   src={token.logoUrl}

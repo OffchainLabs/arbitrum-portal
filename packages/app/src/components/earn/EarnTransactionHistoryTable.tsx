@@ -153,7 +153,7 @@ function DesktopHistoryRow({
         />
       </div>
 
-      <div className="bg-white/10 rounded-lg p-2 flex items-center justify-center shrink-0 group-hover:bg-white/20">
+      <div className="bg-white/10 rounded p-2 flex items-center justify-center shrink-0 group-hover:bg-white/20">
         <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
     </div>

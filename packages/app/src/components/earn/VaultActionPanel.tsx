@@ -443,7 +443,7 @@ export function VaultActionPanel({
   }
 
   return (
-    <Card className="bg-gray-1 rounded-lg flex flex-col gap-4 p-4">
+    <Card className="bg-gray-1 rounded flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">
           {selectedAction === 'supply' ? 'Supply' : 'Withdraw'} {assetSymbol}

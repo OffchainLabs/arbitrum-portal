@@ -41,7 +41,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       <div className="flex h-full w-full flex-col gap-6 py-4">
         <div className="flex w-full flex-1 flex-col items-start gap-5">
           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/5">
-            <ExclamationTriangleIcon className="w-8 h-8 text-[#CCB069]" />
+            <ExclamationTriangleIcon className="w-8 h-8 text-pending" />
           </div>
 
           <h2 className="text-[28px] font-medium text-white leading-normal">

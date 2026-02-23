@@ -190,14 +190,14 @@ export function EarnTransactionDetailsPopup({
                     }
                   />
                   {showSuccessAnimation && (
-                    <div className="absolute -bottom-1 -right-1 flex items-center justify-center w-5 h-5 bg-[#96d18e] rounded-full animate-in fade-in zoom-in duration-300">
+                    <div className="absolute -bottom-1 -right-1 flex items-center justify-center w-5 h-5 bg-earn-success rounded-full animate-in fade-in zoom-in duration-300">
                       <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-white/10">
-                  <CheckCircleIcon className="w-[23px] h-[23px] text-[#96d18e]" />
+                  <CheckCircleIcon className="w-[23px] h-[23px] text-earn-success" />
                 </div>
               )}
 
@@ -277,7 +277,7 @@ export function EarnTransactionDetailsPopup({
             {txHash && (
               <ExternalLink
                 href={`${explorerUrl}/tx/${txHash}`}
-                className="bg-[#404040] flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
+                className="bg-neutral-250 flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
               >
                 View on {explorerName}
               </ExternalLink>
