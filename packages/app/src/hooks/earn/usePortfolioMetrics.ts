@@ -35,7 +35,7 @@ export function usePortfolioMetrics(
     const totalEarnings =
       projectedEarningsUsdNumber !== undefined
         ? projectedEarningsUsdNumber
-        : opportunities.reduce((sum, opp) => sum + (opp.earningsUsd ?? 0), 0);
+        : opportunities.reduce((sum, opp) => sum + (opp.projectedEarningsUsd ?? 0), 0);
 
     const calculatedNetApy =
       netApy ??

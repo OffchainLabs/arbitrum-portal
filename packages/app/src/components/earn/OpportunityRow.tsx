@@ -143,9 +143,9 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
       </div>
 
       <div className="flex-1 flex items-center min-w-0">
-        {opportunity.earningsUsd != null ? (
+        {opportunity.projectedEarningsUsd != null ? (
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
-            {formatUSD(opportunity.earningsUsd)}
+            {formatUSD(opportunity.projectedEarningsUsd)}
           </p>
         ) : (
           <p className="text-sm text-gray-5">-</p>

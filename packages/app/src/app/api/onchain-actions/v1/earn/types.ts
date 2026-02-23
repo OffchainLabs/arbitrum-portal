@@ -33,9 +33,9 @@ export interface StandardOpportunityMetrics {
   deposited: string | null;
   /** Raw numeric value or null. No $ or locale formatting. */
   depositedUsd: string | null;
-  earnings: string | null;
+  projectedEarnings: string | null;
   /** Raw numeric value or null. No $ or locale formatting. */
-  earningsUsd: string | null;
+  projectedEarningsUsd: string | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
 }

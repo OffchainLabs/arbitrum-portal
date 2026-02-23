@@ -22,7 +22,7 @@ export interface UserPositionData {
   deposited: string;
   valueUsd: number;
   projectedEarningsUsd: number;
-  earnings: string;
+  projectedEarnings: string;
 }
 
 interface UseUserPositionsResult {
@@ -92,7 +92,7 @@ export function useUserPositions(
         deposited,
         valueUsd: position.valueUsd,
         projectedEarningsUsd,
-        earnings: '-',
+        projectedEarnings: '-',
       });
 
       opportunityIds.add(position.opportunityId);

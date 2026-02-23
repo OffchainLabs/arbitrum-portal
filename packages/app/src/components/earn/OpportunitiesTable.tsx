@@ -104,7 +104,7 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
         <div className="flex items-center gap-2">
           <SortableColumnHeader
             column="projectedEarnings"
-            label="Projected Earnings"
+            label="Proj. Earnings"
             isActive={sortColumn === 'projectedEarnings'}
             sortDirection={sortDirection}
             onSort={onSort}
@@ -229,7 +229,7 @@ export function OpportunitiesTable({
               return compareMetric(a.depositedUsd, b.depositedUsd);
             }
             if (sortColumn === 'projectedEarnings') {
-              return compareMetric(a.earningsUsd, b.earningsUsd);
+              return compareMetric(a.projectedEarningsUsd, b.projectedEarningsUsd);
             }
             return compareMetric(a.rawTvl, b.rawTvl);
           });
@@ -266,7 +266,7 @@ export function OpportunitiesTable({
           return compareMetric(a.depositedUsd, b.depositedUsd);
         }
         if (sortColumn === 'projectedEarnings') {
-          return compareMetric(a.earningsUsd, b.earningsUsd);
+          return compareMetric(a.projectedEarningsUsd, b.projectedEarningsUsd);
         }
         return compareMetric(a.rawTvl, b.rawTvl);
       });

@@ -45,8 +45,8 @@ export interface OpportunityTableRow {
   };
   deposited: string | null;
   depositedUsd: number | null;
-  earnings: string | null;
-  earningsUsd: number | null;
+  projectedEarnings: string | null;
+  projectedEarningsUsd: number | null;
   tvl: string;
   protocol: string;
   protocolIcon: string;

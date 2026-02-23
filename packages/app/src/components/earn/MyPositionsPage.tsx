@@ -64,8 +64,8 @@ export function MyPositionsPage() {
           ...opp,
           deposited: positionData.deposited,
           depositedUsd: positionData.valueUsd,
-          earnings: positionData.earnings,
-          earningsUsd:
+          projectedEarnings: positionData.projectedEarnings,
+          projectedEarningsUsd:
             positionData.projectedEarningsUsd > 0 ? positionData.projectedEarningsUsd : null,
         } satisfies OpportunityTableRow;
       });
