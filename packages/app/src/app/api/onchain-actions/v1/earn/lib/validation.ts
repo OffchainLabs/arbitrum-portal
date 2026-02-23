@@ -1,4 +1,5 @@
 import { isAddress } from 'viem';
+import { z } from 'zod';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
 
@@ -21,6 +22,59 @@ export class ValidationError extends Error {
   }
 }
 
+const opportunityCategorySchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .refine(
+    (value): value is OpportunityCategory =>
+      OPPORTUNITY_CATEGORIES.includes(value as OpportunityCategory),
+    {
+      message: `Must be one of: ${OPPORTUNITY_CATEGORIES.join(', ')}`,
+    },
+  )
+  .transform((value) => value as OpportunityCategory);
+
+const earnNetworkSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .refine((value): value is EarnNetwork => EARN_NETWORKS.includes(value as EarnNetwork), {
+    message: `Must be one of: ${EARN_NETWORKS.join(', ')}`,
+  })
+  .transform((value) => value as EarnNetwork);
+
+const historicalRangeSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .refine(
+    (value): value is HistoricalTimeRange =>
+      ALLOWED_HISTORICAL_RANGES.includes(value as HistoricalTimeRange),
+    {
+      message: `Must be one of: ${ALLOWED_HISTORICAL_RANGES.join(', ')}`,
+    },
+  )
+  .transform((value) => value as HistoricalTimeRange);
+
+const addressSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Value is required' })
+  .refine((value) => isAddress(value), {
+    message: 'Must be a valid Ethereum address',
+  });
+
+const plainObjectSchema = z.object({}).passthrough();
+const nonEmptyStringSchema = z.string().trim().min(1, { message: 'Value is required' });
+const assetSymbolSchema = z
+  .string()
+  .trim()
+  .max(64, { message: 'assetSymbol must be at most 64 characters' })
+  .refine((value) => !/[\u0000-\u001F\u007F]/u.test(value), {
+    message: 'assetSymbol contains invalid characters',
+  });
+
 function normalizeQueryValue(rawValue: string | null): string | undefined {
   if (rawValue === null) {
     return undefined;
@@ -36,16 +90,15 @@ export function parseOpportunityCategory(rawValue: string | null): OpportunityCa
     throw new ValidationError('MISSING_CATEGORY', 'category is required');
   }
 
-  const normalizedCategory = normalized.toLowerCase();
-
-  if (!OPPORTUNITY_CATEGORIES.includes(normalizedCategory as OpportunityCategory)) {
+  const parsed = opportunityCategorySchema.safeParse(normalized);
+  if (!parsed.success) {
     throw new ValidationError(
       'INVALID_CATEGORY',
       `Invalid category: ${normalized}. Must be one of: ${OPPORTUNITY_CATEGORIES.join(', ')}`,
     );
   }
 
-  return normalizedCategory as OpportunityCategory;
+  return parsed.data;
 }
 
 export function parseOptionalOpportunityCategory(
@@ -58,19 +111,20 @@ export function parseOptionalOpportunityCategory(
 }
 
 export function parseEarnNetwork(rawValue: string | null, fallback: EarnNetwork = 'arbitrum') {
-  const normalized = normalizeQueryValue(rawValue)?.toLowerCase();
+  const normalized = normalizeQueryValue(rawValue);
   if (!normalized) {
     return fallback;
   }
 
-  if (!EARN_NETWORKS.includes(normalized as EarnNetwork)) {
+  const parsed = earnNetworkSchema.safeParse(normalized);
+  if (!parsed.success) {
     throw new ValidationError(
       'INVALID_NETWORK',
       `network must be one of: ${EARN_NETWORKS.join(', ')}`,
     );
   }
 
-  return normalized as EarnNetwork;
+  return parsed.data;
 }
 
 export function assertAddress(value: string | null, field: string): string {
@@ -78,16 +132,15 @@ export function assertAddress(value: string | null, field: string): string {
     throw new ValidationError(`MISSING_${field.toUpperCase()}`, `${field} is required`);
   }
 
-  const normalized = value.trim();
-
-  if (!isAddress(normalized)) {
+  const parsed = addressSchema.safeParse(value);
+  if (!parsed.success) {
     throw new ValidationError(
       `INVALID_${field.toUpperCase()}`,
       `${field} must be a valid Ethereum address`,
     );
   }
 
-  return normalized;
+  return parsed.data;
 }
 
 export function assertOptionalAddress(value: string | null | undefined, field: string) {
@@ -95,23 +148,15 @@ export function assertOptionalAddress(value: string | null | undefined, field: s
     return undefined;
   }
 
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  const parsed = addressSchema.safeParse(value);
+  if (!parsed.success) {
     throw new ValidationError(
       `INVALID_${field.toUpperCase()}`,
       `${field} must be a valid Ethereum address`,
     );
   }
 
-  const normalized = value.trim();
-
-  if (!isAddress(normalized)) {
-    throw new ValidationError(
-      `INVALID_${field.toUpperCase()}`,
-      `${field} must be a valid Ethereum address`,
-    );
-  }
-
-  return normalized;
+  return parsed.data;
 }
 
 export function parseOptionalNumber(
@@ -123,101 +168,160 @@ export function parseOptionalNumber(
     return undefined;
   }
 
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
-    throw new ValidationError(config.code, `${config.field} must be a valid number`);
+  let schema: z.ZodType<number> = z.coerce.number().refine(Number.isFinite, {
+    message: `${config.field} must be a valid number`,
+  });
+
+  if (config.integer) {
+    schema = schema.refine(Number.isInteger, {
+      message: `${config.field} must be an integer`,
+    });
   }
 
-  if (config.integer && !Number.isInteger(parsed)) {
-    throw new ValidationError(config.code, `${config.field} must be an integer`);
+  if (config.min !== undefined) {
+    const min = config.min;
+    schema = schema.refine((value) => value >= min, {
+      message: `${config.field} must be >= ${min}`,
+    });
   }
 
-  if (config.min !== undefined && parsed < config.min) {
-    throw new ValidationError(config.code, `${config.field} must be >= ${config.min}`);
+  if (config.max !== undefined) {
+    const max = config.max;
+    schema = schema.refine((value) => value <= max, {
+      message: `${config.field} must be <= ${max}`,
+    });
   }
 
-  if (config.max !== undefined && parsed > config.max) {
-    throw new ValidationError(config.code, `${config.field} must be <= ${config.max}`);
+  const parsed = schema.safeParse(normalized);
+  if (!parsed.success) {
+    throw new ValidationError(
+      config.code,
+      parsed.error.issues[0]?.message ?? `${config.field} is invalid`,
+    );
   }
 
-  return parsed;
+  return parsed.data;
 }
 
 export function assertPositiveNumberString(rawValue: string | null, field: string): string {
-  if (!rawValue) {
+  if (rawValue === null) {
     throw new ValidationError(`MISSING_${field.toUpperCase()}`, `${field} is required`);
   }
 
-  const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  const parsedString = nonEmptyStringSchema.safeParse(rawValue);
+  if (!parsedString.success) {
+    throw new ValidationError(`MISSING_${field.toUpperCase()}`, `${field} is required`);
+  }
+
+  const parsedNumber = z.coerce.number().safeParse(parsedString.data);
+  if (!parsedNumber.success || !Number.isFinite(parsedNumber.data) || parsedNumber.data <= 0) {
     throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be > 0`);
   }
 
-  return rawValue;
+  return parsedString.data;
 }
 
 export function parseHistoricalRange(rawValue: string | null): HistoricalTimeRange {
-  const normalized = normalizeQueryValue(rawValue)?.toLowerCase();
+  const normalized = normalizeQueryValue(rawValue);
   if (!normalized) {
     return '7d';
   }
 
-  if (!ALLOWED_HISTORICAL_RANGES.includes(normalized as HistoricalTimeRange)) {
+  const parsed = historicalRangeSchema.safeParse(normalized);
+  if (!parsed.success) {
     throw new ValidationError(
       'INVALID_RANGE',
       `range must be one of: ${ALLOWED_HISTORICAL_RANGES.join(', ')}`,
     );
   }
 
-  return normalized as HistoricalTimeRange;
+  return parsed.data;
 }
 
 export function assertPlainObject(value: unknown, field: string = 'body'): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+  const parsed = plainObjectSchema.safeParse(value);
+  if (!parsed.success) {
     throw new ValidationError('INVALID_BODY', `${field} must be an object`);
   }
 
-  return value as Record<string, unknown>;
+  return parsed.data;
 }
 
 export function assertOptionalBoolean(value: unknown, field: string): boolean | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (typeof value !== 'boolean') {
+  const parsed = z.boolean().optional().safeParse(value);
+  if (!parsed.success) {
     throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a boolean`);
   }
-  return value;
+
+  return parsed.data;
 }
 
 export function assertOptionalFiniteNumber(
   value: unknown,
   config: { field: string; min?: number; max?: number },
 ): number | undefined {
-  if (value === undefined) {
+  let schema: z.ZodType<number | undefined> = z.number().finite().optional();
+
+  if (config.min !== undefined) {
+    const min = config.min;
+    schema = schema.refine((v) => v === undefined || v >= min, {
+      message: `${config.field} must be >= ${min}`,
+    });
+  }
+  if (config.max !== undefined) {
+    const max = config.max;
+    schema = schema.refine((v) => v === undefined || v <= max, {
+      message: `${config.field} must be <= ${max}`,
+    });
+  }
+
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) {
+    throw new ValidationError(
+      `INVALID_${config.field.toUpperCase()}`,
+      parsed.error.issues[0]?.message ?? `${config.field} must be a valid number`,
+    );
+  }
+
+  return parsed.data;
+}
+
+export function assertString(value: unknown, field: string): string {
+  if (value === null || value === undefined) {
+    throw new ValidationError(`MISSING_${field.toUpperCase()}`, `${field} is required`);
+  }
+
+  const parsed = nonEmptyStringSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a string`);
+  }
+
+  return parsed.data;
+}
+
+export function assertOptionalString(value: unknown, field: string): string | undefined {
+  const parsed = z.string().optional().safeParse(value);
+  if (!parsed.success) {
+    throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a string`);
+  }
+
+  const normalized = parsed.data?.trim();
+  return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+export function parseOptionalAssetSymbol(rawValue: string | null): string | undefined {
+  const normalized = normalizeQueryValue(rawValue);
+  if (normalized === undefined) {
     return undefined;
   }
 
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
+  const parsed = assetSymbolSchema.safeParse(normalized);
+  if (!parsed.success) {
     throw new ValidationError(
-      `INVALID_${config.field.toUpperCase()}`,
-      `${config.field} must be a valid number`,
+      'INVALID_ASSET_SYMBOL',
+      parsed.error.issues[0]?.message ?? 'assetSymbol is invalid',
     );
   }
 
-  if (config.min !== undefined && value < config.min) {
-    throw new ValidationError(
-      `INVALID_${config.field.toUpperCase()}`,
-      `${config.field} must be >= ${config.min}`,
-    );
-  }
-
-  if (config.max !== undefined && value > config.max) {
-    throw new ValidationError(
-      `INVALID_${config.field.toUpperCase()}`,
-      `${config.field} must be <= ${config.max}`,
-    );
-  }
-
-  return value;
+  return parsed.data;
 }
