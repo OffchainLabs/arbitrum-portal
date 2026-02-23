@@ -1,7 +1,4 @@
-import { formatUnits } from 'viem';
-
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
-import { formatAmount } from '@/bridge/util/NumberUtils';
 
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
@@ -24,21 +21,10 @@ import {
   VendorAdapter,
 } from '../types';
 
-/**
- * Valid network types supported by Vaults SDK
- * Based on @vaultsfyi/sdk allowedNetworks parameter
- */
 export type VaultsNetwork = 'mainnet' | 'arbitrum';
 
-/**
- * Valid protocol types supported by Vaults SDK
- * Based on @vaultsfyi/sdk allowedProtocols parameter
- */
 export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
-/**
- * Valid action types for Vaults SDK getActions method
- */
 export type VaultsActionType = 'deposit' | 'redeem';
 
 export class VaultsAdapter implements VendorAdapter {
@@ -167,25 +153,11 @@ export class VaultsAdapter implements VendorAdapter {
     };
   }
 
-  /**
-   * Get available actions - "What can I do?"
-   * Returns available actions and full transaction context for Vaults.
-   *
-   * For Vaults: Returns complete transactional context including:
-   * - Available deposit/redeem steps
-   * - Claimable rewards
-   * - Asset and LP token information
-   * - Other vault-specific transactional data
-   *
-   * Fetched once when action panel loads.
-   */
   async getAvailableActions(
     id: string,
     userAddress: string,
     network: VaultsNetwork = 'arbitrum',
   ): Promise<AvailableActions> {
-    // Get full transaction context from Vaults SDK
-    // This includes deposit/redeem steps, claimable rewards, and other vault-specific data
     const context = await vaultsSdk.getTransactionsContext({
       path: {
         userAddress,
@@ -227,11 +199,6 @@ export class VaultsAdapter implements VendorAdapter {
     };
   }
 
-  /**
-   * Get transaction quote - "How do I execute this?"
-   * Returns transaction steps for a specific action with a specific amount.
-   * Fetched when user enters amount (debounced).
-   */
   async getTransactionQuote(
     id: string,
     request: TransactionQuoteRequest,
@@ -249,8 +216,6 @@ export class VaultsAdapter implements VendorAdapter {
       );
     }
 
-    // Direct call to getActions - no getUserContext needed
-    // Validate action is a valid Vaults action type
     if (action !== 'deposit' && action !== 'redeem') {
       throw new Error(
         `Invalid action for Vaults: ${action}. Only 'deposit' and 'redeem' are supported.`,
@@ -272,15 +237,12 @@ export class VaultsAdapter implements VendorAdapter {
       },
     });
 
-    // Validate actionsResponse structure
     if (!actionsResponse || !actionsResponse.actions || !Array.isArray(actionsResponse.actions)) {
       throw new Error(
         `Invalid actions response: expected actions array. Received: ${JSON.stringify(actionsResponse)}`,
       );
     }
 
-    // Transform to standardized transaction steps
-    // Vaults SDK returns: { name: string, tx: { to, chainId, data?, value? } }
     const transactionSteps: TransactionStep[] = actionsResponse.actions.map(
       (actionItem: VaultsAction, index: number) => {
         if (!('tx' in actionItem) || !actionItem.tx || typeof actionItem.tx !== 'object') {
@@ -335,7 +297,6 @@ export class VaultsAdapter implements VendorAdapter {
       },
     );
 
-    // Vaults SDK may not provide gas estimates, use defaults if not available
     const estimatedGas =
       'estimatedGas' in actionsResponse && typeof actionsResponse.estimatedGas === 'string'
         ? actionsResponse.estimatedGas
@@ -365,23 +326,12 @@ export class VaultsAdapter implements VendorAdapter {
       query: { allowedNetworks: [network] },
     });
 
-    // Transform each position using only position data (no vault details fetch)
     return response.data.map((position) => {
-      // Use lpToken balance (actual position balance)
       const lpTokenBalanceNative = position.lpToken?.balanceNative || '0';
-      const lpTokenBalanceBigInt = BigInt(lpTokenBalanceNative);
       const lpTokenDecimals = position.lpToken?.decimals ?? 18;
 
-      // Use underlying asset symbol for display (better UX - shows USDC instead of hyperUSDC)
       const assetSymbol = position.asset?.symbol || '';
       const assetAddress = position.asset?.address || '';
-
-      // Format LP token balance but display with underlying asset symbol
-      const formattedAmount = formatUnits(lpTokenBalanceBigInt, lpTokenDecimals);
-      const amountFormatted = formatAmount(parseFloat(formattedAmount), {
-        decimals: lpTokenDecimals,
-        symbol: assetSymbol, // Use underlying asset symbol (USDC) instead of LP token symbol (hyperUSDC)
-      });
 
       const valueUsd = parseFloat(
         (position.lpToken?.balanceUsd || '0').replace(/[^0-9.-]/g, '') || '0',
@@ -396,7 +346,6 @@ export class VaultsAdapter implements VendorAdapter {
         vendor: Vendor.Vaults,
         network: position.network?.name || network,
         amount: lpTokenBalanceNative,
-        amountFormatted,
         valueUsd,
         tokenAddress: assetAddress,
         tokenSymbol: assetSymbol,
@@ -440,7 +389,6 @@ export class VaultsAdapter implements VendorAdapter {
           symbol: response.asset.symbol,
         });
 
-        // Map eventType: 'deposit' | 'withdrawal' -> 'deposit' | 'redeem'
         const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
 
         return {

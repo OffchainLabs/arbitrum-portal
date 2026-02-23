@@ -138,7 +138,6 @@ export async function GET(request: NextRequest) {
             });
           }
         } else {
-          // Fetch positions from all adapters in parallel
           const adapters = router.getAllAdapters();
           const results = await Promise.allSettled(
             adapters.map(async (adapter) => {
@@ -158,7 +157,6 @@ export async function GET(request: NextRequest) {
             .flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
         }
 
-        // Calculate summary statistics
         const summary = calculatePositionsSummary(allPositions);
 
         return {

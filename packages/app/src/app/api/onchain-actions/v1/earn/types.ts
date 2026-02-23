@@ -53,7 +53,6 @@ export interface StandardOpportunityLendDetail {
   apy30day?: number;
   apy7day?: number;
 }
-
 export interface StandardOpportunityBase {
   id: string;
   vendor: Vendor;
@@ -192,7 +191,6 @@ export interface StandardUserPosition {
   vendor: Vendor;
   network: string;
   amount: string;
-  amountFormatted: string;
   valueUsd: number;
   tokenAddress: string;
   tokenSymbol: string;
