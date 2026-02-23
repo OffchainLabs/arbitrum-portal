@@ -5,8 +5,9 @@ import useSWRImmutable from 'swr/immutable';
 
 import { EarnTransactionHistoryRow } from '@/app-components/earn/EarnTransactionHistoryTable';
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import type {
-  EarnNetwork,
+  EarnChainId,
   StandardTransactionHistory,
   TransactionHistoryResponse,
   Vendor,
@@ -23,27 +24,27 @@ type EarnTransactionHistoryKey = readonly [
   OpportunityCategory,
   string,
   string,
-  EarnNetwork,
+  EarnChainId,
 ];
 
 function buildEarnTransactionHistoryKey(
   category: OpportunityCategory,
   opportunityId: string,
   userAddress: string,
-  network: EarnNetwork,
+  chainId: EarnChainId,
 ): EarnTransactionHistoryKey {
-  return ['earn-transactions', category, opportunityId, userAddress, network] as const;
+  return ['earn-transactions', category, opportunityId, userAddress, chainId] as const;
 }
 
 export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
   userAddress: string | null,
-  network: EarnNetwork = 'arbitrum',
+  chainId: EarnChainId = ChainId.ArbitrumOne,
 ): UseEarnTransactionHistoryResult {
   const historyKey =
     userAddress && opportunityId
-      ? buildEarnTransactionHistoryKey(category, opportunityId, userAddress, network)
+      ? buildEarnTransactionHistoryKey(category, opportunityId, userAddress, chainId)
       : null;
 
   const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
@@ -53,13 +54,13 @@ export function useEarnTransactionHistory(
       keyCategory,
       keyOpportunityId,
       keyUserAddress,
-      keyNetwork,
+      keyChainId,
     ]: EarnTransactionHistoryKey) => {
       if (!keyUserAddress || !keyOpportunityId) return null;
 
       const params = new URLSearchParams({
         userAddress: keyUserAddress,
-        network: keyNetwork,
+        chainId: String(keyChainId),
       });
 
       const response = await fetch(
@@ -107,13 +108,13 @@ export async function addTransactionToHistory(params: {
   category: OpportunityCategory;
   opportunityId: string;
   userAddress: string;
-  network: EarnNetwork;
+  chainId: EarnChainId;
   vendor: Vendor;
   transaction: StandardTransactionHistory;
 }): Promise<void> {
-  const { category, opportunityId, userAddress, network, vendor, transaction } = params;
+  const { category, opportunityId, userAddress, chainId, vendor, transaction } = params;
 
-  const historyKey = buildEarnTransactionHistoryKey(category, opportunityId, userAddress, network);
+  const historyKey = buildEarnTransactionHistoryKey(category, opportunityId, userAddress, chainId);
 
   await mutate(
     historyKey,

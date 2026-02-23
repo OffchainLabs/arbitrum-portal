@@ -10,10 +10,10 @@ import {
 } from '../../../../lib/http';
 import {
   assertAddress,
-  parseEarnNetwork,
+  parseEarnChainId,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import { AvailableActions } from '../../../../types';
+import { AvailableActions, getEarnNetworkFromChainId } from '../../../../types';
 
 export async function GET(
   request: NextRequest,
@@ -25,10 +25,11 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
-    const network = parseEarnNetwork(searchParams.get('network'));
+    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
 
-    const cacheKey = `available-actions:${category}:${network}:${opportunityId}:${userAddress}`;
+    const cacheKey = `available-actions:${category}:${chainId}:${opportunityId}:${userAddress}`;
 
     const getCachedAvailableActions = unstable_cache(
       async () => {

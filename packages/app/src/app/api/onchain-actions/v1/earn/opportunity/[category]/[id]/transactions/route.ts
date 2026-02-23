@@ -10,10 +10,10 @@ import {
 } from '@/earn-api/lib/http';
 import {
   assertAddress,
-  parseEarnNetwork,
+  parseEarnChainId,
   parseOpportunityCategory,
 } from '@/earn-api/lib/validation';
-import { TransactionHistoryResponse } from '@/earn-api/types';
+import { TransactionHistoryResponse, getEarnNetworkFromChainId } from '@/earn-api/types';
 
 export async function GET(
   request: NextRequest,
@@ -24,14 +24,15 @@ export async function GET(
 
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
-    const network = parseEarnNetwork(searchParams.get('network'));
+    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
 
-    const rateLimitKey = `transactions-rl:${category}:${network}:${opportunityId}:${userAddress}`;
+    const rateLimitKey = `transactions-rl:${category}:${chainId}:${opportunityId}:${userAddress}`;
 
     const getRateLimitedTransactions = unstable_cache(
       async () => {

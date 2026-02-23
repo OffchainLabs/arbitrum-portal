@@ -21,12 +21,15 @@ import {
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import { type EarnNetwork, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
+import {
+  type StandardTransactionHistory,
+  Vendor,
+  getEarnChainIdFromNetwork,
+} from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -81,10 +84,11 @@ export function VaultActionPanel({
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
   const [, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState<string | null>(null);
-  const requestNetwork: EarnNetwork = useMemo(
+  const requestNetwork = useMemo(
     () => getEarnRequestNetwork(vault.network?.name),
     [vault.network?.name],
   );
+  const requestChainId = useMemo(() => getEarnChainIdFromNetwork(requestNetwork), [requestNetwork]);
 
   useEffect(() => {
     setSelectedAction(initialAction);
@@ -103,7 +107,7 @@ export function VaultActionPanel({
     opportunityId: vault.address,
     category: OpportunityCategory.Lend,
     userAddress: walletAddress || null,
-    network: requestNetwork,
+    chainId: requestChainId,
   });
 
   const transactionContext = availableActions?.transactionContext;
@@ -127,7 +131,7 @@ export function VaultActionPanel({
           .toString()
       : '0';
 
-  const networkChainId = requestNetwork === 'mainnet' ? ChainId.Ethereum : ChainId.ArbitrumOne;
+  const networkChainId = requestChainId;
 
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
   const lpTokenAddress = lpToken?.address ?? null;
@@ -204,7 +208,7 @@ export function VaultActionPanel({
     userAddress: walletAddress || null,
     inputTokenAddress:
       selectedAction === 'supply' ? asset?.address || vault.asset?.address : vault.asset?.address,
-    network: requestNetwork,
+    chainId: requestChainId,
     enabled: amountInRawUnits !== '0' && (!isConnected || !amountExceedsBalance),
   });
 
@@ -314,7 +318,7 @@ export function VaultActionPanel({
           category: OpportunityCategory.Lend,
           opportunityId: vault.address,
           userAddress: walletAddress,
-          network: requestNetwork,
+          chainId: requestChainId,
           vendor: Vendor.Vaults,
           transaction: newTransaction,
         });

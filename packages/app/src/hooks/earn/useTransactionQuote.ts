@@ -5,8 +5,9 @@ import { BigNumber } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import type {
-  EarnNetwork,
+  EarnChainId,
   TransactionQuoteRequest,
   TransactionQuoteResponse,
   TransactionStep,
@@ -24,7 +25,7 @@ export interface UseTransactionQuoteParams {
   outputTokenAddress?: string;
   slippage?: number;
   simulate?: boolean;
-  network?: EarnNetwork;
+  chainId?: EarnChainId;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
   enabled?: boolean;
@@ -47,7 +48,7 @@ type TransactionQuoteKey = readonly [
   string | undefined,
   number,
   boolean,
-  EarnNetwork,
+  EarnChainId,
   string | undefined,
   string | undefined,
   'transaction-quote',
@@ -63,7 +64,7 @@ function buildTransactionQuoteKey(params: {
   outputTokenAddress?: string;
   slippage: number;
   simulate: boolean;
-  network: EarnNetwork;
+  chainId: EarnChainId;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
 }): TransactionQuoteKey {
@@ -77,7 +78,7 @@ function buildTransactionQuoteKey(params: {
     outputTokenAddress,
     slippage,
     simulate,
-    network,
+    chainId,
     rolloverTargetOpportunityId,
     rolloverAmount,
   } = params;
@@ -92,7 +93,7 @@ function buildTransactionQuoteKey(params: {
     outputTokenAddress,
     slippage,
     simulate,
-    network,
+    chainId,
     rolloverTargetOpportunityId,
     rolloverAmount,
     'transaction-quote',
@@ -122,7 +123,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
     outputTokenAddress,
     slippage = 0.5,
     simulate = false,
-    network = 'arbitrum',
+    chainId = ChainId.ArbitrumOne,
     rolloverTargetOpportunityId,
     rolloverAmount,
     enabled = true,
@@ -143,7 +144,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           outputTokenAddress,
           slippage,
           simulate,
-          network,
+          chainId,
           rolloverTargetOpportunityId,
           rolloverAmount,
         })
@@ -158,7 +159,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       keyOutputTokenAddress,
       keySlippage,
       keySimulate,
-      keyNetwork,
+      keyChainId,
       keyRolloverTargetOpportunityId,
       keyRolloverAmount,
     ]: TransactionQuoteKey): Promise<TransactionQuoteResponse> => {
@@ -178,7 +179,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
             outputTokenAddress: keyOutputTokenAddress,
             slippage: keySlippage,
             simulate: keySimulate,
-            network: keyNetwork,
+            chainId: keyChainId,
             rolloverTargetOpportunityId: keyRolloverTargetOpportunityId,
             rolloverAmount: keyRolloverAmount,
           }),

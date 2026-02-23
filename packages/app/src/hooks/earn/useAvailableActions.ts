@@ -4,8 +4,9 @@ import type { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import {
-  type EarnNetwork,
+  type EarnChainId,
   type FixedYieldAvailableActions,
   type LendAvailableActions,
   type LiquidStakingAvailableActions,
@@ -23,7 +24,7 @@ export interface UseAvailableActionsParams<C extends OpportunityCategory> {
   opportunityId: string | null;
   category: C;
   userAddress: string | null;
-  network?: EarnNetwork;
+  chainId?: EarnChainId;
 }
 
 export type UseAvailableActionsResult<C extends OpportunityCategory> = Omit<
@@ -41,25 +42,25 @@ type AvailableActionsKey<C extends OpportunityCategory> = readonly [
   C,
   string,
   string,
-  EarnNetwork,
+  EarnChainId,
 ];
 
 function buildAvailableActionsKey<C extends OpportunityCategory>(
   category: C,
   opportunityId: string,
   userAddress: string,
-  network: EarnNetwork,
+  chainId: EarnChainId,
 ): AvailableActionsKey<C> {
-  return ['available-actions', category, opportunityId, userAddress, network] as const;
+  return ['available-actions', category, opportunityId, userAddress, chainId] as const;
 }
 
 export function useAvailableActions<C extends OpportunityCategory>(
   params: UseAvailableActionsParams<C>,
 ): UseAvailableActionsResult<C> {
-  const { opportunityId, category, userAddress, network = 'arbitrum' } = params;
+  const { opportunityId, category, userAddress, chainId = ChainId.ArbitrumOne } = params;
   const swrKey =
     opportunityId && category && userAddress
-      ? buildAvailableActionsKey(category, opportunityId, userAddress, network)
+      ? buildAvailableActionsKey(category, opportunityId, userAddress, chainId)
       : null;
 
   const REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -71,11 +72,11 @@ export function useAvailableActions<C extends OpportunityCategory>(
       keyCategory,
       keyOpportunityId,
       keyUserAddress,
-      keyNetwork,
+      keyChainId,
     ]: AvailableActionsKey<C>) => {
       const queryParams = new URLSearchParams({
         userAddress: keyUserAddress,
-        network: keyNetwork,
+        chainId: String(keyChainId),
       });
 
       const response = await fetch(

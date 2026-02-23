@@ -17,10 +17,14 @@ import {
   assertPlainObject,
   assertPositiveNumberString,
   assertString,
-  parseEarnNetwork,
+  parseEarnChainId,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import { EARN_TRANSACTION_ACTIONS, type EarnTransactionAction } from '../../../../types';
+import {
+  EARN_TRANSACTION_ACTIONS,
+  type EarnTransactionAction,
+  getEarnNetworkFromChainId,
+} from '../../../../types';
 
 function isEarnTransactionAction(value: string): value is EarnTransactionAction {
   return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
@@ -41,7 +45,9 @@ export async function POST(
     const rawAction = assertString(parsedRequest.action, 'action');
     const rawAmount = assertString(parsedRequest.amount, 'amount');
     const bodyCategoryRaw = assertOptionalString(parsedRequest.category, 'category');
-    const rawNetwork = assertOptionalString(parsedRequest.network, 'network');
+    const rawChainId = assertOptionalFiniteNumber(parsedRequest.chainId, {
+      field: 'chainId',
+    });
     const rawUserAddress = assertString(parsedRequest.userAddress, 'userAddress');
     const rawInputTokenAddress = assertOptionalString(
       parsedRequest.inputTokenAddress,
@@ -83,7 +89,11 @@ export async function POST(
 
     const amount = assertPositiveNumberString(rawAmount, 'amount');
     const userAddress = assertAddress(rawUserAddress, 'userAddress');
-    const network = parseEarnNetwork(rawNetwork ?? null);
+    if (rawChainId !== undefined && !Number.isInteger(rawChainId)) {
+      throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
+    }
+    const chainId = parseEarnChainId(rawChainId === undefined ? null : String(rawChainId));
+    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
     const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
@@ -108,6 +118,7 @@ export async function POST(
         outputTokenAddress,
         slippage,
         simulate,
+        chainId,
         rolloverTargetOpportunityId,
         rolloverAmount,
       },
