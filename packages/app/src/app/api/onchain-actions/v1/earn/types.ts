@@ -58,9 +58,7 @@ export interface StandardOpportunityMetrics {
   rawApy: number | null;
   rawTvl: number | null;
   deposited: string | null;
-  /** Raw numeric value or null. No $ or locale formatting. */
   depositedUsd: number | null;
-  /** Raw numeric value or null. No $ or locale formatting. */
   projectedEarningsUsd: number | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
