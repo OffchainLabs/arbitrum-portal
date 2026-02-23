@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
   ValidationError,
   parseEarnChainId,
@@ -16,14 +16,12 @@ const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-rev
 
 export const revalidate = 3600;
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }
 
 export async function GET(request: NextRequest) {
   try {
-    assertCorsOriginAllowed(request);
-
     const searchParams = request.nextUrl.searchParams;
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const orderByParam = searchParams.get('orderBy');
@@ -97,10 +95,10 @@ export async function GET(request: NextRequest) {
       categories: Array.from(new Set(opportunities.map((o) => o.category))),
     };
 
-    return jsonResponse(request, result, { headers: CACHE_HEADERS });
+    return jsonResponse(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'OPPORTUNITIES_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
     });

@@ -140,7 +140,7 @@ export function useUserPositions(
 
       return (await response.json()) as UserPositionsResponse;
     },
-    { refreshInterval: 12 * 60 * 60 * 1000, errorRetryCount: 2 },
+    { errorRetryCount: 2 },
   );
 
   const data = useMemo(() => (rawData ? mapUserPositionsData(rawData) : null), [rawData]);

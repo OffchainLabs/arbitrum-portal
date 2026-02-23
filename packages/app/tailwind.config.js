@@ -169,6 +169,9 @@ module.exports = {
         unica77: ['var(--font-unica77)'],
         theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)'],
       },
+      spacing: {
+        50: '12.5rem',
+      },
       fontSize: {
         xl: '1.375rem',
       },

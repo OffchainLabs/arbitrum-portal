@@ -17,8 +17,6 @@ export function useOpportunityDetails(
   category: OpportunityCategory,
   chainId: EarnChainId = ChainId.ArbitrumOne,
 ): UseOpportunityDetailsResult {
-  const REVALIDATE_INTERVAL = 24 * 60 * 60 * 1000;
-
   const isValid =
     opportunityId &&
     category &&
@@ -42,7 +40,7 @@ export function useOpportunityDetails(
       }
       return (await response.json()) as StandardOpportunity;
     },
-    { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
+    { errorRetryCount: 2 },
   );
 
   return {

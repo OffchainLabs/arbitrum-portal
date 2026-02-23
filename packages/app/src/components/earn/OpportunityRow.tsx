@@ -19,10 +19,8 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
       className="group bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
     >
-      {/* Name with Category Color Indicator */}
       <div className="w-[150px] shrink-0">
         <div className="flex items-center gap-2.5">
-          {/* Category color indicator */}
           <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${categoryClass}`} />
           <div className="flex flex-col gap-0.5">
             <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
@@ -37,7 +35,6 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
         </div>
       </div>
 
-      {/* Token */}
       <div className="w-[146px] shrink-0 flex items-center gap-2">
         <SafeImage
           src={opportunity.tokenIcon}
@@ -69,7 +66,6 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
         </div>
       </div>
 
-      {/* APY */}
       <div className="flex-1 flex items-center gap-1 min-w-0">
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] w-[45px]">
           {opportunity.apy}
@@ -116,14 +112,13 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
             }
             tippyProps={{ placement: 'top' }}
           >
-            <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full p-0.5">
+            <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded p-0.5">
               <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />
             </div>
           </Tooltip>
         )}
       </div>
 
-      {/* Your Holdings */}
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
         {opportunity.deposited != null ? (
           <>
@@ -151,14 +146,12 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
         )}
       </div>
 
-      {/* TVL */}
       <div className="w-[116px] shrink-0 flex items-center gap-2">
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap">
           {opportunity.tvl}
         </p>
       </div>
 
-      {/* Protocol */}
       <div className="flex-1 flex items-center gap-2 min-w-0">
         <SafeImage
           src={opportunity.protocolIcon}

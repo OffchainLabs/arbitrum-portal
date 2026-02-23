@@ -152,8 +152,15 @@ export function OpportunitiesTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
-    setSortColumn(groupByCategory ? 'tvl' : 'holdings');
-    setSortDirection('desc');
+    setSortColumn((current) => {
+      if (groupByCategory && current === 'holdings') {
+        return 'tvl';
+      }
+      if (!groupByCategory && current === 'tvl') {
+        return 'holdings';
+      }
+      return current;
+    });
   }, [groupByCategory]);
 
   const compareMetric = useCallback(

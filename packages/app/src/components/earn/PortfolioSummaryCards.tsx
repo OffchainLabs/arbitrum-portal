@@ -1,6 +1,7 @@
 'use client';
 
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -91,20 +92,9 @@ export function PortfolioSummaryCards({
       : (projectedEarningsYearlyPercentage ?? 0);
 
   const getTargetDate = () => {
-    const now = new Date();
-    const targetDate = new Date(now);
-
-    if (earningsTimeframe === 'month') {
-      targetDate.setMonth(targetDate.getMonth() + 1);
-    } else {
-      targetDate.setFullYear(targetDate.getFullYear() + 1);
-    }
-
-    return targetDate.toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    const targetDate =
+      earningsTimeframe === 'month' ? dayjs().add(1, 'month') : dayjs().add(1, 'year');
+    return targetDate.format('D MMM YYYY');
   };
   const totalValueForProgress = totalValue || 1;
   const categoryWidths = activeCategories.map((category) => ({
@@ -233,7 +223,7 @@ export function PortfolioSummaryCards({
               <div className="flex flex-col gap-2 mt-2">
                 {activeCategories.map((category) => {
                   const apy = categoryApy[category];
-                  if (apy === undefined || apy === null || !isFinite(apy)) return null;
+                  if (apy === undefined || !isFinite(apy)) return null;
                   return (
                     <div key={category} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -331,7 +321,7 @@ export function PortfolioSummaryCards({
             <div className="flex flex-col gap-2 mt-2">
               {activeCategories.map((category) => {
                 const apy = categoryApy[category];
-                if (apy === undefined || apy === null || !isFinite(apy)) return null;
+                if (apy === undefined || !isFinite(apy)) return null;
                 return (
                   <div key={category} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">

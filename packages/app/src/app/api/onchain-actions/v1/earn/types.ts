@@ -11,20 +11,24 @@ export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
 export type EarnNetwork = (typeof EARN_NETWORKS)[number];
 export const EARN_CHAIN_IDS = [ChainId.ArbitrumOne, ChainId.Ethereum] as const;
 export type EarnChainId = (typeof EARN_CHAIN_IDS)[number];
-export const EARN_NETWORK_TO_CHAIN_ID: Record<EarnNetwork, EarnChainId> = {
+export const EARN_NETWORK_TO_CHAIN_ID: Record<EarnNetwork, ChainId> = {
   arbitrum: ChainId.ArbitrumOne,
   mainnet: ChainId.Ethereum,
 };
-export const EARN_CHAIN_ID_TO_NETWORK: Record<EarnChainId, EarnNetwork> = {
+export const EARN_CHAIN_ID_TO_NETWORK: Partial<Record<ChainId, EarnNetwork>> = {
   [ChainId.ArbitrumOne]: 'arbitrum',
   [ChainId.Ethereum]: 'mainnet',
 };
 
-export function getEarnNetworkFromChainId(chainId: EarnChainId): EarnNetwork {
-  return EARN_CHAIN_ID_TO_NETWORK[chainId];
+export function getEarnNetworkFromChainId(chainId: number): EarnNetwork {
+  const network = EARN_CHAIN_ID_TO_NETWORK[chainId as ChainId];
+  if (!network) {
+    throw new Error(`Unsupported chainId for earn network mapping: ${chainId}`);
+  }
+  return network;
 }
 
-export function getEarnChainIdFromNetwork(network: EarnNetwork): EarnChainId {
+export function getEarnChainIdFromNetwork(network: EarnNetwork): ChainId {
   return EARN_NETWORK_TO_CHAIN_ID[network];
 }
 export const EARN_TRANSACTION_ACTIONS = [

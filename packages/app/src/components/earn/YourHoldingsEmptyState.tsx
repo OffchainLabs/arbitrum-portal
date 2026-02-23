@@ -61,7 +61,6 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
         )}
       </div>
 
-      {/* Opportunity Showcase */}
       {opportunities && opportunities.length > 0 && (
         <BestOpportunitiesShowcase opportunities={opportunities} />
       )}

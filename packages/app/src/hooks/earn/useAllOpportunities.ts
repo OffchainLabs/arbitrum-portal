@@ -74,20 +74,18 @@ export function useAllOpportunities(filters?: {
   minTvl?: number;
   minApy?: number;
 }): UseAllOpportunitiesResult {
-  const REVALIDATE_INTERVAL = 12 * 60 * 60 * 1000;
-
   const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<OpportunitiesResponse>(
     [
-      'earn-opportunities',
       filters?.chainId ?? null,
       filters?.minTvl ?? null,
       filters?.minApy ?? null,
+      'earn-opportunities',
     ] as const,
-    async ([, chainId, minTvl, minApy]: readonly [
-      string,
+    async ([chainId, minTvl, minApy]: readonly [
       EarnChainId | null,
       number | null,
       number | null,
+      string,
     ]) => {
       const params = new URLSearchParams();
       if (chainId) params.set('chainId', String(chainId));
@@ -102,7 +100,7 @@ export function useAllOpportunities(filters?: {
       }
       return (await response.json()) as OpportunitiesResponse;
     },
-    { refreshInterval: REVALIDATE_INTERVAL, errorRetryCount: 2 },
+    { errorRetryCount: 2 },
   );
 
   const opportunities: OpportunityTableRow[] = data?.opportunities.map(toTableRow) ?? [];

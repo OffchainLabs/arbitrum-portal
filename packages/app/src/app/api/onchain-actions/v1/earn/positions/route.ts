@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { assertCorsOriginAllowed, errorResponse, jsonResponse, optionsResponse } from '../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
   assertAddress,
   parseEarnChainId,
@@ -106,14 +106,12 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   };
 }
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }
 
 export async function GET(request: NextRequest) {
   try {
-    assertCorsOriginAllowed(request);
-
     const searchParams = request.nextUrl.searchParams;
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
@@ -186,14 +184,14 @@ export async function GET(request: NextRequest) {
 
     const result = await getCachedPositions();
 
-    return jsonResponse(request, result, {
+    return jsonResponse(result, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
       },
     });
   } catch (error) {
     console.error('Error fetching positions:', error);
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'POSITIONS_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch positions',
     });

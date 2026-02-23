@@ -1,12 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import {
-  assertCorsOriginAllowed,
-  errorResponse,
-  jsonResponse,
-  optionsResponse,
-} from '@/earn-api/lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/http';
 import {
   assertAddress,
   parseEarnChainId,
@@ -16,8 +11,8 @@ import { getEarnNetworkFromChainId } from '@/earn-api/types';
 
 export const revalidate = 3600;
 
-export function OPTIONS(request: NextRequest) {
-  return optionsResponse(request);
+export function OPTIONS() {
+  return optionsResponse();
 }
 
 export async function GET(
@@ -25,8 +20,6 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
-    assertCorsOriginAllowed(request);
-
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
@@ -37,14 +30,14 @@ export async function GET(
     const adapter = router.routeToAdapter(category);
     const opportunity = await adapter.getOpportunityDetails(opportunityId, network);
 
-    return jsonResponse(request, opportunity, {
+    return jsonResponse(opportunity, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600',
       },
     });
   } catch (error) {
     console.error('Error fetching opportunity details:', error);
-    return errorResponse(request, error, {
+    return errorResponse(error, {
       code: 'OPPORTUNITY_DETAILS_FETCH_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch opportunity details',
     });
