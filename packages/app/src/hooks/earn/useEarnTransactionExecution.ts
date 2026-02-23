@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { type Address, type Hex } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import {
+  getAccount,
   getCallsStatus,
   sendCalls,
   sendTransaction,
@@ -60,8 +61,17 @@ export function useEarnTransactionExecution({
 
     try {
       const ensureCorrectChain = async () => {
+        if (!chainId) {
+          throw new Error('Invalid transaction chain');
+        }
+
         if (connectedChainId !== chainId) {
           await switchChain(wagmiConfig, { chainId });
+        }
+
+        const activeChainId = getAccount(wagmiConfig).chainId;
+        if (activeChainId !== chainId) {
+          throw new Error('Please switch to Arbitrum One');
         }
       };
 
@@ -70,6 +80,15 @@ export function useEarnTransactionExecution({
         if (calls.length === 0) {
           throw new Error('No calls to execute');
         }
+
+        for (const [index, call] of calls.entries()) {
+          if (call.chainId !== chainId) {
+            throw new Error(
+              `Invalid transaction step ${index + 1}: chain ${call.chainId} does not match ${chainId}`,
+            );
+          }
+        }
+
         return calls;
       };
 
