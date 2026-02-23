@@ -99,7 +99,7 @@ export function EarnAmountInputSection({
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">
-          <span>{currentInputUsdValue != null ? `~${formatUSD(currentInputUsdValue)}` : '—'}</span>
+          <span>{currentInputUsdValue != null ? `~${formatUSD(currentInputUsdValue)}` : null}</span>
           {isConnected && <span>Balance: {currentBalance}</span>}
         </div>
       </div>
