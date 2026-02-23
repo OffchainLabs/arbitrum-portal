@@ -13,8 +13,6 @@ import {
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
-import { ChartPlaceholder } from './ChartPlaceholder';
-
 function formatPercentage(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
@@ -183,10 +181,6 @@ export function PortfolioSummaryCards({
               {formatPercentage(earningsPercentage)} by {getTargetDate()}
             </p>
           </div>
-
-          <div className="hidden lg:block">
-            <ChartPlaceholder label="Projected earnings" />
-          </div>
         </div>
 
         <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col justify-between">
@@ -283,8 +277,6 @@ export function PortfolioSummaryCards({
             {formatPercentage(earningsPercentage)} by {getTargetDate()}
           </p>
         </div>
-
-        <ChartPlaceholder label="Projected earnings" />
       </div>
 
       <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col justify-between">
