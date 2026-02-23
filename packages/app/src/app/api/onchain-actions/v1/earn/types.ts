@@ -303,6 +303,14 @@ export interface StandardTransactionHistory {
   assetSymbol: string;
   decimals: number;
   assetLogo?: string;
+  inputAssetAmountRaw?: string;
+  inputAssetSymbol?: string;
+  inputAssetDecimals?: number;
+  inputAssetLogo?: string;
+  outputAssetAmountRaw?: string;
+  outputAssetSymbol?: string;
+  outputAssetDecimals?: number;
+  outputAssetLogo?: string;
   chainId: number;
   chainName: string;
   transactionHash: string;

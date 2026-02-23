@@ -282,29 +282,20 @@ export function VaultActionPanel({
       const txChainName = getNetworkName(txChainId);
       const quoteReceiveAmount = transactionQuote?.receiveAmount;
       const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
-      const historyAmountRaw: string = hasReceiveAmount
-        ? quoteReceiveAmount || amountInRawUnits || '0'
-        : amountInRawUnits || '0';
-      const historyTokenSymbol: string = hasReceiveAmount
-        ? selectedAction === 'supply'
-          ? (lpToken?.symbol ?? assetSymbol ?? '')
-          : (assetSymbol ?? '')
-        : selectedAction === 'supply'
-          ? (assetSymbol ?? '')
-          : (lpToken?.symbol ?? assetSymbol ?? '');
-      const historyTokenDecimals = hasReceiveAmount
-        ? selectedAction === 'supply'
-          ? lpTokenDecimals
-          : assetDecimals
-        : selectedAction === 'supply'
-          ? assetDecimals
-          : lpTokenDecimals;
+      const inputAmountRaw = amountInRawUnits || '0';
+      const inputTokenSymbol =
+        selectedAction === 'supply' ? (assetSymbol ?? '') : (lpToken?.symbol ?? assetSymbol ?? '');
+      const inputTokenDecimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
+      const outputAmountRaw = hasReceiveAmount ? quoteReceiveAmount || undefined : undefined;
+      const outputTokenSymbol =
+        selectedAction === 'supply' ? (lpToken?.symbol ?? assetSymbol ?? '') : (assetSymbol ?? '');
+      const outputTokenDecimals = selectedAction === 'supply' ? lpTokenDecimals : assetDecimals;
 
       const transactionDetails = {
         action: selectedAction === 'supply' ? 'supply' : 'withdraw',
-        amount: historyAmountRaw,
-        tokenSymbol: historyTokenSymbol,
-        decimals: historyTokenDecimals,
+        amount: inputAmountRaw,
+        tokenSymbol: inputTokenSymbol,
+        decimals: inputTokenDecimals,
         assetLogo: vault.asset?.assetLogo,
         chainId: txChainId,
         txHash: txHash ?? '',
@@ -324,10 +315,18 @@ export function VaultActionPanel({
         const newTransaction: StandardTransactionHistory = {
           timestamp,
           eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
-          assetAmountRaw: historyAmountRaw,
-          assetSymbol: historyTokenSymbol,
-          decimals: historyTokenDecimals,
+          assetAmountRaw: inputAmountRaw,
+          assetSymbol: inputTokenSymbol,
+          decimals: inputTokenDecimals,
           assetLogo: vault.asset?.assetLogo,
+          inputAssetAmountRaw: inputAmountRaw,
+          inputAssetSymbol: inputTokenSymbol,
+          inputAssetDecimals: inputTokenDecimals,
+          inputAssetLogo: vault.asset?.assetLogo,
+          outputAssetAmountRaw: outputAmountRaw,
+          outputAssetSymbol: outputTokenSymbol,
+          outputAssetDecimals: outputTokenDecimals,
+          outputAssetLogo: vault.asset?.assetLogo,
           chainId: txChainId,
           chainName: txChainName,
           transactionHash: txHash ?? '',

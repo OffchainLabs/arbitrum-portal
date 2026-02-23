@@ -398,6 +398,7 @@ export class VaultsAdapter implements VendorAdapter {
 
         const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
 
+        const chainId = this.getChainId(network);
         return {
           timestamp: event.timestamp,
           eventType,
@@ -405,8 +406,12 @@ export class VaultsAdapter implements VendorAdapter {
           assetSymbol: response.asset.symbol,
           decimals,
           assetLogo: response.asset.assetLogo,
+          inputAssetAmountRaw: event.assetAmountNative || '0',
+          inputAssetSymbol: response.asset.symbol,
+          inputAssetDecimals: decimals,
+          inputAssetLogo: response.asset.assetLogo,
           chainId,
-          chainName: network === 'arbitrum' ? 'Arbitrum One' : network,
+          chainName: network === 'arbitrum' ? 'Arbitrum One' : 'Ethereum',
           transactionHash: event.transactionHash,
         };
       })

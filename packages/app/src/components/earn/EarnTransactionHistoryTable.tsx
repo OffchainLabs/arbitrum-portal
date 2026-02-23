@@ -6,6 +6,7 @@ import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { shortenAddress } from '@/bridge/util/CommonUtils';
@@ -22,12 +23,21 @@ export interface EarnTransactionHistoryRow {
   assetSymbol: string;
   decimals: number;
   assetLogo?: string;
+  inputAssetAmountRaw?: string;
+  inputAssetSymbol?: string;
+  inputAssetDecimals?: number;
+  inputAssetLogo?: string;
+  outputAssetAmountRaw?: string;
+  outputAssetSymbol?: string;
+  outputAssetDecimals?: number;
+  outputAssetLogo?: string;
   chainId: number;
   chainName: string;
   transactionHash: string;
 }
 
 interface EarnTransactionHistoryTableProps {
+  category: OpportunityCategory;
   rows: EarnTransactionHistoryRow[];
   getDateStr: (timestamp: number) => string;
   getTimeStr: (timestamp: number) => string;
@@ -49,15 +59,62 @@ const EVENT_TYPE_TO_ACTION: Record<string, string> = {
   claim: 'claim',
 };
 
-function formatHistoryAmount(row: EarnTransactionHistoryRow): string {
-  return formatAmount(BigNumber.from(row.assetAmountRaw || '0'), {
-    decimals: row.decimals,
+function getDisplayAsset(
+  row: EarnTransactionHistoryRow,
+  category: OpportunityCategory,
+): { amountRaw: string; symbol: string; decimals: number; logo?: string } {
+  if (
+    category === OpportunityCategory.Lend &&
+    row.inputAssetAmountRaw &&
+    row.inputAssetSymbol &&
+    typeof row.inputAssetDecimals === 'number'
+  ) {
+    return {
+      amountRaw: row.inputAssetAmountRaw,
+      symbol: row.inputAssetSymbol,
+      decimals: row.inputAssetDecimals,
+      logo: row.inputAssetLogo ?? row.assetLogo,
+    };
+  }
+
+  if (
+    category !== OpportunityCategory.Lend &&
+    row.outputAssetAmountRaw &&
+    row.outputAssetSymbol &&
+    typeof row.outputAssetDecimals === 'number'
+  ) {
+    return {
+      amountRaw: row.outputAssetAmountRaw,
+      symbol: row.outputAssetSymbol,
+      decimals: row.outputAssetDecimals,
+      logo: row.outputAssetLogo ?? row.assetLogo,
+    };
+  }
+
+  return {
+    amountRaw: row.assetAmountRaw || '0',
     symbol: row.assetSymbol,
+    decimals: row.decimals,
+    logo: row.assetLogo,
+  };
+}
+
+function formatHistoryAmount(displayAsset: {
+  amountRaw: string;
+  symbol: string;
+  decimals: number;
+}): string {
+  return formatAmount(BigNumber.from(displayAsset.amountRaw || '0'), {
+    decimals: displayAsset.decimals,
+    symbol: displayAsset.symbol,
   });
 }
 
-function getEventTypeDisplay(row: EarnTransactionHistoryRow): string {
-  return `${row.eventType.charAt(0).toUpperCase() + row.eventType.slice(1)} ${row.assetSymbol}`;
+function getEventTypeDisplay(
+  row: EarnTransactionHistoryRow,
+  displayAsset: { symbol: string },
+): string {
+  return `${row.eventType.charAt(0).toUpperCase() + row.eventType.slice(1)} ${displayAsset.symbol}`;
 }
 
 function TransactionHashLink({
@@ -87,17 +144,20 @@ function TransactionHashLink({
 
 function DesktopHistoryRow({
   row,
+  category,
   getDateStr,
   getTimeStr,
   onClick,
 }: {
   row: EarnTransactionHistoryRow;
+  category: OpportunityCategory;
   getDateStr: (timestamp: number) => string;
   getTimeStr: (timestamp: number) => string;
   onClick: () => void;
 }) {
   const dateStr = getDateStr(row.timestamp);
   const timeStr = getTimeStr(row.timestamp);
+  const displayAsset = getDisplayAsset(row, category);
 
   return (
     <div
@@ -116,10 +176,10 @@ function DesktopHistoryRow({
       </div>
 
       <div className="flex-1 flex items-center gap-2 min-w-0">
-        {row.assetLogo && (
+        {displayAsset.logo && (
           <SafeImage
-            src={row.assetLogo}
-            alt={row.assetSymbol}
+            src={displayAsset.logo}
+            alt={displayAsset.symbol}
             width={24}
             height={24}
             className="rounded-full shrink-0"
@@ -127,7 +187,7 @@ function DesktopHistoryRow({
         )}
         <div className="flex flex-col gap-0.5 min-w-0">
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap truncate">
-            {formatHistoryAmount(row)}
+            {formatHistoryAmount(displayAsset)}
           </p>
           <div className="flex items-center gap-1.5">
             <SafeImage
@@ -162,11 +222,15 @@ function DesktopHistoryRow({
 
 function MobileHistoryRow({
   row,
+  category,
   onClick,
 }: {
   row: EarnTransactionHistoryRow;
+  category: OpportunityCategory;
   onClick: () => void;
 }) {
+  const displayAsset = getDisplayAsset(row, category);
+
   return (
     <div
       onClick={onClick}
@@ -174,7 +238,7 @@ function MobileHistoryRow({
     >
       <div className="flex items-center justify-between w-full">
         <p className="text-base text-white leading-[1.15] tracking-[-0.32px] whitespace-nowrap">
-          {getEventTypeDisplay(row)}
+          {getEventTypeDisplay(row, displayAsset)}
         </p>
         <TransactionHashLink
           chainId={row.chainId}
@@ -198,7 +262,7 @@ function MobileHistoryRow({
           </p>
         </div>
         <p className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap">
-          {formatHistoryAmount(row)}
+          {formatHistoryAmount(displayAsset)}
         </p>
       </div>
     </div>
@@ -206,6 +270,7 @@ function MobileHistoryRow({
 }
 
 export function EarnTransactionHistoryTable({
+  category,
   rows,
   getDateStr,
   getTimeStr,
@@ -219,13 +284,14 @@ export function EarnTransactionHistoryTable({
   const handleRowClick = (row: EarnTransactionHistoryRow) => {
     if (!onRowClick) return;
 
+    const displayAsset = getDisplayAsset(row, category);
     const action = EVENT_TYPE_TO_ACTION[row.eventType.toLowerCase()] || row.eventType.toLowerCase();
     const transactionDetails: TransactionDetails = {
       action,
-      amount: row.assetAmountRaw || '0',
-      tokenSymbol: row.assetSymbol,
-      decimals: row.decimals,
-      assetLogo: row.assetLogo,
+      amount: displayAsset.amountRaw || '0',
+      tokenSymbol: displayAsset.symbol,
+      decimals: displayAsset.decimals,
+      assetLogo: displayAsset.logo,
       txHash: row.transactionHash,
       chainId: row.chainId,
       timestamp: row.timestamp,
@@ -286,6 +352,7 @@ export function EarnTransactionHistoryTable({
           <DesktopHistoryRow
             key={`${row.transactionHash}-${row.timestamp}`}
             row={row}
+            category={category}
             getDateStr={getDateStr}
             getTimeStr={getTimeStr}
             onClick={() => handleRowClick(row)}
@@ -303,10 +370,7 @@ export function EarnTransactionHistoryTable({
           return (
             <div key={dateKey} className="flex flex-col gap-1">
               <div
-                className={twMerge(
-                  'flex items-center',
-                  isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
-                )}
+                className={twMerge('flex items-center', isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4')}
               >
                 <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
               </div>
@@ -315,6 +379,7 @@ export function EarnTransactionHistoryTable({
                 <MobileHistoryRow
                   key={`${row.transactionHash}-${row.timestamp}`}
                   row={row}
+                  category={category}
                   onClick={() => handleRowClick(row)}
                 />
               ))}

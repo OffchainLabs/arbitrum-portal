@@ -202,6 +202,7 @@ export function EarnUserTransactionHistory({
       {viewState === 'table' && (
         <>
           <EarnTransactionHistoryTable
+            category={category}
             rows={paginatedTransactions}
             getDateStr={getDateStr}
             getTimeStr={getTimeStr}
