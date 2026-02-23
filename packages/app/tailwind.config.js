@@ -27,6 +27,7 @@ module.exports = {
     // Common components
     '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
   ],
+  safelist: ['bg-earn-lend', 'bg-earn-liquid-staking', 'bg-earn-fixed-yield'],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {

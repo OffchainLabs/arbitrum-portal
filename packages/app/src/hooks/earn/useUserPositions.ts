@@ -41,6 +41,76 @@ interface UseUserPositionsResult {
   refetch: () => void;
 }
 
+interface MappedUserPositionsData {
+  positionsMap: Map<string, UserPositionData>;
+  opportunityIds: Set<string>;
+  summary: UserPositionsResponse['summary'];
+  totalValueUsd: number;
+  projectedEarningsUsd: number;
+  projectedEarningsMonthlyUsd: number;
+  projectedEarningsYearlyPercentage: number;
+  projectedEarningsMonthlyPercentage: number;
+  netApy: number;
+  categoryApy: Record<OpportunityCategory, number>;
+}
+
+export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUserPositionsData {
+  const positionsMap = new Map<string, UserPositionData>();
+  const opportunityIds = new Set<string>();
+
+  for (const position of rawData.positions) {
+    const normalizedOpportunityId = position.opportunityId.toLowerCase();
+    const apy = position.opportunity.apy || 0;
+    const projectedEarningsUsd =
+      position.projectedEarningsUsd ??
+      (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
+    const deposited = formatAmount(BigNumber.from(position.amount), {
+      decimals: position.tokenDecimals,
+      symbol: position.tokenSymbol,
+    });
+
+    positionsMap.set(normalizedOpportunityId, {
+      deposited,
+      valueUsd: position.valueUsd,
+      projectedEarningsUsd,
+      projectedEarnings: '-',
+    });
+
+    opportunityIds.add(normalizedOpportunityId);
+  }
+
+  const byCategory = { ...DEFAULT_BY_CATEGORY };
+  for (const [rawCategory, summaryEntry] of Object.entries(rawData.summary.byCategory)) {
+    const category = normalizeOpportunityCategory(rawCategory);
+    if (!category || !summaryEntry) continue;
+
+    byCategory[category] = {
+      count: summaryEntry.count,
+      valueUsd: summaryEntry.valueUsd,
+    };
+  }
+
+  const categoryApy = { ...DEFAULT_CATEGORY_APY };
+  for (const [rawCategory, rawApy] of Object.entries(rawData.categoryApy)) {
+    const category = normalizeOpportunityCategory(rawCategory);
+    if (!category || rawApy === undefined || rawApy === null || !isFinite(rawApy)) continue;
+    categoryApy[category] = rawApy;
+  }
+
+  return {
+    positionsMap,
+    opportunityIds,
+    summary: { byCategory, byVendor: rawData.summary.byVendor },
+    totalValueUsd: rawData.totalValueUsd,
+    projectedEarningsUsd: rawData.projectedEarningsUsd,
+    projectedEarningsMonthlyUsd: rawData.projectedEarningsMonthlyUsd,
+    projectedEarningsYearlyPercentage: rawData.projectedEarningsYearlyPercentage,
+    projectedEarningsMonthlyPercentage: rawData.projectedEarningsMonthlyPercentage,
+    netApy: rawData.netApy,
+    categoryApy,
+  };
+}
+
 export function useUserPositions(
   userAddress: string | null,
   allowedNetworks: EarnNetwork[] = ['arbitrum'],
@@ -72,64 +142,7 @@ export function useUserPositions(
     { refreshInterval: 12 * 60 * 60 * 1000, errorRetryCount: 2 },
   );
 
-  const data = useMemo(() => {
-    if (!rawData) return null;
-
-    const positionsMap = new Map<string, UserPositionData>();
-    const opportunityIds = new Set<string>();
-
-    for (const position of rawData.positions) {
-      const normalizedOpportunityId = position.opportunityId.toLowerCase();
-      const apy = position.opportunity.apy || 0;
-      const projectedEarningsUsd =
-        position.projectedEarningsUsd ??
-        (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
-      const deposited = formatAmount(BigNumber.from(position.amount), {
-        decimals: position.tokenDecimals,
-        symbol: position.tokenSymbol,
-      });
-
-      positionsMap.set(normalizedOpportunityId, {
-        deposited,
-        valueUsd: position.valueUsd,
-        projectedEarningsUsd,
-        projectedEarnings: '-',
-      });
-
-      opportunityIds.add(normalizedOpportunityId);
-    }
-
-    const byCategory = { ...DEFAULT_BY_CATEGORY };
-    for (const [rawCategory, summaryEntry] of Object.entries(rawData.summary.byCategory)) {
-      const category = normalizeOpportunityCategory(rawCategory);
-      if (!category || !summaryEntry) continue;
-
-      byCategory[category] = {
-        count: summaryEntry.count,
-        valueUsd: summaryEntry.valueUsd,
-      };
-    }
-
-    const categoryApy = { ...DEFAULT_CATEGORY_APY };
-    for (const [rawCategory, rawApy] of Object.entries(rawData.categoryApy)) {
-      const category = normalizeOpportunityCategory(rawCategory);
-      if (!category || rawApy === undefined || rawApy === null || !isFinite(rawApy)) continue;
-      categoryApy[category] = rawApy;
-    }
-
-    return {
-      positionsMap,
-      opportunityIds,
-      summary: { byCategory, byVendor: rawData.summary.byVendor },
-      totalValueUsd: rawData.totalValueUsd,
-      projectedEarningsUsd: rawData.projectedEarningsUsd,
-      projectedEarningsMonthlyUsd: rawData.projectedEarningsMonthlyUsd,
-      projectedEarningsYearlyPercentage: rawData.projectedEarningsYearlyPercentage,
-      projectedEarningsMonthlyPercentage: rawData.projectedEarningsMonthlyPercentage,
-      netApy: rawData.netApy,
-      categoryApy,
-    };
-  }, [rawData]);
+  const data = useMemo(() => (rawData ? mapUserPositionsData(rawData) : null), [rawData]);
 
   const defaultSummary = {
     byCategory: DEFAULT_BY_CATEGORY,
