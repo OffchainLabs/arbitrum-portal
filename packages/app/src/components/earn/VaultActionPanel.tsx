@@ -208,10 +208,7 @@ export function VaultActionPanel({
     inputTokenAddress:
       selectedAction === 'supply' ? asset?.address || vault.asset?.address : vault.asset?.address,
     network: requestNetwork,
-    enabled:
-      amountInRawUnits !== '0' &&
-      parseFloat(amountInRawUnits) > 0 &&
-      (!isConnected || !amountExceedsBalance),
+    enabled: amountInRawUnits !== '0' && (!isConnected || !amountExceedsBalance),
   });
 
   const fallbackChainIdFromQuote = useMemo(() => {
