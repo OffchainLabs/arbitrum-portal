@@ -1,8 +1,5 @@
-import { formatUnits } from 'viem';
-
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount } from '@/bridge/util/NumberUtils';
 
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
