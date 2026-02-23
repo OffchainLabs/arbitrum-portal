@@ -22,7 +22,7 @@ import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadin
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount, formatUSD, normalizeAmountForParseUnits } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
@@ -118,7 +118,7 @@ export function VaultActionPanel({
     amount && parseFloat(amount) > 0
       ? utils
           .parseUnits(
-            normalizeAmountForParseUnits(
+            truncateExtraDecimals(
               amount,
               selectedAction === 'supply' ? assetDecimals : lpTokenDecimals,
             ),

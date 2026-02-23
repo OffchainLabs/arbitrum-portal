@@ -164,21 +164,3 @@ export const truncateExtraDecimals = (amount: string, decimals: number) => {
 
   return `${wholePart}.${decimalPart.slice(0, decimals)}`;
 };
-
-/**
- * Normalizes an amount string to prevent parseUnits errors when user types too many decimals.
- * Truncates the fractional part to the maximum allowed decimals for the token.
- * @param amount - The amount string to normalize (e.g., "1.123456789")
- * @param decimals - Maximum number of decimal places allowed
- * @returns Normalized amount string safe for parseUnits
- */
-export const normalizeAmountForParseUnits = (amount: string, decimals: number): string => {
-  const parsedAmount = Number(amount);
-  if (!amount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-    return '0';
-  }
-
-  const trimmedAmount = amount.trim();
-  const truncated = truncateExtraDecimals(trimmedAmount, Math.max(0, decimals));
-  return truncated.endsWith('.') ? truncated.slice(0, -1) : truncated;
-};
