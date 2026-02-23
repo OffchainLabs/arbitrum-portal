@@ -1,10 +1,6 @@
 import useSWRImmutable from 'swr/immutable';
 
-import {
-  OpportunityCategory,
-  OpportunityTableRow,
-  normalizeOpportunityCategory,
-} from '@/app-types/earn/vaults';
+import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
@@ -43,13 +39,11 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
   const rawApy = parseMetricNumber(m?.rawApy);
   const rawTvl = parseMetricNumber(m?.rawTvl);
-  const category =
-    normalizeOpportunityCategory(opp.category) ?? (opp.category as OpportunityCategory);
 
   return {
     id: opp.id,
     name: opp.name ?? opp.id,
-    category,
+    category: opp.category,
     token: opp.token,
     tokenIcon: opp.tokenIcon ?? '',
     tokenNetwork: opp.tokenNetwork ?? opp.network,

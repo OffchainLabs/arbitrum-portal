@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   OpportunityCategory,
@@ -150,18 +150,6 @@ export function OpportunitiesTable({
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
   const [sortColumn, setSortColumn] = useState<SortColumn>(groupByCategory ? 'tvl' : 'holdings');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  useEffect(() => {
-    setSortColumn((current) => {
-      if (groupByCategory && current === 'holdings') {
-        return 'tvl';
-      }
-      if (!groupByCategory && current === 'tvl') {
-        return 'holdings';
-      }
-      return current;
-    });
-  }, [groupByCategory]);
 
   const compareMetric = useCallback(
     (aValue: number | null, bValue: number | null) => {
