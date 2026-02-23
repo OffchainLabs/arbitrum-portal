@@ -331,29 +331,3 @@ export function parseOptionalAssetSymbol(rawValue: string | null): string | unde
 
   return parsed.data;
 }
-
-export function assertString(value: unknown, field: string): string {
-  if (typeof value !== 'string') {
-    throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a string`);
-  }
-
-  const normalized = value.trim();
-  if (normalized.length === 0) {
-    throw new ValidationError(`MISSING_${field.toUpperCase()}`, `${field} is required`);
-  }
-
-  return normalized;
-}
-
-export function assertOptionalString(value: unknown, field: string): string | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (typeof value !== 'string') {
-    throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a string`);
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
-}
