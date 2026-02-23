@@ -101,7 +101,7 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
                         />
                         <span className="text-xs text-white opacity-70">Rewards</span>
                       </div>
-                      <span className="text-xs font-medium bg-gradient-to-r from-[#325ee6] to-[#96d18e] bg-clip-text text-transparent">
+                      <span className="text-xs font-medium bg-gradient-to-r from-primary-cta to-earn-success bg-clip-text text-transparent">
                         {opportunity.apyBreakdown.reward.toFixed(2)}%
                       </span>
                     </div>

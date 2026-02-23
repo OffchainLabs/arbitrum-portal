@@ -157,6 +157,11 @@ module.exports = {
         'neutral-50': '#191919',
         'neutral-100': '#212121',
         'neutral-200': '#333333',
+        'neutral-250': '#404040',
+        'gray-650': '#737373',
+        'earn-success': '#96d18e',
+        'cta-border': '#163db6',
+        'overlay': '#0a0a0a',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],

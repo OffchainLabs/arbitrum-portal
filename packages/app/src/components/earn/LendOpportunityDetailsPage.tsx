@@ -43,7 +43,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
+            <Card className="rounded flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Token</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
@@ -60,7 +60,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
+            <Card className="rounded flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Protocol</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
@@ -77,14 +77,14 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
+            <Card className="rounded flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">TVL</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
                 {formattedTvl}
               </div>
             </Card>
 
-            <Card className="rounded-lg flex flex-col gap-3 bg-gray-1 p-4">
+            <Card className="rounded flex flex-col gap-3 bg-gray-1 p-4">
               <span className="text-xs text-white/50 leading-none">Stakers</span>
               <div className="text-base font-medium text-white h-8 flex items-center">
                 {opportunity.lend?.stakersCount != null
@@ -97,7 +97,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           <ChartPlaceholder label="APY history" />
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-lg bg-gray-1 p-4">
+            <div className="rounded bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">7d APY</div>
               <div className="text-base font-medium text-white">
                 {typeof apy7day === 'number' && Number.isFinite(apy7day)
@@ -105,7 +105,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
                   : '—'}
               </div>
             </div>
-            <div className="rounded-lg bg-gray-1 p-4">
+            <div className="rounded bg-gray-1 p-4">
               <div className="text-xs text-white/50 mb-1">30d APY</div>
               <div className="text-base font-medium text-white">
                 {typeof apy30day === 'number' && Number.isFinite(apy30day)
@@ -113,14 +113,14 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
                   : '—'}
               </div>
             </div>
-            <div className="rounded-lg bg-gray-1 p-4 col-span-2 lg:col-span-1">
+            <div className="rounded bg-gray-1 p-4 col-span-2 lg:col-span-1">
               <div className="text-xs text-white/50 mb-1">TVL (Total Value Locked)</div>
               <div className="text-base font-medium text-white">{formattedTvl}</div>
             </div>
           </div>
 
           {opportunity.lend?.description && (
-            <div className="rounded-lg bg-gray-1 p-4">
+            <div className="rounded bg-gray-1 p-4">
               <h3 className="text-base font-medium text-white mb-3">
                 Where does the yield come from?
               </h3>
