@@ -31,8 +31,6 @@ export async function GET(
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
 
-    // Rate limiting: use very short server cache (30s) to prevent abuse
-    // Client-side caching is handled by SWR in-memory cache
     const rateLimitKey = `transactions-rl:${category}:${network}:${opportunityId}:${userAddress}`;
 
     const getRateLimitedTransactions = unstable_cache(
@@ -58,10 +56,9 @@ export async function GET(
       total: transactions.length,
     };
 
-    // No long-term browser caching headers - server and SWR handle cache lifecycle
     return jsonResponse(request, response, {
       headers: {
-        'Cache-Control': 'private, no-cache, no-store, must-revalidate', // No caching, rate limiting handled by unstable_cache
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
       },
     });
   } catch (error) {

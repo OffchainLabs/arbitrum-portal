@@ -15,17 +15,6 @@ import {
 } from '../../../../lib/validation';
 import { AvailableActions } from '../../../../types';
 
-/**
- * Get available actions - "What can I do?"
- * Returns available actions and vendor-specific context data.
- *
- * For Vaults (lend): Returns full transaction context including deposit/redeem steps,
- * claimable rewards, and other vault-specific transactional data.
- *
- * For other categories: Returns minimal context (just available actions).
- *
- * Fetched once when action panel loads.
- */
 export async function GET(
   request: NextRequest,
   { params }: { params: { category: string; id: string } },

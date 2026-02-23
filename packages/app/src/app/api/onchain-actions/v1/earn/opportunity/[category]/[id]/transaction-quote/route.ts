@@ -26,11 +26,6 @@ function isEarnTransactionAction(value: string): value is EarnTransactionAction 
   return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
 }
 
-/**
- * Get transaction quote - "How do I execute this?"
- * Returns transaction steps for a specific action with a specific amount.
- * Fetched when user enters amount (debounced).
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: { category: string; id: string } },
@@ -71,7 +66,6 @@ export async function POST(
     const pathCategory = parseOpportunityCategory(params.category);
     const bodyCategory = bodyCategoryRaw ? parseOpportunityCategory(bodyCategoryRaw) : undefined;
 
-    // Ensure category in body matches path param
     if (bodyCategory && bodyCategory !== pathCategory) {
       throw new ValidationError(
         'CATEGORY_MISMATCH',
@@ -120,7 +114,6 @@ export async function POST(
       network,
     );
 
-    // No caching - transaction quote is dynamic based on amount and user state
     return jsonResponse(request, quote, {
       headers: {
         'Cache-Control': 'no-store',
