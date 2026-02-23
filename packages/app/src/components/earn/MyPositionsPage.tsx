@@ -32,6 +32,7 @@ export function MyPositionsPage() {
   const {
     positionsMap,
     opportunityIds,
+    summary,
     projectedEarningsUsd,
     projectedEarningsMonthlyUsd,
     projectedEarningsYearlyPercentage,
@@ -101,6 +102,7 @@ export function MyPositionsPage() {
           projectedEarningsMonthlyPercentage={projectedEarningsMonthlyPercentage}
           netApy={netApy}
           categoryApy={categoryApy}
+          categoryValueByCategory={summary.byCategory}
           totalValueUsd={totalValueUsd}
         />
         <YourHoldingsEmptyState opportunities={allOpportunities} />
@@ -118,6 +120,7 @@ export function MyPositionsPage() {
         projectedEarningsMonthlyPercentage={projectedEarningsMonthlyPercentage}
         netApy={netApy}
         categoryApy={categoryApy}
+        categoryValueByCategory={summary.byCategory}
         totalValueUsd={totalValueUsd}
       />
       <OpportunitiesTable opportunities={opportunitiesWithPositions} groupByCategory={false} />

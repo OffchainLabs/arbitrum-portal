@@ -11,8 +11,7 @@ interface OpportunityCardProps {
 }
 
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
-  const categoryClass =
-    CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
+  const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
 
   return (
     <Link
@@ -20,7 +19,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
       className="group bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
     >
       <div className="flex items-center gap-2.5">
-        <div className={`w-3 h-3 rounded-[5px] border-2 shrink-0 ${categoryClass}`} />
+        <div className={`w-3 h-3 rounded-full shrink-0 ${categoryClass}`} />
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
       </div>
 

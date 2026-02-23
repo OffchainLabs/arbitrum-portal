@@ -9,6 +9,7 @@ import {
   CATEGORY_INDICATOR_CLASS,
   OpportunityCategory,
   OpportunityTableRow,
+  getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
 import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
@@ -17,9 +18,17 @@ function formatPercentage(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 
-const TYPE_ORDER: Array<{ type: 'Lending'; category: OpportunityCategory }> = [
-  { type: 'Lending', category: OpportunityCategory.Lend },
+const CATEGORY_ORDER: OpportunityCategory[] = [
+  OpportunityCategory.Lend,
+  OpportunityCategory.LiquidStaking,
+  OpportunityCategory.FixedYield,
 ];
+
+const EMPTY_CATEGORY_VALUE: Record<OpportunityCategory, number> = {
+  [OpportunityCategory.Lend]: 0,
+  [OpportunityCategory.LiquidStaking]: 0,
+  [OpportunityCategory.FixedYield]: 0,
+};
 
 interface PortfolioSummaryCardsProps {
   opportunities: OpportunityTableRow[];
@@ -29,6 +38,9 @@ interface PortfolioSummaryCardsProps {
   projectedEarningsMonthlyPercentage?: number;
   netApy?: number;
   categoryApy?: Partial<Record<OpportunityCategory, number>>;
+  categoryValueByCategory?: Partial<
+    Record<OpportunityCategory, { count: number; valueUsd: number }>
+  >;
   totalValueUsd?: number;
 }
 
@@ -42,11 +54,30 @@ export function PortfolioSummaryCards({
   projectedEarningsMonthlyPercentage,
   netApy,
   categoryApy,
+  categoryValueByCategory,
   totalValueUsd,
 }: PortfolioSummaryCardsProps) {
   const [earningsTimeframe, setEarningsTimeframe] = useState<EarningsTimeframe>('year');
   const summary = usePortfolioMetrics(opportunities, projectedEarningsUsd, netApy);
 
+  const valueByCategory = categoryValueByCategory
+    ? {
+        [OpportunityCategory.Lend]:
+          categoryValueByCategory[OpportunityCategory.Lend]?.valueUsd ?? 0,
+        [OpportunityCategory.LiquidStaking]:
+          categoryValueByCategory[OpportunityCategory.LiquidStaking]?.valueUsd ?? 0,
+        [OpportunityCategory.FixedYield]:
+          categoryValueByCategory[OpportunityCategory.FixedYield]?.valueUsd ?? 0,
+      }
+    : opportunities.reduce(
+        (acc, opportunity) => {
+          acc[opportunity.category] += opportunity.depositedUsd ?? 0;
+          return acc;
+        },
+        { ...EMPTY_CATEGORY_VALUE },
+      );
+
+  const activeCategories = CATEGORY_ORDER.filter((category) => valueByCategory[category] > 0);
   const totalValue = totalValueUsd !== undefined ? totalValueUsd : summary.totalValue;
 
   const displayEarnings =
@@ -76,7 +107,10 @@ export function PortfolioSummaryCards({
     });
   };
   const totalValueForProgress = totalValue || 1;
-  const lendingWidth = (summary.valueByType.Lending / totalValueForProgress) * 100;
+  const categoryWidths = activeCategories.map((category) => ({
+    category,
+    width: (valueByCategory[category] / totalValueForProgress) * 100,
+  }));
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
@@ -94,27 +128,28 @@ export function PortfolioSummaryCards({
         </div>
         <div className="flex flex-col gap-3">
           <div className="relative h-2 bg-default-black-hover rounded-[5px] overflow-hidden w-full">
-            {lendingWidth > 0 && (
-              <div
-                className="absolute h-2 bg-earn-lend left-0 top-0"
-                style={{ width: `${lendingWidth}%` }}
-              />
-            )}
+            <div className="flex h-full w-full">
+              {categoryWidths.map(({ category, width }) => (
+                <div
+                  key={category}
+                  className={twMerge('h-full', CATEGORY_INDICATOR_CLASS[category])}
+                  style={{ width: `${width}%` }}
+                />
+              ))}
+            </div>
           </div>
           <div className="flex gap-3">
-            {TYPE_ORDER.map(({ type, category }) => {
-              const value = summary.valueByType[type];
-              if (value === 0) return null;
+            {activeCategories.map((category) => {
               return (
-                <div key={type} className="flex items-center gap-2">
+                <div key={category} className="flex items-center gap-2">
                   <div
                     className={twMerge(
-                      'w-2 h-2 rounded-[5px] shrink-0',
+                      'w-2 h-2 rounded-full shrink-0',
                       CATEGORY_INDICATOR_CLASS[category],
                     )}
                   />
                   <p className="text-xs font-medium text-white opacity-80 whitespace-nowrap">
-                    {type}
+                    {getCategoryDisplayName(category)}
                   </p>
                 </div>
               );
@@ -196,19 +231,21 @@ export function PortfolioSummaryCards({
             </p>
             {categoryApy && (
               <div className="flex flex-col gap-2 mt-2">
-                {TYPE_ORDER.map(({ type, category }) => {
+                {activeCategories.map((category) => {
                   const apy = categoryApy[category];
                   if (apy === undefined || apy === null || !isFinite(apy)) return null;
                   return (
-                    <div key={type} className="flex items-center justify-between gap-2">
+                    <div key={category} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
                           className={twMerge(
-                            'w-2 h-2 rounded shrink-0',
+                            'w-2 h-2 rounded-full shrink-0',
                             CATEGORY_INDICATOR_CLASS[category],
                           )}
                         />
-                        <p className="text-xs text-white opacity-80">{type}</p>
+                        <p className="text-xs text-white opacity-80">
+                          {getCategoryDisplayName(category)}
+                        </p>
                       </div>
                       <p className="text-xs font-medium text-white">{formatPercentage(apy)}</p>
                     </div>
@@ -292,19 +329,21 @@ export function PortfolioSummaryCards({
           </p>
           {categoryApy && (
             <div className="flex flex-col gap-2 mt-2">
-              {TYPE_ORDER.map(({ type, category }) => {
+              {activeCategories.map((category) => {
                 const apy = categoryApy[category];
                 if (apy === undefined || apy === null || !isFinite(apy)) return null;
                 return (
-                  <div key={type} className="flex items-center justify-between gap-2">
+                  <div key={category} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div
                         className={twMerge(
-                          'w-2 h-2 rounded shrink-0',
+                          'w-2 h-2 rounded-full shrink-0',
                           CATEGORY_INDICATOR_CLASS[category],
                         )}
                       />
-                      <p className="text-xs text-white opacity-80">{type}</p>
+                      <p className="text-xs text-white opacity-80">
+                        {getCategoryDisplayName(category)}
+                      </p>
                     </div>
                     <p className="text-xs font-medium text-white">{formatPercentage(apy)}</p>
                   </div>

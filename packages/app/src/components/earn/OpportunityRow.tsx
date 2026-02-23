@@ -12,8 +12,7 @@ interface OpportunityRowProps {
 }
 
 export function OpportunityRow({ opportunity }: OpportunityRowProps) {
-  const categoryClass =
-    CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1 border-gray-1/10';
+  const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
 
   return (
     <Link
@@ -24,7 +23,7 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
       <div className="w-[150px] shrink-0">
         <div className="flex items-center gap-2.5">
           {/* Category color indicator */}
-          <div className={`w-2.5 h-2.5 rounded border-2 shrink-0 ${categoryClass}`} />
+          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${categoryClass}`} />
           <div className="flex flex-col gap-0.5">
             <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
               {opportunity.name}
