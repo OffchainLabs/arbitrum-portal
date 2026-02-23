@@ -1,4 +1,7 @@
+import { formatUnits } from 'viem';
+
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
+import { formatAmount } from '@/bridge/util/NumberUtils';
 
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
