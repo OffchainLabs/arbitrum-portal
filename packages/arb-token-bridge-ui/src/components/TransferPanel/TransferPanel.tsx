@@ -1345,7 +1345,6 @@ export function TransferPanel() {
           <Tooltip
             side="bottom"
             align="end"
-            variant="orange"
             open={showSmartContractWalletTooltip}
             onOpenChange={setShowSmartContractWalletTooltip}
             onClickOutside={() => setShowSmartContractWalletTooltip(false)}
