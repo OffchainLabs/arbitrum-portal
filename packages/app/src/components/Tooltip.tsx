@@ -1,7 +1,7 @@
 'use client';
 
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { ReactNode } from 'react';
+import { Fragment, ReactElement, ReactNode, cloneElement, isValidElement } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 export type TooltipProps = {
@@ -33,12 +33,18 @@ export function Tooltip({
     return <>{children}</>;
   }
 
+  const trigger = isValidElement(children) && children.type !== Fragment
+    ? cloneElement(children as ReactElement<{ className?: string }>, {
+        className: twMerge(wrapperClassName, children.props.className),
+      })
+    : typeof children === 'string' || typeof children === 'number'
+      ? <span className={wrapperClassName}>{children}</span>
+      : <div className={wrapperClassName}>{children}</div>;
+
   return (
     <RadixTooltip.Provider delayDuration={120}>
       <RadixTooltip.Root open={open} onOpenChange={onOpenChange}>
-        <RadixTooltip.Trigger asChild>
-          <div className={wrapperClassName}>{children}</div>
-        </RadixTooltip.Trigger>
+        <RadixTooltip.Trigger asChild>{trigger}</RadixTooltip.Trigger>
 
         <RadixTooltip.Portal>
           <RadixTooltip.Content
