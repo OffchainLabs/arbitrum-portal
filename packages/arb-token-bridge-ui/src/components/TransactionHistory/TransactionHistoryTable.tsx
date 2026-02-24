@@ -28,10 +28,7 @@ import { isTxPending } from './helpers';
 export const BatchTransferNativeTokenTooltip = ({
   children,
   tx,
-}: {
-  children: ReactElement;
-  tx: MergedTransaction;
-}) => {
+}: PropsWithChildren<{ tx: MergedTransaction }>) => {
   const childProvider = getProviderForChainId(tx.childChainId);
   const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
@@ -39,7 +36,7 @@ export const BatchTransferNativeTokenTooltip = ({
     <Tooltip
       content={`This is any additional ${nativeCurrency.symbol} you might have deposited along with your ERC-20, plus the refunded excess gas fee.`}
     >
-      {children}
+      <span>{children}</span>
     </Tooltip>
   );
 };
