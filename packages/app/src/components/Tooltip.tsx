@@ -1,7 +1,7 @@
 'use client';
 
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { ReactElement, ReactNode } from 'react';
+import { PropsWithChildren, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 type TooltipBaseProps = {
@@ -14,9 +14,7 @@ type TooltipBaseProps = {
   onOpenChange?: (open: boolean) => void;
   onClickOutside?: () => void;
 };
-export type TooltipProps = TooltipBaseProps & {
-  children: ReactElement;
-};
+export type TooltipProps = TooltipBaseProps & PropsWithChildren;
 
 export function Tooltip({
   show = true,
