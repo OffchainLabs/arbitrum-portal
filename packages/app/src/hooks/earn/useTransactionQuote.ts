@@ -2,7 +2,7 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber } from 'ethers';
-import useSWRImmutable from 'swr/immutable';
+import useSWR from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
@@ -132,7 +132,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   const debouncedAmount = useDebounce(amount, 500);
   const hasPositiveAmount = isPositiveRawAmount(debouncedAmount);
 
-  const { data, error, isLoading, mutate } = useSWRImmutable<TransactionQuoteResponse>(
+  const { data, error, isLoading, mutate } = useSWR<TransactionQuoteResponse>(
     enabled && opportunityId && category && userAddress && hasPositiveAmount
       ? buildTransactionQuoteKey({
           opportunityId,

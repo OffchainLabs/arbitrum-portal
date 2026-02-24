@@ -157,4 +157,8 @@ describe('truncateExtraDecimals', () => {
   it('should return integer part when max decimals is 0', () => {
     expect(truncateExtraDecimals('1.999', 0)).toBe('1');
   });
+
+  it('should preserve sign while truncating negative values', () => {
+    expect(truncateExtraDecimals('-1.2345678', 4)).toBe('-1.2345');
+  });
 });

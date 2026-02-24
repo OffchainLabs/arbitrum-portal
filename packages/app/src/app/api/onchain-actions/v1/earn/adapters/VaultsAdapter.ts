@@ -309,9 +309,11 @@ export class VaultsAdapter implements VendorAdapter {
       'estimatedGas' in actionsResponse && typeof actionsResponse.estimatedGas === 'string'
         ? actionsResponse.estimatedGas
         : '0';
+    const estimatedGasUsdValue =
+      'estimatedGasUsd' in actionsResponse ? actionsResponse.estimatedGasUsd : undefined;
     const estimatedGasUsdRaw =
-      'estimatedGasUsd' in actionsResponse && typeof actionsResponse.estimatedGasUsd === 'string'
-        ? actionsResponse.estimatedGasUsd
+      typeof estimatedGasUsdValue === 'string' || typeof estimatedGasUsdValue === 'number'
+        ? String(estimatedGasUsdValue)
         : '0';
 
     return {

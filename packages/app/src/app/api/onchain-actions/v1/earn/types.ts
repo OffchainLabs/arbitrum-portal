@@ -132,12 +132,8 @@ export type PendleOpportunity = StandardOpportunityFixedYield & { vendor: Vendor
 
 // Vendor-specific response types
 type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
-export type VaultsAction =
-  Awaited<ReturnType<VaultsSdkInstance['getActions']>> extends { actions: infer A }
-    ? A extends readonly (infer T)[]
-      ? T
-      : never
-    : never;
+type VaultsActionsResponse = Awaited<ReturnType<VaultsSdkInstance['getActions']>>;
+export type VaultsAction = VaultsActionsResponse['actions'][number];
 
 export interface StandardTokenContextItem {
   decimals: number;

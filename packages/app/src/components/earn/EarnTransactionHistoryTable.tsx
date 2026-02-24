@@ -249,6 +249,10 @@ export function EarnTransactionHistoryTable({
     });
     return groups;
   }, [sortedRows]);
+  const mobileDateGroups = useMemo(
+    () => Object.entries(groupedByDate).sort(([dateA], [dateB]) => dateB.localeCompare(dateA)),
+    [groupedByDate],
+  );
 
   const getFullDateStr = (timestamp: number) => {
     const normalizedTs = normalizeTimestamp(timestamp);
@@ -290,35 +294,33 @@ export function EarnTransactionHistoryTable({
       </div>
 
       <div className="flex md:hidden flex-col gap-2.5">
-        {Object.entries(groupedByDate)
-          .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
-          .map(([dateKey, dateRows], groupIndex) => {
-            const firstRow = dateRows[0];
-            if (!firstRow) return null;
-            const fullDateStr = getFullDateStr(firstRow.timestamp);
-            const isFirstGroup = groupIndex === 0;
+        {mobileDateGroups.map(([dateKey, dateRows], groupIndex) => {
+          const firstRow = dateRows[0];
+          if (!firstRow) return null;
+          const fullDateStr = getFullDateStr(firstRow.timestamp);
+          const isFirstGroup = groupIndex === 0;
 
-            return (
-              <div key={dateKey} className="flex flex-col gap-1">
-                <div
-                  className={twMerge(
-                    'flex items-center',
-                    isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
-                  )}
-                >
-                  <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
-                </div>
-
-                {dateRows.map((row) => (
-                  <MobileHistoryRow
-                    key={`${row.transactionHash}-${row.timestamp}`}
-                    row={row}
-                    onClick={() => handleRowClick(row)}
-                  />
-                ))}
+          return (
+            <div key={dateKey} className="flex flex-col gap-1">
+              <div
+                className={twMerge(
+                  'flex items-center',
+                  isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
+                )}
+              >
+                <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
               </div>
-            );
-          })}
+
+              {dateRows.map((row) => (
+                <MobileHistoryRow
+                  key={`${row.transactionHash}-${row.timestamp}`}
+                  row={row}
+                  onClick={() => handleRowClick(row)}
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

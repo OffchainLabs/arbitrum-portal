@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
-import { getEarnRequestNetwork } from '@/app-hooks/earn/getEarnRequestNetwork';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
@@ -20,6 +19,7 @@ import {
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { getEarnRequestNetwork } from '@/app-lib/earn/getEarnRequestNetwork';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
