@@ -131,7 +131,6 @@ export const ProjectPanel = () => {
                         : 'Bookmark this project'}
                     </p>
                   }
-                  side="bottom"
                 >
                   <button
                     className="rounded-md p-2 hover:bg-white/20"
@@ -184,9 +183,8 @@ export const ProjectPanel = () => {
                         launched on Arbitrum as one of their primary deployments.
                       </p>
                     }
-                    side="bottom"
                   >
-                    Arbitrum Native
+                    <span>Arbitrum Native</span>
                   </Tooltip>
                 </span>
               )}

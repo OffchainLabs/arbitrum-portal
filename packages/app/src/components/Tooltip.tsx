@@ -1,14 +1,13 @@
 'use client';
 
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { ReactNode } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 export type TooltipProps = {
   show?: boolean;
-  children: ReactNode;
+  children: ReactElement;
   content?: ReactNode;
-  wrapperClassName?: string;
   contentClassName?: string;
   side?: 'top' | 'right' | 'bottom' | 'left';
   align?: 'start' | 'center' | 'end';
@@ -20,7 +19,6 @@ export type TooltipProps = {
 export function Tooltip({
   show = true,
   content,
-  wrapperClassName = 'w-max',
   contentClassName,
   side = 'top',
   align = 'center',
@@ -36,9 +34,7 @@ export function Tooltip({
   return (
     <RadixTooltip.Provider delayDuration={120}>
       <RadixTooltip.Root open={open} onOpenChange={onOpenChange}>
-        <RadixTooltip.Trigger asChild>
-          <div className={wrapperClassName}>{children}</div>
-        </RadixTooltip.Trigger>
+        <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
 
         <RadixTooltip.Portal>
           <RadixTooltip.Content

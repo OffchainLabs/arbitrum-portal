@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import {
   ButtonHTMLAttributes,
   PropsWithChildren,
+  ReactElement,
   forwardRef,
   useEffect,
   useMemo,
@@ -27,7 +28,10 @@ import { isTxPending } from './helpers';
 export const BatchTransferNativeTokenTooltip = ({
   children,
   tx,
-}: PropsWithChildren<{ tx: MergedTransaction }>) => {
+}: {
+  children: ReactElement;
+  tx: MergedTransaction;
+}) => {
   const childProvider = getProviderForChainId(tx.childChainId);
   const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
