@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { LIVE_INCENTIVES_END_DATE, LIVE_INCENTIVES_START_DATE } from '@/common/constants';
 import { getProjectDetailsById, hasLiveIncentives as hasLiveIncentivesFn } from '@/common/projects';
 import { EntityType } from '@/common/types';
@@ -14,7 +15,6 @@ import { Card } from '@/components/Card';
 import { DyorChecklist } from '@/components/DyorChecklist';
 import { ExternalLink } from '@/components/ExternalLink';
 import { SidePanel } from '@/components/SidePanel';
-import { Tooltip } from '@/components/Tooltip';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
@@ -131,6 +131,7 @@ export const ProjectPanel = () => {
                         : 'Bookmark this project'}
                     </p>
                   }
+                  side="bottom"
                 >
                   <button
                     className="rounded-md p-2 hover:bg-white/20"
@@ -183,6 +184,7 @@ export const ProjectPanel = () => {
                         launched on Arbitrum as one of their primary deployments.
                       </p>
                     }
+                    side="bottom"
                   >
                     Arbitrum Native
                   </Tooltip>
