@@ -12,12 +12,9 @@ export type TooltipProps = {
   contentClassName?: string;
   side?: 'top' | 'right' | 'bottom' | 'left';
   align?: 'start' | 'center' | 'end';
-  sideOffset?: number;
-  delayDuration?: number;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onClickOutside?: () => void;
-  disableHoverableContent?: boolean;
 };
 
 export function Tooltip({
@@ -27,12 +24,9 @@ export function Tooltip({
   contentClassName,
   side = 'top',
   align = 'center',
-  sideOffset = 8,
-  delayDuration = 120,
   open,
   onOpenChange,
   onClickOutside,
-  disableHoverableContent = false,
   children,
 }: TooltipProps): JSX.Element {
   if (!show || !content) {
@@ -40,12 +34,8 @@ export function Tooltip({
   }
 
   return (
-    <RadixTooltip.Provider delayDuration={delayDuration}>
-      <RadixTooltip.Root
-        open={open}
-        onOpenChange={onOpenChange}
-        disableHoverableContent={disableHoverableContent}
-      >
+    <RadixTooltip.Provider delayDuration={120}>
+      <RadixTooltip.Root open={open} onOpenChange={onOpenChange}>
         <RadixTooltip.Trigger asChild>
           <div className={wrapperClassName}>{children}</div>
         </RadixTooltip.Trigger>
@@ -54,7 +44,7 @@ export function Tooltip({
           <RadixTooltip.Content
             side={side}
             align={align}
-            sideOffset={sideOffset}
+            sideOffset={8}
             onPointerDownOutside={onClickOutside}
             className={twMerge(
               'z-[1001] p-2 bg-neutral-100 border border-neutral-200 rounded-sm text-xs text-white',
