@@ -370,7 +370,10 @@ export function EarnTransactionHistoryTable({
           return (
             <div key={dateKey} className="flex flex-col gap-1">
               <div
-                className={twMerge('flex items-center', isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4')}
+                className={twMerge(
+                  'flex items-center',
+                  isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
+                )}
               >
                 <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
               </div>

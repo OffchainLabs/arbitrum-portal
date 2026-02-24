@@ -5,7 +5,6 @@ import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParse
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
-  EARN_CHAIN_ID_TO_NETWORK,
   type EarnChainId,
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
@@ -35,6 +34,10 @@ export type VaultsActionType = 'deposit' | 'redeem';
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
 
+  private toVaultsNetwork(chainId: EarnChainId): VaultsNetwork {
+    return getEarnNetworkFromChainId(chainId) as VaultsNetwork;
+  }
+
   private toEarnChainId(networkName: string | undefined): EarnChainId {
     const normalizedNetwork = networkName?.trim().toLowerCase();
     if (normalizedNetwork === 'mainnet' || normalizedNetwork === 'ethereum') {
@@ -55,7 +58,7 @@ export class VaultsAdapter implements VendorAdapter {
   }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
-    const network = filters.chainId ? getEarnNetworkFromChainId(filters.chainId) : undefined;
+    const network = filters.chainId ? this.toVaultsNetwork(filters.chainId) : undefined;
     const response = await vaultsSdk.getAllVaults({
       query: {
         allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
@@ -83,7 +86,7 @@ export class VaultsAdapter implements VendorAdapter {
   }
 
   async getOpportunityDetails(id: string, chainId: EarnChainId): Promise<StandardOpportunity> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const vault = await vaultsSdk.getVault({
       path: {
         network,
@@ -99,7 +102,7 @@ export class VaultsAdapter implements VendorAdapter {
     range: HistoricalTimeRange,
     chainId: EarnChainId,
   ): Promise<HistoricalData> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const toTimestamp = Math.floor(Date.now() / 1000);
     let fromTimestamp: number;
     let granularity: '1hour' | '1day' | '1week';
@@ -164,7 +167,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<AvailableActions> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const context = await vaultsSdk.getTransactionsContext({
       path: {
         userAddress,
@@ -211,7 +214,7 @@ export class VaultsAdapter implements VendorAdapter {
     request: TransactionQuoteRequest,
     chainId: EarnChainId,
   ): Promise<TransactionQuoteResponse> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const { action, amount, userAddress, simulate = false } = request;
 
     const assetAddress =
@@ -331,7 +334,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<StandardUserPosition[]> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const response = await vaultsSdk.getPositions({
       path: { userAddress },
       query: { allowedNetworks: [network] },
@@ -379,7 +382,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<StandardTransactionHistory[]> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const response = await vaultsSdk.getUserVaultEvents({
       path: {
         userAddress,
@@ -398,7 +401,6 @@ export class VaultsAdapter implements VendorAdapter {
 
         const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
 
-        const chainId = this.getChainId(network);
         return {
           timestamp: event.timestamp,
           eventType,
@@ -416,14 +418,6 @@ export class VaultsAdapter implements VendorAdapter {
         };
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }
-
-  private resolveNetwork(chainId: EarnChainId): VaultsNetwork {
-    const network = EARN_CHAIN_ID_TO_NETWORK[chainId] as VaultsNetwork | undefined;
-    if (!network) {
-      throw new Error(`Unsupported chainId for Vaults network mapping: ${chainId}`);
-    }
-    return network;
   }
 
   private transformToStandard(vault: DetailedVault): StandardOpportunity {

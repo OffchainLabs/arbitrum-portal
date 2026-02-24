@@ -8,7 +8,7 @@ import {
   parseEarnChainId,
   parseOpportunityCategory,
 } from '@/earn-api/lib/validation';
-import { TransactionHistoryResponse, getEarnNetworkFromChainId } from '@/earn-api/types';
+import { TransactionHistoryResponse } from '@/earn-api/types';
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +18,6 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
 
@@ -29,7 +28,7 @@ export async function GET(
 
     const getRateLimitedTransactions = unstable_cache(
       async () => {
-        const transactions = await adapter.getUserTransactions(opportunityId, userAddress, network);
+        const transactions = await adapter.getUserTransactions(opportunityId, userAddress, chainId);
         return transactions;
       },
       [rateLimitKey],

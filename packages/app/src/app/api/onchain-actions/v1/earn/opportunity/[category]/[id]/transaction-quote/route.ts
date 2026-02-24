@@ -15,11 +15,7 @@ import {
   parseEarnChainId,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import {
-  EARN_TRANSACTION_ACTIONS,
-  type EarnTransactionAction,
-  getEarnNetworkFromChainId,
-} from '../../../../types';
+import { EARN_TRANSACTION_ACTIONS, type EarnTransactionAction } from '../../../../types';
 
 function isEarnTransactionAction(value: string): value is EarnTransactionAction {
   return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
@@ -86,7 +82,6 @@ export async function POST(
       throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
     }
     const chainId = parseEarnChainId(rawChainId === undefined ? null : String(rawChainId));
-    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
     const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
@@ -115,7 +110,7 @@ export async function POST(
         rolloverTargetOpportunityId,
         rolloverAmount,
       },
-      network,
+      chainId,
     );
 
     return jsonResponse(quote, {

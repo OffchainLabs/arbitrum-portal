@@ -8,7 +8,7 @@ import {
   parseEarnChainId,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
-import { AvailableActions, getEarnNetworkFromChainId } from '../../../../types';
+import { AvailableActions } from '../../../../types';
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,6 @@ export async function GET(
     const category = parseOpportunityCategory(params.category);
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
 
     const cacheKey = `available-actions:${category}:${chainId}:${opportunityId}:${userAddress}`;
@@ -28,7 +27,7 @@ export async function GET(
       async () => {
         const router = new CategoryRouter();
         const adapter = router.routeToAdapter(category);
-        const actions = await adapter.getAvailableActions(opportunityId, userAddress, network);
+        const actions = await adapter.getAvailableActions(opportunityId, userAddress, chainId);
 
         return actions;
       },
