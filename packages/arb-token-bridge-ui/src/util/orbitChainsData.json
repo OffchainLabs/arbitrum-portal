@@ -91,48 +91,6 @@
       }
     },
     {
-      "chainId": 94524,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0x2Be65c5b58F78B02AB5c0e798A9ffC181703D3C1",
-        "inbox": "0xE961Ef06c26D0f032F0298c97C41e648d3bb715a",
-        "outbox": "0x0b8071337dcB089478Ea740efC10904d9F359141",
-        "rollup": "0xeb61c3FA03544021cf76412eFb9D0Ce7D8c0290d",
-        "sequencerInbox": "0x47861E0419BE83d0175818a09221B6DF2EFD7793"
-      },
-      "explorerUrl": "https://xchain-explorer.idex.io",
-      "rpcUrl": "https://xchain-rpc.idex.io",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "XCHAIN",
-      "slug": "xchain",
-      "parentChainId": 1,
-      "tokenBridge": {
-        "parentCustomGateway": "0xEFb1F8ae759c595907782e9bD45F119c9814b308",
-        "parentErc20Gateway": "0xFFb821ca61e823a884D79226B0fcD7a99A4d48aa",
-        "parentGatewayRouter": "0xe0a99350288971456EE4BAc4568495352929B769",
-        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
-        "parentProxyAdmin": "0x22010F5C4c106dfBaffec780196d2F691860Ff62",
-        "parentWeth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        "parentWethGateway": "0xCAde60b1331f1cF714ECb01f08117780887A0AF4",
-        "childCustomGateway": "0x642e40E3F9948F11E18973f79E910f0953dd0C80",
-        "childErc20Gateway": "0xBF14b5F058AE33469eC2D20c9Ee712Cb7eC68A8b",
-        "childGatewayRouter": "0xe95788E89383447177312846DB45E6bffc32DD3b",
-        "childMultiCall": "0x9eE16369804735D75944AA3B025B063C31862786",
-        "childProxyAdmin": "0xc5A8e16EADC3276B3DdB9F122e2c824Dc8a87BfD",
-        "childWeth": "0x594Ee2FA451dC7aCFC6785c0d746695f79A4daeE",
-        "childWethGateway": "0x377880CbbA57EB9ACb7120028f21Ce043266A431"
-      },
-      "bridgeUiConfig": {
-        "color": "#FD0598",
-        "network": {
-          "name": "XCHAIN",
-          "description": "XCHAIN powers IDEX, the premier omnichain perpetuals exchange, combining industry-leading speed and performance with transparency and security to create an entirely new trading experience.",
-          "logo": "/images/XCHAINLogo.png"
-        }
-      }
-    },
-    {
       "chainId": 1996,
       "confirmPeriodBlocks": 45818,
       "ethBridge": {
@@ -600,48 +558,6 @@
           "name": "Miracle Play",
           "symbol": "MPT",
           "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
-        }
-      }
-    },
-    {
-      "chainId": 53456,
-      "confirmPeriodBlocks": 150,
-      "ethBridge": {
-        "bridge": "0x113E7DC5e4A42b1bEe9DB0594f48EFdEa7b88eE0",
-        "inbox": "0x5b777fa9fBF1587509fe5b2Ab681af7Af890A5A3",
-        "outbox": "0x1B7b002b9430c6D59058beFa1f718A91fBe51ff0",
-        "rollup": "0xd6e33A7898aE63Cb3D56b4B51575141E953BD9D5",
-        "sequencerInbox": "0xf5299083F7C234425f01CccDD9141e500011fffb"
-      },
-      "explorerUrl": "https://scan.birdlayer.xyz",
-      "rpcUrl": "https://rpc.birdlayer.xyz",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "BirdLayer",
-      "slug": "birdlayer",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x07a873c2372653615e2EA3D4405Aa19D2972Eb7C",
-        "parentErc20Gateway": "0x6111D7AAa83fbE979301C458fF8f07F1d2E30002",
-        "parentGatewayRouter": "0xf222cf6633f381B10D3b01793FC9bD3C07975800",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0x8F6D27486eb773C7eEd27760D6aBd7355e0B64e9",
-        "childCustomGateway": "0xfEc33B9e6ce2bf63e6C545Ba356719a9F8EB472d",
-        "childErc20Gateway": "0x16D58745A9ad3Ea35b922CF71E65Fc98d0A37AE5",
-        "childGatewayRouter": "0xE4D8B01Eff656681c94C2a20A557A5e0872c523f",
-        "childMultiCall": "0x157c5776c948c5783213d1ba58b14ef8c15dfcC4",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x8d312E9A5C7edF5612C9e28C22593dA40d707720",
-        "childWethGateway": "0x27571468a8336d26E432A177e36E33Cf94D3DC8d"
-      },
-      "bridgeUiConfig": {
-        "color": "#FFC804",
-        "network": {
-          "name": "BirdLayer",
-          "logo": "/images/BirdLayer_Logo.png",
-          "description": "Birdlayer - an Omni-Trading Layer3 platform using Arbitrum Chain, connecting EVM and non-EVM ecosystems for seamless trading."
         }
       }
     },
