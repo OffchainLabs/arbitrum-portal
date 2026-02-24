@@ -184,9 +184,8 @@ const ItemContent = ({
                       launched on Arbitrum as one of their primary deployments.
                     </p>
                   }
-                  side="bottom"
                 >
-                  Arbitrum Native
+                  <span>Arbitrum Native</span>
                 </Tooltip>
               </span>
             )}

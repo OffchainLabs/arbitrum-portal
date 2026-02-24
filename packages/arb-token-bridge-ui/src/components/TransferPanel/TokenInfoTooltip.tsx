@@ -48,7 +48,6 @@ export const TokenInfoTooltip = ({ token }: { token: ERC20BridgeToken | null }) 
 
   return (
     <Tooltip
-      wrapperClassName="underline cursor-pointer"
       content={
         <div className="flex items-center space-x-2">
           <TokenLogo srcOverride={token.logoURI} className="h-7 w-7" />
@@ -62,7 +61,10 @@ export const TokenInfoTooltip = ({ token }: { token: ERC20BridgeToken | null }) 
         </div>
       }
     >
-      <ExternalLink href={`${getExplorerUrl(networks.destinationChain.id)}/token/${tokenAddress}`}>
+      <ExternalLink
+        href={`${getExplorerUrl(networks.destinationChain.id)}/token/${tokenAddress}`}
+        className="cursor-pointer underline"
+      >
         {token.symbol}
       </ExternalLink>
     </Tooltip>

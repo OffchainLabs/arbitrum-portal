@@ -224,10 +224,12 @@ function NetworkRow({
 
           {!isLoadingBalance && !balanceError && balanceState && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
-              {formatAmount(balanceState.balance, {
-                decimals: balanceState.decimals,
-                symbol: balanceState.symbol,
-              })}
+              <span>
+                {formatAmount(balanceState.balance, {
+                  decimals: balanceState.decimals,
+                  symbol: balanceState.symbol,
+                })}
+              </span>
             </Tooltip>
           )}
         </p>
