@@ -20,7 +20,7 @@ export function Tooltip({
   show = true,
   content,
   contentClassName,
-  side = 'top',
+  side = 'bottom',
   align = 'center',
   open,
   onOpenChange,
