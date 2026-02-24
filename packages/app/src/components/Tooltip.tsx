@@ -57,7 +57,7 @@ export function Tooltip({
             sideOffset={sideOffset}
             onPointerDownOutside={onClickOutside}
             className={twMerge(
-              'z-[1001] p-2 bg-neutral-100 border border-neutral-200 rounded-sm text-xs',
+              'z-[1001] p-2 bg-neutral-100 border border-neutral-200 rounded-sm text-xs text-white',
               contentClassName,
             )}
           >
