@@ -1344,13 +1344,13 @@ export function TransferPanel() {
         {showSmartContractWalletTooltip && (
           <Tooltip
             side="bottom"
-            align="end"
+            align="center"
             open={showSmartContractWalletTooltip}
             onOpenChange={setShowSmartContractWalletTooltip}
             onClickOutside={() => setShowSmartContractWalletTooltip(false)}
             contentClassName="max-w-none"
             content={
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <span>
                   <b>To continue, please approve tx on your smart contract wallet.</b>
                 </span>
@@ -1358,7 +1358,7 @@ export function TransferPanel() {
               </div>
             }
           >
-            <div className="!m-0 h-px w-px" aria-hidden="true" />
+            <div className="!m-0 h-px mx-auto text-center w-full" aria-hidden="true" />
           </Tooltip>
         )}
       </div>
