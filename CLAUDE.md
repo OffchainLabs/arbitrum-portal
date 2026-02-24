@@ -88,3 +88,9 @@ See `tsconfig.base.json` for the full list.
 - **Environment Variables**: Copy `packages/app/.env.sample` to `packages/app/.env` and fill in keys. The bridge app requires RPC provider keys to function.
 - **Prebuild Steps**: `yarn dev` and `yarn build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
 - **Per-Package Context**: Check each package's own `package.json` and `tsconfig.json` for package-specific configuration.
+
+## Working Style
+
+- **Minimize line churn**: Keep diffs small and focused. Avoid reformatting, reordering, or touching code unrelated to the task.
+- **Linear, small PRs**: Each PR should do one thing. Prefer multiple small PRs over one large PR.
+- **App-only migration**: The `portal` and `arb-token-bridge-ui` packages are being consolidated into `packages/app/`. All new features go in `packages/app/`.
