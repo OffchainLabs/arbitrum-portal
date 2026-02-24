@@ -4,21 +4,12 @@ import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-type TooltipVariant = 'dark' | 'light' | 'orange';
-
-const contentClassNamesByVariant: Record<TooltipVariant, string> = {
-  dark: 'border border-[#777] bg-black text-white',
-  light: 'border border-[#777] bg-white text-black',
-  orange: 'bg-[#FFEED3] text-[#60461F]',
-};
-
 export type TooltipProps = {
   show?: boolean;
   children: ReactNode;
   content?: ReactNode;
   wrapperClassName?: string;
   contentClassName?: string;
-  variant?: TooltipVariant;
   side?: 'top' | 'right' | 'bottom' | 'left';
   align?: 'start' | 'center' | 'end';
   sideOffset?: number;
@@ -34,7 +25,6 @@ export function Tooltip({
   content,
   wrapperClassName = 'w-max',
   contentClassName,
-  variant = 'dark',
   side = 'top',
   align = 'center',
   sideOffset = 8,
@@ -67,8 +57,7 @@ export function Tooltip({
             sideOffset={sideOffset}
             onPointerDownOutside={onClickOutside}
             className={twMerge(
-              'z-[80] rounded-lg px-3 py-2 text-xs leading-5 shadow-tooltip',
-              contentClassNamesByVariant[variant],
+              'z-[1001] p-2 bg-neutral-100 border border-neutral-200 rounded-sm text-xs',
               contentClassName,
             )}
           >
