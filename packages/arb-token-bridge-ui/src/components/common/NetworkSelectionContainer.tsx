@@ -10,6 +10,8 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
+
 import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection';
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -34,7 +36,6 @@ import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
-import { Tooltip } from './Tooltip';
 import { Loader } from './atoms/Loader';
 
 type NetworkType = 'core' | 'more' | 'orbit';

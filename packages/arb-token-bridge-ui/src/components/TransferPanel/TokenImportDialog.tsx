@@ -51,7 +51,10 @@ type TokenImportDialogProps = Omit<UseDialogProps, 'isOpen'> & {
   tokenAddress: string;
 };
 
-export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogProps): JSX.Element {
+export function TokenImportDialog({
+  onClose,
+  tokenAddress,
+}: TokenImportDialogProps): React.JSX.Element {
   const {
     app: {
       arbTokenBridge: { bridgeTokens, token },

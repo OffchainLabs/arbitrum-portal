@@ -17,6 +17,7 @@ module.exports = {
     // Bridge UI Page/Layout
     '../arb-token-bridge-ui/src/**/*.{js,ts,jsx,tsx}',
     '../arb-token-bridge-ui/src/components/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
     './src/components/**/*.{js,ts,jsx,tsx}',
     './src/app/(embed)/**/*.{js,ts,jsx,tsx}',
     './src/app/(with-sidebar)/bridge/**/*.{js,ts,jsx,tsx}',

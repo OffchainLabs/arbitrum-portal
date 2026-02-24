@@ -1,11 +1,10 @@
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getChainDetailsById, getChainSlugFromTitle } from '@/common/chains';
 import { EntityType, FullProject } from '@/common/types';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
-
-import { Tooltip } from '../Tooltip';
 
 export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
   const { openEntitySidePanel: openOrbitChainPanel } = useEntitySidePanel(EntityType.OrbitChain);
