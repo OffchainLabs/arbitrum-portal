@@ -1343,7 +1343,6 @@ export function TransferPanel() {
 
         {showSmartContractWalletTooltip && (
           <Tooltip
-            side="bottom"
             align="end"
             open={showSmartContractWalletTooltip}
             onOpenChange={setShowSmartContractWalletTooltip}
@@ -1358,7 +1357,7 @@ export function TransferPanel() {
               </div>
             }
           >
-            <div className="!m-0" />
+            <div className="!m-0 h-px w-px" aria-hidden="true" />
           </Tooltip>
         )}
       </div>
