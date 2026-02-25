@@ -243,7 +243,7 @@ export function EarnTransactionDetailsPopup({
                         fallback={<div className="h-[21px] w-[21px] rounded-full bg-white/10" />}
                       />
                     )}
-                    <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
+                    <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px] capitalize">
                       {transactionDetails.protocolName}
                     </span>
                   </div>
