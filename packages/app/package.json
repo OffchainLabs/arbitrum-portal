@@ -14,7 +14,6 @@
     "react-dom": "^18.3.1",
     "react-toastify": "^9.1.1",
     "tailwind-merge": "^3.2.0",
-    "tippy.js": "^6.3.7",
     "@heroicons/react": "^2.2.0",
     "@vaultsfyi/sdk": "^2.1.3",
     "axios": "^1.12.0",
