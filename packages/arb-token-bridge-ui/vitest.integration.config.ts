@@ -8,6 +8,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    fileParallelism: true,
     sequence: { concurrent: true },
     snapshotFormat: {
       escapeString: true,
@@ -21,7 +22,7 @@ export default defineConfig({
         url: 'http://localhost:3000',
       },
     },
-    setupFiles: ['./vitest.mocks.ts', './vitest.integration.setup.ts'],
+    setupFiles: ['./vitest.mocks.ts', './vitest.integration.setup.tsx'],
   },
   resolve: {
     alias: {

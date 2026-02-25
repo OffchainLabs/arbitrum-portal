@@ -1,8 +1,6 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { constants } from 'ethers';
-import React from 'react';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, expect } from 'vitest';
 
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import {
@@ -15,59 +13,11 @@ import { mapCustomChainToNetworkData } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import { TransferPanel } from './TransferPanel';
 
-vi.mock('@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory', async () => {
-  const { BigNumber } = await import('ethers');
-
-  return {
-    Inbox__factory: {
-      connect: vi.fn(() => ({
-        calculateRetryableSubmissionFee: vi.fn().mockResolvedValue(BigNumber.from(0)),
-      })),
-    },
-  };
-});
-
-vi.mock('next/navigation', async (importActual) => ({
-  ...(await importActual()),
-  usePathname: vi.fn().mockReturnValue('/bridge'),
-}));
-
-vi.mock('react-virtualized', () => ({
-  AutoSizer: ({
-    children,
-  }: {
-    children: (props: { width: number; height: number }) => JSX.Element;
-  }) => children({ width: 500, height: 700 }),
-  List: React.forwardRef(function MockList(
-    {
-      rowCount,
-      rowRenderer,
-    }: {
-      rowCount: number;
-      rowRenderer: (props: {
-        index: number;
-        key: number;
-        style: React.CSSProperties;
-      }) => JSX.Element | null;
-    },
-    _ref: React.ForwardedRef<unknown>,
-  ) {
-    void _ref;
-    return (
-      <div>
-        {Array.from({ length: rowCount }).map((_, index) => (
-          <div key={index}>{rowRenderer({ index, key: index, style: {} })}</div>
-        ))}
-      </div>
-    );
-  }),
-}));
-
-type ChainQuerySlug = 'ethereum' | 'apechain' | 'superposition';
+export type ChainQuerySlug = 'ethereum' | 'apechain' | 'superposition';
 type ExpectedSymbol = 'USDC' | 'USDC.e' | 'USDT' | 'ETH' | 'WETH' | 'APE';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 50_000;
 
-type RouteTokenCase = {
+export type RouteTokenCase = {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   expectedSourceSymbol: ExpectedSymbol;
@@ -76,13 +26,15 @@ type RouteTokenCase = {
   expectedDestinationPanelSymbols?: ExpectedSymbol[];
 };
 
-const usdcAddressByChain: Record<ChainQuerySlug, string> = {
+export const nonConnectedDestinationAddress = 'integration-destination-address';
+
+export const usdcAddressByChain: Record<ChainQuerySlug, string> = {
   ethereum: CommonAddress.Ethereum.USDC,
   apechain: CommonAddress.ApeChain.USDCe,
   superposition: CommonAddress.Superposition.USDCe,
 };
 
-const defaultTokenCases: RouteTokenCase[] = [
+export const defaultTokenCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
@@ -133,7 +85,7 @@ const defaultTokenCases: RouteTokenCase[] = [
   },
 ];
 
-const usdcCases: RouteTokenCase[] = [
+export const usdcCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
@@ -172,7 +124,7 @@ const usdcCases: RouteTokenCase[] = [
   },
 ];
 
-const ethWethCases: RouteTokenCase[] = [
+export const ethWethCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
@@ -211,7 +163,7 @@ const ethWethCases: RouteTokenCase[] = [
   },
 ];
 
-const swapCases: RouteTokenCase[] = [
+export const swapCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
@@ -254,7 +206,7 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToken {
+export function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToken {
   const isEthereum = sourceChain === 'ethereum';
   return {
     type: TokenType.ERC20,
@@ -266,7 +218,7 @@ function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToken {
   };
 }
 
-function renderTransferPanel({
+export function renderTransferPanel({
   sourceChain,
   destinationChain,
   token,
@@ -295,7 +247,7 @@ function renderTransferPanel({
   render(<TransferPanel />, { wrapper });
 }
 
-async function expectTokenButtonSymbol({
+export async function expectTokenButtonSymbol({
   isDestination,
   symbol,
 }: {
@@ -316,7 +268,7 @@ async function expectTokenButtonSymbol({
   );
 }
 
-async function expectTokenPanelSymbol({
+export async function expectTokenPanelSymbol({
   isDestination,
   symbolsToContain,
 }: {
@@ -372,10 +324,7 @@ async function expectTokenPanelSymbol({
   );
 }
 
-describe.sequential('TransferPanel LiFi Integration', () => {
-  const nonConnectedDestinationAddress = 'integration-destination-address';
-  const previousLifiFlag = process.env.NEXT_PUBLIC_FEATURE_FLAG_LIFI;
-
+export function setupTransferPanelLifiIntegrationSuite() {
   beforeAll(() => {
     process.env.NEXT_PUBLIC_FEATURE_FLAG_LIFI = 'true';
 
@@ -389,181 +338,4 @@ describe.sequential('TransferPanel LiFi Integration', () => {
     mapCustomChainToNetworkData(apeChain);
     mapCustomChainToNetworkData(superposition);
   });
-
-  afterAll(() => {
-    process.env.NEXT_PUBLIC_FEATURE_FLAG_LIFI = previousLifiFlag;
-  });
-
-  it.each(defaultTokenCases)(
-    'renders source $expectedSourceSymbol and destination $expectedDestinationSymbol for default token transfer: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      expectedSourceSymbol,
-      expectedDestinationSymbol,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
-    }) => {
-      renderTransferPanel({
-        sourceChain,
-        destinationChain,
-        destinationAddress: nonConnectedDestinationAddress,
-      });
-
-      await expectTokenButtonSymbol({
-        isDestination: false,
-        symbol: expectedSourceSymbol,
-      });
-      await expectTokenButtonSymbol({
-        isDestination: true,
-        symbol: expectedDestinationSymbol,
-      });
-      if (expectedSourcePanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: false,
-          symbolsToContain: expectedSourcePanelSymbols,
-        });
-      }
-      if (expectedDestinationPanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: true,
-          symbolsToContain: expectedDestinationPanelSymbols,
-        });
-      }
-    },
-  );
-
-  it.each(usdcCases)(
-    'renders source $expectedSourceSymbol and destination $expectedDestinationSymbol for USDC transfer: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      expectedSourceSymbol,
-      expectedDestinationSymbol,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
-    }) => {
-      const sourceUsdcAddress = usdcAddressByChain[sourceChain];
-      const sourceUsdcToken = getUsdcSourceToken(sourceChain);
-
-      renderTransferPanel({
-        sourceChain,
-        destinationChain,
-        token: sourceUsdcAddress,
-        destinationToken: sourceUsdcAddress,
-        bridgeTokens: {
-          [sourceUsdcAddress.toLowerCase()]: sourceUsdcToken,
-        },
-        destinationAddress: nonConnectedDestinationAddress,
-      });
-
-      await expectTokenButtonSymbol({
-        isDestination: false,
-        symbol: expectedSourceSymbol,
-      });
-      await expectTokenButtonSymbol({
-        isDestination: true,
-        symbol: expectedDestinationSymbol,
-      });
-      if (expectedSourcePanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: false,
-          symbolsToContain: expectedSourcePanelSymbols,
-        });
-      }
-      if (expectedDestinationPanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: true,
-          symbolsToContain: expectedDestinationPanelSymbols,
-        });
-      }
-    },
-  );
-
-  it.each(ethWethCases)(
-    'renders source $expectedSourceSymbol and destination $expectedDestinationSymbol for ETH/WETH override: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      expectedSourceSymbol,
-      expectedDestinationSymbol,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
-    }) => {
-      renderTransferPanel({
-        sourceChain,
-        destinationChain,
-        destinationToken: constants.AddressZero,
-        destinationAddress: nonConnectedDestinationAddress,
-      });
-
-      await expectTokenButtonSymbol({
-        isDestination: false,
-        symbol: expectedSourceSymbol,
-      });
-      await expectTokenButtonSymbol({
-        isDestination: true,
-        symbol: expectedDestinationSymbol,
-      });
-      if (expectedSourcePanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: false,
-          symbolsToContain: expectedSourcePanelSymbols,
-        });
-      }
-      if (expectedDestinationPanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: true,
-          symbolsToContain: expectedDestinationPanelSymbols,
-        });
-      }
-    },
-  );
-
-  it.each(swapCases)(
-    'renders source $expectedSourceSymbol and destination $expectedDestinationSymbol for swap (USDC -> ETH/WETH): $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      expectedSourceSymbol,
-      expectedDestinationSymbol,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
-    }) => {
-      const sourceUsdcAddress = usdcAddressByChain[sourceChain];
-      const sourceUsdcToken = getUsdcSourceToken(sourceChain);
-
-      renderTransferPanel({
-        sourceChain,
-        destinationChain,
-        token: sourceUsdcAddress,
-        destinationToken: constants.AddressZero,
-        bridgeTokens: {
-          [sourceUsdcAddress.toLowerCase()]: sourceUsdcToken,
-        },
-        destinationAddress: nonConnectedDestinationAddress,
-      });
-
-      await expectTokenButtonSymbol({
-        isDestination: false,
-        symbol: expectedSourceSymbol,
-      });
-      await expectTokenButtonSymbol({
-        isDestination: true,
-        symbol: expectedDestinationSymbol,
-      });
-      if (expectedSourcePanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: false,
-          symbolsToContain: expectedSourcePanelSymbols,
-        });
-      }
-      if (expectedDestinationPanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: true,
-          symbolsToContain: expectedDestinationPanelSymbols,
-        });
-      }
-    },
-  );
-});
+}
