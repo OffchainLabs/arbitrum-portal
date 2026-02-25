@@ -60,12 +60,6 @@ import {
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
 
-const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: 5_000_000, // ApeChain
-  4078: 10_000, // Muster
-  1628: 10_000, // T-REX
-};
-
 function getPositiveIntFromEnv(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
@@ -77,16 +71,36 @@ function getPositiveIntFromEnv(value: string | undefined, fallback: number): num
 
 const TX_HISTORY_BATCH_PARALLELISM = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM,
-  10,
+  16,
 );
 const TX_HISTORY_TRANSFORM_PARALLELISM = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM,
-  3,
+  6,
 );
 const TX_HISTORY_PAUSE_SIZE_DAYS = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS,
-  30,
+  60,
 );
+const TX_HISTORY_PAGE_SIZE = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE,
+  1_500,
+);
+const TX_HISTORY_BATCH_BLOCKS_DEFAULT = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT,
+  8_000_000,
+);
+const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
+  3_600_000,
+);
+const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
+  33139: getPositiveIntFromEnv(
+    process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN,
+    8_000_000,
+  ), // ApeChain
+  4078: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER, 25_000), // Muster
+  1628: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX, 25_000), // T-REX
+};
 
 export type UseTransactionHistoryResult = {
   transactions: MergedTransaction[];
@@ -287,7 +301,7 @@ export async function fetchWithdrawalsInBatches(
     throw new Error(`toBlock (${toBlock}) cannot be lower than fromBlock (${fromBlock})`);
   }
 
-  const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
+  const batchSizeBlocks = params.batchSizeBlocks ?? TX_HISTORY_BATCH_BLOCKS_DEFAULT;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
 
   // Tune with NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM.
@@ -335,7 +349,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? TX_HISTORY_PAGE_SIZE : 0,
     type: 'all',
   });
 
@@ -344,7 +358,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? TX_HISTORY_PAGE_SIZE : 0,
     type: 'all',
   });
 
@@ -427,16 +441,14 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                   parentChainProvider: getProviderForChainId(chainPair.parentChainId),
                   childChainProvider: getProviderForChainId(chainPair.childChainId),
                   pageNumber: 0,
-                  pageSize: 1000,
+                  pageSize: TX_HISTORY_PAGE_SIZE,
                 });
               }
 
-              const batchSizeBlocks = BATCH_FETCH_BLOCKS[chainPair.childChainId];
-
-              const withdrawalFn =
-                typeof batchSizeBlocks === 'number' ? fetchWithdrawalsInBatches : fetchWithdrawals;
-
-              const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
+              const batchSizeBlocks =
+                BATCH_FETCH_BLOCKS[chainPair.childChainId] ?? TX_HISTORY_BATCH_BLOCKS_DEFAULT;
+              const fetcherFn =
+                type === 'deposits' ? fetchDeposits : fetchWithdrawalsInBatches;
 
               // else, fetch deposits or withdrawals
               return await fetcherFn({
@@ -445,7 +457,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
                 l2Provider: getProviderForChainId(chainPair.childChainId),
                 pageNumber: 0,
-                pageSize: 1000,
+                pageSize: TX_HISTORY_PAGE_SIZE,
                 forceFetchReceived,
                 batchSizeBlocks,
               });
@@ -653,7 +665,7 @@ export const useTransactionHistory = (
       refreshWhenHidden: false,
       revalidateFirstPage: false,
       keepPreviousData: true,
-      dedupingInterval: 1_000_000,
+      dedupingInterval: TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
     },
   );
 

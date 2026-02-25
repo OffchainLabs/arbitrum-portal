@@ -1,6 +1,7 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { Provider } from '@ethersproject/providers';
 import { constants } from 'ethers';
+import pLimit from 'p-limit';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
 import { Withdrawal } from '../../hooks/useTransactionHistory';
@@ -19,6 +20,33 @@ import {
   fetchWithdrawalsFromSubgraph,
 } from './fetchWithdrawalsFromSubgraph';
 import { attachTimestampToTokenWithdrawal } from './helpers';
+
+function getPositiveIntFromEnv(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  const rounded = Math.floor(parsed);
+  return rounded > 0 ? rounded : fallback;
+}
+
+function getNonNegativeIntFromEnv(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  const rounded = Math.floor(parsed);
+  return rounded >= 0 ? rounded : fallback;
+}
+
+const TX_HISTORY_ALCHEMY_DELAY_MS = getNonNegativeIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS,
+  1_000,
+);
+const TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY,
+  16,
+);
 
 async function getGateways(provider: Provider): Promise<{
   standardGateway: string;
@@ -126,11 +154,9 @@ export async function fetchWithdrawals({
 
   const queries: Query[] = [];
 
-  // Optional override: set NEXT_PUBLIC_TX_HISTORY_FORCE_PARALLEL=true to bypass Alchemy sequential fallback.
-  const forceParallel = process.env.NEXT_PUBLIC_TX_HISTORY_FORCE_PARALLEL === 'true';
-  // Alchemy as a RaaS has a global rate limit across chains, so default behavior is still sequential.
-  const isAlchemy = !forceParallel && isAlchemyChain(l2ChainID);
-  const delayMs = isAlchemy ? 2_000 : 0;
+  // Alchemy as a RaaS has a global rate limit across their chains, so we fetch sequentially and wait in-between requests.
+  const isAlchemy = isAlchemyChain(l2ChainID);
+  const delayMs = isAlchemy ? TX_HISTORY_ALCHEMY_DELAY_MS : 0;
 
   const allGateways = [
     gateways.standardGateway,
@@ -217,9 +243,10 @@ export async function fetchWithdrawals({
     });
 
   // we need timestamps to sort token withdrawals along ETH withdrawals
+  const enrichTimestampLimit = pLimit(TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY);
   const tokenWithdrawalsFromEventLogsWithTimestamp: Withdrawal[] = await Promise.all(
     mappedTokenWithdrawalsFromEventLogs.map((withdrawal) =>
-      attachTimestampToTokenWithdrawal({ withdrawal, l2Provider }),
+      enrichTimestampLimit(() => attachTimestampToTokenWithdrawal({ withdrawal, l2Provider })),
     ),
   );
 
