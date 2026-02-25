@@ -85,11 +85,6 @@ export async function fetchNativeCurrency({
   const canonicalParentChainId = chain.parentChainId;
   const parentChainProvider = getProviderForChainId(canonicalParentChainId);
 
-  const { name, symbol, decimals } = await fetchErc20Data({
-    address,
-    provider: parentChainProvider,
-  });
-
   /**
    * When transferring Ape token from Base or Ethereum, address from ethBridger is the address on Arbitrum One.
    * It should be the address of the Ape token on the source chain instead
@@ -108,12 +103,34 @@ export async function fetchNativeCurrency({
         : CommonAddress.Ethereum.APE;
   }
 
-  return {
-    name,
-    logoUrl: getBridgeUiConfigForChain(chain.chainId).nativeTokenData?.logoUrl,
-    symbol,
-    decimals,
-    address,
-    isCustom: true,
-  };
+  try {
+    const { name, symbol, decimals } = await fetchErc20Data({
+      address: ethBridger.nativeToken.toLowerCase(),
+      provider: parentChainProvider,
+    });
+
+    return {
+      name,
+      logoUrl: getBridgeUiConfigForChain(chain.chainId).nativeTokenData?.logoUrl,
+      symbol,
+      decimals,
+      address,
+      isCustom: true,
+    };
+  } catch {
+    const nativeTokenData = getBridgeUiConfigForChain(chain.chainId).nativeTokenData;
+
+    if (!nativeTokenData) {
+      return nativeCurrencyEther;
+    }
+
+    return {
+      name: nativeTokenData.name,
+      symbol: nativeTokenData.symbol,
+      logoUrl: nativeTokenData.logoUrl,
+      decimals: 18,
+      address,
+      isCustom: true,
+    };
+  }
 }
