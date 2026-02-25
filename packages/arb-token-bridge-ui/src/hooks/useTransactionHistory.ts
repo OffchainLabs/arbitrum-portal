@@ -66,6 +66,28 @@ const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   1628: 10_000, // T-REX
 };
 
+function getPositiveIntFromEnv(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  const rounded = Math.floor(parsed);
+  return rounded > 0 ? rounded : fallback;
+}
+
+const TX_HISTORY_BATCH_PARALLELISM = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM,
+  10,
+);
+const TX_HISTORY_TRANSFORM_PARALLELISM = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM,
+  3,
+);
+const TX_HISTORY_PAUSE_SIZE_DAYS = getPositiveIntFromEnv(
+  process.env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS,
+  30,
+);
+
 export type UseTransactionHistoryResult = {
   transactions: MergedTransaction[];
   loading: boolean;
@@ -268,8 +290,8 @@ export async function fetchWithdrawalsInBatches(
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
 
-  // Max parallel fetches to avoid 429 errors
-  const limit = pLimit(10);
+  // Tune with NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM.
+  const limit = pLimit(TX_HISTORY_BATCH_PARALLELISM);
 
   const childChainId = (await params.l2Provider.getNetwork()).chainId;
 
@@ -516,10 +538,10 @@ export const useTransactionHistory = (
     (state) => state.updateTransaction,
   );
   const { connector } = useAccount();
-  // max number of transactions mapped in parallel
-  const MAX_BATCH_SIZE = 3;
-  // Pause fetching after specified number of days. User can resume fetching to get another batch.
-  const PAUSE_SIZE_DAYS = 30;
+  // Tune with NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM.
+  const MAX_BATCH_SIZE = TX_HISTORY_TRANSFORM_PARALLELISM;
+  // Tune with NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS.
+  const PAUSE_SIZE_DAYS = TX_HISTORY_PAUSE_SIZE_DAYS;
 
   const [fetching, setFetching] = useState(true);
   const [pauseCount, setPauseCount] = useState(0);

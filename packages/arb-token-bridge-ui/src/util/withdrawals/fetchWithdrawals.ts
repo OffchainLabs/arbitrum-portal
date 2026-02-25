@@ -126,8 +126,10 @@ export async function fetchWithdrawals({
 
   const queries: Query[] = [];
 
-  // alchemy as a raas has a global rate limit across their chains, so we have to fetch sequentially and wait in-between requests to work around this
-  const isAlchemy = isAlchemyChain(l2ChainID);
+  // Optional override: set NEXT_PUBLIC_TX_HISTORY_FORCE_PARALLEL=true to bypass Alchemy sequential fallback.
+  const forceParallel = process.env.NEXT_PUBLIC_TX_HISTORY_FORCE_PARALLEL === 'true';
+  // Alchemy as a RaaS has a global rate limit across chains, so default behavior is still sequential.
+  const isAlchemy = !forceParallel && isAlchemyChain(l2ChainID);
   const delayMs = isAlchemy ? 2_000 : 0;
 
   const allGateways = [
