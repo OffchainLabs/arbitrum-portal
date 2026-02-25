@@ -135,6 +135,22 @@ export function useEarnTransferReadiness({
 
     if (gasEstimate.estimate && nativeBalanceFloat !== null) {
       const gasFeeEth = parseFloat(gasEstimate.estimate.eth);
+      const isNativeAsset = amountSymbol.toUpperCase() === 'ETH';
+
+      if (isNativeAsset) {
+        const requiredEth = amountNum + gasFeeEth;
+        if (requiredEth > nativeBalanceFloat) {
+          return notReady({
+            errorMessage: getInsufficientFundsForGasFeesErrorMessage({
+              asset: 'ETH',
+              chain: getNetworkName(chainId),
+              balance: formatAmount(nativeBalance, { decimals: 18, symbol: 'ETH' }),
+              requiredBalance: `${requiredEth} ETH`,
+            }),
+          });
+        }
+      }
+
       if (gasFeeEth > nativeBalanceFloat) {
         return notReady({
           errorMessage: getInsufficientFundsForGasFeesErrorMessage({
