@@ -2,9 +2,9 @@ import { ChartBarIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityRowProps {
@@ -110,7 +110,7 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
                 </div>
               </div>
             }
-            tippyProps={{ placement: 'top' }}
+            side="top"
           >
             <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded p-0.5">
               <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />

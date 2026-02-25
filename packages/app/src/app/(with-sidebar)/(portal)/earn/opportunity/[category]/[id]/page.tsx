@@ -52,5 +52,11 @@ export default function OpportunityDetailPageRoute({
     return notFound();
   }
 
-  return <OpportunityDetailPage opportunityId={params.id} category={category} />;
+  return (
+    <OpportunityDetailPage
+      opportunityId={params.id}
+      category={category}
+      chainId={DEFAULT_EARN_CHAIN_ID}
+    />
+  );
 }

@@ -1,9 +1,9 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { Tooltip } from '@/bridge/components/common/Tooltip';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityCardProps {
@@ -86,7 +86,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
                   </div>
                 </div>
               }
-              tippyProps={{ placement: 'top' }}
+              side="top"
             >
               <div className="w-5 h-5 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full">
                 <SparklesIcon className="h-5 w-5 text-white opacity-50" />

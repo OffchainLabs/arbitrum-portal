@@ -4,9 +4,9 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { OpportunityTableRow, getCategoryDisplayName } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { Tooltip } from '@/bridge/components/common/Tooltip';
 
 interface BestOpportunityCardProps {
   opportunity: OpportunityTableRow;
@@ -49,7 +49,7 @@ export function BestOpportunityCard({ opportunity }: BestOpportunityCardProps) {
               </p>
             </div>
           }
-          tippyProps={{ placement: 'top' }}
+          side="top"
         >
           <div className="shrink-0 flex items-center gap-1 bg-primary-cta rounded px-2 py-1 cursor-help">
             <SparklesIconSolid className="h-3 w-3 text-white" />

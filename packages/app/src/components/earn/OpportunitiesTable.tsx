@@ -3,13 +3,13 @@
 import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useCallback, useMemo, useState } from 'react';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import {
   OpportunityCategory,
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
 import { Button } from '@/bridge/components/common/Button';
-import { Tooltip } from '@/bridge/components/common/Tooltip';
 
 import { OpportunityCard } from './OpportunityCard';
 import { OpportunityRow } from './OpportunityRow';
@@ -118,7 +118,7 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
                 </p>
               </div>
             }
-            tippyProps={{ placement: 'top' }}
+            side="top"
           >
             <div className="flex items-center justify-center cursor-pointer">
               <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
@@ -304,7 +304,7 @@ export function OpportunitiesTable({
                         </p>
                       </div>
                     }
-                    tippyProps={{ placement: 'top' }}
+                    side="top"
                   >
                     <div className="flex items-center justify-center cursor-pointer">
                       <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
