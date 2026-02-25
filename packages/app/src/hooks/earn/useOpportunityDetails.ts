@@ -2,7 +2,11 @@ import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
+import {
+  DEFAULT_EARN_CHAIN_ID,
+  type EarnChainId,
+  type StandardOpportunity,
+} from '@/earn-api/types';
 
 interface UseOpportunityDetailsResult {
   data: StandardOpportunity | null;
@@ -14,8 +18,9 @@ interface UseOpportunityDetailsResult {
 export function useOpportunityDetails(
   opportunityId: string,
   category: OpportunityCategory,
-  chainId: EarnChainId,
+  chainId?: EarnChainId,
 ): UseOpportunityDetailsResult {
+  const requestedChainId = chainId ?? DEFAULT_EARN_CHAIN_ID;
   const isValid =
     opportunityId &&
     category &&
@@ -23,7 +28,7 @@ export function useOpportunityDetails(
     OPPORTUNITY_CATEGORIES.includes(category);
 
   const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<StandardOpportunity>(
-    isValid ? ([opportunityId, category, chainId, 'opportunity-details'] as const) : null,
+    isValid ? ([opportunityId, category, requestedChainId, 'opportunity-details'] as const) : null,
     async ([keyOpportunityId, keyCategory, keyChainId]: readonly [
       string,
       OpportunityCategory,

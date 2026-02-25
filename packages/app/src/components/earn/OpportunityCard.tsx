@@ -15,7 +15,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   return (
     <Link
-      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}?chainId=${opportunity.chainId}`}
+      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
       className="group bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
     >
       <div className="flex items-center gap-2.5">

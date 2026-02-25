@@ -11,6 +11,7 @@ export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
 export type EarnNetwork = (typeof EARN_NETWORKS)[number];
 export const EARN_CHAIN_IDS = [ChainId.ArbitrumOne, ChainId.Ethereum] as const;
 export type EarnChainId = (typeof EARN_CHAIN_IDS)[number];
+export const DEFAULT_EARN_CHAIN_ID: EarnChainId = ChainId.ArbitrumOne;
 export const EARN_NETWORK_TO_CHAIN_ID: Record<EarnNetwork, EarnChainId> = {
   arbitrum: ChainId.ArbitrumOne,
   mainnet: ChainId.Ethereum,

@@ -4,33 +4,13 @@ import { isAddress } from 'viem';
 
 import { OpportunityDetailPage } from '@/app-components/earn/OpportunityDetailPage';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { EARN_CHAIN_IDS, type EarnChainId } from '@/earn-api/types';
-
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function getRequestedChainId(searchParams?: SearchParams): EarnChainId {
-  const rawValue = searchParams?.chainId;
-  const value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
-  if (!value) {
-    return ChainId.ArbitrumOne;
-  }
-
-  const parsed = Number(value);
-  if (EARN_CHAIN_IDS.includes(parsed as EarnChainId)) {
-    return parsed as EarnChainId;
-  }
-
-  return ChainId.ArbitrumOne;
-}
+import { DEFAULT_EARN_CHAIN_ID } from '@/earn-api/types';
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { category: string; id: string };
-  searchParams?: SearchParams;
 }): Promise<Metadata> {
   if (!isAddress(params.id)) {
     return {
@@ -41,10 +21,9 @@ export async function generateMetadata({
   try {
     const category = params.category as OpportunityCategory;
     if (OPPORTUNITY_CATEGORIES.includes(category)) {
-      const chainId = getRequestedChainId(searchParams);
       const router = new CategoryRouter();
       const adapter = router.routeToAdapter(category);
-      const opportunity = await adapter.getOpportunityDetails(params.id, chainId);
+      const opportunity = await adapter.getOpportunityDetails(params.id, DEFAULT_EARN_CHAIN_ID);
       const opportunityName = opportunity?.name ?? opportunity?.id ?? 'Opportunity';
       return {
         title: `Earn - ${opportunityName}`,
@@ -61,10 +40,8 @@ export async function generateMetadata({
 
 export default function OpportunityDetailPageRoute({
   params,
-  searchParams,
 }: {
   params: { category: string; id: string };
-  searchParams?: SearchParams;
 }) {
   if (!isAddress(params.id)) {
     return notFound();
@@ -75,7 +52,5 @@ export default function OpportunityDetailPageRoute({
     return notFound();
   }
 
-  const chainId = getRequestedChainId(searchParams);
-
-  return <OpportunityDetailPage opportunityId={params.id} category={category} chainId={chainId} />;
+  return <OpportunityDetailPage opportunityId={params.id} category={category} />;
 }

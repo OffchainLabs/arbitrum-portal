@@ -2,7 +2,6 @@
 
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { type EarnChainId } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
 import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
@@ -10,15 +9,10 @@ import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
 interface OpportunityDetailPageProps {
   opportunityId: string;
   category: OpportunityCategory;
-  chainId: EarnChainId;
 }
 
-export function OpportunityDetailPage({
-  opportunityId,
-  category,
-  chainId,
-}: OpportunityDetailPageProps) {
-  const { data, isLoading, error } = useOpportunityDetails(opportunityId, category, chainId);
+export function OpportunityDetailPage({ opportunityId, category }: OpportunityDetailPageProps) {
+  const { data, isLoading, error } = useOpportunityDetails(opportunityId, category);
 
   if (isLoading) {
     return <OpportunityDetailPageSkeleton />;

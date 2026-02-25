@@ -16,7 +16,7 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
 
   return (
     <Link
-      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}?chainId=${opportunity.chainId}`}
+      href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
       className="group bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
     >
       <div className="w-[150px] shrink-0">
