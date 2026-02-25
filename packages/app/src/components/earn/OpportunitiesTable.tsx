@@ -111,12 +111,10 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
           />
           <Tooltip
             content={
-              <div className="p-2 bg-neutral-100 rounded max-w-[200px]">
-                <p className="text-xs text-white leading-relaxed">
-                  Projected earnings are annualized estimates based on current APY rates. Actual
-                  earnings may vary and are not guaranteed, as APY rates can change over time.
-                </p>
-              </div>
+              <p className="text-xs text-white leading-relaxed">
+                Projected earnings are annualized estimates based on current APY rates. Actual
+                earnings may vary and are not guaranteed, as APY rates can change over time.
+              </p>
             }
             side="top"
           >
@@ -298,11 +296,9 @@ export function OpportunitiesTable({
                   </h2>
                   <Tooltip
                     content={
-                      <div className="p-2 bg-neutral-100 rounded max-w-[250px]">
-                        <p className="text-xs text-white leading-relaxed">
-                          {getCategoryDescription(category)}
-                        </p>
-                      </div>
+                      <p className="text-xs text-white leading-relaxed">
+                        {getCategoryDescription(category)}
+                      </p>
                     }
                     side="top"
                   >

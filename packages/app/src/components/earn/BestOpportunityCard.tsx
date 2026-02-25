@@ -42,12 +42,10 @@ export function BestOpportunityCard({ opportunity }: BestOpportunityCardProps) {
         </div>
         <Tooltip
           content={
-            <div className="p-2 bg-neutral-100 rounded max-w-xs">
-              <p className="text-xs text-white leading-relaxed">
-                This opportunity has the highest total value locked (TVL) in its category, making it
-                one of the most popular choices.
-              </p>
-            </div>
+            <p className="text-xs text-white leading-relaxed">
+              This opportunity has the highest total value locked (TVL) in its category, making it
+              one of the most popular choices.
+            </p>
           }
           side="top"
         >

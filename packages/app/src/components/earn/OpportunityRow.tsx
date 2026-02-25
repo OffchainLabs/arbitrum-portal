@@ -73,40 +73,38 @@ export function OpportunityRow({ opportunity }: OpportunityRowProps) {
         {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
           <Tooltip
             content={
-              <div className="flex flex-col gap-2 p-2 bg-neutral-100 rounded">
-                <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <ChartBarIcon className="h-3.5 w-3.5 text-white opacity-70" />
+                    <span className="text-xs text-white opacity-70">Base APY</span>
+                  </div>
+                  <span className="text-xs text-white font-medium">
+                    {opportunity.apyBreakdown.base.toFixed(2)}%
+                  </span>
+                </div>
+                {opportunity.apyBreakdown.reward > 0 && (
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-1.5">
-                      <ChartBarIcon className="h-3.5 w-3.5 text-white opacity-70" />
-                      <span className="text-xs text-white opacity-70">Base APY</span>
+                      <Image
+                        src="/images/sparkles.svg"
+                        alt="Sparkles"
+                        width={16}
+                        height={16}
+                        aria-hidden
+                      />
+                      <span className="text-xs text-white opacity-70">Rewards</span>
                     </div>
-                    <span className="text-xs text-white font-medium">
-                      {opportunity.apyBreakdown.base.toFixed(2)}%
+                    <span className="text-xs font-medium bg-gradient-to-r from-primary-cta to-earn-success bg-clip-text text-transparent">
+                      {opportunity.apyBreakdown.reward.toFixed(2)}%
                     </span>
                   </div>
-                  {opportunity.apyBreakdown.reward > 0 && (
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-1.5">
-                        <Image
-                          src="/images/sparkles.svg"
-                          alt="Sparkles"
-                          width={16}
-                          height={16}
-                          aria-hidden
-                        />
-                        <span className="text-xs text-white opacity-70">Rewards</span>
-                      </div>
-                      <span className="text-xs font-medium bg-gradient-to-r from-primary-cta to-earn-success bg-clip-text text-transparent">
-                        {opportunity.apyBreakdown.reward.toFixed(2)}%
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/10">
-                    <span className="text-xs text-white font-medium">Total APY</span>
-                    <span className="text-xs text-white font-medium">
-                      {opportunity.apyBreakdown.total.toFixed(2)}%
-                    </span>
-                  </div>
+                )}
+                <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/10">
+                  <span className="text-xs text-white font-medium">Total APY</span>
+                  <span className="text-xs text-white font-medium">
+                    {opportunity.apyBreakdown.total.toFixed(2)}%
+                  </span>
                 </div>
               </div>
             }

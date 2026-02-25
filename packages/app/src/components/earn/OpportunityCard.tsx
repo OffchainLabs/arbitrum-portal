@@ -61,28 +61,26 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
           {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
             <Tooltip
               content={
-                <div className="flex flex-col gap-2 p-2 bg-neutral-100 rounded">
-                  <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-xs text-white opacity-70">Base APY</span>
+                    <span className="text-xs text-white font-medium">
+                      {opportunity.apyBreakdown.base.toFixed(2)}%
+                    </span>
+                  </div>
+                  {opportunity.apyBreakdown.reward > 0 && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-xs text-white opacity-70">Base APY</span>
+                      <span className="text-xs text-white opacity-70">Reward APY</span>
                       <span className="text-xs text-white font-medium">
-                        {opportunity.apyBreakdown.base.toFixed(2)}%
+                        {opportunity.apyBreakdown.reward.toFixed(2)}%
                       </span>
                     </div>
-                    {opportunity.apyBreakdown.reward > 0 && (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-xs text-white opacity-70">Reward APY</span>
-                        <span className="text-xs text-white font-medium">
-                          {opportunity.apyBreakdown.reward.toFixed(2)}%
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/10">
-                      <span className="text-xs text-white font-medium">Total APY</span>
-                      <span className="text-xs text-white font-medium">
-                        {opportunity.apyBreakdown.total.toFixed(2)}%
-                      </span>
-                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/10">
+                    <span className="text-xs text-white font-medium">Total APY</span>
+                    <span className="text-xs text-white font-medium">
+                      {opportunity.apyBreakdown.total.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
               }
