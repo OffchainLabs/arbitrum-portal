@@ -10,6 +10,7 @@ import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestSubgraphBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
 import { isAlchemyChain, isNetwork } from '../networks';
+import { txHistoryEnv } from '../txHistoryEnv';
 import { fetchETHWithdrawalsFromEventLogs } from './fetchETHWithdrawalsFromEventLogs';
 import {
   Query,
@@ -20,26 +21,6 @@ import {
   fetchWithdrawalsFromSubgraph,
 } from './fetchWithdrawalsFromSubgraph';
 import { attachTimestampToTokenWithdrawal } from './helpers';
-
-function getIntFromEnv(value: string | undefined, fallback: number, minValue: number): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-  const rounded = Math.floor(parsed);
-  return rounded >= minValue ? rounded : fallback;
-}
-
-const TX_HISTORY_ALCHEMY_DELAY_MS = getIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS,
-  2_000,
-  0,
-);
-const TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY = getIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY,
-  0,
-  0,
-);
 
 async function getGateways(provider: Provider): Promise<{
   standardGateway: string;
@@ -149,7 +130,7 @@ export async function fetchWithdrawals({
 
   // alchemy as a raas has a global rate limit across their chains, so we have to fetch sequentially and wait in-between requests to work around this
   const isAlchemy = isAlchemyChain(l2ChainID);
-  const delayMs = isAlchemy ? TX_HISTORY_ALCHEMY_DELAY_MS : 0;
+  const delayMs = isAlchemy ? txHistoryEnv.alchemyDelayMs : 0;
 
   const allGateways = [
     gateways.standardGateway,
@@ -236,15 +217,10 @@ export async function fetchWithdrawals({
     });
 
   // we need timestamps to sort token withdrawals along ETH withdrawals
-  const enrichTimestampLimit =
-    TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY > 0
-      ? pLimit(TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY)
-      : null;
+  const enrichTimestampLimit = pLimit(txHistoryEnv.timestampEnrichConcurrency);
   const tokenWithdrawalsFromEventLogsWithTimestamp: Withdrawal[] = await Promise.all(
     mappedTokenWithdrawalsFromEventLogs.map((withdrawal) =>
-      enrichTimestampLimit
-        ? enrichTimestampLimit(() => attachTimestampToTokenWithdrawal({ withdrawal, l2Provider }))
-        : attachTimestampToTokenWithdrawal({ withdrawal, l2Provider }),
+      enrichTimestampLimit(() => attachTimestampToTokenWithdrawal({ withdrawal, l2Provider })),
     ),
   );
 

@@ -35,6 +35,7 @@ import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
+import { txHistoryEnv } from '../util/txHistoryEnv';
 import {
   isTransferTeleportFromSubgraph,
   transformTeleportFromSubgraph,
@@ -60,46 +61,16 @@ import {
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
 
-function getPositiveIntFromEnv(value: string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-  const rounded = Math.floor(parsed);
-  return rounded > 0 ? rounded : fallback;
-}
-
-const TX_HISTORY_BATCH_PARALLELISM = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM,
-  10,
-);
-const TX_HISTORY_TRANSFORM_PARALLELISM = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM,
-  3,
-);
-const TX_HISTORY_PAUSE_SIZE_DAYS = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS,
-  30,
-);
-const TX_HISTORY_PAGE_SIZE = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE,
-  1_000,
-);
-const TX_HISTORY_BATCH_BLOCKS_DEFAULT = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT,
-  5_000_000,
-);
-const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = getPositiveIntFromEnv(
-  process.env.NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
-  1_000_000,
-);
+const TX_HISTORY_BATCH_PARALLELISM = txHistoryEnv.batchParallelism;
+const TX_HISTORY_TRANSFORM_PARALLELISM = txHistoryEnv.transformParallelism;
+const TX_HISTORY_PAUSE_SIZE_DAYS = txHistoryEnv.pauseSizeDays;
+const TX_HISTORY_PAGE_SIZE = txHistoryEnv.pageSize;
+const TX_HISTORY_BATCH_BLOCKS_DEFAULT = txHistoryEnv.batchBlocksDefault;
+const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = txHistoryEnv.swrDedupingIntervalMs;
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: getPositiveIntFromEnv(
-    process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN,
-    5_000_000,
-  ), // ApeChain
-  4078: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER, 10_000), // Muster
-  1628: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX, 10_000), // T-REX
+  33139: txHistoryEnv.batchBlocksApeChain, // ApeChain
+  4078: txHistoryEnv.batchBlocksMuster, // Muster
+  1628: txHistoryEnv.batchBlocksTrex, // T-REX
 };
 
 export type UseTransactionHistoryResult = {
