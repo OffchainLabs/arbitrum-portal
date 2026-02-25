@@ -11,7 +11,6 @@ import { Dialog } from '@/bridge/components/common/Dialog';
 import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
-import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -23,7 +22,7 @@ export interface TransactionDetails {
   decimals: number;
   assetLogo?: string;
   txHash?: string;
-  chainId?: number;
+  chainId: number;
   timestamp?: number;
   protocolName?: string;
   protocolLogo?: string;
@@ -87,11 +86,10 @@ export function EarnTransactionDetailsPopup({
   isLoading,
 }: EarnTransactionDetailsPopupProps) {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const chainId = transactionDetails?.chainId || ChainId.ArbitrumOne;
   const { networkFee, isFetchingFee } = useEarnTransactionNetworkFee({
     isOpen,
     isLoading,
-    chainId,
+    chainId: transactionDetails?.chainId,
     txHash: transactionDetails?.txHash,
     providedNetworkFee: transactionDetails?.networkFee,
   });
@@ -116,6 +114,7 @@ export function EarnTransactionDetailsPopup({
     return null;
   }
 
+  const chainId = transactionDetails.chainId;
   const explorerUrl = getExplorerUrl(chainId);
   const networkName = getNetworkName(chainId);
   const txHash = transactionDetails.txHash;

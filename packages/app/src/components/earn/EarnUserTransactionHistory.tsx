@@ -13,7 +13,6 @@ import {
   getStandardizedTime,
   normalizeTimestamp,
 } from '@/bridge/state/app/utils';
-import { ChainId } from '@/bridge/types/ChainId';
 import { type EarnChainId } from '@/earn-api/types';
 
 import { useEarnDialogs } from './EarnDialogsProvider';
@@ -48,7 +47,7 @@ interface EarnUserTransactionHistoryProps {
   category: OpportunityCategory;
   opportunityId: string;
   opportunityName: string;
-  chainId?: EarnChainId;
+  chainId: EarnChainId;
   protocolName?: string;
   protocolLogo?: string;
 }
@@ -148,7 +147,7 @@ export function EarnUserTransactionHistory({
   category,
   opportunityId,
   opportunityName,
-  chainId = ChainId.ArbitrumOne,
+  chainId,
   protocolName,
   protocolLogo,
 }: EarnUserTransactionHistoryProps) {

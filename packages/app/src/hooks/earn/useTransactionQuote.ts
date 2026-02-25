@@ -5,7 +5,6 @@ import { BigNumber } from 'ethers';
 import useSWR from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import type {
   EarnChainId,
   TransactionQuoteRequest,
@@ -25,7 +24,7 @@ export interface UseTransactionQuoteParams {
   outputTokenAddress?: string;
   slippage?: number;
   simulate?: boolean;
-  chainId?: EarnChainId;
+  chainId: EarnChainId;
   rolloverTargetOpportunityId?: string;
   rolloverAmount?: string;
   enabled?: boolean;
@@ -123,7 +122,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
     outputTokenAddress,
     slippage = 0.5,
     simulate = false,
-    chainId = ChainId.ArbitrumOne,
+    chainId,
     rolloverTargetOpportunityId,
     rolloverAmount,
     enabled = true,

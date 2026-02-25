@@ -2,8 +2,6 @@ import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 
-import { ChainId } from '@/bridge/types/ChainId';
-
 export interface EarnTransactionNetworkFee {
   amount: string;
   usd?: string;
@@ -29,8 +27,7 @@ export function useEarnTransactionNetworkFee({
   txHash,
   providedNetworkFee,
 }: UseEarnTransactionNetworkFeeParams): UseEarnTransactionNetworkFeeResult {
-  const resolvedChainId = chainId || ChainId.ArbitrumOne;
-  const publicClient = usePublicClient({ chainId: resolvedChainId });
+  const publicClient = usePublicClient({ chainId });
   const [networkFee, setNetworkFee] = useState<EarnTransactionNetworkFee | null>(null);
   const [isFetchingFee, setIsFetchingFee] = useState(false);
 

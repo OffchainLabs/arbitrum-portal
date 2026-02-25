@@ -10,6 +10,8 @@ import {
 } from '@/earn-api/lib/validation';
 import { TransactionHistoryResponse } from '@/earn-api/types';
 
+const router = new CategoryRouter();
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { category: string; id: string } },
@@ -21,7 +23,6 @@ export async function GET(
     const opportunityId = assertAddress(params.id, 'opportunityId');
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
 
-    const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
 
     const rateLimitKey = `transactions-rl:${category}:${chainId}:${opportunityId}:${userAddress}`;

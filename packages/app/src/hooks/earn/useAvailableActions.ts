@@ -4,7 +4,6 @@ import type { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import {
   type EarnChainId,
   type FixedYieldAvailableActions,
@@ -24,7 +23,7 @@ export interface UseAvailableActionsParams<C extends OpportunityCategory> {
   opportunityId: string | null;
   category: C;
   userAddress: string | null;
-  chainId?: EarnChainId;
+  chainId: EarnChainId;
 }
 
 export type UseAvailableActionsResult<C extends OpportunityCategory> = Omit<
@@ -57,7 +56,7 @@ function buildAvailableActionsKey<C extends OpportunityCategory>(
 export function useAvailableActions<C extends OpportunityCategory>(
   params: UseAvailableActionsParams<C>,
 ): UseAvailableActionsResult<C> {
-  const { opportunityId, category, userAddress, chainId = ChainId.ArbitrumOne } = params;
+  const { opportunityId, category, userAddress, chainId } = params;
   const swrKey =
     opportunityId && category && userAddress
       ? buildAvailableActionsKey(category, opportunityId, userAddress, chainId)

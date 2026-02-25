@@ -140,18 +140,14 @@ export function useEarnGasEstimate({
           }),
         );
 
-        const transactionStepEstimates = gasEstimates.filter(
-          ({ step }) => step.type !== 'approval',
-        );
-
-        const totalGasCostWei = transactionStepEstimates.reduce(
+        const totalGasCostWei = gasEstimates.reduce(
           (sum, { cost }) => sum.add(cost),
           BigNumber.from(0),
         );
 
-        const hasValidEstimate = transactionStepEstimates.some(({ cost }) => !cost.isZero());
+        const hasValidEstimate = gasEstimates.some(({ cost }) => !cost.isZero());
 
-        if (!hasValidEstimate && transactionStepEstimates.length > 0) {
+        if (!hasValidEstimate && gasEstimates.length > 0) {
           if (!isCancelled) {
             setOnchainGasEstimate(null);
             setIsLoading(false);

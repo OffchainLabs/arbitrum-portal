@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
@@ -9,6 +8,8 @@ import {
   parseOpportunityCategory,
 } from '../../../../lib/validation';
 import { AvailableActions } from '../../../../types';
+
+const router = new CategoryRouter();
 
 export async function GET(
   request: NextRequest,
@@ -21,28 +22,16 @@ export async function GET(
     const chainId = parseEarnChainId(searchParams.get('chainId'));
     const opportunityId = assertAddress(params.id, 'opportunityId');
 
-    const cacheKey = `available-actions:${category}:${chainId}:${opportunityId}:${userAddress}`;
-
-    const getCachedAvailableActions = unstable_cache(
-      async () => {
-        const router = new CategoryRouter();
-        const adapter = router.routeToAdapter(category);
-        const actions = await adapter.getAvailableActions(opportunityId, userAddress, chainId);
-
-        return actions;
-      },
-      [cacheKey],
-      {
-        revalidate: 300, // 5 minutes (available actions context changes with user state)
-        tags: ['available-actions', cacheKey],
-      },
+    const adapter = router.routeToAdapter(category);
+    const availableActions: AvailableActions = await adapter.getAvailableActions(
+      opportunityId,
+      userAddress,
+      chainId,
     );
-
-    const availableActions: AvailableActions = await getCachedAvailableActions();
 
     return jsonResponse(availableActions, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error) {

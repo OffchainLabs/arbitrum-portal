@@ -17,6 +17,8 @@ import {
 } from '../../../../lib/validation';
 import { EARN_TRANSACTION_ACTIONS, type EarnTransactionAction } from '../../../../types';
 
+const router = new CategoryRouter();
+
 function isEarnTransactionAction(value: string): value is EarnTransactionAction {
   return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
 }
@@ -93,7 +95,6 @@ export async function POST(
       ? assertPositiveNumberString(rawRolloverAmount, 'rolloverAmount')
       : undefined;
 
-    const router = new CategoryRouter();
     const adapter = router.routeToAdapter(pathCategory);
     const quote = await adapter.getTransactionQuote(
       opportunityId,

@@ -5,7 +5,6 @@ import useSWRImmutable from 'swr/immutable';
 
 import { EarnTransactionHistoryRow } from '@/app-components/earn/EarnTransactionHistoryTable';
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import type {
   EarnChainId,
   StandardTransactionHistory,
@@ -40,7 +39,7 @@ export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
   userAddress: string | null,
-  chainId: EarnChainId = ChainId.ArbitrumOne,
+  chainId: EarnChainId,
 ): UseEarnTransactionHistoryResult {
   const historyKey =
     userAddress && opportunityId

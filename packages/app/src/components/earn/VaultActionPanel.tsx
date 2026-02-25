@@ -19,17 +19,12 @@ import {
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
-import { getEarnRequestNetwork } from '@/app-lib/earn/getEarnRequestNetwork';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import {
-  type StandardTransactionHistory,
-  Vendor,
-  getEarnChainIdFromNetwork,
-} from '@/earn-api/types';
+import { type EarnChainId, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -43,6 +38,7 @@ import { useEarnDialogs } from './EarnDialogsProvider';
 
 export interface LendVaultContext {
   address: string;
+  chainId: EarnChainId;
   network?: { name?: string };
   asset?: { symbol?: string; address?: string; assetLogo?: string };
   name?: string;
@@ -57,7 +53,6 @@ interface VaultActionPanelProps {
 }
 
 type ActionType = 'supply' | 'withdraw';
-type TxState = 'idle' | 'loading' | 'success';
 const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
@@ -82,13 +77,8 @@ export function VaultActionPanel({
 
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
-  const [, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState<string | null>(null);
-  const requestNetwork = useMemo(
-    () => getEarnRequestNetwork(vault.network?.name),
-    [vault.network?.name],
-  );
-  const requestChainId = useMemo(() => getEarnChainIdFromNetwork(requestNetwork), [requestNetwork]);
+  const requestChainId = vault.chainId;
 
   useEffect(() => {
     setSelectedAction(initialAction);
@@ -271,7 +261,6 @@ export function VaultActionPanel({
     chainId,
     buildCalls,
     onTransactionFinished: async ({ txHash }) => {
-      setTxState('success');
       setAmount('');
       refetchContext();
       void refetchAssetBalance();
@@ -432,13 +421,11 @@ export function VaultActionPanel({
       return;
     }
 
-    setTxState('loading');
     setTxError(null);
 
     try {
       await executeTx();
     } catch (error) {
-      setTxState('idle');
       setTxError(formatTransactionError(error));
     }
   };
