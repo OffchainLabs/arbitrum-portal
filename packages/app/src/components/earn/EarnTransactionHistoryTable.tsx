@@ -59,34 +59,66 @@ const EVENT_TYPE_TO_ACTION: Record<string, string> = {
   claim: 'claim',
 };
 
+function getDisplayAction(eventType: string): string {
+  const normalized = eventType.toLowerCase();
+  return EVENT_TYPE_TO_ACTION[normalized] ?? normalized;
+}
+
 function getDisplayAsset(
   row: EarnTransactionHistoryRow,
   category: OpportunityCategory,
+  action: string,
 ): { amountRaw: string; symbol: string; decimals: number; logo?: string } {
-  if (
-    category === OpportunityCategory.Lend &&
-    row.inputAssetAmountRaw &&
-    row.inputAssetSymbol &&
-    typeof row.inputAssetDecimals === 'number'
-  ) {
-    return {
-      amountRaw: row.inputAssetAmountRaw,
-      symbol: row.inputAssetSymbol,
-      decimals: row.inputAssetDecimals,
-      logo: row.inputAssetLogo ?? row.assetLogo,
-    };
-  }
-
-  if (
-    category !== OpportunityCategory.Lend &&
+  const hasInputAsset =
+    row.inputAssetAmountRaw && row.inputAssetSymbol && typeof row.inputAssetDecimals === 'number';
+  const hasOutputAsset =
     row.outputAssetAmountRaw &&
     row.outputAssetSymbol &&
-    typeof row.outputAssetDecimals === 'number'
-  ) {
+    typeof row.outputAssetDecimals === 'number';
+
+  if (category === OpportunityCategory.Lend) {
+    if (action === 'withdraw' && hasOutputAsset) {
+      return {
+        amountRaw: row.outputAssetAmountRaw!,
+        symbol: row.outputAssetSymbol!,
+        decimals: row.outputAssetDecimals!,
+        logo: row.outputAssetLogo ?? row.assetLogo,
+      };
+    }
+
+    if (action === 'supply' && hasInputAsset) {
+      return {
+        amountRaw: row.inputAssetAmountRaw!,
+        symbol: row.inputAssetSymbol!,
+        decimals: row.inputAssetDecimals!,
+        logo: row.inputAssetLogo ?? row.assetLogo,
+      };
+    }
+
+    if (hasInputAsset) {
+      return {
+        amountRaw: row.inputAssetAmountRaw!,
+        symbol: row.inputAssetSymbol!,
+        decimals: row.inputAssetDecimals!,
+        logo: row.inputAssetLogo ?? row.assetLogo,
+      };
+    }
+
+    if (hasOutputAsset) {
+      return {
+        amountRaw: row.outputAssetAmountRaw!,
+        symbol: row.outputAssetSymbol!,
+        decimals: row.outputAssetDecimals!,
+        logo: row.outputAssetLogo ?? row.assetLogo,
+      };
+    }
+  }
+
+  if (category !== OpportunityCategory.Lend && hasOutputAsset) {
     return {
-      amountRaw: row.outputAssetAmountRaw,
-      symbol: row.outputAssetSymbol,
-      decimals: row.outputAssetDecimals,
+      amountRaw: row.outputAssetAmountRaw!,
+      symbol: row.outputAssetSymbol!,
+      decimals: row.outputAssetDecimals!,
       logo: row.outputAssetLogo ?? row.assetLogo,
     };
   }
@@ -110,11 +142,8 @@ function formatHistoryAmount(displayAsset: {
   });
 }
 
-function getEventTypeDisplay(
-  row: EarnTransactionHistoryRow,
-  displayAsset: { symbol: string },
-): string {
-  return `${row.eventType.charAt(0).toUpperCase() + row.eventType.slice(1)} ${displayAsset.symbol}`;
+function getEventTypeDisplay(action: string, displayAsset: { symbol: string }): string {
+  return `${action.charAt(0).toUpperCase() + action.slice(1)} ${displayAsset.symbol}`;
 }
 
 function TransactionHashLink({
@@ -157,7 +186,8 @@ function DesktopHistoryRow({
 }) {
   const dateStr = getDateStr(row.timestamp);
   const timeStr = getTimeStr(row.timestamp);
-  const displayAsset = getDisplayAsset(row, category);
+  const action = getDisplayAction(row.eventType);
+  const displayAsset = getDisplayAsset(row, category, action);
 
   return (
     <div
@@ -170,9 +200,7 @@ function DesktopHistoryRow({
       </div>
 
       <div className="w-[80px] shrink-0">
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] capitalize">
-          {row.eventType}
-        </p>
+        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] capitalize">{action}</p>
       </div>
 
       <div className="flex-1 flex items-center gap-2 min-w-0">
@@ -229,7 +257,8 @@ function MobileHistoryRow({
   category: OpportunityCategory;
   onClick: () => void;
 }) {
-  const displayAsset = getDisplayAsset(row, category);
+  const action = getDisplayAction(row.eventType);
+  const displayAsset = getDisplayAsset(row, category, action);
 
   return (
     <div
@@ -238,7 +267,7 @@ function MobileHistoryRow({
     >
       <div className="flex items-center justify-between w-full">
         <p className="text-base text-white leading-[1.15] tracking-[-0.32px] whitespace-nowrap">
-          {getEventTypeDisplay(row, displayAsset)}
+          {getEventTypeDisplay(action, displayAsset)}
         </p>
         <TransactionHashLink
           chainId={row.chainId}
@@ -284,8 +313,8 @@ export function EarnTransactionHistoryTable({
   const handleRowClick = (row: EarnTransactionHistoryRow) => {
     if (!onRowClick) return;
 
-    const displayAsset = getDisplayAsset(row, category);
-    const action = EVENT_TYPE_TO_ACTION[row.eventType.toLowerCase()] || row.eventType.toLowerCase();
+    const action = getDisplayAction(row.eventType);
+    const displayAsset = getDisplayAsset(row, category, action);
     const transactionDetails: TransactionDetails = {
       action,
       amount: displayAsset.amountRaw || '0',

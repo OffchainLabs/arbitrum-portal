@@ -279,12 +279,18 @@ export function VaultActionPanel({
       const outputTokenSymbol =
         selectedAction === 'supply' ? (lpToken?.symbol ?? assetSymbol ?? '') : (assetSymbol ?? '');
       const outputTokenDecimals = selectedAction === 'supply' ? lpTokenDecimals : assetDecimals;
+      const shouldDisplayOutput =
+        selectedAction === 'withdraw' &&
+        Boolean(outputAmountRaw && /^\d+$/.test(outputAmountRaw) && outputTokenSymbol);
+      const displayAmountRaw = shouldDisplayOutput ? outputAmountRaw || '0' : inputAmountRaw;
+      const displayTokenSymbol = shouldDisplayOutput ? outputTokenSymbol : inputTokenSymbol;
+      const displayTokenDecimals = shouldDisplayOutput ? outputTokenDecimals : inputTokenDecimals;
 
       const transactionDetails = {
         action: selectedAction === 'supply' ? 'supply' : 'withdraw',
-        amount: inputAmountRaw,
-        tokenSymbol: inputTokenSymbol,
-        decimals: inputTokenDecimals,
+        amount: displayAmountRaw,
+        tokenSymbol: displayTokenSymbol,
+        decimals: displayTokenDecimals,
         assetLogo: vault.asset?.assetLogo,
         chainId: txChainId,
         txHash: txHash ?? '',
