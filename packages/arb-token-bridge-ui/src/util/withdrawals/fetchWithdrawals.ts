@@ -32,13 +32,13 @@ function getIntFromEnv(value: string | undefined, fallback: number, minValue: nu
 
 const TX_HISTORY_ALCHEMY_DELAY_MS = getIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS,
-  1_000,
+  2_000,
   0,
 );
 const TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY = getIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY,
-  16,
-  1,
+  0,
+  0,
 );
 
 async function getGateways(provider: Provider): Promise<{
@@ -147,7 +147,7 @@ export async function fetchWithdrawals({
 
   const queries: Query[] = [];
 
-  // Alchemy as a RaaS has a global rate limit across their chains, so we fetch sequentially and wait in-between requests.
+  // alchemy as a raas has a global rate limit across their chains, so we have to fetch sequentially and wait in-between requests to work around this
   const isAlchemy = isAlchemyChain(l2ChainID);
   const delayMs = isAlchemy ? TX_HISTORY_ALCHEMY_DELAY_MS : 0;
 
@@ -236,10 +236,15 @@ export async function fetchWithdrawals({
     });
 
   // we need timestamps to sort token withdrawals along ETH withdrawals
-  const enrichTimestampLimit = pLimit(TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY);
+  const enrichTimestampLimit =
+    TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY > 0
+      ? pLimit(TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY)
+      : null;
   const tokenWithdrawalsFromEventLogsWithTimestamp: Withdrawal[] = await Promise.all(
     mappedTokenWithdrawalsFromEventLogs.map((withdrawal) =>
-      enrichTimestampLimit(() => attachTimestampToTokenWithdrawal({ withdrawal, l2Provider })),
+      enrichTimestampLimit
+        ? enrichTimestampLimit(() => attachTimestampToTokenWithdrawal({ withdrawal, l2Provider }))
+        : attachTimestampToTokenWithdrawal({ withdrawal, l2Provider }),
     ),
   );
 

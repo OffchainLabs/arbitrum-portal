@@ -71,35 +71,35 @@ function getPositiveIntFromEnv(value: string | undefined, fallback: number): num
 
 const TX_HISTORY_BATCH_PARALLELISM = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM,
-  16,
+  10,
 );
 const TX_HISTORY_TRANSFORM_PARALLELISM = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM,
-  6,
+  3,
 );
 const TX_HISTORY_PAUSE_SIZE_DAYS = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS,
-  60,
+  30,
 );
 const TX_HISTORY_PAGE_SIZE = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE,
-  1_500,
+  1_000,
 );
 const TX_HISTORY_BATCH_BLOCKS_DEFAULT = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT,
-  8_000_000,
+  5_000_000,
 );
 const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = getPositiveIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
-  3_600_000,
+  1_000_000,
 );
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: getPositiveIntFromEnv(
     process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN,
-    8_000_000,
+    5_000_000,
   ), // ApeChain
-  4078: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER, 25_000), // Muster
-  1628: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX, 25_000), // T-REX
+  4078: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER, 10_000), // Muster
+  1628: getPositiveIntFromEnv(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX, 10_000), // T-REX
 };
 
 export type UseTransactionHistoryResult = {
@@ -445,8 +445,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 });
               }
 
-              const batchSizeBlocks =
-                BATCH_FETCH_BLOCKS[chainPair.childChainId] ?? TX_HISTORY_BATCH_BLOCKS_DEFAULT;
+              const batchSizeBlocks = BATCH_FETCH_BLOCKS[chainPair.childChainId];
               const withdrawalFn =
                 typeof batchSizeBlocks === 'number' ? fetchWithdrawalsInBatches : fetchWithdrawals;
               const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
