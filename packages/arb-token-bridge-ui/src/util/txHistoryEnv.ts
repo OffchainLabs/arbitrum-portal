@@ -1,38 +1,31 @@
-import { z } from 'zod';
+function readInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
 
-const positiveIntSchema = z.coerce.number().int().positive();
+function readPositiveInt(raw: string | undefined, fallback: number): number {
+  return Math.max(1, readInt(raw, fallback));
+}
 
-const txHistoryEnvSchema = z.object({
-  NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM: positiveIntSchema.catch(10),
-  NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM: positiveIntSchema.catch(3),
-  NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS: positiveIntSchema.catch(30),
-  NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE: positiveIntSchema.catch(1_000),
-  NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT: positiveIntSchema.catch(5_000_000),
-  NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN: positiveIntSchema.catch(5_000_000),
-  NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER: positiveIntSchema.catch(10_000),
-  NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX: positiveIntSchema.catch(10_000),
-  NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS: positiveIntSchema.catch(1_000_000),
-  NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS: z.coerce.number().int().min(0).catch(2_000),
-  NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .catch(0)
-    .transform((value) => (value === 0 ? Number.MAX_SAFE_INTEGER : value)),
-});
-
-const env = txHistoryEnvSchema.parse(process.env);
+function readNonNegativeInt(raw: string | undefined, fallback: number): number {
+  return Math.max(0, readInt(raw, fallback));
+}
 
 export const txHistoryEnv = {
-  batchParallelism: env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM,
-  transformParallelism: env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM,
-  pauseSizeDays: env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS,
-  pageSize: env.NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE,
-  batchBlocksDefault: env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT,
-  batchBlocksApeChain: env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN,
-  batchBlocksMuster: env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER,
-  batchBlocksTrex: env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX,
-  swrDedupingIntervalMs: env.NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
-  alchemyDelayMs: env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS,
-  timestampEnrichConcurrency: env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY,
+  batchParallelism: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM, 10),
+  transformParallelism: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM, 3),
+  pauseSizeDays: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS, 30),
+  pageSize: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_PAGE_SIZE, 1_000),
+  batchBlocksDefault: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_DEFAULT, 5_000_000),
+  batchBlocksApeChain: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_APECHAIN, 5_000_000),
+  batchBlocksMuster: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_MUSTER, 10_000),
+  batchBlocksTrex: readPositiveInt(process.env.NEXT_PUBLIC_TX_HISTORY_BATCH_BLOCKS_TREX, 10_000),
+  swrDedupingIntervalMs: readPositiveInt(
+    process.env.NEXT_PUBLIC_TX_HISTORY_SWR_DEDUPING_INTERVAL_MS,
+    1_000_000,
+  ),
+  alchemyDelayMs: readNonNegativeInt(process.env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS, 2_000),
+  timestampEnrichConcurrency:
+    readNonNegativeInt(process.env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY, 0) ||
+    Number.MAX_SAFE_INTEGER,
 } as const;
