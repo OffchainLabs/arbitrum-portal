@@ -1,8 +1,58 @@
 import axios from 'axios';
 import { mockAnimationsApi } from 'jsdom-testing-mocks';
+import React from 'react';
+import { vi } from 'vitest';
 
 import { ChainId } from './src/types/ChainId';
 import { rpcURLs } from './src/util/networks';
+
+vi.mock('@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory', async () => {
+  const { BigNumber } = await import('ethers');
+
+  return {
+    Inbox__factory: {
+      connect: vi.fn(() => ({
+        calculateRetryableSubmissionFee: vi.fn().mockResolvedValue(BigNumber.from(0)),
+      })),
+    },
+  };
+});
+
+vi.mock('next/navigation', async (importActual) => ({
+  ...(await importActual()),
+  usePathname: vi.fn().mockReturnValue('/bridge'),
+}));
+
+vi.mock('react-virtualized', () => ({
+  AutoSizer: ({
+    children,
+  }: {
+    children: (props: { width: number; height: number }) => React.ReactElement;
+  }) => children({ width: 500, height: 700 }),
+  List: React.forwardRef(function MockList(
+    {
+      rowCount,
+      rowRenderer,
+    }: {
+      rowCount: number;
+      rowRenderer: (props: {
+        index: number;
+        key: number;
+        style: React.CSSProperties;
+      }) => React.ReactElement | null;
+    },
+    _ref: React.ForwardedRef<unknown>,
+  ) {
+    void _ref;
+    return (
+      <div>
+        {Array.from({ length: rowCount }).map((_, index) => (
+          <div key={index}>{rowRenderer({ index, key: index, style: {} })}</div>
+        ))}
+      </div>
+    );
+  }),
+}));
 
 mockAnimationsApi();
 
