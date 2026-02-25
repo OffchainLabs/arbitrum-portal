@@ -16,6 +16,7 @@ import {
 import { type EarnChainId } from '@/earn-api/types';
 
 import { useEarnDialogs } from './EarnDialogsProvider';
+import { TransactionHistoryPlaceholder } from './TransactionHistoryPlaceholder';
 
 function getDateStr(timestamp: number): string {
   if (timestamp === 0) return '';
@@ -188,11 +189,7 @@ export function EarnUserTransactionHistory({
         </h3>
       </div>
 
-      {viewState === 'loading' && (
-        <div className="flex items-center justify-center py-6 text-white/60 text-sm">
-          Loading transactions...
-        </div>
-      )}
+      {viewState === 'loading' && <TransactionHistoryPlaceholder />}
 
       {viewState === 'error' && <div className="text-xs text-red-400">Failed to load: {error}</div>}
 
