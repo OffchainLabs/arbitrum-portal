@@ -1388,6 +1388,54 @@
         },
         "fastWithdrawalTime": 86400000
       }
+    },
+    {
+      "chainId": 20010,
+      "confirmPeriodBlocks": 6000,
+      "ethBridge": {
+        "bridge": "0x65DB181838b53f32428ce106fA5355b7e4806b79",
+        "inbox": "0x62DfD05c460C7E55DA85B39EaD3eBc6e0CcdD0d5",
+        "outbox": "0x004eF39261cee56409Dbd26040a33Eca8326490C",
+        "rollup": "0x218D35154D1efEBFC46D64451C9495288219b275",
+        "sequencerInbox": "0x325acf46079d3f750D5D7E6182E094B1fD0AC2F4"
+      },
+      "nativeToken": "0x5a30Ed2D3650c99e9B0de9063982495e9818BBE2",
+      "explorerUrl": "https://explorer.mandalachain.io",
+      "rpcUrl": "https://rpc1-mainnet.mandalachain.io",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "Mandala Chain",
+      "slug": "mandala-chain",
+      "parentChainId": 1,
+      "tokenBridge": {
+        "parentCustomGateway": "0x5f46e3cA07b8a55cC90Ff8fEcC14264A9C7762B6",
+        "parentErc20Gateway": "0x920B251832F273b2127D3163815971ae96226beF",
+        "parentGatewayRouter": "0x9E615026f372Bd8EAe831f88ad661D5d5fBb2c9f",
+        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x0BE267C2ef19dB02E42398eafDB215D669910374",
+        "childErc20Gateway": "0xaACC6E401f0181f4a9fDb5F74cedf9F2Af71C809",
+        "childGatewayRouter": "0x64d05717F8Ba08A19a5D0C62Fd9f5998b770adc9",
+        "childMultiCall": "0x7Bb2526e78c03Ec31BFb1478DF5795C580f77538",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#2535e4",
+        "network": {
+          "name": "Mandala Chain",
+          "logo": "/images/MandalaChain_Logo.svg",
+          "description": "Mandala Chain provides compliant, modular, sovereign chain infrastructure to drive tomorrow’s intelligent economies."
+        },
+        "nativeTokenData": {
+          "name": "Kepeng",
+          "symbol": "KPG",
+          "logoUrl": "/images/MandalaChain_NativeTokenLogo.svg"
+        }
+      }
     }
   ],
   "testnet": [
