@@ -35,7 +35,7 @@ import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
-import { txHistoryEnv } from '../util/txHistoryEnv';
+import { TX_HISTORY_ENV } from '../util/txHistoryEnv';
 import {
   isTransferTeleportFromSubgraph,
   transformTeleportFromSubgraph,
@@ -61,16 +61,16 @@ import {
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
 
-const TX_HISTORY_BATCH_PARALLELISM = txHistoryEnv.batchParallelism;
-const TX_HISTORY_TRANSFORM_PARALLELISM = txHistoryEnv.transformParallelism;
-const TX_HISTORY_PAUSE_SIZE_DAYS = txHistoryEnv.pauseSizeDays;
-const TX_HISTORY_PAGE_SIZE = txHistoryEnv.pageSize;
-const TX_HISTORY_BATCH_BLOCKS_DEFAULT = txHistoryEnv.batchBlocksDefault;
-const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = txHistoryEnv.swrDedupingIntervalMs;
+const TX_HISTORY_BATCH_PARALLELISM = TX_HISTORY_ENV.BATCH_PARALLELISM;
+const TX_HISTORY_TRANSFORM_PARALLELISM = TX_HISTORY_ENV.TRANSFORM_PARALLELISM;
+const TX_HISTORY_PAUSE_SIZE_DAYS = TX_HISTORY_ENV.PAUSE_SIZE_DAYS;
+const TX_HISTORY_PAGE_SIZE = TX_HISTORY_ENV.PAGE_SIZE;
+const TX_HISTORY_BATCH_BLOCKS_DEFAULT = TX_HISTORY_ENV.BATCH_BLOCKS_DEFAULT;
+const TX_HISTORY_SWR_DEDUPING_INTERVAL_MS = TX_HISTORY_ENV.SWR_DEDUPING_INTERVAL_MS;
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: txHistoryEnv.batchBlocksApeChain, // ApeChain
-  4078: txHistoryEnv.batchBlocksMuster, // Muster
-  1628: txHistoryEnv.batchBlocksTrex, // T-REX
+  33139: TX_HISTORY_ENV.BATCH_BLOCKS_APECHAIN, // ApeChain
+  4078: TX_HISTORY_ENV.BATCH_BLOCKS_MUSTER, // Muster
+  1628: TX_HISTORY_ENV.BATCH_BLOCKS_TREX, // T-REX
 };
 
 export type UseTransactionHistoryResult = {
