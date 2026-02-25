@@ -21,31 +21,24 @@ import {
 } from './fetchWithdrawalsFromSubgraph';
 import { attachTimestampToTokenWithdrawal } from './helpers';
 
-function getPositiveIntFromEnv(value: string | undefined, fallback: number): number {
+function getIntFromEnv(value: string | undefined, fallback: number, minValue: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     return fallback;
   }
   const rounded = Math.floor(parsed);
-  return rounded > 0 ? rounded : fallback;
+  return rounded >= minValue ? rounded : fallback;
 }
 
-function getNonNegativeIntFromEnv(value: string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-  const rounded = Math.floor(parsed);
-  return rounded >= 0 ? rounded : fallback;
-}
-
-const TX_HISTORY_ALCHEMY_DELAY_MS = getNonNegativeIntFromEnv(
+const TX_HISTORY_ALCHEMY_DELAY_MS = getIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_ALCHEMY_DELAY_MS,
   1_000,
+  0,
 );
-const TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY = getPositiveIntFromEnv(
+const TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY = getIntFromEnv(
   process.env.NEXT_PUBLIC_TX_HISTORY_TIMESTAMP_ENRICH_CONCURRENCY,
   16,
+  1,
 );
 
 async function getGateways(provider: Provider): Promise<{

@@ -304,7 +304,7 @@ export async function fetchWithdrawalsInBatches(
   const batchSizeBlocks = params.batchSizeBlocks ?? TX_HISTORY_BATCH_BLOCKS_DEFAULT;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
 
-  // Tune with NEXT_PUBLIC_TX_HISTORY_BATCH_PARALLELISM.
+  // Max parallel fetches to avoid 429 errors
   const limit = pLimit(TX_HISTORY_BATCH_PARALLELISM);
 
   const childChainId = (await params.l2Provider.getNetwork()).chainId;
@@ -447,8 +447,9 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
 
               const batchSizeBlocks =
                 BATCH_FETCH_BLOCKS[chainPair.childChainId] ?? TX_HISTORY_BATCH_BLOCKS_DEFAULT;
-              const fetcherFn =
-                type === 'deposits' ? fetchDeposits : fetchWithdrawalsInBatches;
+              const withdrawalFn =
+                typeof batchSizeBlocks === 'number' ? fetchWithdrawalsInBatches : fetchWithdrawals;
+              const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
 
               // else, fetch deposits or withdrawals
               return await fetcherFn({
@@ -550,9 +551,9 @@ export const useTransactionHistory = (
     (state) => state.updateTransaction,
   );
   const { connector } = useAccount();
-  // Tune with NEXT_PUBLIC_TX_HISTORY_TRANSFORM_PARALLELISM.
+  // max number of transactions mapped in parallel
   const MAX_BATCH_SIZE = TX_HISTORY_TRANSFORM_PARALLELISM;
-  // Tune with NEXT_PUBLIC_TX_HISTORY_PAUSE_SIZE_DAYS.
+  // Pause fetching after specified number of days. User can resume fetching to get another batch.
   const PAUSE_SIZE_DAYS = TX_HISTORY_PAUSE_SIZE_DAYS;
 
   const [fetching, setFetching] = useState(true);
