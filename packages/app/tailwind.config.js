@@ -182,7 +182,6 @@ module.exports = {
         // shadow used for input fields across the app
         input: '0px 2px 2px rgba(33,37,41,0.06), 0px 0px 1px rgba(33,37,41,0.08)',
         2: '0px 0px 1px 0px rgba(33, 37, 41, 0.08), 0px 2px 2px 0px rgba(33, 37, 41, 0.06)',
-        tooltip: '0px 4px 4px rgba(0, 0, 0, 0.25), 0px 4px 6px rgba(33, 37, 41, 0.2)',
         logo: '0px 0px 20px rgba(255, 255, 255, 0.7)',
         card: '-1px 3px 12px 1px rgb(101 183 255 / 20%)',
         field: '0px 2px 2px rgba(33, 37, 41, 0.06), 0px 0px 1px rgba(33, 37, 41, 0.08)',

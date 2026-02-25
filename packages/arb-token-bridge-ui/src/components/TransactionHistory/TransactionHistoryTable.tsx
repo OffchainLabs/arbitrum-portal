@@ -11,6 +11,7 @@ import {
 import { Column, Table } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -18,7 +19,6 @@ import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransacti
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
-import { Tooltip } from '../common/Tooltip';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';
@@ -35,7 +35,7 @@ export const BatchTransferNativeTokenTooltip = ({
     <Tooltip
       content={`This is any additional ${nativeCurrency.symbol} you might have deposited along with your ERC-20, plus the refunded excess gas fee.`}
     >
-      {children}
+      <span>{children}</span>
     </Tooltip>
   );
 };
