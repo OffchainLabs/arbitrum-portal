@@ -70,7 +70,6 @@ export function MyPositionsPage() {
           ...opp,
           deposited: positionData.deposited,
           depositedUsd: positionData.valueUsd,
-          projectedEarnings: positionData.projectedEarnings,
           projectedEarningsUsd:
             positionData.projectedEarningsUsd > 0 ? positionData.projectedEarningsUsd : null,
         } satisfies OpportunityTableRow;

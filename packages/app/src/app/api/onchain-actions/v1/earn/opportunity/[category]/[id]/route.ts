@@ -7,7 +7,8 @@ import {
   parseEarnChainId,
   parseOpportunityCategory,
 } from '@/earn-api/lib/validation';
-import { getEarnNetworkFromChainId } from '@/earn-api/types';
+
+const router = new CategoryRouter();
 
 export const revalidate = 3600;
 
@@ -23,12 +24,10 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const network = getEarnNetworkFromChainId(chainId);
     const opportunityId = assertAddress(params.id, 'opportunityId');
 
-    const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
-    const opportunity = await adapter.getOpportunityDetails(opportunityId, network);
+    const opportunity = await adapter.getOpportunityDetails(opportunityId, chainId);
 
     return jsonResponse(opportunity, {
       headers: {

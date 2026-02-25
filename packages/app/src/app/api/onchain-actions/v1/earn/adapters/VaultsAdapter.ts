@@ -7,6 +7,8 @@ import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParse
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
+  EARN_CHAIN_ID_TO_NETWORK,
+  type EarnChainId,
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
   HistoricalDataPoint,
@@ -63,10 +65,8 @@ export class VaultsAdapter implements VendorAdapter {
     return filtered.map((vault) => this.transformToStandard(vault));
   }
 
-  async getOpportunityDetails(
-    id: string,
-    network: VaultsNetwork = 'arbitrum',
-  ): Promise<StandardOpportunity> {
+  async getOpportunityDetails(id: string, chainId: EarnChainId): Promise<StandardOpportunity> {
+    const network = this.resolveNetwork(chainId);
     const vault = await vaultsSdk.getVault({
       path: {
         network,
@@ -80,8 +80,9 @@ export class VaultsAdapter implements VendorAdapter {
   async getHistoricalData(
     id: string,
     range: HistoricalTimeRange,
-    network: VaultsNetwork = 'arbitrum',
+    chainId: EarnChainId,
   ): Promise<HistoricalData> {
+    const network = this.resolveNetwork(chainId);
     const toTimestamp = Math.floor(Date.now() / 1000);
 
     // Map UI range to Vaults.fyi time window + granularity
@@ -146,8 +147,9 @@ export class VaultsAdapter implements VendorAdapter {
   async getAvailableActions(
     id: string,
     userAddress: string,
-    network: VaultsNetwork = 'arbitrum',
+    chainId: EarnChainId,
   ): Promise<AvailableActions> {
+    const network = this.resolveNetwork(chainId);
     const context = await vaultsSdk.getTransactionsContext({
       path: {
         userAddress,
@@ -192,13 +194,14 @@ export class VaultsAdapter implements VendorAdapter {
   async getTransactionQuote(
     id: string,
     request: TransactionQuoteRequest,
-    network: VaultsNetwork = 'arbitrum',
+    chainId: EarnChainId,
   ): Promise<TransactionQuoteResponse> {
+    const network = this.resolveNetwork(chainId);
     const { action, amount, userAddress, simulate = false } = request;
 
     const assetAddress =
       request.inputTokenAddress ||
-      (await this.getAvailableActions(id, userAddress, network)).transactionContext?.asset?.address;
+      (await this.getAvailableActions(id, userAddress, chainId)).transactionContext?.asset?.address;
 
     if (!assetAddress) {
       throw new Error(
@@ -294,7 +297,7 @@ export class VaultsAdapter implements VendorAdapter {
     const estimatedGasUsd =
       'estimatedGasUsd' in actionsResponse && typeof actionsResponse.estimatedGasUsd === 'string'
         ? actionsResponse.estimatedGasUsd
-        : '$0';
+        : '0';
 
     return {
       opportunityId: id,
@@ -309,8 +312,9 @@ export class VaultsAdapter implements VendorAdapter {
 
   async getUserPositions(
     userAddress: string,
-    network: VaultsNetwork = 'arbitrum',
+    chainId: EarnChainId,
   ): Promise<StandardUserPosition[]> {
+    const network = this.resolveNetwork(chainId);
     const response = await vaultsSdk.getPositions({
       path: { userAddress },
       query: { allowedNetworks: [network] },
@@ -356,8 +360,9 @@ export class VaultsAdapter implements VendorAdapter {
   async getUserTransactions(
     id: string,
     userAddress: string,
-    network: VaultsNetwork = 'arbitrum',
+    chainId: EarnChainId,
   ): Promise<StandardTransactionHistory[]> {
+    const network = this.resolveNetwork(chainId);
     const response = await vaultsSdk.getUserVaultEvents({
       path: {
         userAddress,
@@ -387,7 +392,7 @@ export class VaultsAdapter implements VendorAdapter {
           assetAmount: amountFormatted,
           assetSymbol: response.asset.symbol,
           assetLogo: response.asset.assetLogo,
-          chainId: this.getChainId(network),
+          chainId,
           chainName: network === 'arbitrum' ? 'Arbitrum One' : network,
           transactionHash: event.transactionHash,
         };
@@ -395,12 +400,12 @@ export class VaultsAdapter implements VendorAdapter {
       .sort((a, b) => b.timestamp - a.timestamp);
   }
 
-  private getChainId(network: string): number {
-    const chainIdMap: Record<string, number> = {
-      arbitrum: 42161,
-      mainnet: 1,
-    };
-    return chainIdMap[network] || 42161;
+  private resolveNetwork(chainId: EarnChainId): VaultsNetwork {
+    const network = EARN_CHAIN_ID_TO_NETWORK[chainId] as VaultsNetwork | undefined;
+    if (!network) {
+      throw new Error(`Unsupported chainId for Vaults network mapping: ${chainId}`);
+    }
+    return network;
   }
 
   private transformToStandard(vault: DetailedVault): StandardOpportunity {
@@ -431,7 +436,6 @@ export class VaultsAdapter implements VendorAdapter {
         rawTvl: tvlUsd,
         deposited: null,
         depositedUsd: null,
-        projectedEarnings: null,
         projectedEarningsUsd: null,
         apyBreakdown,
       },

@@ -4,6 +4,7 @@ import { isAddress } from 'viem';
 
 import { OpportunityDetailPage } from '@/app-components/earn/OpportunityDetailPage';
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
 
 export async function generateMetadata({
@@ -22,7 +23,7 @@ export async function generateMetadata({
     if (OPPORTUNITY_CATEGORIES.includes(category)) {
       const router = new CategoryRouter();
       const adapter = router.routeToAdapter(category);
-      const opportunity = await adapter.getOpportunityDetails(params.id, 'arbitrum');
+      const opportunity = await adapter.getOpportunityDetails(params.id, ChainId.ArbitrumOne);
       const opportunityName = opportunity?.name ?? opportunity?.id ?? 'Opportunity';
       return {
         title: `Earn - ${opportunityName}`,

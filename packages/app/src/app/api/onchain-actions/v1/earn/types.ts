@@ -47,7 +47,6 @@ export interface OpportunityFilters {
   minTvl?: number;
   minApy?: number;
   perPage?: number;
-  page?: number;
 }
 
 export interface StandardOpportunityMetrics {
@@ -55,10 +54,9 @@ export interface StandardOpportunityMetrics {
   rawTvl: number | null;
   deposited: string | null;
   /** Raw numeric value or null. No $ or locale formatting. */
-  depositedUsd: string | null;
-  projectedEarnings: string | null;
+  depositedUsd: number | null;
   /** Raw numeric value or null. No $ or locale formatting. */
-  projectedEarningsUsd: string | null;
+  projectedEarningsUsd: number | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
 }
@@ -91,7 +89,7 @@ export interface StandardOpportunityBase {
 }
 
 export interface StandardOpportunityLend extends StandardOpportunityBase {
-  category: OpportunityCategory.Lend;
+  category: typeof OpportunityCategory.Lend;
   lend: StandardOpportunityLendDetail;
 }
 
@@ -274,22 +272,26 @@ export interface TransactionHistoryResponse {
 export interface VendorAdapter {
   vendor: Vendor;
   getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]>;
-  getOpportunityDetails(id: string, network?: string): Promise<StandardOpportunity>;
+  getOpportunityDetails(id: string, chainId: EarnChainId): Promise<StandardOpportunity>;
   getHistoricalData(
     id: string,
     range: HistoricalTimeRange,
-    network?: string,
+    chainId: EarnChainId,
   ): Promise<HistoricalData>;
-  getAvailableActions(id: string, userAddress: string, network?: string): Promise<AvailableActions>;
+  getAvailableActions(
+    id: string,
+    userAddress: string,
+    chainId: EarnChainId,
+  ): Promise<AvailableActions>;
   getTransactionQuote(
     id: string,
     request: TransactionQuoteRequest,
-    network?: string,
+    chainId: EarnChainId,
   ): Promise<TransactionQuoteResponse>;
-  getUserPositions(userAddress: string, network?: string): Promise<StandardUserPosition[]>;
+  getUserPositions(userAddress: string, chainId: EarnChainId): Promise<StandardUserPosition[]>;
   getUserTransactions(
     id: string,
     userAddress: string,
-    network?: string,
+    chainId: EarnChainId,
   ): Promise<StandardTransactionHistory[]>;
 }

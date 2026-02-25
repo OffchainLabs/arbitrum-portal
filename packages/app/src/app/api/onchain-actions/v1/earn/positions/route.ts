@@ -10,7 +10,9 @@ import {
   parseEarnChainId,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
-import { StandardUserPosition, Vendor, getEarnNetworkFromChainId } from '../types';
+import { StandardUserPosition, Vendor } from '../types';
+
+const router = new CategoryRouter();
 
 const ALL_CATEGORIES: readonly OpportunityCategory[] = [
   OpportunityCategory.Lend,
@@ -116,20 +118,18 @@ export async function GET(request: NextRequest) {
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const network = getEarnNetworkFromChainId(chainId);
 
     const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${chainId}`;
 
     const getCachedPositions = unstable_cache(
       async () => {
-        const router = new CategoryRouter();
         let allPositions: StandardUserPosition[] = [];
         const errors: Array<{ category: string; error: string }> = [];
 
         if (category) {
           try {
             const adapter = router.routeToAdapter(category);
-            allPositions = await adapter.getUserPositions(userAddress, network);
+            allPositions = await adapter.getUserPositions(userAddress, chainId);
           } catch (error) {
             errors.push({
               category,
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
           const results = await Promise.allSettled(
             adapters.map(async (adapter) => {
               try {
-                return await adapter.getUserPositions(userAddress, network);
+                return await adapter.getUserPositions(userAddress, chainId);
               } catch (error) {
                 errors.push({
                   category: adapter.vendor,

@@ -13,19 +13,9 @@ interface UseAllOpportunitiesResult {
 
 interface OpportunitiesResponse {
   opportunities: StandardOpportunity[];
-  pagination: {
-    page: number;
-    perPage: number;
-    total: number;
-  };
+  total: number;
   vendors: string[];
   categories: string[];
-}
-
-function parseUsdMetric(s: string | null | undefined): number | null {
-  if (s == null || s === '') return null;
-  const n = parseFloat(s);
-  return Number.isNaN(n) ? null : n;
 }
 
 function parseMetricNumber(value: number | null | undefined): number | null {
@@ -50,9 +40,8 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     apy: rawApy !== null ? formatPercentage(rawApy) : '—',
     apyBreakdown: m?.apyBreakdown,
     deposited: m?.deposited ?? null,
-    depositedUsd: parseUsdMetric(m?.depositedUsd),
-    projectedEarnings: m?.projectedEarnings ?? null,
-    projectedEarningsUsd: parseUsdMetric(m?.projectedEarningsUsd),
+    depositedUsd: m?.depositedUsd ?? null,
+    projectedEarningsUsd: m?.projectedEarningsUsd ?? null,
     tvl: rawTvl !== null ? formatTVL(rawTvl) : '—',
     protocol: opp.protocol,
     protocolIcon: opp.protocolIcon ?? '',

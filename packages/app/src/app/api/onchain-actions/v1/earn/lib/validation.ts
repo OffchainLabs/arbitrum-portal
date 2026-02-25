@@ -2,7 +2,6 @@ import { isAddress } from 'viem';
 import { z } from 'zod';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 
 import {
   ALLOWED_HISTORICAL_RANGES,
@@ -110,13 +109,10 @@ export function parseOptionalOpportunityCategory(
   return parseOpportunityCategory(rawValue);
 }
 
-export function parseEarnChainId(
-  rawValue: string | null,
-  fallback: EarnChainId = ChainId.ArbitrumOne,
-) {
+export function parseEarnChainId(rawValue: string | null): EarnChainId {
   const normalized = normalizeQueryValue(rawValue);
   if (!normalized) {
-    return fallback;
+    throw new ValidationError('MISSING_CHAIN_ID', 'chainId is required');
   }
 
   const parsed = earnChainIdSchema.safeParse(normalized);
@@ -128,6 +124,13 @@ export function parseEarnChainId(
   }
 
   return parsed.data;
+}
+
+export function parseOptionalEarnChainId(rawValue: string | null): EarnChainId | undefined {
+  if (!normalizeQueryValue(rawValue)) {
+    return undefined;
+  }
+  return parseEarnChainId(rawValue);
 }
 
 export function assertAddress(value: string | null, field: string): string {

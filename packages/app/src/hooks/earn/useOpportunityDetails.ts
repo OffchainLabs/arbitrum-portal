@@ -2,7 +2,6 @@ import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
 import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 interface UseOpportunityDetailsResult {
@@ -15,7 +14,7 @@ interface UseOpportunityDetailsResult {
 export function useOpportunityDetails(
   opportunityId: string,
   category: OpportunityCategory,
-  chainId: EarnChainId = ChainId.ArbitrumOne,
+  chainId: EarnChainId,
 ): UseOpportunityDetailsResult {
   const isValid =
     opportunityId &&

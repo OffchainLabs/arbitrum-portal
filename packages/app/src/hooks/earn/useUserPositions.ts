@@ -23,7 +23,6 @@ export interface UserPositionData {
   deposited: string;
   valueUsd: number;
   projectedEarningsUsd: number;
-  projectedEarnings: string;
 }
 
 interface UseUserPositionsResult {
@@ -74,7 +73,6 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
       deposited,
       valueUsd: position.valueUsd,
       projectedEarningsUsd,
-      projectedEarnings: '-',
     });
 
     opportunityIds.add(normalizedOpportunityId);

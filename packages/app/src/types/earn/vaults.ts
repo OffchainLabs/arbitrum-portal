@@ -7,11 +7,12 @@ export type GetPositionsResponse = Awaited<ReturnType<VaultsSdkInstance['getPosi
 export type DetailedVault = GetAllVaultsResponse['data'][0];
 export type UserPosition = GetPositionsResponse['data'][0];
 
-export enum OpportunityCategory {
-  Lend = 'lend',
-  LiquidStaking = 'liquid-staking',
-  FixedYield = 'fixed-yield',
-}
+export const OpportunityCategory = {
+  Lend: 'lend',
+  LiquidStaking: 'liquid-staking',
+  FixedYield: 'fixed-yield',
+} as const;
+export type OpportunityCategory = (typeof OpportunityCategory)[keyof typeof OpportunityCategory];
 
 export const OPPORTUNITY_CATEGORIES: OpportunityCategory[] = [OpportunityCategory.Lend];
 
@@ -45,7 +46,6 @@ export interface OpportunityTableRow {
   };
   deposited: string | null;
   depositedUsd: number | null;
-  projectedEarnings: string | null;
   projectedEarningsUsd: number | null;
   tvl: string;
   protocol: string;

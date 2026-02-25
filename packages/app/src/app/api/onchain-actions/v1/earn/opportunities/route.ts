@@ -4,15 +4,15 @@ import { CategoryRouter } from '../CategoryRouter';
 import { errorResponse, jsonResponse, optionsResponse } from '../lib/http';
 import {
   ValidationError,
-  parseEarnChainId,
+  parseOptionalEarnChainId,
   parseOptionalNumber,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
 import { OpportunityFilters, StandardOpportunity } from '../types';
 
-const MIN_PER_PAGE = 1;
-const MAX_PER_PAGE = 50;
+const MAX_RESULTS = 50;
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
+const router = new CategoryRouter();
 
 export const revalidate = 3600;
 
@@ -30,23 +30,6 @@ export async function GET(request: NextRequest) {
       throw new ValidationError('INVALID_ORDER_BY', 'orderBy must be one of: rawApy, rawTvl');
     }
 
-    const perPage =
-      parseOptionalNumber(searchParams.get('perPage'), {
-        field: 'perPage',
-        code: 'INVALID_PER_PAGE',
-        min: MIN_PER_PAGE,
-        max: MAX_PER_PAGE,
-        integer: true,
-      }) ?? 50;
-
-    const page =
-      parseOptionalNumber(searchParams.get('page'), {
-        field: 'page',
-        code: 'INVALID_PAGE',
-        min: 0,
-        integer: true,
-      }) ?? 0;
-
     const minTvl = parseOptionalNumber(searchParams.get('minTvl'), {
       field: 'minTvl',
       code: 'INVALID_MIN_TVL',
@@ -59,14 +42,12 @@ export async function GET(request: NextRequest) {
     });
 
     const filters: OpportunityFilters = {
-      chainId: parseEarnChainId(searchParams.get('chainId')),
+      chainId: parseOptionalEarnChainId(searchParams.get('chainId')),
       minTvl,
       minApy,
-      perPage,
-      page,
+      perPage: MAX_RESULTS,
     };
 
-    const router = new CategoryRouter();
     let opportunities: StandardOpportunity[] = [];
 
     if (category) {
@@ -85,14 +66,13 @@ export async function GET(request: NextRequest) {
     const sortKey = orderBy === 'rawTvl' ? 'rawTvl' : 'rawApy';
     opportunities.sort((a, b) => (b.metrics[sortKey] ?? 0) - (a.metrics[sortKey] ?? 0));
 
-    const start = page * perPage;
-    const paginated = opportunities.slice(start, start + perPage);
+    const capped = opportunities.slice(0, MAX_RESULTS);
 
     const result = {
-      opportunities: paginated,
-      pagination: { page, perPage, total: opportunities.length },
-      vendors: Array.from(new Set(opportunities.map((o) => o.vendor))),
-      categories: Array.from(new Set(opportunities.map((o) => o.category))),
+      opportunities: capped,
+      total: opportunities.length,
+      vendors: Array.from(new Set(capped.map((o) => o.vendor))),
+      categories: Array.from(new Set(capped.map((o) => o.category))),
     };
 
     return jsonResponse(result, { headers: CACHE_HEADERS });
