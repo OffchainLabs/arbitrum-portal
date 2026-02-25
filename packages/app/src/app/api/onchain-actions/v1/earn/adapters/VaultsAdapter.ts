@@ -1,6 +1,7 @@
 import { formatUnits } from 'viem';
 
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
+import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
@@ -36,6 +37,17 @@ export type VaultsActionType = 'deposit' | 'redeem';
 
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
+
+  private toEarnChainId(networkName: string | undefined): EarnChainId {
+    const normalizedNetwork = networkName?.trim().toLowerCase();
+    if (normalizedNetwork === 'mainnet' || normalizedNetwork === 'ethereum') {
+      return ChainId.Ethereum;
+    }
+    if (normalizedNetwork === 'arbitrum' || normalizedNetwork === 'arbitrum one') {
+      return ChainId.ArbitrumOne;
+    }
+    throw new Error(`Unsupported vault network: ${networkName ?? 'undefined'}`);
+  }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
     const network = filters.chainId ? getEarnNetworkFromChainId(filters.chainId) : undefined;
@@ -420,6 +432,7 @@ export class VaultsAdapter implements VendorAdapter {
       : undefined;
     const tvlUsd = parseOptionalNumber(vault.tvl?.usd);
     const networkName = vault.network?.name || '';
+    const chainId = this.toEarnChainId(vault.network?.name);
     const protocolName = vault.protocol?.name || '';
 
     const addressLower = vault.address.toLowerCase();
@@ -427,6 +440,7 @@ export class VaultsAdapter implements VendorAdapter {
       id: addressLower,
       category: OpportunityCategory.Lend,
       vendor: Vendor.Vaults,
+      chainId,
       network: networkName,
       protocol: protocolName,
       token: vault.asset?.symbol || '',

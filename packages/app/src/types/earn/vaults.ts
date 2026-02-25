@@ -1,5 +1,7 @@
 import { VaultsSdk } from '@vaultsfyi/sdk';
 
+import type { EarnChainId } from '@/earn-api/types';
+
 export type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
 export type GetAllVaultsResponse = Awaited<ReturnType<VaultsSdkInstance['getAllVaults']>>;
 export type GetPositionsResponse = Awaited<ReturnType<VaultsSdkInstance['getPositions']>>;
@@ -33,6 +35,7 @@ export const CATEGORY_INDICATOR_CLASS: Record<OpportunityCategory, string> = {
 
 export interface OpportunityTableRow {
   id: string;
+  chainId: EarnChainId;
   name: string;
   category: OpportunityCategory;
   token: string;

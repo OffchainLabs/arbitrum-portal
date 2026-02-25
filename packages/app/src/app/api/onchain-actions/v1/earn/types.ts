@@ -77,6 +77,7 @@ export interface StandardOpportunityLendDetail {
 export interface StandardOpportunityBase {
   id: string;
   vendor: Vendor;
+  chainId: EarnChainId;
   network: string;
   protocol: string;
   token: string;

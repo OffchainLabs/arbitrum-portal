@@ -32,6 +32,7 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
 
   return {
     id: opp.id,
+    chainId: opp.chainId,
     name: opp.name ?? opp.id,
     category: opp.category,
     token: opp.token,
