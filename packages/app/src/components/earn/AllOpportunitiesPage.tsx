@@ -19,7 +19,7 @@ export function AllOpportunitiesPage() {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
-  } = useAllOpportunities({ minTvl: 5_000_000 });
+  } = useAllOpportunities({ chainId: ChainId.ArbitrumOne, minTvl: 5_000_000 });
 
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(
     isConnected ? (address ?? null) : null,
