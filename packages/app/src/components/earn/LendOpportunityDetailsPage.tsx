@@ -15,9 +15,7 @@ interface LendOpportunityDetailsPageProps {
 }
 
 export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetailsPageProps) {
-  const protocolName =
-    (opportunity.lend?.protocolName ?? opportunity.protocol).charAt(0).toUpperCase() +
-    (opportunity.lend?.protocolName ?? opportunity.protocol).slice(1);
+  const protocolName = opportunity.lend?.protocolName ?? opportunity.protocol;
 
   const apy30day = opportunity.lend?.apy30day;
   const apy7day = opportunity.lend?.apy7day;
@@ -71,7 +69,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
                   className="rounded-full"
                   fallback={<span className="w-5 h-5 rounded-full bg-white/10 shrink-0" />}
                 />
-                <span className="text-base font-medium text-white leading-none">
+                <span className="text-base font-medium text-white leading-none capitalize">
                   {protocolName}
                 </span>
               </div>
