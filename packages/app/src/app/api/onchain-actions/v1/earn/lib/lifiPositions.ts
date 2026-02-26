@@ -105,9 +105,9 @@ export async function fetchLifiUserPositions(params: {
         effectivePrice !== null && Number.isFinite(effectivePrice)
           ? balanceInTokens * effectivePrice
           : 0;
-      const apy = opportunity.rawApy ?? undefined;
+      const apy = opportunity.rawApy ?? 0;
       const projectedEarningsUsdNumber =
-        typeof apy === 'number' && valueUsdNumber > 0 ? (valueUsdNumber * apy) / 100 : undefined;
+        valueUsdNumber > 0 && apy > 0 ? (valueUsdNumber * apy) / 100 : undefined;
 
       const position: StandardUserPosition = {
         opportunityId: tokenAddress,

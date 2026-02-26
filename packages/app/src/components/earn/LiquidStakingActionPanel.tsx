@@ -170,7 +170,7 @@ function TokenSelectorDropdown({
     <div className="relative token-dropdown">
       <TokenDisplayButton token={selected} showDropdown onClick={onToggle} />
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 bg-neutral-100 border border-neutral-200 rounded-[10px] overflow-hidden z-50 min-w-[200px]">
+        <div className="absolute top-full right-0 mt-1 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden z-50 min-w-[200px]">
           {options.map((token) => (
             <button
               key={token.symbol}
