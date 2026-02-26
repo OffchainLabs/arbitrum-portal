@@ -1,9 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useCCTPIsBlocked } from '../../hooks/CCTP/useCCTPIsBlocked';
-import { useAccountIsBlocked } from '../../hooks/useAccountIsBlocked';
 import { TokenBridgeParams } from '../../hooks/useArbTokenBridge';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
@@ -12,7 +10,6 @@ import { useActions } from '../../state';
 import { MainContent } from '../MainContent/MainContent';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
-import { BlockedDialog } from './BlockedDialog';
 import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics';
 import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams';
 
@@ -88,26 +85,8 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
 };
 
 const AppContent = React.memo(() => {
-  const { address } = useAccount();
-  const { isBlocked } = useAccountIsBlocked();
-
   // apply custom themes if any
   useTheme();
-
-  if (address && isBlocked) {
-    return (
-      <BlockedDialog
-        address={address}
-        isOpen={true}
-        closeable={false}
-        // ignoring until we use the package
-        // https://github.com/OffchainLabs/config-monorepo/pull/11
-        //
-
-        onClose={() => {}}
-      />
-    );
-  }
 
   return (
     <>
