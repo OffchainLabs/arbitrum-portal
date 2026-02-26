@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { errorResponse } from '../../../../lib/responses';
 import {
+  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOpportunityCategory,
@@ -36,10 +36,10 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching available actions:', error);
-    return errorResponse(error, {
-      code: 'AVAILABLE_ACTIONS_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch available actions',
-    });
+    const status = error instanceof ValidationError ? error.status : 500;
+    const code = error instanceof ValidationError ? error.code : 'AVAILABLE_ACTIONS_FETCH_ERROR';
+    const message = error instanceof Error ? error.message : 'Failed to fetch available actions';
+    return NextResponse.json({ error: { code, message } }, { status });
   }
 }
 

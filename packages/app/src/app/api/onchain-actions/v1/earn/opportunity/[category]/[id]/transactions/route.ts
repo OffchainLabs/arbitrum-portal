@@ -2,8 +2,8 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse } from '@/earn-api/lib/responses';
 import {
+  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOpportunityCategory,
@@ -56,10 +56,10 @@ export async function GET(
       },
     });
   } catch (error) {
-    return errorResponse(error, {
-      code: 'TRANSACTION_HISTORY_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch transaction history',
-    });
+    const status = error instanceof ValidationError ? error.status : 500;
+    const code = error instanceof ValidationError ? error.code : 'TRANSACTION_HISTORY_FETCH_ERROR';
+    const message = error instanceof Error ? error.message : 'Failed to fetch transaction history';
+    return NextResponse.json({ error: { code, message } }, { status });
   }
 }
 

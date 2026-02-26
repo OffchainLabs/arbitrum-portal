@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { errorResponse } from '../../../../lib/responses';
 import {
   ValidationError,
   assertAddress,
@@ -9,7 +8,6 @@ import {
   assertOptionalBoolean,
   assertOptionalFiniteNumber,
   assertOptionalString,
-  assertPlainObject,
   assertPositiveNumberString,
   assertString,
   parseEarnChainId,
@@ -170,50 +168,10 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error preparing transaction:', error);
-    return errorResponse(error, {
-      code: 'TRANSACTION_QUOTE_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to get transaction quote',
-    });
-  }
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { category: string; id: string } },
-) {
-  try {
-    const parsedJson = await request.json().catch(() => {
-      throw new ValidationError('INVALID_JSON', 'Request body must be valid JSON');
-    });
-    const parsedRequest = assertPlainObject(parsedJson);
-
-    const quote = await getTransactionQuote({
-      category: params.category,
-      opportunityId: params.id,
-      action: parsedRequest.action,
-      amount: parsedRequest.amount,
-      bodyCategory: parsedRequest.category,
-      chainId: parsedRequest.chainId,
-      userAddress: parsedRequest.userAddress,
-      inputTokenAddress: parsedRequest.inputTokenAddress,
-      outputTokenAddress: parsedRequest.outputTokenAddress,
-      rolloverTargetOpportunityId: parsedRequest.rolloverTargetOpportunityId,
-      rolloverAmount: parsedRequest.rolloverAmount,
-      slippage: parsedRequest.slippage,
-      simulate: parsedRequest.simulate,
-    });
-
-    return NextResponse.json(quote, {
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-    });
-  } catch (error) {
-    console.error('Error preparing transaction:', error);
-    return errorResponse(error, {
-      code: 'TRANSACTION_QUOTE_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to get transaction quote',
-    });
+    const status = error instanceof ValidationError ? error.status : 500;
+    const code = error instanceof ValidationError ? error.code : 'TRANSACTION_QUOTE_ERROR';
+    const message = error instanceof Error ? error.message : 'Failed to get transaction quote';
+    return NextResponse.json({ error: { code, message } }, { status });
   }
 }
 
