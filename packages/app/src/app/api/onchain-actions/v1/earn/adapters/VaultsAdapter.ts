@@ -413,7 +413,6 @@ export class VaultsAdapter implements VendorAdapter {
           inputAssetDecimals: decimals,
           inputAssetLogo: response.asset.assetLogo,
           chainId,
-          chainName: network === 'arbitrum' ? 'Arbitrum One' : 'Ethereum',
           transactionHash: event.transactionHash,
         };
       })

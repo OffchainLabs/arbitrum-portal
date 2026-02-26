@@ -1,3 +1,5 @@
+'use client';
+
 import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';
 import { usePublicClient } from 'wagmi';

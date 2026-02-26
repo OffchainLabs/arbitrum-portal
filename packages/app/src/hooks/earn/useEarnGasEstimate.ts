@@ -1,3 +1,5 @@
+'use client';
+
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';

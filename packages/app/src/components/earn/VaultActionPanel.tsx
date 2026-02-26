@@ -23,7 +23,6 @@ import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
-import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
 import {
   type StandardOpportunityLend,
@@ -60,6 +59,13 @@ function normalizeTokenAddress(tokenAddress: string | null): Address | undefined
   } catch {
     return undefined;
   }
+}
+
+function formatApr(apy: number | undefined) {
+  if (apy == null || !Number.isFinite(apy)) {
+    return '—';
+  }
+  return `${(apy * 100).toFixed(2)}%`;
 }
 
 export function VaultActionPanel({
@@ -254,7 +260,7 @@ export function VaultActionPanel({
   const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
 
-  const buildCalls = useCallback((): TransactionCall[] => {
+  const buildCalls = useCallback(async (): Promise<TransactionCall[]> => {
     if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
       throw new Error('No transaction steps found');
     }
@@ -277,12 +283,11 @@ export function VaultActionPanel({
     onTransactionFinished: async ({ txHash }) => {
       setAmount('');
       refetchContext();
-      void refetchAssetBalance();
-      void refetchLpTokenBalance();
+      refetchAssetBalance();
+      refetchLpTokenBalance();
 
       const timestamp = Math.floor(Date.now() / 1000);
       const txChainId = chainId || 0;
-      const txChainName = getNetworkName(txChainId);
       const quoteReceiveAmount = transactionQuote?.receiveAmount;
       const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
       const inputAmountRaw = amountInRawUnits || '0';
@@ -337,7 +342,6 @@ export function VaultActionPanel({
           outputAssetDecimals: outputTokenDecimals,
           outputAssetLogo: vault.asset?.assetLogo,
           chainId: txChainId,
-          chainName: txChainName,
           transactionHash: txHash ?? '',
         };
 
@@ -368,8 +372,7 @@ export function VaultActionPanel({
     setSelectedAction: setSelectedAction as (action: string) => void,
   });
 
-  const currentApr =
-    vault.apy != null && Number.isFinite(vault.apy) ? `${(vault.apy * 100).toFixed(2)}%` : '—';
+  const currentApr = formatApr(vault.apy);
 
   const {
     estimate: estimatedTxCostUsd,
@@ -451,6 +454,22 @@ export function VaultActionPanel({
       usdValue: formatUSD(lpTokenUsdValue),
     };
   }, [lpTokenBalanceRaw, lpTokenDecimals, assetSymbol, lpTokenUsdValue]);
+  const transactionDetailsRows = useMemo(
+    () => [
+      { label: 'APY', value: currentApr },
+      {
+        label: 'Transaction Cost',
+        value: (
+          <EarnGasEstimateDisplay
+            estimate={estimatedTxCostUsd}
+            isLoading={isGasEstimateLoading}
+            error={gasEstimateError}
+          />
+        ),
+      },
+    ],
+    [currentApr, estimatedTxCostUsd, gasEstimateError, isGasEstimateLoading],
+  );
 
   if (!availableActions && contextLoading) {
     return <EarnActionPanelSkeleton />;
@@ -507,21 +526,7 @@ export function VaultActionPanel({
         }
       />
 
-      <EarnTransactionDetailsSection
-        details={[
-          { label: 'APY', value: currentApr },
-          {
-            label: 'Transaction Cost',
-            value: (
-              <EarnGasEstimateDisplay
-                estimate={estimatedTxCostUsd}
-                isLoading={isGasEstimateLoading}
-                error={gasEstimateError}
-              />
-            ),
-          },
-        ]}
-      />
+      <EarnTransactionDetailsSection details={transactionDetailsRows} />
 
       <EarnErrorDisplay error={txError || null} />
 

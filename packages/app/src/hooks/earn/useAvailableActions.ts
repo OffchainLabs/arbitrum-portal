@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import type { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
@@ -93,6 +94,9 @@ export function useAvailableActions<C extends OpportunityCategory>(
   );
 
   const { data, error, isLoading, mutate, ...restSWR } = swrResponse;
+  const refetch = useCallback(() => {
+    void mutate(undefined, { revalidate: true });
+  }, [mutate]);
 
   return {
     ...restSWR,
@@ -100,6 +104,6 @@ export function useAvailableActions<C extends OpportunityCategory>(
     data: data ?? null,
     isLoading,
     error: error?.message || null,
-    refetch: () => mutate(undefined, { revalidate: true }),
+    refetch,
   };
 }

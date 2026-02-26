@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useState } from 'react';
 import { type Address, type Hex } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
@@ -22,7 +24,7 @@ export interface TransactionCall {
 
 export interface EarnTransactionExecutionOptions {
   chainId: number;
-  buildCalls: () => TransactionCall[] | Promise<TransactionCall[]>;
+  buildCalls: () => Promise<TransactionCall[]>;
   onTransactionSubmitted?: (params: { txHash: string | undefined; amount: string }) => void;
   onTransactionFinished: (params: { txHash: string | undefined; amount: string }) => void;
   inputAmount: string;
@@ -40,6 +42,45 @@ const POLL_INTERVAL_MS = 1000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isEip7702RelatedError(e: unknown) {
+  const err = e as { message?: string; shortMessage?: string };
+  const msg = (err.message ?? '').toLowerCase();
+  const shortMsg = (err.shortMessage ?? '').toLowerCase();
+  const combined = `${msg} ${shortMsg}`;
+  return combined.includes('eip-7702') || combined.includes('7702 not supported');
+}
+
+async function waitForBatchTxHash(
+  wagmiConfig: Parameters<typeof getCallsStatus>[0],
+  batchId: string,
+) {
+  for (let attempt = 0; attempt < MAX_BATCH_POLL_ATTEMPTS; attempt++) {
+    // eslint-disable-next-line no-await-in-loop
+    const callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
+
+    if (callsStatus.status === 'failure') {
+      throw new Error('Batch calls failed');
+    }
+
+    if (callsStatus.status !== 'pending') {
+      const receipt = callsStatus.receipts?.[0];
+      if (!receipt) {
+        throw new Error('Batch completed but no receipt found');
+      }
+      const txHash = receipt.transactionHash;
+      if (!txHash) {
+        throw new Error('Batch completed but transaction hash not found in receipt');
+      }
+      return txHash;
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(POLL_INTERVAL_MS);
+  }
+
+  throw new Error('Batch transaction timed out');
 }
 
 export function useEarnTransactionExecution({
@@ -92,34 +133,6 @@ export function useEarnTransactionExecution({
         return calls;
       };
 
-      const waitForBatchTxHash = async (batchId: string) => {
-        for (let attempt = 0; attempt < MAX_BATCH_POLL_ATTEMPTS; attempt++) {
-          // eslint-disable-next-line no-await-in-loop
-          const callsStatus = await getCallsStatus(wagmiConfig, { id: batchId });
-
-          if (callsStatus.status === 'failure') {
-            throw new Error('Batch calls failed');
-          }
-
-          if (callsStatus.status !== 'pending') {
-            const receipt = callsStatus.receipts?.[0];
-            if (!receipt) {
-              throw new Error('Batch completed but no receipt found');
-            }
-            const txHash = receipt.transactionHash;
-            if (!txHash) {
-              throw new Error('Batch completed but transaction hash not found in receipt');
-            }
-            return txHash;
-          }
-
-          // eslint-disable-next-line no-await-in-loop
-          await sleep(POLL_INTERVAL_MS);
-        }
-
-        throw new Error('Batch transaction timed out');
-      };
-
       const executeBatch = async () => {
         await ensureCorrectChain();
         const calls = await getCallsOrThrow();
@@ -130,7 +143,7 @@ export function useEarnTransactionExecution({
           onTransactionSubmitted({ txHash: undefined, amount: inputAmount });
         }
 
-        const batchTxHash = await waitForBatchTxHash(batchId);
+        const batchTxHash = await waitForBatchTxHash(wagmiConfig, batchId);
         onTransactionFinished({ txHash: batchTxHash, amount: inputAmount });
       };
 
@@ -163,14 +176,6 @@ export function useEarnTransactionExecution({
         }
 
         onTransactionFinished({ txHash: lastTxHash, amount: inputAmount });
-      };
-
-      const isEip7702RelatedError = (e: unknown) => {
-        const err = e as { message?: string; shortMessage?: string };
-        const msg = (err.message ?? '').toLowerCase();
-        const shortMsg = (err.shortMessage ?? '').toLowerCase();
-        const combined = `${msg} ${shortMsg}`;
-        return combined.includes('eip-7702') || combined.includes('7702 not supported');
       };
 
       if (isBatchSupported) {

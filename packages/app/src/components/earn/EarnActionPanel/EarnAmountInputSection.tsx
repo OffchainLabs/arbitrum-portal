@@ -45,9 +45,10 @@ export function EarnAmountInputSection({
   decimals = 18,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
-  const parsedBalanceFromLabel = Number(currentBalance.replace(/[^0-9.]/g, ''));
   const currentBalanceNumeric =
-    currentBalanceAmount ?? (Number.isFinite(parsedBalanceFromLabel) ? parsedBalanceFromLabel : 0);
+    typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
+      ? currentBalanceAmount
+      : 0;
   const perUnitUsd =
     currentBalanceNumeric > 0 && currentUsdValue != null
       ? currentUsdValue / currentBalanceNumeric

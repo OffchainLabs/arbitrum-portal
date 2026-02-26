@@ -5,6 +5,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import { EarnTransactionHistoryRow } from '@/app-components/earn/EarnTransactionHistoryTable';
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
+import { getNetworkName } from '@/bridge/util/networks';
 import type {
   EarnChainId,
   StandardTransactionHistory,
@@ -18,23 +19,6 @@ type UseEarnTransactionHistoryResult = {
   error: string | null;
 };
 
-type EarnTransactionHistoryKey = readonly [
-  'earn-transactions',
-  OpportunityCategory,
-  string,
-  string,
-  EarnChainId,
-];
-
-function buildEarnTransactionHistoryKey(
-  category: OpportunityCategory,
-  opportunityId: string,
-  userAddress: string,
-  chainId: EarnChainId,
-): EarnTransactionHistoryKey {
-  return ['earn-transactions', category, opportunityId, userAddress, chainId] as const;
-}
-
 export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
@@ -43,18 +27,14 @@ export function useEarnTransactionHistory(
 ): UseEarnTransactionHistoryResult {
   const historyKey =
     userAddress && opportunityId
-      ? buildEarnTransactionHistoryKey(category, opportunityId, userAddress, chainId)
+      ? ([category, opportunityId, userAddress, chainId, 'earn-transactions'] as const)
       : null;
 
   const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
     historyKey,
-    async ([
-      ,
-      keyCategory,
-      keyOpportunityId,
-      keyUserAddress,
-      keyChainId,
-    ]: EarnTransactionHistoryKey) => {
+    async ([keyCategory, keyOpportunityId, keyUserAddress, keyChainId]: NonNullable<
+      typeof historyKey
+    >) => {
       if (!keyUserAddress || !keyOpportunityId) return null;
 
       const params = new URLSearchParams({
@@ -80,30 +60,27 @@ export function useEarnTransactionHistory(
     },
   );
 
-  const transactions: EarnTransactionHistoryRow[] =
-    data?.transactions
-      .slice()
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .map((tx: StandardTransactionHistory) => ({
-        timestamp: tx.timestamp,
-        eventType: tx.eventType,
-        assetAmountRaw: tx.assetAmountRaw,
-        assetSymbol: tx.assetSymbol,
-        decimals: tx.decimals,
-        assetLogo: tx.assetLogo,
-        inputAssetAmountRaw: tx.inputAssetAmountRaw,
-        inputAssetSymbol: tx.inputAssetSymbol,
-        inputAssetDecimals: tx.inputAssetDecimals,
-        inputAssetLogo: tx.inputAssetLogo,
-        outputAssetAmountRaw: tx.outputAssetAmountRaw,
-        outputAssetSymbol: tx.outputAssetSymbol,
-        outputAssetDecimals: tx.outputAssetDecimals,
-        outputAssetLogo: tx.outputAssetLogo,
-        chainId: tx.chainId,
-        chainName: tx.chainName,
-        transactionHash: tx.transactionHash,
-      })) || [];
-
+  const transactions: EarnTransactionHistoryRow[] = (data?.transactions ?? [])
+    .map((tx: StandardTransactionHistory) => ({
+      timestamp: tx.timestamp,
+      eventType: tx.eventType,
+      assetAmountRaw: tx.assetAmountRaw,
+      assetSymbol: tx.assetSymbol,
+      decimals: tx.decimals,
+      assetLogo: tx.assetLogo,
+      inputAssetAmountRaw: tx.inputAssetAmountRaw,
+      inputAssetSymbol: tx.inputAssetSymbol,
+      inputAssetDecimals: tx.inputAssetDecimals,
+      inputAssetLogo: tx.inputAssetLogo,
+      outputAssetAmountRaw: tx.outputAssetAmountRaw,
+      outputAssetSymbol: tx.outputAssetSymbol,
+      outputAssetDecimals: tx.outputAssetDecimals,
+      outputAssetLogo: tx.outputAssetLogo,
+      chainId: tx.chainId,
+      chainName: getNetworkName(tx.chainId),
+      transactionHash: tx.transactionHash,
+    }))
+    .sort((a, b) => b.timestamp - a.timestamp);
   return {
     transactions,
     isLoading,
@@ -121,7 +98,7 @@ export async function addTransactionToHistory(params: {
 }): Promise<void> {
   const { category, opportunityId, userAddress, chainId, vendor, transaction } = params;
 
-  const historyKey = buildEarnTransactionHistoryKey(category, opportunityId, userAddress, chainId);
+  const historyKey = [category, opportunityId, userAddress, chainId, 'earn-transactions'] as const;
 
   await mutate(
     historyKey,
