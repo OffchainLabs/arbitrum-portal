@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/responses';
+import { errorResponse } from '@/earn-api/lib/responses';
 import {
   ValidationError,
   assertAddress,
@@ -15,7 +15,7 @@ import { HISTORICAL_VENDOR_TTL_SECONDS, type HistoricalData } from '@/earn-api/t
 export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET(
@@ -44,7 +44,7 @@ export async function GET(
       throw new ValidationError('HISTORICAL_DATA_NOT_FOUND', 'No historical data found', 404);
     }
 
-    return jsonResponse(historicalData, {
+    return NextResponse.json(historicalData, {
       headers: {
         'Cache-Control': `public, s-maxage=${HISTORICAL_VENDOR_TTL_SECONDS}, stale-while-revalidate=${HISTORICAL_VENDOR_TTL_SECONDS}, max-age=${HISTORICAL_VENDOR_TTL_SECONDS}`,
       },
