@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/responses';
 import {
   assertAddress,
   parseEarnChainId,

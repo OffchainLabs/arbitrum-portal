@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/responses';
 import {
   ValidationError,
   assertAddress,
