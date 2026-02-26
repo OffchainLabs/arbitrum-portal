@@ -2,13 +2,52 @@ import { constants } from 'ethers';
 import { describe, it } from 'vitest';
 
 import {
-  ethWethCases,
+  type RouteTokenCase,
   expectTokenButtonSymbol,
   expectTokenPanelSymbol,
   nonConnectedDestinationAddress,
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
 } from './TransferPanel.integration.helpers';
+
+const ethWethCases: RouteTokenCase[] = [
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'APE',
+    expectedDestinationSymbol: 'WETH',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'APE',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'ETH',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'ETH',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'APE',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'ETH',
+    expectedDestinationSymbol: 'WETH',
+  },
+];
 
 describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => {
   setupTransferPanelLifiIntegrationSuite();

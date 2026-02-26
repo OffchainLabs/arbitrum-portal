@@ -2,15 +2,54 @@ import { constants } from 'ethers';
 import { describe, it } from 'vitest';
 
 import {
+  type RouteTokenCase,
   expectTokenButtonSymbol,
   expectTokenPanelSymbol,
   getUsdcSourceToken,
   nonConnectedDestinationAddress,
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
-  swapCases,
   usdcAddressByChain,
 } from './TransferPanel.integration.helpers';
+
+const swapCases: RouteTokenCase[] = [
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'USDC',
+    expectedDestinationSymbol: 'WETH',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'USDC',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'ETH',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'WETH',
+  },
+];
 
 describe.sequential('TransferPanel LiFi Integration - Swap (USDC -> ETH/WETH)', () => {
   setupTransferPanelLifiIntegrationSuite();
