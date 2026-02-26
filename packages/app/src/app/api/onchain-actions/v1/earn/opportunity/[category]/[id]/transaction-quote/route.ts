@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/responses';
+import { errorResponse } from '../../../../lib/responses';
 import {
   ValidationError,
   assertAddress,
@@ -163,7 +163,7 @@ export async function GET(
       simulate: parseOptionalBooleanQuery(url.searchParams.get('simulate')),
     });
 
-    return jsonResponse(quote, {
+    return NextResponse.json(quote, {
       headers: {
         'Cache-Control': 'no-store',
       },
@@ -203,7 +203,7 @@ export async function POST(
       simulate: parsedRequest.simulate,
     });
 
-    return jsonResponse(quote, {
+    return NextResponse.json(quote, {
       headers: {
         'Cache-Control': 'no-store',
       },
@@ -218,5 +218,5 @@ export async function POST(
 }
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }

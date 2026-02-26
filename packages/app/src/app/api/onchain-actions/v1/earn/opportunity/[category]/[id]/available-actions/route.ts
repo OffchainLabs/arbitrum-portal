@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../../../../lib/responses';
+import { errorResponse } from '../../../../lib/responses';
 import {
   assertAddress,
   parseEarnChainId,
@@ -29,7 +29,7 @@ export async function GET(
       chainId,
     );
 
-    return jsonResponse(availableActions, {
+    return NextResponse.json(availableActions, {
       headers: {
         'Cache-Control': 'no-store',
       },
@@ -44,5 +44,5 @@ export async function GET(
 }
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }

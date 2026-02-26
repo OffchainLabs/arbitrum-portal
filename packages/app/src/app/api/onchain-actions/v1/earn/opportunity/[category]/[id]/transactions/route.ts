@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/responses';
+import { errorResponse } from '@/earn-api/lib/responses';
 import {
   assertAddress,
   parseEarnChainId,
@@ -50,7 +50,7 @@ export async function GET(
       total: transactions.length,
     };
 
-    return jsonResponse(response, {
+    return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'private, no-cache, no-store, must-revalidate',
       },
@@ -64,5 +64,5 @@ export async function GET(
 }
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }
