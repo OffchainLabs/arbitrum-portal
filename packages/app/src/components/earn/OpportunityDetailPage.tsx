@@ -1,16 +1,59 @@
 'use client';
 
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
-import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { type EarnChainId } from '@/earn-api/types';
+import { OpportunityCategory, type OpportunityTableRow } from '@/app-types/earn/vaults';
+import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
+import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
+import { LiquidStakingDetailPage } from './LiquidStakingDetailPage';
 import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
 
 interface OpportunityDetailPageProps {
   opportunityId: string;
   category: OpportunityCategory;
   chainId: EarnChainId;
+}
+
+function parseMetricNumber(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  return value;
+}
+
+function parseOptionalNumber(value: number | null | undefined): number | null {
+  if (value == null) {
+    return null;
+  }
+  return Number.isFinite(value) ? value : null;
+}
+
+function toTableRow(opportunity: StandardOpportunity): OpportunityTableRow {
+  const rawApy = parseMetricNumber(opportunity.metrics.rawApy);
+  const rawTvl = parseMetricNumber(opportunity.metrics.rawTvl);
+
+  return {
+    id: opportunity.id,
+    chainId: opportunity.chainId,
+    name: opportunity.name ?? opportunity.id,
+    category: opportunity.category,
+    token: opportunity.token,
+    tokenIcon: opportunity.tokenIcon ?? '',
+    tokenNetwork: opportunity.tokenNetwork ?? opportunity.network,
+    apy: rawApy !== null ? formatPercentage(rawApy) : '—',
+    apyBreakdown: opportunity.metrics.apyBreakdown,
+    deposited: opportunity.metrics.deposited,
+    depositedUsd: parseOptionalNumber(opportunity.metrics.depositedUsd),
+    projectedEarningsUsd: parseOptionalNumber(opportunity.metrics.projectedEarningsUsd),
+    tvl: rawTvl !== null ? formatTVL(rawTvl) : '—',
+    protocol: opportunity.protocol,
+    protocolIcon: opportunity.protocolIcon ?? '',
+    vaultAddress: opportunity.vaultAddress,
+    rawApy,
+    rawTvl,
+    maturityDate: opportunity.metrics.maturityDate,
+  };
 }
 
 export function OpportunityDetailPage({
@@ -50,13 +93,30 @@ export function OpportunityDetailPage({
     );
   }
 
-  if (data.category !== OpportunityCategory.Lend || !('lend' in data)) {
-    return (
-      <div className="rounded border-error bg-error/20 p-8 text-center">
-        <p className="text-error">Unsupported category: {data.category}</p>
-      </div>
-    );
+  switch (category) {
+    case OpportunityCategory.Lend:
+      if (data.category !== OpportunityCategory.Lend) {
+        return (
+          <div className="rounded border-error bg-error/20 p-8 text-center">
+            <p className="text-error">Unsupported category: {data.category}</p>
+          </div>
+        );
+      }
+      return <LendOpportunityDetailsPage opportunity={data} />;
+    case OpportunityCategory.LiquidStaking:
+      if (data.category !== OpportunityCategory.LiquidStaking) {
+        return (
+          <div className="rounded border-error bg-error/20 p-8 text-center">
+            <p className="text-error">Unsupported category: {data.category}</p>
+          </div>
+        );
+      }
+      return <LiquidStakingDetailPage opportunity={toTableRow(data)} />;
+    default:
+      return (
+        <div className="rounded border-error bg-error/20 p-8 text-center">
+          <p className="text-error">Unsupported category: {category}</p>
+        </div>
+      );
   }
-
-  return <LendOpportunityDetailsPage opportunity={data} />;
 }

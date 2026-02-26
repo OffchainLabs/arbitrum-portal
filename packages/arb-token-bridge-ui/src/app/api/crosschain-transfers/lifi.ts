@@ -289,15 +289,56 @@ function getIntegratorId(request: NextRequest): string {
   return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
 }
 
+/**
+ * Get LiFi routes for a swap/transfer
+ * Reusable function for getting routes from LiFi SDK
+ */
+export async function getLifiRoutes(params: {
+  fromChainId: number;
+  toChainId: number;
+  fromTokenAddress: string;
+  toTokenAddress: string;
+  fromAmount: string;
+  fromAddress?: string;
+  toAddress?: string;
+  slippage?: number;
+  integrator?: string;
+}) {
+  const { integrator = LIFI_INTEGRATOR_IDS.NORMAL } = params;
+
+  createConfig({
+    integrator,
+    apiKey: process.env.LIFI_KEY,
+  });
+
+  const options: RoutesRequest['options'] = {
+    integrator,
+    allowSwitchChain: false,
+    allowDestinationCall: false,
+  };
+
+  if (params.slippage !== undefined) {
+    options.slippage = params.slippage;
+  }
+
+  const { routes } = await getRoutes({
+    fromAddress: params.fromAddress,
+    fromChainId: params.fromChainId,
+    toChainId: params.toChainId,
+    fromTokenAddress: params.fromTokenAddress,
+    toTokenAddress: params.toTokenAddress,
+    fromAmount: params.fromAmount,
+    toAddress: params.toAddress,
+    options,
+  });
+
+  return routes;
+}
+
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
   const integratorId = getIntegratorId(request);
-
-  createConfig({
-    integrator: integratorId,
-    apiKey: process.env.LIFI_KEY,
-  });
 
   const { searchParams } = new URL(request.url);
   const fromToken = searchParams.get('fromToken');
@@ -363,16 +404,7 @@ export async function GET(
       );
     }
 
-    const parameters: RoutesRequest = {
-      fromAddress,
-      fromAmount,
-      fromTokenAddress: fromToken,
-      fromChainId: Number(fromChainId),
-      toChainId: Number(toChainId),
-      toTokenAddress: toToken,
-      toAddress,
-    };
-
+    // Build options for getRoutes
     const options: RoutesRequest['options'] = {
       integrator: integratorId,
       allowSwitchChain: false,
@@ -393,7 +425,17 @@ export async function GET(
       };
     }
 
-    const { routes } = await getRoutes({ ...parameters, options });
+    // Use getRoutes directly since we need bridge/exchange options
+    const { routes } = await getRoutes({
+      fromAddress,
+      fromChainId: Number(fromChainId),
+      toChainId: Number(toChainId),
+      fromTokenAddress: fromToken,
+      toTokenAddress: toToken,
+      fromAmount,
+      toAddress,
+      options,
+    });
 
     const filteredRoutes = routes
       .filter((route) => route.steps.length === 1)
