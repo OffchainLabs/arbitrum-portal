@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../lib/responses';
+import { errorResponse } from '../lib/responses';
 import {
   ValidationError,
   parseOptionalEarnChainId,
@@ -17,7 +17,7 @@ const router = new CategoryRouter();
 export const revalidate = 3600;
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET(request: NextRequest) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       categories: Array.from(new Set(capped.map((o) => o.category))),
     };
 
-    return jsonResponse(result, { headers: CACHE_HEADERS });
+    return NextResponse.json(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     return errorResponse(error, {

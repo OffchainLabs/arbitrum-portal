@@ -1,10 +1,10 @@
 import { unstable_cache } from 'next/cache';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../lib/responses';
+import { errorResponse } from '../lib/responses';
 import {
   assertAddress,
   parseEarnChainId,
@@ -109,7 +109,7 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 }
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET(request: NextRequest) {
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
 
     const result = await getCachedPositions();
 
-    return jsonResponse(result, {
+    return NextResponse.json(result, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
       },

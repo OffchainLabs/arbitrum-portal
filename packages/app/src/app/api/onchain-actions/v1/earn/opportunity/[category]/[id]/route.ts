@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '@/earn-api/lib/responses';
+import { errorResponse } from '@/earn-api/lib/responses';
 import {
   assertAddress,
   parseEarnChainId,
@@ -13,7 +13,7 @@ const router = new CategoryRouter();
 export const revalidate = 3600;
 
 export function OPTIONS() {
-  return optionsResponse();
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET(
@@ -29,7 +29,7 @@ export async function GET(
     const adapter = router.routeToAdapter(category);
     const opportunity = await adapter.getOpportunityDetails(opportunityId, chainId);
 
-    return jsonResponse(opportunity, {
+    return NextResponse.json(opportunity, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600',
       },
