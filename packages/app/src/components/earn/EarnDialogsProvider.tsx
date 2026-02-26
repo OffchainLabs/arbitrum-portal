@@ -1,7 +1,14 @@
 'use client';
 
 import { useLocalStorage } from '@rehooks/local-storage';
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  type PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
 import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
@@ -25,11 +32,7 @@ export function useEarnDialogs() {
   return context;
 }
 
-interface EarnDialogsProviderProps {
-  children: React.ReactNode;
-}
-
-export function EarnDialogsProvider({ children }: EarnDialogsProviderProps) {
+export function EarnDialogsProvider({ children }: PropsWithChildren) {
   const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
   const [tosDialogProps, tosOpenDialog] = useDialog2();
 

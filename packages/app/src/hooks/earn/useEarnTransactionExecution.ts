@@ -140,6 +140,7 @@ export function useEarnTransactionExecution({
 
         let lastTxHash: string | undefined;
 
+        // Send steps sequentially to preserve nonce order and avoid RPC rate-limit issues.
         for (const [index, currentCall] of calls.entries()) {
           setCurrentActionIndex(index);
 

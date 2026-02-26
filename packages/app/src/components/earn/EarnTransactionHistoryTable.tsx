@@ -3,7 +3,7 @@
 import { ArrowTopRightOnSquareIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { BigNumber } from 'ethers';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -176,13 +176,13 @@ function DesktopHistoryRow({
   category,
   getDateStr,
   getTimeStr,
-  onClick,
+  onRowClick,
 }: {
   row: EarnTransactionHistoryRow;
   category: OpportunityCategory;
   getDateStr: (timestamp: number) => string;
   getTimeStr: (timestamp: number) => string;
-  onClick: () => void;
+  onRowClick: (row: EarnTransactionHistoryRow) => void;
 }) {
   const dateStr = getDateStr(row.timestamp);
   const timeStr = getTimeStr(row.timestamp);
@@ -190,9 +190,10 @@ function DesktopHistoryRow({
   const displayAsset = getDisplayAsset(row, category, action);
 
   return (
-    <div
-      onClick={onClick}
-      className="group cursor-pointer bg-gray-1 rounded-[10px] h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-neutral-100 transition-colors"
+    <button
+      type="button"
+      onClick={() => onRowClick(row)}
+      className="group w-full border-none text-left cursor-pointer bg-gray-1 rounded-[10px] h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-neutral-100 transition-colors"
     >
       <div className="w-[140px] shrink-0 flex flex-col gap-0.5">
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{timeStr}</p>
@@ -244,26 +245,27 @@ function DesktopHistoryRow({
       <div className="bg-white/10 rounded p-2 flex items-center justify-center shrink-0 group-hover:bg-white/20">
         <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
-    </div>
+    </button>
   );
 }
 
 function MobileHistoryRow({
   row,
   category,
-  onClick,
+  onRowClick,
 }: {
   row: EarnTransactionHistoryRow;
   category: OpportunityCategory;
-  onClick: () => void;
+  onRowClick: (row: EarnTransactionHistoryRow) => void;
 }) {
   const action = getDisplayAction(row.eventType);
   const displayAsset = getDisplayAsset(row, category, action);
 
   return (
-    <div
-      onClick={onClick}
-      className="bg-gray-1 rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-neutral-100 transition-colors"
+    <button
+      type="button"
+      onClick={() => onRowClick(row)}
+      className="w-full border-none text-left bg-gray-1 rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-neutral-100 transition-colors"
     >
       <div className="flex items-center justify-between w-full">
         <p className="text-base text-white leading-[1.15] tracking-[-0.32px] whitespace-nowrap">
@@ -294,7 +296,7 @@ function MobileHistoryRow({
           {formatHistoryAmount(displayAsset)}
         </p>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -310,27 +312,30 @@ export function EarnTransactionHistoryTable({
 }: EarnTransactionHistoryTableProps) {
   const sortedRows = useMemo(() => [...rows].sort((a, b) => b.timestamp - a.timestamp), [rows]);
 
-  const handleRowClick = (row: EarnTransactionHistoryRow) => {
-    if (!onRowClick) return;
+  const handleRowClick = useCallback(
+    (row: EarnTransactionHistoryRow) => {
+      if (!onRowClick) return;
 
-    const action = getDisplayAction(row.eventType);
-    const displayAsset = getDisplayAsset(row, category, action);
-    const transactionDetails: TransactionDetails = {
-      action,
-      amount: displayAsset.amountRaw || '0',
-      tokenSymbol: displayAsset.symbol,
-      decimals: displayAsset.decimals,
-      assetLogo: displayAsset.logo,
-      txHash: row.transactionHash,
-      chainId: row.chainId,
-      timestamp: row.timestamp,
-      opportunityName: opportunityName || 'Transaction',
-      protocolName,
-      protocolLogo,
-    };
+      const action = getDisplayAction(row.eventType);
+      const displayAsset = getDisplayAsset(row, category, action);
+      const transactionDetails: TransactionDetails = {
+        action,
+        amount: displayAsset.amountRaw || '0',
+        tokenSymbol: displayAsset.symbol,
+        decimals: displayAsset.decimals,
+        assetLogo: displayAsset.logo,
+        txHash: row.transactionHash,
+        chainId: row.chainId,
+        timestamp: row.timestamp,
+        opportunityName: opportunityName || 'Transaction',
+        protocolName,
+        protocolLogo,
+      };
 
-    onRowClick(transactionDetails, true);
-  };
+      onRowClick(transactionDetails, true);
+    },
+    [category, onRowClick, opportunityName, protocolLogo, protocolName],
+  );
 
   const groupedByDate = useMemo(() => {
     const groups: Record<string, EarnTransactionHistoryRow[]> = {};
@@ -384,7 +389,7 @@ export function EarnTransactionHistoryTable({
             category={category}
             getDateStr={getDateStr}
             getTimeStr={getTimeStr}
-            onClick={() => handleRowClick(row)}
+            onRowClick={handleRowClick}
           />
         ))}
       </div>
@@ -412,7 +417,7 @@ export function EarnTransactionHistoryTable({
                   key={`${row.transactionHash}-${row.timestamp}`}
                   row={row}
                   category={category}
-                  onClick={() => handleRowClick(row)}
+                  onRowClick={handleRowClick}
                 />
               ))}
             </div>

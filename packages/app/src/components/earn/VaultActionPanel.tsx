@@ -1,6 +1,6 @@
 'use client';
 
-import { BigNumber, utils } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -20,11 +20,16 @@ import {
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
-import { type EarnChainId, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
+import {
+  type StandardOpportunityLend,
+  type StandardTransactionHistory,
+  Vendor,
+} from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -36,27 +41,17 @@ import { EarnTransactionDetailsSection } from './EarnActionPanel/EarnTransaction
 import { EarnActionPanelSkeleton } from './EarnActionPanelSkeleton';
 import { useEarnDialogs } from './EarnDialogsProvider';
 
-export interface LendVaultContext {
-  address: string;
-  chainId: EarnChainId;
-  network?: { name?: string };
-  asset?: { symbol?: string; address?: string; assetLogo?: string };
-  name?: string;
-  protocol?: { name?: string; protocolLogo?: string };
-  apy?: number | { '7day'?: { total?: number }; '30day'?: { total?: number } };
-}
-
 interface VaultActionPanelProps {
-  vault: LendVaultContext;
+  opportunity: StandardOpportunityLend;
   initialAction?: 'supply' | 'withdraw';
   hidePositionOnMobile?: boolean;
 }
 
 type ActionType = 'supply' | 'withdraw';
-const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
+const NATIVE_TOKEN_ADDRESS = constants.AddressZero;
 
 function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || tokenAddress === NATIVE_TOKEN_ADDRESS) {
+  if (!tokenAddress || addressesEqual(tokenAddress, NATIVE_TOKEN_ADDRESS)) {
     return undefined;
   }
 
@@ -68,10 +63,28 @@ function normalizeTokenAddress(tokenAddress: string | null): Address | undefined
 }
 
 export function VaultActionPanel({
-  vault,
+  opportunity,
   initialAction = 'supply',
   hidePositionOnMobile = false,
 }: VaultActionPanelProps) {
+  const vault = useMemo(
+    () => ({
+      address: opportunity.id,
+      chainId: opportunity.chainId,
+      asset: {
+        symbol: opportunity.lend?.assetSymbol ?? '',
+        address: opportunity.lend?.assetAddress ?? '',
+        assetLogo: opportunity.lend?.assetLogo,
+      },
+      name: opportunity.name,
+      protocol: {
+        name: opportunity.lend?.protocolName ?? opportunity.protocol,
+        protocolLogo: opportunity.lend?.protocolLogo,
+      },
+      apy: opportunity.lend?.apy7day != null ? opportunity.lend.apy7day / 100 : undefined,
+    }),
+    [opportunity],
+  );
   const { address: walletAddress, isConnected } = useAccount();
   const { checkAndShowToS, showTransactionDetails } = useEarnDialogs();
 
@@ -134,13 +147,14 @@ export function VaultActionPanel({
     () => normalizeTokenAddress(lpTokenAddress),
     [lpTokenAddress],
   );
-  const isAssetNativeBalance = !assetTokenAddress || assetTokenAddress === NATIVE_TOKEN_ADDRESS;
+  const isAssetNativeBalance =
+    !assetTokenAddress || addressesEqual(assetTokenAddress, NATIVE_TOKEN_ADDRESS);
   const shouldFetchAssetBalance =
     isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
   const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
 
   const { data: assetBalanceData, refetch: refetchAssetBalance } = useBalance({
-    address: shouldFetchAssetBalance ? walletAddress : undefined,
+    address: walletAddress,
     chainId: networkChainId,
     token: isAssetNativeBalance ? undefined : normalizedAssetTokenAddress,
     query: {
@@ -153,7 +167,7 @@ export function VaultActionPanel({
   });
 
   const { data: lpTokenBalanceData, refetch: refetchLpTokenBalance } = useBalance({
-    address: shouldFetchLpTokenBalance ? walletAddress : undefined,
+    address: walletAddress,
     chainId: networkChainId,
     token: normalizedLpTokenAddress,
     query: {
@@ -354,17 +368,8 @@ export function VaultActionPanel({
     setSelectedAction: setSelectedAction as (action: string) => void,
   });
 
-  const currentApr: string = (() => {
-    if (vault.apy != null && typeof vault.apy === 'object' && '7day' in vault.apy) {
-      const apy7day = vault.apy['7day'];
-      if (apy7day && typeof apy7day === 'object' && 'total' in apy7day) {
-        const total = apy7day.total;
-        if (typeof total === 'number') return `${(total * 100).toFixed(2)}%`;
-      }
-    }
-    if (typeof vault.apy === 'number') return `${(vault.apy * 100).toFixed(2)}%`;
-    return '—';
-  })();
+  const currentApr =
+    vault.apy != null && Number.isFinite(vault.apy) ? `${(vault.apy * 100).toFixed(2)}%` : '—';
 
   const {
     estimate: estimatedTxCostUsd,

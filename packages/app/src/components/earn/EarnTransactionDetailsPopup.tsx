@@ -145,8 +145,8 @@ export function EarnTransactionDetailsPopup({
           {opportunityName}
         </span>
       }
-      closeable={true}
-      isFooterHidden={true}
+      closeable
+      isFooterHidden
       className="!border-0 md:!max-w-[450px]"
     >
       <div className="flex flex-col gap-6 items-start w-full pb-6">
