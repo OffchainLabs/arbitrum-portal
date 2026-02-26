@@ -3,16 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
+import { EarnPagination } from '@/app-components/earn/EarnPagination';
 import { EarnTransactionHistoryTable } from '@/app-components/earn/EarnTransactionHistoryTable';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/app-components/ui/pagination';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import {
@@ -35,22 +27,6 @@ function getTimeStr(timestamp: number): string {
   return getStandardizedTime(normalizeTimestamp(timestamp));
 }
 
-function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
-  if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  if (currentPage <= 2) {
-    return [1, 2, 3, 'ellipsis', totalPages];
-  }
-
-  if (currentPage >= totalPages - 1) {
-    return [1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages];
-  }
-
-  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages];
-}
-
 interface EarnUserTransactionHistoryProps {
   category: OpportunityCategory;
   opportunityId: string;
@@ -62,12 +38,6 @@ interface EarnUserTransactionHistoryProps {
 }
 
 const ITEMS_PER_PAGE = 5;
-
-interface PaginationControlsProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
 
 type TransactionHistoryViewState = 'loading' | 'error' | 'empty' | 'table';
 
@@ -87,58 +57,6 @@ function getViewState(params: {
     return 'empty';
   }
   return 'table';
-}
-
-function PaginationControls({ currentPage, totalPages, onPageChange }: PaginationControlsProps) {
-  if (totalPages <= 1) {
-    return null;
-  }
-
-  const canGoPrevious = currentPage > 1;
-  const canGoNext = currentPage < totalPages;
-
-  return (
-    <Pagination className="pt-2">
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious
-            onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
-            disabled={!canGoPrevious}
-          />
-        </PaginationItem>
-
-        {getPageNumbers(currentPage, totalPages).map((page, idx) => {
-          if (page === 'ellipsis') {
-            return (
-              <PaginationItem key={`ellipsis-${idx}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            );
-          }
-
-          const pageNum = page as number;
-          return (
-            <PaginationItem key={pageNum}>
-              <PaginationLink
-                onClick={() => onPageChange(pageNum)}
-                isActive={pageNum === currentPage}
-                aria-label={`Go to page ${pageNum}`}
-              >
-                {pageNum}
-              </PaginationLink>
-            </PaginationItem>
-          );
-        })}
-
-        <PaginationItem>
-          <PaginationNext
-            onClick={() => canGoNext && onPageChange(currentPage + 1)}
-            disabled={!canGoNext}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
-  );
 }
 
 export function EarnUserTransactionHistory({
@@ -204,7 +122,7 @@ export function EarnUserTransactionHistory({
             protocolName={protocolName}
             protocolLogo={protocolLogo}
           />
-          <PaginationControls
+          <EarnPagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
