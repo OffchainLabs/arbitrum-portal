@@ -205,7 +205,7 @@ export function EarnTransactionDetailsPopup({
               </div>
             </div>
 
-            <div className="bg-gray-1 flex flex-col gap-2 items-start p-4 rounded-[10px] w-full">
+            <div className="bg-gray-1 flex flex-col gap-2 items-start p-4 rounded-lg w-full">
               <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                 <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                   Network
@@ -276,7 +276,7 @@ export function EarnTransactionDetailsPopup({
             {txHash && (
               <ExternalLink
                 href={`${explorerUrl}/tx/${txHash}`}
-                className="bg-neutral-250 flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-[10px] w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
+                className="bg-neutral-250 flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-lg w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
               >
                 View on {explorerName}
               </ExternalLink>

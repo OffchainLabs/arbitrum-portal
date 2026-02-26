@@ -1,6 +1,6 @@
 function DesktopHistoryRowSkeleton() {
   return (
-    <div className="bg-gray-1 rounded-[10px] h-[66px] px-4 py-3 flex gap-4 items-center">
+    <div className="bg-gray-1 rounded-lg h-[66px] px-4 py-3 flex gap-4 items-center">
       <div className="w-[140px] shrink-0 flex flex-col gap-1">
         <div className="h-4 bg-neutral-200 rounded w-16" />
         <div className="h-3 bg-neutral-200 rounded w-20" />
@@ -26,7 +26,7 @@ function DesktopHistoryRowSkeleton() {
 
 function MobileHistoryRowSkeleton() {
   return (
-    <div className="bg-gray-1 rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-2">
+    <div className="bg-gray-1 rounded-lg h-[78px] px-4 py-4 flex flex-col justify-center gap-2">
       <div className="flex items-center justify-between w-full">
         <div className="h-4 bg-neutral-200 rounded w-24" />
         <div className="h-4 bg-neutral-200 rounded w-20" />

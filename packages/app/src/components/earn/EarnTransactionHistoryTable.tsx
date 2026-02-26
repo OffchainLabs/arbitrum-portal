@@ -193,7 +193,7 @@ function DesktopHistoryRow({
     <button
       type="button"
       onClick={() => onRowClick(row)}
-      className="group w-full border-none text-left cursor-pointer bg-gray-1 rounded-[10px] h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-neutral-100 transition-colors"
+      className="group w-full border-none text-left cursor-pointer bg-gray-1 rounded-lg h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-neutral-100 transition-colors"
     >
       <div className="w-[140px] shrink-0 flex flex-col gap-0.5">
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{timeStr}</p>
@@ -265,7 +265,7 @@ function MobileHistoryRow({
     <button
       type="button"
       onClick={() => onRowClick(row)}
-      className="w-full border-none text-left bg-gray-1 rounded-[10px] h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-neutral-100 transition-colors"
+      className="w-full border-none text-left bg-gray-1 rounded-lg h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-neutral-100 transition-colors"
     >
       <div className="flex items-center justify-between w-full">
         <p className="text-base text-white leading-[1.15] tracking-[-0.32px] whitespace-nowrap">
