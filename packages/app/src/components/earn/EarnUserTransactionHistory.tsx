@@ -1,11 +1,18 @@
 'use client';
 
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { EarnTransactionHistoryTable } from '@/app-components/earn/EarnTransactionHistoryTable';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/app-components/ui/pagination';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import {
@@ -91,63 +98,46 @@ function PaginationControls({ currentPage, totalPages, onPageChange }: Paginatio
   const canGoNext = currentPage < totalPages;
 
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-center pt-2">
-      <ul className="flex items-center gap-2">
-        <li>
-          <button
-            type="button"
+    <Pagination className="pt-2">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
             onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
             disabled={!canGoPrevious}
-            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-            aria-label="Go to previous page"
-          >
-            <ArrowLeftIcon className="h-4 w-4 text-white" />
-          </button>
-        </li>
+          />
+        </PaginationItem>
 
         {getPageNumbers(currentPage, totalPages).map((page, idx) => {
           if (page === 'ellipsis') {
             return (
-              <li key={`ellipsis-${idx}`} className="px-2 text-white/50" aria-hidden>
-                ...
-              </li>
+              <PaginationItem key={`ellipsis-${idx}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
             );
           }
 
           const pageNum = page as number;
-          const isActive = pageNum === currentPage;
-
           return (
-            <li key={pageNum}>
-              <button
-                type="button"
+            <PaginationItem key={pageNum}>
+              <PaginationLink
                 onClick={() => onPageChange(pageNum)}
-                className={twMerge(
-                  'px-2 py-1 text-sm font-medium transition-colors',
-                  isActive ? 'text-white' : 'text-white/50 hover:text-white/70',
-                )}
+                isActive={pageNum === currentPage}
                 aria-label={`Go to page ${pageNum}`}
-                aria-current={isActive ? 'page' : undefined}
               >
                 {pageNum}
-              </button>
-            </li>
+              </PaginationLink>
+            </PaginationItem>
           );
         })}
 
-        <li>
-          <button
-            type="button"
+        <PaginationItem>
+          <PaginationNext
             onClick={() => canGoNext && onPageChange(currentPage + 1)}
             disabled={!canGoNext}
-            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-            aria-label="Go to next page"
-          >
-            <ArrowRightIcon className="h-4 w-4 text-white" />
-          </button>
-        </li>
-      </ul>
-    </nav>
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   );
 }
 
