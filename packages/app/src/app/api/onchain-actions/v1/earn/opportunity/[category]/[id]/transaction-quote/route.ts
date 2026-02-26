@@ -168,13 +168,13 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error preparing transaction:', error);
-    const status = error instanceof ValidationError ? error.status : 500;
-    const code = error instanceof ValidationError ? error.code : 'TRANSACTION_QUOTE_ERROR';
-    const message = error instanceof Error ? error.message : 'Failed to get transaction quote';
-    return NextResponse.json({ error: { code, message } }, { status });
+    const routeError = error as { message?: string; code?: string; status?: number };
+    return NextResponse.json(
+      {
+        message: routeError.message ?? 'Failed to get transaction quote',
+        code: routeError.code ?? 'TRANSACTION_QUOTE_ERROR',
+      },
+      { status: routeError.status ?? 500 },
+    );
   }
-}
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
 }

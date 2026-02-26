@@ -49,7 +49,9 @@ export function useEarnTransactionHistory(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error?.message || `Failed to fetch transaction history: ${response.statusText}`,
+          errorData.message ||
+            errorData.error?.message ||
+            `Failed to fetch transaction history: ${response.statusText}`,
         );
       }
 

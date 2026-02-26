@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
 import {
-  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOpportunityCategory,
@@ -56,13 +55,13 @@ export async function GET(
       },
     });
   } catch (error) {
-    const status = error instanceof ValidationError ? error.status : 500;
-    const code = error instanceof ValidationError ? error.code : 'TRANSACTION_HISTORY_FETCH_ERROR';
-    const message = error instanceof Error ? error.message : 'Failed to fetch transaction history';
-    return NextResponse.json({ error: { code, message } }, { status });
+    const routeError = error as { message?: string; code?: string; status?: number };
+    return NextResponse.json(
+      {
+        message: routeError.message ?? 'Failed to fetch transaction history',
+        code: routeError.code ?? 'TRANSACTION_HISTORY_FETCH_ERROR',
+      },
+      { status: routeError.status ?? 500 },
+    );
   }
-}
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
 }
