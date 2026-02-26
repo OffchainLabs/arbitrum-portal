@@ -112,11 +112,7 @@ export function VaultActionPanel({
     setTxError(null);
   }, [selectedAction]);
 
-  const {
-    data: availableActions,
-    isLoading: contextLoading,
-    refetch: refetchContext,
-  } = useAvailableActions({
+  const { data: availableActions, isLoading: contextLoading } = useAvailableActions({
     opportunityId: vault.address,
     category: OpportunityCategory.Lend,
     userAddress: walletAddress || null,
@@ -286,7 +282,6 @@ export function VaultActionPanel({
     buildCalls,
     onTransactionFinished: async ({ txHash }) => {
       setAmount('');
-      refetchContext();
       refetchAssetBalance();
       refetchLpTokenBalance();
 

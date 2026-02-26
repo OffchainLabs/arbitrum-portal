@@ -161,4 +161,8 @@ describe('truncateExtraDecimals', () => {
   it('should preserve sign while truncating negative values', () => {
     expect(truncateExtraDecimals('-1.2345678', 4)).toBe('-1.2345');
   });
+
+  it('should throw when decimals is negative', () => {
+    expect(() => truncateExtraDecimals('1.2345', -1)).toThrow('decimals must be non-negative');
+  });
 });

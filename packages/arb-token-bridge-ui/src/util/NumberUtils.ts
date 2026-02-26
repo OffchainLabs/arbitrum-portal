@@ -158,7 +158,11 @@ export const truncateExtraDecimals = (amount: string, decimals: number) => {
     return amount;
   }
 
-  if (decimals <= 0) {
+  if (decimals < 0) {
+    throw new Error('decimals must be non-negative');
+  }
+
+  if (decimals === 0) {
     return wholePart;
   }
 
