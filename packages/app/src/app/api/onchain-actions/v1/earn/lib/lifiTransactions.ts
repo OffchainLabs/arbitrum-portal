@@ -1,7 +1,5 @@
 import type { IncludedStep, StatusResponse } from '@lifi/types';
 
-import { ChainId } from '@/bridge/types/ChainId';
-
 import type { StandardTransactionHistory } from '../types';
 
 type TransferToken = {
@@ -92,9 +90,7 @@ function toStandardTransaction(
 
   const sending = transfer.sending;
   const txHash = sending.txHash || '';
-  const chainId = Number(
-    ('chainId' in sending ? sending.chainId : ChainId.ArbitrumOne) || ChainId.ArbitrumOne,
-  );
+  const chainId = Number(('chainId' in sending ? sending.chainId : 42161) || 42161);
   const timestamp = Number('timestamp' in sending ? sending.timestamp : 0);
 
   if (!txHash || !Number.isFinite(timestamp) || timestamp <= 0) {
@@ -171,7 +167,6 @@ function toStandardTransaction(
     outputAssetDecimals: outputToken?.decimals,
     outputAssetLogo: outputToken?.logoURI,
     chainId,
-    chainName: chainId === ChainId.ArbitrumOne ? 'Arbitrum One' : 'Unknown',
     transactionHash: txHash,
   };
 }

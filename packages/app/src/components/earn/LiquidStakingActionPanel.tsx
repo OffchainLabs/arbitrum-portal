@@ -23,12 +23,11 @@ import {
 } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
-import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
-import { getNetworkName } from '@/bridge/util/networks';
 import { Card } from '@/components/Card';
 import {
   ARBITRUM_ONE_TOKEN_ADDRESSES,
@@ -36,7 +35,7 @@ import {
   WSTETH_ADDRESS,
 } from '@/earn-api/lib/liquidStakingConstants';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
-import type { StandardTransactionHistory } from '@/earn-api/types';
+import type { StandardTransactionHistory, TransactionStep } from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -45,13 +44,15 @@ import { EarnErrorDisplay } from './EarnActionPanel/EarnErrorDisplay';
 import { EarnGasEstimateDisplay } from './EarnActionPanel/EarnGasEstimateDisplay';
 import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
 import { EarnReceiveAmountSection } from './EarnActionPanel/EarnReceiveAmountSection';
-import { useEarnDialogs } from './EarnDialogsProvider';
+import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 import { SlippageSettingsPanel } from './SlippageSettingsPanel';
 
 interface LiquidStakingActionPanelProps {
   opportunity: OpportunityTableRow;
   initialAction?: 'buy' | 'sell';
   hidePositionOnMobile?: boolean;
+  checkAndShowToS: () => Promise<boolean>;
+  showTransactionDetails: (details: TransactionDetails, isCompleted?: boolean) => void;
 }
 
 type ActionType = 'buy' | 'sell';
@@ -207,9 +208,10 @@ export function LiquidStakingActionPanel({
   opportunity,
   initialAction = 'buy',
   hidePositionOnMobile = false,
+  checkAndShowToS,
+  showTransactionDetails,
 }: LiquidStakingActionPanelProps) {
   const { address: walletAddress, isConnected } = useAccount();
-  const { checkAndShowToS, showTransactionDetails } = useEarnDialogs();
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
 
@@ -400,7 +402,6 @@ export function LiquidStakingActionPanel({
       // Extract transaction details for popup and history
       const timestamp = Math.floor(Date.now() / 1000);
       const txChainId = requestChainId;
-      const txChainName = getNetworkName(txChainId);
       const quoteReceiveAmount = transactionQuote?.receiveAmount;
       const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
       const inputAmountRaw = submittedAmountRaw;
@@ -467,7 +468,6 @@ export function LiquidStakingActionPanel({
           outputAssetDecimals: hasReceiveAmount ? historyTokenDecimals : undefined,
           outputAssetLogo: hasReceiveAmount ? historyAssetLogo : undefined,
           chainId: txChainId,
-          chainName: txChainName,
           transactionHash: txHash,
         };
 
@@ -511,45 +511,33 @@ export function LiquidStakingActionPanel({
   );
 
   // Build transaction calls from API response (simplified - no client-side approval checks)
-  const buildBatchCalls = useMemo(() => {
-    return (): TransactionCall[] => {
-      if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
-        throw new Error('No transaction steps found');
+  const buildBatchCalls = useCallback(async (): Promise<TransactionCall[]> => {
+    if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
+      throw new Error('No transaction steps found');
+    }
+
+    return transactionQuote.transactionSteps.map((step: TransactionStep, index: number) => {
+      validateTransactionStep(step, index);
+
+      let value: bigint | undefined;
+      if (step.value) {
+        const valueStr = step.value.toString().toLowerCase().trim();
+        const isZero =
+          valueStr === '0' ||
+          valueStr === '0x0' ||
+          valueStr === '0x' ||
+          BigInt(step.value) === BigInt(0);
+
+        value = isZero ? undefined : BigInt(step.value);
       }
-      return transactionQuote.transactionSteps.map((step: TransactionStep, index: number) => {
-        // Validate required fields
-        validateTransactionStep(step, index);
 
-        // Normalize value: if '0' or '0x0', set to undefined (not 0n)
-        // This ensures MetaMask doesn't misinterpret zero values
-        // Only set value when it's actually > 0
-        let value: bigint | undefined;
-        if (step.value) {
-          const valueStr = step.value.toString().toLowerCase().trim();
-          // Check if value is zero in any format
-          const isZero =
-            valueStr === '0' ||
-            valueStr === '0x0' ||
-            valueStr === '0x' ||
-            BigInt(step.value) === BigInt(0);
-
-          if (isZero) {
-            value = undefined; // Use undefined for zero values, not BigInt(0)
-          } else {
-            value = BigInt(step.value);
-          }
-        } else {
-          value = undefined;
-        }
-
-        return {
-          to: step.to as `0x${string}`,
-          data: step.data as `0x${string}`,
-          value,
-          chainId: step.chainId,
-        };
-      });
-    };
+      return {
+        to: step.to as `0x${string}`,
+        data: step.data as `0x${string}`,
+        value,
+        chainId: step.chainId,
+      };
+    });
   }, [transactionQuote]);
 
   const { executeTx, isExecuting } = useEarnTransactionExecution({
