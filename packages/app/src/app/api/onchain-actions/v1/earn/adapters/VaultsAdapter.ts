@@ -2,7 +2,8 @@ import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults
 import { ChainId } from '@/bridge/types/ChainId';
 
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
-import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
+import { DEFAULT_ALLOWED_ASSETS, vaultsSdk, vaultsToZerionKeyMapping } from '../lib/vaultsSdk';
+import { fetchZerionPriceAligned } from '../lib/zerionService';
 import {
   AvailableActions,
   type EarnChainId,
@@ -10,6 +11,7 @@ import {
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
   HistoricalDataPoint,
+  type HistoricalDataRequestOptions,
   type HistoricalTimeRange,
   OpportunityFilters,
   type PendingHistoryTemplate,
@@ -33,6 +35,19 @@ export type VaultsNetwork = 'mainnet' | 'arbitrum';
 export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
 export type VaultsActionType = 'deposit' | 'redeem';
+
+const HISTORICAL_POINTS_BY_RANGE: Record<HistoricalTimeRange, number> = {
+  '1d': 48, // hourly + buffer
+  '7d': 14, // daily + buffer
+  '1m': 62, // daily + buffer
+  '1y': 104, // weekly + buffer
+};
+
+type VaultHistoricalPoint = {
+  timestamp: number;
+  apy?: { total?: number } | null;
+  tvl?: { usd?: string } | null;
+};
 
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
@@ -104,6 +119,7 @@ export class VaultsAdapter implements VendorAdapter {
     id: string,
     range: HistoricalTimeRange,
     chainId: EarnChainId,
+    options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
     const network = this.toVaultsNetwork(chainId);
     const toTimestamp = Math.floor(Date.now() / 1000);
@@ -130,25 +146,79 @@ export class VaultsAdapter implements VendorAdapter {
         break;
     }
 
-    const response = await vaultsSdk.getVaultHistoricalData({
-      path: { network, vaultAddress: id },
-      query: {
-        page: 0,
-        perPage: 10,
-        apyInterval: '7day',
-        fromTimestamp,
-        toTimestamp,
-        granularity,
-      },
+    const rawHistoricalPoints = await this.fetchHistoricalPoints({
+      id,
+      network,
+      range,
+      fromTimestamp,
+      toTimestamp,
+      granularity,
     });
 
-    const dataPoints: HistoricalDataPoint[] = response.data
-      .map((point) => ({
-        timestamp: point.timestamp,
-        apy: point.apy?.total ? point.apy.total * 100 : null,
-        tvl: point.tvl?.usd ? parseFloat(point.tvl.usd) : null,
-        price: null,
-      }))
+    let assetSymbol: string | undefined = options?.assetSymbol;
+    if (!assetSymbol) {
+      const vault = await vaultsSdk.getVault({ path: { network, vaultAddress: id } });
+      assetSymbol = vault?.asset?.symbol;
+    }
+
+    let zerionPriceMap = new Map<number, number | null>();
+    const zerionId = assetSymbol ? vaultsToZerionKeyMapping[assetSymbol.toLowerCase()] : undefined;
+    if (zerionId) {
+      try {
+        zerionPriceMap = await fetchZerionPriceAligned(zerionId, range);
+      } catch (error) {
+        // Price is optional for chart; preserve APY/TVL even if Zerion is unavailable.
+        console.warn('[earn][historical] zerion price fetch failed', {
+          opportunityId: id,
+          network,
+          range,
+          assetSymbol,
+          error: error instanceof Error ? error.message : 'Unknown Zerion error',
+        });
+      }
+    }
+
+    const zerionPriceEntries = Array.from(zerionPriceMap.entries()).sort(([a], [b]) => a - b);
+    const alignmentBucketSeconds = granularity === '1hour' ? 3600 : 86400;
+    const getAlignedPrice = (timestamp: number): number | null => {
+      if (zerionPriceEntries.length === 0) {
+        return null;
+      }
+
+      const bucketTimestamp =
+        Math.floor(timestamp / alignmentBucketSeconds) * alignmentBucketSeconds;
+      const exactPrice = zerionPriceMap.get(bucketTimestamp);
+      if (exactPrice != null) {
+        return exactPrice;
+      }
+
+      let previousPrice: number | null = null;
+      for (const [priceTimestamp, price] of zerionPriceEntries) {
+        if (priceTimestamp > bucketTimestamp) {
+          break;
+        }
+        if (price != null) {
+          previousPrice = price;
+        }
+      }
+
+      return previousPrice;
+    };
+
+    const dataPoints: HistoricalDataPoint[] = rawHistoricalPoints
+      .map((point) => {
+        const price = getAlignedPrice(point.timestamp);
+        const apyTotal = point.apy?.total;
+        const tvlRaw = point.tvl?.usd;
+        const tvlParsed = tvlRaw != null ? Number(tvlRaw) : null;
+
+        return {
+          timestamp: point.timestamp,
+          apy: apyTotal != null ? apyTotal * 100 : null,
+          tvl: tvlParsed != null && Number.isFinite(tvlParsed) ? tvlParsed : null,
+          price,
+        };
+      })
       .sort((a, b) => a.timestamp - b.timestamp);
 
     const now = Math.floor(Date.now() / 1000);
@@ -165,6 +235,67 @@ export class VaultsAdapter implements VendorAdapter {
     };
   }
 
+  private async fetchHistoricalPoints(params: {
+    id: string;
+    network: VaultsNetwork;
+    range: HistoricalTimeRange;
+    fromTimestamp: number;
+    toTimestamp: number;
+    granularity: '1hour' | '1day' | '1week';
+  }): Promise<VaultHistoricalPoint[]> {
+    const { id, network, range, fromTimestamp, toTimestamp, granularity } = params;
+    const perPage = HISTORICAL_POINTS_BY_RANGE[range];
+    const maxPages = 50;
+    const pointsByTimestamp = new Map<number, VaultHistoricalPoint>();
+    let oldestCollectedTimestamp = Number.POSITIVE_INFINITY;
+    let newestCollectedTimestamp = Number.NEGATIVE_INFINITY;
+
+    for (let page = 0; page < maxPages; page++) {
+      // Pagination is stateful by page cursor, so requests must run sequentially.
+      // eslint-disable-next-line no-await-in-loop
+      const response = await vaultsSdk.getVaultHistoricalData({
+        path: { network, vaultAddress: id },
+        query: {
+          page,
+          perPage,
+          apyInterval: '7day',
+          fromTimestamp,
+          toTimestamp,
+          granularity,
+        },
+      });
+
+      const pagePoints = (response.data ?? []) as VaultHistoricalPoint[];
+      if (pagePoints.length === 0) {
+        break;
+      }
+
+      const previousPointCount = pointsByTimestamp.size;
+      for (const point of pagePoints) {
+        if (typeof point.timestamp === 'number') {
+          pointsByTimestamp.set(point.timestamp, point);
+          oldestCollectedTimestamp = Math.min(oldestCollectedTimestamp, point.timestamp);
+          newestCollectedTimestamp = Math.max(newestCollectedTimestamp, point.timestamp);
+        }
+      }
+      const addedAnyNewPoint = pointsByTimestamp.size > previousPointCount;
+
+      if (!addedAnyNewPoint) {
+        break;
+      }
+
+      const hasCoveredRequestedWindow =
+        oldestCollectedTimestamp <= fromTimestamp && newestCollectedTimestamp >= toTimestamp;
+
+      if (hasCoveredRequestedWindow || pagePoints.length < perPage) {
+        break;
+      }
+    }
+
+    return Array.from(pointsByTimestamp.values())
+      .filter((point) => point.timestamp >= fromTimestamp && point.timestamp <= toTimestamp)
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
   async getAvailableActions(
     id: string,
     userAddress: string,
