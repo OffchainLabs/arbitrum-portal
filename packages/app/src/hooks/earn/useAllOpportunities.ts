@@ -1,3 +1,5 @@
+'use client';
+
 import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
@@ -58,19 +60,16 @@ export function useAllOpportunities(filters?: {
   minTvl?: number;
   minApy?: number;
 }): UseAllOpportunitiesResult {
-  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable<OpportunitiesResponse>(
-    [
-      filters?.chainId ?? null,
-      filters?.minTvl ?? null,
-      filters?.minApy ?? null,
-      'earn-opportunities',
-    ] as const,
-    async ([chainId, minTvl, minApy]: readonly [
-      EarnChainId | null,
-      number | null,
-      number | null,
-      string,
-    ]) => {
+  const key = [
+    filters?.chainId ?? null,
+    filters?.minTvl ?? null,
+    filters?.minApy ?? null,
+    'earn-opportunities',
+  ] as const;
+
+  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable(
+    key,
+    async ([chainId, minTvl, minApy]) => {
       const params = new URLSearchParams();
       if (chainId) params.set('chainId', String(chainId));
       if (minTvl != null) params.set('minTvl', String(minTvl));

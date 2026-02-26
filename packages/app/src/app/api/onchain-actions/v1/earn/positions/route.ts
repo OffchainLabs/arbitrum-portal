@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { errorResponse, jsonResponse, optionsResponse } from '../lib/http';
+import { errorResponse, jsonResponse, optionsResponse } from '../lib/responses';
 import {
   assertAddress,
   parseEarnChainId,

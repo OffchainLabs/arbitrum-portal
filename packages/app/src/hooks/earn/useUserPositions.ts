@@ -1,3 +1,5 @@
+'use client';
+
 import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
@@ -17,6 +19,11 @@ const DEFAULT_CATEGORY_APY: Record<OpportunityCategory, number> = {
   [OpportunityCategory.Lend]: 0,
   [OpportunityCategory.LiquidStaking]: 0,
   [OpportunityCategory.FixedYield]: 0,
+};
+
+const DEFAULT_SUMMARY = {
+  byCategory: DEFAULT_BY_CATEGORY,
+  byVendor: {},
 };
 
 export interface UserPositionData {
@@ -110,7 +117,7 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
 }
 
 export function useUserPositions(
-  userAddress: string | null,
+  userAddress: string | null | undefined,
   allowedChainIds: EarnChainId[] = [ChainId.ArbitrumOne],
 ): UseUserPositionsResult {
   const primaryChainId = allowedChainIds[0] ?? ChainId.ArbitrumOne;
@@ -142,15 +149,10 @@ export function useUserPositions(
 
   const data = useMemo(() => (rawData ? mapUserPositionsData(rawData) : null), [rawData]);
 
-  const defaultSummary = {
-    byCategory: DEFAULT_BY_CATEGORY,
-    byVendor: {},
-  };
-
   return {
     positionsMap: data?.positionsMap || new Map(),
     opportunityIds: data?.opportunityIds || new Set(),
-    summary: data?.summary || defaultSummary,
+    summary: data?.summary || DEFAULT_SUMMARY,
     totalValueUsd: data?.totalValueUsd ?? 0,
     projectedEarningsUsd: data?.projectedEarningsUsd ?? 0,
     projectedEarningsMonthlyUsd: data?.projectedEarningsMonthlyUsd ?? 0,

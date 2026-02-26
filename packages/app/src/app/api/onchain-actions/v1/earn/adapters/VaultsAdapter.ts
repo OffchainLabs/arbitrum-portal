@@ -342,8 +342,8 @@ export class VaultsAdapter implements VendorAdapter {
       const valueUsd = parseFloat(
         (position.lpToken?.balanceUsd || '0').replace(/[^0-9.-]/g, '') || '0',
       );
-      const apy = position.apy?.total ? position.apy.total * 100 : undefined;
-      const projectedEarningsUsd = apy && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
+      const apy = position.apy?.total ? position.apy.total * 100 : 0;
+      const projectedEarningsUsd = apy > 0 && valueUsd > 0 ? (valueUsd * apy) / 100 : undefined;
 
       const addressLower = position.address.toLowerCase();
       return {

@@ -43,7 +43,7 @@ export function MyPositionsPage() {
     totalValueUsd,
     isLoading: positionsLoading,
     error: positionsError,
-  } = useUserPositions(address || null, [ChainId.ArbitrumOne]);
+  } = useUserPositions(address, [ChainId.ArbitrumOne]);
 
   const opportunitiesWithPositions = useMemo(() => {
     return allOpportunities

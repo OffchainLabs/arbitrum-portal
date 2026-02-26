@@ -224,7 +224,7 @@ export interface StandardUserPosition {
     id: string;
     name: string;
     protocol: string;
-    apy?: number;
+    apy: number;
     tvl?: number;
   };
   isExpired?: boolean;

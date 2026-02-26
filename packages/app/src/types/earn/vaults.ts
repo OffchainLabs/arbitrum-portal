@@ -1,6 +1,6 @@
 import { VaultsSdk } from '@vaultsfyi/sdk';
 
-import type { EarnChainId } from '@/earn-api/types';
+import type { EarnChainId, StandardOpportunityMetrics } from '@/earn-api/types';
 
 export type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
 export type GetAllVaultsResponse = Awaited<ReturnType<VaultsSdkInstance['getAllVaults']>>;
@@ -42,11 +42,7 @@ export interface OpportunityTableRow {
   tokenIcon: string;
   tokenNetwork: string;
   apy: string;
-  apyBreakdown?: {
-    base: number;
-    reward: number;
-    total: number;
-  };
+  apyBreakdown?: StandardOpportunityMetrics['apyBreakdown'];
   deposited: string | null;
   depositedUsd: number | null;
   projectedEarningsUsd: number | null;

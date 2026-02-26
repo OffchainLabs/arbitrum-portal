@@ -1,3 +1,5 @@
+'use client';
+
 import useSWRImmutable from 'swr/immutable';
 import { isAddress } from 'viem';
 
