@@ -11,9 +11,7 @@ interface EarnActionPanelInputProps {
   'aria-label'?: string;
   'value': string;
   'onChange': (value: string) => void;
-  'placeholder'?: string;
-  'className'?: string;
-  'decimals'?: number;
+  'decimals': number;
 }
 
 export function EarnActionPanelInput({
@@ -22,18 +20,13 @@ export function EarnActionPanelInput({
   'aria-label': ariaLabel,
   value,
   onChange,
-  placeholder = '0',
-  className,
-  decimals = 18,
+  decimals,
 }: EarnActionPanelInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     const sanitizedValue = sanitizeAmountQueryParam(truncateExtraDecimals(inputValue, decimals));
     onChange(sanitizedValue);
   };
-
-  const defaultClassName =
-    'flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none outline-none h-[34px]';
 
   return (
     <input
@@ -42,10 +35,10 @@ export function EarnActionPanelInput({
       aria-label={ariaLabel}
       type="text"
       inputMode="decimal"
-      placeholder={placeholder}
+      placeholder="0"
       value={value}
       onChange={handleChange}
-      className={className || defaultClassName}
+      className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none outline-none h-[34px]"
     />
   );
 }

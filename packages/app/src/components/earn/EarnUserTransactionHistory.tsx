@@ -15,7 +15,7 @@ import {
 } from '@/bridge/state/app/utils';
 import { type EarnChainId } from '@/earn-api/types';
 
-import { useEarnDialogs } from './EarnDialogsProvider';
+import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 import { TransactionHistoryPlaceholder } from './TransactionHistoryPlaceholder';
 
 function getDateStr(timestamp: number): string {
@@ -51,6 +51,7 @@ interface EarnUserTransactionHistoryProps {
   chainId: EarnChainId;
   protocolName?: string;
   protocolLogo?: string;
+  onTransactionClick?: (details: TransactionDetails, isCompleted?: boolean) => void;
 }
 
 const ITEMS_PER_PAGE = 5;
@@ -90,57 +91,63 @@ function PaginationControls({ currentPage, totalPages, onPageChange }: Paginatio
   const canGoNext = currentPage < totalPages;
 
   return (
-    <div className="flex items-center justify-center pt-2">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
-          disabled={!canGoPrevious}
-          className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-          aria-label="Previous page"
-        >
-          <ArrowLeftIcon className="h-4 w-4 text-white" />
-        </button>
+    <nav aria-label="Pagination" className="flex items-center justify-center pt-2">
+      <ul className="flex items-center gap-2">
+        <li>
+          <button
+            type="button"
+            onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
+            disabled={!canGoPrevious}
+            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+            aria-label="Go to previous page"
+          >
+            <ArrowLeftIcon className="h-4 w-4 text-white" />
+          </button>
+        </li>
 
-        <div className="flex items-center gap-3">
-          {getPageNumbers(currentPage, totalPages).map((page, idx) => {
-            if (page === 'ellipsis') {
-              return (
-                <span key={`ellipsis-${idx}`} className="px-2 text-white/50">
-                  ...
-                </span>
-              );
-            }
-
-            const pageNum = page as number;
-            const isActive = pageNum === currentPage;
-
+        {getPageNumbers(currentPage, totalPages).map((page, idx) => {
+          if (page === 'ellipsis') {
             return (
+              <li key={`ellipsis-${idx}`} className="px-2 text-white/50" aria-hidden>
+                ...
+              </li>
+            );
+          }
+
+          const pageNum = page as number;
+          const isActive = pageNum === currentPage;
+
+          return (
+            <li key={pageNum}>
               <button
-                key={pageNum}
+                type="button"
                 onClick={() => onPageChange(pageNum)}
                 className={twMerge(
                   'px-2 py-1 text-sm font-medium transition-colors',
                   isActive ? 'text-white' : 'text-white/50 hover:text-white/70',
                 )}
-                aria-label={`Page ${pageNum}`}
+                aria-label={`Go to page ${pageNum}`}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {pageNum}
               </button>
-            );
-          })}
-        </div>
+            </li>
+          );
+        })}
 
-        <button
-          onClick={() => canGoNext && onPageChange(currentPage + 1)}
-          disabled={!canGoNext}
-          className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
-          aria-label="Next page"
-        >
-          <ArrowRightIcon className="h-4 w-4 text-white" />
-        </button>
-      </div>
-    </div>
+        <li>
+          <button
+            type="button"
+            onClick={() => canGoNext && onPageChange(currentPage + 1)}
+            disabled={!canGoNext}
+            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+            aria-label="Go to next page"
+          >
+            <ArrowRightIcon className="h-4 w-4 text-white" />
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 }
 
@@ -151,10 +158,10 @@ export function EarnUserTransactionHistory({
   chainId,
   protocolName,
   protocolLogo,
+  onTransactionClick,
 }: EarnUserTransactionHistoryProps) {
   const { address: walletAddress } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);
-  const { showTransactionDetails } = useEarnDialogs();
 
   const { transactions, isLoading, error } = useEarnTransactionHistory(
     category,
@@ -202,7 +209,7 @@ export function EarnUserTransactionHistory({
             rows={paginatedTransactions}
             getDateStr={getDateStr}
             getTimeStr={getTimeStr}
-            onRowClick={showTransactionDetails}
+            onRowClick={onTransactionClick}
             opportunityName={opportunityName}
             protocolName={protocolName}
             protocolLogo={protocolLogo}

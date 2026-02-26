@@ -18,7 +18,7 @@ import {
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
-import { type TransactionStep, useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
@@ -27,6 +27,7 @@ import { Card } from '@/components/Card';
 import {
   type StandardOpportunityLend,
   type StandardTransactionHistory,
+  type TransactionStep,
   Vendor,
 } from '@/earn-api/types';
 
@@ -38,12 +39,14 @@ import { EarnGasEstimateDisplay } from './EarnActionPanel/EarnGasEstimateDisplay
 import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
 import { EarnTransactionDetailsSection } from './EarnActionPanel/EarnTransactionDetailsSection';
 import { EarnActionPanelSkeleton } from './EarnActionPanelSkeleton';
-import { useEarnDialogs } from './EarnDialogsProvider';
+import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 
 interface VaultActionPanelProps {
   opportunity: StandardOpportunityLend;
   initialAction?: 'supply' | 'withdraw';
   hidePositionOnMobile?: boolean;
+  checkAndShowToS: () => Promise<boolean>;
+  showTransactionDetails: (details: TransactionDetails, isCompleted?: boolean) => void;
 }
 
 type ActionType = 'supply' | 'withdraw';
@@ -72,6 +75,8 @@ export function VaultActionPanel({
   opportunity,
   initialAction = 'supply',
   hidePositionOnMobile = false,
+  checkAndShowToS,
+  showTransactionDetails,
 }: VaultActionPanelProps) {
   const vault = useMemo(
     () => ({
@@ -92,7 +97,6 @@ export function VaultActionPanel({
     [opportunity],
   );
   const { address: walletAddress, isConnected } = useAccount();
-  const { checkAndShowToS, showTransactionDetails } = useEarnDialogs();
 
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);

@@ -1,7 +1,7 @@
 'use client';
 
 import { BigNumber, utils } from 'ethers';
-import { useEffect, useState } from 'react';
+import useSWRImmutable from 'swr/immutable';
 import { usePublicClient } from 'wagmi';
 
 export interface EarnTransactionNetworkFee {
@@ -30,32 +30,21 @@ export function useEarnTransactionNetworkFee({
   providedNetworkFee,
 }: UseEarnTransactionNetworkFeeParams): UseEarnTransactionNetworkFeeResult {
   const publicClient = usePublicClient({ chainId });
-  const [networkFee, setNetworkFee] = useState<EarnTransactionNetworkFee | null>(null);
-  const [isFetchingFee, setIsFetchingFee] = useState(false);
+  const feeKey =
+    !providedNetworkFee && isOpen && !isLoading && txHash && chainId
+      ? (['earn-network-fee', chainId, txHash] as const)
+      : null;
 
-  useEffect(() => {
-    if (!isOpen || isLoading) {
-      return;
-    }
+  const { data: fetchedNetworkFee, isLoading: isFetchingFee } =
+    useSWRImmutable<EarnTransactionNetworkFee | null>(
+      feeKey,
+      async ([, , keyTxHash]) => {
+        if (!publicClient) {
+          return null;
+        }
 
-    if (providedNetworkFee) {
-      setNetworkFee(providedNetworkFee);
-      setIsFetchingFee(false);
-      return;
-    }
-
-    if (!txHash || !publicClient) {
-      setNetworkFee(null);
-      setIsFetchingFee(false);
-      return;
-    }
-
-    let isCancelled = false;
-    const fetchNetworkFee = async () => {
-      setIsFetchingFee(true);
-      try {
         const receipt = await publicClient.getTransactionReceipt({
-          hash: txHash as `0x${string}`,
+          hash: keyTxHash as `0x${string}`,
         });
 
         const gasUsed = BigNumber.from(receipt.gasUsed.toString());
@@ -64,39 +53,25 @@ export function useEarnTransactionNetworkFee({
           : null;
 
         if (!effectiveGasPrice) {
-          if (!isCancelled) {
-            setNetworkFee(null);
-          }
-          return;
+          return null;
         }
 
         const feeWei = gasUsed.mul(effectiveGasPrice);
         const feeEth = Number(utils.formatEther(feeWei));
         const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
+        return {
+          amount: `~${feeEthFormatted} ETH`,
+        };
+      },
+      {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        shouldRetryOnError: false,
+      },
+    );
 
-        if (!isCancelled) {
-          setNetworkFee({
-            amount: `~${feeEthFormatted} ETH`,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch network fee:', error);
-        if (!isCancelled) {
-          setNetworkFee(null);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsFetchingFee(false);
-        }
-      }
-    };
-
-    fetchNetworkFee();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isLoading, isOpen, providedNetworkFee, publicClient, txHash]);
-
-  return { networkFee, isFetchingFee };
+  return {
+    networkFee: providedNetworkFee ?? fetchedNetworkFee ?? null,
+    isFetchingFee: !providedNetworkFee && isFetchingFee,
+  };
 }

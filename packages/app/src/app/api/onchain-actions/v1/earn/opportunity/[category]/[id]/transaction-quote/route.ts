@@ -23,6 +23,160 @@ function isEarnTransactionAction(value: string): value is EarnTransactionAction 
   return EARN_TRANSACTION_ACTIONS.includes(value as EarnTransactionAction);
 }
 
+function parseOptionalBooleanQuery(value: string | null): unknown {
+  if (value === null) {
+    return undefined;
+  }
+
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  return value;
+}
+
+function parseOptionalNumberQuery(value: string | null): unknown {
+  if (value === null || value === '') {
+    return undefined;
+  }
+
+  return Number(value);
+}
+
+async function getTransactionQuote(input: {
+  category: string;
+  opportunityId: string;
+  action: unknown;
+  amount: unknown;
+  bodyCategory?: unknown;
+  chainId?: unknown;
+  userAddress: unknown;
+  inputTokenAddress?: unknown;
+  outputTokenAddress?: unknown;
+  rolloverTargetOpportunityId?: unknown;
+  rolloverAmount?: unknown;
+  slippage?: unknown;
+  simulate?: unknown;
+}) {
+  const rawAction = assertString(input.action, 'action');
+  const rawAmount = assertString(input.amount, 'amount');
+  const bodyCategoryRaw = assertOptionalString(input.bodyCategory, 'category');
+  const rawChainId = assertOptionalFiniteNumber(input.chainId, {
+    field: 'chainId',
+  });
+  const rawUserAddress = assertString(input.userAddress, 'userAddress');
+  const rawInputTokenAddress = assertOptionalString(input.inputTokenAddress, 'inputTokenAddress');
+  const rawOutputTokenAddress = assertOptionalString(
+    input.outputTokenAddress,
+    'outputTokenAddress',
+  );
+  const rawRolloverTargetOpportunityId = assertOptionalString(
+    input.rolloverTargetOpportunityId,
+    'rolloverTargetOpportunityId',
+  );
+  const rawRolloverAmount = assertOptionalString(input.rolloverAmount, 'rolloverAmount');
+  const slippage = assertOptionalFiniteNumber(input.slippage, {
+    field: 'slippage',
+    min: 0,
+    max: 100,
+  });
+  const simulate = assertOptionalBoolean(input.simulate, 'simulate');
+
+  const pathCategory = parseOpportunityCategory(input.category);
+  const bodyCategory = bodyCategoryRaw ? parseOpportunityCategory(bodyCategoryRaw) : undefined;
+
+  if (bodyCategory && bodyCategory !== pathCategory) {
+    throw new ValidationError(
+      'CATEGORY_MISMATCH',
+      `Category in path (${pathCategory}) does not match category in body (${bodyCategory})`,
+    );
+  }
+
+  if (!isEarnTransactionAction(rawAction)) {
+    throw new ValidationError(
+      'INVALID_ACTION',
+      `action must be one of: ${EARN_TRANSACTION_ACTIONS.join(', ')}`,
+    );
+  }
+  const action = rawAction;
+
+  const amount = assertPositiveNumberString(rawAmount, 'amount');
+  const userAddress = assertAddress(rawUserAddress, 'userAddress');
+  if (rawChainId !== undefined && !Number.isInteger(rawChainId)) {
+    throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
+  }
+  const chainId = parseEarnChainId(rawChainId === undefined ? null : String(rawChainId));
+  const opportunityId = assertAddress(input.opportunityId, 'opportunityId');
+  const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
+  const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
+  const rolloverTargetOpportunityId = assertOptionalAddress(
+    rawRolloverTargetOpportunityId,
+    'rolloverTargetOpportunityId',
+  );
+  const rolloverAmount = rawRolloverAmount
+    ? assertPositiveNumberString(rawRolloverAmount, 'rolloverAmount')
+    : undefined;
+
+  const adapter = router.routeToAdapter(pathCategory);
+  return adapter.getTransactionQuote(
+    opportunityId,
+    {
+      category: pathCategory,
+      action,
+      amount,
+      userAddress,
+      inputTokenAddress,
+      outputTokenAddress,
+      slippage,
+      simulate,
+      chainId,
+      rolloverTargetOpportunityId,
+      rolloverAmount,
+    },
+    chainId,
+  );
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { category: string; id: string } },
+) {
+  try {
+    const url = new URL(request.url);
+    const quote = await getTransactionQuote({
+      category: params.category,
+      opportunityId: params.id,
+      action: url.searchParams.get('action'),
+      amount: url.searchParams.get('amount'),
+      bodyCategory: url.searchParams.get('category'),
+      chainId: parseOptionalNumberQuery(url.searchParams.get('chainId')),
+      userAddress: url.searchParams.get('userAddress'),
+      inputTokenAddress: url.searchParams.get('inputTokenAddress'),
+      outputTokenAddress: url.searchParams.get('outputTokenAddress'),
+      rolloverTargetOpportunityId: url.searchParams.get('rolloverTargetOpportunityId'),
+      rolloverAmount: url.searchParams.get('rolloverAmount'),
+      slippage: parseOptionalNumberQuery(url.searchParams.get('slippage')),
+      simulate: parseOptionalBooleanQuery(url.searchParams.get('simulate')),
+    });
+
+    return jsonResponse(quote, {
+      headers: {
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (error) {
+    console.error('Error preparing transaction:', error);
+    return errorResponse(error, {
+      code: 'TRANSACTION_QUOTE_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to get transaction quote',
+    });
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { category: string; id: string } },
@@ -33,86 +187,21 @@ export async function POST(
     });
     const parsedRequest = assertPlainObject(parsedJson);
 
-    const rawAction = assertString(parsedRequest.action, 'action');
-    const rawAmount = assertString(parsedRequest.amount, 'amount');
-    const bodyCategoryRaw = assertOptionalString(parsedRequest.category, 'category');
-    const rawChainId = assertOptionalFiniteNumber(parsedRequest.chainId, {
-      field: 'chainId',
+    const quote = await getTransactionQuote({
+      category: params.category,
+      opportunityId: params.id,
+      action: parsedRequest.action,
+      amount: parsedRequest.amount,
+      bodyCategory: parsedRequest.category,
+      chainId: parsedRequest.chainId,
+      userAddress: parsedRequest.userAddress,
+      inputTokenAddress: parsedRequest.inputTokenAddress,
+      outputTokenAddress: parsedRequest.outputTokenAddress,
+      rolloverTargetOpportunityId: parsedRequest.rolloverTargetOpportunityId,
+      rolloverAmount: parsedRequest.rolloverAmount,
+      slippage: parsedRequest.slippage,
+      simulate: parsedRequest.simulate,
     });
-    const rawUserAddress = assertString(parsedRequest.userAddress, 'userAddress');
-    const rawInputTokenAddress = assertOptionalString(
-      parsedRequest.inputTokenAddress,
-      'inputTokenAddress',
-    );
-    const rawOutputTokenAddress = assertOptionalString(
-      parsedRequest.outputTokenAddress,
-      'outputTokenAddress',
-    );
-    const rawRolloverTargetOpportunityId = assertOptionalString(
-      parsedRequest.rolloverTargetOpportunityId,
-      'rolloverTargetOpportunityId',
-    );
-    const rawRolloverAmount = assertOptionalString(parsedRequest.rolloverAmount, 'rolloverAmount');
-    const slippage = assertOptionalFiniteNumber(parsedRequest.slippage, {
-      field: 'slippage',
-      min: 0,
-      max: 100,
-    });
-    const simulate = assertOptionalBoolean(parsedRequest.simulate, 'simulate');
-
-    const pathCategory = parseOpportunityCategory(params.category);
-    const bodyCategory = bodyCategoryRaw ? parseOpportunityCategory(bodyCategoryRaw) : undefined;
-
-    if (bodyCategory && bodyCategory !== pathCategory) {
-      throw new ValidationError(
-        'CATEGORY_MISMATCH',
-        `Category in path (${pathCategory}) does not match category in body (${bodyCategory})`,
-      );
-    }
-
-    if (!isEarnTransactionAction(rawAction)) {
-      throw new ValidationError(
-        'INVALID_ACTION',
-        `action must be one of: ${EARN_TRANSACTION_ACTIONS.join(', ')}`,
-      );
-    }
-    const action = rawAction;
-
-    const amount = assertPositiveNumberString(rawAmount, 'amount');
-    const userAddress = assertAddress(rawUserAddress, 'userAddress');
-    if (rawChainId !== undefined && !Number.isInteger(rawChainId)) {
-      throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
-    }
-    const chainId = parseEarnChainId(rawChainId === undefined ? null : String(rawChainId));
-    const opportunityId = assertAddress(params.id, 'opportunityId');
-    const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
-    const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
-    const rolloverTargetOpportunityId = assertOptionalAddress(
-      rawRolloverTargetOpportunityId,
-      'rolloverTargetOpportunityId',
-    );
-    const rolloverAmount = rawRolloverAmount
-      ? assertPositiveNumberString(rawRolloverAmount, 'rolloverAmount')
-      : undefined;
-
-    const adapter = router.routeToAdapter(pathCategory);
-    const quote = await adapter.getTransactionQuote(
-      opportunityId,
-      {
-        category: pathCategory,
-        action,
-        amount,
-        userAddress,
-        inputTokenAddress,
-        outputTokenAddress,
-        slippage,
-        simulate,
-        chainId,
-        rolloverTargetOpportunityId,
-        rolloverAmount,
-      },
-      chainId,
-    );
 
     return jsonResponse(quote, {
       headers: {

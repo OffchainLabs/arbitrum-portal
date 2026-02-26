@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 
-import type { TransactionStep } from './useTransactionQuote';
+import type { TransactionStep } from '@/earn-api/types';
 
 export function checkAmountExceedsBalance(
   amountRaw: string,

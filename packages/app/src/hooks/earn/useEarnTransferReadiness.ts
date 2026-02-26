@@ -8,9 +8,9 @@ import {
 } from '@/bridge/components/TransferPanel/useTransferReadinessUtils';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getNetworkName } from '@/bridge/util/networks';
+import type { TransactionStep } from '@/earn-api/types';
 
 import { useEarnGasEstimate } from './useEarnGasEstimate';
-import type { TransactionStep } from './useTransactionQuote';
 
 export enum EarnTransferReadinessRichErrorMessage {
   GAS_ESTIMATION_FAILURE = 'Gas estimation failed. Please try again.',

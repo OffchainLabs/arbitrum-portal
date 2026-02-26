@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useConfig, usePublicClient } from 'wagmi';
 import { estimateGas } from 'wagmi/actions';
 
-import type { TransactionStep } from './useTransactionQuote';
+import type { TransactionStep } from '@/earn-api/types';
 
 interface UseEarnGasEstimateParams {
   transactionSteps: TransactionStep[] | undefined;

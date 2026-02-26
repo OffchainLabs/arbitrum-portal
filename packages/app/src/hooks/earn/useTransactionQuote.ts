@@ -2,6 +2,7 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber } from 'ethers';
+import type { SWRResponse } from 'swr';
 import useSWR from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -9,10 +10,7 @@ import type {
   EarnChainId,
   TransactionQuoteRequest,
   TransactionQuoteResponse,
-  TransactionStep,
 } from '@/earn-api/types';
-
-export type { TransactionQuoteResponse, TransactionStep };
 
 export interface UseTransactionQuoteParams {
   opportunityId: string | null;
@@ -30,12 +28,14 @@ export interface UseTransactionQuoteParams {
   enabled?: boolean;
 }
 
-export interface UseTransactionQuoteResult {
+export type UseTransactionQuoteResult = Omit<
+  SWRResponse<TransactionQuoteResponse, Error>,
+  'data' | 'error'
+> & {
   data: TransactionQuoteResponse | null;
-  isLoading: boolean;
   error: string | null;
   refetch: () => void;
-}
+};
 
 type TransactionQuoteKey = readonly [
   string,
@@ -52,52 +52,6 @@ type TransactionQuoteKey = readonly [
   string | undefined,
   'transaction-quote',
 ];
-
-function buildTransactionQuoteKey(params: {
-  opportunityId: string;
-  category: OpportunityCategory;
-  action: TransactionQuoteRequest['action'];
-  userAddress: string;
-  amount: string;
-  inputTokenAddress?: string;
-  outputTokenAddress?: string;
-  slippage: number;
-  simulate: boolean;
-  chainId: EarnChainId;
-  rolloverTargetOpportunityId?: string;
-  rolloverAmount?: string;
-}): TransactionQuoteKey {
-  const {
-    opportunityId,
-    category,
-    action,
-    userAddress,
-    amount,
-    inputTokenAddress,
-    outputTokenAddress,
-    slippage,
-    simulate,
-    chainId,
-    rolloverTargetOpportunityId,
-    rolloverAmount,
-  } = params;
-
-  return [
-    opportunityId,
-    category,
-    action,
-    userAddress,
-    amount,
-    inputTokenAddress,
-    outputTokenAddress,
-    slippage,
-    simulate,
-    chainId,
-    rolloverTargetOpportunityId,
-    rolloverAmount,
-    'transaction-quote',
-  ] as const;
-}
 
 function isPositiveRawAmount(rawAmount: string): boolean {
   if (!/^\d+$/.test(rawAmount)) {
@@ -131,14 +85,14 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   const debouncedAmount = useDebounce(amount, 500);
   const hasPositiveAmount = isPositiveRawAmount(debouncedAmount);
 
-  const { data, error, isLoading, mutate } = useSWR<TransactionQuoteResponse>(
-    enabled && opportunityId && category && userAddress && hasPositiveAmount
-      ? buildTransactionQuoteKey({
+  const quoteKey =
+    enabled && opportunityId && userAddress && hasPositiveAmount
+      ? ([
           opportunityId,
           category,
           action,
           userAddress,
-          amount: debouncedAmount,
+          debouncedAmount,
           inputTokenAddress,
           outputTokenAddress,
           slippage,
@@ -146,8 +100,12 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           chainId,
           rolloverTargetOpportunityId,
           rolloverAmount,
-        })
-      : null,
+          'transaction-quote',
+        ] as const)
+      : null;
+
+  const swrResponse = useSWR<TransactionQuoteResponse>(
+    quoteKey,
     async ([
       keyOpportunityId,
       keyCategory,
@@ -162,27 +120,33 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       keyRolloverTargetOpportunityId,
       keyRolloverAmount,
     ]: TransactionQuoteKey): Promise<TransactionQuoteResponse> => {
+      const queryParams = new URLSearchParams({
+        action: keyAction,
+        amount: keyDebouncedAmount,
+        userAddress: keyUserAddress,
+        slippage: String(keySlippage),
+        simulate: String(keySimulate),
+        chainId: String(keyChainId),
+      });
+
+      if (keyInputTokenAddress) {
+        queryParams.set('inputTokenAddress', keyInputTokenAddress);
+      }
+
+      if (keyOutputTokenAddress) {
+        queryParams.set('outputTokenAddress', keyOutputTokenAddress);
+      }
+
+      if (keyRolloverTargetOpportunityId) {
+        queryParams.set('rolloverTargetOpportunityId', keyRolloverTargetOpportunityId);
+      }
+
+      if (keyRolloverAmount) {
+        queryParams.set('rolloverAmount', keyRolloverAmount);
+      }
+
       const response = await fetch(
-        `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/transaction-quote`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            category: keyCategory,
-            action: keyAction,
-            amount: keyDebouncedAmount,
-            userAddress: keyUserAddress,
-            inputTokenAddress: keyInputTokenAddress,
-            outputTokenAddress: keyOutputTokenAddress,
-            slippage: keySlippage,
-            simulate: keySimulate,
-            chainId: keyChainId,
-            rolloverTargetOpportunityId: keyRolloverTargetOpportunityId,
-            rolloverAmount: keyRolloverAmount,
-          }),
-        },
+        `/api/onchain-actions/v1/earn/opportunity/${keyCategory}/${keyOpportunityId}/transaction-quote?${queryParams.toString()}`,
       );
 
       if (!response.ok) {
@@ -207,10 +171,15 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
     },
   );
 
+  const { data, error, mutate, ...restSWR } = swrResponse;
+
   return {
+    ...restSWR,
+    mutate,
     data: data ?? null,
-    isLoading,
     error: error?.message || null,
-    refetch: () => mutate(),
+    refetch: () => {
+      void mutate();
+    },
   };
 }
