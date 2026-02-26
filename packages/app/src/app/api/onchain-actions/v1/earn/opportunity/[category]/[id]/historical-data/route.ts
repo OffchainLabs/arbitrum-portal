@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse } from '@/earn-api/lib/responses';
 import {
   ValidationError,
   assertAddress,
@@ -13,10 +12,6 @@ import {
 import { HISTORICAL_VENDOR_TTL_SECONDS, type HistoricalData } from '@/earn-api/types';
 
 export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
-}
 
 export async function GET(
   request: NextRequest,
@@ -51,9 +46,13 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching historical data:', error);
-    return errorResponse(error, {
-      code: 'HISTORICAL_DATA_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch historical data',
-    });
+    const routeError = error as { message?: string; code?: string; status?: number };
+    return NextResponse.json(
+      {
+        message: routeError.message ?? 'Failed to fetch historical data',
+        code: routeError.code ?? 'HISTORICAL_DATA_FETCH_ERROR',
+      },
+      { status: routeError.status ?? 500 },
+    );
   }
 }
