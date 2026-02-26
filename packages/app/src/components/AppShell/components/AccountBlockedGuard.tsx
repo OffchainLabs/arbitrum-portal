@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useAccount } from 'wagmi';
 
 import { BlockedDialog } from '@/bridge/components/App/BlockedDialog';
