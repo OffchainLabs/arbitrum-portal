@@ -1,7 +1,9 @@
 import { Cog8ToothIcon } from '@heroicons/react/24/outline';
 import { useMemo } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { useAccountType } from '../../hooks/useAccountType';
+import { useMode } from '../../hooks/useMode';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
@@ -9,6 +11,7 @@ import { RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 export function LifiSettingsButton() {
   const [dialogProps, openDialog] = useDialog2();
   const eligibleRouteTypes = useRouteStore((state) => state.eligibleRouteTypes);
+  const { embedMode } = useMode();
 
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
@@ -34,7 +37,7 @@ export function LifiSettingsButton() {
       <Button
         id="route-settings-button"
         variant="secondary"
-        className="h-10 p-2 text-white"
+        className={twMerge('p-2 text-white', embedMode && 'h-10')}
         onClick={() => openDialog('settings')}
         aria-label="Open Settings"
       >
