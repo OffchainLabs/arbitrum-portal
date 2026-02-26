@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 
 import {
+  type RouteTokenCase,
   expectTokenButtonSymbol,
   expectTokenPanelSymbol,
   getUsdcSourceToken,
@@ -8,8 +9,46 @@ import {
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
   usdcAddressByChain,
-  usdcCases,
 } from './TransferPanel.integration.helpers';
+
+const usdcCases: RouteTokenCase[] = [
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'USDC',
+    expectedDestinationSymbol: 'USDC.e',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'USDC',
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'USDC',
+    expectedDestinationSymbol: 'USDC.e',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'ethereum',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'USDC',
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'superposition',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'USDC.e',
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'apechain',
+    expectedSourceSymbol: 'USDC.e',
+    expectedDestinationSymbol: 'USDC.e',
+  },
+];
 
 describe.sequential('TransferPanel LiFi Integration - USDC', () => {
   setupTransferPanelLifiIntegrationSuite();
