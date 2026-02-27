@@ -10,9 +10,9 @@ export function AccountBlockedGuard({ children }: PropsWithChildren) {
   const { address } = useAccount();
   const { isBlocked } = useAccountIsBlocked();
 
-  if (!address || !isBlocked) {
-    return children;
+  if (address && isBlocked) {
+    return <BlockedDialog address={address} isOpen={true} closeable={false} onClose={() => {}} />;
   }
 
-  return <BlockedDialog address={address} isOpen={true} closeable={false} onClose={() => {}} />;
+  return children;
 }
