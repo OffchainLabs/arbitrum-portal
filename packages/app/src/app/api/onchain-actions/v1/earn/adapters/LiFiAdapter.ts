@@ -162,7 +162,7 @@ export class LiFiAdapter implements VendorAdapter {
     }
     const minApy = filters.minApy;
     if (minApy != null) {
-      filtered = filtered.filter((o) => o.rawApy == null || o.rawApy >= minApy);
+      filtered = filtered.filter((o) => o.rawApy != null && o.rawApy >= minApy);
     }
     const minTvl = filters.minTvl;
     if (minTvl != null) {
