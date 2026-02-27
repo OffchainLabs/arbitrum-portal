@@ -11,6 +11,7 @@ import {
   WEETH_ADDRESS,
   WSTETH_ADDRESS,
 } from '@/earn-api/lib/liquidStakingConstants';
+import type { EarnChainId } from '@/earn-api/types';
 
 /**
  * SWR key generator for token balance cache
@@ -18,7 +19,7 @@ import {
 function getTokenBalanceKey(
   walletAddress: string | undefined,
   tokenAddress: string | null,
-  chainId: number,
+  chainId: EarnChainId,
 ): string[] | null {
   if (!walletAddress) return null;
   return [
@@ -63,7 +64,7 @@ interface UseTokenBalanceParams {
   /** Token address (null for native ETH) */
   tokenAddress: string | null;
   /** Chain ID */
-  chainId?: number;
+  chainId?: EarnChainId;
   /** Whether to fetch balance */
   enabled?: boolean;
 }
@@ -126,7 +127,7 @@ export function useTokenBalance({
  */
 export function invalidateLiquidStakingBalances(
   walletAddress: string,
-  chainId: number = ChainId.ArbitrumOne,
+  chainId: EarnChainId = ChainId.ArbitrumOne,
 ) {
   // This will be used with SWR's mutate function
   // Usage: mutate(invalidateLiquidStakingBalances(walletAddress, chainId))

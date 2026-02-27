@@ -114,7 +114,7 @@ function TokenIcon({ src, alt, symbol, size = 'md' }: TokenIconProps) {
   return (
     <div className={`relative ${sizeClass} rounded-full overflow-hidden`}>
       <SafeImage
-        src={src || ''}
+        src={src}
         alt={alt}
         className={`${sizeClass} rounded-full`}
         fallback={

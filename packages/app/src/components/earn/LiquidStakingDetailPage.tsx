@@ -181,7 +181,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               <span className="text-xs text-white/50 leading-none">Token</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.tokenIcon || ''}
+                  src={opportunity.tokenIcon}
                   alt={opportunity.token}
                   width={32}
                   height={32}
@@ -198,7 +198,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               <span className="text-xs text-white/50 leading-none">Protocol</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.protocolIcon || ''}
+                  src={opportunity.protocolIcon}
                   alt={opportunity.protocol}
                   width={32}
                   height={32}
