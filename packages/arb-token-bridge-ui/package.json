@@ -93,7 +93,7 @@
     "autoprefixer": "^10.4.13",
     "cypress-terminal-report": "^7.1.0",
     "env-cmd": "^10.1.0",
-    "happy-dom": "^17.4.4",
+    "happy-dom": "^20.0.2",
     "postcss": "^8.5.3",
     "satori": "^0.12.2",
     "start-server-and-test": "^2.0.11",
