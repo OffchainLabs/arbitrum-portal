@@ -291,9 +291,8 @@ export function VaultActionPanel({
       const quoteReceiveAmount = transactionQuote?.receiveAmount;
       const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
       const inputAmountRaw = amountInRawUnits || '0';
-      const inputTokenSymbol =
-        selectedAction === 'supply' ? (assetSymbol ?? '') : (lpToken?.symbol ?? assetSymbol ?? '');
-      const inputTokenDecimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
+      const inputTokenSymbol = assetSymbol ?? '';
+      const inputTokenDecimals = assetDecimals;
       const outputAmountRaw = hasReceiveAmount ? quoteReceiveAmount || undefined : undefined;
       const outputTokenSymbol =
         selectedAction === 'supply' ? (lpToken?.symbol ?? assetSymbol ?? '') : (assetSymbol ?? '');
@@ -348,9 +347,9 @@ export function VaultActionPanel({
         const newTransaction: StandardTransactionHistory = {
           timestamp,
           eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
-          assetAmountRaw: inputAmountRaw,
-          assetSymbol: inputTokenSymbol,
-          decimals: inputTokenDecimals,
+          assetAmountRaw: displayAmountRaw,
+          assetSymbol: displayTokenSymbol,
+          decimals: displayTokenDecimals,
           assetLogo: vault.asset?.assetLogo,
           inputAssetAmountRaw: inputAmountRaw,
           inputAssetSymbol: inputTokenSymbol,
