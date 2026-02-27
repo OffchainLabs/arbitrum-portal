@@ -814,19 +814,6 @@ export function LiquidStakingActionPanel({
         <h3 className="text-base font-medium text-white">
           {selectedAction === 'buy' ? 'Buy' : 'Sell'} {outputTokenSymbol}
         </h3>
-        {isConnected && userBalance && userBalance.gt(0) && !hidePositionOnMobile && (
-          <div className="opacity-50 size-[12.5px]">
-            <svg
-              className="size-full"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="6" cy="6" r="5.5" stroke="white" strokeWidth="1" />
-              <path d="M6 4V6M6 8H6.01" stroke="white" strokeWidth="1" strokeLinecap="round" />
-            </svg>
-          </div>
-        )}
       </div>
 
       {/* Position Value Card */}
