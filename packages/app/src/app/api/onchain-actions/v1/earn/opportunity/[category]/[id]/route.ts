@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
-import { errorResponse } from '@/earn-api/lib/responses';
 import {
+  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOpportunityCategory,
@@ -11,10 +11,6 @@ import {
 const router = new CategoryRouter();
 
 export const revalidate = 3600;
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
-}
 
 export async function GET(
   request: NextRequest,
@@ -36,9 +32,12 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching opportunity details:', error);
-    return errorResponse(error, {
-      code: 'OPPORTUNITY_DETAILS_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch opportunity details',
-    });
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch opportunity details',
+        code: error instanceof ValidationError ? error.code : 'OPPORTUNITY_DETAILS_FETCH_ERROR',
+      },
+      { status: error instanceof ValidationError ? error.status : 500 },
+    );
   }
 }

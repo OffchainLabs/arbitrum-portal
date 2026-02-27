@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { errorResponse } from '../lib/responses';
 import {
+  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOptionalOpportunityCategory,
@@ -108,10 +108,6 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   };
 }
 
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
-}
-
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -191,9 +187,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching positions:', error);
-    return errorResponse(error, {
-      code: 'POSITIONS_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch positions',
-    });
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch positions',
+        code: error instanceof ValidationError ? error.code : 'POSITIONS_FETCH_ERROR',
+      },
+      { status: error instanceof ValidationError ? error.status : 500 },
+    );
   }
 }

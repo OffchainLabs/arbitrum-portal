@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
-import { errorResponse } from '../lib/responses';
 import {
   ValidationError,
   parseOptionalEarnChainId,
@@ -15,10 +14,6 @@ const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-rev
 const router = new CategoryRouter();
 
 export const revalidate = 3600;
-
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,9 +73,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
-    return errorResponse(error, {
-      code: 'OPPORTUNITIES_FETCH_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
-    });
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
+        code: error instanceof ValidationError ? error.code : 'OPPORTUNITIES_FETCH_ERROR',
+      },
+      { status: error instanceof ValidationError ? error.status : 500 },
+    );
   }
 }
