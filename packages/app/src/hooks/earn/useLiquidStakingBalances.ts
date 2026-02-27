@@ -5,12 +5,8 @@ import { Address, PublicClient, getAddress } from 'viem';
 import { useAccount, usePublicClient } from 'wagmi';
 
 import { ChainId } from '@/bridge/types/ChainId';
+import { AddressZero, CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { ERC20_BALANCE_ABI } from '@/earn-api/lib/erc20Abi';
-import {
-  ARBITRUM_ONE_TOKEN_ADDRESSES,
-  WEETH_ADDRESS,
-  WSTETH_ADDRESS,
-} from '@/earn-api/lib/liquidStakingConstants';
 import type { EarnChainId } from '@/earn-api/types';
 
 /**
@@ -42,7 +38,7 @@ async function fetchTokenBalance(
     throw new Error('Public client not available');
   }
 
-  if (!tokenAddress || tokenAddress === ARBITRUM_ONE_TOKEN_ADDRESSES.ETH) {
+  if (!tokenAddress || tokenAddress === AddressZero) {
     // Fetch native ETH balance
     const balance = await publicClient.getBalance({
       address: walletAddress as Address,
@@ -153,14 +149,14 @@ export function useETHBalance(enabled: boolean = true) {
 
 export function useWstETHBalance(enabled: boolean = true) {
   return useTokenBalance({
-    tokenAddress: WSTETH_ADDRESS,
+    tokenAddress: CommonAddress.ArbitrumOne.WSTETH,
     enabled,
   });
 }
 
 export function useWeETHBalance(enabled: boolean = true) {
   return useTokenBalance({
-    tokenAddress: WEETH_ADDRESS,
+    tokenAddress: CommonAddress.ArbitrumOne.WEETH,
     enabled,
   });
 }

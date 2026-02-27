@@ -13,6 +13,7 @@ import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import { WEETH_ADDRESS, WSTETH_ADDRESS } from '@/earn-api/lib/liquidStakingConstants';
@@ -48,9 +49,9 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenSymbol);
 
   const userBalance = useMemo(() => {
-    if (outputTokenAddress === WSTETH_ADDRESS.toLowerCase()) {
+    if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {
       return wstETHBalance;
-    } else if (outputTokenAddress === WEETH_ADDRESS.toLowerCase()) {
+    } else if (outputTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()) {
       return weETHBalance;
     }
     return null;
@@ -67,15 +68,18 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const historyOpportunityId = useMemo(() => {
     const initialId = (opportunity.vaultAddress || opportunity.id).toLowerCase();
 
-    if (initialId === WSTETH_ADDRESS.toLowerCase() || initialId === WEETH_ADDRESS.toLowerCase()) {
+    if (
+      initialId === CommonAddress.ArbitrumOne.WSTETH.toLowerCase() ||
+      initialId === CommonAddress.ArbitrumOne.WEETH.toLowerCase()
+    ) {
       return initialId;
     }
 
     if (opportunity.token === 'wstETH') {
-      return WSTETH_ADDRESS;
+      return CommonAddress.ArbitrumOne.WSTETH;
     }
     if (opportunity.token === 'weETH') {
-      return WEETH_ADDRESS;
+      return CommonAddress.ArbitrumOne.WEETH;
     }
 
     return opportunity.id;

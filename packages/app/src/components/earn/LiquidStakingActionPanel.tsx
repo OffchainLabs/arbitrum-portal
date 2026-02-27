@@ -26,6 +26,7 @@ import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTok
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { AddressZero, CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
@@ -75,28 +76,28 @@ const ARB_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0x912CE59144191C1204E64559FE8253a0e49E6548/logo.png';
 
 const BUY_TOKEN_OPTIONS: TokenOption[] = [
-  { symbol: 'ETH', address: ARBITRUM_ONE_TOKEN_ADDRESSES.ETH, decimals: 18, logoUrl: ETH_LOGO },
-  { symbol: 'USDC', address: ARBITRUM_ONE_TOKEN_ADDRESSES.USDC, decimals: 6, logoUrl: USDC_LOGO },
-  { symbol: 'USDT', address: ARBITRUM_ONE_TOKEN_ADDRESSES.USDT, decimals: 6, logoUrl: USDT_LOGO },
-  { symbol: 'ARB', address: ARBITRUM_ONE_TOKEN_ADDRESSES.ARB, decimals: 18, logoUrl: ARB_LOGO },
+  { symbol: 'ETH', address: AddressZero, decimals: 18, logoUrl: ETH_LOGO },
+  { symbol: 'USDC', address: CommonAddress.ArbitrumOne.USDC, decimals: 6, logoUrl: USDC_LOGO },
+  { symbol: 'USDT', address: CommonAddress.ArbitrumOne.USDT, decimals: 6, logoUrl: USDT_LOGO },
+  { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
 ];
 
 const SELL_TOKEN_OPTIONS: TokenOption[] = [
-  { symbol: 'ETH', address: ARBITRUM_ONE_TOKEN_ADDRESSES.ETH, decimals: 18, logoUrl: ETH_LOGO },
-  { symbol: 'USDC', address: ARBITRUM_ONE_TOKEN_ADDRESSES.USDC, decimals: 6, logoUrl: USDC_LOGO },
-  { symbol: 'USDT', address: ARBITRUM_ONE_TOKEN_ADDRESSES.USDT, decimals: 6, logoUrl: USDT_LOGO },
-  { symbol: 'ARB', address: ARBITRUM_ONE_TOKEN_ADDRESSES.ARB, decimals: 18, logoUrl: ARB_LOGO },
+  { symbol: 'ETH', address: AddressZero, decimals: 18, logoUrl: ETH_LOGO },
+  { symbol: 'USDC', address: CommonAddress.ArbitrumOne.USDC, decimals: 6, logoUrl: USDC_LOGO },
+  { symbol: 'USDT', address: CommonAddress.ArbitrumOne.USDT, decimals: 6, logoUrl: USDT_LOGO },
+  { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
 ];
 
 const DEFAULT_BUY_TOKEN: TokenOption = {
   symbol: 'ETH',
-  address: ARBITRUM_ONE_TOKEN_ADDRESSES.ETH,
+  address: AddressZero,
   decimals: 18,
   logoUrl: ETH_LOGO,
 };
 const DEFAULT_SELL_TOKEN: TokenOption = {
   symbol: 'ETH',
-  address: ARBITRUM_ONE_TOKEN_ADDRESSES.ETH,
+  address: AddressZero,
   decimals: 18,
   logoUrl: ETH_LOGO,
 };
@@ -238,9 +239,9 @@ export function LiquidStakingActionPanel({
 
   const { wstETHBalance, weETHBalance } = useLiquidStakingPositions();
   const userBalance = useMemo(() => {
-    if (outputTokenAddress === WSTETH_ADDRESS.toLowerCase()) {
+    if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {
       return wstETHBalance;
-    } else if (outputTokenAddress === WEETH_ADDRESS.toLowerCase()) {
+    } else if (outputTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()) {
       return weETHBalance;
     }
     return null;
@@ -261,13 +262,9 @@ export function LiquidStakingActionPanel({
   const [selectedSellToken, setSelectedSellToken] = useState<TokenOption>(DEFAULT_SELL_TOKEN);
 
   const fromTokenAddress =
-    selectedAction === 'buy'
-      ? selectedBuyToken?.address || ARBITRUM_ONE_TOKEN_ADDRESSES.ETH
-      : outputTokenAddress;
+    selectedAction === 'buy' ? selectedBuyToken?.address || AddressZero : outputTokenAddress;
   const toTokenAddress =
-    selectedAction === 'buy'
-      ? outputTokenAddress
-      : selectedSellToken?.address || ARBITRUM_ONE_TOKEN_ADDRESSES.ETH;
+    selectedAction === 'buy' ? outputTokenAddress : selectedSellToken?.address || AddressZero;
 
   // Convert amount to raw units for API
   const amountInRawUnits = useMemo(() => {
@@ -277,9 +274,7 @@ export function LiquidStakingActionPanel({
   }, [amount, selectedAction, selectedBuyToken]);
 
   const selectedTokenAddress =
-    selectedAction === 'buy' &&
-    selectedBuyToken &&
-    selectedBuyToken.address !== ARBITRUM_ONE_TOKEN_ADDRESSES.ETH
+    selectedAction === 'buy' && selectedBuyToken && selectedBuyToken.address !== AddressZero
       ? selectedBuyToken.address
       : null;
 
@@ -298,7 +293,7 @@ export function LiquidStakingActionPanel({
     if (!isConnected) return BigNumber.from('0');
     if (selectedAction === 'buy') {
       if (!selectedBuyToken) return BigNumber.from('0');
-      if (selectedBuyToken.address === ARBITRUM_ONE_TOKEN_ADDRESSES.ETH) {
+      if (selectedBuyToken.address === AddressZero) {
         return ethBalance || BigNumber.from('0');
       } else {
         return erc20Balance || BigNumber.from('0');
@@ -384,10 +379,7 @@ export function LiquidStakingActionPanel({
 
       // Refetch balances after transaction
       // Refetch ETH balance if buying with ETH
-      if (
-        selectedAction === 'buy' &&
-        selectedBuyToken?.address === ARBITRUM_ONE_TOKEN_ADDRESSES.ETH
-      ) {
+      if (selectedAction === 'buy' && selectedBuyToken?.address === AddressZero) {
         refetchEthBalance();
       }
       // Refetch ERC20 balance if buying with ERC20 token

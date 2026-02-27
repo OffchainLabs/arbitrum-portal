@@ -1,4 +1,4 @@
-import { WEETH_ADDRESS, WSTETH_ADDRESS } from './liquidStakingConstants';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 /**
  * Dune Analytics Query IDs for liquid staking data
@@ -38,11 +38,11 @@ type DuneQueryIds = { apy: number; tvl: number };
  * Note: Token addresses are imported from liquidStaking.ts to avoid duplication
  */
 export const LIQUID_STAKING_DUNE_QUERIES: Record<string, DuneQueryIds> = {
-  [WSTETH_ADDRESS.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WSTETH.toLowerCase()]: {
     apy: DUNE_QUERY_IDS.WSTETH_APY,
     tvl: DUNE_QUERY_IDS.WSTETH_TVL,
   },
-  [WEETH_ADDRESS.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WEETH.toLowerCase()]: {
     apy: DUNE_QUERY_IDS.WEETH_APY,
     tvl: DUNE_QUERY_IDS.WEETH_TVL,
   },

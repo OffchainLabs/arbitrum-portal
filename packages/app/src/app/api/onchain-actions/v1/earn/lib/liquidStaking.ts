@@ -1,3 +1,5 @@
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+
 /**
  * Data source mappings for liquid staking opportunities
  * Maps token addresses to their external data source IDs
@@ -6,25 +8,16 @@
  */
 import { getDuneQueryIds } from './duneQueries';
 import { fetchDuneCurrentData, fetchDuneCurrentDataMerged } from './duneService';
-// Import constants from constants-only file (safe for frontend imports)
-import {
-  ARBITRUM_ONE_TOKEN_ADDRESSES,
-  WEETH_ADDRESS,
-  WSTETH_ADDRESS,
-} from './liquidStakingConstants';
-
-// Re-export constants for backward compatibility
-export { ARBITRUM_ONE_TOKEN_ADDRESSES, WEETH_ADDRESS, WSTETH_ADDRESS };
 
 export const LIQUID_STAKING_DATA_SOURCES = {
-  [WSTETH_ADDRESS.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WSTETH.toLowerCase()]: {
     // wstETH uses stETH Zerion fungible ID (wstETH is wrapped stETH, shares same price)
     zerionId: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84', // stETH Zerion fungible ID
-    duneQueryIds: getDuneQueryIds(WSTETH_ADDRESS), // Lido APY and TVL query IDs (resolved as separate IDs)
+    duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WSTETH), // Lido APY and TVL query IDs (resolved as separate IDs)
   },
-  [WEETH_ADDRESS.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WEETH.toLowerCase()]: {
     zerionId: 'de920845-665d-4e58-84af-a317ae56cc00', // weETH Zerion fungible ID
-    duneQueryIds: getDuneQueryIds(WEETH_ADDRESS), // Ether.fi APY and TVL query IDs (separate)
+    duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WEETH), // Ether.fi APY and TVL query IDs (separate)
   },
 } as const;
 
@@ -61,26 +54,26 @@ export interface LiquidStakingOpportunitySeed {
 
 export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
   {
-    id: WSTETH_ADDRESS,
+    id: CommonAddress.ArbitrumOne.WSTETH,
     name: 'Liquid Staked stETH',
     token: 'wstETH',
     tokenIcon: 'https://assets.coingecko.com/coins/images/18834/large/wstETH.png',
     tokenNetwork: 'Arbitrum One',
     protocol: 'Lido',
     protocolIcon: '/images/lido-logo.svg',
-    vaultAddress: WSTETH_ADDRESS,
+    vaultAddress: CommonAddress.ArbitrumOne.WSTETH,
     rawApy: null,
     rawTvl: null,
   },
   {
-    id: WEETH_ADDRESS,
+    id: CommonAddress.ArbitrumOne.WEETH,
     name: 'Liquid Staked ETH',
     token: 'weETH',
     tokenIcon: 'https://assets.coingecko.com/coins/images/33033/large/weETH.png',
     tokenNetwork: 'Arbitrum One',
     protocol: 'Ether.fi',
     protocolIcon: 'https://assets.coingecko.com/coins/images/33033/large/weETH.png',
-    vaultAddress: WEETH_ADDRESS,
+    vaultAddress: CommonAddress.ArbitrumOne.WEETH,
     rawApy: null,
     rawTvl: null,
   },
