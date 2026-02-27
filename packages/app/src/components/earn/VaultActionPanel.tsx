@@ -1,6 +1,7 @@
 'use client';
 
 import { BigNumber, utils } from 'ethers';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -78,6 +79,7 @@ export function VaultActionPanel({
   checkAndShowToS,
   showTransactionDetails,
 }: VaultActionPanelProps) {
+  const posthog = usePostHog();
   const vault = useMemo(
     () => ({
       address: opportunity.id,
@@ -303,6 +305,25 @@ export function VaultActionPanel({
       const displayTokenSymbol = shouldDisplayOutput ? outputTokenSymbol : inputTokenSymbol;
       const displayTokenDecimals = shouldDisplayOutput ? outputTokenDecimals : inputTokenDecimals;
 
+      if (txHash) {
+        posthog?.capture('Earn Transaction Succeeded', {
+          page: 'Earn',
+          section: 'Action Panel',
+          category: OpportunityCategory.Lend,
+          action: selectedAction,
+          opportunityId: vault.address,
+          opportunityName: vault.name,
+          protocol: vault.protocol?.name,
+          chainId: requestChainId,
+          transactionHash: txHash,
+          walletConnected: isConnected,
+          inputToken: inputTokenSymbol,
+          inputAmountRaw,
+          outputToken: outputTokenSymbol,
+          outputAmountRaw,
+        });
+      }
+
       const transactionDetails = {
         action: selectedAction === 'supply' ? 'supply' : 'withdraw',
         amount: displayAmountRaw,
@@ -473,11 +494,15 @@ export function VaultActionPanel({
     return <EarnActionPanelSkeleton />;
   }
 
+  const actionLabel = selectedAction === 'supply' ? 'Supply' : 'Withdraw';
+  const amountLabel = `Amount to ${selectedAction === 'supply' ? 'supply' : 'withdraw'}`;
+  const submitLabel = transactionQuoteLoading ? 'Fetching Quote...' : actionLabel;
+
   return (
     <Card className="bg-gray-1 rounded flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">
-          {selectedAction === 'supply' ? 'Supply' : 'Withdraw'} {assetSymbol}
+          {actionLabel} {assetSymbol}
         </h3>
       </div>
 
@@ -492,9 +517,21 @@ export function VaultActionPanel({
         tabs={actionTabs}
         selectedAction={selectedAction}
         onActionChange={(action) => {
+          if (action === selectedAction) return;
           setSelectedAction(action as ActionType);
           setAmount('');
           setTxError(null);
+          posthog?.capture('Earn Action Selected', {
+            page: 'Earn',
+            section: 'Action Panel',
+            category: OpportunityCategory.Lend,
+            action,
+            opportunityId: vault.address,
+            opportunityName: vault.name,
+            protocol: vault.protocol?.name,
+            chainId: requestChainId,
+            walletConnected: isConnected,
+          });
         }}
       />
 
@@ -502,7 +539,7 @@ export function VaultActionPanel({
         amount={amount}
         onAmountChange={setAmount}
         onMaxClick={handleMaxClick}
-        label={`Amount to ${selectedAction === 'supply' ? 'supply' : 'withdraw'}`}
+        label={amountLabel}
         inputToken={{
           symbol: assetSymbol ?? '',
           logoUrl: vault?.asset?.assetLogo,
@@ -527,13 +564,7 @@ export function VaultActionPanel({
       <EarnErrorDisplay error={txError || null} />
 
       <EarnActionSubmitButton
-        label={
-          transactionQuoteLoading
-            ? 'Fetching Quote...'
-            : selectedAction === 'supply'
-              ? 'Supply'
-              : 'Withdraw'
-        }
+        label={submitLabel}
         onClick={handleTransaction}
         isSubmitting={isExecuting}
         disabled={

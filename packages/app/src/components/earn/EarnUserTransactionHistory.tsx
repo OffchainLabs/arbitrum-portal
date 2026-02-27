@@ -1,5 +1,6 @@
 'use client';
 
+import { usePostHog } from 'posthog-js/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -68,6 +69,7 @@ export function EarnUserTransactionHistory({
   protocolLogo,
   onTransactionClick,
 }: EarnUserTransactionHistoryProps) {
+  const posthog = usePostHog();
   const { address: walletAddress } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -91,6 +93,22 @@ export function EarnUserTransactionHistory({
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
+
+  const handlePageChange = (page: number) => {
+    if (page === currentPage) return;
+    setCurrentPage(page);
+    posthog?.capture('Earn Transaction History Page Changed', {
+      page: 'Earn',
+      section: 'Transaction History',
+      category,
+      opportunityId,
+      opportunityName,
+      chainId,
+      currentPage,
+      nextPage: page,
+      totalPages,
+    });
+  };
 
   if (!walletAddress) return null;
 
@@ -125,7 +143,7 @@ export function EarnUserTransactionHistory({
           <EarnPagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
           />
         </>
       )}

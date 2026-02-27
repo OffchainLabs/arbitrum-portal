@@ -3,6 +3,7 @@
 import { ArrowTopRightOnSquareIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { BigNumber } from 'ethers';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -289,14 +290,29 @@ export function EarnTransactionHistoryTable({
   protocolName,
   protocolLogo,
 }: EarnTransactionHistoryTableProps) {
+  const posthog = usePostHog();
   const sortedRows = useMemo(() => [...rows].sort((a, b) => b.timestamp - a.timestamp), [rows]);
 
   const handleRowClick = useCallback(
     (row: EarnTransactionHistoryRow) => {
-      if (!onRowClick) return;
-
       const action = getDisplayAction(row.eventType);
       const displayAsset = getDisplayAsset(row, category, action);
+      posthog?.capture('Earn Transaction History Row Clicked', {
+        page: 'Earn',
+        section: 'Transaction History',
+        category,
+        action,
+        asset: displayAsset.symbol,
+        amountRaw: displayAsset.amountRaw,
+        chainId: row.chainId,
+        chainName: row.chainName,
+        transactionHash: row.transactionHash,
+        opportunityName,
+        protocol: protocolName,
+      });
+
+      if (!onRowClick) return;
+
       const transactionDetails: TransactionDetails = {
         action,
         amount: displayAsset.amountRaw || '0',
@@ -313,7 +329,7 @@ export function EarnTransactionHistoryTable({
 
       onRowClick(transactionDetails, true);
     },
-    [category, onRowClick, opportunityName, protocolLogo, protocolName],
+    [category, onRowClick, opportunityName, posthog, protocolLogo, protocolName],
   );
 
   const groupedByDate = useMemo(() => {
