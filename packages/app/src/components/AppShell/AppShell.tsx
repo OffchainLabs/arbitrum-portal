@@ -7,6 +7,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 
+import { AccountBlockedGuard } from './components/AccountBlockedGuard';
 import { Nav } from './components/Nav';
 import { NavLinks } from './components/NavLinks';
 import { SubNav } from './components/SubNav';
@@ -49,18 +50,20 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <AppProviders>
-      <div className="flex min-h-screen flex-col">
-        {!isEmbedMode && (
-          <>
-            <Nav />
-            <NavLinks />
-          </>
-        )}
-        <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
-          {!isEmbedMode && <SubNav />}
-          <main className="flex-1">{children}</main>
-        </AppShellPaddingWrapper>
-      </div>
+      <AccountBlockedGuard>
+        <div className="flex min-h-screen flex-col">
+          {!isEmbedMode && (
+            <>
+              <Nav />
+              <NavLinks />
+            </>
+          )}
+          <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
+            {!isEmbedMode && <SubNav />}
+            <main className="flex-1">{children}</main>
+          </AppShellPaddingWrapper>
+        </div>
+      </AccountBlockedGuard>
     </AppProviders>
   );
 }
