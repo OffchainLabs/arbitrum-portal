@@ -1541,7 +1541,7 @@
       },
       "nativeToken": "0x9c5EB9723728123AF896089b902CB17B44Fd09e6",
       "explorerUrl": "https://explorerl2.toronto.sx.technology",
-      "rpcUrl": "https://rpc.sx-rollup-testnet.t.raas.gelato.cloud",
+      "rpcUrl": "https://rpc-rollup.toronto.sx.technology",
       "isCustom": true,
       "isTestnet": true,
       "name": "SX Toronto",
