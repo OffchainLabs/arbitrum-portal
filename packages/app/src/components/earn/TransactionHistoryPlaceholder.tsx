@@ -51,18 +51,18 @@ export function TransactionHistoryPlaceholder() {
       </div>
 
       <div className="hidden md:flex flex-col gap-1">
-        {[...Array(5)].map((_, rowIndex) => (
+        {Array.from({ length: 5 }).map((_, rowIndex) => (
           <DesktopHistoryRowSkeleton key={rowIndex} />
         ))}
       </div>
 
       <div className="flex md:hidden flex-col gap-2.5">
-        {[...Array(2)].map((_, groupIndex) => (
+        {Array.from({ length: 2 }).map((_, groupIndex) => (
           <div key={groupIndex} className="flex flex-col gap-1">
             <div className="flex items-center pt-4 pb-[5px]">
               <div className="h-3 bg-neutral-200 rounded w-28" />
             </div>
-            {[...Array(2)].map((_, rowIndex) => (
+            {Array.from({ length: 2 }).map((_, rowIndex) => (
               <MobileHistoryRowSkeleton key={`${groupIndex}-${rowIndex}`} />
             ))}
           </div>

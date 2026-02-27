@@ -311,7 +311,7 @@ export interface StandardTransactionHistory {
   outputAssetSymbol?: string;
   outputAssetDecimals?: number;
   outputAssetLogo?: string;
-  chainId: number;
+  chainId: EarnChainId;
   transactionHash: string;
 }
 

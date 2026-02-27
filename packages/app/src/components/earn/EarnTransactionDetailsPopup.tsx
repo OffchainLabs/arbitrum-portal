@@ -11,9 +11,11 @@ import { Dialog } from '@/bridge/components/common/Dialog';
 import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
+import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
+import type { EarnChainId } from '@/earn-api/types';
 
 export interface TransactionDetails {
   action: string;
@@ -22,7 +24,7 @@ export interface TransactionDetails {
   decimals: number;
   assetLogo?: string;
   txHash?: string;
-  chainId: number;
+  chainId: EarnChainId;
   timestamp?: number;
   protocolName?: string;
   protocolLogo?: string;
@@ -40,22 +42,8 @@ interface EarnTransactionDetailsPopupProps {
   isLoading: boolean;
 }
 
-function getExplorerName(chainId: number): string {
-  const url = getExplorerUrl(chainId);
-  if (url.includes('arbiscan.io')) {
-    if (url.includes('nova')) return 'Nova Arbiscan';
-    if (url.includes('sepolia')) return 'Sepolia Arbiscan';
-    return 'Arbiscan';
-  }
-  if (url.includes('basescan.org')) {
-    if (url.includes('sepolia')) return 'Sepolia Basescan';
-    return 'Basescan';
-  }
-  if (url.includes('etherscan.io')) {
-    if (url.includes('sepolia')) return 'Sepolia Etherscan';
-    return 'Etherscan';
-  }
-  return 'Explorer';
+function getExplorerName(chainId: EarnChainId): string {
+  return chainId === ChainId.ArbitrumOne ? 'Arbiscan' : 'Etherscan';
 }
 
 function formatUsdRaw(usdRaw?: string): string | null {

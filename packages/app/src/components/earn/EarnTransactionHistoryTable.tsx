@@ -7,12 +7,14 @@ import { useCallback, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
-import { shortenAddress } from '@/bridge/util/CommonUtils';
+import { shortenTxHash } from '@/bridge/util/CommonUtils';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
+import type { EarnChainId } from '@/earn-api/types';
 
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 
@@ -31,7 +33,7 @@ export interface EarnTransactionHistoryRow {
   outputAssetSymbol?: string;
   outputAssetDecimals?: number;
   outputAssetLogo?: string;
-  chainId: number;
+  chainId: EarnChainId;
   chainName: string;
   transactionHash: string;
 }
@@ -83,15 +85,6 @@ function getDisplayAsset(
         symbol: row.outputAssetSymbol!,
         decimals: row.outputAssetDecimals!,
         logo: row.outputAssetLogo ?? row.assetLogo,
-      };
-    }
-
-    if (action === 'supply' && hasInputAsset) {
-      return {
-        amountRaw: row.inputAssetAmountRaw!,
-        symbol: row.inputAssetSymbol!,
-        decimals: row.inputAssetDecimals!,
-        logo: row.inputAssetLogo ?? row.assetLogo,
       };
     }
 
@@ -152,7 +145,7 @@ function TransactionHashLink({
   className,
   textClassName,
 }: {
-  chainId: number;
+  chainId: EarnChainId;
   transactionHash: string;
   className: string;
   textClassName: string;
@@ -164,7 +157,7 @@ function TransactionHashLink({
       onClick={(event) => event.stopPropagation()}
     >
       <p className={textClassName} title={transactionHash}>
-        {shortenAddress(transactionHash)}
+        {shortenTxHash(transactionHash)}
       </p>
       <ArrowTopRightOnSquareIcon className="h-4 w-4 text-white shrink-0" />
     </ExternalLink>
@@ -205,27 +198,19 @@ function DesktopHistoryRow({
       </div>
 
       <div className="flex-1 flex items-center gap-2 min-w-0">
-        {displayAsset.logo && (
-          <SafeImage
-            src={displayAsset.logo}
-            alt={displayAsset.symbol}
-            width={24}
-            height={24}
-            className="rounded-full shrink-0"
-          />
-        )}
+        <SafeImage
+          src={displayAsset.logo}
+          alt={displayAsset.symbol}
+          width={24}
+          height={24}
+          className="rounded-full shrink-0"
+        />
         <div className="flex flex-col gap-0.5 min-w-0">
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap truncate">
             {formatHistoryAmount(displayAsset)}
           </p>
           <div className="flex items-center gap-1.5">
-            <SafeImage
-              src="/images/ArbitrumLogo.svg"
-              alt={row.chainName}
-              width={12}
-              height={12}
-              className="shrink-0"
-            />
+            <NetworkImage chainId={row.chainId} className="h-3 w-3 shrink-0" />
             <p className="text-xs text-white opacity-50 leading-none whitespace-nowrap">
               {row.chainName}
             </p>
@@ -281,13 +266,7 @@ function MobileHistoryRow({
 
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-[5px]">
-          <SafeImage
-            src="/images/ArbitrumLogo.svg"
-            alt={row.chainName}
-            width={12}
-            height={12}
-            className="shrink-0"
-          />
+          <NetworkImage chainId={row.chainId} className="h-3 w-3 shrink-0" />
           <p className="text-xs text-white opacity-50 leading-normal whitespace-nowrap">
             {row.chainName}
           </p>

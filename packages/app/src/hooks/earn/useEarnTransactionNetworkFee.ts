@@ -4,6 +4,8 @@ import { BigNumber, utils } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 import { usePublicClient } from 'wagmi';
 
+import type { EarnChainId } from '@/earn-api/types';
+
 export interface EarnTransactionNetworkFee {
   amount: string;
   usd?: string;
@@ -12,7 +14,7 @@ export interface EarnTransactionNetworkFee {
 interface UseEarnTransactionNetworkFeeParams {
   isOpen: boolean;
   isLoading: boolean;
-  chainId?: number;
+  chainId?: EarnChainId;
   txHash?: string;
   providedNetworkFee?: EarnTransactionNetworkFee;
 }

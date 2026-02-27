@@ -306,6 +306,10 @@ export function assertString(value: unknown, field: string): string {
 }
 
 export function assertOptionalString(value: unknown, field: string): string | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
   const parsed = z.string().optional().safeParse(value);
   if (!parsed.success) {
     throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be a string`);

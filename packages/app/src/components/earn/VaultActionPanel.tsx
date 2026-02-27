@@ -1,8 +1,8 @@
 'use client';
 
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
@@ -50,10 +50,9 @@ interface VaultActionPanelProps {
 }
 
 type ActionType = 'supply' | 'withdraw';
-const NATIVE_TOKEN_ADDRESS = constants.AddressZero;
 
 function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || addressesEqual(tokenAddress, NATIVE_TOKEN_ADDRESS)) {
+  if (!tokenAddress || addressesEqual(tokenAddress, zeroAddress)) {
     return undefined;
   }
 
@@ -153,8 +152,7 @@ export function VaultActionPanel({
     () => normalizeTokenAddress(lpTokenAddress),
     [lpTokenAddress],
   );
-  const isAssetNativeBalance =
-    !assetTokenAddress || addressesEqual(assetTokenAddress, NATIVE_TOKEN_ADDRESS);
+  const isAssetNativeBalance = !assetTokenAddress || addressesEqual(assetTokenAddress, zeroAddress);
   const shouldFetchAssetBalance =
     isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
   const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
@@ -482,14 +480,12 @@ export function VaultActionPanel({
         </h3>
       </div>
 
-      {positionValue &&
-        (hidePositionOnMobile ? (
-          <div className="hidden lg:flex">
-            <EarnPositionValueCard positionValue={positionValue} />
-          </div>
-        ) : (
-          <EarnPositionValueCard positionValue={positionValue} />
-        ))}
+      {positionValue && (
+        <EarnPositionValueCard
+          positionValue={positionValue}
+          className={hidePositionOnMobile ? 'hidden lg:flex' : undefined}
+        />
+      )}
 
       <EarnActionTabs
         tabs={actionTabs}

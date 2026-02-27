@@ -1,3 +1,5 @@
+import { twMerge } from 'tailwind-merge';
+
 export interface PositionValue {
   amount: string;
   usdValue?: string;
@@ -7,11 +9,12 @@ export interface PositionValue {
 
 interface EarnPositionValueCardProps {
   positionValue: PositionValue;
+  className?: string;
 }
 
-export function EarnPositionValueCard({ positionValue }: EarnPositionValueCardProps) {
+export function EarnPositionValueCard({ positionValue, className }: EarnPositionValueCardProps) {
   return (
-    <div className="bg-neutral-100 rounded flex flex-col p-4">
+    <div className={twMerge('bg-neutral-100 rounded flex flex-col p-4', className)}>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">

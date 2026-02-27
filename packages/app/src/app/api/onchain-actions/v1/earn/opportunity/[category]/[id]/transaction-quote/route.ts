@@ -50,7 +50,6 @@ async function getTransactionQuote(input: {
   opportunityId: string;
   action: unknown;
   amount: unknown;
-  bodyCategory?: unknown;
   chainId?: unknown;
   userAddress: unknown;
   inputTokenAddress?: unknown;
@@ -62,7 +61,6 @@ async function getTransactionQuote(input: {
 }) {
   const rawAction = assertString(input.action, 'action');
   const rawAmount = assertString(input.amount, 'amount');
-  const bodyCategoryRaw = assertOptionalString(input.bodyCategory, 'category');
   const rawChainId = assertOptionalFiniteNumber(input.chainId, {
     field: 'chainId',
   });
@@ -85,14 +83,6 @@ async function getTransactionQuote(input: {
   const simulate = assertOptionalBoolean(input.simulate, 'simulate');
 
   const pathCategory = parseOpportunityCategory(input.category);
-  const bodyCategory = bodyCategoryRaw ? parseOpportunityCategory(bodyCategoryRaw) : undefined;
-
-  if (bodyCategory && bodyCategory !== pathCategory) {
-    throw new ValidationError(
-      'CATEGORY_MISMATCH',
-      `Category in path (${pathCategory}) does not match category in body (${bodyCategory})`,
-    );
-  }
 
   if (!isEarnTransactionAction(rawAction)) {
     throw new ValidationError(
@@ -150,7 +140,6 @@ export async function GET(
       opportunityId: params.id,
       action: url.searchParams.get('action'),
       amount: url.searchParams.get('amount'),
-      bodyCategory: url.searchParams.get('category'),
       chainId: parseOptionalNumberQuery(url.searchParams.get('chainId')),
       userAddress: url.searchParams.get('userAddress'),
       inputTokenAddress: url.searchParams.get('inputTokenAddress'),
