@@ -45,7 +45,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
 
   const outputTokenAddress = opportunity.id.toLowerCase();
   const outputTokenSymbol = opportunity.token;
-  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenSymbol);
+  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
 
   const userBalance = useMemo(() => {
     if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {

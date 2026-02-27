@@ -232,7 +232,7 @@ export function LiquidStakingActionPanel({
   const outputTokenAddress = opportunity.id.toLowerCase();
   const outputTokenSymbol = opportunity.token;
   const requestChainId = opportunity.chainId;
-  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenSymbol);
+  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
 
   const { wstETHBalance, weETHBalance } = useLiquidStakingPositions();
   const userBalance = useMemo(() => {
