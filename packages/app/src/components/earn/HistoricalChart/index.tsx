@@ -1,5 +1,6 @@
 'use client';
 
+import { usePostHog } from 'posthog-js/react';
 import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -73,8 +74,10 @@ function HistoricalChartContent({
   opportunityId,
   category,
   chainId = ChainId.ArbitrumOne,
+  title,
   assetSymbol,
 }: HistoricalChartProps) {
+  const posthog = usePostHog();
   const [metric, setMetric] = useState<MetricKey>('apy');
   const [range, setRange] = useState<HistoricalTimeRange>('7d');
   const config = CHART_CONFIG[category];
@@ -155,9 +158,20 @@ function HistoricalChartContent({
                 )}
                 disabled={isLoading}
                 onClick={() => {
-                  if (!isLoading) {
-                    setMetric(mk);
-                  }
+                  if (isLoading || activeMetric === mk) return;
+                  setMetric(mk);
+                  posthog?.capture('Earn Historical Chart Interacted', {
+                    page: 'Earn',
+                    section: 'Historical Chart',
+                    interactionType: 'metric',
+                    metric: mk,
+                    range,
+                    category,
+                    opportunityId,
+                    opportunityName: title,
+                    assetSymbol,
+                    chainId,
+                  });
                 }}
               >
                 {mk.toUpperCase()}
@@ -177,9 +191,20 @@ function HistoricalChartContent({
               )}
               disabled={isLoading}
               onClick={() => {
-                if (!isLoading) {
-                  setRange(r.id);
-                }
+                if (isLoading || range === r.id) return;
+                setRange(r.id);
+                posthog?.capture('Earn Historical Chart Interacted', {
+                  page: 'Earn',
+                  section: 'Historical Chart',
+                  interactionType: 'range',
+                  metric: activeMetric,
+                  range: r.id,
+                  category,
+                  opportunityId,
+                  opportunityName: title,
+                  assetSymbol,
+                  chainId,
+                });
               }}
             >
               {r.label}
