@@ -3,8 +3,7 @@ import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
-  expectTokenButtonSymbol,
-  expectTokenPanelSymbol,
+  expectTokenButtonToken,
   nonConnectedDestinationAddress,
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
@@ -14,38 +13,38 @@ const ethWethCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceSymbol: 'APE',
-    expectedDestinationSymbol: 'WETH',
+    expectedSourceToken: { symbol: 'APE' },
+    expectedDestinationToken: { symbol: 'WETH' },
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceSymbol: 'APE',
-    expectedDestinationSymbol: 'ETH',
+    expectedSourceToken: { symbol: 'APE' },
+    expectedDestinationToken: { symbol: 'ETH' },
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceSymbol: 'ETH',
-    expectedDestinationSymbol: 'ETH',
+    expectedSourceToken: { symbol: 'ETH' },
+    expectedDestinationToken: { symbol: 'ETH' },
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceSymbol: 'ETH',
-    expectedDestinationSymbol: 'ETH',
+    expectedSourceToken: { symbol: 'ETH' },
+    expectedDestinationToken: { symbol: 'ETH' },
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceSymbol: 'APE',
-    expectedDestinationSymbol: 'ETH',
+    expectedSourceToken: { symbol: 'APE' },
+    expectedDestinationToken: { symbol: 'ETH' },
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceSymbol: 'ETH',
-    expectedDestinationSymbol: 'WETH',
+    expectedSourceToken: { symbol: 'ETH' },
+    expectedDestinationToken: { symbol: 'WETH' },
   },
 ];
 
@@ -53,43 +52,23 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(ethWethCases)(
-    'renders source $expectedSourceSymbol and destination $expectedDestinationSymbol for ETH/WETH override: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      expectedSourceSymbol,
-      expectedDestinationSymbol,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
-    }) => {
-      renderTransferPanel({
+    'renders expected source and destination tokens for ETH/WETH override: $sourceChain -> $destinationChain',
+    async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
+      await renderTransferPanel({
         sourceChain,
         destinationChain,
         destinationToken: constants.AddressZero,
         destinationAddress: nonConnectedDestinationAddress,
       });
 
-      await expectTokenButtonSymbol({
+      await expectTokenButtonToken({
         isDestination: false,
-        symbol: expectedSourceSymbol,
+        tokenExpectation: expectedSourceToken,
       });
-      await expectTokenButtonSymbol({
+      await expectTokenButtonToken({
         isDestination: true,
-        symbol: expectedDestinationSymbol,
+        tokenExpectation: expectedDestinationToken,
       });
-
-      if (expectedSourcePanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: false,
-          symbolsToContain: expectedSourcePanelSymbols,
-        });
-      }
-      if (expectedDestinationPanelSymbols) {
-        await expectTokenPanelSymbol({
-          isDestination: true,
-          symbolsToContain: expectedDestinationPanelSymbols,
-        });
-      }
     },
   );
 });
