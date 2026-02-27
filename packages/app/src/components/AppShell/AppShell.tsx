@@ -50,19 +50,20 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <AppProviders>
-      <div className="flex min-h-screen flex-col">
-        {!isEmbedMode && (
-          <>
-            <Nav />
-            <NavLinks />
-          </>
-        )}
-        <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
-          {!isEmbedMode && <SubNav />}
-          <main className="flex-1">{children}</main>
-        </AppShellPaddingWrapper>
-        <AccountBlockedGuard />
-      </div>
+      <AccountBlockedGuard>
+        <div className="flex min-h-screen flex-col">
+          {!isEmbedMode && (
+            <>
+              <Nav />
+              <NavLinks />
+            </>
+          )}
+          <AppShellPaddingWrapper isEmbedMode={isEmbedMode}>
+            {!isEmbedMode && <SubNav />}
+            <main className="flex-1">{children}</main>
+          </AppShellPaddingWrapper>
+        </div>
+      </AccountBlockedGuard>
     </AppProviders>
   );
 }

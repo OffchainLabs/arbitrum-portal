@@ -1,17 +1,17 @@
 'use client';
 
-import React from 'react';
+import { PropsWithChildren } from 'react';
 import { useAccount } from 'wagmi';
 
 import { BlockedDialog } from '@/bridge/components/App/BlockedDialog';
 import { useAccountIsBlocked } from '@/bridge/hooks/useAccountIsBlocked';
 
-export function AccountBlockedGuard() {
+export function AccountBlockedGuard({ children }: PropsWithChildren) {
   const { address } = useAccount();
   const { isBlocked } = useAccountIsBlocked();
 
   if (!address || !isBlocked) {
-    return null;
+    return children;
   }
 
   return <BlockedDialog address={address} isOpen={true} closeable={false} onClose={() => {}} />;
