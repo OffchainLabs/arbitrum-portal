@@ -45,7 +45,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <span className="text-xs text-white/50 leading-none">Token</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.lend?.assetLogo || ''}
+                  src={opportunity.lend?.assetLogo}
                   alt={opportunity.lend?.assetSymbol ?? opportunity.token}
                   width={20}
                   height={20}
@@ -62,7 +62,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <span className="text-xs text-white/50 leading-none">Protocol</span>
               <div className="flex items-center gap-2 h-8">
                 <SafeImage
-                  src={opportunity.lend?.protocolLogo || ''}
+                  src={opportunity.lend?.protocolLogo}
                   alt={opportunity.lend?.protocolName ?? opportunity.protocol}
                   width={20}
                   height={20}
