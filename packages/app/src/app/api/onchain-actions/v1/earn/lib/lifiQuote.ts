@@ -6,7 +6,6 @@ import { AddressZero } from '@/bridge/util/CommonAddressUtils';
 
 import type { TransactionStep } from '../types';
 import { ERC20_ALLOWANCE_ABI, ERC20_APPROVE_ABI } from './erc20Abi';
-import { ARBITRUM_ONE_TOKEN_ADDRESSES } from './liquidStakingConstants';
 
 type LifiQuoteStep = {
   action: {

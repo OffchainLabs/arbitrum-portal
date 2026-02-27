@@ -1,6 +1,7 @@
 'use client';
 
 import { BigNumber, utils } from 'ethers';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { mutate } from 'swr';
 import { useAccount } from 'wagmi';
@@ -30,11 +31,6 @@ import { AddressZero, CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
-import {
-  ARBITRUM_ONE_TOKEN_ADDRESSES,
-  WEETH_ADDRESS,
-  WSTETH_ADDRESS,
-} from '@/earn-api/lib/liquidStakingConstants';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardTransactionHistory, TransactionStep } from '@/earn-api/types';
 
@@ -212,6 +208,7 @@ export function LiquidStakingActionPanel({
   checkAndShowToS,
   showTransactionDetails,
 }: LiquidStakingActionPanelProps) {
+  const posthog = usePostHog();
   const { address: walletAddress, isConnected } = useAccount();
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
@@ -442,6 +439,26 @@ export function LiquidStakingActionPanel({
         opportunityName: opportunity.token || 'Liquid Staking',
       };
 
+      if (txHash) {
+        posthog?.capture('Earn Transaction Succeeded', {
+          page: 'Earn',
+          section: 'Action Panel',
+          category: OpportunityCategory.LiquidStaking,
+          action: selectedAction,
+          opportunityId: opportunity.id,
+          opportunityName: opportunity.name,
+          protocol: opportunity.protocol,
+          chainId: requestChainId,
+          transactionHash: txHash,
+          walletConnected: isConnected,
+          inputToken: inputTokenSymbol,
+          inputAmountRaw,
+          outputToken: historyTokenSymbol,
+          outputAmountRaw: hasReceiveAmount ? historyAmountRaw : undefined,
+          slippagePercent,
+        });
+      }
+
       // Add transaction to history cache (optimistic update)
       if (walletAddress && txHash) {
         const newTransaction: StandardTransactionHistory = {
@@ -485,6 +502,7 @@ export function LiquidStakingActionPanel({
       currentSymbol,
       outputTokenSymbol,
       opportunity.tokenIcon,
+      opportunity.name,
       opportunity.protocol,
       opportunity.protocolIcon,
       opportunity.token,
@@ -498,7 +516,9 @@ export function LiquidStakingActionPanel({
       requestChainId,
       transactionQuote?.receiveAmount,
       estimatedTxCostUsd,
+      posthog,
       showTransactionDetails,
+      slippagePercent,
     ],
   );
 
@@ -571,9 +591,79 @@ export function LiquidStakingActionPanel({
   };
 
   const handleActionChange = (action: string) => {
+    if (action === selectedAction) return;
     setSelectedAction(action as ActionType);
     setAmount('');
     setTxError(null);
+    posthog?.capture('Earn Action Selected', {
+      page: 'Earn',
+      section: 'Action Panel',
+      category: OpportunityCategory.LiquidStaking,
+      action,
+      opportunityId: opportunity.id,
+      opportunityName: opportunity.name,
+      protocol: opportunity.protocol,
+      chainId: requestChainId,
+      walletConnected: isConnected,
+    });
+  };
+
+  const handleSlippageChange = (value: number) => {
+    if (value === slippagePercent) return;
+    setSlippagePercent(value);
+    posthog?.capture('Earn Slippage Updated', {
+      page: 'Earn',
+      section: 'Action Panel',
+      category: OpportunityCategory.LiquidStaking,
+      action: selectedAction,
+      opportunityId: opportunity.id,
+      opportunityName: opportunity.name,
+      protocol: opportunity.protocol,
+      chainId: requestChainId,
+      slippagePercent: value,
+    });
+  };
+
+  const handleBuyTokenSelect = (token: TokenOption) => {
+    if (selectedBuyToken?.address.toLowerCase() === token.address.toLowerCase()) {
+      setIsBuyTokenDropdownOpen(false);
+      return;
+    }
+    setSelectedBuyToken(token);
+    setIsBuyTokenDropdownOpen(false);
+    posthog?.capture('Earn Input Token Selected', {
+      page: 'Earn',
+      section: 'Action Panel',
+      category: OpportunityCategory.LiquidStaking,
+      action: selectedAction,
+      opportunityId: opportunity.id,
+      opportunityName: opportunity.name,
+      protocol: opportunity.protocol,
+      chainId: requestChainId,
+      tokenSymbol: token.symbol,
+      tokenAddress: token.address,
+    });
+  };
+
+  const handleSellTokenSelect = (token: TokenOption) => {
+    if (selectedSellToken?.address.toLowerCase() === token.address.toLowerCase()) {
+      setIsSellTokenDropdownOpen(false);
+      return;
+    }
+    setSelectedSellToken(token);
+    setIsSellTokenDropdownOpen(false);
+    posthog?.capture('Earn Input Token Selected', {
+      page: 'Earn',
+      section: 'Action Panel',
+      category: OpportunityCategory.LiquidStaking,
+      action: selectedAction,
+      opportunityId: opportunity.id,
+      opportunityName: opportunity.name,
+      protocol: opportunity.protocol,
+      chainId: requestChainId,
+      tokenSymbol: token.symbol,
+      tokenAddress: token.address,
+    });
   };
 
   useEffect(() => {
@@ -652,10 +742,7 @@ export function LiquidStakingActionPanel({
         selected={selectedBuyToken}
         isOpen={isBuyTokenDropdownOpen}
         onToggle={() => setIsBuyTokenDropdownOpen(!isBuyTokenDropdownOpen)}
-        onSelect={(token) => {
-          setSelectedBuyToken(token);
-          setIsBuyTokenDropdownOpen(false);
-        }}
+        onSelect={handleBuyTokenSelect}
       />
     ) : (
       <div className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2">
@@ -671,10 +758,7 @@ export function LiquidStakingActionPanel({
         selected={selectedSellToken || SELL_TOKEN_OPTIONS[0]}
         isOpen={isSellTokenDropdownOpen}
         onToggle={() => setIsSellTokenDropdownOpen(!isSellTokenDropdownOpen)}
-        onSelect={(token) => {
-          setSelectedSellToken(token);
-          setIsSellTokenDropdownOpen(false);
-        }}
+        onSelect={handleSellTokenSelect}
       />
     ) : undefined;
 
@@ -812,7 +896,7 @@ export function LiquidStakingActionPanel({
         </div>
         <SlippageSettingsPanel
           slippagePercent={slippagePercent}
-          onSlippageChange={setSlippagePercent}
+          onSlippageChange={handleSlippageChange}
         />
         {transactionDetails.map((detail, index) => (
           <div key={index} className="flex items-center justify-between">

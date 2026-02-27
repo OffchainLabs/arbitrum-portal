@@ -16,7 +16,6 @@ import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
-import { WEETH_ADDRESS, WSTETH_ADDRESS } from '@/earn-api/lib/liquidStakingConstants';
 import { OpportunityCategory } from '@/earn-api/types';
 
 import { EarnToSPopupDialog } from './EarnToSPopupDialog';
@@ -233,6 +232,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
             opportunityId={opportunity.id}
             category={OpportunityCategory.LiquidStaking}
             chainId={requestChainId}
+            title={opportunity.name}
           />
 
           {/* Rolling APRs */}
