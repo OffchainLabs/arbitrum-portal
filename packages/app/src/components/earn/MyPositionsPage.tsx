@@ -96,22 +96,7 @@ export function MyPositionsPage() {
   }
 
   if (opportunitiesWithPositions.length === 0) {
-    return (
-      <div className="flex flex-col gap-4">
-        <PortfolioSummaryCards
-          opportunities={opportunitiesWithPositions}
-          projectedEarningsUsd={projectedEarningsUsd}
-          projectedEarningsMonthlyUsd={projectedEarningsMonthlyUsd}
-          projectedEarningsYearlyPercentage={projectedEarningsYearlyPercentage}
-          projectedEarningsMonthlyPercentage={projectedEarningsMonthlyPercentage}
-          netApy={netApy}
-          categoryApy={categoryApy}
-          categoryValueByCategory={summary.byCategory}
-          totalValueUsd={totalValueUsd}
-        />
-        <YourHoldingsEmptyState opportunities={allOpportunities} />
-      </div>
-    );
+    return <YourHoldingsEmptyState opportunities={allOpportunities} />;
   }
 
   return (
