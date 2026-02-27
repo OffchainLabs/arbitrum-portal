@@ -1,11 +1,13 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Tooltip } from '@/app-components/Tooltip';
 import {
   OpportunityCategory,
+  type OpportunitySelectHandler,
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
@@ -17,6 +19,7 @@ import { OpportunityRow } from './OpportunityRow';
 interface OpportunitiesTableProps {
   opportunities: OpportunityTableRow[];
   groupByCategory?: boolean;
+  onOpportunitySelect?: OpportunitySelectHandler;
 }
 
 type GroupedOpportunities = Record<OpportunityCategory, OpportunityTableRow[]>;
@@ -25,6 +28,19 @@ type SortColumn = 'apy' | 'holdings' | 'projectedEarnings' | 'tvl' | null;
 type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
+const CATEGORY_ORDER: OpportunityCategory[] = [
+  OpportunityCategory.Lend,
+  OpportunityCategory.LiquidStaking,
+  OpportunityCategory.FixedYield,
+];
+const CATEGORY_DESCRIPTIONS: Record<OpportunityCategory, string> = {
+  [OpportunityCategory.Lend]:
+    'Supply assets like WETH, USDC, and WBTC on Arbitrum lending markets to earn variable yield.',
+  [OpportunityCategory.LiquidStaking]:
+    'Stake ETH on Arbitrum and receive liquid staking tokens like weETH and wstETH while keeping liquidity.',
+  [OpportunityCategory.FixedYield]:
+    'Access fixed-rate opportunities on Arbitrum through Pendle markets with a clear maturity date.',
+};
 
 interface SortableColumnHeaderProps {
   column: NonNullable<SortColumn>;
@@ -144,7 +160,9 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
 export function OpportunitiesTable({
   opportunities,
   groupByCategory = false,
+  onOpportunitySelect,
 }: OpportunitiesTableProps) {
+  const posthog = usePostHog();
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
   const [sortColumn, setSortColumn] = useState<SortColumn>(groupByCategory ? 'tvl' : 'holdings');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -165,36 +183,50 @@ export function OpportunitiesTable({
     [sortDirection],
   );
 
-  const visibleOpportunities = useMemo(
-    () =>
-      groupByCategory
-        ? opportunities.filter((opportunity) => (opportunity.rawApy ?? 0) > 0)
-        : opportunities,
-    [groupByCategory, opportunities],
-  );
+  const visibleOpportunities = useMemo(() => opportunities, [opportunities]);
 
-  const toggleCategory = useCallback((category: OpportunityCategory) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
+  const toggleCategory = useCallback(
+    (category: OpportunityCategory) => {
+      const nextExpanded = !expandedCategories.has(category);
+      const next = new Set(expandedCategories);
+
+      if (nextExpanded) {
         next.add(category);
+      } else {
+        next.delete(category);
       }
-      return next;
-    });
-  }, []);
+
+      setExpandedCategories(next);
+      posthog?.capture('Earn Opportunity Section Toggled', {
+        page: 'Earn',
+        section: getCategoryDisplayName(category),
+        category,
+        expanded: nextExpanded,
+      });
+    },
+    [expandedCategories, posthog],
+  );
 
   const handleSort = useCallback(
     (column: NonNullable<SortColumn>) => {
+      const nextSortDirection =
+        sortColumn === column ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'desc';
+
       if (sortColumn === column) {
-        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        setSortDirection(nextSortDirection);
       } else {
         setSortColumn(column);
-        setSortDirection('desc');
+        setSortDirection(nextSortDirection);
       }
+
+      posthog?.capture('Earn Opportunities Sorted', {
+        page: 'Earn',
+        section: 'All Opportunities',
+        sortColumn: column,
+        sortDirection: nextSortDirection,
+      });
     },
-    [sortColumn],
+    [posthog, sortColumn, sortDirection],
   );
 
   const groupedOpportunities = useMemo(() => {
@@ -215,16 +247,25 @@ export function OpportunitiesTable({
         let sorted = group;
         if (sortColumn) {
           sorted = [...group].sort((a, b) => {
+            const compareByName = a.name.localeCompare(b.name);
+
             if (sortColumn === 'apy') {
-              return compareMetric(a.rawApy, b.rawApy);
+              const metricComparison = compareMetric(a.rawApy, b.rawApy);
+              return metricComparison !== 0 ? metricComparison : compareByName;
             }
             if (sortColumn === 'holdings') {
-              return compareMetric(a.depositedUsd, b.depositedUsd);
+              const metricComparison = compareMetric(a.depositedUsd, b.depositedUsd);
+              return metricComparison !== 0 ? metricComparison : compareByName;
             }
             if (sortColumn === 'projectedEarnings') {
-              return compareMetric(a.projectedEarningsUsd, b.projectedEarningsUsd);
+              const metricComparison = compareMetric(
+                a.projectedEarningsUsd,
+                b.projectedEarningsUsd,
+              );
+              return metricComparison !== 0 ? metricComparison : compareByName;
             }
-            return compareMetric(a.rawTvl, b.rawTvl);
+            const metricComparison = compareMetric(a.rawTvl, b.rawTvl);
+            return metricComparison !== 0 ? metricComparison : compareByName;
           });
         }
         groups[category] = sorted;
@@ -234,34 +275,27 @@ export function OpportunitiesTable({
     return groups;
   }, [visibleOpportunities, groupByCategory, sortColumn, compareMetric]);
 
-  const categoryOrder: OpportunityCategory[] = [OpportunityCategory.Lend];
-
-  const getCategoryDescription = (category: OpportunityCategory): string => {
-    const descriptions: Record<OpportunityCategory, string> = {
-      [OpportunityCategory.Lend]:
-        'Lend your tokens to borrowers and earn interest. Your tokens are used as collateral and you receive regular interest payments.',
-      [OpportunityCategory.LiquidStaking]:
-        'Stake your assets in liquid staking protocols and earn yield.',
-      [OpportunityCategory.FixedYield]: 'Earn fixed or stable yield from structured products.',
-    };
-    return descriptions[category];
-  };
-
   const sortedOpportunities = useMemo(() => {
     if (groupByCategory) return null;
 
     if (sortColumn) {
       return [...opportunities].sort((a, b) => {
+        const compareByName = a.name.localeCompare(b.name);
+
         if (sortColumn === 'apy') {
-          return compareMetric(a.rawApy, b.rawApy);
+          const metricComparison = compareMetric(a.rawApy, b.rawApy);
+          return metricComparison !== 0 ? metricComparison : compareByName;
         }
         if (sortColumn === 'holdings') {
-          return compareMetric(a.depositedUsd, b.depositedUsd);
+          const metricComparison = compareMetric(a.depositedUsd, b.depositedUsd);
+          return metricComparison !== 0 ? metricComparison : compareByName;
         }
         if (sortColumn === 'projectedEarnings') {
-          return compareMetric(a.projectedEarningsUsd, b.projectedEarningsUsd);
+          const metricComparison = compareMetric(a.projectedEarningsUsd, b.projectedEarningsUsd);
+          return metricComparison !== 0 ? metricComparison : compareByName;
         }
-        return compareMetric(a.rawTvl, b.rawTvl);
+        const metricComparison = compareMetric(a.rawTvl, b.rawTvl);
+        return metricComparison !== 0 ? metricComparison : compareByName;
       });
     }
 
@@ -275,7 +309,7 @@ export function OpportunitiesTable({
   if (groupByCategory && groupedOpportunities) {
     return (
       <div className="flex flex-col gap-8">
-        {categoryOrder.map((category) => {
+        {CATEGORY_ORDER.map((category) => {
           const categoryOpportunities = groupedOpportunities[category];
           if (!categoryOpportunities || categoryOpportunities.length === 0) {
             return null;
@@ -291,13 +325,16 @@ export function OpportunitiesTable({
             <div key={category}>
               <div className="mb-4 flex items-center justify-between top-[60px] sticky bg-black/70 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-white">
-                    {getCategoryDisplayName(category)}
-                  </h2>
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">
+                      {getCategoryDisplayName(category)}
+                    </h2>
+                    <p className="sr-only">{CATEGORY_DESCRIPTIONS[category]}</p>
+                  </div>
                   <Tooltip
                     content={
                       <p className="text-xs text-white leading-relaxed">
-                        {getCategoryDescription(category)}
+                        {CATEGORY_DESCRIPTIONS[category]}
                       </p>
                     }
                     side="top"
@@ -327,7 +364,11 @@ export function OpportunitiesTable({
               <div>
                 <div className="flex flex-col gap-1 md:hidden">
                   {displayedOpportunities.map((opportunity) => (
-                    <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+                    <OpportunityCard
+                      key={opportunity.id}
+                      opportunity={opportunity}
+                      onOpportunitySelect={onOpportunitySelect}
+                    />
                   ))}
                 </div>
                 <div className="hidden md:flex overflow-x-auto">
@@ -338,7 +379,11 @@ export function OpportunitiesTable({
                       onSort={handleSort}
                     />
                     {displayedOpportunities.map((opportunity) => (
-                      <OpportunityRow key={opportunity.id} opportunity={opportunity} />
+                      <OpportunityRow
+                        key={opportunity.id}
+                        opportunity={opportunity}
+                        onOpportunitySelect={onOpportunitySelect}
+                      />
                     ))}
                   </div>
                 </div>
@@ -355,7 +400,11 @@ export function OpportunitiesTable({
       <div>
         <div className="flex flex-col gap-1 md:hidden">
           {sortedOpportunities.map((opportunity) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+            <OpportunityCard
+              key={opportunity.id}
+              opportunity={opportunity}
+              onOpportunitySelect={onOpportunitySelect}
+            />
           ))}
         </div>
         <div className="hidden md:flex overflow-x-auto">
@@ -366,7 +415,11 @@ export function OpportunitiesTable({
               onSort={handleSort}
             />
             {sortedOpportunities.map((opportunity) => (
-              <OpportunityRow key={opportunity.id} opportunity={opportunity} />
+              <OpportunityRow
+                key={opportunity.id}
+                opportunity={opportunity}
+                onOpportunitySelect={onOpportunitySelect}
+              />
             ))}
           </div>
         </div>

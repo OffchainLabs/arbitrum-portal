@@ -3,9 +3,14 @@
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePostHog } from 'posthog-js/react';
 import { useAccount } from 'wagmi';
 
-import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import {
+  type OpportunitySelectHandler,
+  OpportunityTableRow,
+  getCategoryDisplayName,
+} from '@/app-types/earn/vaults';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 
@@ -16,11 +21,28 @@ interface YourHoldingsEmptyStateProps {
 export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyStateProps) {
   const { isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const posthog = usePostHog();
 
   const title = isConnected ? 'No active positions yet' : 'Connect your wallet to get started';
   const description = isConnected
     ? 'Explore earn opportunities with liquid staking, lending, and fixed yield products.'
     : 'Connect your wallet to see your holdings and explore earn opportunities.';
+
+  const handleOpportunitySelect: OpportunitySelectHandler = (opportunity, surface) => {
+    posthog?.capture('Earn Opportunity Selected', {
+      page: 'Earn',
+      surface,
+      section: getCategoryDisplayName(opportunity.category),
+      category: opportunity.category,
+      asset: opportunity.token,
+      protocol: opportunity.protocol,
+      apy: opportunity.rawApy,
+      tvl: opportunity.rawTvl,
+      chainId: opportunity.chainId,
+      walletConnected: isConnected,
+      opportunityId: opportunity.id,
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -53,7 +75,14 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
         ) : (
           <button
             type="button"
-            onClick={() => openConnectModal?.()}
+            onClick={() => {
+              posthog?.capture('Earn Connect Wallet Clicked', {
+                page: 'Earn',
+                section: 'Your Holdings',
+                walletConnected: false,
+              });
+              openConnectModal?.();
+            }}
             className="bg-primary-cta hover:bg-primary-cta/90 px-4 flex items-center justify-center transition-colors cursor-pointer rounded border border-dark text-sm text-white py-2 no-underline"
           >
             Connect Wallet
@@ -62,7 +91,10 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
       </div>
 
       {opportunities && opportunities.length > 0 && (
-        <BestOpportunitiesShowcase opportunities={opportunities} />
+        <BestOpportunitiesShowcase
+          opportunities={opportunities}
+          onOpportunitySelect={handleOpportunitySelect}
+        />
       )}
     </div>
   );

@@ -3,20 +3,26 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Tooltip } from '@/app-components/Tooltip';
-import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
+import {
+  CATEGORY_INDICATOR_CLASS,
+  type OpportunitySelectHandler,
+  OpportunityTableRow,
+} from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityRowProps {
   opportunity: OpportunityTableRow;
+  onOpportunitySelect?: OpportunitySelectHandler;
 }
 
-export function OpportunityRow({ opportunity }: OpportunityRowProps) {
+export function OpportunityRow({ opportunity, onOpportunitySelect }: OpportunityRowProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
 
   return (
     <Link
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+      onClick={() => onOpportunitySelect?.(opportunity, 'table-row')}
       className="group bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
     >
       <div className="w-[150px] shrink-0">

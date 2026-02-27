@@ -2,6 +2,7 @@
 
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
+import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -58,8 +59,19 @@ export function PortfolioSummaryCards({
   categoryValueByCategory,
   totalValueUsd,
 }: PortfolioSummaryCardsProps) {
+  const posthog = usePostHog();
   const [earningsTimeframe, setEarningsTimeframe] = useState<EarningsTimeframe>('year');
   const summary = usePortfolioMetrics(opportunities, projectedEarningsUsd, netApy);
+
+  const handleTimeframeChange = (timeframe: EarningsTimeframe) => {
+    if (earningsTimeframe === timeframe) return;
+    setEarningsTimeframe(timeframe);
+    posthog?.capture('Earn Portfolio Timeframe Selected', {
+      page: 'Earn',
+      section: 'Portfolio Summary',
+      timeframe,
+    });
+  };
 
   const valueByCategory = categoryValueByCategory
     ? {
@@ -175,7 +187,7 @@ export function PortfolioSummaryCards({
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
                 }`}
-                onClick={() => setEarningsTimeframe('month')}
+                onClick={() => handleTimeframeChange('month')}
               >
                 Month
               </button>
@@ -185,7 +197,7 @@ export function PortfolioSummaryCards({
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
                 }`}
-                onClick={() => setEarningsTimeframe('year')}
+                onClick={() => handleTimeframeChange('year')}
               >
                 Year
               </button>
@@ -271,7 +283,7 @@ export function PortfolioSummaryCards({
                   ? 'bg-white text-black'
                   : 'text-white hover:bg-white/10'
               }`}
-              onClick={() => setEarningsTimeframe('month')}
+              onClick={() => handleTimeframeChange('month')}
             >
               Month
             </button>
@@ -281,7 +293,7 @@ export function PortfolioSummaryCards({
                   ? 'bg-white text-black'
                   : 'text-white hover:bg-white/10'
               }`}
-              onClick={() => setEarningsTimeframe('year')}
+              onClick={() => handleTimeframeChange('year')}
             >
               Year
             </button>

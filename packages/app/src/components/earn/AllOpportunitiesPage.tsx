@@ -1,11 +1,16 @@
 'use client';
 
-import { useMemo } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
-import { OpportunityTableRow } from '@/app-types/earn/vaults';
+import {
+  type OpportunitySelectHandler,
+  OpportunityTableRow,
+  getCategoryDisplayName,
+} from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
@@ -14,6 +19,7 @@ import { OpportunitiesTable } from './OpportunitiesTable';
 
 export function AllOpportunitiesPage() {
   const { address, isConnected } = useAccount();
+  const posthog = usePostHog();
 
   const {
     opportunities: allOpportunities,
@@ -50,6 +56,25 @@ export function AllOpportunitiesPage() {
     });
   }, [allOpportunities, positionsMap, isConnected]);
 
+  const handleOpportunitySelect = useCallback<OpportunitySelectHandler>(
+    (opportunity, surface) => {
+      posthog?.capture('Earn Opportunity Selected', {
+        page: 'Earn',
+        surface,
+        section: getCategoryDisplayName(opportunity.category),
+        category: opportunity.category,
+        asset: opportunity.token,
+        protocol: opportunity.protocol,
+        apy: opportunity.rawApy,
+        tvl: opportunity.rawTvl,
+        chainId: opportunity.chainId,
+        walletConnected: isConnected,
+        opportunityId: opportunity.id,
+      });
+    },
+    [isConnected, posthog],
+  );
+
   const isLoading = opportunitiesLoading || (isConnected ? positionsLoading : false);
 
   if (isLoading) {
@@ -74,8 +99,15 @@ export function AllOpportunitiesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <BestOpportunitiesShowcase opportunities={enrichedOpportunities} />
-      <OpportunitiesTable opportunities={enrichedOpportunities} groupByCategory />
+      <BestOpportunitiesShowcase
+        opportunities={enrichedOpportunities}
+        onOpportunitySelect={handleOpportunitySelect}
+      />
+      <OpportunitiesTable
+        opportunities={enrichedOpportunities}
+        groupByCategory
+        onOpportunitySelect={handleOpportunitySelect}
+      />
     </div>
   );
 }

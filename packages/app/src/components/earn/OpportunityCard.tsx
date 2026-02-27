@@ -2,20 +2,26 @@ import { SparklesIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 import { Tooltip } from '@/app-components/Tooltip';
-import { CATEGORY_INDICATOR_CLASS, OpportunityTableRow } from '@/app-types/earn/vaults';
+import {
+  CATEGORY_INDICATOR_CLASS,
+  type OpportunitySelectHandler,
+  OpportunityTableRow,
+} from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityCardProps {
   opportunity: OpportunityTableRow;
+  onOpportunitySelect?: OpportunitySelectHandler;
 }
 
-export function OpportunityCard({ opportunity }: OpportunityCardProps) {
+export function OpportunityCard({ opportunity, onOpportunitySelect }: OpportunityCardProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
 
   return (
     <Link
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+      onClick={() => onOpportunitySelect?.(opportunity, 'table-card')}
       className="group bg-neutral-50 rounded p-4 flex flex-col gap-5 transition-colors hover:bg-default-black-hover no-underline"
     >
       <div className="flex items-center gap-2.5">

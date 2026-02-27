@@ -16,7 +16,11 @@ export const OpportunityCategory = {
 } as const;
 export type OpportunityCategory = (typeof OpportunityCategory)[keyof typeof OpportunityCategory];
 
-export const OPPORTUNITY_CATEGORIES: OpportunityCategory[] = [OpportunityCategory.Lend];
+export const OPPORTUNITY_CATEGORIES: OpportunityCategory[] = [
+  OpportunityCategory.Lend,
+  OpportunityCategory.LiquidStaking,
+  OpportunityCategory.FixedYield,
+];
 
 export function getCategoryDisplayName(category: OpportunityCategory): string {
   const displayNames: Record<OpportunityCategory, string> = {
@@ -54,3 +58,10 @@ export interface OpportunityTableRow {
   rawTvl: number | null;
   maturityDate?: string;
 }
+
+export type OpportunitySelectSurface = 'featured-card' | 'table-card' | 'table-row';
+
+export type OpportunitySelectHandler = (
+  opportunity: OpportunityTableRow,
+  surface: OpportunitySelectSurface,
+) => void;

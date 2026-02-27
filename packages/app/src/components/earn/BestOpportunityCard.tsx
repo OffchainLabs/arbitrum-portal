@@ -5,19 +5,28 @@ import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 
 import { Tooltip } from '@/app-components/Tooltip';
-import { OpportunityTableRow, getCategoryDisplayName } from '@/app-types/earn/vaults';
+import {
+  type OpportunitySelectHandler,
+  OpportunityTableRow,
+  getCategoryDisplayName,
+} from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 
 interface BestOpportunityCardProps {
   opportunity: OpportunityTableRow;
+  onOpportunitySelect?: OpportunitySelectHandler;
 }
 
-export function BestOpportunityCard({ opportunity }: BestOpportunityCardProps) {
+export function BestOpportunityCard({
+  opportunity,
+  onOpportunitySelect,
+}: BestOpportunityCardProps) {
   const categoryDisplayName = getCategoryDisplayName(opportunity.category);
 
   return (
     <Link
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
+      onClick={() => onOpportunitySelect?.(opportunity, 'featured-card')}
       className="group bg-neutral-100 rounded p-4 flex flex-col gap-4 hover:bg-default-black-hover transition-colors relative justify-between no-underline"
     >
       <div className="flex items-start justify-between gap-3">
