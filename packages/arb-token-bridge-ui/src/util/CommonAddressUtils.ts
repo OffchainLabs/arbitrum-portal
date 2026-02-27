@@ -1,4 +1,8 @@
+import { constants } from 'ethers';
+
 import { ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
+
+export const AddressZero = constants.AddressZero;
 
 export const CommonAddress = {
   Ethereum: {

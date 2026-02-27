@@ -2,7 +2,7 @@
 
 import { BigNumber, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type Address, getAddress, zeroAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
@@ -21,6 +21,7 @@ import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadin
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
+import { AddressZero } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
@@ -52,7 +53,7 @@ interface VaultActionPanelProps {
 type ActionType = 'supply' | 'withdraw';
 
 function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || addressesEqual(tokenAddress, zeroAddress)) {
+  if (!tokenAddress || addressesEqual(tokenAddress, AddressZero)) {
     return undefined;
   }
 
@@ -152,7 +153,7 @@ export function VaultActionPanel({
     () => normalizeTokenAddress(lpTokenAddress),
     [lpTokenAddress],
   );
-  const isAssetNativeBalance = !assetTokenAddress || addressesEqual(assetTokenAddress, zeroAddress);
+  const isAssetNativeBalance = !assetTokenAddress || addressesEqual(assetTokenAddress, AddressZero);
   const shouldFetchAssetBalance =
     isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
   const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
