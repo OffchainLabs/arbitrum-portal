@@ -54,6 +54,20 @@ vi.mock('react-virtualized', () => ({
   }),
 }));
 
+class MockLoadedImage {
+  onload: ((event: Event) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+
+  set src(_value: string) {
+    queueMicrotask(() => {
+      this.onload?.(new Event('load'));
+    });
+  }
+}
+
+// SafeImage waits for browser image loading before rendering an <img>; make this deterministic in tests.
+vi.stubGlobal('Image', MockLoadedImage);
+
 mockAnimationsApi();
 
 const localhostPattern = /(?:^|\/\/)(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i;
