@@ -29,6 +29,7 @@ const defaultQueryParams: ArbQueryParams = {
   tab: 0,
   disabledFeatures: [],
   theme: {},
+  debug: false,
 };
 
 vi.mock('../useArbQueryParams', () => ({
