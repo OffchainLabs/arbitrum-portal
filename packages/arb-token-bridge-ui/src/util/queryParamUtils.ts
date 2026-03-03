@@ -1,5 +1,6 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
+import { QueryParamConfig } from 'use-query-params';
 
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
@@ -11,6 +12,7 @@ import {
 } from '../types/ChainQueryParam';
 import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
+import { LOG_LEVELS, LogLevel } from './logger';
 import { isNetwork } from './networks';
 import { orbitChains } from './orbitChainsList';
 
@@ -284,6 +286,18 @@ export const AmountQueryParam = {
     // toString() casts the potential string array into a string
     const amountStr = amount?.toString() ?? '';
     return sanitizeAmountQueryParam(amountStr);
+  },
+};
+
+export const LogLevelParam: QueryParamConfig<LogLevel> = {
+  encode(value) {
+    return value ?? 'silent';
+  },
+  decode(value) {
+    if (typeof value === 'string' && LOG_LEVELS.includes(value as LogLevel)) {
+      return value as LogLevel;
+    }
+    return 'silent';
   },
 };
 

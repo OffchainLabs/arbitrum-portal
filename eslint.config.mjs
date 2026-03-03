@@ -122,7 +122,7 @@ export default [
       'packages/arb-token-bridge-ui/**/synpress*',
     ],
     rules: {
-      'no-console': ['error', { allow: ['debug', 'trace'] }],
+      'no-console': 'error',
     },
   },
   {

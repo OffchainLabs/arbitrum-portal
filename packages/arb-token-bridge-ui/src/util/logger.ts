@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
-type LogLevel = 'silent' | 'error' | 'warn' | 'info' | 'debug';
+export type LogLevel = 'silent' | 'error' | 'warn' | 'info' | 'debug';
+
+export const LOG_LEVELS: LogLevel[] = ['silent', 'error', 'warn', 'info', 'debug'];
 
 const LEVELS: Record<LogLevel, number> = {
   silent: 0,
@@ -9,16 +11,19 @@ const LEVELS: Record<LogLevel, number> = {
   debug: 4,
 };
 
+function isLogLevel(value: string): value is LogLevel {
+  return LOG_LEVELS.includes(value as LogLevel);
+}
+
 function getLevel(): LogLevel {
-  // ?debug=true shows everything
   if (typeof window !== 'undefined') {
-    const query = new URLSearchParams(window.location.search);
-    if (query.get('debug') === 'true') return 'debug';
+    const param = new URLSearchParams(window.location.search).get('debugLevel');
+    if (param && isLogLevel(param)) return param;
   }
 
   if (process.env.NODE_ENV === 'development') return 'warn';
 
-  // Production
+  // Production default
   return 'silent';
 }
 

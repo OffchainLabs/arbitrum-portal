@@ -34,6 +34,7 @@ import {
   DestinationTokenQueryParam,
   DisabledFeatures,
   DisabledFeaturesParam,
+  LogLevelParam,
   TabParam,
   TabParamEnum,
   ThemeParam,
@@ -68,6 +69,7 @@ export {
   DestinationTokenQueryParam,
   ChainParam,
   TabParam,
+  LogLevelParam,
 };
 
 export const queryParamProviderOptions = {
@@ -88,7 +90,7 @@ export const queryParamProviderOptions = {
     tab: withDefault(TabParam, tabToIndex[TabParamEnum.BRIDGE]), // which tab is active
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
     theme: withDefault(ThemeParam, defaultTheme), // theme customization
-    debug: withDefault(BooleanParam, false), // debug mode to show extra console errors in the UI
+    debugLevel: withDefault(LogLevelParam, 'silent'), // debug mode to show extra console errors in the UI
   },
 } as const satisfies QueryParamOptions;
 
