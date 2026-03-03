@@ -54,6 +54,7 @@ import { trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
+import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
@@ -346,9 +347,7 @@ export function TransferPanel() {
   };
 
   const stepExecutor: UiDriverStepExecutor = async (context, step) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(step);
-    }
+    logger.debug(step);
 
     if (step.type === 'return') {
       throw Error(`[stepExecutor] "return" step should be handled outside the executor`);
@@ -856,7 +855,7 @@ export function TransferPanel() {
         label: 'oft_transfer',
         category: 'transaction_signing',
       });
-      console.error(error);
+      logger.error(error);
       errorToast(
         `OFT ${isDepositMode ? 'Deposit' : 'Withdrawal'} transaction failed: ${
           (error as Error)?.message ?? error
@@ -880,7 +879,7 @@ export function TransferPanel() {
 
     // SC Teleport transfers aren't enabled yet. Safety check, shouldn't be able to get here.
     if (isSmartContractWallet && isTeleportMode) {
-      console.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
+      logger.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
       return;
     }
 
@@ -939,7 +938,7 @@ export function TransferPanel() {
       }
 
       if (destinationAddressError) {
-        console.error(destinationAddressError);
+        logger.error(destinationAddressError);
         return;
       }
 

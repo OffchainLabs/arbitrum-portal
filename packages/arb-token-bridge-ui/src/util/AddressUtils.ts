@@ -2,6 +2,7 @@ import { Provider } from '@ethersproject/providers';
 
 import { getAPIBaseUrl } from '.';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { logger } from './logger';
 
 export type Address = `0x${string}`;
 
@@ -28,7 +29,7 @@ export async function addressIsDenylisted(address: string) {
     });
     return (await denylistResponse.json()).data as boolean;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return false;
   }
 }

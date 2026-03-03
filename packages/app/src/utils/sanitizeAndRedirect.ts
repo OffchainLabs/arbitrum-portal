@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { sanitizeExperimentalFeaturesQueryParam } from '@/bridge/util';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
+import { logger } from '@/bridge/util/logger';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import {
   DisabledFeaturesParam,
@@ -152,11 +153,11 @@ export async function sanitizeAndRedirect(
     tab !== sanitized.tab ||
     (disabledFeatures?.length || 0) !== (sanitized.disabledFeatures?.length || 0)
   ) {
-    console.log(`[sanitizeAndRedirect] sanitizing query params`);
-    console.log(
+    logger.debug(`[sanitizeAndRedirect] sanitizing query params`);
+    logger.debug(
       `[sanitizeAndRedirect]     sourceChain=${sourceChainId}&destinationChain=${destinationChainId}&experiments=${experiments}&token=${token}&destinationToken=${destinationToken}&tab=${tab}&disabledFeatures=${disabledFeatures} (before)`,
     );
-    console.log(
+    logger.debug(
       `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&destinationToken=${sanitized.destinationToken}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`,
     );
 

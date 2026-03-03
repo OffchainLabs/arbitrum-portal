@@ -13,6 +13,7 @@ import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils'
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
+import { logger } from './logger';
 import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
@@ -361,7 +362,7 @@ export async function registerLocalNetwork() {
       isLocalCustomNativeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network,
     );
   } catch (error: any) {
-    console.error(`Failed to register local network: ${error.message}`);
+    logger.error(`Failed to register local network: ${error.message}`);
   }
 }
 

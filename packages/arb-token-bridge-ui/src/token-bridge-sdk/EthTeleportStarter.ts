@@ -2,6 +2,7 @@ import { EthL1L3Bridger, getArbitrumNetwork } from '@arbitrum/sdk';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, constants } from 'ethers';
 
+import { logger } from '../util/logger';
 import {
   BridgeTransferStarter,
   BridgeTransferStarterProps,
@@ -91,7 +92,7 @@ export class EthTeleportStarter extends BridgeTransferStarter {
         estimatedChildChainGas: constants.Zero,
       };
     } catch (e) {
-      console.warn('Error while estimating gas, falling back to hardcoded values.', e);
+      logger.warn('Error while estimating gas, falling back to hardcoded values.', e);
       return {
         // fallback estimates
         estimatedParentChainGas: BigNumber.from(240_000),

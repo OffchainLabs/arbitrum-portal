@@ -19,6 +19,7 @@ import {
   isTokenNativeUSDC,
   isTokenSepoliaUSDC,
 } from '../util/TokenUtils';
+import { logger } from '../util/logger';
 import { isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
@@ -120,7 +121,7 @@ export const useSelectedToken = (): [
             destinationToken: sanitizeTokenAddress(erc20ParentAddress),
           };
         } catch (error) {
-          console.error('Error sanitizing token address:', error);
+          logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };
         }
       });

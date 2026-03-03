@@ -37,6 +37,7 @@ import {
   isTokenArbitrumSepoliaNativeUSDC,
   isTokenNativeUSDC,
 } from '../../util/TokenUtils';
+import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { Button } from '../common/Button';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -464,7 +465,7 @@ function TokensPanel({
     try {
       await storeNewToken();
     } catch (ex) {
-      console.log(ex);
+      logger.warn(ex);
     } finally {
       setIsAddingToken(false);
     }
@@ -641,7 +642,7 @@ export function TokenSearch(props: UseDialogProps) {
         setSelectedToken(_token.address);
       }
     } catch (error: any) {
-      console.warn(error);
+      logger.warn(error);
 
       if (error.name === 'TokenDisabledError') {
         warningToast('This token is currently paused in the bridge');

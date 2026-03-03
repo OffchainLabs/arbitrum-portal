@@ -115,6 +115,17 @@ export default [
     },
   },
   {
+    files: ['packages/arb-token-bridge-ui/**/*.{js,jsx,ts,tsx}'],
+    ignores: [
+      'packages/arb-token-bridge-ui/**/__tests__/**',
+      'packages/arb-token-bridge-ui/tests/**',
+      'packages/arb-token-bridge-ui/**/synpress*',
+    ],
+    rules: {
+      'no-console': 'error',
+    },
+  },
+  {
     files: ['**/tests/e2e/**/*.ts', '**/tests/support/**/*.js'],
     languageOptions: {
       parser: tsParser,

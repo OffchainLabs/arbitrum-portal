@@ -7,6 +7,7 @@ import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { isDepositMode } from '../util/isDepositMode';
+import { logger } from '../util/logger';
 import { isNetwork } from '../util/networks';
 import { AssetType } from './arbTokenBridge.types';
 
@@ -339,7 +340,7 @@ export async function getUpdatedOftTransfer(
       destinationTxHash,
     };
   } catch (error) {
-    console.error('Error fetching updated OFT transfer for tx:', tx.txId, error);
+    logger.error('Error fetching updated OFT transfer for tx:', tx.txId, error);
     return tx;
   }
 }

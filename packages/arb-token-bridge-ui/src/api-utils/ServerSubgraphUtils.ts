@@ -2,6 +2,7 @@ import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from '@a
 import ApolloLinkTimeout from 'apollo-link-timeout';
 
 import { ChainId } from '../types/ChainId';
+import { logger } from '../util/logger';
 
 /**
  * The API key to be used for calls to The Graph Network.
@@ -110,7 +111,7 @@ function createTheGraphNetworkClient(subgraphId: TheGraphNetworkSubgraphId) {
 }
 
 function createSubgraphClient(key: SubgraphKey) {
-  console.log(`[createSubgraphClient] key=${key}`);
+  logger.debug(`[createSubgraphClient] key=${key}`);
 
   const { theGraphNetworkSubgraphId, selfHostedSubgraph } = subgraphs[key];
 
@@ -118,7 +119,7 @@ function createSubgraphClient(key: SubgraphKey) {
     return createSelfHostedSubgraphClient(selfHostedSubgraph);
   }
 
-  console.log(
+  logger.debug(
     `[createSubgraphClient] using subgraph "${theGraphNetworkSubgraphId}" on the graph network`,
   );
   return createTheGraphNetworkClient(theGraphNetworkSubgraphId);

@@ -13,6 +13,7 @@ import {
   fetchErc20ParentChainGatewayAddress,
   getL2ERC20Address,
 } from './TokenUtils';
+import { logger } from './logger';
 
 async function fetchTokenFallbackGasEstimates({
   inboxAddress,
@@ -144,7 +145,7 @@ export async function depositTokenEstimateGas(
 
   try {
     if (await allowanceIsInsufficient(params)) {
-      console.warn(
+      logger.warn(
         `Gateway allowance for "${parentChainErc20Address}" is too low, falling back to hardcoded values.`,
       );
 

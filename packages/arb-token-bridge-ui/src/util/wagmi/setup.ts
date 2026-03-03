@@ -15,6 +15,7 @@ import { arbitrum, mainnet } from 'wagmi/chains';
 
 import { ChainId } from '../../types/ChainId';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
+import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, rpcURLs } from '../networks';
 import { getOrbitChains } from '../orbitChainsList';
 import { getWagmiChain } from './getWagmiChain';
@@ -81,7 +82,7 @@ const chainList = getChainList();
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
 if (!projectId) {
-  console.error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID variable missing.');
+  logger.error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID variable missing.');
 }
 
 const appInfo = {

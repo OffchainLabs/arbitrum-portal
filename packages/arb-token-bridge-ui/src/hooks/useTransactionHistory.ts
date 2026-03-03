@@ -33,6 +33,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
+import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
 import {
@@ -853,7 +854,7 @@ export const useTransactionHistory = (
 
   useEffect(() => {
     if (typeof error !== 'undefined') {
-      console.warn(error);
+      logger.warn(error);
       captureSentryErrorWithExtraData({
         error,
         originFunction: 'useTransactionHistoryWithoutStatuses',
@@ -861,7 +862,7 @@ export const useTransactionHistory = (
     }
 
     if (typeof txPagesError !== 'undefined') {
-      console.warn(txPagesError);
+      logger.warn(txPagesError);
       captureSentryErrorWithExtraData({
         error: txPagesError,
         originFunction: 'useTransactionHistory',

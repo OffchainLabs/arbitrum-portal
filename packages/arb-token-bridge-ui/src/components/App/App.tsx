@@ -7,6 +7,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTheme } from '../../hooks/useTheme';
 import { useActions } from '../../state';
+import { logger } from '../../util/logger';
 import { MainContent } from '../MainContent/MainContent';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
@@ -73,7 +74,7 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
         actions.app.setWarningTokens(res.data);
       })
       .catch((err) => {
-        console.warn('Failed to fetch warning tokens:', err);
+        logger.warn('Failed to fetch warning tokens:', err);
       });
   }, []);
 

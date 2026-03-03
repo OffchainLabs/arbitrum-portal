@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import type { ErrorCategory, EthersError } from '../util/SentryUtils';
 import { isEthersError } from '../util/SentryUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
+import { logger } from '../util/logger';
 import { useNetworks } from './useNetworks';
 
 /**
@@ -117,21 +118,17 @@ export function useError() {
 
       // Handle user rejections explicitly
       if (isUserRejectedError(error)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`Ignored User Rejected Error: '${label}'`, {
-            originalError: error,
-          });
-        }
+        logger.debug(`Ignored User Rejected Error: '${label}'`, {
+          originalError: error,
+        });
         return;
       }
 
       // Skip logging for ignored categories
       if (IGNORED_ERROR_CATEGORIES.includes(category)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`Ignored Error by Category: '${label}' [Category: ${category}]`, {
-            originalError: error,
-          });
-        }
+        logger.debug(`Ignored Error by Category: '${label}' [Category: ${category}]`, {
+          originalError: error,
+        });
         return;
       }
 
@@ -150,13 +147,11 @@ export function useError() {
       // log to sentry
       _logToSentry(error, params, mergedData, level);
 
-      // log to console in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`Handled Error: '${label}' [Category: ${category}, Level: ${level}]`, {
-          originalError: error,
-          contextData: mergedData,
-        });
-      }
+      // log to console
+      logger.error(`Handled Error: '${label}' [Category: ${category}, Level: ${level}]`, {
+        originalError: error,
+        contextData: mergedData,
+      });
     },
     [_getCommonContext],
   );
