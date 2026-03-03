@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 
 import { isUserRejectedError } from './isUserRejectedError';
+import { logger } from './logger';
 
 /**
  * Categories for classifying errors
@@ -85,9 +86,7 @@ const generateAppFingerprint = (
  */
 export function initializeSentry(dsn: string | undefined) {
   if (!dsn) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Sentry DSN not found, Sentry will not be initialized.');
-    }
+    logger.warn('Sentry DSN not found, Sentry will not be initialized.');
     return;
   }
 
@@ -146,11 +145,9 @@ export function captureSentryErrorWithExtraData({
   additionalData?: Record<string, string>;
 }) {
   // Add a console warning in development
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(
-      'captureSentryErrorWithExtraData is deprecated. Use the useError().handleError() hook instead.',
-    );
-  }
+  logger.warn(
+    'captureSentryErrorWithExtraData is deprecated. Use the useError().handleError() hook instead.',
+  );
 
   Sentry.withScope((scope) => {
     // tags only allow primitive values

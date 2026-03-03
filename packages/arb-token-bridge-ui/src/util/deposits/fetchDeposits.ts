@@ -1,11 +1,11 @@
 import { Provider } from '@ethersproject/providers';
 import { utils } from 'ethers';
 
-import { isDebugModeEnabled } from '..';
 import { defaultErc20Decimals } from '../../defaults';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
 import { Transaction } from '../../types/Transactions';
+import { logger } from '../logger';
 import {
   FetchDepositsFromSubgraphResult,
   fetchDepositsFromSubgraph,
@@ -71,21 +71,14 @@ export const fetchDeposits = async ({
   try {
     depositsFromSubgraph = await fetchDepositsFromSubgraph(subgraphParams);
   } catch (error: any) {
-    if (isDebugModeEnabled()) {
-      console.log('Error fetching deposits from subgraph', error);
-    }
+    logger.info('Error fetching deposits from subgraph', error);
   }
 
   try {
     ethDepositsToCustomDestinationFromSubgraph =
       await fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams);
   } catch (error: any) {
-    if (isDebugModeEnabled()) {
-      console.log(
-        'Error fetching native token deposits to custom destination from subgraph',
-        error,
-      );
-    }
+    logger.info('Error fetching native token deposits to custom destination from subgraph', error);
   }
 
   const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph.map(

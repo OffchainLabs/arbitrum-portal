@@ -18,6 +18,7 @@ import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from './SentryUtils';
+import { logger } from './logger';
 import { isNetwork } from './networks';
 
 export function getDefaultTokenName(address: string) {
@@ -145,8 +146,8 @@ export async function fetchErc20Data({
     try {
       setErc20DataCache({ chainId, address, erc20Data });
     } catch (e) {
-      console.warn('Failed to store ERC-20 data to cache.');
-      console.warn(e);
+      logger.warn('Failed to store ERC-20 data to cache.');
+      logger.warn(e);
     }
 
     return erc20Data;

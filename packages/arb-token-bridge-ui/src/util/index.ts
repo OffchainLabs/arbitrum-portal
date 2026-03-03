@@ -45,11 +45,6 @@ const featureFlags = [] as const;
 
 type FeatureFlag = (typeof featureFlags)[number];
 
-export const isDebugModeEnabled = () => {
-  const query = new URLSearchParams(window.location.search);
-  return query.get('debug') === 'true';
-};
-
 export const isExperimentalFeatureEnabled = (flag: FeatureFlag) => {
   const query = new URLSearchParams(window.location.search);
   const flags = query.get('experiments');

@@ -5,6 +5,7 @@ import { ImageProps } from 'next/image';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { logger } from './logger';
 import orbitChainsData from './orbitChainsData.json';
 
 const ArbitrumLogo = '/images/lists/ArbitrumLogo.png';
@@ -246,7 +247,7 @@ export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
 
     return { data };
   } catch (error) {
-    console.warn('Token List URL Invalid', tokenListURL);
+    logger.warn('Token List URL Invalid', tokenListURL);
     return { data: undefined };
   }
 }
