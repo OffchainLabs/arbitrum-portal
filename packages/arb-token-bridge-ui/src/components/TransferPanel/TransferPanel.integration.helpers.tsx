@@ -15,9 +15,10 @@ import { mapCustomChainToNetworkData } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import { TransferPanel } from './TransferPanel';
 
-export type ChainQuerySlug = 'ethereum' | 'apechain' | 'superposition';
+export type ChainQuerySlug = 'ethereum' | 'arbitrum-one' | 'base' | 'apechain' | 'superposition';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
+const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 
 export type TokenExpectation = {
   symbol: string;
@@ -35,9 +36,11 @@ export type RouteTokenCase = {
 export const nonConnectedDestinationAddress = 'integration-destination-address';
 
 export const usdcAddressByChain: Record<ChainQuerySlug, string> = {
-  ethereum: CommonAddress.Ethereum.USDC,
-  apechain: CommonAddress.ApeChain.USDCe,
-  superposition: CommonAddress.Superposition.USDCe,
+  'ethereum': CommonAddress.Ethereum.USDC,
+  'arbitrum-one': CommonAddress.ArbitrumOne.USDC,
+  'base': CommonAddress.Base.USDC,
+  'apechain': CommonAddress.ApeChain.USDCe,
+  'superposition': CommonAddress.Superposition.USDCe,
 };
 
 function escapeRegExp(value: string): string {
@@ -88,12 +91,14 @@ async function getSearchParamsAfterSanitization({
 }
 
 export function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToken {
-  const isEthereum = sourceChain === 'ethereum';
+  const usesNativeUsdc =
+    sourceChain === 'ethereum' || sourceChain === 'arbitrum-one' || sourceChain === 'base';
+
   return {
     type: TokenType.ERC20,
     decimals: 6,
-    name: isEthereum ? 'USD Coin' : 'Bridged USDC',
-    symbol: isEthereum ? 'USDC' : 'USDC.e',
+    name: usesNativeUsdc ? 'USD Coin' : 'Bridged USDC',
+    symbol: usesNativeUsdc ? 'USDC' : 'USDC.e',
     address: usdcAddressByChain[sourceChain],
     listIds: new Set<string>(),
   };
@@ -145,6 +150,13 @@ export async function expectTokenButtonToken({
   const buttonAriaLabel = isDestination ? 'Select Destination Token' : 'Select Token';
   const symbolRegex = new RegExp(`\\b${escapeRegExp(tokenExpectation.symbol)}\\b`, 'i');
 
+  type TokenButtonSnapshot = {
+    found: boolean;
+    buttonText: string;
+    symbolText: string;
+    logoSrc: string | null;
+  };
+
   const getTokenButtonSnapshot = () => {
     try {
       const latestTokenButton = screen.getByRole('button', {
@@ -152,35 +164,55 @@ export async function expectTokenButtonToken({
         hidden: true,
       });
       const logoImage = latestTokenButton.querySelector('img');
+      const symbolElement = latestTokenButton.querySelector('span.font-light');
+      const symbolText = symbolElement?.textContent?.trim() ?? '';
 
       return {
+        found: true,
         buttonText: latestTokenButton.textContent?.trim() ?? '',
-        logoSrc: logoImage?.getAttribute('src') ?? '<missing>',
-      };
+        symbolText,
+        logoSrc: logoImage?.getAttribute('src') ?? null,
+      } satisfies TokenButtonSnapshot;
     } catch {
       return {
-        buttonText: '<button-not-found>',
-        logoSrc: '<button-not-found>',
-      };
+        found: false,
+        buttonText: '',
+        symbolText: '',
+        logoSrc: null,
+      } satisfies TokenButtonSnapshot;
     }
+  };
+
+  const formatTokenButtonSnapshot = (snapshot: TokenButtonSnapshot) => {
+    if (!snapshot.found) {
+      return 'button not found yet';
+    }
+
+    return `symbol=${JSON.stringify(snapshot.symbolText)} rawText=${JSON.stringify(snapshot.buttonText)}`;
   };
 
   await waitFor(
     () => {
       const snapshot = getTokenButtonSnapshot();
-      if (!symbolRegex.test(snapshot.buttonText)) {
+      if (!snapshot.found || !snapshot.symbolText) {
         throw new Error(
-          `Expected "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}", got "${snapshot.buttonText}".`,
+          `Waiting for "${buttonAriaLabel}" symbol to resolve. Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
+        );
+      }
+
+      if (!symbolRegex.test(snapshot.symbolText)) {
+        throw new Error(
+          `Expected "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}", got symbol "${snapshot.symbolText}" (raw: "${snapshot.buttonText}").`,
         );
       }
     },
     {
-      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
       interval: POLL_INTERVAL_MS,
       onTimeout: () => {
         const snapshot = getTokenButtonSnapshot();
         return new Error(
-          `Timed out waiting for "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}". Current text: "${snapshot.buttonText}".`,
+          `Timed out waiting for "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}". Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
         );
       },
     },
@@ -188,18 +220,15 @@ export async function expectTokenButtonToken({
 
   const logoURI = tokenExpectation.logoURI;
   if (logoURI) {
-    const logoDeadline = Date.now() + INTEGRATION_ASSERT_TIMEOUT_MS;
+    const logoDeadline = Date.now() + TOKEN_BUTTON_ASSERT_TIMEOUT_MS;
     while (Date.now() < logoDeadline) {
       const snapshot = getTokenButtonSnapshot();
 
-      if (snapshot.logoSrc.includes(logoURI)) {
+      if (snapshot.logoSrc?.includes(logoURI)) {
         break;
       }
 
-      const hasResolvedWrongLogo =
-        snapshot.logoSrc !== '<button-not-found>' &&
-        snapshot.logoSrc !== '<missing>' &&
-        snapshot.logoSrc !== '';
+      const hasResolvedWrongLogo = snapshot.found && !!snapshot.logoSrc;
 
       if (hasResolvedWrongLogo) {
         console.error('[TransferPanel integration debug] Token button logo mismatch', {
@@ -218,7 +247,7 @@ export async function expectTokenButtonToken({
     }
 
     const finalLogoSnapshot = getTokenButtonSnapshot();
-    if (!finalLogoSnapshot.logoSrc.includes(logoURI)) {
+    if (!finalLogoSnapshot.logoSrc?.includes(logoURI)) {
       console.error('[TransferPanel integration debug] Token button logo mismatch', {
         buttonAriaLabel,
         expectedLogoURI: logoURI,
@@ -227,7 +256,7 @@ export async function expectTokenButtonToken({
       });
 
       throw new Error(
-        `Timed out waiting for "${buttonAriaLabel}" button logo to contain "${logoURI}". Current src: "${finalLogoSnapshot.logoSrc}", text: "${finalLogoSnapshot.buttonText}".`,
+        `Timed out waiting for "${buttonAriaLabel}" button logo to contain "${logoURI}". Current state: ${formatTokenButtonSnapshot(finalLogoSnapshot)}, current src: ${JSON.stringify(finalLogoSnapshot.logoSrc)}.`,
       );
     }
   }
