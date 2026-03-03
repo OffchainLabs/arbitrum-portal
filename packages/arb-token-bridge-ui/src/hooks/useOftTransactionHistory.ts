@@ -4,6 +4,7 @@ import useSWRImmutable from 'swr/immutable';
 import { LayerZeroTransaction } from '../state/app/state';
 import { getChainIdFromEid, getOftV2TransferDecodedData } from '../token-bridge-sdk/oftUtils';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { isDebugModeEnabled } from '../util';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { isDepositMode } from '../util/isDepositMode';
@@ -339,7 +340,9 @@ export async function getUpdatedOftTransfer(
       destinationTxHash,
     };
   } catch (error) {
-    console.error('Error fetching updated OFT transfer for tx:', tx.txId, error);
+    if (isDebugModeEnabled()) {
+      console.error('Error fetching updated OFT transfer for tx:', tx.txId, error);
+    }
     return tx;
   }
 }

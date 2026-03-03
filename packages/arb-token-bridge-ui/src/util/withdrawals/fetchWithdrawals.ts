@@ -2,6 +2,7 @@ import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { Provider } from '@ethersproject/providers';
 import { constants } from 'ethers';
 
+import { isDebugModeEnabled } from '..';
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
 import { Withdrawal } from '../../hooks/useTransactionHistory';
 import { getNonce } from '../AddressUtils';
@@ -118,7 +119,9 @@ export async function fetchWithdrawals({
     // if successful, this is our latest fetched block and we will use it as a start block for event logs to fetch the remaining data
     latestFetchedBlock = toBlockSubgraph;
   } catch (error) {
-    console.log('Error fetching withdrawals from subgraph', error);
+    if (isDebugModeEnabled()) {
+      console.log('Error fetching withdrawals from subgraph', error);
+    }
   }
 
   const gateways = await getGateways(l2Provider);
