@@ -1,6 +1,6 @@
 'use client';
 
-import { BigNumber, utils } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Address, getAddress } from 'viem';
@@ -22,7 +22,6 @@ import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadin
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
-import { AddressZero } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
@@ -54,7 +53,7 @@ interface VaultActionPanelProps {
 type ActionType = 'supply' | 'withdraw';
 
 function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || addressesEqual(tokenAddress, AddressZero)) {
+  if (!tokenAddress || addressesEqual(tokenAddress, constants.AddressZero)) {
     return undefined;
   }
 
@@ -155,7 +154,8 @@ export function VaultActionPanel({
     () => normalizeTokenAddress(lpTokenAddress),
     [lpTokenAddress],
   );
-  const isAssetNativeBalance = !assetTokenAddress || addressesEqual(assetTokenAddress, AddressZero);
+  const isAssetNativeBalance =
+    !assetTokenAddress || addressesEqual(assetTokenAddress, constants.AddressZero);
   const shouldFetchAssetBalance =
     isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
   const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
@@ -390,6 +390,35 @@ export function VaultActionPanel({
     setSelectedAction: setSelectedAction as (action: string) => void,
   });
 
+  const handleActionChange = useCallback(
+    (action: string) => {
+      if (action === selectedAction) return;
+      setSelectedAction(action as ActionType);
+      setAmount('');
+      setTxError(null);
+      posthog?.capture('Earn Action Selected', {
+        page: 'Earn',
+        section: 'Action Panel',
+        category: OpportunityCategory.Lend,
+        action,
+        opportunityId: vault.address,
+        opportunityName: vault.name,
+        protocol: vault.protocol?.name,
+        chainId: requestChainId,
+        walletConnected: isConnected,
+      });
+    },
+    [
+      isConnected,
+      posthog,
+      requestChainId,
+      selectedAction,
+      vault.address,
+      vault.name,
+      vault.protocol,
+    ],
+  );
+
   const currentApr = formatApr(vault.apy);
 
   const {
@@ -515,23 +544,7 @@ export function VaultActionPanel({
       <EarnActionTabs
         tabs={actionTabs}
         selectedAction={selectedAction}
-        onActionChange={(action) => {
-          if (action === selectedAction) return;
-          setSelectedAction(action as ActionType);
-          setAmount('');
-          setTxError(null);
-          posthog?.capture('Earn Action Selected', {
-            page: 'Earn',
-            section: 'Action Panel',
-            category: OpportunityCategory.Lend,
-            action,
-            opportunityId: vault.address,
-            opportunityName: vault.name,
-            protocol: vault.protocol?.name,
-            chainId: requestChainId,
-            walletConnected: isConnected,
-          });
-        }}
+        onActionChange={handleActionChange}
       />
 
       <EarnAmountInputSection

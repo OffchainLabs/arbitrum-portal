@@ -32,9 +32,13 @@ export function useEarnTransactionHistory(
 
   const { data, error, isLoading } = useSWRImmutable<TransactionHistoryResponse>(
     historyKey,
-    async ([keyCategory, keyOpportunityId, keyUserAddress, keyChainId]: NonNullable<
-      typeof historyKey
-    >) => {
+    async ([keyCategory, keyOpportunityId, keyUserAddress, keyChainId]: readonly [
+      OpportunityCategory,
+      string,
+      string,
+      EarnChainId,
+      'earn-transactions',
+    ]) => {
       if (!keyUserAddress || !keyOpportunityId) return null;
 
       const params = new URLSearchParams({

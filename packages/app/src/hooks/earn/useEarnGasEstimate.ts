@@ -32,7 +32,7 @@ function parseApiEstimateUsd(apiEstimate?: string): number | null {
     return null;
   }
 
-  const parsed = parseFloat(apiEstimate.replace(/[^0-9.-]/g, ''));
+  const parsed = parseFloat(apiEstimate);
   return Number.isFinite(parsed) ? parsed : null;
 }
 

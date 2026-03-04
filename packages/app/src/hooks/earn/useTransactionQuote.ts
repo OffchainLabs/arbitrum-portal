@@ -28,14 +28,7 @@ export interface UseTransactionQuoteParams {
   enabled?: boolean;
 }
 
-export type UseTransactionQuoteResult = Omit<
-  SWRResponse<TransactionQuoteResponse, Error>,
-  'data' | 'error'
-> & {
-  data: TransactionQuoteResponse | null;
-  error: string | null;
-  refetch: () => void;
-};
+export type UseTransactionQuoteResult = SWRResponse<TransactionQuoteResponse, Error>;
 
 type TransactionQuoteKey = readonly [
   string,
@@ -52,18 +45,6 @@ type TransactionQuoteKey = readonly [
   string | undefined,
   'transaction-quote',
 ];
-
-function isPositiveRawAmount(rawAmount: string): boolean {
-  if (!/^\d+$/.test(rawAmount)) {
-    return false;
-  }
-
-  try {
-    return BigNumber.from(rawAmount).gt(0);
-  } catch {
-    return false;
-  }
-}
 
 export function useTransactionQuote(params: UseTransactionQuoteParams): UseTransactionQuoteResult {
   const {
@@ -83,7 +64,17 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
   } = params;
 
   const debouncedAmount = useDebounce(amount, 500);
-  const hasPositiveAmount = isPositiveRawAmount(debouncedAmount);
+  const hasPositiveAmount = (() => {
+    if (!/^\d+$/.test(debouncedAmount)) {
+      return false;
+    }
+
+    try {
+      return BigNumber.from(debouncedAmount).gt(0);
+    } catch {
+      return false;
+    }
+  })();
 
   const quoteKey =
     enabled && opportunityId && userAddress && hasPositiveAmount
@@ -104,7 +95,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
         ] as const)
       : null;
 
-  const swrResponse = useSWR<TransactionQuoteResponse>(
+  return useSWR<TransactionQuoteResponse>(
     quoteKey,
     async ([
       keyOpportunityId,
@@ -170,16 +161,4 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       errorRetryCount: 2,
     },
   );
-
-  const { data, error, mutate, ...restSWR } = swrResponse;
-
-  return {
-    ...restSWR,
-    mutate,
-    data: data ?? null,
-    error: error?.message || null,
-    refetch: () => {
-      void mutate();
-    },
-  };
 }

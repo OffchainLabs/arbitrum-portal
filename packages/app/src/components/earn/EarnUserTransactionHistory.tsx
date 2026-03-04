@@ -1,7 +1,7 @@
 'use client';
 
 import { usePostHog } from 'posthog-js/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
 import { EarnPagination } from '@/app-components/earn/EarnPagination';
@@ -94,21 +94,24 @@ export function EarnUserTransactionHistory({
     }
   }, [currentPage, totalPages]);
 
-  const handlePageChange = (page: number) => {
-    if (page === currentPage) return;
-    setCurrentPage(page);
-    posthog?.capture('Earn Transaction History Page Changed', {
-      page: 'Earn',
-      section: 'Transaction History',
-      category,
-      opportunityId,
-      opportunityName,
-      chainId,
-      currentPage,
-      nextPage: page,
-      totalPages,
-    });
-  };
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page === currentPage) return;
+      setCurrentPage(page);
+      posthog?.capture('Earn Transaction History Page Changed', {
+        page: 'Earn',
+        section: 'Transaction History',
+        category,
+        opportunityId,
+        opportunityName,
+        chainId,
+        currentPage,
+        nextPage: page,
+        totalPages,
+      });
+    },
+    [category, chainId, currentPage, opportunityId, opportunityName, posthog, totalPages],
+  );
 
   if (!walletAddress) return null;
 
@@ -117,7 +120,7 @@ export function EarnUserTransactionHistory({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center">
-        <h3 className="text-[18px] font-medium text-white tracking-[-0.36px]">
+        <h3 className="text-[18px] font-medium text-white">
           Your transactions for {opportunityName}
         </h3>
       </div>
