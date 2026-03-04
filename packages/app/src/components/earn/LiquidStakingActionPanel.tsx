@@ -866,7 +866,7 @@ export function LiquidStakingActionPanel({
         isConnected={isConnected}
         decimals={currentDecimals}
         validationError={
-          routeError ||
+          routeError?.message ||
           (transferReadiness.errorMessage
             ? typeof transferReadiness.errorMessage === 'string'
               ? transferReadiness.errorMessage
