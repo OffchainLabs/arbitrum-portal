@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo } from 'react';
 
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
