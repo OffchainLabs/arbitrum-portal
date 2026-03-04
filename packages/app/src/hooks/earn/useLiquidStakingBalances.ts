@@ -1,34 +1,16 @@
-import { BigNumber } from 'ethers';
+'use client';
+
+import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { Address, PublicClient, getAddress } from 'viem';
 import { useAccount, usePublicClient } from 'wagmi';
 
 import { ChainId } from '@/bridge/types/ChainId';
-import { AddressZero, CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { ERC20_BALANCE_ABI } from '@/earn-api/lib/erc20Abi';
 import type { EarnChainId } from '@/earn-api/types';
 
-/**
- * SWR key generator for token balance cache
- */
-function getTokenBalanceKey(
-  walletAddress: string | undefined,
-  tokenAddress: string | null,
-  chainId: EarnChainId,
-): string[] | null {
-  if (!walletAddress) return null;
-  return [
-    'liquid-staking-balance',
-    walletAddress.toLowerCase(),
-    tokenAddress?.toLowerCase() || 'ETH',
-    String(chainId),
-  ];
-}
-
-/**
- * Fetcher function for token balances using wagmi
- */
 async function fetchTokenBalance(
   publicClient: PublicClient | undefined,
   walletAddress: string,
@@ -38,22 +20,20 @@ async function fetchTokenBalance(
     throw new Error('Public client not available');
   }
 
-  if (!tokenAddress || tokenAddress === AddressZero) {
-    // Fetch native ETH balance
+  if (!tokenAddress || tokenAddress === constants.AddressZero) {
     const balance = await publicClient.getBalance({
       address: walletAddress as Address,
     });
     return balance;
-  } else {
-    // Fetch ERC20 token balance
-    const balance = await publicClient.readContract({
-      address: getAddress(tokenAddress),
-      abi: ERC20_BALANCE_ABI,
-      functionName: 'balanceOf',
-      args: [walletAddress as Address],
-    });
-    return balance as bigint;
   }
+
+  const balance = await publicClient.readContract({
+    address: getAddress(tokenAddress),
+    abi: ERC20_BALANCE_ABI,
+    functionName: 'balanceOf',
+    args: [walletAddress as Address],
+  });
+  return balance as bigint;
 }
 
 interface UseTokenBalanceParams {
@@ -76,10 +56,6 @@ interface UseTokenBalanceResult {
   refetch: () => void;
 }
 
-/**
- * Hook to fetch a single token balance using SWR
- * Key: ['liquid-staking-balance', walletAddress, tokenAddress, chainId]
- */
 export function useTokenBalance({
   tokenAddress,
   chainId = ChainId.ArbitrumOne,
@@ -89,7 +65,14 @@ export function useTokenBalance({
   const publicClient = usePublicClient({ chainId });
 
   const shouldFetch = enabled && !!walletAddress && isConnected;
-  const swrKey = shouldFetch ? getTokenBalanceKey(walletAddress, tokenAddress, chainId) : null;
+  const swrKey = shouldFetch
+    ? ([
+        'liquid-staking-balance',
+        walletAddress.toLowerCase(),
+        tokenAddress?.toLowerCase() || 'ETH',
+        String(chainId),
+      ] as const)
+    : null;
 
   const { data, error, isLoading, mutate } = useSWRImmutable(
     swrKey,
@@ -117,16 +100,10 @@ export function useTokenBalance({
   };
 }
 
-/**
- * Helper function to invalidate all liquid staking balances for a wallet
- * Can be called after successful transactions
- */
 export function invalidateLiquidStakingBalances(
   walletAddress: string,
   chainId: EarnChainId = ChainId.ArbitrumOne,
 ) {
-  // This will be used with SWR's mutate function
-  // Usage: mutate(invalidateLiquidStakingBalances(walletAddress, chainId))
   return (key: string[] | null) => {
     if (!Array.isArray(key)) return false;
     return (
@@ -137,9 +114,6 @@ export function invalidateLiquidStakingBalances(
   };
 }
 
-/**
- * Convenience hooks for specific tokens
- */
 export function useETHBalance(enabled: boolean = true) {
   return useTokenBalance({
     tokenAddress: null,

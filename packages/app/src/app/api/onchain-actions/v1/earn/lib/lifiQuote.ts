@@ -1,8 +1,7 @@
-import { Address, PublicClient, encodeFunctionData, getAddress } from 'viem';
+import { Address, PublicClient, encodeFunctionData, getAddress, zeroAddress } from 'viem';
 import { readContract } from 'viem/actions';
 
 import { ChainId } from '@/bridge/types/ChainId';
-import { AddressZero } from '@/bridge/util/CommonAddressUtils';
 
 import type { TransactionStep } from '../types';
 import { ERC20_ALLOWANCE_ABI, ERC20_APPROVE_ABI } from './erc20Abi';
@@ -55,7 +54,7 @@ async function buildTransactionSteps({
   const transactionSteps: TransactionStep[] = [];
   let stepNumber = 1;
 
-  const isNativeETH = inputTokenAddress.toLowerCase() === AddressZero.toLowerCase();
+  const isNativeETH = inputTokenAddress.toLowerCase() === zeroAddress.toLowerCase();
 
   if (!isNativeETH) {
     const spenderAddress = transactionRequest.to as Address;
