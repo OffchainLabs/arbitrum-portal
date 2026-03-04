@@ -1,3 +1,4 @@
+import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { GET_HELP_LINK } from '@/portal/common/constants';
 
 import type { NavLink, NavRoute } from '../types';
@@ -108,7 +109,11 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
   },
 };
 
-export const navLinks: NavLink[] = Object.values(NAV_CONFIG).map(({ label, route, href }) => ({
+const visibleNavConfig = Object.values(NAV_CONFIG).filter(
+  ({ route }) => route !== '/earn' || isEarnEnabled(),
+);
+
+export const navLinks: NavLink[] = visibleNavConfig.map(({ label, route, href }) => ({
   label,
   route,
   href,
@@ -118,7 +123,7 @@ export interface NavLinkWithIcon extends NavLink {
   imgSrc: string;
 }
 
-export const navLinksWithIcons: NavLinkWithIcon[] = Object.values(NAV_CONFIG).map(
+export const navLinksWithIcons: NavLinkWithIcon[] = visibleNavConfig.map(
   ({ label, route, href, imgSrc }) => ({
     label,
     route,
@@ -128,5 +133,5 @@ export const navLinksWithIcons: NavLinkWithIcon[] = Object.values(NAV_CONFIG).ma
 );
 
 export const subNavItems: Record<string, SubNavItem[]> = Object.fromEntries(
-  Object.entries(NAV_CONFIG).map(([route, config]) => [route, config.subNavItems]),
+  visibleNavConfig.map(({ route, subNavItems }) => [route, subNavItems]),
 );
