@@ -16,8 +16,8 @@ export const SIDEBAR_OPEN_PREFERENCE_KEY = 'arbitrum:portal:sidebar:opened';
 export const PORTAL_DATA_ENDPOINT = 'https://portal-data.arbitrum.io';
 
 export const STATUS_LINK = 'https://status.arbitrum.io/';
-export const TERMS_OF_SERVICE_LINK = 'https://arbitrum.io/terms-of-service';
-export const PRIVACY_POLICY_LINK = 'https://arbitrum.io/privacy-policy';
+export const TERMS_OF_SERVICE_LINK = 'https://arbitrum.io/tos';
+export const PRIVACY_POLICY_LINK = 'https://arbitrum.io/privacy';
 export const MEDIA_KIT_LINK = 'https://arbitrum.io/brand-kit';
 export const OFFCHAIN_LABS_LINK = 'https://offchainlabs.com/';
 export const ARBITRUM_TECHNOLOGY_LINK = 'https://arbitrum.io/';
