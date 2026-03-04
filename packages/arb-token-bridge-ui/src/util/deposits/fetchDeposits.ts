@@ -81,8 +81,12 @@ export const fetchDeposits = async ({
     logger.info('Error fetching native token deposits to custom destination from subgraph', error);
   }
 
-  const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph.map(
-    (tx: FetchDepositsFromSubgraphResult) => {
+  // filter out classic deposits
+  const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph
+    .filter((deposit) =>
+      process.env.NEXT_PUBLIC_SHOW_CLASSIC_DEPOSITS === 'false' ? !deposit.isClassic : true,
+    )
+    .map((tx: FetchDepositsFromSubgraphResult) => {
       const isEthDeposit = tx.type === 'EthDeposit';
 
       const assetDetails = {
@@ -128,8 +132,7 @@ export const fetchDeposits = async ({
         childChainId: l2ChainId,
         parentChainId: l1ChainId,
       };
-    },
-  );
+    });
 
   const mappedEthDepositsToCustomDestinationFromSubgraph: Transaction[] =
     ethDepositsToCustomDestinationFromSubgraph.map(
