@@ -74,6 +74,25 @@ describe('isArbitrumCanonicalTransfer', () => {
       expect(erc20Deposit).toBe(false);
     });
 
+    it('should return false for PYUSD deposits', () => {
+      const pyusdDeposit = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...usdcToken,
+          address: CommonAddress.Ethereum.PYUSD,
+          symbol: 'PYUSD',
+          name: 'PayPal USD',
+        },
+        isSwap: false,
+      });
+      expect(pyusdDeposit).toBe(false);
+    });
+
     it('should return false from Base to Arbitrum One', () => {
       const baseDeposit = isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,
@@ -228,6 +247,26 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSwap: false,
       });
       expect(erc20Withdrawal).toBe(true);
+    });
+
+    it('should return true for PYUSD withdrawals', () => {
+      const pyusdWithdrawal = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...usdcToken,
+          address: CommonAddress.Ethereum.PYUSD,
+          l2Address: CommonAddress.ArbitrumOne.PYUSD,
+          symbol: 'PYUSD',
+          name: 'PayPal USD',
+        },
+        isSwap: false,
+      });
+      expect(pyusdWithdrawal).toBe(true);
     });
 
     it('should return false from Arbitrum One to Base', () => {

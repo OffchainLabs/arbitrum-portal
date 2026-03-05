@@ -11,7 +11,7 @@ import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
-import { sanitizeTokenSymbol } from '../../util/TokenUtils';
+import { isTokenEthereumPYUSD, sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
@@ -56,6 +56,15 @@ export function isDisabledCanonicalTransfer({
     parentChainId === ChainId.ArbitrumOne &&
     childChainId === ChainId.ApeChain &&
     addressesEqual(selectedToken.address, constants.AddressZero)
+  ) {
+    return true;
+  }
+
+  if (
+    isDepositMode &&
+    parentChainId === ChainId.Ethereum &&
+    childChainId === ChainId.ArbitrumOne &&
+    isTokenEthereumPYUSD(selectedToken.address)
   ) {
     return true;
   }

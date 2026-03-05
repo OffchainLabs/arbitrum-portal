@@ -398,6 +398,16 @@ export const isTokenUSDT = (tokenAddress: string | undefined) => {
   );
 };
 
+export const isTokenEthereumPYUSD = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Ethereum.PYUSD);
+
+export const isTokenArbitrumOnePYUSD = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.PYUSD);
+
+export const isTokenPYUSD = (tokenAddress: string | undefined) => {
+  return isTokenEthereumPYUSD(tokenAddress) || isTokenArbitrumOnePYUSD(tokenAddress);
+};
+
 export const isTokenEthereumWBTC = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.Ethereum.WBTC);
 
