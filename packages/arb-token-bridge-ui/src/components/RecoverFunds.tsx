@@ -22,7 +22,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useError } from '../hooks/useError';
@@ -45,6 +44,7 @@ import { DialogWrapper, useDialog2 } from './common/Dialog2';
 import { NetworkImage } from './common/NetworkImage';
 import { NoteBox } from './common/NoteBox';
 import { SafeImage } from './common/SafeImage';
+import { Tooltip } from './common/Tooltip';
 import { Loader } from './common/atoms/Loader';
 import { errorToast } from './common/atoms/Toast';
 
@@ -298,16 +298,24 @@ export function RecoverFunds() {
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
-            <Tooltip content={getAliasedAddress(address)}>
-              <span className="inline cursor-help underline arb-hover">
-                {shortenAddress(getAliasedAddress(address))}
-              </span>
+            <Tooltip
+              wrapperClassName="inline arb-hover underline cursor-help"
+              content={getAliasedAddress(address)}
+              tippyProps={{
+                hideOnClick: false,
+              }}
+            >
+              {shortenAddress(getAliasedAddress(address))}
             </Tooltip>{' '}
             alias of currently connected address (
-            <Tooltip content={address}>
-              <span className="inline cursor-help underline arb-hover">
-                {shortenAddress(address)}
-              </span>
+            <Tooltip
+              wrapperClassName="inline arb-hover underline cursor-help"
+              content={address}
+              tippyProps={{
+                hideOnClick: false,
+              }}
+            >
+              {shortenAddress(address)}
             </Tooltip>
             )
           </p>
