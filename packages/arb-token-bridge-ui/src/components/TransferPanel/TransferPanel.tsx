@@ -1,6 +1,7 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
 import { getStepTransaction } from '@lifi/sdk';
+import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
@@ -10,7 +11,6 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
@@ -1341,15 +1341,14 @@ export function TransferPanel() {
         )}
 
         {showSmartContractWalletTooltip && (
-          <Tooltip
-            side="bottom"
-            align="center"
-            open={showSmartContractWalletTooltip}
-            onOpenChange={setShowSmartContractWalletTooltip}
+          <Tippy
+            placement="bottom-end"
+            maxWidth="auto"
             onClickOutside={() => setShowSmartContractWalletTooltip(false)}
-            contentClassName="max-w-none"
+            theme="orange"
+            visible={showSmartContractWalletTooltip}
             content={
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col">
                 <span>
                   <b>To continue, please approve tx on your smart contract wallet.</b>
                 </span>
@@ -1357,8 +1356,9 @@ export function TransferPanel() {
               </div>
             }
           >
-            <div className="!m-0 h-px mx-auto text-center w-full" aria-hidden="true" />
-          </Tooltip>
+            {/* Override margin coming from Tippy that causes layout disruptions */}
+            <div className="!m-0" />
+          </Tippy>
         )}
       </div>
     </>

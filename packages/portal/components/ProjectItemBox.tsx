@@ -8,7 +8,6 @@ import React from 'react';
 import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import { formatOptionalDate } from '@/common/dateUtils';
 import { getProjectDetailsById, hasLiveIncentives } from '@/common/projects';
 import { EntityCardDisplayMode, EntityType, FullProject, SearchableData } from '@/common/types';
@@ -18,6 +17,7 @@ import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
 import ExternalLinkIcon from '@/public/images/link.svg';
 
 import { LiveIncentivesBadge } from './LiveIncentivesBadge';
+import { Tooltip } from './Tooltip';
 
 export type ItemBoxProps = {
   slug: string;
@@ -185,7 +185,7 @@ const ItemContent = ({
                     </p>
                   }
                 >
-                  <span>Arbitrum Native</span>
+                  Arbitrum Native
                 </Tooltip>
               </span>
             )}

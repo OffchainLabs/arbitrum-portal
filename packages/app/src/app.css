@@ -119,6 +119,25 @@ input:focus-visible {
   z-index: 50 !important;
 }
 
+/* Tippy themes */
+.tippy-box[data-theme='orange'] {
+  background-color: #ffeed3;
+  color: #ffeed3;
+}
+
+.tippy-box[data-theme='orange'] > .tippy-arrow {
+  color: inherit;
+}
+
+.tippy-box[data-theme='orange'] > .tippy-content {
+  color: #60461f;
+}
+
+.tippy-box[data-theme~='dark'] {
+  border-radius: 5px;
+  border: 1px solid #777;
+}
+
 /*
   Custom
 */

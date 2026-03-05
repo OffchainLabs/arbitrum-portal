@@ -1,5 +1,3 @@
-import { Tooltip } from '@/app-components/Tooltip';
-
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -9,6 +7,7 @@ import { shortenAddress } from '../../util/CommonUtils';
 import { isTokenNativeUSDC } from '../../util/TokenUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
+import { Tooltip } from '../common/Tooltip';
 import { TokenLogo } from './TokenLogo';
 
 export function BlockExplorerTokenLink({
@@ -48,6 +47,7 @@ export const TokenInfoTooltip = ({ token }: { token: ERC20BridgeToken | null }) 
 
   return (
     <Tooltip
+      wrapperClassName="underline cursor-pointer"
       content={
         <div className="flex items-center space-x-2">
           <TokenLogo srcOverride={token.logoURI} className="h-7 w-7" />
@@ -60,11 +60,12 @@ export const TokenInfoTooltip = ({ token }: { token: ERC20BridgeToken | null }) 
           </div>
         </div>
       }
+      tippyProps={{
+        arrow: false,
+        interactive: true,
+      }}
     >
-      <ExternalLink
-        href={`${getExplorerUrl(networks.destinationChain.id)}/token/${tokenAddress}`}
-        className="cursor-pointer underline"
-      >
+      <ExternalLink href={`${getExplorerUrl(networks.destinationChain.id)}/token/${tokenAddress}`}>
         {token.symbol}
       </ExternalLink>
     </Tooltip>
