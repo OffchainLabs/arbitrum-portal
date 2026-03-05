@@ -145,7 +145,7 @@
         "bridge": "0xEca0fEB4aA6112a3923823559e7197294Bc49CC7",
         "inbox": "0x2EAf07A964c6601c4fAefd6D8969DF0B84f65e55",
         "outbox": "0xa4b3B4D5f7976a8D283864ea83f1Bb3D815b1798",
-        "rollup": "0x325Dd0279Ba31bC346BA80F3D00628deFa2EacD4",
+        "rollup": "0xf3C4a84a948658D012C915Ad4bb4b501F6C3c075",
         "sequencerInbox": "0xe0064A9fb8e45BfD8e5aB1cE7523888814A096E0"
       },
       "explorerUrl": "https://explorer.superposition.so",
@@ -326,7 +326,7 @@
         "bridge": "0x7983403dDA368AA7d67145a9b81c5c517F364c42",
         "inbox": "0x7AD2a94BefF3294a31894cFb5ba4206957a53c19",
         "outbox": "0x1153a1e4B1523DFf36f77d696bd6eBF2B0e7DAbF",
-        "rollup": "0xf993AF239770932A0EDaB88B6A5ba3708Bd58239",
+        "rollup": "0x2807B1d5d94ca823ca7d8642A5F5DDac120ce48f",
         "sequencerInbox": "0x8D99372612e8cFE7163B1a453831Bc40eAeb3cF3"
       },
       "nativeToken": "0x9C7BEBa8F6eF6643aBd725e45a4E8387eF260649",
@@ -471,7 +471,7 @@
         "bridge": "0xd46AB997110a91C4CB6f4576ffE6769a3033622A",
         "inbox": "0xF649EF414d5674851614615b3e3861E90a812379",
         "outbox": "0x48a5c0942046753B8026b1dc074Dd22297A31340",
-        "rollup": "0xAa400A624190FFbD09F292d09C2Ed01704609C67",
+        "rollup": "0xc905b1F4e9fFcC21a58B430FBa06d07203F641E1",
         "sequencerInbox": "0x6CBf221c8cc7E2B9De4bce3a5c75378591Bdf8Ea"
       },
       "nativeToken": "0x6a9896837021EA3eD83F623F655C119c54abE02c",
@@ -520,7 +520,7 @@
         "bridge": "0xaF25849aEb040bEab7a0c783fc6861d26aE49796",
         "inbox": "0xc7b143E5E4Bf1893BA33007ecb3Db9c1092dab38",
         "outbox": "0xA5b6E1DbA5c9037cCd2013D7dd7BD173AFc90d4c",
-        "rollup": "0xE18FD99F6C0eBEC7d01893E9f7Cf363EeF38F9B4",
+        "rollup": "0x0DA5198b8ae8aE9354061649D08BE1c53ec8a377",
         "sequencerInbox": "0x21f9c31eD91612B48A8ae450Bdd0f19F8f5Bea40"
       },
       "nativeToken": "0xa4f63404b58C3efD9Db6D53352BD386fFa174e5A",
@@ -568,7 +568,7 @@
         "bridge": "0x35381f63091926750F43b2A7401B083263aDEF83",
         "inbox": "0x943fc691242291B74B105e8D19bd9E5DC2fcBa1D",
         "outbox": "0x7e4627bC114Fcd12ba912103279FD2858E644E71",
-        "rollup": "0x35c60Cc77b0A8bf6F938B11bd3E9D319a876c2aC",
+        "rollup": "0x4eD3F488a5a4417839BbC39712EB76D8Aaee6eE8",
         "sequencerInbox": "0x85eC1b9138a8b9659A51e2b51bb0861901040b59"
       },
       "nativeToken": "0x4C1746A800D224393fE2470C70A35717eD4eA5F1",
@@ -845,7 +845,7 @@
         "bridge": "0x55A1B18E0300aD707617B828E0554765dBFc8535",
         "inbox": "0x306c4D4032862813db6554519e03DA31C1387cFf",
         "outbox": "0x8D6513Bc0cafaa0CaEdB80dB392997E92c7FA125",
-        "rollup": "0xA71a1e9649167787e179DD66348e578f928d43F4",
+        "rollup": "0xCE9b9DcC2D281356a7591F3D8307991546172771",
         "sequencerInbox": "0xA672239e003124455c00FdAB7D15dD682BCe97AE"
       },
       "nativeToken": "0x49bef7de007b944505f5a2fac1f00737c8e4fa96",
@@ -893,7 +893,7 @@
         "bridge": "0x9948eDFBb9e0b104bAd60393dBe79d0BC7937014",
         "inbox": "0xE0400a87d5Ee8a2Fc1dF2aAf4B6d8f89d0B9bE55",
         "outbox": "0x433da6d107e942Ec4EAB1e86B16427B6071F6491",
-        "rollup": "0xf0d2960a37B33567FF7507C2d59da021277663A1",
+        "rollup": "0x8361fC54C99AdDbeD390Af68e7e6115323AB8DB1",
         "sequencerInbox": "0x9B26957a661bc862FA0d7eb21813Aa008d0Cc6E6"
       },
       "explorerUrl": "https://explorer.hpp.io/",
@@ -1071,7 +1071,7 @@
         "bridge": "0x7a472B48D9e9D2f6B7fF8FCBb5251849ca75D18f",
         "inbox": "0x009060fdb0816c354F487843d275D9e1d90B1956",
         "outbox": "0x09c35e5848B52Fa422447AD6728b328d0Aa39bA9",
-        "rollup": "0xA11359544aEDC8E5d6700DEf8A8D9dCb828cf646",
+        "rollup": "0xc3074172C101b3789055912DE768d7222000836F",
         "sequencerInbox": "0x3a1b2BDcD084f0536bEF90B8e709fbcCDBf9fEb3"
       },
       "nativeToken": "0xC7603786470F04D33E35f9E9B56bD0Ca8803fB95",
@@ -1299,7 +1299,7 @@
         "bridge": "0x53b168016aA2E3469B5D76315311aAC4Ce0020DB",
         "inbox": "0x7d4509336b154C17Df80D03A19C051ddAcdA2e7f",
         "outbox": "0xc0dd0a059a8a948B7737D00bfC9024475C791259",
-        "rollup": "0x9f3dC4D1f6c6D9F2273d8b497E460E6E727210e8",
+        "rollup": "0xc3196FEE2b194bf699076865060d566c7Cb02892",
         "sequencerInbox": "0x903Af716AA8C7C27Fd785F453D5a59C20E06bDeC"
       },
       "nativeToken": "0x429F0d8233e517f9acf6F0C8293BF35804063a83",
@@ -1583,7 +1583,7 @@
         "bridge": "0xA2e0a93Adc142A94C0a0E4e80940298F9c59DeC9",
         "inbox": "0x5AAa02fa6A405329CAe9b7F6D744f73CB20bFe2e",
         "outbox": "0xDE34eC789e300229E6e419aa814452e413CDb69B",
-        "rollup": "0x1cb092BC61359fcade2d23B10e7C7A98a707B87F",
+        "rollup": "0x627E5adAA60F15Ed29e16F4e18e481F878d76376",
         "sequencerInbox": "0x6018eDaA79B32eb75F95aE85C8158FAFd40CaC0d"
       },
       "nativeToken": "0x3523Fdf00Ed10B874F84fe0b677dE04151840353",
@@ -1631,7 +1631,7 @@
         "bridge": "0xC55b89c17d7a35877FA4ea818fea2a70d5765f1c",
         "inbox": "0xb48cdff890199f5De31514024B95F8664F8Af222",
         "outbox": "0x3F6e2Ee3406b18b7F5ce3D0447d3aD8fbc807744",
-        "rollup": "0x76268c4a75D1bE588356569acbfE03366d9eDCbD",
+        "rollup": "0x3B37BeD1c38c6283A56E60340FE813C0BBA031C3",
         "sequencerInbox": "0xbCa991f1831bE1F1E7e5576d5F84A645e70F3E4d"
       },
       "nativeToken": "0x4C1746A800D224393fE2470C70A35717eD4eA5F1",
@@ -1862,7 +1862,7 @@
         "bridge": "0xD522DC770E2452375AfceD3c3ec96eb784c75570",
         "inbox": "0xb0579056c22aD1fF85a1288f82089B1205447613",
         "outbox": "0xDE290348c15283a812E393DE59EC178Bb7D65de9",
-        "rollup": "0xF66e4186BCeAfCEF7d04024773D41864d9b07B1f",
+        "rollup": "0x2A419230ACA266F4BCddE349936871C6e622529d",
         "sequencerInbox": "0x0826aB1eF7AB293933d7e3cE1122b5d677A23e71"
       },
       "nativeToken": "0x37B8D1d8f7b718001ca4Ca1b2EC08010c16047Aa",
@@ -1909,7 +1909,7 @@
         "bridge": "0x1DDe0F57E7889B6866505634E58E3057b01dfed0",
         "inbox": "0xAAD45a7bF65b43E56767CdE3Ab84A5433c714Afc",
         "outbox": "0x781Fc2C8EAeA5DFBa4E40A2487187C70703BD92C",
-        "rollup": "0x60b33120F5572608CC33c5C3a40c992987B59Edc",
+        "rollup": "0x537F6A3606cb000aE568005bebAF8bd1Ea2DE3b6",
         "sequencerInbox": "0x7A6398deA2adc6fe4A3cfBA3352840bB03e440d3"
       },
       "explorerUrl": "https://sepolia-explorer.hpp.io/",
