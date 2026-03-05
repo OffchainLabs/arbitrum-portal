@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
 
@@ -15,8 +16,8 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
     coinKey: 'PYUSD',
     addresses: {
-      [ChainId.Ethereum]: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
-      [ChainId.ArbitrumOne]: '0x46850ad61c2b7d64d08c9c754f45254596696984',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.PYUSD,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.PYUSD,
     },
   },
   {
