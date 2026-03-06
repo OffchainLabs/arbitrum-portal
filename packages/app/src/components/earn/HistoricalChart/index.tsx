@@ -25,7 +25,12 @@ export interface HistoricalChartProps {
 
 type MetricKey = 'apy' | 'tvl' | 'price';
 
-const ALL_METRICS: MetricKey[] = ['apy', 'tvl', 'price'];
+const ALL_METRICS: MetricKey[] = ['price', 'apy', 'tvl'];
+const METRIC_LABELS: Record<MetricKey, string> = {
+  price: 'Token Price',
+  apy: 'APY',
+  tvl: 'TVL',
+};
 const RANGE_OPTIONS: Array<{ id: HistoricalTimeRange; label: string }> = [
   { id: '1d', label: '1D' },
   { id: '7d', label: '7D' },
@@ -78,8 +83,8 @@ function HistoricalChartContent({
   assetSymbol,
 }: HistoricalChartProps) {
   const posthog = usePostHog();
-  const [metric, setMetric] = useState<MetricKey>('apy');
-  const [range, setRange] = useState<HistoricalTimeRange>('7d');
+  const [metric, setMetric] = useState<MetricKey>('price');
+  const [range, setRange] = useState<HistoricalTimeRange>('1d');
   const config = CHART_CONFIG[category];
 
   const { data, isLoading, error } = useHistoricalData({
@@ -138,21 +143,22 @@ function HistoricalChartContent({
   };
 
   const pillBase =
-    'px-3 py-0.5 text-xs font-medium rounded-full transition-colors border-0 cursor-pointer';
+    'px-3 py-0.5 text-xs font-medium rounded-full transition-colors border-0 cursor-pointer text-center';
   const pillSelected = 'bg-white text-black';
   const pillUnselected = 'text-white hover:bg-white/10';
 
   return (
     <Card className="rounded bg-gray-1 p-4">
-      <div className="flex flex-row items-center justify-between gap-4 mb-3 flex-wrap">
+      <div className="flex flex-col gap-2 mb-3">
         {(availableMetrics.length > 0 || isLoading) && (
-          <div className="flex items-center bg-white/5 rounded-full p-1 gap-1">
+          <div className="flex w-full md:w-auto items-center bg-white/5 rounded-full p-1 gap-1">
             {metricsToRender.map((mk) => (
               <button
                 key={mk}
                 type="button"
                 className={twMerge(
                   pillBase,
+                  'flex-1 md:flex-none',
                   activeMetric === mk ? pillSelected : pillUnselected,
                   isLoading ? 'opacity-60 cursor-default pointer-events-none' : '',
                 )}
@@ -174,12 +180,12 @@ function HistoricalChartContent({
                   });
                 }}
               >
-                {mk.toUpperCase()}
+                {METRIC_LABELS[mk]}
               </button>
             ))}
           </div>
         )}
-        <div className="flex items-center bg-white/5 rounded-full p-1 gap-1 shrink-0">
+        <div className="hidden md:flex items-center bg-white/5 rounded-full p-1 gap-1 shrink-0">
           {RANGE_OPTIONS.map((r) => (
             <button
               key={r.id}
@@ -214,7 +220,7 @@ function HistoricalChartContent({
       </div>
 
       {(currentValue || isLoading) && (
-        <div className="flex flex-col mb-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="text-2xl font-bold text-white">
             {currentValue && !isLoading ? (
               formatCurrentValue(currentValue.value)
@@ -222,16 +228,18 @@ function HistoricalChartContent({
               <div className="h-7 w-24 rounded bg-white/20" />
             )}
           </div>
-          {currentValue && currentValue.change !== null && !isLoading ? (
+          {currentValue && currentValue.change !== null && !isLoading && (
             <div
-              className={`text-sm font-medium ${
-                currentValue.change >= 0 ? 'text-green-500' : 'text-red-500'
+              className={`mt-1 rounded px-2 py-1 text-xs font-medium ${
+                currentValue.change >= 0
+                  ? 'bg-green-500/10 text-green-500'
+                  : 'bg-red-500/10 text-red-500'
               }`}
             >
               {currentValue.change >= 0 ? '+' : ''}
               {currentValue.change.toFixed(2)}%
             </div>
-          ) : null}
+          )}
         </div>
       )}
 
@@ -337,6 +345,39 @@ function HistoricalChartContent({
         {!isLoading && !error && chartData.length === 0 && (
           <div className="text-gray-500 text-sm">No chart data available</div>
         )}
+      </div>
+      <div className="mt-3 flex md:hidden items-center bg-white/5 rounded-full p-1 gap-1">
+        {RANGE_OPTIONS.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            className={twMerge(
+              pillBase,
+              'flex-1',
+              range === r.id ? pillSelected : pillUnselected,
+              isLoading ? 'opacity-60 cursor-default pointer-events-none' : '',
+            )}
+            disabled={isLoading}
+            onClick={() => {
+              if (isLoading || range === r.id) return;
+              setRange(r.id);
+              posthog?.capture('Earn Historical Chart Interacted', {
+                page: 'Earn',
+                section: 'Historical Chart',
+                interactionType: 'range',
+                metric: activeMetric,
+                range: r.id,
+                category,
+                opportunityId,
+                opportunityName: title,
+                assetSymbol,
+                chainId,
+              });
+            }}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
     </Card>
   );
