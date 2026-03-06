@@ -3,7 +3,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { mutate } from 'swr';
 import { useAccount } from 'wagmi';
 
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
@@ -19,10 +18,7 @@ import {
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
-import {
-  invalidateLiquidStakingBalances,
-  useTokenBalance,
-} from '@/app-hooks/earn/useLiquidStakingBalances';
+import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
@@ -252,7 +248,8 @@ export function LiquidStakingActionPanel({
   const requestChainId = opportunity.chainId;
   const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
 
-  const { wstETHBalance, weETHBalance } = useLiquidStakingPositions();
+  const { wstETHBalance, weETHBalance, refetchWstETHBalance, refetchWeETHBalance } =
+    useLiquidStakingPositions();
   const userBalance = useMemo(() => {
     if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {
       return wstETHBalance;
@@ -407,10 +404,8 @@ export function LiquidStakingActionPanel({
       if (selectedAction === 'buy' && selectedTokenAddress) {
         refetchErc20Balance();
       }
-      // Invalidate all token balances to ensure liquid staking positions are refreshed
-      if (walletAddress) {
-        mutate(invalidateLiquidStakingBalances(walletAddress, requestChainId));
-      }
+      refetchWstETHBalance();
+      refetchWeETHBalance();
 
       // Extract transaction details for popup and history
       const timestamp = Math.floor(Date.now() / 1000);
@@ -536,6 +531,8 @@ export function LiquidStakingActionPanel({
       selectedSellToken,
       refetchEthBalance,
       refetchErc20Balance,
+      refetchWstETHBalance,
+      refetchWeETHBalance,
       selectedTokenAddress,
       requestChainId,
       transactionQuote?.receiveAmount,
@@ -816,10 +813,8 @@ export function LiquidStakingActionPanel({
       return null;
     }
 
-    return `${receiveAmountNumber.toFixed(6)}${
-      selectedAction === 'sell' ? ` ${selectedSellToken?.symbol || ''}` : ''
-    }`;
-  }, [receiveAmount, selectedAction, selectedSellToken]);
+    return formatAmount(receiveAmountNumber);
+  }, [receiveAmount]);
   const receiveUsdValue = useMemo(() => {
     if (!receiveAmount || selectedAction !== 'buy' || tokenPrice === null) {
       return undefined;

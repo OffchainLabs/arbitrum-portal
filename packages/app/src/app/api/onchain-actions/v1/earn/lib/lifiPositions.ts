@@ -6,7 +6,7 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { OpportunityCategory, type StandardUserPosition, Vendor } from '../types';
 import { getDunePriceLookup } from './dunePriceSources';
 import { fetchDuneCurrentPriceByAddress } from './duneService';
-import { ERC20_BALANCE_DECIMALS_ABI } from './erc20Abi';
+import { ERC20_BALANCE_ABI } from './erc20Abi';
 import { type LiquidStakingOpportunitySeed } from './liquidStaking';
 
 export async function fetchLifiUserPositions(params: {
@@ -45,27 +45,18 @@ export async function fetchLifiUserPositions(params: {
     const tokenAddress = opportunity.id;
 
     try {
-      const [balance, decimals] = await Promise.all([
-        publicClient.readContract({
-          address: getAddress(tokenAddress),
-          abi: ERC20_BALANCE_DECIMALS_ABI,
-          functionName: 'balanceOf',
-          args: [userAddress as Address],
-        }),
-        publicClient
-          .readContract({
-            address: getAddress(tokenAddress),
-            abi: ERC20_BALANCE_DECIMALS_ABI,
-            functionName: 'decimals',
-          })
-          .catch(() => 18),
-      ]);
+      const balance = await publicClient.readContract({
+        address: getAddress(tokenAddress),
+        abi: ERC20_BALANCE_ABI,
+        functionName: 'balanceOf',
+        args: [userAddress as Address],
+      });
 
       if (balance === BigInt(0)) {
         return null;
       }
 
-      const decimalsNumber = Number(decimals);
+      const decimalsNumber = opportunity.tokenDecimals;
       const balanceInTokens = parseFloat(formatUnits(balance, decimalsNumber));
       const effectivePrice = tokenPriceMap.get(tokenAddress.toLowerCase()) ?? null;
       const valueUsdNumber =

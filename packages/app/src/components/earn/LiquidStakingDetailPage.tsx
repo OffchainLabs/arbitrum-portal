@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useLocalStorage } from '@rehooks/local-storage';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 
@@ -59,10 +60,22 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
 
   const positionUsdValue = useMemo(() => {
-    if (!userBalance || !userBalance.gt(0) || tokenPrice === null) return '—';
+    if (!userBalance || !userBalance.gt(0)) return '—';
     const balanceInTokens = Number(formatUnits(BigInt(userBalance.toString()), 18));
-    return formatUSD(balanceInTokens * tokenPrice);
-  }, [userBalance, tokenPrice]);
+    if (tokenPrice !== null) {
+      return formatUSD(balanceInTokens * tokenPrice);
+    }
+
+    if (
+      typeof opportunity.depositedUsd === 'number' &&
+      Number.isFinite(opportunity.depositedUsd) &&
+      opportunity.depositedUsd > 0
+    ) {
+      return formatUSD(opportunity.depositedUsd);
+    }
+
+    return '—';
+  }, [userBalance, tokenPrice, opportunity.depositedUsd]);
 
   const historyOpportunityId = useMemo(() => {
     const initialId = (opportunity.vaultAddress || opportunity.id).toLowerCase();
@@ -221,10 +234,12 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               </div>
             </Card>
 
-            {/* Stakers Card */}
+            {/* Current APY Card */}
             <Card className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-              <span className="text-xs text-white/50 leading-none">Total Staked</span>
-              <div className="text-base font-medium text-white h-8 flex items-center">—</div>
+              <span className="text-xs text-white/50 leading-none">Current APY</span>
+              <div className="text-base font-medium text-white h-8 flex items-center">
+                {opportunity.apy}
+              </div>
             </Card>
           </div>
 
@@ -322,11 +337,10 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               setSelectedAction('buy');
               setShowActionPanel(true);
             }}
-            className={`flex-1 rounded flex items-center justify-center py-3 text-base font-medium transition-colors ${
-              selectedAction === 'buy'
-                ? 'bg-primary-cta border border-cta-border text-white'
-                : 'bg-white/10 border border-white/10 text-white/70'
-            }`}
+            className={twMerge(
+              'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+              selectedAction === 'buy' ? 'bg-primary-cta text-white' : 'bg-white/10 text-white/70',
+            )}
           >
             Buy
           </button>
@@ -336,11 +350,12 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
                 setSelectedAction('sell');
                 setShowActionPanel(true);
               }}
-              className={`flex-1 rounded flex items-center justify-center py-3 text-base font-medium transition-colors ${
+              className={twMerge(
+                'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
                 selectedAction === 'sell'
-                  ? 'bg-primary-cta border border-cta-border text-white'
-                  : 'bg-white/10 border border-white/10 text-white/70'
-              }`}
+                  ? 'bg-primary-cta text-white'
+                  : 'bg-white/10 text-white/70',
+              )}
             >
               Sell
             </button>

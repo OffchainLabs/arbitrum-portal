@@ -9,13 +9,23 @@ interface UseLiquidStakingPositionsResult {
   isLoading: boolean;
   wstETHBalance: BigNumber | null;
   weETHBalance: BigNumber | null;
+  refetchWstETHBalance: () => void;
+  refetchWeETHBalance: () => void;
 }
 
 export function useLiquidStakingPositions(): UseLiquidStakingPositionsResult {
   const { address: walletAddress } = useAccount();
 
-  const { balance: wstETHBalance, isLoading: isLoadingWstETH } = useWstETHBalance(!!walletAddress);
-  const { balance: weETHBalance, isLoading: isLoadingWeETH } = useWeETHBalance(!!walletAddress);
+  const {
+    balance: wstETHBalance,
+    isLoading: isLoadingWstETH,
+    refetch: refetchWstETHBalance,
+  } = useWstETHBalance(!!walletAddress);
+  const {
+    balance: weETHBalance,
+    isLoading: isLoadingWeETH,
+    refetch: refetchWeETHBalance,
+  } = useWeETHBalance(!!walletAddress);
 
   const isLoading = isLoadingWstETH || isLoadingWeETH;
 
@@ -23,5 +33,7 @@ export function useLiquidStakingPositions(): UseLiquidStakingPositionsResult {
     isLoading,
     wstETHBalance,
     weETHBalance,
+    refetchWstETHBalance,
+    refetchWeETHBalance,
   };
 }

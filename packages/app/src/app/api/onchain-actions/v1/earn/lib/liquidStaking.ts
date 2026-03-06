@@ -37,6 +37,7 @@ export interface LiquidStakingOpportunitySeed {
   id: string;
   name: string;
   token: string;
+  tokenDecimals: number;
   tokenIcon: string;
   tokenNetwork: string;
   protocol: string;
@@ -50,8 +51,9 @@ export interface LiquidStakingOpportunitySeed {
 export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
   {
     id: CommonAddress.ArbitrumOne.WSTETH,
-    name: 'Liquid Staked stETH',
+    name: 'Liquid Staked ETH',
     token: 'wstETH',
+    tokenDecimals: 18,
     tokenIcon: 'https://assets.coingecko.com/coins/images/18834/large/wstETH.png',
     tokenNetwork: 'Arbitrum One',
     protocol: 'Lido',
@@ -64,6 +66,7 @@ export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
     id: CommonAddress.ArbitrumOne.WEETH,
     name: 'Liquid Staked ETH',
     token: 'weETH',
+    tokenDecimals: 18,
     tokenIcon: 'https://assets.coingecko.com/coins/images/33033/large/weETH.png',
     tokenNetwork: 'Arbitrum One',
     protocol: 'Ether.fi',
