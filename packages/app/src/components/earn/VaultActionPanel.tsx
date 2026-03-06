@@ -334,12 +334,12 @@ export function VaultActionPanel({
         timestamp,
         protocolName: vault.protocol?.name,
         protocolLogo: vault.protocol?.protocolLogo,
-        networkFee: estimatedTxCostUsd
-          ? {
-              amount: estimatedTxCostUsd.eth,
-              usd: estimatedTxCostUsd.usd ?? undefined,
-            }
-          : undefined,
+        networkFee:
+          estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
+            ? {
+                amount: `~${estimatedTxCostUsd.eth} ETH`,
+              }
+            : undefined,
         opportunityName: vault.name ?? 'Lend',
       };
 

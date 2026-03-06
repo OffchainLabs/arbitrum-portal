@@ -24,6 +24,38 @@ interface UseEarnTransactionNetworkFeeResult {
   isFetchingFee: boolean;
 }
 
+function normalizeNetworkFeeAmount(amount?: string): string | null {
+  const trimmedAmount = amount?.trim();
+  if (!trimmedAmount || trimmedAmount === '—' || trimmedAmount === '-') {
+    return null;
+  }
+
+  if (trimmedAmount.toLowerCase().includes('eth')) {
+    return trimmedAmount.startsWith('~') ? trimmedAmount : `~${trimmedAmount}`;
+  }
+
+  const numericValue = trimmedAmount.startsWith('~') ? trimmedAmount.slice(1) : trimmedAmount;
+  if (/^\d+(\.\d+)?$/.test(numericValue)) {
+    return `~${numericValue} ETH`;
+  }
+
+  return trimmedAmount;
+}
+
+function normalizeProvidedNetworkFee(
+  providedNetworkFee?: EarnTransactionNetworkFee,
+): EarnTransactionNetworkFee | null {
+  const normalizedAmount = normalizeNetworkFeeAmount(providedNetworkFee?.amount);
+  if (!normalizedAmount) {
+    return null;
+  }
+
+  return {
+    amount: normalizedAmount,
+    usd: providedNetworkFee?.usd,
+  };
+}
+
 export function useEarnTransactionNetworkFee({
   isOpen,
   isLoading,
@@ -32,8 +64,9 @@ export function useEarnTransactionNetworkFee({
   providedNetworkFee,
 }: UseEarnTransactionNetworkFeeParams): UseEarnTransactionNetworkFeeResult {
   const publicClient = usePublicClient({ chainId });
+  const normalizedProvidedNetworkFee = normalizeProvidedNetworkFee(providedNetworkFee);
   const feeKey =
-    !providedNetworkFee && isOpen && !isLoading && txHash && chainId
+    isOpen && !isLoading && txHash && chainId
       ? (['earn-network-fee', chainId, txHash] as const)
       : null;
 
@@ -73,7 +106,7 @@ export function useEarnTransactionNetworkFee({
     );
 
   return {
-    networkFee: providedNetworkFee ?? fetchedNetworkFee ?? null,
-    isFetchingFee: !providedNetworkFee && isFetchingFee,
+    networkFee: fetchedNetworkFee || normalizedProvidedNetworkFee,
+    isFetchingFee: isFetchingFee && !fetchedNetworkFee && !normalizedProvidedNetworkFee,
   };
 }

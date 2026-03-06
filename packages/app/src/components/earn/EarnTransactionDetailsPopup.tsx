@@ -12,7 +12,7 @@ import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
+import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
 import type { EarnChainId } from '@/earn-api/types';
@@ -44,19 +44,6 @@ interface EarnTransactionDetailsPopupProps {
 
 function getExplorerName(chainId: EarnChainId): string {
   return chainId === ChainId.ArbitrumOne ? 'Arbiscan' : 'Etherscan';
-}
-
-function formatUsdRaw(usdRaw?: string): string | null {
-  if (!usdRaw) {
-    return null;
-  }
-
-  const parsed = Number(usdRaw);
-  if (!Number.isFinite(parsed)) {
-    return null;
-  }
-
-  return formatUSD(parsed);
 }
 
 function safeBigNumberFromAmount(amount: string): BigNumber {
@@ -113,7 +100,6 @@ export function EarnTransactionDetailsPopup({
     : dayjs().format('MMM D, YYYY h:mm A');
 
   const displayNetworkFee = networkFee;
-  const formattedNetworkFeeUsd = formatUsdRaw(displayNetworkFee?.usd);
   const explorerName = getExplorerName(chainId);
 
   const tokenDecimals = transactionDetails.decimals;
@@ -245,7 +231,6 @@ export function EarnTransactionDetailsPopup({
                   </span>
                   <span className="text-[14px] text-white leading-[17px] tracking-[0.14px]">
                     {displayNetworkFee.amount}
-                    {formattedNetworkFeeUsd ? ` (${formattedNetworkFeeUsd})` : ''}
                   </span>
                 </div>
               )}
