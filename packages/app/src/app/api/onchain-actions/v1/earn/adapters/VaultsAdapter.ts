@@ -1,9 +1,10 @@
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
+import { fetchAlignedPriceLookup } from '../lib/duneService';
+import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
-import { DEFAULT_ALLOWED_ASSETS, vaultsSdk, vaultsToZerionKeyMapping } from '../lib/vaultsSdk';
-import { fetchZerionPriceAligned } from '../lib/zerionService';
+import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
   type EarnChainId,
@@ -35,13 +36,6 @@ export type VaultsNetwork = 'mainnet' | 'arbitrum';
 export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
 export type VaultsActionType = 'deposit' | 'redeem';
-
-const HISTORICAL_POINTS_BY_RANGE: Record<HistoricalTimeRange, number> = {
-  '1d': 48, // hourly + buffer
-  '7d': 14, // daily + buffer
-  '1m': 62, // daily + buffer
-  '1y': 104, // weekly + buffer
-};
 
 type VaultHistoricalPoint = {
   timestamp: number;
@@ -122,88 +116,53 @@ export class VaultsAdapter implements VendorAdapter {
     options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
     const network = this.toVaultsNetwork(chainId);
-    const toTimestamp = Math.floor(Date.now() / 1000);
-    let fromTimestamp: number;
-    let granularity: '1hour' | '1day' | '1week';
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveAdapterWindow(
+      range,
+      options,
+    );
 
-    switch (range) {
-      case '1d':
-        fromTimestamp = toTimestamp - 1 * 24 * 60 * 60;
-        granularity = '1hour';
-        break;
-      case '1m':
-        fromTimestamp = toTimestamp - 30 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
-      case '1y':
-        fromTimestamp = toTimestamp - 365 * 24 * 60 * 60;
-        granularity = '1week';
-        break;
-      case '7d':
-      default:
-        fromTimestamp = toTimestamp - 7 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
+    if (fromTimestamp >= toTimestamp) {
+      throw new Error('fromTimestamp must be lower than toTimestamp');
     }
 
     const rawHistoricalPoints = await this.fetchHistoricalPoints({
       id,
       network,
-      range,
       fromTimestamp,
       toTimestamp,
       granularity,
     });
 
-    let assetSymbol: string | undefined = options?.assetSymbol;
-    if (!assetSymbol) {
-      const vault = await vaultsSdk.getVault({ path: { network, vaultAddress: id } });
-      assetSymbol = vault?.asset?.symbol;
-    }
-
-    let zerionPriceMap = new Map<number, number | null>();
-    const zerionId = assetSymbol ? vaultsToZerionKeyMapping[assetSymbol.toLowerCase()] : undefined;
-    if (zerionId) {
-      try {
-        zerionPriceMap = await fetchZerionPriceAligned(zerionId, range);
-      } catch (error) {
-        // Price is optional for chart; preserve APY/TVL even if Zerion is unavailable.
-        console.warn('[earn][historical] zerion price fetch failed', {
+    let assetAddress: string | null = null;
+    let assetSymbol = options?.assetSymbol;
+    try {
+      const vault = await vaultsSdk.getVault({
+        path: { network, vaultAddress: id },
+      });
+      assetAddress = vault.asset.address;
+      if (!assetSymbol) {
+        assetSymbol = vault.asset.symbol;
+      }
+    } catch (error) {
+      console.warn(
+        '[earn][dune] Failed to fetch vault asset metadata for historical price lookup',
+        {
           opportunityId: id,
           network,
-          range,
+          chainId,
           assetSymbol,
-          error: error instanceof Error ? error.message : 'Unknown Zerion error',
-        });
-      }
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
     }
 
-    const zerionPriceEntries = Array.from(zerionPriceMap.entries()).sort(([a], [b]) => a - b);
-    const alignmentBucketSeconds = granularity === '1hour' ? 3600 : 86400;
-    const getAlignedPrice = (timestamp: number): number | null => {
-      if (zerionPriceEntries.length === 0) {
-        return null;
-      }
-
-      const bucketTimestamp =
-        Math.floor(timestamp / alignmentBucketSeconds) * alignmentBucketSeconds;
-      const exactPrice = zerionPriceMap.get(bucketTimestamp);
-      if (exactPrice != null) {
-        return exactPrice;
-      }
-
-      let previousPrice: number | null = null;
-      for (const [priceTimestamp, price] of zerionPriceEntries) {
-        if (priceTimestamp > bucketTimestamp) {
-          break;
-        }
-        if (price != null) {
-          previousPrice = price;
-        }
-      }
-
-      return previousPrice;
-    };
+    const getAlignedPrice = await fetchAlignedPriceLookup({
+      chainId,
+      tokenAddress: assetAddress,
+      assetSymbol,
+      timestamps: rawHistoricalPoints.map((point) => point.timestamp),
+      granularity,
+    });
 
     const dataPoints: HistoricalDataPoint[] = rawHistoricalPoints
       .map((point) => {
@@ -226,7 +185,7 @@ export class VaultsAdapter implements VendorAdapter {
     return {
       data: dataPoints,
       granularity,
-      range,
+      range: resolvedRange,
       fromTimestamp,
       toTimestamp,
       isCached: false,
@@ -238,13 +197,14 @@ export class VaultsAdapter implements VendorAdapter {
   private async fetchHistoricalPoints(params: {
     id: string;
     network: VaultsNetwork;
-    range: HistoricalTimeRange;
     fromTimestamp: number;
     toTimestamp: number;
     granularity: '1hour' | '1day' | '1week';
   }): Promise<VaultHistoricalPoint[]> {
-    const { id, network, range, fromTimestamp, toTimestamp, granularity } = params;
-    const perPage = HISTORICAL_POINTS_BY_RANGE[range];
+    const { id, network, fromTimestamp, toTimestamp, granularity } = params;
+    const bucketSeconds = granularity === '1hour' ? 3600 : granularity === '1week' ? 604800 : 86400;
+    const requestedBuckets = Math.max(1, Math.ceil((toTimestamp - fromTimestamp) / bucketSeconds));
+    const perPage = Math.min(200, Math.max(24, requestedBuckets + 2));
     const maxPages = 50;
     const pointsByTimestamp = new Map<number, VaultHistoricalPoint>();
     let oldestCollectedTimestamp = Number.POSITIVE_INFINITY;
