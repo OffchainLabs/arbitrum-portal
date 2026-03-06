@@ -284,7 +284,7 @@ export interface StandardUserPosition {
   vendor: Vendor;
   network: string;
   amount: string;
-  valueUsd: number;
+  valueUsd: number | null;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;

@@ -1,67 +1,13 @@
 import { Address, PublicClient, getAddress } from 'viem';
 import { formatUnits } from 'viem';
 
+import { ChainId } from '@/bridge/types/ChainId';
+
 import { OpportunityCategory, type StandardUserPosition, Vendor } from '../types';
+import { getDunePriceLookup } from './dunePriceSources';
+import { fetchDuneCurrentPriceByAddress } from './duneService';
 import { ERC20_BALANCE_DECIMALS_ABI } from './erc20Abi';
-import { type LiquidStakingOpportunitySeed, getLiquidStakingDataSource } from './liquidStaking';
-import { fetchZerionCurrentPrice } from './zerionService';
-
-type CoinbaseEthSpotResponse = {
-  data?: {
-    amount?: string;
-  };
-};
-
-async function fetchEthPrice(): Promise<number | null> {
-  try {
-    const response = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot', {
-      next: {
-        revalidate: 300,
-      },
-    });
-    if (!response.ok) {
-      throw new Error(
-        `Coinbase ETH price request failed (${response.status} ${response.statusText})`,
-      );
-    }
-
-    const data = (await response.json()) as CoinbaseEthSpotResponse;
-    const ethPrice = Number(data.data?.amount);
-    if (!Number.isFinite(ethPrice) || ethPrice <= 0) {
-      throw new Error('Coinbase ETH price response was invalid');
-    }
-
-    return ethPrice;
-  } catch (error) {
-    console.error('Failed to fetch ETH price:', error);
-    return null;
-  }
-}
-
-async function getTokenPriceByAddress(
-  opportunities: LiquidStakingOpportunitySeed[],
-): Promise<Map<string, number | null>> {
-  const tokenPriceByAddress = new Map<string, number | null>();
-
-  await Promise.all(
-    opportunities.map(async (opportunity) => {
-      const dataSource = getLiquidStakingDataSource(opportunity.id);
-      if (!dataSource?.zerionId) {
-        tokenPriceByAddress.set(opportunity.id.toLowerCase(), null);
-        return;
-      }
-
-      try {
-        const zerionPrice = await fetchZerionCurrentPrice(dataSource.zerionId);
-        tokenPriceByAddress.set(opportunity.id.toLowerCase(), zerionPrice);
-      } catch {
-        tokenPriceByAddress.set(opportunity.id.toLowerCase(), null);
-      }
-    }),
-  );
-
-  return tokenPriceByAddress;
-}
+import { type LiquidStakingOpportunitySeed } from './liquidStaking';
 
 export async function fetchLifiUserPositions(params: {
   publicClient: PublicClient;
@@ -69,8 +15,31 @@ export async function fetchLifiUserPositions(params: {
   userAddress: string;
 }): Promise<StandardUserPosition[]> {
   const { publicClient, opportunities, userAddress } = params;
-  const ethPrice = await fetchEthPrice();
-  const tokenPriceByAddress = await getTokenPriceByAddress(opportunities);
+  const priceCache = new Map<string, number | null>();
+  const tokenPriceEntries = await Promise.all(
+    opportunities.map(async (opportunity) => {
+      const priceLookup = getDunePriceLookup({
+        chainId: ChainId.ArbitrumOne,
+        tokenAddress: opportunity.id,
+        assetSymbol: opportunity.token,
+      });
+
+      if (!priceLookup) {
+        return [opportunity.id.toLowerCase(), null] as const;
+      }
+
+      const cacheKey = `${priceLookup.chainId}:${priceLookup.tokenAddress.toLowerCase()}`;
+      let price = priceCache.get(cacheKey);
+      if (price === undefined) {
+        price = await fetchDuneCurrentPriceByAddress(priceLookup.tokenAddress, priceLookup.chainId);
+        priceCache.set(cacheKey, price);
+      }
+
+      const validPrice = price !== null && Number.isFinite(price) && price > 0 ? price : null;
+      return [opportunity.id.toLowerCase(), validPrice] as const;
+    }),
+  );
+  const tokenPriceMap = new Map<string, number | null>(tokenPriceEntries);
 
   const positionPromises = opportunities.map(async (opportunity) => {
     const tokenAddress = opportunity.id;
@@ -98,16 +67,16 @@ export async function fetchLifiUserPositions(params: {
 
       const decimalsNumber = Number(decimals);
       const balanceInTokens = parseFloat(formatUnits(balance, decimalsNumber));
-      const tokenPrice = tokenPriceByAddress.get(tokenAddress.toLowerCase());
-      const effectivePrice =
-        tokenPrice != null && Number.isFinite(tokenPrice) && tokenPrice > 0 ? tokenPrice : ethPrice;
+      const effectivePrice = tokenPriceMap.get(tokenAddress.toLowerCase()) ?? null;
       const valueUsdNumber =
         effectivePrice !== null && Number.isFinite(effectivePrice)
           ? balanceInTokens * effectivePrice
-          : 0;
+          : null;
       const apy = opportunity.rawApy ?? 0;
       const projectedEarningsUsdNumber =
-        valueUsdNumber > 0 && apy > 0 ? (valueUsdNumber * apy) / 100 : undefined;
+        valueUsdNumber !== null && valueUsdNumber > 0 && apy > 0
+          ? (valueUsdNumber * apy) / 100
+          : undefined;
 
       const position: StandardUserPosition = {
         opportunityId: tokenAddress,

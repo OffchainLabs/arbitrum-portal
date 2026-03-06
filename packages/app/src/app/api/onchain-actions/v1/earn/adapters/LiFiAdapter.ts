@@ -5,7 +5,12 @@ import { arbitrum } from 'viem/chains';
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
 
-import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
+import {
+  fetchAlignedPriceLookup,
+  fetchDuneHistoricalData,
+  fetchDuneHistoricalDataMerged,
+} from '../lib/duneService';
+import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { fetchLifiUserPositions } from '../lib/lifiPositions';
 import { buildLifiQuoteData } from '../lib/lifiQuote';
 import { toStandardTransactionHistory } from '../lib/lifiTransactions';
@@ -18,12 +23,12 @@ import {
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
 import { ValidationError } from '../lib/validation';
-import { fetchZerionPriceAligned } from '../lib/zerionService';
 import {
   AvailableActions,
   type EarnChainId,
   HistoricalData,
   HistoricalDataPoint,
+  type HistoricalDataRequestOptions,
   type HistoricalTimeRange,
   OpportunityCategory,
   OpportunityFilters,
@@ -205,35 +210,13 @@ export class LiFiAdapter implements VendorAdapter {
     id: string,
     range: HistoricalTimeRange,
     chainId: EarnChainId = ChainId.ArbitrumOne,
+    options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
-    const toTimestamp = Math.floor(Date.now() / 1000);
-    let fromTimestamp: number;
-    let lookbackDays: number;
-    let granularity: HistoricalData['granularity'];
-
-    switch (range) {
-      case '1d':
-        lookbackDays = 1;
-        fromTimestamp = toTimestamp - 1 * 24 * 60 * 60;
-        granularity = '1hour';
-        break;
-      case '1m':
-        lookbackDays = 30;
-        fromTimestamp = toTimestamp - 30 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
-      case '1y':
-        lookbackDays = 365;
-        fromTimestamp = toTimestamp - 365 * 24 * 60 * 60;
-        granularity = '1week';
-        break;
-      case '7d':
-      default:
-        lookbackDays = 7;
-        fromTimestamp = toTimestamp - 7 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
-    }
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveAdapterWindow(
+      range,
+      options,
+    );
+    const lookbackDays = Math.max(1, Math.ceil((toTimestamp - fromTimestamp) / (24 * 60 * 60)));
 
     const now = Math.floor(Date.now() / 1000);
     if (chainId !== ChainId.ArbitrumOne) {
@@ -264,43 +247,14 @@ export class LiFiAdapter implements VendorAdapter {
             )
           : await fetchDuneHistoricalData(dataSource.duneQueryIds.apy, lookbackDays);
 
-      // Fetch price data from Zerion (last 7 days independently)
-      let zerionPriceMap = new Map<number, number | null>();
-      if (dataSource.zerionId) {
-        try {
-          // Get Zerion price series aligned to the requested range
-          zerionPriceMap = await fetchZerionPriceAligned(dataSource.zerionId, range);
-        } catch (error) {
-          // Price is optional, fail silently
-        }
-      }
-
-      const alignmentBucketSeconds = granularity === '1hour' ? 3600 : 86400;
-      const zerionPriceEntries = Array.from(zerionPriceMap.entries()).sort(([a], [b]) => a - b);
-      const getAlignedPrice = (timestamp: number): number | null => {
-        if (zerionPriceEntries.length === 0) {
-          return null;
-        }
-
-        const bucketTimestamp =
-          Math.floor(timestamp / alignmentBucketSeconds) * alignmentBucketSeconds;
-        const exactPrice = zerionPriceMap.get(bucketTimestamp);
-        if (exactPrice != null) {
-          return exactPrice;
-        }
-
-        let previousPrice: number | null = null;
-        for (const [priceTimestamp, price] of zerionPriceEntries) {
-          if (priceTimestamp > bucketTimestamp) {
-            break;
-          }
-          if (price != null) {
-            previousPrice = price;
-          }
-        }
-
-        return previousPrice;
-      };
+      const opportunity = getLiquidStakingOpportunity(id);
+      const getAlignedPrice = await fetchAlignedPriceLookup({
+        chainId,
+        tokenAddress: id,
+        assetSymbol: opportunity?.token,
+        timestamps: duneData.map((point) => point.timestamp),
+        granularity,
+      });
 
       const dataPoints: HistoricalDataPoint[] = duneData.map((point) => {
         const price = getAlignedPrice(point.timestamp);
@@ -315,7 +269,7 @@ export class LiFiAdapter implements VendorAdapter {
       return {
         data: dataPoints,
         granularity,
-        range,
+        range: resolvedRange,
         fromTimestamp,
         toTimestamp,
         isCached: false, // Always false at adapter level - route will determine if cached
@@ -328,7 +282,7 @@ export class LiFiAdapter implements VendorAdapter {
       return {
         data: [],
         granularity,
-        range,
+        range: resolvedRange,
         fromTimestamp,
         toTimestamp,
         isCached: false,

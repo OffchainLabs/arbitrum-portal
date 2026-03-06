@@ -11,12 +11,9 @@ import { fetchDuneCurrentData, fetchDuneCurrentDataMerged } from './duneService'
 
 export const LIQUID_STAKING_DATA_SOURCES = {
   [CommonAddress.ArbitrumOne.WSTETH.toLowerCase()]: {
-    // wstETH uses stETH Zerion fungible ID (wstETH is wrapped stETH, shares same price)
-    zerionId: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84', // stETH Zerion fungible ID
     duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WSTETH), // Lido APY and TVL query IDs (resolved as separate IDs)
   },
   [CommonAddress.ArbitrumOne.WEETH.toLowerCase()]: {
-    zerionId: 'de920845-665d-4e58-84af-a317ae56cc00', // weETH Zerion fungible ID
     duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WEETH), // Ether.fi APY and TVL query IDs (separate)
   },
 } as const;
@@ -25,7 +22,6 @@ export const LIQUID_STAKING_DATA_SOURCES = {
  * Get data source configuration for a liquid staking token
  */
 export function getLiquidStakingDataSource(tokenAddress: string): {
-  zerionId: string;
   duneQueryIds: { apy: number | null; tvl: number | null };
 } | null {
   const sources = LIQUID_STAKING_DATA_SOURCES[tokenAddress.toLowerCase()];
@@ -33,7 +29,6 @@ export function getLiquidStakingDataSource(tokenAddress: string): {
     return null;
   }
   return {
-    zerionId: sources.zerionId,
     duneQueryIds: sources.duneQueryIds,
   };
 }
