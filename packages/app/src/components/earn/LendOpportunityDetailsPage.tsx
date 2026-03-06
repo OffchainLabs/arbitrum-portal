@@ -27,9 +27,11 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
     <div className="space-y-4 pb-20 lg:pb-4">
       <Link
         href="/earn/market"
-        className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors"
+        className="inline-flex items-center gap-4 text-[18px] font-semibold leading-none text-white/50 transition-opacity hover:opacity-80"
       >
-        <ChevronLeftIcon className="h-5 w-5" />
+        <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
+          <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
+        </span>
         Back
       </Link>
 
