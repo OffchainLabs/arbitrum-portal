@@ -22,7 +22,6 @@ import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
-import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL } from '@/app-lib/earn/constants';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
@@ -41,6 +40,13 @@ import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
 import { EarnReceiveAmountSection } from './EarnActionPanel/EarnReceiveAmountSection';
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 import { SlippageSettingsPanel } from './SlippageSettingsPanel';
+import {
+  ARB_TOKEN_OPTION,
+  ETH_TOKEN_OPTION,
+  type EarnTokenOption,
+  USDC_TOKEN_OPTION,
+  USDT_TOKEN_OPTION,
+} from './tokenOptions';
 
 interface LiquidStakingActionPanelProps {
   opportunity: OpportunityTableRow;
@@ -52,65 +58,24 @@ interface LiquidStakingActionPanelProps {
 
 type ActionType = 'buy' | 'sell';
 
-type TokenOption = {
-  symbol: string;
-  address: string;
-  decimals: number;
-  logoUrl: string;
-};
-
-// Hardcoded token logos for Arbitrum One
-const ETH_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
-const ARB_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0x912CE59144191C1204E64559FE8253a0e49E6548/logo.png';
+type TokenOption = EarnTokenOption;
 
 const BUY_TOKEN_OPTIONS: TokenOption[] = [
-  { symbol: 'ETH', address: constants.AddressZero, decimals: 18, logoUrl: ETH_LOGO },
-  {
-    symbol: 'USDC',
-    address: CommonAddress.ArbitrumOne.USDC,
-    decimals: 6,
-    logoUrl: ARB_USDC_LOGO_URL,
-  },
-  {
-    symbol: 'USDT',
-    address: CommonAddress.ArbitrumOne.USDT,
-    decimals: 6,
-    logoUrl: ARB_USDT_LOGO_URL,
-  },
-  { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
+  ETH_TOKEN_OPTION,
+  USDC_TOKEN_OPTION,
+  USDT_TOKEN_OPTION,
+  ARB_TOKEN_OPTION,
 ];
 
 const SELL_TOKEN_OPTIONS: TokenOption[] = [
-  { symbol: 'ETH', address: constants.AddressZero, decimals: 18, logoUrl: ETH_LOGO },
-  {
-    symbol: 'USDC',
-    address: CommonAddress.ArbitrumOne.USDC,
-    decimals: 6,
-    logoUrl: ARB_USDC_LOGO_URL,
-  },
-  {
-    symbol: 'USDT',
-    address: CommonAddress.ArbitrumOne.USDT,
-    decimals: 6,
-    logoUrl: ARB_USDT_LOGO_URL,
-  },
-  { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
+  ETH_TOKEN_OPTION,
+  USDC_TOKEN_OPTION,
+  USDT_TOKEN_OPTION,
+  ARB_TOKEN_OPTION,
 ];
 
-const DEFAULT_BUY_TOKEN: TokenOption = {
-  symbol: 'ETH',
-  address: constants.AddressZero,
-  decimals: 18,
-  logoUrl: ETH_LOGO,
-};
-const DEFAULT_SELL_TOKEN: TokenOption = {
-  symbol: 'ETH',
-  address: constants.AddressZero,
-  decimals: 18,
-  logoUrl: ETH_LOGO,
-};
+const DEFAULT_BUY_TOKEN: TokenOption = ETH_TOKEN_OPTION;
+const DEFAULT_SELL_TOKEN: TokenOption = ETH_TOKEN_OPTION;
 
 // Internal Components
 interface TokenIconProps {
