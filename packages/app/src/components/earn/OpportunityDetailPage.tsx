@@ -2,7 +2,7 @@
 
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory, type OpportunityTableRow } from '@/app-types/earn/vaults';
-import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
@@ -46,7 +46,7 @@ function toTableRow(opportunity: StandardOpportunity): OpportunityTableRow {
     deposited: opportunity.metrics.deposited,
     depositedUsd: parseOptionalNumber(opportunity.metrics.depositedUsd),
     projectedEarningsUsd: parseOptionalNumber(opportunity.metrics.projectedEarningsUsd),
-    tvl: rawTvl !== null ? formatTVL(rawTvl) : '—',
+    tvl: rawTvl !== null ? formatCompactUsd(rawTvl) : '—',
     protocol: opportunity.protocol,
     protocolIcon: opportunity.protocolIcon ?? '',
     vaultAddress: opportunity.vaultAddress,
