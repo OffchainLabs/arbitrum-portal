@@ -149,7 +149,7 @@ function HistoricalChartContent({
 
   return (
     <Card className="rounded bg-gray-1 p-4">
-      <div className="flex flex-col gap-2 mb-3">
+      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
         {(availableMetrics.length > 0 || isLoading) && (
           <div className="flex w-full md:w-auto items-center bg-white/5 rounded-full p-1 gap-1">
             {metricsToRender.map((mk) => (
