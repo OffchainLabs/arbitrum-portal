@@ -1,7 +1,7 @@
 'use client';
 
 import { usePostHog } from 'posthog-js/react';
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { useHistoricalData } from '@/app-hooks/earn/useHistoricalData';
@@ -67,13 +67,13 @@ function computeCurrentMetricValue(
   return { value: latest.value, change };
 }
 
-export function HistoricalChart(props: HistoricalChartProps) {
+export const HistoricalChart = memo(function HistoricalChart(props: HistoricalChartProps) {
   return (
     <SwrLocalStorageCacheProvider>
       <HistoricalChartContent {...props} />
     </SwrLocalStorageCacheProvider>
   );
-}
+});
 
 function HistoricalChartContent({
   opportunityId,
