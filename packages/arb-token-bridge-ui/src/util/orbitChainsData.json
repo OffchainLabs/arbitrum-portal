@@ -102,7 +102,7 @@
       },
       "nativeToken": "0x8B0E6f19Ee57089F7649A455D89D7bC6314D04e8",
       "explorerUrl": "https://explorer.sanko.xyz",
-      "rpcUrl": "https://mainnet.sanko.xyz",
+      "rpcUrl": "https://sanko-mainnet.calderachain.xyz/http",
       "isCustom": true,
       "isTestnet": false,
       "name": "Sanko",
