@@ -85,7 +85,9 @@ async function buildTransactionSteps({
           description: `Approve ${step.action.fromToken.symbol}`,
         });
       }
-    } catch {}
+    } catch (error) {
+      throw new Error(`Failed to read allowance: ${String(error)}`);
+    }
   }
 
   const transactionValue = isNativeETH ? transactionRequest.value || '0x0' : '0x0';

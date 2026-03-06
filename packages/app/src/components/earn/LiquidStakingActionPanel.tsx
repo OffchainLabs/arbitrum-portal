@@ -15,6 +15,7 @@ import {
 import { addTransactionToHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
   checkAmountExceedsBalance,
+  getMaxAmountWithGasBuffer,
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
@@ -25,6 +26,7 @@ import {
 import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL } from '@/app-lib/earn/constants';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
@@ -64,24 +66,40 @@ type TokenOption = {
 // Hardcoded token logos for Arbitrum One
 const ETH_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
-const USDC_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png';
-const USDT_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9/logo.png';
 const ARB_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0x912CE59144191C1204E64559FE8253a0e49E6548/logo.png';
 
 const BUY_TOKEN_OPTIONS: TokenOption[] = [
   { symbol: 'ETH', address: constants.AddressZero, decimals: 18, logoUrl: ETH_LOGO },
-  { symbol: 'USDC', address: CommonAddress.ArbitrumOne.USDC, decimals: 6, logoUrl: USDC_LOGO },
-  { symbol: 'USDT', address: CommonAddress.ArbitrumOne.USDT, decimals: 6, logoUrl: USDT_LOGO },
+  {
+    symbol: 'USDC',
+    address: CommonAddress.ArbitrumOne.USDC,
+    decimals: 6,
+    logoUrl: ARB_USDC_LOGO_URL,
+  },
+  {
+    symbol: 'USDT',
+    address: CommonAddress.ArbitrumOne.USDT,
+    decimals: 6,
+    logoUrl: ARB_USDT_LOGO_URL,
+  },
   { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
 ];
 
 const SELL_TOKEN_OPTIONS: TokenOption[] = [
   { symbol: 'ETH', address: constants.AddressZero, decimals: 18, logoUrl: ETH_LOGO },
-  { symbol: 'USDC', address: CommonAddress.ArbitrumOne.USDC, decimals: 6, logoUrl: USDC_LOGO },
-  { symbol: 'USDT', address: CommonAddress.ArbitrumOne.USDT, decimals: 6, logoUrl: USDT_LOGO },
+  {
+    symbol: 'USDC',
+    address: CommonAddress.ArbitrumOne.USDC,
+    decimals: 6,
+    logoUrl: ARB_USDC_LOGO_URL,
+  },
+  {
+    symbol: 'USDT',
+    address: CommonAddress.ArbitrumOne.USDT,
+    decimals: 6,
+    logoUrl: ARB_USDT_LOGO_URL,
+  },
   { symbol: 'ARB', address: CommonAddress.ArbitrumOne.ARB, decimals: 18, logoUrl: ARB_LOGO },
 ];
 
@@ -271,7 +289,11 @@ export function LiquidStakingActionPanel({
   const amountInRawUnits = useMemo(() => {
     if (!amount || parseFloat(amount) <= 0) return '0';
     const decimals = selectedAction === 'buy' ? selectedBuyToken?.decimals || 18 : 18;
-    return utils.parseUnits(truncateExtraDecimals(amount, decimals), decimals).toString();
+    try {
+      return utils.parseUnits(truncateExtraDecimals(amount, decimals), decimals).toString();
+    } catch {
+      return '0';
+    }
   }, [amount, selectedAction, selectedBuyToken]);
 
   const selectedTokenAddress =
@@ -344,10 +366,6 @@ export function LiquidStakingActionPanel({
   const currentDecimals = selectedAction === 'buy' ? selectedBuyToken?.decimals || 18 : 18;
   const currentSymbol =
     selectedAction === 'buy' ? selectedBuyToken?.symbol || 'ETH' : outputTokenSymbol;
-  const currentBalance = useMemo(
-    () => utils.formatUnits(currentBalanceRaw, currentDecimals),
-    [currentBalanceRaw, currentDecimals],
-  );
 
   // Use unified transfer readiness hook
   const transferReadiness = useEarnTransferReadiness({
@@ -522,6 +540,7 @@ export function LiquidStakingActionPanel({
       requestChainId,
       transactionQuote?.receiveAmount,
       estimatedTxCostUsd,
+      isConnected,
       posthog,
       showTransactionDetails,
       slippagePercent,
@@ -593,7 +612,15 @@ export function LiquidStakingActionPanel({
   };
 
   const handleMaxClick = () => {
-    setAmount(currentBalance);
+    const isNativeBuy =
+      selectedAction === 'buy' && selectedBuyToken?.address === constants.AddressZero;
+    const maxAmount = getMaxAmountWithGasBuffer({
+      balanceRaw: currentBalanceRaw,
+      decimals: currentDecimals,
+      isNativeAsset: Boolean(isNativeBuy),
+      estimatedGasEth: estimatedTxCostUsd?.eth,
+    });
+    setAmount(maxAmount);
   };
 
   const handleActionChange = useCallback(

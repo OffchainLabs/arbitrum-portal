@@ -4,6 +4,7 @@ import { arbitrum } from 'viem/chains';
 
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
+import { rpcURLs } from '@/bridge/util/networks';
 
 import {
   fetchAlignedPriceLookup,
@@ -47,6 +48,7 @@ function getArbitrumRpcUrl(): string {
   return (
     process.env.ARBITRUM_RPC_URL ||
     process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL ||
+    rpcURLs[ChainId.ArbitrumOne] ||
     DEFAULT_ARBITRUM_RPC_URL
   );
 }

@@ -165,9 +165,9 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
             </div>
           </div>
 
-          {/* Current APR */}
+          {/* Current APY */}
           <div className="flex justify-between items-center">
-            <span className="text-xs font-medium text-white">Current APR</span>
+            <span className="text-xs font-medium text-white">Current APY</span>
             <span className="text-xs font-medium text-earn-success">{opportunity.apy}</span>
           </div>
         </div>
@@ -235,22 +235,22 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
             title={opportunity.name}
           />
 
-          {/* Rolling APRs */}
+          {/* Rolling APYs */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded bg-neutral-50 p-4">
-              <div className="text-xs text-white/50 mb-1">Base APR</div>
+              <div className="text-xs text-white/50 mb-1">Base APY</div>
               <div className="text-base font-medium text-white">
                 {formatApyBreakdown(opportunity.apyBreakdown?.base)}
               </div>
             </div>
             <div className="rounded bg-neutral-50 p-4">
-              <div className="text-xs text-white/50 mb-1">Reward APR</div>
+              <div className="text-xs text-white/50 mb-1">Reward APY</div>
               <div className="text-base font-medium text-white">
                 {formatApyBreakdown(opportunity.apyBreakdown?.reward)}
               </div>
             </div>
             <div className="rounded bg-neutral-50 p-4 col-span-2 lg:col-span-1">
-              <div className="text-xs text-white/50 mb-1">Total APR</div>
+              <div className="text-xs text-white/50 mb-1">Total APY</div>
               <div className="text-base font-medium text-white">
                 {formatApyBreakdown(opportunity.apyBreakdown?.total)}
               </div>

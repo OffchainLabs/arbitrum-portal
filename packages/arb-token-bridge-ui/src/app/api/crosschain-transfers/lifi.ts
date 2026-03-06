@@ -283,6 +283,13 @@ export type LifiParams = QueryParams & {
   denyExchanges?: string[];
 };
 
+function configureLifiSdk(integrator: string) {
+  createConfig({
+    integrator,
+    apiKey: process.env.LIFI_KEY,
+  });
+}
+
 function getIntegratorId(request: NextRequest): string {
   const referer = request.headers.get('referer');
   const isEmbedMode = referer && referer.includes('/bridge/embed');
@@ -306,10 +313,7 @@ export async function getLifiRoutes(params: {
 }) {
   const { integrator = LIFI_INTEGRATOR_IDS.NORMAL } = params;
 
-  createConfig({
-    integrator,
-    apiKey: process.env.LIFI_KEY,
-  });
+  configureLifiSdk(integrator);
 
   const options: RoutesRequest['options'] = {
     integrator,
@@ -339,6 +343,7 @@ export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
   const integratorId = getIntegratorId(request);
+  configureLifiSdk(integratorId);
 
   const { searchParams } = new URL(request.url);
   const fromToken = searchParams.get('fromToken');
