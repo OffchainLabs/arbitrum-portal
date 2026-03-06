@@ -108,6 +108,26 @@ function getDisplayAsset(
     }
   }
 
+  if (category === OpportunityCategory.FixedYield) {
+    if (action === 'enter' && hasInputAsset) {
+      return {
+        amountRaw: row.inputAssetAmountRaw!,
+        symbol: row.inputAssetSymbol!,
+        decimals: row.inputAssetDecimals!,
+        logo: row.inputAssetLogo ?? row.assetLogo,
+      };
+    }
+
+    if (action === 'exit' && hasOutputAsset) {
+      return {
+        amountRaw: row.outputAssetAmountRaw!,
+        symbol: row.outputAssetSymbol!,
+        decimals: row.outputAssetDecimals!,
+        logo: row.outputAssetLogo ?? row.assetLogo,
+      };
+    }
+  }
+
   if (category !== OpportunityCategory.Lend && hasOutputAsset) {
     return {
       amountRaw: row.outputAssetAmountRaw!,

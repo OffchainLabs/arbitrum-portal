@@ -1,6 +1,9 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 
 import type { TransactionStep } from '@/earn-api/types';
+
+const DEFAULT_NATIVE_GAS_BUFFER_ETH = '0.0005';
+const NATIVE_GAS_BUFFER_MULTIPLIER = 1.4;
 
 export function checkAmountExceedsBalance(
   amountRaw: string,
@@ -37,4 +40,38 @@ export function validateTransactionStep(step: TransactionStep, index: number): v
   if (!step.chainId || typeof step.chainId !== 'number') {
     throw new Error(`Invalid transaction step ${stepNumber}: missing or invalid 'chainId'`);
   }
+}
+
+export function getMaxAmountWithGasBuffer({
+  balanceRaw,
+  decimals,
+  isNativeAsset,
+  estimatedGasEth,
+}: {
+  balanceRaw: BigNumber;
+  decimals: number;
+  isNativeAsset: boolean;
+  estimatedGasEth?: string | null;
+}): string {
+  if (!isNativeAsset) {
+    return utils.formatUnits(balanceRaw, decimals);
+  }
+
+  let gasBufferWei = constants.Zero;
+  if (estimatedGasEth) {
+    const estimatedGas = Number(estimatedGasEth);
+    if (Number.isFinite(estimatedGas) && estimatedGas > 0) {
+      gasBufferWei = utils.parseEther((estimatedGas * NATIVE_GAS_BUFFER_MULTIPLIER).toString());
+    }
+  }
+
+  if (gasBufferWei.isZero()) {
+    gasBufferWei = utils.parseEther(DEFAULT_NATIVE_GAS_BUFFER_ETH);
+  }
+
+  if (balanceRaw.lte(gasBufferWei)) {
+    return utils.formatUnits(balanceRaw, decimals);
+  }
+
+  return utils.formatUnits(balanceRaw.sub(gasBufferWei), decimals);
 }
