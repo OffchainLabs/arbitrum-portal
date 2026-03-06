@@ -10,7 +10,12 @@ import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { formatAmount, formatCompactNumber, formatCompactUsd, formatUSD } from '@/bridge/util/NumberUtils';
+import {
+  formatAmount,
+  formatCompactNumber,
+  formatCompactUsd,
+  formatUSD,
+} from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import { type StandardOpportunityLend } from '@/earn-api/types';
 
@@ -254,10 +259,13 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
         <div className="fixed inset-0 bg-overlay z-[70] lg:hidden flex flex-col !mt-0">
           <div className="flex items-center p-4">
             <button
+              type="button"
               onClick={() => setShowActionPanel(false)}
-              className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors"
+              className="inline-flex items-center gap-4 text-[18px] font-semibold leading-none text-white/50 transition-opacity hover:opacity-80"
             >
-              <ChevronLeftIcon className="h-5 w-5" />
+              <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
+                <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
+              </span>
               Back
             </button>
           </div>
