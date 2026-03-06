@@ -46,7 +46,7 @@ import {
   type EarnTokenOption,
   USDC_TOKEN_OPTION,
   USDT_TOKEN_OPTION,
-} from './tokenOptions';
+} from './earnTokenDropdownOptions';
 
 interface LiquidStakingActionPanelProps {
   opportunity: OpportunityTableRow;
