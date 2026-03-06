@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useLocalStorage } from '@rehooks/local-storage';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
@@ -19,6 +18,7 @@ import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import { OpportunityCategory } from '@/earn-api/types';
 
+import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
 import { EarnToSPopupDialog } from './EarnToSPopupDialog';
 import {
   EarnTransactionDetailsPopup,
@@ -141,14 +141,8 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
       {/* Back Navigation */}
-      <Link
-        href="/earn/market"
-        className="inline-flex items-center gap-4 text-[18px] font-semibold leading-none text-white/50 transition-opacity hover:opacity-80"
-      >
-        <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
-          <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
-        </span>
-        Back
+      <Link href="/earn/market" className={earnBackButtonClassName}>
+        <EarnBackButtonLabel />
       </Link>
 
       {/* Header Row */}
@@ -314,12 +308,9 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
             <button
               type="button"
               onClick={() => setShowActionPanel(false)}
-              className="inline-flex items-center gap-4 text-[18px] font-semibold leading-none text-white/50 transition-opacity hover:opacity-80"
+              className={earnBackButtonClassName}
             >
-              <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
-                <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
-              </span>
-              Back
+              <EarnBackButtonLabel />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4">
