@@ -131,6 +131,25 @@ function HistoricalChartContent({
   const metricsToRender = availableMetrics.length > 0 ? availableMetrics : ALL_METRICS;
   const xFormat =
     data?.range === '1d' ? 'HH:mm' : data?.range === '1y' ? 'MMM D, YYYY' : config.dateFormat;
+  const xDomain = useMemo<[number, number] | undefined>(() => {
+    if (!chartData.length) {
+      return data ? [data.fromTimestamp, data.toTimestamp] : undefined;
+    }
+
+    const timestamps = chartData.map((point) => point.timestamp);
+    const minTimestamp = Math.min(...timestamps);
+    const maxTimestamp = Math.max(...timestamps);
+
+    if (!Number.isFinite(minTimestamp) || !Number.isFinite(maxTimestamp)) {
+      return data ? [data.fromTimestamp, data.toTimestamp] : undefined;
+    }
+
+    if (minTimestamp === maxTimestamp) {
+      return [minTimestamp - 1, maxTimestamp + 1];
+    }
+
+    return [minTimestamp, maxTimestamp];
+  }, [chartData, data]);
 
   const formatCurrentValue = (value: number): string => {
     if (activeMetric === 'apy') {
@@ -339,7 +358,7 @@ function HistoricalChartContent({
             config={config}
             metricType={activeMetric}
             xFormat={xFormat}
-            xDomain={[data.fromTimestamp, data.toTimestamp]}
+            xDomain={xDomain}
           />
         )}
         {!isLoading && !error && chartData.length === 0 && (
