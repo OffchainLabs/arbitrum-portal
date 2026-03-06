@@ -6,7 +6,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { useHistoricalData } from '@/app-hooks/earn/useHistoricalData';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatTVL } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { EarnChainId, HistoricalTimeRange, OpportunityCategory } from '@/earn-api/types';
 
@@ -139,7 +139,7 @@ function HistoricalChartContent({
     if (activeMetric === 'price') {
       return formatPriceUsd(value);
     }
-    return formatTVL(value);
+    return formatCompactUsd(value);
   };
 
   const pillBase =

@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import { formatTVL } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd } from '@/bridge/util/NumberUtils';
 
 import type { ChartConfig } from './chartConfig';
 import { formatPriceUsd } from './formatters';
@@ -36,7 +36,7 @@ function formatMetricValue(metricType: MetricType | undefined, value: number): s
     return formatPriceUsd(value);
   }
 
-  return formatTVL(value);
+  return formatCompactUsd(value);
 }
 
 interface ChartTooltipContentProps extends TooltipProps<number, string> {
@@ -120,7 +120,7 @@ export function HistoricalLineChart({
     if (metricType === 'price') {
       return formatPriceUsd(value);
     }
-    return formatTVL(value);
+    return formatCompactUsd(value);
   };
 
   return (
