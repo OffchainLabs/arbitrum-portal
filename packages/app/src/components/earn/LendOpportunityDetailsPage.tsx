@@ -1,4 +1,3 @@
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 import { SafeImage } from '@/bridge/components/common/SafeImage';
@@ -8,6 +7,7 @@ import type { StandardOpportunityLend } from '@/earn-api/types';
 
 import { ActionPanelPlaceholder } from './ActionPanelPlaceholder';
 import { ChartPlaceholder } from './ChartPlaceholder';
+import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
 import { TransactionHistoryPlaceholder } from './TransactionHistoryPlaceholder';
 
 interface LendOpportunityDetailsPageProps {
@@ -25,14 +25,8 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
-      <Link
-        href="/earn/market"
-        className="inline-flex items-center gap-4 text-[18px] font-semibold leading-none text-white/50 transition-opacity hover:opacity-80"
-      >
-        <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
-          <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
-        </span>
-        Back
+      <Link href="/earn/market" className={earnBackButtonClassName}>
+        <EarnBackButtonLabel />
       </Link>
 
       <div className="flex items-center gap-2">
