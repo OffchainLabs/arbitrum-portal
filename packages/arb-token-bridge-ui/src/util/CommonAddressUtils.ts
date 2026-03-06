@@ -4,6 +4,7 @@ export const CommonAddress = {
   Ethereum: {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    PYUSD: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
     WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
     tokenMessengerContractAddress: '0xbd3fa81b58ba92a82136038b25adec7066af3155',
     APE: '0x4d224452801aced8b2f0aebe155379bb5d594381',
@@ -12,6 +13,7 @@ export const CommonAddress = {
     'USDC': '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     'USDC.e': '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
     'USDT': '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+    'PYUSD': '0x46850ad61c2b7d64d08c9c754f45254596696984',
     'WBTC': '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
     'tokenMessengerContractAddress': '0x19330d10d9cc8751218eaf51e8885d058642e08a',
     'CU': '0x89c49a3fa372920ac23ce757a029e6936c0b8e02',
