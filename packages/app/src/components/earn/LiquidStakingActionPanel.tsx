@@ -414,12 +414,12 @@ export function LiquidStakingActionPanel({
         timestamp,
         protocolName: opportunity.protocol,
         protocolLogo: opportunity.protocolIcon,
-        networkFee: estimatedTxCostUsd
-          ? {
-              amount: estimatedTxCostUsd.eth,
-              usd: estimatedTxCostUsd.usd ?? '0.00',
-            }
-          : undefined,
+        networkFee:
+          estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
+            ? {
+                amount: `~${estimatedTxCostUsd.eth} ETH`,
+              }
+            : undefined,
         opportunityName: opportunity.token || 'Liquid Staking',
       };
 
