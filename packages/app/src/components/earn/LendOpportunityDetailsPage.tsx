@@ -2,7 +2,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { formatCompactNumber, formatTVL } from '@/bridge/util/NumberUtils';
+import { formatCompactNumber, formatCompactUsd } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { StandardOpportunityLend } from '@/earn-api/types';
 
@@ -21,7 +21,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
   const apy7day = opportunity.lend?.apy7day;
   const tvlUsd = opportunity.lend?.tvlUsd;
   const formattedTvl =
-    typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatTVL(tvlUsd) : '—';
+    typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatCompactUsd(tvlUsd) : '—';
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">

@@ -17,14 +17,14 @@ export function formatUSD(value: number) {
   return `$${formattedValue} USD`;
 }
 
-export function formatTVL(tvl: number): string {
+export function formatCompactUsd(value: number): string {
   return (
     new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       notation: 'compact',
       maximumFractionDigits: 1,
-    }).format(tvl) + ' USD'
+    }).format(value) + ' USD'
   );
 }
 

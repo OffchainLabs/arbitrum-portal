@@ -3,7 +3,7 @@
 import useSWRImmutable from 'swr/immutable';
 
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { formatPercentage, formatTVL } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 interface UseAllOpportunitiesResult {
@@ -45,7 +45,7 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     deposited: m?.deposited ?? null,
     depositedUsd: m?.depositedUsd ?? null,
     projectedEarningsUsd: m?.projectedEarningsUsd ?? null,
-    tvl: rawTvl !== null ? formatTVL(rawTvl) : '—',
+    tvl: rawTvl !== null ? formatCompactUsd(rawTvl) : '—',
     protocol: opp.protocol,
     protocolIcon: opp.protocolIcon ?? '',
     vaultAddress: opp.vaultAddress,
