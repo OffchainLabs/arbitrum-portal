@@ -20,6 +20,7 @@ import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
 import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
+import { useIsLzValueTransfer } from '../hooks/useIsLzValueTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
 import {
@@ -50,7 +51,11 @@ function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undef
   const oftV2Route = routes.find((route) => route.type === 'oftV2');
   if (oftV2Route) return 'oftV2';
 
-  // 2. CCTP (second priority)
+  // 2. LZ Value Transfer (second priority)
+  const lzValueTransferRoute = routes.find((route) => route.type === 'lzValueTransfer');
+  if (lzValueTransferRoute) return 'lzValueTransfer';
+
+  // 3. CCTP (third priority)
   const cctpRoute = routes.find((route) => route.type === 'cctp');
   if (cctpRoute) return 'cctp';
 
@@ -69,6 +74,7 @@ function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undef
 }
 
 interface GetEligibleRoutesParams {
+  isLzValueTransfer: boolean;
   isOftV2Transfer: boolean;
   isNativeUsdcTransfer: boolean;
   amount: string;
@@ -81,6 +87,7 @@ interface GetEligibleRoutesParams {
 }
 
 function getEligibleRoutes({
+  isLzValueTransfer,
   isOftV2Transfer,
   isNativeUsdcTransfer,
   amount,
@@ -97,6 +104,11 @@ function getEligibleRoutes({
 
   if (Number(amount) === 0) {
     return [];
+  }
+
+  if (isLzValueTransfer) {
+    eligibleRouteTypes.push('lzValueTransfer');
+    return eligibleRouteTypes;
   }
 
   if (isOftV2Transfer) {
@@ -157,6 +169,7 @@ export function useRoutesUpdater() {
   const { isDepositMode } = useNetworksRelationship(networks);
   const [{ amount }] = useArbQueryParams();
   const isNativeUsdcTransfer = useIsCctpTransfer();
+  const isLzValueTransfer = useIsLzValueTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const [selectedToken] = useSelectedToken();
   const destinationToken = useDestinationToken();
@@ -185,6 +198,7 @@ export function useRoutesUpdater() {
   const eligibleRouteTypes = useMemo(
     () =>
       getEligibleRoutes({
+        isLzValueTransfer,
         isOftV2Transfer,
         isNativeUsdcTransfer,
         amount,
@@ -196,6 +210,7 @@ export function useRoutesUpdater() {
         tokensFromLists,
       }),
     [
+      isLzValueTransfer,
       isOftV2Transfer,
       isNativeUsdcTransfer,
       amount,
@@ -259,6 +274,16 @@ export function useRoutesUpdater() {
 
   const routeData = useMemo(() => {
     const routes: RouteData[] = [];
+
+    // LZ Value Transfer route data
+    if (eligibleRouteTypes.includes('lzValueTransfer')) {
+      routes.push({
+        type: 'lzValueTransfer',
+        data: {
+          amountReceived: amount,
+        },
+      });
+    }
 
     // OFT V2 route data
     if (eligibleRouteTypes.includes('oftV2')) {

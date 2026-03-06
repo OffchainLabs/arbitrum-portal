@@ -67,6 +67,7 @@ export interface BaseMergedTransaction {
   isCctp?: boolean;
   isOft?: false;
   isLifi?: false;
+  isLzValueTransfer?: false;
   nodeBlockDeadline?: NodeBlockDeadlineStatus;
   parentToChildMsgData?: ParentToChildMessageData;
   childToParentMsgData?: ChildToParentMessageData;
@@ -107,11 +108,19 @@ export interface LayerZeroTransaction extends Omit<BaseMergedTransaction, 'isOft
   destinationTxHash?: string | null;
 }
 
+export interface LzValueTransferTransaction
+  extends Omit<BaseMergedTransaction, 'isLzValueTransfer'> {
+  isLzValueTransfer: true;
+  lzQuoteId?: string;
+  destinationTxHash?: string | null;
+}
+
 export type MergedTransaction =
   | BaseMergedTransaction
   | LifiMergedTransaction
   | TeleporterMergedTransaction
-  | LayerZeroTransaction;
+  | LayerZeroTransaction
+  | LzValueTransferTransaction;
 
 export interface WarningTokens {
   [address: string]: {

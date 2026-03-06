@@ -45,6 +45,7 @@ import {
 } from '../../state/app/state';
 import { normalizeTimestamp } from '../../state/app/utils';
 import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
+import { LzValueTransferStarter } from '../../token-bridge-sdk/LzValueTransferStarter';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
@@ -866,6 +867,131 @@ export function TransferPanel() {
     }
   };
 
+  const transferLzValueTransfer = async () => {
+    if (!selectedToken) {
+      return;
+    }
+    if (!signer) {
+      throw new Error(signerUndefinedError);
+    }
+    if (!isTransferAllowed) {
+      throw new Error(transferNotAllowedError);
+    }
+
+    setTransferring(true);
+
+    try {
+      const { sourceChainProvider, destinationChainProvider } = latestNetworks.current;
+
+      if (!(await confirmCustomDestinationAddress())) {
+        return;
+      }
+
+      const lzStarter = new LzValueTransferStarter({
+        sourceChainProvider,
+        sourceChainErc20Address: isDepositMode ? selectedToken.address : selectedToken?.l2Address,
+        destinationChainProvider,
+      });
+
+      const isTokenApprovalRequired = await lzStarter.requiresTokenApproval({
+        amount: amountBigNumber,
+        owner: await signer.getAddress(),
+      });
+
+      if (isTokenApprovalRequired) {
+        const userConfirmation = await confirmDialog('approve_token');
+        if (!userConfirmation) return false;
+
+        if (isSmartContractWallet) {
+          showDelayedSmartContractTxRequest();
+        }
+
+        try {
+          const tx = await lzStarter.approveToken({
+            signer,
+            amount: amountBigNumber,
+          });
+          await tx.wait();
+        } catch (error) {
+          if (isUserRejectedError(error)) {
+            return;
+          }
+          handleError({
+            error,
+            label: 'lz_value_transfer_approve_token',
+            category: 'token_approval',
+          });
+          errorToast(
+            `LZ Value Transfer token approval failed: ${(error as Error)?.message ?? error}`,
+          );
+          return;
+        }
+      }
+
+      if (isSmartContractWallet) {
+        showDelayedSmartContractTxRequest();
+      }
+
+      const bridgeTransfer = await lzStarter.transfer({
+        amount: amountBigNumber,
+        signer,
+        destinationAddress,
+      });
+
+      trackEvent('LZ Value Transfer', {
+        tokenSymbol: selectedToken.symbol,
+        assetType: 'ERC-20',
+        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        network: getNetworkName(networks.sourceChain.id),
+        amount: Number(amount),
+        sourceChain: getNetworkName(networks.sourceChain.id),
+        destinationChain: getNetworkName(networks.destinationChain.id),
+      });
+
+      resetAmountAndSwitchToTransactionHistoryTab();
+
+      addPendingTransaction({
+        isLzValueTransfer: true,
+        sender: walletAddress,
+        direction: isDepositMode ? 'deposit' : 'withdraw',
+        status: 'pending',
+        createdAt: dayjs().valueOf(),
+        resolvedAt: null,
+        txId: bridgeTransfer.sourceChainTransaction.hash.toLowerCase(),
+        assetType: AssetType.ERC20,
+        uniqueId: null,
+        isWithdrawal: !isDepositMode,
+        blockNum: null,
+        childChainId: childChain.id,
+        parentChainId: parentChain.id,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        asset: selectedToken.symbol,
+        value: amount,
+        tokenAddress: selectedToken.address,
+      });
+
+      clearRoute();
+    } catch (error) {
+      if (isUserRejectedError(error)) {
+        return;
+      }
+      handleError({
+        error,
+        label: 'lz_value_transfer',
+        category: 'transaction_signing',
+      });
+      logger.error(error);
+      errorToast(
+        `LZ Value Transfer ${isDepositMode ? 'Deposit' : 'Withdrawal'} failed: ${
+          (error as Error)?.message ?? error
+        }`,
+      );
+    } finally {
+      setTransferring(false);
+    }
+  };
+
   const transfer = async () => {
     const sourceChainId = latestNetworks.current.sourceChain.id;
 
@@ -1276,6 +1402,9 @@ export function TransferPanel() {
       return networkConnectionWarningToast();
     }
 
+    if (selectedRoute === 'lzValueTransfer') {
+      return transferLzValueTransfer();
+    }
     if (selectedRoute == 'oftV2') {
       return transferOft();
     }
