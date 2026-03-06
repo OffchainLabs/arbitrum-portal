@@ -149,9 +149,9 @@ function HistoricalChartContent({
 
   return (
     <Card className="rounded bg-gray-1 p-4">
-      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+      <div className="mb-3 flex flex-col gap-2 md:flex-row md:flex-nowrap md:items-start md:justify-between md:gap-4">
         {(availableMetrics.length > 0 || isLoading) && (
-          <div className="flex w-full md:w-auto items-center bg-white/5 rounded-full p-1 gap-1">
+          <div className="flex w-full md:w-auto md:shrink-0 items-center bg-white/5 rounded-[10px] p-[2px] gap-1 md:gap-2">
             {metricsToRender.map((mk) => (
               <button
                 key={mk}
@@ -185,7 +185,7 @@ function HistoricalChartContent({
             ))}
           </div>
         )}
-        <div className="hidden md:flex items-center bg-white/5 rounded-full p-1 gap-1 shrink-0">
+        <div className="hidden md:flex w-[188px] items-center justify-between bg-white/5 rounded-[10px] p-[2px] gap-2 shrink-0">
           {RANGE_OPTIONS.map((r) => (
             <button
               key={r.id}
