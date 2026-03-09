@@ -87,7 +87,13 @@ export function TransactionHistorySearchBar() {
         onSubmit={(event) => event.preventDefault()}
       >
         <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-[7px] h-3 w-3" />
-        <Tooltip content="Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction.">
+        <Tooltip
+          content="Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction."
+          wrapperClassName="h-full w-full"
+          tippyProps={{
+            hideOnClick: false,
+          }}
+        >
           <input
             type="text"
             value={address}

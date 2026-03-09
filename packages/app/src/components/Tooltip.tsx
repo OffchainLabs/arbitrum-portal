@@ -1,56 +1,37 @@
 'use client';
 
-import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { PropsWithChildren, ReactNode } from 'react';
+import Tippy, { type TippyProps } from '@tippyjs/react';
+import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-type TooltipBaseProps = {
+export type TooltipProps = {
   show?: boolean;
+  children: ReactNode;
   content?: ReactNode;
-  contentClassName?: string;
-  side?: 'top' | 'right' | 'bottom' | 'left';
-  align?: 'start' | 'center' | 'end';
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onClickOutside?: () => void;
+  wrapperClassName?: string;
+  tippyProps?: TippyProps;
+  theme?: 'light' | 'dark';
 };
-export type TooltipProps = TooltipBaseProps & PropsWithChildren;
 
 export function Tooltip({
   show = true,
   content,
-  contentClassName,
-  side = 'bottom',
-  align = 'center',
-  open,
-  onOpenChange,
-  onClickOutside,
+  wrapperClassName,
+  theme = 'dark',
+  tippyProps = {},
   children,
-}: TooltipProps): JSX.Element {
-  if (!show || !content) {
+}: TooltipProps): JSX.Element | null {
+  if (!content) {
+    return null;
+  }
+
+  if (!show) {
     return <>{children}</>;
   }
 
   return (
-    <RadixTooltip.Provider delayDuration={120}>
-      <RadixTooltip.Root open={open} onOpenChange={onOpenChange}>
-        <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
-
-        <RadixTooltip.Portal>
-          <RadixTooltip.Content
-            side={side}
-            align={align}
-            sideOffset={8}
-            onPointerDownOutside={onClickOutside}
-            className={twMerge(
-              'z-[1001] w-max max-w-[350px] p-2 bg-neutral-100 border border-neutral-200 rounded-sm text-xs text-white',
-              contentClassName,
-            )}
-          >
-            {content}
-          </RadixTooltip.Content>
-        </RadixTooltip.Portal>
-      </RadixTooltip.Root>
-    </RadixTooltip.Provider>
+    <Tippy {...tippyProps} theme={theme} content={content} arrow={false}>
+      <div className={twMerge(wrapperClassName)}>{children}</div>
+    </Tippy>
   );
 }

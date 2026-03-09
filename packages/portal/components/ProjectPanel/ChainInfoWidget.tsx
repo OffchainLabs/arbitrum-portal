@@ -28,7 +28,7 @@ export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
             <Tooltip
               key={chainDetails.slug}
               content={<p>{chainDetails.description}</p>}
-              side="bottom"
+              tippyProps={{ placement: 'bottom' }}
             >
               <div
                 className={twMerge(

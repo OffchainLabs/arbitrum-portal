@@ -1342,12 +1342,6 @@ export function TransferPanel() {
 
         {showSmartContractWalletTooltip && (
           <Tooltip
-            side="bottom"
-            align="center"
-            open={showSmartContractWalletTooltip}
-            onOpenChange={setShowSmartContractWalletTooltip}
-            onClickOutside={() => setShowSmartContractWalletTooltip(false)}
-            contentClassName="max-w-none"
             content={
               <div className="flex flex-col items-center">
                 <span>
@@ -1356,6 +1350,11 @@ export function TransferPanel() {
                 <span>If you have k of n signers, then k of n will need to sign.</span>
               </div>
             }
+            tippyProps={{
+              placement: 'bottom',
+              visible: showSmartContractWalletTooltip,
+              onClickOutside: () => setShowSmartContractWalletTooltip(false),
+            }}
           >
             <div className="!m-0 h-px mx-auto text-center w-full" aria-hidden="true" />
           </Tooltip>
