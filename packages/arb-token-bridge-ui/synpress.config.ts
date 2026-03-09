@@ -2,7 +2,7 @@ import { Erc20Bridger, EthBridger } from '@arbitrum/sdk';
 import { TestERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/TestERC20__factory';
 import { TestWETH9__factory } from '@arbitrum/sdk/dist/lib/abi/factories/TestWETH9__factory';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import synpressPlugins from '@synthetixio/synpress/plugins';
+import { configureSynpressForMetaMask } from '@synthetixio/synpress/cypress';
 import { defineConfig } from 'cypress';
 import logsPrinter from 'cypress-terminal-report/src/installLogsPrinter';
 import { BigNumber, Contract, ContractFactory, Wallet, constants, utils } from 'ethers';
@@ -206,10 +206,9 @@ export default defineConfig({
 
       config.env.REDEEM_RETRYABLE_TEST_TX = await generateTestTxForRedeemRetryable();
 
-      synpressPlugins(on, config);
       setupCypressTasks(on, { requiresNetworkSetup: true });
       config.browsers = [browserConfig];
-      return config;
+      return configureSynpressForMetaMask(on, config);
     },
     baseUrl: 'http://localhost:3000',
     specPattern: tests,

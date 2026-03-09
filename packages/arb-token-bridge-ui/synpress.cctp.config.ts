@@ -1,6 +1,6 @@
 import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory';
 import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
-import synpressPlugins from '@synthetixio/synpress/plugins';
+import { configureSynpressForMetaMask } from '@synthetixio/synpress/cypress';
 import { defineConfig } from 'cypress';
 import logsPrinter from 'cypress-terminal-report/src/installLogsPrinter';
 import { BigNumber, Contract, Wallet, utils } from 'ethers';
@@ -219,9 +219,8 @@ export default defineConfig({
       }
 
       setupCypressTasks(on, { requiresNetworkSetup: false });
-      synpressPlugins(on, config);
       config.browsers = [browserConfig];
-      return config;
+      return configureSynpressForMetaMask(on, config);
     },
     baseUrl: 'http://localhost:3000',
     specPattern: tests,
