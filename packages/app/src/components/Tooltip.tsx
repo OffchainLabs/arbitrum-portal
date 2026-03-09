@@ -31,7 +31,7 @@ export function Tooltip({
 
   return (
     <Tippy {...tippyProps} theme={theme} content={content} arrow={false}>
-      <div className={twMerge(wrapperClassName)}>{children}</div>
+      <span className={twMerge(wrapperClassName)}>{children}</span>
     </Tippy>
   );
 }

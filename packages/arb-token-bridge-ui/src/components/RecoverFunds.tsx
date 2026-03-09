@@ -294,7 +294,7 @@ export function RecoverFunds() {
   return (
     <>
       <DialogWrapper {...dialogProps} />
-      <NoteBox className="m-auto max-w-[600px] mx-4">
+      <NoteBox className="m-auto max-w-[600px] mx-4 w-full">
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
@@ -458,7 +458,7 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
       <Button
         aria-label={`Recover funds`}
         variant="primary"
-        className="ml-auto mr-3 w-14 rounded bg-green-400 p-2 text-xs text-black"
+        className="ml-auto mr-3 w-min rounded bg-green-400 p-2 text-xs text-black"
         onClick={async () => {
           if (!latestSigner || !destinationAddress) {
             return;
