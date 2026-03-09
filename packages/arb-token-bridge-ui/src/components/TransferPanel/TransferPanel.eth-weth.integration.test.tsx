@@ -3,9 +3,7 @@ import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
-  expectTokenButtonToken,
-  nonConnectedDestinationAddress,
-  renderTransferPanel,
+  runTransferPanelScenario,
   setupTransferPanelLifiIntegrationSuite,
 } from './TransferPanel.integration.helpers';
 
@@ -54,20 +52,12 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
   it.each(ethWethCases)(
     'renders expected source and destination tokens for ETH/WETH override: $sourceChain -> $destinationChain',
     async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
-      await renderTransferPanel({
+      await runTransferPanelScenario({
         sourceChain,
         destinationChain,
+        expectedSourceToken,
+        expectedDestinationToken,
         destinationToken: constants.AddressZero,
-        destinationAddress: nonConnectedDestinationAddress,
-      });
-
-      await expectTokenButtonToken({
-        isDestination: false,
-        tokenExpectation: expectedSourceToken,
-      });
-      await expectTokenButtonToken({
-        isDestination: true,
-        tokenExpectation: expectedDestinationToken,
       });
     },
   );
