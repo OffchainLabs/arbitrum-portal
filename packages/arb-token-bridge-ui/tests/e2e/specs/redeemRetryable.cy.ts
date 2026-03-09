@@ -84,7 +84,7 @@ describe('Redeem ERC20 Deposit', () => {
           .click();
 
         // approve redeem transaction
-        cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
+        cy.confirmTransaction();
         cy.wait(15_000);
         cy.selectTransactionsPanelTab('settled');
 

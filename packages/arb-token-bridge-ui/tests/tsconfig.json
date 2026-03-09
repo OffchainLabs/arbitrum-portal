@@ -3,7 +3,6 @@
   "compilerOptions": {
     "types": [
       "./e2e/cypress.d.ts",
-      "@synthetixio/synpress/support",
       "@testing-library/cypress",
       "@types/mocha",
       "cypress"
