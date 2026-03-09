@@ -172,7 +172,9 @@ export function PortfolioSummaryCards({
                     earnings may vary and are not guaranteed, as APY rates can change over time.
                   </p>
                 }
-                side="top"
+                tippyProps={{
+                  placement: 'top',
+                }}
               >
                 <div className="flex items-center justify-center cursor-pointer">
                   <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
@@ -268,7 +270,9 @@ export function PortfolioSummaryCards({
                   earnings may vary and are not guaranteed, as APY rates can change over time.
                 </p>
               }
-              side="top"
+              tippyProps={{
+                placement: 'top',
+              }}
             >
               <div className="flex items-center justify-center cursor-pointer">
                 <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />

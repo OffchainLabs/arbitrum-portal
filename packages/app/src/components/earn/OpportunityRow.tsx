@@ -114,7 +114,9 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                 </div>
               </div>
             }
-            side="top"
+            tippyProps={{
+              placement: 'top',
+            }}
           >
             <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded p-0.5">
               <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />

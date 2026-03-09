@@ -90,7 +90,9 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
                   </div>
                 </div>
               }
-              side="top"
+              tippyProps={{
+                placement: 'top',
+              }}
             >
               <div className="w-5 h-5 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full">
                 <SparklesIcon className="h-5 w-5 text-white opacity-50" />
