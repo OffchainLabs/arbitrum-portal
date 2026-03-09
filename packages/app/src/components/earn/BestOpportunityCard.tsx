@@ -56,7 +56,6 @@ export function BestOpportunityCard({
               one of the most popular choices.
             </p>
           }
-          side="top"
         >
           <div className="shrink-0 flex items-center gap-1 bg-primary-cta rounded px-2 py-1 cursor-help">
             <SparklesIconSolid className="h-3 w-3 text-white" />
