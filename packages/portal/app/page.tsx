@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { getEntityMetaData } from '@/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/common/getServerSideAppParams';
 import { EntityType } from '@/common/types';
-import { DripCard } from '@/components/DripCard';
 import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
 import { HeroBanner } from '@/components/HomePage/HeroBanner';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
@@ -68,8 +67,6 @@ export default function Home(props: ServerSideAppProps) {
       <TrendingProjects />
 
       <EcosystemEssentials />
-
-      <DripCard />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-8">
         <div className="lg:col-span-5">
