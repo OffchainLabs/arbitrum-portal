@@ -298,13 +298,13 @@ export function RecoverFunds() {
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
-            <Tooltip content={getAliasedAddress(address)}>
+            <Tooltip as="span" content={getAliasedAddress(address)}>
               <span className="inline cursor-help underline arb-hover">
                 {shortenAddress(getAliasedAddress(address))}
               </span>
             </Tooltip>{' '}
             alias of currently connected address (
-            <Tooltip content={address}>
+            <Tooltip as="span" content={address}>
               <span className="inline cursor-help underline arb-hover">
                 {shortenAddress(address)}
               </span>
