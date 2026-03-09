@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeAll, expect } from 'vitest';
 
 import { getBridgePageSanitizedRedirectPath } from '../../../../app/src/utils/bridgePageUtils';
-import { PathnameEnum } from '../../constants';
+import { ETHER_TOKEN_LOGO, PathnameEnum } from '../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import {
   createIntegrationWrapper,
@@ -19,12 +19,43 @@ export type ChainQuerySlug = 'ethereum' | 'arbitrum-one' | 'base' | 'apechain' |
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
+const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
 
 export type TokenExpectation = {
   symbol: string;
   logoURI?: string;
-  contractAddress?: string;
+  contract?: string | 'native';
 };
+
+export const APE_TOKEN_LOGO = '/images/ApeTokenLogo.svg';
+export const WETH_TOKEN_LOGO =
+  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
+export const USDC_TOKEN_LOGO =
+  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png';
+
+const tokenLogosBySymbol: Record<string, string> = {
+  'ETH': ETHER_TOKEN_LOGO,
+  'APE': APE_TOKEN_LOGO,
+  'WETH': WETH_TOKEN_LOGO,
+  'USDC': USDC_TOKEN_LOGO,
+  'USDC.e': USDC_TOKEN_LOGO,
+};
+
+export function withExpectedTokenLogo(tokenExpectation: TokenExpectation): TokenExpectation {
+  if (tokenExpectation.logoURI) {
+    return tokenExpectation;
+  }
+
+  const logoURI = tokenLogosBySymbol[tokenExpectation.symbol];
+  if (!logoURI) {
+    return tokenExpectation;
+  }
+
+  return {
+    ...tokenExpectation,
+    logoURI,
+  };
+}
 
 export type RouteTokenCase = {
   sourceChain: ChainQuerySlug;
@@ -33,7 +64,21 @@ export type RouteTokenCase = {
   expectedDestinationToken: TokenExpectation;
 };
 
-export const nonConnectedDestinationAddress = 'integration-destination-address';
+export type TransferPanelScenarioRenderConfig = {
+  sourceChain: ChainQuerySlug;
+  destinationChain: ChainQuerySlug;
+  token?: string;
+  destinationToken?: string;
+  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
+};
+
+export type TransferPanelScenario = TransferPanelScenarioRenderConfig & {
+  name?: string;
+  expectedSourceToken: TokenExpectation;
+  expectedDestinationToken: TokenExpectation;
+  expectedSourcePanelTokens?: TokenExpectation[];
+  expectedDestinationPanelTokens?: TokenExpectation[];
+};
 
 export const usdcAddressByChain: Record<ChainQuerySlug, string> = {
   'ethereum': CommonAddress.Ethereum.USDC,
@@ -62,20 +107,17 @@ async function getSearchParamsAfterSanitization({
   destinationChain,
   token,
   destinationToken,
-  destinationAddress,
 }: {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   token?: string;
   destinationToken?: string;
-  destinationAddress: string;
 }) {
   const searchParams = {
     sourceChain,
     destinationChain,
     token,
     destinationToken,
-    destinationAddress,
   };
 
   const sanitizedRedirectPath = await getBridgePageSanitizedRedirectPath({
@@ -104,32 +146,51 @@ export function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToke
   };
 }
 
+function getAutoSeededBridgeTokens({
+  sourceChain,
+  token,
+}: {
+  sourceChain: ChainQuerySlug;
+  token?: string;
+}): ContractStorage<ERC20BridgeToken> | undefined {
+  if (!token) {
+    return undefined;
+  }
+
+  if (token.toLowerCase() !== usdcAddressByChain[sourceChain].toLowerCase()) {
+    return undefined;
+  }
+
+  return {
+    [token.toLowerCase()]: getUsdcSourceToken(sourceChain),
+  };
+}
+
 export async function renderTransferPanel({
   sourceChain,
   destinationChain,
   token,
   destinationToken,
   bridgeTokens,
-  destinationAddress,
 }: {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   token?: string;
   destinationToken?: string;
   bridgeTokens?: ContractStorage<ERC20BridgeToken>;
-  destinationAddress: string;
 }) {
   const search = await getSearchParamsAfterSanitization({
     sourceChain,
     destinationChain,
     token,
     destinationToken,
-    destinationAddress,
   });
+
+  const resolvedBridgeTokens = bridgeTokens ?? getAutoSeededBridgeTokens({ sourceChain, token });
 
   const wrapper = createIntegrationWrapper({
     search,
-    bridgeTokens,
+    bridgeTokens: resolvedBridgeTokens,
   });
 
   await act(async () => {
@@ -220,45 +281,32 @@ export async function expectTokenButtonToken({
 
   const logoURI = tokenExpectation.logoURI;
   if (logoURI) {
-    const logoDeadline = Date.now() + TOKEN_BUTTON_ASSERT_TIMEOUT_MS;
-    while (Date.now() < logoDeadline) {
-      const snapshot = getTokenButtonSnapshot();
+    await waitFor(
+      () => {
+        const snapshot = getTokenButtonSnapshot();
+        if (!snapshot.found || !snapshot.logoSrc) {
+          throw new Error(
+            `Waiting for "${buttonAriaLabel}" logo to resolve. Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
+          );
+        }
 
-      if (snapshot.logoSrc?.includes(logoURI)) {
-        break;
-      }
-
-      const hasResolvedWrongLogo = snapshot.found && !!snapshot.logoSrc;
-
-      if (hasResolvedWrongLogo) {
-        console.error('[TransferPanel integration debug] Token button logo mismatch', {
-          buttonAriaLabel,
-          expectedLogoURI: logoURI,
-          actualLogoSrc: snapshot.logoSrc,
-          buttonText: snapshot.buttonText,
-        });
-
-        throw new Error(
-          `Found wrong logo in "${buttonAriaLabel}" button. Expected "${logoURI}", got "${snapshot.logoSrc}".`,
-        );
-      }
-
-      await sleepInAct(POLL_INTERVAL_MS);
-    }
-
-    const finalLogoSnapshot = getTokenButtonSnapshot();
-    if (!finalLogoSnapshot.logoSrc?.includes(logoURI)) {
-      console.error('[TransferPanel integration debug] Token button logo mismatch', {
-        buttonAriaLabel,
-        expectedLogoURI: logoURI,
-        actualLogoSrc: finalLogoSnapshot.logoSrc,
-        buttonText: finalLogoSnapshot.buttonText,
-      });
-
-      throw new Error(
-        `Timed out waiting for "${buttonAriaLabel}" button logo to contain "${logoURI}". Current state: ${formatTokenButtonSnapshot(finalLogoSnapshot)}, current src: ${JSON.stringify(finalLogoSnapshot.logoSrc)}.`,
-      );
-    }
+        if (!snapshot.logoSrc.includes(logoURI)) {
+          throw new Error(
+            `Expected "${buttonAriaLabel}" logo to contain "${logoURI}", got "${snapshot.logoSrc}".`,
+          );
+        }
+      },
+      {
+        timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
+        interval: POLL_INTERVAL_MS,
+        onTimeout: () => {
+          const snapshot = getTokenButtonSnapshot();
+          return new Error(
+            `Timed out waiting for "${buttonAriaLabel}" button logo to contain "${logoURI}". Current state: ${formatTokenButtonSnapshot(snapshot)}, current src: ${JSON.stringify(snapshot.logoSrc)}.`,
+          );
+        },
+      },
+    );
   }
 }
 
@@ -278,6 +326,35 @@ function getTokenPanelRowButtonBySymbol(dialog: HTMLElement, symbol: string): HT
   }
 
   return rowButton;
+}
+
+function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
+  return within(dialog)
+    .queryAllByRole('button')
+    .filter((button): button is HTMLButtonElement => {
+      if (!(button instanceof HTMLButtonElement)) {
+        return false;
+      }
+
+      if (button.getAttribute('aria-label') === 'Close Dialog') {
+        return false;
+      }
+
+      const normalizedText = button.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? '';
+      if (!normalizedText) {
+        return false;
+      }
+
+      if (normalizedText === 'add') {
+        return false;
+      }
+
+      if (normalizedText.includes('manage token lists')) {
+        return false;
+      }
+
+      return true;
+    });
 }
 
 export async function expectTokenPanelContent({
@@ -304,20 +381,25 @@ export async function expectTokenPanelContent({
   await within(dialog).findByText(dialogTitle);
 
   if (symbolsToContain) {
-    const matchers = symbolsToContain.map((symbol) => ({
-      symbol,
-      matcher: new RegExp(escapeRegExp(symbol), 'i'),
-    }));
+    const getAvailableButtons = () =>
+      getTokenPanelRowButtons(dialog)
+        .map((button) => button.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+        .filter(Boolean)
+        .slice(0, 20);
+
+    const getMissingSymbols = () =>
+      symbolsToContain.filter((symbol) => {
+        try {
+          getTokenPanelRowButtonBySymbol(dialog, symbol);
+          return false;
+        } catch {
+          return true;
+        }
+      });
 
     await waitFor(
       () => {
-        const missingSymbols = matchers
-          .filter(
-            ({ matcher }) =>
-              within(dialog).queryAllByRole('button', { name: matcher }).length === 0,
-          )
-          .map(({ symbol }) => symbol);
-
+        const missingSymbols = getMissingSymbols();
         if (missingSymbols.length > 0) {
           throw new Error(
             `Missing symbol(s) "${missingSymbols.join(', ')}" in ${isDestination ? 'destination' : 'source'} token panel.`,
@@ -325,56 +407,74 @@ export async function expectTokenPanelContent({
         }
       },
       {
-        timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
-        onTimeout: () =>
-          new Error(
-            `Timed out waiting for [${symbolsToContain.join(', ')}] in ${isDestination ? 'destination' : 'source'} token panel.`,
-          ),
+        timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
+        interval: POLL_INTERVAL_MS,
+        onTimeout: () => {
+          const missingSymbols = getMissingSymbols();
+          return new Error(
+            `Timed out waiting for [${missingSymbols.join(', ')}] in ${isDestination ? 'destination' : 'source'} token panel. Available rows: [${getAvailableButtons().join(' | ')}].`,
+          );
+        },
       },
     );
   }
 
   if (tokenExpectation) {
     if (typeof tokenExpectation.logoURI !== 'undefined') {
-      const logoDeadline = Date.now() + INTEGRATION_ASSERT_TIMEOUT_MS;
-      while (Date.now() < logoDeadline) {
-        const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
-        const logoImage = tokenRowButton.querySelector('img');
-        const rowLogoSrc = logoImage?.getAttribute('src') ?? '';
+      await waitFor(
+        () => {
+          const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+          const logoImage = tokenRowButton.querySelector('img');
+          const rowLogoSrc = logoImage?.getAttribute('src') ?? '';
 
-        if (rowLogoSrc.includes(tokenExpectation.logoURI)) {
-          break;
-        }
+          if (!rowLogoSrc) {
+            throw new Error(`Waiting for "${tokenExpectation.symbol}" row logo to resolve.`);
+          }
 
-        if (rowLogoSrc) {
-          throw new Error(
-            `Found wrong logo for "${tokenExpectation.symbol}" row. Expected "${tokenExpectation.logoURI}", got "${rowLogoSrc}".`,
-          );
-        }
-
-        await sleepInAct(POLL_INTERVAL_MS);
-      }
-
-      const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
-      const logoImage = tokenRowButton.querySelector('img');
-      const rowLogoSrc = logoImage?.getAttribute('src') ?? '';
-      if (!rowLogoSrc.includes(tokenExpectation.logoURI)) {
-        throw new Error(
-          `Timed out waiting for "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}".`,
-        );
-      }
+          if (!rowLogoSrc.includes(tokenExpectation.logoURI)) {
+            throw new Error(
+              `Expected "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}", got "${rowLogoSrc}".`,
+            );
+          }
+        },
+        {
+          timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+          interval: POLL_INTERVAL_MS,
+          onTimeout: () =>
+            new Error(
+              `Timed out waiting for "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}".`,
+            ),
+        },
+      );
     }
 
-    if (typeof tokenExpectation.contractAddress !== 'undefined') {
-      const expectedContractAddress = tokenExpectation.contractAddress.toLowerCase();
+    if (typeof tokenExpectation.contract !== 'undefined') {
+      const expectsNativeContract = tokenExpectation.contract === 'native';
+      const expectedContractAddress = expectsNativeContract
+        ? undefined
+        : tokenExpectation.contract.toLowerCase();
+
       await waitFor(
         () => {
           const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
           const links = Array.from(tokenRowButton.querySelectorAll('a[href]'));
+          const rowText = (tokenRowButton.textContent ?? '').toLowerCase();
+          const hasAnyTokenContractLink = links.some((link) => {
+            const href = (link.getAttribute('href') ?? '').toLowerCase();
+            return href.includes('/token/');
+          });
           const hasExpectedContractLink = links.some((link) => {
             const href = (link.getAttribute('href') ?? '').toLowerCase();
-            return href.includes(`/token/${expectedContractAddress}`);
+            return expectedContractAddress
+              ? href.includes(`/token/${expectedContractAddress}`)
+              : false;
           });
+
+          if (expectsNativeContract) {
+            expect(rowText).toContain('native token on');
+            expect(hasAnyTokenContractLink).toBe(false);
+            return;
+          }
 
           expect(hasExpectedContractLink).toBe(true);
         },
@@ -382,7 +482,9 @@ export async function expectTokenPanelContent({
           timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
           onTimeout: () =>
             new Error(
-              `Timed out waiting for "${tokenExpectation.symbol}" row contract link to include "${tokenExpectation.contractAddress}".`,
+              expectsNativeContract
+                ? `Timed out waiting for "${tokenExpectation.symbol}" row to show native token text without token contract links.`
+                : `Timed out waiting for "${tokenExpectation.symbol}" row contract link to include "${tokenExpectation.contract}".`,
             ),
         },
       );
@@ -416,6 +518,67 @@ export async function expectTokenPanelSymbol({
     isDestination,
     symbolsToContain,
   });
+}
+
+async function expectTokenPanelTokens({
+  isDestination,
+  tokenExpectations,
+  scenarioName,
+}: {
+  isDestination: boolean;
+  tokenExpectations: TokenExpectation[];
+  scenarioName: string;
+}) {
+  const primaryTokenExpectation = tokenExpectations[0];
+  if (!primaryTokenExpectation) {
+    throw new Error(
+      `Missing primary ${isDestination ? 'destination' : 'source'} panel token expectation for scenario "${scenarioName}".`,
+    );
+  }
+
+  await expectTokenPanelContent({
+    isDestination,
+    symbolsToContain: tokenExpectations.map(({ symbol }) => symbol),
+    tokenExpectation: withExpectedTokenLogo(primaryTokenExpectation),
+  });
+}
+
+export async function runTransferPanelScenario({
+  name,
+  expectedSourceToken,
+  expectedDestinationToken,
+  expectedSourcePanelTokens,
+  expectedDestinationPanelTokens,
+  ...renderConfig
+}: TransferPanelScenario) {
+  const scenarioName = name ?? `${renderConfig.sourceChain} -> ${renderConfig.destinationChain}`;
+
+  await renderTransferPanel(renderConfig);
+
+  await expectTokenButtonToken({
+    isDestination: false,
+    tokenExpectation: withExpectedTokenLogo(expectedSourceToken),
+  });
+  await expectTokenButtonToken({
+    isDestination: true,
+    tokenExpectation: withExpectedTokenLogo(expectedDestinationToken),
+  });
+
+  if (expectedSourcePanelTokens) {
+    await expectTokenPanelTokens({
+      isDestination: false,
+      tokenExpectations: expectedSourcePanelTokens,
+      scenarioName,
+    });
+  }
+
+  if (expectedDestinationPanelTokens) {
+    await expectTokenPanelTokens({
+      isDestination: true,
+      tokenExpectations: expectedDestinationPanelTokens,
+      scenarioName,
+    });
+  }
 }
 
 export function setupTransferPanelLifiIntegrationSuite() {

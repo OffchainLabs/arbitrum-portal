@@ -31,6 +31,7 @@ export default defineConfig({
       '@/common': path.resolve(__dirname, '../portal/common'),
       '@/components': path.resolve(__dirname, '../portal/components'),
       '@/portal': path.resolve(__dirname, '../portal'),
+      '@/app-components': path.resolve(__dirname, '../app/src/components'),
       '@/token-bridge-sdk': path.resolve(__dirname, './src/token-bridge-sdk'),
       '@/bridge': path.resolve(__dirname, './src'),
     },
