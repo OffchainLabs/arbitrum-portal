@@ -6,14 +6,14 @@
   "dependencies": {
     "@arbitrum/sdk": "^4.0.3",
     "@rainbow-me/rainbowkit": "^2.2.4",
+    "@tippyjs/react": "^4.2.6",
     "dayjs": "^1.11.13",
     "next": "^14.2.35",
     "posthog-js": "^1.273.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-toastify": "^9.1.1",
-    "tailwind-merge": "^3.2.0",
-    "tippy.js": "^6.3.7"
+    "tailwind-merge": "^3.2.0"
   },
   "devDependencies": {
     "@headlessui/tailwindcss": "^0.2.2",

@@ -1,9 +1,13 @@
+'use client';
+
 import Tippy, { type TippyProps } from '@tippyjs/react';
+import { ReactNode } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 export type TooltipProps = {
   show?: boolean;
-  children: React.ReactNode;
-  content?: React.ReactNode;
+  children: ReactNode;
+  content?: ReactNode;
   wrapperClassName?: string;
   tippyProps?: TippyProps;
   theme?: 'light' | 'dark';
@@ -12,7 +16,7 @@ export type TooltipProps = {
 export function Tooltip({
   show = true,
   content,
-  wrapperClassName = 'w-max',
+  wrapperClassName,
   theme = 'dark',
   tippyProps = {},
   children,
@@ -27,7 +31,7 @@ export function Tooltip({
 
   return (
     <Tippy {...tippyProps} theme={theme} content={content} arrow={false}>
-      <div className={wrapperClassName}>{children}</div>
+      <div className={twMerge(wrapperClassName)}>{children}</div>
     </Tippy>
   );
 }

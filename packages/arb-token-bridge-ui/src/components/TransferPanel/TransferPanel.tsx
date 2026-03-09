@@ -1,7 +1,6 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
 import { getStepTransaction } from '@lifi/sdk';
-import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
@@ -11,6 +10,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
@@ -1341,24 +1341,23 @@ export function TransferPanel() {
         )}
 
         {showSmartContractWalletTooltip && (
-          <Tippy
-            placement="bottom-end"
-            maxWidth="auto"
-            onClickOutside={() => setShowSmartContractWalletTooltip(false)}
-            theme="orange"
-            visible={showSmartContractWalletTooltip}
+          <Tooltip
             content={
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <span>
                   <b>To continue, please approve tx on your smart contract wallet.</b>
                 </span>
                 <span>If you have k of n signers, then k of n will need to sign.</span>
               </div>
             }
+            tippyProps={{
+              placement: 'bottom',
+              visible: showSmartContractWalletTooltip,
+              onClickOutside: () => setShowSmartContractWalletTooltip(false),
+            }}
           >
-            {/* Override margin coming from Tippy that causes layout disruptions */}
-            <div className="!m-0" />
-          </Tippy>
+            <div className="!m-0 h-px mx-auto text-center w-full" aria-hidden="true" />
+          </Tooltip>
         )}
       </div>
     </>
