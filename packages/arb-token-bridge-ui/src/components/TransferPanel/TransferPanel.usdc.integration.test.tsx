@@ -52,14 +52,15 @@ describe.sequential('TransferPanel LiFi Integration - USDC', () => {
   it.each(usdcCases)(
     'renders expected source and destination tokens for USDC transfer: $sourceChain -> $destinationChain',
     async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
-      const sourceUsdcAddress = usdcAddressByChain[sourceChain];
+      const sourceTokenAddress = usdcAddressByChain[sourceChain];
       await runTransferPanelScenario({
         sourceChain,
         destinationChain,
         expectedSourceToken,
         expectedDestinationToken,
-        token: sourceUsdcAddress,
-        destinationToken: sourceUsdcAddress,
+        token: sourceTokenAddress,
+        // `destinationToken` is sanitized from the source token address into the destination-chain token.
+        destinationToken: sourceTokenAddress,
       });
     },
   );
