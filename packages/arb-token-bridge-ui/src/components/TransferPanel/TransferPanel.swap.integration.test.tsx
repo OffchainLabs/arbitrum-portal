@@ -53,13 +53,13 @@ describe.sequential('TransferPanel LiFi Integration - Swap (USDC -> ETH/WETH)', 
   it.each(swapCases)(
     'renders expected source and destination tokens for swap (USDC -> ETH/WETH): $sourceChain -> $destinationChain',
     async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
-      const sourceUsdcAddress = usdcAddressByChain[sourceChain];
+      const sourceTokenAddress = usdcAddressByChain[sourceChain];
       await runTransferPanelScenario({
         sourceChain,
         destinationChain,
         expectedSourceToken,
         expectedDestinationToken,
-        token: sourceUsdcAddress,
+        token: sourceTokenAddress,
         destinationToken: constants.AddressZero,
       });
     },

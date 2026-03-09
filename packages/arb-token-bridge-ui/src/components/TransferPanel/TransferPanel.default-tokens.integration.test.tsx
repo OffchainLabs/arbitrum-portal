@@ -13,9 +13,6 @@ import {
   setupTransferPanelLifiIntegrationSuite,
 } from './TransferPanel.integration.helpers';
 
-const APE_LOGO_URI = APE_TOKEN_LOGO;
-const WETH_LOGO_URI = WETH_TOKEN_LOGO;
-
 const defaultTokenCases: RouteTokenCase[] = [
   {
     sourceChain: 'base',
@@ -111,11 +108,11 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
     expectedSourcePanelSymbols: [
       {
         symbol: 'APE',
-        logoURI: APE_LOGO_URI,
+        logoURI: APE_TOKEN_LOGO,
       },
     ],
     expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_LOGO_URI },
+      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
       { symbol: 'USDC.e' },
       { symbol: 'USDT' },
       { symbol: 'WETH' },
@@ -152,11 +149,11 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
     expectedSourcePanelSymbols: [
       {
         symbol: 'APE',
-        logoURI: APE_LOGO_URI,
+        logoURI: APE_TOKEN_LOGO,
       },
     ],
     expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_LOGO_URI },
+      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
       { symbol: 'USDC.e' },
       { symbol: 'USDT' },
       { symbol: 'WETH' },
@@ -175,11 +172,11 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
   {
     sourceChain: 'apechain',
     destinationChain: 'arbitrum-one',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_LOGO_URI }],
+    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
     expectedDestinationPanelSymbols: [
       {
         symbol: 'APE',
-        logoURI: APE_LOGO_URI,
+        logoURI: APE_TOKEN_LOGO,
       },
       { symbol: 'USDC', contract: CommonAddress.ArbitrumOne.USDC },
       { symbol: 'USDT', contract: CommonAddress.ArbitrumOne.USDT },
@@ -203,11 +200,11 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
     expectedSourcePanelSymbols: [
       {
         symbol: 'APE',
-        logoURI: APE_LOGO_URI,
+        logoURI: APE_TOKEN_LOGO,
       },
     ],
     expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_LOGO_URI },
+      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
       { symbol: 'USDC.e' },
       { symbol: 'USDT' },
       { symbol: 'WETH' },
@@ -216,11 +213,11 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_LOGO_URI }],
+    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
     expectedDestinationPanelSymbols: [
       {
         symbol: 'APE',
-        logoURI: APE_LOGO_URI,
+        logoURI: APE_TOKEN_LOGO,
       },
       { symbol: 'USDC' },
       { symbol: 'USDT' },
@@ -251,7 +248,7 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_LOGO_URI }],
+    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
     expectedDestinationPanelSymbols: [
       { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
       { symbol: 'USDC.e', logoURI: USDC_TOKEN_LOGO, contract: CommonAddress.Superposition.USDCe },
@@ -269,11 +266,10 @@ const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
     expectedDestinationPanelSymbols: [
       {
         symbol: 'WETH',
-        logoURI: WETH_LOGO_URI,
+        logoURI: WETH_TOKEN_LOGO,
       },
       { symbol: 'APE' },
       { symbol: 'USDC.e' },
-      { symbol: 'WETH' },
     ],
   },
 ];
