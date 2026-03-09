@@ -507,19 +507,6 @@ export async function expectTokenPanelContent({
   );
 }
 
-export async function expectTokenPanelSymbol({
-  isDestination,
-  symbolsToContain,
-}: {
-  isDestination: boolean;
-  symbolsToContain: string[];
-}) {
-  await expectTokenPanelContent({
-    isDestination,
-    symbolsToContain,
-  });
-}
-
 async function expectTokenPanelTokens({
   isDestination,
   tokenExpectations,
