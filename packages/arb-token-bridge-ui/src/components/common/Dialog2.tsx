@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { EarnToSPopupDialog } from '../../../../app/src/components/earn/EarnToSPopupDialog';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -165,6 +166,8 @@ export function DialogWrapper(props: DialogProps) {
       return <PoPDisabledDialog {...commonProps} />;
     case 'one_nova_transfer':
       return <OneNovaTransferDialog {...commonProps} />;
+    case 'earn_tos':
+      return <EarnToSPopupDialog {...commonProps} />;
     default:
       return null;
   }

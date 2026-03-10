@@ -91,49 +91,24 @@ export function useEarnGasEstimate({
           return;
         }
 
+        const gasPrice = BigNumber.from((await publicClient.getGasPrice()).toString());
+
         const gasEstimates = await Promise.all(
           chainSteps.map(async (step) => {
-            if (step.type === 'approval') {
-              try {
-                const [gasLimit, gasPrice] = await Promise.all([
-                  estimateGas(wagmiConfig, {
-                    to: step.to as `0x${string}`,
-                    data: step.data as `0x${string}`,
-                    value: step.value ? BigInt(step.value) : undefined,
-                    account: walletAddress as `0x${string}`,
-                    chainId: step.chainId,
-                  }),
-                  publicClient.getGasPrice(),
-                ]);
-
-                const cost = BigNumber.from(gasLimit.toString()).mul(
-                  BigNumber.from(gasPrice.toString()),
-                );
-                return { step, cost };
-              } catch {
-                return { step, cost: BigNumber.from(0) };
-              }
-            }
-
             try {
-              const [gasLimit, gasPrice] = await Promise.all([
-                estimateGas(wagmiConfig, {
-                  to: step.to as `0x${string}`,
-                  data: step.data as `0x${string}`,
-                  value: step.value ? BigInt(step.value) : undefined,
-                  account: walletAddress as `0x${string}`,
-                  chainId: step.chainId,
-                }),
-                publicClient.getGasPrice(),
-              ]);
+              const gasLimit = await estimateGas(wagmiConfig, {
+                to: step.to as `0x${string}`,
+                data: step.data as `0x${string}`,
+                value: step.value ? BigInt(step.value) : undefined,
+                account: walletAddress as `0x${string}`,
+                chainId: step.chainId,
+              });
 
-              const cost = BigNumber.from(gasLimit.toString()).mul(
-                BigNumber.from(gasPrice.toString()),
-              );
+              const cost = BigNumber.from(gasLimit.toString()).mul(gasPrice);
               return { step, cost };
             } catch (err) {
               const isAllowanceError = isAllowanceRelatedError(err);
-              if (isAllowanceError) {
+              if (step.type === 'approval' || isAllowanceError) {
                 return { step, cost: BigNumber.from(0) };
               }
 

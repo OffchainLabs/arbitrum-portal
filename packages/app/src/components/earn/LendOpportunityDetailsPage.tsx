@@ -21,7 +21,6 @@ import { type StandardOpportunityLend } from '@/earn-api/types';
 
 import { ChartPlaceholder } from './ChartPlaceholder';
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
-import { EarnToSPopupDialog } from './EarnToSPopupDialog';
 import {
   EarnTransactionDetailsPopup,
   type TransactionDetails,
@@ -313,11 +312,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
         </div>
       </div>
 
-      {tosDialogProps.openedDialogType === 'earn_tos' ? (
-        <EarnToSPopupDialog {...tosDialogProps} isOpen />
-      ) : (
-        <DialogWrapper {...tosDialogProps} />
-      )}
+      <DialogWrapper {...tosDialogProps} />
       <EarnTransactionDetailsPopup
         isOpen={txDetailsIsOpen}
         onClose={closeTransactionDetails}
