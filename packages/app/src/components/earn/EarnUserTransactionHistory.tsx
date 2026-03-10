@@ -42,12 +42,15 @@ const ITEMS_PER_PAGE = 5;
 
 type TransactionHistoryViewState = 'loading' | 'error' | 'empty' | 'table';
 
-function getViewState(params: {
+function getViewState({
+  isLoading,
+  error,
+  hasTransactions,
+}: {
   isLoading: boolean;
   error: string | null;
   hasTransactions: boolean;
 }): TransactionHistoryViewState {
-  const { isLoading, error, hasTransactions } = params;
   if (isLoading) {
     return 'loading';
   }
