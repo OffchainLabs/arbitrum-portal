@@ -30,22 +30,6 @@ export interface UseTransactionQuoteParams {
 
 export type UseTransactionQuoteResult = SWRResponse<TransactionQuoteResponse, Error>;
 
-type TransactionQuoteKey = readonly [
-  string,
-  OpportunityCategory,
-  TransactionQuoteRequest['action'],
-  string,
-  string,
-  string | undefined,
-  string | undefined,
-  number,
-  boolean,
-  EarnChainId,
-  string | undefined,
-  string | undefined,
-  'transaction-quote',
-];
-
 export function useTransactionQuote(params: UseTransactionQuoteParams): UseTransactionQuoteResult {
   const {
     opportunityId,
@@ -76,7 +60,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
     }
   })();
 
-  const quoteKey =
+  return useSWR(
     enabled && opportunityId && userAddress && hasPositiveAmount
       ? ([
           opportunityId,
@@ -93,10 +77,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
           rolloverAmount,
           'transaction-quote',
         ] as const)
-      : null;
-
-  return useSWR<TransactionQuoteResponse>(
-    quoteKey,
+      : null,
     async ([
       keyOpportunityId,
       keyCategory,
@@ -110,7 +91,7 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       keyChainId,
       keyRolloverTargetOpportunityId,
       keyRolloverAmount,
-    ]: TransactionQuoteKey): Promise<TransactionQuoteResponse> => {
+    ]) => {
       const queryParams = new URLSearchParams({
         action: keyAction,
         amount: keyDebouncedAmount,
@@ -141,16 +122,10 @@ export function useTransactionQuote(params: UseTransactionQuoteParams): UseTrans
       );
 
       if (!response.ok) {
-        let errorMessage = `Failed to get transaction quote: ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          if (errorData?.error?.message) {
-            errorMessage = errorData.error.message;
-          } else if (errorData?.message) {
-            errorMessage = errorData.message;
-          }
-        } catch {}
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        throw new Error(
+          errorData?.message ?? `Failed to get transaction quote: ${response.statusText}`,
+        );
       }
 
       return (await response.json()) as TransactionQuoteResponse;

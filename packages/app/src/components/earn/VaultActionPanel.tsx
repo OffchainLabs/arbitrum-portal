@@ -13,7 +13,7 @@ import {
   type TransactionCall,
   useEarnTransactionExecution,
 } from '@/app-hooks/earn/useEarnTransactionExecution';
-import { addTransactionToHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
+import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
   checkAmountExceedsBalance,
   validateTransactionStep,
@@ -112,6 +112,13 @@ export function VaultActionPanel({
     setAmount('');
     setTxError(null);
   }, [selectedAction]);
+
+  const { addTransaction } = useEarnTransactionHistory(
+    OpportunityCategory.Lend,
+    vault.address,
+    walletAddress || null,
+    requestChainId,
+  );
 
   const { data: availableActions, isLoading: contextLoading } = useAvailableActions({
     opportunityId: vault.address,
@@ -363,11 +370,7 @@ export function VaultActionPanel({
           transactionHash: txHash ?? '',
         };
 
-        await addTransactionToHistory({
-          category: OpportunityCategory.Lend,
-          opportunityId: vault.address,
-          userAddress: walletAddress,
-          chainId: requestChainId,
+        await addTransaction({
           vendor: Vendor.Vaults,
           transaction: newTransaction,
         });

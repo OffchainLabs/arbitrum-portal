@@ -66,47 +66,46 @@ export function useEarnTransactionNetworkFee({
   const publicClient = usePublicClient({ chainId });
   const normalizedProvidedNetworkFee = normalizeProvidedNetworkFee(providedNetworkFee);
   const feeKey =
-    isOpen && !isLoading && txHash && chainId
+    isOpen && !isLoading && !normalizedProvidedNetworkFee && txHash && chainId
       ? (['earn-network-fee', chainId, txHash] as const)
       : null;
 
-  const { data: fetchedNetworkFee, isLoading: isFetchingFee } =
-    useSWRImmutable<EarnTransactionNetworkFee | null>(
-      feeKey,
-      async ([, , keyTxHash]) => {
-        if (!publicClient) {
-          return null;
-        }
+  const { data: fetchedNetworkFee, isLoading: isFetchingFee } = useSWRImmutable(
+    feeKey,
+    async ([, , keyTxHash]) => {
+      if (!publicClient) {
+        return null;
+      }
 
-        const receipt = await publicClient.getTransactionReceipt({
-          hash: keyTxHash as `0x${string}`,
-        });
+      const receipt = await publicClient.getTransactionReceipt({
+        hash: keyTxHash as `0x${string}`,
+      });
 
-        const gasUsed = BigNumber.from(receipt.gasUsed.toString());
-        const effectiveGasPrice = receipt.effectiveGasPrice
-          ? BigNumber.from(receipt.effectiveGasPrice.toString())
-          : null;
+      const gasUsed = BigNumber.from(receipt.gasUsed.toString());
+      const effectiveGasPrice = receipt.effectiveGasPrice
+        ? BigNumber.from(receipt.effectiveGasPrice.toString())
+        : null;
 
-        if (!effectiveGasPrice) {
-          return null;
-        }
+      if (!effectiveGasPrice) {
+        return null;
+      }
 
-        const feeWei = gasUsed.mul(effectiveGasPrice);
-        const feeEth = Number(utils.formatEther(feeWei));
-        const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
-        return {
-          amount: `~${feeEthFormatted} ETH`,
-        };
-      },
-      {
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        shouldRetryOnError: false,
-      },
-    );
+      const feeWei = gasUsed.mul(effectiveGasPrice);
+      const feeEth = Number(utils.formatEther(feeWei));
+      const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
+      return {
+        amount: `~${feeEthFormatted} ETH`,
+      };
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+    },
+  );
 
   return {
     networkFee: fetchedNetworkFee || normalizedProvidedNetworkFee,
-    isFetchingFee: isFetchingFee && !fetchedNetworkFee && !normalizedProvidedNetworkFee,
+    isFetchingFee,
   };
 }
