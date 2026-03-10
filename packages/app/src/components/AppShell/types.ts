@@ -1,4 +1,4 @@
-export type NavRoute = '/' | '/bridge' | '/projects' | '/build';
+export type NavRoute = '/' | '/bridge' | '/earn' | '/projects' | '/build';
 
 export interface NavLink {
   label: string;

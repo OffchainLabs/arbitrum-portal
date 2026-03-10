@@ -15,6 +15,10 @@ export function useActiveRoute(): NavRoute | null {
     return '/bridge';
   }
 
+  if (pathname.startsWith('/earn')) {
+    return '/earn';
+  }
+
   if (
     pathname.startsWith('/projects') ||
     pathname.startsWith('/chains') ||
