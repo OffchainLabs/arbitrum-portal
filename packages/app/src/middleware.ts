@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { PathnameEnum } from '@/bridge/constants';
+import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
+  const isEarnApiRequest = url.pathname.startsWith('/api/onchain-actions/v1/earn');
 
   const disabledFeaturesParam = url.searchParams.getAll('disabledFeatures');
   const isOnrampEnabled = isOnrampFeatureEnabled({ disabledFeatures: disabledFeaturesParam });
+  const earnEnabled = isEarnEnabled();
 
   // Redirect /?mode=embed to /bridge/embed and keep query params (without mode)
   if (url.searchParams.get('mode') === 'embed') {
@@ -32,6 +35,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
+  if (isEarnApiRequest && !earnEnabled) {
+    return new NextResponse(null, { status: 404 });
+  }
+
+  if (url.pathname.startsWith('/earn') && !earnEnabled) {
+    url.pathname = '/';
+    url.search = '';
+    return NextResponse.redirect(url, 308);
+  }
+
   // Redirect /?tab=buy to /bridge/buy and keep query params (without tab)
   if (url.searchParams.get('tab') === 'buy') {
     url.pathname = PathnameEnum.BUY;
@@ -43,5 +56,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/bridge/:path*'],
+  matcher: ['/', '/bridge/:path*', '/earn/:path*', '/api/onchain-actions/v1/earn/:path*'],
 };

@@ -10,9 +10,10 @@ import type { TabConfig } from '@/portal/common/pageTabConfig';
 interface PageTabsProps {
   title: string;
   tabs: readonly TabConfig[];
+  className?: string;
 }
 
-export function PageTabs({ title, tabs }: PageTabsProps) {
+export function PageTabs({ title, tabs, className }: PageTabsProps) {
   const pathname = usePathname();
 
   const isActive = (pathMatch: string) => pathname.startsWith(pathMatch);
@@ -22,7 +23,7 @@ export function PageTabs({ title, tabs }: PageTabsProps) {
       <PageHeading>{title}</PageHeading>
 
       {/* Mobile */}
-      <div className="flex items-center w-full md:hidden py-4">
+      <div className={twMerge('flex items-center w-full md:hidden py-4', className)}>
         {tabs.map((tab) => {
           const active = isActive(tab.pathMatch);
           return (
