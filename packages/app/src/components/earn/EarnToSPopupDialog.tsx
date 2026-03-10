@@ -1,7 +1,7 @@
 'use client';
 
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Checkbox } from '@/bridge/components/common/Checkbox';
 import { Dialog } from '@/bridge/components/common/Dialog';
@@ -11,21 +11,10 @@ import { ExternalLink } from '@/components/ExternalLink';
 export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
   const [isChecked, setIsChecked] = useState(false);
 
-  useEffect(() => {
-    if (props.isOpen) {
-      setIsChecked(false);
-    }
-  }, [props.isOpen]);
-
-  const handleCancel = () => {
-    setIsChecked(false);
-    props.onClose(false);
-  };
-
   return (
     <Dialog
       isOpen={props.isOpen}
-      onClose={handleCancel}
+      onClose={props.onClose}
       title=""
       closeable
       actionButtonTitle="Proceed"
