@@ -1,9 +1,6 @@
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber } from 'ethers';
 
 import type { TransactionStep } from '@/earn-api/types';
-
-const DEFAULT_NATIVE_GAS_BUFFER_ETH = '0.0005';
-const NATIVE_GAS_BUFFER_MULTIPLIER = 1.4;
 
 export function checkAmountExceedsBalance(
   amountRaw: string,

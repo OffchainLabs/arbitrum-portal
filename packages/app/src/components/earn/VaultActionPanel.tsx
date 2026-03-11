@@ -336,7 +336,11 @@ export function VaultActionPanel({
     [amountInRawUnits, currentBalanceForQuote, isConnected, walletAddress],
   );
 
-  const { data: transactionQuote, isLoading: transactionQuoteLoading } = useTransactionQuote({
+  const {
+    data: transactionQuote,
+    isLoading: transactionQuoteLoading,
+    error: transactionQuoteError,
+  } = useTransactionQuote({
     opportunityId: vault.address,
     category: OpportunityCategory.Lend,
     action: selectedAction === 'supply' ? 'deposit' : 'redeem',
@@ -613,14 +617,17 @@ export function VaultActionPanel({
 
       <EarnTransactionDetailsSection details={transactionDetailsRows} />
 
-      <EarnErrorDisplay error={txError || null} />
+      <EarnErrorDisplay error={txError || transactionQuoteError?.message || null} />
 
       <EarnActionSubmitButton
         label={submitLabel}
         onClick={handleTransaction}
         isSubmitting={isExecuting}
         disabled={
-          !transferReadiness.isReady || transactionQuoteLoading || transferReadiness.isLoading
+          !transferReadiness.isReady ||
+          transactionQuoteLoading ||
+          transferReadiness.isLoading ||
+          !!transactionQuoteError
         }
         isConnected={isConnected}
       />
