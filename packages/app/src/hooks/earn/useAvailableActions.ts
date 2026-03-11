@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -27,51 +26,18 @@ export interface UseAvailableActionsParams<C extends OpportunityCategory> {
   chainId: EarnChainId;
 }
 
-export type UseAvailableActionsResult<C extends OpportunityCategory> = Omit<
-  SWRResponse<AvailableActionsByCategory[C], Error>,
-  'data' | 'error'
-> & {
-  data: AvailableActionsByCategory[C] | null;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => void;
-};
-
-type AvailableActionsKey<C extends OpportunityCategory> = readonly [
-  'available-actions',
-  C,
-  string,
-  string,
-  EarnChainId,
-];
-
-function buildAvailableActionsKey<C extends OpportunityCategory>(
-  category: C,
-  opportunityId: string,
-  userAddress: string,
-  chainId: EarnChainId,
-): AvailableActionsKey<C> {
-  return ['available-actions', category, opportunityId, userAddress, chainId] as const;
-}
-
 export function useAvailableActions<C extends OpportunityCategory>(
   params: UseAvailableActionsParams<C>,
-): UseAvailableActionsResult<C> {
+) {
   const { opportunityId, category, userAddress, chainId } = params;
   const swrKey =
     opportunityId && category && userAddress
-      ? buildAvailableActionsKey(category, opportunityId, userAddress, chainId)
+      ? (['available-actions', category, opportunityId, userAddress, chainId] as const)
       : null;
 
-  const swrResponse = useSWRImmutable<AvailableActionsByCategory[C]>(
+  const { data, error, isLoading, mutate, ...restSWR } = useSWRImmutable(
     swrKey,
-    async ([
-      ,
-      keyCategory,
-      keyOpportunityId,
-      keyUserAddress,
-      keyChainId,
-    ]: AvailableActionsKey<C>) => {
+    async ([, keyCategory, keyOpportunityId, keyUserAddress, keyChainId]) => {
       const queryParams = new URLSearchParams({
         userAddress: keyUserAddress,
         chainId: String(keyChainId),
@@ -93,7 +59,6 @@ export function useAvailableActions<C extends OpportunityCategory>(
     },
   );
 
-  const { data, error, isLoading, mutate, ...restSWR } = swrResponse;
   const refetch = useCallback(() => {
     void mutate(undefined, { revalidate: true });
   }, [mutate]);
