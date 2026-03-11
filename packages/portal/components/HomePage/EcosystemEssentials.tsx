@@ -4,17 +4,28 @@ import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { CATEGORIES } from '@/common/categories';
+import { spotlightOrbitChains } from '@/common/orbitChains';
 import { getSpotlightProjects } from '@/common/projects';
 import { Card } from '@/components/Card';
+import { OrbitItemBox } from '@/components/OrbitItemBox';
 import { ProjectItemBox } from '@/components/ProjectItemBox';
 import { ResponsiveHorizontalScrollableLayout } from '@/components/ResponsiveHorizontalScrollableLayout';
 
 export const EcosystemEssentials = () => {
+  const CHAIN_SPOTLIGHT_KEY = 'chain-spotlight';
+
   const [selectedCategory, setSelectedCategory] = useState('defi');
 
+  const isChainSpotlight = selectedCategory === CHAIN_SPOTLIGHT_KEY;
+
   const spotlightProjects = useMemo(
-    () => getSpotlightProjects(selectedCategory).slice(0, 3),
-    [selectedCategory],
+    () => (isChainSpotlight ? [] : getSpotlightProjects(selectedCategory).slice(0, 3)),
+    [selectedCategory, isChainSpotlight],
+  );
+
+  const spotlightChains = useMemo(
+    () => (isChainSpotlight ? spotlightOrbitChains.slice(0, 3) : []),
+    [isChainSpotlight],
   );
 
   return (
@@ -37,11 +48,40 @@ export const EcosystemEssentials = () => {
             {category.title}
           </button>
         ))}
+        <button
+          className={twMerge(
+            'shrink-0 rounded-md bg-default-black p-2 px-3 text-xs',
+            selectedCategory === CHAIN_SPOTLIGHT_KEY
+              ? 'bg-white text-default-black'
+              : 'hover:bg-default-black-hover',
+          )}
+          onClick={() => {
+            setSelectedCategory(CHAIN_SPOTLIGHT_KEY);
+          }}
+        >
+          Chain Spotlight
+        </button>
       </div>
       <hr className="border-white/40" />
 
       <div className="flex flex-nowrap gap-3">
-        {spotlightProjects.length ? (
+        {isChainSpotlight ? (
+          spotlightChains.length ? (
+            <ResponsiveHorizontalScrollableLayout>
+              {spotlightChains.map((slug) => (
+                <OrbitItemBox
+                  slug={slug}
+                  key={slug}
+                  analyticsSource={'Homepage Ecosystem Essentials'}
+                  displayMode="spotlight"
+                  className="max-w-[300px] lg:max-w-none"
+                />
+              ))}
+            </ResponsiveHorizontalScrollableLayout>
+          ) : (
+            <Card className="h-[200px] w-full">No chains to show</Card>
+          )
+        ) : spotlightProjects.length ? (
           <ResponsiveHorizontalScrollableLayout>
             {spotlightProjects.map((slug) => (
               <ProjectItemBox
