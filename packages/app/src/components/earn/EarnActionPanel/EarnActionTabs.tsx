@@ -21,6 +21,7 @@ export function EarnActionTabs({ tabs, selectedAction, onActionChange }: EarnAct
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
           role="tab"
           aria-selected={selectedAction === tab.id}
           onClick={() => onActionChange(tab.id)}
