@@ -9,15 +9,9 @@ import { useAccount, useBalance } from 'wagmi';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
-import {
-  type TransactionCall,
-  useEarnTransactionExecution,
-} from '@/app-hooks/earn/useEarnTransactionExecution';
+import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
-import {
-  checkAmountExceedsBalance,
-  validateTransactionStep,
-} from '@/app-hooks/earn/useEarnTransactionUtils';
+import { checkAmountExceedsBalance } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -107,18 +101,6 @@ function getChainIdFromQuote(transactionSteps: TransactionStep[] | undefined): n
     throw new Error('Invalid transaction step: missing chainId');
   }
   return txChainId;
-}
-
-function buildTransactionCalls(transactionSteps: TransactionStep[]): TransactionCall[] {
-  return transactionSteps.map((step: TransactionStep, index: number) => {
-    validateTransactionStep(step, index);
-    return {
-      to: step.to as `0x${string}`,
-      data: step.data as `0x${string}`,
-      value: step.value ? BigInt(step.value) : undefined,
-      chainId: step.chainId,
-    };
-  });
 }
 
 interface TransactionResultParams {
@@ -378,16 +360,9 @@ export function VaultActionPanel({
   const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
 
-  const buildCalls = useCallback(async (): Promise<TransactionCall[]> => {
-    if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
-      throw new Error('No transaction steps found');
-    }
-    return buildTransactionCalls(transactionQuote.transactionSteps);
-  }, [transactionQuote]);
-
   const { executeTx, isExecuting } = useEarnTransactionExecution({
     chainId,
-    buildCalls,
+    transactionSteps: transactionQuote?.transactionSteps,
     onTransactionFinished: async ({ txHash }) => {
       setAmount('');
       refetchAssetBalance();

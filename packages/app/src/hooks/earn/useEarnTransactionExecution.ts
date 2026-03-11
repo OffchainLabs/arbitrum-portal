@@ -14,6 +14,9 @@ import {
 
 import { useIsTxBatchingSupported } from '@/app-hooks/useIsTxBatchingSupported';
 import { isUserRejectedError } from '@/bridge/util/isUserRejectedError';
+import type { TransactionStep } from '@/earn-api/types';
+
+import { validateTransactionStep } from './useEarnTransactionUtils';
 
 export interface TransactionCall {
   to: Address;
@@ -24,7 +27,7 @@ export interface TransactionCall {
 
 export interface EarnTransactionExecutionOptions {
   chainId: number;
-  buildCalls: () => Promise<TransactionCall[]>;
+  transactionSteps: TransactionStep[] | undefined;
   onTransactionSubmitted?: (params: { txHash: string | undefined; amount: string }) => void;
   onTransactionFinished: (params: { txHash: string | undefined; amount: string }) => void;
   inputAmount: string;
@@ -42,6 +45,18 @@ const POLL_INTERVAL_MS = 1000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildTransactionCalls(transactionSteps: TransactionStep[]): TransactionCall[] {
+  return transactionSteps.map((step: TransactionStep, index: number) => {
+    validateTransactionStep(step, index);
+    return {
+      to: step.to as `0x${string}`,
+      data: step.data as `0x${string}`,
+      value: step.value ? BigInt(step.value) : undefined,
+      chainId: step.chainId,
+    };
+  });
 }
 
 function isEip7702RelatedError(e: unknown) {
@@ -85,7 +100,7 @@ async function waitForBatchTxHash(
 
 export function useEarnTransactionExecution({
   chainId,
-  buildCalls,
+  transactionSteps,
   onTransactionSubmitted,
   onTransactionFinished,
   inputAmount,
@@ -116,11 +131,11 @@ export function useEarnTransactionExecution({
         }
       };
 
-      const getCallsOrThrow = async () => {
-        const calls = await buildCalls();
-        if (calls.length === 0) {
-          throw new Error('No calls to execute');
+      const getCallsOrThrow = () => {
+        if (!transactionSteps || transactionSteps.length === 0) {
+          throw new Error('No transaction steps found');
         }
+        const calls = buildTransactionCalls(transactionSteps);
 
         for (const [index, call] of calls.entries()) {
           if (call.chainId !== chainId) {
@@ -135,7 +150,7 @@ export function useEarnTransactionExecution({
 
       const executeBatch = async () => {
         await ensureCorrectChain();
-        const calls = await getCallsOrThrow();
+        const calls = getCallsOrThrow();
 
         const { id: batchId } = await sendCalls(wagmiConfig, { calls });
 
@@ -149,7 +164,7 @@ export function useEarnTransactionExecution({
 
       const executeSequential = async () => {
         await ensureCorrectChain();
-        const calls = await getCallsOrThrow();
+        const calls = getCallsOrThrow();
 
         let lastTxHash: string | undefined;
 
@@ -204,7 +219,7 @@ export function useEarnTransactionExecution({
     chainId,
     connectedChainId,
     isBatchSupported,
-    buildCalls,
+    transactionSteps,
     onTransactionSubmitted,
     onTransactionFinished,
     inputAmount,
