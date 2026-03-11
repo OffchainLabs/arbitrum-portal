@@ -60,7 +60,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
   );
 
   const refetch = useCallback(() => {
-    void mutate(undefined, { revalidate: true });
+    mutate(undefined, { revalidate: true });
   }, [mutate]);
 
   return {

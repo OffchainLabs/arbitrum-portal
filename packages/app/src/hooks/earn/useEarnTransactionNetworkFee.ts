@@ -4,6 +4,7 @@ import { BigNumber, utils } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 import { usePublicClient } from 'wagmi';
 
+import { formatAmount } from '@/bridge/util/NumberUtils';
 import type { EarnChainId } from '@/earn-api/types';
 
 export interface EarnTransactionNetworkFee {
@@ -65,20 +66,14 @@ export function useEarnTransactionNetworkFee({
 }: UseEarnTransactionNetworkFeeParams): UseEarnTransactionNetworkFeeResult {
   const publicClient = usePublicClient({ chainId });
   const normalizedProvidedNetworkFee = normalizeProvidedNetworkFee(providedNetworkFee);
-  const feeKey =
-    isOpen && !isLoading && !normalizedProvidedNetworkFee && txHash && chainId
-      ? (['earn-network-fee', chainId, txHash] as const)
-      : null;
 
   const { data: fetchedNetworkFee, isLoading: isFetchingFee } = useSWRImmutable(
-    feeKey,
-    async ([, , keyTxHash]) => {
-      if (!publicClient) {
-        return null;
-      }
-
-      const receipt = await publicClient.getTransactionReceipt({
-        hash: keyTxHash as `0x${string}`,
+    isOpen && !isLoading && !normalizedProvidedNetworkFee && txHash && publicClient && chainId
+      ? ([txHash, publicClient, chainId, 'earn-network-fee'] as const)
+      : null,
+    async ([_txHash, _publicClient]) => {
+      const receipt = await _publicClient.getTransactionReceipt({
+        hash: _txHash as `0x${string}`,
       });
 
       const gasUsed = BigNumber.from(receipt.gasUsed.toString());
@@ -92,16 +87,11 @@ export function useEarnTransactionNetworkFee({
 
       const feeWei = gasUsed.mul(effectiveGasPrice);
       const feeEth = Number(utils.formatEther(feeWei));
-      const feeEthFormatted = Number.isFinite(feeEth) ? feeEth.toFixed(6) : '0.000000';
       return {
-        amount: `~${feeEthFormatted} ETH`,
+        amount: `~${formatAmount(feeEth, { symbol: 'ETH' })}`,
       };
     },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      shouldRetryOnError: false,
-    },
+    { shouldRetryOnError: false },
   );
 
   return {

@@ -30,23 +30,21 @@ export interface UseTransactionQuoteParams {
 
 export type UseTransactionQuoteResult = SWRResponse<TransactionQuoteResponse, Error>;
 
-export function useTransactionQuote(params: UseTransactionQuoteParams): UseTransactionQuoteResult {
-  const {
-    opportunityId,
-    category,
-    action,
-    amount,
-    userAddress,
-    inputTokenAddress,
-    outputTokenAddress,
-    slippage = 0.5,
-    simulate = false,
-    chainId,
-    rolloverTargetOpportunityId,
-    rolloverAmount,
-    enabled = true,
-  } = params;
-
+export function useTransactionQuote({
+  opportunityId,
+  category,
+  action,
+  amount,
+  userAddress,
+  inputTokenAddress,
+  outputTokenAddress,
+  slippage = 0.5,
+  simulate = false,
+  chainId,
+  rolloverTargetOpportunityId,
+  rolloverAmount,
+  enabled = true,
+}: UseTransactionQuoteParams): UseTransactionQuoteResult {
   const debouncedAmount = useDebounce(amount, 500);
   const hasPositiveAmount = (() => {
     if (!/^\d+$/.test(debouncedAmount)) {

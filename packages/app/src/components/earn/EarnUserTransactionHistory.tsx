@@ -1,7 +1,7 @@
 'use client';
 
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount } from 'wagmi';
 
 import { EarnPagination } from '@/app-components/earn/EarnPagination';
@@ -40,27 +40,22 @@ interface EarnUserTransactionHistoryProps {
 
 const ITEMS_PER_PAGE = 5;
 
-type TransactionHistoryViewState = 'loading' | 'error' | 'empty' | 'table';
-
-function getViewState({
-  isLoading,
-  error,
-  hasTransactions,
-}: {
-  isLoading: boolean;
-  error: string | null;
-  hasTransactions: boolean;
-}): TransactionHistoryViewState {
-  if (isLoading) {
-    return 'loading';
-  }
-  if (error) {
-    return 'error';
-  }
-  if (!hasTransactions) {
-    return 'empty';
-  }
-  return 'table';
+function TransactionHistorySection({
+  opportunityName,
+  children,
+}: PropsWithChildren<{
+  opportunityName: string;
+}>) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center">
+        <h3 className="text-[18px] font-medium text-white">
+          Your transactions for {opportunityName}
+        </h3>
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export function EarnUserTransactionHistory({
@@ -118,41 +113,47 @@ export function EarnUserTransactionHistory({
 
   if (!walletAddress) return null;
 
-  const viewState = getViewState({ isLoading, error, hasTransactions });
+  if (isLoading) {
+    return (
+      <TransactionHistorySection opportunityName={opportunityName}>
+        <TransactionHistoryPlaceholder />
+      </TransactionHistorySection>
+    );
+  }
+
+  if (error) {
+    return (
+      <TransactionHistorySection opportunityName={opportunityName}>
+        <div className="text-xs text-red-400">Failed to load: {error}</div>
+      </TransactionHistorySection>
+    );
+  }
+
+  if (!hasTransactions) {
+    return (
+      <TransactionHistorySection opportunityName={opportunityName}>
+        <div className="text-xs text-white/50">No transactions found.</div>
+      </TransactionHistorySection>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center">
-        <h3 className="text-[18px] font-medium text-white">
-          Your transactions for {opportunityName}
-        </h3>
-      </div>
-
-      {viewState === 'loading' && <TransactionHistoryPlaceholder />}
-
-      {viewState === 'error' && <div className="text-xs text-red-400">Failed to load: {error}</div>}
-
-      {viewState === 'empty' && <div className="text-xs text-white/50">No transactions found.</div>}
-
-      {viewState === 'table' && (
-        <>
-          <EarnTransactionHistoryTable
-            category={category}
-            rows={paginatedTransactions}
-            getDateStr={getDateStr}
-            getTimeStr={getTimeStr}
-            onRowClick={onTransactionClick}
-            opportunityName={opportunityName}
-            protocolName={protocolName}
-            protocolLogo={protocolLogo}
-          />
-          <EarnPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
-      )}
-    </div>
+    <TransactionHistorySection opportunityName={opportunityName}>
+      <EarnTransactionHistoryTable
+        category={category}
+        rows={paginatedTransactions}
+        getDateStr={getDateStr}
+        getTimeStr={getTimeStr}
+        onRowClick={onTransactionClick}
+        opportunityName={opportunityName}
+        protocolName={protocolName}
+        protocolLogo={protocolLogo}
+      />
+      <EarnPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </TransactionHistorySection>
   );
 }
