@@ -1,3 +1,5 @@
+'use client';
+
 import { BigNumber, utils } from 'ethers';
 import { useMemo } from 'react';
 import { useAccount } from 'wagmi';

@@ -1,3 +1,5 @@
+'use client';
+
 import { useCapabilities } from 'wagmi';
 
 export function useIsTxBatchingSupported(chainId: number) {
