@@ -14,7 +14,7 @@ import { ResponsiveHorizontalScrollableLayout } from '@/components/ResponsiveHor
 export const EcosystemEssentials = () => {
   const CHAIN_SPOTLIGHT_KEY = 'chain-spotlight';
 
-  const [selectedCategory, setSelectedCategory] = useState('defi');
+  const [selectedCategory, setSelectedCategory] = useState(CHAIN_SPOTLIGHT_KEY);
 
   const isChainSpotlight = selectedCategory === CHAIN_SPOTLIGHT_KEY;
 
