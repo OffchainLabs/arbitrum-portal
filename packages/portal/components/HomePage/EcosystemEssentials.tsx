@@ -32,6 +32,19 @@ export const EcosystemEssentials = () => {
     <div className="flex flex-col gap-4">
       <div className="text-2xl">Ecosystem Essentials</div>
       <div className="flex flex-wrap gap-2">
+        <button
+          className={twMerge(
+            'shrink-0 rounded-md bg-default-black p-2 px-3 text-xs',
+            selectedCategory === CHAIN_SPOTLIGHT_KEY
+              ? 'bg-white text-default-black'
+              : 'hover:bg-default-black-hover',
+          )}
+          onClick={() => {
+            setSelectedCategory(CHAIN_SPOTLIGHT_KEY);
+          }}
+        >
+          Chains
+        </button>
         {CATEGORIES.map((category) => (
           <button
             className={twMerge(
@@ -48,19 +61,6 @@ export const EcosystemEssentials = () => {
             {category.title}
           </button>
         ))}
-        <button
-          className={twMerge(
-            'shrink-0 rounded-md bg-default-black p-2 px-3 text-xs',
-            selectedCategory === CHAIN_SPOTLIGHT_KEY
-              ? 'bg-white text-default-black'
-              : 'hover:bg-default-black-hover',
-          )}
-          onClick={() => {
-            setSelectedCategory(CHAIN_SPOTLIGHT_KEY);
-          }}
-        >
-          Chain Spotlight
-        </button>
       </div>
       <hr className="border-white/40" />
 
@@ -74,7 +74,8 @@ export const EcosystemEssentials = () => {
                   key={slug}
                   analyticsSource={'Homepage Ecosystem Essentials'}
                   displayMode="spotlight"
-                  className="max-w-[300px] lg:max-w-none"
+                  className="max-w-[300px] lg:max-w-none w-full max-h-[200px]"
+                  showProjectPreview={false}
                 />
               ))}
             </ResponsiveHorizontalScrollableLayout>
