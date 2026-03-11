@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -35,7 +34,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
       ? (['available-actions', category, opportunityId, userAddress, chainId] as const)
       : null;
 
-  const { data, error, isLoading, mutate, ...restSWR } = useSWRImmutable(
+  return useSWRImmutable(
     swrKey,
     async ([, keyCategory, keyOpportunityId, keyUserAddress, keyChainId]) => {
       const queryParams = new URLSearchParams({
@@ -53,22 +52,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
       return (await response.json()) as AvailableActionsByCategory[C];
     },
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
       errorRetryCount: 2,
     },
   );
-
-  const refetch = useCallback(() => {
-    mutate(undefined, { revalidate: true });
-  }, [mutate]);
-
-  return {
-    ...restSWR,
-    mutate,
-    data: data ?? null,
-    isLoading,
-    error: error?.message || null,
-    refetch,
-  };
 }

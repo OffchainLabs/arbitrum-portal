@@ -61,7 +61,7 @@ export function EarnTransactionDetailsPopup({
   isLoading,
 }: EarnTransactionDetailsPopupProps) {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const { networkFee, isFetchingFee } = useEarnTransactionNetworkFee({
+  const { data: networkFee, isLoading: isFetchingFee } = useEarnTransactionNetworkFee({
     isOpen,
     isLoading,
     chainId: transactionDetails?.chainId,

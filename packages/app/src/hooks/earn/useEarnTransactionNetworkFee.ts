@@ -20,11 +20,6 @@ interface UseEarnTransactionNetworkFeeParams {
   providedNetworkFee?: EarnTransactionNetworkFee;
 }
 
-interface UseEarnTransactionNetworkFeeResult {
-  networkFee: EarnTransactionNetworkFee | null;
-  isFetchingFee: boolean;
-}
-
 function normalizeNetworkFeeAmount(amount?: string): string | null {
   const trimmedAmount = amount?.trim();
   if (!trimmedAmount || trimmedAmount === '—' || trimmedAmount === '-') {
@@ -63,13 +58,13 @@ export function useEarnTransactionNetworkFee({
   chainId,
   txHash,
   providedNetworkFee,
-}: UseEarnTransactionNetworkFeeParams): UseEarnTransactionNetworkFeeResult {
+}: UseEarnTransactionNetworkFeeParams) {
   const publicClient = usePublicClient({ chainId });
   const normalizedProvidedNetworkFee = normalizeProvidedNetworkFee(providedNetworkFee);
 
-  const { data: fetchedNetworkFee, isLoading: isFetchingFee } = useSWRImmutable(
-    isOpen && !isLoading && !normalizedProvidedNetworkFee && txHash && publicClient && chainId
-      ? ([txHash, publicClient, chainId, 'earn-network-fee'] as const)
+  return useSWRImmutable(
+    isOpen && !isLoading && txHash && publicClient
+      ? ([txHash, publicClient, 'earn-network-fee'] as const)
       : null,
     async ([_txHash, _publicClient]) => {
       const receipt = await _publicClient.getTransactionReceipt({
@@ -82,7 +77,7 @@ export function useEarnTransactionNetworkFee({
         : null;
 
       if (!effectiveGasPrice) {
-        return null;
+        return normalizedProvidedNetworkFee;
       }
 
       const feeWei = gasUsed.mul(effectiveGasPrice);
@@ -93,9 +88,4 @@ export function useEarnTransactionNetworkFee({
     },
     { shouldRetryOnError: false },
   );
-
-  return {
-    networkFee: fetchedNetworkFee || normalizedProvidedNetworkFee,
-    isFetchingFee,
-  };
 }
