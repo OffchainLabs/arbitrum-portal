@@ -71,6 +71,147 @@ function formatApr(apy: number | undefined) {
   return `${(apy * 100).toFixed(2)}%`;
 }
 
+function deriveVault(opportunity: StandardOpportunityLend) {
+  return {
+    address: opportunity.id,
+    chainId: opportunity.chainId,
+    asset: {
+      symbol: opportunity.lend?.assetSymbol ?? '',
+      address: opportunity.lend?.assetAddress ?? '',
+      assetLogo: opportunity.lend?.assetLogo,
+    },
+    name: opportunity.name,
+    protocol: {
+      name: opportunity.lend?.protocolName ?? opportunity.protocol,
+      protocolLogo: opportunity.lend?.protocolLogo,
+    },
+    apy: opportunity.lend?.apy7day != null ? opportunity.lend.apy7day / 100 : undefined,
+  };
+}
+
+function parseAmountToRawUnits(
+  amount: string,
+  selectedAction: ActionType,
+  assetDecimals: number,
+  lpTokenDecimals: number,
+): string {
+  if (!amount || parseFloat(amount) <= 0) return '0';
+  const decimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
+  return utils.parseUnits(truncateExtraDecimals(amount, decimals), decimals).toString();
+}
+
+function getChainIdFromQuote(transactionSteps: TransactionStep[] | undefined): number {
+  if (!transactionSteps || transactionSteps.length === 0) return 0;
+  const txChainId = transactionSteps[0]?.chainId;
+  if (!txChainId) {
+    throw new Error('Invalid transaction step: missing chainId');
+  }
+  return txChainId;
+}
+
+function buildTransactionCalls(transactionSteps: TransactionStep[]): TransactionCall[] {
+  return transactionSteps.map((step: TransactionStep, index: number) => {
+    validateTransactionStep(step, index);
+    return {
+      to: step.to as `0x${string}`,
+      data: step.data as `0x${string}`,
+      value: step.value ? BigInt(step.value) : undefined,
+      chainId: step.chainId,
+    };
+  });
+}
+
+interface TransactionResultParams {
+  txHash: string | undefined;
+  selectedAction: ActionType;
+  amountInRawUnits: string;
+  assetSymbol: string;
+  assetDecimals: number;
+  lpTokenSymbol: string | undefined;
+  lpTokenDecimals: number;
+  receiveAmount: string | undefined;
+  chainId: number;
+  vault: ReturnType<typeof deriveVault>;
+  estimatedTxCostEth: string | undefined;
+}
+
+function buildTransactionResult(params: TransactionResultParams) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const txChainId = params.chainId || 0;
+  const hasReceiveAmount = Boolean(params.receiveAmount && /^\d+$/.test(params.receiveAmount));
+  const inputAmountRaw = params.amountInRawUnits || '0';
+  const inputTokenSymbol = params.assetSymbol;
+  const inputTokenDecimals = params.assetDecimals;
+  const outputAmountRaw = hasReceiveAmount ? params.receiveAmount : undefined;
+  const outputTokenSymbol =
+    params.selectedAction === 'supply'
+      ? (params.lpTokenSymbol ?? params.assetSymbol)
+      : params.assetSymbol;
+  const outputTokenDecimals =
+    params.selectedAction === 'supply' ? params.lpTokenDecimals : params.assetDecimals;
+  const shouldDisplayOutput =
+    params.selectedAction === 'withdraw' &&
+    Boolean(outputAmountRaw && /^\d+$/.test(outputAmountRaw) && outputTokenSymbol);
+  const displayAmountRaw = shouldDisplayOutput ? outputAmountRaw || '0' : inputAmountRaw;
+  const displayTokenSymbol = shouldDisplayOutput ? outputTokenSymbol : inputTokenSymbol;
+  const displayTokenDecimals = shouldDisplayOutput ? outputTokenDecimals : inputTokenDecimals;
+
+  const details = {
+    action: params.selectedAction === 'supply' ? 'supply' : 'withdraw',
+    amount: displayAmountRaw,
+    tokenSymbol: displayTokenSymbol,
+    decimals: displayTokenDecimals,
+    assetLogo: params.vault.asset?.assetLogo,
+    chainId: txChainId,
+    txHash: params.txHash ?? '',
+    timestamp,
+    protocolName: params.vault.protocol?.name,
+    protocolLogo: params.vault.protocol?.protocolLogo,
+    networkFee:
+      params.estimatedTxCostEth && params.estimatedTxCostEth !== '—'
+        ? { amount: `~${params.estimatedTxCostEth} ETH` }
+        : undefined,
+    opportunityName: params.vault.name ?? 'Lend',
+  };
+
+  const historyRecord: StandardTransactionHistory = {
+    timestamp,
+    eventType: params.selectedAction === 'supply' ? 'deposit' : 'redeem',
+    assetAmountRaw: displayAmountRaw,
+    assetSymbol: displayTokenSymbol,
+    decimals: displayTokenDecimals,
+    assetLogo: params.vault.asset?.assetLogo,
+    inputAssetAmountRaw: inputAmountRaw,
+    inputAssetSymbol: inputTokenSymbol,
+    inputAssetDecimals: inputTokenDecimals,
+    inputAssetLogo: params.vault.asset?.assetLogo,
+    outputAssetAmountRaw: outputAmountRaw,
+    outputAssetSymbol: outputTokenSymbol,
+    outputAssetDecimals: outputTokenDecimals,
+    outputAssetLogo: params.vault.asset?.assetLogo,
+    chainId: txChainId,
+    transactionHash: params.txHash ?? '',
+  };
+
+  const analyticsProps = {
+    page: 'Earn',
+    section: 'Action Panel',
+    category: OpportunityCategory.Lend,
+    action: params.selectedAction,
+    opportunityId: params.vault.address,
+    opportunityName: params.vault.name,
+    protocol: params.vault.protocol?.name,
+    chainId: params.vault.chainId,
+    transactionHash: params.txHash,
+    inputToken: inputTokenSymbol,
+    inputAmountRaw,
+    outputToken: outputTokenSymbol,
+    outputAmountRaw,
+  };
+
+  return { details, historyRecord, analyticsProps };
+}
+
 export function VaultActionPanel({
   opportunity,
   initialAction = 'supply',
@@ -79,24 +220,7 @@ export function VaultActionPanel({
   showTransactionDetails,
 }: VaultActionPanelProps) {
   const posthog = usePostHog();
-  const vault = useMemo(
-    () => ({
-      address: opportunity.id,
-      chainId: opportunity.chainId,
-      asset: {
-        symbol: opportunity.lend?.assetSymbol ?? '',
-        address: opportunity.lend?.assetAddress ?? '',
-        assetLogo: opportunity.lend?.assetLogo,
-      },
-      name: opportunity.name,
-      protocol: {
-        name: opportunity.lend?.protocolName ?? opportunity.protocol,
-        protocolLogo: opportunity.lend?.protocolLogo,
-      },
-      apy: opportunity.lend?.apy7day != null ? opportunity.lend.apy7day / 100 : undefined,
-    }),
-    [opportunity],
-  );
+  const vault = useMemo(() => deriveVault(opportunity), [opportunity]);
   const { address: walletAddress, isConnected } = useAccount();
 
   const [amount, setAmount] = useState('');
@@ -135,18 +259,12 @@ export function VaultActionPanel({
   const assetSymbol = asset?.symbol || vault.asset?.symbol;
   const lpTokenDecimals = lpToken?.decimals || 18;
 
-  const amountInRawUnits =
-    amount && parseFloat(amount) > 0
-      ? utils
-          .parseUnits(
-            truncateExtraDecimals(
-              amount,
-              selectedAction === 'supply' ? assetDecimals : lpTokenDecimals,
-            ),
-            selectedAction === 'supply' ? assetDecimals : lpTokenDecimals,
-          )
-          .toString()
-      : '0';
+  const amountInRawUnits = parseAmountToRawUnits(
+    amount,
+    selectedAction,
+    assetDecimals,
+    lpTokenDecimals,
+  );
 
   const networkChainId = requestChainId;
 
@@ -230,23 +348,11 @@ export function VaultActionPanel({
     enabled: amountInRawUnits !== '0' && (!isConnected || !amountExceedsBalance),
   });
 
-  const fallbackChainIdFromQuote = useMemo(() => {
-    if (transactionQuote?.transactionSteps && transactionQuote.transactionSteps.length > 0) {
-      return transactionQuote.transactionSteps[0]?.chainId || networkChainId;
-    }
-    return networkChainId;
-  }, [transactionQuote, networkChainId]);
-
-  const chainId = useMemo(() => {
-    if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
-      return 0;
-    }
-    const txChainId = transactionQuote.transactionSteps[0]?.chainId;
-    if (!txChainId) {
-      throw new Error('Invalid transaction step: missing chainId');
-    }
-    return txChainId;
-  }, [transactionQuote]);
+  const chainId = useMemo(
+    () => getChainIdFromQuote(transactionQuote?.transactionSteps),
+    [transactionQuote],
+  );
+  const fallbackChainIdFromQuote = chainId || networkChainId;
 
   const shouldFetchNativeBalance = isConnected && !!walletAddress && chainId !== 0;
   const { data: nativeBalanceData } = useBalance({
@@ -272,17 +378,7 @@ export function VaultActionPanel({
     if (!transactionQuote?.transactionSteps || transactionQuote.transactionSteps.length === 0) {
       throw new Error('No transaction steps found');
     }
-
-    return transactionQuote.transactionSteps.map((step: TransactionStep, index: number) => {
-      validateTransactionStep(step, index);
-
-      return {
-        to: step.to as `0x${string}`,
-        data: step.data as `0x${string}`,
-        value: step.value ? BigInt(step.value) : undefined,
-        chainId: step.chainId,
-      };
-    });
+    return buildTransactionCalls(transactionQuote.transactionSteps);
   }, [transactionQuote]);
 
   const { executeTx, isExecuting } = useEarnTransactionExecution({
@@ -293,90 +389,35 @@ export function VaultActionPanel({
       refetchAssetBalance();
       refetchLpTokenBalance();
 
-      const timestamp = Math.floor(Date.now() / 1000);
-      const txChainId = chainId || 0;
-      const quoteReceiveAmount = transactionQuote?.receiveAmount;
-      const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
-      const inputAmountRaw = amountInRawUnits || '0';
-      const inputTokenSymbol = assetSymbol ?? '';
-      const inputTokenDecimals = assetDecimals;
-      const outputAmountRaw = hasReceiveAmount ? quoteReceiveAmount || undefined : undefined;
-      const outputTokenSymbol =
-        selectedAction === 'supply' ? (lpToken?.symbol ?? assetSymbol ?? '') : (assetSymbol ?? '');
-      const outputTokenDecimals = selectedAction === 'supply' ? lpTokenDecimals : assetDecimals;
-      const shouldDisplayOutput =
-        selectedAction === 'withdraw' &&
-        Boolean(outputAmountRaw && /^\d+$/.test(outputAmountRaw) && outputTokenSymbol);
-      const displayAmountRaw = shouldDisplayOutput ? outputAmountRaw || '0' : inputAmountRaw;
-      const displayTokenSymbol = shouldDisplayOutput ? outputTokenSymbol : inputTokenSymbol;
-      const displayTokenDecimals = shouldDisplayOutput ? outputTokenDecimals : inputTokenDecimals;
+      const { details, historyRecord, analyticsProps } = buildTransactionResult({
+        txHash,
+        selectedAction,
+        amountInRawUnits,
+        assetSymbol: assetSymbol ?? '',
+        assetDecimals,
+        lpTokenSymbol: lpToken?.symbol,
+        lpTokenDecimals,
+        receiveAmount: transactionQuote?.receiveAmount,
+        chainId,
+        vault,
+        estimatedTxCostEth: estimatedTxCostUsd?.eth,
+      });
 
       if (txHash) {
         posthog?.capture('Earn Transaction Succeeded', {
-          page: 'Earn',
-          section: 'Action Panel',
-          category: OpportunityCategory.Lend,
-          action: selectedAction,
-          opportunityId: vault.address,
-          opportunityName: vault.name,
-          protocol: vault.protocol?.name,
-          chainId: requestChainId,
-          transactionHash: txHash,
+          ...analyticsProps,
           walletConnected: isConnected,
-          inputToken: inputTokenSymbol,
-          inputAmountRaw,
-          outputToken: outputTokenSymbol,
-          outputAmountRaw,
         });
       }
-
-      const transactionDetails = {
-        action: selectedAction === 'supply' ? 'supply' : 'withdraw',
-        amount: displayAmountRaw,
-        tokenSymbol: displayTokenSymbol,
-        decimals: displayTokenDecimals,
-        assetLogo: vault.asset?.assetLogo,
-        chainId: txChainId,
-        txHash: txHash ?? '',
-        timestamp,
-        protocolName: vault.protocol?.name,
-        protocolLogo: vault.protocol?.protocolLogo,
-        networkFee:
-          estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
-            ? {
-                amount: `~${estimatedTxCostUsd.eth} ETH`,
-              }
-            : undefined,
-        opportunityName: vault.name ?? 'Lend',
-      };
 
       if (walletAddress && txHash) {
-        const newTransaction: StandardTransactionHistory = {
-          timestamp,
-          eventType: selectedAction === 'supply' ? 'deposit' : 'redeem',
-          assetAmountRaw: displayAmountRaw,
-          assetSymbol: displayTokenSymbol,
-          decimals: displayTokenDecimals,
-          assetLogo: vault.asset?.assetLogo,
-          inputAssetAmountRaw: inputAmountRaw,
-          inputAssetSymbol: inputTokenSymbol,
-          inputAssetDecimals: inputTokenDecimals,
-          inputAssetLogo: vault.asset?.assetLogo,
-          outputAssetAmountRaw: outputAmountRaw,
-          outputAssetSymbol: outputTokenSymbol,
-          outputAssetDecimals: outputTokenDecimals,
-          outputAssetLogo: vault.asset?.assetLogo,
-          chainId: txChainId,
-          transactionHash: txHash ?? '',
-        };
-
         await addTransaction({
           vendor: Vendor.Vaults,
-          transaction: newTransaction,
+          transaction: historyRecord,
         });
       }
 
-      showTransactionDetails(transactionDetails, true);
+      showTransactionDetails(details, true);
     },
     inputAmount: amount,
   });
@@ -461,10 +502,6 @@ export function VaultActionPanel({
     apiGasEstimate: transactionQuote?.estimatedGasUsd,
     enabled: isConnected && !!walletAddress && chainId !== 0,
   });
-
-  const isAmountExceedsBalance = !!(
-    amount && parseFloat(amount) > Number(utils.formatUnits(currentBalanceRaw, currentDecimals))
-  );
 
   const currentBalanceFormatted = formatAmount(currentBalanceRaw, {
     decimals: currentDecimals,
@@ -562,7 +599,7 @@ export function VaultActionPanel({
         currentBalance={currentBalanceFormatted}
         currentBalanceAmount={currentBalanceAmount}
         currentUsdValue={currentUsdValue}
-        isAmountExceedsBalance={isAmountExceedsBalance}
+        isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
         decimals={currentDecimals}
         validationError={
