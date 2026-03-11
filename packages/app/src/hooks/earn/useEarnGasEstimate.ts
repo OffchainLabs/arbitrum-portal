@@ -1,6 +1,5 @@
 'use client';
 
-import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
@@ -46,15 +45,6 @@ function isAllowanceRelatedError(err: unknown): boolean {
   );
 }
 
-/**
- * Stable serialization key for transaction steps to avoid unnecessary refetches.
- * Only includes fields that affect gas estimation.
- */
-function serializeSteps(steps: TransactionStep[], chainId: number): string {
-  const chainSteps = steps.filter((step) => step.chainId === chainId);
-  return JSON.stringify(chainSteps.map((s) => [s.to, s.data, s.value ?? '', s.chainId, s.type]));
-}
-
 export function useEarnGasEstimate({
   transactionSteps,
   chainId,
@@ -64,32 +54,31 @@ export function useEarnGasEstimate({
 }: UseEarnGasEstimateParams): UseEarnGasEstimateResult {
   const wagmiConfig = useConfig();
   const publicClient = usePublicClient({ chainId });
-  const debouncedTransactionSteps = useDebounce(transactionSteps, 300);
-
-  const stepsKey = useMemo(
-    () =>
-      debouncedTransactionSteps && debouncedTransactionSteps.length > 0
-        ? serializeSteps(debouncedTransactionSteps, chainId)
-        : null,
-    [debouncedTransactionSteps, chainId],
-  );
+  const hasSteps = transactionSteps && transactionSteps.length > 0;
 
   const {
     data: onchainEstimate,
     error: onchainError,
     isLoading: isOnchainLoading,
   } = useSWR(
-    enabled && stepsKey && walletAddress && publicClient && chainId !== 0
-      ? ([stepsKey, walletAddress, chainId, apiEstimate, 'earn-gas-estimate'] as const)
+    enabled && hasSteps && walletAddress && publicClient && chainId !== 0
+      ? ([
+          transactionSteps,
+          walletAddress,
+          chainId,
+          apiEstimate,
+          publicClient,
+          'earn-gas-estimate',
+        ] as const)
       : null,
-    async ([, _walletAddress, _chainId, _apiEstimate]) => {
-      const chainSteps = debouncedTransactionSteps!.filter((step) => step.chainId === _chainId);
+    async ([_steps, _walletAddress, _chainId, _apiEstimate, _publicClient]) => {
+      const chainSteps = _steps.filter((step) => step.chainId === _chainId);
 
       if (chainSteps.length === 0) {
         return null;
       }
 
-      const gasPrice = BigNumber.from((await publicClient!.getGasPrice()).toString());
+      const gasPrice = BigNumber.from((await _publicClient.getGasPrice()).toString());
 
       // Estimate gas for each step; approval/allowance failures are treated as zero-cost
       const perStepCosts = await Promise.all(
