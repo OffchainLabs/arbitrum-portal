@@ -2,7 +2,8 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import useSWR from 'swr';
 import { useConfig, usePublicClient } from 'wagmi';
 import { estimateGas } from 'wagmi/actions';
 
@@ -45,6 +46,15 @@ function isAllowanceRelatedError(err: unknown): boolean {
   );
 }
 
+/**
+ * Stable serialization key for transaction steps to avoid unnecessary refetches.
+ * Only includes fields that affect gas estimation.
+ */
+function serializeSteps(steps: TransactionStep[], chainId: number): string {
+  const chainSteps = steps.filter((step) => step.chainId === chainId);
+  return JSON.stringify(chainSteps.map((s) => [s.to, s.data, s.value ?? '', s.chainId, s.type]));
+}
+
 export function useEarnGasEstimate({
   transactionSteps,
   chainId,
@@ -54,164 +64,98 @@ export function useEarnGasEstimate({
 }: UseEarnGasEstimateParams): UseEarnGasEstimateResult {
   const wagmiConfig = useConfig();
   const publicClient = usePublicClient({ chainId });
-  const [onchainGasEstimate, setOnchainGasEstimate] = useState<GasEstimate | null>(null);
-  const [apiGasEstimate, setApiGasEstimate] = useState<GasEstimate | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
   const debouncedTransactionSteps = useDebounce(transactionSteps, 300);
 
-  useEffect(() => {
-    if (
-      !enabled ||
-      !debouncedTransactionSteps ||
-      debouncedTransactionSteps.length === 0 ||
-      !walletAddress ||
-      !publicClient ||
-      chainId === 0
-    ) {
-      setOnchainGasEstimate(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
+  const stepsKey = useMemo(
+    () =>
+      debouncedTransactionSteps && debouncedTransactionSteps.length > 0
+        ? serializeSteps(debouncedTransactionSteps, chainId)
+        : null,
+    [debouncedTransactionSteps, chainId],
+  );
 
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: onchainEstimate,
+    error: onchainError,
+    isLoading: isOnchainLoading,
+  } = useSWR(
+    enabled && stepsKey && walletAddress && publicClient && chainId !== 0
+      ? ([stepsKey, walletAddress, chainId, apiEstimate, 'earn-gas-estimate'] as const)
+      : null,
+    async ([, _walletAddress, _chainId, _apiEstimate]) => {
+      const chainSteps = debouncedTransactionSteps!.filter((step) => step.chainId === _chainId);
 
-    let isCancelled = false;
-    const estimateGasCosts = async () => {
-      try {
-        const chainSteps = debouncedTransactionSteps.filter((step) => step.chainId === chainId);
+      if (chainSteps.length === 0) {
+        return null;
+      }
 
-        if (chainSteps.length === 0) {
-          if (!isCancelled) {
-            setOnchainGasEstimate(null);
-            setIsLoading(false);
-          }
-          return;
-        }
+      const gasPrice = BigNumber.from((await publicClient!.getGasPrice()).toString());
 
-        const gasPrice = BigNumber.from((await publicClient.getGasPrice()).toString());
+      // Estimate gas for each step; approval/allowance failures are treated as zero-cost
+      const perStepCosts = await Promise.all(
+        chainSteps.map(async (step) => {
+          try {
+            const gasLimit = await estimateGas(wagmiConfig, {
+              to: step.to as `0x${string}`,
+              data: step.data as `0x${string}`,
+              value: step.value ? BigInt(step.value) : undefined,
+              account: _walletAddress as `0x${string}`,
+              chainId: step.chainId,
+            });
 
-        const gasEstimates = await Promise.all(
-          chainSteps.map(async (step) => {
-            try {
-              const gasLimit = await estimateGas(wagmiConfig, {
-                to: step.to as `0x${string}`,
-                data: step.data as `0x${string}`,
-                value: step.value ? BigInt(step.value) : undefined,
-                account: walletAddress as `0x${string}`,
-                chainId: step.chainId,
-              });
-
-              const cost = BigNumber.from(gasLimit.toString()).mul(gasPrice);
-              return { step, cost };
-            } catch (err) {
-              const isAllowanceError = isAllowanceRelatedError(err);
-              if (step.type === 'approval' || isAllowanceError) {
-                return { step, cost: BigNumber.from(0) };
-              }
-
-              throw err;
+            return BigNumber.from(gasLimit.toString()).mul(gasPrice);
+          } catch (err) {
+            if (step.type === 'approval' || isAllowanceRelatedError(err)) {
+              return BigNumber.from(0);
             }
-          }),
-        );
-
-        const totalGasCostWei = gasEstimates.reduce(
-          (sum, { cost }) => sum.add(cost),
-          BigNumber.from(0),
-        );
-
-        const hasValidEstimate = gasEstimates.some(({ cost }) => !cost.isZero());
-
-        if (!hasValidEstimate && gasEstimates.length > 0) {
-          if (!isCancelled) {
-            setOnchainGasEstimate(null);
-            setIsLoading(false);
+            throw err;
           }
-          return;
-        }
+        }),
+      );
 
-        const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
-        const apiEstimateUsd = parseApiEstimateUsd(apiEstimate);
-        const usd = apiEstimateUsd != null ? apiEstimateUsd.toFixed(2) : null;
-
-        if (!isCancelled) {
-          setOnchainGasEstimate({
-            eth: totalGasCostEth.toFixed(6),
-            usd,
-          });
-          setIsLoading(false);
-        }
-      } catch (err) {
-        const isAllowanceError = isAllowanceRelatedError(err);
-
-        if (isAllowanceError) {
-          if (!isCancelled) {
-            setOnchainGasEstimate(null);
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        if (!isCancelled) {
-          setOnchainGasEstimate(null);
-          setError(err instanceof Error ? err : new Error('Failed to estimate gas'));
-          setIsLoading(false);
-        }
+      const hasValidEstimate = perStepCosts.some((cost) => !cost.isZero());
+      if (!hasValidEstimate && perStepCosts.length > 0) {
+        return null;
       }
-    };
 
-    estimateGasCosts();
+      const totalGasCostWei = perStepCosts.reduce((sum, cost) => sum.add(cost), BigNumber.from(0));
+      const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
+      const apiEstimateUsd = parseApiEstimateUsd(_apiEstimate);
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    debouncedTransactionSteps,
-    walletAddress,
-    publicClient,
-    chainId,
-    wagmiConfig,
-    enabled,
-    apiEstimate,
-  ]);
+      return {
+        eth: totalGasCostEth.toFixed(6),
+        usd: apiEstimateUsd != null ? apiEstimateUsd.toFixed(2) : null,
+      } satisfies GasEstimate;
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      errorRetryCount: 2,
+      errorRetryInterval: 5_000,
+      shouldRetryOnError: (err) => !isAllowanceRelatedError(err),
+    },
+  );
 
-  useEffect(() => {
-    if (!apiEstimate || onchainGasEstimate) {
-      setApiGasEstimate(null);
-      if (!onchainGasEstimate) {
-        setIsLoading(false);
-      }
-      return;
+  // --- API fallback: used only when onchain estimation is unavailable ---
+  const apiGasEstimate = useMemo<GasEstimate | null>(() => {
+    if (onchainEstimate || isOnchainLoading) {
+      return null;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    const processApiEstimate = async () => {
-      const cost = parseApiEstimateUsd(apiEstimate);
-      if (cost == null) {
-        setApiGasEstimate(null);
-        setIsLoading(false);
-        return;
-      }
-
-      setApiGasEstimate({
-        eth: '—',
-        usd: cost.toFixed(2),
-      });
-      setIsLoading(false);
-    };
-
-    processApiEstimate();
-  }, [apiEstimate, onchainGasEstimate]);
-
-  const finalEstimate = onchainGasEstimate || apiGasEstimate || null;
+    const cost = parseApiEstimateUsd(apiEstimate);
+    if (cost == null) {
+      return null;
+    }
+    return { eth: '—', usd: cost.toFixed(2) };
+  }, [apiEstimate, onchainEstimate, isOnchainLoading]);
 
   return {
-    estimate: finalEstimate,
-    isLoading,
-    error,
+    estimate: onchainEstimate ?? apiGasEstimate,
+    isLoading: isOnchainLoading,
+    error:
+      onchainError && !isAllowanceRelatedError(onchainError)
+        ? onchainError instanceof Error
+          ? onchainError
+          : new Error('Failed to estimate gas')
+        : null,
   };
 }
