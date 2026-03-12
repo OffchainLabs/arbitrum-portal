@@ -36,12 +36,8 @@ export function parseAmountToRawUnits(
 }
 
 export function getChainIdFromQuote(transactionSteps: TransactionStep[] | undefined): number {
-  if (!transactionSteps || transactionSteps.length === 0) return 0;
-  const txChainId = transactionSteps[0]?.chainId;
-  if (!txChainId) {
-    throw new Error('Invalid transaction step: missing chainId');
-  }
-  return txChainId;
+  if (!transactionSteps || transactionSteps.length === 0 || !transactionSteps[0]) return 0;
+  return transactionSteps[0].chainId;
 }
 
 export function validateTransactionStep(step: TransactionStep, index: number): void {
