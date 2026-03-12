@@ -5,7 +5,6 @@ import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
 import {
-  ValidationError,
   assertAddress,
   parseEarnChainId,
   parseOptionalOpportunityCategory,
@@ -187,12 +186,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching positions:', error);
+    const routeError = error as { message?: string; code?: string; status?: number };
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : 'Failed to fetch positions',
-        code: error instanceof ValidationError ? error.code : 'POSITIONS_FETCH_ERROR',
+        message: routeError.message ?? 'Failed to fetch positions',
+        code: routeError.code ?? 'POSITIONS_FETCH_ERROR',
       },
-      { status: error instanceof ValidationError ? error.status : 500 },
+      { status: routeError.status ?? 500 },
     );
   }
 }

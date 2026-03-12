@@ -1,10 +1,14 @@
 import type { VaultsSdk } from '@vaultsfyi/sdk';
 
-import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
+
+export { OpportunityCategory, OPPORTUNITY_CATEGORIES };
 
 export enum Vendor {
   Vaults = 'vaults',
+  LiFi = 'lifi',
+  Pendle = 'pendle',
 }
 
 export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
@@ -54,9 +58,7 @@ export interface StandardOpportunityMetrics {
   rawApy: number | null;
   rawTvl: number | null;
   deposited: string | null;
-  /** Raw numeric value or null. No $ or locale formatting. */
   depositedUsd: number | null;
-  /** Raw numeric value or null. No $ or locale formatting. */
   projectedEarningsUsd: number | null;
   maturityDate?: string;
   apyBreakdown?: { base: number; reward: number; total: number };
@@ -75,6 +77,21 @@ export interface StandardOpportunityLendDetail {
   apy30day?: number;
   apy7day?: number;
 }
+
+export interface StandardOpportunityFixedYieldDetail {
+  pt: string;
+  detailsTvlUsd: number;
+  detailsImpliedApy: number;
+  expiry?: string;
+  detailsUnderlyingApy?: number;
+  detailsLiquidityUsd?: number;
+  detailsTradingVolumeUsd?: number;
+  ptTokenIcon?: string;
+  underlyingAsset?: string;
+  sySupplyCap?: number | null;
+  syCurrentSupply?: number;
+}
+
 export interface StandardOpportunityBase {
   id: string;
   vendor: Vendor;
@@ -95,20 +112,28 @@ export interface StandardOpportunityLend extends StandardOpportunityBase {
   lend: StandardOpportunityLendDetail;
 }
 
-export type StandardOpportunity = StandardOpportunityLend;
+export interface StandardOpportunityLiquidStaking extends StandardOpportunityBase {
+  category: typeof OpportunityCategory.LiquidStaking;
+}
+
+export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
+  category: typeof OpportunityCategory.FixedYield;
+  fixedYield: StandardOpportunityFixedYieldDetail;
+}
+
+export type StandardOpportunity =
+  | StandardOpportunityLend
+  | StandardOpportunityLiquidStaking
+  | StandardOpportunityFixedYield;
 
 export type VaultsOpportunity = StandardOpportunityLend & { vendor: Vendor.Vaults };
+export type LiFiOpportunity = StandardOpportunityLiquidStaking & { vendor: Vendor.LiFi };
+export type PendleOpportunity = StandardOpportunityFixedYield & { vendor: Vendor.Pendle };
 
+// Vendor-specific response types
 type VaultsSdkInstance = InstanceType<typeof VaultsSdk>;
-export type VaultsTransactionContextResponse = Awaited<
-  ReturnType<VaultsSdkInstance['getTransactionsContext']>
->;
-export type VaultsActionsResponse = Awaited<ReturnType<VaultsSdkInstance['getActions']>>;
-export type VaultsAction = VaultsActionsResponse extends { actions: infer A }
-  ? A extends readonly (infer T)[]
-    ? T
-    : never
-  : never;
+type VaultsActionsResponse = Awaited<ReturnType<VaultsSdkInstance['getActions']>>;
+export type VaultsAction = VaultsActionsResponse['actions'][number];
 
 export interface StandardTokenContextItem {
   decimals: number;
@@ -155,17 +180,36 @@ export interface TransactionStep {
   description?: string;
 }
 
+/** Pre-built template for the transaction details popup (minus runtime fields). */
+export interface TransactionDetailsTemplate {
+  amount: string;
+  tokenSymbol: string;
+  decimals: number;
+  assetLogo?: string;
+  chainId: EarnChainId;
+  protocolName?: string;
+  protocolLogo?: string;
+  opportunityName?: string;
+}
+
+export type PendingHistoryTemplate = Omit<
+  StandardTransactionHistory,
+  'timestamp' | 'transactionHash'
+>;
+
 export interface TransactionQuoteResponse {
   opportunityId: string;
   vendor: Vendor;
   action: TransactionQuoteRequest['action'];
   canExecute: boolean;
   estimatedGas: string;
+  /** Raw numeric USD value as string (no currency symbol or unit suffix). */
   estimatedGasUsd: string;
   receiveAmount?: string;
-  receiveAmountFormatted?: string;
   priceImpact?: number;
   transactionSteps: TransactionStep[];
+  transactionDetailsTemplate?: TransactionDetailsTemplate;
+  pendingHistoryTemplate?: PendingHistoryTemplate;
 }
 
 export type LendAvailableActions = AvailableActions & {
@@ -173,8 +217,26 @@ export type LendAvailableActions = AvailableActions & {
   transactionContext: StandardTransactionContext;
 };
 
+export type LiquidStakingAvailableActions = AvailableActions & {
+  vendor: Vendor.LiFi;
+  transactionContext: null;
+};
+
+export type FixedYieldAvailableActions = AvailableActions & {
+  vendor: Vendor.Pendle;
+  transactionContext: null;
+};
+
 export type LendTransactionQuoteResponse = TransactionQuoteResponse & {
   vendor: Vendor.Vaults;
+};
+
+export type LiquidStakingTransactionQuoteResponse = TransactionQuoteResponse & {
+  vendor: Vendor.LiFi;
+};
+
+export type FixedYieldTransactionQuoteResponse = TransactionQuoteResponse & {
+  vendor: Vendor.Pendle;
 };
 
 export interface HistoricalDataPoint {
@@ -197,6 +259,10 @@ export interface HistoricalData {
   isCached: boolean;
   lastFetchedAt: number;
   expiresAt: number;
+}
+
+export interface HistoricalDataRequestOptions {
+  assetSymbol?: string;
 }
 
 export const HISTORICAL_VENDOR_TTL_SECONDS = 86400 as const;
@@ -252,11 +318,19 @@ export interface UserPositionsResponse {
 export interface StandardTransactionHistory {
   timestamp: number;
   eventType: string;
-  assetAmount: string;
+  assetAmountRaw: string;
   assetSymbol: string;
+  decimals: number;
   assetLogo?: string;
-  chainId: number;
-  chainName: string;
+  inputAssetAmountRaw?: string;
+  inputAssetSymbol?: string;
+  inputAssetDecimals?: number;
+  inputAssetLogo?: string;
+  outputAssetAmountRaw?: string;
+  outputAssetSymbol?: string;
+  outputAssetDecimals?: number;
+  outputAssetLogo?: string;
+  chainId: EarnChainId;
   transactionHash: string;
 }
 
@@ -279,6 +353,7 @@ export interface VendorAdapter {
     id: string,
     range: HistoricalTimeRange,
     chainId: EarnChainId,
+    options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData>;
   getAvailableActions(
     id: string,

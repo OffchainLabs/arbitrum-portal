@@ -151,11 +151,20 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
 };
 
 export const truncateExtraDecimals = (amount: string, decimals: number) => {
+  const wholePart = amount.split('.')[0] ?? '';
   const decimalPart = amount.split('.')[1];
 
   if (typeof decimalPart === 'undefined') {
     return amount;
   }
 
-  return `${amount.split('.')[0]}.${decimalPart.slice(0, decimals)}`;
+  if (decimals < 0) {
+    throw new Error('decimals must be non-negative');
+  }
+
+  if (decimals === 0) {
+    return wholePart;
+  }
+
+  return `${wholePart}.${decimalPart.slice(0, decimals)}`;
 };

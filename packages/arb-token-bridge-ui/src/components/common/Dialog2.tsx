@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { EarnToSPopupDialog } from '../../../../app/src/components/earn/EarnToSPopupDialog';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -62,7 +63,8 @@ export type DialogType =
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
   | 'pop_disabled'
-  | 'one_nova_transfer';
+  | 'one_nova_transfer'
+  | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef =
@@ -164,6 +166,8 @@ export function DialogWrapper(props: DialogProps) {
       return <PoPDisabledDialog {...commonProps} />;
     case 'one_nova_transfer':
       return <OneNovaTransferDialog {...commonProps} />;
+    case 'earn_tos':
+      return <EarnToSPopupDialog {...commonProps} />;
     default:
       return null;
   }

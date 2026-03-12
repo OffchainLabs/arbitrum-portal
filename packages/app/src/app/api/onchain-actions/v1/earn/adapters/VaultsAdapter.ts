@@ -1,25 +1,24 @@
-import { formatUnits } from 'viem';
-
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount } from '@/bridge/util/NumberUtils';
 
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
-  EARN_CHAIN_ID_TO_NETWORK,
   type EarnChainId,
+  type EarnTransactionAction,
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
   HistoricalDataPoint,
   type HistoricalTimeRange,
   OpportunityFilters,
+  type PendingHistoryTemplate,
   StandardOpportunity,
   StandardTokenContextItem,
   StandardTransactionContext,
   StandardTransactionHistory,
   StandardUserPosition,
+  type TransactionDetailsTemplate,
   TransactionQuoteRequest,
   TransactionQuoteResponse,
   TransactionStep,
@@ -38,6 +37,10 @@ export type VaultsActionType = 'deposit' | 'redeem';
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
 
+  private toVaultsNetwork(chainId: EarnChainId): VaultsNetwork {
+    return getEarnNetworkFromChainId(chainId) as VaultsNetwork;
+  }
+
   private toEarnChainId(networkName: string | undefined): EarnChainId {
     const normalizedNetwork = networkName?.trim().toLowerCase();
     if (normalizedNetwork === 'mainnet' || normalizedNetwork === 'ethereum') {
@@ -49,8 +52,16 @@ export class VaultsAdapter implements VendorAdapter {
     throw new Error(`Unsupported vault network: ${networkName ?? 'undefined'}`);
   }
 
+  private normalizeUsdValue(rawValue: string | undefined): string {
+    if (!rawValue) {
+      return '0';
+    }
+    const parsed = parseFloat(rawValue.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed.toString() : '0';
+  }
+
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
-    const network = filters.chainId ? getEarnNetworkFromChainId(filters.chainId) : undefined;
+    const network = filters.chainId ? this.toVaultsNetwork(filters.chainId) : undefined;
     const response = await vaultsSdk.getAllVaults({
       query: {
         allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
@@ -78,7 +89,7 @@ export class VaultsAdapter implements VendorAdapter {
   }
 
   async getOpportunityDetails(id: string, chainId: EarnChainId): Promise<StandardOpportunity> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const vault = await vaultsSdk.getVault({
       path: {
         network,
@@ -94,10 +105,8 @@ export class VaultsAdapter implements VendorAdapter {
     range: HistoricalTimeRange,
     chainId: EarnChainId,
   ): Promise<HistoricalData> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const toTimestamp = Math.floor(Date.now() / 1000);
-
-    // Map UI range to Vaults.fyi time window + granularity
     let fromTimestamp: number;
     let granularity: '1hour' | '1day' | '1week';
 
@@ -161,7 +170,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<AvailableActions> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const context = await vaultsSdk.getTransactionsContext({
       path: {
         userAddress,
@@ -208,22 +217,27 @@ export class VaultsAdapter implements VendorAdapter {
     request: TransactionQuoteRequest,
     chainId: EarnChainId,
   ): Promise<TransactionQuoteResponse> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const { action, amount, userAddress, simulate = false } = request;
-
-    const assetAddress =
-      request.inputTokenAddress ||
-      (await this.getAvailableActions(id, userAddress, chainId)).transactionContext?.asset?.address;
-
-    if (!assetAddress) {
-      throw new Error(
-        'Asset address is required. Provide inputTokenAddress or ensure available actions context includes asset address.',
-      );
-    }
 
     if (action !== 'deposit' && action !== 'redeem') {
       throw new Error(
         `Invalid action for Vaults: ${action}. Only 'deposit' and 'redeem' are supported.`,
+      );
+    }
+
+    // Fetch context + opportunity in parallel for display metadata
+    const [contextResult, opportunity] = await Promise.all([
+      this.getAvailableActions(id, userAddress, chainId),
+      this.getOpportunityDetails(id, chainId),
+    ]);
+
+    const assetAddress =
+      request.inputTokenAddress || contextResult.transactionContext?.asset?.address;
+
+    if (!assetAddress) {
+      throw new Error(
+        'Asset address is required. Provide inputTokenAddress or ensure available actions context includes asset address.',
       );
     }
 
@@ -306,10 +320,21 @@ export class VaultsAdapter implements VendorAdapter {
       'estimatedGas' in actionsResponse && typeof actionsResponse.estimatedGas === 'string'
         ? actionsResponse.estimatedGas
         : '0';
-    const estimatedGasUsd =
-      'estimatedGasUsd' in actionsResponse && typeof actionsResponse.estimatedGasUsd === 'string'
-        ? actionsResponse.estimatedGasUsd
+    const estimatedGasUsdValue =
+      'estimatedGasUsd' in actionsResponse ? actionsResponse.estimatedGasUsd : undefined;
+    const estimatedGasUsdRaw =
+      typeof estimatedGasUsdValue === 'string' || typeof estimatedGasUsdValue === 'number'
+        ? String(estimatedGasUsdValue)
         : '0';
+
+    const context = contextResult.transactionContext;
+
+    const receiveAmount =
+      'receiveAmount' in actionsResponse &&
+      typeof actionsResponse.receiveAmount === 'string' &&
+      actionsResponse.receiveAmount
+        ? actionsResponse.receiveAmount
+        : undefined;
 
     return {
       opportunityId: id,
@@ -317,8 +342,87 @@ export class VaultsAdapter implements VendorAdapter {
       action,
       canExecute: transactionSteps.length > 0,
       estimatedGas,
-      estimatedGasUsd,
+      estimatedGasUsd: this.normalizeUsdValue(estimatedGasUsdRaw),
+      receiveAmount,
       transactionSteps,
+      transactionDetailsTemplate: this.buildTransactionDetailsTemplate(
+        action,
+        amount,
+        context,
+        opportunity,
+        transactionSteps,
+        receiveAmount,
+      ),
+      pendingHistoryTemplate: this.buildPendingHistoryTemplate(
+        action,
+        amount,
+        context,
+        opportunity,
+        transactionSteps,
+        receiveAmount,
+      ),
+    };
+  }
+
+  private buildTransactionDetailsTemplate(
+    action: EarnTransactionAction,
+    amount: string,
+    context: StandardTransactionContext | null,
+    opportunity: StandardOpportunity,
+    transactionSteps: TransactionStep[],
+    receiveAmount?: string,
+  ): TransactionDetailsTemplate {
+    const lend = 'lend' in opportunity ? opportunity.lend : undefined;
+    const txChainId = transactionSteps[0]?.chainId || 0;
+    const isRedeem = action === 'redeem';
+    const validReceiveAmount =
+      receiveAmount && /^\d+$/.test(receiveAmount) ? receiveAmount : undefined;
+    return {
+      amount: isRedeem && validReceiveAmount ? validReceiveAmount : amount,
+      tokenSymbol: context?.asset?.symbol || opportunity.token,
+      decimals: context?.asset?.decimals ?? 18,
+      assetLogo: lend?.assetLogo,
+      chainId: txChainId as EarnChainId,
+      protocolName: lend?.protocolName ?? opportunity.protocol,
+      protocolLogo: lend?.protocolLogo,
+      opportunityName: opportunity.name,
+    };
+  }
+
+  private buildPendingHistoryTemplate(
+    action: EarnTransactionAction,
+    amount: string,
+    context: StandardTransactionContext | null,
+    opportunity: StandardOpportunity,
+    transactionSteps: TransactionStep[],
+    receiveAmount?: string,
+  ): PendingHistoryTemplate {
+    const lend = 'lend' in opportunity ? opportunity.lend : undefined;
+    const assetSymbol = context?.asset?.symbol || opportunity.token;
+    const assetDecimals = context?.asset?.decimals ?? 18;
+    const assetLogo = lend?.assetLogo;
+    const lpTokenSymbol = context?.lpToken?.symbol;
+    const lpTokenDecimals = context?.lpToken?.decimals ?? 18;
+    const isRedeem = action === 'redeem';
+    const txChainId = transactionSteps[0]?.chainId || 0;
+    const validReceiveAmount =
+      receiveAmount && /^\d+$/.test(receiveAmount) ? receiveAmount : undefined;
+
+    return {
+      eventType: isRedeem ? 'redeem' : 'deposit',
+      assetAmountRaw: isRedeem && validReceiveAmount ? validReceiveAmount : amount,
+      assetSymbol,
+      decimals: assetDecimals,
+      assetLogo,
+      inputAssetAmountRaw: amount,
+      inputAssetSymbol: assetSymbol,
+      inputAssetDecimals: assetDecimals,
+      inputAssetLogo: assetLogo,
+      outputAssetAmountRaw: validReceiveAmount,
+      outputAssetSymbol: isRedeem ? assetSymbol : lpTokenSymbol || assetSymbol,
+      outputAssetDecimals: isRedeem ? assetDecimals : lpTokenDecimals,
+      outputAssetLogo: assetLogo,
+      chainId: txChainId as EarnChainId,
     };
   }
 
@@ -326,7 +430,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<StandardUserPosition[]> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const response = await vaultsSdk.getPositions({
       path: { userAddress },
       query: { allowedNetworks: [network] },
@@ -374,7 +478,7 @@ export class VaultsAdapter implements VendorAdapter {
     userAddress: string,
     chainId: EarnChainId,
   ): Promise<StandardTransactionHistory[]> {
-    const network = this.resolveNetwork(chainId);
+    const network = this.toVaultsNetwork(chainId);
     const response = await vaultsSdk.getUserVaultEvents({
       path: {
         userAddress,
@@ -389,35 +493,26 @@ export class VaultsAdapter implements VendorAdapter {
 
     return response.data
       .map((event) => {
-        const amountNative = BigInt(event.assetAmountNative || '0');
         const decimals = response.asset.decimals || 18;
-        const amountFormatted = formatAmount(Number(formatUnits(amountNative, decimals)), {
-          decimals,
-          symbol: response.asset.symbol,
-        });
 
         const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
 
         return {
           timestamp: event.timestamp,
           eventType,
-          assetAmount: amountFormatted,
+          assetAmountRaw: event.assetAmountNative || '0',
           assetSymbol: response.asset.symbol,
+          decimals,
           assetLogo: response.asset.assetLogo,
+          inputAssetAmountRaw: event.assetAmountNative || '0',
+          inputAssetSymbol: response.asset.symbol,
+          inputAssetDecimals: decimals,
+          inputAssetLogo: response.asset.assetLogo,
           chainId,
-          chainName: network === 'arbitrum' ? 'Arbitrum One' : network,
           transactionHash: event.transactionHash,
         };
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }
-
-  private resolveNetwork(chainId: EarnChainId): VaultsNetwork {
-    const network = EARN_CHAIN_ID_TO_NETWORK[chainId] as VaultsNetwork | undefined;
-    if (!network) {
-      throw new Error(`Unsupported chainId for Vaults network mapping: ${chainId}`);
-    }
-    return network;
   }
 
   private transformToStandard(vault: DetailedVault): StandardOpportunity {

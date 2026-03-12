@@ -73,12 +73,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);
+    const routeError = error as { message?: string; code?: string; status?: number };
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : 'Failed to fetch opportunities',
-        code: error instanceof ValidationError ? error.code : 'OPPORTUNITIES_FETCH_ERROR',
+        message: routeError.message ?? 'Failed to fetch opportunities',
+        code: routeError.code ?? 'OPPORTUNITIES_FETCH_ERROR',
       },
-      { status: error instanceof ValidationError ? error.status : 500 },
+      { status: routeError.status ?? 500 },
     );
   }
 }
