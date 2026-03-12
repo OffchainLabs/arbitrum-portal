@@ -17,7 +17,54 @@ import {
   parseOptionalAssetSymbol,
   parseOptionalTimestamp,
 } from '@/earn-api/lib/validation';
-import { HISTORICAL_VENDOR_TTL_SECONDS, type HistoricalData } from '@/earn-api/types';
+import {
+  HISTORICAL_VENDOR_TTL_SECONDS,
+  type HistoricalData,
+  type HistoricalGranularity,
+  type HistoricalTimeRange,
+} from '@/earn-api/types';
+
+function resolveWindow(
+  range: HistoricalTimeRange,
+  fromParam?: number,
+  toParam?: number,
+): {
+  fromTimestamp: number;
+  toTimestamp: number;
+  granularity: HistoricalGranularity;
+  resolvedRange: HistoricalTimeRange;
+} {
+  if (fromParam === undefined && toParam === undefined) {
+    return { ...buildWindowFromRange({ range }), resolvedRange: range };
+  }
+  if (fromParam === undefined || toParam === undefined) {
+    throw new ValidationError(
+      'INVALID_DATE_RANGE',
+      'Both from and to must be provided when using explicit date range',
+    );
+  }
+  if (fromParam >= toParam) {
+    throw new ValidationError('INVALID_DATE_RANGE', 'from must be before to');
+  }
+
+  const granularity = deriveGranularityFromWindow(fromParam, toParam);
+  const fromTimestamp = alignTimestampToGranularity(fromParam, granularity);
+  const toTimestamp = alignTimestampToGranularity(toParam, granularity);
+
+  if (fromTimestamp >= toTimestamp) {
+    throw new ValidationError(
+      'INVALID_DATE_RANGE',
+      'from/to must span at least one granularity bucket',
+    );
+  }
+
+  return {
+    fromTimestamp,
+    toTimestamp,
+    granularity,
+    resolvedRange: deriveRangeFromWindow(fromTimestamp, toTimestamp),
+  };
+}
 
 export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
 
@@ -35,40 +82,11 @@ export async function GET(
     const fromTimestampParam = parseOptionalTimestamp(searchParams.get('from'), 'from');
     const toTimestampParam = parseOptionalTimestamp(searchParams.get('to'), 'to');
 
-    let fromTimestamp: number;
-    let toTimestamp: number;
-    let granularity: '1hour' | '1day' | '1week';
-    let resolvedRange = range;
-
-    if (fromTimestampParam !== undefined || toTimestampParam !== undefined) {
-      if (fromTimestampParam === undefined || toTimestampParam === undefined) {
-        throw new ValidationError(
-          'INVALID_DATE_RANGE',
-          'Both from and to must be provided when using explicit date range',
-        );
-      }
-      if (fromTimestampParam >= toTimestampParam) {
-        throw new ValidationError('INVALID_DATE_RANGE', 'from must be before to');
-      }
-      fromTimestamp = fromTimestampParam;
-      toTimestamp = toTimestampParam;
-      granularity = deriveGranularityFromWindow(fromTimestamp, toTimestamp);
-      fromTimestamp = alignTimestampToGranularity(fromTimestamp, granularity);
-      toTimestamp = alignTimestampToGranularity(toTimestamp, granularity);
-      if (fromTimestamp >= toTimestamp) {
-        throw new ValidationError(
-          'INVALID_DATE_RANGE',
-          'from/to must span at least one granularity bucket',
-        );
-      }
-      resolvedRange = deriveRangeFromWindow(fromTimestamp, toTimestamp);
-    } else {
-      const defaultWindow = buildWindowFromRange({ range });
-      fromTimestamp = defaultWindow.fromTimestamp;
-      toTimestamp = defaultWindow.toTimestamp;
-      granularity = defaultWindow.granularity;
-      resolvedRange = range;
-    }
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveWindow(
+      range,
+      fromTimestampParam,
+      toTimestampParam,
+    );
 
     const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);

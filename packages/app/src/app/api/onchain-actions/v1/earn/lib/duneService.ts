@@ -274,137 +274,92 @@ async function fetchDunePriceAligned(params: {
   }
 }
 
+type DuneDataPoint = { timestamp: number; apy: number | null; tvl: number | null };
+
 /**
- * Transform Dune query results to standardized format
- * Handles different column name variations from different queries
+ * Find the first column in `columns` that matches one of the `matchers` (tried in priority order).
+ * Each matcher receives the lowercased column name.
  */
-function transformDuneResults(
-  rows: Array<Record<string, unknown>>,
-): Array<{ timestamp: number; apy: number | null; tvl: number | null }> {
-  if (!rows || rows.length === 0) {
-    return [];
+function findColumn(
+  columns: string[],
+  ...matchers: Array<(name: string) => boolean>
+): string | undefined {
+  for (const match of matchers) {
+    const found = columns.find((col) => match(col.toLowerCase()));
+    if (found) return found;
   }
+  return undefined;
+}
 
-  // Get column names from first row
+/** APY columns that are already expressed as percentages (not decimals). */
+const PERCENTAGE_APY_MATCHERS: Array<(name: string) => boolean> = [
+  (n) => n === 'lido staking apr (instant)' || n === 'lido staking apr(instant)',
+  (n) => n === 'steth apy',
+];
+
+function trimToLookback(data: DuneDataPoint[], lookbackDays: number): DuneDataPoint[] {
+  if (data.length === 0) return [];
+  const latestTimestamp = data[data.length - 1]?.timestamp;
+  if (!latestTimestamp) return [];
+  const fromTimestamp = latestTimestamp - lookbackDays * 86400;
+  return data.filter((point) => point.timestamp >= fromTimestamp);
+}
+
+function findLatestValues(data: DuneDataPoint[]): { apy: number | null; tvl: number | null } {
+  let apy: number | null = null;
+  let tvl: number | null = null;
+  for (let i = data.length - 1; i >= 0; i--) {
+    const point = data[i]!;
+    if (apy === null) apy = point.apy;
+    if (tvl === null) tvl = point.tvl;
+    if (apy !== null && tvl !== null) break;
+  }
+  return { apy, tvl };
+}
+
+/**
+ * Transform Dune query results to standardized format.
+ * Handles different column name variations from different queries.
+ */
+function transformDuneResults(rows: Array<Record<string, unknown>>): DuneDataPoint[] {
   const firstRow = rows[0];
-  if (!firstRow) {
-    return [];
-  }
+  if (!firstRow) return [];
 
-  // Map column names (queries may have different column names)
-  // Common variations: 'date', 'time', 'timestamp', 'day', 'apy', 'apr', 'tvl', 'total_value_locked'
-  const columnMap: Record<string, string> = {};
-  let apyIsPercentage = false; // Track if APY is already percentage (for wstETH 'stETH APY')
   const allColumns = Object.keys(firstRow);
 
-  // Find timestamp column - prefer 'day', 'block_day', or 'time', fallback to other date fields
-  for (const colName of allColumns) {
-    const name = colName.toLowerCase();
-    if (name === 'day' || name === 'block_day' || name === 'time') {
-      columnMap.timestamp = colName;
-      break;
-    }
-  }
-  // If not found, look for other date fields
-  if (!columnMap.timestamp) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      if (name.includes('timestamp') || name.includes('date')) {
-        columnMap.timestamp = colName;
-        break;
-      }
-    }
-  }
+  const timestampColumn = findColumn(
+    allColumns,
+    (n) => n === 'day' || n === 'block_day' || n === 'time',
+    (n) => n.includes('timestamp') || n.includes('date'),
+  );
+  if (!timestampColumn) return [];
 
-  // Find APY column - prefer specific columns, fallback to other apr/apy fields
-  // Priority: 'Lido staking APR (instant)' (wstETH new query - already percentage), 'stETH APY' (wstETH old query - already percentage), 'avg_7day_apr' (weETH - decimal), 'daily_apr', then others
-  for (const colName of allColumns) {
-    const name = colName.toLowerCase();
-    // wstETH new query uses 'Lido staking APR (instant)' (already percentage, e.g., 2.53664202797352 = 2.54%)
-    if (name === 'lido staking apr (instant)' || name === 'lido staking apr(instant)') {
-      columnMap.apy = colName;
-      apyIsPercentage = true; // Mark that this is already a percentage
-      break;
-    }
-  }
-  // If not found, check for old wstETH format
-  if (!columnMap.apy) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      // wstETH old query uses 'stETH APY' (already percentage, e.g., 2.64 = 2.64%)
-      // Match exactly 'stETH APY' (not 'stETH APY (30d)' or 'stETH APY (7d)')
-      if (name === 'steth apy') {
-        columnMap.apy = colName;
-        apyIsPercentage = true; // Mark that this is already a percentage
-        break;
-      }
-    }
-  }
-  // If not found, look for weETH format (decimal format)
-  if (!columnMap.apy) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      if (name === 'avg_7day_apr' || name === 'daily_apr') {
-        columnMap.apy = colName;
-        apyIsPercentage = false; // These are decimals
-        break;
-      }
-    }
-  }
-  // If still not found, look for any apr/apy fields
-  if (!columnMap.apy) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      if (name.includes('apy') || name.includes('apr') || name.includes('yield')) {
-        columnMap.apy = colName;
-        // Default: assume decimal if value < 1, percentage if >= 1
-        break;
-      }
-    }
-  }
+  const apyColumn = findColumn(
+    allColumns,
+    // wstETH new query (already percentage)
+    (n) => n === 'lido staking apr (instant)' || n === 'lido staking apr(instant)',
+    // wstETH old query (already percentage)
+    (n) => n === 'steth apy',
+    // weETH (decimal format)
+    (n) => n === 'avg_7day_apr' || n === 'daily_apr',
+    // Generic fallback
+    (n) => n.includes('apy') || n.includes('apr') || n.includes('yield'),
+  );
 
-  // Find TVL column - look for tvl, total_value_locked, token_supply_usd, or similar
-  // Priority: 'TVL' (wstETH TVL query), 'token_supply_usd' (weETH TVL query), then other TVL-related columns
-  for (const colName of allColumns) {
-    const name = colName.toLowerCase();
-    if (name === 'tvl') {
-      // wstETH TVL query uses this column (exact match)
-      columnMap.tvl = colName;
-      break;
-    }
-  }
-  // If not found, check for weETH format
-  if (!columnMap.tvl) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      if (name === 'token_supply_usd') {
-        // weETH TVL query uses this column
-        columnMap.tvl = colName;
-        break;
-      }
-    }
-  }
-  // If not found, look for other TVL-related columns
-  if (!columnMap.tvl) {
-    for (const colName of allColumns) {
-      const name = colName.toLowerCase();
-      if (
-        name.includes('total_value') ||
-        name.includes('value_locked') ||
-        name.includes('total_deposit') ||
-        name === 'cum_deposit'
-      ) {
-        columnMap.tvl = colName;
-        break;
-      }
-    }
-  }
+  const apyIsPercentage = apyColumn
+    ? PERCENTAGE_APY_MATCHERS.some((match) => match(apyColumn.toLowerCase()))
+    : false;
 
-  const timestampColumn = columnMap.timestamp;
-  if (!timestampColumn) {
-    // No timestamp column found, cannot process data
-    return [];
-  }
+  const tvlColumn = findColumn(
+    allColumns,
+    (n) => n === 'tvl',
+    (n) => n === 'token_supply_usd',
+    (n) =>
+      n.includes('total_value') ||
+      n.includes('value_locked') ||
+      n.includes('total_deposit') ||
+      n === 'cum_deposit',
+  );
 
   return rows
     .map((row) => {
@@ -412,39 +367,28 @@ function transformDuneResults(
       let timestamp: number;
       const tsValue = row[timestampColumn];
       if (typeof tsValue === 'string') {
-        // Parse ISO string or other date formats
-        // Handle formats like "2025-09-15 12:20:35.000 UTC" or ISO strings
         const parsedDate = new Date(tsValue);
-        if (isNaN(parsedDate.getTime())) {
-          return null; // Skip invalid rows
-        }
+        if (isNaN(parsedDate.getTime())) return null;
         timestamp = Math.floor(parsedDate.getTime() / 1000);
       } else if (typeof tsValue === 'number') {
-        // Already a timestamp (seconds or milliseconds)
         timestamp = tsValue > 1e10 ? Math.floor(tsValue / 1000) : tsValue;
       } else {
-        return null; // Skip invalid rows
+        return null;
       }
 
       // Extract APY (may be percentage or decimal)
-      // wstETH query: 'stETH APY' is already percentage (2.64 = 2.64%)
-      // weETH query: 'avg_7day_apr' or 'daily_apr' is decimal (0.025 = 2.5%)
       let apy: number | null = null;
-      if (columnMap.apy && row[columnMap.apy] !== null && row[columnMap.apy] !== undefined) {
-        const apyValue = Number(row[columnMap.apy]);
+      if (apyColumn && row[apyColumn] !== null && row[apyColumn] !== undefined) {
+        const apyValue = Number(row[apyColumn]);
         if (Number.isFinite(apyValue)) {
-          if (apyIsPercentage || apyValue >= 1) {
-            apy = apyValue;
-          } else {
-            apy = apyValue * 100;
-          }
+          apy = apyIsPercentage || apyValue >= 1 ? apyValue : apyValue * 100;
         }
       }
 
       // Extract TVL
       let tvl: number | null = null;
-      if (columnMap.tvl && row[columnMap.tvl] !== null && row[columnMap.tvl] !== undefined) {
-        const tvlValue = Number(row[columnMap.tvl]);
+      if (tvlColumn && row[tvlColumn] !== null && row[tvlColumn] !== undefined) {
+        const tvlValue = Number(row[tvlColumn]);
         if (Number.isFinite(tvlValue)) {
           tvl = tvlValue;
         }
@@ -452,11 +396,8 @@ function transformDuneResults(
 
       return { timestamp, apy, tvl };
     })
-    .filter(
-      (point): point is { timestamp: number; apy: number | null; tvl: number | null } =>
-        point !== null,
-    )
-    .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp ascending
+    .filter((point): point is DuneDataPoint => point !== null)
+    .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 /**
@@ -468,35 +409,10 @@ function transformDuneResults(
 export async function fetchDuneHistoricalData(
   queryId: number,
   lookbackDays = 7,
-): Promise<
-  Array<{
-    timestamp: number;
-    apy: number | null;
-    tvl: number | null;
-  }>
-> {
+): Promise<DuneDataPoint[]> {
   try {
     const rows = await fetchLatestDuneRows(queryId);
-    if (rows.length === 0) {
-      return [];
-    }
-
-    const transformed = transformDuneResults(rows);
-    if (transformed.length === 0) {
-      return [];
-    }
-
-    // Get the latest timestamp from the data (data is sorted ascending)
-    const latestTimestamp = transformed[transformed.length - 1]?.timestamp;
-    if (!latestTimestamp) {
-      return [];
-    }
-
-    const lookbackSeconds = lookbackDays * 24 * 60 * 60;
-    const fromTimestamp = latestTimestamp - lookbackSeconds;
-
-    // Filter to the requested window relative to the latest data point
-    return transformed.filter((point) => point.timestamp >= fromTimestamp);
+    return trimToLookback(transformDuneResults(rows), lookbackDays);
   } catch (error) {
     throw new Error(
       `Failed to fetch Dune historical data for query ${queryId}: ${getErrorMessage(error)}`,
@@ -513,17 +429,7 @@ export async function fetchDuneCurrentData(queryId: number): Promise<{
 }> {
   try {
     const historical = await fetchDuneHistoricalData(queryId);
-    if (historical.length === 0) {
-      return { apy: null, tvl: null };
-    }
-
-    const latestApy = [...historical].reverse().find((point) => point.apy !== null)?.apy ?? null;
-    const latestTvl = [...historical].reverse().find((point) => point.tvl !== null)?.tvl ?? null;
-
-    return {
-      apy: latestApy,
-      tvl: latestTvl,
-    };
+    return findLatestValues(historical);
   } catch (error) {
     throw new Error(
       `Failed to fetch current Dune data for query ${queryId}: ${getErrorMessage(error)}`,
@@ -542,17 +448,11 @@ export async function fetchDuneHistoricalDataMerged(
   apyQueryId: number,
   tvlQueryId: number,
   lookbackDays = 7,
-): Promise<
-  Array<{
-    timestamp: number;
-    apy: number | null;
-    tvl: number | null;
-  }>
-> {
+): Promise<DuneDataPoint[]> {
   const fetchHistoricalDataOrEmpty = async (
     queryId: number,
     metric: 'apy' | 'tvl',
-  ): Promise<Array<{ timestamp: number; apy: number | null; tvl: number | null }>> => {
+  ): Promise<DuneDataPoint[]> => {
     try {
       return await fetchDuneHistoricalData(queryId, lookbackDays);
     } catch (error) {
@@ -564,7 +464,6 @@ export async function fetchDuneHistoricalDataMerged(
   };
 
   try {
-    // Fetch both queries in parallel
     const [apyData, tvlData] = await Promise.all([
       fetchHistoricalDataOrEmpty(apyQueryId, 'apy'),
       fetchHistoricalDataOrEmpty(tvlQueryId, 'tvl'),
@@ -574,45 +473,29 @@ export async function fetchDuneHistoricalDataMerged(
     const apyMap = new Map<number, number | null>();
     const tvlMap = new Map<number, number | null>();
 
-    // Populate APY map
     for (const point of apyData) {
-      const dayTimestamp = Math.floor(point.timestamp / 86400) * 86400; // Round to day
+      const dayTimestamp = Math.floor(point.timestamp / 86400) * 86400;
       apyMap.set(dayTimestamp, point.apy);
     }
-
-    // Populate TVL map
     for (const point of tvlData) {
-      const dayTimestamp = Math.floor(point.timestamp / 86400) * 86400; // Round to day
+      const dayTimestamp = Math.floor(point.timestamp / 86400) * 86400;
       tvlMap.set(dayTimestamp, point.tvl);
     }
 
-    // Get all unique timestamps (from both datasets)
     const allTimestamps = new Set<number>([
       ...Array.from(apyMap.keys()),
       ...Array.from(tvlMap.keys()),
     ]);
 
-    // Merge data points
     const merged = Array.from(allTimestamps)
       .map((dayTimestamp) => ({
         timestamp: dayTimestamp,
         apy: apyMap.get(dayTimestamp) ?? null,
         tvl: tvlMap.get(dayTimestamp) ?? null,
       }))
-      .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp ascending
+      .sort((a, b) => a.timestamp - b.timestamp);
 
-    if (merged.length === 0) {
-      return [];
-    }
-
-    const latestTimestamp = merged[merged.length - 1]?.timestamp;
-    if (!latestTimestamp) {
-      return [];
-    }
-
-    const lookbackSeconds = lookbackDays * 24 * 60 * 60;
-    const fromTimestamp = latestTimestamp - lookbackSeconds;
-    return merged.filter((point) => point.timestamp >= fromTimestamp);
+    return trimToLookback(merged, lookbackDays);
   } catch (error) {
     throw new Error(
       `Failed to fetch merged Dune historical data for queries ${apyQueryId}/${tvlQueryId}: ${getErrorMessage(error)}`,
@@ -633,17 +516,7 @@ export async function fetchDuneCurrentDataMerged(
 }> {
   try {
     const historical = await fetchDuneHistoricalDataMerged(apyQueryId, tvlQueryId);
-    if (historical.length === 0) {
-      return { apy: null, tvl: null };
-    }
-
-    const latestApy = [...historical].reverse().find((point) => point.apy !== null)?.apy ?? null;
-    const latestTvl = [...historical].reverse().find((point) => point.tvl !== null)?.tvl ?? null;
-
-    return {
-      apy: latestApy,
-      tvl: latestTvl,
-    };
+    return findLatestValues(historical);
   } catch (error) {
     throw new Error(
       `Failed to fetch merged current Dune data for queries ${apyQueryId}/${tvlQueryId}: ${getErrorMessage(error)}`,
