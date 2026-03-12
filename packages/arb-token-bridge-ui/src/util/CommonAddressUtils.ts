@@ -7,6 +7,7 @@ export const CommonAddress = {
     WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
     WETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     STETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
+    WSTETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
     DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
     ARB: '0xb50721bcf8d664c30412cfbc6cf7a15145234ad1',
     USDe: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',

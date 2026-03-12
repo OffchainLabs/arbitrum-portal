@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR from 'swr';
+import useSWRImmutable from 'swr/immutable';
 
 import { ChainId } from '@/bridge/types/ChainId';
 import type {
@@ -20,9 +20,9 @@ export interface UseHistoricalDataParams {
 }
 
 export interface UseHistoricalDataResult {
-  data: HistoricalData | null;
+  data: HistoricalData | undefined;
   isLoading: boolean;
-  error: string | null;
+  error: Error | undefined;
   refetch: () => void;
 }
 
@@ -61,9 +61,9 @@ export function useHistoricalData(params: UseHistoricalDataParams): UseHistorica
   const normalizedAssetSymbol = assetSymbol?.toLowerCase();
   const { fromTimestamp, toTimestamp } = buildHistoricalWindow(range);
 
-  const { data, error, isLoading, mutate } = useSWR<HistoricalData>(
+  const { data, error, isLoading, mutate } = useSWRImmutable(
     opportunityId && category
-      ? [
+      ? ([
           'historical-data',
           opportunityId,
           category,
@@ -72,7 +72,7 @@ export function useHistoricalData(params: UseHistoricalDataParams): UseHistorica
           fromTimestamp,
           toTimestamp,
           normalizedAssetSymbol,
-        ]
+        ] as const)
       : null,
     async ([
       ,
@@ -83,15 +83,6 @@ export function useHistoricalData(params: UseHistoricalDataParams): UseHistorica
       keyFromTimestamp,
       keyToTimestamp,
       keyAssetSymbol,
-    ]: readonly [
-      string,
-      string,
-      OpportunityCategory,
-      EarnChainId,
-      HistoricalTimeRange,
-      number,
-      number,
-      string | undefined,
     ]) => {
       const queryParams = new URLSearchParams();
       queryParams.set('chainId', String(keyChainId));
@@ -115,17 +106,14 @@ export function useHistoricalData(params: UseHistoricalDataParams): UseHistorica
     },
     {
       refreshInterval: HISTORICAL_REVALIDATE_INTERVAL_MS,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
       errorRetryCount: 2,
     },
   );
 
   return {
-    data: data ?? null,
+    data,
     isLoading,
-    error: error?.message || null,
+    error,
     refetch: () => mutate(),
   };
 }
