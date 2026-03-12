@@ -104,6 +104,14 @@ function isUsdtToken(tokenAddress: string | undefined, chainId: number) {
   );
 }
 
+function isPyUsdToken(tokenAddress: string | undefined, chainId: number) {
+  return (
+    (addressesEqual(tokenAddress, CommonAddress.Ethereum.PYUSD) && chainId === ChainId.Ethereum) ||
+    (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.PYUSD) &&
+      chainId === ChainId.ArbitrumOne)
+  );
+}
+
 function isApeToken(tokenAddress: string | undefined, chainId: number) {
   return (
     (addressesEqual(tokenAddress, constants.AddressZero) && chainId === ChainId.ApeChain) ||
@@ -114,15 +122,24 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
   );
 }
 
-/** Override token metadata (symbol, name, ...) for special cases (e.g., USDT) */
+/** Override token metadata (symbol, name, ...) for special cases (e.g., USDT, PYUSD). */
 function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: string } {
   if (isUsdtToken(token.address, chainId)) {
     return {
       ...token,
-      name: 'USDT',
       symbol: 'USDT',
+      name: 'Tether USD',
     };
   }
+
+  if (isPyUsdToken(token.address, chainId)) {
+    return {
+      ...token,
+      symbol: 'PYUSD',
+      name: 'PayPal USD',
+    };
+  }
+
   return token;
 }
 

@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
 
@@ -12,6 +13,13 @@ type CustomTokenConfig = {
 };
 
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
+  {
+    coinKey: 'PYUSD',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.PYUSD,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.PYUSD,
+    },
+  },
   {
     coinKey: 'ENA',
     addresses: {
@@ -99,12 +107,23 @@ function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
   return token;
 }
 
+const TOKEN_METADATA_OVERRIDES: Record<string, { symbol: string; name: string }> = {
+  USDT: {
+    symbol: 'USDT',
+    name: 'Tether USD',
+  },
+  PYUSD: {
+    symbol: 'PYUSD',
+    name: 'PayPal USD',
+  },
+};
+
 function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
-  if (token.coinKey === CoinKey.USDT) {
+  const metadataOverride = TOKEN_METADATA_OVERRIDES[token.coinKey];
+  if (metadataOverride) {
     return {
       ...token,
-      symbol: 'USDT',
-      name: 'Tether USD',
+      ...metadataOverride,
     };
   }
 
