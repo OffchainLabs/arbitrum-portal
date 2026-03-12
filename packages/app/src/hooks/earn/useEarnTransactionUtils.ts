@@ -1,5 +1,6 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 
+import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import type { TransactionStep } from '@/earn-api/types';
 
 export function checkAmountExceedsBalance(
@@ -21,6 +22,26 @@ export function checkAmountExceedsBalance(
   } catch {
     return false;
   }
+}
+
+export function parseAmountToRawUnits(
+  amount: string,
+  selectedAction: 'supply' | 'withdraw',
+  assetDecimals: number,
+  lpTokenDecimals: number,
+): string {
+  if (!amount || parseFloat(amount) <= 0) return '0';
+  const decimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
+  return utils.parseUnits(truncateExtraDecimals(amount, decimals), decimals).toString();
+}
+
+export function getChainIdFromQuote(transactionSteps: TransactionStep[] | undefined): number {
+  if (!transactionSteps || transactionSteps.length === 0) return 0;
+  const txChainId = transactionSteps[0]?.chainId;
+  if (!txChainId) {
+    throw new Error('Invalid transaction step: missing chainId');
+  }
+  return txChainId;
 }
 
 export function validateTransactionStep(step: TransactionStep, index: number): void {

@@ -11,20 +11,20 @@ import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
-import { checkAmountExceedsBalance } from '@/app-hooks/earn/useEarnTransactionUtils';
+import {
+  checkAmountExceedsBalance,
+  getChainIdFromQuote,
+  parseAmountToRawUnits,
+} from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { deriveVault, formatApr, getSelectedActionValues } from '@/app-lib/earn/utils';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
-import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
-import {
-  type StandardOpportunityLend,
-  type StandardTransactionHistory,
-  type TransactionStep,
-  Vendor,
-} from '@/earn-api/types';
+import { type StandardOpportunityLend, Vendor } from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -58,142 +58,6 @@ function normalizeTokenAddress(tokenAddress: string | null): Address | undefined
   }
 }
 
-function formatApr(apy: number | undefined) {
-  if (apy == null || !Number.isFinite(apy)) {
-    return '—';
-  }
-  return `${(apy * 100).toFixed(2)}%`;
-}
-
-function deriveVault(opportunity: StandardOpportunityLend) {
-  return {
-    address: opportunity.id,
-    chainId: opportunity.chainId,
-    asset: {
-      symbol: opportunity.lend?.assetSymbol ?? '',
-      address: opportunity.lend?.assetAddress ?? '',
-      assetLogo: opportunity.lend?.assetLogo,
-    },
-    name: opportunity.name,
-    protocol: {
-      name: opportunity.lend?.protocolName ?? opportunity.protocol,
-      protocolLogo: opportunity.lend?.protocolLogo,
-    },
-    apy: opportunity.lend?.apy7day != null ? opportunity.lend.apy7day / 100 : undefined,
-  };
-}
-
-function parseAmountToRawUnits(
-  amount: string,
-  selectedAction: ActionType,
-  assetDecimals: number,
-  lpTokenDecimals: number,
-): string {
-  if (!amount || parseFloat(amount) <= 0) return '0';
-  const decimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
-  return utils.parseUnits(truncateExtraDecimals(amount, decimals), decimals).toString();
-}
-
-function getChainIdFromQuote(transactionSteps: TransactionStep[] | undefined): number {
-  if (!transactionSteps || transactionSteps.length === 0) return 0;
-  const txChainId = transactionSteps[0]?.chainId;
-  if (!txChainId) {
-    throw new Error('Invalid transaction step: missing chainId');
-  }
-  return txChainId;
-}
-
-interface TransactionResultParams {
-  txHash: string | undefined;
-  selectedAction: ActionType;
-  amountInRawUnits: string;
-  assetSymbol: string;
-  assetDecimals: number;
-  lpTokenSymbol: string | undefined;
-  lpTokenDecimals: number;
-  receiveAmount: string | undefined;
-  chainId: number;
-  vault: ReturnType<typeof deriveVault>;
-  estimatedTxCostEth: string | undefined;
-}
-
-function buildTransactionResult(params: TransactionResultParams) {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const txChainId = params.chainId || 0;
-  const hasReceiveAmount = Boolean(params.receiveAmount && /^\d+$/.test(params.receiveAmount));
-  const inputAmountRaw = params.amountInRawUnits || '0';
-  const inputTokenSymbol = params.assetSymbol;
-  const inputTokenDecimals = params.assetDecimals;
-  const outputAmountRaw = hasReceiveAmount ? params.receiveAmount : undefined;
-  const outputTokenSymbol =
-    params.selectedAction === 'supply'
-      ? (params.lpTokenSymbol ?? params.assetSymbol)
-      : params.assetSymbol;
-  const outputTokenDecimals =
-    params.selectedAction === 'supply' ? params.lpTokenDecimals : params.assetDecimals;
-  const shouldDisplayOutput =
-    params.selectedAction === 'withdraw' &&
-    Boolean(outputAmountRaw && /^\d+$/.test(outputAmountRaw) && outputTokenSymbol);
-  const displayAmountRaw = shouldDisplayOutput ? outputAmountRaw || '0' : inputAmountRaw;
-  const displayTokenSymbol = shouldDisplayOutput ? outputTokenSymbol : inputTokenSymbol;
-  const displayTokenDecimals = shouldDisplayOutput ? outputTokenDecimals : inputTokenDecimals;
-
-  const details = {
-    action: params.selectedAction === 'supply' ? 'supply' : 'withdraw',
-    amount: displayAmountRaw,
-    tokenSymbol: displayTokenSymbol,
-    decimals: displayTokenDecimals,
-    assetLogo: params.vault.asset?.assetLogo,
-    chainId: txChainId,
-    txHash: params.txHash ?? '',
-    timestamp,
-    protocolName: params.vault.protocol?.name,
-    protocolLogo: params.vault.protocol?.protocolLogo,
-    networkFee:
-      params.estimatedTxCostEth && params.estimatedTxCostEth !== '—'
-        ? { amount: `~${params.estimatedTxCostEth} ETH` }
-        : undefined,
-    opportunityName: params.vault.name ?? 'Lend',
-  };
-
-  const historyRecord: StandardTransactionHistory = {
-    timestamp,
-    eventType: params.selectedAction === 'supply' ? 'deposit' : 'redeem',
-    assetAmountRaw: displayAmountRaw,
-    assetSymbol: displayTokenSymbol,
-    decimals: displayTokenDecimals,
-    assetLogo: params.vault.asset?.assetLogo,
-    inputAssetAmountRaw: inputAmountRaw,
-    inputAssetSymbol: inputTokenSymbol,
-    inputAssetDecimals: inputTokenDecimals,
-    inputAssetLogo: params.vault.asset?.assetLogo,
-    outputAssetAmountRaw: outputAmountRaw,
-    outputAssetSymbol: outputTokenSymbol,
-    outputAssetDecimals: outputTokenDecimals,
-    outputAssetLogo: params.vault.asset?.assetLogo,
-    chainId: txChainId,
-    transactionHash: params.txHash ?? '',
-  };
-
-  const analyticsProps = {
-    page: 'Earn',
-    section: 'Action Panel',
-    category: OpportunityCategory.Lend,
-    action: params.selectedAction,
-    opportunityId: params.vault.address,
-    opportunityName: params.vault.name,
-    protocol: params.vault.protocol?.name,
-    chainId: params.vault.chainId,
-    transactionHash: params.txHash,
-    inputToken: inputTokenSymbol,
-    inputAmountRaw,
-    outputToken: outputTokenSymbol,
-    outputAmountRaw,
-  };
-
-  return { details, historyRecord, analyticsProps };
-}
-
 export function VaultActionPanel({
   opportunity,
   initialAction = 'supply',
@@ -209,10 +73,6 @@ export function VaultActionPanel({
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
   const [txError, setTxError] = useState<string | null>(null);
   const requestChainId = vault.chainId;
-
-  useEffect(() => {
-    setSelectedAction(initialAction);
-  }, [initialAction]);
 
   useEffect(() => {
     setAmount('');
@@ -237,85 +97,78 @@ export function VaultActionPanel({
   const asset = transactionContext?.asset;
   const lpToken = transactionContext?.lpToken;
 
-  const assetDecimals = asset?.decimals || 18;
-  const assetSymbol = asset?.symbol || vault.asset?.symbol;
-  const lpTokenDecimals = lpToken?.decimals || 18;
-
-  const amountInRawUnits = parseAmountToRawUnits(
-    amount,
-    selectedAction,
-    assetDecimals,
-    lpTokenDecimals,
-  );
-
   const networkChainId = requestChainId;
+  const canFetchBalance = isConnected && !!walletAddress;
 
   const assetTokenAddress = asset?.address ?? vault.asset?.address ?? null;
   const lpTokenAddress = lpToken?.address ?? null;
-
-  const normalizedAssetTokenAddress = useMemo(
-    () => normalizeTokenAddress(assetTokenAddress),
-    [assetTokenAddress],
-  );
-  const normalizedLpTokenAddress = useMemo(
-    () => normalizeTokenAddress(lpTokenAddress),
-    [lpTokenAddress],
-  );
-  const isAssetNativeBalance =
+  const isNativeAsset =
     !assetTokenAddress || addressesEqual(assetTokenAddress, constants.AddressZero);
-  const shouldFetchAssetBalance =
-    isConnected && !!walletAddress && (isAssetNativeBalance || !!normalizedAssetTokenAddress);
-  const shouldFetchLpTokenBalance = isConnected && !!walletAddress && !!normalizedLpTokenAddress;
+  const normalizedAssetToken = isNativeAsset ? undefined : normalizeTokenAddress(assetTokenAddress);
+  const normalizedLpToken = normalizeTokenAddress(lpTokenAddress);
+
+  const balanceQuery = {
+    retry: 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 15_000,
+  } as const;
 
   const { data: assetBalanceData, refetch: refetchAssetBalance } = useBalance({
     address: walletAddress,
     chainId: networkChainId,
-    token: isAssetNativeBalance ? undefined : normalizedAssetTokenAddress,
+    token: normalizedAssetToken,
     query: {
-      enabled: shouldFetchAssetBalance,
-      retry: 2,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      staleTime: 15_000,
+      ...balanceQuery,
+      enabled: canFetchBalance && (isNativeAsset || !!normalizedAssetToken),
     },
   });
 
   const { data: lpTokenBalanceData, refetch: refetchLpTokenBalance } = useBalance({
     address: walletAddress,
     chainId: networkChainId,
-    token: normalizedLpTokenAddress,
-    query: {
-      enabled: shouldFetchLpTokenBalance,
-      retry: 2,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      staleTime: 15_000,
-    },
+    token: normalizedLpToken,
+    query: { ...balanceQuery, enabled: canFetchBalance && !!normalizedLpToken },
   });
 
-  const assetBalanceOnchain = useMemo(
-    () => (assetBalanceData ? BigNumber.from(assetBalanceData.value.toString()) : null),
-    [assetBalanceData],
-  );
-  const lpTokenBalanceOnchain = useMemo(
-    () => (lpTokenBalanceData ? BigNumber.from(lpTokenBalanceData.value.toString()) : null),
-    [lpTokenBalanceData],
+  const assetBalance = {
+    balanceRaw: assetBalanceData
+      ? BigNumber.from(assetBalanceData.value.toString())
+      : BigNumber.from(asset?.balanceNative ?? '0'),
+    decimals: assetBalanceData?.decimals ?? asset?.decimals ?? 18,
+    balanceUsd: asset?.balanceUsd,
+  };
+  const lpTokenBalance = {
+    balanceRaw: lpTokenBalanceData
+      ? BigNumber.from(lpTokenBalanceData.value.toString())
+      : BigNumber.from(lpToken?.balanceNative ?? '0'),
+    decimals: lpTokenBalanceData?.decimals ?? lpToken?.decimals ?? 18,
+    balanceUsd: lpToken?.balanceUsd,
+  };
+  const assetSymbol = assetBalanceData?.symbol ?? asset?.symbol ?? vault.asset?.symbol;
+
+  const amountInRawUnits = parseAmountToRawUnits(
+    amount,
+    selectedAction,
+    assetBalance.decimals,
+    lpTokenBalance.decimals,
   );
 
-  const assetBalanceRaw = assetBalanceOnchain || BigNumber.from(asset?.balanceNative ?? '0');
-  const lpTokenBalanceRaw = lpTokenBalanceOnchain || BigNumber.from(lpToken?.balanceNative ?? '0');
-
-  const currentBalanceForQuote = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
+  const selectedActionValues = getSelectedActionValues(
+    selectedAction,
+    assetBalance,
+    lpTokenBalance,
+  );
 
   const amountExceedsBalance = useMemo(
     () =>
       checkAmountExceedsBalance(
         amountInRawUnits,
-        currentBalanceForQuote,
+        selectedActionValues.balanceRaw,
         isConnected,
         walletAddress,
       ),
-    [amountInRawUnits, currentBalanceForQuote, isConnected, walletAddress],
+    [amountInRawUnits, selectedActionValues.balanceRaw, isConnected, walletAddress],
   );
 
   const {
@@ -340,70 +193,117 @@ export function VaultActionPanel({
   );
   const fallbackChainIdFromQuote = chainId || networkChainId;
 
-  const shouldFetchNativeBalance = isConnected && !!walletAddress && chainId !== 0;
+  const shouldFetchNativeBalance = canFetchBalance && chainId !== 0;
   const { data: nativeBalanceData } = useBalance({
     address: shouldFetchNativeBalance ? walletAddress : undefined,
     chainId: fallbackChainIdFromQuote || networkChainId,
-    query: {
-      enabled: shouldFetchNativeBalance,
-      retry: 2,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      staleTime: 15_000,
-    },
+    query: { ...balanceQuery, enabled: shouldFetchNativeBalance },
   });
-  const nativeBalance = useMemo(
-    () => (nativeBalanceData ? BigNumber.from(nativeBalanceData.value.toString()) : null),
-    [nativeBalanceData],
-  );
+  const nativeBalance = nativeBalanceData
+    ? BigNumber.from(nativeBalanceData.value.toString())
+    : null;
 
-  const assetUsdValue = parseFloat(asset?.balanceUsd ?? '0');
-  const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
-
-  const { executeTx, isExecuting } = useEarnTransactionExecution({
-    chainId,
+  const {
+    estimate: estimatedTxCostUsd,
+    isLoading: isGasEstimateLoading,
+    error: gasEstimateError,
+  } = useEarnGasEstimate({
     transactionSteps: transactionQuote?.transactionSteps,
-    onTransactionFinished: async ({ txHash }) => {
+    chainId,
+    walletAddress: walletAddress || undefined,
+    apiEstimate: transactionQuote?.estimatedGasUsd,
+    enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
+  });
+
+  const onTransactionFinished = useCallback(
+    async ({ txHash }: { txHash: string | undefined }) => {
       setAmount('');
       refetchAssetBalance();
       refetchLpTokenBalance();
 
-      const { details, historyRecord, analyticsProps } = buildTransactionResult({
-        txHash,
-        selectedAction,
-        amountInRawUnits,
-        assetSymbol: assetSymbol ?? '',
-        assetDecimals,
-        lpTokenSymbol: lpToken?.symbol,
-        lpTokenDecimals,
-        receiveAmount: transactionQuote?.receiveAmount,
-        chainId,
-        vault,
-        estimatedTxCostEth: estimatedTxCostUsd?.eth,
-      });
+      if (
+        !transactionQuote?.transactionDetailsTemplate ||
+        !transactionQuote.pendingHistoryTemplate
+      ) {
+        return;
+      }
+
+      const { transactionDetailsTemplate, pendingHistoryTemplate } = transactionQuote;
+      const timestamp = Math.floor(Date.now() / 1000);
 
       if (txHash) {
+        const historyRecord = { ...pendingHistoryTemplate, timestamp, transactionHash: txHash };
+
         posthog?.capture('Earn Transaction Succeeded', {
-          ...analyticsProps,
+          page: 'Earn',
+          section: 'Action Panel',
+          category: OpportunityCategory.Lend,
+          action: selectedAction,
+          opportunityId: vault.address,
+          opportunityName: transactionDetailsTemplate.opportunityName ?? vault.name,
+          protocol: transactionDetailsTemplate.protocolName ?? vault.protocol?.name,
+          chainId: vault.chainId,
+          transactionHash: txHash,
+          inputToken: historyRecord.inputAssetSymbol ?? transactionDetailsTemplate.tokenSymbol,
+          inputAmountRaw: historyRecord.inputAssetAmountRaw ?? amountInRawUnits,
+          outputToken: historyRecord.outputAssetSymbol,
+          outputAmountRaw: historyRecord.outputAssetAmountRaw,
           walletConnected: isConnected,
         });
+
+        if (walletAddress) {
+          await addTransaction({
+            vendor: Vendor.Vaults,
+            transaction: historyRecord,
+          });
+        }
       }
 
-      if (walletAddress && txHash) {
-        await addTransaction({
-          vendor: Vendor.Vaults,
-          transaction: historyRecord,
-        });
-      }
+      const networkFee =
+        estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
+          ? { amount: `~${estimatedTxCostUsd.eth} ETH` }
+          : undefined;
 
-      showTransactionDetails(details, true);
+      showTransactionDetails(
+        {
+          action: selectedAction === 'supply' ? 'supply' : 'withdraw',
+          ...transactionDetailsTemplate,
+          txHash: txHash ?? '',
+          timestamp,
+          networkFee,
+        },
+        true,
+      );
     },
+    [
+      addTransaction,
+      amountInRawUnits,
+      estimatedTxCostUsd,
+      isConnected,
+      posthog,
+      refetchAssetBalance,
+      refetchLpTokenBalance,
+      selectedAction,
+      showTransactionDetails,
+      transactionQuote,
+      vault.address,
+      vault.chainId,
+      vault.name,
+      vault.protocol?.name,
+      walletAddress,
+    ],
+  );
+
+  const { executeTx, isExecuting } = useEarnTransactionExecution({
+    chainId,
+    transactionSteps: transactionQuote?.transactionSteps,
+    onTransactionFinished,
     inputAmount: amount,
   });
 
   const hasRedeem = availableActions?.availableActions?.includes('redeem') ?? false;
 
-  const hasPosition = lpTokenBalanceRaw.gt(0);
+  const hasPosition = lpTokenBalance.balanceRaw.gt(0);
 
   const actionTabs = useEarnActionTabs({
     primaryAction: { id: 'supply', label: 'Supply' },
@@ -444,37 +344,19 @@ export function VaultActionPanel({
 
   const currentApr = formatApr(vault.apy);
 
-  const {
-    estimate: estimatedTxCostUsd,
-    isLoading: isGasEstimateLoading,
-    error: gasEstimateError,
-  } = useEarnGasEstimate({
-    transactionSteps: transactionQuote?.transactionSteps,
-    chainId,
-    walletAddress: walletAddress || undefined,
-    apiEstimate: transactionQuote?.estimatedGasUsd,
-    enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
-  });
-
   const handleMaxClick = () => {
-    if (selectedAction === 'supply') {
-      setAmount(utils.formatUnits(assetBalanceRaw, assetDecimals));
-    } else {
-      setAmount(utils.formatUnits(lpTokenBalanceRaw, lpTokenDecimals));
-    }
+    setAmount(utils.formatUnits(selectedActionValues.balanceRaw, selectedActionValues.decimals));
   };
 
-  const currentBalanceRaw = selectedAction === 'supply' ? assetBalanceRaw : lpTokenBalanceRaw;
-  const currentDecimals = selectedAction === 'supply' ? assetDecimals : lpTokenDecimals;
-  const currentSymbol = assetSymbol;
-  const currentUsdValue = selectedAction === 'supply' ? assetUsdValue : lpTokenUsdValue;
-  const currentBalanceAmount = Number(utils.formatUnits(currentBalanceRaw, currentDecimals));
+  const currentBalanceAmount = Number(
+    utils.formatUnits(selectedActionValues.balanceRaw, selectedActionValues.decimals),
+  );
 
   const transferReadiness = useEarnTransferReadiness({
     amount,
-    amountBalance: currentBalanceRaw,
-    amountDecimals: currentDecimals,
-    amountSymbol: currentSymbol ?? '',
+    amountBalance: selectedActionValues.balanceRaw,
+    amountDecimals: selectedActionValues.decimals,
+    amountSymbol: assetSymbol ?? '',
     nativeBalance: nativeBalance || undefined,
     chainId,
     transactionSteps: transactionQuote?.transactionSteps,
@@ -482,9 +364,9 @@ export function VaultActionPanel({
     enabled: isConnected && !!walletAddress && chainId !== 0,
   });
 
-  const currentBalanceFormatted = formatAmount(currentBalanceRaw, {
-    decimals: currentDecimals,
-    symbol: currentSymbol,
+  const currentBalanceFormatted = formatAmount(selectedActionValues.balanceRaw, {
+    decimals: selectedActionValues.decimals,
+    symbol: assetSymbol,
   });
 
   const handleTransaction = async () => {
@@ -511,15 +393,16 @@ export function VaultActionPanel({
   };
 
   const positionValue = useMemo(() => {
-    if (!lpTokenBalanceRaw.gt(0)) return undefined;
+    if (!lpTokenBalance.balanceRaw.gt(0)) return undefined;
     return {
-      amount: formatAmount(lpTokenBalanceRaw, {
-        decimals: lpTokenDecimals,
+      amount: formatAmount(lpTokenBalance.balanceRaw, {
+        decimals: lpTokenBalance.decimals,
         symbol: assetSymbol,
       }),
-      usdValue: formatUSD(lpTokenUsdValue),
+      usdValue: formatUSD(parseFloat(lpToken?.balanceUsd ?? '0')),
     };
-  }, [lpTokenBalanceRaw, lpTokenDecimals, assetSymbol, lpTokenUsdValue]);
+  }, [lpTokenBalance.balanceRaw, lpTokenBalance.decimals, assetSymbol, lpToken?.balanceUsd]);
+
   const transactionDetailsRows = useMemo(
     () => [
       { label: 'APY', value: currentApr },
@@ -577,10 +460,10 @@ export function VaultActionPanel({
         }}
         currentBalance={currentBalanceFormatted}
         currentBalanceAmount={currentBalanceAmount}
-        currentUsdValue={currentUsdValue}
+        currentUsdValue={selectedActionValues.usdValue}
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
-        decimals={currentDecimals}
+        decimals={selectedActionValues.decimals}
         validationError={
           transferReadiness.errorMessage
             ? typeof transferReadiness.errorMessage === 'string'

@@ -6,16 +6,19 @@ import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
   AvailableActions,
   type EarnChainId,
+  type EarnTransactionAction,
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
   HistoricalDataPoint,
   type HistoricalTimeRange,
   OpportunityFilters,
+  type PendingHistoryTemplate,
   StandardOpportunity,
   StandardTokenContextItem,
   StandardTransactionContext,
   StandardTransactionHistory,
   StandardUserPosition,
+  type TransactionDetailsTemplate,
   TransactionQuoteRequest,
   TransactionQuoteResponse,
   TransactionStep,
@@ -217,19 +220,24 @@ export class VaultsAdapter implements VendorAdapter {
     const network = this.toVaultsNetwork(chainId);
     const { action, amount, userAddress, simulate = false } = request;
 
+    if (action !== 'deposit' && action !== 'redeem') {
+      throw new Error(
+        `Invalid action for Vaults: ${action}. Only 'deposit' and 'redeem' are supported.`,
+      );
+    }
+
+    // Fetch context + opportunity in parallel for display metadata
+    const [contextResult, opportunity] = await Promise.all([
+      this.getAvailableActions(id, userAddress, chainId),
+      this.getOpportunityDetails(id, chainId),
+    ]);
+
     const assetAddress =
-      request.inputTokenAddress ||
-      (await this.getAvailableActions(id, userAddress, chainId)).transactionContext?.asset?.address;
+      request.inputTokenAddress || contextResult.transactionContext?.asset?.address;
 
     if (!assetAddress) {
       throw new Error(
         'Asset address is required. Provide inputTokenAddress or ensure available actions context includes asset address.',
-      );
-    }
-
-    if (action !== 'deposit' && action !== 'redeem') {
-      throw new Error(
-        `Invalid action for Vaults: ${action}. Only 'deposit' and 'redeem' are supported.`,
       );
     }
 
@@ -319,6 +327,15 @@ export class VaultsAdapter implements VendorAdapter {
         ? String(estimatedGasUsdValue)
         : '0';
 
+    const context = contextResult.transactionContext;
+
+    const receiveAmount =
+      'receiveAmount' in actionsResponse &&
+      typeof actionsResponse.receiveAmount === 'string' &&
+      actionsResponse.receiveAmount
+        ? actionsResponse.receiveAmount
+        : undefined;
+
     return {
       opportunityId: id,
       vendor: Vendor.Vaults,
@@ -326,7 +343,86 @@ export class VaultsAdapter implements VendorAdapter {
       canExecute: transactionSteps.length > 0,
       estimatedGas,
       estimatedGasUsd: this.normalizeUsdValue(estimatedGasUsdRaw),
+      receiveAmount,
       transactionSteps,
+      transactionDetailsTemplate: this.buildTransactionDetailsTemplate(
+        action,
+        amount,
+        context,
+        opportunity,
+        transactionSteps,
+        receiveAmount,
+      ),
+      pendingHistoryTemplate: this.buildPendingHistoryTemplate(
+        action,
+        amount,
+        context,
+        opportunity,
+        transactionSteps,
+        receiveAmount,
+      ),
+    };
+  }
+
+  private buildTransactionDetailsTemplate(
+    action: EarnTransactionAction,
+    amount: string,
+    context: StandardTransactionContext | null,
+    opportunity: StandardOpportunity,
+    transactionSteps: TransactionStep[],
+    receiveAmount?: string,
+  ): TransactionDetailsTemplate {
+    const lend = 'lend' in opportunity ? opportunity.lend : undefined;
+    const txChainId = transactionSteps[0]?.chainId || 0;
+    const isRedeem = action === 'redeem';
+    const validReceiveAmount =
+      receiveAmount && /^\d+$/.test(receiveAmount) ? receiveAmount : undefined;
+    return {
+      amount: isRedeem && validReceiveAmount ? validReceiveAmount : amount,
+      tokenSymbol: context?.asset?.symbol || opportunity.token,
+      decimals: context?.asset?.decimals ?? 18,
+      assetLogo: lend?.assetLogo,
+      chainId: txChainId as EarnChainId,
+      protocolName: lend?.protocolName ?? opportunity.protocol,
+      protocolLogo: lend?.protocolLogo,
+      opportunityName: opportunity.name,
+    };
+  }
+
+  private buildPendingHistoryTemplate(
+    action: EarnTransactionAction,
+    amount: string,
+    context: StandardTransactionContext | null,
+    opportunity: StandardOpportunity,
+    transactionSteps: TransactionStep[],
+    receiveAmount?: string,
+  ): PendingHistoryTemplate {
+    const lend = 'lend' in opportunity ? opportunity.lend : undefined;
+    const assetSymbol = context?.asset?.symbol || opportunity.token;
+    const assetDecimals = context?.asset?.decimals ?? 18;
+    const assetLogo = lend?.assetLogo;
+    const lpTokenSymbol = context?.lpToken?.symbol;
+    const lpTokenDecimals = context?.lpToken?.decimals ?? 18;
+    const isRedeem = action === 'redeem';
+    const txChainId = transactionSteps[0]?.chainId || 0;
+    const validReceiveAmount =
+      receiveAmount && /^\d+$/.test(receiveAmount) ? receiveAmount : undefined;
+
+    return {
+      eventType: isRedeem ? 'redeem' : 'deposit',
+      assetAmountRaw: isRedeem && validReceiveAmount ? validReceiveAmount : amount,
+      assetSymbol,
+      decimals: assetDecimals,
+      assetLogo,
+      inputAssetAmountRaw: amount,
+      inputAssetSymbol: assetSymbol,
+      inputAssetDecimals: assetDecimals,
+      inputAssetLogo: assetLogo,
+      outputAssetAmountRaw: validReceiveAmount,
+      outputAssetSymbol: isRedeem ? assetSymbol : lpTokenSymbol || assetSymbol,
+      outputAssetDecimals: isRedeem ? assetDecimals : lpTokenDecimals,
+      outputAssetLogo: assetLogo,
+      chainId: txChainId as EarnChainId,
     };
   }
 

@@ -180,6 +180,23 @@ export interface TransactionStep {
   description?: string;
 }
 
+/** Pre-built template for the transaction details popup (minus runtime fields). */
+export interface TransactionDetailsTemplate {
+  amount: string;
+  tokenSymbol: string;
+  decimals: number;
+  assetLogo?: string;
+  chainId: EarnChainId;
+  protocolName?: string;
+  protocolLogo?: string;
+  opportunityName?: string;
+}
+
+export type PendingHistoryTemplate = Omit<
+  StandardTransactionHistory,
+  'timestamp' | 'transactionHash'
+>;
+
 export interface TransactionQuoteResponse {
   opportunityId: string;
   vendor: Vendor;
@@ -191,6 +208,8 @@ export interface TransactionQuoteResponse {
   receiveAmount?: string;
   priceImpact?: number;
   transactionSteps: TransactionStep[];
+  transactionDetailsTemplate?: TransactionDetailsTemplate;
+  pendingHistoryTemplate?: PendingHistoryTemplate;
 }
 
 export type LendAvailableActions = AvailableActions & {
