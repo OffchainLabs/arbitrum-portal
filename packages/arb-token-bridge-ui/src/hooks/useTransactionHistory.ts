@@ -33,6 +33,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
+import { getCurrentExperimentsQueryParam } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
@@ -55,6 +56,7 @@ import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
 import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
+import { useNetworks } from './useNetworks';
 import {
   getUpdatedOftTransfer,
   updateAdditionalLayerZeroData,
@@ -301,11 +303,15 @@ export async function fetchWithdrawalsInBatches(
  */
 const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const { chain } = useAccount();
+  const [networks] = useNetworks();
   const [isTestnetMode] = useIsTestnetMode();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
+  const isIndexerExperimentEnabled =
+    getCurrentExperimentsQueryParam()?.split(',').includes('indexer') ?? false;
+  const cctpPageSize = isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0;
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
@@ -314,7 +320,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: cctpPageSize,
     type: 'all',
   });
 
@@ -323,7 +329,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: cctpPageSize,
     type: 'all',
   });
 
@@ -348,7 +354,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     cctpTransfersTestnet.isLoadingWithdrawals;
 
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled && !isIndexerExperimentEnabled ? address : undefined,
     isTestnet: isTestnetMode,
   });
 
@@ -356,103 +362,129 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     address ? ['failed_chain_pairs', address] : null,
   );
 
+  const selectedChainPairs = useMemo(
+    () =>
+      getMultiChainFetchList().filter(
+        (chainPair) =>
+          (chainPair.parentChainId === networks.sourceChain.id &&
+            chainPair.childChainId === networks.destinationChain.id) ||
+          (chainPair.parentChainId === networks.destinationChain.id &&
+            chainPair.childChainId === networks.sourceChain.id),
+      ),
+    [networks.destinationChain.id, networks.sourceChain.id],
+  );
+
   const fetcher = useCallback(
     (type: 'deposits' | 'withdrawals') => {
-      if (!chain) {
+      if (isSmartContractWallet && !chain) {
         return [];
       }
 
-      return Promise.all(
-        getMultiChainFetchList()
-          .filter((chainPair) => {
-            if (isSmartContractWallet) {
-              // only fetch txs from the connected network
-              return [chainPair.parentChainId, chainPair.childChainId].includes(chain.id);
-            }
-
-            return isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode;
-          })
-          .map(async (chainPair) => {
-            // SCW address is tied to a specific network
-            // that's why we need to limit shown txs either to sent or received funds
-            // otherwise we'd display funds for a different network, which could be someone else's account
-            const isConnectedToParentChain = chainPair.parentChainId === chain.id;
-
-            const includeSentTxs = shouldIncludeSentTxs({
-              type,
-              isSmartContractWallet,
-              isConnectedToParentChain,
-            });
-
-            const includeReceivedTxs = shouldIncludeReceivedTxs({
-              type,
-              isSmartContractWallet,
-              isConnectedToParentChain,
-            });
-            try {
-              // early check for fetching teleport
-              if (
-                isValidTeleportChainPair({
-                  sourceChainId: chainPair.parentChainId,
-                  destinationChainId: chainPair.childChainId,
-                })
-              ) {
-                // teleporter does not support withdrawals
-                if (type === 'withdrawals') return [];
-
-                return await fetchTeleports({
-                  sender: includeSentTxs ? address : undefined,
-                  receiver: includeReceivedTxs ? address : undefined,
-                  parentChainProvider: getProviderForChainId(chainPair.parentChainId),
-                  childChainProvider: getProviderForChainId(chainPair.childChainId),
-                  pageNumber: 0,
-                  pageSize: 1000,
-                });
+      const chainPairs =
+        !isIndexerExperimentEnabled && chain
+          ? getMultiChainFetchList().filter((chainPair) => {
+              if (isSmartContractWallet) {
+                // only fetch txs from the connected network
+                return [chainPair.parentChainId, chainPair.childChainId].includes(chain.id);
               }
 
-              const batchSizeBlocks = BATCH_FETCH_BLOCKS[chainPair.childChainId];
+              return isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode;
+            })
+          : selectedChainPairs;
 
-              const withdrawalFn =
-                typeof batchSizeBlocks === 'number' ? fetchWithdrawalsInBatches : fetchWithdrawals;
+      return Promise.all(
+        chainPairs.map(async (chainPair) => {
+          // SCW address is tied to a specific network
+          // that's why we need to limit shown txs either to sent or received funds
+          // otherwise we'd display funds for a different network, which could be someone else's account
+          const isConnectedToParentChain =
+            typeof chain !== 'undefined' && chainPair.parentChainId === chain.id;
 
-              const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
+          const includeSentTxs = shouldIncludeSentTxs({
+            type,
+            isSmartContractWallet,
+            isConnectedToParentChain,
+          });
 
-              // else, fetch deposits or withdrawals
-              return await fetcherFn({
+          const includeReceivedTxs = shouldIncludeReceivedTxs({
+            type,
+            isSmartContractWallet,
+            isConnectedToParentChain,
+          });
+          try {
+            // early check for fetching teleport
+            if (
+              !isIndexerExperimentEnabled &&
+              isValidTeleportChainPair({
+                sourceChainId: chainPair.parentChainId,
+                destinationChainId: chainPair.childChainId,
+              })
+            ) {
+              // teleporter does not support withdrawals
+              if (type === 'withdrawals') return [];
+
+              return await fetchTeleports({
                 sender: includeSentTxs ? address : undefined,
                 receiver: includeReceivedTxs ? address : undefined,
-                l1Provider: getProviderForChainId(chainPair.parentChainId),
-                l2Provider: getProviderForChainId(chainPair.childChainId),
+                parentChainProvider: getProviderForChainId(chainPair.parentChainId),
+                childChainProvider: getProviderForChainId(chainPair.childChainId),
                 pageNumber: 0,
                 pageSize: 1000,
-                forceFetchReceived,
-                batchSizeBlocks,
               });
-            } catch {
-              addFailedChainPair((prevFailedChainPairs) => {
-                if (!prevFailedChainPairs) {
-                  return [chainPair];
-                }
-                if (
-                  typeof prevFailedChainPairs.find(
-                    (prevPair) =>
-                      prevPair.parentChainId === chainPair.parentChainId &&
-                      prevPair.childChainId === chainPair.childChainId,
-                  ) !== 'undefined'
-                ) {
-                  // already added
-                  return prevFailedChainPairs;
-                }
-
-                return [...prevFailedChainPairs, chainPair];
-              });
-
-              return [];
             }
-          }),
+
+            const batchSizeBlocks = BATCH_FETCH_BLOCKS[chainPair.childChainId];
+
+            const withdrawalFn =
+              typeof batchSizeBlocks === 'number' ? fetchWithdrawalsInBatches : fetchWithdrawals;
+
+            const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
+
+            // else, fetch deposits or withdrawals
+            return await fetcherFn({
+              sender: includeSentTxs ? address : undefined,
+              receiver: includeReceivedTxs ? address : undefined,
+              l1Provider: getProviderForChainId(chainPair.parentChainId),
+              l2Provider: getProviderForChainId(chainPair.childChainId),
+              pageNumber: 0,
+              pageSize: 1000,
+              forceFetchReceived,
+              batchSizeBlocks,
+            });
+          } catch {
+            addFailedChainPair((prevFailedChainPairs) => {
+              if (!prevFailedChainPairs) {
+                return [chainPair];
+              }
+              if (
+                typeof prevFailedChainPairs.find(
+                  (prevPair) =>
+                    prevPair.parentChainId === chainPair.parentChainId &&
+                    prevPair.childChainId === chainPair.childChainId,
+                ) !== 'undefined'
+              ) {
+                // already added
+                return prevFailedChainPairs;
+              }
+
+              return [...prevFailedChainPairs, chainPair];
+            });
+
+            return [];
+          }
+        }),
       );
     },
-    [address, isTestnetMode, addFailedChainPair, isSmartContractWallet, chain, forceFetchReceived],
+    [
+      address,
+      isTestnetMode,
+      addFailedChainPair,
+      isSmartContractWallet,
+      chain,
+      forceFetchReceived,
+      isIndexerExperimentEnabled,
+      selectedChainPairs,
+    ],
   );
 
   const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
@@ -549,7 +581,7 @@ export const useTransactionHistory = (
   );
 
   const depositsFromCache = useMemo(() => {
-    if (isLoadingAccountType || !chain || !isTxHistoryEnabled) {
+    if (isLoadingAccountType || !isTxHistoryEnabled) {
       return [];
     }
     return getDepositsWithoutStatusesFromCache(address)
@@ -570,6 +602,9 @@ export const useTransactionHistory = (
         }
 
         if (isSmartContractWallet) {
+          if (!chain) {
+            return false;
+          }
           // only include txs for the connected network
           return tx.parentChainId === chain.id;
         }

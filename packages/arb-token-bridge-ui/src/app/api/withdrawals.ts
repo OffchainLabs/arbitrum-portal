@@ -6,6 +6,7 @@ import {
   getSourceFromSubgraphClient,
 } from '../../api-utils/ServerSubgraphUtils';
 import { WithdrawalFromSubgraph } from '../../util/withdrawals/fetchWithdrawalsFromSubgraph';
+import { proxyToIndexer, shouldUseIndexer } from './indexer';
 
 type WithdrawalResponse = {
   meta?: { source: string | null };
@@ -16,6 +17,9 @@ type WithdrawalResponse = {
 export async function GET(request: NextRequest): Promise<NextResponse<WithdrawalResponse>> {
   try {
     const { searchParams } = new URL(request.url);
+    if (shouldUseIndexer(request)) {
+      return proxyToIndexer(request, '/api/bridge-history/withdrawals');
+    }
     const sender = searchParams.get('sender') || undefined;
     const receiver = searchParams.get('receiver') || undefined;
     const search = searchParams.get('search') || '';
