@@ -11,7 +11,7 @@ import {
   type TransactionCall,
   useEarnTransactionExecution,
 } from '@/app-hooks/earn/useEarnTransactionExecution';
-import { addTransactionToHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
+import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
   checkAmountExceedsBalance,
   getMaxAmountWithGasBuffer,
@@ -212,6 +212,12 @@ export function LiquidStakingActionPanel({
   const outputTokenSymbol = opportunity.token;
   const requestChainId = opportunity.chainId;
   const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
+  const { addTransaction } = useEarnTransactionHistory(
+    OpportunityCategory.LiquidStaking,
+    opportunity.id,
+    walletAddress || null,
+    requestChainId,
+  );
 
   const { wstETHBalance, weETHBalance, refetchWstETHBalance, refetchWeETHBalance } =
     useLiquidStakingPositions();
@@ -464,11 +470,7 @@ export function LiquidStakingActionPanel({
           transactionHash: txHash,
         };
 
-        await addTransactionToHistory({
-          category: OpportunityCategory.LiquidStaking,
-          opportunityId: opportunity.id,
-          userAddress: walletAddress,
-          chainId: requestChainId,
+        await addTransaction({
           vendor: Vendor.LiFi,
           transaction: newTransaction,
         });
@@ -506,6 +508,7 @@ export function LiquidStakingActionPanel({
       posthog,
       showTransactionDetails,
       slippagePercent,
+      addTransaction,
     ],
   );
 
