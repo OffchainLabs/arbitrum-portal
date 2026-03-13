@@ -350,7 +350,7 @@ function HistoricalChartContent({
           </div>
         )}
         {!isLoading && error && (
-          <div className="text-red-400 text-xs">Failed to load chart: {error}</div>
+          <div className="text-red-400 text-xs">Failed to load chart: {error.message}</div>
         )}
         {!isLoading && !error && chartData.length > 0 && data && (
           <HistoricalLineChart
