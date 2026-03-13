@@ -6,7 +6,6 @@ import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -30,8 +29,7 @@ export function DestinationTokenButton({
 
   const [dialogProps, openDialog] = useDialog2();
 
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: networks.destinationChainProvider });
   const tokenOverride = getTokenOverride({
     destinationChainId: networks.destinationChain.id,
     fromToken: destinationToken?.address,
