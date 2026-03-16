@@ -488,8 +488,11 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     data: depositsData,
     error: depositsError,
     isLoading: depositsLoading,
-  } = useSWRImmutable(shouldFetch ? ['tx_list', 'deposits', address, isTestnetMode] : null, () =>
-    fetcher('deposits'),
+  } = useSWRImmutable(
+    shouldFetch
+      ? ['tx_list', 'deposits', address, isTestnetMode, isIndexerExperimentEnabled]
+      : null,
+    () => fetcher('deposits'),
   );
 
   const {
@@ -497,7 +500,16 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     error: withdrawalsError,
     isLoading: withdrawalsLoading,
   } = useSWRImmutable(
-    shouldFetch ? ['tx_list', 'withdrawals', address, isTestnetMode, forceFetchReceived] : null,
+    shouldFetch
+      ? [
+          'tx_list',
+          'withdrawals',
+          address,
+          isTestnetMode,
+          forceFetchReceived,
+          isIndexerExperimentEnabled,
+        ]
+      : null,
     () => fetcher('withdrawals'),
   );
 
