@@ -14,6 +14,7 @@ import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { config } from '@/bridge/state';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
+import { WalletProvider } from '@/bridge/wallet/providers/WalletProvider';
 
 import { initializeDayjs } from '../../../initialization';
 
@@ -50,7 +51,9 @@ export function AppProviders({ children }: PropsWithChildren) {
         <ArbQueryParamProvider>
           <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
-              <AppContextProvider>{children}</AppContextProvider>
+              <WalletProvider>
+                <AppContextProvider>{children}</AppContextProvider>
+              </WalletProvider>
             </QueryClientProvider>
           </WagmiProvider>
         </ArbQueryParamProvider>

@@ -1,6 +1,6 @@
 import type { UseAppKitAccountReturn } from '@reown/appkit/react';
 
-export type WalletEcosystem = 'evm' | 'solana';
+export type WalletEcosystem = 'evm';
 
 export type WalletStatus = NonNullable<UseAppKitAccountReturn['status']>;
 

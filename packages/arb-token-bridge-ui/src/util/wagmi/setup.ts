@@ -22,7 +22,7 @@ import {
   sepolia,
 } from './wagmiAdditionalNetworks';
 
-type AppKitNetworkList = readonly [AppKitNetwork, ...AppKitNetwork[]];
+type AppKitNetworkList = [AppKitNetwork, ...AppKitNetwork[]];
 
 function asAppKitNetworkList(networks: AppKitNetwork[]): AppKitNetworkList {
   if (networks.length === 0) {

@@ -1,16 +1,15 @@
 import { useCallback, useMemo } from 'react';
 
 import { useNetworks } from '../../hooks/useNetworks';
+import { useEvmWalletContext } from '../contexts/EvmWalletContext';
 import { WalletHandle } from '../types';
-import { useEvmWallet } from './useEvmWallet';
 
 export function useWallets(): {
   sourceWallet: WalletHandle;
   destinationWallet: WalletHandle;
 } {
   const [networks] = useNetworks();
-  const evmWallet = useEvmWallet();
-
+  const evmWallet = useEvmWalletContext();
   const getWalletForChainId = useCallback(
     (chainId: number): WalletHandle => {
       switch (chainId) {
