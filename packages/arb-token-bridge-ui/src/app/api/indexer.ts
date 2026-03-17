@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { loadEnvironmentVariableWithFallback } from '../../util';
-
 export function shouldUseIndexer(request: NextRequest): boolean {
   const experiments = new URL(request.url).searchParams.get('experiments');
   return experiments?.split(',').includes('indexer') ?? false;
@@ -9,10 +7,7 @@ export function shouldUseIndexer(request: NextRequest): boolean {
 
 function buildIndexerBridgeHistoryUrl(request: NextRequest, path: string) {
   const requestUrl = new URL(request.url);
-  const indexerApiBaseUrl = loadEnvironmentVariableWithFallback({
-    env: process.env.INDEXER_API_URL,
-    fallback: process.env.NEXT_PUBLIC_INDEXER_URL,
-  });
+  const indexerApiBaseUrl = process.env.INDEXER_API_URL;
   requestUrl.searchParams.delete('experiments');
   return `${indexerApiBaseUrl}${path}?${requestUrl.searchParams.toString()}`;
 }
