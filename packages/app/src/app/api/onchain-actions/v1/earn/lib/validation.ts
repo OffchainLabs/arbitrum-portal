@@ -251,7 +251,7 @@ export function parseOptionalTimestamp(rawValue: string | null, field: string): 
   }
 
   const numericValue = Number(normalized);
-  if (Number.isFinite(numericValue)) {
+  if (!Number.isNaN(numericValue)) {
     const seconds =
       numericValue > 1e12 ? Math.floor(numericValue / 1000) : Math.floor(numericValue);
     if (seconds <= 0) {
