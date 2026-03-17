@@ -257,8 +257,7 @@ export class VaultsAdapter implements VendorAdapter {
 
     await collectPages(0);
 
-    return pointsByTimestamp
-      .values()
+    return [...pointsByTimestamp.values()]
       .filter((point) => point.timestamp >= fromTimestamp && point.timestamp <= toTimestamp)
       .sort((a, b) => a.timestamp - b.timestamp);
   }
