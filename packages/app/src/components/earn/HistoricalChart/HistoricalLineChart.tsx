@@ -7,7 +7,7 @@ import {
   LineChart,
   ResponsiveContainer,
   Tooltip,
-  TooltipProps,
+  TooltipContentProps,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -15,7 +15,7 @@ import {
 import { formatCompactUsd } from '@/bridge/util/NumberUtils';
 
 import type { ChartConfig } from './chartConfig';
-import { formatPriceUsd } from './formatters';
+import { type MetricType, formatMetricValue, formatPriceUsd } from './formatters';
 
 interface HistoricalLineChartProps {
   data: Array<{ timestamp: number; value: number }>;
@@ -25,25 +25,11 @@ interface HistoricalLineChartProps {
   xDomain?: [number, number];
 }
 
-type MetricType = 'apy' | 'tvl' | 'price';
 
-function formatMetricValue(metricType: MetricType | undefined, value: number): string {
-  if (metricType === 'apy') {
-    return `${value.toFixed(2)}%`;
-  }
-
-  if (metricType === 'price') {
-    return formatPriceUsd(value);
-  }
-
-  return formatCompactUsd(value);
-}
-
-interface ChartTooltipContentProps extends TooltipProps<number, string> {
+interface ChartTooltipContentProps extends Partial<TooltipContentProps<number, string>> {
   metricType?: MetricType;
   xFormat?: string;
   payload?: Array<{ name: string; value: number }>;
-  label?: number | string;
 }
 
 function ChartTooltipContent(props: ChartTooltipContentProps) {
@@ -76,6 +62,32 @@ function ChartTooltipContent(props: ChartTooltipContentProps) {
   );
 }
 
+function getYAxisDomain(data: Array<{ value: number }>): [number | string, number | string] {
+  if (data.length === 0) {
+    return [0, 'auto'];
+  }
+
+  const values = data.map((d) => d.value).filter((v) => v !== null && !isNaN(v));
+  if (values.length === 0) {
+    return [0, 'auto'];
+  }
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const range = maxValue - minValue;
+
+  if (range < 0.0001) {
+    const center = minValue;
+    const padding = center > 1 ? Math.max(center * 0.01, 0.01) : Math.max(center * 0.01, 0.001);
+    return [center - padding, center + padding];
+  }
+
+  const padding = range * 0.5;
+  const minPadding = range > 0.01 ? range * 0.05 : Math.max(range * 0.1, 0.001);
+  const adjustedPadding = Math.max(padding, minPadding);
+  return [minValue - adjustedPadding, maxValue + adjustedPadding];
+}
+
 export function HistoricalLineChart({
   data,
   config,
@@ -84,32 +96,6 @@ export function HistoricalLineChart({
   xDomain,
 }: HistoricalLineChartProps) {
   const metricConfig = config[metricType];
-
-  const getYAxisDomain = (): [number | string, number | string] => {
-    if (data.length === 0) {
-      return [0, 'auto'];
-    }
-
-    const values = data.map((d) => d.value).filter((v) => v !== null && !isNaN(v));
-    if (values.length === 0) {
-      return [0, 'auto'];
-    }
-
-    const minValue = Math.min(...values);
-    const maxValue = Math.max(...values);
-    const range = maxValue - minValue;
-
-    if (range < 0.0001) {
-      const center = minValue;
-      const padding = center > 1 ? Math.max(center * 0.01, 0.01) : Math.max(center * 0.01, 0.001);
-      return [center - padding, center + padding];
-    }
-
-    const padding = range * 0.5;
-    const minPadding = range > 0.01 ? range * 0.05 : Math.max(range * 0.1, 0.001);
-    const adjustedPadding = Math.max(padding, minPadding);
-    return [minValue - adjustedPadding, maxValue + adjustedPadding];
-  };
 
   const formatYAxisLabel = (value: number): string => {
     if (metricType === 'apy') {
@@ -145,7 +131,7 @@ export function HistoricalLineChart({
           tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
         />
         <YAxis
-          domain={getYAxisDomain()}
+          domain={getYAxisDomain(data)}
           tickFormatter={formatYAxisLabel}
           tickLine={false}
           axisLine={false}

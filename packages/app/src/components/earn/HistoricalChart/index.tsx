@@ -2,18 +2,23 @@
 
 import { usePostHog } from 'posthog-js/react';
 import { memo, useMemo, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
 
 import { useHistoricalData } from '@/app-hooks/earn/useHistoricalData';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatCompactUsd } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { EarnChainId, HistoricalTimeRange, OpportunityCategory } from '@/earn-api/types';
 
 import { SwrLocalStorageCacheProvider } from '../../../app/SwrLocalStorageCacheProvider';
 import { HistoricalLineChart } from './HistoricalLineChart';
+import { PillButton } from './PillButton';
 import { CHART_CONFIG } from './chartConfig';
-import { formatPriceUsd } from './formatters';
+import {
+  ALL_METRICS,
+  type MetricType,
+  computeCurrentMetricValue,
+  formatMetricValue,
+  getMetricsWithData,
+} from './formatters';
 
 export interface HistoricalChartProps {
   opportunityId: string;
@@ -23,10 +28,7 @@ export interface HistoricalChartProps {
   assetSymbol?: string;
 }
 
-type MetricKey = 'apy' | 'tvl' | 'price';
-
-const ALL_METRICS: MetricKey[] = ['price', 'apy', 'tvl'];
-const METRIC_LABELS: Record<MetricKey, string> = {
+const METRIC_LABELS: Record<MetricType, string> = {
   price: 'Token Price',
   apy: 'APY',
   tvl: 'TVL',
@@ -37,35 +39,6 @@ const RANGE_OPTIONS: Array<{ id: HistoricalTimeRange; label: string }> = [
   { id: '1m', label: '1M' },
   { id: '1y', label: '1Y' },
 ];
-
-function getMetricsWithData(
-  data: Array<{ apy: number | null; tvl: number | null; price: number | null }>,
-): MetricKey[] {
-  const hasApy = data.some((d) => d.apy !== null);
-  const hasTvl = data.some((d) => d.tvl !== null);
-  const hasPrice = data.some((d) => d.price !== null);
-  return ALL_METRICS.filter((mk) => {
-    if (mk === 'apy') return hasApy;
-    if (mk === 'tvl') return hasTvl;
-    return hasPrice;
-  });
-}
-
-function computeCurrentMetricValue(
-  chartData: Array<{ timestamp: number; value: number }>,
-): { value: number; change: number | null } | null {
-  if (!chartData.length) return null;
-  const first = chartData[0];
-  const latest = chartData[chartData.length - 1];
-  if (!first || !latest) return null;
-
-  if (first.value === 0) {
-    return { value: latest.value, change: null };
-  }
-
-  const change = ((latest.value - first.value) / first.value) * 100;
-  return { value: latest.value, change };
-}
 
 export const HistoricalChart = memo(function HistoricalChart(props: HistoricalChartProps) {
   return (
@@ -83,7 +56,7 @@ function HistoricalChartContent({
   assetSymbol,
 }: HistoricalChartProps) {
   const posthog = usePostHog();
-  const [metric, setMetric] = useState<MetricKey>('price');
+  const [metric, setMetric] = useState<MetricType>('price');
   const [range, setRange] = useState<HistoricalTimeRange>('1d');
   const config = CHART_CONFIG[category];
 
@@ -100,7 +73,7 @@ function HistoricalChartContent({
     [data?.data],
   );
 
-  const activeMetric: MetricKey = availableMetrics.includes(metric)
+  const activeMetric: MetricType = availableMetrics.includes(metric)
     ? metric
     : (availableMetrics[0] ?? 'apy');
 
@@ -151,20 +124,7 @@ function HistoricalChartContent({
     return [minTimestamp, maxTimestamp];
   }, [chartData, data]);
 
-  const formatCurrentValue = (value: number): string => {
-    if (activeMetric === 'apy') {
-      return `${value.toFixed(2)}%`;
-    }
-    if (activeMetric === 'price') {
-      return formatPriceUsd(value);
-    }
-    return formatCompactUsd(value);
-  };
-
-  const pillBase =
-    'px-3 py-0.5 text-xs font-medium rounded-full transition-colors border-0 cursor-pointer text-center';
-  const pillSelected = 'bg-white text-black';
-  const pillUnselected = 'text-white hover:bg-white/10';
+  const formatCurrentValue = (value: number): string => formatMetricValue(activeMetric, value);
 
   return (
     <Card className="rounded bg-gray-1 p-4">
@@ -172,16 +132,11 @@ function HistoricalChartContent({
         {(availableMetrics.length > 0 || isLoading) && (
           <div className="flex w-full md:w-auto md:shrink-0 items-center bg-white/5 rounded-[10px] p-[2px] gap-1 md:gap-2">
             {metricsToRender.map((mk) => (
-              <button
+              <PillButton
                 key={mk}
-                type="button"
-                className={twMerge(
-                  pillBase,
-                  'flex-1 md:flex-none',
-                  activeMetric === mk ? pillSelected : pillUnselected,
-                  isLoading ? 'opacity-60 cursor-default pointer-events-none' : '',
-                )}
+                selected={activeMetric === mk}
                 disabled={isLoading}
+                className="flex-1 md:flex-none"
                 onClick={() => {
                   if (isLoading || activeMetric === mk) return;
                   setMetric(mk);
@@ -200,20 +155,15 @@ function HistoricalChartContent({
                 }}
               >
                 {METRIC_LABELS[mk]}
-              </button>
+              </PillButton>
             ))}
           </div>
         )}
         <div className="hidden md:flex w-[188px] items-center justify-between bg-white/5 rounded-[10px] p-[2px] gap-2 shrink-0">
           {RANGE_OPTIONS.map((r) => (
-            <button
+            <PillButton
               key={r.id}
-              type="button"
-              className={twMerge(
-                pillBase,
-                range === r.id ? pillSelected : pillUnselected,
-                isLoading ? 'opacity-60 cursor-default pointer-events-none' : '',
-              )}
+              selected={range === r.id}
               disabled={isLoading}
               onClick={() => {
                 if (isLoading || range === r.id) return;
@@ -233,7 +183,7 @@ function HistoricalChartContent({
               }}
             >
               {r.label}
-            </button>
+            </PillButton>
           ))}
         </div>
       </div>
@@ -367,16 +317,11 @@ function HistoricalChartContent({
       </div>
       <div className="mt-3 flex md:hidden items-center bg-white/5 rounded-full p-1 gap-1">
         {RANGE_OPTIONS.map((r) => (
-          <button
+          <PillButton
             key={r.id}
-            type="button"
-            className={twMerge(
-              pillBase,
-              'flex-1',
-              range === r.id ? pillSelected : pillUnselected,
-              isLoading ? 'opacity-60 cursor-default pointer-events-none' : '',
-            )}
+            selected={range === r.id}
             disabled={isLoading}
+            className="flex-1"
             onClick={() => {
               if (isLoading || range === r.id) return;
               setRange(r.id);
@@ -395,7 +340,7 @@ function HistoricalChartContent({
             }}
           >
             {r.label}
-          </button>
+          </PillButton>
         ))}
       </div>
     </Card>

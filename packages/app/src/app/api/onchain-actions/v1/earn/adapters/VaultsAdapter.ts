@@ -169,12 +169,12 @@ export class VaultsAdapter implements VendorAdapter {
         const price = getAlignedPrice(point.timestamp);
         const apyTotal = point.apy?.total;
         const tvlRaw = point.tvl?.usd;
-        const tvlParsed = tvlRaw != null ? Number(tvlRaw) : null;
+        const tvlParsed = tvlRaw !== null ? Number(tvlRaw) : null;
 
         return {
           timestamp: point.timestamp,
-          apy: apyTotal != null ? apyTotal * 100 : null,
-          tvl: tvlParsed != null && Number.isFinite(tvlParsed) ? tvlParsed : null,
+          apy: typeof apyTotal !== 'undefined' && apyTotal !== null ? apyTotal * 100 : null,
+          tvl: tvlParsed !== null && Number.isFinite(tvlParsed) ? tvlParsed : null,
           price,
         };
       })
@@ -207,12 +207,12 @@ export class VaultsAdapter implements VendorAdapter {
     const perPage = Math.min(200, Math.max(24, requestedBuckets + 2));
     const maxPages = 50;
     const pointsByTimestamp = new Map<number, VaultHistoricalPoint>();
-    let oldestCollectedTimestamp = Number.POSITIVE_INFINITY;
-    let newestCollectedTimestamp = Number.NEGATIVE_INFINITY;
 
-    for (let page = 0; page < maxPages; page++) {
-      // Pagination is stateful by page cursor, so requests must run sequentially.
-      // eslint-disable-next-line no-await-in-loop
+    const collectPages = async (page: number): Promise<void> => {
+      if (page >= maxPages) {
+        return;
+      }
+
       const response = await vaultsSdk.getVaultHistoricalData({
         path: { network, vaultAddress: id },
         query: {
@@ -227,32 +227,36 @@ export class VaultsAdapter implements VendorAdapter {
 
       const pagePoints = (response.data ?? []) as VaultHistoricalPoint[];
       if (pagePoints.length === 0) {
-        break;
+        return;
       }
 
       const previousPointCount = pointsByTimestamp.size;
-      for (const point of pagePoints) {
-        if (typeof point.timestamp === 'number') {
-          pointsByTimestamp.set(point.timestamp, point);
-          oldestCollectedTimestamp = Math.min(oldestCollectedTimestamp, point.timestamp);
-          newestCollectedTimestamp = Math.max(newestCollectedTimestamp, point.timestamp);
-        }
-      }
-      const addedAnyNewPoint = pointsByTimestamp.size > previousPointCount;
+      pagePoints
+        .filter(
+          (point): point is VaultHistoricalPoint & { timestamp: number } =>
+            typeof point.timestamp === 'number',
+        )
+        .forEach((point) => pointsByTimestamp.set(point.timestamp, point));
 
-      if (!addedAnyNewPoint) {
-        break;
+      if (pointsByTimestamp.size === previousPointCount) {
+        return;
       }
 
-      const hasCoveredRequestedWindow =
-        oldestCollectedTimestamp <= fromTimestamp && newestCollectedTimestamp >= toTimestamp;
+      const [oldest, newest] = [...pointsByTimestamp.keys()].reduce<[number, number]>(
+        ([min, max], ts) => [Math.min(min, ts), Math.max(max, ts)],
+        [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY],
+      );
 
-      if (hasCoveredRequestedWindow || pagePoints.length < perPage) {
-        break;
+      if ((oldest <= fromTimestamp && newest >= toTimestamp) || pagePoints.length < perPage) {
+        return;
       }
-    }
 
-    return Array.from(pointsByTimestamp.values())
+      return collectPages(page + 1);
+    };
+
+    await collectPages(0);
+
+    return [...pointsByTimestamp.values()]
       .filter((point) => point.timestamp >= fromTimestamp && point.timestamp <= toTimestamp)
       .sort((a, b) => a.timestamp - b.timestamp);
   }
