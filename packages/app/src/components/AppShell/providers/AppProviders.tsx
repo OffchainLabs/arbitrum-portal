@@ -13,6 +13,7 @@ import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
+import { WalletProvider } from '@/bridge/wallet/providers/WalletProvider';
 
 import { initializeDayjs } from '../../../initialization';
 
