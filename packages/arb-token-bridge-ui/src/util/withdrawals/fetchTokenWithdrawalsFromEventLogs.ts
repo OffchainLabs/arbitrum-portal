@@ -7,7 +7,11 @@ function dedupeEvents(
     txHash: string;
   })[],
 ) {
-  return [...new Map(events.map((item) => [item.txHash, item])).values()];
+  return [
+    ...new Map(
+      events.map((item) => [`${item.txHash}-${item._l2ToL1Id?.toString() ?? '0'}`, item]),
+    ).values(),
+  ];
 }
 
 export type FetchTokenWithdrawalsFromEventLogsParams = {

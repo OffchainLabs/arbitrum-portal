@@ -6,6 +6,7 @@ import {
   ParentToChildMessageReader,
   ParentToChildMessageStatus,
 } from '@arbitrum/sdk';
+import { BigNumber } from '@ethersproject/bignumber';
 import { Provider } from '@ethersproject/providers';
 import { getStatus } from '@lifi/sdk';
 import dayjs from 'dayjs';
@@ -192,18 +193,27 @@ export function isSameTransaction(
     txId: string;
     parentChainId: ChainId;
     childChainId: ChainId;
+    uniqueId?: BigNumber | null;
   },
   txDetails_2: {
     txId: string;
     parentChainId: ChainId;
     childChainId: ChainId;
+    uniqueId?: BigNumber | null;
   },
 ) {
-  return (
+  const baseMatch =
     txDetails_1.txId === txDetails_2.txId &&
     txDetails_1.parentChainId === txDetails_2.parentChainId &&
-    txDetails_1.childChainId === txDetails_2.childChainId
-  );
+    txDetails_1.childChainId === txDetails_2.childChainId;
+
+  if (!baseMatch) return false;
+
+  // If both have uniqueId, compare them (batch tx disambiguation)
+  if (txDetails_1.uniqueId && txDetails_2.uniqueId) {
+    return txDetails_1.uniqueId.eq(txDetails_2.uniqueId);
+  }
+  return true;
 }
 
 export function getTxReceipt(tx: MergedTransaction) {
@@ -471,7 +481,10 @@ export async function getUpdatedWithdrawal(tx: MergedTransaction): Promise<Merge
   const childChainProvider = getProviderForChainId(tx.childChainId);
   const txReceipt = await getTxReceipt(tx);
   const childTxReceipt = new ChildTransactionReceipt(txReceipt);
-  const [withdrawalEvent] = childTxReceipt.getChildToParentEvents();
+  const events = childTxReceipt.getChildToParentEvents();
+  const withdrawalEvent = tx.uniqueId
+    ? events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!))
+    : events[0];
 
   if (childTxReceipt) {
     const newStatus = withdrawalEvent

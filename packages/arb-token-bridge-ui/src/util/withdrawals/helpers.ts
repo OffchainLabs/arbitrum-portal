@@ -1,5 +1,6 @@
 import {
   ChildToParentMessageReader,
+  ChildToParentTransactionEvent,
   ChildTransactionReceipt,
   scaleFrom18DecimalsToNativeTokenDecimals,
 } from '@arbitrum/sdk';
@@ -21,6 +22,33 @@ import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
 import { addToLocalStorageObjectSequentially } from '../CommonUtils';
 import { fetchErc20Data } from '../TokenUtils';
 import { WithdrawalFromSubgraph } from './fetchWithdrawalsFromSubgraph';
+
+function findMatchingChildToParentEvent(
+  events: ChildToParentTransactionEvent[],
+  l2ToL1Id?: BigNumber,
+  tokenAddress?: string,
+): ChildToParentTransactionEvent | undefined {
+  if (events.length <= 1) return events[0];
+
+  // Match by position (from _l2ToL1Id on WithdrawalInitiated events)
+  if (l2ToL1Id) {
+    const match = events.find(
+      (e) =>
+        'position' in e && BigNumber.from((e as { position: BigNumber }).position).eq(l2ToL1Id),
+    );
+    if (match) return match;
+  }
+
+  // Fallback: match by token address in the event's data field
+  // The data field encodes finalizeInboundTransfer(l1Token, from, to, amount, extraData)
+  if (tokenAddress) {
+    const needle = tokenAddress.slice(2).toLowerCase();
+    const match = events.find((e) => e.data.toLowerCase().includes(needle));
+    if (match) return match;
+  }
+
+  return events[0];
+}
 
 /**
  * `l2TxHash` exists on result from subgraph
@@ -44,7 +72,8 @@ export async function attachTimestampToTokenWithdrawal({
 }) {
   const txReceipt = await l2Provider.getTransactionReceipt(withdrawal.txHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  const event = findMatchingChildToParentEvent(events, withdrawal._l2ToL1Id);
 
   return {
     ...withdrawal,
@@ -156,8 +185,8 @@ export async function mapTokenWithdrawalFromEventLogsToL2ToL1EventResult({
   const txReceipt = await l2Provider.getTransactionReceipt(result.txHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
 
-  // TODO: length != 1
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  const event = findMatchingChildToParentEvent(events, result._l2ToL1Id, result.l1Token);
 
   if (!event) {
     return undefined;
@@ -175,13 +204,12 @@ export async function mapTokenWithdrawalFromEventLogsToL2ToL1EventResult({
   //
   // Get hash of the topic that contains sender and destination.
   const signatureHash = utils.id('TransferRouted(address,address,address,address)');
-  // Searching logs for the topic.
-  const logs = txReceipt.logs.find((log) => {
-    if (!log) {
-      return false;
-    }
-    return log.topics[0] === signatureHash;
-  });
+  // Searching logs for the topic — find the TransferRouted log matching this specific token.
+  const allTransferRoutedLogs = txReceipt.logs.filter((log) => log?.topics[0] === signatureHash);
+  const logs =
+    allTransferRoutedLogs.find((log) =>
+      log.topics[1]?.toLowerCase().includes(result.l1Token.slice(2).toLowerCase()),
+    ) ?? allTransferRoutedLogs[0];
 
   // We can directly access them by index, these won't change.
   let sender = logs?.topics[2];
@@ -227,8 +255,18 @@ export async function mapWithdrawalFromSubgraphToL2ToL1EventResult({
   const txReceipt = await l2Provider.getTransactionReceipt(withdrawal.l2TxHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
 
-  // TODO: length != 1
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  let event = findMatchingChildToParentEvent(
+    events,
+    undefined,
+    withdrawal.type === 'TokenWithdrawal' ? withdrawal.l1Token?.id : undefined,
+  );
+
+  // For ETH batch withdrawals from subgraph (extremely rare), match by callvalue
+  if (!event && withdrawal.type === 'EthWithdrawal') {
+    const match = events.find((e) => e.callvalue.eq(BigNumber.from(withdrawal.ethValue)));
+    event = match ?? events[0];
+  }
 
   if (!event) {
     return undefined;

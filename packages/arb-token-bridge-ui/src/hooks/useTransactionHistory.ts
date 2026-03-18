@@ -1,3 +1,4 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -244,7 +245,21 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   if (!txId) {
     return undefined;
   }
-  return `${tx.parentChainId}-${txId.toLowerCase()}`;
+  const base = `${tx.parentChainId}-${txId.toLowerCase()}`;
+
+  // For token withdrawals from event logs, include _l2ToL1Id to preserve batch events
+  if ('_l2ToL1Id' in tx && tx._l2ToL1Id) {
+    return `${base}-${(tx._l2ToL1Id as BigNumber).toString()}`;
+  }
+  // For ETH withdrawals from event logs, include position
+  if ('position' in tx && (tx as { position: BigNumber }).position) {
+    return `${base}-${(tx as { position: BigNumber }).position.toString()}`;
+  }
+  // For subgraph withdrawals, include the entity id (unique per event)
+  if ('source' in tx && tx.source === 'subgraph' && 'id' in tx) {
+    return `${base}-${(tx as WithdrawalFromSubgraph).id}`;
+  }
+  return base;
 }
 
 // remove the duplicates from the transactions passed
