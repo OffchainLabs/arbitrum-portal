@@ -68,6 +68,8 @@ function resolveWindow(
 
 export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
 
+const router = new CategoryRouter();
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { category: string; id: string } },
@@ -88,7 +90,6 @@ export async function GET(
       toTimestampParam,
     );
 
-    const router = new CategoryRouter();
     const adapter = router.routeToAdapter(category);
 
     const historicalData: HistoricalData = await adapter.getHistoricalData(
@@ -114,6 +115,12 @@ export async function GET(
     });
   } catch (error) {
     const routeError = error as { message?: string; code?: string; status?: number };
+    console.error('Error fetching historical data:', {
+      message: routeError.message,
+      code: routeError.code,
+      status: routeError.status,
+      error,
+    });
     return NextResponse.json(
       {
         message: routeError.message ?? 'Failed to fetch historical data',
