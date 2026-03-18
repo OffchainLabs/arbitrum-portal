@@ -11,22 +11,11 @@ export function EvmWalletProvider({ children }: PropsWithChildren) {
   const { disconnect } = useDisconnect();
 
   const account = useMemo<WalletAccount>(() => {
-    const walletStatus = status ?? 'disconnected';
-
-    if (!address || walletStatus === 'disconnected') {
-      return {
-        ecosystem: 'evm',
-        address: undefined,
-        chain: undefined,
-        status: walletStatus,
-      };
-    }
-
     return {
+      ecosystem: 'evm',
       address,
       chain: chainId === undefined ? undefined : { id: chainId as number },
-      ecosystem: 'evm',
-      status: walletStatus,
+      status: status ?? 'disconnected',
     };
   }, [address, chainId, status]);
 
