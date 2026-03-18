@@ -1,11 +1,13 @@
 'use client';
 
 import { Cog6ToothIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const SLIPPAGE_PRESETS = [0.2, 0.25, 0.5, 1] as const;
 const SLIPPAGE_MIN = 0.01;
 const SLIPPAGE_MAX = 50;
+
+const isPreset = (n: number) => SLIPPAGE_PRESETS.some((p) => Math.abs(p - n) < 0.001);
 
 export interface SlippageSettingsPanelProps {
   slippagePercent: number;
@@ -18,33 +20,31 @@ export function SlippageSettingsPanel({
 }: SlippageSettingsPanelProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(slippagePercent);
-
-  useEffect(() => {
-    setDraft(slippagePercent);
-  }, [slippagePercent]);
+  const [customInput, setCustomInput] = useState('');
 
   const openPanel = () => {
     setDraft(slippagePercent);
+    setCustomInput(isPreset(slippagePercent) ? '' : String(slippagePercent));
     setOpen(true);
   };
 
-  const closePanel = () => {
+  const closePanel = useCallback(() => {
     setDraft(slippagePercent);
     setOpen(false);
-  };
-
-  const isPreset = (n: number) => SLIPPAGE_PRESETS.some((p) => Math.abs(p - n) < 0.001);
+  }, [slippagePercent]);
 
   const isSlippageValid = Number.isFinite(draft) && draft >= SLIPPAGE_MIN && draft <= SLIPPAGE_MAX;
 
-  const handleUpdate = () => {
+  const handleUpdate = useCallback(() => {
     if (!isSlippageValid) return;
     onSlippageChange(Number(draft.toFixed(2)));
+    setDraft(slippagePercent);
     closePanel();
-  };
+  }, [closePanel, draft, isSlippageValid, onSlippageChange, slippagePercent]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
+    setCustomInput(raw);
     if (raw === '' || raw === '.') {
       setDraft(0);
       return;
@@ -92,7 +92,10 @@ export function SlippageSettingsPanel({
               <button
                 key={p}
                 type="button"
-                onClick={() => setDraft(p)}
+                onClick={() => {
+                  setDraft(p);
+                  setCustomInput('');
+                }}
                 className={`rounded border px-3 py-2 text-center flex items-center justify-center text-xs font-medium ${
                   isPreset(draft) && draft === p
                     ? 'border-white bg-neutral-200 text-white'
@@ -115,7 +118,7 @@ export function SlippageSettingsPanel({
                 min={SLIPPAGE_MIN}
                 max={SLIPPAGE_MAX}
                 step={0.1}
-                value={isPreset(draft) ? '' : draft > 0 ? draft : ''}
+                value={isPreset(draft) ? '' : customInput}
                 onChange={handleInputChange}
                 placeholder="Custom"
                 className="w-full min-w-0 border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

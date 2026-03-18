@@ -1,5 +1,8 @@
 import type { IncludedStep, StatusResponse } from '@lifi/types';
 
+import { ChainId } from '@/bridge/types/ChainId';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
+
 import type { StandardTransactionHistory } from '../types';
 
 type TransferToken = {
@@ -19,8 +22,8 @@ function includesTargetTokenInSteps(
 
   return steps.some(
     (step) =>
-      step.fromToken.address.toLowerCase() === normalizedTarget ||
-      step.toToken.address.toLowerCase() === normalizedTarget,
+      addressesEqual(step.fromToken.address.toLowerCase(), normalizedTarget) ||
+      addressesEqual(step.toToken.address.toLowerCase(), normalizedTarget),
   );
 }
 
@@ -90,8 +93,8 @@ function toStandardTransaction(
 
   const sending = transfer.sending;
   const txHash = sending.txHash || '';
-  const chainId = Number(('chainId' in sending ? sending.chainId : 42161) || 42161);
-  const timestamp = Number('timestamp' in sending ? sending.timestamp : 0);
+  const chainId = 'chainId' in sending ? Number(sending.chainId) : ChainId.ArbitrumOne;
+  const timestamp = 'timestamp' in sending ? Number(sending.timestamp) : 0;
 
   if (!txHash || !Number.isFinite(timestamp) || timestamp <= 0) {
     return null;

@@ -70,7 +70,7 @@ export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
     tokenIcon: 'https://assets.coingecko.com/coins/images/33033/large/weETH.png',
     tokenNetwork: 'Arbitrum One',
     protocol: 'Ether.fi',
-    protocolIcon: 'https://assets.coingecko.com/coins/images/33033/large/weETH.png',
+    protocolIcon: '/images/etherfi-logo.svg',
     vaultAddress: CommonAddress.ArbitrumOne.WEETH,
     rawApy: null,
     rawTvl: null,

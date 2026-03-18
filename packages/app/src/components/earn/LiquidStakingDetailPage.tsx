@@ -1,17 +1,17 @@
 'use client';
 
-import { useLocalStorage } from '@rehooks/local-storage';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
+import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
+import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
-import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
+import { formatApyBreakdown } from '@/app-lib/earn/utils';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
+import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
@@ -19,7 +19,6 @@ import { Card } from '@/components/Card';
 import { OpportunityCategory } from '@/earn-api/types';
 
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
-import { EarnToSPopupDialog } from './EarnToSPopupDialog';
 import {
   EarnTransactionDetailsPopup,
   type TransactionDetails,
@@ -35,27 +34,19 @@ interface LiquidStakingDetailPageProps {
 export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPageProps) {
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedAction, setSelectedAction] = useState<'buy' | 'sell'>('buy');
-  const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
-  const [tosDialogProps, tosOpenDialog] = useDialog2();
+  const { checkAndShowToS, tosDialogProps } = useCheckAndShowToS();
   const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
   const { isConnected } = useAccount();
-  const { wstETHBalance, weETHBalance } = useLiquidStakingPositions();
   const requestChainId = opportunity.chainId;
 
   const outputTokenAddress = opportunity.id.toLowerCase();
+  const { balance: userBalance } = useTokenBalance({
+    tokenAddress: outputTokenAddress,
+  });
   const outputTokenSymbol = opportunity.token;
   const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
-
-  const userBalance = useMemo(() => {
-    if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {
-      return wstETHBalance;
-    } else if (outputTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()) {
-      return weETHBalance;
-    }
-    return null;
-  }, [outputTokenAddress, wstETHBalance, weETHBalance]);
 
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
 
@@ -97,30 +88,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
     return opportunity.id;
   }, [opportunity.id, opportunity.token, opportunity.vaultAddress]);
 
-  const formatApyBreakdown = (value: number | undefined) =>
-    typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(1)}%` : '—';
-
-  const checkAndShowToS = useCallback(async (): Promise<boolean> => {
-    if (tosAccepted) {
-      return true;
-    }
-
-    const waitForInput = tosOpenDialog('earn_tos');
-    const [confirmed, onCloseData] = await waitForInput();
-
-    if (
-      confirmed &&
-      onCloseData &&
-      typeof onCloseData === 'object' &&
-      'tosAccepted' in onCloseData
-    ) {
-      setTosAccepted(true);
-      return true;
-    }
-
-    return false;
-  }, [setTosAccepted, tosAccepted, tosOpenDialog]);
-
   const showTransactionDetails = useCallback(
     (details: TransactionDetails, isCompleted: boolean = false) => {
       setTransactionDetails(details);
@@ -144,13 +111,11 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
       <Link href="/earn/market" className={earnBackButtonClassName}>
         <EarnBackButtonLabel />
       </Link>
-
       {/* Header Row */}
       <div className="flex items-center gap-2">
         <div className="text-lg text-white font-medium">{opportunity.name}</div>
         <div className="text-xs text-white bg-white/10 rounded px-2 py-1">Liquid Staking</div>
       </div>
-
       {/* Mobile Position Value and Current APY - Only show if user has position */}
       {hasPosition && (
         <div className="lg:hidden space-y-4">
@@ -181,7 +146,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
           </div>
         </div>
       )}
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left Column - Opportunity Details */}
@@ -300,7 +264,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
           />
         </div>
       </div>
-
       {/* Mobile Action Panel Overlay */}
       {showActionPanel && (
         <div className="fixed inset-0 bg-overlay z-50 lg:hidden flex flex-col !mt-0">
@@ -324,7 +287,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
           </div>
         </div>
       )}
-
       {/* Mobile CTA Buttons - Sticky Bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
         <div className="flex gap-2">
@@ -359,11 +321,8 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
         </div>
       </div>
 
-      {tosDialogProps.openedDialogType === 'earn_tos' ? (
-        <EarnToSPopupDialog {...tosDialogProps} isOpen />
-      ) : (
-        <DialogWrapper {...tosDialogProps} />
-      )}
+      <DialogWrapper {...tosDialogProps} />
+
       <EarnTransactionDetailsPopup
         isOpen={txDetailsIsOpen}
         onClose={closeTransactionDetails}

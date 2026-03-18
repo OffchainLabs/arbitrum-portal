@@ -1,4 +1,4 @@
-export function parseOptionalNumber(rawValue: string | null | undefined): number | null {
+export function parseOptionalNumber(rawValue: number | string | null | undefined): number | null {
   if (rawValue == null) {
     return null;
   }

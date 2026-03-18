@@ -35,7 +35,7 @@ async function fetchLiquidStakingPrices(): Promise<LiquidStakingPrices> {
 
   for (const token of payload.tokens ?? []) {
     const price = Number(token.extensions?.priceUSD ?? token.priceUSD);
-    if (!Number.isFinite(price) || price <= 0) {
+    if (Number.isNaN(price) || price <= 0) {
       continue;
     }
 
@@ -57,7 +57,7 @@ export function useLiquidStakingTokenPrice(
   const normalizedTokenAddress = tokenAddress?.toLowerCase();
 
   const { data, isLoading, error } = useSWR<LiquidStakingPrices>(
-    normalizedTokenAddress ? LIQUID_STAKING_PRICE_KEY : null,
+    normalizedTokenAddress ? [normalizedTokenAddress, LIQUID_STAKING_PRICE_KEY] : null,
     fetchLiquidStakingPrices,
     {
       refreshInterval: PRICE_REFRESH_INTERVAL_MS,

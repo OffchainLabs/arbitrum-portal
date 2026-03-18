@@ -19,12 +19,11 @@ import {
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
-import { useLiquidStakingPositions } from '@/app-hooks/earn/useLiquidStakingPositions';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
@@ -208,27 +207,19 @@ export function LiquidStakingActionPanel({
   const [isSellTokenDropdownOpen, setIsSellTokenDropdownOpen] = useState(false);
   const [slippagePercent, setSlippagePercent] = useState(0.5);
 
-  const outputTokenAddress = opportunity.id.toLowerCase();
+  const outputTokenAddress = sanitizeOutputTokenAddress(opportunity.id);
   const outputTokenSymbol = opportunity.token;
   const requestChainId = opportunity.chainId;
-  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
+  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress ?? undefined);
   const { addTransaction } = useEarnTransactionHistory(
     OpportunityCategory.LiquidStaking,
     opportunity.id,
     walletAddress || null,
     requestChainId,
   );
-
-  const { wstETHBalance, weETHBalance, refetchWstETHBalance, refetchWeETHBalance } =
-    useLiquidStakingPositions();
-  const userBalance = useMemo(() => {
-    if (outputTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase()) {
-      return wstETHBalance;
-    } else if (outputTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()) {
-      return weETHBalance;
-    }
-    return null;
-  }, [outputTokenAddress, wstETHBalance, weETHBalance]);
+  const { balance: userBalance, refetch: refetchUserBalance } = useTokenBalance({
+    tokenAddress: outputTokenAddress,
+  });
 
   // Check if user has a position (balance > 0)
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
@@ -313,8 +304,8 @@ export function LiquidStakingActionPanel({
     action: 'swap',
     amount: amountInRawUnits,
     userAddress: walletAddress || null,
-    inputTokenAddress: fromTokenAddress,
-    outputTokenAddress: toTokenAddress,
+    inputTokenAddress: fromTokenAddress ?? undefined,
+    outputTokenAddress: toTokenAddress ?? undefined,
     slippage: slippagePercent,
     enabled: amountInRawUnits !== '0' && !!walletAddress && !amountExceedsBalance,
   });
@@ -375,8 +366,7 @@ export function LiquidStakingActionPanel({
       if (selectedAction === 'buy' && selectedTokenAddress) {
         refetchErc20Balance();
       }
-      refetchWstETHBalance();
-      refetchWeETHBalance();
+      refetchUserBalance();
 
       // Extract transaction details for popup and history
       const timestamp = Math.floor(Date.now() / 1000);
@@ -498,8 +488,7 @@ export function LiquidStakingActionPanel({
       selectedSellToken,
       refetchEthBalance,
       refetchErc20Balance,
-      refetchWstETHBalance,
-      refetchWeETHBalance,
+      refetchUserBalance,
       selectedTokenAddress,
       requestChainId,
       transactionQuote?.receiveAmount,

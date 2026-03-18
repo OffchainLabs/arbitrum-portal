@@ -1,7 +1,6 @@
 'use client';
 
 import { BigNumber } from 'ethers';
-import { useAccount } from 'wagmi';
 
 import { useWeETHBalance, useWstETHBalance } from './useLiquidStakingBalances';
 
@@ -14,18 +13,16 @@ interface UseLiquidStakingPositionsResult {
 }
 
 export function useLiquidStakingPositions(): UseLiquidStakingPositionsResult {
-  const { address: walletAddress } = useAccount();
-
   const {
     balance: wstETHBalance,
     isLoading: isLoadingWstETH,
     refetch: refetchWstETHBalance,
-  } = useWstETHBalance(!!walletAddress);
+  } = useWstETHBalance();
   const {
     balance: weETHBalance,
     isLoading: isLoadingWeETH,
     refetch: refetchWeETHBalance,
-  } = useWeETHBalance(!!walletAddress);
+  } = useWeETHBalance();
 
   const isLoading = isLoadingWstETH || isLoadingWeETH;
 

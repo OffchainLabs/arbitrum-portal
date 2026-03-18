@@ -1,4 +1,5 @@
-import { useLocalStorage } from '@rehooks/local-storage';
+'use client';
+
 import { BigNumber } from 'ethers';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
@@ -6,9 +7,9 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
-import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
+import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
+import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import {
   formatAmount,
@@ -35,8 +36,7 @@ interface LendOpportunityDetailsPageProps {
 export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetailsPageProps) {
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedAction, setSelectedAction] = useState<'supply' | 'withdraw'>('supply');
-  const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
-  const [tosDialogProps, tosOpenDialog] = useDialog2();
+  const { checkAndShowToS, tosDialogProps } = useCheckAndShowToS();
   const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
@@ -66,27 +66,6 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
     typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatCompactUsd(tvlUsd) : '—';
   const currentApr =
     opportunity.lend?.apy7day != null ? `${opportunity.lend.apy7day.toFixed(2)}%` : '—';
-
-  const checkAndShowToS = useCallback(async (): Promise<boolean> => {
-    if (tosAccepted) {
-      return true;
-    }
-
-    const waitForInput = tosOpenDialog('earn_tos');
-    const [confirmed, onCloseData] = await waitForInput();
-
-    if (
-      confirmed &&
-      onCloseData &&
-      typeof onCloseData === 'object' &&
-      'tosAccepted' in onCloseData
-    ) {
-      setTosAccepted(true);
-      return true;
-    }
-
-    return false;
-  }, [setTosAccepted, tosAccepted, tosOpenDialog]);
 
   const showTransactionDetails = useCallback(
     (details: TransactionDetails, isCompleted: boolean = false) => {
@@ -319,6 +298,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
       </div>
 
       <DialogWrapper {...tosDialogProps} />
+
       <EarnTransactionDetailsPopup
         isOpen={txDetailsIsOpen}
         onClose={closeTransactionDetails}

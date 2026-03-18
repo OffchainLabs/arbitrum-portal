@@ -1,6 +1,18 @@
 import { BigNumber } from 'ethers';
 
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import type { StandardOpportunityLend } from '@/earn-api/types';
+
+export function parseMetricNumber(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  return value;
+}
+
+export function formatApyBreakdown(value: number | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(1)}%` : '—';
+}
 
 export function formatApr(apy: number | undefined) {
   if (apy == null || !Number.isFinite(apy)) {
@@ -46,4 +58,15 @@ export function getSelectedActionValues(
     decimals,
     usdValue: parseFloat((isSupply ? asset.balanceUsd : lpToken.balanceUsd) ?? '0'),
   };
+}
+
+export function sanitizeOutputTokenAddress(tokenAddress: string) {
+  const lowercasedTokenAddress = tokenAddress.toLowerCase();
+  if (
+    lowercasedTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase() ||
+    lowercasedTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()
+  ) {
+    return lowercasedTokenAddress;
+  }
+  return null;
 }

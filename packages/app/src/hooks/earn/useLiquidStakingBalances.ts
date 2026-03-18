@@ -32,10 +32,9 @@ interface UseTokenBalanceResult {
 export function useTokenBalance({
   tokenAddress,
   chainId = ChainId.ArbitrumOne,
-  enabled = true,
 }: UseTokenBalanceParams): UseTokenBalanceResult {
   const { address: walletAddress, isConnected } = useAccount();
-  const shouldFetch = enabled && isConnected && !!walletAddress;
+  const shouldFetch = isConnected && !!walletAddress;
   const normalizedTokenAddress = useMemo(() => {
     if (!tokenAddress || tokenAddress === constants.AddressZero) {
       return undefined;
@@ -70,23 +69,20 @@ export function useTokenBalance({
   };
 }
 
-export function useETHBalance(enabled: boolean = true) {
+export function useETHBalance() {
   return useTokenBalance({
     tokenAddress: null,
-    enabled,
   });
 }
 
-export function useWstETHBalance(enabled: boolean = true) {
+export function useWstETHBalance() {
   return useTokenBalance({
     tokenAddress: CommonAddress.ArbitrumOne.WSTETH,
-    enabled,
   });
 }
 
-export function useWeETHBalance(enabled: boolean = true) {
+export function useWeETHBalance() {
   return useTokenBalance({
     tokenAddress: CommonAddress.ArbitrumOne.WEETH,
-    enabled,
   });
 }

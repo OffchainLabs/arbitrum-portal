@@ -1,8 +1,10 @@
 'use client';
 
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
+import { parseMetricNumber } from '@/app-lib/earn/utils';
 import { OpportunityCategory, type OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
+import { parseOptionalNumber } from '@/earn-api/lib/metricParsers';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
@@ -13,20 +15,6 @@ interface OpportunityDetailPageProps {
   opportunityId: string;
   category: OpportunityCategory;
   chainId: EarnChainId;
-}
-
-function parseMetricNumber(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null;
-  }
-  return value;
-}
-
-function parseOptionalNumber(value: number | null | undefined): number | null {
-  if (value == null) {
-    return null;
-  }
-  return Number.isFinite(value) ? value : null;
 }
 
 function toTableRow(opportunity: StandardOpportunity): OpportunityTableRow {
