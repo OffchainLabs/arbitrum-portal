@@ -33,7 +33,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
-import { getCurrentExperimentsQueryParam } from '../util/index';
+import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
@@ -56,7 +56,6 @@ import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
 import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
-import { useNetworks } from './useNetworks';
 import {
   getUpdatedOftTransfer,
   updateAdditionalLayerZeroData,
@@ -303,14 +302,12 @@ export async function fetchWithdrawalsInBatches(
  */
 const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const { chain } = useAccount();
-  const [networks] = useNetworks();
   const [isTestnetMode] = useIsTestnetMode();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
-  const isIndexerExperimentEnabled =
-    getCurrentExperimentsQueryParam()?.split(',').includes('indexer') ?? false;
+  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
   const cctpPageSize = isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0;
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
@@ -364,21 +361,13 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
 
   const fetcher = useCallback(
     (type: 'deposits' | 'withdrawals') => {
-      if (!chain && !isIndexerExperimentEnabled) {
+      if (!chain) {
         return [];
       }
 
       return Promise.all(
         getMultiChainFetchList()
           .filter((chainPair) => {
-            if (isIndexerExperimentEnabled) {
-              return (
-                (chainPair.parentChainId === networks.sourceChain.id &&
-                  chainPair.childChainId === networks.destinationChain.id) ||
-                (chainPair.parentChainId === networks.destinationChain.id &&
-                  chainPair.childChainId === networks.sourceChain.id)
-              );
-            }
             if (isSmartContractWallet) {
               // only fetch txs from the connected network
               return chain
@@ -477,8 +466,6 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
       chain,
       forceFetchReceived,
       isIndexerExperimentEnabled,
-      networks.sourceChain.id,
-      networks.destinationChain.id,
     ],
   );
 
@@ -550,8 +537,6 @@ export const useTransactionHistory = (
 
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
-  const isIndexerExperimentEnabled =
-    getCurrentExperimentsQueryParam()?.split(',').includes('indexer') ?? false;
 
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
@@ -590,7 +575,7 @@ export const useTransactionHistory = (
   );
 
   const depositsFromCache = useMemo(() => {
-    if (isLoadingAccountType || (!chain && !isIndexerExperimentEnabled) || !isTxHistoryEnabled) {
+    if (isLoadingAccountType || !chain || !isTxHistoryEnabled) {
       return [];
     }
     return getDepositsWithoutStatusesFromCache(address)
@@ -626,7 +611,6 @@ export const useTransactionHistory = (
     isSmartContractWallet,
     chain,
     isTxHistoryEnabled,
-    isIndexerExperimentEnabled,
   ]);
 
   const lifiTransactionsFromCache = useMemo(() => {

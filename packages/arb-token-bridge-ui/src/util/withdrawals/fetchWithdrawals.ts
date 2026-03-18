@@ -8,7 +8,7 @@ import { getNonce } from '../AddressUtils';
 import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestSubgraphBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
-import { getCurrentExperimentsQueryParam } from '../index';
+import { isExperimentalFeatureEnabled } from '../index';
 import { logger } from '../logger';
 import { isAlchemyChain, isNetwork } from '../networks';
 import { fetchETHWithdrawalsFromEventLogs } from './fetchETHWithdrawalsFromEventLogs';
@@ -72,8 +72,7 @@ export async function fetchWithdrawals({
     return [];
   }
 
-  const isIndexerExperimentEnabled =
-    getCurrentExperimentsQueryParam()?.split(',').includes('indexer') ?? false;
+  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
 
   const l1ChainID = (await l1Provider.getNetwork()).chainId;
   const l2ChainID = (await l2Provider.getNetwork()).chainId;

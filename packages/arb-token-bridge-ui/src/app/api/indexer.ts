@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export function shouldUseIndexer(request: NextRequest): boolean {
+export function isIndexerApiExperimentEnabled(request: NextRequest): boolean {
   const experiments = new URL(request.url).searchParams.get('experiments');
   return experiments?.split(',').includes('indexer') ?? false;
 }
