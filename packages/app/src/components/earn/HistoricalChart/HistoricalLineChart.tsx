@@ -25,7 +25,6 @@ interface HistoricalLineChartProps {
   xDomain?: [number, number];
 }
 
-
 interface ChartTooltipContentProps extends Partial<TooltipContentProps<number, string>> {
   metricType?: MetricType;
   xFormat?: string;
