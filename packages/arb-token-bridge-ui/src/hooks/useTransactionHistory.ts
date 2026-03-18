@@ -308,7 +308,6 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
   const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
-  const cctpPageSize = isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0;
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
@@ -317,7 +316,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: cctpPageSize,
+    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -326,7 +325,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: cctpPageSize,
+    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -370,9 +369,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           .filter((chainPair) => {
             if (isSmartContractWallet) {
               // only fetch txs from the connected network
-              return chain
-                ? [chainPair.parentChainId, chainPair.childChainId].includes(chain.id)
-                : false;
+              return [chainPair.parentChainId, chainPair.childChainId].includes(chain.id);
             }
 
             return isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode;
@@ -381,7 +378,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
             // SCW address is tied to a specific network
             // that's why we need to limit shown txs either to sent or received funds
             // otherwise we'd display funds for a different network, which could be someone else's account
-            const isConnectedToParentChain = chainPair.parentChainId === chain?.id;
+            const isConnectedToParentChain = chainPair.parentChainId === chain.id;
 
             const includeSentTxs = shouldIncludeSentTxs({
               type,
