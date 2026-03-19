@@ -52,14 +52,21 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
     const txReceipt = await childChainProvider.getTransactionReceipt(tx.txId);
     const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
     const events = l2TxReceipt.getChildToParentEvents();
-    const event = tx.uniqueId
-      ? (events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!)) ?? events[0])
-      : events[0];
-
-    if (!event) {
-      setIsClaiming(false);
-      errorToast("Can't claim withdrawal: event not found.");
-      return;
+    let event: (typeof events)[number] | undefined;
+    if (tx.uniqueId) {
+      event = events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!));
+      if (!event) {
+        setIsClaiming(false);
+        errorToast("Can't claim withdrawal: event not found.");
+        return;
+      }
+    } else {
+      event = events[0];
+      if (!event) {
+        setIsClaiming(false);
+        errorToast("Can't claim withdrawal: event not found.");
+        return;
+      }
     }
 
     const { symbol, decimals } =

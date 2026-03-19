@@ -2,7 +2,7 @@ import { Erc20Bridger, EventArgs } from '@arbitrum/sdk';
 import { WithdrawalInitiatedEvent } from '@arbitrum/sdk/dist/lib/abi/L2ArbitrumGateway';
 import { BlockTag, Provider } from '@ethersproject/providers';
 
-function dedupeEvents(
+export function dedupeEvents(
   events: (EventArgs<WithdrawalInitiatedEvent> & {
     txHash: string;
   })[],
