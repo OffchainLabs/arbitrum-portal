@@ -1,5 +1,5 @@
 import { hasL2Subgraph } from '../SubgraphUtils';
-import { getAPIBaseUrl, sanitizeQueryParams } from './../index';
+import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
 
 export type WithdrawalFromSubgraph = {
   id: string;
@@ -72,6 +72,7 @@ export async function fetchWithdrawalsFromSubgraph({
       pageSize,
       page: pageNumber,
       search: searchString,
+      experiments: getCurrentExperimentsQueryParam(),
     }),
   );
 

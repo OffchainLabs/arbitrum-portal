@@ -57,12 +57,13 @@ async function fetchDripProgram(publicDir) {
       throw new Error('drip program response does not contain opportunities array');
     }
 
-    // Write the JSON file
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     console.log(`✅ Saved ${filename}`);
   } catch (error) {
-    console.error(`❌ Error fetching ${filename}:`, error.message);
-    process.exit(1);
+    console.error(`⚠️ Error fetching ${filename}:`, error.message);
+
+    fs.writeFileSync(filePath, JSON.stringify({ opportunities: [] }, null, 2));
+    console.warn(`⚠️ Saved empty fallback ${filename}`);
   }
 }
 
