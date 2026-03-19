@@ -244,6 +244,37 @@ export function parseHistoricalRange(rawValue: string | null): HistoricalTimeRan
   return parsed.data;
 }
 
+export function parseOptionalTimestamp(rawValue: string | null, field: string): number | undefined {
+  const normalized = normalizeQueryValue(rawValue);
+  if (!normalized) {
+    return undefined;
+  }
+
+  const numericValue = Number(normalized);
+  if (!Number.isNaN(numericValue)) {
+    const seconds =
+      numericValue > 1e12 ? Math.floor(numericValue / 1000) : Math.floor(numericValue);
+    if (seconds <= 0) {
+      throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be > 0`);
+    }
+    return seconds;
+  }
+
+  const parsedDateMs = Date.parse(normalized);
+  if (!Number.isFinite(parsedDateMs)) {
+    throw new ValidationError(
+      `INVALID_${field.toUpperCase()}`,
+      `${field} must be a unix timestamp or ISO datetime`,
+    );
+  }
+
+  const seconds = Math.floor(parsedDateMs / 1000);
+  if (seconds <= 0) {
+    throw new ValidationError(`INVALID_${field.toUpperCase()}`, `${field} must be > 0`);
+  }
+  return seconds;
+}
+
 export function assertPlainObject(value: unknown, field: string = 'body'): Record<string, unknown> {
   const parsed = plainObjectSchema.safeParse(value);
   if (!parsed.success) {

@@ -1,6 +1,8 @@
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
+import { fetchAlignedPriceLookup } from '../lib/duneService';
+import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import {
@@ -10,6 +12,7 @@ import {
   HISTORICAL_VENDOR_TTL_SECONDS,
   HistoricalData,
   HistoricalDataPoint,
+  type HistoricalDataRequestOptions,
   type HistoricalTimeRange,
   OpportunityFilters,
   type PendingHistoryTemplate,
@@ -33,6 +36,12 @@ export type VaultsNetwork = 'mainnet' | 'arbitrum';
 export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
 export type VaultsActionType = 'deposit' | 'redeem';
+
+type VaultHistoricalPoint = {
+  timestamp: number;
+  apy?: { total?: number } | null;
+  tvl?: { usd?: string } | null;
+};
 
 export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
@@ -104,51 +113,71 @@ export class VaultsAdapter implements VendorAdapter {
     id: string,
     range: HistoricalTimeRange,
     chainId: EarnChainId,
+    options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
     const network = this.toVaultsNetwork(chainId);
-    const toTimestamp = Math.floor(Date.now() / 1000);
-    let fromTimestamp: number;
-    let granularity: '1hour' | '1day' | '1week';
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveAdapterWindow(
+      range,
+      options,
+    );
 
-    switch (range) {
-      case '1d':
-        fromTimestamp = toTimestamp - 1 * 24 * 60 * 60;
-        granularity = '1hour';
-        break;
-      case '1m':
-        fromTimestamp = toTimestamp - 30 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
-      case '1y':
-        fromTimestamp = toTimestamp - 365 * 24 * 60 * 60;
-        granularity = '1week';
-        break;
-      case '7d':
-      default:
-        fromTimestamp = toTimestamp - 7 * 24 * 60 * 60;
-        granularity = '1day';
-        break;
+    if (fromTimestamp >= toTimestamp) {
+      throw new Error('fromTimestamp must be lower than toTimestamp');
     }
 
-    const response = await vaultsSdk.getVaultHistoricalData({
-      path: { network, vaultAddress: id },
-      query: {
-        page: 0,
-        perPage: 10,
-        apyInterval: '7day',
-        fromTimestamp,
-        toTimestamp,
-        granularity,
-      },
+    const rawHistoricalPoints = await this.fetchHistoricalPoints({
+      id,
+      network,
+      fromTimestamp,
+      toTimestamp,
+      granularity,
     });
 
-    const dataPoints: HistoricalDataPoint[] = response.data
-      .map((point) => ({
-        timestamp: point.timestamp,
-        apy: point.apy?.total ? point.apy.total * 100 : null,
-        tvl: point.tvl?.usd ? parseFloat(point.tvl.usd) : null,
-        price: null,
-      }))
+    let assetAddress: string | null = null;
+    let assetSymbol = options?.assetSymbol;
+    try {
+      const vault = await vaultsSdk.getVault({
+        path: { network, vaultAddress: id },
+      });
+      assetAddress = vault.asset.address;
+      if (!assetSymbol) {
+        assetSymbol = vault.asset.symbol;
+      }
+    } catch (error) {
+      console.warn(
+        '[earn][dune] Failed to fetch vault asset metadata for historical price lookup',
+        {
+          opportunityId: id,
+          network,
+          chainId,
+          assetSymbol,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+
+    const getAlignedPrice = await fetchAlignedPriceLookup({
+      chainId,
+      tokenAddress: assetAddress,
+      assetSymbol,
+      timestamps: rawHistoricalPoints.map((point) => point.timestamp),
+      granularity,
+    });
+
+    const dataPoints: HistoricalDataPoint[] = rawHistoricalPoints
+      .map((point) => {
+        const price = getAlignedPrice(point.timestamp);
+        const apyTotal = point.apy?.total;
+        const tvlRaw = point.tvl?.usd;
+        const tvlParsed = tvlRaw !== null ? Number(tvlRaw) : null;
+
+        return {
+          timestamp: point.timestamp,
+          apy: typeof apyTotal !== 'undefined' && apyTotal !== null ? apyTotal * 100 : null,
+          tvl: tvlParsed !== null && Number.isFinite(tvlParsed) ? tvlParsed : null,
+          price,
+        };
+      })
       .sort((a, b) => a.timestamp - b.timestamp);
 
     const now = Math.floor(Date.now() / 1000);
@@ -156,7 +185,7 @@ export class VaultsAdapter implements VendorAdapter {
     return {
       data: dataPoints,
       granularity,
-      range,
+      range: resolvedRange,
       fromTimestamp,
       toTimestamp,
       isCached: false,
@@ -165,6 +194,73 @@ export class VaultsAdapter implements VendorAdapter {
     };
   }
 
+  private async fetchHistoricalPoints(params: {
+    id: string;
+    network: VaultsNetwork;
+    fromTimestamp: number;
+    toTimestamp: number;
+    granularity: '1hour' | '1day' | '1week';
+  }): Promise<VaultHistoricalPoint[]> {
+    const { id, network, fromTimestamp, toTimestamp, granularity } = params;
+    const bucketSeconds = granularity === '1hour' ? 3600 : granularity === '1week' ? 604800 : 86400;
+    const requestedBuckets = Math.max(1, Math.ceil((toTimestamp - fromTimestamp) / bucketSeconds));
+    const perPage = Math.min(200, Math.max(24, requestedBuckets + 2));
+    const maxPages = 50;
+    const pointsByTimestamp = new Map<number, VaultHistoricalPoint>();
+
+    const collectPages = async (page: number): Promise<void> => {
+      if (page >= maxPages) {
+        return;
+      }
+
+      const response = await vaultsSdk.getVaultHistoricalData({
+        path: { network, vaultAddress: id },
+        query: {
+          page,
+          perPage,
+          apyInterval: '7day',
+          fromTimestamp,
+          toTimestamp,
+          granularity,
+        },
+      });
+
+      const pagePoints = (response.data ?? []) as VaultHistoricalPoint[];
+      if (pagePoints.length === 0) {
+        return;
+      }
+
+      const previousPointCount = pointsByTimestamp.size;
+      pagePoints
+        .filter(
+          (point): point is VaultHistoricalPoint & { timestamp: number } =>
+            typeof point.timestamp === 'number',
+        )
+        .forEach((point) => pointsByTimestamp.set(point.timestamp, point));
+
+      if (pointsByTimestamp.size === previousPointCount) {
+        return;
+      }
+
+      const [oldest, newest] = pointsByTimestamp
+        .keys()
+        .reduce<
+          [number, number]
+        >(([min, max], ts) => [Math.min(min, ts), Math.max(max, ts)], [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]);
+
+      if ((oldest <= fromTimestamp && newest >= toTimestamp) || pagePoints.length < perPage) {
+        return;
+      }
+
+      return collectPages(page + 1);
+    };
+
+    await collectPages(0);
+
+    return [...pointsByTimestamp.values()]
+      .filter((point) => point.timestamp >= fromTimestamp && point.timestamp <= toTimestamp)
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
   async getAvailableActions(
     id: string,
     userAddress: string,

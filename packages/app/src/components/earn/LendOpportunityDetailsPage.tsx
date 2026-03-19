@@ -19,13 +19,13 @@ import {
 import { Card } from '@/components/Card';
 import { type StandardOpportunityLend } from '@/earn-api/types';
 
-import { ChartPlaceholder } from './ChartPlaceholder';
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
 import {
   EarnTransactionDetailsPopup,
   type TransactionDetails,
 } from './EarnTransactionDetailsPopup';
 import { EarnUserTransactionHistory } from './EarnUserTransactionHistory';
+import { HistoricalChart } from './HistoricalChart';
 import { VaultActionPanel } from './VaultActionPanel';
 
 interface LendOpportunityDetailsPageProps {
@@ -198,7 +198,13 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             </Card>
           </div>
 
-          <ChartPlaceholder label="APY history" />
+          <HistoricalChart
+            opportunityId={opportunity.id}
+            category={OpportunityCategory.Lend}
+            chainId={requestChainId}
+            title={opportunity.name}
+            assetSymbol={opportunity.lend?.assetSymbol}
+          />
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="rounded bg-gray-1 p-4">
