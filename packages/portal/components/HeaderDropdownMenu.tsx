@@ -17,11 +17,7 @@ import { ExternalLink } from './ExternalLink';
 
 export const HeaderDropdownMenu = () => {
   const pathname = usePathname();
-  const isMissionsPage: boolean = pathname.includes('missions');
   const isOrbitPage: boolean = pathname.includes('orbit');
-
-  //   hide the dropdown button on missions page
-  if (isMissionsPage) return null;
 
   const menuItemClassName =
     'group flex shrink-0 grow-0 select-none flex-nowrap items-center justify-start gap-2 rounded-md p-2 text-sm no-underline hover:bg-default-black-hover md:flex';

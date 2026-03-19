@@ -18,6 +18,7 @@ module.exports = {
     '../arb-token-bridge-ui/src/**/*.{js,ts,jsx,tsx}',
     '../arb-token-bridge-ui/src/components/**/*.{js,ts,jsx,tsx}',
     './src/components/**/*.{js,ts,jsx,tsx}',
+    './src/types/**/*.{js,ts,jsx,tsx}',
     './src/app/(embed)/**/*.{js,ts,jsx,tsx}',
     './src/app/(with-sidebar)/bridge/**/*.{js,ts,jsx,tsx}',
 
@@ -26,6 +27,7 @@ module.exports = {
     // Common components
     '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
   ],
+  safelist: ['bg-earn-lend', 'bg-earn-liquid-staking', 'bg-earn-fixed-yield'],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {
@@ -42,7 +44,7 @@ module.exports = {
         mobileBottom: '90px',
         bannerDesktop: '32px',
         bannerMobile: '56px',
-        spacing: '30px',
+        spacing: '15px',
       },
       aspectRatio: {
         '3/1': '3 / 1',
@@ -110,8 +112,12 @@ module.exports = {
         'future-orchid': '#C710FF',
         'future-orchid-dark': '#850BAA',
         'gray-subtext': '#808080',
-        'arb-arcade': '#ba2d26',
         'stylus-pink': '#F62674',
+
+        // EARN category colors
+        'earn-lend': '#4970e9',
+        'earn-fixed-yield': '#b759e6',
+        'earn-liquid-staking': '#f6851b',
 
         // NEUTRAL (GRAYS)
         'gray-1': '#191919',
@@ -152,10 +158,18 @@ module.exports = {
         'neutral-50': '#191919',
         'neutral-100': '#212121',
         'neutral-200': '#333333',
+        'neutral-250': '#404040',
+        'gray-650': '#737373',
+        'earn-success': '#96d18e',
+        'cta-border': '#163db6',
+        'overlay': '#0a0a0a',
       },
       fontFamily: {
         unica77: ['var(--font-unica77)'],
         theme: ['var(--font-family, var(--font-unica77), Roboto, sans-serif)'],
+      },
+      spacing: {
+        50: '12.5rem',
       },
       fontSize: {
         xl: '1.375rem',

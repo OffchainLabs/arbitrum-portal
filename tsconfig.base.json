@@ -29,7 +29,13 @@
       "@/icons/*": ["./packages/app/public/icons/*"],
       "@/images/*": ["./packages/app/public/images/*"],
       "@/public/*": ["./packages/app/public/*"],
-      "@/app-components/*": ["./packages/app/src/components/*"]
+      "@/app-components/*": ["./packages/app/src/components/*"],
+      "@/app-hooks/*": ["./packages/app/src/hooks/*"],
+      "@/app-services/*": ["./packages/app/src/services/*"],
+      "@/app-store/*": ["./packages/app/src/store/*"],
+      "@/app-types/*": ["./packages/app/src/types/*"],
+      "@/app-lib/*": ["./packages/app/src/lib/*"],
+      "@/earn-api/*": ["./packages/app/src/app/api/onchain-actions/v1/earn/*"]
     },
     "types": [
       "dayjs/plugin/relativeTime",

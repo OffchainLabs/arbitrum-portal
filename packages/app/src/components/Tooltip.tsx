@@ -8,6 +8,7 @@ export type TooltipProps = {
   show?: boolean;
   children: ReactNode;
   content?: ReactNode;
+  as?: 'div' | 'span';
   wrapperClassName?: string;
   tippyProps?: TippyProps;
   theme?: 'light' | 'dark';
@@ -16,6 +17,7 @@ export type TooltipProps = {
 export function Tooltip({
   show = true,
   content,
+  as: Wrapper = 'div',
   wrapperClassName,
   theme = 'dark',
   tippyProps = {},
@@ -31,7 +33,7 @@ export function Tooltip({
 
   return (
     <Tippy {...tippyProps} theme={theme} content={content} arrow={false}>
-      <div className={twMerge(wrapperClassName)}>{children}</div>
+      <Wrapper className={twMerge(wrapperClassName)}>{children}</Wrapper>
     </Tippy>
   );
 }

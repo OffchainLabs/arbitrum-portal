@@ -33,6 +33,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
+import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
@@ -306,6 +307,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
+  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
@@ -314,7 +316,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -323,7 +325,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -348,7 +350,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     cctpTransfersTestnet.isLoadingWithdrawals;
 
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled && !isIndexerExperimentEnabled ? address : undefined,
     isTestnet: isTestnetMode,
   });
 
@@ -392,6 +394,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
             try {
               // early check for fetching teleport
               if (
+                !isIndexerExperimentEnabled &&
                 isValidTeleportChainPair({
                   sourceChainId: chainPair.parentChainId,
                   destinationChainId: chainPair.childChainId,
@@ -452,7 +455,15 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           }),
       );
     },
-    [address, isTestnetMode, addFailedChainPair, isSmartContractWallet, chain, forceFetchReceived],
+    [
+      address,
+      isTestnetMode,
+      addFailedChainPair,
+      isSmartContractWallet,
+      chain,
+      forceFetchReceived,
+      isIndexerExperimentEnabled,
+    ],
   );
 
   const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
@@ -461,8 +472,11 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     data: depositsData,
     error: depositsError,
     isLoading: depositsLoading,
-  } = useSWRImmutable(shouldFetch ? ['tx_list', 'deposits', address, isTestnetMode] : null, () =>
-    fetcher('deposits'),
+  } = useSWRImmutable(
+    shouldFetch
+      ? ['tx_list', 'deposits', address, isTestnetMode, isIndexerExperimentEnabled]
+      : null,
+    () => fetcher('deposits'),
   );
 
   const {
@@ -470,7 +484,16 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     error: withdrawalsError,
     isLoading: withdrawalsLoading,
   } = useSWRImmutable(
-    shouldFetch ? ['tx_list', 'withdrawals', address, isTestnetMode, forceFetchReceived] : null,
+    shouldFetch
+      ? [
+          'tx_list',
+          'withdrawals',
+          address,
+          isTestnetMode,
+          forceFetchReceived,
+          isIndexerExperimentEnabled,
+        ]
+      : null,
     () => fetcher('withdrawals'),
   );
 
@@ -570,6 +593,9 @@ export const useTransactionHistory = (
         }
 
         if (isSmartContractWallet) {
+          if (!chain) {
+            return false;
+          }
           // only include txs for the connected network
           return tx.parentChainId === chain.id;
         }

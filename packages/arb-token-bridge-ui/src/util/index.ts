@@ -41,7 +41,7 @@ export const getAPIBaseUrl = () => {
 };
 
 // add feature flags to the array
-const featureFlags = [] as const;
+const featureFlags = ['indexer'] as const;
 
 type FeatureFlag = (typeof featureFlags)[number];
 
@@ -81,4 +81,13 @@ export const sanitizeExperimentalFeaturesQueryParam = (flags: string | null | un
   }
 
   return validFlagsArray.join(',');
+};
+
+export const getCurrentExperimentsQueryParam = () => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  const query = new URLSearchParams(window.location.search);
+  return sanitizeExperimentalFeaturesQueryParam(query.get('experiments'));
 };

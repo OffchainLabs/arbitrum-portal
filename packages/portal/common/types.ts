@@ -113,18 +113,6 @@ export type CommunityTalk = {
   className?: string;
 };
 
-export type EcosystemMission = {
-  rank?: number;
-  id: string;
-  title: string;
-  status: string;
-  teamsInvolved: string[];
-  link: string;
-  coverImage?: string;
-  startDate?: string;
-  endDate?: string;
-};
-
 export type OrbitChainTeamMember = {
   primaryText: string;
   secondaryText?: string;
