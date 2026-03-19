@@ -1,5 +1,5 @@
 import { hasL1Subgraph } from '../SubgraphUtils';
-import { getAPIBaseUrl, sanitizeQueryParams } from './../index';
+import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
 
 export type FetchDepositsFromSubgraphResult = {
   receiver: string;
@@ -74,6 +74,7 @@ export const fetchDepositsFromSubgraph = async ({
       pageSize,
       page: pageNumber,
       search: searchString,
+      experiments: getCurrentExperimentsQueryParam(),
     }),
   );
 
