@@ -92,7 +92,7 @@ jobs:
           DISPLAY: :0.0
 
       - name: Build Synpress wallet cache
-        run: xvfb-run npx synpress ./packages/arb-token-bridge-ui/test/wallet-setup
+        run: yarn synpress:cache
         env:
           DISPLAY: :0.0
           PRIVATE_KEY_USER: ${{ secrets.E2E_PRIVATE_KEY_USER }}
