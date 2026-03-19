@@ -15,7 +15,7 @@ export const getCurrentDateInEasternTime = () => {
   return dayjs.utc().tz(EASTERN_TIMEZONE);
 };
 
-/** given the date in Eastern time (eg. for Arcade/Missions), parse it into dayjs format */
+/** given the date in Eastern time (eg. for Missions), parse it into dayjs format */
 export const parseDateInEasternTime = (date: string) => {
   return dayjs(date).tz(EASTERN_TIMEZONE, true);
 };

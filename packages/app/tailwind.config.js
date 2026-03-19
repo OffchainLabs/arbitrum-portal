@@ -112,7 +112,6 @@ module.exports = {
         'future-orchid': '#C710FF',
         'future-orchid-dark': '#850BAA',
         'gray-subtext': '#808080',
-        'arb-arcade': '#ba2d26',
         'stylus-pink': '#F62674',
 
         // EARN category colors
