@@ -48,7 +48,8 @@ async function fetchDripProgram(publicDir) {
   const url = 'https://api.merkl.xyz/v4/programs/drip';
   const filePath = path.join(publicDir, filename);
 
-  let data = {};
+  let data = { opportunities: [] };
+  let success = false;
   try {
     console.log(`📥 Fetching ${filename}...`);
     data = await fetchJson(url);
@@ -57,13 +58,18 @@ async function fetchDripProgram(publicDir) {
     if (!Array.isArray(data.opportunities)) {
       throw new Error('drip program response does not contain opportunities array');
     }
+    success = true;
   } catch (error) {
     console.error(`⚠️ Error fetching ${filename}:`, error.message);
-    data = {};
+    data = { opportunities: [] };
   }
 
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-  console.log(`✅ Saved ${filename}`);
+  if (success) {
+    console.log(`✅ Saved ${filename}`);
+  } else {
+    console.warn(`⚠️ Saved empty fallback ${filename}`);
+  }
 }
 
 async function fetchAllData() {
