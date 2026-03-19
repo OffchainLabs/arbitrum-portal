@@ -154,36 +154,7 @@ notionProjects
 
 export const PROJECTS = projectsList;
 
-// to show in a blurred state in arcade without revealing any details about upcoming missions
-export const ARCADE_LOCKED_PROJECT_DETAILS: SearchableData<FullProject> = {
-  categoryIds: ['defi'],
-  chains: ['Arbitrum One', 'Arbitrum Nova'],
-  chainsMap: { 'Arbitrum One': true, 'Arbitrum Nova': true },
-  description: 'Got you! This project is locked. Patience is the key.',
-  id: 'dummy',
-  images: {
-    logoUrl: '/ArbitrumOneLogo.svg',
-    bannerUrl: '',
-  },
-  links: {
-    website: '',
-    discord: '',
-    twitter: '',
-    github: '',
-  },
-  meta: { isLive: true },
-  slug: 'dummy-project',
-  subcategories: [],
-  subcategoryIds: ['defi-tool'],
-  title: 'Dummy Project',
-  entityType: EntityType.Project,
-};
-
 export const getProjectDetailsById = (id: string) => {
-  // We don't want to add dummy project to Projects map, otherwise it would be displayed everywhere
-  if (id === 'dummy-project') {
-    return ARCADE_LOCKED_PROJECT_DETAILS;
-  }
   return typeof projectKeyToIndexMap[id] === 'number' ? PROJECTS[projectKeyToIndexMap[id]] : null;
 };
 

@@ -5,12 +5,10 @@ import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
-import { MISSIONS } from '@/common/missions';
 import { getOrbitChainDetailsById } from '@/common/orbitChains';
 import { EntityType } from '@/common/types';
 import { Card } from '@/components/Card';
 import { ExternalLink } from '@/components/ExternalLink';
-import { MissionCard } from '@/components/Missions/MissionCard';
 import { OrbitStatusBadge } from '@/components/OrbitStatusBadge';
 import { OrbitTvlBadge } from '@/components/OrbitTvlBadge';
 import { DisclaimerWidget } from '@/components/ProjectPanel/DisclaimerWidget';
@@ -32,12 +30,6 @@ export const OrbitChainPanel = () => {
 
   // if no orbitChain corresponds to the one passed in query params then no need of this dialog
   if (!orbitChain) return null;
-
-  const relatedMissions = MISSIONS.filter((mission) => {
-    return mission.teamsInvolved.some(
-      (teamName) => teamName.toLowerCase() === orbitChain.title.toLowerCase(),
-    );
-  });
 
   const primaryColor = orbitChain.color.primary;
 
@@ -156,17 +148,6 @@ export const OrbitChainPanel = () => {
         </div>
 
         <LinksWidget entityDetails={orbitChain} />
-
-        {relatedMissions.length > 0 ? (
-          <div className="col-span-4 row-span-2 my-8 flex flex-col gap-4">
-            <div className="text-xl">Ongoing Quest{relatedMissions.length > 1 ? 's' : ''}</div>
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2">
-              {relatedMissions.map((mission, index) => (
-                <MissionCard key={`oribitChain-mission-${index}`} mission={mission} />
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         <OrbitChainDetailsTable orbitChain={orbitChain} />
 
