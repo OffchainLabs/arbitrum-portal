@@ -9,7 +9,7 @@
     "@tippyjs/react": "^4.2.6",
     "@uidotdev/usehooks": "^2.4.1",
     "dayjs": "^1.11.13",
-    "next": "^14.2.35",
+    "next": "^16.1.7",
     "posthog-js": "^1.273.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
