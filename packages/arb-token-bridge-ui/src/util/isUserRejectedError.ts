@@ -6,13 +6,47 @@ import { UserRejectedRequestError } from 'viem';
  *
  * Filtering of userRejectedError sent to sentry is done in _app.tsx
  */
-function isUserRejectedError(error: any) {
+export function isUserRejectedError(error: unknown) {
+  const candidate = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+  };
+
+  const hasUserCancelledMessage =
+    typeof candidate.message === 'string' && /User Cancelled/.test(candidate.message);
+
   return (
-    error?.code === 4001 ||
-    error?.code === 'ACTION_REJECTED' ||
-    error?.message?.match(/User Cancelled/) ||
+    candidate.code === 4001 ||
+    candidate.code === 'ACTION_REJECTED' ||
+    hasUserCancelledMessage ||
     error instanceof UserRejectedRequestError ||
-    error?.details === 'MetaMask Tx Signature: User denied transaction signature.'
+    candidate.details === 'MetaMask Tx Signature: User denied transaction signature.'
   );
 }
-export { isUserRejectedError };
+
+/**
+ * Formats a transaction error into a user-friendly error message
+ * Handles UserRejectedRequestError and other error types consistently
+ *
+ * @param error - The error object from transaction execution
+ * @param defaultMessage - Default message if error cannot be parsed (default: 'Transaction failed')
+ * @returns User-friendly error message string
+ */
+export function formatTransactionError(
+  error: unknown,
+  defaultMessage: string = 'Transaction failed',
+): string {
+  // Handle user rejection errors first
+  if (isUserRejectedError(error)) {
+    return 'Transaction rejected';
+  }
+
+  // Handle generic Error objects
+  if (error instanceof Error) {
+    return error.message || defaultMessage;
+  }
+
+  // Fallback to default message
+  return defaultMessage;
+}

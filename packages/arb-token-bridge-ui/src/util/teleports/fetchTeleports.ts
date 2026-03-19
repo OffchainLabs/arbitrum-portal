@@ -2,6 +2,7 @@ import { Provider } from '@ethersproject/providers';
 
 import { getL2ConfigForTeleport, isValidTeleportChainPair } from '../../token-bridge-sdk/teleport';
 import { getChainIdFromProvider } from '../../token-bridge-sdk/utils';
+import { logger } from '../logger';
 import {
   FetchErc20TeleportsFromSubgraphResult,
   fetchErc20TeleportsFromSubgraph,
@@ -52,7 +53,7 @@ export const fetchTeleports = async ({
       destinationChainId: l3ChainId,
     })
   ) {
-    console.error(
+    logger.error(
       `Error fetching teleports from subgraph: invalid source and destination chain ids: ${l1ChainId} -> ${l3ChainId}`,
     );
     return [];
@@ -81,7 +82,7 @@ export const fetchTeleports = async ({
       searchString,
     });
   } catch (error: any) {
-    console.log('Error fetching eth teleports from subgraph', error);
+    logger.info('Error fetching eth teleports from subgraph', error);
   }
 
   let erc20TeleportsFromSubgraph: FetchErc20TeleportsFromSubgraphResult[] = [];
@@ -95,7 +96,7 @@ export const fetchTeleports = async ({
       pageNumber,
     });
   } catch (error: any) {
-    console.log('Error fetching erc20 teleports from subgraph', error);
+    logger.info('Error fetching erc20 teleports from subgraph', error);
   }
 
   const combinedTeleports: TeleportFromSubgraph[] = [

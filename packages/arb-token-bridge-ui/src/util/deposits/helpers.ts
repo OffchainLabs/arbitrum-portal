@@ -27,6 +27,7 @@ import {
   TxnStatus,
 } from '../../types/Transactions';
 import { fetchErc20Data } from '../TokenUtils';
+import { logger } from '../logger';
 
 export function isEthDepositMessage(
   message: EthDepositMessage | ParentToChildMessageReader | ParentToChildMessageReaderClassic,
@@ -554,7 +555,7 @@ export async function fetchTeleporterDepositStatusData({
     };
   } catch (error) {
     // in case fetching teleport status fails (happens sometimes when you fetch before l1 confirmation), return the default data
-    console.log('Error fetching status for teleporter tx', txId);
+    logger.info('Error fetching status for teleporter tx', txId);
     return {
       status: 'pending',
       l2ToL3MsgData: {

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { sanitizeExperimentalFeaturesQueryParam } from '@/bridge/util';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
+import { logger } from '@/bridge/util/logger';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import {
   DisabledFeaturesParam,
@@ -18,7 +19,8 @@ function getDestinationWithSanitizedQueryParams(
     sourceChainId: number;
     destinationChainId: number;
     experiments: string | undefined;
-    token: string | undefined;
+    token: string | undefined | null;
+    destinationToken: string | undefined | null;
     tab: string;
     disabledFeatures: string[] | undefined;
   },
@@ -34,6 +36,7 @@ function getDestinationWithSanitizedQueryParams(
       key === 'destinationChain' ||
       key === 'experiments' ||
       key === 'token' ||
+      key === 'destinationToken' ||
       key === 'tab' ||
       key === 'disabledFeatures'
     ) {
@@ -52,6 +55,7 @@ function getDestinationWithSanitizedQueryParams(
   const encodedDestination = encodeChainQueryParam(sanitized.destinationChainId);
   const encodedExperiments = encodeString(sanitized.experiments);
   const encodedToken = encodeString(sanitized.token);
+  const encodedDestinationToken = encodeString(sanitized.destinationToken);
   const encodedTab = encodeString(sanitized.tab);
 
   if (encodedSource) {
@@ -68,6 +72,10 @@ function getDestinationWithSanitizedQueryParams(
 
   if (encodedToken) {
     params.set('token', encodedToken);
+  }
+
+  if (encodedDestinationToken) {
+    params.set('destinationToken', encodedDestinationToken);
   }
 
   if (encodedTab) {
@@ -97,6 +105,8 @@ export async function sanitizeAndRedirect(
   const experiments =
     typeof searchParams.experiments === 'string' ? searchParams.experiments : undefined;
   const token = typeof searchParams.token === 'string' ? searchParams.token : undefined;
+  const destinationToken =
+    typeof searchParams.destinationToken === 'string' ? searchParams.destinationToken : undefined;
   const tab = typeof searchParams.tab === 'string' ? searchParams.tab : undefined;
   const disabledFeatures =
     typeof searchParams.disabledFeatures === 'string'
@@ -124,6 +134,11 @@ export async function sanitizeAndRedirect(
       sourceChainId: sanitizedChainIds.sourceChainId,
       destinationChainId: sanitizedChainIds.destinationChainId,
     }),
+    destinationToken: sanitizeTokenQueryParam({
+      token: destinationToken,
+      sourceChainId: sanitizedChainIds.sourceChainId,
+      destinationChainId: sanitizedChainIds.destinationChainId,
+    }),
     tab: sanitizeTabQueryParam(tab),
     disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures),
   };
@@ -134,15 +149,16 @@ export async function sanitizeAndRedirect(
     destinationChainId !== sanitized.destinationChainId ||
     experiments !== sanitized.experiments ||
     token !== sanitized.token ||
+    destinationToken !== sanitized.destinationToken ||
     tab !== sanitized.tab ||
     (disabledFeatures?.length || 0) !== (sanitized.disabledFeatures?.length || 0)
   ) {
-    console.log(`[sanitizeAndRedirect] sanitizing query params`);
-    console.log(
-      `[sanitizeAndRedirect]     sourceChain=${sourceChainId}&destinationChain=${destinationChainId}&experiments=${experiments}&token=${token}&tab=${tab}&disabledFeatures=${disabledFeatures} (before)`,
+    logger.debug(`[sanitizeAndRedirect] sanitizing query params`);
+    logger.debug(
+      `[sanitizeAndRedirect]     sourceChain=${sourceChainId}&destinationChain=${destinationChainId}&experiments=${experiments}&token=${token}&destinationToken=${destinationToken}&tab=${tab}&disabledFeatures=${disabledFeatures} (before)`,
     );
-    console.log(
-      `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`,
+    logger.debug(
+      `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&destinationToken=${sanitized.destinationToken}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`,
     );
 
     redirect(getDestinationWithSanitizedQueryParams(sanitized, searchParams, baseUrl));

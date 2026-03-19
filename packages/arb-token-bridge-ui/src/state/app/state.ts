@@ -35,6 +35,7 @@ export enum WithdrawalStatus {
   CONFIRMED = 'Confirmed',
   EXPIRED = 'Expired',
   FAILURE = 'Failure',
+  REFUNDED = 'Refunded', // Lifi only
 }
 
 export type MergedTransactionLifiData = {

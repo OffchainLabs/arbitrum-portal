@@ -1,21 +1,16 @@
 import axios from 'axios';
-import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useCCTPIsBlocked } from '../../hooks/CCTP/useCCTPIsBlocked';
-import { useAccountIsBlocked } from '../../hooks/useAccountIsBlocked';
 import { TokenBridgeParams } from '../../hooks/useArbTokenBridge';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTheme } from '../../hooks/useTheme';
 import { useActions } from '../../state';
+import { logger } from '../../util/logger';
 import { MainContent } from '../MainContent/MainContent';
-import { Header, HeaderAccountOrConnectWalletButton } from '../common/Header';
-import { Loader } from '../common/atoms/Loader';
 import { ArbTokenBridgeStoreSync } from '../syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../syncers/TokenListSyncer';
-import { BlockedDialog } from './BlockedDialog';
 import { useSyncConnectedChainToAnalytics } from './useSyncConnectedChainToAnalytics';
 import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQueryParams';
 
@@ -79,7 +74,7 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
         actions.app.setWarningTokens(res.data);
       })
       .catch((err) => {
-        console.warn('Failed to fetch warning tokens:', err);
+        logger.warn('Failed to fetch warning tokens:', err);
       });
   }, []);
 
@@ -91,32 +86,11 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
 };
 
 const AppContent = React.memo(() => {
-  const { address } = useAccount();
-  const { isBlocked } = useAccountIsBlocked();
-
   // apply custom themes if any
   useTheme();
 
-  if (address && isBlocked) {
-    return (
-      <BlockedDialog
-        address={address}
-        isOpen={true}
-        closeable={false}
-        // ignoring until we use the package
-        // https://github.com/OffchainLabs/config-monorepo/pull/11
-        //
-
-        onClose={() => {}}
-      />
-    );
-  }
-
   return (
     <>
-      <Header>
-        <HeaderAccountOrConnectWalletButton />
-      </Header>
       <TokenListSyncer />
       <ArbTokenBridgeStoreSyncWrapper />
       <MainContent />
@@ -126,22 +100,6 @@ const AppContent = React.memo(() => {
 
 AppContent.displayName = 'AppContent';
 
-const AppProviders = dynamic(() => import('./AppProviders').then((mod) => mod.AppProviders), {
-  ssr: false, // use-query-params provider doesn't support SSR
-  loading: () => (
-    <div className="bg-black-500 flex h-screen w-full items-center justify-center">
-      <div className="h-12 w-full lg:h-16" />
-      <div className="fixed inset-0 m-auto h-[44px] w-[44px]">
-        <Loader size="large" color="white" />
-      </div>
-    </div>
-  ),
-});
-
 export default function App() {
-  return (
-    <AppProviders>
-      <AppContent />
-    </AppProviders>
-  );
+  return <AppContent />;
 }

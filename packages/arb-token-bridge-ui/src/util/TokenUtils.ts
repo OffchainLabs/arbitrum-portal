@@ -18,6 +18,7 @@ import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from './SentryUtils';
+import { logger } from './logger';
 import { isNetwork } from './networks';
 
 export function getDefaultTokenName(address: string) {
@@ -145,8 +146,8 @@ export async function fetchErc20Data({
     try {
       setErc20DataCache({ chainId, address, erc20Data });
     } catch (e) {
-      console.warn('Failed to store ERC-20 data to cache.');
-      console.warn(e);
+      logger.warn('Failed to store ERC-20 data to cache.');
+      logger.warn(e);
     }
 
     return erc20Data;
@@ -378,6 +379,45 @@ export const isTokenNativeUSDC = (tokenAddress: string | undefined) => {
 
 export const isTokenEthereumUSDT = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT);
+
+export const isTokenArbitrumOneUSDT = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDT);
+
+export const isTokenBaseUSDT = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Base.USDT);
+
+export const isTokenApeChainUSDT = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ApeChain.USDT);
+
+export const isTokenUSDT = (tokenAddress: string | undefined) => {
+  return (
+    isTokenEthereumUSDT(tokenAddress) ||
+    isTokenArbitrumOneUSDT(tokenAddress) ||
+    isTokenBaseUSDT(tokenAddress) ||
+    isTokenApeChainUSDT(tokenAddress)
+  );
+};
+
+export const isTokenEthereumWBTC = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Ethereum.WBTC);
+
+export const isTokenArbitrumOneWBTC = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.WBTC);
+
+export const isTokenBaseWBTC = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Base.WBTC);
+
+export const isTokenSuperpositionWBTC = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Superposition.WBTC);
+
+export const isTokenWBTC = (tokenAddress: string | undefined) => {
+  return (
+    isTokenEthereumWBTC(tokenAddress) ||
+    isTokenArbitrumOneWBTC(tokenAddress) ||
+    isTokenBaseWBTC(tokenAddress) ||
+    isTokenSuperpositionWBTC(tokenAddress)
+  );
+};
 
 // get the exact token symbol for a particular chain
 export function sanitizeTokenSymbol(tokenSymbol: string, options: SanitizeTokenOptions) {

@@ -19,10 +19,11 @@ export function LifiRoute({
   tag?: BadgeType | BadgeType[];
   overrideToken?: ERC20BridgeToken | undefined;
 }) {
-  const { selectedRoute, setSelectedRoute } = useRouteStore(
+  const { selectedRoute, setSelectedRoute, isLoading } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
+      isLoading: state.isLoading,
     }),
     shallow,
   );
@@ -67,6 +68,7 @@ export function LifiRoute({
       selected={isSelected}
       onSelectedRouteClick={setSelectedRouteWithContext}
       tag={tag}
+      isDisabled={isLoading}
     />
   );
 }

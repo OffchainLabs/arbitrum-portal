@@ -1,48 +1,71 @@
 import { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
-import { BRIDGE_TOKEN_LISTS, TokenListWithId, fetchTokenListFromURL } from '../util/TokenListUtils';
+import {
+  TokenListWithId,
+  fetchTokenListFromURL,
+  getBridgeTokenListsForNetworks,
+} from '../util/TokenListUtils';
 import { isNetwork } from '../util/networks';
+import { useNetworks } from './useNetworks';
+import { useNetworksRelationship } from './useNetworksRelationship';
 
-export function fetchTokenLists(forL2ChainId: number): Promise<TokenListWithId[]> {
+function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<TokenListWithId[]> {
   return new Promise((resolve) => {
     const { isOrbitChain } = isNetwork(forL2ChainId);
-    const requestListArray = BRIDGE_TOKEN_LISTS.filter(
-      (bridgeTokenList) =>
-        bridgeTokenList.originChainID === forL2ChainId ||
-        // Always load the Arbitrum Token token list except from or to Orbit chain
-        (bridgeTokenList.isArbitrumTokenTokenList && !isOrbitChain),
-    );
+    const requestListArray = getBridgeTokenListsForNetworks({
+      childChainId: forL2ChainId,
+      parentChainId,
+    }).filter((bridgeTokenList) => {
+      if (bridgeTokenList.isArbitrumTokenTokenList && isOrbitChain) {
+        return false;
+      }
 
-    Promise.all(
+      return true;
+    });
+
+    Promise.allSettled(
       requestListArray.map((bridgeTokenList) => fetchTokenListFromURL(bridgeTokenList.url)),
     ).then((responses) => {
-      const tokenListsWithBridgeTokenListId = responses
-        .map(({ data, isValid }, index) => {
+      const tokenListsWithBridgeTokenListId = responses.reduce<TokenListWithId[]>(
+        (acc, response, index) => {
+          if (response.status !== 'fulfilled') {
+            return acc;
+          }
+
+          const { data } = response.value;
+          if (!data) {
+            return acc;
+          }
+
           const bridgeTokenListId = requestListArray[index]?.id;
 
           if (typeof bridgeTokenListId === 'undefined') {
-            return { ...data, isValid };
+            return acc;
           }
 
-          return {
-            l2ChainId: forL2ChainId,
+          acc.push({
+            l2ChainId: String(forL2ChainId),
             bridgeTokenListId,
-            isValid,
             ...data,
-          };
-        })
-        .filter((list) => list?.isValid);
+          });
 
-      resolve(tokenListsWithBridgeTokenListId as TokenListWithId[]);
+          return acc;
+        },
+        [],
+      );
+
+      resolve(tokenListsWithBridgeTokenListId);
     });
   });
 }
 
 export function useTokenLists(forL2ChainId: number): SWRResponse<TokenListWithId[]> {
+  const [networks] = useNetworks();
+  const { parentChain } = useNetworksRelationship(networks);
   return useSWRImmutable(
-    ['useTokenLists', forL2ChainId],
-    ([, _forL2ChainId]) => fetchTokenLists(_forL2ChainId),
+    ['useTokenLists', forL2ChainId, parentChain.id],
+    ([, _forL2ChainId, _parentChainId]) => fetchTokenLists(_forL2ChainId, _parentChainId),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,

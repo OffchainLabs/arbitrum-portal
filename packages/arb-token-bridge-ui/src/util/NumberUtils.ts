@@ -2,11 +2,11 @@ import { BigNumber, utils } from 'ethers';
 
 export function formatUSD(value: number) {
   if (value === 0) {
-    return `$0.00`;
+    return `$0.00 USD`;
   }
 
   if (value > 0 && value < 0.01) {
-    return `< $0.01`;
+    return `< $0.01 USD`;
   }
 
   const formattedValue = value.toLocaleString(undefined, {
@@ -14,7 +14,33 @@ export function formatUSD(value: number) {
     maximumFractionDigits: 2,
   });
 
-  return `$${formattedValue}`;
+  return `$${formattedValue} USD`;
+}
+
+export function formatCompactUsd(value: number): string {
+  return (
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value) + ' USD'
+  );
+}
+
+const formatCompact = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+export function formatCompactNumber(n: number): string {
+  return formatCompact.format(n);
+}
+
+export function formatPercentage(value: number): string {
+  if (value < 0.01) return `${value.toFixed(4)}%`;
+  if (value < 1) return `${value.toFixed(3)}%`;
+  return `${value.toFixed(2)}%`;
 }
 
 export enum MaximumFractionDigits {
@@ -125,11 +151,20 @@ export const formatAmount = <T extends number | BigNumber | undefined>(
 };
 
 export const truncateExtraDecimals = (amount: string, decimals: number) => {
+  const wholePart = amount.split('.')[0] ?? '';
   const decimalPart = amount.split('.')[1];
 
   if (typeof decimalPart === 'undefined') {
     return amount;
   }
 
-  return `${amount.split('.')[0]}.${decimalPart.slice(0, decimals)}`;
+  if (decimals < 0) {
+    throw new Error('decimals must be non-negative');
+  }
+
+  if (decimals === 0) {
+    return wholePart;
+  }
+
+  return `${wholePart}.${decimalPart.slice(0, decimals)}`;
 };

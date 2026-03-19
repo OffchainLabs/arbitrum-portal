@@ -153,11 +153,13 @@ describe('Withdraw ERC20 Token', () => {
 
         cy.findByLabelText('show settled transactions').should('be.visible').click();
 
-        cy.findByText(
-          `${formatAmount(ERC20AmountToSend, {
+        cy.findAllByText(
+          formatAmount(ERC20AmountToSend, {
             symbol: testCase.symbol,
-          })}`,
-        ).should('be.visible');
+          }),
+        )
+          .first()
+          .should('be.visible');
 
         cy.switchToTransferPanelTab();
 

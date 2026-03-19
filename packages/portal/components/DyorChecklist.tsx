@@ -177,7 +177,6 @@ export const DyorChecklist = ({
   return (
     <Card
       className={twMerge('relative flex flex-col gap-4 p-6', className)}
-      grainy
       style={{
         background:
           'linear-gradient(163deg, rgba(29,63,112,1) 0%, rgba(91,101,147,1) 26%, rgba(91,53,103,1) 40%, rgba(40,52,115,1) 60%, rgba(126,91,212,1) 84%, rgba(135,64,64,1) 100%)',
@@ -257,7 +256,7 @@ export const DyorChecklist = ({
                         htmlFor={check.id}
                         className="group flex cursor-pointer items-start gap-4 rounded-md p-1 px-3 text-left font-light text-white peer-checked:text-white lg:gap-4"
                       >
-                        <span className="mt-[2px] flex items-center justify-center rounded-sm border border-white bg-black p-[3px] lg:p-[1px]">
+                        <span className="mt-[2px] flex items-center justify-center rounded-[3px] border border-white bg-black p-[3px] lg:p-[1px]">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
                         </span>
                         <span className="text-sm">{check.title}</span>

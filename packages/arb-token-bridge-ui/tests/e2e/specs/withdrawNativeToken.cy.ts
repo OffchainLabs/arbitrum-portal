@@ -101,11 +101,13 @@ describe('Withdraw native token', () => {
 
         cy.findByLabelText('show settled transactions').should('be.visible').click();
 
-        cy.findByText(
-          `${formatAmount(ETHToWithdraw, {
+        cy.findAllByText(
+          formatAmount(ETHToWithdraw, {
             symbol: nativeTokenSymbol,
-          })}`,
-        ).should('be.visible');
+          }),
+        )
+          .first()
+          .should('be.visible');
 
         cy.switchToTransferPanelTab();
 

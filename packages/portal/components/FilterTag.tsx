@@ -106,7 +106,7 @@ export const FilterTag = ({
         htmlFor={subcategory.slug}
         className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white hover:peer-checked:text-black"
       >
-        <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-[1px]">
+        <span className="flex items-center justify-center rounded-[3px] border border-gray-100/20 bg-default-black p-[3px] lg:p-[1px]">
           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
         </span>
         <span className="text-sm">

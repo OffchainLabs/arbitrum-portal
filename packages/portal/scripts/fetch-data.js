@@ -43,6 +43,30 @@ function fetchJson(url) {
   });
 }
 
+async function fetchDripProgram(publicDir) {
+  const filename = '__auto-generated-drip-program.json';
+  const url = 'https://api.merkl.xyz/v4/programs/drip';
+  const filePath = path.join(publicDir, filename);
+
+  try {
+    console.log(`📥 Fetching ${filename}...`);
+    const data = await fetchJson(url);
+
+    // Validate the response
+    if (!Array.isArray(data.opportunities)) {
+      throw new Error('drip program response does not contain opportunities array');
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    console.log(`✅ Saved ${filename}`);
+  } catch (error) {
+    console.error(`⚠️ Error fetching ${filename}:`, error.message);
+
+    fs.writeFileSync(filePath, JSON.stringify({ opportunities: [] }, null, 2));
+    console.warn(`⚠️ Saved empty fallback ${filename}`);
+  }
+}
+
 async function fetchAllData() {
   console.log('🔄 Fetching data from', BACKEND_ENDPOINT);
 
@@ -69,8 +93,7 @@ async function fetchAllData() {
       process.exit(1);
     }
   });
-
-  await Promise.all(fetchPromises);
+  await Promise.all([...fetchPromises, fetchDripProgram(publicDir)]);
 
   console.log('🎉 All data fetched successfully!');
 }

@@ -1,15 +1,17 @@
+import '@rainbow-me/rainbowkit/styles.css';
 import type { Metadata } from 'next';
 import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light.css';
 
 import { unica } from '@/bridge/components/common/Font';
-import { PORTAL_DATA_ENDPOINT } from '@/common/constants';
+import { PORTAL_DOMAIN } from '@/bridge/constants';
 
-import { BodyClassSyncer } from '../components/BodyClassSyncer';
 import '../styles/common.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(PORTAL_DATA_ENDPOINT),
+  metadataBase: new URL(PORTAL_DOMAIN),
   icons: {
     icon: '/logo.png',
   },
@@ -18,10 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body className={twMerge('relative bg-black text-white', unica.variable)}>
-        {children}
-        <BodyClassSyncer />
-      </body>
+      <body className={twMerge('relative bg-black text-white', unica.variable)}>{children}</body>
     </html>
   );
 }

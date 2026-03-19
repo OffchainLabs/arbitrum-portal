@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { toolsTabs } from '@/portal/common/pageTabConfig';
 import { Blog } from '@/portal/common/types';
 import { AdvancedDocs } from '@/portal/components/Learn/AdvancedDocs';
 import { Blogs } from '@/portal/components/Learn/Blogs';
@@ -9,7 +11,7 @@ import { LearnStats } from '@/portal/components/Learn/LearnStats';
 
 const metadataContent = {
   title: 'Learn about Arbitrum',
-  description: 'Nitro, Orbit, Stylus, One, Nova - learn what makes all of this tech so impressive',
+  description: 'Nitro, Chains, Stylus, One, Nova - learn what makes all of this tech so impressive',
 };
 
 // Generate server-side metadata for this page
@@ -51,6 +53,7 @@ export default async function LearnPage() {
 
   return (
     <div className="flex flex-col gap-8 lg:gap-12">
+      <PageTabs title="Tools" tabs={toolsTabs} />
       <HeroBanner />
 
       <LearnStats />

@@ -6,6 +6,7 @@ import { Address } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '../util/CommonUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
+import { logger } from '../util/logger';
 
 /**
  * Checks if an address is blocked using the external Screenings API service.
@@ -34,7 +35,7 @@ async function isBlocked(address: Address): Promise<boolean> {
     const { blocked } = await response.json();
     return blocked;
   } catch (error) {
-    console.error('Failed to check if address is blocked', error);
+    logger.error('Failed to check if address is blocked', error);
     captureSentryErrorWithExtraData({
       error,
       originFunction: 'isBlocked',

@@ -108,7 +108,7 @@ const CATEGORY_NAME_MAP: Record<string, string> = {
   'defi': 'DeFi',
   'ai-and-depin': 'AI & DePIN',
   'gaming': 'Gaming',
-  'nfts': 'NFTs',
+  'consumer': 'Consumer',
   'bridges-and-on-ramps': 'Bridges & On-Ramps',
   'infra-and-tools': 'Infrastructure & Tools',
 };

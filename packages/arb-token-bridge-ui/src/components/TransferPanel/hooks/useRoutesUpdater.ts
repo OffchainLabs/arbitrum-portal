@@ -7,26 +7,36 @@ import { shallow } from 'zustand/shallow';
 import { Order } from '../../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
+import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
 import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
-import { RouteData, RouteType, useRouteStore } from './useRouteStore';
+import {
+  RouteContext,
+  RouteData,
+  RouteType,
+  getContextFromRoute,
+  isLifiRoute,
+  useRouteStore,
+} from './useRouteStore';
 
 /**
  * Determines the best route based on priority order.
  *
  * Route Selection Priority:
- * 1. OFT V2 (highest priority) - LayerZero protocol for USDT transfers
+ * 1. OFT V2 (highest priority) - LayerZero protocol for supported OFT tokens
+ *    (excluded when swapping from USDT to a different token)
  * 2. CCTP (second priority) - Circle's native USDC transfers
  * 3. LiFi cheapest (third priority) - Best deal from LiFi aggregator
  * 4. LiFi single route (fourth priority) - When fastest and cheapest are the same
@@ -67,6 +77,7 @@ interface GetEligibleRoutesParams {
   destinationChainId: number;
   selectedToken: ERC20BridgeToken | null;
   isArbitrumCanonicalTransfer: boolean;
+  tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
 
 function getEligibleRoutes({
@@ -78,6 +89,7 @@ function getEligibleRoutes({
   destinationChainId,
   selectedToken,
   isArbitrumCanonicalTransfer,
+  tokensFromLists,
 }: GetEligibleRoutesParams): RouteType[] {
   const { isTestnet } = isNetwork(sourceChainId);
   const isLifiEnabled = isLifiEnabledUtil() && !isTestnet;
@@ -89,6 +101,20 @@ function getEligibleRoutes({
 
   if (isOftV2Transfer) {
     eligibleRouteTypes.push('oftV2');
+
+    if (isLifiEnabled) {
+      const isValidLifiRoute = isValidLifiTransfer({
+        fromToken: selectedToken?.address,
+        sourceChainId: sourceChainId,
+        destinationChainId: destinationChainId,
+        tokensFromLists,
+      });
+
+      if (isValidLifiRoute) {
+        eligibleRouteTypes.push('lifi');
+      }
+    }
+
     return eligibleRouteTypes;
   }
 
@@ -109,9 +135,10 @@ function getEligibleRoutes({
   const isValidLifiRoute =
     isLifiEnabled &&
     isValidLifiTransfer({
-      fromToken: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
+      fromToken: selectedToken?.address,
       sourceChainId: sourceChainId,
       destinationChainId: destinationChainId,
+      tokensFromLists,
     });
 
   if (isValidLifiRoute) {
@@ -132,6 +159,8 @@ export function useRoutesUpdater() {
   const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const [selectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
+  const tokensFromLists = useTokensFromLists();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
@@ -164,6 +193,7 @@ export function useRoutesUpdater() {
         destinationChainId: networks.destinationChain.id,
         selectedToken,
         isArbitrumCanonicalTransfer,
+        tokensFromLists,
       }),
     [
       isOftV2Transfer,
@@ -174,10 +204,11 @@ export function useRoutesUpdater() {
       networks.destinationChain.id,
       selectedToken,
       isArbitrumCanonicalTransfer,
+      tokensFromLists,
     ],
   );
 
-  const overrideToken = useMemo(
+  const overrideSourceToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: networks.sourceChain.id,
@@ -186,16 +217,35 @@ export function useRoutesUpdater() {
       }),
     [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
   );
+  const overrideDestinationToken = useMemo(
+    () =>
+      getTokenOverride({
+        sourceChainId: networks.sourceChain.id,
+        fromToken: destinationToken?.address,
+        destinationChainId: networks.destinationChain.id,
+      }),
+    [destinationToken?.address, networks.sourceChain.id, networks.destinationChain.id],
+  );
+
+  const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
+  const defaultToTokenAddress = isDepositMode
+    ? destinationToken?.l2Address
+    : destinationToken?.address;
+
+  const fromTokenAddress =
+    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+  const toTokenAddress =
+    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
 
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
-    fromToken: overrideToken.source?.address || constants.AddressZero,
+    fromToken: fromTokenAddress,
     toAddress: (destinationAddress as Address) || address,
     toChainId: networks.destinationChain.id,
-    toToken: overrideToken.destination?.address || constants.AddressZero,
+    toToken: toTokenAddress,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,
@@ -307,7 +357,6 @@ export function useRoutesUpdater() {
       eligibleRouteTypes,
       lifiError,
       isLifiLoading,
-      lifiRoutes,
       slippage,
       disabledExchanges,
       disabledBridges,
@@ -326,6 +375,15 @@ export function useRoutesUpdater() {
         ? userSelectedRoute // User selection is valid - preserve it
         : getBestRouteForDefaultSelection(routeData); // Auto-select best route - becomes default selection
 
+    // Compute context for LiFi routes, but only after loading completes to ensure button stays disabled during loading
+    let context: RouteContext | undefined = undefined;
+    if (!isLifiLoading && selectedRoute && isLifiRoute(selectedRoute)) {
+      const selectedRouteData = routeData.find((route) => route.type === selectedRoute);
+      if (selectedRouteData && 'route' in selectedRouteData.data) {
+        context = getContextFromRoute(selectedRouteData.data.route);
+      }
+    }
+
     setRouteState({
       eligibleRouteTypes,
       isLoading: isLifiLoading,
@@ -335,6 +393,7 @@ export function useRoutesUpdater() {
       hasLowLiquidity: flags.hasLowLiquidity,
       hasModifiedSettings: flags.hasModifiedSettings,
       selectedRoute,
+      context,
     });
   }, [
     eligibleRouteTypes,

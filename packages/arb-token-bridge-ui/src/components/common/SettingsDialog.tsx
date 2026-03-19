@@ -59,14 +59,14 @@ export const SettingsDialog = () => {
 
         {/* Add custom chain */}
         <div className="w-full transition-opacity">
-          <SectionTitle className="mb-1">Add Custom Orbit Chain</SectionTitle>
+          <SectionTitle className="mb-1">Add Custom Arbitrum Chain</SectionTitle>
           <p className="mb-4 text-sm">
-            Add in your own Orbit chain to the bridge. This will only be for local testing, other
+            Add in your own Arbitrum chain to the bridge. This will only be for local testing, other
             users will not see it.
             <br />
-            Learn more about how to create and add your Orbit Testnet in{' '}
+            Learn more about how to create and add your Arbitrum Chain Testnet in{' '}
             <ExternalLink className="arb-hover underline" href={ORBIT_QUICKSTART_LINK}>
-              Arbitrum Orbit Quickstart
+              Arbitrum Chain Quickstart
             </ExternalLink>
             .
           </p>

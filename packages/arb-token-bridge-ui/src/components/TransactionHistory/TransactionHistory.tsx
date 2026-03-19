@@ -32,7 +32,7 @@ export const useTxDetailsStore = create<TxDetailsStore>((set) => ({
 
 export const TransactionHistory = () => {
   return (
-    <div className="m-auto w-full max-w-[100vw] border-y border-white/30 bg-[#191919] py-4 pl-4 md:max-w-[1000px] md:rounded md:border-x md:pr-4">
+    <div className="m-auto w-full max-w-[100vw] bg-[#191919] p-4 md:max-w-[1000px] rounded">
       <TransactionHistorySearchBar />
 
       <TransactionHistorySearchResults />

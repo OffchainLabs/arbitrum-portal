@@ -21,8 +21,11 @@ const ItemContent = ({
   slug,
   displayMode,
   analyticsSource,
+  showProjectPreview = true,
   onClick,
-}: Pick<ItemBoxProps, 'slug' | 'displayMode' | 'analyticsSource' | 'onClick'>) => {
+}: Pick<ItemBoxProps, 'slug' | 'displayMode' | 'analyticsSource' | 'onClick'> & {
+  showProjectPreview?: boolean;
+}) => {
   const orbitChain = getOrbitChainDetailsById(slug);
   const { openEntitySidePanel: openOrbitChainSidePanel } = useEntitySidePanel(
     EntityType.OrbitChain,
@@ -80,7 +83,9 @@ const ItemContent = ({
         </>
       )}
       {/* Normal orbit-chain contents */}
-      <div className={twMerge('z-10 flex flex-col gap-4', isSpotlightMode && 'w-full lg:w-1/3')}>
+      <div
+        className={twMerge('z-10 flex flex-col gap-4', isSpotlightMode && 'w-full lg:w-[240px]')}
+      >
         {/* Logos */}
         <div className="flex shrink-0 grow-0 flex-col gap-2 overflow-hidden bg-cover bg-center">
           {/* Chain logo */}
@@ -136,7 +141,7 @@ const ItemContent = ({
         </div>
       </div>
 
-      {isSpotlightMode && (
+      {isSpotlightMode && showProjectPreview && (
         <OrbitSpotlightProjectPreview
           orbitChainSlug={slug}
           className="h-full w-full lg:w-[540px] lg:min-w-[400px]"
@@ -153,7 +158,8 @@ export const OrbitItemBox = ({
   lazyload = true, // `lazyload` option false will render the card without lazy-loading. eg. in search preview / carousel etc.
   analyticsSource, // source from where this orbit-chain was rendered - helpful for tracking analytics
   onClick, // optional function that can be passed when orbit-chain is clicked
-}: ItemBoxProps) => {
+  showProjectPreview = true,
+}: ItemBoxProps & { showProjectPreview?: boolean }) => {
   const orbitChain = getOrbitChainDetailsById(slug);
   const isSpotlightMode = displayMode === 'spotlight';
 
@@ -177,6 +183,7 @@ export const OrbitItemBox = ({
             displayMode={displayMode}
             analyticsSource={analyticsSource}
             onClick={onClick}
+            showProjectPreview={showProjectPreview}
           />
         </LazyLoad>
       ) : (
@@ -185,6 +192,7 @@ export const OrbitItemBox = ({
           displayMode={displayMode}
           analyticsSource={analyticsSource}
           onClick={onClick}
+          showProjectPreview={showProjectPreview}
         />
       )}
     </div>

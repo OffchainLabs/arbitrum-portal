@@ -1,6 +1,8 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
+import { QueryParamConfig } from 'use-query-params';
 
+import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import {
   ChainKeyQueryParam,
@@ -10,6 +12,7 @@ import {
 } from '../types/ChainQueryParam';
 import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
+import { LOG_LEVELS, LogLevel } from './logger';
 import { isNetwork } from './networks';
 import { orbitChains } from './orbitChainsList';
 
@@ -286,6 +289,18 @@ export const AmountQueryParam = {
   },
 };
 
+export const LogLevelParam: QueryParamConfig<LogLevel> = {
+  encode(value) {
+    return value ?? 'silent';
+  },
+  decode(value) {
+    if (typeof value === 'string' && LOG_LEVELS.includes(value as LogLevel)) {
+      return value as LogLevel;
+    }
+    return 'silent';
+  },
+};
+
 export const TokenQueryParam = {
   encode: (token: string | undefined) => {
     return token?.toLowerCase();
@@ -294,6 +309,16 @@ export const TokenQueryParam = {
     const tokenStr = token?.toString();
     // We are not checking for a valid address because we handle it in the UI
     // by showing an invalid token dialog
+    return tokenStr?.toLowerCase();
+  },
+};
+
+export const DestinationTokenQueryParam = {
+  encode: (token: string | undefined) => {
+    return token?.toLowerCase();
+  },
+  decode: (token: string | (string | null)[] | null | undefined) => {
+    const tokenStr = token?.toString();
     return tokenStr?.toLowerCase();
   },
 };
@@ -437,11 +462,30 @@ export function sanitizeNullSelectedToken({
     return undefined;
   }
 
+  const isLifiChainPair = isLifiTransfer({ sourceChainId, destinationChainId });
+
+  if (isLifiEnabled() && isLifiChainPair) {
+    // If an ERC20 token is selected for LiFi transfer, return it directly
+    if (erc20ParentAddress) {
+      return erc20ParentAddress;
+    }
+
+    // Superposition doesn't have ApeToken, so we default to AddressZero only when ApeChain is the destination
+    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
+      return constants.AddressZero;
+    }
+
+    // All other LiFi pairs: default to null (native token of destination chain)
+    return null;
+  }
+
   try {
     const destinationChain = getArbitrumNetwork(destinationChainId);
 
-    // If the destination chain has a custom fee token, and selectedToken is null,
-    // return native token for deposit from the parent chain, ETH otherwise
+    /**
+     * If the destination chain has a custom fee token, and selectedToken is null,
+     * return native token for deposit from the parent chain, ETH otherwise
+     */
     if (destinationChain.nativeToken && !erc20ParentAddress) {
       if (sourceChainId === destinationChain.parentChainId) {
         return erc20ParentAddress;
@@ -478,9 +522,7 @@ export const sanitizeTokenQueryParam = ({
       erc20ParentAddress: tokenLowercased || null,
     });
 
-    if (sanitizedTokenAddress) {
-      return sanitizedTokenAddress;
-    }
+    return sanitizedTokenAddress;
   }
   if (!destinationChainId) {
     return tokenLowercased;

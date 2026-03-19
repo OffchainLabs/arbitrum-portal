@@ -69,7 +69,7 @@ SearchPanel.MainPageCTA = MainPageCTA;
 function CloseButton({ className, ...props }: React.HTMLAttributes<HTMLButtonElement>) {
   return (
     <button className={twMerge('arb-hover', className)} {...props}>
-      <XMarkIcon className="h-7 w-7 text-gray-7 lg:h-5 lg:w-5" />
+      <XMarkIcon className="h-8 w-8 text-gray-7 lg:h-5 lg:w-5" />
     </button>
   );
 }

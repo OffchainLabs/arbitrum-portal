@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount } from '../NumberUtils';
+import { formatAmount, truncateExtraDecimals } from '../NumberUtils';
 
 describe('formatAmount', () => {
   describe('for short token symbol', () => {
@@ -142,5 +142,27 @@ describe('formatAmount', () => {
       expect(getResultFromNumber(123456789012345678.901234)).toBe('123,456.8T LONGTOKEN');
       expect(getResultFromNumber(1234567890123456789.012345)).toBe('1,234,567.9T LONGTOKEN');
     });
+  });
+});
+
+describe('truncateExtraDecimals', () => {
+  it('should return amount unchanged when no decimal point is present', () => {
+    expect(truncateExtraDecimals('100', 6)).toBe('100');
+  });
+
+  it('should truncate decimal places when exceeding max decimals', () => {
+    expect(truncateExtraDecimals('1.2345678', 4)).toBe('1.2345');
+  });
+
+  it('should return integer part when max decimals is 0', () => {
+    expect(truncateExtraDecimals('1.999', 0)).toBe('1');
+  });
+
+  it('should preserve sign while truncating negative values', () => {
+    expect(truncateExtraDecimals('-1.2345678', 4)).toBe('-1.2345');
+  });
+
+  it('should throw when decimals is negative', () => {
+    expect(() => truncateExtraDecimals('1.2345', -1)).toThrow('decimals must be non-negative');
   });
 });

@@ -1,6 +1,11 @@
 import axios from 'axios';
+import { constants } from 'ethers';
 import { useCallback } from 'react';
 import useSWR, { KeyedMutator } from 'swr';
+
+import { ChainId } from '../types/ChainId';
+import { getAPIBaseUrl } from '../util';
+import { isLifiEnabled } from '../util/featureFlag';
 
 export type UseETHPriceResult = {
   ethPrice: number;
@@ -11,9 +16,43 @@ export type UseETHPriceResult = {
 };
 
 export function useETHPrice(): UseETHPriceResult {
+  const fetchCoinbaseEthPrice = () =>
+    axios
+      .get('https://api.coinbase.com/v2/prices/ETH-USD/spot')
+      .then((res) => Number(res.data.data.amount));
+
+  const fetchLifiEthPrice = async (): Promise<number | undefined> => {
+    const url = `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/tokens?parentChainId=${ChainId.Ethereum}&childChainId=${ChainId.ArbitrumOne}`;
+    const { data } = await axios.get(url);
+    const tokens: {
+      address: string;
+      extensions?: {
+        priceUSD?: string | number;
+      };
+    }[] = data?.tokens ?? [];
+    const ethToken = tokens.find((token) => token.address === constants.AddressZero);
+    const priceUSD = ethToken?.extensions?.priceUSD;
+    if (!priceUSD) return undefined;
+    const parsed = Number(priceUSD);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+
   const { data, error, isValidating, mutate } = useSWR<number, Error>(
-    'https://api.coinbase.com/v2/prices/ETH-USD/spot',
-    (url) => axios.get(url).then((res) => res.data.data.amount),
+    'eth-price',
+    async () => {
+      if (isLifiEnabled()) {
+        try {
+          const lifiPrice = await fetchLifiEthPrice();
+          if (typeof lifiPrice === 'number') {
+            return lifiPrice;
+          }
+        } catch {
+          // Fall back to Coinbase if LiFi price fetch fails
+        }
+      }
+
+      return fetchCoinbaseEthPrice();
+    },
     {
       refreshInterval: 300_000, // 5 minutes
       shouldRetryOnError: true,

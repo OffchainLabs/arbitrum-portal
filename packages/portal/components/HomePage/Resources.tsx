@@ -33,7 +33,6 @@ const ResourceCard = ({
         className,
       )}
       href={href}
-      grainy
     >
       <Image
         alt={name}
@@ -73,7 +72,7 @@ const Content = () => {
       />
 
       <ResourceCard
-        name="Orbit"
+        name="Arbitrum Chains"
         cardType="link"
         href={'/orbit'}
         imageSrc="/images/illustration-orbit.webp"

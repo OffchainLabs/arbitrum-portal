@@ -113,10 +113,6 @@ export const fillCustomDestinationAddress = () => {
     .click();
 
   cy.wait(1_000);
-  cy.findByLabelText('Custom Destination Address Input').scrollIntoView().should('be.disabled');
-
-  // unlock custom destination address input
-  cy.findByLabelText('Custom destination input lock').scrollIntoView().should('be.visible').click();
 
   cy.findByLabelText('Custom Destination Address Input')
     .scrollIntoView()
@@ -198,13 +194,13 @@ export function findSelectTokenButton(text: string): Cypress.Chainable<JQuery<HT
 
 export function switchToTransferPanelTab() {
   cy.wait(1_000);
-  return cy.findByLabelText('Switch to Bridge Tab').click();
+  return cy.findAllByLabelText('Switch to Bridge Tab').click();
 }
 
 export function switchToTransactionHistoryTab(tab: 'pending' | 'settled') {
   cy.log(`opening transactions panel on ${tab}`);
 
-  cy.findByLabelText('Switch to Transaction History Tab').click();
+  cy.findAllByLabelText('Switch to Transaction History Tab').click();
 
   cy.selectTransactionsPanelTab(tab);
 

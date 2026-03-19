@@ -2,12 +2,8 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { Metadata } from 'next';
 import { PropsWithChildren } from 'react';
 import 'react-toastify/dist/ReactToastify.css';
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light.css';
 
 import { PORTAL_DOMAIN } from '@/bridge/constants';
-
-import '../../../styles/bridge.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(PORTAL_DOMAIN),

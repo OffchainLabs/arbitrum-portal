@@ -1,4 +1,5 @@
 import { ChainId } from '../../types/ChainId';
+import { logger } from '../logger';
 import { getAlchemyRpcUrl } from './alchemy';
 import { getInfuraRpcUrl } from './infura';
 
@@ -13,14 +14,14 @@ function getRpcProvider(): RpcProvider {
   const rpcProviderFromEnv = process.env.NEXT_PUBLIC_RPC_PROVIDER;
 
   if (typeof rpcProviderFromEnv === 'undefined' || rpcProviderFromEnv === '') {
-    console.warn(`[getRpcProvider] no provider specified`);
-    console.warn(`[getRpcProvider] defaulting to infura`);
+    logger.warn(`[getRpcProvider] no provider specified`);
+    logger.warn(`[getRpcProvider] defaulting to infura`);
     return 'infura';
   }
 
   if (rpcProviderFromEnv !== 'infura' && rpcProviderFromEnv !== 'alchemy') {
-    console.warn(`[getRpcProvider] unknown provider "${rpcProviderFromEnv}"`);
-    console.warn(`[getRpcProvider] defaulting to infura`);
+    logger.warn(`[getRpcProvider] unknown provider "${rpcProviderFromEnv}"`);
+    logger.warn(`[getRpcProvider] defaulting to infura`);
     return 'infura';
   }
 

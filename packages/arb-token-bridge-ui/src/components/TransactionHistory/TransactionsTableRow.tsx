@@ -4,6 +4,7 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
+import { BigNumber } from 'ethers';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useInterval } from 'react-use';
@@ -22,6 +23,7 @@ import { getExplorerUrl, getNetworkName } from '../../util/networks';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { NetworkImage } from '../common/NetworkImage';
+import { SafeImage } from '../common/SafeImage';
 import { useTxDetailsStore } from './TransactionHistory';
 import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
 import { TransactionsTableExternalLink } from './TransactionsTableExternalLink';
@@ -29,6 +31,7 @@ import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
 import {
   getDestinationNetworkTxId,
+  isLifiTransfer,
   isTxClaimable,
   isTxExpired,
   isTxFailed,
@@ -137,10 +140,34 @@ export function TransactionsTableRow({
   // make sure relative time updates periodically
   useInterval(() => setTxRelativeTime(dayjs(tx.createdAt).fromNow()), 10_000);
 
-  const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
-    erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId,
-  });
+  const tokenSymbol = isLifiTransfer(tx)
+    ? tx.fromAmount.token.symbol
+    : sanitizeTokenSymbol(tx.asset, {
+        erc20L1Address: tx.tokenAddress,
+        chainId: tx.sourceChainId,
+      });
+  const tokenLogoSrc = isLifiTransfer(tx) ? tx.fromAmount.token.logoURI : undefined;
+  const tokenAddress = isLifiTransfer(tx) ? tx.fromAmount.token.address : tx.tokenAddress;
+
+  const lifiToAmount = isLifiTransfer(tx) ? tx.toAmount : undefined;
+  const toTokenSymbol = lifiToAmount?.token?.symbol ?? tokenSymbol;
+  const toTokenLogoSrc = lifiToAmount?.token?.logoURI;
+  const toTokenBigNumber = lifiToAmount?.amount
+    ? BigNumber.isBigNumber(lifiToAmount.amount)
+      ? lifiToAmount.amount
+      : BigNumber.from(lifiToAmount.amount)
+    : undefined;
+  const toTokenAmount = toTokenBigNumber
+    ? formatAmount(toTokenBigNumber, {
+        decimals: lifiToAmount?.token?.decimals,
+        symbol: toTokenSymbol,
+      })
+    : toTokenSymbol;
+  const nonLifiReceivedAmount = formatAmount(Number(tx.value), { symbol: tokenSymbol });
+  const nonLifiReceivedAmount2 =
+    isBatchTransfer(tx) && tx.value2
+      ? formatAmount(Number(tx.value2), { symbol: nativeCurrency.symbol })
+      : null;
 
   const isError = useMemo(() => {
     if (tx.isCctp || !tx.isWithdrawal) {
@@ -176,7 +203,7 @@ export function TransactionsTableRow({
     <div
       data-testid={testId}
       className={twMerge(
-        'relative grid h-[60px] grid-cols-[140px_140px_140px_140px_100px_170px_140px] items-center justify-between border-b border-white/30 text-xs text-white md:mx-4',
+        'relative grid h-[60px] grid-cols-[100px_140px_120px_120px_120px_90px_130px_120px] items-center justify-between border-b border-white/30 text-xs text-white md:mx-4',
         className,
       )}
     >
@@ -184,10 +211,19 @@ export function TransactionsTableRow({
       <div className="flex flex-col space-y-1">
         <div className="flex items-center pr-3 align-middle">
           <TransactionsTableExternalLink
-            href={`${getExplorerUrl(sourceChainId)}/token/${tx.tokenAddress}`}
-            disabled={!tx.tokenAddress}
+            href={`${getExplorerUrl(sourceChainId)}/token/${tokenAddress}`}
+            disabled={!tokenAddress}
           >
-            <TransactionsTableTokenImage tx={tx} />
+            {tokenLogoSrc ? (
+              <SafeImage
+                src={tokenLogoSrc}
+                alt={`${tokenSymbol} logo`}
+                className="h-5 w-5"
+                fallback={<div className="h-5 w-5 rounded-full bg-white/20" />}
+              />
+            ) : (
+              <TransactionsTableTokenImage tx={tx} />
+            )}
             <span className="ml-2">
               {formatAmount(Number(tx.value), {
                 symbol: tokenSymbol,
@@ -214,13 +250,40 @@ export function TransactionsTableRow({
         )}
       </div>
       <div className="flex items-center space-x-2">
+        {toTokenLogoSrc ? (
+          <SafeImage
+            src={toTokenLogoSrc}
+            alt={`${toTokenSymbol} logo`}
+            className="h-5 w-5"
+            fallback={<div className="h-5 w-5 rounded-full bg-white/20" />}
+          />
+        ) : (
+          <TransactionsTableTokenImage tx={tx} />
+        )}
+        {isLifiTransfer(tx) ? (
+          <span className="inline-block max-w-[90px] break-words">{toTokenAmount}</span>
+        ) : (
+          <div className="flex flex-col">
+            <span className="inline-block max-w-[90px] break-words">{nonLifiReceivedAmount}</span>
+            {nonLifiReceivedAmount2 && (
+              <span className="inline-block max-w-[90px] break-words text-white/70">
+                {nonLifiReceivedAmount2}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center space-x-2">
         <TransactionsTableExternalLink
           href={`${getExplorerUrl(sourceChainId)}/address/${tx.sender}`}
         >
           <span>
             <NetworkImage chainId={sourceChainId} className="h-5 w-5" />
           </span>
-          <span className="inline-block max-w-[55px] break-words">
+          <span
+            className="inline-block max-w-[55px] truncate whitespace-nowrap"
+            title={getNetworkName(sourceChainId)}
+          >
             {getNetworkName(sourceChainId)}
           </span>
         </TransactionsTableExternalLink>
@@ -231,7 +294,10 @@ export function TransactionsTableRow({
         >
           <NetworkImage chainId={destinationChainId} className="h-5 w-5" />
 
-          <span className="inline-block max-w-[55px] break-words">
+          <span
+            className="inline-block max-w-[55px] truncate whitespace-nowrap"
+            title={getNetworkName(destinationChainId)}
+          >
             {getNetworkName(destinationChainId)}
           </span>
         </TransactionsTableExternalLink>

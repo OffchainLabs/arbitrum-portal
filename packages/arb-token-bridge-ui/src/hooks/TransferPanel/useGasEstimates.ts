@@ -20,11 +20,13 @@ import {
 } from '../../components/TransferPanel/hooks/useRouteStore';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
+import { useDestinationToken } from '../useDestinationToken';
 import {
   UseLifiCrossTransfersRouteParams,
   useLifiCrossTransfersRoute,
 } from '../useLifiCrossTransferRoute';
 import { useNetworks } from '../useNetworks';
+import { useNetworksRelationship } from '../useNetworksRelationship';
 import { useSelectedToken } from '../useSelectedToken';
 
 async function fetcher([
@@ -80,8 +82,12 @@ export function useGasEstimates({
   gasEstimates: TransferEstimateGasResult;
   error: any;
 } {
-  const [{ sourceChain, destinationChain }] = useNetworks();
+  const [networks] = useNetworks();
+  const { sourceChain, destinationChain } = networks;
+  const { isDepositMode } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
+  const destinationTokenForGas = destinationToken ?? selectedToken;
   const [{ destinationAddress }] = useArbQueryParams();
   const { address: walletAddress } = useAccount();
   const balance = useBalanceOnSourceChain(selectedToken);
@@ -99,7 +105,7 @@ export function useGasEstimates({
   );
   const isLifiRouteEligible = eligibleRouteTypes.includes('lifi');
 
-  const overrideToken = useMemo(
+  const overrideSourceToken = useMemo(
     () =>
       getTokenOverride({
         sourceChainId: sourceChain.id,
@@ -107,6 +113,15 @@ export function useGasEstimates({
         destinationChainId: destinationChain.id,
       }),
     [selectedToken?.address, sourceChain.id, destinationChain.id],
+  );
+  const overrideDestinationToken = useMemo(
+    () =>
+      getTokenOverride({
+        sourceChainId: sourceChain.id,
+        fromToken: destinationTokenForGas?.address,
+        destinationChainId: destinationChain.id,
+      }),
+    [destinationTokenForGas?.address, sourceChain.id, destinationChain.id],
   );
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
     (state) => ({
@@ -116,15 +131,26 @@ export function useGasEstimates({
     }),
     shallow,
   );
+
+  const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
+  const defaultToTokenAddress = isDepositMode
+    ? destinationTokenForGas?.l2Address
+    : destinationTokenForGas?.address;
+
+  const fromTokenAddress =
+    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+  const toTokenAddress =
+    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
+
   const parameters = {
     enabled: isLifiRouteEligible,
     fromAddress: walletAddress,
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
-    fromToken: overrideToken.source?.address || constants.AddressZero,
+    fromToken: fromTokenAddress,
     toAddress: (destinationAddress as Address) || walletAddress,
     toChainId: destinationChain.id,
-    toToken: overrideToken.destination?.address || constants.AddressZero,
+    toToken: toTokenAddress,
     denyBridges: disabledBridges,
     denyExchanges: disabledExchanges,
     slippage,

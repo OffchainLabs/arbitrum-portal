@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -142,9 +143,6 @@ function getCoreChainImage(from: Chain, to: Chain) {
         style={{
           transform: 'rotate(180deg)',
           mixBlendMode: 'overlay',
-          backgroundImage: 'url("https://arbitrum.io/background/grains_bottom.png")',
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'cover',
           width: '100%',
           height: '100%',
           opacity: 0.35,

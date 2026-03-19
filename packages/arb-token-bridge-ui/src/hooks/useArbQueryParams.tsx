@@ -31,8 +31,10 @@ import {
   AmountQueryParam,
   AmountQueryParamEnum,
   ChainParam,
+  DestinationTokenQueryParam,
   DisabledFeatures,
   DisabledFeaturesParam,
+  LogLevelParam,
   TabParam,
   TabParamEnum,
   ThemeParam,
@@ -64,8 +66,10 @@ export {
   AmountQueryParam,
   sanitizeAmountQueryParam,
   TokenQueryParam,
+  DestinationTokenQueryParam,
   ChainParam,
   TabParam,
+  LogLevelParam,
 };
 
 export const queryParamProviderOptions = {
@@ -81,10 +85,13 @@ export const queryParamProviderOptions = {
     amount2: withDefault(AmountQueryParam, ''), // extra eth to send together with erc20
     destinationAddress: withDefault(StringParam, undefined),
     token: TokenQueryParam, // import a new token using a Dialog Box
+    destinationToken: DestinationTokenQueryParam, // token to receive on destination via LiFi
     settingsOpen: withDefault(BooleanParam, false),
     tab: withDefault(TabParam, tabToIndex[TabParamEnum.BRIDGE]), // which tab is active
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
     theme: withDefault(ThemeParam, defaultTheme), // theme customization
+    debugLevel: withDefault(LogLevelParam, 'silent'), // debug mode to show extra console errors in the UI
+    experiments: withDefault(StringParam, undefined), // experimental feature flags
   },
 } as const satisfies QueryParamOptions;
 

@@ -15,8 +15,8 @@ const categoryMetaData: {
     image: '/images/illustration-infra-tools.webp',
     description: 'Explore the new wave of intelligence.',
   },
-  'nfts': {
-    image: '/images/illustration-nft.webp',
+  'consumer': {
+    image: '/images/illustration-consumer.webp',
     description: 'Browse new art collections.',
   },
   'gaming': {

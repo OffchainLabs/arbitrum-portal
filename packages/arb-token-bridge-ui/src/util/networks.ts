@@ -13,6 +13,7 @@ import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils'
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
+import { logger } from './logger';
 import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
@@ -271,7 +272,7 @@ export const explorerUrls: { [chainId: number]: string } = {
   // L1 Testnets
   [ChainId.Sepolia]: 'https://sepolia.etherscan.io',
   // L2
-  [ChainId.ArbitrumNova]: 'https://nova.arbiscan.io',
+  [ChainId.ArbitrumNova]: 'https://arbitrum-nova.blockscout.com',
   [ChainId.ArbitrumOne]: 'https://arbiscan.io',
   [ChainId.Base]: 'https://basescan.org',
   // L2 Testnets
@@ -361,7 +362,7 @@ export async function registerLocalNetwork() {
       isLocalCustomNativeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network,
     );
   } catch (error: any) {
-    console.error(`Failed to register local network: ${error.message}`);
+    logger.error(`Failed to register local network: ${error.message}`);
   }
 }
 

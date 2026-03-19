@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { twMerge } from 'tailwind-merge';
 
+import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import { useArbQueryParams } from '@/hooks/useArbQueryParams';
 import { useBookmarkedProjects } from '@/hooks/useBookmarkedProjects';
 import { useDyorProjects } from '@/hooks/useDyorProjects';
@@ -30,9 +31,9 @@ export const MyProjects = () => {
 
   return (
     <>
+      <PageHeading>My Apps</PageHeading>
       <Card
         className="relative mb-4 flex h-[100px] flex-row items-center justify-between text-2xl lg:px-10 lg:text-3xl"
-        grainy
         style={{
           background: isDyorView
             ? 'linear-gradient(163deg, rgba(29,63,112,1) 0%, rgba(91,101,147,1) 26%, rgba(91,53,103,1) 40%, rgba(40,52,115,1) 60%, rgba(126,91,212,1) 84%, rgba(135,64,64,1) 100%)'

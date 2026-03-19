@@ -6,10 +6,11 @@ import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app-components/Tooltip';
+
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { Button } from '../common/Button';
-import { Tooltip } from '../common/Tooltip';
 
 export enum TransactionHistorySearchError {
   INVALID_ADDRESS = 'That doesn’t seem to be a valid address, please try again.',

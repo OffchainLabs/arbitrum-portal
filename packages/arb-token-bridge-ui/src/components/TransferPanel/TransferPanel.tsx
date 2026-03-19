@@ -1,7 +1,6 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
 import { getStepTransaction } from '@lifi/sdk';
-import Tippy from '@tippyjs/react';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
@@ -11,6 +10,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app-components/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
@@ -19,6 +19,7 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import { ChainId } from '@/bridge/types/ChainId';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -54,6 +55,7 @@ import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { extractErrorMessage } from '../../util/extractErrorMessage';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
+import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
@@ -83,6 +85,7 @@ import {
 } from './bridgeSdkConversionUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
+import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
@@ -171,6 +174,8 @@ export function TransferPanel() {
   );
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());
+
+  const isSwapTransfer = useIsSwapTransfer();
 
   const latestDestinationAddress = useLatest(destinationAddress);
 
@@ -343,9 +348,7 @@ export function TransferPanel() {
   };
 
   const stepExecutor: UiDriverStepExecutor = async (context, step) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(step);
-    }
+    logger.debug(step);
 
     if (step.type === 'return') {
       throw Error(`[stepExecutor] "return" step should be handled outside the executor`);
@@ -560,11 +563,19 @@ export function TransferPanel() {
         return;
       }
 
+      const destinationChainErc20Address =
+        tokenOverrides.destination?.address || isDepositMode
+          ? selectedToken?.l2Address
+          : selectedToken?.address;
+      const sourceChainErc20Address =
+        tokenOverrides.source?.address || isDepositMode
+          ? selectedToken?.address
+          : selectedToken?.l2Address;
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,
-        destinationChainErc20Address: tokenOverrides.destination?.address,
-        sourceChainErc20Address: tokenOverrides.source?.address,
+        destinationChainErc20Address,
+        sourceChainErc20Address,
         lifiData: {
           ...context,
           transactionRequest,
@@ -616,15 +627,29 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
+      const assetType =
+        addressesEqual(context.fromAmount.token.address, constants.AddressZero) &&
+        networks.sourceChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
+      const destinationAssetType =
+        addressesEqual(context.toAmount.token.address, constants.AddressZero) &&
+        networks.destinationChain.id === ChainId.ApeChain
+          ? AssetType.ERC20
+          : AssetType.ETH;
+
       trackEvent('Lifi Transfer', {
-        tokenSymbol: selectedToken?.symbol || 'ETH',
-        assetType: selectedToken ? AssetType.ERC20 : AssetType.ETH,
+        tokenSymbol: context.fromAmount.token.symbol,
+        assetType,
+        destinationTokenSymbol: context.toAmount.token.symbol,
+        destinationAssetType,
         accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
         destinationChain: getNetworkName(networks.destinationChain.id),
         tag: selectedRoute,
+        isSwap: isSwapTransfer,
       });
 
       resetAmountAndSwitchToTransactionHistoryTab();
@@ -675,6 +700,20 @@ export function TransferPanel() {
       }
 
       clearRoute();
+
+      if (transfer?.sourceChainTransaction?.wait) {
+        await transfer.sourceChainTransaction.wait();
+
+        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+
+        if (selectedToken) {
+          token.updateTokenData(selectedToken.address);
+        }
+
+        if (nativeCurrency.isCustom) {
+          await updateErc20ParentBalances([nativeCurrency.address]);
+        }
+      }
     } catch (error) {
       if (isUserRejectedError(error)) {
         return;
@@ -815,7 +854,7 @@ export function TransferPanel() {
         label: 'oft_transfer',
         category: 'transaction_signing',
       });
-      console.error(error);
+      logger.error(error);
       errorToast(
         `OFT ${isDepositMode ? 'Deposit' : 'Withdrawal'} transaction failed: ${
           (error as Error)?.message ?? error
@@ -839,7 +878,7 @@ export function TransferPanel() {
 
     // SC Teleport transfers aren't enabled yet. Safety check, shouldn't be able to get here.
     if (isSmartContractWallet && isTeleportMode) {
-      console.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
+      logger.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
       return;
     }
 
@@ -898,7 +937,7 @@ export function TransferPanel() {
       }
 
       if (destinationAddressError) {
-        console.error(destinationAddressError);
+        logger.error(destinationAddressError);
         return;
       }
 
@@ -1275,8 +1314,7 @@ export function TransferPanel() {
 
       <div
         className={twMerge(
-          'bg-gray-1 mb-7 flex flex-col gap-4 border-y border-white/30 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
-          'sm:rounded sm:border',
+          'bg-gray-1 mb-7 flex flex-col border-0 rounded gap-4 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
         )}
       >
         <TransferPanelMain />
@@ -1302,24 +1340,23 @@ export function TransferPanel() {
         )}
 
         {showSmartContractWalletTooltip && (
-          <Tippy
-            placement="bottom-end"
-            maxWidth="auto"
-            onClickOutside={() => setShowSmartContractWalletTooltip(false)}
-            theme="orange"
-            visible={showSmartContractWalletTooltip}
+          <Tooltip
             content={
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <span>
                   <b>To continue, please approve tx on your smart contract wallet.</b>
                 </span>
                 <span>If you have k of n signers, then k of n will need to sign.</span>
               </div>
             }
+            tippyProps={{
+              placement: 'bottom',
+              visible: showSmartContractWalletTooltip,
+              onClickOutside: () => setShowSmartContractWalletTooltip(false),
+            }}
           >
-            {/* Override margin coming from Tippy that causes layout disruptions */}
-            <div className="!m-0" />
-          </Tippy>
+            <div className="!m-0 h-px mx-auto text-center w-full" aria-hidden="true" />
+          </Tooltip>
         )}
       </div>
     </>

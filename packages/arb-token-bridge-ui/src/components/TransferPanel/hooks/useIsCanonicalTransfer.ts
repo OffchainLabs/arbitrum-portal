@@ -7,6 +7,7 @@ import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { isDepositMode } from '../../../util/isDepositMode';
 import { getDestinationChainIds } from '../../../util/networks';
 import { isDisabledCanonicalTransfer } from '../TransferDisabledDialog';
+import { useIsSwapTransfer } from './useIsSwapTransfer';
 import { useSelectedTokenIsWithdrawOnly } from './useSelectedTokenIsWithdrawOnly';
 
 export function isArbitrumCanonicalTransfer({
@@ -17,6 +18,7 @@ export function isArbitrumCanonicalTransfer({
   isSelectedTokenWithdrawOnly,
   isSelectedTokenWithdrawOnlyLoading,
   selectedToken,
+  isSwap,
 }: {
   sourceChainId: number;
   destinationChainId: number;
@@ -25,6 +27,7 @@ export function isArbitrumCanonicalTransfer({
   isSelectedTokenWithdrawOnly: boolean;
   isSelectedTokenWithdrawOnlyLoading: boolean;
   selectedToken: ERC20BridgeToken | null;
+  isSwap: boolean;
 }): boolean {
   const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
   const isTeleportMode = isValidTeleportChainPair({
@@ -36,22 +39,19 @@ export function isArbitrumCanonicalTransfer({
   if (!isValidPair) {
     return false;
   }
-
-  if (
-    isDisabledCanonicalTransfer({
-      childChainId: childChainId,
-      isDepositMode: isDeposit,
-      isSelectedTokenWithdrawOnly,
-      isSelectedTokenWithdrawOnlyLoading,
-      isTeleportMode,
-      parentChainId: parentChainId,
-      selectedToken,
-    })
-  ) {
+  if (isSwap) {
     return false;
   }
 
-  return true;
+  return !isDisabledCanonicalTransfer({
+    childChainId: childChainId,
+    isDepositMode: isDeposit,
+    isSelectedTokenWithdrawOnly,
+    isSelectedTokenWithdrawOnlyLoading,
+    isTeleportMode,
+    parentChainId: parentChainId,
+    selectedToken,
+  });
 }
 
 export const useIsArbitrumCanonicalTransfer = function () {
@@ -60,6 +60,7 @@ export const useIsArbitrumCanonicalTransfer = function () {
   const { childChain, parentChain } = useNetworksRelationship(networks);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
+  const isSwap = useIsSwapTransfer();
 
   return isArbitrumCanonicalTransfer({
     sourceChainId: networks.sourceChain.id,
@@ -69,5 +70,6 @@ export const useIsArbitrumCanonicalTransfer = function () {
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedToken,
+    isSwap,
   });
 };

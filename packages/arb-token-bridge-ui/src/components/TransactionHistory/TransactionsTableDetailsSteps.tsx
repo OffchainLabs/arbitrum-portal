@@ -148,7 +148,10 @@ function isSourceChainStatusFailure(tx: MergedTransaction) {
 
 function isDestinationChainStatusFailure(tx: MergedTransaction) {
   if (isLifiTransfer(tx)) {
-    return tx.destinationStatus === WithdrawalStatus.FAILURE;
+    return (
+      tx.destinationStatus === WithdrawalStatus.FAILURE ||
+      tx.destinationStatus === WithdrawalStatus.REFUNDED
+    );
   }
 
   if (isTeleportTx(tx)) {
@@ -170,6 +173,7 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
   const isTeleport = isTeleportTx(tx);
 
   const isDestinationChainFailure = isDestinationChainStatusFailure(tx);
+  const isLifiRefunded = isLifiTransfer(tx) && tx.destinationStatus === WithdrawalStatus.REFUNDED;
 
   const destinationChainTxText = useMemo(() => {
     const networkName = getNetworkName(tx.destinationChainId);
@@ -186,10 +190,13 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
       return <TransactionFailedOnNetwork networkName={networkName} />;
     }
     if (isDestinationChainFailure) {
+      if (isLifiRefunded) {
+        return `Funds refunded on ${sourceNetworkName}`;
+      }
       return `Transaction failed on ${networkName}.`;
     }
     return fundsArrivedText;
-  }, [tx, isDestinationChainFailure, isTeleport]);
+  }, [tx, isDestinationChainFailure, isTeleport, sourceNetworkName, isLifiRefunded]);
 
   return (
     <div className="flex flex-col text-xs">

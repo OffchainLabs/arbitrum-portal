@@ -20,6 +20,7 @@ import {
   secondRetryableLegForTeleportRequiresRedeem,
 } from '../util/RetryableUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
+import { logger } from '../util/logger';
 import { getNetworkName } from '../util/networks';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { UseRedeemRetryableResult } from './useRedeemRetryable';
@@ -34,7 +35,7 @@ const redeemRetryable = async (retryable: ParentToChildMessageWriter) => {
   const isSuccess = status === ParentToChildMessageStatus.REDEEMED;
 
   if (!isSuccess) {
-    console.error('Redemption failed; status is not REDEEMED', redeemTx);
+    logger.error('Redemption failed; status is not REDEEMED', redeemTx);
     throw new Error('Redemption failed; status is not REDEEMED. Please try again later.');
   }
 

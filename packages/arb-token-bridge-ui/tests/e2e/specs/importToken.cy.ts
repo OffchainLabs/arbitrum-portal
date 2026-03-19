@@ -108,6 +108,8 @@ describe('Import token', () => {
           connectMetamask: false,
         });
 
+        cy.intercept('GET', '**/ArbTokenLists/arbed_coinmarketcap.json').as('cmcTokenList');
+
         cy.findSelectTokenButton('ETH').click();
 
         // Check that token list is imported
@@ -121,6 +123,7 @@ describe('Import token', () => {
         cy.findByRole('switch', {
           name: /Arbed CMC List toggle/,
         }).should('have.attr', 'aria-checked', 'true');
+        cy.wait('@cmcTokenList');
 
         cy.findByRole('button', { name: /Back to Select Token/ })
           .should('be.visible')

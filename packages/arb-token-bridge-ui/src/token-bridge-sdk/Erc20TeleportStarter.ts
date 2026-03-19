@@ -4,6 +4,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, constants } from 'ethers';
 
 import { fetchErc20Allowance } from '../util/TokenUtils';
+import { logger } from '../util/logger';
 import {
   ApproveTokenProps,
   BridgeTransferStarter,
@@ -142,7 +143,7 @@ export class Erc20TeleportStarter extends BridgeTransferStarter {
         estimatedChildChainGas: constants.Zero,
       };
     } catch (e) {
-      console.warn('Error while estimating gas, falling back to hardcoded values.', e);
+      logger.warn('Error while estimating gas, falling back to hardcoded values.', e);
       return {
         // fallback estimates
         estimatedParentChainGas: BigNumber.from(800_000),

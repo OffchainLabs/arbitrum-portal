@@ -2,6 +2,7 @@ import { MoonPay } from '@moonpay/moonpay-node';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { isOnrampServiceEnabled } from '../../util/featureFlag';
+import { logger } from '../../util/logger';
 
 const moonPayApiKey = process.env.MOONPAY_SK;
 
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ signature }, { status: 200 });
   } catch (error) {
-    console.error('MoonPay API error:', error);
+    logger.error('MoonPay API error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

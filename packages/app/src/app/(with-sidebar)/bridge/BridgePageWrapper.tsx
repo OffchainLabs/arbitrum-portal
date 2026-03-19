@@ -5,7 +5,7 @@ export default async function BridgePageWrapper({ searchParams, redirectPath }: 
   await initializeBridgePage({ searchParams, redirectPath });
 
   return (
-    <main className="bridge-wrapper relative flex h-full flex-1 flex-col overflow-y-auto">
+    <main className="relative flex h-full flex-1 flex-col overflow-y-auto">
       <BridgeClient />
     </main>
   );

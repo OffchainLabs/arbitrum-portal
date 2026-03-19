@@ -46,7 +46,7 @@ const Tag = ({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1 rounded-md border border-white/5 bg-atmosphere-blue/50 px-2 py-1 text-xs text-white/80 hover:opacity-80"
+      className="flex items-center gap-1 rounded-sm border border-white/5 bg-atmosphere-blue/50 px-2 py-1 text-xs text-white/80 hover:opacity-80"
     >
       {slugsToCategoryOrSubcategoryTitle(categoryOrSubcategory)}
       <XMarkIcon className="h-4 w-4" />
@@ -86,7 +86,7 @@ export const ProjectsCountByFilters = () => {
       {/* Show more / show less button */}
       {allowedSubcategories.length - MAX_LIMIT > 1 ? (
         <button
-          className="flex items-center gap-1 rounded-md border border-white/5 bg-default-black px-2 py-1 text-xs text-white/80 hover:opacity-80"
+          className="flex items-center gap-1 rounded-sm border border-white/5 bg-default-black px-2 py-1 text-xs text-white/80 hover:opacity-80"
           onClick={() => setShowingMore(!showingMore)}
         >
           {showingMore ? (
