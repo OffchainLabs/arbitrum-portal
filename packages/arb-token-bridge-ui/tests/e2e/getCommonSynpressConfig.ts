@@ -11,6 +11,7 @@ export function getCommonSynpressConfig(shouldRecordVideo: boolean) {
     scrollBehavior: false,
     viewportWidth: 1366,
     viewportHeight: 850,
+    testIsolation: false,
     env: {
       coverage: false,
     },

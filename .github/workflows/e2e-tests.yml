@@ -91,6 +91,12 @@ jobs:
         env:
           DISPLAY: :0.0
 
+      - name: Build Synpress wallet cache
+        run: yarn synpress:cache
+        env:
+          DISPLAY: :0.0
+          PRIVATE_KEY_USER: ${{ secrets.E2E_PRIVATE_KEY_USER }}
+
       - name: Run nitro testnode
         if: inputs.test_type != 'cctp'
         timeout-minutes: 20

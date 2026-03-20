@@ -17,8 +17,9 @@
     "lint:fix": "tsc && eslint --quiet --fix",
     "postinstall": "yarn install:chromium",
     "install:chromium": "npx @puppeteer/browsers install chrome@$npm_package_config_chromeVersion --path $npm_package_config_chromePath",
-    "test:e2e": "yarn workspace arb-token-bridge-ui env-cmd --silent --file .e2e.env yarn synpress run --configFile synpress.config.ts",
-    "test:e2e:cctp": "yarn test:e2e --configFile synpress.cctp.config.ts",
+    "synpress:cache": "yarn workspace arb-token-bridge-ui env-cmd --silent --file .e2e.env npx synpress ./test/wallet-setup",
+    "test:e2e": "yarn synpress:cache && yarn workspace arb-token-bridge-ui env-cmd --silent --file .e2e.env cypress run --headed --browser chrome --config-file synpress.config.ts",
+    "test:e2e:cctp": "yarn synpress:cache && yarn workspace arb-token-bridge-ui env-cmd --silent --file .e2e.env cypress run --headed --browser chrome --config-file synpress.cctp.config.ts",
     "test:e2e:orbit": "E2E_ORBIT=true yarn test:e2e",
     "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true yarn test:e2e"
   },

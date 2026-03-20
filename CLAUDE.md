@@ -83,6 +83,11 @@ See `tsconfig.base.json` for the full list.
   - `build(deps): security advisories (#172)`
   - `chore: update Plume testnet urls (#167)`
 
+## Sensitive Files — DO NOT READ
+
+- **NEVER read `.env` files** (e.g. `.env`, `.env.local`, `.e2e.env`, or any `*.env` file that is not `*.env.sample`).
+- Only read `*.env.sample` files to understand variable names.
+
 ## Development Notes
 
 - **Environment Variables**: Copy `packages/app/.env.sample` to `packages/app/.env` and fill in keys. The bridge app requires RPC provider keys to function.

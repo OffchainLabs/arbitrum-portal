@@ -73,11 +73,11 @@ describe('Deposit USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString());
 
     /**
-     * Currently synpress cy.confirmMetamaskTransaction doesn't work on Sepolia
+     * Currently synpress cy.confirmTransaction doesn't work on Sepolia
      * CCTP flow is tested in withdrawCctp.cy.ts
      */
     // cy.wait(40_000)
-    // cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' })
+    // cy.confirmTransaction()
     // cy.findTransactionInTransactionHistory({
     //   duration: 'a minute',
     //   amount: USDCAmountToSend,
@@ -89,7 +89,7 @@ describe('Deposit USDC through CCTP', () => {
 
     // We have setup deposit transactions before running tests
     cy.wait(40_000);
-    cy.rejectMetamaskTransaction();
+    cy.rejectTransaction();
   });
 
   it('should claim deposit', () => {
@@ -112,7 +112,7 @@ describe('Deposit USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString());
 
     cy.wait(40_000);
-    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
+    cy.confirmTransaction();
     const txData = { amount: USDCAmountToSend, symbol: 'USDC' };
     cy.wait(15_000);
     cy.findTransactionInTransactionHistory({

@@ -1,5 +1,4 @@
 /// <reference types="cypress" />
-import '@synthetixio/synpress/support/index.d.ts';
 import 'cypress-wait-until';
 
 import {

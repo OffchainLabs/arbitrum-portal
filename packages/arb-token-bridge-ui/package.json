@@ -81,7 +81,9 @@
   },
   "devDependencies": {
     "@headlessui/tailwindcss": "^0.2.2",
-    "@synthetixio/synpress": "3.7.3",
+    "@playwright/test": "1.48.2",
+    "@synthetixio/synpress": "4.0.5",
+    "cypress": "^13.0.0",
     "@testing-library/react": "^16.3.0",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",

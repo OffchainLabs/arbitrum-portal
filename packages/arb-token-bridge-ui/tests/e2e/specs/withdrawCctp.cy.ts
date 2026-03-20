@@ -67,7 +67,7 @@ describe('Withdraw USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString());
 
     cy.wait(40_000);
-    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
+    cy.confirmTransaction();
     cy.findTransactionInTransactionHistory({
       amount: USDCAmountToSend,
       symbol: 'USDC',
@@ -77,13 +77,13 @@ describe('Withdraw USDC through CCTP', () => {
         symbol: 'USDC',
       }),
     );
-    cy.allowMetamaskToSwitchNetwork();
-    cy.rejectMetamaskTransaction();
-    cy.changeMetamaskNetwork('Arbitrum Sepolia');
+    cy.approveSwitchNetwork();
+    cy.rejectTransaction();
+    cy.switchNetwork({ networkName: 'Arbitrum Sepolia', isTestnet: true });
   });
 
   it('should claim deposit', () => {
-    cy.changeMetamaskNetwork('Sepolia');
+    cy.switchNetwork({ networkName: 'Sepolia', isTestnet: true });
     cy.claimCctp(0.00012, { accept: true });
     cy.claimCctp(0.00013, { accept: true });
   });
@@ -102,7 +102,7 @@ describe('Withdraw USDC through CCTP', () => {
     cy.confirmSpending(USDCAmountToSend.toString());
 
     cy.wait(10_000);
-    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
+    cy.confirmTransaction();
     const txData = {
       amount: USDCAmountToSend,
       symbol: 'USDC',
@@ -119,7 +119,7 @@ describe('Withdraw USDC through CCTP', () => {
         symbol: 'USDC',
       }),
     );
-    cy.allowMetamaskToSwitchNetwork();
-    cy.rejectMetamaskTransaction();
+    cy.approveSwitchNetwork();
+    cy.rejectTransaction();
   });
 });
