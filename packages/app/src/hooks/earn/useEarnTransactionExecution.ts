@@ -107,6 +107,9 @@ export function useEarnTransactionExecution({
   inputAmount,
   ...callsSource
 }: EarnTransactionExecutionOptions): UseEarnTransactionExecutionResult {
+  const transactionSteps =
+    'transactionSteps' in callsSource ? callsSource.transactionSteps : undefined;
+  const buildCalls = 'buildCalls' in callsSource ? callsSource.buildCalls : undefined;
   const wagmiConfig = useConfig();
   const { chainId: connectedChainId } = useAccount();
   const isBatchSupported = useIsTxBatchingSupported(chainId);
@@ -135,14 +138,10 @@ export function useEarnTransactionExecution({
 
       const getCallsOrThrow = async () => {
         let calls: TransactionCall[];
-        if ('buildCalls' in callsSource && callsSource.buildCalls) {
-          calls = await callsSource.buildCalls();
-        } else if (
-          'transactionSteps' in callsSource &&
-          callsSource.transactionSteps &&
-          callsSource.transactionSteps.length > 0
-        ) {
-          calls = buildTransactionCalls(callsSource.transactionSteps);
+        if (buildCalls) {
+          calls = await buildCalls();
+        } else if (transactionSteps && transactionSteps.length > 0) {
+          calls = buildTransactionCalls(transactionSteps);
         } else {
           throw new Error('No transaction steps found');
         }
@@ -229,7 +228,8 @@ export function useEarnTransactionExecution({
     chainId,
     connectedChainId,
     isBatchSupported,
-    callsSource,
+    transactionSteps,
+    buildCalls,
     onTransactionSubmitted,
     onTransactionFinished,
     inputAmount,

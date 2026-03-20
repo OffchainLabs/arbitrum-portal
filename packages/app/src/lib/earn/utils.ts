@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import type { StandardOpportunityLend } from '@/earn-api/types';
+import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
 
 export function parseMetricNumber(value: number | null | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
@@ -61,12 +61,9 @@ export function getSelectedActionValues(
 }
 
 export function sanitizeOutputTokenAddress(tokenAddress: string) {
-  const lowercasedTokenAddress = tokenAddress.toLowerCase();
-  if (
-    lowercasedTokenAddress === CommonAddress.ArbitrumOne.WSTETH.toLowerCase() ||
-    lowercasedTokenAddress === CommonAddress.ArbitrumOne.WEETH.toLowerCase()
-  ) {
-    return lowercasedTokenAddress;
-  }
-  return null;
+  const lowercased = tokenAddress.toLowerCase();
+  const match = LIQUID_STAKING_OPPORTUNITIES.find(
+    (opp) => opp.id.toLowerCase() === lowercased,
+  );
+  return match ? lowercased : null;
 }

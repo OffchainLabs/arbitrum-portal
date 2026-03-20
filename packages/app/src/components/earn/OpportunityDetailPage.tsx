@@ -1,11 +1,9 @@
 'use client';
 
+import { toTableRow } from '@/app-hooks/earn/useAllOpportunities';
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
-import { parseMetricNumber } from '@/app-lib/earn/utils';
-import { OpportunityCategory, type OpportunityTableRow } from '@/app-types/earn/vaults';
-import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
-import { parseOptionalNumber } from '@/earn-api/lib/metricParsers';
-import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
+import { OpportunityCategory } from '@/app-types/earn/vaults';
+import { type EarnChainId } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
 import { LiquidStakingDetailPage } from './LiquidStakingDetailPage';
@@ -15,33 +13,6 @@ interface OpportunityDetailPageProps {
   opportunityId: string;
   category: OpportunityCategory;
   chainId: EarnChainId;
-}
-
-function toTableRow(opportunity: StandardOpportunity): OpportunityTableRow {
-  const rawApy = parseMetricNumber(opportunity.metrics.rawApy);
-  const rawTvl = parseMetricNumber(opportunity.metrics.rawTvl);
-
-  return {
-    id: opportunity.id,
-    chainId: opportunity.chainId,
-    name: opportunity.name ?? opportunity.id,
-    category: opportunity.category,
-    token: opportunity.token,
-    tokenIcon: opportunity.tokenIcon ?? '',
-    tokenNetwork: opportunity.tokenNetwork ?? opportunity.network,
-    apy: rawApy !== null ? formatPercentage(rawApy) : '—',
-    apyBreakdown: opportunity.metrics.apyBreakdown,
-    deposited: opportunity.metrics.deposited,
-    depositedUsd: parseOptionalNumber(opportunity.metrics.depositedUsd),
-    projectedEarningsUsd: parseOptionalNumber(opportunity.metrics.projectedEarningsUsd),
-    tvl: rawTvl !== null ? formatCompactUsd(rawTvl) : '—',
-    protocol: opportunity.protocol,
-    protocolIcon: opportunity.protocolIcon ?? '',
-    vaultAddress: opportunity.vaultAddress,
-    rawApy,
-    rawTvl,
-    maturityDate: opportunity.metrics.maturityDate,
-  };
 }
 
 export function OpportunityDetailPage({

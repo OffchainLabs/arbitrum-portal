@@ -42,6 +42,11 @@ import {
   VendorAdapter,
 } from '../types';
 
+createConfig({
+  integrator: LIFI_INTEGRATOR_IDS.NORMAL,
+  apiKey: process.env.LIFI_KEY,
+});
+
 export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
@@ -408,12 +413,6 @@ export class LiFiAdapter implements VendorAdapter {
     // For liquid staking, the ID should be the token address
     // Normalize it to lowercase for comparison
     const normalizedId = id.toLowerCase();
-
-    // Configure LiFi SDK with integrator and API key (required for valid responses)
-    createConfig({
-      integrator: LIFI_INTEGRATOR_IDS.NORMAL,
-      apiKey: process.env.LIFI_KEY,
-    });
 
     // Determine target token address (id is token address for liquid staking)
     const targetTokenAddress = normalizedId;

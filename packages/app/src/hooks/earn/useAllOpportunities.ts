@@ -21,7 +21,7 @@ interface OpportunitiesResponse {
   categories: string[];
 }
 
-function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
+export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
   const rawApy = parseMetricNumber(m?.rawApy);
   const rawTvl = parseMetricNumber(m?.rawTvl);

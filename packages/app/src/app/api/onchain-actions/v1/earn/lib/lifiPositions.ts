@@ -1,4 +1,4 @@
-import { Address, PublicClient, getAddress } from 'viem';
+import { PublicClient, getAddress } from 'viem';
 import { formatUnits } from 'viem';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -49,7 +49,7 @@ export async function fetchLifiUserPositions(params: {
         address: getAddress(tokenAddress),
         abi: ERC20_BALANCE_ABI,
         functionName: 'balanceOf',
-        args: [userAddress as Address],
+        args: [getAddress(userAddress)],
       });
 
       if (balance === BigInt(0)) {

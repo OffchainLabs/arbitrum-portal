@@ -24,7 +24,8 @@ export const LIQUID_STAKING_DATA_SOURCES = {
 export function getLiquidStakingDataSource(tokenAddress: string): {
   duneQueryIds: { apy: number | null; tvl: number | null };
 } | null {
-  const sources = LIQUID_STAKING_DATA_SOURCES[tokenAddress.toLowerCase()];
+  const key = tokenAddress.toLowerCase() as keyof typeof LIQUID_STAKING_DATA_SOURCES;
+  const sources = LIQUID_STAKING_DATA_SOURCES[key];
   if (!sources) {
     return null;
   }
