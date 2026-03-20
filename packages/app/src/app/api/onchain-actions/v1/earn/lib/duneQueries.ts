@@ -38,11 +38,11 @@ type DuneQueryIds = { apy: number; tvl: number };
  * Note: Token addresses are imported from liquidStaking.ts to avoid duplication
  */
 export const LIQUID_STAKING_DUNE_QUERIES: Record<string, DuneQueryIds> = {
-  [CommonAddress.ArbitrumOne.WSTETH.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WSTETH]: {
     apy: DUNE_QUERY_IDS.WSTETH_APY,
     tvl: DUNE_QUERY_IDS.WSTETH_TVL,
   },
-  [CommonAddress.ArbitrumOne.WEETH.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WEETH]: {
     apy: DUNE_QUERY_IDS.WEETH_APY,
     tvl: DUNE_QUERY_IDS.WEETH_TVL,
   },
@@ -65,13 +65,4 @@ export function getDuneQueryIds(tokenAddress: string): {
     apy: queryConfig.apy,
     tvl: queryConfig.tvl,
   };
-}
-
-/**
- * @deprecated Use getDuneQueryIds instead
- * Get Dune query ID for a liquid staking token address (returns APY query ID)
- */
-export function getDuneQueryId(tokenAddress: string): number | null {
-  const ids = getDuneQueryIds(tokenAddress);
-  return ids.apy;
 }

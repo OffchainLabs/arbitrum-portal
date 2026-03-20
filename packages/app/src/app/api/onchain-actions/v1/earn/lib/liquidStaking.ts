@@ -10,10 +10,10 @@ import { getDuneQueryIds } from './duneQueries';
 import { fetchDuneCurrentData, fetchDuneCurrentDataMerged } from './duneService';
 
 export const LIQUID_STAKING_DATA_SOURCES = {
-  [CommonAddress.ArbitrumOne.WSTETH.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WSTETH]: {
     duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WSTETH), // Lido APY and TVL query IDs (resolved as separate IDs)
   },
-  [CommonAddress.ArbitrumOne.WEETH.toLowerCase()]: {
+  [CommonAddress.ArbitrumOne.WEETH]: {
     duneQueryIds: getDuneQueryIds(CommonAddress.ArbitrumOne.WEETH), // Ether.fi APY and TVL query IDs (separate)
   },
 } as const;

@@ -42,24 +42,13 @@ import {
   VendorAdapter,
 } from '../types';
 
-const DEFAULT_ARBITRUM_RPC_URL = 'https://arb1.arbitrum.io/rpc';
-
-function getArbitrumRpcUrl(): string {
-  return (
-    process.env.ARBITRUM_RPC_URL ||
-    process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL ||
-    rpcURLs[ChainId.ArbitrumOne] ||
-    DEFAULT_ARBITRUM_RPC_URL
-  );
-}
-
 export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
     return createPublicClient({
       chain: arbitrum,
-      transport: http(getArbitrumRpcUrl()),
+      transport: http(rpcURLs[ChainId.ArbitrumOne]),
     });
   }
 
@@ -87,10 +76,7 @@ export class LiFiAdapter implements VendorAdapter {
     amount: string;
     userAddress: string;
     slippage: number;
-  }): Promise<{
-    step: NonNullable<Awaited<ReturnType<typeof getLifiRoutes>>[number]>['steps'][number];
-    transactionRequest: { to: string; data: string; value?: string };
-  }> {
+  }) {
     const fetchQuoteStep = async () => {
       const routes = await getLifiRoutes({
         fromChainId: ChainId.ArbitrumOne,
@@ -134,26 +120,22 @@ export class LiFiAdapter implements VendorAdapter {
       };
     };
 
-    try {
-      return await fetchQuoteStep();
-    } catch (firstError) {
-      if (!this.isRouteRefreshError(firstError)) {
-        throw firstError instanceof Error
-          ? firstError
-          : new Error('Failed to get transaction quote');
-      }
-
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
         return await fetchQuoteStep();
-      } catch (secondError) {
-        if (this.isRouteRefreshError(secondError)) {
+      } catch (error) {
+        if (!this.isRouteRefreshError(error)) {
+          throw error instanceof Error
+            ? error
+            : new Error('Failed to get transaction quote');
+        }
+        if (attempt === 1) {
           throw new Error('Quote expired due to market changes. Please try again.');
         }
-        throw secondError instanceof Error
-          ? secondError
-          : new Error('Failed to get transaction quote');
       }
     }
+
+    throw new Error('Failed to get transaction quote');
   }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {

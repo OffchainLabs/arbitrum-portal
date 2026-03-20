@@ -3,6 +3,7 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
@@ -87,11 +88,11 @@ interface TokenIconProps {
 function TokenIcon({ src, alt, symbol, size = 'md' }: TokenIconProps) {
   const sizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
   return (
-    <div className={`relative ${sizeClass} rounded-full overflow-hidden`}>
+    <div className={twMerge('relative rounded-full overflow-hidden', sizeClass)}>
       <SafeImage
         src={src}
         alt={alt}
-        className={`${sizeClass} rounded-full`}
+        className={twMerge('rounded-full', sizeClass)}
         fallback={
           <div className="w-full h-full bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
             {symbol[0]}

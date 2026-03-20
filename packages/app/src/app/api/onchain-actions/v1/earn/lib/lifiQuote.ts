@@ -2,6 +2,7 @@ import { Address, PublicClient, encodeFunctionData, getAddress, zeroAddress } fr
 
 import { getProviderForChainId } from '@/bridge/token-bridge-sdk/utils';
 import { ChainId } from '@/bridge/types/ChainId';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { fetchErc20Allowance } from '@/bridge/util/TokenUtils';
 
 import type { TransactionStep } from '../types';
@@ -55,7 +56,7 @@ async function buildTransactionSteps({
   const transactionSteps: TransactionStep[] = [];
   let stepNumber = 1;
 
-  const isNativeETH = inputTokenAddress.toLowerCase() === zeroAddress.toLowerCase();
+  const isNativeETH = addressesEqual(inputTokenAddress, zeroAddress);
 
   if (!isNativeETH) {
     const spenderAddress = transactionRequest.to as Address;
