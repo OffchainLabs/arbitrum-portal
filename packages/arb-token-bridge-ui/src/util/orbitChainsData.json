@@ -1255,7 +1255,7 @@
         "sequencerInbox": "0x9fE4399563Cb6e1Bbb0947d51420Dbb725b16ffE"
       },
       "nativeToken": "0x9Ffb8BAE5feD58AF7dC06C096D1AfC981DE8A387",
-      "explorerUrl": "https://panax-mainnet.explorer.alchemy.com",
+      "explorerUrl": "https://www.panaxscan.com",
       "rpcUrl": "https://panax-mainnet.g.alchemy.com/public",
       "isCustom": true,
       "isTestnet": false,
