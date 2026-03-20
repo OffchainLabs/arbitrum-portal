@@ -234,7 +234,7 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   };
 }
 
-function findCheapestRoute(
+export function findCheapestRoute(
   routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const cheapestRoute = routes.reduce((currentMin, route) => {
@@ -242,7 +242,7 @@ function findCheapestRoute(
       return route;
     }
 
-    if (BigNumber.from(route.toAmount.amount).lt(BigNumber.from(currentMin.toAmount.amount))) {
+    if (BigNumber.from(route.toAmount.amount).gt(BigNumber.from(currentMin.toAmount.amount))) {
       return route;
     }
     return currentMin;
@@ -251,7 +251,7 @@ function findCheapestRoute(
   return cheapestRoute;
 }
 
-function findFastestRoute(
+export function findFastestRoute(
   routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const fastestRoute = routes.reduce((currentMin, route) => {

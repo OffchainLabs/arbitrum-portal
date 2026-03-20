@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
+import { BaseError } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
@@ -52,7 +53,6 @@ import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
-import { BaseError } from 'viem';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
@@ -611,7 +611,9 @@ export function TransferPanel() {
             label: 'lifi_approve_token',
             category: 'token_approval',
           });
-          errorToast(`Lifi approval transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`);
+          errorToast(
+            `Lifi approval transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
+          );
           return;
         }
       }
@@ -724,7 +726,9 @@ export function TransferPanel() {
         label: 'lifi_transfer',
         category: 'token_transfer',
       });
-      errorToast(`Lifi transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`);
+      errorToast(
+        `Lifi transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
+      );
     } finally {
       setTransferring(false);
     }
