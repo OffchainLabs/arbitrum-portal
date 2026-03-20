@@ -264,14 +264,12 @@ export function LiquidStakingActionPanel({
       : null;
 
   const { balance: ethBalance, refetch: refetchEthBalance } = useTokenBalance({
-    tokenAddress: null, // null for native ETH
+    tokenAddress: null,
     chainId: requestChainId,
-    enabled: isConnected && selectedAction === 'buy',
   });
   const { balance: erc20Balance, refetch: refetchErc20Balance } = useTokenBalance({
     tokenAddress: selectedTokenAddress,
     chainId: requestChainId,
-    enabled: isConnected && !!selectedTokenAddress,
   });
 
   const currentBalanceRaw = useMemo(() => {
@@ -542,7 +540,7 @@ export function LiquidStakingActionPanel({
     inputAmount: amount,
   });
 
-  const handleTransaction = async () => {
+  const handleTransaction = useCallback(async () => {
     if (
       !transferReadiness.isReady ||
       !transactionQuote?.transactionSteps ||
@@ -551,7 +549,6 @@ export function LiquidStakingActionPanel({
     )
       return;
 
-    // Check ToS before proceeding (hook validates but doesn't show popup)
     const tosAccepted = await checkAndShowToS();
     if (!tosAccepted) return;
 
@@ -564,7 +561,7 @@ export function LiquidStakingActionPanel({
     } catch (error) {
       setTxError(formatTransactionError(error));
     }
-  };
+  }, [transferReadiness.isReady, transactionQuote, walletAddress, checkAndShowToS, executeTx]);
 
   const handleMaxClick = () => {
     const isNativeBuy =

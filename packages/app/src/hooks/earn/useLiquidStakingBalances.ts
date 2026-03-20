@@ -14,8 +14,6 @@ interface UseTokenBalanceParams {
   tokenAddress: string | null;
   /** Chain ID */
   chainId?: EarnChainId;
-  /** Whether to fetch balance */
-  enabled?: boolean;
 }
 
 interface UseTokenBalanceResult {

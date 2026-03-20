@@ -15,6 +15,7 @@ import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
+import { getLiquidStakingOpportunity } from '@/earn-api/lib/liquidStaking';
 import { Card } from '@/components/Card';
 import { OpportunityCategory } from '@/earn-api/types';
 
@@ -99,10 +100,11 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
 
   const closeTransactionDetails = useCallback(() => {
     setTxDetailsIsOpen(false);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setTransactionDetails(null);
       setTxDetailsIsLoading(true);
     }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -238,9 +240,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               Where does the yield come from?
             </h3>
             <p className="text-sm text-white/50 leading-relaxed">
-              {opportunity.protocol === 'Lido'
-                ? 'Wrapped stETH earns rewards generated from staking on the Ethereum network. stETH is a "liquid staking" token that represents ETH staked through the Lido protocol, including accrued rewards earned through staking.'
-                : 'Ether.fi offers a liquid re-staking token, weETH, that enables holders to earn ETH staking rewards and EigenLayer restaking rewards. weETH can be procured by swapping via LiFi.'}
+              {getLiquidStakingOpportunity(opportunity.id)?.yieldDescription ?? ''}
             </p>
           </div>
 

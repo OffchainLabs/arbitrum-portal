@@ -1,3 +1,5 @@
+'use client';
+
 import { useLocalStorage } from '@rehooks/local-storage';
 import { useCallback } from 'react';
 

@@ -78,10 +78,11 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
 
   const closeTransactionDetails = useCallback(() => {
     setTxDetailsIsOpen(false);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setTransactionDetails(null);
       setTxDetailsIsLoading(true);
     }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

@@ -47,6 +47,7 @@ export interface LiquidStakingOpportunitySeed {
   rawApy: number | null;
   rawTvl: number | null;
   apyBreakdown?: { base: number; reward: number; total: number };
+  yieldDescription: string;
 }
 
 export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
@@ -62,6 +63,8 @@ export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
     vaultAddress: CommonAddress.ArbitrumOne.WSTETH,
     rawApy: null,
     rawTvl: null,
+    yieldDescription:
+      'Wrapped stETH earns rewards generated from staking on the Ethereum network. stETH is a "liquid staking" token that represents ETH staked through the Lido protocol, including accrued rewards earned through staking.',
   },
   {
     id: CommonAddress.ArbitrumOne.WEETH,
@@ -75,6 +78,8 @@ export const LIQUID_STAKING_OPPORTUNITIES: LiquidStakingOpportunitySeed[] = [
     vaultAddress: CommonAddress.ArbitrumOne.WEETH,
     rawApy: null,
     rawTvl: null,
+    yieldDescription:
+      'Ether.fi offers a liquid re-staking token, weETH, that enables holders to earn ETH staking rewards and EigenLayer restaking rewards. weETH can be procured by swapping via LiFi.',
   },
 ];
 

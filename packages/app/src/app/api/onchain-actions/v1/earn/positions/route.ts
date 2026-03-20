@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const chainId = parseEarnChainId(searchParams.get('chainId'));
 
-    const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${chainId}`;
+    const cacheKey = `positions:${userAddress.toLowerCase()}:${category ?? 'all'}:${chainId}`;
 
     const getCachedPositions = unstable_cache(
       async () => {

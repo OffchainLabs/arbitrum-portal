@@ -4,11 +4,6 @@ import useSWR from 'swr';
 
 import { ChainId } from '@/bridge/types/ChainId';
 
-const LIQUID_STAKING_PRICE_KEY = 'earn-liquid-staking-prices';
-const PRICE_REFRESH_INTERVAL_MS = 300_000;
-
-type LiquidStakingPrices = Record<string, number>;
-
 type LifiTokenListResponse = {
   tokens?: Array<{
     address: string;
@@ -19,27 +14,23 @@ type LifiTokenListResponse = {
   }>;
 };
 
-async function fetchLiquidStakingPrices(): Promise<LiquidStakingPrices> {
+async function fetchLiquidStakingPrices() {
   const response = await fetch(
     `/api/crosschain-transfers/lifi/tokens?parentChainId=${ChainId.Ethereum}&childChainId=${ChainId.ArbitrumOne}`,
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch liquid staking prices (${response.status} ${response.statusText})`,
-    );
+    throw new Error(`Failed to fetch token prices (${response.status} ${response.statusText})`);
   }
 
   const payload = (await response.json()) as LifiTokenListResponse;
-  const prices: LiquidStakingPrices = {};
+  const prices: Record<string, number> = {};
 
   for (const token of payload.tokens ?? []) {
     const price = Number(token.extensions?.priceUSD ?? token.priceUSD);
-    if (Number.isNaN(price) || price <= 0) {
-      continue;
+    if (!Number.isNaN(price) && price > 0) {
+      prices[token.address.toLowerCase()] = price;
     }
-
-    prices[token.address.toLowerCase()] = price;
   }
 
   return prices;
@@ -56,11 +47,11 @@ export function useLiquidStakingTokenPrice(
 ): UseLiquidStakingTokenPriceResult {
   const normalizedTokenAddress = tokenAddress?.toLowerCase();
 
-  const { data, isLoading, error } = useSWR<LiquidStakingPrices>(
-    normalizedTokenAddress ? [normalizedTokenAddress, LIQUID_STAKING_PRICE_KEY] : null,
+  const { data, isLoading, error } = useSWR(
+    normalizedTokenAddress ? 'earn-liquid-staking-prices' : null,
     fetchLiquidStakingPrices,
     {
-      refreshInterval: PRICE_REFRESH_INTERVAL_MS,
+      refreshInterval: 300_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       shouldRetryOnError: true,
