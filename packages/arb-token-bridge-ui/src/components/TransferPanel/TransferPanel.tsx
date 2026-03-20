@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
+import { BaseError } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
@@ -611,7 +612,7 @@ export function TransferPanel() {
             category: 'token_approval',
           });
           errorToast(
-            `Lifi token approval transaction failed: ${(error as Error)?.message ?? error}`,
+            `Lifi approval transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
           );
           return;
         }
@@ -725,7 +726,9 @@ export function TransferPanel() {
         label: 'lifi_transfer',
         category: 'token_transfer',
       });
-      errorToast(`Lifi withdrawal transaction failed: ${(error as Error)?.message ?? error}`);
+      errorToast(
+        `Lifi transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
+      );
     } finally {
       setTransferring(false);
     }

@@ -91,6 +91,7 @@ export const queryParamProviderOptions = {
     disabledFeatures: withDefault(DisabledFeaturesParam, []), // disabled features in the bridge
     theme: withDefault(ThemeParam, defaultTheme), // theme customization
     debugLevel: withDefault(LogLevelParam, 'silent'), // debug mode to show extra console errors in the UI
+    experiments: withDefault(StringParam, undefined), // experimental feature flags
   },
 } as const satisfies QueryParamOptions;
 

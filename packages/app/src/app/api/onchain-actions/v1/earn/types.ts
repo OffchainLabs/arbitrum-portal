@@ -263,6 +263,10 @@ export interface HistoricalData {
 
 export interface HistoricalDataRequestOptions {
   assetSymbol?: string;
+  fromTimestamp?: number;
+  toTimestamp?: number;
+  granularity?: HistoricalGranularity;
+  resolvedRange?: HistoricalTimeRange;
 }
 
 export const HISTORICAL_VENDOR_TTL_SECONDS = 86400 as const;

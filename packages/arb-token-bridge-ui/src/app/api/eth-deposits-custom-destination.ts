@@ -6,6 +6,7 @@ import {
   getSourceFromSubgraphClient,
 } from '../../api-utils/ServerSubgraphUtils';
 import { FetchEthDepositsToCustomDestinationFromSubgraphResult } from '../../util/deposits/fetchEthDepositsToCustomDestinationFromSubgraph';
+import { isIndexerApiExperimentEnabled, proxyToIndexer } from './indexer';
 
 type RetryableFromSubgraph = {
   destAddr: string;
@@ -28,6 +29,9 @@ export async function GET(
 ): Promise<NextResponse<EthDepositsToCustomDestinationResponse>> {
   try {
     const { searchParams } = new URL(request.url);
+    if (isIndexerApiExperimentEnabled(request)) {
+      return proxyToIndexer(request, '/api/bridge-history/eth-deposits-custom-destination');
+    }
     const sender = searchParams.get('sender') || undefined;
     const receiver = searchParams.get('receiver') || undefined;
     const search = searchParams.get('search') || '';

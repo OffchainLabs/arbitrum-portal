@@ -8,6 +8,7 @@ import { getNonce } from '../AddressUtils';
 import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestSubgraphBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
+import { isExperimentalFeatureEnabled } from '../index';
 import { logger } from '../logger';
 import { isAlchemyChain, isNetwork } from '../networks';
 import { fetchETHWithdrawalsFromEventLogs } from './fetchETHWithdrawalsFromEventLogs';
@@ -71,6 +72,8 @@ export async function fetchWithdrawals({
     return [];
   }
 
+  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
+
   const l1ChainID = (await l1Provider.getNetwork()).chainId;
   const l2ChainID = (await l2Provider.getNetwork()).chainId;
 
@@ -78,6 +81,32 @@ export async function fetchWithdrawals({
 
   if (!fromBlock) {
     fromBlock = 0;
+  }
+
+  if (isIndexerExperimentEnabled) {
+    const latestBlockNumber =
+      typeof toBlock === 'number' ? toBlock : await l2Provider.getBlockNumber();
+
+    return (
+      await fetchWithdrawalsFromSubgraph({
+        sender,
+        receiver,
+        fromBlock,
+        toBlock: latestBlockNumber,
+        l2ChainId: l2ChainID,
+        pageNumber,
+        pageSize,
+        searchString,
+      })
+    ).map((tx) => {
+      return {
+        ...tx,
+        direction: 'withdrawal',
+        source: 'subgraph',
+        parentChainId: l1ChainID,
+        childChainId: l2ChainID,
+      };
+    });
   }
 
   // this value will be:
