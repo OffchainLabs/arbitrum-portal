@@ -2,12 +2,16 @@ import { Erc20Bridger, EventArgs } from '@arbitrum/sdk';
 import { WithdrawalInitiatedEvent } from '@arbitrum/sdk/dist/lib/abi/L2ArbitrumGateway';
 import { BlockTag, Provider } from '@ethersproject/providers';
 
-function dedupeEvents(
+export function dedupeEvents(
   events: (EventArgs<WithdrawalInitiatedEvent> & {
     txHash: string;
   })[],
 ) {
-  return [...new Map(events.map((item) => [item.txHash, item])).values()];
+  return [
+    ...new Map(
+      events.map((item) => [`${item.txHash}-${item._l2ToL1Id?.toString() ?? '0'}`, item]),
+    ).values(),
+  ];
 }
 
 export type FetchTokenWithdrawalsFromEventLogsParams = {
