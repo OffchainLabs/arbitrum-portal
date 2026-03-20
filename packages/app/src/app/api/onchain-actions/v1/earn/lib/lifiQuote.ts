@@ -1,12 +1,16 @@
-import { Address, PublicClient, encodeFunctionData, getAddress, zeroAddress } from 'viem';
+import {
+  Address,
+  PublicClient,
+  encodeFunctionData,
+  erc20Abi,
+  getAddress,
+  zeroAddress,
+} from 'viem';
 
-import { getProviderForChainId } from '@/bridge/token-bridge-sdk/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
-import { fetchErc20Allowance } from '@/bridge/util/TokenUtils';
 
 import type { TransactionStep } from '../types';
-import { ERC20_APPROVE_ABI } from './erc20Abi';
 
 type LifiQuoteStep = {
   action: {
@@ -63,20 +67,16 @@ async function buildTransactionSteps({
     const amountBigInt = BigInt(amount);
 
     try {
-      if (typeof publicClient.chain === 'undefined') {
-        throw Error('Public client chain information is unavailable');
-      }
-
-      const allowance = await fetchErc20Allowance({
+      const allowance = await publicClient.readContract({
         address: getAddress(inputTokenAddress),
-        provider: getProviderForChainId(publicClient.chain.id),
-        owner: getAddress(userAddress),
-        spender: spenderAddress,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [getAddress(userAddress), spenderAddress],
       });
 
-      if (BigInt(allowance.toString()) < amountBigInt) {
+      if (allowance < amountBigInt) {
         const approvalData = encodeFunctionData({
-          abi: ERC20_APPROVE_ABI,
+          abi: erc20Abi,
           functionName: 'approve',
           args: [spenderAddress, amountBigInt],
         });

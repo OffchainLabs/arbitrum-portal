@@ -1,4 +1,4 @@
-import { PublicClient, getAddress } from 'viem';
+import { PublicClient, erc20Abi, getAddress } from 'viem';
 import { formatUnits } from 'viem';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -6,7 +6,6 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { OpportunityCategory, type StandardUserPosition, Vendor } from '../types';
 import { getDunePriceLookup } from './dunePriceSources';
 import { fetchDuneCurrentPriceByAddress } from './duneService';
-import { ERC20_BALANCE_ABI } from './erc20Abi';
 import { type LiquidStakingOpportunitySeed } from './liquidStaking';
 
 export async function fetchLifiUserPositions(params: {
@@ -47,7 +46,7 @@ export async function fetchLifiUserPositions(params: {
     try {
       const balance = await publicClient.readContract({
         address: getAddress(tokenAddress),
-        abi: ERC20_BALANCE_ABI,
+        abi: erc20Abi,
         functionName: 'balanceOf',
         args: [getAddress(userAddress)],
       });
