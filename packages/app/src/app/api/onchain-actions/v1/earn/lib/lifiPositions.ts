@@ -63,6 +63,7 @@ export async function fetchLifiUserPositions(params: {
         effectivePrice !== null && Number.isFinite(effectivePrice)
           ? balanceInTokens * effectivePrice
           : null;
+      // rawApy is a percentage value (e.g. 3.5 means 3.5%)
       const apy = opportunity.rawApy ?? 0;
       const projectedEarningsUsdNumber =
         valueUsdNumber !== null && valueUsdNumber > 0 && apy > 0

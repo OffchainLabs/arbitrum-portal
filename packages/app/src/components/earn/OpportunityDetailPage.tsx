@@ -52,29 +52,15 @@ export function OpportunityDetailPage({
     );
   }
 
-  switch (category) {
+  switch (data.category) {
     case OpportunityCategory.Lend:
-      if (data.category !== OpportunityCategory.Lend) {
-        return (
-          <div className="rounded border-error bg-error/20 p-8 text-center">
-            <p className="text-error">Unsupported category: {data.category}</p>
-          </div>
-        );
-      }
       return <LendOpportunityDetailsPage opportunity={data} />;
     case OpportunityCategory.LiquidStaking:
-      if (data.category !== OpportunityCategory.LiquidStaking) {
-        return (
-          <div className="rounded border-error bg-error/20 p-8 text-center">
-            <p className="text-error">Unsupported category: {data.category}</p>
-          </div>
-        );
-      }
       return <LiquidStakingDetailPage opportunity={toTableRow(data)} />;
     default:
       return (
         <div className="rounded border-error bg-error/20 p-8 text-center">
-          <p className="text-error">Unsupported category: {category}</p>
+          <p className="text-error">Unsupported category: {data.category}</p>
         </div>
       );
   }

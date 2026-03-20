@@ -130,9 +130,7 @@ export class LiFiAdapter implements VendorAdapter {
         return await fetchQuoteStep();
       } catch (error) {
         if (!this.isRouteRefreshError(error)) {
-          throw error instanceof Error
-            ? error
-            : new Error('Failed to get transaction quote');
+          throw error instanceof Error ? error : new Error('Failed to get transaction quote');
         }
         if (attempt === 1) {
           throw new Error('Quote expired due to market changes. Please try again.');

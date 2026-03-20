@@ -2,10 +2,6 @@ export const TOS_VERSION = 2;
 
 export const TOS_LOCALSTORAGE_KEY = 'arbitrum:bridge:tos-v' + TOS_VERSION;
 
-export const EARN_TOS_VERSION = 1;
-
-export const EARN_TOS_LOCALSTORAGE_KEY = 'earn:tos-v' + EARN_TOS_VERSION;
-
 const SUPPORT_LINK_BASE = 'https://support.arbitrum.io';
 
 export const GET_HELP_LINK = `${SUPPORT_LINK_BASE}/hc/en-us/requests/new?ticket_form_id=18155929976987`;

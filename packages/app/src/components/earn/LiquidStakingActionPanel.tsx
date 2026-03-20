@@ -60,22 +60,14 @@ type ActionType = 'buy' | 'sell';
 
 type TokenOption = EarnTokenOption;
 
-const BUY_TOKEN_OPTIONS: TokenOption[] = [
+const SWAP_TOKEN_OPTIONS: TokenOption[] = [
   ETH_TOKEN_OPTION,
   USDC_TOKEN_OPTION,
   USDT_TOKEN_OPTION,
   ARB_TOKEN_OPTION,
 ];
 
-const SELL_TOKEN_OPTIONS: TokenOption[] = [
-  ETH_TOKEN_OPTION,
-  USDC_TOKEN_OPTION,
-  USDT_TOKEN_OPTION,
-  ARB_TOKEN_OPTION,
-];
-
-const DEFAULT_BUY_TOKEN: TokenOption = ETH_TOKEN_OPTION;
-const DEFAULT_SELL_TOKEN: TokenOption = ETH_TOKEN_OPTION;
+const DEFAULT_SWAP_TOKEN: TokenOption = ETH_TOKEN_OPTION;
 
 // Internal Components
 interface TokenIconProps {
@@ -233,8 +225,8 @@ export function LiquidStakingActionPanel({
     setSelectedAction: setSelectedAction as (action: string) => void,
   });
 
-  const [selectedBuyToken, setSelectedBuyToken] = useState<TokenOption>(DEFAULT_BUY_TOKEN);
-  const [selectedSellToken, setSelectedSellToken] = useState<TokenOption>(DEFAULT_SELL_TOKEN);
+  const [selectedBuyToken, setSelectedBuyToken] = useState<TokenOption>(DEFAULT_SWAP_TOKEN);
+  const [selectedSellToken, setSelectedSellToken] = useState<TokenOption>(DEFAULT_SWAP_TOKEN);
 
   const fromTokenAddress =
     selectedAction === 'buy'
@@ -734,14 +726,14 @@ export function LiquidStakingActionPanel({
   const inputTokenSelector =
     selectedAction === 'buy' ? (
       <TokenSelectorDropdown
-        options={BUY_TOKEN_OPTIONS}
+        options={SWAP_TOKEN_OPTIONS}
         selected={selectedBuyToken}
         isOpen={isBuyTokenDropdownOpen}
         onToggle={() => setIsBuyTokenDropdownOpen(!isBuyTokenDropdownOpen)}
         onSelect={handleBuyTokenSelect}
       />
     ) : (
-      <div className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2">
+      <div className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2" aria-label={`Selected token: ${outputTokenSymbol}`}>
         <TokenIcon src={opportunity.tokenIcon} alt={outputTokenSymbol} symbol={outputTokenSymbol} />
         <span className="text-base font-medium text-white">{outputTokenSymbol}</span>
       </div>
@@ -750,8 +742,8 @@ export function LiquidStakingActionPanel({
   const receiveAmountTokenSelector =
     selectedAction === 'sell' ? (
       <TokenSelectorDropdown
-        options={SELL_TOKEN_OPTIONS}
-        selected={selectedSellToken || SELL_TOKEN_OPTIONS[0]}
+        options={SWAP_TOKEN_OPTIONS}
+        selected={selectedSellToken || SWAP_TOKEN_OPTIONS[0]}
         isOpen={isSellTokenDropdownOpen}
         onToggle={() => setIsSellTokenDropdownOpen(!isSellTokenDropdownOpen)}
         onSelect={handleSellTokenSelect}

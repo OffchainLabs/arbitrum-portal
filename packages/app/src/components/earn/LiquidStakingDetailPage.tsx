@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { formatUnits } from 'viem';
+import { formatUnits, isAddress } from 'viem';
 import { useAccount } from 'wagmi';
 
 import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
@@ -42,12 +42,12 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const { isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
 
-  const outputTokenAddress = opportunity.id.toLowerCase();
+  const outputTokenAddress = isAddress(opportunity.id) ? opportunity.id.toLowerCase() : null;
   const { balance: userBalance } = useTokenBalance({
     tokenAddress: outputTokenAddress,
   });
   const outputTokenSymbol = opportunity.token;
-  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress);
+  const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress ?? undefined);
 
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
 

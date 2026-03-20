@@ -27,7 +27,7 @@ function includesTargetTokenInSteps(
   );
 }
 
-export function involvesLiquidStakingToken(
+function involvesLiquidStakingToken(
   transfer: StatusResponse,
   targetTokenAddress: string,
 ): boolean {

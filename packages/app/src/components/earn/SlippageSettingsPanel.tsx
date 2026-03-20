@@ -38,9 +38,8 @@ export function SlippageSettingsPanel({
   const handleUpdate = useCallback(() => {
     if (!isSlippageValid) return;
     onSlippageChange(Number(draft.toFixed(2)));
-    setDraft(slippagePercent);
     closePanel();
-  }, [closePanel, draft, isSlippageValid, onSlippageChange, slippagePercent]);
+  }, [closePanel, draft, isSlippageValid, onSlippageChange]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
