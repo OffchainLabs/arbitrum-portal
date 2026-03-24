@@ -10,6 +10,7 @@ import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
+import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -42,8 +43,11 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
   const [{ theme }] = useArbQueryParams();
 
   const [networks, setNetworks] = useNetworks();
-  const [, setSelectedToken] = useSelectedToken();
+  const [selectedToken, setSelectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
   const isSwapTransfer = useIsSwapTransfer();
+  const shouldSwitchToResolvedDestinationToken =
+    !!destinationToken && !addressesEqual(destinationToken.address, selectedToken?.address);
 
   const { isFeatureDisabled } = useDisabledFeatures();
 
@@ -96,8 +100,8 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (isSwapTransfer) {
-            setSelectedToken(null);
+          if (isSwapTransfer || shouldSwitchToResolvedDestinationToken) {
+            setSelectedToken(destinationToken?.address ?? null);
           }
         }}
         aria-label="Switch Networks"

@@ -49,6 +49,9 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   }, [selectedToken, networks.sourceChain.id, nativeCurrency.symbol, options]);
 
   const isLoadingToken = useMemo(() => {
+    if (selectedToken) {
+      return false;
+    }
     // don't show loader if native currency is selected
     if (!tokenFromSearchParams) {
       return false;
@@ -57,7 +60,7 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
       return false;
     }
     return isLoadingTokenLists;
-  }, [tokenFromSearchParams, isLoadingTokenLists]);
+  }, [selectedToken, tokenFromSearchParams, isLoadingTokenLists]);
 
   return (
     <>

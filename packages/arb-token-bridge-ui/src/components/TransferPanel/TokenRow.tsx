@@ -184,7 +184,7 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
   }, [overrideToken, token, nativeCurrency.symbol, chainId]);
 
   const logoURI = useMemo(() => {
-    if (overrideToken) {
+    if (overrideToken?.logoURI) {
       return overrideToken.logoURI;
     }
     if (!token) {
@@ -305,7 +305,8 @@ function TokenBalance({
       return true;
     }
 
-    return typeof bridgeTokens[token.address] !== 'undefined';
+    const importLookupAddress = token.importLookupAddress ?? token.address;
+    return typeof bridgeTokens[importLookupAddress] !== 'undefined';
   }, [bridgeTokens, isArbitrumNativeUSDC, token]);
 
   const decimals = useMemo(() => {

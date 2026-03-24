@@ -121,7 +121,8 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token },
+      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridgeLoaded,
       warningTokens,
     },
   } = useAppState();
@@ -244,11 +245,32 @@ export function TransferPanel() {
       return undefined;
     }
 
+    if (!arbTokenBridgeLoaded || typeof bridgeTokens === 'undefined') {
+      return undefined;
+    }
+
+    const importLookupAddress = (
+      selectedToken?.importLookupAddress ?? tokenFromSearchParams
+    ).toLowerCase();
+    const normalizedTokenAddress = tokenFromSearchParams.toLowerCase();
+
     return (
-      typeof tokensFromLists[tokenFromSearchParams] !== 'undefined' ||
-      typeof tokensFromUser[tokenFromSearchParams] !== 'undefined'
+      (selectedToken?.listIds.size ?? 0) > 0 ||
+      typeof bridgeTokens[importLookupAddress] !== 'undefined' ||
+      typeof tokensFromLists[importLookupAddress] !== 'undefined' ||
+      typeof tokensFromUser[importLookupAddress] !== 'undefined' ||
+      typeof tokensFromUser[normalizedTokenAddress] !== 'undefined'
     );
-  }, [isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
+  }, [
+    arbTokenBridgeLoaded,
+    bridgeTokens,
+    isLoadingTokenLists,
+    selectedToken?.listIds.size,
+    selectedToken?.importLookupAddress,
+    tokenFromSearchParams,
+    tokensFromLists,
+    tokensFromUser,
+  ]);
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
@@ -563,13 +585,11 @@ export function TransferPanel() {
       }
 
       const destinationChainErc20Address =
-        tokenOverrides.destination?.address || isDepositMode
-          ? selectedToken?.l2Address
-          : selectedToken?.address;
+        tokenOverrides.destination?.address ||
+        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
       const sourceChainErc20Address =
-        tokenOverrides.source?.address || isDepositMode
-          ? selectedToken?.address
-          : selectedToken?.l2Address;
+        tokenOverrides.source?.address ||
+        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,

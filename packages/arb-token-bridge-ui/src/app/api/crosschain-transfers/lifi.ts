@@ -13,6 +13,7 @@ import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { isTokenArbitrumOnePyusdOft, isTokenEthereumPyusd } from '@/bridge/util/PyusdUtils';
 
 import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
@@ -116,14 +117,29 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
 
 /** Override token metadata (symbol, name, ...) for special cases (e.g., USDT) */
 function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: string } {
+  if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PYUSD' });
+  }
+
+  if (isTokenArbitrumOnePyusdOft(token.address) && chainId === ChainId.ArbitrumOne) {
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PYUSD OFT' });
+  }
+
   if (isUsdtToken(token.address, chainId)) {
-    return {
-      ...token,
-      name: 'USDT',
-      symbol: 'USDT',
-    };
+    return withOverriddenNameAndSymbol(token, { symbol: 'USDT', name: 'USDT' });
   }
   return token;
+}
+
+function withOverriddenNameAndSymbol(
+  token: Token,
+  { symbol, name }: { symbol: string; name: string },
+): Token & { name?: string } {
+  return {
+    ...token,
+    symbol,
+    name,
+  };
 }
 
 /**

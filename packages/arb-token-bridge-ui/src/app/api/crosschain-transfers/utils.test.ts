@@ -4,6 +4,7 @@ import { describe, expect, it, test } from 'vitest';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { getArbitrumOnePyusdOftToken, getEthereumPyusdToken } from '../../../util/PyusdUtils';
 import { getTokenOverride, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
@@ -79,6 +80,15 @@ function generateBaseDepositTestCases() {
     .flatMap((testCase) => testCase);
 }
 
+function getPyusdLifiListEntry(): ERC20BridgeToken {
+  return {
+    ...getEthereumPyusdToken({
+      listIds: new Set(['lifi-token-list']),
+    }),
+    l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+  };
+}
+
 describe('isValidLifiTransfer', () => {
   test.each([
     ...generateTestCases({
@@ -137,6 +147,66 @@ describe('isValidLifiTransfer', () => {
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
         tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows Ethereum PYUSD deposits to Arbitrum through LiFi', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {
+      [CommonAddress.Ethereum.PYUSD]: getPyusdLifiListEntry(),
+    };
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Ethereum.PYUSD,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows Ethereum PYUSD deposits to Arbitrum through LiFi without tokensFromLists', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Ethereum.PYUSD,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+  });
+
+  it('blocks canonical PYUSD withdrawals from appearing as LiFi transfers', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {
+      [CommonAddress.Ethereum.PYUSD]: getPyusdLifiListEntry(),
+    };
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Ethereum.PYUSD,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists,
+      }),
+    ).toBe(false);
+  });
+
+  it('blocks canonical PYUSD withdrawals without tokensFromLists', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Ethereum.PYUSD,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+      }),
+    ).toBe(false);
+  });
+
+  it('allows PYUSD OFT withdrawals through LiFi', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
       }),
     ).toBe(true);
   });
@@ -307,6 +377,36 @@ describe('getTokenOverride', () => {
     expect(superpositionToMainnetOverride.destination).toEqual({
       ...nativeUsdcToken,
       address: CommonAddress.Ethereum.USDC,
+    });
+  });
+
+  it('maps Ethereum PYUSD deposits to PYUSD OFT on Arbitrum One', () => {
+    const override = getTokenOverride({
+      fromToken: CommonAddress.Ethereum.PYUSD,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(override.source).toEqual({
+      ...getEthereumPyusdToken(),
+    });
+    expect(override.destination).toEqual({
+      ...getArbitrumOnePyusdOftToken(),
+    });
+  });
+
+  it('maps PYUSD OFT withdrawals back to Ethereum PYUSD', () => {
+    const override = getTokenOverride({
+      fromToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.Ethereum,
+    });
+
+    expect(override.source).toEqual({
+      ...getArbitrumOnePyusdOftToken(),
+    });
+    expect(override.destination).toEqual({
+      ...getEthereumPyusdToken(),
     });
   });
 });

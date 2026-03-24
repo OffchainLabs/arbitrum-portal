@@ -7,6 +7,12 @@ import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arb
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
+import {
+  getArbitrumOnePyusdOftToken,
+  getEthereumPyusdToken,
+  isTokenArbitrumOnePyusdOft,
+  isTokenEthereumPyusd,
+} from '../../../util/PyusdUtils';
 import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants';
 
 export function isLifiTransfer({
@@ -56,6 +62,31 @@ export function isValidLifiTransfer({
 
   // Native ETH is always valid for LiFi
   if (!fromToken) {
+    return true;
+  }
+
+  // Canonical PYUSD is only supported through canonical withdraw
+  if (
+    isTokenEthereumPyusd(fromToken) &&
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum
+  ) {
+    return false;
+  }
+
+  if (
+    isTokenEthereumPyusd(fromToken) &&
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne
+  ) {
+    return true;
+  }
+
+  if (
+    isTokenArbitrumOnePyusdOft(fromToken) &&
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum
+  ) {
     return true;
   }
 
@@ -279,6 +310,28 @@ export function getTokenOverride({
         },
       };
     }
+  }
+
+  if (
+    isTokenEthereumPyusd(fromToken) &&
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne
+  ) {
+    return {
+      source: getEthereumPyusdToken(),
+      destination: getArbitrumOnePyusdOftToken(),
+    };
+  }
+
+  if (
+    isTokenArbitrumOnePyusdOft(fromToken) &&
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum
+  ) {
+    return {
+      source: getArbitrumOnePyusdOftToken(),
+      destination: getEthereumPyusdToken(),
+    };
   }
 
   return {

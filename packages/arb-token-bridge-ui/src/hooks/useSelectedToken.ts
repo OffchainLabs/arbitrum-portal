@@ -1,6 +1,6 @@
 import { Provider } from '@ethersproject/providers';
 import { constants, utils } from 'ethers';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -11,6 +11,11 @@ import {
 } from '../components/TransferPanel/TokenSearchUtils';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import {
+  getEthereumPyusdToken,
+  getPyusdTokenForArbitrumOneWithdrawal,
+  isTokenEthereumPyusd,
+} from '../util/PyusdUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -46,7 +51,7 @@ export const useSelectedToken = (): [
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
@@ -129,12 +134,48 @@ export const useSelectedToken = (): [
     [setQueryParams],
   );
 
-  const selectedToken = tokenFromSearchParams
-    ? usdcToken ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null
-    : null;
+  const normalizedTokenAddress = tokenFromSearchParams?.toLowerCase();
+  const ethereumPyusdAddress = CommonAddress.Ethereum.PYUSD.toLowerCase();
+  const listSelectedToken = normalizedTokenAddress
+    ? tokensFromLists[normalizedTokenAddress]
+    : undefined;
+  const userSelectedToken = normalizedTokenAddress
+    ? tokensFromUser[normalizedTokenAddress]
+    : undefined;
+  const pyusdListEntry = listSelectedToken || tokensFromLists[ethereumPyusdAddress];
+  const stablePyusdListIdsRef = useRef<Set<string> | undefined>(undefined);
+
+  if (!areSetsEqual(stablePyusdListIdsRef.current, pyusdListEntry?.listIds)) {
+    stablePyusdListIdsRef.current = pyusdListEntry?.listIds
+      ? new Set(pyusdListEntry.listIds)
+      : undefined;
+  }
+
+  const stablePyusdListIds = stablePyusdListIdsRef.current;
+  const selectedPyusdToken = useMemo(() => {
+    return getSelectedPyusdToken({
+      tokenAddress: tokenFromSearchParams,
+      isDepositMode,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      pyusdPriceUSD: pyusdListEntry?.priceUSD,
+      pyusdL2Address: pyusdListEntry?.l2Address,
+      pyusdListIds: stablePyusdListIds,
+    });
+  }, [
+    isDepositMode,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    pyusdListEntry?.l2Address,
+    pyusdListEntry?.priceUSD,
+    stablePyusdListIds,
+    tokenFromSearchParams,
+  ]);
+
+  const selectedToken = useMemo(
+    () => selectedPyusdToken ?? usdcToken ?? userSelectedToken ?? listSelectedToken ?? null,
+    [listSelectedToken, selectedPyusdToken, usdcToken, userSelectedToken],
+  );
 
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
@@ -151,6 +192,69 @@ function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
     return tokenAddress;
   }
   return undefined;
+}
+
+function areSetsEqual<T>(a: Set<T> | undefined, b: Set<T> | undefined): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const item of a) {
+    if (!b.has(item)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getSelectedPyusdToken({
+  tokenAddress,
+  isDepositMode,
+  sourceChainId,
+  destinationChainId,
+  pyusdPriceUSD,
+  pyusdL2Address,
+  pyusdListIds,
+}: {
+  tokenAddress: string | undefined;
+  isDepositMode: boolean;
+  sourceChainId: number;
+  destinationChainId: number;
+  pyusdPriceUSD?: number;
+  pyusdL2Address?: string;
+  pyusdListIds?: Set<string>;
+}) {
+  if (!tokenAddress) {
+    return null;
+  }
+
+  if (
+    isDepositMode &&
+    isTokenEthereumPyusd(tokenAddress) &&
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne
+  ) {
+    return {
+      ...getEthereumPyusdToken({
+        priceUSD: pyusdPriceUSD,
+        listIds: pyusdListIds,
+      }),
+      l2Address: pyusdL2Address ?? CommonAddress.ArbitrumOne.PYUSDOFT,
+    };
+  }
+
+  return getPyusdTokenForArbitrumOneWithdrawal({
+    tokenAddress,
+    sourceChainId,
+    destinationChainId,
+    priceUSD: pyusdPriceUSD,
+    listIds: pyusdListIds,
+  });
 }
 
 export async function getUsdcToken({

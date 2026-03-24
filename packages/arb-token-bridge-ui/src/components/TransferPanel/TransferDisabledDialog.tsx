@@ -6,9 +6,11 @@ import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { useTokenLists } from '../../hooks/useTokenLists';
 import { getL2ConfigForTeleport } from '../../token-bridge-sdk/teleport';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import { isTokenArbitrumOnePyusdOft, isTokenEthereumPyusd } from '../../util/PyusdUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -60,6 +62,24 @@ export function isDisabledCanonicalTransfer({
     return true;
   }
 
+  if (
+    isDepositMode &&
+    isTokenEthereumPyusd(selectedToken.address) &&
+    parentChainId === ChainId.Ethereum &&
+    childChainId === ChainId.ArbitrumOne
+  ) {
+    return true;
+  }
+
+  if (
+    !isDepositMode &&
+    isTokenArbitrumOnePyusdOft(selectedToken.address) &&
+    childChainId === ChainId.ArbitrumOne &&
+    parentChainId === ChainId.Ethereum
+  ) {
+    return true;
+  }
+
   return !!(isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading);
 }
 
@@ -68,6 +88,7 @@ export function TransferDisabledDialog() {
   const { isDepositMode, isTeleportMode, parentChain, childChain } =
     useNetworksRelationship(networks);
   const [selectedToken, setSelectedToken] = useSelectedToken();
+  const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   // for tracking local state and prevent flickering with async URL params updating
   const [selectedTokenAddressLocalValue, setSelectedTokenAddressLocalValue] = useState<
     string | null
@@ -102,6 +123,10 @@ export function TransferDisabledDialog() {
       return false;
     }
 
+    if (isLoadingTokenLists) {
+      return false;
+    }
+
     // If a lifi route exists, don't show any dialog
     if (
       isLifiEnabled() &&
@@ -127,6 +152,7 @@ export function TransferDisabledDialog() {
   }, [
     childChain.id,
     isDepositMode,
+    isLoadingTokenLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     isTeleportMode,

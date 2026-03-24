@@ -75,7 +75,7 @@ interface GetEligibleRoutesParams {
   isDepositMode: boolean;
   sourceChainId: number;
   destinationChainId: number;
-  selectedToken: ERC20BridgeToken | null;
+  fromToken: string | undefined;
   isArbitrumCanonicalTransfer: boolean;
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
@@ -87,7 +87,7 @@ function getEligibleRoutes({
   isDepositMode,
   sourceChainId,
   destinationChainId,
-  selectedToken,
+  fromToken,
   isArbitrumCanonicalTransfer,
   tokensFromLists,
 }: GetEligibleRoutesParams): RouteType[] {
@@ -104,7 +104,7 @@ function getEligibleRoutes({
 
     if (isLifiEnabled) {
       const isValidLifiRoute = isValidLifiTransfer({
-        fromToken: selectedToken?.address,
+        fromToken,
         sourceChainId: sourceChainId,
         destinationChainId: destinationChainId,
         tokensFromLists,
@@ -135,7 +135,7 @@ function getEligibleRoutes({
   const isValidLifiRoute =
     isLifiEnabled &&
     isValidLifiTransfer({
-      fromToken: selectedToken?.address,
+      fromToken,
       sourceChainId: sourceChainId,
       destinationChainId: destinationChainId,
       tokensFromLists,
@@ -155,7 +155,7 @@ function getEligibleRoutes({
 export function useRoutesUpdater() {
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
-  const [{ amount }] = useArbQueryParams();
+  const [{ amount, token: tokenFromSearchParams }] = useArbQueryParams();
   const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const [selectedToken] = useSelectedToken();
@@ -181,6 +181,7 @@ export function useRoutesUpdater() {
     }),
     shallow,
   );
+  const fromToken = selectedToken?.address;
 
   const eligibleRouteTypes = useMemo(
     () =>
@@ -191,7 +192,7 @@ export function useRoutesUpdater() {
         isDepositMode,
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-        selectedToken,
+        fromToken,
         isArbitrumCanonicalTransfer,
         tokensFromLists,
       }),
@@ -202,7 +203,7 @@ export function useRoutesUpdater() {
       isDepositMode,
       networks.sourceChain.id,
       networks.destinationChain.id,
-      selectedToken,
+      fromToken,
       isArbitrumCanonicalTransfer,
       tokensFromLists,
     ],
@@ -236,9 +237,10 @@ export function useRoutesUpdater() {
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
   const toTokenAddress =
     overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
+  const isWaitingForSelectedErc20Token = !!tokenFromSearchParams && !selectedToken;
 
   const lifiParameters = {
-    enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
+    enabled: eligibleRouteTypes.includes('lifi') && !isWaitingForSelectedErc20Token, // only fetch LiFi routes once the ERC20 selection has resolved
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,

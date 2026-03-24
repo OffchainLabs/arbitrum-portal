@@ -8,6 +8,8 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import { getArbitrumOnePyusdOftToken, getEthereumPyusdToken } from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
@@ -89,6 +91,10 @@ describe.sequential('useDestinationToken', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetTokenOverride.mockReturnValue({
+      source: null,
+      destination: null,
+    });
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -138,6 +144,152 @@ describe.sequential('useDestinationToken', () => {
 
       const { result } = renderHook(useDestinationToken);
       expect(result.current).toBeNull();
+    });
+
+    it('maps Ethereum PYUSD deposits to Arbitrum One PYUSD OFT', () => {
+      mockedUseSelectedToken.mockReturnValue([
+        getEthereumPyusdToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+        vi.fn(),
+      ]);
+
+      mockedUseArbQueryParams.mockReturnValue([
+        { ...defaultQueryParams, destinationToken: CommonAddress.Ethereum.PYUSD },
+        vi.fn(),
+      ]);
+
+      mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
+        fromToken === CommonAddress.Ethereum.PYUSD
+          ? {
+              source: getEthereumPyusdToken({
+                priceUSD: 1,
+                listIds: new Set(['1']),
+              }),
+              destination: getArbitrumOnePyusdOftToken({
+                priceUSD: 1,
+                listIds: new Set(['1']),
+              }),
+            }
+          : {
+              source: null,
+              destination: null,
+            },
+      );
+
+      const { result } = renderHook(useDestinationToken);
+
+      expect(result.current).toEqual(
+        getArbitrumOnePyusdOftToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+      );
+    });
+
+    it('maps PYUSD OFT withdrawals back to Ethereum PYUSD with metadata', () => {
+      mockedUseNetworks.mockReturnValue([
+        {
+          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+          destinationChain: getWagmiChain(ChainId.Ethereum),
+          destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
+        },
+        vi.fn(),
+      ]);
+
+      mockedUseSelectedToken.mockReturnValue([
+        getArbitrumOnePyusdOftToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+        vi.fn(),
+      ]);
+
+      mockedUseArbQueryParams.mockReturnValue([
+        { ...defaultQueryParams, destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
+        fromToken === CommonAddress.ArbitrumOne.PYUSDOFT
+          ? {
+              source: null,
+              destination: getEthereumPyusdToken({
+                priceUSD: 1,
+                listIds: new Set(['1']),
+              }),
+            }
+          : {
+              source: null,
+              destination: null,
+            },
+      );
+
+      const { result } = renderHook(useDestinationToken);
+
+      expect(result.current).toEqual(
+        getEthereumPyusdToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+      );
+    });
+
+    it('maps PYUSD OFT withdrawals safely before bridgeTokens hydrate', () => {
+      mockedUseNetworks.mockReturnValue([
+        {
+          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+          destinationChain: getWagmiChain(ChainId.Ethereum),
+          destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
+        },
+        vi.fn(),
+      ]);
+
+      mockedUseAppState.mockReturnValue({
+        app: {
+          arbTokenBridge: {
+            bridgeTokens: undefined,
+          },
+        },
+      } as Context['state']);
+
+      mockedUseSelectedToken.mockReturnValue([
+        getArbitrumOnePyusdOftToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+        vi.fn(),
+      ]);
+
+      mockedUseArbQueryParams.mockReturnValue([
+        { ...defaultQueryParams, destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
+        fromToken === CommonAddress.ArbitrumOne.PYUSDOFT
+          ? {
+              source: null,
+              destination: getEthereumPyusdToken({
+                priceUSD: 1,
+                listIds: new Set(['1']),
+              }),
+            }
+          : {
+              source: null,
+              destination: null,
+            },
+      );
+
+      const { result } = renderHook(useDestinationToken);
+
+      expect(result.current).toEqual(
+        getEthereumPyusdToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+      );
     });
   });
 

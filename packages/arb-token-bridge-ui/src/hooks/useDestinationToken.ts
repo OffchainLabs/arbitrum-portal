@@ -28,6 +28,15 @@ export function useDestinationToken(): ERC20BridgeToken | null {
     },
   } = useAppState();
   const isSwapTransfer = useIsSwapTransfer();
+  const selectedTokenOverride = useMemo(
+    () =>
+      getTokenOverride({
+        fromToken: selectedToken?.address,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      }),
+    [networks.destinationChain.id, networks.sourceChain.id, selectedToken?.address],
+  );
   const overrideToken = useMemo(
     () =>
       getTokenOverride({
@@ -38,19 +47,74 @@ export function useDestinationToken(): ERC20BridgeToken | null {
     [networks.destinationChain.id, networks.sourceChain.id],
   );
 
-  if (!isSwapTransfer) return selectedToken;
+  return useMemo(() => {
+    if (!isSwapTransfer) {
+      return getNonSwapDestinationToken({
+        selectedToken,
+        bridgeTokens,
+        selectedTokenOverrideDestination: selectedTokenOverride.destination,
+      });
+    }
 
-  // Case 1: destinationToken is the zeroAddress -> Return ETH
-  // Use getTokenOverride to handle special cases like ApeChain WETH
-  if (destinationToken && addressesEqual(destinationToken, constants.AddressZero)) {
-    return overrideToken.destination;
+    // Case 1: For OFT token that have multiple L2 addresses (canonical and OFT) for one L1 address,
+    // the destinationToken query param may equal the selected token's L1 address while the effective destination token is actually the OFT.
+    // In that case, prefer the resolved override destination so swap handling and network switching stay aligned.
+    if (
+      selectedTokenOverride.destination &&
+      destinationToken &&
+      addressesEqual(destinationToken, selectedToken?.address)
+    ) {
+      return selectedTokenOverride.destination;
+    }
+
+    // Case 2: destinationToken is the zeroAddress -> Return ETH
+    // Use getTokenOverride to handle special cases like ApeChain WETH
+    if (destinationToken && addressesEqual(destinationToken, constants.AddressZero)) {
+      return overrideToken.destination;
+    }
+
+    // Case 3: destinationToken is set to a specific token address
+    if (destinationToken && bridgeTokens) {
+      return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+    }
+
+    // Case 4: For regular chains (native ETH): return null (button will show native ETH)
+    return null;
+  }, [
+    bridgeTokens,
+    destinationToken,
+    isSwapTransfer,
+    overrideToken.destination,
+    selectedToken,
+    selectedTokenOverride.destination,
+  ]);
+}
+
+function getNonSwapDestinationToken({
+  selectedToken,
+  bridgeTokens,
+  selectedTokenOverrideDestination,
+}: {
+  selectedToken: ERC20BridgeToken | null;
+  bridgeTokens: Record<string, ERC20BridgeToken | undefined> | undefined;
+  selectedTokenOverrideDestination: ERC20BridgeToken | null;
+}) {
+  if (selectedTokenOverrideDestination) {
+    return selectedTokenOverrideDestination;
   }
 
-  // Case 2: destinationToken is set to a specific token address
-  if (destinationToken && bridgeTokens) {
-    return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+  if (
+    !selectedToken?.destinationBalanceAddress ||
+    addressesEqual(selectedToken.address, selectedToken.destinationBalanceAddress)
+  ) {
+    return selectedToken;
   }
 
-  // For regular chains (native ETH): return null (button will show native ETH)
-  return null;
+  return (
+    bridgeTokens?.[selectedToken.destinationBalanceAddress.toLowerCase()] ?? {
+      ...selectedToken,
+      address: selectedToken.destinationBalanceAddress,
+      l2Address: undefined,
+    }
+  );
 }

@@ -11,6 +11,16 @@ import { TokenListWithId } from '../../util/TokenListUtils';
 // keeps the reference stable
 const emptyData = {};
 
+function parsePriceUSD(price: unknown): number | undefined {
+  const parsedPrice = Number(price);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return undefined;
+  }
+
+  return parsedPrice;
+}
+
 export function useTokensFromLists(): ContractStorage<ERC20BridgeToken> {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
@@ -76,7 +86,7 @@ function tokenListsToSearchableTokenStorage(
 
       if (stringifiedChainId === l1ChainId) {
         // The address is from an L1 token
-        const priceUSD = token.extensions?.priceUSD as number;
+        const priceUSD = parsePriceUSD(token.extensions?.priceUSD);
         if (typeof accAddress === 'undefined') {
           // First time encountering the token through its L1 address
           acc[address] = {
@@ -115,7 +125,7 @@ function tokenListsToSearchableTokenStorage(
         const l1Bridge = bridgeInfo[l1ChainId];
         if (l1Bridge) {
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
-          const priceUSD = token.extensions?.priceUSD as number;
+          const priceUSD = parsePriceUSD(token.extensions?.priceUSD);
 
           if (!addressOnL1) {
             return;
