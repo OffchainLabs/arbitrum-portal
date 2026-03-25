@@ -234,9 +234,7 @@ export function LiquidStakingActionPanel({
     token: normalizeTokenAddress(outputTokenAddress),
     query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
-  const userBalance = userBalanceData
-    ? BigNumber.from(userBalanceData.value.toString())
-    : null;
+  const userBalance = userBalanceData ? BigNumber.from(userBalanceData.value.toString()) : null;
 
   // Check if user has a position (balance > 0)
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
@@ -284,18 +282,14 @@ export function LiquidStakingActionPanel({
     chainId: requestChainId,
     query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
-  const ethBalance = ethBalanceData
-    ? BigNumber.from(ethBalanceData.value.toString())
-    : null;
+  const ethBalance = ethBalanceData ? BigNumber.from(ethBalanceData.value.toString()) : null;
   const { data: erc20BalanceData, refetch: refetchErc20Balance } = useBalance({
     address: walletAddress,
     chainId: requestChainId,
     token: normalizeTokenAddress(selectedTokenAddress),
     query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
-  const erc20Balance = erc20BalanceData
-    ? BigNumber.from(erc20BalanceData.value.toString())
-    : null;
+  const erc20Balance = erc20BalanceData ? BigNumber.from(erc20BalanceData.value.toString()) : null;
 
   const currentBalanceRaw = useMemo(() => {
     if (!isConnected) return BigNumber.from('0');
@@ -766,7 +760,10 @@ export function LiquidStakingActionPanel({
         onSelect={handleBuyTokenSelect}
       />
     ) : (
-      <div className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2" aria-label={`Selected token: ${outputTokenSymbol}`}>
+      <div
+        className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2"
+        aria-label={`Selected token: ${outputTokenSymbol}`}
+      >
         <TokenIcon src={opportunity.tokenIcon} alt={outputTokenSymbol} symbol={outputTokenSymbol} />
         <span className="text-base font-medium text-white">{outputTokenSymbol}</span>
       </div>

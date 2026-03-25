@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 
-import type { StandardOpportunityLend } from '@/earn-api/types';
 import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
+import type { StandardOpportunityLend } from '@/earn-api/types';
 
 export function parseMetricNumber(value: number | null | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
@@ -62,8 +62,6 @@ export function getSelectedActionValues(
 
 export function sanitizeOutputTokenAddress(tokenAddress: string) {
   const lowercased = tokenAddress.toLowerCase();
-  const match = LIQUID_STAKING_OPPORTUNITIES.find(
-    (opp) => opp.id.toLowerCase() === lowercased,
-  );
+  const match = LIQUID_STAKING_OPPORTUNITIES.find((opp) => opp.id.toLowerCase() === lowercased);
   return match ? lowercased : null;
 }

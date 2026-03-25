@@ -1,11 +1,4 @@
-import {
-  Address,
-  PublicClient,
-  encodeFunctionData,
-  erc20Abi,
-  getAddress,
-  zeroAddress,
-} from 'viem';
+import { Address, PublicClient, encodeFunctionData, erc20Abi, getAddress, zeroAddress } from 'viem';
 
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
