@@ -26,10 +26,7 @@ import { sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import {
-  formatTransactionError,
-  isUserRejectedError,
-} from '@/bridge/util/isUserRejectedError';
+import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardTransactionHistory, TransactionStep } from '@/earn-api/types';

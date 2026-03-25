@@ -36,9 +36,7 @@ export function isBundleRejectedError(error: unknown) {
   const msg = (candidate.message ?? '').toLowerCase();
   const details = (candidate.details ?? '').toLowerCase();
   const combined = `${msg} ${details}`;
-  return (
-    combined.includes('bundle id is unknown') || combined.includes('no matching bundle found')
-  );
+  return combined.includes('bundle id is unknown') || combined.includes('no matching bundle found');
 }
 
 /**
