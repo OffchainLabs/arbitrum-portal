@@ -13,7 +13,11 @@ import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
-import { isTokenArbitrumOnePyusdOft, isTokenEthereumPyusd } from '@/bridge/util/PyusdUtils';
+import {
+  ETHEREUM_PYUSD_LOGO_URI,
+  isTokenArbitrumOnePyusdOft,
+  isTokenEthereumPyusd,
+} from '@/bridge/util/PyusdUtils';
 
 import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
@@ -147,6 +151,20 @@ function withOverriddenNameAndSymbol(
  * LiFi returns TrustWallet URLs, but we want to use local logos
  */
 function overrideTokenLogo(token: Token, chainId: number): Token {
+  if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
+    return {
+      ...token,
+      logoURI: ETHEREUM_PYUSD_LOGO_URI,
+    };
+  }
+
+  if (isTokenArbitrumOnePyusdOft(token.address) && chainId === ChainId.ArbitrumOne) {
+    return {
+      ...token,
+      logoURI: ETHEREUM_PYUSD_LOGO_URI,
+    };
+  }
+
   if (addressesEqual(token.address, constants.AddressZero)) {
     if (chainId === ChainId.ApeChain) {
       return {
@@ -170,7 +188,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
   return token;
 }
 
-function applyOverrides(token: Token, chainId: number): Token {
+export function applyOverrides(token: Token, chainId: number): Token {
   return overrideTokenLogo(overrideTokenMetadata(token, chainId), chainId);
 }
 

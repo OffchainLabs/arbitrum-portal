@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { ETHEREUM_PYUSD_LOGO_URI } from '@/bridge/util/PyusdUtils';
 
 export const LIFI_TOKENS_REVALIDATE_SECONDS = 30;
 
@@ -91,7 +92,12 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
   return null;
 }
 
-function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+export function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  if (String(token.coinKey) === 'PYUSD') {
+    token.logoURI = ETHEREUM_PYUSD_LOGO_URI;
+    return token;
+  }
+
   switch (token.coinKey) {
     case CoinKey.ETH: {
       token.logoURI = '/images/EthereumLogoRound.svg';

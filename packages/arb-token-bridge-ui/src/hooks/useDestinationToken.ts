@@ -2,6 +2,7 @@ import { constants } from 'ethers';
 import { useMemo } from 'react';
 
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../components/TransferPanel/TokenSearchUtils';
 import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
@@ -27,6 +28,7 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
+  const tokensFromLists = useTokensFromLists();
   const isSwapTransfer = useIsSwapTransfer();
   const selectedTokenOverride = useMemo(
     () =>
@@ -52,7 +54,10 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       return getNonSwapDestinationToken({
         selectedToken,
         bridgeTokens,
-        selectedTokenOverrideDestination: selectedTokenOverride.destination,
+        selectedTokenOverrideDestination: withDestinationTokenMetadata({
+          token: selectedTokenOverride.destination,
+          metadataSource: selectedToken,
+        }),
       });
     }
 
@@ -64,7 +69,10 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       destinationToken &&
       addressesEqual(destinationToken, selectedToken?.address)
     ) {
-      return selectedTokenOverride.destination;
+      return withDestinationTokenMetadata({
+        token: selectedTokenOverride.destination,
+        metadataSource: selectedToken,
+      });
     }
 
     // Case 2: destinationToken is the zeroAddress -> Return ETH
@@ -74,8 +82,12 @@ export function useDestinationToken(): ERC20BridgeToken | null {
     }
 
     // Case 3: destinationToken is set to a specific token address
-    if (destinationToken && bridgeTokens) {
-      return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+    if (destinationToken) {
+      return (
+        tokensFromLists[destinationToken.toLowerCase()] ??
+        bridgeTokens?.[destinationToken.toLowerCase()] ??
+        null
+      );
     }
 
     // Case 4: For regular chains (native ETH): return null (button will show native ETH)
@@ -87,7 +99,33 @@ export function useDestinationToken(): ERC20BridgeToken | null {
     overrideToken.destination,
     selectedToken,
     selectedTokenOverride.destination,
+    tokensFromLists,
   ]);
+}
+
+function withDestinationTokenMetadata({
+  token,
+  metadataSource,
+}: {
+  token: ERC20BridgeToken | null;
+  metadataSource: ERC20BridgeToken | null;
+}) {
+  if (!token || !metadataSource) {
+    return token;
+  }
+
+  const tokenLookupAddress = token.importLookupAddress ?? token.address;
+  const metadataLookupAddress = metadataSource.importLookupAddress ?? metadataSource.address;
+
+  if (!addressesEqual(tokenLookupAddress, metadataLookupAddress)) {
+    return token;
+  }
+
+  return {
+    ...token,
+    priceUSD: token.priceUSD ?? metadataSource.priceUSD,
+    listIds: token.listIds.size > 0 ? token.listIds : new Set(metadataSource.listIds),
+  };
 }
 
 function getNonSwapDestinationToken({

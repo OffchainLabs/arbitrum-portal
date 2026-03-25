@@ -73,7 +73,7 @@ export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {
   return data;
 }
 
-function tokenListsToSearchableTokenStorage(
+export function tokenListsToSearchableTokenStorage(
   tokenLists: TokenListWithId[],
   l1ChainId: string,
   l2ChainId: string,
@@ -101,6 +101,10 @@ function tokenListsToSearchableTokenStorage(
           acc[address] = {
             ...accAddress,
             address,
+            name: token.name,
+            symbol: token.symbol,
+            decimals: token.decimals,
+            logoURI: token.logoURI,
           };
           if (!acc[address]!.priceUSD && priceUSD) {
             acc[address]!.priceUSD = priceUSD;
@@ -119,13 +123,23 @@ function tokenListsToSearchableTokenStorage(
         // @ts-ignore TODO
         // TODO: should we upgrade '@uniswap/token-lists'?
         const bridgeInfo: {
-          [chainId: string]: { tokenAddress: string };
+          [chainId: string]: {
+            tokenAddress: string;
+            name?: string;
+            symbol?: string;
+            decimals?: number;
+            logoURI?: string;
+          };
         } = token.extensions.bridgeInfo;
 
         const l1Bridge = bridgeInfo[l1ChainId];
         if (l1Bridge) {
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
           const priceUSD = parsePriceUSD(token.extensions?.priceUSD);
+          const parentTokenName = l1Bridge.name ?? token.name;
+          const parentTokenSymbol = l1Bridge.symbol ?? token.symbol;
+          const parentTokenDecimals = l1Bridge.decimals ?? token.decimals;
+          const parentTokenLogoURI = l1Bridge.logoURI ?? token.logoURI;
 
           if (!addressOnL1) {
             return;
@@ -134,18 +148,23 @@ function tokenListsToSearchableTokenStorage(
           if (typeof acc[addressOnL1] === 'undefined') {
             // Token is not on the list yet
             acc[addressOnL1] = {
-              name: token.name,
-              symbol: token.symbol,
+              name: parentTokenName,
+              symbol: parentTokenSymbol,
               type: TokenType.ERC20,
-              logoURI: token.logoURI,
+              logoURI: parentTokenLogoURI,
               address: addressOnL1,
               l2Address: address,
-              decimals: token.decimals,
+              decimals: parentTokenDecimals,
               listIds: new Set(),
               priceUSD,
             };
           } else {
-            // The token's L1 address is already on the list, just fill in its L2 address
+            // The token's L1 address is already on the list.
+            // LiFi bridgeInfo carries the canonical parent-chain branding, so prefer it.
+            acc[addressOnL1]!.name = parentTokenName;
+            acc[addressOnL1]!.symbol = parentTokenSymbol;
+            acc[addressOnL1]!.decimals = parentTokenDecimals;
+            acc[addressOnL1]!.logoURI = parentTokenLogoURI;
             acc[addressOnL1]!.l2Address = address;
             if (!acc[addressOnL1]!.priceUSD && priceUSD) {
               acc[addressOnL1]!.priceUSD = priceUSD;

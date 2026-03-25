@@ -57,12 +57,6 @@ export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): Bi
     return constants.Zero;
   }
 
-  if (token.destinationBalanceAddress) {
-    return (
-      erc20DestinationChainBalances[token.destinationBalanceAddress.toLowerCase()] ?? constants.Zero
-    );
-  }
-
   // In deposit mode: destination = child chain, use l2Address
   if (isDepositMode) {
     const tokenChildChainAddress = token.l2Address?.toLowerCase();
@@ -74,6 +68,12 @@ export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): Bi
     }
 
     return erc20DestinationChainBalances[tokenChildChainAddress] ?? constants.Zero;
+  }
+
+  if (token.destinationBalanceAddress) {
+    return (
+      erc20DestinationChainBalances[token.destinationBalanceAddress.toLowerCase()] ?? constants.Zero
+    );
   }
 
   // In withdrawal mode: destination = parent chain, use parent address

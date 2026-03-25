@@ -14,6 +14,7 @@ import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferR
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
 import { useTokensFromLists } from '../TokenSearchUtils';
@@ -237,10 +238,13 @@ export function useRoutesUpdater() {
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
   const toTokenAddress =
     overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
-  const isWaitingForSelectedErc20Token = !!tokenFromSearchParams && !selectedToken;
+  const shouldWaitForSelectedErc20Token =
+    !!tokenFromSearchParams &&
+    !addressesEqual(tokenFromSearchParams, constants.AddressZero) &&
+    !selectedToken;
 
   const lifiParameters = {
-    enabled: eligibleRouteTypes.includes('lifi') && !isWaitingForSelectedErc20Token, // only fetch LiFi routes once the ERC20 selection has resolved
+    enabled: eligibleRouteTypes.includes('lifi') && !shouldWaitForSelectedErc20Token, // only fetch LiFi routes once the ERC20 selection has resolved
     fromAddress: address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,

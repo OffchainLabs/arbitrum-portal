@@ -8,9 +8,9 @@ type PyusdTokenMetadata = {
   listIds?: Set<string>;
 };
 
-const ETHEREUM_PYUSD_LOGO_URI =
+export const ETHEREUM_PYUSD_LOGO_URI =
   'https://assets.coingecko.com/coins/images/31212/thumb/PYUSD_Token_Logo_2x.png?1765987788';
-const ARBITRUM_ONE_PYUSD_OFT_LOGO_URI =
+export const ARBITRUM_ONE_PYUSD_OFT_LOGO_URI =
   'https://storage.googleapis.com/zapper-fi-assets/tokens/arbitrum/0x46850ad61c2b7d64d08c9c754f45254596696984.png';
 const commonPyusdToken = {
   decimals: 6,

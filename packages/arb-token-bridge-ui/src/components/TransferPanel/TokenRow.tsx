@@ -133,6 +133,40 @@ interface TokenRowProps {
   isDestination?: boolean;
 }
 
+export function getTokenRowLogoURI({
+  token,
+  overrideToken,
+  nativeCurrencyLogoUrl,
+  isDestination,
+}: {
+  token: ERC20BridgeToken | null;
+  overrideToken: ERC20BridgeToken | null;
+  nativeCurrencyLogoUrl?: string;
+  isDestination: boolean;
+}) {
+  if (
+    isDestination &&
+    token?.logoURI &&
+    overrideToken &&
+    addressesEqual(
+      token.importLookupAddress ?? token.address,
+      overrideToken.importLookupAddress ?? overrideToken.address,
+    )
+  ) {
+    return token.logoURI;
+  }
+
+  if (overrideToken?.logoURI) {
+    return overrideToken.logoURI;
+  }
+
+  if (!token) {
+    return nativeCurrencyLogoUrl;
+  }
+
+  return token.logoURI;
+}
+
 function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination: boolean }) {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
@@ -184,15 +218,13 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
   }, [overrideToken, token, nativeCurrency.symbol, chainId]);
 
   const logoURI = useMemo(() => {
-    if (overrideToken?.logoURI) {
-      return overrideToken.logoURI;
-    }
-    if (!token) {
-      return nativeCurrency.logoUrl;
-    }
-
-    return token.logoURI;
-  }, [overrideToken, token, nativeCurrency.logoUrl]);
+    return getTokenRowLogoURI({
+      token,
+      overrideToken,
+      nativeCurrencyLogoUrl: nativeCurrency.logoUrl,
+      isDestination: options?.isDestination ?? false,
+    });
+  }, [nativeCurrency.logoUrl, options?.isDestination, overrideToken, token]);
 
   const sourceBalance = useBalanceOnSourceChain(token);
   const destinationBalance = useBalanceOnDestinationChain(token);

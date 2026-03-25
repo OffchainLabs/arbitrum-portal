@@ -6,10 +6,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../../components/TransferPanel/TokenSearchUtils';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { getArbitrumOnePyusdOftToken, getEthereumPyusdToken } from '../../util/PyusdUtils';
+import {
+  ETHEREUM_PYUSD_LOGO_URI,
+  getArbitrumOnePyusdOftToken,
+  getEthereumPyusdToken,
+} from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
@@ -55,12 +60,17 @@ vi.mock('../../app/api/crosschain-transfers/utils', () => ({
   getTokenOverride: vi.fn(),
 }));
 
+vi.mock('../../components/TransferPanel/TokenSearchUtils', () => ({
+  useTokensFromLists: vi.fn(),
+}));
+
 describe.sequential('useDestinationToken', () => {
   const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
   const mockedUseNetworks = vi.mocked(useNetworks);
   const mockedUseAppState = vi.mocked(useAppState);
   const mockedGetTokenOverride = vi.mocked(getTokenOverride);
+  const mockedUseTokensFromLists = vi.mocked(useTokensFromLists);
 
   const mockSelectedToken: ERC20BridgeToken = {
     type: TokenType.ERC20,
@@ -115,6 +125,7 @@ describe.sequential('useDestinationToken', () => {
         },
       },
     } as Context['state']);
+    mockedUseTokensFromLists.mockReturnValue({});
 
     mockedUseSelectedToken.mockReturnValue([mockSelectedToken, vi.fn()]);
 
@@ -167,10 +178,7 @@ describe.sequential('useDestinationToken', () => {
                 priceUSD: 1,
                 listIds: new Set(['1']),
               }),
-              destination: getArbitrumOnePyusdOftToken({
-                priceUSD: 1,
-                listIds: new Set(['1']),
-              }),
+              destination: getArbitrumOnePyusdOftToken(),
             }
           : {
               source: null,
@@ -326,6 +334,55 @@ describe.sequential('useDestinationToken', () => {
 
         const { result } = renderHook(useDestinationToken);
         expect(result.current).toEqual(mockDestinationToken);
+      });
+
+      it('prefers token-list metadata for explicitly selected destination tokens', () => {
+        mockedUseNetworks.mockReturnValue([
+          {
+            sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+            sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+            destinationChain: getWagmiChain(ChainId.Ethereum),
+            destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
+          },
+          vi.fn(),
+        ]);
+
+        mockedUseSelectedToken.mockReturnValue([
+          getArbitrumOnePyusdOftToken({
+            priceUSD: 1,
+            listIds: new Set(['1']),
+          }),
+          vi.fn(),
+        ]);
+        mockedUseArbQueryParams.mockReturnValue([
+          { ...defaultQueryParams, destinationToken: CommonAddress.Ethereum.PYUSD },
+          vi.fn(),
+        ]);
+        mockedUseAppState.mockReturnValue({
+          app: {
+            arbTokenBridge: {
+              bridgeTokens: {
+                [CommonAddress.Ethereum.PYUSD.toLowerCase()]: {
+                  ...getEthereumPyusdToken({
+                    priceUSD: 1,
+                    listIds: new Set(['1']),
+                  }),
+                  logoURI: 'https://example.com/blue.png',
+                },
+              },
+            },
+          },
+        } as Context['state']);
+        mockedUseTokensFromLists.mockReturnValue({
+          [CommonAddress.Ethereum.PYUSD.toLowerCase()]: getEthereumPyusdToken({
+            priceUSD: 1,
+            listIds: new Set(['1']),
+          }),
+        });
+
+        const { result } = renderHook(useDestinationToken);
+
+        expect(result.current?.logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
       });
 
       it('should handle case insensitive address lookup in bridgeTokens', () => {
