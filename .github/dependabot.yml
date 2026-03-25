@@ -8,6 +8,3 @@ updates:
     versioning-strategy: increase
     open-pull-requests-limit: 5
     target-branch: master
-    allow:
-      - dependency-name: '@arbitrum/*'
-      - dependency-name: '@offchainlabs/*'
