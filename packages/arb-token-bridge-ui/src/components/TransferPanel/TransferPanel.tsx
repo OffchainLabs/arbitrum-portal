@@ -51,6 +51,7 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getBridgeTokenLookupAddress } from '../../util/BridgeTokenAddressUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
@@ -249,16 +250,23 @@ export function TransferPanel() {
       return undefined;
     }
 
-    const importLookupAddress = (
-      selectedToken?.importLookupAddress ?? tokenFromSearchParams
-    ).toLowerCase();
+    const importLookupAddress = getBridgeTokenLookupAddress({
+      address: tokenFromSearchParams,
+      importLookupAddress: selectedToken?.importLookupAddress,
+    });
+
+    if (!importLookupAddress) {
+      return undefined;
+    }
+
+    const normalizedImportLookupAddress = importLookupAddress.toLowerCase();
     const normalizedTokenAddress = tokenFromSearchParams.toLowerCase();
 
     return (
       (selectedToken?.listIds.size ?? 0) > 0 ||
-      typeof bridgeTokens[importLookupAddress] !== 'undefined' ||
-      typeof tokensFromLists[importLookupAddress] !== 'undefined' ||
-      typeof tokensFromUser[importLookupAddress] !== 'undefined' ||
+      typeof bridgeTokens[normalizedImportLookupAddress] !== 'undefined' ||
+      typeof tokensFromLists[normalizedImportLookupAddress] !== 'undefined' ||
+      typeof tokensFromUser[normalizedImportLookupAddress] !== 'undefined' ||
       typeof tokensFromUser[normalizedTokenAddress] !== 'undefined'
     );
   }, [

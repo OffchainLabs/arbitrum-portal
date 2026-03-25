@@ -15,7 +15,6 @@ import { Tooltip } from '@/app-components/Tooltip';
 import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection';
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { useMode } from '../../hooks/useMode';
@@ -23,13 +22,13 @@ import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrenc
 import { useNetworks } from '../../hooks/useNetworks';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
+import { useNetworkSwitchSelectedTokenAddress } from '../TransferPanel/hooks/useNetworkSwitchSelectedTokenAddress';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
@@ -477,14 +476,12 @@ export const NetworkSelectionContainer = React.memo(
     },
   ) => {
     const isSwapTransfer = useIsSwapTransfer();
-    const [selectedToken, setSelectedToken] = useSelectedToken();
+    const [, setSelectedToken] = useSelectedToken();
     const [networks, setNetworks] = useNetworks();
     const [, setQueryParams] = useArbQueryParams();
     const { embedMode } = useMode();
     const isSource = props.type === 'source';
-    const destinationToken = useDestinationToken();
-    const shouldSwitchToResolvedDestinationToken =
-      !!destinationToken && !addressesEqual(destinationToken.address, selectedToken?.address);
+    const nextSelectedTokenAddress = useNetworkSwitchSelectedTokenAddress();
 
     const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
 
@@ -507,8 +504,8 @@ export const NetworkSelectionContainer = React.memo(
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (isSwapTransfer || shouldSwitchToResolvedDestinationToken) {
-            setSelectedToken(destinationToken?.address ?? null);
+          if (typeof nextSelectedTokenAddress !== 'undefined') {
+            setSelectedToken(nextSelectedTokenAddress);
           }
           return;
         }
@@ -530,9 +527,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken,
         setQueryParams,
         props,
-        isSwapTransfer,
-        destinationToken?.address,
-        shouldSwitchToResolvedDestinationToken,
+        nextSelectedTokenAddress,
       ],
     );
 

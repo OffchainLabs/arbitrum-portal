@@ -19,6 +19,10 @@ import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChain
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import {
+  areEquivalentBridgeTokens,
+  getBridgeTokenLookupAddress,
+} from '../../util/BridgeTokenAddressUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
@@ -148,10 +152,7 @@ export function getTokenRowLogoURI({
     isDestination &&
     token?.logoURI &&
     overrideToken &&
-    addressesEqual(
-      token.importLookupAddress ?? token.address,
-      overrideToken.importLookupAddress ?? overrideToken.address,
-    )
+    areEquivalentBridgeTokens(token, overrideToken)
   ) {
     return token.logoURI;
   }
@@ -337,7 +338,10 @@ function TokenBalance({
       return true;
     }
 
-    const importLookupAddress = token.importLookupAddress ?? token.address;
+    const importLookupAddress = getBridgeTokenLookupAddress(token);
+    if (!importLookupAddress) {
+      return false;
+    }
     return typeof bridgeTokens[importLookupAddress] !== 'undefined';
   }, [bridgeTokens, isArbitrumNativeUSDC, token]);
 

@@ -6,6 +6,7 @@ import { useTokensFromLists } from '../components/TransferPanel/TokenSearchUtils
 import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
+import { areEquivalentBridgeTokens } from '../util/BridgeTokenAddressUtils';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -114,10 +115,7 @@ function withDestinationTokenMetadata({
     return token;
   }
 
-  const tokenLookupAddress = token.importLookupAddress ?? token.address;
-  const metadataLookupAddress = metadataSource.importLookupAddress ?? metadataSource.address;
-
-  if (!addressesEqual(tokenLookupAddress, metadataLookupAddress)) {
+  if (!areEquivalentBridgeTokens(token, metadataSource)) {
     return token;
   }
 

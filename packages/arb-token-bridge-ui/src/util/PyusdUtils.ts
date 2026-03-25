@@ -112,3 +112,46 @@ export function getPyusdTokenForArbitrumOneWithdrawal({
 
   return null;
 }
+
+export function getPyusdTokenForTransfer({
+  tokenAddress,
+  sourceChainId,
+  destinationChainId,
+  isDepositMode,
+  pyusdL2Address,
+  priceUSD,
+  listIds,
+}: PyusdTokenMetadata & {
+  tokenAddress: string | undefined;
+  sourceChainId: number;
+  destinationChainId: number;
+  isDepositMode: boolean;
+  pyusdL2Address?: string;
+}): ERC20BridgeToken | null {
+  if (!tokenAddress) {
+    return null;
+  }
+
+  if (
+    isDepositMode &&
+    isTokenEthereumPyusd(tokenAddress) &&
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne
+  ) {
+    return {
+      ...getEthereumPyusdToken({
+        priceUSD,
+        listIds,
+      }),
+      l2Address: pyusdL2Address ?? CommonAddress.ArbitrumOne.PYUSDOFT,
+    };
+  }
+
+  return getPyusdTokenForArbitrumOneWithdrawal({
+    tokenAddress,
+    sourceChainId,
+    destinationChainId,
+    priceUSD,
+    listIds,
+  });
+}

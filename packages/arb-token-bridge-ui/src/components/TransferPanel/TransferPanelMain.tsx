@@ -10,7 +10,6 @@ import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
-import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -35,7 +34,7 @@ import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
-import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
+import { useNetworkSwitchSelectedTokenAddress } from './hooks/useNetworkSwitchSelectedTokenAddress';
 
 export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
@@ -43,11 +42,8 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
   const [{ theme }] = useArbQueryParams();
 
   const [networks, setNetworks] = useNetworks();
-  const [selectedToken, setSelectedToken] = useSelectedToken();
-  const destinationToken = useDestinationToken();
-  const isSwapTransfer = useIsSwapTransfer();
-  const shouldSwitchToResolvedDestinationToken =
-    !!destinationToken && !addressesEqual(destinationToken.address, selectedToken?.address);
+  const [, setSelectedToken] = useSelectedToken();
+  const nextSelectedTokenAddress = useNetworkSwitchSelectedTokenAddress();
 
   const { isFeatureDisabled } = useDisabledFeatures();
 
@@ -100,8 +96,8 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (isSwapTransfer || shouldSwitchToResolvedDestinationToken) {
-            setSelectedToken(destinationToken?.address ?? null);
+          if (typeof nextSelectedTokenAddress !== 'undefined') {
+            setSelectedToken(nextSelectedTokenAddress);
           }
         }}
         aria-label="Switch Networks"

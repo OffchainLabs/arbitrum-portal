@@ -40,18 +40,7 @@ describe('useSelectedToken', () => {
 
   beforeEach(() => {
     tokensFromUserValue = {};
-    tokensFromListsValue = {
-      [CommonAddress.Ethereum.PYUSD.toLowerCase()]: {
-        type: TokenType.ERC20,
-        decimals: 6,
-        name: 'PYUSD',
-        symbol: 'PYUSD',
-        address: CommonAddress.Ethereum.PYUSD,
-        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
-        priceUSD: 1,
-        listIds: new Set(['lifi-token-list']),
-      },
-    };
+    tokensFromListsValue = {};
 
     mockedUseArbQueryParams.mockReturnValue([
       {
@@ -60,8 +49,8 @@ describe('useSelectedToken', () => {
         amount: '',
         amount2: '',
         destinationAddress: undefined,
-        token: CommonAddress.Ethereum.PYUSD,
-        destinationToken: CommonAddress.Ethereum.PYUSD,
+        token: undefined,
+        destinationToken: undefined,
         settingsOpen: false,
         tab: 0,
         disabledFeatures: [],
@@ -88,6 +77,37 @@ describe('useSelectedToken', () => {
   });
 
   it('keeps the same PYUSD token object when unrelated token-list entries change', () => {
+    tokensFromListsValue = {
+      [CommonAddress.Ethereum.PYUSD.toLowerCase()]: {
+        type: TokenType.ERC20,
+        decimals: 6,
+        name: 'PYUSD',
+        symbol: 'PYUSD',
+        address: CommonAddress.Ethereum.PYUSD,
+        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        priceUSD: 1,
+        listIds: new Set(['lifi-token-list']),
+      },
+    };
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        sourceChain: ChainId.Ethereum,
+        destinationChain: ChainId.ArbitrumOne,
+        amount: '',
+        amount2: '',
+        destinationAddress: undefined,
+        token: CommonAddress.Ethereum.PYUSD,
+        destinationToken: CommonAddress.Ethereum.PYUSD,
+        settingsOpen: false,
+        tab: 0,
+        disabledFeatures: [],
+        theme: {},
+        debugLevel: 'silent',
+        experiments: undefined,
+      },
+      vi.fn(),
+    ]);
+
     const { result, rerender } = renderHook(() => useSelectedToken());
     const firstSelectedToken = result.current[0];
 

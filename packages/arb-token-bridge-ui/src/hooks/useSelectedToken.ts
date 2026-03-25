@@ -11,11 +11,7 @@ import {
 } from '../components/TransferPanel/TokenSearchUtils';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import {
-  getEthereumPyusdToken,
-  getPyusdTokenForArbitrumOneWithdrawal,
-  isTokenEthereumPyusd,
-} from '../util/PyusdUtils';
+import { getPyusdTokenForTransfer } from '../util/PyusdUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -153,14 +149,14 @@ export const useSelectedToken = (): [
 
   const stablePyusdListIds = stablePyusdListIdsRef.current;
   const selectedPyusdToken = useMemo(() => {
-    return getSelectedPyusdToken({
+    return getPyusdTokenForTransfer({
       tokenAddress: tokenFromSearchParams,
       isDepositMode,
       sourceChainId: networks.sourceChain.id,
       destinationChainId: networks.destinationChain.id,
-      pyusdPriceUSD: pyusdListEntry?.priceUSD,
+      priceUSD: pyusdListEntry?.priceUSD,
       pyusdL2Address: pyusdListEntry?.l2Address,
-      pyusdListIds: stablePyusdListIds,
+      listIds: stablePyusdListIds,
     });
   }, [
     isDepositMode,
@@ -210,51 +206,6 @@ function areSetsEqual<T>(a: Set<T> | undefined, b: Set<T> | undefined): boolean 
     }
   }
   return true;
-}
-
-function getSelectedPyusdToken({
-  tokenAddress,
-  isDepositMode,
-  sourceChainId,
-  destinationChainId,
-  pyusdPriceUSD,
-  pyusdL2Address,
-  pyusdListIds,
-}: {
-  tokenAddress: string | undefined;
-  isDepositMode: boolean;
-  sourceChainId: number;
-  destinationChainId: number;
-  pyusdPriceUSD?: number;
-  pyusdL2Address?: string;
-  pyusdListIds?: Set<string>;
-}) {
-  if (!tokenAddress) {
-    return null;
-  }
-
-  if (
-    isDepositMode &&
-    isTokenEthereumPyusd(tokenAddress) &&
-    sourceChainId === ChainId.Ethereum &&
-    destinationChainId === ChainId.ArbitrumOne
-  ) {
-    return {
-      ...getEthereumPyusdToken({
-        priceUSD: pyusdPriceUSD,
-        listIds: pyusdListIds,
-      }),
-      l2Address: pyusdL2Address ?? CommonAddress.ArbitrumOne.PYUSDOFT,
-    };
-  }
-
-  return getPyusdTokenForArbitrumOneWithdrawal({
-    tokenAddress,
-    sourceChainId,
-    destinationChainId,
-    priceUSD: pyusdPriceUSD,
-    listIds: pyusdListIds,
-  });
 }
 
 export async function getUsdcToken({

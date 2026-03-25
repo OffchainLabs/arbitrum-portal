@@ -22,9 +22,10 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import { getBridgeTokenLookupAddress } from '../../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
-import { getPyusdTokenForArbitrumOneWithdrawal } from '../../util/PyusdUtils';
+import { getPyusdTokenForTransfer } from '../../util/PyusdUtils';
 import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
@@ -203,8 +204,9 @@ function TokensPanel({
 
       const pyusdListEntry = tokensFromLists[ETHEREUM_PYUSD_ADDRESS];
 
-      return getPyusdTokenForArbitrumOneWithdrawal({
+      return getPyusdTokenForTransfer({
         tokenAddress: address,
+        isDepositMode,
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
         priceUSD: pyusdListEntry?.priceUSD,
@@ -534,10 +536,11 @@ function TokensPanel({
       }
 
       const normalizedAddress = address.toLowerCase();
-      let token =
+      let token: ERC20BridgeToken | null =
         getWithdrawalPyusdToken(address) ??
         tokensFromUser[normalizedAddress] ??
-        tokensFromLists[normalizedAddress];
+        tokensFromLists[normalizedAddress] ??
+        null;
 
       if (isTokenArbitrumOneNativeUSDC(address) && !token?.l2Address) {
         token = ARB_ONE_NATIVE_USDC_TOKEN;
@@ -683,16 +686,14 @@ export function TokenSearch(props: UseDialogProps) {
       const isL2NativeUSDC =
         isTokenArbitrumOneNativeUSDC(_token.address) ||
         isTokenArbitrumSepoliaNativeUSDC(_token.address);
+      const importLookupAddress = getBridgeTokenLookupAddress(_token);
 
       if (isL2NativeUSDC) {
         setSelectedToken(_token.address);
         return;
       }
 
-      if (
-        _token.importLookupAddress &&
-        !addressesEqual(_token.importLookupAddress, _token.address)
-      ) {
+      if (importLookupAddress && !addressesEqual(importLookupAddress, _token.address)) {
         setSelectedToken(_token.address);
         return;
       }
