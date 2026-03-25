@@ -12,6 +12,7 @@ import {
   getConfirmPeriodBlocks,
   getL1BlockTime,
 } from './networks';
+import { orbitChains } from './orbitChainsList';
 
 export async function withdrawInitTxEstimateGas({
   amount,
@@ -108,10 +109,10 @@ const SECONDS_IN_MINUTE = 60;
 const SECONDS_IN_HOUR = 3600;
 const SECONDS_IN_DAY = 86400;
 /**
- * Buffer for after a node is confirmable but isn't yet confirmed.
- * A rollup block (RBlock) typically gets asserted every 30-60 minutes.
+ * Default assertion interval, used when a chain doesn't specify one.
+ * Matches the ~30-60 min assertion cadence on Arb One / Nova.
  */
-const CONFIRMATION_BUFFER_MINUTES = 60;
+const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
 
 function formatDuration(seconds: number, short = false): string {
   if (seconds < SECONDS_IN_MINUTE) {
@@ -152,9 +153,11 @@ export function getConfirmationTime(chainId: number) {
     if (blockNumberReferenceChainId === ChainId.Local) {
       confirmationTimeInSeconds = 0;
     } else {
+      const assertionInterval =
+        orbitChains[chainId]?.assertionIntervalSeconds ?? DEFAULT_ASSERTION_INTERVAL_SECONDS;
       confirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
-        CONFIRMATION_BUFFER_MINUTES * SECONDS_IN_MINUTE;
+        assertionInterval;
     }
   }
 

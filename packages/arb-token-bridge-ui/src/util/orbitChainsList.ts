@@ -25,6 +25,7 @@ export type BridgeUiConfig = {
 
 export type OrbitChainConfig = ChainWithRpcUrl & {
   bridgeUiConfig: BridgeUiConfig;
+  assertionIntervalSeconds?: number;
 };
 
 type OrbitChainsData = {

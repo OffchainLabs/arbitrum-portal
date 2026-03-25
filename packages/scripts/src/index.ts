@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 
-import { addOrbitChain } from './addOrbitChain';
-
 const program = new Command();
 
 program
@@ -13,9 +11,21 @@ program
 program
   .command('add-orbit-chain <targetJsonPath>')
   .description('Add a new Arbitrum chain')
-  .action((targetJsonPath) => {
+  .action(async (targetJsonPath) => {
+    const { addOrbitChain } = await import('./addOrbitChain');
     addOrbitChain(targetJsonPath).catch((error) => {
       console.error(`Error in addOrbitChain: ${error}`);
+      process.exit(1);
+    });
+  });
+
+program
+  .command('update-assertion-intervals [targetJsonPath]')
+  .description('Update orbit chain assertion intervals from recent rollup assertions')
+  .action(async (targetJsonPath) => {
+    const { updateAssertionIntervals } = await import('./updateAssertionIntervals');
+    updateAssertionIntervals(targetJsonPath).catch((error) => {
+      console.error(`Error in updateAssertionIntervals: ${error}`);
       process.exit(1);
     });
   });
