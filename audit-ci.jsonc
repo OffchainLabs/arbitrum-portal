@@ -50,5 +50,16 @@
     // from: app>next
     "GHSA-9g9p-9gw9-jx7f",
     "GHSA-h25m-26qc-wcjf",
+    //
+    // https://github.com/advisories/GHSA-ggv3-7p47-pfv8
+    // Next.js Server-Side Request Forgery in Server Actions (CVE-2026-27980)
+    //
+    // https://github.com/advisories/GHSA-3x4c-7xq6-9pq8
+    // Next.js: Unbounded next/image disk cache growth can exhaust storage
+    //
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-ggv3-7p47-pfv8",
+    "GHSA-3x4c-7xq6-9pq8",
   ],
 }
