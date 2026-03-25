@@ -79,7 +79,7 @@ export class LiFiAdapter implements VendorAdapter {
     inputTokenAddress: string;
     outputTokenAddress: string;
     amount: string;
-    userAddress: string;
+    userAddress?: string;
     slippage: number;
   }) {
     const fetchQuoteStep = async () => {
@@ -339,10 +339,10 @@ export class LiFiAdapter implements VendorAdapter {
       );
     }
 
-    if (!inputTokenAddress || !outputTokenAddress || !userAddress) {
+    if (!inputTokenAddress || !outputTokenAddress) {
       throw new ValidationError(
         'INVALID_SWAP_PARAMS',
-        'inputTokenAddress, outputTokenAddress, and userAddress are required for swaps',
+        'inputTokenAddress and outputTokenAddress are required for swaps',
       );
     }
 

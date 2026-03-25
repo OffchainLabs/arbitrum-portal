@@ -35,7 +35,7 @@ type LifiTransactionRequest = {
 type LifiQuoteBuildParams = {
   amount: string;
   inputTokenAddress: string;
-  userAddress: string;
+  userAddress?: string;
   publicClient: PublicClient;
   step: LifiQuoteStep;
   transactionRequest: LifiTransactionRequest;
@@ -62,7 +62,7 @@ async function buildTransactionSteps({
 
   const isNativeETH = addressesEqual(inputTokenAddress, zeroAddress);
 
-  if (!isNativeETH) {
+  if (!isNativeETH && userAddress) {
     const spenderAddress = transactionRequest.to as Address;
     const amountBigInt = BigInt(amount);
 

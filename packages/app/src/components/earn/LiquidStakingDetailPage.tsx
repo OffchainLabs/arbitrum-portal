@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { formatUnits, isAddress } from 'viem';
-import { useAccount } from 'wagmi';
+import { formatUnits, getAddress, isAddress } from 'viem';
+import { useAccount, useBalance } from 'wagmi';
 
 import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
-import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { formatApyBreakdown } from '@/app-lib/earn/utils';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
@@ -15,8 +14,8 @@ import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
-import { getLiquidStakingOpportunity } from '@/earn-api/lib/liquidStaking';
 import { Card } from '@/components/Card';
+import { getLiquidStakingOpportunity } from '@/earn-api/lib/liquidStaking';
 import { OpportunityCategory } from '@/earn-api/types';
 
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
@@ -39,21 +38,25 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
-  const { isConnected } = useAccount();
+  const { address: walletAddress, isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
 
   const outputTokenAddress = isAddress(opportunity.id) ? opportunity.id.toLowerCase() : null;
-  const { balance: userBalance } = useTokenBalance({
-    tokenAddress: outputTokenAddress,
+  const { data: userBalanceData } = useBalance({
+    address: walletAddress,
+    chainId: opportunity.chainId,
+    token: outputTokenAddress ? getAddress(outputTokenAddress) : undefined,
+    query: { enabled: isConnected && !!walletAddress },
   });
+  const userBalance = userBalanceData?.value ?? null;
   const outputTokenSymbol = opportunity.token;
   const { priceUsd: tokenPrice } = useLiquidStakingTokenPrice(outputTokenAddress ?? undefined);
 
-  const hasPosition = isConnected && userBalance && userBalance.gt(0);
+  const hasPosition = isConnected && userBalance != null && userBalance > BigInt(0);
 
   const positionUsdValue = useMemo(() => {
-    if (!userBalance || !userBalance.gt(0)) return '—';
-    const balanceInTokens = Number(formatUnits(BigInt(userBalance.toString()), 18));
+    if (userBalance === null || userBalance <= BigInt(0)) return '—';
+    const balanceInTokens = Number(formatUnits(userBalance, 18));
     if (tokenPrice !== null) {
       return formatUSD(balanceInTokens * tokenPrice);
     }
@@ -129,10 +132,11 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
               </div>
               <div className="flex flex-col gap-2">
                 <div className="text-[28px] font-normal text-white/70 leading-[1.15] tracking-[-0.56px]">
-                  {formatAmount(userBalance, {
-                    decimals: 18,
-                    symbol: outputTokenSymbol,
-                  })}
+                  {userBalance !== null
+                    ? formatAmount(Number(formatUnits(userBalance, 18)), {
+                        symbol: outputTokenSymbol,
+                      })
+                    : ''}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-6">{positionUsdValue}</span>

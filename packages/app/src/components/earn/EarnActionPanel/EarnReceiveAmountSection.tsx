@@ -13,7 +13,6 @@ interface EarnReceiveAmountSectionProps {
   token: TokenDisplay;
   tokenSelector?: ReactNode;
   usdValue?: string;
-  outputBalance?: string;
 }
 
 export function EarnReceiveAmountSection({
@@ -23,7 +22,6 @@ export function EarnReceiveAmountSection({
   token,
   tokenSelector,
   usdValue,
-  outputBalance,
 }: EarnReceiveAmountSectionProps) {
   return (
     <div className="bg-neutral-100 rounded flex flex-col p-4">
@@ -62,10 +60,9 @@ export function EarnReceiveAmountSection({
             </div>
           )}
         </div>
-        {(usdValue || outputBalance) && (
+        {usdValue && (
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>{usdValue || '$0.00 USD'}</span>
-            {outputBalance && <span>Balance: {outputBalance}</span>}
+            <span>{usdValue}</span>
           </div>
         )}
       </div>

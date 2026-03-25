@@ -4,7 +4,8 @@ import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
+import { type Address, getAddress } from 'viem';
+import { useAccount, useBalance } from 'wagmi';
 
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
@@ -19,7 +20,6 @@ import {
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
-import { useTokenBalance } from '@/app-hooks/earn/useLiquidStakingBalances';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
@@ -68,6 +68,24 @@ const SWAP_TOKEN_OPTIONS: TokenOption[] = [
 ];
 
 const DEFAULT_SWAP_TOKEN: TokenOption = ETH_TOKEN_OPTION;
+
+const balanceQuery = {
+  retry: 2,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  staleTime: 15_000,
+} as const;
+
+function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
+  if (!tokenAddress || tokenAddress === constants.AddressZero) {
+    return undefined;
+  }
+  try {
+    return getAddress(tokenAddress);
+  } catch {
+    return undefined;
+  }
+}
 
 // Internal Components
 interface TokenIconProps {
@@ -210,9 +228,15 @@ export function LiquidStakingActionPanel({
     walletAddress || null,
     requestChainId,
   );
-  const { balance: userBalance, refetch: refetchUserBalance } = useTokenBalance({
-    tokenAddress: outputTokenAddress,
+  const { data: userBalanceData, refetch: refetchUserBalance } = useBalance({
+    address: walletAddress,
+    chainId: requestChainId,
+    token: normalizeTokenAddress(outputTokenAddress),
+    query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
+  const userBalance = userBalanceData
+    ? BigNumber.from(userBalanceData.value.toString())
+    : null;
 
   // Check if user has a position (balance > 0)
   const hasPosition = isConnected && userBalance && userBalance.gt(0);
@@ -255,14 +279,23 @@ export function LiquidStakingActionPanel({
       ? selectedBuyToken.address
       : null;
 
-  const { balance: ethBalance, refetch: refetchEthBalance } = useTokenBalance({
-    tokenAddress: null,
+  const { data: ethBalanceData, refetch: refetchEthBalance } = useBalance({
+    address: walletAddress,
     chainId: requestChainId,
+    query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
-  const { balance: erc20Balance, refetch: refetchErc20Balance } = useTokenBalance({
-    tokenAddress: selectedTokenAddress,
+  const ethBalance = ethBalanceData
+    ? BigNumber.from(ethBalanceData.value.toString())
+    : null;
+  const { data: erc20BalanceData, refetch: refetchErc20Balance } = useBalance({
+    address: walletAddress,
     chainId: requestChainId,
+    token: normalizeTokenAddress(selectedTokenAddress),
+    query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
+  const erc20Balance = erc20BalanceData
+    ? BigNumber.from(erc20BalanceData.value.toString())
+    : null;
 
   const currentBalanceRaw = useMemo(() => {
     if (!isConnected) return BigNumber.from('0');
@@ -294,11 +327,11 @@ export function LiquidStakingActionPanel({
     chainId: opportunity.chainId,
     action: 'swap',
     amount: amountInRawUnits,
-    userAddress: walletAddress || null,
+    userAddress: walletAddress,
     inputTokenAddress: fromTokenAddress ?? undefined,
     outputTokenAddress: toTokenAddress ?? undefined,
     slippage: slippagePercent,
-    enabled: amountInRawUnits !== '0' && !!walletAddress && !amountExceedsBalance,
+    enabled: amountInRawUnits !== '0' && !amountExceedsBalance,
   });
 
   // Extract receive amount from transaction quote
@@ -752,7 +785,9 @@ export function LiquidStakingActionPanel({
 
   const receiveAmountDisplay = useMemo(() => {
     if (!receiveAmount) {
-      return null;
+      // No amount entered: show idle state (0.00)
+      // Otherwise a quote was attempted but returned nothing: show "No quote found"
+      return amountInRawUnits === '0' ? '' : null;
     }
 
     const receiveAmountNumber = Number(receiveAmount);
@@ -761,7 +796,7 @@ export function LiquidStakingActionPanel({
     }
 
     return formatAmount(receiveAmountNumber);
-  }, [receiveAmount]);
+  }, [receiveAmount, amountInRawUnits]);
   const receiveUsdValue = useMemo(() => {
     if (!receiveAmount || selectedAction !== 'buy' || tokenPrice === null) {
       return undefined;

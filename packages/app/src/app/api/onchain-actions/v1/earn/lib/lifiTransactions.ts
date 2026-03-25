@@ -22,15 +22,12 @@ function includesTargetTokenInSteps(
 
   return steps.some(
     (step) =>
-      addressesEqual(step.fromToken.address.toLowerCase(), normalizedTarget) ||
-      addressesEqual(step.toToken.address.toLowerCase(), normalizedTarget),
+      addressesEqual(step.fromToken.address, normalizedTarget) ||
+      addressesEqual(step.toToken.address, normalizedTarget),
   );
 }
 
-function involvesLiquidStakingToken(
-  transfer: StatusResponse,
-  targetTokenAddress: string,
-): boolean {
+function involvesLiquidStakingToken(transfer: StatusResponse, targetTokenAddress: string): boolean {
   const normalizedTarget = targetTokenAddress.toLowerCase();
 
   if ('sending' in transfer) {

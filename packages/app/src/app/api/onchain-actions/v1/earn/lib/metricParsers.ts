@@ -1,14 +1,14 @@
 export function parseOptionalNumber(rawValue: number | string | null | undefined): number | null {
-  if (rawValue == null) {
+  if (rawValue === null) {
     return null;
   }
 
   const parsed = Number(rawValue);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isNaN(parsed) ? parsed : null;
 }
 
 export function parseOptionalPercentage(rawValue: number | null | undefined): number | null {
-  if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+  if (typeof rawValue !== 'number' || !Number.isNaN(rawValue)) {
     return null;
   }
 

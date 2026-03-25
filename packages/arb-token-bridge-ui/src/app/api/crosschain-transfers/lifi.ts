@@ -284,9 +284,6 @@ export type LifiParams = QueryParams & {
 };
 
 function configureLifiSdk(integrator: string) {
-  if (!process.env.LIFI_KEY) {
-    console.warn('[LiFi] LIFI_KEY env var is not set — requests may be rate-limited');
-  }
   createConfig({
     integrator,
     apiKey: process.env.LIFI_KEY,

@@ -160,7 +160,7 @@ export interface TransactionQuoteRequest {
   category: OpportunityCategory;
   action: EarnTransactionAction;
   amount: string;
-  userAddress: string;
+  userAddress?: string;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;

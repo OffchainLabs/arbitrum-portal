@@ -316,6 +316,10 @@ export class VaultsAdapter implements VendorAdapter {
     const network = this.toVaultsNetwork(chainId);
     const { action, amount, userAddress, simulate = false } = request;
 
+    if (!userAddress) {
+      throw new Error('userAddress is required for vault transactions');
+    }
+
     if (action !== 'deposit' && action !== 'redeem') {
       throw new Error(
         `Invalid action for Vaults: ${action}. Only 'deposit' and 'redeem' are supported.`,

@@ -61,7 +61,7 @@ export function useAllOpportunities(filters?: {
     'earn-opportunities',
   ] as const;
 
-  const { data, error, isLoading, mutate } = useSWRImmutable(
+  const { data, error, isLoading, mutate, ...rest } = useSWRImmutable(
     key,
     async ([chainId, minTvl, minApy]) => {
       const params = new URLSearchParams();
@@ -87,5 +87,6 @@ export function useAllOpportunities(filters?: {
     isLoading,
     error: error?.message ?? null,
     refetch: () => mutate(),
+    ...rest,
   };
 }
