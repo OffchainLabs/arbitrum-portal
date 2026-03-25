@@ -26,7 +26,10 @@ import { sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
+import {
+  formatTransactionError,
+  isUserRejectedError,
+} from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardTransactionHistory, TransactionStep } from '@/earn-api/types';
@@ -578,7 +581,9 @@ export function LiquidStakingActionPanel({
       // including EIP-7702 fallback automatically
       await executeTx();
     } catch (error) {
-      setTxError(formatTransactionError(error));
+      if (!isUserRejectedError(error)) {
+        setTxError(formatTransactionError(error));
+      }
     }
   }, [transferReadiness.isReady, transactionQuote, walletAddress, checkAndShowToS, executeTx]);
 
