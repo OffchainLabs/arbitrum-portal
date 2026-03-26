@@ -183,7 +183,7 @@ describe('isValidLifiTransfer', () => {
 
     expect(
       isValidLifiTransfer({
-        fromToken: CommonAddress.Ethereum.PYUSD,
+        fromToken: CommonAddress.ArbitrumOne.PYUSDCanonical,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
         tokensFromLists,
@@ -194,7 +194,7 @@ describe('isValidLifiTransfer', () => {
   it('blocks canonical PYUSD withdrawals without tokensFromLists', () => {
     expect(
       isValidLifiTransfer({
-        fromToken: CommonAddress.Ethereum.PYUSD,
+        fromToken: CommonAddress.ArbitrumOne.PYUSDCanonical,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
       }),
@@ -205,6 +205,16 @@ describe('isValidLifiTransfer', () => {
     expect(
       isValidLifiTransfer({
         fromToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows PYUSD OFT withdrawal through LiFi', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Ethereum.PYUSD,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
       }),

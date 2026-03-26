@@ -3,6 +3,7 @@ import { constants } from 'ethers';
 import { DecodedValueMap } from 'use-query-params';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
@@ -42,6 +43,15 @@ vi.mock('../../../hooks/useSelectedToken', () => ({
 describe('useIsSwapTransfer', () => {
   const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
+  const defaultSelectedToken: ERC20BridgeToken = {
+    address: CommonAddress.Ethereum.WETH,
+    symbol: 'WETH',
+    name: 'Wrapped Ether',
+    decimals: 18,
+    logoURI: 'https://example.com/weth.png',
+    listIds: new Set(['1']),
+    type: TokenType.ERC20,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,11 +59,15 @@ describe('useIsSwapTransfer', () => {
     mockedUseArbQueryParams.mockReturnValue([
       {
         ...defaultQueryParams,
-        destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        destinationToken: CommonAddress.Ethereum.WETH,
       },
       vi.fn(),
     ]);
 
+    mockedUseSelectedToken.mockReturnValue([defaultSelectedToken, vi.fn()]);
+  });
+
+  it('does not treat PYUSD (OFT) to PYUSD (L1) as a swap', () => {
     mockedUseSelectedToken.mockReturnValue([
       getArbitrumOnePyusdOftToken({
         priceUSD: 1,
@@ -61,9 +75,14 @@ describe('useIsSwapTransfer', () => {
       }),
       vi.fn(),
     ]);
-  });
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        ...defaultQueryParams,
+        destinationToken: CommonAddress.Ethereum.PYUSD,
+      },
+      vi.fn(),
+    ]);
 
-  it('does not treat PYUSD (OFT) to PYUSD (L1) as a swap', () => {
     const { result } = renderHook(useIsSwapTransfer);
     expect(result.current).toBe(false);
   });
@@ -119,5 +138,32 @@ describe('useIsSwapTransfer', () => {
 
     const { result } = renderHook(useIsSwapTransfer);
     expect(result.current).toBe(true);
+  });
+
+  it('returns false when destinationToken is undefined', () => {
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        ...defaultQueryParams,
+        destinationToken: undefined,
+      },
+      vi.fn(),
+    ]);
+
+    const { result } = renderHook(useIsSwapTransfer);
+    expect(result.current).toBe(false);
+  });
+
+  it('returns false when destinationToken is undefined and selectedToken is null', () => {
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        ...defaultQueryParams,
+        destinationToken: undefined,
+      },
+      vi.fn(),
+    ]);
+    mockedUseSelectedToken.mockReturnValue([null, vi.fn()]);
+
+    const { result } = renderHook(useIsSwapTransfer);
+    expect(result.current).toBe(false);
   });
 });

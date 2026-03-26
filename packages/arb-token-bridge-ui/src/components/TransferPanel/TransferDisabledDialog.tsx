@@ -10,7 +10,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { getL2ConfigForTeleport } from '../../token-bridge-sdk/teleport';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { isTokenArbitrumOnePyusdOft, isTokenEthereumPyusd } from '../../util/PyusdUtils';
+import { isPyusdOverrideFlow } from '../../util/PyusdUtils';
 import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -63,19 +63,10 @@ export function isDisabledCanonicalTransfer({
   }
 
   if (
-    isDepositMode &&
-    isTokenEthereumPyusd(selectedToken.address) &&
-    parentChainId === ChainId.Ethereum &&
-    childChainId === ChainId.ArbitrumOne
-  ) {
-    return true;
-  }
-
-  if (
-    !isDepositMode &&
-    isTokenArbitrumOnePyusdOft(selectedToken.address) &&
-    childChainId === ChainId.ArbitrumOne &&
-    parentChainId === ChainId.Ethereum
+    isPyusdOverrideFlow({
+      tokenAddress: selectedToken.address,
+      isDepositMode,
+    })
   ) {
     return true;
   }

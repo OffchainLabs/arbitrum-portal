@@ -51,6 +51,10 @@ export function useDestinationToken(): ERC20BridgeToken | null {
   );
 
   return useMemo(() => {
+    if (!destinationToken) {
+      return null;
+    }
+
     if (!isSwapTransfer) {
       return getNonSwapDestinationToken({
         selectedToken,
@@ -91,7 +95,7 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       );
     }
 
-    // Case 4: For regular chains (native ETH): return null (button will show native ETH)
+    // destinationToken is already guarded above, so this is just a defensive fallback.
     return null;
   }, [
     bridgeTokens,
@@ -121,6 +125,10 @@ function withDestinationTokenMetadata({
 
   return {
     ...token,
+    logoURI:
+      metadataSource.address === metadataSource.importLookupAddress
+        ? metadataSource.logoURI
+        : token.logoURI,
     priceUSD: token.priceUSD ?? metadataSource.priceUSD,
     listIds: token.listIds.size > 0 ? token.listIds : new Set(metadataSource.listIds),
   };

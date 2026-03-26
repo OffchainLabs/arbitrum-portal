@@ -131,14 +131,13 @@ export const useSelectedToken = (): [
   );
 
   const normalizedTokenAddress = tokenFromSearchParams?.toLowerCase();
-  const ethereumPyusdAddress = CommonAddress.Ethereum.PYUSD.toLowerCase();
   const listSelectedToken = normalizedTokenAddress
     ? tokensFromLists[normalizedTokenAddress]
     : undefined;
   const userSelectedToken = normalizedTokenAddress
     ? tokensFromUser[normalizedTokenAddress]
     : undefined;
-  const pyusdListEntry = listSelectedToken || tokensFromLists[ethereumPyusdAddress];
+  const pyusdListEntry = listSelectedToken || tokensFromLists[CommonAddress.Ethereum.PYUSD];
   const stablePyusdListIdsRef = useRef<Set<string> | undefined>(undefined);
 
   if (!areSetsEqual(stablePyusdListIdsRef.current, pyusdListEntry?.listIds)) {
@@ -152,16 +151,12 @@ export const useSelectedToken = (): [
     return getPyusdTokenForTransfer({
       tokenAddress: tokenFromSearchParams,
       isDepositMode,
-      sourceChainId: networks.sourceChain.id,
-      destinationChainId: networks.destinationChain.id,
       priceUSD: pyusdListEntry?.priceUSD,
       pyusdL2Address: pyusdListEntry?.l2Address,
       listIds: stablePyusdListIds,
     });
   }, [
     isDepositMode,
-    networks.destinationChain.id,
-    networks.sourceChain.id,
     pyusdListEntry?.l2Address,
     pyusdListEntry?.priceUSD,
     stablePyusdListIds,

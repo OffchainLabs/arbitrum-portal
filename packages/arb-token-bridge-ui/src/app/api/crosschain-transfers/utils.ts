@@ -8,10 +8,9 @@ import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import {
-  getArbitrumOnePyusdOftToken,
-  getEthereumPyusdToken,
-  isTokenArbitrumOnePyusdOft,
-  isTokenEthereumPyusd,
+  getPyusdTokenOverride,
+  isPyusdOverrideFlow,
+  isTokenArbitrumOnePyusdCanonical,
 } from '../../../util/PyusdUtils';
 import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants';
 
@@ -66,26 +65,15 @@ export function isValidLifiTransfer({
   }
 
   // Canonical PYUSD is only supported through canonical withdraw
-  if (
-    isTokenEthereumPyusd(fromToken) &&
-    sourceChainId === ChainId.ArbitrumOne &&
-    destinationChainId === ChainId.Ethereum
-  ) {
+  if (isTokenArbitrumOnePyusdCanonical(fromToken)) {
     return false;
   }
 
   if (
-    isTokenEthereumPyusd(fromToken) &&
-    sourceChainId === ChainId.Ethereum &&
-    destinationChainId === ChainId.ArbitrumOne
-  ) {
-    return true;
-  }
-
-  if (
-    isTokenArbitrumOnePyusdOft(fromToken) &&
-    sourceChainId === ChainId.ArbitrumOne &&
-    destinationChainId === ChainId.Ethereum
+    isPyusdOverrideFlow({
+      tokenAddress: fromToken,
+      isDepositMode: sourceChainId === ChainId.Ethereum,
+    })
   ) {
     return true;
   }
@@ -312,26 +300,13 @@ export function getTokenOverride({
     }
   }
 
-  if (
-    isTokenEthereumPyusd(fromToken) &&
-    sourceChainId === ChainId.Ethereum &&
-    destinationChainId === ChainId.ArbitrumOne
-  ) {
-    return {
-      source: getEthereumPyusdToken(),
-      destination: getArbitrumOnePyusdOftToken(),
-    };
-  }
+  const pyusdOverride = getPyusdTokenOverride({
+    tokenAddress: fromToken,
+    isDepositMode: sourceChainId === ChainId.Ethereum,
+  });
 
-  if (
-    isTokenArbitrumOnePyusdOft(fromToken) &&
-    sourceChainId === ChainId.ArbitrumOne &&
-    destinationChainId === ChainId.Ethereum
-  ) {
-    return {
-      source: getArbitrumOnePyusdOftToken(),
-      destination: getEthereumPyusdToken(),
-    };
+  if (pyusdOverride) {
+    return pyusdOverride;
   }
 
   return {

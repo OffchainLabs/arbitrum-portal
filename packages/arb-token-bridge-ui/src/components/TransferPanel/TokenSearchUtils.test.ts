@@ -54,11 +54,11 @@ describe('tokenListsToSearchableTokenStorage', () => {
       '42161',
     );
 
-    expect(tokens[CommonAddress.Ethereum.PYUSD.toLowerCase()]).toMatchObject({
-      address: CommonAddress.Ethereum.PYUSD.toLowerCase(),
+    expect(tokens[CommonAddress.Ethereum.PYUSD]).toMatchObject({
+      address: CommonAddress.Ethereum.PYUSD,
       name: 'PYUSD',
       logoURI: 'https://example.com/black.png',
-      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT.toLowerCase(),
+      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
     });
   });
 
@@ -125,11 +125,11 @@ describe('tokenListsToSearchableTokenStorage', () => {
       '42161',
     );
 
-    expect(tokens[CommonAddress.Ethereum.PYUSD.toLowerCase()]).toMatchObject({
-      address: CommonAddress.Ethereum.PYUSD.toLowerCase(),
+    expect(tokens[CommonAddress.Ethereum.PYUSD]).toMatchObject({
+      address: CommonAddress.Ethereum.PYUSD,
       name: 'PYUSD',
       logoURI: 'https://example.com/black.png',
-      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT.toLowerCase(),
+      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
     });
   });
 });

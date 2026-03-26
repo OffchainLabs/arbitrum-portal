@@ -154,7 +154,6 @@ function TokenListsPanel() {
 }
 
 const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
-const ETHEREUM_PYUSD_ADDRESS = CommonAddress.Ethereum.PYUSD.toLowerCase();
 
 function TokensPanel({
   onTokenSelected,
@@ -198,28 +197,20 @@ function TokensPanel({
 
   const getWithdrawalPyusdToken = useCallback(
     (address: string) => {
-      if (isDepositMode || !isArbitrumOneEthereumPair) {
+      if (isDepositMode) {
         return null;
       }
 
-      const pyusdListEntry = tokensFromLists[ETHEREUM_PYUSD_ADDRESS];
+      const pyusdListEntry = tokensFromLists[CommonAddress.Ethereum.PYUSD];
 
       return getPyusdTokenForTransfer({
         tokenAddress: address,
         isDepositMode,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
         priceUSD: pyusdListEntry?.priceUSD,
         listIds: pyusdListEntry?.listIds,
       });
     },
-    [
-      isDepositMode,
-      isArbitrumOneEthereumPair,
-      networks.sourceChain.id,
-      networks.destinationChain.id,
-      tokensFromLists,
-    ],
+    [isDepositMode, tokensFromLists],
   );
 
   const getBalance = useCallback(
@@ -314,6 +305,7 @@ function TokensPanel({
         tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
         if (isArbitrumOneEthereumPair) {
           tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSDOFT);
+          tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSDCanonical);
         }
       }
       if (isArbitrumSepolia) {
@@ -352,6 +344,15 @@ function TokensPanel({
     return tokens
       .filter((address) => {
         const normalizedAddress = address.toLowerCase();
+
+        if (
+          !isDepositMode &&
+          isArbitrumOneEthereumPair &&
+          addressesEqual(address, CommonAddress.Ethereum.PYUSD)
+        ) {
+          return false;
+        }
+
         const pyusdToken = getWithdrawalPyusdToken(address);
 
         let token =

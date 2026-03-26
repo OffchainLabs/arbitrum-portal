@@ -19,7 +19,7 @@ import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
 import { useDestinationToken } from '../useDestinationToken';
-import { useNetworks } from '../useNetworks';
+import { UseNetworksState, useNetworks } from '../useNetworks';
 import { useSelectedToken } from '../useSelectedToken';
 
 type ArbQueryParams = DecodedValueMap<typeof queryParamProviderOptions.params>;
@@ -64,6 +64,15 @@ vi.mock('../../components/TransferPanel/TokenSearchUtils', () => ({
   useTokensFromLists: vi.fn(),
 }));
 
+function makeNetworksState(sourceChainId: ChainId, destinationChainId: ChainId): UseNetworksState {
+  return {
+    sourceChain: getWagmiChain(sourceChainId),
+    sourceChainProvider: getProviderForChainId(sourceChainId),
+    destinationChain: getWagmiChain(destinationChainId),
+    destinationChainProvider: getProviderForChainId(destinationChainId),
+  };
+}
+
 describe.sequential('useDestinationToken', () => {
   const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
@@ -107,12 +116,7 @@ describe.sequential('useDestinationToken', () => {
     });
 
     mockedUseNetworks.mockReturnValue([
-      {
-        sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-      },
+      makeNetworksState(ChainId.Ethereum, ChainId.ArbitrumOne),
       vi.fn(),
     ]);
 
@@ -188,22 +192,19 @@ describe.sequential('useDestinationToken', () => {
 
       const { result } = renderHook(useDestinationToken);
 
-      expect(result.current).toEqual(
-        getArbitrumOnePyusdOftToken({
+      expect(result.current).toMatchObject({
+        ...getArbitrumOnePyusdOftToken({
           priceUSD: 1,
           listIds: new Set(['1']),
         }),
-      );
+        logoURI: ETHEREUM_PYUSD_LOGO_URI,
+      });
+      expect(result.current?.logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
     });
 
     it('maps PYUSD OFT withdrawals back to Ethereum PYUSD with metadata', () => {
       mockedUseNetworks.mockReturnValue([
-        {
-          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
-          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-          destinationChain: getWagmiChain(ChainId.Ethereum),
-          destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
-        },
+        makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
       ]);
 
@@ -246,12 +247,7 @@ describe.sequential('useDestinationToken', () => {
 
     it('maps PYUSD OFT withdrawals safely before bridgeTokens hydrate', () => {
       mockedUseNetworks.mockReturnValue([
-        {
-          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
-          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-          destinationChain: getWagmiChain(ChainId.Ethereum),
-          destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
-        },
+        makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
       ]);
 
@@ -337,36 +333,21 @@ describe.sequential('useDestinationToken', () => {
       });
 
       it('prefers token-list metadata for explicitly selected destination tokens', () => {
-        mockedUseNetworks.mockReturnValue([
-          {
-            sourceChain: getWagmiChain(ChainId.ArbitrumOne),
-            sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-            destinationChain: getWagmiChain(ChainId.Ethereum),
-            destinationChainProvider: getProviderForChainId(ChainId.Ethereum),
-          },
-          vi.fn(),
-        ]);
+        const tokenListDestinationToken = {
+          ...mockDestinationToken,
+          logoURI: 'https://example.com/black.png',
+        };
 
-        mockedUseSelectedToken.mockReturnValue([
-          getArbitrumOnePyusdOftToken({
-            priceUSD: 1,
-            listIds: new Set(['1']),
-          }),
-          vi.fn(),
-        ]);
         mockedUseArbQueryParams.mockReturnValue([
-          { ...defaultQueryParams, destinationToken: CommonAddress.Ethereum.PYUSD },
+          { ...defaultQueryParams, destinationToken: mockDestinationToken.address },
           vi.fn(),
         ]);
         mockedUseAppState.mockReturnValue({
           app: {
             arbTokenBridge: {
               bridgeTokens: {
-                [CommonAddress.Ethereum.PYUSD.toLowerCase()]: {
-                  ...getEthereumPyusdToken({
-                    priceUSD: 1,
-                    listIds: new Set(['1']),
-                  }),
+                [mockDestinationToken.address.toLowerCase()]: {
+                  ...mockDestinationToken,
                   logoURI: 'https://example.com/blue.png',
                 },
               },
@@ -374,15 +355,12 @@ describe.sequential('useDestinationToken', () => {
           },
         } as Context['state']);
         mockedUseTokensFromLists.mockReturnValue({
-          [CommonAddress.Ethereum.PYUSD.toLowerCase()]: getEthereumPyusdToken({
-            priceUSD: 1,
-            listIds: new Set(['1']),
-          }),
+          [mockDestinationToken.address.toLowerCase()]: tokenListDestinationToken,
         });
 
         const { result } = renderHook(useDestinationToken);
 
-        expect(result.current?.logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
+        expect(result.current?.logoURI).toBe(tokenListDestinationToken.logoURI);
       });
 
       it('should handle case insensitive address lookup in bridgeTokens', () => {
@@ -440,12 +418,7 @@ describe.sequential('useDestinationToken', () => {
 
     it('should handle ApeChain as source chain', () => {
       mockedUseNetworks.mockReturnValue([
-        {
-          sourceChain: getWagmiChain(ChainId.ApeChain),
-          sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
-          destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-          destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-        },
+        makeNetworksState(ChainId.ApeChain, ChainId.ArbitrumOne),
         vi.fn(),
       ]);
 

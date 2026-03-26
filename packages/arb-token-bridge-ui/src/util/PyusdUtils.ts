@@ -1,5 +1,4 @@
 import { ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
-import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 
@@ -55,9 +54,9 @@ export function getArbitrumOnePyusdCanonicalToken({
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
     name: 'PYUSD Canonical',
-    address: CommonAddress.Ethereum.PYUSD,
+    address: CommonAddress.ArbitrumOne.PYUSDCanonical,
     l2Address: CommonAddress.ArbitrumOne.PYUSDCanonical,
-    logoURI: ETHEREUM_PYUSD_LOGO_URI,
+    logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
     priceUSD,
     sourceBalanceAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
     destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
@@ -74,57 +73,55 @@ export function getArbitrumOnePyusdOftToken({
     name: 'PYUSD OFT',
     address: CommonAddress.ArbitrumOne.PYUSDOFT,
     l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
-    logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
+    logoURI: ETHEREUM_PYUSD_LOGO_URI,
     priceUSD,
     sourceBalanceAddress: CommonAddress.ArbitrumOne.PYUSDOFT,
     destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
   };
 }
 
-export function getPyusdTokenForArbitrumOneWithdrawal({
+export function getPyusdTokenOverride({
   tokenAddress,
-  sourceChainId,
-  destinationChainId,
-  priceUSD,
-  listIds,
-}: PyusdTokenMetadata & {
-  tokenAddress: string;
-  sourceChainId: number;
-  destinationChainId: number;
-}): ERC20BridgeToken | null {
-  if (sourceChainId !== ChainId.ArbitrumOne || destinationChainId !== ChainId.Ethereum) {
-    return null;
+  isDepositMode,
+}: {
+  tokenAddress: string | undefined;
+  isDepositMode: boolean;
+}) {
+  if (isDepositMode && isTokenEthereumPyusd(tokenAddress)) {
+    return {
+      source: getEthereumPyusdToken(),
+      destination: getArbitrumOnePyusdOftToken(),
+    };
   }
 
-  if (isTokenEthereumPyusd(tokenAddress)) {
-    return getArbitrumOnePyusdCanonicalToken({
-      priceUSD,
-      listIds,
-    });
-  }
-
-  if (isTokenArbitrumOnePyusdOft(tokenAddress)) {
-    return getArbitrumOnePyusdOftToken({
-      priceUSD,
-      listIds,
-    });
+  if (!isDepositMode && isTokenArbitrumOnePyusdOft(tokenAddress)) {
+    return {
+      source: getArbitrumOnePyusdOftToken(),
+      destination: getEthereumPyusdToken(),
+    };
   }
 
   return null;
 }
 
+export function isPyusdOverrideFlow({
+  tokenAddress,
+  isDepositMode,
+}: {
+  tokenAddress: string | undefined;
+  isDepositMode: boolean;
+}) {
+  return !!getPyusdTokenOverride({ tokenAddress, isDepositMode });
+}
+
 export function getPyusdTokenForTransfer({
   tokenAddress,
-  sourceChainId,
-  destinationChainId,
   isDepositMode,
   pyusdL2Address,
   priceUSD,
   listIds,
 }: PyusdTokenMetadata & {
   tokenAddress: string | undefined;
-  sourceChainId: number;
-  destinationChainId: number;
   isDepositMode: boolean;
   pyusdL2Address?: string;
 }): ERC20BridgeToken | null {
@@ -132,12 +129,7 @@ export function getPyusdTokenForTransfer({
     return null;
   }
 
-  if (
-    isDepositMode &&
-    isTokenEthereumPyusd(tokenAddress) &&
-    sourceChainId === ChainId.Ethereum &&
-    destinationChainId === ChainId.ArbitrumOne
-  ) {
+  if (isDepositMode && isTokenEthereumPyusd(tokenAddress)) {
     return {
       ...getEthereumPyusdToken({
         priceUSD,
@@ -147,11 +139,21 @@ export function getPyusdTokenForTransfer({
     };
   }
 
-  return getPyusdTokenForArbitrumOneWithdrawal({
-    tokenAddress,
-    sourceChainId,
-    destinationChainId,
-    priceUSD,
-    listIds,
-  });
+  if (isTokenArbitrumOnePyusdCanonical(tokenAddress)) {
+    return getArbitrumOnePyusdCanonicalToken({
+      priceUSD,
+      listIds,
+    });
+  }
+
+  // In withdrawal mode, the legacy L1 PYUSD address is treated as the OFT alias.
+  // The canonical path only applies when the explicit Arbitrum One canonical address is selected.
+  if (isTokenArbitrumOnePyusdOft(tokenAddress) || isTokenEthereumPyusd(tokenAddress)) {
+    return getArbitrumOnePyusdOftToken({
+      priceUSD,
+      listIds,
+    });
+  }
+
+  return null;
 }
