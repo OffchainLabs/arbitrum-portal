@@ -27,7 +27,6 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
     mockedUseIsSwapTransfer.mockReturnValue(false);
     mockedUseSelectedToken.mockReturnValue([
       {
@@ -50,10 +49,10 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
   });
 
-  it('returns undefined (keeps the current token) when the resolved destination token is the same logical token', () => {
-    // Ethereum (PYUSD) to ArbitrumOne (PYUSD OFT)
-    // Different addresses but same "logical" token
-    // Returns undefined to keep the current token
+  it('returns the resolved destination token address when the source token changes across a network switch', () => {
+    // Ethereum -> Arbitrum One:
+    // the selected source token is L1 PYUSD, but after switching networks
+    // the new source token must become the resolved Arbitrum-side token.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
@@ -77,13 +76,69 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSDOFT);
+  });
+
+  it('returns the L1 PYUSD address when switching away from Arbitrum One PYUSD OFT', () => {
+    // Arbitrum One -> Ethereum:
+    // the current source token is Arbitrum PYUSD OFT, and after switching
+    // networks the new source token must become Ethereum PYUSD.
+    mockedUseSelectedToken.mockReturnValue([
+      {
+        type: TokenType.ERC20,
+        address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        importLookupAddress: CommonAddress.Ethereum.PYUSD,
+        name: 'PYUSD OFT',
+        symbol: 'PYUSD',
+        decimals: 6,
+        listIds: new Set(['1']),
+      },
+      vi.fn(),
+    ]);
+    mockedUseDestinationToken.mockReturnValue({
+      type: TokenType.ERC20,
+      address: CommonAddress.Ethereum.PYUSD,
+      importLookupAddress: CommonAddress.Ethereum.PYUSD,
+      name: 'PYUSD',
+      symbol: 'PYUSD',
+      decimals: 6,
+      listIds: new Set(['1']),
+    });
+
+    const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
+    expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
+  });
+
+  it('returns undefined when the resolved destination token keeps the same address', () => {
+    // If switching networks would keep the exact same token address,
+    // the hook should leave query state untouched.
+    mockedUseSelectedToken.mockReturnValue([
+      {
+        type: TokenType.ERC20,
+        address: CommonAddress.Ethereum.WETH,
+        name: 'Wrapped Ether',
+        symbol: 'WETH',
+        decimals: 18,
+        listIds: new Set(['1']),
+      },
+      vi.fn(),
+    ]);
+    mockedUseDestinationToken.mockReturnValue({
+      type: TokenType.ERC20,
+      address: CommonAddress.Ethereum.WETH,
+      name: 'Wrapped Ether',
+      symbol: 'WETH',
+      decimals: 18,
+      listIds: new Set(['1']),
+    });
+
+    const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
     expect(result.current).toBeUndefined();
   });
 
   it('returns the resolved destination token address for swaps', () => {
-    // LiFi swap from Ethereum (PYUSD) to ArbitrumOne (PYUSD OFT)
-    // Different addresses but same "logical" token
-    // Returns the destination token (PYUSD OFT)
+    // In swap mode, the selected token should always follow the resolved
+    // destination token instead of trying to preserve the current source token.
     mockedUseIsSwapTransfer.mockReturnValue(true);
     mockedUseDestinationToken.mockReturnValue({
       type: TokenType.ERC20,
@@ -100,8 +155,8 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
   });
 
   it('returns null for native swaps without a destination token', () => {
-    // LiFi swaps to native currency
-    // Returns null to clear the selected token
+    // For swaps that resolve to the native asset, there is no ERC20 token
+    // address to keep selected, so the hook clears the token query param.
     mockedUseIsSwapTransfer.mockReturnValue(true);
     mockedUseDestinationToken.mockReturnValue(null);
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { areEquivalentBridgeTokens } from '../../../util/BridgeTokenAddressUtils';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
 
 /**
@@ -23,7 +23,7 @@ export function useNetworkSwitchSelectedTokenAddress() {
       return destinationToken?.address ?? null;
     }
 
-    if (!destinationToken || areEquivalentBridgeTokens(destinationToken, selectedToken)) {
+    if (!destinationToken || addressesEqual(destinationToken.address, selectedToken?.address)) {
       return undefined;
     }
 

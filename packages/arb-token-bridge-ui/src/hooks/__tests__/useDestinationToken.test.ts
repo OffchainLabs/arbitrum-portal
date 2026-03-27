@@ -161,7 +161,7 @@ describe.sequential('useDestinationToken', () => {
       expect(result.current).toBeNull();
     });
 
-    it('maps Ethereum PYUSD deposits to Arbitrum One PYUSD OFT', () => {
+    it('maps Ethereum PYUSD deposits to Arbitrum One PYUSD OFT when both query params are the L1 address', () => {
       mockedUseSelectedToken.mockReturnValue([
         getEthereumPyusdToken({
           priceUSD: 1,
@@ -171,7 +171,11 @@ describe.sequential('useDestinationToken', () => {
       ]);
 
       mockedUseArbQueryParams.mockReturnValue([
-        { ...defaultQueryParams, destinationToken: CommonAddress.Ethereum.PYUSD },
+        {
+          ...defaultQueryParams,
+          token: CommonAddress.Ethereum.PYUSD,
+          destinationToken: CommonAddress.Ethereum.PYUSD,
+        },
         vi.fn(),
       ]);
 
@@ -202,7 +206,7 @@ describe.sequential('useDestinationToken', () => {
       expect(result.current?.logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
     });
 
-    it('maps PYUSD OFT withdrawals back to Ethereum PYUSD with metadata', () => {
+    it('maps PYUSD OFT withdrawals back to Ethereum PYUSD when both query params are the OFT address', () => {
       mockedUseNetworks.mockReturnValue([
         makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
@@ -217,7 +221,11 @@ describe.sequential('useDestinationToken', () => {
       ]);
 
       mockedUseArbQueryParams.mockReturnValue([
-        { ...defaultQueryParams, destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT },
+        {
+          ...defaultQueryParams,
+          token: CommonAddress.ArbitrumOne.PYUSDOFT,
+          destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        },
         vi.fn(),
       ]);
       mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
@@ -245,7 +253,7 @@ describe.sequential('useDestinationToken', () => {
       );
     });
 
-    it('maps PYUSD OFT withdrawals safely before bridgeTokens hydrate', () => {
+    it('maps PYUSD OFT withdrawals safely before bridgeTokens hydrate when both query params are the OFT address', () => {
       mockedUseNetworks.mockReturnValue([
         makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
@@ -268,7 +276,11 @@ describe.sequential('useDestinationToken', () => {
       ]);
 
       mockedUseArbQueryParams.mockReturnValue([
-        { ...defaultQueryParams, destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT },
+        {
+          ...defaultQueryParams,
+          token: CommonAddress.ArbitrumOne.PYUSDOFT,
+          destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        },
         vi.fn(),
       ]);
       mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
