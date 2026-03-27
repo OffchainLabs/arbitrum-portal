@@ -117,7 +117,7 @@ export function ArbitrumCanonicalRoute() {
     ? isDepositMode
       ? bridgedUsdcToken
       : nativeUsdcToken
-    : routeTokenOverride.destination ?? undefined;
+    : (routeTokenOverride.destination ?? undefined);
 
   const durationMs =
     getDuration({
