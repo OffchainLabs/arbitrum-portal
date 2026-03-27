@@ -101,6 +101,13 @@ export function getPyusdTokenOverride({
     };
   }
 
+  if (!isDepositMode && isTokenArbitrumOnePyusdCanonical(tokenAddress)) {
+    return {
+      source: getArbitrumOnePyusdCanonicalToken(),
+      destination: getEthereumPyusdToken(),
+    };
+  }
+
   return null;
 }
 
@@ -111,7 +118,11 @@ export function isPyusdOverrideFlow({
   tokenAddress: string | undefined;
   isDepositMode: boolean;
 }) {
-  return !!getPyusdTokenOverride({ tokenAddress, isDepositMode });
+  if (isDepositMode) {
+    return isTokenEthereumPyusd(tokenAddress);
+  }
+
+  return isTokenArbitrumOnePyusdOft(tokenAddress);
 }
 
 export function getPyusdTokenForTransfer({

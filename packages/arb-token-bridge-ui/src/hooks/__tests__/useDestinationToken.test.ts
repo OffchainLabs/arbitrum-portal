@@ -12,6 +12,7 @@ import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
   ETHEREUM_PYUSD_LOGO_URI,
+  getArbitrumOnePyusdCanonicalToken,
   getArbitrumOnePyusdOftToken,
   getEthereumPyusdToken,
 } from '../../util/PyusdUtils';

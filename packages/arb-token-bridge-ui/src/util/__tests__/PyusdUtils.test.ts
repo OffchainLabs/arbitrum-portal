@@ -25,13 +25,19 @@ describe('getPyusdTokenOverride', () => {
     });
   });
 
-  it('does not override canonical withdrawals', () => {
+  it('overrides canonical withdrawals to black-logo L1 PYUSD on destination', () => {
     expect(
       getPyusdTokenOverride({
         tokenAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
         isDepositMode: false,
       }),
-    ).toBeNull();
+    ).toMatchObject({
+      source: {
+        address: CommonAddress.ArbitrumOne.PYUSDCanonical,
+        logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
+      },
+      destination: { address: CommonAddress.Ethereum.PYUSD, logoURI: ETHEREUM_PYUSD_LOGO_URI },
+    });
   });
 });
 
