@@ -125,20 +125,20 @@ export class LiFiAdapter implements VendorAdapter {
       };
     };
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        return await fetchQuoteStep();
-      } catch (error) {
-        if (!this.isRouteRefreshError(error)) {
-          throw error instanceof Error ? error : new Error('Failed to get transaction quote');
-        }
-        if (attempt === 1) {
-          throw new Error('Quote expired due to market changes. Please try again.');
-        }
+    try {
+      return await fetchQuoteStep();
+    } catch (error) {
+      if (!this.isRouteRefreshError(error)) {
+        throw error instanceof Error ? error : new Error('Failed to get transaction quote');
       }
     }
 
-    throw new Error('Failed to get transaction quote');
+    // Retry once if the route expired due to market changes
+    try {
+      return await fetchQuoteStep();
+    } catch {
+      throw new Error('Quote expired due to market changes. Please try again.');
+    }
   }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {
