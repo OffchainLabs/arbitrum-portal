@@ -5593,9 +5593,9 @@ bare-fs@^4.0.1, bare-fs@^4.5.5:
     fast-fifo "^1.3.2"
 
 bare-os@^3.0.1:
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/bare-os/-/bare-os-3.8.0.tgz#888541d443914e861abed02657a6ef1c50bbf383"
-  integrity sha512-Dc9/SlwfxkXIGYhvMQNUtKaXCaGkZYGcd1vuNUUADVqzu4/vQfvnMkYYOUnt2VwQ2AqKr/8qAVFRtwETljgeFg==
+  version "3.8.4"
+  resolved "https://registry.yarnpkg.com/bare-os/-/bare-os-3.8.4.tgz#2d3a132ad63d0d29f28d42fb1610ec32bb6069f1"
+  integrity sha512-4JboWUl7/2LhgU536tjUszzaVC8/WEWKtyX5crayvlN71ih8+O2SdvBhotQeDsuhhmPZmLCrPBJEcwVPhI/kkQ==
 
 bare-path@^3.0.0:
   version "3.0.0"
@@ -9120,10 +9120,10 @@ handle-thing@^2.0.0:
   resolved "https://registry.yarnpkg.com/handle-thing/-/handle-thing-2.0.1.tgz#857f79ce359580c340d43081cc648970d0bb234e"
   integrity sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg==
 
-happy-dom@^20.8.8:
-  version "20.8.8"
-  resolved "https://registry.yarnpkg.com/happy-dom/-/happy-dom-20.8.8.tgz#ad87a83340161943d7f7425dae9ca237b6cd4bc7"
-  integrity sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==
+happy-dom@^20.8.9:
+  version "20.8.9"
+  resolved "https://registry.yarnpkg.com/happy-dom/-/happy-dom-20.8.9.tgz#aeacc9ab9aacada379bce0ba37b2f02dabbba286"
+  integrity sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==
   dependencies:
     "@types/node" ">=20.0.0"
     "@types/whatwg-mimetype" "^3.0.2"
