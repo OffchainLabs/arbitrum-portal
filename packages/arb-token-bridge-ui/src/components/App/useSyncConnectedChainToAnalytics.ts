@@ -1,28 +1,12 @@
+import { useWalletInfo } from '@reown/appkit/react';
 import * as Sentry from '@sentry/react';
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { ProviderName, trackEvent } from '../../util/AnalyticsUtils';
+import { trackEvent } from '../../util/AnalyticsUtils';
 import { rpcURLs } from '../../util/networks';
-
-// connector names: https://github.com/wagmi-dev/wagmi/blob/b17c07443e407a695dfe9beced2148923b159315/docs/pages/core/connectors/_meta.en-US.json#L4
-function getWalletName(connectorName: string): ProviderName {
-  switch (connectorName) {
-    case 'MetaMask':
-    case 'Coinbase Wallet':
-    case 'Trust Wallet':
-    case 'Safe':
-    case 'Injected':
-    case 'Ledger':
-    case 'WalletConnect':
-      return connectorName;
-
-    default:
-      return 'Other';
-  }
-}
 
 /** given our RPC url, sanitize it before logging to Sentry, to only pass the url and not the keys */
 function getBaseUrl(url: string | undefined): string | null {
@@ -42,21 +26,22 @@ function getBaseUrl(url: string | undefined): string | null {
 export function useSyncConnectedChainToAnalytics() {
   const [networks] = useNetworks();
   const { parentChain, childChain } = useNetworksRelationship(networks);
-  const { isConnected, connector } = useAccount();
+  const { isConnected } = useAccount();
+  const { walletInfo } = useWalletInfo('eip155');
 
   useEffect(() => {
-    if (isConnected && connector) {
-      const walletName = getWalletName(connector.name);
+    if (isConnected) {
+      const walletName = walletInfo?.name ?? 'Other';
       trackEvent('Connect Wallet Click', { walletName });
 
       // Set wallet name tag only when we have a connected wallet
-      Sentry.setTag('wallet.name', connector.name);
+      Sentry.setTag('wallet.name', walletName);
     } else {
       // If no wallet is connected, explicitly set the tag to 'not_connected'
       // This prevents it from showing as '<invalid>' in Sentry
       Sentry.setTag('wallet.name', 'not_connected');
     }
-  }, [isConnected, connector]);
+  }, [isConnected, walletInfo?.name]);
 
   useEffect(() => {
     Sentry.setTag('network.parent_chain_id', parentChain.id);

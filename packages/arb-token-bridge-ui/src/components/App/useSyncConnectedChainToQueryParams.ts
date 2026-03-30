@@ -1,22 +1,18 @@
+import { useDisconnect } from '@reown/appkit/react';
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
 import { getAccountType } from '../../util/AccountUtils';
 import { getNetworkName } from '../../util/networks';
-import { onDisconnectHandler } from '../../util/walletConnectUtils';
 
 export function useSyncConnectedChainToQueryParams() {
   const { address, chain } = useAccount();
   const [shouldSync, setShouldSync] = useState(false);
   const [didSync, setDidSync] = useState(false);
-  const { disconnect } = useDisconnect({
-    mutation: {
-      onSettled: onDisconnectHandler,
-    },
-  });
+  const { disconnect } = useDisconnect();
   const { isFeatureDisabled } = useDisabledFeatures();
 
   const [{ sourceChain, destinationChain }, setQueryParams] = useArbQueryParams();
@@ -60,7 +56,7 @@ export function useSyncConnectedChainToQueryParams() {
         window.alert(
           `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
         );
-        disconnect();
+        await disconnect({ namespace: 'eip155' });
       }
     }
 
