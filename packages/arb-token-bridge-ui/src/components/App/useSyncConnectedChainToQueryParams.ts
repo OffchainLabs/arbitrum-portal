@@ -1,16 +1,22 @@
+import { useDisconnect } from '@reown/appkit/react';
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
+
+import { useWallets } from '@/bridge/wallet/hooks/useWallets';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
+import { getAccountType } from '../../util/AccountUtils';
+import { getNetworkName } from '../../util/networks';
 
 export function useSyncConnectedChainToQueryParams() {
-  const { chain } = useAccount();
+  const { sourceWallet } = useWallets();
+  const { address, chain } = sourceWallet.account;
   const { accountType } = useAccountType(undefined, chain?.id);
   const [shouldSync, setShouldSync] = useState(false);
   const [didSync, setDidSync] = useState(false);
+  const { disconnect } = useDisconnect();
   const { isFeatureDisabled } = useDisabledFeatures();
 
   const [{ sourceChain, destinationChain }, setQueryParams] = useArbQueryParams();
@@ -40,6 +46,35 @@ export function useSyncConnectedChainToQueryParams() {
     }
 
     if (sourceChain !== chain.id) {
+      setSourceChainToConnectedChain();
+    }
+  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
+
+  useEffect(() => {
+    async function checkCorrectChainForSmartContractWallet() {
+      if (typeof chain === 'undefined') {
+        return;
+      }
+      if (!address) {
+        return;
+      }
+      const accountType = await getAccountType({
+        address: address,
+        chainId: chain.id,
+      });
+      if (accountType === 'smart-contract-wallet' && sourceChain !== chain.id) {
+        const chainName = getNetworkName(chain.id);
+
+        setSourceChainToConnectedChain();
+
+        window.alert(
+          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
+        );
+        await disconnect({ namespace: 'eip155' });
+      }
+    }
+
+    if (sourceChain !== chain?.id) {
       setSourceChainToConnectedChain();
     }
   }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);

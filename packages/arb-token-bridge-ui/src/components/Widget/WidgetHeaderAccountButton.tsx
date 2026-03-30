@@ -7,10 +7,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
 
 import { useAccountMenu } from '../../hooks/useAccountMenu';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
 import { SafeImage } from '../common/SafeImage';
@@ -58,10 +58,10 @@ const AccountContent = ({
 };
 
 export const WidgetHeaderAccountButton = () => {
-  const { address, chain, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { sourceWallet } = useWallets();
   const { openConnectModal } = useWalletModal();
   const [isCopied, setIsCopied] = useState(false);
+  const { address } = sourceWallet.account;
 
   const copyToClipboard = async () => {
     if (address) {
@@ -73,7 +73,7 @@ export const WidgetHeaderAccountButton = () => {
 
   return (
     <div className="flex items-center gap-2 text-base text-white">
-      {isConnected && address && chain && (
+      {sourceWallet.isConnected && (
         <Popover className="relative">
           {({ open }) => (
             <>
@@ -96,7 +96,7 @@ export const WidgetHeaderAccountButton = () => {
                     <Button
                       variant="secondary"
                       className="flex w-full items-center justify-center border-none bg-white/5"
-                      onClick={() => disconnect()}
+                      onClick={sourceWallet.disconnect}
                     >
                       <div className="flex items-center gap-2">
                         <ArrowLeftEndOnRectangleIcon className="h-3 w-3 text-white/70" />
@@ -111,7 +111,7 @@ export const WidgetHeaderAccountButton = () => {
         </Popover>
       )}
 
-      {(!isConnected || !address || !chain) && (
+      {!sourceWallet.isConnected && (
         <Button
           variant="primary"
           className="flex h-[40px] w-full justify-between bg-primary-cta"
