@@ -49,8 +49,7 @@
     "**/bn.js": "5.2.3",
     "**/flatted": "3.4.2",
     "**/brace-expansion": "1.1.13",
-    "@typescript-eslint/**/brace-expansion": "5.0.5",
-    "**/picomatch": "2.3.2"
+    "@typescript-eslint/**/brace-expansion": "5.0.5"
   },
   "keywords": [],
   "author": "",
