@@ -1,5 +1,6 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { type AppKitNetwork } from '@reown/appkit/networks';
+import { solana } from '@reown/appkit/networks';
+import type { AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
 import { http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
@@ -22,20 +23,10 @@ import {
   sepolia,
 } from './wagmiAdditionalNetworks';
 
-type AppKitNetworkList = [AppKitNetwork, ...AppKitNetwork[]];
-
-function asAppKitNetworkList(networks: AppKitNetwork[]): AppKitNetworkList {
-  if (networks.length === 0) {
-    throw new Error('[wagmi/setup] Expected at least one AppKit network.');
-  }
-
-  return networks as unknown as AppKitNetworkList;
-}
-
 const customChains = getCustomChainsFromLocalStorage().map((chain) => getWagmiChain(chain.chainId));
 const wagmiOrbitChains = getOrbitChains().map((chain) => getWagmiChain(chain.chainId));
 
-const defaultChains: AppKitNetworkList = [
+const defaultChains: AppKitNetwork[] = [
   mainnet,
   arbitrum,
   arbitrumNova,
@@ -45,26 +36,20 @@ const defaultChains: AppKitNetworkList = [
   baseSepolia,
 ];
 
-function getChainList(): AppKitNetworkList {
+function getChainList(): AppKitNetwork[] {
   if (isE2eTestingEnvironment) {
-    return asAppKitNetworkList([local, arbitrumLocal, l3Local, sepolia, arbitrumSepolia, mainnet]);
+    return [local, arbitrumLocal, l3Local, sepolia, arbitrumSepolia, mainnet];
   }
 
   if (isDevelopmentEnvironment) {
-    return asAppKitNetworkList([
-      ...defaultChains,
-      ...wagmiOrbitChains,
-      local,
-      arbitrumLocal,
-      l3Local,
-      ...customChains,
-    ]);
+    return [...defaultChains, ...wagmiOrbitChains, local, arbitrumLocal, l3Local, ...customChains];
   }
 
-  return asAppKitNetworkList([...defaultChains, ...wagmiOrbitChains, ...customChains]);
+  return [...defaultChains, ...wagmiOrbitChains, ...customChains];
 }
 
 const chainList = getChainList();
+const solanaEnabled = process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
@@ -108,12 +93,21 @@ const wagmiAdapter = new WagmiAdapter({
   transports: getTransports(),
 });
 
+const appKitNetworks = solanaEnabled ? [...chainList, solana] : [...chainList];
+const appKitAdapters = solanaEnabled
+  ? [
+      wagmiAdapter,
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      new (require('@reown/appkit-adapter-solana/react').SolanaAdapter)(),
+    ]
+  : [wagmiAdapter];
+
 createAppKit({
   projectId,
   metadata,
-  networks: [...chainList],
-  defaultNetwork: chainList[0],
-  adapters: [wagmiAdapter],
+  networks: appKitNetworks as [AppKitNetwork, ...AppKitNetwork[]],
+  defaultNetwork: chainList[0]!,
+  adapters: appKitAdapters,
   features: {
     email: false,
     socials: false,
