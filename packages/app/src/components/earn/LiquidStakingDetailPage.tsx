@@ -41,11 +41,11 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const { address: walletAddress, isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
 
-  const outputTokenAddress = isAddress(opportunity.id) ? opportunity.id.toLowerCase() : null;
+  const outputTokenAddress = isAddress(opportunity.id) ? getAddress(opportunity.id) : null;
   const { data: userBalanceData } = useBalance({
     address: walletAddress,
     chainId: opportunity.chainId,
-    token: outputTokenAddress ? getAddress(outputTokenAddress) : undefined,
+    token: outputTokenAddress ?? undefined,
     query: { enabled: isConnected && !!walletAddress },
   });
   const userBalance = userBalanceData?.value ?? null;

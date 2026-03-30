@@ -28,14 +28,12 @@ function includesTargetTokenInSteps(
 }
 
 function involvesLiquidStakingToken(transfer: StatusResponse, targetTokenAddress: string): boolean {
-  const normalizedTarget = targetTokenAddress.toLowerCase();
-
   if ('sending' in transfer) {
     const sendingIncludedSteps =
       'includedSteps' in transfer.sending && Array.isArray(transfer.sending.includedSteps)
         ? transfer.sending.includedSteps
         : undefined;
-    if (includesTargetTokenInSteps(sendingIncludedSteps, normalizedTarget)) {
+    if (includesTargetTokenInSteps(sendingIncludedSteps, targetTokenAddress)) {
       return true;
     }
   }
@@ -47,15 +45,13 @@ function involvesLiquidStakingToken(transfer: StatusResponse, targetTokenAddress
 
     if (sendingChainId && receivingChainId && sendingChainId === receivingChainId) {
       if ('token' in transfer.sending && transfer.sending.token) {
-        const sendingTokenAddress = transfer.sending.token.address.toLowerCase();
-        if (sendingTokenAddress === normalizedTarget) {
+        if (addressesEqual(transfer.sending.token.address, targetTokenAddress)) {
           return true;
         }
       }
 
       if ('token' in transfer.receiving && transfer.receiving.token) {
-        const receivingTokenAddress = transfer.receiving.token.address.toLowerCase();
-        if (receivingTokenAddress === normalizedTarget) {
+        if (addressesEqual(transfer.receiving.token.address, targetTokenAddress)) {
           return true;
         }
       }
@@ -64,15 +60,14 @@ function involvesLiquidStakingToken(transfer: StatusResponse, targetTokenAddress
         'includedSteps' in transfer.receiving && Array.isArray(transfer.receiving.includedSteps)
           ? transfer.receiving.includedSteps
           : undefined;
-      if (includesTargetTokenInSteps(receivingIncludedSteps, normalizedTarget)) {
+      if (includesTargetTokenInSteps(receivingIncludedSteps, targetTokenAddress)) {
         return true;
       }
     }
   }
 
   if ('sending' in transfer && 'token' in transfer.sending && transfer.sending.token) {
-    const sendingTokenAddress = transfer.sending.token.address.toLowerCase();
-    if (sendingTokenAddress === normalizedTarget) {
+    if (addressesEqual(transfer.sending.token.address, targetTokenAddress)) {
       return true;
     }
   }
@@ -112,11 +107,11 @@ function toStandardTransaction(
     if (!firstStep || !lastStep) return null;
 
     const isBuy =
-      firstStep.fromToken.address.toLowerCase() !== targetTokenAddress &&
-      lastStep.toToken.address.toLowerCase() === targetTokenAddress;
+      !addressesEqual(firstStep.fromToken.address, targetTokenAddress) &&
+      addressesEqual(lastStep.toToken.address, targetTokenAddress);
     const isSell =
-      firstStep.fromToken.address.toLowerCase() === targetTokenAddress &&
-      lastStep.toToken.address.toLowerCase() !== targetTokenAddress;
+      addressesEqual(firstStep.fromToken.address, targetTokenAddress) &&
+      !addressesEqual(lastStep.toToken.address, targetTokenAddress);
 
     if (isBuy) {
       eventType = 'buy';
@@ -175,11 +170,9 @@ export function toStandardTransactionHistory(
   transfers: StatusResponse[],
   targetTokenAddress: string,
 ): StandardTransactionHistory[] {
-  const normalizedTarget = targetTokenAddress.toLowerCase();
-
   const transactions = transfers
-    .filter((transfer) => involvesLiquidStakingToken(transfer, normalizedTarget))
-    .map((transfer) => toStandardTransaction(transfer, normalizedTarget))
+    .filter((transfer) => involvesLiquidStakingToken(transfer, targetTokenAddress))
+    .map((transfer) => toStandardTransaction(transfer, targetTokenAddress))
     .filter((transaction): transaction is StandardTransactionHistory => transaction !== null);
 
   return transactions.sort((a, b) => b.timestamp - a.timestamp);

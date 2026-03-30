@@ -65,6 +65,7 @@ export function useTransactionQuote({
           category,
           action,
           debouncedAmount,
+          userAddress,
           inputTokenAddress,
           outputTokenAddress,
           slippage,
@@ -80,6 +81,7 @@ export function useTransactionQuote({
       keyCategory,
       keyAction,
       keyDebouncedAmount,
+      keyUserAddress,
       keyInputTokenAddress,
       keyOutputTokenAddress,
       keySlippage,
@@ -96,8 +98,8 @@ export function useTransactionQuote({
         chainId: String(keyChainId),
       });
 
-      if (userAddress) {
-        queryParams.set('userAddress', userAddress);
+      if (keyUserAddress) {
+        queryParams.set('userAddress', keyUserAddress);
       }
 
       if (keyInputTokenAddress) {

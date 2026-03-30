@@ -58,16 +58,14 @@ interface LiquidStakingActionPanelProps {
 
 type ActionType = 'buy' | 'sell';
 
-type TokenOption = EarnTokenOption;
-
-const SWAP_TOKEN_OPTIONS: TokenOption[] = [
+const SWAP_TOKEN_OPTIONS: EarnTokenOption[] = [
   ETH_TOKEN_OPTION,
   USDC_TOKEN_OPTION,
   USDT_TOKEN_OPTION,
   ARB_TOKEN_OPTION,
 ];
 
-const DEFAULT_SWAP_TOKEN: TokenOption = ETH_TOKEN_OPTION;
+const DEFAULT_SWAP_TOKEN: EarnTokenOption = ETH_TOKEN_OPTION;
 
 const balanceQuery = {
   retry: 2,
@@ -114,7 +112,7 @@ function TokenIcon({ src, alt, symbol, size = 'md' }: TokenIconProps) {
 }
 
 interface TokenDisplayButtonProps {
-  token: TokenOption | { symbol: string; logoUrl?: string };
+  token: EarnTokenOption | { symbol: string; logoUrl?: string };
   showDropdown?: boolean;
   onClick?: () => void;
 }
@@ -138,11 +136,11 @@ function TokenDisplayButton({ token, showDropdown = false, onClick }: TokenDispl
 }
 
 interface TokenSelectorDropdownProps {
-  options: TokenOption[];
-  selected: TokenOption;
+  options: EarnTokenOption[];
+  selected: EarnTokenOption;
   isOpen: boolean;
   onToggle: () => void;
-  onSelect: (token: TokenOption) => void;
+  onSelect: (token: EarnTokenOption) => void;
 }
 
 function TokenSelectorDropdown({
@@ -247,8 +245,8 @@ export function LiquidStakingActionPanel({
     setSelectedAction: setSelectedAction as (action: string) => void,
   });
 
-  const [selectedBuyToken, setSelectedBuyToken] = useState<TokenOption>(DEFAULT_SWAP_TOKEN);
-  const [selectedSellToken, setSelectedSellToken] = useState<TokenOption>(DEFAULT_SWAP_TOKEN);
+  const [selectedBuyToken, setSelectedBuyToken] = useState<EarnTokenOption>(DEFAULT_SWAP_TOKEN);
+  const [selectedSellToken, setSelectedSellToken] = useState<EarnTokenOption>(DEFAULT_SWAP_TOKEN);
 
   const fromTokenAddress =
     selectedAction === 'buy'
@@ -641,7 +639,7 @@ export function LiquidStakingActionPanel({
     });
   };
 
-  const handleBuyTokenSelect = (token: TokenOption) => {
+  const handleBuyTokenSelect = (token: EarnTokenOption) => {
     if (selectedBuyToken?.address.toLowerCase() === token.address.toLowerCase()) {
       setIsBuyTokenDropdownOpen(false);
       return;
@@ -662,7 +660,7 @@ export function LiquidStakingActionPanel({
     });
   };
 
-  const handleSellTokenSelect = (token: TokenOption) => {
+  const handleSellTokenSelect = (token: EarnTokenOption) => {
     if (selectedSellToken?.address.toLowerCase() === token.address.toLowerCase()) {
       setIsSellTokenDropdownOpen(false);
       return;

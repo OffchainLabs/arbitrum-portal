@@ -1,5 +1,6 @@
 import { BigNumber } from 'ethers';
 
+import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
 import type { StandardOpportunityLend } from '@/earn-api/types';
 
@@ -61,7 +62,6 @@ export function getSelectedActionValues(
 }
 
 export function sanitizeOutputTokenAddress(tokenAddress: string) {
-  const lowercased = tokenAddress.toLowerCase();
-  const match = LIQUID_STAKING_OPPORTUNITIES.find((opp) => opp.id.toLowerCase() === lowercased);
-  return match ? lowercased : null;
+  const match = LIQUID_STAKING_OPPORTUNITIES.find((opp) => addressesEqual(opp.id, tokenAddress));
+  return match ? match.id.toLowerCase() : null;
 }
