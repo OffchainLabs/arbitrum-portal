@@ -37,7 +37,9 @@ function ActionRowConnectButton() {
     <Button
       variant="primary"
       className="w-14 rounded bg-lime-dark p-2 text-xs text-white"
-      onClick={openConnectModal}
+      onClick={() => {
+        openConnectModal();
+      }}
     >
       Connect
     </Button>

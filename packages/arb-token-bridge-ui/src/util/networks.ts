@@ -368,6 +368,10 @@ export async function registerLocalNetwork() {
 }
 
 function isTestnetChain(chainId: ChainId) {
+  if (chainId === ChainId.Solana) {
+    return false;
+  }
+
   const l1Network = l1Networks[chainId];
   if (l1Network) {
     return l1Network.isTestnet;
@@ -407,6 +411,7 @@ export function isNetwork(chainId: ChainId) {
 
   const isBaseMainnet = chainId === ChainId.Base;
   const isBaseSepolia = chainId === ChainId.BaseSepolia;
+  const isSolana = chainId === ChainId.Solana;
 
   const isEthereumMainnetOrTestnet = isEthereumMainnet || isSepolia || isLocal;
 
@@ -416,7 +421,7 @@ export function isNetwork(chainId: ChainId) {
 
   const isCoreChain = isEthereumMainnetOrTestnet || isArbitrum;
   const isOrbitChain = getIsArbitrumChain(chainId) && !isCoreChain;
-  const isNonArbitrumNetwork = isBase || isEthereumMainnetOrTestnet;
+  const isNonArbitrumNetwork = isBase || isEthereumMainnetOrTestnet || isSolana;
 
   return {
     // L1
@@ -430,6 +435,7 @@ export function isNetwork(chainId: ChainId) {
     isArbitrumNova,
     isBase,
     isBaseMainnet,
+    isSolana,
     // L2 Testnets
     isArbitrumSepolia,
     isBaseSepolia,

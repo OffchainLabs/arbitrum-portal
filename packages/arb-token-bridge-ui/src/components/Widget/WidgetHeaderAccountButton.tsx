@@ -115,7 +115,9 @@ export const WidgetHeaderAccountButton = () => {
         <Button
           variant="primary"
           className="flex h-[40px] w-full justify-between bg-primary-cta"
-          onClick={openConnectModal}
+          onClick={() => {
+            openConnectModal();
+          }}
         >
           <div>Connect Wallet</div>
         </Button>

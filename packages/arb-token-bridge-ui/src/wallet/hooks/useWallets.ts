@@ -1,7 +1,10 @@
 import { useCallback, useMemo } from 'react';
 
 import { useNetworks } from '../../hooks/useNetworks';
+import { ChainId } from '../../types/ChainId';
+import { isSolanaEnabled } from '../../util/featureFlag';
 import { useEvmWalletContext } from '../contexts/EvmWalletContext';
+import { useSolanaWalletContext } from '../contexts/SolanaWalletContext';
 import { WalletHandle } from '../types';
 
 export function useWallets(): {
@@ -10,14 +13,18 @@ export function useWallets(): {
 } {
   const [networks] = useNetworks();
   const evmWallet = useEvmWalletContext();
+  const solanaWallet = useSolanaWalletContext();
   const getWalletForChainId = useCallback(
     (chainId: number): WalletHandle => {
       switch (chainId) {
+        case ChainId.Solana:
+          return isSolanaEnabled() ? solanaWallet : evmWallet;
+
         default:
           return evmWallet;
       }
     },
-    [evmWallet],
+    [evmWallet, solanaWallet],
   );
 
   const sourceWallet = useMemo<WalletHandle>(

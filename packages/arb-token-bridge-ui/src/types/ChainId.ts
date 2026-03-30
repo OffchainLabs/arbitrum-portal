@@ -14,6 +14,8 @@ export enum ChainId {
   BaseSepolia = 84532,
   // L3 Testnets
   L3Local = 333333,
+  // Non-EVM
+  Solana = 1151111081099710,
   // Orbit chains
   ApeChain = 33139,
   Superposition = 55244,

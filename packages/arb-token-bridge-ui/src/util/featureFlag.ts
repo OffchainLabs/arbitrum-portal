@@ -25,3 +25,7 @@ export function onrampEnabledList() {
 export function isOnrampServiceEnabled(service: (typeof full_onramp_services_list)[number]) {
   return onrampEnabledList().includes(service);
 }
+
+export function isSolanaEnabled() {
+  return process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true';
+}
