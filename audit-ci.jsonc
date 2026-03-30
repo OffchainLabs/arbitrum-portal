@@ -2,19 +2,6 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "low": true,
   "allowlist": [
-    // https://github.com/advisories/GHSA-95m3-7q98-8xr5
-    // sha.js missing type checks leading to hash rewind and passing on crafted data
-    // Reason to ignore: Low risk client-side vulnerability in Coinbase Wallet connector only.
-    // Does not affect core bridge functionality, limited to wallet-specific operations.
-    // from: arb-token-bridge-ui>wagmi>@wagmi/connectors>cbw-sdk>sha.js
-    "GHSA-95m3-7q98-8xr5",
-    //
-    // https://github.com/advisories/GHSA-qj3p-xc97-xw74
-    // MetaMask SDK supply chain compromise via debug@4.4.2 on Sept 8th 2025
-    // Reason to ignore: Does not affect us as we did not perform any installations without a lock file
-    // during the affected window (Sept 8th 2025, 13:00-15:30 UTC)
-    // from: arb-token-bridge-ui>wagmi>@wagmi/connectors>@metamask/sdk
-    "GHSA-qj3p-xc97-xw74",
     // https://github.com/advisories/GHSA-vqpr-j7v3-hqw9
     // Valibot has a ReDoS vulnerability in `EMOJI_REGEX`
     // Reason to ignore: Not used directly. Patched version is a major bump (v1.2.0).
@@ -25,20 +12,6 @@
     // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
     // Reason to ignore: Low severity vulnerability with no patched version available yet
     "GHSA-848j-6mx2-7j84",
-    //
-    // https://github.com/advisories/GHSA-2g4f-4pwh-qvx6
-    // ajv ReDoS when using `$data` option (CVE-2025-69873)
-    // Reason to ignore: Only used in dev tooling (eslint). The vulnerability requires $data: true
-    // which is not used by eslint's ajv configuration. No user-controlled input reaches ajv.
-    // from: @eslint/eslintrc>ajv
-    "GHSA-2g4f-4pwh-qvx6",
-    //
-    // https://github.com/advisories/GHSA-3ppc-4f35-3m26
-    // minimatch ReDoS with consecutive `*` wildcards (CVE-2026-26996)
-    // Reason to ignore: Only used in dev tooling (eslint, typescript-eslint). No user-controlled
-    // glob patterns are passed to minimatch. Fix requires major version bump (3.x/9.x -> 10.2.1).
-    // from: @eslint/eslintrc>minimatch, eslint-config-next>@typescript-eslint/typescript-estree>minimatch
-    "GHSA-3ppc-4f35-3m26",
     //
     // https://github.com/advisories/GHSA-9g9p-9gw9-jx7f
     // Next.js Image Optimizer DoS via unbounded memory consumption (CVE-2025-59471)
