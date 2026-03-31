@@ -72,7 +72,7 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000637722>
 - [ ] `3000648560` at `:699`: reuse the existing dialog support instead of rebuilding dialog behavior in this file.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000648560>
-- [ ] `3000656919` at `:1`: broad refactor request to split this file into smaller buy/sell pieces and move more logic into hooks or APIs.  
+- [x] `3000656919` at `:1`: broad refactor request to split this file into smaller buy/sell pieces and move more logic into hooks or APIs. Addressed in working tree by moving liquid-staking panel orchestration into a dedicated hook, extracting token-selection UI out of the main panel file, and keeping the component mostly focused on render composition.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000656919>
 
 ### `packages/app/src/components/earn/AllOpportunitiesPage.tsx`

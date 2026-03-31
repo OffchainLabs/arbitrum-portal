@@ -91,15 +91,9 @@ export class LiFiAdapter implements VendorAdapter {
     return { step };
   }
 
-  private async getQuoteStepWithTransaction(params: {
-    inputTokenAddress: string;
-    outputTokenAddress: string;
-    amount: string;
-    userAddress?: string;
-    slippage: number;
-  }) {
-    const { step } = await this.getQuoteStep(params);
-
+  private async getQuoteStepWithTransaction(
+    step: Awaited<ReturnType<LiFiAdapter['getQuoteStep']>>['step'],
+  ) {
     const { transactionRequest } = await getStepTransaction(step);
     const to = transactionRequest?.to;
     const data = transactionRequest?.data;
@@ -347,13 +341,7 @@ export class LiFiAdapter implements VendorAdapter {
       };
     }
 
-    const { transactionRequest } = await this.getQuoteStepWithTransaction({
-      inputTokenAddress,
-      outputTokenAddress,
-      amount,
-      userAddress,
-      slippage,
-    });
+    const { transactionRequest } = await this.getQuoteStepWithTransaction(step);
 
     const { transactionSteps, estimatedGas, estimatedGasUsd, receiveAmount, priceImpact } =
       await buildLifiQuoteData({
