@@ -133,3 +133,30 @@ export function StaticLiquidStakingTokenBadge({
 }: StaticLiquidStakingTokenBadgeProps) {
   return <LiquidStakingTokenBadge symbol={symbol} logoUrl={logoUrl} />;
 }
+
+export type LiquidStakingTokenControl =
+  | {
+      type: 'select';
+      options: EarnTokenOption[];
+      selected: EarnTokenOption;
+      onSelect: (token: EarnTokenOption) => void;
+    }
+  | {
+      type: 'static';
+      symbol: string;
+      logoUrl?: string;
+    };
+
+export function LiquidStakingTokenControl({ control }: { control: LiquidStakingTokenControl }) {
+  if (control.type === 'select') {
+    return (
+      <LiquidStakingTokenSelector
+        options={control.options}
+        selected={control.selected}
+        onSelect={control.onSelect}
+      />
+    );
+  }
+
+  return <StaticLiquidStakingTokenBadge symbol={control.symbol} logoUrl={control.logoUrl} />;
+}

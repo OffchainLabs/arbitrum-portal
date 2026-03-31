@@ -2,28 +2,28 @@
 
 import { useEffect, useMemo } from 'react';
 
-export interface ActionTab {
-  id: string;
+export interface ActionTab<T extends string = string> {
+  id: T;
   label: string;
 }
 
-interface UseEarnActionTabsParams {
-  primaryAction: { id: string; label: string };
-  secondaryAction?: { id: string; label: string };
+interface UseEarnActionTabsParams<T extends string> {
+  primaryAction: { id: T; label: string };
+  secondaryAction?: { id: T; label: string };
   hasSecondaryAction: boolean;
-  selectedAction: string;
-  setSelectedAction: (action: string) => void;
+  selectedAction: T;
+  setSelectedAction: (action: T) => void;
 }
 
-export function useEarnActionTabs({
+export function useEarnActionTabs<T extends string>({
   primaryAction,
   secondaryAction,
   hasSecondaryAction,
   selectedAction,
   setSelectedAction,
-}: UseEarnActionTabsParams): ActionTab[] {
+}: UseEarnActionTabsParams<T>): ActionTab<T>[] {
   const actionTabs = useMemo(() => {
-    const tabs: ActionTab[] = [primaryAction];
+    const tabs: ActionTab<T>[] = [primaryAction];
     if (hasSecondaryAction && secondaryAction) {
       tabs.push(secondaryAction);
     }
@@ -33,7 +33,7 @@ export function useEarnActionTabs({
   useEffect(() => {
     const availableTabIds = actionTabs.map((tab) => tab.id);
     if (availableTabIds.length > 0 && !availableTabIds.includes(selectedAction)) {
-      const firstTabId = availableTabIds[0];
+      const firstTabId = availableTabIds[0] as T | undefined;
       if (firstTabId) {
         setSelectedAction(firstTabId);
       }
