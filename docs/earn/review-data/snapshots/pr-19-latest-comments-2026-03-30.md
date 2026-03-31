@@ -50,25 +50,25 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 
 - [x] `3000214435` at `:61`: reuse `EarnTokenOption` directly instead of introducing a parallel type. Addressed in `de3bde649`.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000214435>
-- [ ] `3000216864` at `:79`: reuse the existing helper from `VaultActionPanel` instead of duplicating it here.  
+- [x] `3000216864` at `:79`: reuse the existing helper from `VaultActionPanel` instead of duplicating it here. Addressed in working tree by moving `normalizeTokenAddress` into `app/lib/earn/utils.ts` and reusing it from both action panels.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000216864>
-- [ ] `3000252768`, `3000258794` at `:208`: stop using `useEffect` to sync props into local state; reviewer suggests lifting `selectedAction` or tightening initialization, and folding the second effect into the same cleanup.  
+- [x] `3000252768`, `3000258794` at `:208`: stop using `useEffect` to sync props into local state; reviewer suggests lifting `selectedAction` or tightening initialization, and folding the second effect into the same cleanup. Addressed in working tree by initializing `selectedAction` from `initialAction` once and resetting local state in the action-change handler instead of syncing via effects.  
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000252768>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000258794>
-- [ ] `3000270376` at `:237`: normalize liquid staking data before it reaches the component, ideally in the API or the fetch hook.  
+- [x] `3000270376` at `:237`: normalize liquid staking data before it reaches the component, ideally in the API or the fetch hook. Addressed in working tree by moving quote shaping into `useLiquidStakingQuote`, which returns normalized liquid-staking quote data to the component.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000270376>
 - [ ] `3000505711` at `:248`: reviewer prefers using Radix Tabs directly instead of the current wrapper.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000505711>
-- [ ] `3000520688` at `:262`: allow any input amount and convert to raw units, instead of rejecting values up front.  
+- [x] `3000520688` at `:262`: allow any input amount and convert to raw units, instead of rejecting values up front. Addressed in working tree by removing upfront decimal truncation from `EarnActionPanelInput` and leaving raw-unit conversion to the quote/transaction path.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000520688>
 - [ ] `3000524104` at `:375`: reviewer thinks this code path is unnecessary and should be removed.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000524104>
-- [ ] `3000531339` at `:396`: remove alias variables that only rename the same values.  
+- [x] `3000531339` at `:396`: remove alias variables that only rename the same values. Addressed in working tree by removing the rename-only locals in `handleTransactionSuccess` and using the source values directly.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000531339>
-- [ ] `3000536499` at `:418`: move the selected-action-derived asset/history logic into a utility.  
+- [x] `3000536499` at `:418`: move the selected-action-derived asset/history logic into a utility. Addressed in working tree by moving the liquid-staking history/input asset shaping into `getLiquidStakingHistoryValues` in `app/lib/earn/utils.ts`.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000536499>
-- [ ] `3000545259` at `:460`: reviewer wants SWR optimistic updates here and called out missing failed-transaction handling.  
+- [x] `3000545259` at `:460`: reviewer wants SWR optimistic updates here and called out missing failed-transaction handling. Addressed in working tree by moving liquid-staking history mutation into the SWR-backed history/success hooks and only inserting the history row after `useEarnTransactionExecution` finishes with a confirmed receipt, so failed transactions are not added.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000545259>
-- [ ] `3000637722` at `:523`: shift this handling down into the API or hook layer instead of keeping it in the component.  
+- [x] `3000637722` at `:523`: shift this handling down into the API or hook layer instead of keeping it in the component. Addressed in working tree by moving liquid-staking transaction success, popup details, analytics, and optimistic history handling into `useLiquidStakingTransactionSuccess`.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000637722>
 - [ ] `3000648560` at `:699`: reuse the existing dialog support instead of rebuilding dialog behavior in this file.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000648560>

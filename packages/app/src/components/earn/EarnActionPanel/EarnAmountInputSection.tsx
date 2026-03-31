@@ -26,7 +26,6 @@ interface EarnAmountInputSectionProps {
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
-  decimals?: number;
 }
 
 export function EarnAmountInputSection({
@@ -42,7 +41,6 @@ export function EarnAmountInputSection({
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
-  decimals = 18,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
   const currentBalanceNumeric =
@@ -78,7 +76,6 @@ export function EarnAmountInputSection({
             aria-label="amount-input"
             value={amount}
             onChange={onAmountChange}
-            decimals={decimals}
           />
           {inputTokenSelector || (
             <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">

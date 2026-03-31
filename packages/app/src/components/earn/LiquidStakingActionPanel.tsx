@@ -4,7 +4,6 @@ import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
@@ -20,16 +19,17 @@ import {
   validateTransactionStep,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
+import { useLiquidStakingQuote } from '@/app-hooks/earn/useLiquidStakingQuote';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
-import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
-import { sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
+import { useLiquidStakingTransactionSuccess } from '@/app-hooks/earn/useLiquidStakingTransactionSuccess';
+import { normalizeTokenAddress, sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
-import { OpportunityCategory, Vendor } from '@/earn-api/types';
-import type { StandardTransactionHistory, TransactionStep } from '@/earn-api/types';
+import { OpportunityCategory } from '@/earn-api/types';
+import type { TransactionStep } from '@/earn-api/types';
 
 import { EarnActionSubmitButton } from './EarnActionPanel/EarnActionSubmitButton';
 import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
@@ -74,15 +74,57 @@ const balanceQuery = {
   staleTime: 15_000,
 } as const;
 
-function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || tokenAddress === constants.AddressZero) {
-    return undefined;
+function getSelectedActionValues({
+  selectedAction,
+  selectedBuyToken,
+  selectedSellToken,
+  outputTokenAddress,
+  outputTokenSymbol,
+  outputTokenIcon,
+  ethBalance,
+  erc20Balance,
+  userBalance,
+  isConnected,
+}: {
+  selectedAction: ActionType;
+  selectedBuyToken: EarnTokenOption;
+  selectedSellToken: EarnTokenOption;
+  outputTokenAddress: string | null;
+  outputTokenSymbol: string;
+  outputTokenIcon?: string;
+  ethBalance: BigNumber | null;
+  erc20Balance: BigNumber | null;
+  userBalance: BigNumber | null;
+  isConnected: boolean;
+}) {
+  if (selectedAction === 'buy') {
+    const isNativeAsset = selectedBuyToken.address === constants.AddressZero;
+    return {
+      fromTokenAddress: selectedBuyToken.address,
+      toTokenAddress: outputTokenAddress,
+      selectedTokenAddress: isNativeAsset ? null : selectedBuyToken.address,
+      balanceRaw: isConnected
+        ? isNativeAsset
+          ? ethBalance || BigNumber.from('0')
+          : erc20Balance || BigNumber.from('0')
+        : BigNumber.from('0'),
+      decimals: selectedBuyToken.decimals,
+      symbol: selectedBuyToken.symbol,
+      logoUrl: selectedBuyToken.logoUrl,
+      isNativeAsset,
+    };
   }
-  try {
-    return getAddress(tokenAddress);
-  } catch {
-    return undefined;
-  }
+
+  return {
+    fromTokenAddress: outputTokenAddress,
+    toTokenAddress: selectedSellToken.address,
+    selectedTokenAddress: null,
+    balanceRaw: isConnected ? userBalance || BigNumber.from('0') : BigNumber.from('0'),
+    decimals: 18,
+    symbol: outputTokenSymbol,
+    logoUrl: outputTokenIcon,
+    isNativeAsset: false,
+  };
 }
 
 // Internal Components
@@ -198,20 +240,8 @@ export function LiquidStakingActionPanel({
   const posthog = usePostHog();
   const { address: walletAddress, isConnected } = useAccount();
   const [amount, setAmount] = useState('');
-  const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
-
-  // Update selectedAction when initialAction changes
-  useEffect(() => {
-    setSelectedAction(initialAction);
-  }, [initialAction]);
-
+  const [selectedAction, setSelectedAction] = useState<ActionType>(() => initialAction);
   const [txError, setTxError] = useState<string | null>(null);
-
-  // Reset amount and error when action changes
-  useEffect(() => {
-    setAmount('');
-    setTxError(null);
-  }, [selectedAction]);
   const [isBuyTokenDropdownOpen, setIsBuyTokenDropdownOpen] = useState(false);
   const [isSellTokenDropdownOpen, setIsSellTokenDropdownOpen] = useState(false);
   const [slippagePercent, setSlippagePercent] = useState(0.5);
@@ -248,15 +278,6 @@ export function LiquidStakingActionPanel({
   const [selectedBuyToken, setSelectedBuyToken] = useState<EarnTokenOption>(DEFAULT_SWAP_TOKEN);
   const [selectedSellToken, setSelectedSellToken] = useState<EarnTokenOption>(DEFAULT_SWAP_TOKEN);
 
-  const fromTokenAddress =
-    selectedAction === 'buy'
-      ? selectedBuyToken?.address || constants.AddressZero
-      : outputTokenAddress;
-  const toTokenAddress =
-    selectedAction === 'buy'
-      ? outputTokenAddress
-      : selectedSellToken?.address || constants.AddressZero;
-
   // Convert amount to raw units for API
   const amountInRawUnits = useMemo(() => {
     if (!amount || parseFloat(amount) <= 0) return '0';
@@ -268,84 +289,104 @@ export function LiquidStakingActionPanel({
     }
   }, [amount, selectedAction, selectedBuyToken]);
 
-  const selectedTokenAddress =
-    selectedAction === 'buy' &&
-    selectedBuyToken &&
-    selectedBuyToken.address !== constants.AddressZero
-      ? selectedBuyToken.address
-      : null;
-
   const { data: ethBalanceData, refetch: refetchEthBalance } = useBalance({
     address: walletAddress,
     chainId: requestChainId,
     query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
   const ethBalance = ethBalanceData ? BigNumber.from(ethBalanceData.value.toString()) : null;
+  const selectedInputTokenValues = useMemo(
+    () =>
+      getSelectedActionValues({
+        selectedAction,
+        selectedBuyToken,
+        selectedSellToken,
+        outputTokenAddress,
+        outputTokenSymbol,
+        outputTokenIcon: opportunity.tokenIcon,
+        ethBalance,
+        erc20Balance: null,
+        userBalance,
+        isConnected,
+      }),
+    [
+      selectedAction,
+      selectedBuyToken,
+      selectedSellToken,
+      outputTokenAddress,
+      outputTokenSymbol,
+      opportunity.tokenIcon,
+      ethBalance,
+      userBalance,
+      isConnected,
+    ],
+  );
   const { data: erc20BalanceData, refetch: refetchErc20Balance } = useBalance({
     address: walletAddress,
     chainId: requestChainId,
-    token: normalizeTokenAddress(selectedTokenAddress),
+    token: normalizeTokenAddress(selectedInputTokenValues.selectedTokenAddress),
     query: { ...balanceQuery, enabled: isConnected && !!walletAddress },
   });
   const erc20Balance = erc20BalanceData ? BigNumber.from(erc20BalanceData.value.toString()) : null;
-
-  const currentBalanceRaw = useMemo(() => {
-    if (!isConnected) return BigNumber.from('0');
-    if (selectedAction === 'buy') {
-      if (!selectedBuyToken) return BigNumber.from('0');
-      if (selectedBuyToken.address === constants.AddressZero) {
-        return ethBalance || BigNumber.from('0');
-      } else {
-        return erc20Balance || BigNumber.from('0');
-      }
-    } else {
-      return userBalance || BigNumber.from('0');
-    }
-  }, [isConnected, selectedAction, selectedBuyToken, ethBalance, erc20Balance, userBalance]);
+  const currentActionValues = useMemo(
+    () =>
+      getSelectedActionValues({
+        selectedAction,
+        selectedBuyToken,
+        selectedSellToken,
+        outputTokenAddress,
+        outputTokenSymbol,
+        outputTokenIcon: opportunity.tokenIcon,
+        ethBalance,
+        erc20Balance,
+        userBalance,
+        isConnected,
+      }),
+    [
+      selectedAction,
+      selectedBuyToken,
+      selectedSellToken,
+      outputTokenAddress,
+      outputTokenSymbol,
+      opportunity.tokenIcon,
+      ethBalance,
+      erc20Balance,
+      userBalance,
+      isConnected,
+    ],
+  );
 
   const amountExceedsBalance = useMemo(
     () =>
-      checkAmountExceedsBalance(amountInRawUnits, currentBalanceRaw, isConnected, walletAddress),
-    [amountInRawUnits, currentBalanceRaw, isConnected, walletAddress],
+      checkAmountExceedsBalance(
+        amountInRawUnits,
+        currentActionValues.balanceRaw,
+        isConnected,
+        walletAddress,
+      ),
+    [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
 
-  const {
-    data: transactionQuote,
-    isLoading: routeLoading,
-    error: routeError,
-  } = useTransactionQuote({
+  const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
-    category: OpportunityCategory.LiquidStaking,
     chainId: opportunity.chainId,
-    action: 'swap',
     amount: amountInRawUnits,
-    userAddress: walletAddress,
-    inputTokenAddress: fromTokenAddress ?? undefined,
-    outputTokenAddress: toTokenAddress ?? undefined,
+    userAddress: walletAddress || undefined,
+    inputTokenAddress: currentActionValues.fromTokenAddress ?? undefined,
+    outputTokenAddress: currentActionValues.toTokenAddress ?? undefined,
     slippage: slippagePercent,
     enabled: amountInRawUnits !== '0' && !amountExceedsBalance,
+    selectedAction,
+    selectedSellTokenDecimals: selectedSellToken?.decimals,
   });
 
-  // Extract receive amount from transaction quote
-  const receiveAmount = useMemo(() => {
-    if (!transactionQuote?.receiveAmount) return null;
-    const receiveDecimals = selectedAction === 'sell' ? (selectedSellToken?.decimals ?? 18) : 18;
-
-    try {
-      return utils.formatUnits(transactionQuote.receiveAmount, receiveDecimals);
-    } catch {
-      return null;
-    }
-  }, [transactionQuote, selectedAction, selectedSellToken]);
-
-  const currentDecimals = selectedAction === 'buy' ? selectedBuyToken?.decimals || 18 : 18;
-  const currentSymbol =
-    selectedAction === 'buy' ? selectedBuyToken?.symbol || 'ETH' : outputTokenSymbol;
+  const currentDecimals = currentActionValues.decimals;
+  const currentSymbol = currentActionValues.symbol;
 
   // Use unified transfer readiness hook
   const transferReadiness = useEarnTransferReadiness({
     amount,
-    amountBalance: currentBalanceRaw,
+    amountBalance: currentActionValues.balanceRaw,
     amountDecimals: currentDecimals,
     amountSymbol: currentSymbol,
     nativeBalance: ethBalance || undefined,
@@ -368,154 +409,36 @@ export function LiquidStakingActionPanel({
     enabled: isConnected && !!walletAddress && !amountExceedsBalance,
   });
 
-  const handleTransactionSuccess = useCallback(
-    async (txHash: string | undefined) => {
-      const submittedAmountRaw = amountInRawUnits;
-      setAmount('');
-
-      // Refetch balances after transaction
-      // Refetch ETH balance if buying with ETH
-      if (selectedAction === 'buy' && selectedBuyToken?.address === constants.AddressZero) {
-        refetchEthBalance();
-      }
-      // Refetch ERC20 balance if buying with ERC20 token
-      if (selectedAction === 'buy' && selectedTokenAddress) {
-        refetchErc20Balance();
-      }
-      refetchUserBalance();
-
-      // Extract transaction details for popup and history
-      const timestamp = Math.floor(Date.now() / 1000);
-      const txChainId = requestChainId;
-      const quoteReceiveAmount = transactionQuote?.receiveAmount;
-      const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
-      const inputAmountRaw = submittedAmountRaw;
-      const inputTokenSymbol = currentSymbol;
-      const inputTokenDecimals = currentDecimals;
-      const inputAssetLogo =
-        selectedAction === 'buy'
-          ? selectedBuyToken?.logoUrl || opportunity.tokenIcon
-          : opportunity.tokenIcon;
-      const historyAmountRaw: string = hasReceiveAmount
-        ? quoteReceiveAmount || submittedAmountRaw
-        : submittedAmountRaw;
-      const historyTokenSymbol: string = hasReceiveAmount
-        ? selectedAction === 'buy'
-          ? outputTokenSymbol
-          : (selectedSellToken?.symbol ?? currentSymbol)
-        : currentSymbol;
-      const historyTokenDecimals = hasReceiveAmount
-        ? selectedAction === 'buy'
-          ? 18
-          : (selectedSellToken?.decimals ?? currentDecimals)
-        : currentDecimals;
-      const historyAssetLogo = hasReceiveAmount
-        ? selectedAction === 'buy'
-          ? opportunity.tokenIcon
-          : selectedSellToken?.logoUrl || opportunity.tokenIcon
-        : opportunity.tokenIcon;
-
-      const transactionDetails = {
-        action: selectedAction,
-        amount: historyAmountRaw,
-        tokenSymbol: historyTokenSymbol,
-        decimals: historyTokenDecimals,
-        assetLogo: historyAssetLogo,
-        chainId: txChainId,
-        txHash, // Include txHash so it shows in the popup
-        timestamp,
-        protocolName: opportunity.protocol,
-        protocolLogo: opportunity.protocolIcon,
-        networkFee:
-          estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
-            ? {
-                amount: `~${estimatedTxCostUsd.eth} ETH`,
-              }
-            : undefined,
-        opportunityName: opportunity.token || 'Liquid Staking',
-      };
-
-      if (txHash) {
-        posthog?.capture('Earn Transaction Succeeded', {
-          page: 'Earn',
-          section: 'Action Panel',
-          category: OpportunityCategory.LiquidStaking,
-          action: selectedAction,
-          opportunityId: opportunity.id,
-          opportunityName: opportunity.name,
-          protocol: opportunity.protocol,
-          chainId: requestChainId,
-          transactionHash: txHash,
-          walletConnected: isConnected,
-          inputToken: inputTokenSymbol,
-          inputAmountRaw,
-          outputToken: historyTokenSymbol,
-          outputAmountRaw: hasReceiveAmount ? historyAmountRaw : undefined,
-          slippagePercent,
-        });
-      }
-
-      // Add transaction to history cache (optimistic update)
-      if (walletAddress && txHash) {
-        const newTransaction: StandardTransactionHistory = {
-          timestamp,
-          eventType: selectedAction === 'buy' ? 'buy' : 'sell',
-          assetAmountRaw: historyAmountRaw,
-          assetSymbol: historyTokenSymbol,
-          decimals: historyTokenDecimals,
-          assetLogo: historyAssetLogo,
-          inputAssetAmountRaw: inputAmountRaw,
-          inputAssetSymbol: inputTokenSymbol,
-          inputAssetDecimals: inputTokenDecimals,
-          inputAssetLogo,
-          outputAssetAmountRaw: hasReceiveAmount ? historyAmountRaw : undefined,
-          outputAssetSymbol: hasReceiveAmount ? historyTokenSymbol : undefined,
-          outputAssetDecimals: hasReceiveAmount ? historyTokenDecimals : undefined,
-          outputAssetLogo: hasReceiveAmount ? historyAssetLogo : undefined,
-          chainId: txChainId,
-          transactionHash: txHash,
-        };
-
-        await addTransaction({
-          vendor: Vendor.LiFi,
-          transaction: newTransaction,
-        });
-      }
-
-      // Show transaction details popup after receipt is confirmed (with tick animation)
-      if (txHash) {
-        showTransactionDetails(transactionDetails, true);
-      }
+  const handleTransactionSuccess = useLiquidStakingTransactionSuccess({
+    submittedAmountRaw: amountInRawUnits,
+    selectedAction,
+    currentSymbol,
+    currentDecimals,
+    currentActionValues,
+    outputTokenSymbol,
+    outputTokenIcon: opportunity.tokenIcon,
+    selectedSellToken,
+    quoteReceiveAmount: transactionQuote?.receiveAmount,
+    requestChainId,
+    opportunity: {
+      id: opportunity.id,
+      name: opportunity.name,
+      token: opportunity.token,
+      tokenIcon: opportunity.tokenIcon,
+      protocol: opportunity.protocol,
+      protocolIcon: opportunity.protocolIcon,
     },
-    [
-      amountInRawUnits,
-      currentDecimals,
-      selectedAction,
-      currentSymbol,
-      outputTokenSymbol,
-      opportunity.tokenIcon,
-      opportunity.name,
-      opportunity.protocol,
-      opportunity.protocolIcon,
-      opportunity.token,
-      opportunity.id,
-      walletAddress,
-      selectedBuyToken,
-      selectedSellToken,
-      refetchEthBalance,
-      refetchErc20Balance,
-      refetchUserBalance,
-      selectedTokenAddress,
-      requestChainId,
-      transactionQuote?.receiveAmount,
-      estimatedTxCostUsd,
-      isConnected,
-      posthog,
-      showTransactionDetails,
-      slippagePercent,
-      addTransaction,
-    ],
-  );
+    estimatedTxCostUsd,
+    isConnected,
+    walletAddress: walletAddress || undefined,
+    slippagePercent,
+    addTransaction,
+    showTransactionDetails,
+    refetchEthBalance,
+    refetchErc20Balance,
+    refetchUserBalance,
+    resetAmount: () => setAmount(''),
+  });
 
   // Build transaction calls from API response (simplified - no client-side approval checks)
   const buildBatchCalls = useCallback(async (): Promise<TransactionCall[]> => {
@@ -583,12 +506,10 @@ export function LiquidStakingActionPanel({
   }, [transferReadiness.isReady, transactionQuote, walletAddress, checkAndShowToS, executeTx]);
 
   const handleMaxClick = () => {
-    const isNativeBuy =
-      selectedAction === 'buy' && selectedBuyToken?.address === constants.AddressZero;
     const maxAmount = getMaxAmountWithGasBuffer({
-      balanceRaw: currentBalanceRaw,
+      balanceRaw: currentActionValues.balanceRaw,
       decimals: currentDecimals,
-      isNativeAsset: Boolean(isNativeBuy),
+      isNativeAsset: selectedAction === 'buy' && currentActionValues.isNativeAsset,
       estimatedGasEth: estimatedTxCostUsd?.eth,
     });
     setAmount(maxAmount);
@@ -696,13 +617,13 @@ export function LiquidStakingActionPanel({
     }
   }, []);
 
-  const currentBalanceFormatted = formatAmount(currentBalanceRaw, {
+  const currentBalanceFormatted = formatAmount(currentActionValues.balanceRaw, {
     decimals: currentDecimals,
     symbol: currentSymbol,
   });
   const currentBalanceAmount = useMemo(
-    () => Number(utils.formatUnits(currentBalanceRaw, currentDecimals)),
-    [currentBalanceRaw, currentDecimals],
+    () => Number(utils.formatUnits(currentActionValues.balanceRaw, currentDecimals)),
+    [currentActionValues.balanceRaw, currentDecimals],
   );
   const inputTokenUnitUsd = useMemo(() => {
     if (selectedAction === 'sell') {
@@ -865,7 +786,6 @@ export function LiquidStakingActionPanel({
         currentUsdValue={currentUsdValue}
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
-        decimals={currentDecimals}
         validationError={
           routeError?.message ||
           (transferReadiness.errorMessage
@@ -880,7 +800,7 @@ export function LiquidStakingActionPanel({
       <EarnReceiveAmountSection
         label="You will receive"
         amount={receiveAmountDisplay}
-        isLoading={routeLoading}
+        isLoading={isLoading}
         token={{
           symbol: selectedAction === 'buy' ? outputTokenSymbol : selectedSellToken?.symbol || 'ETH',
           logoUrl: selectedAction === 'buy' ? opportunity.tokenIcon : selectedSellToken?.logoUrl,
@@ -924,7 +844,7 @@ export function LiquidStakingActionPanel({
         isSubmitting={isExecuting}
         disabled={
           !transferReadiness.isReady ||
-          routeLoading ||
+          isLoading ||
           !transactionQuote ||
           transferReadiness.isLoading
         }
