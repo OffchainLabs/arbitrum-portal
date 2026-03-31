@@ -51,7 +51,7 @@ jobs:
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash
-        run: yarn build
+        run: pnpm build
         env:
           NEXT_PUBLIC_IS_E2E_TEST: true
           NEXT_PUBLIC_RPC_PROVIDER: alchemy

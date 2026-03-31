@@ -63,7 +63,7 @@ jobs:
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Start UI and Test
-        run: yarn start-server-and-test 'start' http://127.0.0.1:3000 'yarn test:ci'
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:ci'
 
   audit:
     name: 'Audit'
@@ -81,7 +81,7 @@ jobs:
         uses: OffchainLabs/actions/node-modules/install@main
 
       - name: Run audit
-        run: yarn audit:ci
+        run: pnpm audit:ci
 
   check-formatting:
     name: 'Check Formatting'
@@ -104,12 +104,12 @@ jobs:
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Check formatting with Prettier
-        run: yarn prettier:check
+        run: pnpm prettier:check
 
       - name: Check formatting with ESLint
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
-        run: yarn lint
+        run: pnpm lint
 
   e2e-tests:
     name: 'E2E Tests'

@@ -1,4 +1,5 @@
 // @ts-check type next.config.js
+const path = require('path');
 
 /**
  * @type {import('next').NextConfig}
@@ -13,6 +14,17 @@ module.exports = {
   },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
+    // pnpm's strict isolation can cause packages to resolve their own copy
+    // of context-dependent libraries, breaking React context sharing.
+    // Force all imports to the single hoisted copy in the root node_modules.
+    /** @param {string} pkg */
+    const hoisted = (pkg) => path.resolve(__dirname, '../../node_modules', pkg);
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@tanstack/react-query': hoisted('@tanstack/react-query'),
+      'overmind-react': hoisted('overmind-react'),
+      overmind: hoisted('overmind'),
+    };
     return config;
   },
   images: {

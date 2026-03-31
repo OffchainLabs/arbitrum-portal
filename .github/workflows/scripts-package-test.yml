@@ -51,4 +51,4 @@ jobs:
         uses: OffchainLabs/actions/node-modules/install@main
 
       - name: Run scripts tests
-        run: yarn workspace scripts test
+        run: pnpm --filter scripts test

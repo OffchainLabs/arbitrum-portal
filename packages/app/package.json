@@ -34,9 +34,9 @@
     "tailwindcss": "^3.4.16"
   },
   "scripts": {
-    "predev": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
+    "predev": "pnpm --filter portal fetch:data && pnpm --filter arb-token-bridge-ui generateDenylist && pnpm run css:build",
     "dev": "next dev",
-    "prebuild": "yarn workspace portal fetch:data && yarn workspace arb-token-bridge-ui generateDenylist && yarn css:build",
+    "prebuild": "pnpm --filter portal fetch:data && pnpm --filter arb-token-bridge-ui generateDenylist && pnpm run css:build",
     "build": "next build",
     "start": "next start",
     "css:build": "tailwindcss -c ./tailwind.config.js -i ./src/app.css -o ./src/styles/common.css --minify",
