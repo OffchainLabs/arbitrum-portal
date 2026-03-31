@@ -1,3 +1,4 @@
+import type { LiFiStep, TransactionRequest as LiFiTransactionRequest } from '@lifi/sdk';
 import { Address, PublicClient, encodeFunctionData, erc20Abi, getAddress, zeroAddress } from 'viem';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -5,33 +6,14 @@ import { addressesEqual } from '@/bridge/util/AddressUtils';
 
 import type { TransactionStep } from '../types';
 
-type LifiQuoteStep = {
-  action: {
-    fromToken: { symbol: string };
-    toToken: { symbol: string };
-  };
-  estimate: {
-    gasCosts?: Array<{ estimate?: string; amountUSD?: string | number | null }>;
-    feeCosts?: Array<{ amountUSD?: string | number | null }>;
-    toAmount: string;
-    fromAmountUSD?: string | number | null;
-    toAmountUSD?: string | number | null;
-  };
-};
-
-type LifiTransactionRequest = {
-  to: string;
-  data: string;
-  value?: string;
-};
-
 type LifiQuoteBuildParams = {
   amount: string;
   inputTokenAddress: string;
   userAddress?: string;
   publicClient: PublicClient;
-  step: LifiQuoteStep;
-  transactionRequest: LifiTransactionRequest;
+  step: LiFiStep;
+  transactionRequest: Required<Pick<LiFiTransactionRequest, 'to' | 'data'>> &
+    Pick<LiFiTransactionRequest, 'value'>;
 };
 
 type LifiQuoteBuildResult = {
@@ -104,7 +86,7 @@ async function buildTransactionSteps({
   return transactionSteps;
 }
 
-function buildQuoteMetrics(step: LifiQuoteStep): Omit<LifiQuoteBuildResult, 'transactionSteps'> {
+function buildQuoteMetrics(step: LiFiStep): Omit<LifiQuoteBuildResult, 'transactionSteps'> {
   const gasCosts = step.estimate.gasCosts?.[0];
   const estimatedGas = gasCosts?.estimate || '0';
   const estimatedGasUsd = String(Number(gasCosts?.amountUSD ?? 0));

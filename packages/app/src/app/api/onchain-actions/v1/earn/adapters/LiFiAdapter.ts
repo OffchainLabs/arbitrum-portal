@@ -413,9 +413,9 @@ export class LiFiAdapter implements VendorAdapter {
         apyBreakdown: opp.apyBreakdown,
       },
       name: opp.name,
-      tokenIcon: opp.tokenIcon || '',
+      tokenIcon: opp.tokenIcon,
       tokenNetwork: opp.tokenNetwork || 'Arbitrum One',
-      protocolIcon: opp.protocolIcon || '',
+      protocolIcon: opp.protocolIcon,
     };
   }
 }

@@ -18,7 +18,7 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 
 ### `packages/arb-token-bridge-ui/src/util/NumberUtils.ts`
 
-- [ ] `3000035029` at `:179`: reviewer asked to reuse `truncateExtraDecimals` instead of duplicating similar trimming logic.  
+- [x] `3000035029` at `:179`: reviewer asked to reuse `truncateExtraDecimals` instead of duplicating similar trimming logic. Addressed in working tree by having `normalizeAmountForParseUnits` reuse `truncateExtraDecimals`.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000035029>
 
 ### `packages/arb-token-bridge-ui/src/app/api/crosschain-transfers/lifi.ts`
@@ -91,12 +91,12 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000668730>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r2866001670>
 - [x] `3000669486` at `:85`: `bump` on older thread `2866010329`. Underlying ask: the adapter should not call `getLifiRoutes` directly; reviewer wants this to go through the API path. Resolved for this PR by deciding not to introduce internal API-to-API calls and by keeping the existing helper abstraction until shared service extraction is done in follow-up work.  
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000669486>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r2866010329>
-- [ ] `3000712922` at `:416`: reviewer thinks this code is unnecessary and should be removed.  
+- [x] `3000712922` at `:416`: reviewer thinks this code is unnecessary and should be removed. Addressed in working tree by dropping the unnecessary empty-string fallbacks for optional LiFi icon fields in `transformToStandard`.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000712922>
 
 ### `packages/app/src/app/api/onchain-actions/v1/earn/lib/lifiQuote.ts`
 
-- [ ] `3000716935` at `:8`: `bump` on older thread `2866087113`. Underlying ask: reuse the existing similar type instead of creating a new one here.  
+- [x] `3000716935` at `:8`: `bump` on older thread `2866087113`. Underlying ask: reuse the existing similar type instead of creating a new one here. Addressed in working tree by reusing LiFi SDK types in `lifiQuote.ts` instead of maintaining local duplicate shapes.  
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000716935>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r2866087113>
 
 ### `packages/app/src/app/api/onchain-actions/v1/earn/lib/lifiTransactions.ts`

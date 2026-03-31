@@ -178,12 +178,6 @@ export const truncateExtraDecimals = (amount: string, decimals: number) => {
  */
 export const normalizeAmountForParseUnits = (amount: string, decimals: number): string => {
   if (!amount || parseFloat(amount) <= 0) return '0';
-  const parts = amount.split('.');
-  if (parts.length === 1) return amount; // No decimal point
-  const integerPart = parts[0] ?? '';
-  const fractionalPart = parts[1];
-  if (!fractionalPart) return integerPart;
-  // Truncate fractional part to max decimals
-  const normalizedFractional = fractionalPart.slice(0, decimals);
-  return normalizedFractional ? `${integerPart}.${normalizedFractional}` : integerPart;
+  const normalizedAmount = truncateExtraDecimals(amount, decimals);
+  return normalizedAmount.endsWith('.') ? normalizedAmount.slice(0, -1) : normalizedAmount;
 };
