@@ -42,13 +42,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: 'pnpm'
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
 
       - name: Run scripts tests
-        run: yarn workspace scripts test
+        run: pnpm --filter scripts test

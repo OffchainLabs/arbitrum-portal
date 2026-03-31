@@ -63,10 +63,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: 'pnpm'
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
@@ -75,7 +79,7 @@ jobs:
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Install cypress
-        run: yarn cypress install
+        run: pnpm cypress install
 
       - name: Install linux dependencies
         run: |
@@ -111,15 +115,15 @@ jobs:
       - name: Run e2e tests via cypress-io/github-action
         uses: cypress-io/github-action@0da3c06ed8217b912deea9d8ee69630baed1737e # pin@v6.7.6
         with:
-          start: yarn start
+          start: pnpm start
           command: >-
             ${{
-              (matrix.test.type == 'orbit-eth') && 'yarn test:e2e:orbit' ||
-              (matrix.test.type == 'orbit-custom-6dec' && 'yarn test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-18dec' && 'yarn test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-20dec' && 'yarn test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'cctp' && 'yarn test:e2e:cctp') ||
-              'yarn test:e2e'
+              (matrix.test.type == 'orbit-eth') && 'pnpm test:e2e:orbit' ||
+              (matrix.test.type == 'orbit-custom-6dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
+              (matrix.test.type == 'orbit-custom-18dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
+              (matrix.test.type == 'orbit-custom-20dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
+              (matrix.test.type == 'cctp' && 'pnpm test:e2e:cctp') ||
+              'pnpm test:e2e'
             }}
           wait-on: http://127.0.0.1:3000
           wait-on-timeout: 120

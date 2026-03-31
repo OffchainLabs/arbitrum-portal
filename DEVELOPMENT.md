@@ -1,7 +1,7 @@
 ## Prerequisites
 
 - Install [Node.js](https://nodejs.org/en/download/).
-- Install [Yarn (version 1)](https://classic.yarnpkg.com).
+- Install [pnpm](https://pnpm.io/installation).
 - Use a Node version manager (like `nvm`) to ensure your Node version is compatible with project requirements in `.nvmrc` to avoid installation errors.
 
 ## Repository Structure
@@ -24,13 +24,13 @@ This repository contains the **Arbitrum Portal** - a Next.js application that co
 2. Install dependencies:
 
    ```bash
-   $ yarn
+   $ pnpm install
    ```
 
 3. Run the application:
 
    ```bash
-   $ yarn dev
+   $ pnpm dev
    ```
 
 4. Visit `http://localhost:3000/`
@@ -73,7 +73,7 @@ The Bridge app requires environment variables for full functionality:
 
 ```bash
 # Run Unit tests in watch mode
-$ yarn workspace arb-token-bridge-ui test
+$ pnpm --filter arb-token-bridge-ui test
 ```
 
 #### E2E Tests
@@ -114,11 +114,11 @@ E2E tests are only available for the Bridge app and require a local Nitro test n
 
    ```bash
    # Standard Bridge E2E tests
-   $ yarn test:e2e
+   $ pnpm test:e2e
 
    # Orbit chain tests
-   $ yarn test:e2e:orbit
+   $ pnpm test:e2e:orbit
 
    # CCTP Bridging tests
-   $ yarn test:e2e:cctp
+   $ pnpm test:e2e:cctp
    ```

@@ -1,5 +1,4 @@
 import { Chain, connectorsForWallets, getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { _chains } from '@rainbow-me/rainbowkit/dist/config/getDefaultConfig';
 import {
   binanceWallet,
   coinbaseWallet,
@@ -146,7 +145,7 @@ function getChains(targetChainKey: TargetChainKey) {
   const target = chainList.filter((chain) => chain.id === targetChainId);
   const others = chainList.filter((chain) => chain.id !== targetChainId);
 
-  return [...target, ...others] as unknown as _chains;
+  return [...target, ...others] as unknown as readonly [Chain, ...Chain[]];
 }
 
 let cachedProps: ReturnType<typeof createConfig>;
