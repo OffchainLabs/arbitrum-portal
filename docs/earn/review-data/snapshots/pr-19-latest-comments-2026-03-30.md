@@ -18,7 +18,7 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 
 ### `packages/arb-token-bridge-ui/src/util/NumberUtils.ts`
 
-- [x] `3000035029` at `:179`: reviewer asked to reuse `truncateExtraDecimals` instead of duplicating similar trimming logic. Addressed in working tree by having `normalizeAmountForParseUnits` reuse `truncateExtraDecimals`.  
+- [x] `3000035029` at `:179`: reviewer asked to reuse `truncateExtraDecimals` instead of duplicating similar trimming logic. Addressed in working tree by deleting the unused `normalizeAmountForParseUnits` helper and keeping `truncateExtraDecimals` as the shared util.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000035029>
 
 ### `packages/arb-token-bridge-ui/src/app/api/crosschain-transfers/lifi.ts`
