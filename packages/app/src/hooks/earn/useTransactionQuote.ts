@@ -132,8 +132,10 @@ export function useTransactionQuote({
       return (await response.json()) as TransactionQuoteResponse;
     },
     {
+      refreshInterval: 20_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      keepPreviousData: true,
       errorRetryCount: 2,
     },
   );

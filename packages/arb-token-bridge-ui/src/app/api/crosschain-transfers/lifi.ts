@@ -296,10 +296,6 @@ function getIntegratorId(request: NextRequest): string {
   return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
 }
 
-/**
- * Get LiFi routes for a swap/transfer
- * Reusable function for getting routes from LiFi SDK
- */
 export async function getLifiRoutes(params: {
   fromChainId: number;
   toChainId: number;
@@ -343,6 +339,7 @@ export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
   const integratorId = getIntegratorId(request);
+
   configureLifiSdk(integratorId);
 
   const { searchParams } = new URL(request.url);
@@ -409,7 +406,16 @@ export async function GET(
       );
     }
 
-    // Build options for getRoutes
+    const parameters: RoutesRequest = {
+      fromAddress,
+      fromAmount,
+      fromTokenAddress: fromToken,
+      fromChainId: Number(fromChainId),
+      toChainId: Number(toChainId),
+      toTokenAddress: toToken,
+      toAddress,
+    };
+
     const options: RoutesRequest['options'] = {
       integrator: integratorId,
       allowSwitchChain: false,
@@ -430,17 +436,7 @@ export async function GET(
       };
     }
 
-    // Use getRoutes directly since we need bridge/exchange options
-    const { routes } = await getRoutes({
-      fromAddress,
-      fromChainId: Number(fromChainId),
-      toChainId: Number(toChainId),
-      fromTokenAddress: fromToken,
-      toTokenAddress: toToken,
-      fromAmount,
-      toAddress,
-      options,
-    });
+    const { routes } = await getRoutes({ ...parameters, options });
 
     const filteredRoutes = routes
       .filter((route) => route.steps.length === 1)

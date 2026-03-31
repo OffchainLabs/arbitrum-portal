@@ -57,24 +57,6 @@ export class LiFiAdapter implements VendorAdapter {
     });
   }
 
-  private isRouteRefreshError(error: unknown): boolean {
-    const message = error instanceof Error ? error.message : String(error);
-    const maybeError = error as
-      | {
-          status?: number;
-          response?: { status?: number };
-        }
-      | undefined;
-    const status = maybeError?.status ?? maybeError?.response?.status;
-
-    return (
-      status === 422 ||
-      /unprocessable entity/i.test(message) ||
-      /market conditions have changed/i.test(message) ||
-      /request a new route/i.test(message)
-    );
-  }
-
   private async getQuoteStepWithTransaction(params: {
     inputTokenAddress: string;
     outputTokenAddress: string;
@@ -82,63 +64,45 @@ export class LiFiAdapter implements VendorAdapter {
     userAddress?: string;
     slippage: number;
   }) {
-    const fetchQuoteStep = async () => {
-      const routes = await getLifiRoutes({
-        fromChainId: ChainId.ArbitrumOne,
-        toChainId: ChainId.ArbitrumOne,
-        fromTokenAddress: params.inputTokenAddress,
-        toTokenAddress: params.outputTokenAddress,
-        fromAmount: params.amount,
-        fromAddress: params.userAddress,
-        slippage: params.slippage / 100,
-        integrator: LIFI_INTEGRATOR_IDS.NORMAL,
-      });
+    const routes = await getLifiRoutes({
+      fromChainId: ChainId.ArbitrumOne,
+      toChainId: ChainId.ArbitrumOne,
+      fromTokenAddress: params.inputTokenAddress,
+      toTokenAddress: params.outputTokenAddress,
+      fromAmount: params.amount,
+      fromAddress: params.userAddress,
+      slippage: params.slippage / 100,
+      integrator: LIFI_INTEGRATOR_IDS.NORMAL,
+    });
+    if (!routes || routes.length === 0) {
+      throw new Error('No routes found');
+    }
 
-      if (!routes || routes.length === 0) {
-        throw new Error('No routes found');
-      }
+    const quote = routes[0];
+    if (!quote) {
+      throw new Error('Route is undefined');
+    }
 
-      const quote = routes[0];
-      if (!quote) {
-        throw new Error('Route is undefined');
-      }
+    const step = quote.steps[0];
+    if (!step) {
+      throw new Error('Route step is undefined');
+    }
 
-      const step = quote.steps[0];
-      if (!step) {
-        throw new Error('Route step is undefined');
-      }
+    const { transactionRequest } = await getStepTransaction(step);
+    const to = transactionRequest?.to;
+    const data = transactionRequest?.data;
+    if (!to || !data) {
+      throw new Error('No transaction request found');
+    }
 
-      const { transactionRequest } = await getStepTransaction(step);
-      const to = transactionRequest?.to;
-      const data = transactionRequest?.data;
-      if (!to || !data) {
-        throw new Error('No transaction request found');
-      }
-
-      return {
-        step,
-        transactionRequest: {
-          to,
-          data,
-          value: transactionRequest?.value,
-        },
-      };
+    return {
+      step,
+      transactionRequest: {
+        to,
+        data,
+        value: transactionRequest?.value,
+      },
     };
-
-    try {
-      return await fetchQuoteStep();
-    } catch (error) {
-      if (!this.isRouteRefreshError(error)) {
-        throw error instanceof Error ? error : new Error('Failed to get transaction quote');
-      }
-    }
-
-    // Retry once if the route expired due to market changes
-    try {
-      return await fetchQuoteStep();
-    } catch {
-      throw new Error('Quote expired due to market changes. Please try again.');
-    }
   }
 
   async getOpportunities(filters: OpportunityFilters): Promise<StandardOpportunity[]> {

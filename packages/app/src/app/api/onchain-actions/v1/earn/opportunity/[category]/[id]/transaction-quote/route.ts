@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
@@ -150,30 +149,7 @@ export async function GET(
       slippage: parseOptionalNumberQuery(url.searchParams.get('slippage')),
       simulate: parseOptionalBooleanQuery(url.searchParams.get('simulate')),
     };
-
-    const rateLimitKey = `quote-rl:${params.category}:${params.id}:${[
-      quoteInput.action,
-      quoteInput.amount,
-      quoteInput.chainId,
-      quoteInput.userAddress,
-      quoteInput.inputTokenAddress,
-      quoteInput.outputTokenAddress,
-      quoteInput.slippage,
-      quoteInput.simulate,
-      quoteInput.rolloverTargetOpportunityId,
-      quoteInput.rolloverAmount,
-    ].join(':')}`;
-
-    const getRateLimitedQuote = unstable_cache(
-      async () => getTransactionQuote(quoteInput),
-      [rateLimitKey],
-      {
-        revalidate: 10,
-        tags: ['transaction-quote-rl', rateLimitKey],
-      },
-    );
-
-    const quote = await getRateLimitedQuote();
+    const quote = await getTransactionQuote(quoteInput);
 
     return NextResponse.json(quote, {
       headers: {
