@@ -23,7 +23,7 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 
 ### `packages/arb-token-bridge-ui/src/app/api/crosschain-transfers/lifi.ts`
 
-- [ ] `3000045925` at `:1`: reviewer questioned whether this file needs any changes at all. Current decision: keep the reusable `getLifiRoutes` abstraction for this PR and avoid switching earn over to an internal API-to-API call. Shared service extraction is deferred to follow-up work.  
+- [x] `3000045925` at `:1`: reviewer questioned whether this file needs any changes at all. Resolved for this PR by keeping the reusable `getLifiRoutes` abstraction and explicitly not switching earn over to an internal API-to-API call. Shared service extraction is deferred to follow-up work.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000045925>
 
 ### `packages/app/src/lib/earn/utils.ts`
@@ -89,7 +89,7 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 
 - [x] `3000668730` at `:60`: `bump` on older thread `2866001670`. Underlying ask: quote refresh cadence should prevent the quote-expiry errors seen here. Addressed in working tree by removing the route-level cache and adding periodic SWR quote refresh while the user has an active quote.  
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000668730>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r2866001670>
-- [ ] `3000669486` at `:85`: `bump` on older thread `2866010329`. Underlying ask: the adapter should not call `getLifiRoutes` directly; reviewer wants this to go through the API path. Current decision: do not introduce internal API-to-API calls in this PR; keep the existing helper abstraction for now and move to a shared service layer in follow-up work.  
+- [x] `3000669486` at `:85`: `bump` on older thread `2866010329`. Underlying ask: the adapter should not call `getLifiRoutes` directly; reviewer wants this to go through the API path. Resolved for this PR by deciding not to introduce internal API-to-API calls and by keeping the existing helper abstraction until shared service extraction is done in follow-up work.  
   Links: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000669486>, <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r2866010329>
 - [ ] `3000712922` at `:416`: reviewer thinks this code is unnecessary and should be removed.  
   Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#discussion_r3000712922>
