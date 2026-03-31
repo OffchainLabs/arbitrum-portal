@@ -366,7 +366,6 @@ export function LiquidStakingActionPanel({
       ),
     [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
-
   const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
     chainId: opportunity.chainId,
@@ -787,7 +786,7 @@ export function LiquidStakingActionPanel({
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
         validationError={
-          routeError?.message ||
+          (isConnected ? routeError?.message : null) ||
           (transferReadiness.errorMessage
             ? typeof transferReadiness.errorMessage === 'string'
               ? transferReadiness.errorMessage

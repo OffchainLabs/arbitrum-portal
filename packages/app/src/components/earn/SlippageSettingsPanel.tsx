@@ -34,6 +34,7 @@ export function SlippageSettingsPanel({
   }, [slippagePercent]);
 
   const isSlippageValid = Number.isFinite(draft) && draft >= SLIPPAGE_MIN && draft <= SLIPPAGE_MAX;
+  const activePreset = customInput === '' && isPreset(draft) ? draft : null;
 
   const handleUpdate = useCallback(() => {
     if (!isSlippageValid) return;
@@ -96,7 +97,7 @@ export function SlippageSettingsPanel({
                   setCustomInput('');
                 }}
                 className={`rounded border px-3 py-2 text-center flex items-center justify-center text-xs font-medium ${
-                  isPreset(draft) && draft === p
+                  activePreset === p
                     ? 'border-white bg-neutral-200 text-white'
                     : 'border-neutral-200 bg-neutral-50 text-white hover:border-neutral-250'
                 }`}
@@ -117,7 +118,7 @@ export function SlippageSettingsPanel({
                 min={SLIPPAGE_MIN}
                 max={SLIPPAGE_MAX}
                 step={0.1}
-                value={isPreset(draft) ? '' : customInput}
+                value={customInput}
                 onChange={handleInputChange}
                 placeholder="Custom"
                 className="w-full min-w-0 border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

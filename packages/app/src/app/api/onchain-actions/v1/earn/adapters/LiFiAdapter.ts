@@ -13,7 +13,7 @@ import {
 } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { fetchLifiUserPositions } from '../lib/lifiPositions';
-import { buildLifiQuoteData } from '../lib/lifiQuote';
+import { buildLifiQuoteData, buildLifiQuotePreviewData } from '../lib/lifiQuote';
 import { toStandardTransactionHistory } from '../lib/lifiTransactions';
 import {
   LIQUID_STAKING_OPPORTUNITIES,
@@ -57,7 +57,7 @@ export class LiFiAdapter implements VendorAdapter {
     });
   }
 
-  private async getQuoteStepWithTransaction(params: {
+  private async getQuoteStep(params: {
     inputTokenAddress: string;
     outputTokenAddress: string;
     amount: string;
@@ -87,6 +87,18 @@ export class LiFiAdapter implements VendorAdapter {
     if (!step) {
       throw new Error('Route step is undefined');
     }
+
+    return { step };
+  }
+
+  private async getQuoteStepWithTransaction(params: {
+    inputTokenAddress: string;
+    outputTokenAddress: string;
+    amount: string;
+    userAddress?: string;
+    slippage: number;
+  }) {
+    const { step } = await this.getQuoteStep(params);
 
     const { transactionRequest } = await getStepTransaction(step);
     const to = transactionRequest?.to;
@@ -310,7 +322,32 @@ export class LiFiAdapter implements VendorAdapter {
       );
     }
 
-    const { step, transactionRequest } = await this.getQuoteStepWithTransaction({
+    const { step } = await this.getQuoteStep({
+      inputTokenAddress,
+      outputTokenAddress,
+      amount,
+      userAddress,
+      slippage,
+    });
+
+    if (!userAddress) {
+      const { transactionSteps, estimatedGas, estimatedGasUsd, receiveAmount, priceImpact } =
+        buildLifiQuotePreviewData(step);
+
+      return {
+        opportunityId: id,
+        vendor: Vendor.LiFi,
+        action: 'swap',
+        canExecute: false,
+        estimatedGas,
+        estimatedGasUsd,
+        receiveAmount,
+        priceImpact,
+        transactionSteps,
+      };
+    }
+
+    const { transactionRequest } = await this.getQuoteStepWithTransaction({
       inputTokenAddress,
       outputTokenAddress,
       amount,

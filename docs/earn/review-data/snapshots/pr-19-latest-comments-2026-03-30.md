@@ -111,3 +111,8 @@ Window: comments created at or after `2026-03-26T12:06:12Z`
 - Start with the focused correctness and cleanup items outside `LiquidStakingActionPanel`.
 - Then handle the `LiquidStakingActionPanel` comments in one pass, because many of them overlap on component shape and state ownership.
 - Treat the three `bump` replies as still-open escalations on older threads, not as new standalone asks.
+
+## Later Follow-up
+
+- [x] Issue comment `4142295658`: disconnected liquid-staking flow was surfacing a raw LiFi `fromAddress` error, and custom slippage input was still broken for values starting with a preset prefix. Addressed in working tree by returning preview quotes without executable step data when `userAddress` is missing, and by preserving custom slippage input instead of clearing it when it temporarily matches a preset prefix.  
+  Link: <https://github.com/OffchainLabs/arbitrum-portal-private/pull/19#issuecomment-4142295658>

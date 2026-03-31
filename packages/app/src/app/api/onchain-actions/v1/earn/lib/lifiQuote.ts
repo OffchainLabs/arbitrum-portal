@@ -123,3 +123,10 @@ export async function buildLifiQuoteData(
     transactionSteps,
   };
 }
+
+export function buildLifiQuotePreviewData(step: LiFiStep): LifiQuoteBuildResult {
+  return {
+    ...buildQuoteMetrics(step),
+    transactionSteps: [],
+  };
+}
