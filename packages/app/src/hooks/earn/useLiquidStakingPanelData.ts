@@ -27,6 +27,7 @@ interface UseLiquidStakingPanelDataParams {
   opportunity: OpportunityTableRow;
   selectedAction: LiquidStakingAction;
   amount: string;
+  onAmountChange: (amount: string) => void;
   selectedBuyToken: EarnTokenOption;
   selectedSellToken: EarnTokenOption;
   swapTokenOptions: EarnTokenOption[];
@@ -57,6 +58,7 @@ export function useLiquidStakingPanelData({
   opportunity,
   selectedAction,
   amount,
+  onAmountChange,
   selectedBuyToken,
   selectedSellToken,
   swapTokenOptions,
@@ -196,12 +198,14 @@ export function useLiquidStakingPanelData({
       : undefined;
 
   const handleMaxClick = () =>
-    getMaxAmountWithGasBuffer({
-      balanceRaw: currentActionValues.balanceRaw,
-      decimals: currentActionValues.decimals,
-      isNativeAsset: selectedAction === 'buy' && currentActionValues.isNativeAsset,
-      estimatedGasEth: estimatedTxCostUsd?.eth,
-    });
+    onAmountChange(
+      getMaxAmountWithGasBuffer({
+        balanceRaw: currentActionValues.balanceRaw,
+        decimals: currentActionValues.decimals,
+        isNativeAsset: selectedAction === 'buy' && currentActionValues.isNativeAsset,
+        estimatedGasEth: estimatedTxCostUsd?.eth,
+      }),
+    );
 
   return {
     hasPosition,

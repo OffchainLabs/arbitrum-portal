@@ -253,6 +253,7 @@ export function LiquidStakingActionPanel({
     opportunity,
     selectedAction: controls.selectedAction,
     amount: controls.amount,
+    onAmountChange: controls.onAmountChange,
     selectedBuyToken: controls.selectedBuyToken,
     selectedSellToken: controls.selectedSellToken,
     swapTokenOptions: SWAP_TOKEN_OPTIONS,
