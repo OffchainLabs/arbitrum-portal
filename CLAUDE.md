@@ -96,7 +96,7 @@ See `tsconfig.base.json` for the full list.
 - **App-only migration**: The `portal` and `arb-token-bridge-ui` packages are being consolidated into `packages/app/`. All new features go in `packages/app/`.
 - **Reuse existing utilities and patterns first**: Before adding new logic, search the codebase for existing helpers, utilities, and established patterns, and reuse them whenever possible.
   - Check for existing validation logic before adding new validations.
-  - Check for existing address helpers before comparing addresses directly, for example `addressEqual`.
+  - Check for existing address helpers before comparing addresses directly, for example `addressesEqual()`.
   - Check for existing input sanitization or normalization utilities before adding new sanitization code.
   - Check for existing helper modules for recurring logic, for example `NumberUtils.ts`.
   - Follow existing data-fetching and caching patterns, including SWR where the codebase already uses it. All variables within SWR fetcher should come from the key. Key should have an identifier string (at the end of the array)
