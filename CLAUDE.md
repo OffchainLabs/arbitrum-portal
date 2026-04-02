@@ -99,5 +99,5 @@ See `tsconfig.base.json` for the full list.
   - Check for existing address helpers before comparing addresses directly, for example `addressEqual`.
   - Check for existing input sanitization or normalization utilities before adding new sanitization code.
   - Check for existing helper modules for recurring logic, for example `NumberUtils.ts`.
-  - Follow existing data-fetching and caching patterns, including SWR where the codebase already uses it.
+  - Follow existing data-fetching and caching patterns, including SWR where the codebase already uses it. All variables within SWR fetcher should come from the key. Key should have an identifier string (at the end of the array)
   - Follow existing numeric guard conventions, for example preferring `Number.isNaN()` over `Number.isFinite()` where applicable.
