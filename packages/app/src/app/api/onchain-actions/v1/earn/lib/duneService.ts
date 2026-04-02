@@ -354,11 +354,9 @@ function transformDuneResults(rows: Array<Record<string, unknown>>): DuneDataPoi
     allColumns,
     (n) => n === 'tvl',
     (n) => n === 'token_supply_usd',
-    (n) =>
-      n.includes('total_value') ||
-      n.includes('value_locked') ||
-      n.includes('total_deposit') ||
-      n === 'cum_deposit',
+    (n) => n === 'total_tvl',
+    (n) => n === 'cum_deposit',
+    (n) => n.includes('total_value') || n.includes('value_locked') || n.includes('total_deposit'),
   );
 
   return rows
@@ -412,6 +410,8 @@ export async function fetchDuneHistoricalData(
 ): Promise<DuneDataPoint[]> {
   try {
     const rows = await fetchLatestDuneRows(queryId);
+
+    console.log('xxxx', { queryId, rows: rows.filter((_, index) => index < 2) });
     return trimToLookback(transformDuneResults(rows), lookbackDays);
   } catch (error) {
     throw new Error(

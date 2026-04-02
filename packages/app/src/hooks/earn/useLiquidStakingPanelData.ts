@@ -118,6 +118,13 @@ export function useLiquidStakingPanelData({
     }
 
     const balanceInTokens = parseFloat(utils.formatUnits(userBalance, 18));
+    const fallbackUsdValue =
+      typeof opportunity.depositedUsd === 'number' &&
+      Number.isFinite(opportunity.depositedUsd) &&
+      opportunity.depositedUsd > 0
+        ? formatUSD(opportunity.depositedUsd)
+        : '—';
+
     return {
       amount: formatAmount(userBalance, {
         decimals: 18,
@@ -126,9 +133,9 @@ export function useLiquidStakingPanelData({
       usdValue:
         tokenPrice !== null && !Number.isNaN(balanceInTokens)
           ? formatUSD(balanceInTokens * tokenPrice)
-          : '—',
+          : fallbackUsdValue,
     };
-  }, [isConnected, outputTokenSymbol, tokenPrice, userBalance]);
+  }, [isConnected, opportunity.depositedUsd, outputTokenSymbol, tokenPrice, userBalance]);
 
   const receiveAmountDisplay = useMemo(() => {
     if (!receiveAmount) {

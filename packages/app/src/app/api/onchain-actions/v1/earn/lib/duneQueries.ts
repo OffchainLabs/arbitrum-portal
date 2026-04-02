@@ -13,7 +13,7 @@ export const DUNE_QUERY_IDS = {
 
   // Lido wstETH TVL query
   // Query: https://dune.com/queries/837989/1465113
-  // Returns: day, lido_deposited, buffer, price, TVL, TVL_avg30dd
+  // Returns: day, total_deposited, buffer, price, total_TVL
   // We use "TVL" column for TVL
   WSTETH_TVL: 837989,
 

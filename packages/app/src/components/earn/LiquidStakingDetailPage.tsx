@@ -8,6 +8,7 @@ import { useAccount, useBalance } from 'wagmi';
 
 import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
 import { useLiquidStakingTokenPrice } from '@/app-hooks/earn/useLiquidStakingTokenPrice';
+import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { formatApyBreakdown } from '@/app-lib/earn/utils';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { DialogWrapper } from '@/bridge/components/common/Dialog2';
@@ -40,6 +41,26 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
   const { address: walletAddress, isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
+  const { positionsMap } = useUserPositions(isConnected ? walletAddress : null, [requestChainId]);
+
+  const opportunityWithPosition = useMemo(() => {
+    const opportunityId = opportunity.id.toLowerCase();
+    const vaultAddress = opportunity.vaultAddress?.toLowerCase();
+    const positionData =
+      positionsMap.get(opportunityId) ||
+      (vaultAddress ? positionsMap.get(vaultAddress) : undefined);
+
+    if (!positionData) {
+      return opportunity;
+    }
+
+    return {
+      ...opportunity,
+      deposited: positionData.deposited,
+      depositedUsd: positionData.valueUsd,
+      projectedEarningsUsd: positionData.projectedEarningsUsd || null,
+    } satisfies OpportunityTableRow;
+  }, [opportunity, positionsMap]);
 
   const outputTokenAddress = isAddress(opportunity.id) ? getAddress(opportunity.id) : null;
   const { data: userBalanceData } = useBalance({
@@ -62,15 +83,15 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
     }
 
     if (
-      typeof opportunity.depositedUsd === 'number' &&
-      Number.isFinite(opportunity.depositedUsd) &&
-      opportunity.depositedUsd > 0
+      typeof opportunityWithPosition.depositedUsd === 'number' &&
+      Number.isFinite(opportunityWithPosition.depositedUsd) &&
+      opportunityWithPosition.depositedUsd > 0
     ) {
-      return formatUSD(opportunity.depositedUsd);
+      return formatUSD(opportunityWithPosition.depositedUsd);
     }
 
     return '—';
-  }, [userBalance, tokenPrice, opportunity.depositedUsd]);
+  }, [userBalance, tokenPrice, opportunityWithPosition.depositedUsd]);
 
   const historyOpportunityId = useMemo(() => {
     const initialId = (opportunity.vaultAddress || opportunity.id).toLowerCase();
@@ -262,7 +283,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
         {/* Right Column - Buy/Sell Transaction */}
         <div className="hidden lg:block space-y-4">
           <LiquidStakingActionPanel
-            opportunity={opportunity}
+            opportunity={opportunityWithPosition}
             checkAndShowToS={checkAndShowToS}
             showTransactionDetails={showTransactionDetails}
           />
@@ -282,7 +303,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             <LiquidStakingActionPanel
-              opportunity={opportunity}
+              opportunity={opportunityWithPosition}
               initialAction={selectedAction}
               hidePositionOnMobile={!!hasPosition}
               checkAndShowToS={checkAndShowToS}
