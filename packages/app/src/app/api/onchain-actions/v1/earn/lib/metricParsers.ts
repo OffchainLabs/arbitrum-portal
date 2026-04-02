@@ -4,11 +4,11 @@ export function parseOptionalNumber(rawValue: number | string | null | undefined
   }
 
   const parsed = Number(rawValue);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
 export function parseOptionalPercentage(rawValue: number | null | undefined): number | null {
-  if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
+  if (typeof rawValue !== 'number' || Number.isNaN(rawValue)) {
     return null;
   }
 
