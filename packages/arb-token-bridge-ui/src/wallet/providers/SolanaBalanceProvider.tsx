@@ -85,7 +85,9 @@ export function SolanaBalanceProvider({ children }: PropsWithChildren) {
             return;
           }
 
-          balances[tokenInfo.mint] = balances[tokenInfo.mint].add(tokenInfo.tokenAmount.amount);
+          balances[tokenInfo.mint] = (balances[tokenInfo.mint] ?? constants.Zero).add(
+            tokenInfo.tokenAmount.amount,
+          );
         });
       }
 

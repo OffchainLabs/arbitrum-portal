@@ -14,6 +14,10 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
     // pnpm's strict isolation can cause packages to resolve their own copy
     // of context-dependent libraries, breaking React context sharing.
