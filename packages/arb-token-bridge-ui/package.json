@@ -14,6 +14,7 @@
     "@moonpay/moonpay-react": "^1.10.5",
     "@offchainlabs/cobalt": "^0.5.1",
     "@reown/appkit": "^1.8.19",
+    "@reown/appkit-adapter-solana": "^1.8.1",
     "@reown/appkit-adapter-wagmi": "^1.8.19",
     "@rehooks/local-storage": "^2.4.5",
     "@sentry/react": "^9.13.0",
