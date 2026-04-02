@@ -94,3 +94,4 @@ See `tsconfig.base.json` for the full list.
 - **Minimize line churn**: Keep diffs small and focused. Avoid reformatting, reordering, or touching code unrelated to the task.
 - **Linear, small PRs**: Each PR should do one thing. Prefer multiple small PRs over one large PR.
 - **App-only migration**: The `portal` and `arb-token-bridge-ui` packages are being consolidated into `packages/app/`. All new features go in `packages/app/`.
+- **Reuse existing utilities first**: Before writing new code for any task, check the existing codebase thoroughly for reusable utilities, patterns, and helpers. Prefer existing implementations for validations, address comparisons (for example `addressEqual`), input sanitization, and similar logic (eg. NumberUtils.ts) instead of rebuilding them from scratch.
