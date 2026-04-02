@@ -7,13 +7,17 @@ export interface ActionTab {
   label: string;
 }
 
-interface EarnActionTabsProps {
-  tabs: ActionTab[];
-  selectedAction: string;
-  onActionChange: (action: string) => void;
+interface EarnActionTabsProps<T extends string> {
+  tabs: Array<ActionTab & { id: T }>;
+  selectedAction: T;
+  onActionChange: (action: T) => void;
 }
 
-export function EarnActionTabs({ tabs, selectedAction, onActionChange }: EarnActionTabsProps) {
+export function EarnActionTabs<T extends string>({
+  tabs,
+  selectedAction,
+  onActionChange,
+}: EarnActionTabsProps<T>) {
   if (!tabs || tabs.length === 0 || tabs.length === 1) return null;
 
   return (

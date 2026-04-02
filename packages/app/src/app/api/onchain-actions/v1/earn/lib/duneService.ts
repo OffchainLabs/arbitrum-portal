@@ -354,11 +354,9 @@ function transformDuneResults(rows: Array<Record<string, unknown>>): DuneDataPoi
     allColumns,
     (n) => n === 'tvl',
     (n) => n === 'token_supply_usd',
-    (n) =>
-      n.includes('total_value') ||
-      n.includes('value_locked') ||
-      n.includes('total_deposit') ||
-      n === 'cum_deposit',
+    (n) => n === 'total_tvl',
+    (n) => n === 'cum_deposit',
+    (n) => n.includes('total_value') || n.includes('value_locked') || n.includes('total_deposit'),
   );
 
   return rows

@@ -28,7 +28,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       }}
       className="!border-0 !h-[100dvh] !min-h-[100dvh] !max-h-[100dvh] !rounded-none md:!h-auto md:!min-h-0 md:!max-w-[400px] md:!rounded"
     >
-      <div className="flex h-full w-full flex-col gap-6 py-4 pb-8 md:pb-4">
+      <div className="flex h-full w-full flex-col gap-6 pt-4 pb-8 md:pt-0 md:pb-4">
         <div className="flex w-full flex-1 flex-col items-start gap-5">
           <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/5">
             <ExclamationTriangleIcon className="w-8 h-8 text-pending" />

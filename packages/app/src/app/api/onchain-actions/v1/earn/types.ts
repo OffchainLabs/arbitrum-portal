@@ -160,7 +160,7 @@ export interface TransactionQuoteRequest {
   category: OpportunityCategory;
   action: EarnTransactionAction;
   amount: string;
-  userAddress: string;
+  userAddress?: string;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;
@@ -284,7 +284,7 @@ export interface StandardUserPosition {
   vendor: Vendor;
   network: string;
   amount: string;
-  valueUsd: number;
+  valueUsd: number | null;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;

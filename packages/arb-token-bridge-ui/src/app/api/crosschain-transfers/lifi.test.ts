@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import { LifiCrosschainTransfersRoute, findCheapestRoute, findFastestRoute } from './lifi';
 
-/** Shorthand: parseEther('0.5') returns '500000000000000000' */
 const eth = (value: string) => utils.parseEther(value).toString();
 
 function createMockRoute(

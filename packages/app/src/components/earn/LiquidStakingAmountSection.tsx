@@ -1,43 +1,41 @@
 'use client';
 
 import { Button } from '@/bridge/components/common/Button';
-import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
-import { EarnActionPanelInput } from '../EarnActionPanelInput';
+import { EarnActionPanelInput } from './EarnActionPanelInput';
+import {
+  LiquidStakingTokenControl,
+  LiquidStakingTokenControl as LiquidStakingTokenControlType,
+} from './LiquidStakingTokenSelector';
 
-export interface TokenDisplay {
-  symbol: string;
-  logoUrl?: string;
-}
-
-interface EarnAmountInputSectionProps {
+interface LiquidStakingAmountSectionProps {
   amount: string;
   onAmountChange: (amount: string) => void;
   onMaxClick: () => void;
   label: string;
-  inputToken: TokenDisplay;
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
+  tokenControl: LiquidStakingTokenControlType;
 }
 
-export function EarnAmountInputSection({
+export function LiquidStakingAmountSection({
   amount,
   onAmountChange,
   onMaxClick,
   label,
-  inputToken,
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
-}: EarnAmountInputSectionProps) {
+  tokenControl,
+}: LiquidStakingAmountSectionProps) {
   const amountNumber = Number(amount);
   const currentBalanceNumeric =
     typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
@@ -73,17 +71,7 @@ export function EarnAmountInputSection({
             value={amount}
             onChange={onAmountChange}
           />
-          <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
-            <SafeImage
-              src={inputToken.logoUrl}
-              alt={`${inputToken.symbol} logo`}
-              width={20}
-              height={20}
-              className="rounded-full shrink-0"
-              fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
-            />
-            <span className="text-sm font-medium text-white">{inputToken.symbol}</span>
-          </div>
+          <LiquidStakingTokenControl control={tokenControl} />
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">

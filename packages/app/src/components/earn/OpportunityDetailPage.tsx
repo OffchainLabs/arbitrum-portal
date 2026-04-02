@@ -1,10 +1,12 @@
 'use client';
 
+import { toTableRow } from '@/app-hooks/earn/useAllOpportunities';
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { type EarnChainId } from '@/earn-api/types';
 
 import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
+import { LiquidStakingDetailPage } from './LiquidStakingDetailPage';
 import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
 
 interface OpportunityDetailPageProps {
@@ -50,13 +52,16 @@ export function OpportunityDetailPage({
     );
   }
 
-  if (data.category !== OpportunityCategory.Lend || !('lend' in data)) {
-    return (
-      <div className="rounded border-error bg-error/20 p-8 text-center">
-        <p className="text-error">Unsupported category: {data.category}</p>
-      </div>
-    );
+  switch (data.category) {
+    case OpportunityCategory.Lend:
+      return <LendOpportunityDetailsPage opportunity={data} />;
+    case OpportunityCategory.LiquidStaking:
+      return <LiquidStakingDetailPage opportunity={toTableRow(data)} />;
+    default:
+      return (
+        <div className="rounded border-error bg-error/20 p-8 text-center">
+          <p className="text-error">Unsupported category: {data.category}</p>
+        </div>
+      );
   }
-
-  return <LendOpportunityDetailsPage opportunity={data} />;
 }

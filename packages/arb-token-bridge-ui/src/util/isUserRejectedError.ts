@@ -21,8 +21,22 @@ export function isUserRejectedError(error: unknown) {
     candidate.code === 'ACTION_REJECTED' ||
     hasUserCancelledMessage ||
     error instanceof UserRejectedRequestError ||
-    candidate.details === 'MetaMask Tx Signature: User denied transaction signature.'
+    candidate.details === 'MetaMask Tx Signature: User denied transaction signature.' ||
+    isBundleRejectedError(error)
   );
+}
+
+/**
+ * Detects when a wallet batch/bundle transaction was rejected by the user.
+ * Some wallets return a batchId from sendCalls but invalidate it on rejection,
+ * causing getCallsStatus to throw "bundle id is unknown".
+ */
+export function isBundleRejectedError(error: unknown) {
+  const candidate = (error ?? {}) as { message?: string; details?: string };
+  const msg = (candidate.message ?? '').toLowerCase();
+  const details = (candidate.details ?? '').toLowerCase();
+  const combined = `${msg} ${details}`;
+  return combined.includes('bundle id is unknown') || combined.includes('no matching bundle found');
 }
 
 /**
