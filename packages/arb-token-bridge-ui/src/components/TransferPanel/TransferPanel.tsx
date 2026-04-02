@@ -53,6 +53,7 @@ import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
+import { isSolanaEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
@@ -73,6 +74,7 @@ import { getAmountLoss } from './HighSlippageWarningDialog';
 import { MoveFundsButton } from './MoveFundsButton';
 import { ReceiveFundsHeader } from './ReceiveFundsHeader';
 import { Routes } from './Routes/Routes';
+import { SolanaPocTransferPanel } from './SolanaPocTransferPanel';
 import { ToSConfirmationCheckbox } from './ToSConfirmationCheckbox';
 import { TokenDepositCheckDialogType } from './TokenDepositCheckDialog';
 import { TokenImportDialog, useTokenImportDialogStore } from './TokenImportDialog';
@@ -107,6 +109,14 @@ const networkConnectionWarningToast = () =>
   );
 
 export function TransferPanel() {
+  if (isSolanaEnabled()) {
+    return <SolanaPocTransferPanel />;
+  }
+
+  return <DefaultTransferPanel />;
+}
+
+function DefaultTransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
   const [

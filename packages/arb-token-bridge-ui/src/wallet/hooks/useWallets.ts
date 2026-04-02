@@ -3,8 +3,8 @@ import { useCallback, useMemo } from 'react';
 import { useNetworks } from '../../hooks/useNetworks';
 import { ChainId } from '../../types/ChainId';
 import { isSolanaEnabled } from '../../util/featureFlag';
-import { useEvmWalletContext } from '../contexts/EvmWalletContext';
-import { useSolanaWalletContext } from '../contexts/SolanaWalletContext';
+import { useEvmWalletContext } from '../providers/EvmWalletProvider';
+import { useSolanaWalletContext } from '../providers/SolanaWalletProvider';
 import { WalletHandle } from '../types';
 
 export function useWallets(): {

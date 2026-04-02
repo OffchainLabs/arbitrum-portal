@@ -9,6 +9,10 @@ import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants';
 
+export const solanaNativeTokenAddress = '11111111111111111111111111111111';
+export const solanaUsdcTokenAddress = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+export const solanaUsdtTokenAddress = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+
 export function isLifiTransfer({
   sourceChainId,
   destinationChainId,
@@ -57,6 +61,10 @@ export function isValidLifiTransfer({
   // Native ETH is always valid for LiFi
   if (!fromToken) {
     return true;
+  }
+
+  if (sourceChainId === ChainId.Solana) {
+    return fromToken === solanaNativeTokenAddress;
   }
 
   if (!tokensFromLists) {

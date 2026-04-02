@@ -1,9 +1,26 @@
 import { useAppKitAccount, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
 import type { PropsWithChildren } from 'react';
-import { useCallback, useMemo } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
-import { EvmWalletContext } from '../contexts/EvmWalletContext';
 import type { WalletAccount, WalletHandle } from '../types';
+
+const defaultEvmWalletContextValue: WalletHandle = {
+  ecosystem: 'evm',
+  account: {
+    ecosystem: 'evm',
+    address: undefined,
+    chain: undefined,
+    status: 'disconnected',
+  },
+  isConnected: false,
+  disconnect: async () => {},
+};
+
+export const EvmWalletContext = createContext<WalletHandle>(defaultEvmWalletContextValue);
+
+export function useEvmWalletContext() {
+  return useContext(EvmWalletContext);
+}
 
 export function EvmWalletProvider({ children }: PropsWithChildren) {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'eip155' });

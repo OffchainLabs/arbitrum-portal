@@ -8,6 +8,7 @@ import { arbitrum, mainnet } from 'wagmi/chains';
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
+import { isSolanaEnabled } from '../featureFlag';
 import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, rpcURLs } from '../networks';
 import { getOrbitChains } from '../orbitChainsList';
@@ -49,7 +50,7 @@ function getChainList(): AppKitNetwork[] {
 }
 
 const chainList = getChainList();
-const solanaEnabled = process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true';
+const solanaEnabled = isSolanaEnabled();
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
