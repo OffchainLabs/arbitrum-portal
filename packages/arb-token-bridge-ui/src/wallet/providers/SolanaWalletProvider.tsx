@@ -1,4 +1,4 @@
-import { useAppKitAccount, useDisconnect } from '@reown/appkit/react';
+import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
 import type { PropsWithChildren } from 'react';
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
@@ -25,6 +25,7 @@ export function useSolanaWalletContext() {
 
 export function SolanaWalletProvider({ children }: PropsWithChildren) {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'solana' });
+  const { walletInfo } = useWalletInfo('solana');
   const { disconnect } = useDisconnect();
 
   const account = useMemo<WalletAccount>(() => {
@@ -35,8 +36,9 @@ export function SolanaWalletProvider({ children }: PropsWithChildren) {
       address,
       chain: { id: ChainId.Solana },
       status: walletStatus,
+      walletInfo,
     };
-  }, [address, status]);
+  }, [address, status, walletInfo]);
 
   const handleDisconnect = useCallback(async () => {
     if (!isConnected) {
