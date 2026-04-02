@@ -12,6 +12,10 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
     return config;
   },
