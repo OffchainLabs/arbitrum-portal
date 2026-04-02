@@ -6,6 +6,7 @@ import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryPara
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
 import { getAccountType } from '../../util/AccountUtils';
+import { isSolanaEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
 
 export function useSyncConnectedChainToQueryParams() {
@@ -21,7 +22,13 @@ export function useSyncConnectedChainToQueryParams() {
     DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS,
   );
 
+  const shouldDisableConnectedChainSync = isSolanaEnabled();
+
   const setSourceChainToConnectedChain = useCallback(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     if (typeof chain === 'undefined') {
       return;
     }
@@ -34,9 +41,13 @@ export function useSyncConnectedChainToQueryParams() {
       });
 
     setQueryParams({ sourceChain, destinationChain });
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
+  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains, shouldDisableConnectedChainSync]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     async function checkCorrectChainForSmartContractWallet() {
       if (typeof chain === 'undefined') {
         return;
@@ -61,9 +72,21 @@ export function useSyncConnectedChainToQueryParams() {
     }
 
     checkCorrectChainForSmartContractWallet();
-  }, [address, chain, disconnect, setQueryParams, setSourceChainToConnectedChain, sourceChain]);
+  }, [
+    address,
+    chain,
+    disconnect,
+    setQueryParams,
+    setSourceChainToConnectedChain,
+    shouldDisableConnectedChainSync,
+    sourceChain,
+  ]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     if (shouldSync) {
       return;
     }
@@ -72,13 +95,24 @@ export function useSyncConnectedChainToQueryParams() {
     if (typeof sourceChain === 'undefined' && typeof destinationChain === 'undefined') {
       setShouldSync(true);
     }
-  }, [shouldSync, sourceChain, destinationChain]);
+  }, [destinationChain, shouldDisableConnectedChainSync, shouldSync, sourceChain]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     // When the chain is connected and we should sync, and we haven't synced yet, sync the connected chain to the query params
     if (chain && shouldSync && !didSync) {
       setSourceChainToConnectedChain();
       setDidSync(true);
     }
-  }, [chain, shouldSync, didSync, setQueryParams, setSourceChainToConnectedChain]);
+  }, [
+    chain,
+    didSync,
+    setQueryParams,
+    setSourceChainToConnectedChain,
+    shouldDisableConnectedChainSync,
+    shouldSync,
+  ]);
 }
