@@ -25,13 +25,15 @@ export interface TransactionCall {
   chainId: number;
 }
 
-export interface EarnTransactionExecutionOptions {
+export type EarnTransactionExecutionOptions = {
   chainId: number;
-  transactionSteps: TransactionStep[] | undefined;
   onTransactionSubmitted?: (params: { txHash: string | undefined; amount: string }) => void;
   onTransactionFinished: (params: { txHash: string | undefined; amount: string }) => void;
   inputAmount: string;
-}
+} & (
+  | { transactionSteps: TransactionStep[] | undefined; buildCalls?: never }
+  | { buildCalls: () => Promise<TransactionCall[]>; transactionSteps?: never }
+);
 
 export interface UseEarnTransactionExecutionResult {
   executeTx: () => Promise<void>;
@@ -100,11 +102,14 @@ async function waitForBatchTxHash(
 
 export function useEarnTransactionExecution({
   chainId,
-  transactionSteps,
   onTransactionSubmitted,
   onTransactionFinished,
   inputAmount,
+  ...callsSource
 }: EarnTransactionExecutionOptions): UseEarnTransactionExecutionResult {
+  const transactionSteps =
+    'transactionSteps' in callsSource ? callsSource.transactionSteps : undefined;
+  const buildCalls = 'buildCalls' in callsSource ? callsSource.buildCalls : undefined;
   const wagmiConfig = useConfig();
   const { chainId: connectedChainId } = useAccount();
   const isBatchSupported = useIsTxBatchingSupported(chainId);
@@ -131,11 +136,15 @@ export function useEarnTransactionExecution({
         }
       };
 
-      const getCallsOrThrow = () => {
-        if (!transactionSteps || transactionSteps.length === 0) {
+      const getCallsOrThrow = async () => {
+        let calls: TransactionCall[];
+        if (buildCalls) {
+          calls = await buildCalls();
+        } else if (transactionSteps && transactionSteps.length > 0) {
+          calls = buildTransactionCalls(transactionSteps);
+        } else {
           throw new Error('No transaction steps found');
         }
-        const calls = buildTransactionCalls(transactionSteps);
 
         for (const [index, call] of calls.entries()) {
           if (call.chainId !== chainId) {
@@ -150,7 +159,7 @@ export function useEarnTransactionExecution({
 
       const executeBatch = async () => {
         await ensureCorrectChain();
-        const calls = getCallsOrThrow();
+        const calls = await getCallsOrThrow();
 
         const { id: batchId } = await sendCalls(wagmiConfig, { calls });
 
@@ -164,7 +173,7 @@ export function useEarnTransactionExecution({
 
       const executeSequential = async () => {
         await ensureCorrectChain();
-        const calls = getCallsOrThrow();
+        const calls = await getCallsOrThrow();
 
         let lastTxHash: string | undefined;
 
@@ -220,6 +229,7 @@ export function useEarnTransactionExecution({
     connectedChainId,
     isBatchSupported,
     transactionSteps,
+    buildCalls,
     onTransactionSubmitted,
     onTransactionFinished,
     inputAmount,

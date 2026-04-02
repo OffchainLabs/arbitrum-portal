@@ -2,6 +2,7 @@
 
 import useSWRImmutable from 'swr/immutable';
 
+import { parseMetricNumber } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
@@ -20,14 +21,7 @@ interface OpportunitiesResponse {
   categories: string[];
 }
 
-function parseMetricNumber(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null;
-  }
-  return value;
-}
-
-function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
+export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
   const rawApy = parseMetricNumber(m?.rawApy);
   const rawTvl = parseMetricNumber(m?.rawTvl);

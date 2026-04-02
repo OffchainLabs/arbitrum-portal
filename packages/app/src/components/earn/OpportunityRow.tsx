@@ -9,6 +9,7 @@ import {
   OpportunityTableRow,
 } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityRowProps {
@@ -56,7 +57,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
           {opportunity.tokenNetwork && (
             <div className="flex items-center gap-1.5">
               <SafeImage
-                src="/images/ArbitrumLogo.svg"
+                src={ARBITRUM_LOGO}
                 alt={opportunity.tokenNetwork}
                 width={12}
                 height={12}

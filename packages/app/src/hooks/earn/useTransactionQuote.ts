@@ -17,7 +17,7 @@ export interface UseTransactionQuoteParams {
   category: OpportunityCategory;
   action: TransactionQuoteRequest['action'];
   amount: string;
-  userAddress: string | null;
+  userAddress?: string | null;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;
@@ -59,13 +59,13 @@ export function useTransactionQuote({
   })();
 
   return useSWR(
-    enabled && opportunityId && userAddress && hasPositiveAmount
+    enabled && opportunityId && hasPositiveAmount
       ? ([
           opportunityId,
           category,
           action,
-          userAddress,
           debouncedAmount,
+          userAddress,
           inputTokenAddress,
           outputTokenAddress,
           slippage,
@@ -80,8 +80,8 @@ export function useTransactionQuote({
       keyOpportunityId,
       keyCategory,
       keyAction,
-      keyUserAddress,
       keyDebouncedAmount,
+      keyUserAddress,
       keyInputTokenAddress,
       keyOutputTokenAddress,
       keySlippage,
@@ -93,11 +93,14 @@ export function useTransactionQuote({
       const queryParams = new URLSearchParams({
         action: keyAction,
         amount: keyDebouncedAmount,
-        userAddress: keyUserAddress,
         slippage: String(keySlippage),
         simulate: String(keySimulate),
         chainId: String(keyChainId),
       });
+
+      if (keyUserAddress) {
+        queryParams.set('userAddress', keyUserAddress);
+      }
 
       if (keyInputTokenAddress) {
         queryParams.set('inputTokenAddress', keyInputTokenAddress);
@@ -129,8 +132,10 @@ export function useTransactionQuote({
       return (await response.json()) as TransactionQuoteResponse;
     },
     {
+      refreshInterval: 20_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      keepPreviousData: true,
       errorRetryCount: 2,
     },
   );
