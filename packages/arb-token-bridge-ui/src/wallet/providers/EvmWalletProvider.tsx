@@ -1,4 +1,9 @@
-import { useAppKitAccount, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
+import {
+  useAppKitAccount,
+  useAppKitNetwork,
+  useDisconnect,
+  useWalletInfo,
+} from '@reown/appkit/react';
 import type { PropsWithChildren } from 'react';
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
@@ -25,6 +30,7 @@ export function useEvmWalletContext() {
 export function EvmWalletProvider({ children }: PropsWithChildren) {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'eip155' });
   const { chainId } = useAppKitNetwork();
+  const { walletInfo } = useWalletInfo('eip155');
   const { disconnect } = useDisconnect();
 
   const account = useMemo<WalletAccount>(() => {
@@ -33,8 +39,9 @@ export function EvmWalletProvider({ children }: PropsWithChildren) {
       address,
       chain: chainId === undefined ? undefined : { id: chainId as number },
       status: status ?? 'disconnected',
+      walletInfo,
     };
-  }, [address, chainId, status]);
+  }, [address, chainId, status, walletInfo]);
 
   const handleDisconnect = useCallback(async () => {
     if (!isConnected) {

@@ -23,6 +23,7 @@ import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
+import { SafeImage } from '../common/SafeImage';
 import { Loader } from '../common/atoms/Loader';
 
 type PocBridgeToken = {
@@ -92,6 +93,19 @@ function formatBalance(balance: BigNumber | undefined, decimals: number) {
   } catch {
     return '0';
   }
+}
+
+function WalletButtonLabel({ icon, label }: { icon?: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      {icon ? (
+        <SafeImage src={icon} alt="" className="h-4 w-4 rounded-full" />
+      ) : (
+        <span className="h-4 w-4 rounded-full bg-white/20" />
+      )}
+      <span>{label}</span>
+    </span>
+  );
 }
 
 function getPreferredRoute(
@@ -164,6 +178,8 @@ function SolanaPocTransferPanelContent({
   const { openConnectModal } = useWalletModal();
   const { sourceWallet, destinationWallet } = useWallets();
   const { sourceSigner } = useSigners();
+  const solanaWallet = sourceWallet.ecosystem === 'solana' ? sourceWallet : destinationWallet;
+  const evmWallet = sourceWallet.ecosystem === 'evm' ? sourceWallet : destinationWallet;
 
   const [amount, setAmount] = useState('');
   const [destinationAddress, setDestinationAddress] = useState('');
@@ -172,10 +188,10 @@ function SolanaPocTransferPanelContent({
   const [transactionHash, setTransactionHash] = useState<string>();
 
   useEffect(() => {
-    if (!hasEditedDestination && destinationWallet.account.address) {
-      setDestinationAddress(destinationWallet.account.address);
+    if (!hasEditedDestination && evmWallet.account.address) {
+      setDestinationAddress(evmWallet.account.address);
     }
-  }, [destinationWallet.account.address, hasEditedDestination]);
+  }, [evmWallet.account.address, hasEditedDestination]);
 
   const isDestinationAddressValid = useMemo(
     () => destinationAddress.length > 0 && utils.isAddress(destinationAddress),
@@ -293,38 +309,52 @@ function SolanaPocTransferPanelContent({
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">Source Wallet</p>
-          <p className="text-sm">Source</p>
-          <p className="text-xs text-white/60">{truncateAddress(sourceWallet.account.address)}</p>
+          <p className="text-xs uppercase tracking-wide text-white/50">Solana Wallet</p>
+          <p className="text-xs text-white/60">
+            {solanaWallet.account.walletInfo?.name ?? 'Unknown wallet'}
+          </p>
+          <p className="text-xs text-white/60">{truncateAddress(solanaWallet.account.address)}</p>
           <Button
             variant="secondary"
             className="w-full justify-center"
             onClick={() =>
-              sourceWallet.isConnected ? sourceWallet.disconnect() : openConnectModal(sourceChainId)
+              solanaWallet.isConnected
+                ? solanaWallet.disconnect()
+                : openConnectModal(ChainId.Solana)
             }
           >
-            {sourceWallet.isConnected ? 'Disconnect Source Wallet' : 'Connect Source Wallet'}
+            <WalletButtonLabel
+              icon={solanaWallet.account.walletInfo?.icon}
+              label={
+                solanaWallet.isConnected
+                  ? truncateAddress(solanaWallet.account.address)
+                  : 'Connect Solana Wallet'
+              }
+            />
           </Button>
         </div>
 
         <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">Destination Wallet</p>
-          <p className="text-sm">Destination</p>
+          <p className="text-xs uppercase tracking-wide text-white/50">EVM Wallet</p>
           <p className="text-xs text-white/60">
-            {truncateAddress(destinationWallet.account.address)}
+            {evmWallet.account.walletInfo?.name ?? 'Unknown wallet'}
           </p>
+          <p className="text-xs text-white/60">{truncateAddress(evmWallet.account.address)}</p>
           <Button
             variant="secondary"
             className="w-full justify-center"
             onClick={() =>
-              destinationWallet.isConnected
-                ? destinationWallet.disconnect()
-                : openConnectModal(destinationChainId)
+              evmWallet.isConnected ? evmWallet.disconnect() : openConnectModal(destinationChainId)
             }
           >
-            {destinationWallet.isConnected
-              ? 'Disconnect Destination Wallet'
-              : 'Connect Destination Wallet'}
+            <WalletButtonLabel
+              icon={evmWallet.account.walletInfo?.icon}
+              label={
+                evmWallet.isConnected
+                  ? truncateAddress(evmWallet.account.address)
+                  : 'Connect EVM Wallet'
+              }
+            />
           </Button>
         </div>
       </div>

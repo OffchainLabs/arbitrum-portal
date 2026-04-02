@@ -54,6 +54,9 @@ const sourceWallet: WalletHandle = {
     address: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
     chain: { id: ChainId.Solana },
     status: 'connected',
+    walletInfo: {
+      name: 'Phantom',
+    },
   },
   isConnected: true,
   disconnect: async () => {},
@@ -66,6 +69,9 @@ const destinationWallet: WalletHandle = {
     address: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
     chain: { id: ChainId.ArbitrumOne },
     status: 'connected',
+    walletInfo: {
+      name: 'MetaMask',
+    },
   },
   isConnected: true,
   disconnect: async () => {},
@@ -191,10 +197,14 @@ describe('SolanaPocTransferPanel', () => {
       }),
     });
 
-    expect(screen.getByRole('button', { name: 'Disconnect Source Wallet' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Disconnect Destination Wallet' })).toBeTruthy();
-    expect(screen.getByText('Hgw1pN...APu5')).toBeTruthy();
-    expect(screen.getByText('0x9481...3a33')).toBeTruthy();
+    expect(screen.getByText('Solana Wallet')).toBeTruthy();
+    expect(screen.getByText('EVM Wallet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hgw1pN...APu5' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '0x9481...3a33' })).toBeTruthy();
+    expect(screen.getByText('Phantom')).toBeTruthy();
+    expect(screen.getByText('MetaMask')).toBeTruthy();
+    expect(screen.getAllByText('Hgw1pN...APu5')).toHaveLength(2);
+    expect(screen.getAllByText('0x9481...3a33')).toHaveLength(2);
 
     await waitFor(() => {
       expect(solanaFetchBalance).toHaveBeenCalledWith({

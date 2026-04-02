@@ -1,4 +1,5 @@
 import type { TransactionRequest } from '@ethersproject/providers';
+import type { ConnectedWalletInfo } from '@reown/appkit-controllers';
 import type { UseAppKitAccountReturn } from '@reown/appkit/react';
 import type { BigNumber } from 'ethers';
 
@@ -51,6 +52,7 @@ export interface WalletAccount {
   };
   ecosystem: WalletEcosystem;
   status: WalletStatus;
+  walletInfo?: ConnectedWalletInfo;
 }
 
 export interface WalletHandle {
