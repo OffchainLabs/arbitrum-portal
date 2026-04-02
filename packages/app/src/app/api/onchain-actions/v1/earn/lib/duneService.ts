@@ -410,8 +410,6 @@ export async function fetchDuneHistoricalData(
 ): Promise<DuneDataPoint[]> {
   try {
     const rows = await fetchLatestDuneRows(queryId);
-
-    console.log('xxxx', { queryId, rows: rows.filter((_, index) => index < 2) });
     return trimToLookback(transformDuneResults(rows), lookbackDays);
   } catch (error) {
     throw new Error(
