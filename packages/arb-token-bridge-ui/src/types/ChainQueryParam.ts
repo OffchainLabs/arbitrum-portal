@@ -8,6 +8,7 @@ import * as customChains from '../util/wagmi/wagmiAdditionalNetworks';
 import { chainToWagmiChain } from '../util/wagmi/wagmiAdditionalNetworks';
 
 const chainQueryParams = [
+  'solana',
   'ethereum',
   'sepolia',
   'arbitrum-one',
@@ -36,6 +37,9 @@ export function isValidChainQueryParam(value: string | number): boolean {
 
 export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
   switch (chainId) {
+    case ChainId.Solana:
+      return 'solana';
+
     case ChainId.Ethereum:
       return 'ethereum';
 
@@ -85,6 +89,25 @@ export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
 
 export function getChainForChainKeyQueryParam(chainKeyQueryParam: ChainKeyQueryParam): Chain {
   switch (chainKeyQueryParam) {
+    case 'solana':
+      return {
+        id: ChainId.Solana,
+        name: 'Solana',
+        nativeCurrency: {
+          name: 'Solana',
+          symbol: 'SOL',
+          decimals: 9,
+        },
+        rpcUrls: {
+          default: {
+            http: ['https://api.mainnet-beta.solana.com'],
+          },
+          public: {
+            http: ['https://api.mainnet-beta.solana.com'],
+          },
+        },
+      } as Chain;
+
     case 'ethereum':
       return chains.mainnet;
 

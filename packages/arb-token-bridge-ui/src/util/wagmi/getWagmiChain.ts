@@ -15,6 +15,24 @@ import {
   sepolia,
 } from './wagmiAdditionalNetworks';
 
+const solana = {
+  id: ChainId.Solana,
+  name: 'Solana',
+  nativeCurrency: {
+    name: 'Solana',
+    symbol: 'SOL',
+    decimals: 9,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://api.mainnet-beta.solana.com'],
+    },
+    public: {
+      http: ['https://api.mainnet-beta.solana.com'],
+    },
+  },
+} as const satisfies Chain;
+
 export function getWagmiChain(chainId: number): Chain {
   const customChain = getCustomChainFromLocalStorageById(chainId);
   const orbitChain = orbitChains[chainId];
@@ -28,6 +46,9 @@ export function getWagmiChain(chainId: number): Chain {
   }
 
   switch (chainId) {
+    case ChainId.Solana:
+      return solana;
+
     case ChainId.Ethereum:
       return mainnet;
 

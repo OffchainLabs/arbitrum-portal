@@ -27,6 +27,29 @@ export type UseNetworksSetStateParams = {
 };
 export type UseNetworksSetState = (params: UseNetworksSetStateParams) => void;
 
+function resolveNetworksState({
+  sourceChainId,
+  destinationChainId,
+  disableTransfersToNonArbitrumChains,
+}: {
+  sourceChainId: ChainId | number | undefined;
+  destinationChainId: ChainId | number | undefined;
+  disableTransfersToNonArbitrumChains: boolean;
+}) {
+  if (sourceChainId === ChainId.Solana || destinationChainId === ChainId.Solana) {
+    return {
+      sourceChainId: sourceChainId ?? ChainId.Solana,
+      destinationChainId: destinationChainId ?? ChainId.ArbitrumOne,
+    };
+  }
+
+  return sanitizeQueryParams({
+    sourceChainId,
+    destinationChainId,
+    disableTransfersToNonArbitrumChains,
+  });
+}
+
 export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
   const [{ sourceChain: sourceChainId, destinationChain: destinationChainId }, setQueryParams] =
     useArbQueryParams();
@@ -40,7 +63,7 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
   const { sourceChainId: validSourceChainId, destinationChainId: validDestinationChainId } =
     useMemo(
       () =>
-        sanitizeQueryParams({
+        resolveNetworksState({
           sourceChainId,
           destinationChainId,
           disableTransfersToNonArbitrumChains,
@@ -68,7 +91,7 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
       destinationChainId: newDestinationChainId,
     }: UseNetworksSetStateParams) => {
       const { sourceChainId: validSourceChainId, destinationChainId: validDestinationChainId } =
-        sanitizeQueryParams({
+        resolveNetworksState({
           sourceChainId: newSourceChainId,
           destinationChainId: newDestinationChainId,
           disableTransfersToNonArbitrumChains,
@@ -83,12 +106,27 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
 
   // The return values of the hook will always be the sanitized values
   return useMemo(() => {
+    const fallbackProviderChainId =
+      validSourceChainId === ChainId.Solana
+        ? validDestinationChainId === ChainId.Solana
+          ? ChainId.ArbitrumOne
+          : validDestinationChainId
+        : validSourceChainId;
+    const sourceChainProvider =
+      validSourceChainId === ChainId.Solana
+        ? getProviderForChainId(fallbackProviderChainId as ChainId)
+        : getProviderForChainId(validSourceChainId as ChainId);
+    const destinationChainProvider =
+      validDestinationChainId === ChainId.Solana
+        ? getProviderForChainId(validSourceChainId as ChainId)
+        : getProviderForChainId(validDestinationChainId as ChainId);
+
     return [
       {
         sourceChain: data.sourceChain,
-        sourceChainProvider: getProviderForChainId(validSourceChainId),
+        sourceChainProvider,
         destinationChain: data.destinationChain,
-        destinationChainProvider: getProviderForChainId(validDestinationChainId),
+        destinationChainProvider,
       },
       setState,
     ];

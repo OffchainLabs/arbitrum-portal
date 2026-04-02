@@ -8,6 +8,7 @@ import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryPara
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
 import { getAccountType } from '../../util/AccountUtils';
+import { isSolanaEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
 
 export function useSyncConnectedChainToQueryParams() {
@@ -25,6 +26,8 @@ export function useSyncConnectedChainToQueryParams() {
     DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS,
   );
 
+  const shouldDisableConnectedChainSync = isSolanaEnabled();
+
   const setSourceChainToConnectedChain = useCallback(() => {
     if (!chain) {
       return;
@@ -38,7 +41,7 @@ export function useSyncConnectedChainToQueryParams() {
       });
 
     setQueryParams({ sourceChain, destinationChain });
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
+  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains, shouldDisableConnectedChainSync]);
 
   useEffect(() => {
     if (!chain || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
@@ -80,6 +83,10 @@ export function useSyncConnectedChainToQueryParams() {
   }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     if (shouldSync) {
       return;
     }
@@ -88,9 +95,13 @@ export function useSyncConnectedChainToQueryParams() {
     if (sourceChain === undefined && destinationChain === undefined) {
       setShouldSync(true);
     }
-  }, [shouldSync, sourceChain, destinationChain]);
+  }, [destinationChain, shouldDisableConnectedChainSync, shouldSync, sourceChain]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     // When the chain is connected and we should sync, and we haven't synced yet, sync the connected chain to the query params
     if (chain && shouldSync && !didSync) {
       setSourceChainToConnectedChain();
