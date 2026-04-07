@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -27,11 +27,11 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   const [dialogProps, openDialog] = useDialog2();
 
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {

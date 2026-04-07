@@ -51,14 +51,14 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
 
   it('returns the resolved destination token address when the source token changes across a network switch', () => {
     // Ethereum -> Arbitrum One:
-    // the selected source token is L1 PYUSD, but after switching networks
+    // the selected source token is L1 PayPal USD, but after switching networks
     // the new source token must become the resolved Arbitrum-side token.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
         address: CommonAddress.Ethereum.PYUSD,
         importLookupAddress: CommonAddress.Ethereum.PYUSD,
-        name: 'PYUSD',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         decimals: 6,
         listIds: new Set(['1']),
@@ -69,7 +69,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
       type: TokenType.ERC20,
       address: CommonAddress.ArbitrumOne.PYUSDOFT,
       importLookupAddress: CommonAddress.Ethereum.PYUSD,
-      name: 'PYUSD OFT',
+      name: 'PayPal USD OFT',
       symbol: 'PYUSD',
       decimals: 6,
       listIds: new Set(['1']),
@@ -79,16 +79,16 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSDOFT);
   });
 
-  it('returns the L1 PYUSD address when switching away from Arbitrum One PYUSD OFT', () => {
+  it('returns the L1 PayPal USD address when switching away from Arbitrum One PayPal USD OFT', () => {
     // Arbitrum One -> Ethereum:
-    // the current source token is Arbitrum PYUSD OFT, and after switching
-    // networks the new source token must become Ethereum PYUSD.
+    // the current source token is Arbitrum PayPal USD OFT, and after switching
+    // networks the new source token must become Ethereum PayPal USD.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
         address: CommonAddress.ArbitrumOne.PYUSDOFT,
         importLookupAddress: CommonAddress.Ethereum.PYUSD,
-        name: 'PYUSD OFT',
+        name: 'PayPal USD OFT',
         symbol: 'PYUSD',
         decimals: 6,
         listIds: new Set(['1']),
@@ -99,7 +99,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
       type: TokenType.ERC20,
       address: CommonAddress.Ethereum.PYUSD,
       importLookupAddress: CommonAddress.Ethereum.PYUSD,
-      name: 'PYUSD',
+      name: 'PayPal USD',
       symbol: 'PYUSD',
       decimals: 6,
       listIds: new Set(['1']),
@@ -144,7 +144,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
       type: TokenType.ERC20,
       address: CommonAddress.ArbitrumOne.PYUSDOFT,
       importLookupAddress: CommonAddress.Ethereum.PYUSD,
-      name: 'PYUSD OFT',
+      name: 'PayPal USD OFT',
       symbol: 'PYUSD',
       decimals: 6,
       listIds: new Set(['1']),

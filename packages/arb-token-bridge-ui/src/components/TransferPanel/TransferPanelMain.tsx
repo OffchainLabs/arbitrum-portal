@@ -43,7 +43,7 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
 
   const [networks, setNetworks] = useNetworks();
   const [, setSelectedToken] = useSelectedToken();
-  const nextSelectedTokenAddress = useNetworkSwitchSelectedTokenAddress();
+  const selectedTokenAddressAfterSwitch = useNetworkSwitchSelectedTokenAddress();
 
   const { isFeatureDisabled } = useDisabledFeatures();
 
@@ -96,8 +96,8 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (typeof nextSelectedTokenAddress !== 'undefined') {
-            setSelectedToken(nextSelectedTokenAddress);
+          if (typeof selectedTokenAddressAfterSwitch !== 'undefined') {
+            setSelectedToken(selectedTokenAddressAfterSwitch);
           }
         }}
         aria-label="Switch Networks"

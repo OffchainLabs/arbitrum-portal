@@ -115,7 +115,7 @@ describe('findFastestRoute', () => {
 });
 
 describe('applyOverrides', () => {
-  it('uses the Ethereum PYUSD logo for Ethereum PYUSD', () => {
+  it('uses the Ethereum PayPal USD logo for Ethereum PayPal USD', () => {
     expect(
       applyOverrides(
         {
@@ -129,7 +129,7 @@ describe('applyOverrides', () => {
     ).toBe(ETHEREUM_PYUSD_LOGO_URI);
   });
 
-  it('uses the Ethereum PYUSD logo for Arbitrum One PYUSD OFT', () => {
+  it('uses the Ethereum PayPal USD logo for Arbitrum One PayPal USD OFT', () => {
     expect(
       applyOverrides(
         {

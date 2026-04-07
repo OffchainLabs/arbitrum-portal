@@ -7,6 +7,12 @@ type TokenLookupLike =
   | null
   | undefined;
 
+type TokenChildChainAddressLike =
+  | Pick<ERC20BridgeToken, 'address' | 'l2Address'>
+  | { address?: string; l2Address?: string }
+  | null
+  | undefined;
+
 export function getBridgeTokenLookupAddress(token: TokenLookupLike) {
   if (!token) {
     return undefined;
@@ -24,4 +30,12 @@ export function areEquivalentBridgeTokens(a: TokenLookupLike, b: TokenLookupLike
   }
 
   return addressesEqual(addressA, addressB);
+}
+
+export function getBridgeTokenChildChainAddress(token: TokenChildChainAddressLike) {
+  if (!token) {
+    return undefined;
+  }
+
+  return token.l2Address ?? token.address;
 }

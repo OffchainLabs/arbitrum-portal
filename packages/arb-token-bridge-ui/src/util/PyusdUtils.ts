@@ -37,7 +37,7 @@ export function getEthereumPyusdToken({
   return {
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
-    name: 'PYUSD',
+    name: 'PayPal USD',
     address: CommonAddress.Ethereum.PYUSD,
     logoURI: ETHEREUM_PYUSD_LOGO_URI,
     priceUSD,
@@ -53,7 +53,7 @@ export function getArbitrumOnePyusdCanonicalToken({
   return {
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
-    name: 'PYUSD Canonical',
+    name: 'PayPal USD Canonical',
     address: CommonAddress.ArbitrumOne.PYUSDCanonical,
     l2Address: CommonAddress.ArbitrumOne.PYUSDCanonical,
     logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
@@ -70,7 +70,7 @@ export function getArbitrumOnePyusdOftToken({
   return {
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
-    name: 'PYUSD OFT',
+    name: 'PayPal USD OFT',
     address: CommonAddress.ArbitrumOne.PYUSDOFT,
     l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
     logoURI: ETHEREUM_PYUSD_LOGO_URI,
@@ -150,7 +150,7 @@ export function getPyusdTokenForTransfer({
     };
   }
 
-  if (isTokenArbitrumOnePyusdCanonical(tokenAddress)) {
+  if (!isDepositMode && isTokenArbitrumOnePyusdCanonical(tokenAddress)) {
     return getArbitrumOnePyusdCanonicalToken({
       priceUSD,
       listIds,
@@ -159,7 +159,10 @@ export function getPyusdTokenForTransfer({
 
   // In withdrawal mode, the legacy L1 PYUSD address is treated as the OFT alias.
   // The canonical path only applies when the explicit Arbitrum One canonical address is selected.
-  if (isTokenArbitrumOnePyusdOft(tokenAddress) || isTokenEthereumPyusd(tokenAddress)) {
+  if (
+    !isDepositMode &&
+    (isTokenArbitrumOnePyusdOft(tokenAddress) || isTokenEthereumPyusd(tokenAddress))
+  ) {
     return getArbitrumOnePyusdOftToken({
       priceUSD,
       listIds,

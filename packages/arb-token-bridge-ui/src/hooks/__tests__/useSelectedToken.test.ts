@@ -110,12 +110,12 @@ describe('useSelectedToken', () => {
     );
   });
 
-  it('keeps the same PYUSD token object when unrelated token-list entries change', () => {
+  it('keeps the same PayPal USD token object when unrelated token-list entries change', () => {
     tokensFromListsValue = {
       [CommonAddress.Ethereum.PYUSD]: {
         type: TokenType.ERC20,
         decimals: 6,
-        name: 'PYUSD',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
         l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
@@ -149,7 +149,7 @@ describe('useSelectedToken', () => {
       [CommonAddress.Ethereum.PYUSD]: {
         type: TokenType.ERC20,
         decimals: 6,
-        name: 'PYUSD',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
         l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
@@ -171,12 +171,12 @@ describe('useSelectedToken', () => {
     expect(result.current[0]).toBe(firstSelectedToken);
   });
 
-  it('resolves L1 PYUSD to Arbitrum One PYUSD OFT token', () => {
+  it('resolves L1 PayPal USD to Arbitrum One PayPal USD OFT token', () => {
     tokensFromListsValue = {
       [CommonAddress.Ethereum.PYUSD]: {
         type: TokenType.ERC20,
         decimals: 6,
-        name: 'PYUSD',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
         l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
@@ -220,12 +220,12 @@ describe('useSelectedToken', () => {
     );
   });
 
-  it('resolves the Arbitrum One canonical PYUSD token when selected', () => {
+  it('resolves the Arbitrum One canonical PayPal USD token when selected', () => {
     tokensFromListsValue = {
       [CommonAddress.Ethereum.PYUSD]: {
         type: TokenType.ERC20,
         decimals: 6,
-        name: 'PYUSD',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
         l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,

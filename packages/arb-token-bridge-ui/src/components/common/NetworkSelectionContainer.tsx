@@ -479,7 +479,7 @@ export const NetworkSelectionContainer = React.memo(
     const [, setQueryParams] = useArbQueryParams();
     const { embedMode } = useMode();
     const isSource = props.type === 'source';
-    const nextSelectedTokenAddress = useNetworkSwitchSelectedTokenAddress();
+    const selectedTokenAddressAfterSwitch = useNetworkSwitchSelectedTokenAddress();
 
     const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
 
@@ -502,8 +502,8 @@ export const NetworkSelectionContainer = React.memo(
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (typeof nextSelectedTokenAddress !== 'undefined') {
-            setSelectedToken(nextSelectedTokenAddress);
+          if (typeof selectedTokenAddressAfterSwitch !== 'undefined') {
+            setSelectedToken(selectedTokenAddressAfterSwitch);
           }
           return;
         }
@@ -525,7 +525,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken,
         setQueryParams,
         props,
-        nextSelectedTokenAddress,
+        selectedTokenAddressAfterSwitch,
       ],
     );
 

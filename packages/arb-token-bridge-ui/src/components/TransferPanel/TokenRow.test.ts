@@ -6,14 +6,14 @@ import { ARBITRUM_ONE_PYUSD_OFT_LOGO_URI, ETHEREUM_PYUSD_LOGO_URI } from '../../
 import { getTokenRowLogoURI } from './TokenRow';
 
 describe('getTokenRowLogoURI', () => {
-  it('keeps the token-list logo for equivalent destination PYUSD entries', () => {
+  it('keeps the token-list logo for equivalent destination PayPal USD entries', () => {
     expect(
       getTokenRowLogoURI({
         token: {
           type: TokenType.ERC20,
           address: CommonAddress.Ethereum.PYUSD,
           decimals: 6,
-          name: 'PYUSD',
+          name: 'PayPal USD',
           symbol: 'PYUSD',
           logoURI: ETHEREUM_PYUSD_LOGO_URI,
           listIds: new Set(['lifi']),
@@ -23,7 +23,7 @@ describe('getTokenRowLogoURI', () => {
           address: CommonAddress.ArbitrumOne.PYUSDOFT,
           importLookupAddress: CommonAddress.Ethereum.PYUSD,
           decimals: 6,
-          name: 'PYUSD OFT',
+          name: 'PayPal USD OFT',
           symbol: 'PYUSD',
           logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
           listIds: new Set(),

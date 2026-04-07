@@ -15,6 +15,7 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { addressesEqual } from '../../../util/AddressUtils';
+import { getBridgeTokenChildChainAddress } from '../../../util/BridgeTokenAddressUtils';
 import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
 import { useTokensFromLists } from '../TokenSearchUtils';
@@ -231,7 +232,7 @@ export function useRoutesUpdater() {
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const defaultToTokenAddress = isDepositMode
-    ? destinationToken?.l2Address
+    ? getBridgeTokenChildChainAddress(destinationToken)
     : destinationToken?.address;
 
   const fromTokenAddress =

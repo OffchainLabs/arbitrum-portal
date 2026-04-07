@@ -122,11 +122,11 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
 /** Override token metadata (symbol, name, ...) for special cases (e.g., USDT) */
 function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: string } {
   if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
-    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PYUSD' });
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD' });
   }
 
   if (isTokenArbitrumOnePyusdOft(token.address) && chainId === ChainId.ArbitrumOne) {
-    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PYUSD OFT' });
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD OFT' });
   }
 
   if (isUsdtToken(token.address, chainId)) {

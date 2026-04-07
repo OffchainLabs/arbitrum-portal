@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { RouteContext } from './hooks/useRouteStore';
-import { getAmountToPay, shouldBlockWithdrawOnlyDeposit } from './useTransferReadiness';
+import { getAmountToPay, shouldBlockDeposit } from './useTransferReadiness';
 
 const eth = {
   address: '0x0000000000000000000000000000000000000000',
@@ -272,10 +272,10 @@ describe('getAmountToPay', () => {
   });
 });
 
-describe('shouldBlockWithdrawOnlyDeposit', () => {
+describe('shouldBlockDeposit', () => {
   it('blocks canonical withdraw-only deposits when no LiFi route is available', () => {
     expect(
-      shouldBlockWithdrawOnlyDeposit({
+      shouldBlockDeposit({
         isDepositMode: true,
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
@@ -286,11 +286,22 @@ describe('shouldBlockWithdrawOnlyDeposit', () => {
 
   it('does not block withdraw-only deposits when a LiFi route is available', () => {
     expect(
-      shouldBlockWithdrawOnlyDeposit({
+      shouldBlockDeposit({
         isDepositMode: true,
         isSelectedTokenWithdrawOnly: true,
         isSelectedTokenWithdrawOnlyLoading: false,
         isValidLifiRoute: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not block while withdraw-only state is still loading', () => {
+    expect(
+      shouldBlockDeposit({
+        isDepositMode: true,
+        isSelectedTokenWithdrawOnly: true,
+        isSelectedTokenWithdrawOnlyLoading: true,
+        isValidLifiRoute: false,
       }),
     ).toBe(false);
   });

@@ -113,14 +113,6 @@ export function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey
 }
 
 function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
-  if (String(token.coinKey) === 'PYUSD') {
-    return {
-      ...token,
-      symbol: 'PYUSD',
-      name: 'PYUSD',
-    };
-  }
-
   if (token.coinKey === CoinKey.USDT) {
     return {
       ...token,

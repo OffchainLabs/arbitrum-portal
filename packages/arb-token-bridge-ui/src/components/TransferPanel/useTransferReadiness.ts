@@ -107,7 +107,7 @@ function withdrawalDisabled(token: string) {
   ].includes(token.toLowerCase());
 }
 
-export function shouldBlockWithdrawOnlyDeposit({
+export function shouldBlockDeposit({
   isDepositMode,
   isSelectedTokenWithdrawOnly,
   isSelectedTokenWithdrawOnlyLoading,
@@ -415,7 +415,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
         });
 
       if (
-        shouldBlockWithdrawOnlyDeposit({
+        shouldBlockDeposit({
           isDepositMode,
           isSelectedTokenWithdrawOnly,
           isSelectedTokenWithdrawOnlyLoading,

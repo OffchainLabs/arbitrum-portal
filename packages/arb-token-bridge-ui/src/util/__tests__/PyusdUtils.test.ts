@@ -25,7 +25,7 @@ describe('getPyusdTokenOverride', () => {
     });
   });
 
-  it('overrides canonical withdrawals to black-logo L1 PYUSD on destination', () => {
+  it('overrides canonical withdrawals to black-logo L1 PayPal USD on destination', () => {
     expect(
       getPyusdTokenOverride({
         tokenAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
@@ -42,12 +42,12 @@ describe('getPyusdTokenOverride', () => {
 });
 
 describe('getPyusdTokenForTransfer', () => {
-  it('uses black branding for OFT and blue branding for explicit canonical PYUSD', () => {
+  it('uses black branding for OFT and blue branding for explicit canonical PayPal USD', () => {
     expect(getArbitrumOnePyusdOftToken().logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
     expect(getArbitrumOnePyusdCanonicalToken().logoURI).toBe(ARBITRUM_ONE_PYUSD_OFT_LOGO_URI);
   });
 
-  it('defaults Arbitrum One to Ethereum PYUSD withdrawals to OFT', () => {
+  it('defaults Arbitrum One to Ethereum PayPal USD withdrawals to OFT', () => {
     expect(
       getPyusdTokenForTransfer({
         tokenAddress: CommonAddress.Ethereum.PYUSD,
@@ -59,7 +59,7 @@ describe('getPyusdTokenForTransfer', () => {
     });
   });
 
-  it('keeps canonical PYUSD explicit when the canonical address is selected', () => {
+  it('keeps canonical PayPal USD explicit when the canonical address is selected', () => {
     expect(
       getPyusdTokenForTransfer({
         tokenAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
@@ -70,10 +70,26 @@ describe('getPyusdTokenForTransfer', () => {
       destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
     });
   });
+
+  it('ignores Arbitrum-side PayPal USD addresses in deposit mode', () => {
+    expect(
+      getPyusdTokenForTransfer({
+        tokenAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
+        isDepositMode: true,
+      }),
+    ).toBeNull();
+
+    expect(
+      getPyusdTokenForTransfer({
+        tokenAddress: CommonAddress.ArbitrumOne.PYUSDOFT,
+        isDepositMode: true,
+      }),
+    ).toBeNull();
+  });
 });
 
 describe('isPyusdOverrideFlow', () => {
-  it('returns true for the default LiFi-backed PYUSD flows', () => {
+  it('returns true for the default LiFi-backed PayPal USD flows', () => {
     expect(
       isPyusdOverrideFlow({
         tokenAddress: CommonAddress.Ethereum.PYUSD,

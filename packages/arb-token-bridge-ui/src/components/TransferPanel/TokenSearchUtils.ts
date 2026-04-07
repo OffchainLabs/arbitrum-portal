@@ -7,6 +7,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { TokenListWithId } from '../../util/TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
 
 // keeps the reference stable
 const emptyData = {};
@@ -14,7 +15,7 @@ const emptyData = {};
 function parsePriceUSD(price: unknown): number | undefined {
   const parsedPrice = Number(price);
 
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+  if (Number.isNaN(parsedPrice) || parsedPrice <= 0) {
     return undefined;
   }
 
@@ -106,13 +107,17 @@ export function tokenListsToSearchableTokenStorage(
             decimals: token.decimals,
             logoURI: token.logoURI,
           };
-          if (!acc[address]!.priceUSD && priceUSD) {
-            acc[address]!.priceUSD = priceUSD;
+          const updatedL1Token = acc[address];
+          if (updatedL1Token && !updatedL1Token.priceUSD && priceUSD) {
+            updatedL1Token.priceUSD = priceUSD;
           }
         }
 
         // acc[address] was defined in the if/else above
-        acc[address]!.listIds.add(tokenList.bridgeTokenListId);
+        const l1Token = acc[address];
+        if (l1Token) {
+          l1Token.listIds.add(tokenList.bridgeTokenListId);
+        }
       } else if (stringifiedChainId === l2ChainId) {
         // The token is an L2 token
 
@@ -136,6 +141,7 @@ export function tokenListsToSearchableTokenStorage(
         if (l1Bridge) {
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
           const priceUSD = parsePriceUSD(token.extensions?.priceUSD);
+          const shouldPreferParentMetadata = tokenList.bridgeTokenListId === LIFI_TRANSFER_LIST_ID;
           const parentTokenName = l1Bridge.name ?? token.name;
           const parentTokenSymbol = l1Bridge.symbol ?? token.symbol;
           const parentTokenDecimals = l1Bridge.decimals ?? token.decimals;
@@ -148,31 +154,40 @@ export function tokenListsToSearchableTokenStorage(
           if (typeof acc[addressOnL1] === 'undefined') {
             // Token is not on the list yet
             acc[addressOnL1] = {
-              name: parentTokenName,
-              symbol: parentTokenSymbol,
+              name: shouldPreferParentMetadata ? parentTokenName : token.name,
+              symbol: shouldPreferParentMetadata ? parentTokenSymbol : token.symbol,
               type: TokenType.ERC20,
-              logoURI: parentTokenLogoURI,
+              logoURI: shouldPreferParentMetadata ? parentTokenLogoURI : token.logoURI,
               address: addressOnL1,
               l2Address: address,
-              decimals: parentTokenDecimals,
+              decimals: shouldPreferParentMetadata ? parentTokenDecimals : token.decimals,
               listIds: new Set(),
               priceUSD,
             };
           } else {
-            // The token's L1 address is already on the list.
-            // LiFi bridgeInfo carries the canonical parent-chain branding, so prefer it.
-            acc[addressOnL1]!.name = parentTokenName;
-            acc[addressOnL1]!.symbol = parentTokenSymbol;
-            acc[addressOnL1]!.decimals = parentTokenDecimals;
-            acc[addressOnL1]!.logoURI = parentTokenLogoURI;
-            acc[addressOnL1]!.l2Address = address;
-            if (!acc[addressOnL1]!.priceUSD && priceUSD) {
-              acc[addressOnL1]!.priceUSD = priceUSD;
+            const l1Token = acc[addressOnL1];
+            if (!l1Token) {
+              return;
+            }
+
+            if (shouldPreferParentMetadata) {
+              // LiFi bridgeInfo carries the canonical parent-chain branding, so prefer it.
+              l1Token.name = parentTokenName;
+              l1Token.symbol = parentTokenSymbol;
+              l1Token.decimals = parentTokenDecimals;
+              l1Token.logoURI = parentTokenLogoURI;
+            }
+            l1Token.l2Address = address;
+            if (!l1Token.priceUSD && priceUSD) {
+              l1Token.priceUSD = priceUSD;
             }
           }
 
           // acc[address] was defined in the if/else above
-          acc[addressOnL1]!.listIds.add(tokenList.bridgeTokenListId);
+          const l1Token = acc[addressOnL1];
+          if (l1Token) {
+            l1Token.listIds.add(tokenList.bridgeTokenListId);
+          }
         }
       }
     });
