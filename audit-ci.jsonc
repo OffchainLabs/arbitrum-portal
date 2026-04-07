@@ -34,5 +34,11 @@
     // from: app>next
     "GHSA-ggv3-7p47-pfv8",
     "GHSA-3x4c-7xq6-9pq8",
+    //
+    // https://github.com/advisories/GHSA-x3ff-w252-2g7j
+    // @stablelib/ed25519 side-channel timing vulnerability
+    // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
+    // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/relay-auth>@stablelib/ed25519
+    "GHSA-x3ff-w252-2g7j",
   ],
 }
