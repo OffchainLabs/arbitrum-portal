@@ -135,7 +135,8 @@
           "name": "DMT",
           "symbol": "DMT",
           "logoUrl": "/images/SankoLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 21600
       }
     },
     {
@@ -268,7 +269,8 @@
           "symbol": "SX",
           "logoUrl": "/images/sxTokenLogo.png"
         },
-        "fastWithdrawalTime": 43200000
+        "fastWithdrawalTime": 43200000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -321,7 +323,6 @@
     },
     {
       "chainId": 1625,
-      "assertionIntervalSeconds": 43200,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
         "bridge": "0x7983403dDA368AA7d67145a9b81c5c517F364c42",
@@ -365,7 +366,8 @@
           "name": "G",
           "symbol": "G",
           "logoUrl": "/images/GravityAlpha_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 43200
       }
     },
     {
@@ -511,7 +513,8 @@
           "symbol": "BOUNTY",
           "logoUrl": "/images/ChainBounty_Logo.svg"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 205200
       }
     },
     {
@@ -559,12 +562,12 @@
           "name": "Miracle Play",
           "symbol": "MPT",
           "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 1800
       }
     },
     {
       "chainId": 98866,
-      "assertionIntervalSeconds": 43200,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
         "bridge": "0x35381f63091926750F43b2A7401B083263aDEF83",
@@ -608,7 +611,8 @@
           "name": "Plume",
           "symbol": "PLUME",
           "logoUrl": "/images/PlumeMainnet_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 43200
       }
     },
     {
@@ -837,7 +841,8 @@
         "nativeTokenData": {
           "name": "Molten",
           "symbol": "MOLTEN"
-        }
+        },
+        "assertionIntervalSeconds": 80100
       }
     },
     {
@@ -885,12 +890,12 @@
           "name": "TikTrix Token",
           "symbol": "TRIX",
           "logoUrl": "/images/MeerChain_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 41400
       }
     },
     {
       "chainId": 190415,
-      "assertionIntervalSeconds": 43200,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
         "bridge": "0x9948eDFBb9e0b104bAd60393dBe79d0BC7937014",
@@ -928,7 +933,8 @@
           "name": "HPP Mainnet",
           "logo": "/images/HPPMainnet_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
-        }
+        },
+        "assertionIntervalSeconds": 43200
       }
     },
     {
@@ -1112,13 +1118,13 @@
           "name": "Lit Protocol",
           "symbol": "LITKEY",
           "logoUrl": "/images/LitChain_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 1800
       }
     },
     {
       "chainId": 4078,
       "parentChainId": 42161,
-      "assertionIntervalSeconds": 7200,
       "confirmPeriodBlocks": 7200,
       "ethBridge": {
         "bridge": "0xB0EC3C1368AF7d9C2CAE6B7f8E022Cc14d59D2b1",
@@ -1155,7 +1161,8 @@
           "name": "Muster Network",
           "description": "A gaming chain with cheap fees and account abstraction.",
           "logo": "/images/MusterLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 4500
       }
     },
     {
@@ -1197,12 +1204,12 @@
           "name": "Edge Mainnet",
           "logo": "/images/EdgeMainnet_Logo.png"
         },
-        "fastWithdrawalTime": 180000
+        "fastWithdrawalTime": 180000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
       "chainId": 680,
-      "assertionIntervalSeconds": 34200,
       "confirmPeriodBlocks": 6000,
       "ethBridge": {
         "bridge": "0x546bd55bF4f3F05810f14eea894cEaB8Cb58F1EA",
@@ -1246,7 +1253,8 @@
           "name": "JasmyCoin",
           "symbol": "JASMY",
           "logoUrl": "/images/JasmyChain_NativeTokenLogo.jpg"
-        }
+        },
+        "assertionIntervalSeconds": 22500
       }
     },
     {
@@ -1343,7 +1351,8 @@
           "symbol": "POWER",
           "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
         },
-        "fastWithdrawalTime": 86400000
+        "fastWithdrawalTime": 86400000,
+        "assertionIntervalSeconds": 19800
       }
     },
     {
@@ -1391,7 +1400,8 @@
           "name": "Kepeng",
           "symbol": "KPG",
           "logoUrl": "/images/MandalaChain_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 4500
       }
     }
   ],

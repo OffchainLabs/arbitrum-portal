@@ -109,8 +109,9 @@ const SECONDS_IN_MINUTE = 60;
 const SECONDS_IN_HOUR = 3600;
 const SECONDS_IN_DAY = 86400;
 /**
- * Default assertion interval, used when a chain doesn't specify one.
- * Matches the ~30-60 min assertion cadence on Arb One / Nova.
+ * Default assertion posting interval (1 hour), used when a chain doesn't
+ * specify one. This is the worst-case wait for a withdrawal to be included
+ * in the next assertion. Matches Arb One / Nova's ~60 min posting cadence.
  */
 const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
 
@@ -131,8 +132,8 @@ function formatDuration(seconds: number, short = false): string {
 }
 
 /**
- * Calculate confirmation time for bridge transactions.
- * @param {number} chainId - The ID of the parent chain.
+ * Calculate confirmation time for bridge withdrawals.
+ * @param {number} chainId - The chain being withdrawn from (child chain).
  */
 export function getConfirmationTime(chainId: number) {
   const { fastWithdrawalTime } = getBridgeUiConfigForChain(chainId);
@@ -154,7 +155,8 @@ export function getConfirmationTime(chainId: number) {
       confirmationTimeInSeconds = 0;
     } else {
       const assertionInterval =
-        orbitChains[chainId]?.assertionIntervalSeconds ?? DEFAULT_ASSERTION_INTERVAL_SECONDS;
+        orbitChains[chainId]?.bridgeUiConfig.assertionIntervalSeconds ??
+        DEFAULT_ASSERTION_INTERVAL_SECONDS;
       confirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
         assertionInterval;

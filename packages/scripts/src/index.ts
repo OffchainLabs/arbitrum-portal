@@ -20,7 +20,7 @@ program
   });
 
 program
-  .command('update-assertion-intervals [targetJsonPath]')
+  .command('update-assertion-intervals <targetJsonPath>')
   .description('Update orbit chain assertion intervals from recent rollup assertions')
   .action(async (targetJsonPath) => {
     const { updateAssertionIntervals } = await import('./updateAssertionIntervals');
