@@ -65,6 +65,9 @@ See `tsconfig.base.json` for the full list.
 - Prettier with `@offchainlabs/prettier-config` + Tailwind CSS plugin + import sorting
 - ESLint with `@offchainlabs/eslint-config-typescript` (base + next)
 - Zustand rules enforced: `enforce-use-setstate`, `no-state-mutation`, `use-store-selectors`
+- **Use `twMerge`** for combining class names — do not use template literal className concatenation (e.g., `` className={`foo ${bar}`} ``). Use `twMerge()` to merge Tailwind classes safely.
+- **`useMemo` only for expensive computations** — do not memoize trivially cheap values (simple strings, booleans, shallow object literals). Reserve `useMemo` for genuinely expensive derivations.
+- **Object params for functions with many args** — when a function takes 3+ parameters, use a single options/params object instead of positional arguments for readability.
 
 ## Testing and Quality Checklist
 
