@@ -5,12 +5,12 @@ import {
   ChevronDownIcon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
 
 import { useAccountMenu } from '../../hooks/useAccountMenu';
+import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
 import { SafeImage } from '../common/SafeImage';
@@ -58,10 +58,10 @@ const AccountContent = ({
 };
 
 export const WidgetHeaderAccountButton = () => {
-  const { isConnected, address } = useAccount();
-  const { openConnectModal } = useConnectModal();
-  const { disconnect } = useDisconnect();
+  const { sourceWallet } = useWallets();
+  const { openConnectModal } = useWalletModal();
   const [isCopied, setIsCopied] = useState(false);
+  const { address } = sourceWallet.account;
 
   const copyToClipboard = async () => {
     if (address) {
@@ -73,7 +73,7 @@ export const WidgetHeaderAccountButton = () => {
 
   return (
     <div className="flex items-center gap-2 text-base text-white">
-      {isConnected && (
+      {sourceWallet.isConnected && (
         <Popover className="relative">
           {({ open }) => (
             <>
@@ -85,7 +85,6 @@ export const WidgetHeaderAccountButton = () => {
               <Transition>
                 <PopoverPanel className="absolute right-0 top-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
                   <div className="flex flex-col gap-2 rounded-md border border-white/20 bg-widget-background p-2">
-                    {/* Account name and copy */}
                     <Button variant="secondary" onClick={copyToClipboard} className="border-none">
                       <AccountContent
                         showCopyButton={true}
@@ -94,11 +93,10 @@ export const WidgetHeaderAccountButton = () => {
                       />
                     </Button>
 
-                    {/* Disconnect button */}
                     <Button
                       variant="secondary"
                       className="flex w-full items-center justify-center border-none bg-white/5"
-                      onClick={() => disconnect()}
+                      onClick={sourceWallet.disconnect}
                     >
                       <div className="flex items-center gap-2">
                         <ArrowLeftEndOnRectangleIcon className="h-3 w-3 text-white/70" />
@@ -113,7 +111,7 @@ export const WidgetHeaderAccountButton = () => {
         </Popover>
       )}
 
-      {!isConnected && (
+      {!sourceWallet.isConnected && (
         <Button
           variant="primary"
           className="flex h-[40px] w-full justify-between bg-primary-cta"
