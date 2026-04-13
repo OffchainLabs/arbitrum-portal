@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { DecodedValueMap } from 'use-query-params';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { queryParamProviderOptions, useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -48,8 +49,22 @@ vi.mock('./TokenLogo', () => ({
   TokenLogo: () => <div data-testid="token-logo" />,
 }));
 
-type ArbQueryParams = Partial<typeof queryParamProviderOptions.params> & {
-  token?: string;
+type ArbQueryParams = DecodedValueMap<typeof queryParamProviderOptions.params>;
+
+const defaultQueryParams: ArbQueryParams = {
+  sourceChain: undefined,
+  destinationChain: undefined,
+  amount: '',
+  amount2: '',
+  destinationAddress: undefined,
+  token: undefined,
+  destinationToken: undefined,
+  settingsOpen: false,
+  tab: 0,
+  disabledFeatures: [],
+  theme: {},
+  debugLevel: 'silent',
+  experiments: undefined,
 };
 
 function makeNetworksState(sourceChainId: ChainId, destinationChainId: ChainId): UseNetworksState {
@@ -92,8 +107,9 @@ describe('TokenButton', () => {
     } as never);
     mockedUseArbQueryParams.mockReturnValue([
       {
+        ...defaultQueryParams,
         token: '0x0000000000000000000000000000000000000000',
-      } as ArbQueryParams,
+      },
       vi.fn(),
     ]);
     mockedUseNativeCurrency.mockImplementation(({ provider }) =>
