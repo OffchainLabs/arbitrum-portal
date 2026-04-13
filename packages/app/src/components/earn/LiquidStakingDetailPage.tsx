@@ -297,38 +297,42 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
         </div>
       )}
       {/* Mobile CTA Buttons - Sticky Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelectedAction('buy');
-              setShowActionPanel(true);
-            }}
-            className={twMerge(
-              'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-              selectedAction === 'buy' ? 'bg-primary-cta text-white' : 'bg-white/10 text-white/70',
-            )}
-          >
-            Buy
-          </button>
-          {hasPosition && (
+      {!showActionPanel && (
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
+          <div className="flex gap-2">
             <button
               onClick={() => {
-                setSelectedAction('sell');
+                setSelectedAction('buy');
                 setShowActionPanel(true);
               }}
               className={twMerge(
                 'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-                selectedAction === 'sell'
+                selectedAction === 'buy'
                   ? 'bg-primary-cta text-white'
                   : 'bg-white/10 text-white/70',
               )}
             >
-              Sell
+              Buy
             </button>
-          )}
+            {hasPosition && (
+              <button
+                onClick={() => {
+                  setSelectedAction('sell');
+                  setShowActionPanel(true);
+                }}
+                className={twMerge(
+                  'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+                  selectedAction === 'sell'
+                    ? 'bg-primary-cta text-white'
+                    : 'bg-white/10 text-white/70',
+                )}
+              >
+                Sell
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <DialogWrapper {...tosDialogProps} />
 

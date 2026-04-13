@@ -268,58 +268,14 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
-        <div className="flex gap-2">
-          {!mobileHasPosition && isMarketExpired ? (
-            <div className="flex-1 text-center py-3 text-sm text-white/50">
-              This market has matured
-            </div>
-          ) : !mobileHasPosition ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedAction('enter');
-                setShowActionPanel(true);
-              }}
-              className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
-            >
-              Enter
-            </button>
-          ) : isPositionExpired ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canRedeem) {
-                    return;
-                  }
-
-                  setSelectedAction('redeem');
-                  setShowActionPanel(true);
-                }}
-                disabled={!canRedeem}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Redeem
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canRollover) {
-                    return;
-                  }
-
-                  setSelectedAction('rollover');
-                  setShowActionPanel(true);
-                }}
-                disabled={!canRollover}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Rollover
-              </button>
-            </>
-          ) : (
-            <>
+      {!showActionPanel && (
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
+          <div className="flex gap-2">
+            {!mobileHasPosition && isMarketExpired ? (
+              <div className="flex-1 text-center py-3 text-sm text-white/50">
+                This market has matured
+              </div>
+            ) : !mobileHasPosition ? (
               <button
                 type="button"
                 onClick={() => {
@@ -330,25 +286,71 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
               >
                 Enter
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canExit) {
-                    return;
-                  }
+            ) : isPositionExpired ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canRedeem) {
+                      return;
+                    }
 
-                  setSelectedAction('exit');
-                  setShowActionPanel(true);
-                }}
-                disabled={!canExit}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Exit
-              </button>
-            </>
-          )}
+                    setSelectedAction('redeem');
+                    setShowActionPanel(true);
+                  }}
+                  disabled={!canRedeem}
+                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Redeem
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canRollover) {
+                      return;
+                    }
+
+                    setSelectedAction('rollover');
+                    setShowActionPanel(true);
+                  }}
+                  disabled={!canRollover}
+                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Rollover
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAction('enter');
+                    setShowActionPanel(true);
+                  }}
+                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
+                >
+                  Enter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canExit) {
+                      return;
+                    }
+
+                    setSelectedAction('exit');
+                    setShowActionPanel(true);
+                  }}
+                  disabled={!canExit}
+                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Exit
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <EarnTransactionDetailsPopup
         isOpen={txDetailsIsOpen}
         onClose={closeTransactionDetails}

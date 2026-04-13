@@ -247,40 +247,42 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelectedAction('supply');
-              setShowActionPanel(true);
-            }}
-            className={twMerge(
-              'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-              selectedAction === 'supply'
-                ? 'bg-primary-cta text-white'
-                : 'bg-white/10 text-white/70',
-            )}
-          >
-            Supply
-          </button>
-          {hasPosition && (
+      {!showActionPanel && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
+          <div className="flex gap-2">
             <button
               onClick={() => {
-                setSelectedAction('withdraw');
+                setSelectedAction('supply');
                 setShowActionPanel(true);
               }}
               className={twMerge(
                 'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-                selectedAction === 'withdraw'
+                selectedAction === 'supply'
                   ? 'bg-primary-cta text-white'
                   : 'bg-white/10 text-white/70',
               )}
             >
-              Withdraw
+              Supply
             </button>
-          )}
+            {hasPosition && (
+              <button
+                onClick={() => {
+                  setSelectedAction('withdraw');
+                  setShowActionPanel(true);
+                }}
+                className={twMerge(
+                  'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+                  selectedAction === 'withdraw'
+                    ? 'bg-primary-cta text-white'
+                    : 'bg-white/10 text-white/70',
+                )}
+              >
+                Withdraw
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <DialogWrapper {...tosDialogProps} />
 
