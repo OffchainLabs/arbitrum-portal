@@ -1,14 +1,15 @@
-import { useLocalStorage } from '@rehooks/local-storage';
+'use client';
+
 import { BigNumber } from 'ethers';
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
-import { EARN_TOS_LOCALSTORAGE_KEY } from '@/app-lib/earn/constants';
+import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
+import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import {
   formatAmount,
@@ -20,13 +21,11 @@ import { Card } from '@/components/Card';
 import { type StandardOpportunityLend } from '@/earn-api/types';
 
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
-import {
-  EarnTransactionDetailsPopup,
-  type TransactionDetails,
-} from './EarnTransactionDetailsPopup';
+import { EarnTransactionDetailsPopup } from './EarnTransactionDetailsPopup';
 import { EarnUserTransactionHistory } from './EarnUserTransactionHistory';
 import { HistoricalChart } from './HistoricalChart';
 import { VaultActionPanel } from './VaultActionPanel';
+import { useEarnTransactionDetailsDialog } from './useEarnTransactionDetailsDialog';
 
 interface LendOpportunityDetailsPageProps {
   opportunity: StandardOpportunityLend;
@@ -35,11 +34,14 @@ interface LendOpportunityDetailsPageProps {
 export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetailsPageProps) {
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedAction, setSelectedAction] = useState<'supply' | 'withdraw'>('supply');
-  const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(EARN_TOS_LOCALSTORAGE_KEY, false);
-  const [tosDialogProps, tosOpenDialog] = useDialog2();
-  const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
-  const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
-  const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
+  const { checkAndShowToS, tosDialogProps } = useCheckAndShowToS();
+  const {
+    txDetailsIsOpen,
+    transactionDetails,
+    txDetailsIsLoading,
+    showTransactionDetails,
+    closeTransactionDetails,
+  } = useEarnTransactionDetailsDialog();
   const { address: walletAddress, isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
 
@@ -66,44 +68,6 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
     typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatCompactUsd(tvlUsd) : '—';
   const currentApr =
     opportunity.lend?.apy7day != null ? `${opportunity.lend.apy7day.toFixed(2)}%` : '—';
-
-  const checkAndShowToS = useCallback(async (): Promise<boolean> => {
-    if (tosAccepted) {
-      return true;
-    }
-
-    const waitForInput = tosOpenDialog('earn_tos');
-    const [confirmed, onCloseData] = await waitForInput();
-
-    if (
-      confirmed &&
-      onCloseData &&
-      typeof onCloseData === 'object' &&
-      'tosAccepted' in onCloseData
-    ) {
-      setTosAccepted(true);
-      return true;
-    }
-
-    return false;
-  }, [setTosAccepted, tosAccepted, tosOpenDialog]);
-
-  const showTransactionDetails = useCallback(
-    (details: TransactionDetails, isCompleted: boolean = false) => {
-      setTransactionDetails(details);
-      setTxDetailsIsLoading(!isCompleted && !details.txHash);
-      setTxDetailsIsOpen(true);
-    },
-    [],
-  );
-
-  const closeTransactionDetails = useCallback(() => {
-    setTxDetailsIsOpen(false);
-    setTimeout(() => {
-      setTransactionDetails(null);
-      setTxDetailsIsLoading(true);
-    }, 300);
-  }, []);
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
@@ -283,42 +247,45 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelectedAction('supply');
-              setShowActionPanel(true);
-            }}
-            className={twMerge(
-              'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-              selectedAction === 'supply'
-                ? 'bg-primary-cta text-white'
-                : 'bg-white/10 text-white/70',
-            )}
-          >
-            Supply
-          </button>
-          {hasPosition && (
+      {!showActionPanel && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
+          <div className="flex gap-2">
             <button
               onClick={() => {
-                setSelectedAction('withdraw');
+                setSelectedAction('supply');
                 setShowActionPanel(true);
               }}
               className={twMerge(
                 'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-                selectedAction === 'withdraw'
+                selectedAction === 'supply'
                   ? 'bg-primary-cta text-white'
                   : 'bg-white/10 text-white/70',
               )}
             >
-              Withdraw
+              Supply
             </button>
-          )}
+            {hasPosition && (
+              <button
+                onClick={() => {
+                  setSelectedAction('withdraw');
+                  setShowActionPanel(true);
+                }}
+                className={twMerge(
+                  'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+                  selectedAction === 'withdraw'
+                    ? 'bg-primary-cta text-white'
+                    : 'bg-white/10 text-white/70',
+                )}
+              >
+                Withdraw
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <DialogWrapper {...tosDialogProps} />
+
       <EarnTransactionDetailsPopup
         isOpen={txDetailsIsOpen}
         onClose={closeTransactionDetails}

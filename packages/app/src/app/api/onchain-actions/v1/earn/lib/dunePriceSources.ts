@@ -25,6 +25,9 @@ const PRICE_BY_SYMBOL: Record<string, DunePriceLookup> = {
   'STETH': { chainId: ChainId.Ethereum, tokenAddress: CommonAddress.Ethereum.STETH },
   'WSTETH': { chainId: ChainId.Ethereum, tokenAddress: CommonAddress.Ethereum.WSTETH },
 
+  // Ether.fi restaked ETH
+  'WEETH': { chainId: ChainId.Ethereum, tokenAddress: CommonAddress.Ethereum.WEETH },
+
   // USDC (same asset, bridged)
   'USDC': { chainId: ChainId.Ethereum, tokenAddress: CommonAddress.Ethereum.USDC },
   'USDC.E': { chainId: ChainId.Ethereum, tokenAddress: CommonAddress.Ethereum.USDC },
@@ -64,6 +67,10 @@ const PRICE_BY_ADDRESS: Record<string, DunePriceLookup> = {
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WSTETH.toLowerCase()}`]: {
     chainId: ChainId.Ethereum,
     tokenAddress: CommonAddress.Ethereum.WSTETH,
+  },
+  [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WEETH.toLowerCase()}`]: {
+    chainId: ChainId.Ethereum,
+    tokenAddress: CommonAddress.Ethereum.WEETH,
   },
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WBTC.toLowerCase()}`]: {
     chainId: ChainId.Ethereum,

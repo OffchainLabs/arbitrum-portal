@@ -27,9 +27,19 @@ const DEFAULT_SUMMARY = {
 };
 
 export interface UserPositionData {
+  category: OpportunityCategory;
+  amountRaw: string;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  tokenIcon?: string;
   deposited: string;
-  valueUsd: number;
-  projectedEarningsUsd: number;
+  valueUsd: number | null;
+  projectedEarningsUsd: number | null;
+  expiryDate?: string;
+  opportunityName?: string;
+  opportunityProtocol?: string;
+  opportunityApy?: number;
+  opportunityTvl?: number;
 }
 
 interface UseUserPositionsResult {
@@ -68,18 +78,29 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
   for (const position of rawData.positions) {
     const normalizedOpportunityId = position.opportunityId.toLowerCase();
     const apy = position.opportunity.apy || 0;
+    const valueUsd = position.valueUsd;
     const projectedEarningsUsd =
       position.projectedEarningsUsd ??
-      (position.valueUsd > 0 && apy > 0 ? (position.valueUsd * apy) / 100 : 0);
+      (valueUsd !== null && valueUsd > 0 && apy > 0 ? (valueUsd * apy) / 100 : null);
     const deposited = formatAmount(BigNumber.from(position.amount), {
       decimals: position.tokenDecimals,
       symbol: position.tokenSymbol,
     });
 
     positionsMap.set(normalizedOpportunityId, {
+      category: position.category,
+      amountRaw: position.amount,
+      tokenSymbol: position.tokenSymbol,
+      tokenDecimals: position.tokenDecimals,
+      tokenIcon: position.tokenIcon,
       deposited,
-      valueUsd: position.valueUsd,
+      valueUsd,
       projectedEarningsUsd,
+      expiryDate: position.expiryDate,
+      opportunityName: position.opportunity?.name,
+      opportunityProtocol: position.opportunity?.protocol,
+      opportunityApy: position.opportunity?.apy,
+      opportunityTvl: position.opportunity?.tvl,
     });
 
     opportunityIds.add(normalizedOpportunityId);
@@ -128,7 +149,6 @@ export function useUserPositions(
     error,
     isLoading,
     mutate,
-    ...rest
   } = useSWRImmutable<UserPositionsResponse>(
     swrKey,
     async ([keyUserAddress, keyChainId]: readonly [string, EarnChainId, 'userPositions']) => {
@@ -163,6 +183,5 @@ export function useUserPositions(
     isLoading,
     error: error?.message || null,
     refetch: () => mutate(),
-    ...rest,
   };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { Button } from '@/bridge/components/common/Button';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
@@ -19,14 +19,13 @@ interface EarnAmountInputSectionProps {
   onMaxClick: () => void;
   label: string;
   inputToken: TokenDisplay;
-  inputTokenSelector?: ReactNode;
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
-  decimals?: number;
+  inputTokenSelector?: ReactNode;
 }
 
 export function EarnAmountInputSection({
@@ -35,14 +34,13 @@ export function EarnAmountInputSection({
   onMaxClick,
   label,
   inputToken,
-  inputTokenSelector,
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
-  decimals = 18,
+  inputTokenSelector,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
   const currentBalanceNumeric =
@@ -78,9 +76,8 @@ export function EarnAmountInputSection({
             aria-label="amount-input"
             value={amount}
             onChange={onAmountChange}
-            decimals={decimals}
           />
-          {inputTokenSelector || (
+          {inputTokenSelector ?? (
             <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
               <SafeImage
                 src={inputToken.logoUrl}

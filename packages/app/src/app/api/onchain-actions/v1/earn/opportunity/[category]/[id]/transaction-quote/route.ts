@@ -51,7 +51,7 @@ async function getTransactionQuote(input: {
   action: unknown;
   amount: unknown;
   chainId?: unknown;
-  userAddress: unknown;
+  userAddress?: unknown;
   inputTokenAddress?: unknown;
   outputTokenAddress?: unknown;
   rolloverTargetOpportunityId?: unknown;
@@ -64,7 +64,7 @@ async function getTransactionQuote(input: {
   const rawChainId = assertOptionalFiniteNumber(input.chainId, {
     field: 'chainId',
   });
-  const rawUserAddress = assertString(input.userAddress, 'userAddress');
+  const rawUserAddress = assertOptionalString(input.userAddress, 'userAddress');
   const rawInputTokenAddress = assertOptionalString(input.inputTokenAddress, 'inputTokenAddress');
   const rawOutputTokenAddress = assertOptionalString(
     input.outputTokenAddress,
@@ -93,7 +93,7 @@ async function getTransactionQuote(input: {
   const action = rawAction;
 
   const amount = assertPositiveNumberString(rawAmount, 'amount');
-  const userAddress = assertAddress(rawUserAddress, 'userAddress');
+  const userAddress = assertOptionalAddress(rawUserAddress, 'userAddress');
   if (rawChainId !== undefined && !Number.isInteger(rawChainId)) {
     throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
   }
@@ -135,7 +135,7 @@ export async function GET(
 ) {
   try {
     const url = new URL(request.url);
-    const quote = await getTransactionQuote({
+    const quoteInput = {
       category: params.category,
       opportunityId: params.id,
       action: url.searchParams.get('action'),
@@ -148,7 +148,8 @@ export async function GET(
       rolloverAmount: url.searchParams.get('rolloverAmount'),
       slippage: parseOptionalNumberQuery(url.searchParams.get('slippage')),
       simulate: parseOptionalBooleanQuery(url.searchParams.get('simulate')),
-    });
+    };
+    const quote = await getTransactionQuote(quoteInput);
 
     return NextResponse.json(quote, {
       headers: {

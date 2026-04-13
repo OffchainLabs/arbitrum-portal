@@ -38,7 +38,23 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
   let weightedApySum = 0;
 
   for (const position of positions) {
-    const valueUsd = Number(position.valueUsd) || 0;
+    const categoryStats = byCategory[position.category];
+    categoryStats.count++;
+
+    const vendorKey = position.vendor;
+    if (!byVendor[vendorKey]) {
+      byVendor[vendorKey] = { count: 0, valueUsd: 0 };
+    }
+    const vendor = byVendor[vendorKey];
+    if (vendor) {
+      vendor.count++;
+    }
+
+    if (position.valueUsd === null || position.valueUsd === undefined) {
+      continue;
+    }
+
+    const valueUsd = Number(position.valueUsd);
     if (!isFinite(valueUsd) || valueUsd < 0) continue;
 
     const apy = position.opportunity?.apy ?? 0;
@@ -50,20 +66,12 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 
     totalValueUsd += valueUsd;
 
-    const categoryStats = byCategory[position.category];
-    categoryStats.count++;
     categoryStats.valueUsd += valueUsd;
     if (isFinite(apyNumber) && apyNumber >= 0) {
       categoryStats.weightedApySum += apyNumber * valueUsd;
     }
 
-    const vendorKey = position.vendor;
-    if (!byVendor[vendorKey]) {
-      byVendor[vendorKey] = { count: 0, valueUsd: 0 };
-    }
-    const vendor = byVendor[vendorKey];
     if (vendor) {
-      vendor.count++;
       vendor.valueUsd += valueUsd;
     }
   }
@@ -114,7 +122,7 @@ export async function GET(request: NextRequest) {
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const chainId = parseEarnChainId(searchParams.get('chainId'));
 
-    const cacheKey = `positions:${userAddress}:${category ?? 'all'}:${chainId}`;
+    const cacheKey = `positions:${userAddress.toLowerCase()}:${category ?? 'all'}:${chainId}`;
 
     const getCachedPositions = unstable_cache(
       async () => {

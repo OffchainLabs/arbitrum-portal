@@ -2,7 +2,6 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber } from 'ethers';
-import type { SWRResponse } from 'swr';
 import useSWR from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -12,12 +11,12 @@ import type {
   TransactionQuoteResponse,
 } from '@/earn-api/types';
 
-export interface UseTransactionQuoteParams {
+interface UseTransactionQuoteParams {
   opportunityId: string | null;
   category: OpportunityCategory;
   action: TransactionQuoteRequest['action'];
   amount: string;
-  userAddress: string | null;
+  userAddress?: string | null;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;
@@ -27,8 +26,6 @@ export interface UseTransactionQuoteParams {
   rolloverAmount?: string;
   enabled?: boolean;
 }
-
-export type UseTransactionQuoteResult = SWRResponse<TransactionQuoteResponse, Error>;
 
 export function useTransactionQuote({
   opportunityId,
@@ -44,7 +41,7 @@ export function useTransactionQuote({
   rolloverTargetOpportunityId,
   rolloverAmount,
   enabled = true,
-}: UseTransactionQuoteParams): UseTransactionQuoteResult {
+}: UseTransactionQuoteParams) {
   const debouncedAmount = useDebounce(amount, 500);
   const hasPositiveAmount = (() => {
     if (!/^\d+$/.test(debouncedAmount)) {
@@ -59,13 +56,13 @@ export function useTransactionQuote({
   })();
 
   return useSWR(
-    enabled && opportunityId && userAddress && hasPositiveAmount
+    enabled && opportunityId && hasPositiveAmount
       ? ([
           opportunityId,
           category,
           action,
-          userAddress,
           debouncedAmount,
+          userAddress,
           inputTokenAddress,
           outputTokenAddress,
           slippage,
@@ -80,8 +77,8 @@ export function useTransactionQuote({
       keyOpportunityId,
       keyCategory,
       keyAction,
-      keyUserAddress,
       keyDebouncedAmount,
+      keyUserAddress,
       keyInputTokenAddress,
       keyOutputTokenAddress,
       keySlippage,
@@ -93,11 +90,14 @@ export function useTransactionQuote({
       const queryParams = new URLSearchParams({
         action: keyAction,
         amount: keyDebouncedAmount,
-        userAddress: keyUserAddress,
         slippage: String(keySlippage),
         simulate: String(keySimulate),
         chainId: String(keyChainId),
       });
+
+      if (keyUserAddress) {
+        queryParams.set('userAddress', keyUserAddress);
+      }
 
       if (keyInputTokenAddress) {
         queryParams.set('inputTokenAddress', keyInputTokenAddress);
@@ -129,8 +129,10 @@ export function useTransactionQuote({
       return (await response.json()) as TransactionQuoteResponse;
     },
     {
+      refreshInterval: 20_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      keepPreviousData: true,
       errorRetryCount: 2,
     },
   );

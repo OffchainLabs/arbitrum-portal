@@ -3,7 +3,6 @@
 import { ChangeEvent } from 'react';
 
 import { sanitizeAmountQueryParam } from '@/bridge/hooks/useArbQueryParams';
-import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 
 interface EarnActionPanelInputProps {
   'id'?: string;
@@ -11,7 +10,6 @@ interface EarnActionPanelInputProps {
   'aria-label'?: string;
   'value': string;
   'onChange': (value: string) => void;
-  'decimals': number;
 }
 
 export function EarnActionPanelInput({
@@ -20,12 +18,10 @@ export function EarnActionPanelInput({
   'aria-label': ariaLabel,
   value,
   onChange,
-  decimals,
 }: EarnActionPanelInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    const sanitizedValue = sanitizeAmountQueryParam(truncateExtraDecimals(inputValue, decimals));
-    onChange(sanitizedValue);
+    onChange(sanitizeAmountQueryParam(inputValue));
   };
 
   return (
