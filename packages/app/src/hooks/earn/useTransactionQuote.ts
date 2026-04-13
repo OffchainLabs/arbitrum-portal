@@ -2,7 +2,6 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber } from 'ethers';
-import type { SWRResponse } from 'swr';
 import useSWR from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -12,7 +11,7 @@ import type {
   TransactionQuoteResponse,
 } from '@/earn-api/types';
 
-export interface UseTransactionQuoteParams {
+interface UseTransactionQuoteParams {
   opportunityId: string | null;
   category: OpportunityCategory;
   action: TransactionQuoteRequest['action'];
@@ -28,8 +27,6 @@ export interface UseTransactionQuoteParams {
   enabled?: boolean;
 }
 
-export type UseTransactionQuoteResult = SWRResponse<TransactionQuoteResponse, Error>;
-
 export function useTransactionQuote({
   opportunityId,
   category,
@@ -44,7 +41,7 @@ export function useTransactionQuote({
   rolloverTargetOpportunityId,
   rolloverAmount,
   enabled = true,
-}: UseTransactionQuoteParams): UseTransactionQuoteResult {
+}: UseTransactionQuoteParams) {
   const debouncedAmount = useDebounce(amount, 500);
   const hasPositiveAmount = (() => {
     if (!/^\d+$/.test(debouncedAmount)) {

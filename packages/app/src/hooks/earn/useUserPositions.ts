@@ -31,10 +31,15 @@ export interface UserPositionData {
   amountRaw: string;
   tokenSymbol: string;
   tokenDecimals: number;
+  tokenIcon?: string;
   deposited: string;
   valueUsd: number | null;
   projectedEarningsUsd: number | null;
-  isExpired?: boolean;
+  expiryDate?: string;
+  opportunityName?: string;
+  opportunityProtocol?: string;
+  opportunityApy?: number;
+  opportunityTvl?: number;
 }
 
 interface UseUserPositionsResult {
@@ -87,10 +92,15 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
       amountRaw: position.amount,
       tokenSymbol: position.tokenSymbol,
       tokenDecimals: position.tokenDecimals,
+      tokenIcon: position.tokenIcon,
       deposited,
       valueUsd,
       projectedEarningsUsd,
-      isExpired: position.isExpired,
+      expiryDate: position.expiryDate,
+      opportunityName: position.opportunity?.name,
+      opportunityProtocol: position.opportunity?.protocol,
+      opportunityApy: position.opportunity?.apy,
+      opportunityTvl: position.opportunity?.tvl,
     });
 
     opportunityIds.add(normalizedOpportunityId);

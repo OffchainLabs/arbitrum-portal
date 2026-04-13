@@ -56,14 +56,18 @@ const EVENT_TYPE_TO_ACTION: Record<string, string> = {
   withdraw: 'withdraw',
   supply: 'supply',
   enter: 'enter',
-  exit: 'exit',
+  exit: 'redeem',
   buy: 'buy',
   sell: 'sell',
   claim: 'claim',
+  rollover: 'rollover',
 };
 
 function getDisplayAction(eventType: string): string {
   const normalized = eventType.toLowerCase();
+  if (normalized === 'redeem') {
+    return 'redeem';
+  }
   return EVENT_TYPE_TO_ACTION[normalized] ?? normalized;
 }
 
@@ -118,7 +122,7 @@ function getDisplayAsset(
       };
     }
 
-    if (action === 'exit' && hasOutputAsset) {
+    if ((action === 'exit' || action === 'redeem' || action === 'rollover') && hasOutputAsset) {
       return {
         amountRaw: row.outputAssetAmountRaw!,
         symbol: row.outputAssetSymbol!,

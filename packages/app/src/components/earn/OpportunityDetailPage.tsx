@@ -1,13 +1,28 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
 import { toTableRow } from '@/app-hooks/earn/useAllOpportunities';
 import { useOpportunityDetails } from '@/app-hooks/earn/useOpportunityDetails';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { type EarnChainId } from '@/earn-api/types';
 
-import { LendOpportunityDetailsPage } from './LendOpportunityDetailsPage';
-import { LiquidStakingDetailPage } from './LiquidStakingDetailPage';
 import { OpportunityDetailPageSkeleton } from './OpportunityDetailPageSkeleton';
+
+const LendOpportunityDetailsPage = dynamic(
+  () => import('./LendOpportunityDetailsPage').then((mod) => mod.LendOpportunityDetailsPage),
+  { loading: () => <OpportunityDetailPageSkeleton /> },
+);
+
+const PendleDetailPage = dynamic(
+  () => import('./PendleDetailPage').then((mod) => mod.PendleDetailPage),
+  { loading: () => <OpportunityDetailPageSkeleton /> },
+);
+
+const LiquidStakingDetailPage = dynamic(
+  () => import('./LiquidStakingDetailPage').then((mod) => mod.LiquidStakingDetailPage),
+  { loading: () => <OpportunityDetailPageSkeleton /> },
+);
 
 interface OpportunityDetailPageProps {
   opportunityId: string;
@@ -55,12 +70,14 @@ export function OpportunityDetailPage({
   switch (data.category) {
     case OpportunityCategory.Lend:
       return <LendOpportunityDetailsPage opportunity={data} />;
+    case OpportunityCategory.FixedYield:
+      return <PendleDetailPage opportunity={data} />;
     case OpportunityCategory.LiquidStaking:
       return <LiquidStakingDetailPage opportunity={toTableRow(data)} />;
     default:
       return (
         <div className="rounded border-error bg-error/20 p-8 text-center">
-          <p className="text-error">Unsupported category: {data.category}</p>
+          <p className="text-error">Unsupported category: {category}</p>
         </div>
       );
   }

@@ -134,7 +134,7 @@ export function StaticLiquidStakingTokenBadge({
   return <LiquidStakingTokenBadge symbol={symbol} logoUrl={logoUrl} />;
 }
 
-export type LiquidStakingTokenControl =
+export type TokenSelectorControlConfig =
   | {
       type: 'select';
       options: EarnTokenOption[];
@@ -147,7 +147,7 @@ export type LiquidStakingTokenControl =
       logoUrl?: string;
     };
 
-export function LiquidStakingTokenControl({ control }: { control: LiquidStakingTokenControl }) {
+export function TokenSelectorControl({ control }: { control: TokenSelectorControlConfig }) {
   if (control.type === 'select') {
     return (
       <LiquidStakingTokenSelector

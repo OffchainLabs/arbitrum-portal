@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 
-import type { LiquidStakingTokenControl } from '../../components/earn/LiquidStakingTokenSelector';
+import type { TokenSelectorControlConfig } from '../../components/earn/LiquidStakingTokenSelector';
 import type { EarnTokenOption } from '../../components/earn/earnTokenDropdownOptions';
 import { getMaxAmountWithGasBuffer } from './useEarnTransactionUtils';
 import type { UseEarnTransferReadinessResult } from './useEarnTransferReadiness';
@@ -173,7 +173,7 @@ export function useLiquidStakingPanelData({
         : String(transferReadiness.errorMessage)
       : null);
 
-  const amountTokenControl: LiquidStakingTokenControl =
+  const amountTokenControl: TokenSelectorControlConfig =
     selectedAction === 'buy'
       ? {
           type: 'select',
@@ -187,7 +187,7 @@ export function useLiquidStakingPanelData({
           logoUrl: opportunity.tokenIcon,
         };
 
-  const receiveTokenControl: LiquidStakingTokenControl | undefined =
+  const receiveTokenControl: TokenSelectorControlConfig | undefined =
     selectedAction === 'sell'
       ? {
           type: 'select',

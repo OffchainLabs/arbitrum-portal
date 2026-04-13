@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { Button } from '@/bridge/components/common/Button';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
@@ -23,6 +25,7 @@ interface EarnAmountInputSectionProps {
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
+  inputTokenSelector?: ReactNode;
 }
 
 export function EarnAmountInputSection({
@@ -37,6 +40,7 @@ export function EarnAmountInputSection({
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
+  inputTokenSelector,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
   const currentBalanceNumeric =
@@ -73,17 +77,19 @@ export function EarnAmountInputSection({
             value={amount}
             onChange={onAmountChange}
           />
-          <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
-            <SafeImage
-              src={inputToken.logoUrl}
-              alt={`${inputToken.symbol} logo`}
-              width={20}
-              height={20}
-              className="rounded-full shrink-0"
-              fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
-            />
-            <span className="text-sm font-medium text-white">{inputToken.symbol}</span>
-          </div>
+          {inputTokenSelector ?? (
+            <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
+              <SafeImage
+                src={inputToken.logoUrl}
+                alt={`${inputToken.symbol} logo`}
+                width={20}
+                height={20}
+                className="rounded-full shrink-0"
+                fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
+              />
+              <span className="text-sm font-medium text-white">{inputToken.symbol}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">

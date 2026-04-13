@@ -3,8 +3,8 @@
 import Image from 'next/image';
 
 import {
-  LiquidStakingTokenControl,
-  type LiquidStakingTokenControl as LiquidStakingTokenControlType,
+  TokenSelectorControl,
+  type TokenSelectorControlConfig,
 } from './LiquidStakingTokenSelector';
 
 interface LiquidStakingReceiveSectionProps {
@@ -15,7 +15,7 @@ interface LiquidStakingReceiveSectionProps {
     symbol: string;
     logoUrl?: string;
   };
-  tokenControl?: LiquidStakingTokenControlType;
+  tokenControl?: TokenSelectorControlConfig;
   usdValue?: string;
 }
 
@@ -48,7 +48,7 @@ export function LiquidStakingReceiveSection({
             />
           )}
           {tokenControl ? (
-            <LiquidStakingTokenControl control={tokenControl} />
+            <TokenSelectorControl control={tokenControl} />
           ) : (
             <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
               {token.logoUrl ? (
