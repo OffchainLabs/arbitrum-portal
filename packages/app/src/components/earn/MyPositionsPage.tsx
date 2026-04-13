@@ -109,6 +109,7 @@ export function MyPositionsPage() {
         maturityDate: positionData.expiryDate
           ? dayjs(positionData.expiryDate).format('D MMM YYYY')
           : undefined,
+        rawMaturityDate: positionData.expiryDate,
       } satisfies OpportunityTableRow);
     }
 

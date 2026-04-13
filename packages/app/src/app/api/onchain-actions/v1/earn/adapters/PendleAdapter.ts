@@ -547,7 +547,7 @@ export class PendleAdapter implements VendorAdapter {
     return response.transactions
       .map((transaction) => {
         const isExit = transaction.type === 'exit';
-        const eventType = isExit ? 'redeem' : transaction.type;
+        const eventType = transaction.type;
         const inputAmountRaw = toRawAmount(
           transaction.inputAmount,
           isExit ? ptDecimals : underlyingDecimals,

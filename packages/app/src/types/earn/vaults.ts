@@ -57,6 +57,7 @@ export interface OpportunityTableRow {
   rawApy: number | null;
   rawTvl: number | null;
   maturityDate?: string;
+  rawMaturityDate?: string;
 }
 
 export type OpportunitySelectSurface = 'featured-card' | 'table-card' | 'table-row';

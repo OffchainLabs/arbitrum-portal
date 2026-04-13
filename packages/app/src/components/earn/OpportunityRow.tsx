@@ -20,7 +20,7 @@ interface OpportunityRowProps {
 export function OpportunityRow({ opportunity, onOpportunitySelect }: OpportunityRowProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
   const isExpired =
-    opportunity.maturityDate != null && new Date(opportunity.maturityDate) < new Date();
+    opportunity.rawMaturityDate != null && new Date(opportunity.rawMaturityDate) < new Date();
 
   return (
     <Link

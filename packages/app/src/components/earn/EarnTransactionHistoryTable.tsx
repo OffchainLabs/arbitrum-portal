@@ -56,16 +56,16 @@ const EVENT_TYPE_TO_ACTION: Record<string, string> = {
   withdraw: 'withdraw',
   supply: 'supply',
   enter: 'enter',
-  exit: 'redeem',
+  exit: 'exit',
   buy: 'buy',
   sell: 'sell',
   claim: 'claim',
   rollover: 'rollover',
 };
 
-function getDisplayAction(eventType: string): string {
+function getDisplayAction(eventType: string, category: OpportunityCategory): string {
   const normalized = eventType.toLowerCase();
-  if (normalized === 'redeem') {
+  if (category === OpportunityCategory.FixedYield && normalized === 'redeem') {
     return 'redeem';
   }
   return EVENT_TYPE_TO_ACTION[normalized] ?? normalized;
@@ -204,7 +204,7 @@ function DesktopHistoryRow({
 }) {
   const dateStr = getDateStr(row.timestamp);
   const timeStr = getTimeStr(row.timestamp);
-  const action = getDisplayAction(row.eventType);
+  const action = getDisplayAction(row.eventType, category);
   const displayAsset = getDisplayAsset(row, category, action);
 
   return (
@@ -268,7 +268,7 @@ function MobileHistoryRow({
   category: OpportunityCategory;
   onRowClick: (row: EarnTransactionHistoryRow) => void;
 }) {
-  const action = getDisplayAction(row.eventType);
+  const action = getDisplayAction(row.eventType, category);
   const displayAsset = getDisplayAsset(row, category, action);
 
   return (
@@ -319,7 +319,7 @@ export function EarnTransactionHistoryTable({
 
   const handleRowClick = useCallback(
     (row: EarnTransactionHistoryRow) => {
-      const action = getDisplayAction(row.eventType);
+      const action = getDisplayAction(row.eventType, category);
       const displayAsset = getDisplayAsset(row, category, action);
       posthog?.capture('Earn Transaction History Row Clicked', {
         page: 'Earn',

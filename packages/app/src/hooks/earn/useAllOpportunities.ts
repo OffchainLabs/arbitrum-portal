@@ -60,6 +60,7 @@ export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     rawApy,
     rawTvl,
     maturityDate: formatMaturityDate(m?.maturityDate),
+    rawMaturityDate: m?.maturityDate,
   };
 }
 

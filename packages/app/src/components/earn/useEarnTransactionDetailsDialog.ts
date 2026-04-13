@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 
@@ -8,6 +8,15 @@ export function useEarnTransactionDetailsDialog() {
   const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
   const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
 
   const showTransactionDetails = useCallback(
     (details: TransactionDetails, isCompleted: boolean = false) => {
@@ -20,11 +29,14 @@ export function useEarnTransactionDetailsDialog() {
 
   const closeTransactionDetails = useCallback(() => {
     setTxDetailsIsOpen(false);
-    const timer = setTimeout(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => {
       setTransactionDetails(null);
       setTxDetailsIsLoading(true);
+      closeTimerRef.current = null;
     }, 300);
-    return () => clearTimeout(timer);
   }, []);
 
   return {
