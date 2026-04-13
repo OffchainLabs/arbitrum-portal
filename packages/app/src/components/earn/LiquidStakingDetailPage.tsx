@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { formatUnits, getAddress, isAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -20,13 +20,11 @@ import { getLiquidStakingOpportunity } from '@/earn-api/lib/liquidStaking';
 import { OpportunityCategory } from '@/earn-api/types';
 
 import { EarnBackButtonLabel, earnBackButtonClassName } from './EarnBackButton';
-import {
-  EarnTransactionDetailsPopup,
-  type TransactionDetails,
-} from './EarnTransactionDetailsPopup';
+import { EarnTransactionDetailsPopup } from './EarnTransactionDetailsPopup';
 import { EarnUserTransactionHistory } from './EarnUserTransactionHistory';
 import { HistoricalChart } from './HistoricalChart';
 import { LiquidStakingActionPanel } from './LiquidStakingActionPanel';
+import { useEarnTransactionDetailsDialog } from './useEarnTransactionDetailsDialog';
 
 interface LiquidStakingDetailPageProps {
   opportunity: OpportunityTableRow;
@@ -36,9 +34,13 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedAction, setSelectedAction] = useState<'buy' | 'sell'>('buy');
   const { checkAndShowToS, tosDialogProps } = useCheckAndShowToS();
-  const [txDetailsIsOpen, setTxDetailsIsOpen] = useState(false);
-  const [transactionDetails, setTransactionDetails] = useState<TransactionDetails | null>(null);
-  const [txDetailsIsLoading, setTxDetailsIsLoading] = useState(true);
+  const {
+    txDetailsIsOpen,
+    transactionDetails,
+    txDetailsIsLoading,
+    showTransactionDetails,
+    closeTransactionDetails,
+  } = useEarnTransactionDetailsDialog();
   const { address: walletAddress, isConnected } = useAccount();
   const requestChainId = opportunity.chainId;
   const { positionsMap } = useUserPositions(isConnected ? walletAddress : null, [requestChainId]);
@@ -112,24 +114,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
 
     return opportunity.id;
   }, [opportunity.id, opportunity.token, opportunity.vaultAddress]);
-
-  const showTransactionDetails = useCallback(
-    (details: TransactionDetails, isCompleted: boolean = false) => {
-      setTransactionDetails(details);
-      setTxDetailsIsLoading(!isCompleted && !details.txHash);
-      setTxDetailsIsOpen(true);
-    },
-    [],
-  );
-
-  const closeTransactionDetails = useCallback(() => {
-    setTxDetailsIsOpen(false);
-    const timer = setTimeout(() => {
-      setTransactionDetails(null);
-      setTxDetailsIsLoading(true);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">
@@ -313,38 +297,42 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
         </div>
       )}
       {/* Mobile CTA Buttons - Sticky Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelectedAction('buy');
-              setShowActionPanel(true);
-            }}
-            className={twMerge(
-              'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-              selectedAction === 'buy' ? 'bg-primary-cta text-white' : 'bg-white/10 text-white/70',
-            )}
-          >
-            Buy
-          </button>
-          {hasPosition && (
+      {!showActionPanel && (
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
+          <div className="flex gap-2">
             <button
               onClick={() => {
-                setSelectedAction('sell');
+                setSelectedAction('buy');
                 setShowActionPanel(true);
               }}
               className={twMerge(
                 'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-                selectedAction === 'sell'
+                selectedAction === 'buy'
                   ? 'bg-primary-cta text-white'
                   : 'bg-white/10 text-white/70',
               )}
             >
-              Sell
+              Buy
             </button>
-          )}
+            {hasPosition && (
+              <button
+                onClick={() => {
+                  setSelectedAction('sell');
+                  setShowActionPanel(true);
+                }}
+                className={twMerge(
+                  'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+                  selectedAction === 'sell'
+                    ? 'bg-primary-cta text-white'
+                    : 'bg-white/10 text-white/70',
+                )}
+              >
+                Sell
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <DialogWrapper {...tosDialogProps} />
 

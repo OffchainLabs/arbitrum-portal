@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { usePostHog } from 'posthog-js/react';
 import { memo, useMemo, useState } from 'react';
 
@@ -9,7 +10,6 @@ import { Card } from '@/components/Card';
 import type { EarnChainId, HistoricalTimeRange, OpportunityCategory } from '@/earn-api/types';
 
 import { SwrLocalStorageCacheProvider } from '../../../app/SwrLocalStorageCacheProvider';
-import { HistoricalLineChart } from './HistoricalLineChart';
 import { PillButton } from './PillButton';
 import { CHART_CONFIG } from './chartConfig';
 import {
@@ -19,6 +19,11 @@ import {
   formatMetricValue,
   getMetricsWithData,
 } from './formatters';
+
+const HistoricalLineChart = dynamic(
+  () => import('./HistoricalLineChart').then((mod) => mod.HistoricalLineChart),
+  { ssr: false },
+);
 
 export interface HistoricalChartProps {
   opportunityId: string;

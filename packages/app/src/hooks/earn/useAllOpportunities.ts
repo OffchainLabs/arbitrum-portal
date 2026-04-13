@@ -1,5 +1,6 @@
 'use client';
 
+import dayjs from 'dayjs';
 import useSWRImmutable from 'swr/immutable';
 
 import { parseMetricNumber } from '@/app-lib/earn/utils';
@@ -19,6 +20,19 @@ interface OpportunitiesResponse {
   total: number;
   vendors: string[];
   categories: string[];
+}
+
+function formatMaturityDate(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = dayjs(value);
+  if (!parsed.isValid()) {
+    return value;
+  }
+
+  return parsed.format('D MMM YYYY');
 }
 
 export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
@@ -45,7 +59,8 @@ export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     vaultAddress: opp.vaultAddress,
     rawApy,
     rawTvl,
-    maturityDate: m?.maturityDate,
+    maturityDate: formatMaturityDate(m?.maturityDate),
+    rawMaturityDate: m?.maturityDate,
   };
 }
 
@@ -81,7 +96,6 @@ export function useAllOpportunities(filters?: {
   );
 
   const opportunities: OpportunityTableRow[] = data?.opportunities.map(toTableRow) ?? [];
-
   return {
     opportunities,
     isLoading,

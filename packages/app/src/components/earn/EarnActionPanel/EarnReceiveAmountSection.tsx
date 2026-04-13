@@ -1,16 +1,15 @@
-import Image from 'next/image';
+import { SafeImage } from '@/bridge/components/common/SafeImage';
 
-export interface TokenDisplay {
-  symbol: string;
-  logoUrl?: string;
-}
+import type { TokenDisplay } from './EarnAmountInputSection';
 
 interface EarnReceiveAmountSectionProps {
   label: string;
   amount: string | null;
   isLoading?: boolean;
   token: TokenDisplay;
+  tokenSelector?: React.ReactNode;
   usdValue?: string;
+  outputBalance?: string;
 }
 
 export function EarnReceiveAmountSection({
@@ -18,7 +17,9 @@ export function EarnReceiveAmountSection({
   amount,
   isLoading,
   token,
+  tokenSelector,
   usdValue,
+  outputBalance,
 }: EarnReceiveAmountSectionProps) {
   return (
     <div className="bg-neutral-100 rounded flex flex-col p-4">
@@ -40,24 +41,24 @@ export function EarnReceiveAmountSection({
               className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none h-[34px]"
             />
           )}
-          <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
-            {token.logoUrl ? (
-              <Image
+          {tokenSelector ?? (
+            <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
+              <SafeImage
                 src={token.logoUrl}
                 alt={token.symbol}
                 width={20}
                 height={20}
                 className="rounded-full"
+                fallback={<div className="w-5 h-5 rounded-full bg-blue-600" />}
               />
-            ) : (
-              <div className="w-5 h-5 rounded-full bg-blue-600" />
-            )}
-            <span className="text-base font-medium text-white">{token.symbol}</span>
-          </div>
+              <span className="text-base font-medium text-white">{token.symbol}</span>
+            </div>
+          )}
         </div>
-        {usdValue && (
+        {(usdValue || outputBalance) && (
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>{usdValue}</span>
+            <span>{usdValue || ''}</span>
+            {outputBalance ? <span>{outputBalance}</span> : null}
           </div>
         )}
       </div>

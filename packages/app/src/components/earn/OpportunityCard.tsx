@@ -18,6 +18,8 @@ interface OpportunityCardProps {
 
 export function OpportunityCard({ opportunity, onOpportunitySelect }: OpportunityCardProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
+  const isExpired =
+    opportunity.rawMaturityDate != null && new Date(opportunity.rawMaturityDate) < new Date();
 
   return (
     <Link
@@ -27,7 +29,25 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-3 h-3 rounded-full shrink-0 ${categoryClass}`} />
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
+          {isExpired && (
+            <Tooltip
+              content={
+                <p className="text-xs text-white">
+                  {opportunity.maturityDate
+                    ? `Matured on ${opportunity.maturityDate}`
+                    : 'This position has matured'}
+                </p>
+              }
+              tippyProps={{ placement: 'top' }}
+            >
+              <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default self-start">
+                Matured
+              </span>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2.5">

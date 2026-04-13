@@ -19,6 +19,8 @@ interface OpportunityRowProps {
 
 export function OpportunityRow({ opportunity, onOpportunitySelect }: OpportunityRowProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
+  const isExpired =
+    opportunity.rawMaturityDate != null && new Date(opportunity.rawMaturityDate) < new Date();
 
   return (
     <Link
@@ -33,10 +35,27 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
             <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
               {opportunity.name}
             </p>
-            {opportunity.maturityDate && (
-              <p className="text-xs text-white opacity-50 leading-none">
-                {opportunity.maturityDate}
-              </p>
+            {isExpired ? (
+              <Tooltip
+                content={
+                  <p className="text-xs text-white">
+                    {opportunity.maturityDate
+                      ? `Matured on ${opportunity.maturityDate}`
+                      : 'This position has matured'}
+                  </p>
+                }
+                tippyProps={{ placement: 'top' }}
+              >
+                <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default">
+                  Matured
+                </span>
+              </Tooltip>
+            ) : (
+              opportunity.maturityDate && (
+                <p className="text-xs text-white opacity-50 leading-none">
+                  {opportunity.maturityDate}
+                </p>
+              )
             )}
           </div>
         </div>

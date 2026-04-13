@@ -5,8 +5,8 @@ import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from './EarnActionPanelInput';
 import {
-  LiquidStakingTokenControl,
-  LiquidStakingTokenControl as LiquidStakingTokenControlType,
+  TokenSelectorControl,
+  type TokenSelectorControlConfig,
 } from './LiquidStakingTokenSelector';
 
 interface LiquidStakingAmountSectionProps {
@@ -20,7 +20,7 @@ interface LiquidStakingAmountSectionProps {
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
-  tokenControl: LiquidStakingTokenControlType;
+  tokenControl: TokenSelectorControlConfig;
 }
 
 export function LiquidStakingAmountSection({
@@ -71,7 +71,7 @@ export function LiquidStakingAmountSection({
             value={amount}
             onChange={onAmountChange}
           />
-          <LiquidStakingTokenControl control={tokenControl} />
+          <TokenSelectorControl control={tokenControl} />
         </div>
 
         <div className="flex items-center justify-between text-xs text-white/50">
