@@ -23,6 +23,15 @@ type OrbitChainsData = {
   testnet: OrbitChainConfig[];
 };
 
+type AssertionIntervalResult =
+  | {
+      status: 'ok';
+      interval: number;
+    }
+  | {
+      status: 'insufficient_data';
+    };
+
 const SECONDS_IN_15_MIN = 900;
 /** Chains at this interval (1h) are treated as default and omitted from the JSON. */
 const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
@@ -104,58 +113,59 @@ async function queryAssertionEvents(
 async function getAssertionInterval(
   chain: OrbitChainConfig,
   provider: ethers.providers.JsonRpcProvider,
-): Promise<number | null> {
-  try {
-    const latestBlock = await provider.getBlockNumber();
-    const baseLookback = getLookbackBlocks(chain.parentChainId);
+): Promise<AssertionIntervalResult> {
+  const latestBlock = await provider.getBlockNumber();
+  const baseLookback = getLookbackBlocks(chain.parentChainId);
 
-    let events: ethers.Event[] = [];
-    let lookbackLabel = '';
+  let events: ethers.Event[] = [];
+  let lookbackLabel = '';
 
-    for (const multiplier of LOOKBACK_MULTIPLIERS) {
-      const fromBlock = Math.max(0, latestBlock - baseLookback * multiplier);
-      // eslint-disable-next-line no-await-in-loop
-      events = await queryAssertionEvents(chain.ethBridge.rollup, provider, fromBlock, latestBlock);
-      lookbackLabel = `${multiplier * 7}d`;
-      if (events.length >= 2) {
-        break;
-      }
+  for (const multiplier of LOOKBACK_MULTIPLIERS) {
+    const fromBlock = Math.max(0, latestBlock - baseLookback * multiplier);
+    // eslint-disable-next-line no-await-in-loop
+    events = await queryAssertionEvents(chain.ethBridge.rollup, provider, fromBlock, latestBlock);
+    lookbackLabel = `${multiplier * 7}d`;
+    if (events.length >= 2) {
+      break;
     }
-
-    if (events.length < 2) {
-      console.log(`  ${chain.name} (${chain.chainId}): <2 events in 91d, skipping (inactive?)`);
-      return null;
-    }
-
-    const recentEvents = events.slice(-SAMPLE_SIZE);
-    const intervals: number[] = [];
-
-    for (let i = 1; i < recentEvents.length; i++) {
-      // eslint-disable-next-line no-await-in-loop
-      const [previousBlock, currentBlock] = await Promise.all([
-        provider.getBlock(recentEvents[i - 1]!.blockNumber),
-        provider.getBlock(recentEvents[i]!.blockNumber),
-      ]);
-
-      intervals.push(currentBlock.timestamp - previousBlock.timestamp);
-    }
-
-    if (intervals.length === 0) {
-      return null;
-    }
-
-    const medianInterval = median(intervals);
-    const roundedInterval = roundToNearest15Min(medianInterval);
-
-    console.log(
-      `  ${chain.name} (${chain.chainId}): median=${(medianInterval / 3600).toFixed(1)}h -> rounded=${(roundedInterval / 3600).toFixed(1)}h (${roundedInterval}s) [${lookbackLabel}]`,
-    );
-
-    return roundedInterval;
-  } catch (error) {
-    console.error(`  ${chain.name} (${chain.chainId}): error - ${(error as Error).message}`);
-    return null;
   }
+
+  if (events.length < 2) {
+    console.warn(`  ${chain.name} (${chain.chainId}): <2 events in 91d, preserving current value`);
+    return { status: 'insufficient_data' };
+  }
+
+  const recentEvents = events.slice(-SAMPLE_SIZE);
+  const intervals: number[] = [];
+
+  for (let i = 1; i < recentEvents.length; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    const [previousBlock, currentBlock] = await Promise.all([
+      provider.getBlock(recentEvents[i - 1]!.blockNumber),
+      provider.getBlock(recentEvents[i]!.blockNumber),
+    ]);
+
+    if (!previousBlock || !currentBlock) {
+      throw new Error(
+        `Missing block data while computing assertion interval for ${chain.name} (${chain.chainId})`,
+      );
+    }
+
+    intervals.push(currentBlock.timestamp - previousBlock.timestamp);
+  }
+
+  if (intervals.length === 0) {
+    throw new Error(`No intervals computed for ${chain.name} (${chain.chainId})`);
+  }
+
+  const medianInterval = median(intervals);
+  const roundedInterval = roundToNearest15Min(medianInterval);
+
+  console.log(
+    `  ${chain.name} (${chain.chainId}): median=${(medianInterval / 3600).toFixed(1)}h -> rounded=${(roundedInterval / 3600).toFixed(1)}h (${roundedInterval}s) [${lookbackLabel}]`,
+  );
+
+  return { status: 'ok', interval: roundedInterval };
 }
 
 export async function updateAssertionIntervals(targetJsonPath: string): Promise<void> {
@@ -177,10 +187,18 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
     const provider = getParentProvider(parentChainId);
 
     for (const chain of chains) {
-      // eslint-disable-next-line no-await-in-loop
-      const interval = await getAssertionInterval(chain, provider);
-      if (interval !== null) {
-        intervalsByChainId.set(chain.chainId, interval);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const result = await getAssertionInterval(chain, provider);
+        if (result.status === 'ok') {
+          intervalsByChainId.set(chain.chainId, result.interval);
+        }
+      } catch (error) {
+        throw new Error(
+          `Failed to update assertion interval for ${chain.name} (${chain.chainId}): ${
+            (error as Error).message
+          }`,
+        );
       }
     }
   }
@@ -189,6 +207,10 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
 
   for (const section of ['mainnet', 'testnet'] as const) {
     for (const chain of data[section]) {
+      if (!intervalsByChainId.has(chain.chainId)) {
+        continue;
+      }
+
       const interval = intervalsByChainId.get(chain.chainId);
 
       if (interval && interval !== DEFAULT_ASSERTION_INTERVAL_SECONDS) {
