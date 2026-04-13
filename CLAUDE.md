@@ -65,6 +65,9 @@ See `tsconfig.base.json` for the full list.
 - Prettier with `@offchainlabs/prettier-config` + Tailwind CSS plugin + import sorting
 - ESLint with `@offchainlabs/eslint-config-typescript` (base + next)
 - Zustand rules enforced: `enforce-use-setstate`, `no-state-mutation`, `use-store-selectors`
+- **Prefer `twMerge`** over template literal className concatenation in new code. Do not refactor existing usages unprompted.
+- **Avoid unnecessary `useMemo`** — reserve for expensive derivations or stabilizing referential identity. Don't memoize simple strings, booleans, or pass-through values.
+- **Object params for 4+ args** — use an object when a function has 4+ parameters, multiple optional params, or ambiguous positional args of similar types.
 
 ## Testing and Quality Checklist
 
