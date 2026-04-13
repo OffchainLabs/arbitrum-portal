@@ -27,11 +27,11 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   const [dialogProps, openDialog] = useDialog2();
 
   const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider } = useNetworksRelationship(networks);
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const nativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {
