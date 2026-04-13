@@ -14,8 +14,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import {
-  ETHEREUM_PYUSD_LOGO_URI,
-  isTokenArbitrumOnePyusdOft,
+  PYUSD_BLACK_LOGO_URI,
+  isTokenArbitrumOnePyusd,
   isTokenEthereumPyusd,
 } from '@/bridge/util/PyusdUtils';
 
@@ -125,8 +125,8 @@ function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: 
     return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD' });
   }
 
-  if (isTokenArbitrumOnePyusdOft(token.address) && chainId === ChainId.ArbitrumOne) {
-    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD OFT' });
+  if (isTokenArbitrumOnePyusd(token.address) && chainId === ChainId.ArbitrumOne) {
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD' });
   }
 
   if (isUsdtToken(token.address, chainId)) {
@@ -154,14 +154,14 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
   if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
     return {
       ...token,
-      logoURI: ETHEREUM_PYUSD_LOGO_URI,
+      logoURI: PYUSD_BLACK_LOGO_URI,
     };
   }
 
-  if (isTokenArbitrumOnePyusdOft(token.address) && chainId === ChainId.ArbitrumOne) {
+  if (isTokenArbitrumOnePyusd(token.address) && chainId === ChainId.ArbitrumOne) {
     return {
       ...token,
-      logoURI: ETHEREUM_PYUSD_LOGO_URI,
+      logoURI: PYUSD_BLACK_LOGO_URI,
     };
   }
 

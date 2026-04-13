@@ -232,16 +232,6 @@ function TokensPanel({
         return null;
       }
 
-      const token =
-        getWithdrawalPyusdToken(address) ||
-        tokensFromUser[normalizedAddress] ||
-        tokensFromLists[normalizedAddress] ||
-        null;
-
-      if (token?.sourceBalanceAddress) {
-        return erc20ChildBalances?.[token.sourceBalanceAddress.toLowerCase()] ?? null;
-      }
-
       if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
         return erc20ChildBalances?.[normalizedAddress];
       }
@@ -256,10 +246,7 @@ function TokensPanel({
       erc20ChildBalances,
       ethParentBalance,
       ethChildBalance,
-      getWithdrawalPyusdToken,
       isDepositMode,
-      tokensFromLists,
-      tokensFromUser,
     ],
   );
 
@@ -304,7 +291,7 @@ function TokensPanel({
       if (isArbitrumOne) {
         tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
         if (isArbitrumOneEthereumPair) {
-          tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSDOFT);
+          tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSD);
           tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSDCanonical);
         }
       }

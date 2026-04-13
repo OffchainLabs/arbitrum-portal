@@ -73,7 +73,6 @@ export interface BridgeToken {
   isL2Native?: boolean;
   priceUSD?: number;
   importLookupAddress?: string;
-  sourceBalanceAddress?: string;
   destinationBalanceAddress?: string;
 }
 

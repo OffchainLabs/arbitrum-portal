@@ -9,7 +9,7 @@ import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import {
   getArbitrumOnePyusdCanonicalToken,
-  getArbitrumOnePyusdOftToken,
+  getArbitrumOnePyusdToken,
   getEthereumPyusdToken,
 } from '../../../util/PyusdUtils';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
@@ -67,9 +67,9 @@ describe('useIsSwapTransfer', () => {
     mockedUseSelectedToken.mockReturnValue([defaultSelectedToken, vi.fn()]);
   });
 
-  it('does not treat PYUSD (OFT) to PYUSD (L1) as a swap', () => {
+  it('does not treat Arbitrum One PYUSD to PYUSD (L1) as a swap', () => {
     mockedUseSelectedToken.mockReturnValue([
-      getArbitrumOnePyusdOftToken({
+      getArbitrumOnePyusdToken({
         priceUSD: 1,
         listIds: new Set(['1']),
       }),
@@ -107,7 +107,7 @@ describe('useIsSwapTransfer', () => {
     expect(result.current).toBe(false);
   });
 
-  it('does not treat PYUSD (L1) to PYUSD (OFT) as a swap', () => {
+  it('does not treat PYUSD (L1) to Arbitrum One PYUSD as a swap', () => {
     mockedUseSelectedToken.mockReturnValue([
       getEthereumPyusdToken({
         priceUSD: 1,

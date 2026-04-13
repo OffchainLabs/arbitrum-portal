@@ -21,8 +21,8 @@ describe('tokenListsToSearchableTokenStorage', () => {
           tokens: [
             {
               chainId: 42161,
-              address: CommonAddress.ArbitrumOne.PYUSDOFT,
-              name: 'PayPal USD OFT',
+              address: CommonAddress.ArbitrumOne.PYUSD,
+              name: 'PayPal USD',
               symbol: 'PYUSD',
               decimals: 6,
               logoURI: 'https://example.com/blue.png',
@@ -58,7 +58,7 @@ describe('tokenListsToSearchableTokenStorage', () => {
       address: CommonAddress.Ethereum.PYUSD,
       name: 'PayPal USD',
       logoURI: 'https://example.com/black.png',
-      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD,
     });
   });
 
@@ -79,7 +79,7 @@ describe('tokenListsToSearchableTokenStorage', () => {
             {
               chainId: 1,
               address: CommonAddress.Ethereum.PYUSD,
-              name: 'PayPal USD OFT',
+              name: 'PayPal USD',
               symbol: 'PYUSD',
               decimals: 6,
               logoURI: 'https://example.com/blue.png',
@@ -100,8 +100,8 @@ describe('tokenListsToSearchableTokenStorage', () => {
           tokens: [
             {
               chainId: 42161,
-              address: CommonAddress.ArbitrumOne.PYUSDOFT,
-              name: 'PayPal USD OFT',
+              address: CommonAddress.ArbitrumOne.PYUSD,
+              name: 'PayPal USD',
               symbol: 'PYUSD',
               decimals: 6,
               logoURI: 'https://example.com/blue.png',
@@ -129,7 +129,7 @@ describe('tokenListsToSearchableTokenStorage', () => {
       address: CommonAddress.Ethereum.PYUSD,
       name: 'PayPal USD',
       logoURI: 'https://example.com/black.png',
-      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD,
     });
   });
 
@@ -149,8 +149,8 @@ describe('tokenListsToSearchableTokenStorage', () => {
           tokens: [
             {
               chainId: 42161,
-              address: CommonAddress.ArbitrumOne.PYUSDOFT,
-              name: 'PayPal USD OFT',
+              address: CommonAddress.ArbitrumOne.PYUSD,
+              name: 'PayPal USD',
               symbol: 'PYUSD',
               decimals: 6,
               logoURI: 'https://example.com/blue.png',
@@ -176,9 +176,9 @@ describe('tokenListsToSearchableTokenStorage', () => {
 
     expect(tokens[CommonAddress.Ethereum.PYUSD]).toMatchObject({
       address: CommonAddress.Ethereum.PYUSD,
-      name: 'PayPal USD OFT',
+      name: 'PayPal USD',
       logoURI: 'https://example.com/blue.png',
-      l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD,
     });
   });
 
@@ -207,8 +207,8 @@ describe('tokenListsToSearchableTokenStorage', () => {
             },
             {
               chainId: 42161,
-              address: CommonAddress.ArbitrumOne.PYUSDOFT,
-              name: 'PayPal USD OFT',
+              address: CommonAddress.ArbitrumOne.PYUSD,
+              name: 'PayPal USD',
               symbol: 'PYUSD',
               decimals: 6,
               logoURI: 'https://example.com/blue.png',

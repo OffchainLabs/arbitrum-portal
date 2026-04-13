@@ -5,10 +5,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import {
-  getArbitrumOnePyusdCanonicalToken,
-  getArbitrumOnePyusdOftToken,
-} from '../../util/PyusdUtils';
+import { getArbitrumOnePyusdCanonicalToken, getArbitrumOnePyusdToken } from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
@@ -118,7 +115,7 @@ describe('useSelectedToken', () => {
         name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
-        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        l2Address: CommonAddress.ArbitrumOne.PYUSD,
         priceUSD: 1,
         listIds: new Set(['lifi-token-list']),
       },
@@ -152,7 +149,7 @@ describe('useSelectedToken', () => {
         name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
-        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        l2Address: CommonAddress.ArbitrumOne.PYUSD,
         priceUSD: 1,
         listIds: new Set(['lifi-token-list']),
       },
@@ -171,7 +168,7 @@ describe('useSelectedToken', () => {
     expect(result.current[0]).toBe(firstSelectedToken);
   });
 
-  it('resolves L1 PayPal USD to Arbitrum One PayPal USD OFT token', () => {
+  it('resolves L1 PayPal USD to Arbitrum One PayPal USD', () => {
     tokensFromListsValue = {
       [CommonAddress.Ethereum.PYUSD]: {
         type: TokenType.ERC20,
@@ -179,7 +176,7 @@ describe('useSelectedToken', () => {
         name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
-        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        l2Address: CommonAddress.ArbitrumOne.PYUSD,
         priceUSD: 1,
         listIds: new Set(['lifi-token-list']),
       },
@@ -213,7 +210,7 @@ describe('useSelectedToken', () => {
     const { result } = renderHook(() => useSelectedToken());
 
     expect(result.current[0]).toEqual(
-      getArbitrumOnePyusdOftToken({
+      getArbitrumOnePyusdToken({
         priceUSD: 1,
         listIds: new Set(['lifi-token-list']),
       }),
@@ -228,7 +225,7 @@ describe('useSelectedToken', () => {
         name: 'PayPal USD',
         symbol: 'PYUSD',
         address: CommonAddress.Ethereum.PYUSD,
-        l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        l2Address: CommonAddress.ArbitrumOne.PYUSD,
         priceUSD: 1,
         listIds: new Set(['lifi-token-list']),
       },

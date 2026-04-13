@@ -4,7 +4,7 @@ import { describe, expect, it, test } from 'vitest';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { getArbitrumOnePyusdOftToken, getEthereumPyusdToken } from '../../../util/PyusdUtils';
+import { getArbitrumOnePyusdToken, getEthereumPyusdToken } from '../../../util/PyusdUtils';
 import { getTokenOverride, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
@@ -85,7 +85,7 @@ function getPyusdLifiListEntry(): ERC20BridgeToken {
     ...getEthereumPyusdToken({
       listIds: new Set(['lifi-token-list']),
     }),
-    l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
+    l2Address: CommonAddress.ArbitrumOne.PYUSD,
   };
 }
 
@@ -201,17 +201,37 @@ describe('isValidLifiTransfer', () => {
     ).toBe(false);
   });
 
-  it('allows PayPal USD OFT withdrawals through LiFi', () => {
+  it('does not block non-Arbitrum PYUSD canonical-address collisions on other source chains', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {
+      [CommonAddress.ArbitrumOne.PYUSDCanonical]: {
+        ...getEthereumPyusdToken({
+          listIds: new Set(['lifi-token-list']),
+        }),
+        address: CommonAddress.ArbitrumOne.PYUSDCanonical,
+      },
+    };
+
     expect(
       isValidLifiTransfer({
-        fromToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+        fromToken: CommonAddress.ArbitrumOne.PYUSDCanonical,
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows PayPal USD withdrawals through LiFi', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.ArbitrumOne.PYUSD,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
       }),
     ).toBe(true);
   });
 
-  it('allows PayPal USD OFT withdrawal through LiFi', () => {
+  it('allows Arbitrum One PayPal USD withdrawal through LiFi', () => {
     expect(
       isValidLifiTransfer({
         fromToken: CommonAddress.Ethereum.PYUSD,
@@ -390,7 +410,7 @@ describe('getTokenOverride', () => {
     });
   });
 
-  it('maps Ethereum PayPal USD deposits to PayPal USD OFT on Arbitrum One', () => {
+  it('maps Ethereum PayPal USD deposits to PayPal USD on Arbitrum One', () => {
     const override = getTokenOverride({
       fromToken: CommonAddress.Ethereum.PYUSD,
       sourceChainId: ChainId.Ethereum,
@@ -401,19 +421,19 @@ describe('getTokenOverride', () => {
       ...getEthereumPyusdToken(),
     });
     expect(override.destination).toEqual({
-      ...getArbitrumOnePyusdOftToken(),
+      ...getArbitrumOnePyusdToken(),
     });
   });
 
-  it('maps PayPal USD OFT withdrawals back to Ethereum PayPal USD', () => {
+  it('maps Arbitrum One PayPal USD withdrawals back to Ethereum PayPal USD', () => {
     const override = getTokenOverride({
-      fromToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+      fromToken: CommonAddress.ArbitrumOne.PYUSD,
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.Ethereum,
     });
 
     expect(override.source).toEqual({
-      ...getArbitrumOnePyusdOftToken(),
+      ...getArbitrumOnePyusdToken(),
     });
     expect(override.destination).toEqual({
       ...getEthereumPyusdToken(),

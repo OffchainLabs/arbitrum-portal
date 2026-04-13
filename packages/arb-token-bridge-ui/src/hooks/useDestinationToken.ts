@@ -66,8 +66,8 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       });
     }
 
-    // Case 1: For OFT token that have multiple L2 addresses (canonical and OFT) for one L1 address,
-    // the destinationToken query param may equal the selected token's L1 address while the effective destination token is actually the OFT.
+    // Case 1: For PYUSD, multiple Arbitrum-side addresses map to the same L1 lookup address.
+    // The destinationToken query param may equal the selected token's L1 address while the effective destination token is the ArbOne token.
     // In that case, prefer the resolved override destination so swap handling and network switching stay aligned.
     if (
       selectedTokenOverride.destination &&

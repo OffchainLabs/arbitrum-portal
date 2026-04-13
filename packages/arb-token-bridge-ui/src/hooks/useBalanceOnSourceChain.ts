@@ -53,10 +53,6 @@ export function useBalanceOnSourceChain(token: ERC20BridgeToken | null): BigNumb
     return constants.Zero;
   }
 
-  if (token.sourceBalanceAddress) {
-    return erc20SourceChainBalances[token.sourceBalanceAddress.toLowerCase()] ?? constants.Zero;
-  }
-
   if (isDepositMode) {
     return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero;
   }

@@ -7,9 +7,9 @@ type PyusdTokenMetadata = {
   listIds?: Set<string>;
 };
 
-export const ETHEREUM_PYUSD_LOGO_URI =
+export const PYUSD_BLACK_LOGO_URI =
   'https://assets.coingecko.com/coins/images/31212/thumb/PYUSD_Token_Logo_2x.png?1765987788';
-export const ARBITRUM_ONE_PYUSD_OFT_LOGO_URI =
+export const PYUSD_BLUE_LOGO_URI =
   'https://storage.googleapis.com/zapper-fi-assets/tokens/arbitrum/0x46850ad61c2b7d64d08c9c754f45254596696984.png';
 const commonPyusdToken = {
   decimals: 6,
@@ -26,8 +26,8 @@ export function isTokenArbitrumOnePyusdCanonical(address: string | undefined) {
   return addressesEqual(address, CommonAddress.ArbitrumOne.PYUSDCanonical);
 }
 
-export function isTokenArbitrumOnePyusdOft(address: string | undefined) {
-  return addressesEqual(address, CommonAddress.ArbitrumOne.PYUSDOFT);
+export function isTokenArbitrumOnePyusd(address: string | undefined) {
+  return addressesEqual(address, CommonAddress.ArbitrumOne.PYUSD);
 }
 
 export function getEthereumPyusdToken({
@@ -39,10 +39,8 @@ export function getEthereumPyusdToken({
     listIds: new Set(listIds ?? []),
     name: 'PayPal USD',
     address: CommonAddress.Ethereum.PYUSD,
-    logoURI: ETHEREUM_PYUSD_LOGO_URI,
+    logoURI: PYUSD_BLACK_LOGO_URI,
     priceUSD,
-    sourceBalanceAddress: CommonAddress.Ethereum.PYUSD,
-    destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
   };
 }
 
@@ -56,26 +54,24 @@ export function getArbitrumOnePyusdCanonicalToken({
     name: 'PayPal USD Canonical',
     address: CommonAddress.ArbitrumOne.PYUSDCanonical,
     l2Address: CommonAddress.ArbitrumOne.PYUSDCanonical,
-    logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
+    logoURI: PYUSD_BLUE_LOGO_URI,
     priceUSD,
-    sourceBalanceAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
     destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
   };
 }
 
-export function getArbitrumOnePyusdOftToken({
+export function getArbitrumOnePyusdToken({
   priceUSD,
   listIds,
 }: PyusdTokenMetadata = {}): ERC20BridgeToken {
   return {
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
-    name: 'PayPal USD OFT',
-    address: CommonAddress.ArbitrumOne.PYUSDOFT,
-    l2Address: CommonAddress.ArbitrumOne.PYUSDOFT,
-    logoURI: ETHEREUM_PYUSD_LOGO_URI,
+    name: 'PayPal USD',
+    address: CommonAddress.Ethereum.PYUSD,
+    l2Address: CommonAddress.ArbitrumOne.PYUSD,
+    logoURI: PYUSD_BLACK_LOGO_URI,
     priceUSD,
-    sourceBalanceAddress: CommonAddress.ArbitrumOne.PYUSDOFT,
     destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
   };
 }
@@ -90,13 +86,16 @@ export function getPyusdTokenOverride({
   if (isDepositMode && isTokenEthereumPyusd(tokenAddress)) {
     return {
       source: getEthereumPyusdToken(),
-      destination: getArbitrumOnePyusdOftToken(),
+      destination: getArbitrumOnePyusdToken(),
     };
   }
 
-  if (!isDepositMode && isTokenArbitrumOnePyusdOft(tokenAddress)) {
+  if (
+    !isDepositMode &&
+    (isTokenArbitrumOnePyusd(tokenAddress) || isTokenEthereumPyusd(tokenAddress))
+  ) {
     return {
-      source: getArbitrumOnePyusdOftToken(),
+      source: getArbitrumOnePyusdToken(),
       destination: getEthereumPyusdToken(),
     };
   }
@@ -122,7 +121,7 @@ export function isPyusdOverrideFlow({
     return isTokenEthereumPyusd(tokenAddress);
   }
 
-  return isTokenArbitrumOnePyusdOft(tokenAddress);
+  return isTokenArbitrumOnePyusd(tokenAddress) || isTokenEthereumPyusd(tokenAddress);
 }
 
 export function getPyusdTokenForTransfer({
@@ -146,7 +145,7 @@ export function getPyusdTokenForTransfer({
         priceUSD,
         listIds,
       }),
-      l2Address: pyusdL2Address ?? CommonAddress.ArbitrumOne.PYUSDOFT,
+      l2Address: pyusdL2Address ?? CommonAddress.ArbitrumOne.PYUSD,
     };
   }
 
@@ -157,13 +156,13 @@ export function getPyusdTokenForTransfer({
     });
   }
 
-  // In withdrawal mode, the legacy L1 PYUSD address is treated as the OFT alias.
+  // In withdrawal mode, the legacy L1 PYUSD address is treated as the ArbOne PYUSD alias.
   // The canonical path only applies when the explicit Arbitrum One canonical address is selected.
   if (
     !isDepositMode &&
-    (isTokenArbitrumOnePyusdOft(tokenAddress) || isTokenEthereumPyusd(tokenAddress))
+    (isTokenArbitrumOnePyusd(tokenAddress) || isTokenEthereumPyusd(tokenAddress))
   ) {
-    return getArbitrumOnePyusdOftToken({
+    return getArbitrumOnePyusdToken({
       priceUSD,
       listIds,
     });

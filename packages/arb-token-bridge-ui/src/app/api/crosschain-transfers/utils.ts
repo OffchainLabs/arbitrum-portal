@@ -65,7 +65,7 @@ export function isValidLifiTransfer({
   }
 
   // Canonical PYUSD is only supported through canonical withdraw
-  if (isTokenArbitrumOnePyusdCanonical(fromToken)) {
+  if (sourceChainId === ChainId.ArbitrumOne && isTokenArbitrumOnePyusdCanonical(fromToken)) {
     return false;
   }
 

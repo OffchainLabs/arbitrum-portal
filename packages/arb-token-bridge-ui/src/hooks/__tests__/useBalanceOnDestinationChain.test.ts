@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../../types/ChainId';
-import { getArbitrumOnePyusdOftToken, getEthereumPyusdToken } from '../../util/PyusdUtils';
+import { getArbitrumOnePyusdToken, getEthereumPyusdToken } from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalance } from '../useBalance';
@@ -82,7 +82,7 @@ describe('useBalanceOnDestinationChain', () => {
     });
   });
 
-  it('uses the child-chain token address for PYUSD deposits even when destinationBalanceAddress points to L1', () => {
+  it('uses the child-chain token address for PYUSD deposits', () => {
     const token = {
       ...getEthereumPyusdToken(),
       l2Address: '0x46850ad61c2b7d64d08c9c754f45254596696984',
@@ -110,7 +110,6 @@ describe('useBalanceOnDestinationChain', () => {
       erc20: [
         {
           [token.l2Address.toLowerCase()]: BigNumber.from(42),
-          [token.destinationBalanceAddress!.toLowerCase()]: BigNumber.from(0),
         },
         vi.fn(),
       ],
@@ -123,7 +122,7 @@ describe('useBalanceOnDestinationChain', () => {
   });
 
   it('still uses destinationBalanceAddress for PYUSD withdrawals back to Ethereum', () => {
-    const token = getArbitrumOnePyusdOftToken();
+    const token = getArbitrumOnePyusdToken();
 
     mockedUseNetworks.mockReturnValue([
       {

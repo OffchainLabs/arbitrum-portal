@@ -29,7 +29,7 @@ export const CommonAddress = {
     'sUSDC': '0x940098b108fb7d0a7e374f6eded7760787464609',
     'sUSDe': '0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2',
     'PYUSDCanonical': '0x327006c8712fe0abdbbd55b7999db39b0967342e',
-    'PYUSDOFT': '0x46850ad61c2b7d64d08c9c754f45254596696984',
+    'PYUSD': '0x46850ad61c2b7d64d08c9c754f45254596696984',
     'tokenMessengerContractAddress': '0x19330d10d9cc8751218eaf51e8885d058642e08a',
     'CU': '0x89c49a3fa372920ac23ce757a029e6936c0b8e02',
     'APE': '0x7f9fbf9bdd3f4105c478b996b648fe6e828a1e98',

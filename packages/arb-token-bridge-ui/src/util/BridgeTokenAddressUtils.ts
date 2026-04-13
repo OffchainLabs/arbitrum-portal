@@ -37,5 +37,5 @@ export function getBridgeTokenChildChainAddress(token: TokenChildChainAddressLik
     return undefined;
   }
 
-  return token.l2Address ?? token.address;
+  return token.l2Address;
 }

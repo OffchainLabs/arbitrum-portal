@@ -11,8 +11,8 @@ import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
-  ETHEREUM_PYUSD_LOGO_URI,
-  getArbitrumOnePyusdOftToken,
+  PYUSD_BLACK_LOGO_URI,
+  getArbitrumOnePyusdToken,
   getEthereumPyusdToken,
 } from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
@@ -161,7 +161,7 @@ describe.sequential('useDestinationToken', () => {
       expect(result.current).toBeNull();
     });
 
-    it('maps Ethereum PayPal USD deposits to Arbitrum One PayPal USD OFT when both query params are the L1 address', () => {
+    it('maps Ethereum PayPal USD deposits to Arbitrum One PayPal USD when both query params are the L1 address', () => {
       mockedUseSelectedToken.mockReturnValue([
         getEthereumPyusdToken({
           priceUSD: 1,
@@ -186,7 +186,7 @@ describe.sequential('useDestinationToken', () => {
                 priceUSD: 1,
                 listIds: new Set(['1']),
               }),
-              destination: getArbitrumOnePyusdOftToken(),
+              destination: getArbitrumOnePyusdToken(),
             }
           : {
               source: null,
@@ -197,23 +197,23 @@ describe.sequential('useDestinationToken', () => {
       const { result } = renderHook(useDestinationToken);
 
       expect(result.current).toMatchObject({
-        ...getArbitrumOnePyusdOftToken({
+        ...getArbitrumOnePyusdToken({
           priceUSD: 1,
           listIds: new Set(['1']),
         }),
-        logoURI: ETHEREUM_PYUSD_LOGO_URI,
+        logoURI: PYUSD_BLACK_LOGO_URI,
       });
-      expect(result.current?.logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
+      expect(result.current?.logoURI).toBe(PYUSD_BLACK_LOGO_URI);
     });
 
-    it('maps PayPal USD OFT withdrawals back to Ethereum PayPal USD when both query params are the OFT address', () => {
+    it('maps Arbitrum One PayPal USD withdrawals back to Ethereum PayPal USD when both query params use the ArbOne token address', () => {
       mockedUseNetworks.mockReturnValue([
         makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
       ]);
 
       mockedUseSelectedToken.mockReturnValue([
-        getArbitrumOnePyusdOftToken({
+        getArbitrumOnePyusdToken({
           priceUSD: 1,
           listIds: new Set(['1']),
         }),
@@ -223,13 +223,13 @@ describe.sequential('useDestinationToken', () => {
       mockedUseArbQueryParams.mockReturnValue([
         {
           ...defaultQueryParams,
-          token: CommonAddress.ArbitrumOne.PYUSDOFT,
-          destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+          token: CommonAddress.ArbitrumOne.PYUSD,
+          destinationToken: CommonAddress.ArbitrumOne.PYUSD,
         },
         vi.fn(),
       ]);
       mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
-        fromToken === CommonAddress.ArbitrumOne.PYUSDOFT
+        fromToken === CommonAddress.Ethereum.PYUSD
           ? {
               source: null,
               destination: getEthereumPyusdToken({
@@ -253,7 +253,7 @@ describe.sequential('useDestinationToken', () => {
       );
     });
 
-    it('maps PayPal USD OFT withdrawals safely before bridgeTokens hydrate when both query params are the OFT address', () => {
+    it('maps Arbitrum One PayPal USD withdrawals safely before bridgeTokens hydrate when both query params use the ArbOne token address', () => {
       mockedUseNetworks.mockReturnValue([
         makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
         vi.fn(),
@@ -268,7 +268,7 @@ describe.sequential('useDestinationToken', () => {
       } as Context['state']);
 
       mockedUseSelectedToken.mockReturnValue([
-        getArbitrumOnePyusdOftToken({
+        getArbitrumOnePyusdToken({
           priceUSD: 1,
           listIds: new Set(['1']),
         }),
@@ -278,13 +278,13 @@ describe.sequential('useDestinationToken', () => {
       mockedUseArbQueryParams.mockReturnValue([
         {
           ...defaultQueryParams,
-          token: CommonAddress.ArbitrumOne.PYUSDOFT,
-          destinationToken: CommonAddress.ArbitrumOne.PYUSDOFT,
+          token: CommonAddress.ArbitrumOne.PYUSD,
+          destinationToken: CommonAddress.ArbitrumOne.PYUSD,
         },
         vi.fn(),
       ]);
       mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
-        fromToken === CommonAddress.ArbitrumOne.PYUSDOFT
+        fromToken === CommonAddress.Ethereum.PYUSD
           ? {
               source: null,
               destination: getEthereumPyusdToken({

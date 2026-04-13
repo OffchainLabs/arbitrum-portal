@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { CommonAddress } from '../CommonAddressUtils';
 import {
-  ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
-  ETHEREUM_PYUSD_LOGO_URI,
+  PYUSD_BLACK_LOGO_URI,
+  PYUSD_BLUE_LOGO_URI,
   getArbitrumOnePyusdCanonicalToken,
-  getArbitrumOnePyusdOftToken,
+  getArbitrumOnePyusdToken,
   getPyusdTokenForTransfer,
   getPyusdTokenOverride,
   isPyusdOverrideFlow,
@@ -13,7 +13,7 @@ import {
 } from '../PyusdUtils';
 
 describe('getPyusdTokenOverride', () => {
-  it('returns the default Ethereum to Arbitrum One OFT override', () => {
+  it('returns the default Ethereum to Arbitrum One PYUSD override', () => {
     expect(
       getPyusdTokenOverride({
         tokenAddress: CommonAddress.Ethereum.PYUSD,
@@ -21,7 +21,10 @@ describe('getPyusdTokenOverride', () => {
       }),
     ).toMatchObject({
       source: { address: CommonAddress.Ethereum.PYUSD },
-      destination: { address: CommonAddress.ArbitrumOne.PYUSDOFT },
+      destination: {
+        address: CommonAddress.Ethereum.PYUSD,
+        l2Address: CommonAddress.ArbitrumOne.PYUSD,
+      },
     });
   });
 
@@ -34,27 +37,36 @@ describe('getPyusdTokenOverride', () => {
     ).toMatchObject({
       source: {
         address: CommonAddress.ArbitrumOne.PYUSDCanonical,
-        logoURI: ARBITRUM_ONE_PYUSD_OFT_LOGO_URI,
+        logoURI: PYUSD_BLUE_LOGO_URI,
       },
-      destination: { address: CommonAddress.Ethereum.PYUSD, logoURI: ETHEREUM_PYUSD_LOGO_URI },
+      destination: { address: CommonAddress.Ethereum.PYUSD, logoURI: PYUSD_BLACK_LOGO_URI },
     });
   });
 });
 
 describe('getPyusdTokenForTransfer', () => {
-  it('uses black branding for OFT and blue branding for explicit canonical PayPal USD', () => {
-    expect(getArbitrumOnePyusdOftToken().logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
-    expect(getArbitrumOnePyusdCanonicalToken().logoURI).toBe(ARBITRUM_ONE_PYUSD_OFT_LOGO_URI);
+  it('uses black branding for official PayPal USD and blue branding for explicit canonical PayPal USD', () => {
+    expect(getArbitrumOnePyusdToken().logoURI).toBe(PYUSD_BLACK_LOGO_URI);
+    expect(getArbitrumOnePyusdCanonicalToken().logoURI).toBe(PYUSD_BLUE_LOGO_URI);
   });
 
-  it('defaults Arbitrum One to Ethereum PayPal USD withdrawals to OFT', () => {
+  it('keeps the L1 lookup address and Arbitrum One child-chain address explicit', () => {
+    expect(getArbitrumOnePyusdToken()).toMatchObject({
+      address: CommonAddress.Ethereum.PYUSD,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD,
+      name: 'PayPal USD',
+    });
+  });
+
+  it('defaults Arbitrum One to Ethereum PayPal USD withdrawals to official PayPal USD', () => {
     expect(
       getPyusdTokenForTransfer({
         tokenAddress: CommonAddress.Ethereum.PYUSD,
         isDepositMode: false,
       }),
     ).toMatchObject({
-      address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      address: CommonAddress.Ethereum.PYUSD,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD,
       destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
     });
   });
@@ -81,7 +93,7 @@ describe('getPyusdTokenForTransfer', () => {
 
     expect(
       getPyusdTokenForTransfer({
-        tokenAddress: CommonAddress.ArbitrumOne.PYUSDOFT,
+        tokenAddress: CommonAddress.ArbitrumOne.PYUSD,
         isDepositMode: true,
       }),
     ).toBeNull();
@@ -99,13 +111,13 @@ describe('isPyusdOverrideFlow', () => {
 
     expect(
       isPyusdOverrideFlow({
-        tokenAddress: CommonAddress.ArbitrumOne.PYUSDOFT,
+        tokenAddress: CommonAddress.ArbitrumOne.PYUSD,
         isDepositMode: false,
       }),
     ).toBe(true);
   });
 
-  it('returns false for non-OFT withdrawal addresses', () => {
+  it('returns false for non-canonical PYUSD withdrawal addresses', () => {
     expect(
       isPyusdOverrideFlow({
         tokenAddress: CommonAddress.ArbitrumOne.PYUSDCanonical,
@@ -118,7 +130,7 @@ describe('isPyusdOverrideFlow', () => {
         tokenAddress: CommonAddress.Ethereum.PYUSD,
         isDepositMode: false,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 

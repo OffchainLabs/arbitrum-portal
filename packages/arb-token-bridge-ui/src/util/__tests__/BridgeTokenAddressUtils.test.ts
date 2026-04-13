@@ -13,11 +13,11 @@ describe('getBridgeTokenChildChainAddress', () => {
     ).toBe(CommonAddress.ArbitrumOne['USDC.e']);
   });
 
-  it('falls back to address when the token is already represented on the child chain', () => {
+  it('returns undefined when the child-chain address is not explicitly known', () => {
     expect(
       getBridgeTokenChildChainAddress({
         address: CommonAddress.ApeChain.WETH,
       }),
-    ).toBe(CommonAddress.ApeChain.WETH);
+    ).toBeUndefined();
   });
 });

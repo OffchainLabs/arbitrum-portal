@@ -1,7 +1,7 @@
 import { CoinKey, ChainId as LiFiChainId } from '@lifi/sdk';
 import { describe, expect, it } from 'vitest';
 
-import { ETHEREUM_PYUSD_LOGO_URI } from '@/bridge/util/PyusdUtils';
+import { PYUSD_BLACK_LOGO_URI } from '@/bridge/util/PyusdUtils';
 
 import { type LifiTokenWithCoinKey, assignLogoURI } from '../registry';
 
@@ -20,10 +20,10 @@ function buildToken(chainId = LiFiChainId.ETH): LifiTokenWithCoinKey {
 
 describe('assignLogoURI', () => {
   it('uses the Ethereum PayPal USD logo on Ethereum', () => {
-    expect(assignLogoURI(buildToken()).logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
+    expect(assignLogoURI(buildToken()).logoURI).toBe(PYUSD_BLACK_LOGO_URI);
   });
 
   it('uses the Ethereum PayPal USD logo on Arbitrum One', () => {
-    expect(assignLogoURI(buildToken(LiFiChainId.ARB)).logoURI).toBe(ETHEREUM_PYUSD_LOGO_URI);
+    expect(assignLogoURI(buildToken(LiFiChainId.ARB)).logoURI).toBe(PYUSD_BLACK_LOGO_URI);
   });
 });

@@ -108,16 +108,16 @@ export function ArbitrumCanonicalRoute() {
    * - Depositing USDC, we receive USDC.e on Arbitrum
    */
   const isUsdcTransfer = isTokenNativeUSDC(selectedToken?.address);
-  const routeTokenOverride = getTokenOverride({
+  const destinationTokenOverride = getTokenOverride({
     fromToken: selectedToken?.address,
     sourceChainId: networks.sourceChain.id,
     destinationChainId: networks.destinationChain.id,
   });
-  const overrideToken = isUsdcTransfer
+  const displayedDestinationToken = isUsdcTransfer
     ? isDepositMode
       ? bridgedUsdcToken
       : nativeUsdcToken
-    : (routeTokenOverride.destination ?? undefined);
+    : (destinationTokenOverride.destination ?? undefined);
 
   const durationMs =
     getDuration({
@@ -142,7 +142,7 @@ export function ArbitrumCanonicalRoute() {
       durationMs={durationMs}
       amountReceived={arbitrumData.amountReceived}
       isLoadingGasEstimate={isLoading}
-      overrideToken={overrideToken}
+      overrideToken={displayedDestinationToken}
       gasCost={
         gasCost && gasCost.length > 0
           ? gasCost.map(({ gasCost, gasToken }) => ({

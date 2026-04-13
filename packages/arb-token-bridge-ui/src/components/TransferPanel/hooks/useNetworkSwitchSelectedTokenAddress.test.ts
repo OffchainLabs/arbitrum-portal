@@ -67,28 +67,28 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     ]);
     mockedUseDestinationToken.mockReturnValue({
       type: TokenType.ERC20,
-      address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      address: CommonAddress.ArbitrumOne.PYUSD,
       importLookupAddress: CommonAddress.Ethereum.PYUSD,
-      name: 'PayPal USD OFT',
+      name: 'PayPal USD',
       symbol: 'PYUSD',
       decimals: 6,
       listIds: new Set(['1']),
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSDOFT);
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSD);
   });
 
-  it('returns the L1 PayPal USD address when switching away from Arbitrum One PayPal USD OFT', () => {
+  it('returns the L1 PayPal USD address when switching away from Arbitrum One PayPal USD', () => {
     // Arbitrum One -> Ethereum:
-    // the current source token is Arbitrum PayPal USD OFT, and after switching
+    // the current source token is Arbitrum PayPal USD, and after switching
     // networks the new source token must become Ethereum PayPal USD.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
-        address: CommonAddress.ArbitrumOne.PYUSDOFT,
+        address: CommonAddress.ArbitrumOne.PYUSD,
         importLookupAddress: CommonAddress.Ethereum.PYUSD,
-        name: 'PayPal USD OFT',
+        name: 'PayPal USD',
         symbol: 'PYUSD',
         decimals: 6,
         listIds: new Set(['1']),
@@ -142,16 +142,16 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     mockedUseIsSwapTransfer.mockReturnValue(true);
     mockedUseDestinationToken.mockReturnValue({
       type: TokenType.ERC20,
-      address: CommonAddress.ArbitrumOne.PYUSDOFT,
+      address: CommonAddress.ArbitrumOne.PYUSD,
       importLookupAddress: CommonAddress.Ethereum.PYUSD,
-      name: 'PayPal USD OFT',
+      name: 'PayPal USD',
       symbol: 'PYUSD',
       decimals: 6,
       listIds: new Set(['1']),
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSDOFT);
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSD);
   });
 
   it('returns null for native swaps without a destination token', () => {

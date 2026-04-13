@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { ETHEREUM_PYUSD_LOGO_URI } from '../../../util/PyusdUtils';
+import { PYUSD_BLACK_LOGO_URI } from '../../../util/PyusdUtils';
 import {
   LifiCrosschainTransfersRoute,
   applyOverrides,
@@ -126,20 +126,20 @@ describe('applyOverrides', () => {
         },
         ChainId.Ethereum,
       ).logoURI,
-    ).toBe(ETHEREUM_PYUSD_LOGO_URI);
+    ).toBe(PYUSD_BLACK_LOGO_URI);
   });
 
-  it('uses the Ethereum PayPal USD logo for Arbitrum One PayPal USD OFT', () => {
+  it('uses the same black PayPal USD logo for Arbitrum One PayPal USD', () => {
     expect(
       applyOverrides(
         {
-          address: CommonAddress.ArbitrumOne.PYUSDOFT,
+          address: CommonAddress.ArbitrumOne.PYUSD,
           symbol: 'PYUSD',
           decimals: 6,
           logoURI: 'https://example.com/blue.png',
         },
         ChainId.ArbitrumOne,
       ).logoURI,
-    ).toBe(ETHEREUM_PYUSD_LOGO_URI);
+    ).toBe(PYUSD_BLACK_LOGO_URI);
   });
 });
