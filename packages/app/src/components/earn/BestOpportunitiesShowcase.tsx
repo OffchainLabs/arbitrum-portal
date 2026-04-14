@@ -17,8 +17,8 @@ export function BestOpportunitiesShowcase({
 }: BestOpportunitiesShowcaseProps) {
   const categories: OpportunityCategory[] = [
     OpportunityCategory.Lend,
-    OpportunityCategory.LiquidStaking,
     OpportunityCategory.FixedYield,
+    OpportunityCategory.LiquidStaking,
   ];
 
   const bestOpportunities = categories

@@ -30,8 +30,8 @@ type SortDirection = 'asc' | 'desc';
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
 const CATEGORY_ORDER: OpportunityCategory[] = [
   OpportunityCategory.Lend,
-  OpportunityCategory.LiquidStaking,
   OpportunityCategory.FixedYield,
+  OpportunityCategory.LiquidStaking,
 ];
 const CATEGORY_DESCRIPTIONS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.Lend]:
