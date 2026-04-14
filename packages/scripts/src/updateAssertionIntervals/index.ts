@@ -11,8 +11,11 @@ type OrbitChainConfig = {
   isTestnet: boolean;
   ethBridge: {
     rollup: string;
+    sequencerInbox: string;
   };
   bridgeUiConfig: {
+    batchPostingDelaySeconds?: number;
+    assertionAfterBatchDelaySeconds?: number;
     assertionIntervalSeconds?: number;
     [key: string]: unknown;
   };
@@ -23,20 +26,46 @@ type OrbitChainsData = {
   testnet: OrbitChainConfig[];
 };
 
-type AssertionIntervalResult =
+export type DelayEstimate = {
+  batchPostingDelaySeconds: number;
+  assertionAfterBatchDelaySeconds: number;
+};
+
+type DelayEstimateResult =
   | {
       status: 'ok';
-      interval: number;
+      estimate: DelayEstimate;
+      sampleCount: number;
     }
   | {
       status: 'insufficient_data';
     };
 
-const SECONDS_IN_15_MIN = 900;
-/** Chains at this interval (1h) are treated as default and omitted from the JSON. */
-const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
+export type AssertionEventRecord = {
+  afterInboxBatchAcc: string;
+  blockNumber: number;
+  logIndex: number;
+  timestamp: number;
+};
+
+export type SequencerBatchRecord = {
+  afterAcc: string;
+  blockNumber: number;
+  logIndex: number;
+  timestamp: number;
+  isMessageBearing: boolean;
+};
+
+export type DelaySample = {
+  batchPostingDelaySeconds: number;
+  assertionAfterBatchDelaySeconds: number;
+};
+
 const SAMPLE_SIZE = 20;
-const LOOKBACK_MULTIPLIERS = [1, 4, 13]; // 7d, 30d, 91d
+const MIN_COMPLETE_CYCLE_COUNT = 2;
+const TARGET_ASSERTION_COUNT = SAMPLE_SIZE * 4;
+const MAX_LOOKBACK_MULTIPLIER = 13; // 91d
+const RPC_CONCURRENCY_LIMIT = 8;
 
 // Legacy rollup event (pre-BoLD)
 const LEGACY_ROLLUP_ABI = [
@@ -48,20 +77,71 @@ const BOLD_ROLLUP_ABI = [
   'event AssertionCreated(bytes32 indexed assertionHash, bytes32 indexed parentAssertionHash, tuple(tuple(bytes32 prevPrevAssertionHash, bytes32 sequencerBatchAcc, tuple(bytes32 wasmModuleRoot, uint256 requiredStake, address challengeManager, uint64 confirmPeriodBlocks, uint64 nextInboxPosition) configData) beforeStateData, tuple(tuple(bytes32[2] bytes32Vals, uint64[2] u64Vals) globalState, uint8 machineStatus, bytes32 endHistoryRoot) beforeState, tuple(tuple(bytes32[2] bytes32Vals, uint64[2] u64Vals) globalState, uint8 machineStatus, bytes32 endHistoryRoot) afterState) assertion, bytes32 afterInboxBatchAcc, uint256 inboxMaxCount, bytes32 wasmModuleRoot, uint256 requiredStake, address challengeManager, uint64 confirmPeriodBlocks)',
 ];
 
+const SEQUENCER_INBOX_ABI = [
+  'event SequencerBatchDelivered(uint256 indexed batchSequenceNumber, bytes32 indexed beforeAcc, bytes32 indexed afterAcc, bytes32 delayedAcc, uint256 afterDelayedMessagesRead, tuple(uint64 minTimestamp, uint64 maxTimestamp, uint64 minBlockNumber, uint64 maxBlockNumber) timeBounds, uint8 dataLocation)',
+  'function addSequencerL2Batch(uint256 sequenceNumber, bytes data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)',
+  'function addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes data, uint256 afterDelayedMessagesRead, address gasRefunder)',
+  'function addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)',
+];
+
+const sequencerInboxInterface = new ethers.utils.Interface(SEQUENCER_INBOX_ABI);
+const seenUnknownBatchSelectors = new Set<string>();
+const seenUnexpectedBatchShapes = new Set<string>();
+
+function loadConfiguredParentRpcUrl(parentChainId: number): string | null {
+  switch (parentChainId) {
+    case 1:
+      return (
+        (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ETHEREUM
+          ? `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ETHEREUM}`
+          : '') ||
+        (process.env.NEXT_PUBLIC_INFURA_KEY_ETHEREUM
+          ? `https://mainnet.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY_ETHEREUM}`
+          : '') ||
+        process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM ||
+        null
+      );
+    case 42161:
+      return (
+        (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_ONE
+          ? `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_ONE}`
+          : '') ||
+        (process.env.NEXT_PUBLIC_INFURA_KEY_ARBITRUM_ONE
+          ? `https://arbitrum-mainnet.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY_ARBITRUM_ONE}`
+          : '') ||
+        process.env.NEXT_PUBLIC_RPC_URL_ARBITRUM_ONE ||
+        null
+      );
+    case 42170:
+      return (
+        (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_NOVA
+          ? `https://arbnova-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_NOVA}`
+          : '') ||
+        process.env.NEXT_PUBLIC_RPC_URL_ARBITRUM_NOVA ||
+        'https://nova.arbitrum.io/rpc'
+      );
+    case 8453:
+      return (
+        (process.env.NEXT_PUBLIC_ALCHEMY_KEY_BASE
+          ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_BASE}`
+          : '') ||
+        (process.env.NEXT_PUBLIC_INFURA_KEY_BASE
+          ? `https://base-mainnet.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY_BASE}`
+          : '') ||
+        process.env.NEXT_PUBLIC_RPC_URL_BASE ||
+        null
+      );
+    default:
+      return null;
+  }
+}
+
 function getParentProvider(parentChainId: number): ethers.providers.JsonRpcProvider {
   const { rpcUrl } = getParentChainInfo(parentChainId);
-  return new ethers.providers.JsonRpcProvider(rpcUrl);
+  return new ethers.providers.JsonRpcProvider(loadConfiguredParentRpcUrl(parentChainId) || rpcUrl);
 }
 
-/**
- * Rounds to the nearest 15-minute increment with a minimum floor of 15 minutes.
- * Passing 0 returns 900 (15 min), not 0.
- */
-function roundToNearest15Min(seconds: number): number {
-  return Math.max(SECONDS_IN_15_MIN, Math.round(seconds / SECONDS_IN_15_MIN) * SECONDS_IN_15_MIN);
-}
-
-function median(values: number[]): number {
+export function median(values: number[]): number {
   if (values.length === 0) {
     return 0;
   }
@@ -78,12 +158,67 @@ function getLookbackBlocks(parentChainId: number): number {
   return blocksPerDay * 7;
 }
 
-/**
- * Queries both legacy (NodeCreated) and BoLD (AssertionCreated) events from the
- * rollup contract. Chains that upgraded from legacy to BoLD will have both event
- * types — we merge and sort by block number to use the most recent assertions.
- */
-async function queryAssertionEvents(
+function getMaxLookbackBlocks(parentChainId: number): number {
+  return getLookbackBlocks(parentChainId) * MAX_LOOKBACK_MULTIPLIER;
+}
+
+function getQueryWindowBlocks(parentChainId: number): number {
+  switch (parentChainId) {
+    case 1:
+      return 50_000;
+    case 8453:
+      return 100_000;
+    default:
+      return 200_000;
+  }
+}
+
+function compareByBlockAndLog<T extends { blockNumber: number; logIndex: number }>(a: T, b: T) {
+  return a.blockNumber - b.blockNumber || a.logIndex - b.logIndex;
+}
+
+function isAfterEvent(
+  candidate: { blockNumber: number; logIndex: number },
+  reference: { blockNumber: number; logIndex: number },
+) {
+  return compareByBlockAndLog(candidate, reference) > 0;
+}
+
+function isOnOrBeforeEvent(
+  candidate: { blockNumber: number; logIndex: number },
+  reference: { blockNumber: number; logIndex: number },
+) {
+  return compareByBlockAndLog(candidate, reference) <= 0;
+}
+
+async function mapWithConcurrencyLimit<T, R>(
+  values: T[],
+  concurrency: number,
+  mapper: (value: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(values.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (true) {
+      const currentIndex = nextIndex;
+      nextIndex++;
+
+      if (currentIndex >= values.length) {
+        return;
+      }
+
+      results[currentIndex] = await mapper(values[currentIndex]!, currentIndex);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, values.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
+}
+
+async function queryAssertionEventsInRange(
   rollupAddress: string,
   provider: ethers.providers.JsonRpcProvider,
   fromBlock: number,
@@ -97,75 +232,383 @@ async function queryAssertionEvents(
 
   const [legacyEvents, boldEvents] = await Promise.all([
     legacyFilter
-      ? legacyContract.queryFilter(legacyFilter, fromBlock, toBlock).catch(() => [])
+      ? legacyContract.queryFilter(legacyFilter, fromBlock, toBlock)
       : Promise.resolve([]),
-    boldFilter
-      ? boldContract.queryFilter(boldFilter, fromBlock, toBlock).catch(() => [])
-      : Promise.resolve([]),
+    boldFilter ? boldContract.queryFilter(boldFilter, fromBlock, toBlock) : Promise.resolve([]),
   ]);
 
-  // Merge and sort by block number, then log index
-  return [...legacyEvents, ...boldEvents].sort(
-    (a, b) => a.blockNumber - b.blockNumber || a.logIndex - b.logIndex,
+  return [...legacyEvents, ...boldEvents].sort(compareByBlockAndLog);
+}
+
+async function queryRecentAssertionEvents(
+  rollupAddress: string,
+  parentChainId: number,
+  provider: ethers.providers.JsonRpcProvider,
+): Promise<ethers.Event[]> {
+  const latestBlock = await provider.getBlockNumber();
+  const minBlock = Math.max(0, latestBlock - getMaxLookbackBlocks(parentChainId));
+  const windowSize = getQueryWindowBlocks(parentChainId);
+
+  const assertionEvents: ethers.Event[] = [];
+  let toBlock = latestBlock;
+
+  while (toBlock >= minBlock && assertionEvents.length < TARGET_ASSERTION_COUNT) {
+    const fromBlock = Math.max(minBlock, toBlock - windowSize + 1);
+    // eslint-disable-next-line no-await-in-loop
+    const events = await queryAssertionEventsInRange(rollupAddress, provider, fromBlock, toBlock);
+    assertionEvents.unshift(...events);
+    toBlock = fromBlock - 1;
+  }
+
+  return assertionEvents.sort(compareByBlockAndLog).slice(-TARGET_ASSERTION_COUNT);
+}
+
+async function queryBatchEventsInRange(
+  sequencerInboxAddress: string,
+  provider: ethers.providers.JsonRpcProvider,
+  fromBlock: number,
+  toBlock: number,
+): Promise<ethers.Event[]> {
+  const sequencerInbox = new ethers.Contract(sequencerInboxAddress, SEQUENCER_INBOX_ABI, provider);
+  const filter = sequencerInbox.filters.SequencerBatchDelivered?.();
+
+  if (!filter) {
+    return [];
+  }
+
+  return (await sequencerInbox.queryFilter(filter, fromBlock, toBlock)).sort(compareByBlockAndLog);
+}
+
+async function queryBatchEvents(
+  sequencerInboxAddress: string,
+  parentChainId: number,
+  provider: ethers.providers.JsonRpcProvider,
+  fromBlock: number,
+  toBlock: number,
+): Promise<ethers.Event[]> {
+  const windowSize = getQueryWindowBlocks(parentChainId);
+  const batchEvents: ethers.Event[] = [];
+  let currentToBlock = toBlock;
+
+  while (currentToBlock >= fromBlock) {
+    const currentFromBlock = Math.max(fromBlock, currentToBlock - windowSize + 1);
+    // eslint-disable-next-line no-await-in-loop
+    const events = await queryBatchEventsInRange(
+      sequencerInboxAddress,
+      provider,
+      currentFromBlock,
+      currentToBlock,
+    );
+    batchEvents.unshift(...events);
+    currentToBlock = currentFromBlock - 1;
+  }
+
+  return batchEvents.sort(compareByBlockAndLog);
+}
+
+async function fetchBlocksByNumber(
+  provider: ethers.providers.JsonRpcProvider,
+  blockNumbers: number[],
+): Promise<Map<number, ethers.providers.Block>> {
+  const uniqueBlockNumbers = [...new Set(blockNumbers)];
+  const blocks = await mapWithConcurrencyLimit(
+    uniqueBlockNumbers,
+    RPC_CONCURRENCY_LIMIT,
+    (blockNumber) => provider.getBlock(blockNumber),
+  );
+
+  return new Map(
+    uniqueBlockNumbers.map((blockNumber, index) => {
+      const block = blocks[index];
+
+      if (!block) {
+        throw new Error(`Missing block ${blockNumber}`);
+      }
+
+      return [blockNumber, block];
+    }),
   );
 }
 
-async function getAssertionInterval(
-  chain: OrbitChainConfig,
-  provider: ethers.providers.JsonRpcProvider,
-): Promise<AssertionIntervalResult> {
-  const latestBlock = await provider.getBlockNumber();
-  const baseLookback = getLookbackBlocks(chain.parentChainId);
+function getAssertionAccumulator(event: ethers.Event): string {
+  const afterInboxBatchAcc = event.args?.afterInboxBatchAcc;
 
-  let events: ethers.Event[] = [];
-  let lookbackLabel = '';
-
-  for (const multiplier of LOOKBACK_MULTIPLIERS) {
-    const fromBlock = Math.max(0, latestBlock - baseLookback * multiplier);
-    // eslint-disable-next-line no-await-in-loop
-    events = await queryAssertionEvents(chain.ethBridge.rollup, provider, fromBlock, latestBlock);
-    lookbackLabel = `${multiplier * 7}d`;
-    if (events.length >= 2) {
-      break;
-    }
+  if (typeof afterInboxBatchAcc !== 'string') {
+    throw new Error(`Assertion event missing afterInboxBatchAcc at ${event.transactionHash}`);
   }
 
-  if (events.length < 2) {
-    console.warn(`  ${chain.name} (${chain.chainId}): <2 events in 91d, preserving current value`);
+  return afterInboxBatchAcc.toLowerCase();
+}
+
+async function normalizeAssertionEvents(
+  provider: ethers.providers.JsonRpcProvider,
+  events: ethers.Event[],
+): Promise<AssertionEventRecord[]> {
+  const blocksByNumber = await fetchBlocksByNumber(
+    provider,
+    events.map((event) => event.blockNumber),
+  );
+
+  return events.map((event) => ({
+    afterInboxBatchAcc: getAssertionAccumulator(event),
+    blockNumber: event.blockNumber,
+    logIndex: event.logIndex,
+    timestamp: blocksByNumber.get(event.blockNumber)!.timestamp,
+  }));
+}
+
+export function isMessageBearingBatchTransaction(data: string): boolean {
+  let parsedTransaction: ethers.utils.TransactionDescription | null = null;
+
+  try {
+    parsedTransaction = sequencerInboxInterface.parseTransaction({ data });
+  } catch (error) {
+    const selector = data.slice(0, 10);
+    if (!seenUnknownBatchSelectors.has(selector)) {
+      seenUnknownBatchSelectors.add(selector);
+      console.warn(`    unknown batch poster selector ${selector}, treating as message-bearing`);
+    }
+    return true;
+  }
+
+  if (!parsedTransaction) {
+    console.warn(
+      '    unable to decode sequencer inbox batch transaction, treating as message-bearing',
+    );
+    return true;
+  }
+
+  if (
+    parsedTransaction.name === 'addSequencerL2BatchFromOrigin' &&
+    parsedTransaction.args.length === 4
+  ) {
+    return true;
+  }
+
+  if (parsedTransaction.args.length < 6) {
+    if (!seenUnexpectedBatchShapes.has(parsedTransaction.signature)) {
+      seenUnexpectedBatchShapes.add(parsedTransaction.signature);
+      console.warn(
+        `    unexpected batch poster transaction shape ${parsedTransaction.signature}, treating as message-bearing`,
+      );
+    }
+    return true;
+  }
+
+  const previousMessageCount = ethers.BigNumber.from(parsedTransaction.args[4]);
+  const newMessageCount = ethers.BigNumber.from(parsedTransaction.args[5]);
+
+  return newMessageCount.gt(previousMessageCount);
+}
+
+async function normalizeBatchEvents(
+  provider: ethers.providers.JsonRpcProvider,
+  events: ethers.Event[],
+): Promise<SequencerBatchRecord[]> {
+  const uniqueTransactionHashes = [...new Set(events.map((event) => event.transactionHash))];
+  const [blocksByNumber, transactionsByHash] = await Promise.all([
+    fetchBlocksByNumber(
+      provider,
+      events.map((event) => event.blockNumber),
+    ),
+    mapWithConcurrencyLimit(
+      uniqueTransactionHashes,
+      RPC_CONCURRENCY_LIMIT,
+      async (transactionHash) => {
+        const transaction = await provider.getTransaction(transactionHash);
+
+        if (!transaction) {
+          throw new Error(`Missing transaction ${transactionHash}`);
+        }
+
+        return [transactionHash, transaction] as const;
+      },
+    ).then((entries) => new Map(entries)),
+  ]);
+
+  return events.map((event) => {
+    const afterAcc = event.args?.afterAcc;
+
+    if (typeof afterAcc !== 'string') {
+      throw new Error(`Sequencer batch event missing afterAcc at ${event.transactionHash}`);
+    }
+
+    const transaction = transactionsByHash.get(event.transactionHash);
+
+    if (!transaction) {
+      throw new Error(`Missing transaction ${event.transactionHash}`);
+    }
+
+    return {
+      afterAcc: afterAcc.toLowerCase(),
+      blockNumber: event.blockNumber,
+      logIndex: event.logIndex,
+      timestamp: blocksByNumber.get(event.blockNumber)!.timestamp,
+      isMessageBearing: isMessageBearingBatchTransaction(transaction.data),
+    };
+  });
+}
+
+export function buildDelaySamples(
+  assertions: AssertionEventRecord[],
+  batches: SequencerBatchRecord[],
+): DelaySample[] {
+  const sortedAssertions = [...assertions].sort(compareByBlockAndLog);
+  const sortedBatches = [...batches].sort(compareByBlockAndLog);
+  const batchIndexByAccumulator = new Map(
+    sortedBatches.map((batch, index) => [batch.afterAcc, index] as const),
+  );
+  const finalIncludedBatchIndexByAssertion = sortedAssertions.map((assertion) => {
+    const batchIndex = batchIndexByAccumulator.get(assertion.afterInboxBatchAcc);
+    return typeof batchIndex === 'number' ? batchIndex : null;
+  });
+  const samples: DelaySample[] = [];
+
+  for (let index = 1; index < sortedAssertions.length; index++) {
+    const previousAssertion = sortedAssertions[index - 1]!;
+    const firstNonEmptyBatchIndex = sortedBatches.findIndex(
+      (batch) =>
+        batch.isMessageBearing &&
+        isAfterEvent(batch, previousAssertion) &&
+        finalIncludedBatchIndexByAssertion
+          .slice(index)
+          .some(
+            (finalIncludedBatchIndex) =>
+              typeof finalIncludedBatchIndex === 'number' && finalIncludedBatchIndex >= 0,
+          ),
+    );
+
+    if (firstNonEmptyBatchIndex === -1) {
+      continue;
+    }
+
+    const firstNonEmptyBatch = sortedBatches[firstNonEmptyBatchIndex]!;
+
+    const assertionIndexThatIncludesBatch = finalIncludedBatchIndexByAssertion.findIndex(
+      (finalIncludedBatchIndex, assertionIndex) =>
+        assertionIndex >= index &&
+        typeof finalIncludedBatchIndex === 'number' &&
+        finalIncludedBatchIndex >= firstNonEmptyBatchIndex,
+    );
+
+    if (assertionIndexThatIncludesBatch === -1) {
+      continue;
+    }
+
+    const assertionThatIncludesBatch = sortedAssertions[assertionIndexThatIncludesBatch]!;
+
+    samples.push({
+      batchPostingDelaySeconds: firstNonEmptyBatch.timestamp - previousAssertion.timestamp,
+      assertionAfterBatchDelaySeconds:
+        assertionThatIncludesBatch.timestamp - firstNonEmptyBatch.timestamp,
+    });
+  }
+
+  return samples;
+}
+
+function getDelayEstimateFromSamples(samples: DelaySample[]): DelayEstimateResult {
+  if (samples.length < MIN_COMPLETE_CYCLE_COUNT) {
     return { status: 'insufficient_data' };
   }
 
-  const recentEvents = events.slice(-SAMPLE_SIZE);
-  const intervals: number[] = [];
+  const recentSamples = samples.slice(-SAMPLE_SIZE);
 
-  for (let i = 1; i < recentEvents.length; i++) {
-    // eslint-disable-next-line no-await-in-loop
-    const [previousBlock, currentBlock] = await Promise.all([
-      provider.getBlock(recentEvents[i - 1]!.blockNumber),
-      provider.getBlock(recentEvents[i]!.blockNumber),
-    ]);
+  return {
+    status: 'ok',
+    estimate: {
+      batchPostingDelaySeconds: Math.round(
+        median(recentSamples.map((sample) => sample.batchPostingDelaySeconds)),
+      ),
+      assertionAfterBatchDelaySeconds: Math.round(
+        median(recentSamples.map((sample) => sample.assertionAfterBatchDelaySeconds)),
+      ),
+    },
+    sampleCount: recentSamples.length,
+  };
+}
 
-    if (!previousBlock || !currentBlock) {
-      throw new Error(
-        `Missing block data while computing assertion interval for ${chain.name} (${chain.chainId})`,
-      );
-    }
-
-    intervals.push(currentBlock.timestamp - previousBlock.timestamp);
-  }
-
-  if (intervals.length === 0) {
-    throw new Error(`No intervals computed for ${chain.name} (${chain.chainId})`);
-  }
-
-  const medianInterval = median(intervals);
-  const roundedInterval = roundToNearest15Min(medianInterval);
-
+async function getDelayEstimate(
+  chain: OrbitChainConfig,
+  provider: ethers.providers.JsonRpcProvider,
+): Promise<DelayEstimateResult> {
+  const startedAt = Date.now();
+  const assertionEvents = await queryRecentAssertionEvents(
+    chain.ethBridge.rollup,
+    chain.parentChainId,
+    provider,
+  );
   console.log(
-    `  ${chain.name} (${chain.chainId}): median=${(medianInterval / 3600).toFixed(1)}h -> rounded=${(roundedInterval / 3600).toFixed(1)}h (${roundedInterval}s) [${lookbackLabel}]`,
+    `    fetched ${assertionEvents.length} assertion events in ${Date.now() - startedAt}ms`,
   );
 
-  return { status: 'ok', interval: roundedInterval };
+  if (assertionEvents.length < 2) {
+    console.warn(
+      `  ${chain.name} (${chain.chainId}): <2 assertions in lookback window, preserving current value`,
+    );
+    return { status: 'insufficient_data' };
+  }
+
+  const oldestAssertionBlock = assertionEvents[0]!.blockNumber;
+  const latestAssertionBlock = assertionEvents[assertionEvents.length - 1]!.blockNumber;
+  const batchEvents = await queryBatchEvents(
+    chain.ethBridge.sequencerInbox,
+    chain.parentChainId,
+    provider,
+    oldestAssertionBlock,
+    latestAssertionBlock,
+  );
+  console.log(`    fetched ${batchEvents.length} batch events in ${Date.now() - startedAt}ms`);
+
+  const [assertions, batches] = await Promise.all([
+    normalizeAssertionEvents(provider, assertionEvents),
+    normalizeBatchEvents(provider, batchEvents),
+  ]);
+  console.log(
+    `    normalized ${assertions.length} assertions and ${batches.length} batches in ${Date.now() - startedAt}ms`,
+  );
+
+  const samples = buildDelaySamples(assertions, batches);
+  console.log(`    built ${samples.length} complete cycles in ${Date.now() - startedAt}ms`);
+  const result = getDelayEstimateFromSamples(samples);
+
+  if (result.status === 'insufficient_data') {
+    console.warn(
+      `  ${chain.name} (${chain.chainId}): <${MIN_COMPLETE_CYCLE_COUNT} complete cycles, preserving current value`,
+    );
+    return result;
+  }
+
+  console.log(
+    `  ${chain.name} (${chain.chainId}): batch=${result.estimate.batchPostingDelaySeconds}s assertion=${result.estimate.assertionAfterBatchDelaySeconds}s samples=${result.sampleCount}`,
+  );
+
+  return result;
+}
+
+export function applyDelayEstimates(
+  data: OrbitChainsData,
+  delayEstimatesByChainId: Map<number, DelayEstimate>,
+): number {
+  let updatedChains = 0;
+
+  for (const section of ['mainnet', 'testnet'] as const) {
+    for (const chain of data[section]) {
+      const estimate = delayEstimatesByChainId.get(chain.chainId);
+
+      if (!estimate) {
+        continue;
+      }
+
+      chain.bridgeUiConfig.batchPostingDelaySeconds = estimate.batchPostingDelaySeconds;
+      chain.bridgeUiConfig.assertionAfterBatchDelaySeconds =
+        estimate.assertionAfterBatchDelaySeconds;
+      delete chain.bridgeUiConfig.assertionIntervalSeconds;
+      updatedChains++;
+    }
+  }
+
+  return updatedChains;
 }
 
 export async function updateAssertionIntervals(targetJsonPath: string): Promise<void> {
@@ -180,7 +623,7 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
     chainsByParent.set(chain.parentChainId, chains);
   }
 
-  const intervalsByChainId = new Map<number, number>();
+  const delayEstimatesByChainId = new Map<number, DelayEstimate>();
 
   for (const [parentChainId, chains] of chainsByParent) {
     console.log(`\nParent chain ${parentChainId}:`);
@@ -188,10 +631,13 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
 
     for (const chain of chains) {
       try {
+        console.log(`  Processing ${chain.name} (${chain.chainId})...`);
         // eslint-disable-next-line no-await-in-loop
-        const result = await getAssertionInterval(chain, provider);
+        const result = await getDelayEstimate(chain, provider);
         if (result.status === 'ok') {
-          intervalsByChainId.set(chain.chainId, result.interval);
+          delayEstimatesByChainId.set(chain.chainId, result.estimate);
+        } else {
+          console.log(`  ${chain.name} (${chain.chainId}): preserving existing value`);
         }
       } catch (error) {
         throw new Error(
@@ -203,24 +649,7 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
     }
   }
 
-  let updatedChains = 0;
-
-  for (const section of ['mainnet', 'testnet'] as const) {
-    for (const chain of data[section]) {
-      if (!intervalsByChainId.has(chain.chainId)) {
-        continue;
-      }
-
-      const interval = intervalsByChainId.get(chain.chainId);
-
-      if (interval && interval !== DEFAULT_ASSERTION_INTERVAL_SECONDS) {
-        chain.bridgeUiConfig.assertionIntervalSeconds = interval;
-        updatedChains++;
-      } else {
-        delete chain.bridgeUiConfig.assertionIntervalSeconds;
-      }
-    }
-  }
+  const updatedChains = applyDelayEstimates(data, delayEstimatesByChainId);
 
   fs.writeFileSync(jsonPath, `${JSON.stringify(data, null, 2)}\n`);
   console.log(`\nUpdated ${updatedChains} chains in ${jsonPath}`);

@@ -21,6 +21,8 @@ export type BridgeUiConfig = {
   };
   nativeTokenData?: Omit<NativeCurrencyBase, 'decimals'>;
   fastWithdrawalTime?: number;
+  batchPostingDelaySeconds?: number;
+  assertionAfterBatchDelaySeconds?: number;
   assertionIntervalSeconds?: number;
 };
 

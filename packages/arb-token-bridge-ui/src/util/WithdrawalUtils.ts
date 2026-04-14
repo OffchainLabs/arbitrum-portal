@@ -11,6 +11,7 @@ import {
   getBlockNumberReferenceChainIdByChainId,
   getConfirmPeriodBlocks,
   getL1BlockTime,
+  isNetwork,
 } from './networks';
 import { orbitChains } from './orbitChainsList';
 
@@ -109,11 +110,47 @@ const SECONDS_IN_MINUTE = 60;
 const SECONDS_IN_HOUR = 3600;
 const SECONDS_IN_DAY = 86400;
 /**
- * Default assertion posting interval (1 hour), used when a chain doesn't
- * specify one. This is the worst-case wait for a withdrawal to be included
- * in the next assertion. Matches Arb One / Nova's ~60 min posting cadence.
+ * Default extra delay (1 hour) for Arbitrum chains when we do not have more
+ * specific batch-posting / assertion timing metadata.
  */
 const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
+
+function getChainExtraDelaySeconds(chainId: number): number {
+  const bridgeUiConfig = orbitChains[chainId]?.bridgeUiConfig;
+
+  const batchPostingDelaySeconds = bridgeUiConfig?.batchPostingDelaySeconds;
+  const assertionAfterBatchDelaySeconds = bridgeUiConfig?.assertionAfterBatchDelaySeconds;
+
+  if (
+    typeof batchPostingDelaySeconds === 'number' ||
+    typeof assertionAfterBatchDelaySeconds === 'number'
+  ) {
+    return (batchPostingDelaySeconds ?? 0) + (assertionAfterBatchDelaySeconds ?? 0);
+  }
+
+  if (typeof bridgeUiConfig?.assertionIntervalSeconds === 'number') {
+    return bridgeUiConfig.assertionIntervalSeconds;
+  }
+
+  return isNetwork(chainId as ChainId).isArbitrum ? DEFAULT_ASSERTION_INTERVAL_SECONDS : 0;
+}
+
+export function getAdditionalWithdrawalDelaySeconds(chainId: number): number {
+  const directDelaySeconds = getChainExtraDelaySeconds(chainId);
+  const parentChainId = orbitChains[chainId]?.parentChainId;
+
+  if (!parentChainId) {
+    return directDelaySeconds;
+  }
+
+  const blockNumberReferenceChainId = getBlockNumberReferenceChainIdByChainId({ chainId });
+
+  if (parentChainId === blockNumberReferenceChainId) {
+    return directDelaySeconds;
+  }
+
+  return directDelaySeconds + getAdditionalWithdrawalDelaySeconds(parentChainId);
+}
 
 function formatDuration(seconds: number, short = false): string {
   if (seconds < SECONDS_IN_MINUTE) {
@@ -154,12 +191,9 @@ export function getConfirmationTime(chainId: number) {
     if (blockNumberReferenceChainId === ChainId.Local) {
       confirmationTimeInSeconds = 0;
     } else {
-      const assertionInterval =
-        orbitChains[chainId]?.bridgeUiConfig.assertionIntervalSeconds ??
-        DEFAULT_ASSERTION_INTERVAL_SECONDS;
       confirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
-        assertionInterval;
+        getAdditionalWithdrawalDelaySeconds(chainId);
     }
   }
 
