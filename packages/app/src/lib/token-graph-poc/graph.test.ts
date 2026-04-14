@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { getDestinationTokens, getTokenId, searchTokens } from './graph';
+import { getRouteCandidates, getTokenId, searchTokens } from './graph';
 
 const mockLifiRegistry = {
   tokensByChain: {} as Record<
@@ -62,23 +62,27 @@ describe('token graph destination tokens', () => {
   });
 
   it('returns direct routes first and loads lifi swap routes on demand', async () => {
-    const directResponse = await getDestinationTokens({
+    const directResponse = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC),
       destinationChainId: ChainId.ArbitrumOne,
     });
 
-    expect(directResponse.items.map((item) => `${item.provider}:${item.token.id}`)).toEqual([
+    expect(
+      directResponse.items.map((item) => `${item.provider}:${item.destinationToken.id}`),
+    ).toEqual([
       `cctp:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC)}`,
       `canonical:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne['USDC.e'])}`,
     ]);
 
-    const swapFallbackResponse = await getDestinationTokens({
+    const swapFallbackResponse = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC),
       destinationChainId: ChainId.ArbitrumOne,
       includeSwapFallback: true,
     });
 
-    expect(swapFallbackResponse.items.map((item) => `${item.provider}:${item.token.id}`)).toEqual([
+    expect(
+      swapFallbackResponse.items.map((item) => `${item.provider}:${item.destinationToken.id}`),
+    ).toEqual([
       `cctp:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC)}`,
       `canonical:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne['USDC.e'])}`,
       `lifi:${getTokenId(ChainId.ArbitrumOne, '0x46850ad61c2b7d64d08c9c754f45254596696984')}`,
@@ -109,6 +113,15 @@ describe('token graph destination tokens', () => {
     const arbPyusdLifiAddress = '0x46850ad61c2b7d64d08c9c754f45254596696984';
     const arbPyusdWithdrawOnlyAddress = '0x327006c8712fe0abdbbd55b7999db39b0967342e';
 
+    const ethToArbWithoutRegistry = await getRouteCandidates({
+      sourceTokenId: getTokenId(ChainId.Ethereum, ethPyusdAddress),
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(ethToArbWithoutRegistry.items.map((item) => item.destinationToken.id)).toEqual([
+      getTokenId(ChainId.ArbitrumOne, arbPyusdLifiAddress),
+    ]);
+
     const ethLifiToken = {
       address: ethPyusdAddress,
       coinKey: 'PYUSD' as CoinKey,
@@ -133,21 +146,21 @@ describe('token graph destination tokens', () => {
       [ChainId.ArbitrumOne]: { PYUSD: arbLifiToken },
     };
 
-    const ethToArb = await getDestinationTokens({
+    const ethToArb = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, ethPyusdAddress),
       destinationChainId: ChainId.ArbitrumOne,
     });
 
-    expect(ethToArb.items.map((item) => `${item.provider}:${item.token.id}`)).toContain(
+    expect(ethToArb.items.map((item) => `${item.provider}:${item.destinationToken.id}`)).toEqual([
       `lifi:${getTokenId(ChainId.ArbitrumOne, arbPyusdLifiAddress)}`,
-    );
+    ]);
 
-    const arbToEth = await getDestinationTokens({
+    const arbToEth = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.ArbitrumOne, arbPyusdWithdrawOnlyAddress),
       destinationChainId: ChainId.Ethereum,
     });
 
-    expect(arbToEth.items.map((item) => `${item.provider}:${item.token.id}`)).toContain(
+    expect(arbToEth.items.map((item) => `${item.provider}:${item.destinationToken.id}`)).toContain(
       `canonical:${getTokenId(ChainId.Ethereum, ethPyusdAddress)}`,
     );
   });
@@ -164,14 +177,14 @@ describe('token graph destination tokens', () => {
       getTokenId(ChainId.Ethereum, daiAddress),
     );
 
-    const destinationResponse = await getDestinationTokens({
+    const destinationResponse = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, daiAddress),
       destinationChainId: ChainId.ArbitrumOne,
     });
 
     expect(destinationResponse.items).toHaveLength(0);
 
-    const swapFallbackResponse = await getDestinationTokens({
+    const swapFallbackResponse = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, daiAddress),
       destinationChainId: ChainId.ArbitrumOne,
       includeSwapFallback: true,

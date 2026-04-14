@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getChainById, getDestinationTokens } from '@/app-lib/token-graph-poc/graph';
+import { getChainById, getRouteCandidates } from '@/app-lib/token-graph-poc/graph';
 
 function parseChainId(value: string | null) {
   if (!value) {
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(
-    await getDestinationTokens({
+    await getRouteCandidates({
       sourceTokenId,
       destinationChainId,
       q,

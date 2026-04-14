@@ -3,15 +3,16 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useAccount } from 'wagmi';
 
 import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import type {
   BalancesResponse,
-  DestinationTokensResponse,
   MappingProvider,
+  RouteCandidate,
+  RouteCandidatesResponse,
   TokenVariant,
   TokensResponse,
 } from '@/app-lib/token-graph-poc/types';
@@ -67,7 +68,7 @@ function buildSourceTokensUrl(sourceChainId: number, destinationChainId: number,
   return `/api/token-graph-poc/tokens?${params.toString()}`;
 }
 
-function buildDestinationTokensUrl(
+function buildRouteCandidatesUrl(
   sourceTokenId: string,
   destinationChainId: number,
   q: string,
@@ -111,19 +112,17 @@ function getVisibleTokens(params: {
     return tokensResponse?.items ?? [];
   }
 
-  // Connected with balances: show tokens directly from balance response
   if (isConnected && balancesResponse) {
     return balancesResponse.items.map((item) => item.token);
   }
 
-  // Not connected, not searching: show nothing
   return [];
 }
 
-function getMergedDestinationItems(
-  ...responses: Array<DestinationTokensResponse | undefined>
-): DestinationTokensResponse['items'] {
-  const itemsByRouteId = new Map<string, DestinationTokensResponse['items'][number]>();
+function getMergedRouteCandidates(
+  ...responses: Array<RouteCandidatesResponse | undefined>
+): RouteCandidatesResponse['items'] {
+  const itemsByRouteId = new Map<string, RouteCandidate>();
 
   for (const response of responses) {
     for (const item of response?.items ?? []) {
@@ -134,19 +133,19 @@ function getMergedDestinationItems(
   return [...itemsByRouteId.values()].sort((left, right) => {
     return (
       left.bestPriority - right.bestPriority ||
-      left.token.symbol.localeCompare(right.token.symbol) ||
-      left.token.name.localeCompare(right.token.name) ||
+      left.destinationToken.symbol.localeCompare(right.destinationToken.symbol) ||
+      left.destinationToken.name.localeCompare(right.destinationToken.name) ||
       left.routeId.localeCompare(right.routeId)
     );
   });
 }
 
-function getCachedDestinationResponses(params: {
+function getCachedRouteCandidateResponses(params: {
   cache: ReturnType<typeof useSWRConfig>['cache'];
   destinationChainId: number;
 }) {
   const { cache, destinationChainId } = params;
-  const responses: DestinationTokensResponse[] = [];
+  const responses: RouteCandidatesResponse[] = [];
   const destinationPrefix = `/api/token-graph-poc/destination?destinationChainId=${destinationChainId}`;
 
   for (const key of cache.keys()) {
@@ -154,7 +153,7 @@ function getCachedDestinationResponses(params: {
       continue;
     }
 
-    const entry = cache.get(key) as { data?: DestinationTokensResponse } | undefined;
+    const entry = cache.get(key) as { data?: RouteCandidatesResponse } | undefined;
     if (entry?.data) {
       responses.push(entry.data);
     }
@@ -178,23 +177,54 @@ function ProviderBadge({ provider }: { provider: MappingProvider }) {
   );
 }
 
-function DestinationRouteCard({ item }: { item: DestinationTokensResponse['items'][number] }) {
+function CapabilityBadge({ label }: { label: string }) {
   return (
-    <div className="w-full rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left">
+    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-white/60">
+      {label}
+    </span>
+  );
+}
+
+function RouteCandidateCard({
+  candidate,
+  selected,
+  onSelect,
+}: {
+  candidate: RouteCandidate;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-xl border p-3 text-left transition ${
+        selected
+          ? 'border-white/50 bg-white/10'
+          : 'border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]'
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-white">{item.token.symbol}</div>
-          <div className="text-sm text-white/70">{item.token.name}</div>
+          <div className="text-sm font-semibold text-white">
+            {candidate.destinationToken.symbol}
+            <span className="ml-2 font-normal text-white/45">{candidate.family}</span>
+          </div>
+          <div className="text-sm text-white/70">{candidate.destinationToken.name}</div>
         </div>
-        <div className="text-xs text-white/45">Route</div>
+        <div className="text-xs text-white/45">{candidate.mode}</div>
       </div>
+
       <div className="mt-3 break-all text-[11px] text-white/45">
-        {item.token.address ?? 'native'}
+        {candidate.destinationToken.address ?? 'native'}
       </div>
+
       <div className="mt-3 flex flex-wrap gap-2">
-        <ProviderBadge provider={item.provider} />
+        <ProviderBadge provider={candidate.provider} />
+        {candidate.capabilities.supportsBatchDeposit && <CapabilityBadge label="batch deposit" />}
+        {candidate.mode === 'swap' && <CapabilityBadge label="swap" />}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -238,6 +268,66 @@ function TokenCard({
   );
 }
 
+function RouteSummary({
+  selectedSourceToken,
+  selectedRoute,
+  destinationToken,
+}: {
+  selectedSourceToken: TokenVariant | null;
+  selectedRoute: RouteCandidate | null;
+  destinationToken: TokenVariant | null;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5">
+      <div className="text-sm font-semibold text-white">Bridge-like selectors</div>
+      <div className="mt-2 text-sm text-white/60">
+        The PoC now resolves explicit route candidates first, then derives destination asset and
+        route family directly from the selected candidate instead of inferring route type from token
+        addresses.
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/45">
+            selectedSourceToken
+          </div>
+          <div className="mt-2 text-sm text-white">
+            {selectedSourceToken
+              ? `${selectedSourceToken.symbol} (${selectedSourceToken.id})`
+              : '—'}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/45">destinationToken</div>
+          <div className="mt-2 text-sm text-white">
+            {destinationToken ? `${destinationToken.symbol} (${destinationToken.id})` : '—'}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Selected Family</div>
+          <div className="mt-2 text-sm text-white">{selectedRoute?.family ?? '—'}</div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Selected Mode</div>
+          <div className="mt-2 text-sm text-white">{selectedRoute?.mode ?? '—'}</div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/45">
+            supportsBatchDeposit
+          </div>
+          <div className="mt-2 text-sm text-white">
+            {String(selectedRoute?.capabilities.supportsBatchDeposit ?? false)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function TokenGraphPocClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -248,6 +338,7 @@ export function TokenGraphPocClient() {
   const [destinationQuery, setDestinationQuery] = useState('');
   const [isDestinationDropdownOpen, setIsDestinationDropdownOpen] = useState(false);
   const [selectedSourceTokenId, setSelectedSourceTokenId] = useState<string | null>(null);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
   const sourceChainId = parseChainId(searchParams.get('sourceChainId'), DEFAULT_SOURCE_CHAIN_ID);
   const destinationChainId = parseChainId(
@@ -283,12 +374,15 @@ export function TokenGraphPocClient() {
     isConnected,
     sourceQuery: debouncedSourceQuery,
   });
-
-  const selectedSourceToken = visibleTokens.find((t) => t.id === selectedSourceTokenId) ?? null;
+  const selectedSourceToken = useMemo(
+    () => visibleTokens.find((token) => token.id === selectedSourceTokenId) ?? null,
+    [selectedSourceTokenId, visibleTokens],
+  );
 
   useEffect(() => {
     setDestinationQuery('');
     setIsDestinationDropdownOpen(false);
+    setSelectedRouteId(null);
   }, [selectedSourceTokenId, destinationChainId]);
 
   const sourceLoadedTokenIds = new Set<string>();
@@ -307,64 +401,107 @@ export function TokenGraphPocClient() {
     }
   }
   const sourceLoadedCount = sourceLoadedTokenIds.size;
+
   const canLoadSwapFallback =
     !!selectedSourceToken?.supportsSwap &&
     (lifiDestinationChainIds[sourceChainId] ?? []).includes(destinationChainId);
-  const directDestinationUrl = selectedSourceTokenId
-    ? buildDestinationTokensUrl(selectedSourceTokenId, destinationChainId, '')
+
+  const directRouteCandidatesUrl = selectedSourceTokenId
+    ? buildRouteCandidatesUrl(selectedSourceTokenId, destinationChainId, '')
     : null;
-  const { data: directDestinationResponse, isLoading: directDestinationIsLoading } =
-    useSWR<DestinationTokensResponse>(directDestinationUrl, fetchJson);
-  const swapDestinationUrl =
+  const { data: directRouteCandidatesResponse, isLoading: directRouteCandidatesAreLoading } =
+    useSWR<RouteCandidatesResponse>(directRouteCandidatesUrl, fetchJson);
+
+  const swapRouteCandidatesUrl =
     isDestinationDropdownOpen &&
     selectedSourceTokenId &&
     canLoadSwapFallback &&
     !debouncedDestinationQuery.trim()
-      ? buildDestinationTokensUrl(selectedSourceTokenId, destinationChainId, '', true)
+      ? buildRouteCandidatesUrl(selectedSourceTokenId, destinationChainId, '', true)
       : null;
-  const { data: swapDestinationResponse, isLoading: swapDestinationIsLoading } =
-    useSWR<DestinationTokensResponse>(swapDestinationUrl, fetchJson);
-  const swapDestinationSearchUrl =
+  const { data: swapRouteCandidatesResponse, isLoading: swapRouteCandidatesAreLoading } =
+    useSWR<RouteCandidatesResponse>(swapRouteCandidatesUrl, fetchJson);
+
+  const swapRouteCandidatesSearchUrl =
     isDestinationDropdownOpen &&
     selectedSourceTokenId &&
     canLoadSwapFallback &&
     debouncedDestinationQuery.trim()
-      ? buildDestinationTokensUrl(
+      ? buildRouteCandidatesUrl(
           selectedSourceTokenId,
           destinationChainId,
           debouncedDestinationQuery,
           true,
         )
       : null;
-  const { data: swapDestinationSearchResponse, isLoading: swapDestinationSearchIsLoading } =
-    useSWR<DestinationTokensResponse>(swapDestinationSearchUrl, fetchJson);
-  const cachedDestinationResponses = getCachedDestinationResponses({
+  const {
+    data: swapRouteCandidatesSearchResponse,
+    isLoading: swapRouteCandidatesSearchAreLoading,
+  } = useSWR<RouteCandidatesResponse>(swapRouteCandidatesSearchUrl, fetchJson);
+
+  const cachedRouteCandidateResponses = getCachedRouteCandidateResponses({
     cache,
     destinationChainId,
   });
-  const loadedDestinationItems = getMergedDestinationItems(
-    ...cachedDestinationResponses,
-    directDestinationResponse,
-    swapDestinationResponse,
-    swapDestinationSearchResponse,
+  const loadedRouteCandidates = getMergedRouteCandidates(
+    ...cachedRouteCandidateResponses,
+    directRouteCandidatesResponse,
+    swapRouteCandidatesResponse,
+    swapRouteCandidatesSearchResponse,
   );
-  const directDestinationItems = directDestinationResponse?.items ?? [];
-  const swapDestinationItems =
-    (debouncedDestinationQuery.trim()
-      ? swapDestinationSearchResponse?.items
-      : swapDestinationResponse?.items) ?? [];
-  const visibleDestinationItems = directDestinationItems;
-  const availableSwapDestinationItems = swapDestinationItems.filter((item) =>
-    item.routeId.endsWith(':lifi-swap'),
+  const directRouteCandidates = useMemo(
+    () => directRouteCandidatesResponse?.items ?? [],
+    [directRouteCandidatesResponse?.items],
   );
-  const hasDirectDestinationRoutes = directDestinationItems.length > 0;
-  const isLifiOnlyDestinationSelection = !hasDirectDestinationRoutes && canLoadSwapFallback;
-  const destinationBaseIsLoading = !!selectedSourceTokenId && directDestinationIsLoading;
-  const swapDestinationListIsLoading = debouncedDestinationQuery.trim()
-    ? swapDestinationSearchIsLoading
-    : swapDestinationIsLoading;
+  const swapRouteCandidates = useMemo(
+    () =>
+      (debouncedDestinationQuery.trim()
+        ? swapRouteCandidatesSearchResponse?.items
+        : swapRouteCandidatesResponse?.items) ?? [],
+    [
+      debouncedDestinationQuery,
+      swapRouteCandidatesResponse?.items,
+      swapRouteCandidatesSearchResponse?.items,
+    ],
+  );
+  const availableSwapRouteCandidates = swapRouteCandidates.filter(
+    (candidate) => candidate.mode === 'swap',
+  );
+  const hasDirectRouteCandidates = directRouteCandidates.length > 0;
+  const isLifiOnlyDestinationSelection = !hasDirectRouteCandidates && canLoadSwapFallback;
+  const routeCandidatesAreLoading = !!selectedSourceTokenId && directRouteCandidatesAreLoading;
+  const swapRouteListIsLoading = debouncedDestinationQuery.trim()
+    ? swapRouteCandidatesSearchAreLoading
+    : swapRouteCandidatesAreLoading;
   const shouldShowSwapToButton = !!selectedSourceTokenId && canLoadSwapFallback;
-  const destLoadedCount = loadedDestinationItems.length;
+  const loadedCandidateCount = loadedRouteCandidates.length;
+
+  const selectableRouteCandidates = useMemo(
+    () => [...directRouteCandidates, ...availableSwapRouteCandidates],
+    [availableSwapRouteCandidates, directRouteCandidates],
+  );
+
+  useEffect(() => {
+    if (!selectableRouteCandidates.length) {
+      setSelectedRouteId(null);
+      return;
+    }
+
+    const hasSelectedCandidate = selectableRouteCandidates.some(
+      (candidate) => candidate.routeId === selectedRouteId,
+    );
+
+    if (!hasSelectedCandidate) {
+      setSelectedRouteId(selectableRouteCandidates[0]?.routeId ?? null);
+    }
+  }, [selectableRouteCandidates, selectedRouteId]);
+
+  const selectedRoute = useMemo(
+    () =>
+      selectableRouteCandidates.find((candidate) => candidate.routeId === selectedRouteId) ?? null,
+    [selectableRouteCandidates, selectedRouteId],
+  );
+  const destinationToken = selectedRoute?.destinationToken ?? null;
 
   const toggleDestinationDropdown = () => {
     setIsDestinationDropdownOpen((value) => !value);
@@ -376,12 +513,18 @@ export function TokenGraphPocClient() {
         <h1 className="text-2xl font-bold text-white md:hidden">Token Graph PoC</h1>
         <PageHeading>Token Graph PoC</PageHeading>
         <div className="max-w-3xl text-sm leading-6 text-white/70">
-          Minimal PoC for the graph-backed token model. Source tokens come from a backend multicall
-          against the connected wallet, while destination resolution comes from graph edges keyed by
-          token ids.
+          This version models bridge selection as graph-backed assets plus explicit route
+          candidates. The frontend no longer needs to guess route family from token addresses once a
+          candidate is selected.
         </div>
         <div className="text-xs text-white/55">Route: `/token-graph-poc`</div>
       </div>
+
+      <RouteSummary
+        selectedSourceToken={selectedSourceToken}
+        selectedRoute={selectedRoute}
+        destinationToken={destinationToken}
+      />
 
       <div className="space-y-6">
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5">
@@ -438,7 +581,7 @@ export function TokenGraphPocClient() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-white">1. Source tokens</div>
+                <div className="text-sm font-semibold text-white">1. Source assets</div>
                 <div className="text-xs text-white/55">`GET /api/token-graph-poc/balances`</div>
               </div>
               <div className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/55">
@@ -449,14 +592,14 @@ export function TokenGraphPocClient() {
             <input
               value={sourceQuery}
               onChange={(event) => setSourceQuery(event.target.value)}
-              placeholder="Filter wallet tokens by symbol, name, address, or token id"
+              placeholder="Filter source assets by symbol, name, address, or asset id"
               className="mt-4 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
             />
 
             <div className="mt-4 space-y-3">
               {sourceTokensAreLoading || (!debouncedSourceQuery.trim() && balancesAreLoading) ? (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                  Loading tokens...
+                  Loading source assets...
                 </div>
               ) : visibleTokens.length ? (
                 visibleTokens.map((token) => (
@@ -473,10 +616,10 @@ export function TokenGraphPocClient() {
               ) : (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
                   {!isConnected
-                    ? 'Connect a wallet to load source tokens from balances.'
+                    ? 'Connect a wallet to load source assets from balances.'
                     : sourceQuery.trim()
-                      ? 'No tokens match this query.'
-                      : 'No tokens with balance on this chain.'}
+                      ? 'No assets match this query.'
+                      : 'No assets with balance on this chain.'}
                 </div>
               )}
             </div>
@@ -485,26 +628,24 @@ export function TokenGraphPocClient() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-white">2. Destination token</div>
+                <div className="text-sm font-semibold text-white">2. Route candidates</div>
                 <div className="text-xs text-white/55">
-                  Top routes first, extra routes on demand
+                  Candidates include route family, destination asset, and capabilities
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/55">
-                  {destLoadedCount} loaded
-                </div>
+              <div className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/55">
+                {loadedCandidateCount} loaded
               </div>
             </div>
 
             <div className="mt-4 space-y-3">
               {!selectedSourceToken ? (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                  Select a source token first.
+                  Select a source asset first.
                 </div>
-              ) : destinationBaseIsLoading ? (
+              ) : routeCandidatesAreLoading ? (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                  Loading destination routes...
+                  Loading route candidates...
                 </div>
               ) : isLifiOnlyDestinationSelection ? (
                 <>
@@ -519,11 +660,11 @@ export function TokenGraphPocClient() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold text-white">Select token</div>
+                        <div className="text-sm font-semibold text-white">Load LiFi candidates</div>
                         <div className="text-sm text-white/60">
                           {isDestinationDropdownOpen
-                            ? `${availableSwapDestinationItems.length} swap-supported destination token(s)`
-                            : 'Load swap-supported destination tokens'}
+                            ? `${availableSwapRouteCandidates.length} candidate(s)`
+                            : 'This source asset needs a swap destination selection'}
                         </div>
                       </div>
                       <ChevronDownIcon
@@ -538,32 +679,42 @@ export function TokenGraphPocClient() {
                       <input
                         value={destinationQuery}
                         onChange={(event) => setDestinationQuery(event.target.value)}
-                        placeholder="Filter swap-supported destination tokens"
+                        placeholder="Filter swap destination assets"
                         className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
                       />
 
-                      {swapDestinationListIsLoading ? (
+                      {swapRouteListIsLoading ? (
                         <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                          Loading swap-supported destination tokens...
+                          Loading LiFi candidates...
                         </div>
-                      ) : availableSwapDestinationItems.length ? (
-                        availableSwapDestinationItems.map((item) => (
-                          <DestinationRouteCard key={item.routeId} item={item} />
+                      ) : availableSwapRouteCandidates.length ? (
+                        availableSwapRouteCandidates.map((candidate) => (
+                          <RouteCandidateCard
+                            key={candidate.routeId}
+                            candidate={candidate}
+                            selected={candidate.routeId === selectedRouteId}
+                            onSelect={() => setSelectedRouteId(candidate.routeId)}
+                          />
                         ))
                       ) : (
                         <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
                           {debouncedDestinationQuery.trim()
-                            ? 'No swap-supported destination tokens match this query.'
-                            : 'No swap-supported destination tokens.'}
+                            ? 'No LiFi candidates match this query.'
+                            : 'No LiFi candidates available.'}
                         </div>
                       )}
                     </>
                   )}
                 </>
-              ) : visibleDestinationItems.length ? (
+              ) : directRouteCandidates.length ? (
                 <>
-                  {visibleDestinationItems.map((item) => (
-                    <DestinationRouteCard key={item.routeId} item={item} />
+                  {directRouteCandidates.map((candidate) => (
+                    <RouteCandidateCard
+                      key={candidate.routeId}
+                      candidate={candidate}
+                      selected={candidate.routeId === selectedRouteId}
+                      onSelect={() => setSelectedRouteId(candidate.routeId)}
+                    />
                   ))}
 
                   {shouldShowSwapToButton && (
@@ -579,11 +730,13 @@ export function TokenGraphPocClient() {
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="text-sm font-semibold text-white">Swap to</div>
+                            <div className="text-sm font-semibold text-white">
+                              Load swap alternatives
+                            </div>
                             <div className="text-sm text-white/60">
                               {isDestinationDropdownOpen
-                                ? `${availableSwapDestinationItems.length} swap-supported token(s)`
-                                : 'Load additional swap-supported tokens'}
+                                ? `${availableSwapRouteCandidates.length} extra candidate(s)`
+                                : 'LiFi swap routes for a different destination asset'}
                             </div>
                           </div>
                           <ChevronDownIcon
@@ -598,23 +751,28 @@ export function TokenGraphPocClient() {
                           <input
                             value={destinationQuery}
                             onChange={(event) => setDestinationQuery(event.target.value)}
-                            placeholder="Filter swap-supported destination tokens"
+                            placeholder="Filter swap destination assets"
                             className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
                           />
 
-                          {swapDestinationListIsLoading ? (
+                          {swapRouteListIsLoading ? (
                             <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                              Loading swap-supported destination tokens...
+                              Loading swap alternatives...
                             </div>
-                          ) : availableSwapDestinationItems.length ? (
-                            availableSwapDestinationItems.map((item) => (
-                              <DestinationRouteCard key={item.routeId} item={item} />
+                          ) : availableSwapRouteCandidates.length ? (
+                            availableSwapRouteCandidates.map((candidate) => (
+                              <RouteCandidateCard
+                                key={candidate.routeId}
+                                candidate={candidate}
+                                selected={candidate.routeId === selectedRouteId}
+                                onSelect={() => setSelectedRouteId(candidate.routeId)}
+                              />
                             ))
                           ) : (
                             <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
                               {debouncedDestinationQuery.trim()
-                                ? 'No swap-supported destination tokens match this query.'
-                                : 'No swap-supported destination tokens.'}
+                                ? 'No swap alternatives match this query.'
+                                : 'No swap alternatives.'}
                             </div>
                           )}
                         </>
@@ -624,7 +782,7 @@ export function TokenGraphPocClient() {
                 </>
               ) : (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
-                  No reachable routes for this source token and destination chain.
+                  No reachable route candidates for this source asset and destination chain.
                 </div>
               )}
             </div>
