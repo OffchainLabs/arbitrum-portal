@@ -127,7 +127,7 @@ export function OpportunityDetailPageSkeleton() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
         <div className="flex gap-2">
           <div className="h-12 bg-neutral-200 rounded flex-1" />
           <div className="h-12 bg-neutral-200 rounded flex-1 opacity-60" />
