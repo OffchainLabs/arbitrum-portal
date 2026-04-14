@@ -1,4 +1,5 @@
 import { CoinKey } from '@lifi/sdk';
+import { unstable_cache } from 'next/cache';
 import { createPublicClient, erc20Abi, formatUnits, http, isAddress } from 'viem';
 import type { Address } from 'viem';
 
@@ -10,9 +11,11 @@ import { rpcURLs } from '@/bridge/util/networks';
 import { getLifiTokenRegistry } from '../../app/api/crosschain-transfers/lifi/tokens/registry';
 import type {
   BalancesResponse,
-  DestinationTokensResponse,
   MappingEdge,
   MappingProvider,
+  RouteCandidate,
+  RouteCandidateCapabilities,
+  RouteCandidatesResponse,
   TokenGraphChain,
   TokenVariant,
   TokensResponse,
@@ -20,6 +23,7 @@ import type {
 
 const UNISWAP_TOKEN_LIST_URL = 'https://tokens.uniswap.org/';
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
+const GRAPH_SNAPSHOT_REVALIDATE_SECONDS = 3600;
 
 const supportedChainIds = new Set([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain]);
 
@@ -211,6 +215,12 @@ const protocolEdges: MappingEdge[] = [
     toTokenId: getTokenId(ChainId.Ethereum, '0x6c3ea9036406852006290770bedfcaba0e23a0e8'),
     provider: 'canonical',
   }),
+  // ETH -> Arb1: direct PYUSD deposit lands on the LiFi-supported representation
+  createEdge({
+    fromTokenId: getTokenId(ChainId.Ethereum, '0x6c3ea9036406852006290770bedfcaba0e23a0e8'),
+    toTokenId: getTokenId(ChainId.ArbitrumOne, '0x46850ad61c2b7d64d08c9c754f45254596696984'),
+    provider: 'lifi',
+  }),
   // Arb1 <-> ApeChain: native ETH -> WETH (canonical)
   createEdge({
     fromTokenId: getTokenId(ChainId.ArbitrumOne),
@@ -251,6 +261,60 @@ function getChainIdFromTokenId(tokenId: string) {
 
 function getBestPriority(providers: readonly MappingProvider[]) {
   return Math.min(...providers.map((provider) => providerOrder[provider]));
+}
+
+function isUsdcLikeToken(token: TokenVariant) {
+  return token.symbol.toUpperCase().startsWith('USDC');
+}
+
+function getRouteCapabilities(params: {
+  family: MappingProvider;
+  sourceToken: TokenVariant | null;
+  destinationToken: TokenVariant;
+  isSwapFallback: boolean;
+}): RouteCandidateCapabilities {
+  const { family, sourceToken, destinationToken, isSwapFallback } = params;
+
+  const supportsBatchDeposit =
+    family === 'canonical' &&
+    !isSwapFallback &&
+    !!sourceToken &&
+    sourceToken.chainId === ChainId.Ethereum &&
+    destinationToken.chainId === ChainId.ArbitrumOne &&
+    sourceToken.tokenType === 'contract' &&
+    !isUsdcLikeToken(sourceToken);
+
+  return {
+    supportsBatchDeposit,
+  };
+}
+
+function buildRouteCandidate(params: {
+  routeId: string;
+  sourceTokenId: string;
+  destinationToken: TokenVariant;
+  provider: MappingProvider;
+  sourceToken: TokenVariant | null;
+  isSwapFallback: boolean;
+}): RouteCandidate {
+  const { routeId, sourceTokenId, destinationToken, provider, sourceToken, isSwapFallback } =
+    params;
+
+  return {
+    routeId,
+    family: provider,
+    provider,
+    sourceTokenId,
+    destinationToken,
+    bestPriority: providerOrder[provider],
+    capabilities: getRouteCapabilities({
+      family: provider,
+      sourceToken,
+      destinationToken,
+      isSwapFallback,
+    }),
+    mode: isSwapFallback ? 'swap' : 'direct',
+  };
 }
 
 function getReachableSourceTokenIds({
@@ -388,20 +452,6 @@ interface UniswapToken {
   logoURI?: string;
 }
 
-let cachedTokens: TokenVariant[] | null = null;
-let cachedEdges: MappingEdge[] | null = null;
-let graphPromise: Promise<{
-  tokens: TokenVariant[];
-  edges: MappingEdge[];
-}> | null = null;
-
-function hasTokenCoverageForEdges(params: { tokens: TokenVariant[]; edges: MappingEdge[] }) {
-  const { tokens, edges } = params;
-  const tokenIds = new Set(tokens.map((token) => token.id));
-
-  return edges.every((edge) => tokenIds.has(edge.fromTokenId) && tokenIds.has(edge.toTokenId));
-}
-
 async function fetchUniswapTokens(): Promise<TokenVariant[]> {
   const res = await fetch(UNISWAP_TOKEN_LIST_URL);
   const data = (await res.json()) as { tokens: UniswapToken[] };
@@ -484,56 +534,47 @@ function buildLifiEdges(params: {
   return [...edgesById.values()];
 }
 
+async function buildGraphSnapshot() {
+  const [uniswapTokens, lifiGraphData] = await Promise.all([
+    fetchUniswapTokens(),
+    getLifiGraphData(),
+  ]);
+  const tokenById = new Map<string, TokenVariant>();
+
+  [...nativeTokens, ...manualContractTokens, ...lifiGraphData.tokens, ...uniswapTokens].forEach(
+    (token) => {
+      if (!tokenById.has(token.id)) {
+        tokenById.set(token.id, token);
+      }
+    },
+  );
+
+  const tokens = [...tokenById.values()];
+  const edgesById = new Map<string, MappingEdge>();
+
+  for (const edge of [
+    ...protocolEdges,
+    ...buildLifiEdges({ tokens, registry: lifiGraphData.registry }),
+  ]) {
+    edgesById.set(edge.id, edge);
+  }
+
+  const edges = [...edgesById.values()];
+
+  return { tokens, edges };
+}
+
+const getCachedGraphSnapshot = unstable_cache(buildGraphSnapshot, ['token-graph-poc:snapshot'], {
+  revalidate: GRAPH_SNAPSHOT_REVALIDATE_SECONDS,
+  tags: ['token-graph-poc:snapshot'],
+});
+
 async function getGraphData() {
-  if (cachedTokens && cachedEdges) {
-    if (
-      !hasTokenCoverageForEdges({
-        tokens: cachedTokens,
-        edges: cachedEdges,
-      })
-    ) {
-      cachedTokens = null;
-      cachedEdges = null;
-      graphPromise = null;
-    } else {
-      return { tokens: cachedTokens, edges: cachedEdges };
-    }
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
+    return buildGraphSnapshot();
   }
 
-  if (graphPromise && cachedTokens && cachedEdges) {
-    return { tokens: cachedTokens, edges: cachedEdges };
-  }
-
-  if (!graphPromise) {
-    graphPromise = Promise.all([fetchUniswapTokens(), getLifiGraphData()]).then(
-      ([uniswapTokens, lifiGraphData]) => {
-        const tokenById = new Map<string, TokenVariant>();
-
-        [
-          ...nativeTokens,
-          ...manualContractTokens,
-          ...lifiGraphData.tokens,
-          ...uniswapTokens,
-        ].forEach((token) => {
-          if (!tokenById.has(token.id)) {
-            tokenById.set(token.id, token);
-          }
-        });
-
-        const tokens = [...tokenById.values()];
-        const edges = [
-          ...protocolEdges,
-          ...buildLifiEdges({ tokens, registry: lifiGraphData.registry }),
-        ];
-
-        cachedTokens = tokens;
-        cachedEdges = edges;
-        return { tokens, edges };
-      },
-    );
-  }
-
-  return graphPromise;
+  return getCachedGraphSnapshot();
 }
 
 async function getTokens(): Promise<TokenVariant[]> {
@@ -711,7 +752,7 @@ export async function getBalances({
   };
 }
 
-export async function getDestinationTokens({
+export async function getRouteCandidates({
   sourceTokenId,
   destinationChainId,
   q = '',
@@ -721,12 +762,12 @@ export async function getDestinationTokens({
   destinationChainId: number;
   q?: string;
   includeSwapFallback?: boolean;
-}): Promise<DestinationTokensResponse> {
+}): Promise<RouteCandidatesResponse> {
   const { edges, tokens } = await getGraphData();
   const tokenById = new Map(tokens.map((token) => [token.id, token]));
-  const sourceToken = tokenById.get(sourceTokenId) ?? manualTokenById.get(sourceTokenId);
+  const sourceToken = tokenById.get(sourceTokenId) ?? manualTokenById.get(sourceTokenId) ?? null;
   const sourceChainId = getChainIdFromTokenId(sourceTokenId);
-  const items: Array<DestinationTokensResponse['items'][number] & { rankGroup: number }> = [];
+  const items: Array<RouteCandidatesResponse['items'][number] & { rankGroup: number }> = [];
   const lifiRouteTokenIds = new Set<string>();
 
   for (const edge of edges) {
@@ -743,13 +784,19 @@ export async function getDestinationTokens({
       continue;
     }
 
-    items.push({
-      routeId: edge.id,
-      token,
-      provider: edge.provider,
-      bestPriority: providerOrder[edge.provider],
-      rankGroup: 0,
-    });
+    items.push(
+      Object.assign(
+        buildRouteCandidate({
+          routeId: edge.id,
+          sourceTokenId,
+          destinationToken: token,
+          provider: edge.provider,
+          sourceToken,
+          isSwapFallback: false,
+        }),
+        { rankGroup: 0 },
+      ),
+    );
 
     if (edge.provider === 'lifi') {
       lifiRouteTokenIds.add(token.id);
@@ -775,13 +822,19 @@ export async function getDestinationTokens({
         continue;
       }
 
-      items.push({
-        routeId: `${sourceTokenId}->${token.id}:lifi-swap`,
-        token,
-        provider: 'lifi',
-        bestPriority: providerOrder.lifi,
-        rankGroup: 1,
-      });
+      items.push(
+        Object.assign(
+          buildRouteCandidate({
+            routeId: `${sourceTokenId}->${token.id}:lifi-swap`,
+            sourceTokenId,
+            destinationToken: token,
+            provider: 'lifi',
+            sourceToken,
+            isSwapFallback: true,
+          }),
+          { rankGroup: 1 },
+        ),
+      );
     }
   }
 
@@ -792,8 +845,8 @@ export async function getDestinationTokens({
         return (
           left.rankGroup - right.rankGroup ||
           left.bestPriority - right.bestPriority ||
-          left.token.symbol.localeCompare(right.token.symbol) ||
-          left.token.name.localeCompare(right.token.name) ||
+          left.destinationToken.symbol.localeCompare(right.destinationToken.symbol) ||
+          left.destinationToken.name.localeCompare(right.destinationToken.name) ||
           left.routeId.localeCompare(right.routeId)
         );
       })

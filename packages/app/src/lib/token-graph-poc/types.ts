@@ -39,16 +39,24 @@ export type TokensResponse = {
   items: TokenVariant[];
 };
 
-export type DestinationRouteItem = {
-  routeId: string;
-  token: TokenVariant;
-  provider: MappingProvider;
-  bestPriority: number;
+export type RouteCandidateCapabilities = {
+  supportsBatchDeposit: boolean;
 };
 
-export type DestinationTokensResponse = {
+export type RouteCandidate = {
+  routeId: string;
+  family: MappingProvider;
+  provider: MappingProvider;
   sourceTokenId: string;
-  items: DestinationRouteItem[];
+  destinationToken: TokenVariant;
+  bestPriority: number;
+  capabilities: RouteCandidateCapabilities;
+  mode: 'direct' | 'swap';
+};
+
+export type RouteCandidatesResponse = {
+  sourceTokenId: string;
+  items: RouteCandidate[];
 };
 
 export type BalanceItem = {
