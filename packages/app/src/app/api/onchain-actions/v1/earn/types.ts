@@ -78,18 +78,28 @@ export interface StandardOpportunityLendDetail {
   apy7day?: number;
 }
 
+export interface SettlementToken {
+  symbol: string;
+  address: string;
+  decimals: number;
+  logoUrl?: string;
+}
+
 export interface StandardOpportunityFixedYieldDetail {
   pt: string;
-  detailsTvlUsd: number;
-  detailsImpliedApy: number;
+  detailsTvlUsd: number | null;
+  detailsImpliedApy: number | null;
   expiry?: string;
-  detailsUnderlyingApy?: number;
+  detailsUnderlyingApy?: number | null;
   detailsLiquidityUsd?: number;
   detailsTradingVolumeUsd?: number;
   ptTokenIcon?: string;
+  ptTokenDecimals?: number;
   underlyingAsset?: string;
+  underlyingTokenDecimals?: number;
   sySupplyCap?: number | null;
   syCurrentSupply?: number;
+  settlementTokens?: SettlementToken[];
 }
 
 export interface StandardOpportunityBase {
@@ -148,19 +158,31 @@ export interface StandardTransactionContext {
   lpToken: StandardTokenContextItem;
 }
 
+export interface RolloverTarget {
+  id: string;
+  name?: string;
+  tokenSymbol: string;
+  ptTokenAddress: string;
+  ptTokenDecimals?: number;
+  ptTokenIcon?: string;
+  expiry?: string;
+  impliedApy: number | null;
+}
+
 export interface AvailableActions {
   opportunityId: string;
   vendor: Vendor;
   userAddress: string;
   availableActions: EarnTransactionAction[];
   transactionContext: StandardTransactionContext | null;
+  rolloverTargets?: RolloverTarget[];
 }
 
 export interface TransactionQuoteRequest {
   category: OpportunityCategory;
   action: EarnTransactionAction;
   amount: string;
-  userAddress: string;
+  userAddress?: string;
   inputTokenAddress?: string;
   outputTokenAddress?: string;
   slippage?: number;
@@ -225,6 +247,7 @@ export type LiquidStakingAvailableActions = AvailableActions & {
 export type FixedYieldAvailableActions = AvailableActions & {
   vendor: Vendor.Pendle;
   transactionContext: null;
+  rolloverTargets: RolloverTarget[];
 };
 
 export type LendTransactionQuoteResponse = TransactionQuoteResponse & {
@@ -284,7 +307,7 @@ export interface StandardUserPosition {
   vendor: Vendor;
   network: string;
   amount: string;
-  valueUsd: number;
+  valueUsd: number | null;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
@@ -298,6 +321,7 @@ export interface StandardUserPosition {
     tvl?: number;
   };
   isExpired?: boolean;
+  expiryDate?: string;
 }
 
 export interface UserPositionsResponse {

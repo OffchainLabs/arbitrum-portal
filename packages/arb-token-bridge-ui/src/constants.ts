@@ -2,10 +2,6 @@ export const TOS_VERSION = 2;
 
 export const TOS_LOCALSTORAGE_KEY = 'arbitrum:bridge:tos-v' + TOS_VERSION;
 
-export const EARN_TOS_VERSION = 1;
-
-export const EARN_TOS_LOCALSTORAGE_KEY = 'earn:tos-v' + EARN_TOS_VERSION;
-
 const SUPPORT_LINK_BASE = 'https://support.arbitrum.io';
 
 export const GET_HELP_LINK = `${SUPPORT_LINK_BASE}/hc/en-us/requests/new?ticket_form_id=18155929976987`;
@@ -31,6 +27,7 @@ export const CCTP_DOCUMENTATION = 'https://www.circle.com/en/cross-chain-transfe
 export const MULTICALL_TESTNET_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 
 export const ETHER_TOKEN_LOGO = '/images/EthereumLogoRound.svg';
+export const ARBITRUM_LOGO = '/images/ArbitrumLogo.svg';
 
 export const ether = { name: 'Ether', symbol: 'ETH', decimals: 18 } as const;
 

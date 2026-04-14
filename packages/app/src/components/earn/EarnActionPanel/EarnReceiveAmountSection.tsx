@@ -1,17 +1,13 @@
-import Image from 'next/image';
-import { ReactNode } from 'react';
+import { SafeImage } from '@/bridge/components/common/SafeImage';
 
-export interface TokenDisplay {
-  symbol: string;
-  logoUrl?: string;
-}
+import type { TokenDisplay } from './EarnAmountInputSection';
 
 interface EarnReceiveAmountSectionProps {
   label: string;
   amount: string | null;
   isLoading?: boolean;
   token: TokenDisplay;
-  tokenSelector?: ReactNode;
+  tokenSelector?: React.ReactNode;
   usdValue?: string;
   outputBalance?: string;
 }
@@ -45,27 +41,24 @@ export function EarnReceiveAmountSection({
               className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none h-[34px]"
             />
           )}
-          {tokenSelector || (
+          {tokenSelector ?? (
             <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
-              {token.logoUrl ? (
-                <Image
-                  src={token.logoUrl}
-                  alt={token.symbol}
-                  width={20}
-                  height={20}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-blue-600" />
-              )}
+              <SafeImage
+                src={token.logoUrl}
+                alt={token.symbol}
+                width={20}
+                height={20}
+                className="rounded-full"
+                fallback={<div className="w-5 h-5 rounded-full bg-blue-600" />}
+              />
               <span className="text-base font-medium text-white">{token.symbol}</span>
             </div>
           )}
         </div>
         {(usdValue || outputBalance) && (
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>{usdValue || '$0.00 USD'}</span>
-            {outputBalance && <span>Balance: {outputBalance}</span>}
+            <span>{usdValue || ''}</span>
+            {outputBalance ? <span>{outputBalance}</span> : null}
           </div>
         )}
       </div>
