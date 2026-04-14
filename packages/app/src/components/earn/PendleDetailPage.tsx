@@ -283,7 +283,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                   setSelectedAction('enter');
                   setShowActionPanel(true);
                 }}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
+                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-primary-cta text-white"
               >
                 Enter
               </button>
@@ -300,7 +300,12 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                     setShowActionPanel(true);
                   }}
                   disabled={!canRedeem}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={twMerge(
+                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                    selectedAction === 'redeem'
+                      ? 'bg-primary-cta text-white'
+                      : 'bg-white/10 text-white/70',
+                  )}
                 >
                   Redeem
                 </button>
@@ -315,7 +320,12 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                     setShowActionPanel(true);
                   }}
                   disabled={!canRollover}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={twMerge(
+                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                    selectedAction === 'rollover'
+                      ? 'bg-primary-cta text-white'
+                      : 'bg-white/10 text-white/70',
+                  )}
                 >
                   Rollover
                 </button>
@@ -328,7 +338,12 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                     setSelectedAction('enter');
                     setShowActionPanel(true);
                   }}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
+                  className={twMerge(
+                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
+                    selectedAction === 'enter'
+                      ? 'bg-primary-cta text-white'
+                      : 'bg-white/10 text-white/70',
+                  )}
                 >
                   Enter
                 </button>
@@ -343,7 +358,12 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                     setShowActionPanel(true);
                   }}
                   disabled={!canExit}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={twMerge(
+                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                    selectedAction === 'exit'
+                      ? 'bg-primary-cta text-white'
+                      : 'bg-white/10 text-white/70',
+                  )}
                 >
                   Exit
                 </button>
