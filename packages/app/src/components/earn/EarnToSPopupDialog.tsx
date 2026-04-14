@@ -22,6 +22,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
       onClose={props.onClose}
       title=""
       closeable
+      containerClassName="!z-[100]" // z-100 exception here to ensure it's above the action panel
       actionButtonTitle="Proceed"
       actionButtonProps={{
         disabled: !isChecked,
