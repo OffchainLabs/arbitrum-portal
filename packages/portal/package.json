@@ -9,7 +9,7 @@
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.2.0",
     "@rehooks/local-storage": "^2.4.5",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.20",
     "flickity": "2.3.0",
     "fuse.js": "^6.6.2",
     "next-query-params": "^5.1.0",
