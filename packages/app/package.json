@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@arbitrum/sdk": "^4.0.4",
-    "@rainbow-me/rainbowkit": "^2.2.4",
+    "@rainbow-me/rainbowkit": "^2.2.10",
     "@tippyjs/react": "^4.2.6",
     "@uidotdev/usehooks": "^2.4.1",
     "dayjs": "^1.11.13",
@@ -20,7 +20,7 @@
     "axios": "^1.12.0",
     "recharts": "^3.3.0",
     "swr": "^2.3.3",
-    "viem": "^2.38.5",
+    "viem": "^2.47.12",
     "wagmi": "^2.19.1",
     "zod": "^3.24.3",
     "zustand": "^4.3.9"
