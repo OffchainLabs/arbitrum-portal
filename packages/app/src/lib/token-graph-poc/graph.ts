@@ -12,6 +12,7 @@ import type {
   BalancesResponse,
   DestinationTokensResponse,
   MappingEdge,
+  MappingProvider,
   TokenGraphChain,
   TokenVariant,
   TokensResponse,
@@ -248,7 +249,7 @@ function getChainIdFromTokenId(tokenId: string) {
   return Number(chainId);
 }
 
-function getBestPriority(providers: Array<keyof typeof providerOrder>) {
+function getBestPriority(providers: readonly MappingProvider[]) {
   return Math.min(...providers.map((provider) => providerOrder[provider]));
 }
 
@@ -293,7 +294,7 @@ function getSourceProvidersForDestination(params: {
   token: TokenVariant;
   edges: MappingEdge[];
   destinationChainId: number;
-}) {
+}): readonly MappingProvider[] {
   const { token, edges, destinationChainId } = params;
   const providers = edges
     .filter(
@@ -309,7 +310,7 @@ function getSourceProvidersForDestination(params: {
 
   const lifiDestinationChains = new Set(lifiDestinationChainIds[token.chainId] ?? []);
   if (token.supportsSwap && lifiDestinationChains.has(destinationChainId)) {
-    return ['lifi'] as const;
+    return ['lifi'];
   }
 
   return [];
@@ -680,7 +681,7 @@ export async function getBalances({
   ]);
   const items: BalancesResponse['items'] = [];
 
-  if (nativeToken && nativeBalance && nativeBalance > 0n) {
+  if (nativeToken && nativeBalance && nativeBalance > BigInt(0)) {
     items.push({
       token: nativeToken,
       balance: formatUnits(nativeBalance, nativeToken.decimals),
