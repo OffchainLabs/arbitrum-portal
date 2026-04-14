@@ -1,7 +1,9 @@
 'use client';
 
+import dayjs from 'dayjs';
 import useSWRImmutable from 'swr/immutable';
 
+import { parseMetricNumber } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
@@ -20,14 +22,20 @@ interface OpportunitiesResponse {
   categories: string[];
 }
 
-function parseMetricNumber(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null;
+function formatMaturityDate(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
   }
-  return value;
+
+  const parsed = dayjs(value);
+  if (!parsed.isValid()) {
+    return value;
+  }
+
+  return parsed.format('D MMM YYYY');
 }
 
-function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
+export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
   const m = opp.metrics;
   const rawApy = parseMetricNumber(m?.rawApy);
   const rawTvl = parseMetricNumber(m?.rawTvl);
@@ -51,7 +59,8 @@ function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     vaultAddress: opp.vaultAddress,
     rawApy,
     rawTvl,
-    maturityDate: m?.maturityDate,
+    maturityDate: formatMaturityDate(m?.maturityDate),
+    rawMaturityDate: m?.maturityDate,
   };
 }
 
@@ -87,7 +96,6 @@ export function useAllOpportunities(filters?: {
   );
 
   const opportunities: OpportunityTableRow[] = data?.opportunities.map(toTableRow) ?? [];
-
   return {
     opportunities,
     isLoading,

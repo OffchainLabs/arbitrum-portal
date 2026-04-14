@@ -1,3 +1,4 @@
+import { ARBITRUM_LOGO } from '../constants';
 import { ChainId } from '../types/ChainId';
 import { getCustomChainFromLocalStorageById } from './networks';
 import { BridgeUiConfig, orbitChains } from './orbitChainsList';
@@ -17,7 +18,7 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
   const arbitrumBaseConfig: BaseBridgeUiConfig = {
     color: '#1B4ADD',
     network: {
-      logo: '/images/ArbitrumLogo.svg',
+      logo: ARBITRUM_LOGO,
     },
   };
 
