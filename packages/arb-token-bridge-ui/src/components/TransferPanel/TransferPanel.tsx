@@ -51,7 +51,7 @@ import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { trackEvent } from '../../util/AnalyticsUtils';
+import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
@@ -629,16 +629,14 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
-      const assetType =
-        addressesEqual(context.fromAmount.token.address, constants.AddressZero) &&
-        networks.sourceChain.id === ChainId.ApeChain
-          ? AssetType.ERC20
-          : AssetType.ETH;
-      const destinationAssetType =
-        addressesEqual(context.toAmount.token.address, constants.AddressZero) &&
-        networks.destinationChain.id === ChainId.ApeChain
-          ? AssetType.ERC20
-          : AssetType.ETH;
+      const assetType = getLifiAssetType({
+        tokenAddress: context.fromAmount.token.address,
+        chainId: networks.sourceChain.id,
+      });
+      const destinationAssetType = getLifiAssetType({
+        tokenAddress: context.toAmount.token.address,
+        chainId: networks.destinationChain.id,
+      });
 
       trackEvent('Lifi Transfer', {
         tokenSymbol: context.fromAmount.token.symbol,

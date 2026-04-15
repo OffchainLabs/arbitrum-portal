@@ -1,7 +1,9 @@
+import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
@@ -139,6 +141,20 @@ type AnalyticsEventMap = {
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
+
+export function getLifiAssetType({
+  tokenAddress,
+  chainId,
+}: {
+  tokenAddress: string | undefined;
+  chainId: number;
+}): 'ERC20' | 'ETH' {
+  if (addressesEqual(tokenAddress, constants.AddressZero)) {
+    return chainId === ChainId.ApeChain ? 'ERC20' : 'ETH';
+  }
+
+  return 'ERC20';
+}
 
 export function trackEvent(
   event: AnalyticsEvent,
