@@ -184,13 +184,6 @@ function isAfterEvent(
   return compareByBlockAndLog(candidate, reference) > 0;
 }
 
-function isOnOrBeforeEvent(
-  candidate: { blockNumber: number; logIndex: number },
-  reference: { blockNumber: number; logIndex: number },
-) {
-  return compareByBlockAndLog(candidate, reference) <= 0;
-}
-
 async function mapWithConcurrencyLimit<T, R>(
   values: T[],
   concurrency: number,
@@ -208,6 +201,7 @@ async function mapWithConcurrencyLimit<T, R>(
         return;
       }
 
+      // eslint-disable-next-line no-await-in-loop -- intentional serial execution within each worker
       results[currentIndex] = await mapper(values[currentIndex]!, currentIndex);
     }
   }
