@@ -57,15 +57,16 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
               <li>
                 are facilitated by third party protocols which are not controlled by Arbitrum Earn
                 and{' '}
-              </li>{' '}
+              </li>
               <li>
                 involve risks including those related to novel blockchain technologies and loss of
                 funds.
               </li>
             </ol>
-            <br />
-            You are solely responsible for understanding how the third party protocols work before
-            using them. Do your own independent research and proceed at your own risk.
+            <p className="mt-3">
+              You are solely responsible for understanding how the third party protocols work before
+              using them. Do your own independent research and proceed at your own risk.
+            </p>
           </div>
         </div>
 

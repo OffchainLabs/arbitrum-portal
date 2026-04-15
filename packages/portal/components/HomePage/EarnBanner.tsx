@@ -3,7 +3,6 @@
 import { CurrencyDollarIcon, LockClosedIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
-import { Button } from '@/bridge/components/common/Button';
 import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { Card } from '@/components/Card';
 
@@ -53,9 +52,9 @@ export function EarnBanner() {
             </div>
           ))}
         </div>
-        <Button variant="primary" className="mt-1 px-4 py-2.5 text-sm font-medium bg-primary-cta">
+        <span className="mt-1 inline-flex w-max rounded border border-dark bg-primary-cta px-4 py-2.5 text-sm font-medium text-white">
           Explore opportunities
-        </Button>
+        </span>
       </div>
 
       {/* Shadow card */}

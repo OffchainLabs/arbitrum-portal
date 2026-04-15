@@ -1,3 +1,5 @@
+'use client';
+
 import {
   ARBITRUM_TECHNOLOGY_LINK,
   DISCORD_LINK,
@@ -14,7 +16,7 @@ const EARN_DISCLAIMER =
 
 const footerLinks = [
   { label: 'Discord', href: DISCORD_LINK },
-  { label: 'Github', href: 'https://github.com/OffchainLabs' },
+  { label: 'GitHub', href: 'https://github.com/OffchainLabs' },
   { label: 'X', href: 'https://x.com/arbitrum' },
   { label: 'Status', href: STATUS_LINK },
   { label: 'ToS', href: TERMS_OF_SERVICE_LINK },
