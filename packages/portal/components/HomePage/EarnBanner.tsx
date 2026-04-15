@@ -4,6 +4,7 @@ import { CurrencyDollarIcon, LockClosedIcon, SparklesIcon } from '@heroicons/rea
 import Image from 'next/image';
 
 import { Button } from '@/bridge/components/common/Button';
+import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { Card } from '@/components/Card';
 
 const features = [
@@ -13,6 +14,10 @@ const features = [
 ];
 
 export function EarnBanner() {
+  if (!isEarnEnabled()) {
+    return null;
+  }
+
   return (
     <Card
       cardType="link"
