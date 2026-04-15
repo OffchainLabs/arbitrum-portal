@@ -48,7 +48,7 @@ export function EarnBanner() {
         <div className="flex flex-wrap items-center gap-3 lg:gap-4">
           {features.map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-1">
-              <Icon className="size-4 text-[#5B8DEF] lg:size-5" />
+              <Icon className="size-4 text-primary-cta lg:size-5" />
               <span className="text-xs lg:text-sm">{label}</span>
             </div>
           ))}
@@ -58,9 +58,12 @@ export function EarnBanner() {
         </Button>
       </div>
 
-      {/* Stacked decorative cards - hidden on mobile */}
-      <div className="absolute right-[35px] hidden h-[300px] w-[400px] group-hover:bg-white/50 rounded-[23px] group-hover:bottom-[-100px] transition-all duration-300 border border-white/10 bg-white/20 lg:block rotate-[6deg] bottom-[-110px] z-10 blur-[3px]" />
-      <div className="absolute hidden h-[300px] rounded-[23px] group-hover:bottom-[-105px] transition-all duration-300 border border-white/10 bg-[#4e5d89] lg:block rotate-[6deg] z-10 right-[50px] w-[408px] bottom-[-120px]" />
+      {/* Shadow card */}
+      <div className="absolute right-[45px] hidden h-[300px] w-[400px] group-hover:bg-black/60 group-hover:right-[30px] rounded-[23px] group-hover:bottom-[-100px] transition-all duration-300 border border-white/10 bg-black/20 lg:block rotate-[6deg] bottom-[-120px] z-10 blur-[3px] group-hover:blur-[8px]" />
+
+      {/* Background accent card */}
+      <div className="absolute hidden h-[300px] rounded-[23px] group-hover:bottom-[-105px] transition-all duration-300 border border-white/10 bg-[#3a4b7e] lg:block rotate-[6deg] z-10 right-[50px] w-[408px] bottom-[-120px]" />
+
       {/* Front card: actual SVG, overlaps back card */}
       <Image
         src="/images/EarnBannerCard.svg"
