@@ -51,7 +51,8 @@
     "**/defu": "6.1.6",
     "**/brace-expansion": "1.1.13",
     "@typescript-eslint/**/brace-expansion": "5.0.5",
-    "**/hono": "4.12.12"
+    "**/hono": "4.12.12",
+    "**/follow-redirects": "1.16.0"
   },
   "keywords": [],
   "author": "",
@@ -59,7 +60,7 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/eslintrc": "^3.3.5",
     "@offchainlabs/eslint-config-typescript": "0.2.2",
     "@offchainlabs/prettier-config": "0.3.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
