@@ -1788,10 +1788,10 @@
   resolved "https://registry.yarnpkg.com/@moonpay/moonpay-node/-/moonpay-node-0.2.12.tgz#d7021d300bdd033f90ebfa729f532fcffdfb52fc"
   integrity sha512-jMLZa5dpNFjFyQnfmtmJBTwUNd3SCLhiCpyY2DxfF47sh/ZrF8tzclFB1npcuOfDOX2+36qMoqCm6D81DYsqNA==
 
-"@moonpay/moonpay-react@^1.10.5":
-  version "1.10.5"
-  resolved "https://registry.yarnpkg.com/@moonpay/moonpay-react/-/moonpay-react-1.10.5.tgz#83928d128bab91ac100aa31f9070b1af447b24ef"
-  integrity sha512-VCc4aemxZHrXW8iXUCKy3K+Rnl06fh6Fdp4WgKHPrsfumJbqdG2fvhXmiaBRBxWOJJDXE6x0tWgVlZSIYoODSg==
+"@moonpay/moonpay-react@^1.10.6":
+  version "1.10.6"
+  resolved "https://registry.yarnpkg.com/@moonpay/moonpay-react/-/moonpay-react-1.10.6.tgz#235163aba3d432b502346393edb646f96e0877af"
+  integrity sha512-o+fa3FDKITbOTlkKToT49865ZGKkoGT1/eI0XJnYh9KSNMz3oo2PuwDKJHqLLZ5qE642ZAebksWdEElRySD43Q==
 
 "@motionone/animation@^10.15.1", "@motionone/animation@^10.18.0":
   version "10.18.0"
@@ -5467,9 +5467,9 @@ bare-events@^2.5.4, bare-events@^2.7.0:
   integrity sha512-riJjyv1/mHLIPX4RwiK+oW9/4c3TEUeORHKefKAKnZ5kyslbN+HXowtbaVEqt4IMUB7OXlfixcs6gsFeo/jhiQ==
 
 bare-fs@^4.0.1, bare-fs@^4.5.5:
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/bare-fs/-/bare-fs-4.7.0.tgz#01efd92b14a6c93825e8992ac1e42fdd6237de71"
-  integrity sha512-xzqKsCFxAek9aezYhjJuJRXBIaYlg/0OGDTZp+T8eYmYMlm66cs6cYko02drIyjN2CBbi+I6L7YfXyqpqtKRXA==
+  version "4.7.1"
+  resolved "https://registry.yarnpkg.com/bare-fs/-/bare-fs-4.7.1.tgz#6e81f784761102867c13f0823aa48c942d160f00"
+  integrity sha512-WDRsyVN52eAx/lBamKD6uyw8H4228h/x0sGGGegOamM2cd7Pag88GfMQalobXI+HaEUxpCkbKQUDOQqt9wawRw==
   dependencies:
     bare-events "^2.5.4"
     bare-path "^3.0.0"
