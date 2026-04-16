@@ -1,8 +1,14 @@
+import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 
 import { getParentChainInfo } from '../addOrbitChain/schemas';
+
+// Load env vars from packages/app/.env (where RPC keys live).
+// Try both repo root (direct invocation) and packages/scripts (yarn workspace).
+dotenv.config({ path: path.resolve(process.cwd(), 'packages/app/.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../app/.env') });
 
 type OrbitChainConfig = {
   chainId: number;
@@ -14,8 +20,6 @@ type OrbitChainConfig = {
     sequencerInbox: string;
   };
   bridgeUiConfig: {
-    batchPostingDelaySeconds?: number;
-    assertionAfterBatchDelaySeconds?: number;
     assertionIntervalSeconds?: number;
     [key: string]: unknown;
   };
@@ -27,8 +31,7 @@ type OrbitChainsData = {
 };
 
 export type DelayEstimate = {
-  batchPostingDelaySeconds: number;
-  assertionAfterBatchDelaySeconds: number;
+  assertionIntervalSeconds: number;
 };
 
 type DelayEstimateResult =
@@ -65,7 +68,7 @@ const SAMPLE_SIZE = 20;
 const MIN_COMPLETE_CYCLE_COUNT = 2;
 const TARGET_ASSERTION_COUNT = SAMPLE_SIZE * 4;
 const MAX_LOOKBACK_MULTIPLIER = 13; // 91d
-const RPC_CONCURRENCY_LIMIT = 8;
+const RPC_CONCURRENCY_LIMIT = 3;
 
 // Legacy rollup event (pre-BoLD)
 const LEGACY_ROLLUP_ABI = [
@@ -88,9 +91,10 @@ const sequencerInboxInterface = new ethers.utils.Interface(SEQUENCER_INBOX_ABI);
 const seenUnknownBatchSelectors = new Set<string>();
 const seenUnexpectedBatchShapes = new Set<string>();
 
+/** Resolve an RPC URL from the project's existing env-var RPCs (Alchemy / Infura keys). Returns null if no configured URL is found; callers fall back to getParentChainInfo. */
 function loadConfiguredParentRpcUrl(parentChainId: number): string | null {
   switch (parentChainId) {
-    case 1:
+    case 1: // Ethereum Mainnet
       return (
         (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ETHEREUM
           ? `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ETHEREUM}`
@@ -101,7 +105,7 @@ function loadConfiguredParentRpcUrl(parentChainId: number): string | null {
         process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM ||
         null
       );
-    case 42161:
+    case 42161: // Arbitrum One
       return (
         (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_ONE
           ? `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_ONE}`
@@ -112,7 +116,7 @@ function loadConfiguredParentRpcUrl(parentChainId: number): string | null {
         process.env.NEXT_PUBLIC_RPC_URL_ARBITRUM_ONE ||
         null
       );
-    case 42170:
+    case 42170: // Arbitrum Nova
       return (
         (process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_NOVA
           ? `https://arbnova-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_ARBITRUM_NOVA}`
@@ -120,7 +124,7 @@ function loadConfiguredParentRpcUrl(parentChainId: number): string | null {
         process.env.NEXT_PUBLIC_RPC_URL_ARBITRUM_NOVA ||
         'https://nova.arbitrum.io/rpc'
       );
-    case 8453:
+    case 8453: // Base
       return (
         (process.env.NEXT_PUBLIC_ALCHEMY_KEY_BASE
           ? `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY_BASE}`
@@ -164,11 +168,11 @@ function getMaxLookbackBlocks(parentChainId: number): number {
 
 function getQueryWindowBlocks(parentChainId: number): number {
   switch (parentChainId) {
-    case 1:
-      return 50_000;
-    case 8453:
-      return 100_000;
-    default:
+    case 1: // Ethereum Mainnet — free RPCs cap at 30K
+      return 25_000;
+    case 8453: // Base — free RPCs cap at 10K
+      return 9_000;
+    default: // Arbitrum chains — larger ranges supported
       return 200_000;
   }
 }
@@ -511,11 +515,12 @@ function getDelayEstimateFromSamples(samples: DelaySample[]): DelayEstimateResul
   return {
     status: 'ok',
     estimate: {
-      batchPostingDelaySeconds: Math.round(
-        median(recentSamples.map((sample) => sample.batchPostingDelaySeconds)),
-      ),
-      assertionAfterBatchDelaySeconds: Math.round(
-        median(recentSamples.map((sample) => sample.assertionAfterBatchDelaySeconds)),
+      assertionIntervalSeconds: Math.round(
+        median(
+          recentSamples.map(
+            (sample) => sample.batchPostingDelaySeconds + sample.assertionAfterBatchDelaySeconds,
+          ),
+        ),
       ),
     },
     sampleCount: recentSamples.length,
@@ -574,7 +579,7 @@ async function getDelayEstimate(
   }
 
   console.log(
-    `  ${chain.name} (${chain.chainId}): batch=${result.estimate.batchPostingDelaySeconds}s assertion=${result.estimate.assertionAfterBatchDelaySeconds}s samples=${result.sampleCount}`,
+    `  ${chain.name} (${chain.chainId}): assertionInterval=${result.estimate.assertionIntervalSeconds}s samples=${result.sampleCount}`,
   );
 
   return result;
@@ -594,10 +599,7 @@ export function applyDelayEstimates(
         continue;
       }
 
-      chain.bridgeUiConfig.batchPostingDelaySeconds = estimate.batchPostingDelaySeconds;
-      chain.bridgeUiConfig.assertionAfterBatchDelaySeconds =
-        estimate.assertionAfterBatchDelaySeconds;
-      delete chain.bridgeUiConfig.assertionIntervalSeconds;
+      chain.bridgeUiConfig.assertionIntervalSeconds = estimate.assertionIntervalSeconds;
       updatedChains++;
     }
   }
@@ -618,6 +620,7 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
   }
 
   const delayEstimatesByChainId = new Map<number, DelayEstimate>();
+  const failedChains: { name: string; chainId: number; error: string }[] = [];
 
   for (const [parentChainId, chains] of chainsByParent) {
     console.log(`\nParent chain ${parentChainId}:`);
@@ -634,12 +637,19 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
           console.log(`  ${chain.name} (${chain.chainId}): preserving existing value`);
         }
       } catch (error) {
-        throw new Error(
-          `Failed to update assertion interval for ${chain.name} (${chain.chainId}): ${
-            (error as Error).message
-          }`,
+        const errorMessage = (error as Error).message;
+        console.error(
+          `  Failed to update assertion interval for ${chain.name} (${chain.chainId}): ${errorMessage}`,
         );
+        failedChains.push({ name: chain.name, chainId: chain.chainId, error: errorMessage });
       }
+    }
+  }
+
+  if (failedChains.length > 0) {
+    console.error(`\n${failedChains.length} chain(s) failed during processing:`);
+    for (const failed of failedChains) {
+      console.error(`  - ${failed.name} (${failed.chainId}): ${failed.error}`);
     }
   }
 
@@ -647,4 +657,10 @@ export async function updateAssertionIntervals(targetJsonPath: string): Promise<
 
   fs.writeFileSync(jsonPath, `${JSON.stringify(data, null, 2)}\n`);
   console.log(`\nUpdated ${updatedChains} chains in ${jsonPath}`);
+
+  if (failedChains.length > 0) {
+    throw new Error(
+      `${failedChains.length} chain(s) failed to update. Successful results have been written.`,
+    );
+  }
 }

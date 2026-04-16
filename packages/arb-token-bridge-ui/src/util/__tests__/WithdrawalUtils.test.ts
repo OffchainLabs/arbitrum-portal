@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
-import { getAdditionalWithdrawalDelaySeconds, getConfirmationTime } from '../WithdrawalUtils';
+import { getConfirmationTime } from '../WithdrawalUtils';
 import { getBridgeUiConfigForChain } from '../bridgeUiConfig';
 import {
   getBlockNumberReferenceChainIdByChainId,
@@ -26,15 +26,13 @@ vi.mock('../orbitChainsList', () => ({
     1001: {
       parentChainId: ChainId.ArbitrumOne,
       bridgeUiConfig: {
-        batchPostingDelaySeconds: 600,
-        assertionAfterBatchDelaySeconds: 900,
+        assertionIntervalSeconds: 1500,
       },
     },
     1002: {
       parentChainId: ChainId.Ethereum,
       bridgeUiConfig: {
-        batchPostingDelaySeconds: 300,
-        assertionAfterBatchDelaySeconds: 600,
+        assertionIntervalSeconds: 900,
       },
     },
     1003: {
@@ -100,18 +98,6 @@ describe('WithdrawalUtils', () => {
     );
   });
 
-  it('adds parent-chain extra delay for L3-style withdrawals', () => {
-    expect(getAdditionalWithdrawalDelaySeconds(1001)).toBe(600 + 900 + 3600);
-  });
-
-  it('uses the new batch-aware delay fields when available', () => {
-    expect(getAdditionalWithdrawalDelaySeconds(1002)).toBe(300 + 600);
-  });
-
-  it('falls back to legacy assertionIntervalSeconds during migration', () => {
-    expect(getAdditionalWithdrawalDelaySeconds(1003)).toBe(1800);
-  });
-
   it('keeps fast withdrawals unchanged', () => {
     const result = getConfirmationTime(2001);
 
@@ -119,10 +105,10 @@ describe('WithdrawalUtils', () => {
     expect(result.confirmationTimeInSeconds).toBe(7200);
   });
 
-  it('includes recursive extra delay in confirmation time', () => {
+  it('includes chain extra delay in confirmation time', () => {
     const result = getConfirmationTime(1001);
 
     expect(result.fastWithdrawalActive).toBe(false);
-    expect(result.confirmationTimeInSeconds).toBe(12 * 100 + 600 + 900 + 3600);
+    expect(result.confirmationTimeInSeconds).toBe(12 * 100 + 1500);
   });
 });

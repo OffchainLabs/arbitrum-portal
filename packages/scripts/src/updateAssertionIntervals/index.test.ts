@@ -158,8 +158,7 @@ describe('updateAssertionIntervals helpers', () => {
         [
           1002,
           {
-            batchPostingDelaySeconds: 300,
-            assertionAfterBatchDelaySeconds: 900,
+            assertionIntervalSeconds: 1200,
           },
         ],
       ]),
@@ -168,8 +167,7 @@ describe('updateAssertionIntervals helpers', () => {
     expect(updatedChains).toBe(1);
     expect(data.mainnet[0].bridgeUiConfig).toEqual({ assertionIntervalSeconds: 3600 });
     expect(data.mainnet[1].bridgeUiConfig).toEqual({
-      batchPostingDelaySeconds: 300,
-      assertionAfterBatchDelaySeconds: 900,
+      assertionIntervalSeconds: 1200,
     });
   });
 });

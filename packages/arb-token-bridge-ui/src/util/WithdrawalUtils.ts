@@ -118,38 +118,11 @@ const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
 function getChainExtraDelaySeconds(chainId: number): number {
   const bridgeUiConfig = orbitChains[chainId]?.bridgeUiConfig;
 
-  const batchPostingDelaySeconds = bridgeUiConfig?.batchPostingDelaySeconds;
-  const assertionAfterBatchDelaySeconds = bridgeUiConfig?.assertionAfterBatchDelaySeconds;
-
-  if (
-    typeof batchPostingDelaySeconds === 'number' ||
-    typeof assertionAfterBatchDelaySeconds === 'number'
-  ) {
-    return (batchPostingDelaySeconds ?? 0) + (assertionAfterBatchDelaySeconds ?? 0);
-  }
-
   if (typeof bridgeUiConfig?.assertionIntervalSeconds === 'number') {
     return bridgeUiConfig.assertionIntervalSeconds;
   }
 
   return isNetwork(chainId as ChainId).isArbitrum ? DEFAULT_ASSERTION_INTERVAL_SECONDS : 0;
-}
-
-export function getAdditionalWithdrawalDelaySeconds(chainId: number): number {
-  const directDelaySeconds = getChainExtraDelaySeconds(chainId);
-  const parentChainId = orbitChains[chainId]?.parentChainId;
-
-  if (!parentChainId) {
-    return directDelaySeconds;
-  }
-
-  const blockNumberReferenceChainId = getBlockNumberReferenceChainIdByChainId({ chainId });
-
-  if (parentChainId === blockNumberReferenceChainId) {
-    return directDelaySeconds;
-  }
-
-  return directDelaySeconds + getAdditionalWithdrawalDelaySeconds(parentChainId);
 }
 
 function formatDuration(seconds: number, short = false): string {
@@ -193,7 +166,7 @@ export function getConfirmationTime(chainId: number) {
     } else {
       confirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
-        getAdditionalWithdrawalDelaySeconds(chainId);
+        getChainExtraDelaySeconds(chainId);
     }
   }
 
