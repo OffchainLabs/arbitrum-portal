@@ -156,6 +156,10 @@ export function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 }
 
+export function roundToNearest15Min(seconds: number): number {
+  return Math.max(900, Math.round(seconds / 900) * 900);
+}
+
 function getLookbackBlocks(parentChainId: number): number {
   const blocksPerDay = parentChainId === 1 ? 7200 : parentChainId === 8453 ? 43200 : 345600;
 
@@ -515,7 +519,7 @@ function getDelayEstimateFromSamples(samples: DelaySample[]): DelayEstimateResul
   return {
     status: 'ok',
     estimate: {
-      assertionIntervalSeconds: Math.round(
+      assertionIntervalSeconds: roundToNearest15Min(
         median(
           recentSamples.map(
             (sample) => sample.batchPostingDelaySeconds + sample.assertionAfterBatchDelaySeconds,

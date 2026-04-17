@@ -122,7 +122,8 @@ function getChainExtraDelaySeconds(chainId: number): number {
     return bridgeUiConfig.assertionIntervalSeconds;
   }
 
-  return isNetwork(chainId as ChainId).isArbitrum ? DEFAULT_ASSERTION_INTERVAL_SECONDS : 0;
+  const { isArbitrum, isOrbitChain } = isNetwork(chainId as ChainId);
+  return isArbitrum || isOrbitChain ? DEFAULT_ASSERTION_INTERVAL_SECONDS : 0;
 }
 
 function formatDuration(seconds: number, short = false): string {

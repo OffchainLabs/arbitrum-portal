@@ -6,6 +6,7 @@ import {
   buildDelaySamples,
   isMessageBearingBatchTransaction,
   median,
+  roundToNearest15Min,
 } from './index';
 
 const batchPosterInterface = new ethers.utils.Interface([
@@ -18,6 +19,18 @@ describe('updateAssertionIntervals helpers', () => {
   it('computes the median for odd and even collections', () => {
     expect(median([1, 9, 5])).toBe(5);
     expect(median([1, 3, 5, 9])).toBe(4);
+  });
+
+  it('rounds to the nearest 15 minutes with a 15-minute minimum', () => {
+    expect(roundToNearest15Min(0)).toBe(900);
+    expect(roundToNearest15Min(100)).toBe(900);
+    expect(roundToNearest15Min(899)).toBe(900);
+    expect(roundToNearest15Min(900)).toBe(900);
+    expect(roundToNearest15Min(1350)).toBe(1800);
+    expect(roundToNearest15Min(3600)).toBe(3600);
+    expect(roundToNearest15Min(3700)).toBe(3600);
+    expect(roundToNearest15Min(4000)).toBe(3600);
+    expect(roundToNearest15Min(4050)).toBe(4500);
   });
 
   it('identifies message-bearing batch poster transactions', () => {

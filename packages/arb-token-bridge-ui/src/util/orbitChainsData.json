@@ -46,7 +46,7 @@
           "symbol": "XAI",
           "logoUrl": "/images/XaiLogo.svg"
         },
-        "assertionIntervalSeconds": 3622
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -89,7 +89,7 @@
           "description": "A chain designed specifically for NFT royalties and creator empowerment.",
           "logo": "/images/RARIMainnetLogo.svg"
         },
-        "assertionIntervalSeconds": 3647
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -138,7 +138,7 @@
           "symbol": "DMT",
           "logoUrl": "/images/SankoLogo.png"
         },
-        "assertionIntervalSeconds": 21650
+        "assertionIntervalSeconds": 21600
       }
     },
     {
@@ -181,7 +181,7 @@
           "logo": "/images/SuperpositionLogo.svg",
           "description": "Superposition is the first DeFi-native Layer-3, with shared and permissionless liquidity, AA, and minimal fees, while providing higher yields."
         },
-        "assertionIntervalSeconds": 7200
+        "assertionIntervalSeconds": 6300
       }
     },
     {
@@ -274,7 +274,7 @@
           "logoUrl": "/images/sxTokenLogo.png"
         },
         "fastWithdrawalTime": 43200000,
-        "assertionIntervalSeconds": 954
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -323,7 +323,7 @@
           "symbol": "APE",
           "logoUrl": "/images/ApeTokenLogo.svg"
         },
-        "assertionIntervalSeconds": 3648
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -423,7 +423,7 @@
           "logoUrl": "/images/EduChainTokenLogo.png"
         },
         "fastWithdrawalTime": 3600000,
-        "assertionIntervalSeconds": 3635
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -520,7 +520,7 @@
           "logoUrl": "/images/ChainBounty_Logo.svg"
         },
         "fastWithdrawalTime": 3600000,
-        "assertionIntervalSeconds": 134997
+        "assertionIntervalSeconds": 135000
       }
     },
     {
@@ -569,7 +569,7 @@
           "symbol": "MPT",
           "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
         },
-        "assertionIntervalSeconds": 41385
+        "assertionIntervalSeconds": 41400
       }
     },
     {
@@ -714,7 +714,7 @@
           "symbol": "GNET",
           "logoUrl": "/images/GalacticaMainnet_Logo.svg"
         },
-        "assertionIntervalSeconds": 3606
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -762,7 +762,7 @@
           "symbol": "EARNM",
           "logoUrl": "/images/EarnmMainnet_NativeTokenLogo.svg"
         },
-        "assertionIntervalSeconds": 3632
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -852,7 +852,7 @@
           "name": "Molten",
           "symbol": "MOLTEN"
         },
-        "assertionIntervalSeconds": 86436
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -901,7 +901,7 @@
           "symbol": "TRIX",
           "logoUrl": "/images/MeerChain_NativeTokenLogo.png"
         },
-        "assertionIntervalSeconds": 43200
+        "assertionIntervalSeconds": 63900
       }
     },
     {
@@ -944,7 +944,7 @@
           "logo": "/images/HPPMainnet_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
         },
-        "assertionIntervalSeconds": 128448
+        "assertionIntervalSeconds": 128700
       }
     },
     {
@@ -993,7 +993,7 @@
           "logoUrl": "/images/XMTPMainnet_Logo.png"
         },
         "fastWithdrawalTime": 3600000,
-        "assertionIntervalSeconds": 3758
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1041,7 +1041,7 @@
           "symbol": "WMTX",
           "logoUrl": "/images/WorldMobileChainMainnet_NativeTokenLogo.svg"
         },
-        "assertionIntervalSeconds": 3641
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1083,7 +1083,7 @@
           "name": "Syndicate Network",
           "logo": "/images/SyndicateNetwork_Logo.png"
         },
-        "assertionIntervalSeconds": 3648
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1132,7 +1132,7 @@
           "symbol": "LITKEY",
           "logoUrl": "/images/LitChain_NativeTokenLogo.svg"
         },
-        "assertionIntervalSeconds": 41229
+        "assertionIntervalSeconds": 41400
       }
     },
     {
@@ -1175,7 +1175,7 @@
           "description": "A gaming chain with cheap fees and account abstraction.",
           "logo": "/images/MusterLogo.svg"
         },
-        "assertionIntervalSeconds": 3601
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1218,7 +1218,7 @@
           "logo": "/images/EdgeMainnet_Logo.png"
         },
         "fastWithdrawalTime": 180000,
-        "assertionIntervalSeconds": 105
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1267,7 +1267,7 @@
           "symbol": "JASMY",
           "logoUrl": "/images/JasmyChain_NativeTokenLogo.jpg"
         },
-        "assertionIntervalSeconds": 23850
+        "assertionIntervalSeconds": 24300
       }
     },
     {
@@ -1316,7 +1316,7 @@
           "logoUrl": "/images/PanaxMainnet_NativeTokenLogo.svg"
         },
         "fastWithdrawalTime": 900000,
-        "assertionIntervalSeconds": 1082
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1366,7 +1366,7 @@
           "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
         },
         "fastWithdrawalTime": 86400000,
-        "assertionIntervalSeconds": 19542
+        "assertionIntervalSeconds": 20700
       }
     },
     {
@@ -1415,7 +1415,7 @@
           "symbol": "KPG",
           "logoUrl": "/images/MandalaChain_NativeTokenLogo.svg"
         },
-        "assertionIntervalSeconds": 6294
+        "assertionIntervalSeconds": 18000
       }
     }
   ],
