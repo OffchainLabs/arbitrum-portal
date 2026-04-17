@@ -18,9 +18,5 @@ export function useIsSwapTransfer() {
     return false;
   }
 
-  if (addressesEqual(destinationToken, selectedToken?.l2Address)) {
-    return false;
-  }
-
   return true;
 }

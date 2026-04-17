@@ -11,7 +11,11 @@ import {
 } from '../components/TransferPanel/TokenSearchUtils';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import { getPyusdTokenForTransfer } from '../util/PyusdUtils';
+import {
+  getPyusdTokenForTransfer,
+  isTokenArbitrumOnePyusd,
+  isTokenArbitrumOnePyusdCanonical,
+} from '../util/PyusdUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -91,6 +95,11 @@ export const useSelectedToken = (): [
     (erc20ParentAddress: string | null) => {
       return setQueryParams((latestQuery) => {
         try {
+          const destinationTokenAddress = getDestinationTokenAddressForSelection({
+            tokenAddress: erc20ParentAddress,
+            sourceChainId: latestQuery.sourceChain,
+            destinationChainId: latestQuery.destinationChain,
+          });
           const sanitizedTokenAddress = sanitizeNullSelectedToken({
             sourceChainId: latestQuery.sourceChain,
             destinationChainId: latestQuery.destinationChain,
@@ -100,7 +109,7 @@ export const useSelectedToken = (): [
           if (sanitizedTokenAddress) {
             return {
               token: sanitizedTokenAddress,
-              destinationToken: sanitizedTokenAddress,
+              destinationToken: destinationTokenAddress,
             };
           }
 
@@ -119,7 +128,7 @@ export const useSelectedToken = (): [
 
           return {
             token: sanitizeTokenAddress(erc20ParentAddress),
-            destinationToken: sanitizeTokenAddress(erc20ParentAddress),
+            destinationToken: destinationTokenAddress,
           };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
@@ -183,6 +192,30 @@ function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
     return tokenAddress;
   }
   return undefined;
+}
+
+function getDestinationTokenAddressForSelection({
+  tokenAddress,
+  sourceChainId,
+  destinationChainId,
+}: {
+  tokenAddress: string | null;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) {
+  const sanitizedTokenAddress = sanitizeTokenAddress(tokenAddress);
+
+  if (
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum &&
+    sanitizedTokenAddress &&
+    (isTokenArbitrumOnePyusd(sanitizedTokenAddress) ||
+      isTokenArbitrumOnePyusdCanonical(sanitizedTokenAddress))
+  ) {
+    return CommonAddress.Ethereum.PYUSD;
+  }
+
+  return sanitizedTokenAddress;
 }
 
 function areSetsEqual<T>(a: Set<T> | undefined, b: Set<T> | undefined): boolean {

@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -265,5 +265,99 @@ describe('useSelectedToken', () => {
       }),
     );
     expect(result.current[0]?.l2Address).toBe(CommonAddress.ArbitrumOne.PYUSDCanonical);
+  });
+
+  it('sets token to OFT address and destinationToken to L1 address when selecting OFT PayPal USD for withdrawal', () => {
+    const setQueryParams = vi.fn();
+
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.Ethereum,
+        amount: '',
+        amount2: '',
+        destinationAddress: undefined,
+        token: undefined,
+        destinationToken: undefined,
+        settingsOpen: false,
+        tab: 0,
+        disabledFeatures: [],
+        theme: {},
+        debugLevel: 'silent',
+        experiments: undefined,
+      },
+      setQueryParams,
+    ]);
+    mockedUseNetworks.mockReturnValue([
+      makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue(
+      makeNetworksRelationshipState(ChainId.ArbitrumOne, ChainId.Ethereum, false),
+    );
+
+    const { result } = renderHook(() => useSelectedToken());
+
+    act(() => {
+      result.current[1](CommonAddress.ArbitrumOne.PYUSD);
+    });
+
+    const updater = setQueryParams.mock.calls[0]?.[0];
+    expect(
+      updater({
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.Ethereum,
+      }),
+    ).toEqual({
+      token: CommonAddress.ArbitrumOne.PYUSD,
+      destinationToken: CommonAddress.Ethereum.PYUSD,
+    });
+  });
+
+  it('sets token to canonical address and destinationToken to L1 address when selecting canonical PayPal USD for withdrawal', () => {
+    const setQueryParams = vi.fn();
+
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.Ethereum,
+        amount: '',
+        amount2: '',
+        destinationAddress: undefined,
+        token: undefined,
+        destinationToken: undefined,
+        settingsOpen: false,
+        tab: 0,
+        disabledFeatures: [],
+        theme: {},
+        debugLevel: 'silent',
+        experiments: undefined,
+      },
+      setQueryParams,
+    ]);
+    mockedUseNetworks.mockReturnValue([
+      makeNetworksState(ChainId.ArbitrumOne, ChainId.Ethereum),
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue(
+      makeNetworksRelationshipState(ChainId.ArbitrumOne, ChainId.Ethereum, false),
+    );
+
+    const { result } = renderHook(() => useSelectedToken());
+
+    act(() => {
+      result.current[1](CommonAddress.ArbitrumOne.PYUSDCanonical);
+    });
+
+    const updater = setQueryParams.mock.calls[0]?.[0];
+    expect(
+      updater({
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.Ethereum,
+      }),
+    ).toEqual({
+      token: CommonAddress.ArbitrumOne.PYUSDCanonical,
+      destinationToken: CommonAddress.Ethereum.PYUSD,
+    });
   });
 });

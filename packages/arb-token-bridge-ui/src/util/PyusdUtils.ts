@@ -68,7 +68,7 @@ export function getArbitrumOnePyusdToken({
     ...commonPyusdToken,
     listIds: new Set(listIds ?? []),
     name: 'PayPal USD',
-    address: CommonAddress.Ethereum.PYUSD,
+    address: CommonAddress.ArbitrumOne.PYUSD,
     l2Address: CommonAddress.ArbitrumOne.PYUSD,
     logoURI: PYUSD_BLACK_LOGO_URI,
     priceUSD,

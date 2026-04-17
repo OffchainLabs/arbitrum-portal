@@ -22,7 +22,7 @@ describe('getPyusdTokenOverride', () => {
     ).toMatchObject({
       source: { address: CommonAddress.Ethereum.PYUSD },
       destination: {
-        address: CommonAddress.Ethereum.PYUSD,
+        address: CommonAddress.ArbitrumOne.PYUSD,
         l2Address: CommonAddress.ArbitrumOne.PYUSD,
       },
     });
@@ -50,9 +50,9 @@ describe('getPyusdTokenForTransfer', () => {
     expect(getArbitrumOnePyusdCanonicalToken().logoURI).toBe(PYUSD_BLUE_LOGO_URI);
   });
 
-  it('keeps the L1 lookup address and Arbitrum One child-chain address explicit', () => {
+  it('uses the Arbitrum One address for the ArbOne PYUSD token', () => {
     expect(getArbitrumOnePyusdToken()).toMatchObject({
-      address: CommonAddress.Ethereum.PYUSD,
+      address: CommonAddress.ArbitrumOne.PYUSD,
       l2Address: CommonAddress.ArbitrumOne.PYUSD,
       name: 'PayPal USD',
     });
@@ -65,7 +65,7 @@ describe('getPyusdTokenForTransfer', () => {
         isDepositMode: false,
       }),
     ).toMatchObject({
-      address: CommonAddress.Ethereum.PYUSD,
+      address: CommonAddress.ArbitrumOne.PYUSD,
       l2Address: CommonAddress.ArbitrumOne.PYUSD,
       destinationBalanceAddress: CommonAddress.Ethereum.PYUSD,
     });

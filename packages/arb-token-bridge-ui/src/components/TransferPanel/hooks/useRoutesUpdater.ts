@@ -234,7 +234,6 @@ export function useRoutesUpdater() {
   const defaultToTokenAddress = isDepositMode
     ? getBridgeTokenChildChainAddress(destinationToken)
     : destinationToken?.address;
-
   const fromTokenAddress =
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
   const toTokenAddress =

@@ -140,31 +140,6 @@ describe('useIsSwapTransfer', () => {
     expect(result.current).toBe(true);
   });
 
-  it('does not treat canonical USDC deposits as a swap when destinationToken matches the L2 address', () => {
-    mockedUseSelectedToken.mockReturnValue([
-      {
-        type: TokenType.ERC20,
-        address: CommonAddress.Ethereum.USDC,
-        l2Address: CommonAddress.ArbitrumOne['USDC.e'],
-        symbol: 'USDC',
-        name: 'USD Coin',
-        decimals: 6,
-        listIds: new Set(['1']),
-      },
-      vi.fn(),
-    ]);
-    mockedUseArbQueryParams.mockReturnValue([
-      {
-        ...defaultQueryParams,
-        destinationToken: CommonAddress.ArbitrumOne['USDC.e'],
-      },
-      vi.fn(),
-    ]);
-
-    const { result } = renderHook(useIsSwapTransfer);
-    expect(result.current).toBe(false);
-  });
-
   it('treats ETH to ARB as a swap when destinationToken changes to a different asset', () => {
     mockedUseSelectedToken.mockReturnValue([defaultSelectedToken, vi.fn()]);
     mockedUseArbQueryParams.mockReturnValue([
