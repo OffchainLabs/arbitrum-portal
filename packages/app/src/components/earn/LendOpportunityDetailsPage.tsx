@@ -75,9 +75,12 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
         <EarnBackButtonLabel />
       </Link>
 
-      <div className="flex items-center gap-2">
-        <div className="text-lg text-white font-medium">{opportunity.name}</div>
-        <div className="text-xs text-white bg-white/10 rounded px-2 py-1">Lending</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="text-lg text-white font-medium">{opportunity.name}</div>
+          <div className="text-xs text-white bg-white/10 rounded px-2 py-1">Lending</div>
+        </div>
+        <span className="hidden text-xs text-white/50 lg:block">Powered by Vaults.fyi</span>
       </div>
 
       {hasPosition && (

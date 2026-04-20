@@ -85,6 +85,7 @@ export type DialogProps = {
   isFooterHidden?: boolean;
   onClose: (confirmed: boolean, onCloseData?: unknown) => void;
   className?: string;
+  containerClassName?: string;
   children?: React.ReactNode;
 };
 
@@ -127,7 +128,10 @@ export function Dialog(props: DialogProps) {
       open={props.isOpen && !isClosing}
       onClose={() => handleClose(false)}
       transition
-      className="fixed inset-0 z-50 flex text-white md:items-center md:justify-center"
+      className={twMerge(
+        'fixed inset-0 z-50 flex text-white md:items-center md:justify-center',
+        props.containerClassName,
+      )}
     >
       <DialogBackdrop
         transition
