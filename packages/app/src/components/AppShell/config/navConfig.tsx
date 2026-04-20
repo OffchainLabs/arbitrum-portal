@@ -17,6 +17,7 @@ export interface NavConfigItem {
   href: string;
   imgSrc: string;
   subNavItems: SubNavItem[];
+  isFeatured?: boolean;
 }
 
 export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
@@ -59,6 +60,7 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
     href: '/earn',
     imgSrc: '/icons/navigation/earn.svg',
     subNavItems: [],
+    isFeatured: true,
   },
   '/projects': {
     label: 'Explore',
@@ -121,14 +123,16 @@ export const navLinks: NavLink[] = visibleNavConfig.map(({ label, route, href })
 
 export interface NavLinkWithIcon extends NavLink {
   imgSrc: string;
+  isFeatured?: boolean;
 }
 
 export const navLinksWithIcons: NavLinkWithIcon[] = visibleNavConfig.map(
-  ({ label, route, href, imgSrc }) => ({
+  ({ label, route, href, imgSrc, isFeatured }) => ({
     label,
     route,
     href,
     imgSrc,
+    isFeatured,
   }),
 );
 
