@@ -21,6 +21,7 @@ initializeSentry(process.env.NEXT_PUBLIC_SENTRY_DSN);
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
+    cookieless_mode: 'always',
     loaded: (posthog) => {
       if (!isProductionEnvironment) {
         // when in dev, you can see data that would be sent in prod (in devtools)
