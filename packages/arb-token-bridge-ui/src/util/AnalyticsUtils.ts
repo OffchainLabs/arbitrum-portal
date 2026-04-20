@@ -149,11 +149,12 @@ export function getLifiAssetType({
   tokenAddress: string | undefined;
   chainId: number;
 }): 'ERC20' | 'ETH' {
-  if (addressesEqual(tokenAddress, constants.AddressZero)) {
-    return chainId === ChainId.ApeChain ? 'ERC20' : 'ETH';
+  // ApeChain uses APE token (ERC20) for native token
+  if (chainId === ChainId.ApeChain) {
+    return 'ERC20';
   }
 
-  return 'ERC20';
+  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
 }
 
 export function trackEvent(

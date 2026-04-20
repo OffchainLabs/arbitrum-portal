@@ -32,4 +32,13 @@ describe('getLifiAssetType', () => {
       }),
     ).toBe('ERC20');
   });
+
+  it('classifies ApeChain custom native token addresses as ERC20', () => {
+    expect(
+      getLifiAssetType({
+        tokenAddress: CommonAddress.ArbitrumOne.APE,
+        chainId: ChainId.ApeChain,
+      }),
+    ).toBe('ERC20');
+  });
 });
