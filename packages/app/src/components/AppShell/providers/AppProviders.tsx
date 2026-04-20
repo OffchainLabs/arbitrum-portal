@@ -20,6 +20,7 @@ import { getProps } from './wagmi/setup';
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
+    cookieless_mode: 'always',
     loaded: (posthog) => {
       if (process.env.NODE_ENV !== 'production') {
         posthog.debug();
