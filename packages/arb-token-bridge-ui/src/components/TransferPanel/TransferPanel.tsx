@@ -20,7 +20,6 @@ import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
-import { ChainId } from '@/bridge/types/ChainId';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
