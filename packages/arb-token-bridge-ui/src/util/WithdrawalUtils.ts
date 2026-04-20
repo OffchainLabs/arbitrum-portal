@@ -11,7 +11,9 @@ import {
   getBlockNumberReferenceChainIdByChainId,
   getConfirmPeriodBlocks,
   getL1BlockTime,
+  isNetwork,
 } from './networks';
+import { orbitChains } from './orbitChainsList';
 
 export async function withdrawInitTxEstimateGas({
   amount,
@@ -108,10 +110,21 @@ const SECONDS_IN_MINUTE = 60;
 const SECONDS_IN_HOUR = 3600;
 const SECONDS_IN_DAY = 86400;
 /**
- * Buffer for after a node is confirmable but isn't yet confirmed.
- * A rollup block (RBlock) typically gets asserted every 30-60 minutes.
+ * Default extra delay (1 hour) for Arbitrum chains when we do not have more
+ * specific batch-posting / assertion timing metadata.
  */
-const CONFIRMATION_BUFFER_MINUTES = 60;
+const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
+
+function getChainExtraDelaySeconds(chainId: number): number {
+  const bridgeUiConfig = orbitChains[chainId]?.bridgeUiConfig;
+
+  if (typeof bridgeUiConfig?.assertionIntervalSeconds === 'number') {
+    return bridgeUiConfig.assertionIntervalSeconds;
+  }
+
+  const { isArbitrum, isOrbitChain } = isNetwork(chainId as ChainId);
+  return isArbitrum || isOrbitChain ? DEFAULT_ASSERTION_INTERVAL_SECONDS : 0;
+}
 
 function formatDuration(seconds: number, short = false): string {
   if (seconds < SECONDS_IN_MINUTE) {
@@ -130,8 +143,8 @@ function formatDuration(seconds: number, short = false): string {
 }
 
 /**
- * Calculate confirmation time for bridge transactions.
- * @param {number} chainId - The ID of the parent chain.
+ * Calculate confirmation time for bridge withdrawals.
+ * @param {number} chainId - The chain being withdrawn from (child chain).
  */
 export function getConfirmationTime(chainId: number) {
   const { fastWithdrawalTime } = getBridgeUiConfigForChain(chainId);
@@ -154,7 +167,7 @@ export function getConfirmationTime(chainId: number) {
     } else {
       confirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
-        CONFIRMATION_BUFFER_MINUTES * SECONDS_IN_MINUTE;
+        getChainExtraDelaySeconds(chainId);
     }
   }
 

@@ -1,0 +1,84 @@
+name: Update Assertion Intervals
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update_assertion_intervals:
+    runs-on: ubuntu-4
+    steps:
+      - name: Enforce master dispatch
+        if: github.ref_name != 'master'
+        run: |
+          echo "This workflow must be run from master. Received ref: ${{ github.ref_name }}"
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+
+      - name: Build scripts
+        run: yarn workspace scripts build
+
+      - name: Generate branch name
+        id: branch
+        run: |
+          timestamp=$(date +%s)
+          echo "name=chore/update-assertion-intervals-${timestamp}" >> $GITHUB_OUTPUT
+
+      - name: Setup git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Create branch
+        run: git checkout -b ${{ steps.branch.outputs.name }}
+
+      - name: Run updateAssertionIntervals script
+        run: yarn workspace scripts update-assertion-intervals ../../packages/arb-token-bridge-ui/src/util/orbitChainsData.json
+        env:
+          NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+
+      - name: Format files
+        run: yarn prettier --write "packages/arb-token-bridge-ui/src/util/orbitChainsData.json"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git add "packages/arb-token-bridge-ui/src/util/orbitChainsData.json"
+          git commit -m "chore(bridge): update assertion intervals"
+          git push origin ${{ steps.branch.outputs.name }}
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          gh pr create \
+            --title "chore(bridge): update assertion intervals" \
+            --body "Automated update of orbit chain assertion intervals from on-chain data." \
+            --base master \
+            --head ${{ steps.branch.outputs.name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

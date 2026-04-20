@@ -45,7 +45,8 @@
           "name": "Xai",
           "symbol": "XAI",
           "logoUrl": "/images/XaiLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -87,7 +88,8 @@
           "name": "RARI Mainnet",
           "description": "A chain designed specifically for NFT royalties and creator empowerment.",
           "logo": "/images/RARIMainnetLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -135,7 +137,8 @@
           "name": "DMT",
           "symbol": "DMT",
           "logoUrl": "/images/SankoLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 21600
       }
     },
     {
@@ -177,7 +180,8 @@
           "name": "Superposition",
           "logo": "/images/SuperpositionLogo.svg",
           "description": "Superposition is the first DeFi-native Layer-3, with shared and permissionless liquidity, AA, and minimal fees, while providing higher yields."
-        }
+        },
+        "assertionIntervalSeconds": 6300
       }
     },
     {
@@ -219,7 +223,8 @@
           "name": "Mind Network",
           "logo": "/images/MindChainLogo.webp",
           "description": "MindChain is the 1st FHE consensus chain for Mind Network, serving billions in voted TVL and millions of voters from AI partners."
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -268,7 +273,8 @@
           "symbol": "SX",
           "logoUrl": "/images/sxTokenLogo.png"
         },
-        "fastWithdrawalTime": 43200000
+        "fastWithdrawalTime": 43200000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -316,7 +322,8 @@
           "name": "ApeCoin",
           "symbol": "APE",
           "logoUrl": "/images/ApeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -364,7 +371,8 @@
           "name": "G",
           "symbol": "G",
           "logoUrl": "/images/GravityAlpha_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -414,7 +422,8 @@
           "symbol": "EDU",
           "logoUrl": "/images/EduChainTokenLogo.png"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -510,7 +519,8 @@
           "symbol": "BOUNTY",
           "logoUrl": "/images/ChainBounty_Logo.svg"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 135000
       }
     },
     {
@@ -558,7 +568,8 @@
           "name": "Miracle Play",
           "symbol": "MPT",
           "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 41400
       }
     },
     {
@@ -606,7 +617,8 @@
           "name": "Plume",
           "symbol": "PLUME",
           "logoUrl": "/images/PlumeMainnet_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -653,7 +665,8 @@
           "name": "Humanity",
           "symbol": "H",
           "logoUrl": "/images/HumanityMainnet_Logo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -700,7 +713,8 @@
           "name": "GNET",
           "symbol": "GNET",
           "logoUrl": "/images/GalacticaMainnet_Logo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -747,7 +761,8 @@
           "name": "Earnm Token",
           "symbol": "EARNM",
           "logoUrl": "/images/EarnmMainnet_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -789,7 +804,8 @@
           "name": "T-REX",
           "logo": "/images/T-REX_Logo.png",
           "description": "Invisible blockchain bridging everyday digital interactions into real-world rewards."
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -835,7 +851,8 @@
         "nativeTokenData": {
           "name": "Molten",
           "symbol": "MOLTEN"
-        }
+        },
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -877,7 +894,8 @@
           "name": "HPP Mainnet",
           "logo": "/images/HPPMainnet_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
-        }
+        },
+        "assertionIntervalSeconds": 128700
       }
     },
     {
@@ -925,7 +943,8 @@
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPMainnet_Logo.png"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -972,7 +991,8 @@
           "name": "World Mobile Token",
           "symbol": "WMTX",
           "logoUrl": "/images/WorldMobileChainMainnet_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1013,7 +1033,8 @@
         "network": {
           "name": "Syndicate Network",
           "logo": "/images/SyndicateNetwork_Logo.png"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1055,7 +1076,8 @@
           "name": "Muster Network",
           "description": "A gaming chain with cheap fees and account abstraction.",
           "logo": "/images/MusterLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1097,7 +1119,8 @@
           "name": "Edge Mainnet",
           "logo": "/images/EdgeMainnet_Logo.png"
         },
-        "fastWithdrawalTime": 180000
+        "fastWithdrawalTime": 180000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1145,7 +1168,8 @@
           "name": "JasmyCoin",
           "symbol": "JASMY",
           "logoUrl": "/images/JasmyChain_NativeTokenLogo.jpg"
-        }
+        },
+        "assertionIntervalSeconds": 24300
       }
     },
     {
@@ -1193,7 +1217,8 @@
           "symbol": "PAX",
           "logoUrl": "/images/PanaxMainnet_NativeTokenLogo.svg"
         },
-        "fastWithdrawalTime": 900000
+        "fastWithdrawalTime": 900000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1242,7 +1267,8 @@
           "symbol": "POWER",
           "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
         },
-        "fastWithdrawalTime": 86400000
+        "fastWithdrawalTime": 86400000,
+        "assertionIntervalSeconds": 20700
       }
     },
     {
@@ -1290,7 +1316,8 @@
           "name": "Kepeng",
           "symbol": "KPG",
           "logoUrl": "/images/MandalaChain_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 18000
       }
     }
   ],

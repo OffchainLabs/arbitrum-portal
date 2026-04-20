@@ -9,7 +9,8 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "start": "node dist/scripts.cjs.js",
-    "add-orbit-chain": "node dist/scripts.cjs.js add-orbit-chain"
+    "add-orbit-chain": "node dist/scripts.cjs.js add-orbit-chain",
+    "update-assertion-intervals": "node dist/scripts.cjs.js update-assertion-intervals"
   },
   "author": "",
   "license": "UNLICENSED",

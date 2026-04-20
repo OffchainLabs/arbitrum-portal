@@ -6,7 +6,7 @@ import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constan
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
 import { logger } from './logger';
-import orbitChainsData from './orbitChainsData.json';
+import { getOrbitChains } from './orbitChainsList';
 
 const ArbitrumLogo = '/images/lists/ArbitrumLogo.png';
 const CMCLogo = '/images/lists/cmc.png';
@@ -126,7 +126,7 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
     logoURI: '/images/XaiLogo.svg',
   },
   // For all orbit chains,
-  ...orbitChainsData.mainnet.concat(orbitChainsData.testnet).reduce((acc, chain) => {
+  ...getOrbitChains().reduce((acc, chain) => {
     // Only include arbified native token list for L3 settling to ArbOne
     if (chain.parentChainId === ChainId.ArbitrumOne) {
       acc.push({
