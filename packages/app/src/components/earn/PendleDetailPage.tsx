@@ -12,6 +12,7 @@ import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useCheckAndShowToS } from '@/app-hooks/earn/useCheckAndShowToS';
 import { usePendlePosition } from '@/app-hooks/earn/usePendlePosition';
 import { PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
+import { DialogWrapper } from '@/bridge/components/common/Dialog2';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatAmount, formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
@@ -25,6 +26,34 @@ import { HistoricalChart } from './HistoricalChart';
 import { PendleActionPanel } from './PendleActionPanel';
 import { useEarnTransactionDetailsDialog } from './useEarnTransactionDetailsDialog';
 
+interface PendleMobileActionButtonProps {
+  label: string;
+  isSelected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+function PendleMobileActionButton({
+  label,
+  isSelected,
+  disabled = false,
+  onClick,
+}: PendleMobileActionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={twMerge(
+        'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+        isSelected ? 'bg-primary-cta text-white' : 'bg-white/10 text-white/70',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 interface PendleDetailPageProps {
   opportunity: StandardOpportunityFixedYield;
 }
@@ -32,7 +61,7 @@ interface PendleDetailPageProps {
 export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedAction, setSelectedAction] = useState<PendleAction>('enter');
-  const { checkAndShowToS } = useCheckAndShowToS();
+  const { checkAndShowToS, tosDialogProps } = useCheckAndShowToS();
   const {
     txDetailsIsOpen,
     transactionDetails,
@@ -282,70 +311,50 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                   setSelectedAction('enter');
                   setShowActionPanel(true);
                 }}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
+                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-primary-cta text-white"
               >
                 Enter
               </button>
             ) : isPositionExpired ? (
               <>
-                <button
-                  type="button"
+                <PendleMobileActionButton
+                  label="Redeem"
+                  isSelected={selectedAction === 'redeem'}
+                  disabled={!canRedeem}
                   onClick={() => {
-                    if (!canRedeem) {
-                      return;
-                    }
-
                     setSelectedAction('redeem');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canRedeem}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Redeem
-                </button>
-                <button
-                  type="button"
+                />
+                <PendleMobileActionButton
+                  label="Rollover"
+                  isSelected={selectedAction === 'rollover'}
+                  disabled={!canRollover}
                   onClick={() => {
-                    if (!canRollover) {
-                      return;
-                    }
-
                     setSelectedAction('rollover');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canRollover}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Rollover
-                </button>
+                />
               </>
             ) : (
               <>
-                <button
-                  type="button"
+                <PendleMobileActionButton
+                  label="Enter"
+                  isSelected={selectedAction === 'enter'}
                   onClick={() => {
                     setSelectedAction('enter');
                     setShowActionPanel(true);
                   }}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-brand text-white"
-                >
-                  Enter
-                </button>
-                <button
-                  type="button"
+                />
+                <PendleMobileActionButton
+                  label="Exit"
+                  isSelected={selectedAction === 'exit'}
+                  disabled={!canExit}
                   onClick={() => {
-                    if (!canExit) {
-                      return;
-                    }
-
                     setSelectedAction('exit');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canExit}
-                  className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-white/10 text-white/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Exit
-                </button>
+                />
               </>
             )}
           </div>
@@ -357,6 +366,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
         transactionDetails={transactionDetails}
         isLoading={txDetailsIsLoading}
       />
+      <DialogWrapper {...tosDialogProps} />
     </div>
   );
 }

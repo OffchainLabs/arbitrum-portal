@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 
 import { PageHeading } from '@/app-components/AppShell/components/PageHeading';
 import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { EarnFooter } from '@/app-components/earn/EarnFooter';
 import { DialogWrapper, useDialog2 } from '@/bridge/components/common/Dialog2';
 import type { TabConfig } from '@/portal/common/pageTabConfig';
 
@@ -38,6 +39,7 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
           ))}
         <div className="flex flex-1 flex-col gap-8 lg:gap-12 lg:mt-4">{children}</div>
       </div>
+      <EarnFooter />
       <DialogWrapper {...dialogProps} />
     </div>
   );

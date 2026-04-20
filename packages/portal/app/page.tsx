@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getEntityMetaData } from '@/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/common/getServerSideAppParams';
 import { EntityType } from '@/common/types';
+import { EarnBanner } from '@/components/HomePage/EarnBanner';
 import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
 import { HeroBanner } from '@/components/HomePage/HeroBanner';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
@@ -65,6 +66,8 @@ export default function Home(props: ServerSideAppProps) {
       <LiveIncentivesProjects />
 
       <TrendingProjects />
+
+      <EarnBanner />
 
       <EcosystemEssentials />
 
