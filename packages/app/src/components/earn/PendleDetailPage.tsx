@@ -26,6 +26,34 @@ import { HistoricalChart } from './HistoricalChart';
 import { PendleActionPanel } from './PendleActionPanel';
 import { useEarnTransactionDetailsDialog } from './useEarnTransactionDetailsDialog';
 
+interface PendleMobileActionButtonProps {
+  label: string;
+  isSelected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+function PendleMobileActionButton({
+  label,
+  isSelected,
+  disabled = false,
+  onClick,
+}: PendleMobileActionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={twMerge(
+        'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+        isSelected ? 'bg-primary-cta text-white' : 'bg-white/10 text-white/70',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 interface PendleDetailPageProps {
   opportunity: StandardOpportunityFixedYield;
 }
@@ -289,84 +317,44 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
               </button>
             ) : isPositionExpired ? (
               <>
-                <button
-                  type="button"
+                <PendleMobileActionButton
+                  label="Redeem"
+                  isSelected={selectedAction === 'redeem'}
+                  disabled={!canRedeem}
                   onClick={() => {
-                    if (!canRedeem) {
-                      return;
-                    }
-
                     setSelectedAction('redeem');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canRedeem}
-                  className={twMerge(
-                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                    selectedAction === 'redeem'
-                      ? 'bg-primary-cta text-white'
-                      : 'bg-white/10 text-white/70',
-                  )}
-                >
-                  Redeem
-                </button>
-                <button
-                  type="button"
+                />
+                <PendleMobileActionButton
+                  label="Rollover"
+                  isSelected={selectedAction === 'rollover'}
+                  disabled={!canRollover}
                   onClick={() => {
-                    if (!canRollover) {
-                      return;
-                    }
-
                     setSelectedAction('rollover');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canRollover}
-                  className={twMerge(
-                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                    selectedAction === 'rollover'
-                      ? 'bg-primary-cta text-white'
-                      : 'bg-white/10 text-white/70',
-                  )}
-                >
-                  Rollover
-                </button>
+                />
               </>
             ) : (
               <>
-                <button
-                  type="button"
+                <PendleMobileActionButton
+                  label="Enter"
+                  isSelected={selectedAction === 'enter'}
                   onClick={() => {
                     setSelectedAction('enter');
                     setShowActionPanel(true);
                   }}
-                  className={twMerge(
-                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors',
-                    selectedAction === 'enter'
-                      ? 'bg-primary-cta text-white'
-                      : 'bg-white/10 text-white/70',
-                  )}
-                >
-                  Enter
-                </button>
-                <button
-                  type="button"
+                />
+                <PendleMobileActionButton
+                  label="Exit"
+                  isSelected={selectedAction === 'exit'}
+                  disabled={!canExit}
                   onClick={() => {
-                    if (!canExit) {
-                      return;
-                    }
-
                     setSelectedAction('exit');
                     setShowActionPanel(true);
                   }}
-                  disabled={!canExit}
-                  className={twMerge(
-                    'flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                    selectedAction === 'exit'
-                      ? 'bg-primary-cta text-white'
-                      : 'bg-white/10 text-white/70',
-                  )}
-                >
-                  Exit
-                </button>
+                />
               </>
             )}
           </div>

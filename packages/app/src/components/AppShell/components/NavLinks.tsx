@@ -134,9 +134,7 @@ export function NavLinks() {
             >
               {link.isFeatured ? (
                 <>
-                  <span className="bg-earn-featured-badge bg-clip-text text-transparent">
-                    {link.label}
-                  </span>
+                  <span className="bg-blue bg-clip-text text-transparent">{link.label}</span>
                   <Image
                     src="/images/sparkles.svg"
                     alt=""

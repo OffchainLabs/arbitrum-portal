@@ -28,7 +28,7 @@ type SortColumn = 'apy' | 'holdings' | 'projectedEarnings' | 'tvl' | null;
 type SortDirection = 'asc' | 'desc';
 
 const MAX_DISPLAYED_OPPORTUNITIES = 3;
-const CATEGORY_ORDER: OpportunityCategory[] = [
+export const CATEGORY_ORDER: OpportunityCategory[] = [
   OpportunityCategory.Lend,
   OpportunityCategory.FixedYield,
   OpportunityCategory.LiquidStaking,
