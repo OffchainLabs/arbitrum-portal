@@ -59,7 +59,7 @@ const AccountContent = ({
 
 export const WidgetHeaderAccountButton = () => {
   const { address, chain, isConnected } = useAccount();
-  const { disconnectAsync } = useDisconnect();
+  const { disconnect } = useDisconnect();
   const { openConnectModal } = useWalletModal();
   const [isCopied, setIsCopied] = useState(false);
 
@@ -96,7 +96,7 @@ export const WidgetHeaderAccountButton = () => {
                     <Button
                       variant="secondary"
                       className="flex w-full items-center justify-center border-none bg-white/5"
-                      onClick={() => disconnectAsync()}
+                      onClick={() => disconnect()}
                     >
                       <div className="flex items-center gap-2">
                         <ArrowLeftEndOnRectangleIcon className="h-3 w-3 text-white/70" />

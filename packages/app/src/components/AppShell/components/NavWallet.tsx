@@ -37,7 +37,7 @@ interface WalletConnectedDropdownProps {
 
 function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProps) {
   const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams } = useAccountMenu();
-  const { disconnectAsync } = useDisconnect();
+  const { disconnect } = useDisconnect();
   const [, copyToClipboard] = useCopyToClipboard();
   const [showCopied, setShowCopied] = useState(false);
   const pathname = usePathname();
@@ -129,7 +129,7 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
               </button>
             )}
 
-            <button onClick={() => disconnectAsync()} className={MENU_ITEM_BUTTON_CLASSES}>
+            <button onClick={() => disconnect()} className={MENU_ITEM_BUTTON_CLASSES}>
               <ArrowLeftOnRectangleIcon className={twMerge(ICON_CLASSES, 'text-white')} />
               <span>Disconnect Wallet</span>
             </button>
