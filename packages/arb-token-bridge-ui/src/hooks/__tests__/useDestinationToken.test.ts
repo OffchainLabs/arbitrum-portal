@@ -205,7 +205,6 @@ describe.sequential('useDestinationToken', () => {
       });
       expect(result.current?.logoURI).toBe(PYUSD_BLACK_LOGO_URI);
     });
-
   });
 
   describe('when it is a swap transfer', () => {
