@@ -1,7 +1,9 @@
+import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
@@ -139,6 +141,21 @@ type AnalyticsEventMap = {
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
+
+export function getLifiAssetType({
+  tokenAddress,
+  chainId,
+}: {
+  tokenAddress: string | undefined;
+  chainId: number;
+}): 'ERC20' | 'ETH' {
+  // ApeChain uses APE token (ERC20) for native token
+  if (chainId === ChainId.ApeChain) {
+    return 'ERC20';
+  }
+
+  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
+}
 
 export function trackEvent(
   event: AnalyticsEvent,
