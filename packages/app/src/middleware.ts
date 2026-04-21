@@ -52,6 +52,13 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
+  // Redirect /?tab=tx_history to /bridge/tx-history and keep query params (without tab)
+  if (url.searchParams.get('tab') === 'tx_history') {
+    url.pathname = PathnameEnum.TX_HISTORY;
+    url.searchParams.delete('tab');
+    return NextResponse.redirect(url, 308);
+  }
+
   return NextResponse.next();
 }
 

@@ -36,7 +36,7 @@ export const PORTAL_API_ENDPOINT = 'https://portal.arbitrum.io';
 export enum PathnameEnum {
   BRIDGE = '/bridge',
   BUY = '/bridge/buy',
-  TX_HISTORY = '/bridge/transaction-history',
+  TX_HISTORY = '/bridge/tx-history',
   EMBED = '/bridge/embed',
   EMBED_BUY = '/bridge/embed/buy',
 }
