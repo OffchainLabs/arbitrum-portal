@@ -315,7 +315,7 @@ export async function fetchWithdrawalsInBatches(
 // SWR cache for pending transactions initiated in the current session.
 // Does not fetch; only reads/writes the `new_tx_list` cache. Use this instead
 // of `useTransactionHistory` when a component only needs to add a pending tx.
-export const useNewTransactions = (address: Address | undefined) => {
+export const useAddPendingTransactions = (address: Address | undefined) => {
   const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
     MergedTransaction[]
   >(address ? ['new_tx_list', address] : null);
@@ -720,7 +720,7 @@ export const useTransactionHistory = (
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
   const { newTransactionsData, mutateNewTransactionsData, addPendingTransaction } =
-    useNewTransactions(address);
+    useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
     const txs = [...(newTransactionsData || []), ...(txPages || [])].flat();

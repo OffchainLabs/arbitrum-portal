@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { AssetType } from '../arbTokenBridge.types';
-import { useNewTransactions } from '../useTransactionHistory';
+import { useAddPendingTransactions } from '../useTransactionHistory';
 
 // Each test gets its own SWR cache to avoid cross-test bleed.
 const Wrapper = ({ children }: PropsWithChildren<unknown>) => (
@@ -58,9 +58,9 @@ const settledDeposit: MergedTransaction = {
 const ADDRESS_A = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const ADDRESS_B = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
-describe('useNewTransactions', () => {
+describe('useAddPendingTransactions', () => {
   it('adds a pending transaction to the cache', () => {
-    const { result } = renderHook(() => useNewTransactions(ADDRESS_A), { wrapper: Wrapper });
+    const { result } = renderHook(() => useAddPendingTransactions(ADDRESS_A), { wrapper: Wrapper });
 
     expect(result.current.newTransactionsData).toBeUndefined();
 
@@ -72,7 +72,7 @@ describe('useNewTransactions', () => {
   });
 
   it('ignores non-pending transactions', () => {
-    const { result } = renderHook(() => useNewTransactions(ADDRESS_A), { wrapper: Wrapper });
+    const { result } = renderHook(() => useAddPendingTransactions(ADDRESS_A), { wrapper: Wrapper });
 
     act(() => {
       result.current.addPendingTransaction(settledDeposit);
@@ -82,7 +82,7 @@ describe('useNewTransactions', () => {
   });
 
   it('prepends newer transactions (newest first)', () => {
-    const { result } = renderHook(() => useNewTransactions(ADDRESS_A), { wrapper: Wrapper });
+    const { result } = renderHook(() => useAddPendingTransactions(ADDRESS_A), { wrapper: Wrapper });
 
     act(() => {
       result.current.addPendingTransaction(pendingWithdrawal);
@@ -98,8 +98,8 @@ describe('useNewTransactions', () => {
     // Both hooks must sit under the same SWRConfig provider to share the cache.
     const { result } = renderHook(
       () => ({
-        writer: useNewTransactions(ADDRESS_A),
-        reader: useNewTransactions(ADDRESS_A),
+        writer: useAddPendingTransactions(ADDRESS_A),
+        reader: useAddPendingTransactions(ADDRESS_A),
       }),
       { wrapper: Wrapper },
     );
@@ -114,8 +114,8 @@ describe('useNewTransactions', () => {
   it('isolates caches across different addresses', () => {
     const { result } = renderHook(
       () => ({
-        a: useNewTransactions(ADDRESS_A),
-        b: useNewTransactions(ADDRESS_B),
+        a: useAddPendingTransactions(ADDRESS_A),
+        b: useAddPendingTransactions(ADDRESS_B),
       }),
       { wrapper: Wrapper },
     );
@@ -129,7 +129,7 @@ describe('useNewTransactions', () => {
   });
 
   it('returns undefined cache when address is undefined', () => {
-    const { result } = renderHook(() => useNewTransactions(undefined), { wrapper: Wrapper });
+    const { result } = renderHook(() => useAddPendingTransactions(undefined), { wrapper: Wrapper });
 
     expect(result.current.newTransactionsData).toBeUndefined();
 
