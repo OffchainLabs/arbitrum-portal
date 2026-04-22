@@ -49,10 +49,11 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
   });
 
-  it('returns the resolved destination token address when the source token changes across a network switch', () => {
+  it('keeps the canonical lookup address when the destination token is only a resolved override', () => {
     // Ethereum -> Arbitrum One:
-    // the selected source token is L1 PayPal USD, but after switching networks
-    // the new source token must become the resolved Arbitrum-side token.
+    // the selected query token is already the canonical lookup address, so
+    // switching networks should keep query state stable even if the display token
+    // resolves to an Arbitrum-side override.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
@@ -76,13 +77,13 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSD);
+    expect(result.current).toBeUndefined();
   });
 
-  it('returns the L1 PayPal USD address when switching away from Arbitrum One PayPal USD', () => {
+  it('keeps the canonical lookup address when switching away from an override token', () => {
     // Arbitrum One -> Ethereum:
-    // the current source token is Arbitrum PayPal USD, and after switching
-    // networks the new source token must become Ethereum PayPal USD.
+    // the current selected token resolves to an Arbitrum-side override, but its
+    // canonical lookup identity is still Ethereum PYUSD.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
@@ -106,7 +107,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
+    expect(result.current).toBeUndefined();
   });
 
   it('returns undefined when the resolved destination token keeps the same address', () => {
@@ -136,9 +137,9 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     expect(result.current).toBeUndefined();
   });
 
-  it('returns the resolved destination token address for swaps', () => {
+  it('returns the canonical lookup token address for swaps', () => {
     // In swap mode, the selected token should always follow the resolved
-    // destination token instead of trying to preserve the current source token.
+    // destination token's canonical identity instead of its raw display address.
     mockedUseIsSwapTransfer.mockReturnValue(true);
     mockedUseDestinationToken.mockReturnValue({
       type: TokenType.ERC20,
@@ -151,7 +152,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSD);
+    expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
   });
 
   it('returns null for native swaps without a destination token', () => {

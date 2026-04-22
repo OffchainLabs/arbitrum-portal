@@ -362,6 +362,12 @@ export const isTokenSepoliaUSDC = (tokenAddress: string | undefined) =>
 export const isTokenArbitrumSepoliaUSDCe = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.ArbitrumSepolia['USDC.e']);
 
+export const isTokenSuperpositionUSDCe = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.Superposition.USDCe);
+
+export const isTokenApeChainUSDCe = (tokenAddress: string | undefined) =>
+  addressesEqual(tokenAddress, CommonAddress.ApeChain.USDCe);
+
 export const isTokenArbitrumOneNativeUSDC = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDC);
 
@@ -376,6 +382,33 @@ export const isTokenNativeUSDC = (tokenAddress: string | undefined) => {
     isTokenArbitrumSepoliaNativeUSDC(tokenAddress)
   );
 };
+
+const isTokenBridgedUSDCe = (tokenAddress: string | undefined) => {
+  return (
+    isTokenArbitrumOneUSDCe(tokenAddress) ||
+    isTokenArbitrumSepoliaUSDCe(tokenAddress) ||
+    isTokenSuperpositionUSDCe(tokenAddress) ||
+    isTokenApeChainUSDCe(tokenAddress)
+  );
+};
+
+function getSanitizedUsdcDisplay(tokenAddress: string | undefined) {
+  if (isTokenBridgedUSDCe(tokenAddress)) {
+    return {
+      symbol: 'USDC.e',
+      name: 'Bridged USDC',
+    };
+  }
+
+  if (isTokenNativeUSDC(tokenAddress)) {
+    return {
+      symbol: 'USDC',
+      name: 'USD Coin',
+    };
+  }
+
+  return null;
+}
 
 export const isTokenEthereumUSDT = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT);
@@ -425,21 +458,15 @@ export function sanitizeTokenSymbol(tokenSymbol: string, options: SanitizeTokenO
     return tokenSymbol;
   }
 
-  const { isArbitrumOne, isArbitrumSepolia, isEthereumMainnet } = isNetwork(options.chainId);
+  const { isArbitrumOne, isEthereumMainnet } = isNetwork(options.chainId);
 
   if (addressesEqual(options.erc20L1Address, CommonAddress.Ethereum.USDT) && isEthereumMainnet) {
     return 'USDT';
   }
 
-  if (
-    isTokenMainnetUSDC(options.erc20L1Address) ||
-    isTokenArbitrumOneUSDCe(options.erc20L1Address) ||
-    isTokenSepoliaUSDC(options.erc20L1Address) ||
-    isTokenArbitrumSepoliaUSDCe(options.erc20L1Address)
-  ) {
-    // It should be `USDC` on all chains except Arbitrum One/Arbitrum Sepolia
-    if (isArbitrumOne || isArbitrumSepolia) return 'USDC.e';
-    return 'USDC';
+  const usdcDisplay = getSanitizedUsdcDisplay(options.erc20L1Address);
+  if (usdcDisplay) {
+    return usdcDisplay.symbol;
   }
 
   if (isTokenArbitrumOneCU(options.erc20L1Address)) {
@@ -456,21 +483,15 @@ export function sanitizeTokenName(tokenName: string, options: SanitizeTokenOptio
     return tokenName;
   }
 
-  const { isArbitrumOne, isArbitrumSepolia, isEthereumMainnet } = isNetwork(options.chainId);
+  const { isArbitrumOne, isEthereumMainnet } = isNetwork(options.chainId);
 
   if (addressesEqual(options.erc20L1Address, CommonAddress.Ethereum.USDT) && isEthereumMainnet) {
     return 'USDT';
   }
 
-  if (
-    isTokenMainnetUSDC(options.erc20L1Address) ||
-    isTokenArbitrumOneUSDCe(options.erc20L1Address) ||
-    isTokenSepoliaUSDC(options.erc20L1Address) ||
-    isTokenArbitrumSepoliaUSDCe(options.erc20L1Address)
-  ) {
-    // It should be `USD Coin` on all chains except Arbitrum One/Arbitrum Sepolia
-    if (isArbitrumOne || isArbitrumSepolia) return 'Bridged USDC';
-    return 'USD Coin';
+  const usdcDisplay = getSanitizedUsdcDisplay(options.erc20L1Address);
+  if (usdcDisplay) {
+    return usdcDisplay.name;
   }
 
   if (isTokenArbitrumOneCU(options.erc20L1Address)) {

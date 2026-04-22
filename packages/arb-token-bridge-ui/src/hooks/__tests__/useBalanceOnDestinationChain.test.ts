@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../../types/ChainId';
-import { getArbitrumOnePyusdToken, getEthereumPyusdToken } from '../../util/PyusdUtils';
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import { getArbitrumOnePyusdToken } from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalance } from '../useBalance';
 import { useBalanceOnDestinationChain } from '../useBalanceOnDestinationChain';
@@ -82,11 +84,8 @@ describe('useBalanceOnDestinationChain', () => {
     });
   });
 
-  it('uses the child-chain token address for PYUSD deposits', () => {
-    const token = {
-      ...getEthereumPyusdToken(),
-      l2Address: '0x46850ad61c2b7d64d08c9c754f45254596696984',
-    };
+  it('uses the destination-chain token address for PYUSD deposits', () => {
+    const token = getArbitrumOnePyusdToken();
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -109,7 +108,7 @@ describe('useBalanceOnDestinationChain', () => {
     mockedUseBalance.mockReturnValue({
       erc20: [
         {
-          [token.l2Address.toLowerCase()]: BigNumber.from(42),
+          [token.address.toLowerCase()]: BigNumber.from(42),
         },
         vi.fn(),
       ],
@@ -121,8 +120,102 @@ describe('useBalanceOnDestinationChain', () => {
     expect(result.current).toEqual(BigNumber.from(42));
   });
 
+  it('uses l2Address for destination override tokens in deposit mode', () => {
+    const token: ERC20BridgeToken = {
+      type: TokenType.ERC20,
+      address: CommonAddress.Superposition.USDCe,
+      importLookupAddress: CommonAddress.Ethereum.USDC,
+      l2Address: CommonAddress.Superposition.USDCe,
+      symbol: 'USDC.e',
+      name: 'Bridged USDC',
+      decimals: 6,
+      listIds: new Set<string>(),
+    };
+
+    mockedUseNetworks.mockReturnValue([
+      {
+        sourceChain: getWagmiChain(ChainId.Ethereum),
+        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
+        destinationChain: getWagmiChain(ChainId.Superposition),
+        destinationChainProvider: getProviderForChainId(ChainId.Superposition),
+      },
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue({
+      childChain: getWagmiChain(ChainId.Superposition),
+      childChainProvider: getProviderForChainId(ChainId.Superposition),
+      parentChain: getWagmiChain(ChainId.Ethereum),
+      parentChainProvider: getProviderForChainId(ChainId.Ethereum),
+      isDepositMode: true,
+      isTeleportMode: false,
+      isLifi: false,
+    });
+    mockedUseBalance.mockReturnValue({
+      erc20: [
+        {
+          [CommonAddress.Superposition.USDCe]: BigNumber.from(7),
+        },
+        vi.fn(),
+      ],
+      eth: [constants.Zero, vi.fn()],
+    });
+
+    const { result } = renderHook(() => useBalanceOnDestinationChain(token));
+
+    expect(result.current).toEqual(BigNumber.from(7));
+  });
+
+  it('uses l2Address for ApeChain WETH destination overrides in deposit mode', () => {
+    const token: ERC20BridgeToken = {
+      type: TokenType.ERC20,
+      address: CommonAddress.ApeChain.WETH,
+      l2Address: CommonAddress.ApeChain.WETH,
+      symbol: 'WETH',
+      name: 'Wrapped Ether',
+      decimals: 18,
+      listIds: new Set<string>(),
+    };
+
+    mockedUseNetworks.mockReturnValue([
+      {
+        sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+        sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+        destinationChain: getWagmiChain(ChainId.ApeChain),
+        destinationChainProvider: getProviderForChainId(ChainId.ApeChain),
+      },
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue({
+      childChain: getWagmiChain(ChainId.ApeChain),
+      childChainProvider: getProviderForChainId(ChainId.ApeChain),
+      parentChain: getWagmiChain(ChainId.ArbitrumOne),
+      parentChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+      isDepositMode: true,
+      isTeleportMode: false,
+      isLifi: false,
+    });
+    mockedUseBalance.mockReturnValue({
+      erc20: [
+        {
+          [CommonAddress.ApeChain.WETH.toLowerCase()]: BigNumber.from(13),
+        },
+        vi.fn(),
+      ],
+      eth: [constants.Zero, vi.fn()],
+    });
+
+    const { result } = renderHook(() => useBalanceOnDestinationChain(token));
+
+    expect(result.current).toEqual(BigNumber.from(13));
+  });
+
   it('still uses destinationBalanceAddress for PYUSD withdrawals back to Ethereum', () => {
     const token = getArbitrumOnePyusdToken();
+    const destinationBalanceAddress = token.destinationBalanceAddress?.toLowerCase();
+
+    if (!destinationBalanceAddress) {
+      throw new Error('Expected PYUSD token to expose destinationBalanceAddress');
+    }
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -145,7 +238,7 @@ describe('useBalanceOnDestinationChain', () => {
     mockedUseBalance.mockReturnValue({
       erc20: [
         {
-          [token.destinationBalanceAddress!.toLowerCase()]: BigNumber.from(99),
+          [destinationBalanceAddress]: BigNumber.from(99),
         },
         vi.fn(),
       ],

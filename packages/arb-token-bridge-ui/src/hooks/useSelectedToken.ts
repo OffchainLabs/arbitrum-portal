@@ -9,7 +9,9 @@ import {
   useTokensFromLists,
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
+import { ether } from '../constants';
 import { ChainId } from '../types/ChainId';
+import { isApeChainEthSelection } from '../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import {
   getPyusdTokenForTransfer,
@@ -43,6 +45,13 @@ const commonUSDC: ERC20BridgeToken = {
   address: '',
   logoURI:
     'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+};
+
+const explicitNativeEtherToken: ERC20BridgeToken = {
+  ...ether,
+  type: TokenType.ERC20,
+  address: constants.AddressZero,
+  listIds: new Set<string>(),
 };
 
 export const useSelectedToken = (): [
@@ -172,9 +181,29 @@ export const useSelectedToken = (): [
     tokenFromSearchParams,
   ]);
 
+  const explicitNativeToken = useMemo(() => {
+    if (
+      !isApeChainEthSelection({
+        tokenAddress: tokenFromSearchParams,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      })
+    ) {
+      return null;
+    }
+
+    return explicitNativeEtherToken;
+  }, [networks.destinationChain.id, networks.sourceChain.id, tokenFromSearchParams]);
+
   const selectedToken = useMemo(
-    () => selectedPyusdToken ?? usdcToken ?? userSelectedToken ?? listSelectedToken ?? null,
-    [listSelectedToken, selectedPyusdToken, usdcToken, userSelectedToken],
+    () =>
+      explicitNativeToken ??
+      selectedPyusdToken ??
+      usdcToken ??
+      userSelectedToken ??
+      listSelectedToken ??
+      null,
+    [explicitNativeToken, listSelectedToken, selectedPyusdToken, usdcToken, userSelectedToken],
   );
 
   if (!tokenFromSearchParams) {

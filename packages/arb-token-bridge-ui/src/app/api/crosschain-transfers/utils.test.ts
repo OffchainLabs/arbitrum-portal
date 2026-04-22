@@ -138,6 +138,19 @@ describe('isValidLifiTransfer', () => {
     ).toBe(true);
   });
 
+  it('allows zero-address native ETH routes even when token lists are loaded', () => {
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {};
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: constants.AddressZero,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.ApeChain,
+        tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
   it('allows native USDC swaps', () => {
     const tokensFromLists: ContractStorage<ERC20BridgeToken> = {};
 
@@ -246,6 +259,7 @@ describe('getTokenOverride', () => {
   const weth = {
     address: '0xf4d9235269a96aadafc9adae454a0618ebe37949',
     decimals: 18,
+    l2Address: '0xf4d9235269a96aadafc9adae454a0618ebe37949',
     logoURI:
       'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
     name: 'Wrapped Ether',
@@ -398,6 +412,8 @@ describe('getTokenOverride', () => {
     expect(arbToSuperpositionOverride.destination).toEqual({
       ...bridgedUsdcToken,
       address: CommonAddress.Superposition.USDCe,
+      l2Address: CommonAddress.Superposition.USDCe,
+      importLookupAddress: CommonAddress.ArbitrumOne.USDC,
     });
 
     expect(superpositionToMainnetOverride.source).toEqual({
@@ -407,6 +423,8 @@ describe('getTokenOverride', () => {
     expect(superpositionToMainnetOverride.destination).toEqual({
       ...nativeUsdcToken,
       address: CommonAddress.Ethereum.USDC,
+      l2Address: CommonAddress.Ethereum.USDC,
+      importLookupAddress: CommonAddress.Ethereum.USDC,
     });
   });
 

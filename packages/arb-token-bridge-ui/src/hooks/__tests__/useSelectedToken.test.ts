@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import { constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -265,6 +266,45 @@ describe('useSelectedToken', () => {
       }),
     );
     expect(result.current[0]?.l2Address).toBe(CommonAddress.ArbitrumOne.PYUSDCanonical);
+  });
+
+  it('preserves explicit zero-address native ETH selections on ApeChain routes', () => {
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.ApeChain,
+        amount: '',
+        amount2: '',
+        destinationAddress: undefined,
+        token: constants.AddressZero,
+        destinationToken: constants.AddressZero,
+        settingsOpen: false,
+        tab: 0,
+        disabledFeatures: [],
+        theme: {},
+        debugLevel: 'silent',
+        experiments: undefined,
+      },
+      vi.fn(),
+    ]);
+    mockedUseNetworks.mockReturnValue([
+      makeNetworksState(ChainId.ArbitrumOne, ChainId.ApeChain),
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue(
+      makeNetworksRelationshipState(ChainId.ArbitrumOne, ChainId.ApeChain, true),
+    );
+
+    const { result } = renderHook(() => useSelectedToken());
+
+    expect(result.current[0]).toEqual({
+      type: TokenType.ERC20,
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18,
+      address: constants.AddressZero,
+      listIds: new Set<string>(),
+    });
   });
 
   it('sets token to OFT address and destinationToken to L1 address when selecting OFT PayPal USD for withdrawal', () => {

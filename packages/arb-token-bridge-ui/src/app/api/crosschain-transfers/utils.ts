@@ -6,6 +6,7 @@ import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
+import { isApeChainEthSelection } from '../../../util/BridgeTokenAddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import {
   getPyusdTokenOverride,
@@ -60,7 +61,7 @@ export function isValidLifiTransfer({
   }
 
   // Native ETH is always valid for LiFi
-  if (!fromToken) {
+  if (!fromToken || addressesEqual(fromToken, constants.AddressZero)) {
     return true;
   }
 
@@ -141,6 +142,29 @@ function getUsdc(chainId: number) {
   );
 }
 
+function getResolvedUsdcOverrideToken({
+  chainId,
+  importLookupAddress,
+}: {
+  chainId: number;
+  importLookupAddress: string;
+}): ERC20BridgeToken | null {
+  const usdcToken = getUsdc(chainId);
+
+  if (!usdcToken) {
+    return null;
+  }
+
+  return {
+    ...commonUsdcToken,
+    ...usdcToken,
+    type: TokenType.ERC20,
+    listIds: new Set<string>(),
+    l2Address: usdcToken.address,
+    importLookupAddress,
+  };
+}
+
 const apeToken = {
   symbol: 'APE',
   name: 'ApeCoin',
@@ -190,12 +214,20 @@ export function getTokenOverride({
   destination: ERC20BridgeToken | null;
 } {
   // Eth on ApeChain
-  if (addressesEqual(fromToken, constants.AddressZero)) {
+  if (
+    isApeChainEthSelection({
+      tokenAddress: fromToken,
+      sourceChainId,
+      destinationChainId,
+    }) ||
+    addressesEqual(fromToken, constants.AddressZero)
+  ) {
     if (sourceChainId === ChainId.ApeChain) {
       return {
         source: {
           ...Weth,
           address: CommonAddress.ApeChain.WETH,
+          l2Address: CommonAddress.ApeChain.WETH,
           type: TokenType.ERC20,
           listIds: new Set<string>(),
         },
@@ -215,6 +247,7 @@ export function getTokenOverride({
         destination: {
           ...Weth,
           address: CommonAddress.ApeChain.WETH,
+          l2Address: CommonAddress.ApeChain.WETH,
           type: TokenType.ERC20,
           listIds: new Set<string>(),
         },
@@ -290,12 +323,10 @@ export function getTokenOverride({
           type: TokenType.ERC20,
           listIds: new Set<string>(),
         },
-        destination: {
-          ...commonUsdcToken,
-          ...destinationUsdcToken,
-          type: TokenType.ERC20,
-          listIds: new Set<string>(),
-        },
+        destination: getResolvedUsdcOverrideToken({
+          chainId: destinationChainId,
+          importLookupAddress: fromToken,
+        }),
       };
     }
   }

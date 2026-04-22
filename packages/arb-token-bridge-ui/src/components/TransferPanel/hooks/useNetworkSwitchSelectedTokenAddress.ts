@@ -2,7 +2,10 @@ import { useMemo } from 'react';
 
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { addressesEqual } from '../../../util/AddressUtils';
+import {
+  areEquivalentBridgeTokens,
+  getBridgeTokenLookupAddress,
+} from '../../../util/BridgeTokenAddressUtils';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
 
 /**
@@ -20,13 +23,13 @@ export function useNetworkSwitchSelectedTokenAddress() {
 
   return useMemo(() => {
     if (isSwapTransfer) {
-      return destinationToken?.address ?? null;
+      return getBridgeTokenLookupAddress(destinationToken) ?? null;
     }
 
-    if (!destinationToken || addressesEqual(destinationToken.address, selectedToken?.address)) {
+    if (!destinationToken || areEquivalentBridgeTokens(destinationToken, selectedToken)) {
       return undefined;
     }
 
-    return destinationToken.address;
+    return getBridgeTokenLookupAddress(destinationToken);
   }, [destinationToken, isSwapTransfer, selectedToken]);
 }

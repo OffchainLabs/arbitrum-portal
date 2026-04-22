@@ -22,7 +22,10 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { getBridgeTokenLookupAddress } from '../../util/BridgeTokenAddressUtils';
+import {
+  getBridgeTokenLookupAddress,
+  isApeChainEthSelection,
+} from '../../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
 import { getPyusdTokenForTransfer } from '../../util/PyusdUtils';
@@ -651,13 +654,20 @@ export function TokenSearch(props: UseDialogProps) {
       return;
     }
 
+    if (
+      isApeChainEthSelection({
+        tokenAddress: _token.address,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      })
+    ) {
+      setSelectedToken(constants.AddressZero);
+      return;
+    }
+
     if (addressesEqual(_token.address, constants.AddressZero)) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setSelectedToken(constants.AddressZero);
-      } else {
-        // Map native currency to null for other chains
-        setSelectedToken(null);
-      }
+      // Map native currency to null for other chains
+      setSelectedToken(null);
       return;
     }
 
