@@ -9,6 +9,6 @@ type Props = {
 
 export { generateMetadata };
 
-export default async function BridgeBuyPage({ searchParams }: Props) {
+export default function BridgeTxHistoryPage({ searchParams }: Props) {
   return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.TX_HISTORY} />;
 }
