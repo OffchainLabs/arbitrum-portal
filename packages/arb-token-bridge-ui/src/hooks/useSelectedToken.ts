@@ -104,41 +104,11 @@ export const useSelectedToken = (): [
     (erc20ParentAddress: string | null) => {
       return setQueryParams((latestQuery) => {
         try {
-          const destinationTokenAddress = getDestinationTokenAddressForSelection({
+          return getQueryParamsForSelectedToken({
             tokenAddress: erc20ParentAddress,
             sourceChainId: latestQuery.sourceChain,
             destinationChainId: latestQuery.destinationChain,
           });
-          const sanitizedTokenAddress = sanitizeNullSelectedToken({
-            sourceChainId: latestQuery.sourceChain,
-            destinationChainId: latestQuery.destinationChain,
-            erc20ParentAddress,
-          });
-
-          if (sanitizedTokenAddress) {
-            return {
-              token: sanitizedTokenAddress,
-              destinationToken: destinationTokenAddress,
-            };
-          }
-
-          /**
-           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
-           */
-          if (
-            latestQuery.sourceChain === ChainId.ApeChain &&
-            latestQuery.destinationChain === ChainId.Superposition
-          ) {
-            return {
-              token: sanitizeTokenAddress(erc20ParentAddress),
-              destinationToken: constants.AddressZero,
-            };
-          }
-
-          return {
-            token: sanitizeTokenAddress(erc20ParentAddress),
-            destinationToken: destinationTokenAddress,
-          };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };
@@ -221,6 +191,49 @@ function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
     return tokenAddress;
   }
   return undefined;
+}
+
+export function getQueryParamsForSelectedToken({
+  tokenAddress,
+  sourceChainId,
+  destinationChainId,
+}: {
+  tokenAddress: string | null;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) {
+  const destinationTokenAddress = getDestinationTokenAddressForSelection({
+    tokenAddress,
+    sourceChainId,
+    destinationChainId,
+  });
+  const sanitizedTokenAddress = sanitizeNullSelectedToken({
+    sourceChainId,
+    destinationChainId,
+    erc20ParentAddress: tokenAddress,
+  });
+
+  if (sanitizedTokenAddress) {
+    return {
+      token: sanitizedTokenAddress,
+      destinationToken: destinationTokenAddress,
+    };
+  }
+
+  /**
+   * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
+   */
+  if (sourceChainId === ChainId.ApeChain && destinationChainId === ChainId.Superposition) {
+    return {
+      token: sanitizeTokenAddress(tokenAddress),
+      destinationToken: constants.AddressZero,
+    };
+  }
+
+  return {
+    token: sanitizeTokenAddress(tokenAddress),
+    destinationToken: destinationTokenAddress,
+  };
 }
 
 function getDestinationTokenAddressForSelection({

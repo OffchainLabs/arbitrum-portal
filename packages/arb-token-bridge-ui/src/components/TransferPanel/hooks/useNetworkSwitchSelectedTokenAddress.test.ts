@@ -80,7 +80,7 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     expect(result.current).toBeUndefined();
   });
 
-  it('keeps the canonical lookup address when switching away from an override token', () => {
+  it('rewrites to the destination-chain lookup address when switching away from an override token', () => {
     // Arbitrum One -> Ethereum:
     // the current selected token resolves to an Arbitrum-side override, but its
     // canonical lookup identity is still Ethereum PYUSD.
@@ -107,7 +107,34 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBeUndefined();
+    expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
+  });
+
+  it('rewrites canonical ArbOne PYUSD to Ethereum PYUSD when switching to Ethereum', () => {
+    mockedUseSelectedToken.mockReturnValue([
+      {
+        type: TokenType.ERC20,
+        address: CommonAddress.ArbitrumOne.PYUSDCanonical,
+        importLookupAddress: CommonAddress.Ethereum.PYUSD,
+        name: 'PayPal USD Canonical',
+        symbol: 'PYUSD',
+        decimals: 6,
+        listIds: new Set(['1']),
+      },
+      vi.fn(),
+    ]);
+    mockedUseDestinationToken.mockReturnValue({
+      type: TokenType.ERC20,
+      address: CommonAddress.Ethereum.PYUSD,
+      importLookupAddress: CommonAddress.Ethereum.PYUSD,
+      name: 'PayPal USD',
+      symbol: 'PYUSD',
+      decimals: 6,
+      listIds: new Set(['1']),
+    });
+
+    const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
+    expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
   });
 
   it('returns undefined when the resolved destination token keeps the same address', () => {
