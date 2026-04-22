@@ -130,9 +130,9 @@ describe('TokenButton', () => {
     );
   });
 
-  it('shows the source-chain native asset when no ERC20 token is resolved', () => {
+  it('shows the child-chain native asset when no ERC20 token is resolved', () => {
     render(<TokenButton />);
 
-    expect(screen.getByRole('button', { name: 'Select Token' }).textContent).toContain('ETH');
+    expect(screen.getByRole('button', { name: 'Select Token' }).textContent).toContain('APE');
   });
 });

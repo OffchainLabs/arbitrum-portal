@@ -27,11 +27,11 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   const [dialogProps, openDialog] = useDialog2();
 
   const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider } = useNetworksRelationship(networks);
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const sourceNativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {
@@ -39,19 +39,16 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
     }
 
     if (!selectedToken) {
-      return sourceNativeCurrency.symbol;
+      return nativeCurrency.symbol;
     }
 
     return sanitizeTokenSymbol(selectedToken.symbol, {
       erc20L1Address: selectedToken.address,
       chainId: networks.sourceChain.id,
     });
-  }, [selectedToken, networks.sourceChain.id, options, sourceNativeCurrency.symbol]);
+  }, [selectedToken, networks.sourceChain.id, nativeCurrency.symbol, options]);
 
   const isLoadingToken = useMemo(() => {
-    if (selectedToken) {
-      return false;
-    }
     // don't show loader if native currency is selected
     if (!tokenFromSearchParams) {
       return false;
@@ -60,7 +57,7 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
       return false;
     }
     return isLoadingTokenLists;
-  }, [selectedToken, tokenFromSearchParams, isLoadingTokenLists]);
+  }, [tokenFromSearchParams, isLoadingTokenLists]);
 
   return (
     <>
