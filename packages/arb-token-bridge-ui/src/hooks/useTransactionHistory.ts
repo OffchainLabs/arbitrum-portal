@@ -312,6 +312,38 @@ export async function fetchWithdrawalsInBatches(
   return results.flat();
 }
 
+// SWR cache for pending transactions initiated in the current session.
+// Does not fetch; only reads/writes the `new_tx_list` cache. Use this instead
+// of `useTransactionHistory` when a component only needs to add a pending tx.
+export const useAddPendingTransactions = (address: Address | undefined) => {
+  const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
+    MergedTransaction[]
+  >(address ? ['new_tx_list', address] : null);
+
+  const addPendingTransaction = useCallback(
+    (tx: MergedTransaction) => {
+      if (!isTxPending(tx)) {
+        return;
+      }
+
+      mutateNewTransactionsData((currentNewTransactions) => {
+        if (!currentNewTransactions) {
+          return [tx];
+        }
+
+        return [tx, ...currentNewTransactions];
+      });
+    },
+    [mutateNewTransactionsData],
+  );
+
+  return {
+    newTransactionsData,
+    mutateNewTransactionsData,
+    addPendingTransaction,
+  };
+};
+
 /**
  * Fetches transaction history only for deposits and withdrawals, without their statuses.
  */
@@ -687,9 +719,8 @@ export const useTransactionHistory = (
 
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
-  const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
-    MergedTransaction[]
-  >(address ? ['new_tx_list', address] : null);
+  const { newTransactionsData, mutateNewTransactionsData, addPendingTransaction } =
+    useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
     const txs = [...(newTransactionsData || []), ...(txPages || [])].flat();
@@ -698,23 +729,6 @@ export const useTransactionHistory = (
       [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(address?.toLowerCase()),
     );
   }, [newTransactionsData, txPages, address]);
-
-  const addPendingTransaction = useCallback(
-    (tx: MergedTransaction) => {
-      if (!isTxPending(tx)) {
-        return;
-      }
-
-      mutateNewTransactionsData((currentNewTransactions) => {
-        if (!currentNewTransactions) {
-          return [tx];
-        }
-
-        return [tx, ...currentNewTransactions];
-      });
-    },
-    [mutateNewTransactionsData],
-  );
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {
