@@ -98,7 +98,10 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
-    if (sourceChainNativeCurrency.isCustom && destinationChainNativeCurrency.isCustom) {
+    if (
+      (sourceChainNativeCurrency.isCustom && destinationChainNativeCurrency.isCustom) ||
+      networks.sourceChain.id === ChainId.ApeChain
+    ) {
       return <span className="flex text-xs text-white/70">{tokenListInfo}</span>;
     }
 
