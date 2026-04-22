@@ -1,6 +1,7 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
+import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
 import { useDestinationToken } from '../../hooks/useDestinationToken';
@@ -29,7 +30,8 @@ export function DestinationTokenButton({
 
   const [dialogProps, openDialog] = useDialog2();
 
-  const nativeCurrency = useNativeCurrency({ provider: networks.destinationChainProvider });
+  const { childChainProvider } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const tokenOverride = getTokenOverride({
     destinationChainId: networks.destinationChain.id,
     fromToken: destinationToken?.address,
