@@ -197,7 +197,7 @@ export function TransferPanel() {
 
   const { handleError } = useError();
 
-  const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+  const resetAmountAndNavigateToTransactionHistory = useCallback(() => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.delete('amount');
     newParams.delete('amount2');
@@ -510,7 +510,7 @@ export function TransferPanel() {
 
       addPendingTransaction(newTransfer);
       setTransferring(false);
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
       clearRoute();
     } catch (e) {
     } finally {
@@ -653,7 +653,7 @@ export function TransferPanel() {
         isSwap: isSwapTransfer,
       });
 
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
 
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we cannot show Lifi tx history for SCW
@@ -815,7 +815,7 @@ export function TransferPanel() {
         destinationChain: getNetworkName(networks.destinationChain.id),
       });
 
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
 
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we don't cannot show OFT tx history
@@ -1192,7 +1192,7 @@ export function TransferPanel() {
         amount2: '',
       });
     } else {
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
     }
 
     setTransferring(false);
