@@ -49,11 +49,11 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
   });
 
-  it('keeps the canonical lookup address when the destination token is only a resolved override', () => {
+  it('rewrites to the destination-chain address when the destination token is only a resolved override', () => {
     // Ethereum -> Arbitrum One:
-    // the selected query token is already the canonical lookup address, so
-    // switching networks should keep query state stable even if the display token
-    // resolves to an Arbitrum-side override.
+    // the selected query token is the canonical L1 address, but switching
+    // networks should restore the concrete ArbOne token address so flipping
+    // back does not collapse the query state to the lookup address forever.
     mockedUseSelectedToken.mockReturnValue([
       {
         type: TokenType.ERC20,
@@ -77,10 +77,10 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     });
 
     const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
-    expect(result.current).toBeUndefined();
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.PYUSD);
   });
 
-  it('rewrites to the destination-chain lookup address when switching away from an override token', () => {
+  it('rewrites to the destination-chain address when switching away from an override token', () => {
     // Arbitrum One -> Ethereum:
     // the current selected token resolves to an Arbitrum-side override, but its
     // canonical lookup identity is still Ethereum PYUSD.

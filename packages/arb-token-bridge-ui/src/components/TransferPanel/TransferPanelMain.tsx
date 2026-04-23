@@ -15,7 +15,6 @@ import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
 import {
@@ -34,15 +33,15 @@ import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
+import { getNetworkSwitchQueryParams } from './hooks/getNetworkSwitchQueryParams';
 import { useNetworkSwitchSelectedTokenAddress } from './hooks/useNetworkSwitchSelectedTokenAddress';
 
 export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
 
-  const [{ theme }] = useArbQueryParams();
+  const [{ theme }, setQueryParams] = useArbQueryParams();
 
-  const [networks, setNetworks] = useNetworks();
-  const [, setSelectedToken] = useSelectedToken();
+  const [networks] = useNetworks();
   const selectedTokenAddressAfterSwitch = useNetworkSwitchSelectedTokenAddress();
 
   const { isFeatureDisabled } = useDisabledFeatures();
@@ -91,14 +90,14 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             return;
           }
 
-          setNetworks({
-            sourceChainId: networks.destinationChain.id,
-            destinationChainId: networks.sourceChain.id,
-          });
-
-          if (typeof selectedTokenAddressAfterSwitch !== 'undefined') {
-            setSelectedToken(selectedTokenAddressAfterSwitch);
-          }
+          setQueryParams(
+            getNetworkSwitchQueryParams({
+              sourceChainId: networks.sourceChain.id,
+              destinationChainId: networks.destinationChain.id,
+              disableTransfersToNonArbitrumChains,
+              selectedTokenAddressAfterSwitch,
+            }),
+          );
         }}
         aria-label="Switch Networks"
         {...props}

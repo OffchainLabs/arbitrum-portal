@@ -20,10 +20,11 @@ export function useNetworkSwitchSelectedTokenAddress() {
   const destinationToken = useDestinationToken();
 
   return useMemo(() => {
-    const nextSelectedTokenAddress = getBridgeTokenLookupAddress(destinationToken);
+    const nextSelectedTokenLookupAddress = getBridgeTokenLookupAddress(destinationToken);
+    const nextSelectedTokenAddress = destinationToken?.address;
 
     if (isSwapTransfer) {
-      return nextSelectedTokenAddress ?? null;
+      return nextSelectedTokenLookupAddress ?? null;
     }
 
     if (!nextSelectedTokenAddress) {
