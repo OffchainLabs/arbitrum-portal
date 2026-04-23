@@ -182,6 +182,62 @@ describe('useNetworkSwitchSelectedTokenAddress', () => {
     expect(result.current).toBe(CommonAddress.Ethereum.PYUSD);
   });
 
+  it('keeps the canonical lookup address when a LiFi override resolves to ApeChain USDC.e', () => {
+    mockedUseSelectedToken.mockReturnValue([
+      {
+        type: TokenType.ERC20,
+        address: CommonAddress.ArbitrumOne.USDC,
+        l2Address: CommonAddress.ApeChain.USDCe,
+        name: 'USD Coin',
+        symbol: 'USDC',
+        decimals: 6,
+        listIds: new Set(['lifi-token-list']),
+      },
+      vi.fn(),
+    ]);
+    mockedUseDestinationToken.mockReturnValue({
+      type: TokenType.ERC20,
+      address: CommonAddress.ApeChain.USDCe,
+      importLookupAddress: CommonAddress.ArbitrumOne.USDC,
+      l2Address: CommonAddress.ApeChain.USDCe,
+      name: 'Bridged USDC',
+      symbol: 'USDC.e',
+      decimals: 6,
+      listIds: new Set(['lifi-token-list']),
+    });
+
+    const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.USDC);
+  });
+
+  it('keeps the canonical lookup address when a LiFi override resolves to Superposition USDC.e', () => {
+    mockedUseSelectedToken.mockReturnValue([
+      {
+        type: TokenType.ERC20,
+        address: CommonAddress.ArbitrumOne.USDC,
+        l2Address: CommonAddress.Superposition.USDCe,
+        name: 'USD Coin',
+        symbol: 'USDC',
+        decimals: 6,
+        listIds: new Set(['lifi-token-list']),
+      },
+      vi.fn(),
+    ]);
+    mockedUseDestinationToken.mockReturnValue({
+      type: TokenType.ERC20,
+      address: CommonAddress.Superposition.USDCe,
+      importLookupAddress: CommonAddress.ArbitrumOne.USDC,
+      l2Address: CommonAddress.Superposition.USDCe,
+      name: 'Bridged USDC',
+      symbol: 'USDC.e',
+      decimals: 6,
+      listIds: new Set(['lifi-token-list']),
+    });
+
+    const { result } = renderHook(useNetworkSwitchSelectedTokenAddress);
+    expect(result.current).toBe(CommonAddress.ArbitrumOne.USDC);
+  });
+
   it('returns null for native swaps without a destination token', () => {
     // For swaps that resolve to the native asset, there is no ERC20 token
     // address to keep selected, so the hook clears the token query param.

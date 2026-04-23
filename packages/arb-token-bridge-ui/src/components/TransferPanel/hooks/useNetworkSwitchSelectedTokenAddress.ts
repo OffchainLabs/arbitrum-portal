@@ -35,6 +35,17 @@ export function useNetworkSwitchSelectedTokenAddress() {
       return undefined;
     }
 
+    // Some LiFi override tokens resolve to a child-chain display address, but query
+    // state still needs the canonical lookup address so the next chain pair can
+    // resolve the token from its lists.
+    if (
+      !selectedToken?.importLookupAddress &&
+      nextSelectedTokenLookupAddress &&
+      addressesEqual(selectedToken?.address, nextSelectedTokenLookupAddress)
+    ) {
+      return nextSelectedTokenLookupAddress;
+    }
+
     return nextSelectedTokenAddress;
-  }, [destinationToken, isSwapTransfer, selectedToken?.address]);
+  }, [destinationToken, isSwapTransfer, selectedToken?.address, selectedToken?.importLookupAddress]);
 }

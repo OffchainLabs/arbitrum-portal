@@ -307,6 +307,44 @@ describe('useSelectedToken', () => {
     });
   });
 
+  it('resolves ApeChain USDC.e query tokens back to Arbitrum One USDC on Arb1 deposits', () => {
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.ApeChain,
+        amount: '',
+        amount2: '',
+        destinationAddress: undefined,
+        token: CommonAddress.ApeChain.USDCe,
+        destinationToken: CommonAddress.ApeChain.USDCe,
+        settingsOpen: false,
+        tab: 0,
+        disabledFeatures: [],
+        theme: {},
+        debugLevel: 'silent',
+        experiments: undefined,
+      },
+      vi.fn(),
+    ]);
+    mockedUseNetworks.mockReturnValue([
+      makeNetworksState(ChainId.ArbitrumOne, ChainId.ApeChain),
+      vi.fn(),
+    ]);
+    mockedUseNetworksRelationship.mockReturnValue(
+      makeNetworksRelationshipState(ChainId.ArbitrumOne, ChainId.ApeChain, true),
+    );
+
+    const { result } = renderHook(() => useSelectedToken());
+
+    expect(result.current[0]).toMatchObject({
+      type: TokenType.ERC20,
+      address: CommonAddress.ArbitrumOne.USDC,
+      symbol: 'USDC',
+      name: 'USDC',
+      decimals: 6,
+    });
+  });
+
   it('sets token to OFT address and destinationToken to L1 address when selecting OFT PayPal USD for withdrawal', () => {
     const setQueryParams = vi.fn();
 

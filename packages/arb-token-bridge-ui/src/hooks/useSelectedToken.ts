@@ -9,8 +9,10 @@ import {
   useTokensFromLists,
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
+import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import { ether } from '../constants';
 import { ChainId } from '../types/ChainId';
+import { addressesEqual } from '../util/AddressUtils';
 import { isApeChainEthSelection } from '../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import {
@@ -151,6 +153,40 @@ export const useSelectedToken = (): [
     tokenFromSearchParams,
   ]);
 
+  const selectedOverrideToken = useMemo(() => {
+    if (!tokenFromSearchParams) {
+      return null;
+    }
+
+    const override = getTokenOverride({
+      fromToken: tokenFromSearchParams,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    });
+
+    const sourceToken = override.source;
+    const destinationToken = override.destination;
+
+    if (!sourceToken) {
+      return null;
+    }
+
+    if (
+      addressesEqual(sourceToken.address, tokenFromSearchParams) ||
+      addressesEqual(sourceToken.importLookupAddress, tokenFromSearchParams) ||
+      addressesEqual(destinationToken?.address, tokenFromSearchParams) ||
+      addressesEqual(destinationToken?.importLookupAddress, tokenFromSearchParams)
+    ) {
+      return sourceToken;
+    }
+
+    return null;
+  }, [
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    tokenFromSearchParams,
+  ]);
+
   const explicitNativeToken = useMemo(() => {
     if (
       !isApeChainEthSelection({
@@ -170,10 +206,18 @@ export const useSelectedToken = (): [
       explicitNativeToken ??
       selectedPyusdToken ??
       usdcToken ??
+      selectedOverrideToken ??
       userSelectedToken ??
       listSelectedToken ??
       null,
-    [explicitNativeToken, listSelectedToken, selectedPyusdToken, usdcToken, userSelectedToken],
+    [
+      explicitNativeToken,
+      listSelectedToken,
+      selectedOverrideToken,
+      selectedPyusdToken,
+      usdcToken,
+      userSelectedToken,
+    ],
   );
 
   if (!tokenFromSearchParams) {
