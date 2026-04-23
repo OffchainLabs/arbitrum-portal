@@ -431,7 +431,7 @@ export async function expectTokenPanelContent({
             throw new Error(`Waiting for "${tokenExpectation.symbol}" row logo to resolve.`);
           }
 
-          if (!rowLogoSrc.includes(tokenExpectation.logoURI)) {
+          if (tokenExpectation.logoURI && !rowLogoSrc.includes(tokenExpectation.logoURI)) {
             throw new Error(
               `Expected "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}", got "${rowLogoSrc}".`,
             );
