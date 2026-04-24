@@ -16,7 +16,7 @@ import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.ty
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
-import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
+import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
@@ -159,7 +159,7 @@ export function TransferPanel() {
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
-  const { addPendingTransaction } = useTransactionHistory(walletAddress);
+  const { addPendingTransaction } = useAddPendingTransactions(walletAddress);
   const { selectedRoute, clearRoute, context } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
