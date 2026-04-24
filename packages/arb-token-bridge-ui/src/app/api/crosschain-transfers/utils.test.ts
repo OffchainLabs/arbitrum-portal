@@ -4,7 +4,7 @@ import { describe, expect, it, test } from 'vitest';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { getTokenOverride, isValidLifiTransfer } from './utils';
+import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
   sourceChainId,
@@ -139,6 +139,99 @@ describe('isValidLifiTransfer', () => {
         tokensFromLists,
       }),
     ).toBe(true);
+  });
+
+  describe('Arbitrum Nova pairs', () => {
+    it('Ethereum → Nova is allowed with native token', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: undefined,
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(true);
+    });
+
+    it('Ethereum → Nova is allowed with USDC', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Ethereum.USDC,
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumNova,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    });
+
+    it('Nova → Ethereum is allowed with native token', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: undefined,
+          sourceChainId: ChainId.ArbitrumNova,
+          destinationChainId: ChainId.Ethereum,
+        }),
+      ).toBe(true);
+    });
+
+    it('Nova → ArbitrumOne is allowed with native token', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: undefined,
+          sourceChainId: ChainId.ArbitrumNova,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toBe(true);
+    });
+
+    it('ArbitrumOne → Nova is not a valid LiFi transfer', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: undefined,
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(false);
+    });
+  });
+});
+
+describe('isLifiTransfer', () => {
+  describe('Arbitrum Nova pairs', () => {
+    it('Ethereum → Nova is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(true);
+    });
+
+    it('Nova → Ethereum is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ArbitrumNova,
+          destinationChainId: ChainId.Ethereum,
+        }),
+      ).toBe(true);
+    });
+
+    it('Nova → ArbitrumOne is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ArbitrumNova,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toBe(true);
+    });
+
+    it('ArbitrumOne → Nova is not a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(false);
+    });
   });
 });
 

@@ -39,11 +39,6 @@ export function useChainIdsForNetworkSelection({ isSource }: { isSource: boolean
       disableTransfersToNonArbitrumChains,
     });
 
-    // allow source chain Arbitrum Nova to reach Arbitrum One as destination
-    if (networks.sourceChain.id === ChainId.ArbitrumNova) {
-      destinationChainIds.push(ChainId.ArbitrumOne);
-    }
-
     if (disableTransfersToNonArbitrumChains) {
       return destinationChainIds.filter((chainId) => !isNetwork(chainId).isNonArbitrumNetwork);
     }
