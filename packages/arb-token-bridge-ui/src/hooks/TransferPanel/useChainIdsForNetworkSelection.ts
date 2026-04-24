@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 
-import { ChainId } from '../../types/ChainId';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getDestinationChainIds, getSupportedChainIds, isNetwork } from '../../util/networks';
 import { DisabledFeatures } from '../useArbQueryParams';
