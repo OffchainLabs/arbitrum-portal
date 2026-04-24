@@ -18,6 +18,7 @@ import {
   isLifiRoute,
   useRouteStore,
 } from '../../components/TransferPanel/hooks/useRouteStore';
+import { getBridgeTokenChildChainAddress } from '../../util/BridgeTokenAddressUtils';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
 import { useDestinationToken } from '../useDestinationToken';
@@ -80,7 +81,7 @@ export function useGasEstimates({
   amount: BigNumber;
 }): {
   gasEstimates: TransferEstimateGasResult;
-  error: any;
+  error: unknown;
 } {
   const [networks] = useNetworks();
   const { sourceChain, destinationChain } = networks;
@@ -134,7 +135,7 @@ export function useGasEstimates({
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const defaultToTokenAddress = isDepositMode
-    ? destinationTokenForGas?.l2Address
+    ? getBridgeTokenChildChainAddress(destinationTokenForGas)
     : destinationTokenForGas?.address;
 
   const fromTokenAddress =

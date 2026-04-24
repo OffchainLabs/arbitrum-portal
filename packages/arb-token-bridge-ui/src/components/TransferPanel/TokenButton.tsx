@@ -1,18 +1,18 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { useTokenLists } from '../../hooks/useTokenLists';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { Loader } from '../common/atoms/Loader';
 import { TokenLogo } from './TokenLogo';
+import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 export type TokenButtonOptions = {
   symbol?: string;
@@ -27,26 +27,33 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   const [dialogProps, openDialog] = useDialog2();
 
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
-  const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
+  const { childChainProvider } = useNetworksRelationship(networks);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
+  const tokensFromLists = useTokensFromLists();
+  const tokensFromUser = useTokensFromUser();
 
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const normalizedTokenAddress = tokenFromSearchParams?.toLowerCase();
+  const resolvedToken =
+    selectedToken ??
+    (normalizedTokenAddress
+      ? (tokensFromUser[normalizedTokenAddress] ?? tokensFromLists[normalizedTokenAddress])
+      : null);
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {
       return options.symbol;
     }
 
-    if (!selectedToken) {
+    if (!resolvedToken) {
       return nativeCurrency.symbol;
     }
 
-    return sanitizeTokenSymbol(selectedToken.symbol, {
-      erc20L1Address: selectedToken.address,
+    return sanitizeTokenSymbol(resolvedToken.symbol, {
+      erc20L1Address: resolvedToken.address,
       chainId: networks.sourceChain.id,
     });
-  }, [selectedToken, networks.sourceChain.id, nativeCurrency.symbol, options]);
+  }, [resolvedToken, networks.sourceChain.id, nativeCurrency.symbol, options]);
 
   const isLoadingToken = useMemo(() => {
     // don't show loader if native currency is selected
@@ -56,8 +63,8 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
     if (!utils.isAddress(tokenFromSearchParams)) {
       return false;
     }
-    return isLoadingTokenLists;
-  }, [tokenFromSearchParams, isLoadingTokenLists]);
+    return !resolvedToken;
+  }, [tokenFromSearchParams, resolvedToken]);
 
   return (
     <>

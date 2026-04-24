@@ -1,16 +1,25 @@
 import { Provider } from '@ethersproject/providers';
 import { constants, utils } from 'ethers';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import {
   useTokensFromLists,
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
+import { ether } from '../constants';
 import { ChainId } from '../types/ChainId';
+import { addressesEqual } from '../util/AddressUtils';
+import { isApeChainEthSelection } from '../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import {
+  getPyusdTokenForTransfer,
+  isTokenArbitrumOnePyusd,
+  isTokenArbitrumOnePyusdCanonical,
+} from '../util/PyusdUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -40,13 +49,20 @@ const commonUSDC: ERC20BridgeToken = {
     'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
 };
 
+const explicitNativeEtherToken: ERC20BridgeToken = {
+  ...ether,
+  type: TokenType.ERC20,
+  address: constants.AddressZero,
+  listIds: new Set<string>(),
+};
+
 export const useSelectedToken = (): [
   ERC20BridgeToken | null,
   (erc20ParentAddress: string | null) => void,
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
@@ -90,36 +106,11 @@ export const useSelectedToken = (): [
     (erc20ParentAddress: string | null) => {
       return setQueryParams((latestQuery) => {
         try {
-          const sanitizedTokenAddress = sanitizeNullSelectedToken({
+          return getQueryParamsForSelectedToken({
+            tokenAddress: erc20ParentAddress,
             sourceChainId: latestQuery.sourceChain,
             destinationChainId: latestQuery.destinationChain,
-            erc20ParentAddress,
           });
-
-          if (sanitizedTokenAddress) {
-            return {
-              token: sanitizedTokenAddress,
-              destinationToken: sanitizedTokenAddress,
-            };
-          }
-
-          /**
-           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
-           */
-          if (
-            latestQuery.sourceChain === ChainId.ApeChain &&
-            latestQuery.destinationChain === ChainId.Superposition
-          ) {
-            return {
-              token: sanitizeTokenAddress(erc20ParentAddress),
-              destinationToken: constants.AddressZero,
-            };
-          }
-
-          return {
-            token: sanitizeTokenAddress(erc20ParentAddress),
-            destinationToken: sanitizeTokenAddress(erc20ParentAddress),
-          };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };
@@ -129,12 +120,101 @@ export const useSelectedToken = (): [
     [setQueryParams],
   );
 
-  const selectedToken = tokenFromSearchParams
-    ? usdcToken ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null
-    : null;
+  const normalizedTokenAddress = tokenFromSearchParams?.toLowerCase();
+  const listSelectedToken = normalizedTokenAddress
+    ? tokensFromLists[normalizedTokenAddress]
+    : undefined;
+  const userSelectedToken = normalizedTokenAddress
+    ? tokensFromUser[normalizedTokenAddress]
+    : undefined;
+  const pyusdListEntry = listSelectedToken || tokensFromLists[CommonAddress.Ethereum.PYUSD];
+  const stablePyusdListIdsRef = useRef<Set<string> | undefined>(undefined);
+
+  if (!areSetsEqual(stablePyusdListIdsRef.current, pyusdListEntry?.listIds)) {
+    stablePyusdListIdsRef.current = pyusdListEntry?.listIds
+      ? new Set(pyusdListEntry.listIds)
+      : undefined;
+  }
+
+  const stablePyusdListIds = stablePyusdListIdsRef.current;
+  const selectedPyusdToken = useMemo(() => {
+    return getPyusdTokenForTransfer({
+      tokenAddress: tokenFromSearchParams,
+      isDepositMode,
+      priceUSD: pyusdListEntry?.priceUSD,
+      pyusdL2Address: pyusdListEntry?.l2Address,
+      listIds: stablePyusdListIds,
+    });
+  }, [
+    isDepositMode,
+    pyusdListEntry?.l2Address,
+    pyusdListEntry?.priceUSD,
+    stablePyusdListIds,
+    tokenFromSearchParams,
+  ]);
+
+  const selectedOverrideToken = useMemo(() => {
+    if (!tokenFromSearchParams) {
+      return null;
+    }
+
+    const override = getTokenOverride({
+      fromToken: tokenFromSearchParams,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    });
+
+    const sourceToken = override.source;
+    const destinationToken = override.destination;
+
+    if (!sourceToken) {
+      return null;
+    }
+
+    if (
+      addressesEqual(sourceToken.address, tokenFromSearchParams) ||
+      addressesEqual(sourceToken.importLookupAddress, tokenFromSearchParams) ||
+      addressesEqual(destinationToken?.address, tokenFromSearchParams) ||
+      addressesEqual(destinationToken?.importLookupAddress, tokenFromSearchParams)
+    ) {
+      return sourceToken;
+    }
+
+    return null;
+  }, [networks.destinationChain.id, networks.sourceChain.id, tokenFromSearchParams]);
+
+  const explicitNativeToken = useMemo(() => {
+    if (
+      !isApeChainEthSelection({
+        tokenAddress: tokenFromSearchParams,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      })
+    ) {
+      return null;
+    }
+
+    return explicitNativeEtherToken;
+  }, [networks.destinationChain.id, networks.sourceChain.id, tokenFromSearchParams]);
+
+  const selectedToken = useMemo(
+    () =>
+      explicitNativeToken ??
+      selectedPyusdToken ??
+      usdcToken ??
+      selectedOverrideToken ??
+      userSelectedToken ??
+      listSelectedToken ??
+      null,
+    [
+      explicitNativeToken,
+      listSelectedToken,
+      selectedOverrideToken,
+      selectedPyusdToken,
+      usdcToken,
+      userSelectedToken,
+    ],
+  );
 
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
@@ -151,6 +231,91 @@ function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
     return tokenAddress;
   }
   return undefined;
+}
+
+export function getQueryParamsForSelectedToken({
+  tokenAddress,
+  sourceChainId,
+  destinationChainId,
+}: {
+  tokenAddress: string | null;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) {
+  const destinationTokenAddress = getDestinationTokenAddressForSelection({
+    tokenAddress,
+    sourceChainId,
+    destinationChainId,
+  });
+  const sanitizedTokenAddress = sanitizeNullSelectedToken({
+    sourceChainId,
+    destinationChainId,
+    erc20ParentAddress: tokenAddress,
+  });
+
+  if (sanitizedTokenAddress) {
+    return {
+      token: sanitizedTokenAddress,
+      destinationToken: destinationTokenAddress,
+    };
+  }
+
+  /**
+   * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
+   */
+  if (sourceChainId === ChainId.ApeChain && destinationChainId === ChainId.Superposition) {
+    return {
+      token: sanitizeTokenAddress(tokenAddress),
+      destinationToken: constants.AddressZero,
+    };
+  }
+
+  return {
+    token: sanitizeTokenAddress(tokenAddress),
+    destinationToken: destinationTokenAddress,
+  };
+}
+
+function getDestinationTokenAddressForSelection({
+  tokenAddress,
+  sourceChainId,
+  destinationChainId,
+}: {
+  tokenAddress: string | null;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) {
+  const sanitizedTokenAddress = sanitizeTokenAddress(tokenAddress);
+
+  if (
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum &&
+    sanitizedTokenAddress &&
+    (isTokenArbitrumOnePyusd(sanitizedTokenAddress) ||
+      isTokenArbitrumOnePyusdCanonical(sanitizedTokenAddress))
+  ) {
+    return CommonAddress.Ethereum.PYUSD;
+  }
+
+  return sanitizedTokenAddress;
+}
+
+function areSetsEqual<T>(a: Set<T> | undefined, b: Set<T> | undefined): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const item of a) {
+    if (!b.has(item)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export async function getUsdcToken({

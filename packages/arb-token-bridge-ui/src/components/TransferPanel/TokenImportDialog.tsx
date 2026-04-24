@@ -118,13 +118,15 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
 
   const searchForTokenInLists = useCallback(
     (erc20L1Address: string): TokenListSearchResult => {
+      const normalizedAddress = erc20L1Address.toLowerCase();
+
       // We found the token in an imported list
       const currentBridgeTokens = latestBridgeTokens.current;
       if (typeof currentBridgeTokens === 'undefined') {
         return { found: false };
       }
 
-      const l1Token = currentBridgeTokens[erc20L1Address];
+      const l1Token = currentBridgeTokens[normalizedAddress];
       if (typeof l1Token !== 'undefined') {
         return {
           found: true,
@@ -138,7 +140,7 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
         ...latestTokensFromUser.current,
       };
 
-      const token = tokens[erc20L1Address];
+      const token = tokens[normalizedAddress];
       // We found the token in an unimported list
       if (typeof token !== 'undefined') {
         return {
@@ -240,13 +242,15 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
       return;
     }
 
-    if (typeof bridgeTokens[l1Address] !== 'undefined') {
+    const normalizedL1Address = l1Address.toLowerCase();
+
+    if (typeof bridgeTokens[normalizedL1Address] !== 'undefined') {
       // Token is already added to the bridge
       onClose(true);
       selectToken(tokenToImport!);
     } else {
       // Token is not added to the bridge, so we add it
-      storeNewToken(l1Address)
+      storeNewToken(normalizedL1Address)
         .then(() => {
           if (tokenToImport) {
             selectToken(tokenToImport);

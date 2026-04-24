@@ -107,6 +107,25 @@ function withdrawalDisabled(token: string) {
   ].includes(token.toLowerCase());
 }
 
+export function shouldBlockDeposit({
+  isDepositMode,
+  isSelectedTokenWithdrawOnly,
+  isSelectedTokenWithdrawOnlyLoading,
+  isValidLifiRoute,
+}: {
+  isDepositMode: boolean;
+  isSelectedTokenWithdrawOnly: boolean;
+  isSelectedTokenWithdrawOnlyLoading: boolean;
+  isValidLifiRoute: boolean;
+}) {
+  return (
+    isDepositMode &&
+    isSelectedTokenWithdrawOnly &&
+    !isSelectedTokenWithdrawOnlyLoading &&
+    !isValidLifiRoute
+  );
+}
+
 function ready() {
   const result: UseTransferReadinessResult = {
     transferReady: { deposit: true, withdrawal: true },
@@ -395,7 +414,14 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           tokensFromLists,
         });
 
-      if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+      if (
+        shouldBlockDeposit({
+          isDepositMode,
+          isSelectedTokenWithdrawOnly,
+          isSelectedTokenWithdrawOnlyLoading,
+          isValidLifiRoute,
+        })
+      ) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY,

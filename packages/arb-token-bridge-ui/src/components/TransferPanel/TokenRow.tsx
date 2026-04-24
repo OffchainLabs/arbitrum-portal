@@ -19,6 +19,10 @@ import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChain
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import {
+  areEquivalentBridgeTokens,
+  getBridgeTokenLookupAddress,
+} from '../../util/BridgeTokenAddressUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
@@ -133,6 +137,37 @@ interface TokenRowProps {
   isDestination?: boolean;
 }
 
+export function getTokenRowLogoURI({
+  token,
+  overrideToken,
+  nativeCurrencyLogoUrl,
+  isDestination,
+}: {
+  token: ERC20BridgeToken | null;
+  overrideToken: ERC20BridgeToken | null;
+  nativeCurrencyLogoUrl?: string;
+  isDestination: boolean;
+}) {
+  if (
+    isDestination &&
+    token?.logoURI &&
+    overrideToken &&
+    areEquivalentBridgeTokens(token, overrideToken)
+  ) {
+    return token.logoURI;
+  }
+
+  if (overrideToken?.logoURI) {
+    return overrideToken.logoURI;
+  }
+
+  if (!token) {
+    return nativeCurrencyLogoUrl;
+  }
+
+  return token.logoURI;
+}
+
 function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination: boolean }) {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
@@ -184,15 +219,13 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
   }, [overrideToken, token, nativeCurrency.symbol, chainId]);
 
   const logoURI = useMemo(() => {
-    if (overrideToken) {
-      return overrideToken.logoURI;
-    }
-    if (!token) {
-      return nativeCurrency.logoUrl;
-    }
-
-    return token.logoURI;
-  }, [overrideToken, token, nativeCurrency.logoUrl]);
+    return getTokenRowLogoURI({
+      token,
+      overrideToken,
+      nativeCurrencyLogoUrl: nativeCurrency.logoUrl,
+      isDestination: options?.isDestination ?? false,
+    });
+  }, [nativeCurrency.logoUrl, options?.isDestination, overrideToken, token]);
 
   const sourceBalance = useBalanceOnSourceChain(token);
   const destinationBalance = useBalanceOnDestinationChain(token);
@@ -305,7 +338,11 @@ function TokenBalance({
       return true;
     }
 
-    return typeof bridgeTokens[token.address] !== 'undefined';
+    const importLookupAddress = getBridgeTokenLookupAddress(token);
+    if (!importLookupAddress) {
+      return false;
+    }
+    return typeof bridgeTokens[importLookupAddress] !== 'undefined';
   }, [bridgeTokens, isArbitrumNativeUSDC, token]);
 
   const decimals = useMemo(() => {

@@ -22,8 +22,13 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import {
+  getBridgeTokenLookupAddress,
+  isApeChainEthSelection,
+} from '../../util/BridgeTokenAddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
+import { getPyusdTokenForTransfer } from '../../util/PyusdUtils';
 import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
@@ -167,6 +172,9 @@ function TokensPanel({
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, isDepositMode } =
     useNetworksRelationship(networks);
+  const isArbitrumOneEthereumPair =
+    networks.sourceChain.id === ChainId.ArbitrumOne &&
+    networks.destinationChain.id === ChainId.Ethereum;
 
   const { ethParentBalance, erc20ParentBalances, ethChildBalance, erc20ChildBalances } =
     useBalances({
@@ -190,8 +198,27 @@ function TokensPanel({
   const [errorMessage, setErrorMessage] = useState('');
   const [isAddingToken, setIsAddingToken] = useState(false);
 
+  const getWithdrawalPyusdToken = useCallback(
+    (address: string) => {
+      if (isDepositMode) {
+        return null;
+      }
+
+      const pyusdListEntry = tokensFromLists[CommonAddress.Ethereum.PYUSD];
+
+      return getPyusdTokenForTransfer({
+        tokenAddress: address,
+        isDepositMode,
+        priceUSD: pyusdListEntry?.priceUSD,
+        listIds: pyusdListEntry?.listIds,
+      });
+    },
+    [isDepositMode, tokensFromLists],
+  );
+
   const getBalance = useCallback(
     (address: string) => {
+      const normalizedAddress = address.toLowerCase();
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
         if (nativeCurrency.isCustom) {
           return isDepositMode ? erc20ParentBalances?.[nativeCurrency.address] : ethChildBalance;
@@ -201,7 +228,7 @@ function TokensPanel({
       }
 
       if (isDepositMode) {
-        return erc20ParentBalances?.[address.toLowerCase()];
+        return erc20ParentBalances?.[normalizedAddress];
       }
 
       if (typeof bridgeTokens === 'undefined') {
@@ -209,10 +236,10 @@ function TokensPanel({
       }
 
       if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        return erc20ChildBalances?.[address.toLowerCase()];
+        return erc20ChildBalances?.[normalizedAddress];
       }
 
-      const l2Address = bridgeTokens[address.toLowerCase()]?.l2Address;
+      const l2Address = bridgeTokens[normalizedAddress]?.l2Address;
       return l2Address ? erc20ChildBalances?.[l2Address.toLowerCase()] : null;
     },
     [
@@ -266,6 +293,10 @@ function TokensPanel({
       // L2 to L1 withdrawals
       if (isArbitrumOne) {
         tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
+        if (isArbitrumOneEthereumPair) {
+          tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSD);
+          tokenAddresses.push(CommonAddress.ArbitrumOne.PYUSDCanonical);
+        }
       }
       if (isArbitrumSepolia) {
         tokenAddresses.push(CommonAddress.ArbitrumSepolia.USDC);
@@ -302,16 +333,26 @@ function TokensPanel({
 
     return tokens
       .filter((address) => {
-        // Derive the token object from the address string
-        let token = tokensFromUser[address] || tokensFromLists[address];
+        const normalizedAddress = address.toLowerCase();
+
+        if (
+          !isDepositMode &&
+          isArbitrumOneEthereumPair &&
+          addressesEqual(address, CommonAddress.Ethereum.PYUSD)
+        ) {
+          return false;
+        }
+
+        const pyusdToken = getWithdrawalPyusdToken(address);
+
+        let token =
+          pyusdToken ?? tokensFromUser[normalizedAddress] ?? tokensFromLists[normalizedAddress];
 
         if (isTokenArbitrumOneNativeUSDC(address) && !token?.l2Address) {
-          // for token search as Arb One native USDC isn't in any lists
           token = ARB_ONE_NATIVE_USDC_TOKEN;
         }
 
         if (isTokenArbitrumSepoliaNativeUSDC(address)) {
-          // for token search as Arb One native USDC isn't in any lists
           token = ARB_SEPOLIA_NATIVE_USDC_TOKEN;
         }
 
@@ -416,12 +457,14 @@ function TokensPanel({
     networks.destinationChain.id,
     nativeCurrency,
     isArbitrumOne,
+    isArbitrumOneEthereumPair,
     isArbitrumSepolia,
     isParentChainArbitrumOne,
     isParentChainArbitrumSepolia,
     isOrbitChain,
     childChain.id,
     getBalance,
+    getWithdrawalPyusdToken,
   ]);
 
   const storeNewToken = async () => {
@@ -440,8 +483,8 @@ function TokensPanel({
       // Try to add the token as a regular bridged token
       await token.add(newToken);
       isSuccessful = true;
-    } catch (ex: any) {
-      if (ex.name === 'TokenDisabledError') {
+    } catch (ex: unknown) {
+      if (ex instanceof Error && ex.name === 'TokenDisabledError') {
         error = 'This token is currently paused in the bridge.';
       }
     }
@@ -479,18 +522,31 @@ function TokensPanel({
   const rowRenderer = useCallback(
     (virtualizedProps: ListRowProps) => {
       const address = tokensToShow[virtualizedProps.index];
-      let token: ERC20BridgeToken | null = null;
+      if (!address) {
+        return null;
+      }
 
-      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        if (isOrbitChain) {
-          token = usdcToken;
-        } else {
-          token = isTokenArbitrumOneNativeUSDC(address)
-            ? ARB_ONE_NATIVE_USDC_TOKEN
-            : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
-        }
-      } else if (address) {
-        token = tokensFromLists[address] || tokensFromUser[address] || null;
+      const normalizedAddress = address.toLowerCase();
+      let token: ERC20BridgeToken | null =
+        getWithdrawalPyusdToken(address) ??
+        tokensFromUser[normalizedAddress] ??
+        tokensFromLists[normalizedAddress] ??
+        null;
+
+      if (isTokenArbitrumOneNativeUSDC(address) && !token?.l2Address) {
+        token = ARB_ONE_NATIVE_USDC_TOKEN;
+      }
+
+      if (isTokenArbitrumSepoliaNativeUSDC(address)) {
+        token = ARB_SEPOLIA_NATIVE_USDC_TOKEN;
+      }
+
+      if (
+        token &&
+        (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) &&
+        isOrbitChain
+      ) {
+        token = usdcToken;
       }
 
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
@@ -515,12 +571,13 @@ function TokensPanel({
     },
     [
       tokensToShow,
-      tokensFromLists,
-      tokensFromUser,
       onTokenSelected,
       usdcToken,
       isOrbitChain,
       walletAddress,
+      tokensFromLists,
+      getWithdrawalPyusdToken,
+      tokensFromUser,
     ],
   );
 
@@ -597,13 +654,20 @@ export function TokenSearch(props: UseDialogProps) {
       return;
     }
 
+    if (
+      isApeChainEthSelection({
+        tokenAddress: _token.address,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      })
+    ) {
+      setSelectedToken(constants.AddressZero);
+      return;
+    }
+
     if (addressesEqual(_token.address, constants.AddressZero)) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setSelectedToken(constants.AddressZero);
-      } else {
-        // Map native currency to null for other chains
-        setSelectedToken(null);
-      }
+      // Map native currency to null for other chains
+      setSelectedToken(null);
       return;
     }
 
@@ -620,8 +684,14 @@ export function TokenSearch(props: UseDialogProps) {
       const isL2NativeUSDC =
         isTokenArbitrumOneNativeUSDC(_token.address) ||
         isTokenArbitrumSepoliaNativeUSDC(_token.address);
+      const importLookupAddress = getBridgeTokenLookupAddress(_token);
 
       if (isL2NativeUSDC) {
+        setSelectedToken(_token.address);
+        return;
+      }
+
+      if (importLookupAddress && !addressesEqual(importLookupAddress, _token.address)) {
         setSelectedToken(_token.address);
         return;
       }
@@ -641,10 +711,10 @@ export function TokenSearch(props: UseDialogProps) {
         token.updateTokenData(_token.address);
         setSelectedToken(_token.address);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.warn(error);
 
-      if (error.name === 'TokenDisabledError') {
+      if (error instanceof Error && error.name === 'TokenDisabledError') {
         warningToast('This token is currently paused in the bridge');
       }
     }

@@ -6,13 +6,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../../components/TransferPanel/TokenSearchUtils';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
+import {
+  PYUSD_BLACK_LOGO_URI,
+  getArbitrumOnePyusdToken,
+  getEthereumPyusdToken,
+} from '../../util/PyusdUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
 import { useDestinationToken } from '../useDestinationToken';
-import { useNetworks } from '../useNetworks';
+import { UseNetworksState, useNetworks } from '../useNetworks';
 import { useSelectedToken } from '../useSelectedToken';
 
 type ArbQueryParams = DecodedValueMap<typeof queryParamProviderOptions.params>;
@@ -53,12 +60,26 @@ vi.mock('../../app/api/crosschain-transfers/utils', () => ({
   getTokenOverride: vi.fn(),
 }));
 
+vi.mock('../../components/TransferPanel/TokenSearchUtils', () => ({
+  useTokensFromLists: vi.fn(),
+}));
+
+function makeNetworksState(sourceChainId: ChainId, destinationChainId: ChainId): UseNetworksState {
+  return {
+    sourceChain: getWagmiChain(sourceChainId),
+    sourceChainProvider: getProviderForChainId(sourceChainId),
+    destinationChain: getWagmiChain(destinationChainId),
+    destinationChainProvider: getProviderForChainId(destinationChainId),
+  };
+}
+
 describe.sequential('useDestinationToken', () => {
   const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
   const mockedUseNetworks = vi.mocked(useNetworks);
   const mockedUseAppState = vi.mocked(useAppState);
   const mockedGetTokenOverride = vi.mocked(getTokenOverride);
+  const mockedUseTokensFromLists = vi.mocked(useTokensFromLists);
 
   const mockSelectedToken: ERC20BridgeToken = {
     type: TokenType.ERC20,
@@ -89,14 +110,13 @@ describe.sequential('useDestinationToken', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetTokenOverride.mockReturnValue({
+      source: null,
+      destination: null,
+    });
 
     mockedUseNetworks.mockReturnValue([
-      {
-        sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-      },
+      makeNetworksState(ChainId.Ethereum, ChainId.ArbitrumOne),
       vi.fn(),
     ]);
 
@@ -109,6 +129,7 @@ describe.sequential('useDestinationToken', () => {
         },
       },
     } as Context['state']);
+    mockedUseTokensFromLists.mockReturnValue({});
 
     mockedUseSelectedToken.mockReturnValue([mockSelectedToken, vi.fn()]);
 
@@ -138,6 +159,51 @@ describe.sequential('useDestinationToken', () => {
 
       const { result } = renderHook(useDestinationToken);
       expect(result.current).toBeNull();
+    });
+
+    it('maps Ethereum PayPal USD deposits to Arbitrum One PayPal USD when both query params are the L1 address', () => {
+      mockedUseSelectedToken.mockReturnValue([
+        getEthereumPyusdToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+        vi.fn(),
+      ]);
+
+      mockedUseArbQueryParams.mockReturnValue([
+        {
+          ...defaultQueryParams,
+          token: CommonAddress.Ethereum.PYUSD,
+          destinationToken: CommonAddress.Ethereum.PYUSD,
+        },
+        vi.fn(),
+      ]);
+
+      mockedGetTokenOverride.mockImplementation(({ fromToken }) =>
+        fromToken === CommonAddress.Ethereum.PYUSD
+          ? {
+              source: getEthereumPyusdToken({
+                priceUSD: 1,
+                listIds: new Set(['1']),
+              }),
+              destination: getArbitrumOnePyusdToken(),
+            }
+          : {
+              source: null,
+              destination: null,
+            },
+      );
+
+      const { result } = renderHook(useDestinationToken);
+
+      expect(result.current).toMatchObject({
+        ...getArbitrumOnePyusdToken({
+          priceUSD: 1,
+          listIds: new Set(['1']),
+        }),
+        logoURI: PYUSD_BLACK_LOGO_URI,
+      });
+      expect(result.current?.logoURI).toBe(PYUSD_BLACK_LOGO_URI);
     });
   });
 
@@ -174,6 +240,37 @@ describe.sequential('useDestinationToken', () => {
 
         const { result } = renderHook(useDestinationToken);
         expect(result.current).toEqual(mockDestinationToken);
+      });
+
+      it('prefers token-list metadata for explicitly selected destination tokens', () => {
+        const tokenListDestinationToken = {
+          ...mockDestinationToken,
+          logoURI: 'https://example.com/black.png',
+        };
+
+        mockedUseArbQueryParams.mockReturnValue([
+          { ...defaultQueryParams, destinationToken: mockDestinationToken.address },
+          vi.fn(),
+        ]);
+        mockedUseAppState.mockReturnValue({
+          app: {
+            arbTokenBridge: {
+              bridgeTokens: {
+                [mockDestinationToken.address.toLowerCase()]: {
+                  ...mockDestinationToken,
+                  logoURI: 'https://example.com/blue.png',
+                },
+              },
+            },
+          },
+        } as Context['state']);
+        mockedUseTokensFromLists.mockReturnValue({
+          [mockDestinationToken.address.toLowerCase()]: tokenListDestinationToken,
+        });
+
+        const { result } = renderHook(useDestinationToken);
+
+        expect(result.current?.logoURI).toBe(tokenListDestinationToken.logoURI);
       });
 
       it('should handle case insensitive address lookup in bridgeTokens', () => {
@@ -231,12 +328,7 @@ describe.sequential('useDestinationToken', () => {
 
     it('should handle ApeChain as source chain', () => {
       mockedUseNetworks.mockReturnValue([
-        {
-          sourceChain: getWagmiChain(ChainId.ApeChain),
-          sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
-          destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-          destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
-        },
+        makeNetworksState(ChainId.ApeChain, ChainId.ArbitrumOne),
         vi.fn(),
       ]);
 

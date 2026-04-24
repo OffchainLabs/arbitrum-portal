@@ -13,6 +13,11 @@ import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import {
+  PYUSD_BLACK_LOGO_URI,
+  isTokenArbitrumOnePyusd,
+  isTokenEthereumPyusd,
+} from '@/bridge/util/PyusdUtils';
 
 import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
@@ -116,14 +121,29 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
 
 /** Override token metadata (symbol, name, ...) for special cases (e.g., USDT) */
 function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: string } {
+  if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD' });
+  }
+
+  if (isTokenArbitrumOnePyusd(token.address) && chainId === ChainId.ArbitrumOne) {
+    return withOverriddenNameAndSymbol(token, { symbol: 'PYUSD', name: 'PayPal USD' });
+  }
+
   if (isUsdtToken(token.address, chainId)) {
-    return {
-      ...token,
-      name: 'USDT',
-      symbol: 'USDT',
-    };
+    return withOverriddenNameAndSymbol(token, { symbol: 'USDT', name: 'USDT' });
   }
   return token;
+}
+
+function withOverriddenNameAndSymbol(
+  token: Token,
+  { symbol, name }: { symbol: string; name: string },
+): Token & { name?: string } {
+  return {
+    ...token,
+    symbol,
+    name,
+  };
 }
 
 /**
@@ -131,6 +151,20 @@ function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: 
  * LiFi returns TrustWallet URLs, but we want to use local logos
  */
 function overrideTokenLogo(token: Token, chainId: number): Token {
+  if (isTokenEthereumPyusd(token.address) && chainId === ChainId.Ethereum) {
+    return {
+      ...token,
+      logoURI: PYUSD_BLACK_LOGO_URI,
+    };
+  }
+
+  if (isTokenArbitrumOnePyusd(token.address) && chainId === ChainId.ArbitrumOne) {
+    return {
+      ...token,
+      logoURI: PYUSD_BLACK_LOGO_URI,
+    };
+  }
+
   if (addressesEqual(token.address, constants.AddressZero)) {
     if (chainId === ChainId.ApeChain) {
       return {
@@ -154,7 +188,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
   return token;
 }
 
-function applyOverrides(token: Token, chainId: number): Token {
+export function applyOverrides(token: Token, chainId: number): Token {
   return overrideTokenLogo(overrideTokenMetadata(token, chainId), chainId);
 }
 

@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
-import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
+import { isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
 import { useDestinationToken } from '../../hooks/useDestinationToken';
@@ -32,30 +32,17 @@ export function DestinationTokenButton({
 
   const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
-  const tokenOverride = getTokenOverride({
-    destinationChainId: networks.destinationChain.id,
-    fromToken: destinationToken?.address,
-    sourceChainId: networks.sourceChain.id,
-  });
 
   const tokenSymbol =
     tokenInfo?.symbol ||
-    (tokenOverride.destination
-      ? sanitizeTokenSymbol(tokenOverride.destination.symbol, {
-          erc20L1Address: tokenOverride.destination.address,
+    (destinationToken
+      ? sanitizeTokenSymbol(destinationToken.symbol, {
+          erc20L1Address: destinationToken.address,
           chainId: networks.destinationChain.id,
         })
-      : destinationToken
-        ? destinationToken?.symbol
-        : nativeCurrency.symbol);
+      : nativeCurrency.symbol);
 
-  const tokenLogoSrc =
-    tokenInfo?.logoUrl ||
-    (tokenOverride.destination
-      ? tokenOverride.destination?.logoURI
-      : destinationToken
-        ? destinationToken?.logoURI
-        : nativeCurrency.logoUrl);
+  const tokenLogoSrc = tokenInfo?.logoUrl || destinationToken?.logoURI || nativeCurrency.logoUrl;
 
   return (
     <>

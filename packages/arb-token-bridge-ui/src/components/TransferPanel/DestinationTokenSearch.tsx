@@ -14,6 +14,7 @@ import { useBalances } from '../../hooks/useBalances';
 import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { isApeChainEthDestinationSelection } from '../../util/BridgeTokenAddressUtils';
 import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -230,14 +231,17 @@ export function DestinationTokenSearch(props: UseDialogProps) {
       return;
     }
 
+    if (isApeChainEthDestinationSelection(_token, networks.destinationChain.id)) {
+      setQueryParams({ destinationToken: constants.AddressZero });
+      return;
+    }
+
     /**
      * When going from chain that have WETH, it maps to ETH and WETH on the destination chain.
      * In this case, we need to differentiate between ETH (l2Address: zero) and WETH (l2Address: 0x...)
      */
     if (_token.address === constants.AddressZero) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setQueryParams({ destinationToken: constants.AddressZero });
-      } else if (addressesEqual(_token.l2Address, constants.AddressZero)) {
+      if (addressesEqual(_token.l2Address, constants.AddressZero)) {
         // Map native currency to undefined for other chains
         setQueryParams({ destinationToken: undefined });
       } else {

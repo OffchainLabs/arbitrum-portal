@@ -3,8 +3,7 @@ import { useAccount } from 'wagmi';
 
 import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
 import { addressesEqual } from '../util/AddressUtils';
-import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
-import { isNetwork } from '../util/networks';
+import { getBridgeTokenDestinationBalanceAddress } from '../util/BridgeTokenAddressUtils';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useBalance } from './useBalance';
@@ -20,7 +19,6 @@ export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): Bi
   const [{ destinationAddress }] = useArbQueryParams();
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
-  const { isOrbitChain: isDestinationOrbitChain } = isNetwork(networks.destinationChain.id);
   const destinationChainNativeCurrency = useNativeCurrency({
     provider: networks.destinationChainProvider,
   });
@@ -51,35 +49,17 @@ export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): Bi
       : constants.Zero;
   }
 
-  const tokenAddressLowercased = token.address.toLowerCase();
-
   if (!erc20DestinationChainBalances) {
     return constants.Zero;
   }
 
-  // In deposit mode: destination = child chain, use l2Address
-  if (isDepositMode) {
-    const tokenChildChainAddress = token.l2Address?.toLowerCase();
+  const destinationBalanceAddress = getBridgeTokenDestinationBalanceAddress(token, {
+    isDepositMode,
+  });
 
-    // token that has never been deposited so it doesn't have an l2Address
-    // this should not happen because user shouldn't be able to select it
-    if (!tokenChildChainAddress) {
-      return constants.Zero;
-    }
-
-    return erc20DestinationChainBalances[tokenChildChainAddress] ?? constants.Zero;
+  if (destinationBalanceAddress) {
+    return erc20DestinationChainBalances[destinationBalanceAddress.toLowerCase()] ?? constants.Zero;
   }
 
-  // In withdrawal mode: destination = parent chain, use parent address
-  if (
-    isTokenArbitrumOneNativeUSDC(tokenAddressLowercased) ||
-    isTokenArbitrumSepoliaNativeUSDC(tokenAddressLowercased)
-  ) {
-    // because we read parent chain address, make sure we don't read Orbit chain's address if it's the destination chain
-    if (!isDestinationOrbitChain) {
-      return erc20DestinationChainBalances[tokenAddressLowercased] ?? constants.Zero;
-    }
-  }
-
-  return erc20DestinationChainBalances[tokenAddressLowercased] ?? constants.Zero;
+  return constants.Zero;
 }

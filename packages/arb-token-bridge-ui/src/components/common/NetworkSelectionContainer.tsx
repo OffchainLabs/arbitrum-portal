@@ -27,7 +27,7 @@ import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
-import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
+import { useNetworkSwitchSelectedTokenAddress } from '../TransferPanel/hooks/useNetworkSwitchSelectedTokenAddress';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
@@ -474,12 +474,12 @@ export const NetworkSelectionContainer = React.memo(
       type: 'source' | 'destination';
     },
   ) => {
-    const isSwapTransfer = useIsSwapTransfer();
     const [, setSelectedToken] = useSelectedToken();
     const [networks, setNetworks] = useNetworks();
     const [, setQueryParams] = useArbQueryParams();
     const { embedMode } = useMode();
     const isSource = props.type === 'source';
+    const selectedTokenAddressAfterSwitch = useNetworkSwitchSelectedTokenAddress();
 
     const selectedChainId = isSource ? networks.sourceChain.id : networks.destinationChain.id;
 
@@ -502,8 +502,8 @@ export const NetworkSelectionContainer = React.memo(
             destinationChainId: networks.sourceChain.id,
           });
 
-          if (isSwapTransfer) {
-            setSelectedToken(null);
+          if (typeof selectedTokenAddressAfterSwitch !== 'undefined') {
+            setSelectedToken(selectedTokenAddressAfterSwitch);
           }
           return;
         }
@@ -518,7 +518,15 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken(null);
         setQueryParams({ destinationAddress: undefined });
       },
-      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, props, isSwapTransfer],
+      [
+        isSource,
+        networks,
+        setNetworks,
+        setSelectedToken,
+        setQueryParams,
+        props,
+        selectedTokenAddressAfterSwitch,
+      ],
     );
 
     return (

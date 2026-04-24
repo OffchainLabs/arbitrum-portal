@@ -51,6 +51,7 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getBridgeTokenLookupAddress } from '../../util/BridgeTokenAddressUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
@@ -121,7 +122,8 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token },
+      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridgeLoaded,
       warningTokens,
     },
   } = useAppState();
@@ -244,11 +246,39 @@ export function TransferPanel() {
       return undefined;
     }
 
+    if (!arbTokenBridgeLoaded || typeof bridgeTokens === 'undefined') {
+      return undefined;
+    }
+
+    const importLookupAddress = getBridgeTokenLookupAddress({
+      address: tokenFromSearchParams,
+      importLookupAddress: selectedToken?.importLookupAddress,
+    });
+
+    if (!importLookupAddress) {
+      return undefined;
+    }
+
+    const normalizedImportLookupAddress = importLookupAddress.toLowerCase();
+    const normalizedTokenAddress = tokenFromSearchParams.toLowerCase();
+
     return (
-      typeof tokensFromLists[tokenFromSearchParams] !== 'undefined' ||
-      typeof tokensFromUser[tokenFromSearchParams] !== 'undefined'
+      (selectedToken?.listIds.size ?? 0) > 0 ||
+      typeof bridgeTokens[normalizedImportLookupAddress] !== 'undefined' ||
+      typeof tokensFromLists[normalizedImportLookupAddress] !== 'undefined' ||
+      typeof tokensFromUser[normalizedImportLookupAddress] !== 'undefined' ||
+      typeof tokensFromUser[normalizedTokenAddress] !== 'undefined'
     );
-  }, [isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
+  }, [
+    arbTokenBridgeLoaded,
+    bridgeTokens,
+    isLoadingTokenLists,
+    selectedToken?.listIds.size,
+    selectedToken?.importLookupAddress,
+    tokenFromSearchParams,
+    tokensFromLists,
+    tokensFromUser,
+  ]);
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
@@ -563,13 +593,11 @@ export function TransferPanel() {
       }
 
       const destinationChainErc20Address =
-        tokenOverrides.destination?.address || isDepositMode
-          ? selectedToken?.l2Address
-          : selectedToken?.address;
+        tokenOverrides.destination?.address ||
+        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
       const sourceChainErc20Address =
-        tokenOverrides.source?.address || isDepositMode
-          ? selectedToken?.address
-          : selectedToken?.l2Address;
+        tokenOverrides.source?.address ||
+        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,

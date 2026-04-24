@@ -34,16 +34,16 @@ import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
-import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
+import { getNetworkSwitchQueryParams } from './hooks/getNetworkSwitchQueryParams';
+import { useNetworkSwitchSelectedTokenAddress } from './hooks/useNetworkSwitchSelectedTokenAddress';
 
 export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
 
-  const [{ theme }] = useArbQueryParams();
+  const [{ theme }, setQueryParams] = useArbQueryParams();
 
-  const [networks, setNetworks] = useNetworks();
-  const [, setSelectedToken] = useSelectedToken();
-  const isSwapTransfer = useIsSwapTransfer();
+  const [networks] = useNetworks();
+  const selectedTokenAddressAfterSwitch = useNetworkSwitchSelectedTokenAddress();
 
   const { isFeatureDisabled } = useDisabledFeatures();
 
@@ -91,14 +91,14 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
             return;
           }
 
-          setNetworks({
-            sourceChainId: networks.destinationChain.id,
-            destinationChainId: networks.sourceChain.id,
-          });
-
-          if (isSwapTransfer) {
-            setSelectedToken(null);
-          }
+          setQueryParams(
+            getNetworkSwitchQueryParams({
+              sourceChainId: networks.sourceChain.id,
+              destinationChainId: networks.destinationChain.id,
+              disableTransfersToNonArbitrumChains,
+              selectedTokenAddressAfterSwitch,
+            }),
+          );
         }}
         aria-label="Switch Networks"
         {...props}

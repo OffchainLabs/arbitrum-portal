@@ -1,7 +1,15 @@
 import { constants, utils } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { LifiCrosschainTransfersRoute, findCheapestRoute, findFastestRoute } from './lifi';
+import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { PYUSD_BLACK_LOGO_URI } from '../../../util/PyusdUtils';
+import {
+  LifiCrosschainTransfersRoute,
+  applyOverrides,
+  findCheapestRoute,
+  findFastestRoute,
+} from './lifi';
 
 const eth = (value: string) => utils.parseEther(value).toString();
 
@@ -103,5 +111,35 @@ describe('findFastestRoute', () => {
 
   it('returns undefined for empty array', () => {
     expect(findFastestRoute([])).toBeUndefined();
+  });
+});
+
+describe('applyOverrides', () => {
+  it('uses the Ethereum PayPal USD logo for Ethereum PayPal USD', () => {
+    expect(
+      applyOverrides(
+        {
+          address: CommonAddress.Ethereum.PYUSD,
+          symbol: 'PYUSD',
+          decimals: 6,
+          logoURI: 'https://example.com/blue.png',
+        },
+        ChainId.Ethereum,
+      ).logoURI,
+    ).toBe(PYUSD_BLACK_LOGO_URI);
+  });
+
+  it('uses the same black PayPal USD logo for Arbitrum One PayPal USD', () => {
+    expect(
+      applyOverrides(
+        {
+          address: CommonAddress.ArbitrumOne.PYUSD,
+          symbol: 'PYUSD',
+          decimals: 6,
+          logoURI: 'https://example.com/blue.png',
+        },
+        ChainId.ArbitrumOne,
+      ).logoURI,
+    ).toBe(PYUSD_BLACK_LOGO_URI);
   });
 });
