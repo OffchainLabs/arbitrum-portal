@@ -47,7 +47,8 @@
     //
     // https://github.com/advisories/GHSA-w5hq-g745-h8pq
     // uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided
-    // Reason to ignore: Patched version (v14.0.0) is a major bump. Transitive dependency via wagmi, metamask, lifi, and others; not called with caller-provided buffers in our code paths.
+    // Reason to ignore temporarily: Transitive dependency via wagmi, metamask, lifi, and others; current code paths do not call the vulnerable API with caller-provided buffers.
+    // TODO(security): Replace this allowlist entry by bumping the upstream dependencies or adding a Yarn `resolutions` override to a non-vulnerable `uuid` version as soon as compatibility allows, then remove this exception.
     // from: app>wagmi>@wagmi/connectors>... and arb-token-bridge-ui>@lifi/sdk>...
     "GHSA-w5hq-g745-h8pq",
   ],
