@@ -47,5 +47,10 @@ export function useNetworkSwitchSelectedTokenAddress() {
     }
 
     return nextSelectedTokenAddress;
-  }, [destinationToken, isSwapTransfer, selectedToken?.address, selectedToken?.importLookupAddress]);
+  }, [
+    destinationToken,
+    isSwapTransfer,
+    selectedToken?.address,
+    selectedToken?.importLookupAddress,
+  ]);
 }

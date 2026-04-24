@@ -11,8 +11,8 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { Loader } from '../common/atoms/Loader';
-import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 import { TokenLogo } from './TokenLogo';
+import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 export type TokenButtonOptions = {
   symbol?: string;
@@ -37,7 +37,7 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): JSX.
   const resolvedToken =
     selectedToken ??
     (normalizedTokenAddress
-      ? tokensFromUser[normalizedTokenAddress] ?? tokensFromLists[normalizedTokenAddress]
+      ? (tokensFromUser[normalizedTokenAddress] ?? tokensFromLists[normalizedTokenAddress])
       : null);
 
   const tokenSymbol = useMemo(() => {

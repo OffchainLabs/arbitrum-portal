@@ -5,11 +5,11 @@ import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import {
   useTokensFromLists,
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
-import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import { ether } from '../constants';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual } from '../util/AddressUtils';
@@ -181,11 +181,7 @@ export const useSelectedToken = (): [
     }
 
     return null;
-  }, [
-    networks.destinationChain.id,
-    networks.sourceChain.id,
-    tokenFromSearchParams,
-  ]);
+  }, [networks.destinationChain.id, networks.sourceChain.id, tokenFromSearchParams]);
 
   const explicitNativeToken = useMemo(() => {
     if (
