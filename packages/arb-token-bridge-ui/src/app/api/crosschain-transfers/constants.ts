@@ -1,8 +1,14 @@
 import { ChainId } from '../../../types/ChainId';
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
-  [ChainId.Ethereum]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition],
+  [ChainId.Ethereum]: [
+    ChainId.ArbitrumOne,
+    ChainId.ArbitrumNova,
+    ChainId.ApeChain,
+    ChainId.Superposition,
+  ],
   [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.Superposition],
+  [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
   [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Superposition],
   [ChainId.Superposition]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
   [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition],
