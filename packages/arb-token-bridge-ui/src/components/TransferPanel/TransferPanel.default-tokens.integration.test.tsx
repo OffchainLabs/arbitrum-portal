@@ -1,278 +1,179 @@
 import { describe, it } from 'vitest';
 
-import { ETHER_TOKEN_LOGO } from '@/bridge/constants';
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
-
 import {
-  APE_TOKEN_LOGO,
   type RouteTokenCase,
-  type TokenExpectation,
-  USDC_TOKEN_LOGO,
-  WETH_TOKEN_LOGO,
+  type TokenPanelExpectations,
+  apeTokenByChain,
+  nativeApeTokenExpectation,
+  nativeEthTokenExpectation,
   runTransferPanelScenario,
   setupTransferPanelLifiIntegrationSuite,
+  usdcTokenByChain,
+  usdtTokenByChain,
+  wethTokenByChain,
 } from './TransferPanel.integration.helpers';
-
-const defaultTokenCases: RouteTokenCase[] = [
-  {
-    sourceChain: 'base',
-    destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'APE' },
-  },
-  {
-    sourceChain: 'base',
-    destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'base',
-    destinationChain: 'arbitrum-one',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'arbitrum-one',
-    destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'APE' },
-  },
-  {
-    sourceChain: 'arbitrum-one',
-    destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'arbitrum-one',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'APE' },
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'arbitrum-one',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'ethereum',
-    destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'APE' },
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'APE' },
-  },
-  {
-    sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'ETH' },
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'WETH' },
-  },
-];
 
 type DefaultTokenPanelCase = {
   sourceChain: RouteTokenCase['sourceChain'];
   destinationChain: RouteTokenCase['destinationChain'];
-  expectedSourcePanelSymbols: TokenExpectation[];
-  expectedDestinationPanelSymbols: TokenExpectation[];
+  expectedSourcePanelTokens: TokenPanelExpectations;
+  expectedDestinationPanelTokens: TokenPanelExpectations;
 };
 
 const defaultTokenPanelCases: DefaultTokenPanelCase[] = [
   {
     sourceChain: 'base',
     destinationChain: 'apechain',
-    expectedSourcePanelSymbols: [
-      {
-        symbol: 'APE',
-        logoURI: APE_TOKEN_LOGO,
-      },
-    ],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
-      { symbol: 'USDC.e' },
-      { symbol: 'USDT' },
-      { symbol: 'WETH' },
+    expectedSourcePanelTokens: [apeTokenByChain.base],
+    expectedDestinationPanelTokens: [
+      nativeApeTokenExpectation,
+      usdcTokenByChain.apeChain,
+      usdtTokenByChain.apeChain,
+      wethTokenByChain.apeChain,
     ],
   },
   {
     sourceChain: 'base',
     destinationChain: 'superposition',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC.e', logoURI: USDC_TOKEN_LOGO, contract: CommonAddress.Superposition.USDCe },
-      {
-        symbol: 'WETH',
-        logoURI: WETH_TOKEN_LOGO,
-        contract: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
-      },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.superposition,
+      wethTokenByChain.superposition,
     ],
   },
   {
     sourceChain: 'base',
     destinationChain: 'arbitrum-one',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC', contract: CommonAddress.ArbitrumOne.USDC },
-      { symbol: 'USDT', contract: CommonAddress.ArbitrumOne.USDT },
-      { symbol: 'WETH', contract: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.arbitrumOne,
+      usdtTokenByChain.arbitrumOne,
+      wethTokenByChain.arbitrumOne,
     ],
   },
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'apechain',
-    expectedSourcePanelSymbols: [
-      {
-        symbol: 'APE',
-        logoURI: APE_TOKEN_LOGO,
-      },
-    ],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
-      { symbol: 'USDC.e' },
-      { symbol: 'USDT' },
-      { symbol: 'WETH' },
+    expectedSourcePanelTokens: [apeTokenByChain.arbitrumOne],
+    expectedDestinationPanelTokens: [
+      nativeApeTokenExpectation,
+      usdcTokenByChain.apeChain,
+      usdtTokenByChain.apeChain,
+      wethTokenByChain.apeChain,
     ],
   },
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'superposition',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC.e', contract: CommonAddress.Superposition.USDCe },
-      { symbol: 'WETH', contract: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.superposition,
+      wethTokenByChain.superposition,
     ],
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'arbitrum-one',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      {
-        symbol: 'APE',
-        logoURI: APE_TOKEN_LOGO,
-      },
-      { symbol: 'USDC', contract: CommonAddress.ArbitrumOne.USDC },
-      { symbol: 'USDT', contract: CommonAddress.ArbitrumOne.USDT },
-      { symbol: 'WETH', contract: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' },
-      { symbol: 'ETH', contract: 'native' },
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [
+      apeTokenByChain.arbitrumOne,
+      usdcTokenByChain.arbitrumOne,
+      usdtTokenByChain.arbitrumOne,
+      wethTokenByChain.arbitrumOne,
+      nativeEthTokenExpectation,
     ],
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'arbitrum-one',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC', contract: CommonAddress.ArbitrumOne.USDC },
-      { symbol: 'WETH', contract: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.arbitrumOne,
+      wethTokenByChain.arbitrumOne,
     ],
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourcePanelSymbols: [
-      {
-        symbol: 'APE',
-        logoURI: APE_TOKEN_LOGO,
-      },
-    ],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'APE', logoURI: APE_TOKEN_LOGO },
-      { symbol: 'USDC.e' },
-      { symbol: 'USDT' },
-      { symbol: 'WETH' },
+    expectedSourcePanelTokens: [apeTokenByChain.ethereum],
+    expectedDestinationPanelTokens: [
+      nativeApeTokenExpectation,
+      usdcTokenByChain.apeChain,
+      usdtTokenByChain.apeChain,
+      wethTokenByChain.apeChain,
     ],
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      {
-        symbol: 'APE',
-        logoURI: APE_TOKEN_LOGO,
-      },
-      { symbol: 'USDC' },
-      { symbol: 'USDT' },
-      { symbol: 'WETH' },
-      { symbol: 'ETH' },
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [
+      apeTokenByChain.ethereum,
+      usdcTokenByChain.ethereum,
+      usdtTokenByChain.ethereum,
+      wethTokenByChain.ethereum,
+      nativeEthTokenExpectation,
     ],
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC.e', contract: CommonAddress.Superposition.USDCe },
-      { symbol: 'WETH', contract: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.superposition,
+      wethTokenByChain.superposition,
     ],
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC', contract: CommonAddress.Ethereum.USDC },
-      { symbol: 'WETH', contract: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.ethereum,
+      wethTokenByChain.ethereum,
     ],
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourcePanelSymbols: [{ symbol: 'APE', logoURI: APE_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      { symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO, contract: 'native' },
-      { symbol: 'USDC.e', logoURI: USDC_TOKEN_LOGO, contract: CommonAddress.Superposition.USDCe },
-      {
-        symbol: 'WETH',
-        logoURI: WETH_TOKEN_LOGO,
-        contract: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
-      },
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      usdcTokenByChain.superposition,
+      wethTokenByChain.superposition,
     ],
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourcePanelSymbols: [{ symbol: 'ETH', logoURI: ETHER_TOKEN_LOGO }],
-    expectedDestinationPanelSymbols: [
-      {
-        symbol: 'WETH',
-        logoURI: WETH_TOKEN_LOGO,
-      },
-      { symbol: 'APE' },
-      { symbol: 'USDC.e' },
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      wethTokenByChain.apeChain,
+      nativeApeTokenExpectation,
+      usdcTokenByChain.apeChain,
     ],
   },
 ];
+
+const defaultTokenCases: RouteTokenCase[] = defaultTokenPanelCases.map(
+  ({
+    sourceChain,
+    destinationChain,
+    expectedSourcePanelTokens,
+    expectedDestinationPanelTokens,
+  }) => ({
+    sourceChain,
+    destinationChain,
+    expectedSourceToken: expectedSourcePanelTokens[0],
+    expectedDestinationToken: expectedDestinationPanelTokens[0],
+  }),
+);
 
 describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
   setupTransferPanelLifiIntegrationSuite();
@@ -294,25 +195,16 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
     async ({
       sourceChain,
       destinationChain,
-      expectedSourcePanelSymbols,
-      expectedDestinationPanelSymbols,
+      expectedSourcePanelTokens,
+      expectedDestinationPanelTokens,
     }) => {
-      const sourcePanelTokenExpectation = expectedSourcePanelSymbols[0];
-      const destinationPanelTokenExpectation = expectedDestinationPanelSymbols[0];
-
-      if (!sourcePanelTokenExpectation || !destinationPanelTokenExpectation) {
-        throw new Error(
-          `Missing primary token expectation for "${sourceChain}" -> "${destinationChain}".`,
-        );
-      }
-
       await runTransferPanelScenario({
         sourceChain,
         destinationChain,
-        expectedSourceToken: sourcePanelTokenExpectation,
-        expectedDestinationToken: destinationPanelTokenExpectation,
-        expectedSourcePanelTokens: expectedSourcePanelSymbols,
-        expectedDestinationPanelTokens: expectedDestinationPanelSymbols,
+        expectedSourceToken: expectedSourcePanelTokens[0],
+        expectedDestinationToken: expectedDestinationPanelTokens[0],
+        expectedSourcePanelTokens,
+        expectedDestinationPanelTokens,
       });
     },
   );

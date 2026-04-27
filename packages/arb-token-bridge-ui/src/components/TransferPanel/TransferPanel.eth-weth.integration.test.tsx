@@ -3,46 +3,50 @@ import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
+  apeTokenExpectation,
+  nativeApeTokenExpectation,
+  nativeEthTokenExpectation,
   runTransferPanelScenario,
   setupTransferPanelLifiIntegrationSuite,
+  wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
 const ethWethCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'WETH' },
+    expectedSourceToken: apeTokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: nativeApeTokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: nativeEthTokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: nativeEthTokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'APE' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: nativeApeTokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'ETH' },
-    expectedDestinationToken: { symbol: 'WETH' },
+    expectedSourceToken: nativeEthTokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
   },
 ];
 

@@ -5,44 +5,46 @@ import {
   runTransferPanelScenario,
   setupTransferPanelLifiIntegrationSuite,
   usdcAddressByChain,
+  usdcETokenExpectation,
+  usdcTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
 const usdcCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'USDC' },
-    expectedDestinationToken: { symbol: 'USDC.e' },
+    expectedSourceToken: usdcTokenExpectation,
+    expectedDestinationToken: usdcETokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'USDC' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: usdcTokenExpectation,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'USDC' },
-    expectedDestinationToken: { symbol: 'USDC.e' },
+    expectedSourceToken: usdcTokenExpectation,
+    expectedDestinationToken: usdcETokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'USDC' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: usdcTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'USDC.e' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: usdcETokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'USDC.e' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: usdcETokenExpectation,
   },
 ];
 
