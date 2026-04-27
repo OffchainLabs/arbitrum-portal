@@ -26,12 +26,19 @@ export type TokenExpectation = {
   logoURI?: string;
   contract?: string | 'native';
 };
+export type TokenExpectationWithLogo = TokenExpectation & { logoURI: string };
+export type TokenPanelExpectation = TokenExpectationWithLogo & {
+  contract: NonNullable<TokenExpectation['contract']>;
+};
+export type TokenPanelExpectations = [TokenPanelExpectation, ...TokenPanelExpectation[]];
 
 export const APE_TOKEN_LOGO = '/images/ApeTokenLogo.svg';
 export const WETH_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
 export const USDC_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png';
+export const USDT_TOKEN_LOGO =
+  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png';
 
 const tokenLogosBySymbol: Record<string, string> = {
   'ETH': ETHER_TOKEN_LOGO,
@@ -39,6 +46,74 @@ const tokenLogosBySymbol: Record<string, string> = {
   'WETH': WETH_TOKEN_LOGO,
   'USDC': USDC_TOKEN_LOGO,
   'USDC.e': USDC_TOKEN_LOGO,
+  'USDT': USDT_TOKEN_LOGO,
+};
+
+export function withContract(
+  tokenExpectation: TokenExpectationWithLogo,
+  contract: TokenPanelExpectation['contract'],
+): TokenPanelExpectation {
+  return {
+    ...tokenExpectation,
+    contract,
+  };
+}
+
+export const ethTokenExpectation = {
+  symbol: 'ETH',
+  logoURI: ETHER_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const nativeEthTokenExpectation = {
+  ...ethTokenExpectation,
+  contract: 'native',
+} satisfies TokenPanelExpectation;
+export const apeTokenExpectation = {
+  symbol: 'APE',
+  logoURI: APE_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const nativeApeTokenExpectation = {
+  ...apeTokenExpectation,
+  contract: 'native',
+} satisfies TokenPanelExpectation;
+export const usdcTokenExpectation = {
+  symbol: 'USDC',
+  logoURI: USDC_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const usdcETokenExpectation = {
+  symbol: 'USDC.e',
+  logoURI: USDC_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const usdtTokenExpectation = {
+  symbol: 'USDT',
+  logoURI: USDT_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const wethTokenExpectation = {
+  symbol: 'WETH',
+  logoURI: WETH_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+
+export const apeTokenByChain = {
+  ethereum: withContract(apeTokenExpectation, CommonAddress.Ethereum.APE),
+  arbitrumOne: withContract(apeTokenExpectation, CommonAddress.ArbitrumOne.APE),
+  base: withContract(apeTokenExpectation, CommonAddress.Base.APE),
+  apeChain: nativeApeTokenExpectation,
+};
+export const usdcTokenByChain = {
+  ethereum: withContract(usdcTokenExpectation, CommonAddress.Ethereum.USDC),
+  arbitrumOne: withContract(usdcTokenExpectation, CommonAddress.ArbitrumOne.USDC),
+  apeChain: withContract(usdcETokenExpectation, CommonAddress.ApeChain.USDCe),
+  superposition: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
+};
+export const usdtTokenByChain = {
+  ethereum: withContract(usdtTokenExpectation, CommonAddress.Ethereum.USDT),
+  arbitrumOne: withContract(usdtTokenExpectation, CommonAddress.ArbitrumOne.USDT),
+  apeChain: withContract(usdtTokenExpectation, CommonAddress.ApeChain.USDT),
+};
+export const wethTokenByChain = {
+  ethereum: withContract(wethTokenExpectation, CommonAddress.Ethereum.WETH),
+  arbitrumOne: withContract(wethTokenExpectation, CommonAddress.ArbitrumOne.WETH),
+  apeChain: withContract(wethTokenExpectation, CommonAddress.ApeChain.WETH),
+  superposition: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
 };
 
 export function withExpectedTokenLogo(tokenExpectation: TokenExpectation): TokenExpectation {
@@ -360,11 +435,11 @@ function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
 export async function expectTokenPanelContent({
   isDestination,
   symbolsToContain,
-  tokenExpectation,
+  tokenExpectations,
 }: {
   isDestination: boolean;
   symbolsToContain?: string[];
-  tokenExpectation?: TokenExpectation;
+  tokenExpectations?: TokenExpectation[];
 }) {
   const buttonAriaLabel = isDestination ? 'Select Destination Token' : 'Select Token';
   const dialogTitle = isDestination ? 'Select Destination Token' : 'Select Token';
@@ -419,9 +494,11 @@ export async function expectTokenPanelContent({
     );
   }
 
-  if (tokenExpectation) {
-    if (typeof tokenExpectation.logoURI !== 'undefined') {
-      await waitFor(
+  const expectedTokenLogos =
+    tokenExpectations?.filter(({ logoURI }) => typeof logoURI !== 'undefined') ?? [];
+  await Promise.all(
+    expectedTokenLogos.map((tokenExpectation) =>
+      waitFor(
         () => {
           const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
           const logoImage = tokenRowButton.querySelector('img');
@@ -445,16 +522,23 @@ export async function expectTokenPanelContent({
               `Timed out waiting for "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}".`,
             ),
         },
-      );
-    }
+      ),
+    ),
+  );
 
-    if (typeof tokenExpectation.contract !== 'undefined') {
+  const expectedTokenContracts =
+    tokenExpectations?.filter(
+      (tokenExpectation): tokenExpectation is TokenExpectation & { contract: string } =>
+        typeof tokenExpectation.contract !== 'undefined',
+    ) ?? [];
+  await Promise.all(
+    expectedTokenContracts.map((tokenExpectation) => {
       const expectsNativeContract = tokenExpectation.contract === 'native';
       const expectedContractAddress = expectsNativeContract
         ? undefined
         : tokenExpectation.contract.toLowerCase();
 
-      await waitFor(
+      return waitFor(
         () => {
           const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
           const links = Array.from(tokenRowButton.querySelectorAll('a[href]'));
@@ -488,8 +572,8 @@ export async function expectTokenPanelContent({
             ),
         },
       );
-    }
-  }
+    }),
+  );
 
   const closeDialogButton = within(dialog).getByLabelText('Close Dialog');
   await act(async () => {
@@ -510,37 +594,35 @@ export async function expectTokenPanelContent({
 async function expectTokenPanelTokens({
   isDestination,
   tokenExpectations,
-  scenarioName,
 }: {
   isDestination: boolean;
   tokenExpectations: TokenExpectation[];
-  scenarioName: string;
 }) {
-  const primaryTokenExpectation = tokenExpectations[0];
-  if (!primaryTokenExpectation) {
-    throw new Error(
-      `Missing primary ${isDestination ? 'destination' : 'source'} panel token expectation for scenario "${scenarioName}".`,
-    );
-  }
-
   await expectTokenPanelContent({
     isDestination,
     symbolsToContain: tokenExpectations.map(({ symbol }) => symbol),
-    tokenExpectation: withExpectedTokenLogo(primaryTokenExpectation),
+    tokenExpectations: tokenExpectations.map(withExpectedTokenLogo),
   });
 }
 
 export async function runTransferPanelScenario({
-  name,
+  sourceChain,
+  destinationChain,
+  token,
+  destinationToken,
+  bridgeTokens,
   expectedSourceToken,
   expectedDestinationToken,
   expectedSourcePanelTokens,
   expectedDestinationPanelTokens,
-  ...renderConfig
 }: TransferPanelScenario) {
-  const scenarioName = name ?? `${renderConfig.sourceChain} -> ${renderConfig.destinationChain}`;
-
-  await renderTransferPanel(renderConfig);
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+    token,
+    destinationToken,
+    bridgeTokens,
+  });
 
   await expectTokenButtonToken({
     isDestination: false,
@@ -555,7 +637,6 @@ export async function runTransferPanelScenario({
     await expectTokenPanelTokens({
       isDestination: false,
       tokenExpectations: expectedSourcePanelTokens,
-      scenarioName,
     });
   }
 
@@ -563,7 +644,6 @@ export async function runTransferPanelScenario({
     await expectTokenPanelTokens({
       isDestination: true,
       tokenExpectations: expectedDestinationPanelTokens,
-      scenarioName,
     });
   }
 }

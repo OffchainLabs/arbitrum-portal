@@ -3,47 +3,51 @@ import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
+  nativeEthTokenExpectation,
   runTransferPanelScenario,
   setupTransferPanelLifiIntegrationSuite,
   usdcAddressByChain,
+  usdcETokenExpectation,
+  usdcTokenExpectation,
+  wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
 const swapCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'USDC' },
-    expectedDestinationToken: { symbol: 'WETH' },
+    expectedSourceToken: usdcTokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'USDC' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: usdcTokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'ETH' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: { symbol: 'USDC.e' },
-    expectedDestinationToken: { symbol: 'WETH' },
+    expectedSourceToken: usdcETokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
   },
 ];
 

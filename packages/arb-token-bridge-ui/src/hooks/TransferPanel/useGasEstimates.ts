@@ -8,11 +8,10 @@ import { shallow } from 'zustand/shallow';
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 import { OftV2TransferStarter } from '@/token-bridge-sdk/OftV2TransferStarter';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { LifiCrosschainTransfersRoute, Order } from '../../app/api/crosschain-transfers/lifi';
+import { Order } from '../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
 import {
@@ -32,38 +31,6 @@ import {
 import { useNetworks } from '../useNetworks';
 import { useNetworksRelationship } from '../useNetworksRelationship';
 import { useSelectedToken } from '../useSelectedToken';
-
-function getLifiRouteByType({
-  routeType,
-  lifiRoutes,
-}: {
-  routeType: RouteType;
-  lifiRoutes: LifiCrosschainTransfersRoute[] | undefined;
-}) {
-  if (!lifiRoutes?.length || !isLifiRoute(routeType)) {
-    return undefined;
-  }
-
-  if (routeType === 'lifi') {
-    return (
-      lifiRoutes.find(
-        (route) =>
-          route.protocolData.orders.includes(Order.Cheapest) &&
-          route.protocolData.orders.includes(Order.Fastest),
-      ) ?? lifiRoutes[0]
-    );
-  }
-
-  if (routeType === 'lifi-cheapest') {
-    return lifiRoutes.find((route) => route.protocolData.orders.includes(Order.Cheapest));
-  }
-
-  if (routeType === 'lifi-fastest') {
-    return lifiRoutes.find((route) => route.protocolData.orders.includes(Order.Fastest));
-  }
-
-  return undefined;
-}
 
 async function fetcher([
   routeType,
@@ -90,23 +57,15 @@ async function fetcher([
 ]): Promise<TransferEstimateGasResult> {
   const _walletAddress = walletAddress ?? constants.AddressZero;
   const sourceProvider = getProviderForChainId(sourceChainId);
-  const destinationProvider = getProviderForChainId(destinationChainId);
   const signer = sourceProvider.getSigner(_walletAddress);
   let bridgeTransferStarter;
 
-  if (isLifiRoute(routeType)) {
-    if (!routeContext) {
-      return undefined;
-    }
+  if (isLifiRoute(routeType) && !routeContext) {
+    return undefined;
+  }
 
-    bridgeTransferStarter = new LifiTransferStarter({
-      sourceChainProvider: sourceProvider,
-      sourceChainErc20Address,
-      destinationChainProvider: destinationProvider,
-      destinationChainErc20Address,
-      lifiData: routeContext,
-    });
-  } else if (routeType === 'cctp') {
+  if (routeType === 'cctp') {
+    const destinationProvider = getProviderForChainId(destinationChainId);
     bridgeTransferStarter = new CctpTransferStarter({
       sourceChainProvider: sourceProvider,
       sourceChainErc20Address,
@@ -114,6 +73,7 @@ async function fetcher([
       destinationChainErc20Address,
     });
   } else if (routeType === 'oftV2') {
+    const destinationProvider = getProviderForChainId(destinationChainId);
     bridgeTransferStarter = new OftV2TransferStarter({
       sourceChainProvider: sourceProvider,
       sourceChainErc20Address,
@@ -127,6 +87,7 @@ async function fetcher([
       sourceChainErc20Address,
       destinationChainId,
       destinationChainErc20Address,
+      lifiData: routeContext,
     });
   }
 
@@ -168,17 +129,12 @@ export function useGasEstimates({
     }),
     shallow,
   );
-  const routeTypeForGasEstimate = useMemo(() => {
-    if (
-      selectedRoute &&
-      (eligibleRouteTypes.includes(selectedRoute) ||
-        (isLifiRoute(selectedRoute) && eligibleRouteTypes.includes('lifi')))
-    ) {
-      return selectedRoute;
-    }
-
-    return eligibleRouteTypes[0];
-  }, [eligibleRouteTypes, selectedRoute]);
+  const routeTypeForGasEstimate =
+    selectedRoute &&
+    (eligibleRouteTypes.includes(selectedRoute) ||
+      (isLifiRoute(selectedRoute) && eligibleRouteTypes.includes('lifi')))
+      ? selectedRoute
+      : eligibleRouteTypes[0];
   const isLifiRouteEligible = eligibleRouteTypes.includes('lifi');
 
   const overrideSourceToken = useMemo(
@@ -251,27 +207,36 @@ export function useGasEstimates({
 
       let routeContext: RouteContext | undefined = undefined;
       if (isRouteLifi) {
-        if (selectedRoute === routeTypeForGasEstimate && context) {
-          routeContext = context;
-        } else {
-          if (isLoadingLifiRoutes || !lifiRoutes?.length) {
-            return null;
-          }
-
-          const selectedLifiRoute = getLifiRouteByType({
-            routeType: routeTypeForGasEstimate,
-            lifiRoutes,
-          });
-          if (!selectedLifiRoute) {
-            return null;
-          }
-
-          routeContext = getContextFromRoute(selectedLifiRoute);
+        if (isLoadingLifiRoutes || !lifiRoutes?.length) {
+          return null;
         }
-      }
 
-      if (isRouteLifi && !routeContext) {
-        return null;
+        const lifiRoute =
+          lifiRoutes.find((route) => {
+            if (routeTypeForGasEstimate === 'lifi-cheapest') {
+              return route.protocolData.orders.includes(Order.Cheapest);
+            }
+
+            if (routeTypeForGasEstimate === 'lifi-fastest') {
+              return route.protocolData.orders.includes(Order.Fastest);
+            }
+
+            return (
+              route.protocolData.orders.includes(Order.Cheapest) &&
+              route.protocolData.orders.includes(Order.Fastest)
+            );
+          }) ?? lifiRoutes[0];
+
+        routeContext =
+          selectedRoute === routeTypeForGasEstimate && context
+            ? context
+            : lifiRoute
+              ? getContextFromRoute(lifiRoute)
+              : undefined;
+
+        if (!routeContext) {
+          return null;
+        }
       }
 
       return [
