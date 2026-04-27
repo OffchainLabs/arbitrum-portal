@@ -535,6 +535,8 @@ export class PendleAdapter implements VendorAdapter {
     const ptSymbol = `PT${underlyingSymbol}`;
     const ptDecimals = market?.ptToken?.decimals ?? DEFAULT_PENDLE_DECIMALS;
     const underlyingDecimals = market?.syToken?.decimals ?? DEFAULT_PENDLE_DECIMALS;
+    const ptIcon = market?.ptToken?.icon;
+    const underlyingIcon = market?.syToken?.icon;
 
     const response = await getPendleTransactionHistory({
       userAddress,
@@ -567,14 +569,16 @@ export class PendleAdapter implements VendorAdapter {
           assetAmountRaw,
           assetSymbol,
           decimals: assetDecimals,
+          assetLogo: isExit ? underlyingIcon : ptIcon,
           inputAssetAmountRaw: inputAmountRaw,
           inputAssetSymbol: isExit ? ptSymbol : underlyingSymbol,
           inputAssetDecimals: isExit ? ptDecimals : underlyingDecimals,
+          inputAssetLogo: isExit ? ptIcon : underlyingIcon,
           outputAssetAmountRaw: outputAmountRaw,
           outputAssetSymbol: isExit ? underlyingSymbol : ptSymbol,
           outputAssetDecimals: isExit ? underlyingDecimals : ptDecimals,
+          outputAssetLogo: isExit ? underlyingIcon : ptIcon,
           chainId,
-          chainName: 'Arbitrum One',
           transactionHash: transaction.txHash,
         };
       })
