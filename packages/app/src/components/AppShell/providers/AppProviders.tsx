@@ -13,11 +13,11 @@ import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi'
 import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { config } from '@/bridge/state';
+import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
+import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
 
 import { initializeDayjs } from '../../../initialization';
-import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
-import { registerLocalNetwork } from '@/bridge/util/networks';
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
