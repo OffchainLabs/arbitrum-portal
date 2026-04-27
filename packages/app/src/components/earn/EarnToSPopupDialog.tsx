@@ -63,7 +63,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
                 className="arb-hover text-white/50 underline"
               >
                 terms of service page
-              </ExternalLink>{' '}
+              </ExternalLink>
               .
             </p>
           </div>

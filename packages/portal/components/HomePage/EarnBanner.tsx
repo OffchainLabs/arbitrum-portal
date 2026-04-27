@@ -57,6 +57,7 @@ function StatTile({
   );
 }
 
+// Decorative card shown on the homepage banner; values are static placeholders, not live data.
 function MarketCard() {
   return (
     <div className="pointer-events-none relative -bottom-14 z-10 hidden w-[400px] rotate-[6deg] transition-all duration-300 group-hover:-bottom-10 lg:block shadow-lg">

@@ -20,7 +20,7 @@ const EarnDisclaimer = () => (
     the protocols we support and how we chose them, please visit our{' '}
     <ExternalLink href={TERMS_OF_SERVICE_LINK} className="arb-hover text-white/50 underline">
       terms of service page
-    </ExternalLink>{' '}
+    </ExternalLink>
     .
   </p>
 );
