@@ -16,6 +16,8 @@ import { config } from '@/bridge/state';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
 
 import { initializeDayjs } from '../../../initialization';
+import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
+import { registerLocalNetwork } from '@/bridge/util/networks';
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -41,6 +43,10 @@ const queryClient = new QueryClient();
 
 createConfig({ integrator: integratorId });
 initializeDayjs();
+
+if (!isProductionEnvironment || isE2eTestingEnvironment) {
+  registerLocalNetwork();
+}
 
 export function AppProviders({ children }: PropsWithChildren) {
   const overmind = useMemo(() => createOvermind(config), []);

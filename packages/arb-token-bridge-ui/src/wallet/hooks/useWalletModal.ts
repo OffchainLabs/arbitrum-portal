@@ -1,8 +1,8 @@
 import { useAppKit } from '@reown/appkit/react';
 import { useCallback } from 'react';
 
-import { appKit } from '../../util/wagmi/setup';
 import { useNetworks } from '../../hooks/useNetworks';
+import { appKit } from '../../util/wagmi/setup';
 
 export function useWalletModal() {
   const { open } = useAppKit();
