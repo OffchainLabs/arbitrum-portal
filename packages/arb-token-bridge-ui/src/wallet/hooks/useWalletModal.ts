@@ -1,17 +1,22 @@
-import { useAppKit, useAppKitNetwork } from '@reown/appkit/react';
+import { useAppKit } from '@reown/appkit/react';
 import { useCallback } from 'react';
 
+import { appKit } from '../../util/wagmi/setup';
 import { useNetworks } from '../../hooks/useNetworks';
 
 export function useWalletModal() {
   const { open } = useAppKit();
-  const { switchNetwork } = useAppKitNetwork();
   const [networks] = useNetworks();
 
   const openConnectModal = useCallback(async () => {
-    await switchNetwork(networks.sourceChain);
+    if (appKit && networks.sourceChain) {
+      const caipNetwork = appKit.getCaipNetwork('eip155', networks.sourceChain.id);
+      if (caipNetwork) {
+        appKit.setCaipNetwork(caipNetwork);
+      }
+    }
     await open({ view: 'Connect', namespace: 'eip155' });
-  }, [networks.sourceChain, open, switchNetwork]);
+  }, [networks.sourceChain, open]);
 
   return {
     openConnectModal,

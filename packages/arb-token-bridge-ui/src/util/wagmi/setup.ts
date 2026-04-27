@@ -108,7 +108,7 @@ const wagmiAdapter = new WagmiAdapter({
   transports: getTransports(),
 });
 
-createAppKit({
+export const appKit = createAppKit({
   projectId,
   metadata,
   networks: [...chainList],
