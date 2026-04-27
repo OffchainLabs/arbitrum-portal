@@ -84,6 +84,7 @@ module.exports = {
         'lime': '#E8FFE4',
         'lavender': '#7693EB',
         'bright-blue': '#18c0da',
+        'electric-blue': '#0c4aed',
         'blue': '#12aaff',
 
         // SECONDARY
