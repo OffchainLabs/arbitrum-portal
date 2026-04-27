@@ -177,7 +177,10 @@ export function Dialog(props: DialogProps) {
                   aria-label="Close Dialog"
                 />
               ) : (
-                <XMarkIcon className="arb-hover h-6 w-6 text-gray-7" aria-label="Close Dialog" />
+                <XMarkIcon
+                  className="arb-hover h-7 w-7 p-1 text-gray-7 bg-white/5 rounded-sm"
+                  aria-label="Close Dialog"
+                />
               )}
             </button>
           )}
