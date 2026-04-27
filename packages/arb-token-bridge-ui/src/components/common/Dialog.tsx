@@ -156,7 +156,7 @@ export function Dialog(props: DialogProps) {
       >
         <div
           className={twMerge(
-            'flex items-start justify-between px-6 pt-4',
+            'relative flex items-start justify-center px-6 pt-4',
             embedMode && 'flex-row-reverse items-center justify-end gap-4',
           )}
         >
@@ -166,7 +166,11 @@ export function Dialog(props: DialogProps) {
             {props.title}
           </HeadlessUIDialog.Title>
           {closeable && !hideCloseButton && (
-            <button type="button" onClick={() => handleClose(false)}>
+            <button
+              type="button"
+              onClick={() => handleClose(false)}
+              className={twMerge(!embedMode && 'absolute right-6 top-4')}
+            >
               {embedMode ? (
                 <ChevronLeftIcon
                   className="arb-hover h-4 w-4 text-gray-7"

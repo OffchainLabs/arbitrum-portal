@@ -94,6 +94,10 @@ export function EarnTransactionDetailsPopup({
   const networkName = getNetworkName(chainId);
   const txHash = transactionDetails.txHash;
   const opportunityName = transactionDetails.opportunityName || 'Transaction';
+  const action = transactionDetails.action;
+  const titleText = action
+    ? `${action.charAt(0).toUpperCase()}${action.slice(1)} ${opportunityName}`
+    : opportunityName;
 
   const formattedDate = transactionDetails.timestamp
     ? dayjs(normalizeTimestamp(transactionDetails.timestamp)).format('MMM D, YYYY h:mm A')
@@ -115,9 +119,7 @@ export function EarnTransactionDetailsPopup({
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        <span className="text-lg font-medium text-white/40 text-center w-full">
-          {opportunityName}
-        </span>
+        <span className="text-lg font-medium text-white/40 text-center w-full">{titleText}</span>
       }
       closeable
       isFooterHidden
@@ -179,7 +181,7 @@ export function EarnTransactionDetailsPopup({
               </div>
             </div>
 
-            <div className="bg-gray-1 flex flex-col gap-2 items-start p-4 rounded-lg w-full">
+            <div className="bg-white/5 flex flex-col gap-2 items-start p-4 rounded-lg w-full">
               <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
                 <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
                   Network
@@ -236,7 +238,8 @@ export function EarnTransactionDetailsPopup({
                     Network Fee
                   </span>
                   <span className="text-[14px] text-white leading-[17px] tracking-[0.14px]">
-                    {displayNetworkFee.amount}
+                    {displayNetworkFee.amount}{' '}
+                    {displayNetworkFee.usd ? `(${displayNetworkFee.usd})` : ''}
                   </span>
                 </div>
               )}
