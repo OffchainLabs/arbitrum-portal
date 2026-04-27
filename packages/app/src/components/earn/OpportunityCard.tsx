@@ -59,6 +59,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
             width={24}
             height={24}
             className="rounded-full shrink-0"
+            fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
           />
           <div className="flex flex-col gap-0.5">
             <p className="text-xl text-white leading-[1.15] tracking-[-0.4px]">
@@ -141,6 +142,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
                 width={24}
                 height={24}
                 className="shrink-0 object-contain"
+                fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
               />
               <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">
                 {opportunity.protocol}

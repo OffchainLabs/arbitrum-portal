@@ -8,8 +8,8 @@ import { twMerge } from 'tailwind-merge';
 
 import { useEarnTransactionNetworkFee } from '@/app-hooks/earn/useEarnTransactionNetworkFee';
 import { Dialog } from '@/bridge/components/common/Dialog';
-import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
@@ -185,7 +185,13 @@ export function EarnTransactionDetailsPopup({
                   Network
                 </span>
                 <div className="flex gap-2 items-center justify-end">
-                  <NetworkImage chainId={chainId} className="h-[21px] w-[21px]" />
+                  <SafeImage
+                    src={ARBITRUM_LOGO}
+                    alt={networkName}
+                    width={21}
+                    height={21}
+                    className="shrink-0"
+                  />
                   <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
                     {networkName}
                   </span>

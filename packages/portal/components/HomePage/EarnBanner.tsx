@@ -6,9 +6,6 @@ import { twMerge } from 'tailwind-merge';
 import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { Card } from '@/components/Card';
 
-// Radial sunburst paths copied verbatim from arbitrum.io's homepage hero so
-// the banner shares the exact brand shape. Kept co-located until a second
-// caller appears, at which point this should move to its own module.
 const ARBITRUM_STRIPE_PATHS = [
   'M1127.83 -899.985L1078.63 -1016.77L540.815 553.942L-681.57 31.322L-637.264 135.165L539.676 568.559L1127.83 -899.964V-899.985Z',
   'M538.536 584.339L-592.514 239.917L-547.956 344.31L537.029 604.033L1224.65 -670.364L1176.75 -784.043L538.536 584.339Z',

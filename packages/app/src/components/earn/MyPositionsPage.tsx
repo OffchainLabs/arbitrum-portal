@@ -7,7 +7,6 @@ import { useAccount, useAccountEffect } from 'wagmi';
 
 import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
-import { PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
@@ -99,7 +98,7 @@ export function MyPositionsPage() {
         apy: rawApy > 0 ? formatPercentage(rawApy) : '—',
         tvl: rawTvl != null ? formatCompactUsd(rawTvl) : '—',
         protocol,
-        protocolIcon: protocol === 'Pendle' ? PENDLE_LOGO_URL : '',
+        protocolIcon: positionData.opportunityProtocolLogo ?? '',
         vaultAddress: oppId,
         rawApy,
         rawTvl,

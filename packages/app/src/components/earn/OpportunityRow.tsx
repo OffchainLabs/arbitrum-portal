@@ -68,6 +68,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
           width={24}
           height={24}
           className="rounded-full shrink-0"
+          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
         />
         <div className="flex flex-col gap-0.5">
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap">
@@ -185,6 +186,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
           width={24}
           height={24}
           className="shrink-0 object-contain rounded"
+          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
         />
         <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap capitalize">
           {opportunity.protocol}

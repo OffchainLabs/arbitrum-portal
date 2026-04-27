@@ -566,6 +566,7 @@ export class VaultsAdapter implements VendorAdapter {
           id: addressLower,
           name: position.name || 'Unknown Vault',
           protocol: position.protocol?.name || 'Unknown',
+          protocolLogo: position.protocol?.protocolLogo,
           apy,
           tvl: undefined,
         },

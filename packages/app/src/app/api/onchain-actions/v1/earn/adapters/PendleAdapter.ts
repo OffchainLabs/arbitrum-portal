@@ -504,6 +504,7 @@ export class PendleAdapter implements VendorAdapter {
           id: market.address,
           name: market.name,
           protocol: 'Pendle',
+          protocolLogo: '/images/pendle-logo.svg',
           apy: impliedApy ?? 0,
           tvl,
         },

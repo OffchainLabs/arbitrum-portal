@@ -8,8 +8,8 @@ import { useCallback, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
+import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { shortenTxHash } from '@/bridge/util/CommonUtils';
 import { formatAmount } from '@/bridge/util/NumberUtils';
@@ -229,13 +229,20 @@ function DesktopHistoryRow({
           width={24}
           height={24}
           className="rounded-full shrink-0"
+          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
         />
         <div className="flex flex-col gap-0.5 min-w-0">
           <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap truncate">
             {formatHistoryAmount(displayAsset)}
           </p>
           <div className="flex items-center gap-1.5">
-            <NetworkImage chainId={row.chainId} className="h-3 w-3 shrink-0" />
+            <SafeImage
+              src={ARBITRUM_LOGO}
+              alt={row.chainName}
+              width={12}
+              height={12}
+              className="shrink-0"
+            />
             <p className="text-xs text-white opacity-50 leading-none whitespace-nowrap">
               {row.chainName}
             </p>
@@ -291,7 +298,13 @@ function MobileHistoryRow({
 
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-[5px]">
-          <NetworkImage chainId={row.chainId} className="h-3 w-3 shrink-0" />
+          <SafeImage
+            src={ARBITRUM_LOGO}
+            alt={row.chainName}
+            width={12}
+            height={12}
+            className="shrink-0"
+          />
           <p className="text-xs text-white opacity-50 leading-normal whitespace-nowrap">
             {row.chainName}
           </p>
