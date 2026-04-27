@@ -375,11 +375,13 @@ export function PendleActionPanel({
             selectedAction === 'rollover'
               ? data.transactionQuoteLoading ||
                 !data.transactionQuote ||
+                !!data.transactionQuoteError ||
                 !data.selectedRolloverTarget ||
                 !data.isRolloverEnabled
               : !data.transferReadiness.isReady ||
                 data.transactionQuoteLoading ||
                 !data.transactionQuote ||
+                !!data.transactionQuoteError ||
                 data.transferReadiness.isLoading ||
                 (selectedAction === 'enter' && data.isCapReached)
           }

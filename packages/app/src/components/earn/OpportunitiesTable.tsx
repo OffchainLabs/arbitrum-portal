@@ -37,7 +37,7 @@ const CATEGORY_DESCRIPTIONS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.Lend]:
     'Supply assets like WETH, USDC, and WBTC on Arbitrum lending markets to earn variable yield.',
   [OpportunityCategory.LiquidStaking]:
-    'Stake ETH on Arbitrum and receive liquid staking tokens like weETH and wstETH while keeping liquidity.',
+    'Swap for liquid staked ETH on Arbitrum and receive liquid staking tokens like weETH or wstETH while keeping your assets liquid.',
   [OpportunityCategory.FixedYield]:
     'Access fixed-rate opportunities on Arbitrum through Pendle markets with a clear maturity date.',
 };

@@ -214,7 +214,8 @@ export function useLiquidStakingPanelData({
       !transferReadiness.isReady ||
       isQuoteLoading ||
       !hasTransactionQuote ||
-      transferReadiness.isLoading,
+      transferReadiness.isLoading ||
+      !!routeError,
     amountSection: {
       label: selectedAction === 'buy' ? `Swap for ${outputTokenSymbol}` : 'Amount to sell',
       currentBalance,
