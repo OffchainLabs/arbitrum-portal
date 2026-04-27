@@ -342,6 +342,7 @@ export async function registerLocalNetwork() {
     rpcURLs[defaultL3Network.chainId] = localL3NetworkRpcUrl;
 
     registerCustomArbitrumNetwork(defaultL2Network);
+    registerCustomArbitrumNetwork(defaultL3Network);
 
     let isLocalCustomNativeToken = false;
 
@@ -358,9 +359,9 @@ export async function registerLocalNetwork() {
       isLocalCustomNativeToken = false;
     }
 
-    registerCustomArbitrumNetwork(
-      isLocalCustomNativeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network,
-    );
+    if (isLocalCustomNativeToken) {
+      registerCustomArbitrumNetwork(defaultL3CustomGasTokenNetwork);
+    }
   } catch (error: any) {
     logger.error(`Failed to register local network: ${error.message}`);
   }
