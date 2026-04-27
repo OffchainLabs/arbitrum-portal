@@ -115,14 +115,26 @@ export function PortfolioSummaryCards({
   }));
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4">
-      <div className="w-full lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="md:col-span-2 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-5">
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-row items-center gap-1.5">
             <p className="text-sm text-white opacity-80">Current Holdings</p>
-            <p className="text-xs text-white opacity-50">
-              Total value of all your positions across all protocols
-            </p>
+
+            <Tooltip
+              content={
+                <p className="text-xs text-white leading-relaxed">
+                  Total value of all your positions across all protocols
+                </p>
+              }
+              tippyProps={{
+                placement: 'top',
+              }}
+            >
+              <div className="flex items-center justify-center cursor-pointer">
+                <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
+              </div>
+            </Tooltip>
           </div>
           <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
             {formatUSD(totalValue)}
@@ -160,114 +172,17 @@ export function PortfolioSummaryCards({
         </div>
       </div>
 
-      <div className="flex lg:flex-row flex-col gap-4 w-full lg:hidden">
-        <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-3 relative">
-          <div className="flex flex-row justify-between items-center gap-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium text-white opacity-80">Projected Earnings</p>
-              <Tooltip
-                content={
-                  <p className="text-xs text-white leading-relaxed">
-                    Projected earnings are annualized estimates based on current APY rates. Actual
-                    earnings may vary and are not guaranteed, as APY rates can change over time.
-                  </p>
-                }
-                tippyProps={{
-                  placement: 'top',
-                }}
-              >
-                <div className="flex items-center justify-center cursor-pointer">
-                  <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
-                </div>
-              </Tooltip>
-            </div>
-
-            <div className="flex items-center bg-white/5 rounded-full p-0.5 gap-0.5">
-              <button
-                className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                  earningsTimeframe === 'month'
-                    ? 'bg-white text-black'
-                    : 'text-white hover:bg-white/10'
-                }`}
-                onClick={() => handleTimeframeChange('month')}
-              >
-                Month
-              </button>
-              <button
-                className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                  earningsTimeframe === 'year'
-                    ? 'bg-white text-black'
-                    : 'text-white hover:bg-white/10'
-                }`}
-                onClick={() => handleTimeframeChange('year')}
-              >
-                Year
-              </button>
-            </div>
-          </div>
-
-          <p className="text-xs text-white opacity-50">
-            Expected earnings if current holdings are maintained for the selected timeframe at the
-            current APY.
-          </p>
-          <div className="flex flex-col gap-3">
-            <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
-              {formatUSD(displayEarnings)}
-            </p>
-            <p className="text-xs">
-              {formatPercentage(earningsPercentage)} by {getTargetDate()}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex-1 bg-neutral-50 rounded px-4 py-6 flex flex-col justify-between">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-white opacity-80 whitespace-nowrap">
-                Average APY
-              </p>
-              <p className="text-xs text-white opacity-50">Average APY across all your positions</p>
-            </div>
-            <p className="text-[28px] font-medium text-white tracking-[-0.56px] whitespace-nowrap">
-              {formatPercentage(summary.netApy)}
-            </p>
-            {categoryApy && (
-              <div className="flex flex-col gap-2 mt-2">
-                {activeCategories.map((category) => {
-                  const apy = categoryApy[category];
-                  if (apy === undefined || !isFinite(apy)) return null;
-                  return (
-                    <div key={category} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={twMerge(
-                            'w-2 h-2 rounded-full shrink-0',
-                            CATEGORY_INDICATOR_CLASS[category],
-                          )}
-                        />
-                        <p className="text-xs text-white opacity-80">
-                          {getCategoryDisplayName(category)}
-                        </p>
-                      </div>
-                      <p className="text-xs font-medium text-white">{formatPercentage(apy)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col gap-3 relative">
+      <div className="bg-neutral-50 rounded px-4 py-6 flex flex-col gap-3 relative">
         <div className="flex flex-row justify-between items-center gap-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium text-white opacity-80">Projected Earnings</p>
+            <p className="text-sm font-medium text-white opacity-80 whitespace-nowrap">
+              Projected Earnings
+            </p>
             <Tooltip
               content={
                 <p className="text-xs text-white leading-relaxed">
-                  Projected earnings are annualized estimates based on current APY rates. Actual
-                  earnings may vary and are not guaranteed, as APY rates can change over time.
+                  Expected earnings if current holdings are maintained for the selected timeframe at
+                  the current APY
                 </p>
               }
               tippyProps={{
@@ -304,55 +219,70 @@ export function PortfolioSummaryCards({
           </div>
         </div>
 
-        <p className="text-xs text-white opacity-50">
-          Expected earnings if current holdings are maintained for the selected timeframe at the
-          current APY
-        </p>
         <div className="flex flex-col gap-3">
           <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
             {formatUSD(displayEarnings)}
           </p>
-          <p className="text-xs">
+          <p className="text-xs opacity-50 italic">
             {formatPercentage(earningsPercentage)} by {getTargetDate()}
           </p>
         </div>
       </div>
 
-      <div className="hidden lg:flex lg:flex-1 bg-neutral-50 rounded px-4 py-6 flex-col justify-between">
+      <div className="bg-neutral-50 rounded px-4 py-6 flex flex-col justify-between">
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
             <p className="text-sm font-medium text-white opacity-80 whitespace-nowrap">
               Average APY
             </p>
-            <p className="text-xs text-white opacity-50">Average APY across all your positions</p>
+            <Tooltip
+              content={
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-white leading-relaxed">
+                    Average APY across all your positions
+                  </p>
+                  {categoryApy && (
+                    <div className="flex flex-col gap-1">
+                      {activeCategories.map((category) => {
+                        const apy = categoryApy[category];
+                        if (apy === undefined || !isFinite(apy)) return null;
+                        return (
+                          <div key={category} className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={twMerge(
+                                  'w-2 h-2 rounded-full shrink-0',
+                                  CATEGORY_INDICATOR_CLASS[category],
+                                )}
+                              />
+                              <p className="text-xs text-white opacity-80">
+                                {getCategoryDisplayName(category)}
+                              </p>
+                            </div>
+                            <p className="text-xs font-medium text-white">
+                              {formatPercentage(apy)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              }
+              tippyProps={{
+                placement: 'top',
+              }}
+            >
+              <div className="flex items-center justify-center cursor-pointer">
+                <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
+              </div>
+            </Tooltip>
           </div>
           <p className="text-[28px] font-medium text-white tracking-[-0.56px] whitespace-nowrap">
             {formatPercentage(summary.netApy)}
           </p>
-          {categoryApy && (
-            <div className="flex flex-col gap-2 mt-2">
-              {activeCategories.map((category) => {
-                const apy = categoryApy[category];
-                if (apy === undefined || !isFinite(apy)) return null;
-                return (
-                  <div key={category} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={twMerge(
-                          'w-2 h-2 rounded-full shrink-0',
-                          CATEGORY_INDICATOR_CLASS[category],
-                        )}
-                      />
-                      <p className="text-xs text-white opacity-80">
-                        {getCategoryDisplayName(category)}
-                      </p>
-                    </div>
-                    <p className="text-xs font-medium text-white">{formatPercentage(apy)}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+
+          <p className="text-xs opacity-50 italic">Across all your positions</p>
         </div>
       </div>
     </div>
