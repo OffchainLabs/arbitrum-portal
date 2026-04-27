@@ -12,6 +12,11 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      // MetaMask's browser bundle still contains a React Native-only require.
+      '@react-native-async-storage/async-storage': false,
+    };
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
     return config;
   },
