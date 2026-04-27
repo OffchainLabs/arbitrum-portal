@@ -527,9 +527,16 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     const marketsResponse = await getPendleMarkets(chainId, false);
-    const market = marketsResponse.markets.find(
+    const rawMarket = marketsResponse.markets.find(
       (candidate) => candidate.address === id.toLowerCase(),
     );
+
+    const market = rawMarket
+      ? enrichMarketWithAssets(
+          rawMarket,
+          await this.fetchAssetMetadata(chainId, [rawMarket.pt, rawMarket.sy]),
+        )
+      : undefined;
 
     const underlyingSymbol = market ? getTokenSymbolFromMarketName(market.name) : 'Asset';
     const ptSymbol = `PT${underlyingSymbol}`;

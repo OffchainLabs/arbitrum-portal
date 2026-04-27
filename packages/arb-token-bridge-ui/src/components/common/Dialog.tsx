@@ -77,6 +77,7 @@ export function useDialog(params?: UseDialogParams): UseDialogResult {
 export type DialogProps = {
   isOpen: boolean;
   closeable?: boolean;
+  hideCloseButton?: boolean;
   title?: string | JSX.Element;
   initialFocus?: React.MutableRefObject<HTMLElement | null>;
   cancelButtonProps?: Partial<ButtonProps>;
@@ -93,6 +94,7 @@ export function Dialog(props: DialogProps) {
   const isFooterHidden = props.isFooterHidden || false;
   const closeable = props.closeable ?? true;
   const className = props.className || '';
+  const hideCloseButton = props.hideCloseButton || false;
   const cancelButtonRef = useRef(null);
   const { embedMode } = useMode();
   const onClose = props.onClose;
@@ -145,7 +147,7 @@ export function Dialog(props: DialogProps) {
       <HeadlessUIDialog.Panel
         transition
         className={twMerge(
-          'z-10 max-h-screen w-screen scale-100 overflow-y-auto border border-gray-dark bg-gray-1 opacity-100 transition-[transform_opacity] md:max-w-[727px] md:rounded',
+          'z-10 flex max-h-screen w-screen scale-100 flex-col overflow-y-auto border border-gray-dark bg-gray-1 opacity-100 transition-[transform_opacity] md:max-w-[727px] md:rounded',
           'data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
           'data-[leave]:duration-200 data-[leave]:ease-in',
           embedMode && 'border-0 bg-widget-background',
@@ -163,7 +165,7 @@ export function Dialog(props: DialogProps) {
           >
             {props.title}
           </HeadlessUIDialog.Title>
-          {closeable && (
+          {closeable && !hideCloseButton && (
             <button type="button" onClick={() => handleClose(false)}>
               {embedMode ? (
                 <ChevronLeftIcon
@@ -177,17 +179,17 @@ export function Dialog(props: DialogProps) {
           )}
         </div>
 
-        <div className="flex-grow px-6">{props.children}</div>
+        <div className="px-6">{props.children}</div>
 
         {!isFooterHidden && (
-          <div className="flex flex-row justify-end space-x-2 bg-[#3B3B3B] px-6 py-2">
+          <div className="mt-auto flex flex-row justify-between gap-2 h-12 m-6">
             {closeable && (
               <Button
                 ref={cancelButtonRef}
                 variant="tertiary"
                 onClick={() => handleClose(false)}
                 aria-label="Dialog Cancel"
-                className="text-white"
+                className="text-white w-full h-full text-center"
                 {...(props.cancelButtonProps || {})}
               >
                 Cancel
@@ -198,6 +200,7 @@ export function Dialog(props: DialogProps) {
               onClick={() => handleClose(true)}
               {...(props.actionButtonProps || {})}
               aria-label={props.actionButtonTitle || 'Dialog Continue'}
+              className="w-full bg-white text-black text-center h-full border-none"
             >
               {props.actionButtonTitle || 'Continue'}
             </Button>

@@ -11,8 +11,19 @@ import {
 } from '@/common/constants';
 import { ExternalLink } from '@/components/ExternalLink';
 
-const EARN_DISCLAIMER =
-  'Arbitrum Earn is a non-custodial front-end interface for interacting with third party protocols. Any transactions are facilitated by third party protocols which are not controlled by Arbitrum Earn. Base APY and any Rewards amounts are provided by the underlying protocols; no amounts are provided by Arbitrum Earn. Data is provided by third parties, and is for informational purposes only. Do your own independent research and proceed at your own risk.';
+const EarnDisclaimer = () => (
+  <p>
+    The Arbitrum Portal is only a front-end interface for interacting with existing smart contract
+    protocols. It does not host or control the underlying Defi smart contracts being presented to
+    you here, nor does it manage funds or make investing decisions on your behalf. You are solely
+    responsible for understanding how these protocols work before using them. To learn more about
+    the protocols we support and how we chose them, please visit our{' '}
+    <ExternalLink href={TERMS_OF_SERVICE_LINK} className="arb-hover text-white/50 underline">
+      terms of service page
+    </ExternalLink>{' '}
+    .
+  </p>
+);
 
 const footerLinks = [
   { label: 'Discord', href: DISCORD_LINK },
@@ -27,7 +38,9 @@ const footerLinks = [
 export function EarnFooter() {
   return (
     <footer className="mx-auto w-full pb-6 text-sm text-white/50 mt-24">
-      <p className="mb-6">{EARN_DISCLAIMER}</p>
+      <div className="mb-6">
+        <EarnDisclaimer />
+      </div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           Built with love by{' '}
