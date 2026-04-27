@@ -205,7 +205,7 @@ export function PortfolioSummaryCards({
               </div>
             </div>
 
-            <div className="flex items-center bg-white/5 rounded-full p-0.5 gap-0.5">
+            <div className="items-center bg-white/5 rounded-full p-0.5 gap-0.5 hidden xl:flex">
               <button
                 className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
                   earningsTimeframe === 'month'
