@@ -317,6 +317,7 @@ export interface StandardUserPosition {
     id: string;
     name: string;
     protocol: string;
+    protocolLogo?: string;
     apy: number;
     tvl?: number;
   };

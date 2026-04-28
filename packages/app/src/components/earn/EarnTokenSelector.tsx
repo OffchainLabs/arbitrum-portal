@@ -7,25 +7,12 @@ import { SafeImage } from '@/bridge/components/common/SafeImage';
 
 import type { EarnTokenOption } from './earnTokenDropdownOptions';
 
-interface LiquidStakingTokenBadgeProps {
-  symbol: string;
-  logoUrl?: string;
-  showDropdown?: boolean;
-  onClick?: () => void;
-}
+const TOKEN_BADGE_CLASS =
+  'bg-neutral-200 rounded flex gap-2 items-center px-4 py-2 text-base font-medium text-white';
 
-function LiquidStakingTokenBadge({
-  symbol,
-  logoUrl,
-  showDropdown = false,
-  onClick,
-}: LiquidStakingTokenBadgeProps) {
+function TokenBadgeContent({ symbol, logoUrl }: { symbol: string; logoUrl?: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="bg-neutral-200 rounded flex gap-2 items-center px-4 py-2 text-base font-medium text-white border border-neutral-200 focus:outline-none"
-    >
+    <>
       <div className="relative rounded-full overflow-hidden w-5 h-5">
         <SafeImage
           src={logoUrl}
@@ -39,26 +26,38 @@ function LiquidStakingTokenBadge({
         />
       </div>
       <span>{symbol}</span>
-      {showDropdown && (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      )}
+    </>
+  );
+}
+
+interface SelectableTokenBadgeProps {
+  symbol: string;
+  logoUrl?: string;
+  onClick: () => void;
+}
+
+function SelectableTokenBadge({ symbol, logoUrl, onClick }: SelectableTokenBadgeProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={twMerge(TOKEN_BADGE_CLASS, 'focus:outline-none')}
+    >
+      <TokenBadgeContent symbol={symbol} logoUrl={logoUrl} />
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     </button>
   );
 }
 
-interface LiquidStakingTokenSelectorProps {
+interface EarnTokenSelectorProps {
   options: EarnTokenOption[];
   selected: EarnTokenOption;
   onSelect: (token: EarnTokenOption) => void;
 }
 
-export function LiquidStakingTokenSelector({
-  options,
-  selected,
-  onSelect,
-}: LiquidStakingTokenSelectorProps) {
+export function EarnTokenSelector({ options, selected, onSelect }: EarnTokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -79,10 +78,9 @@ export function LiquidStakingTokenSelector({
 
   return (
     <div className="relative" data-token-selector>
-      <LiquidStakingTokenBadge
+      <SelectableTokenBadge
         symbol={selected.symbol}
         logoUrl={selected.logoUrl}
-        showDropdown
         onClick={() => setIsOpen((open) => !open)}
       />
       {isOpen && (
@@ -95,25 +93,14 @@ export function LiquidStakingTokenSelector({
                 onSelect(token);
                 setIsOpen(false);
               }}
-              className={`w-full flex gap-2 items-center px-4 py-2 text-base font-medium text-white transition-all ${
+              className={twMerge(
+                'w-full flex gap-2 items-center px-4 py-2 text-base font-medium text-white transition-all',
                 selected.symbol === token.symbol
                   ? 'bg-neutral-200 opacity-100'
-                  : 'opacity-50 hover:opacity-75'
-              }`}
+                  : 'opacity-50 hover:opacity-75',
+              )}
             >
-              <div className="relative rounded-full overflow-hidden w-5 h-5">
-                <SafeImage
-                  src={token.logoUrl}
-                  alt={`${token.symbol} logo`}
-                  className={twMerge('rounded-full', 'w-5 h-5')}
-                  fallback={
-                    <div className="w-full h-full bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
-                      {token.symbol[0]}
-                    </div>
-                  }
-                />
-              </div>
-              <span>{token.symbol}</span>
+              <TokenBadgeContent symbol={token.symbol} logoUrl={token.logoUrl} />
             </button>
           ))}
         </div>
@@ -122,16 +109,17 @@ export function LiquidStakingTokenSelector({
   );
 }
 
-interface StaticLiquidStakingTokenBadgeProps {
+interface EarnTokenBadgeProps {
   symbol: string;
   logoUrl?: string;
 }
 
-export function StaticLiquidStakingTokenBadge({
-  symbol,
-  logoUrl,
-}: StaticLiquidStakingTokenBadgeProps) {
-  return <LiquidStakingTokenBadge symbol={symbol} logoUrl={logoUrl} />;
+export function EarnTokenBadge({ symbol, logoUrl }: EarnTokenBadgeProps) {
+  return (
+    <div className={TOKEN_BADGE_CLASS}>
+      <TokenBadgeContent symbol={symbol} logoUrl={logoUrl} />
+    </div>
+  );
 }
 
 export type TokenSelectorControlConfig =
@@ -150,7 +138,7 @@ export type TokenSelectorControlConfig =
 export function TokenSelectorControl({ control }: { control: TokenSelectorControlConfig }) {
   if (control.type === 'select') {
     return (
-      <LiquidStakingTokenSelector
+      <EarnTokenSelector
         options={control.options}
         selected={control.selected}
         onSelect={control.onSelect}
@@ -158,5 +146,5 @@ export function TokenSelectorControl({ control }: { control: TokenSelectorContro
     );
   }
 
-  return <StaticLiquidStakingTokenBadge symbol={control.symbol} logoUrl={control.logoUrl} />;
+  return <EarnTokenBadge symbol={control.symbol} logoUrl={control.logoUrl} />;
 }

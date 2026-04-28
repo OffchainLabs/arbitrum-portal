@@ -38,6 +38,7 @@ export interface UserPositionData {
   expiryDate?: string;
   opportunityName?: string;
   opportunityProtocol?: string;
+  opportunityProtocolLogo?: string;
   opportunityApy?: number;
   opportunityTvl?: number;
 }
@@ -99,6 +100,7 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
       expiryDate: position.expiryDate,
       opportunityName: position.opportunity?.name,
       opportunityProtocol: position.opportunity?.protocol,
+      opportunityProtocolLogo: position.opportunity?.protocolLogo,
       opportunityApy: position.opportunity?.apy,
       opportunityTvl: position.opportunity?.tvl,
     });

@@ -396,6 +396,7 @@ export function usePendlePanelData({
     rolloverError,
     transactionQuote,
     transactionQuoteLoading,
+    transactionQuoteError,
     transferReadiness,
     estimatedTxCost,
     isGasEstimateLoading,

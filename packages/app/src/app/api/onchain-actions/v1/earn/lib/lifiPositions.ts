@@ -85,6 +85,7 @@ export async function fetchLifiUserPositions(params: {
           id: tokenAddress,
           name: opportunity.name,
           protocol: opportunity.protocol,
+          protocolLogo: opportunity.protocolIcon,
           apy,
           tvl: opportunity.rawTvl ?? undefined,
         },

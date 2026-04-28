@@ -15,6 +15,7 @@ import {
   formatAmount,
   formatCompactNumber,
   formatCompactUsd,
+  formatPercentage,
   formatUSD,
 } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
@@ -67,7 +68,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
   const formattedTvl =
     typeof tvlUsd === 'number' && Number.isFinite(tvlUsd) ? formatCompactUsd(tvlUsd) : '—';
   const currentApr =
-    opportunity.lend?.apy7day != null ? `${opportunity.lend.apy7day.toFixed(2)}%` : '—';
+    opportunity.lend?.apy7day != null ? formatPercentage(opportunity.lend.apy7day) : '—';
 
   return (
     <div className="space-y-4 pb-20 lg:pb-4">

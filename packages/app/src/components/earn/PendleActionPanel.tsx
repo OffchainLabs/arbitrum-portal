@@ -8,6 +8,7 @@ import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
 import { usePendlePanelControls } from '@/app-hooks/earn/usePendlePanelControls';
 import { usePendlePanelData } from '@/app-hooks/earn/usePendlePanelData';
 import { usePendlePanelExecution } from '@/app-hooks/earn/usePendlePanelExecution';
+import { formatPercentage } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { StandardOpportunityFixedYield } from '@/earn-api/types';
 
@@ -22,8 +23,8 @@ import {
   EarnTransactionDetailsSection,
   type TransactionDetail,
 } from './EarnActionPanel/EarnTransactionDetailsSection';
+import { TokenSelectorControl } from './EarnTokenSelector';
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
-import { TokenSelectorControl } from './LiquidStakingTokenSelector';
 import { PendleCapWarning } from './PendleCapWarning';
 import { PendleRolloverSection } from './PendleRolloverSection';
 import { SlippageSettingsPanel } from './SlippageSettingsPanel';
@@ -199,14 +200,14 @@ export function PendleActionPanel({
     const details: TransactionDetail[] = [
       {
         label: 'Fixed APY',
-        value: data.fixedApy != null ? `${data.fixedApy.toFixed(2)}%` : '—',
+        value: data.fixedApy != null ? formatPercentage(data.fixedApy) : '—',
       },
     ];
 
     if (data.priceImpact != null) {
       details.push({
         label: 'Price Impact',
-        value: `${(data.priceImpact * 100).toFixed(2)}%`,
+        value: formatPercentage(data.priceImpact * 100),
       });
     }
 
@@ -375,11 +376,13 @@ export function PendleActionPanel({
             selectedAction === 'rollover'
               ? data.transactionQuoteLoading ||
                 !data.transactionQuote ||
+                !!data.transactionQuoteError ||
                 !data.selectedRolloverTarget ||
                 !data.isRolloverEnabled
               : !data.transferReadiness.isReady ||
                 data.transactionQuoteLoading ||
                 !data.transactionQuote ||
+                !!data.transactionQuoteError ||
                 data.transferReadiness.isLoading ||
                 (selectedAction === 'enter' && data.isCapReached)
           }

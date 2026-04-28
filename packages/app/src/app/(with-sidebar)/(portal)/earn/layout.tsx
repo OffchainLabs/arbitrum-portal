@@ -37,7 +37,7 @@ export default function EarnLayout({ children }: { children: React.ReactNode }) 
               <PageHeading>Earn</PageHeading>
             </div>
           ))}
-        <div className="flex flex-1 flex-col gap-8 lg:gap-12 lg:mt-4">{children}</div>
+        <div className="flex flex-1 flex-col gap-8 md:mt-4 lg:gap-12">{children}</div>
       </div>
       <EarnFooter />
       <DialogWrapper {...dialogProps} />

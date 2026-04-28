@@ -37,7 +37,7 @@ const CATEGORY_DESCRIPTIONS: Record<OpportunityCategory, string> = {
   [OpportunityCategory.Lend]:
     'Supply assets like WETH, USDC, and WBTC on Arbitrum lending markets to earn variable yield.',
   [OpportunityCategory.LiquidStaking]:
-    'Stake ETH on Arbitrum and receive liquid staking tokens like weETH and wstETH while keeping liquidity.',
+    'Swap for liquid staked ETH on Arbitrum and receive liquid staking tokens like weETH or wstETH while keeping your assets liquid.',
   [OpportunityCategory.FixedYield]:
     'Access fixed-rate opportunities on Arbitrum through Pendle markets with a clear maturity date.',
 };
@@ -91,7 +91,7 @@ interface TableHeaderProps {
 
 function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
   return (
-    <div className="hidden md:flex gap-4 items-center pt-4 px-4 pb-0">
+    <div className="hidden lg:flex gap-4 items-center pt-4 px-4 pb-0">
       <div className="w-[150px] shrink-0">
         <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Name</p>
       </div>
@@ -366,7 +366,7 @@ export function OpportunitiesTable({
               </div>
 
               <div>
-                <div className="flex flex-col gap-1 md:hidden">
+                <div className="flex flex-col gap-1 lg:hidden">
                   {displayedOpportunities.map((opportunity) => (
                     <OpportunityCard
                       key={opportunity.id}
@@ -375,7 +375,7 @@ export function OpportunitiesTable({
                     />
                   ))}
                 </div>
-                <div className="hidden md:flex overflow-x-auto">
+                <div className="hidden lg:flex overflow-x-auto">
                   <div className="flex flex-col gap-1 min-w-[900px] w-full">
                     <TableHeader
                       sortColumn={sortColumn}
@@ -402,7 +402,7 @@ export function OpportunitiesTable({
   if (sortedOpportunities) {
     return (
       <div>
-        <div className="flex flex-col gap-1 md:hidden">
+        <div className="flex flex-col gap-1 lg:hidden">
           {sortedOpportunities.map((opportunity) => (
             <OpportunityCard
               key={opportunity.id}
@@ -411,7 +411,7 @@ export function OpportunitiesTable({
             />
           ))}
         </div>
-        <div className="hidden md:flex overflow-x-auto">
+        <div className="hidden lg:flex overflow-x-auto">
           <div className="flex flex-col gap-1 min-w-[900px] w-full">
             <TableHeader
               sortColumn={sortColumn}
