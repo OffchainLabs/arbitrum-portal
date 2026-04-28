@@ -503,6 +503,7 @@ export function useCctpFetching({
                 ...resultTxData,
                 isLifi: false,
                 isOft: false,
+                isLzValueTransfer: false,
                 cctpData: {
                   ...cctpData,
                   ...resultCctpData,

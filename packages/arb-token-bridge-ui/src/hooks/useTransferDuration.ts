@@ -2,7 +2,7 @@ import dayjs, { Dayjs } from 'dayjs';
 
 import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
 
-import { isLifiTransfer } from '../components/TransactionHistory/helpers';
+import { isLifiTransfer, isLzValueTransfer } from '../components/TransactionHistory/helpers';
 import { MergedTransaction } from '../state/app/state';
 import { useRemainingTimeCctp } from '../state/cctpState';
 import { getBoldInfo, getDifferenceInSeconds } from '../util/BoLDUtils';
@@ -89,6 +89,17 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
       estimatedMinutesLeft: getRemainingMinutes({
         createdAt: tx.createdAt,
         totalDuration: OFT_TRANSFER_DURATION_MINUTES,
+      }),
+    };
+  }
+
+  if (isLzValueTransfer(tx)) {
+    const LZ_VALUE_TRANSFER_DURATION_MINUTES = 5;
+    return {
+      approximateDurationInMinutes: LZ_VALUE_TRANSFER_DURATION_MINUTES,
+      estimatedMinutesLeft: getRemainingMinutes({
+        createdAt: tx.createdAt,
+        totalDuration: LZ_VALUE_TRANSFER_DURATION_MINUTES,
       }),
     };
   }

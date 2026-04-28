@@ -9,7 +9,14 @@ import { LifiData } from '@/token-bridge-sdk/LifiTransferStarter';
 import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
 import { MergedTransactionLifiData } from '../../../state/app/state';
 
-export type RouteType = 'arbitrum' | 'oftV2' | 'cctp' | 'lifi-fastest' | 'lifi-cheapest' | 'lifi'; // If fastest and cheapest quotes are the same
+export type RouteType =
+  | 'arbitrum'
+  | 'oftV2'
+  | 'cctp'
+  | 'lifi-fastest'
+  | 'lifi-cheapest'
+  | 'lifi'
+  | 'lzValueTransfer';
 
 export type RouteData =
   | {
@@ -36,6 +43,14 @@ export type RouteData =
     }
   | {
       type: 'oftV2';
+      data: {
+        amountReceived: string;
+        gasCost?: RouteGas[];
+        bridgeFee?: BridgeFee;
+      };
+    }
+  | {
+      type: 'lzValueTransfer';
       data: {
         amountReceived: string;
         gasCost?: RouteGas[];

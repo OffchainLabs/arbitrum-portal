@@ -18,6 +18,7 @@ import {
   DepositStatus,
   LayerZeroTransaction,
   LifiMergedTransaction,
+  LzValueTransferTransaction,
   MergedTransaction,
   TeleporterMergedTransaction,
   WithdrawalStatus,
@@ -73,6 +74,10 @@ export function isLifiTransfer(tx: Transfer): tx is LifiMergedTransaction {
   return 'isLifi' in tx && tx.isLifi === true;
 }
 
+export function isLzValueTransfer(tx: Transfer): tx is LzValueTransferTransaction {
+  return 'isLzValueTransfer' in tx && tx.isLzValueTransfer === true;
+}
+
 export function getTransactionType(tx: Transfer): SimplifiedRouteType {
   if (isCctpTransfer(tx)) {
     return 'cctp';
@@ -82,6 +87,9 @@ export function getTransactionType(tx: Transfer): SimplifiedRouteType {
   }
   if (isLifiTransfer(tx)) {
     return 'lifi';
+  }
+  if (isLzValueTransfer(tx)) {
+    return 'lzValueTransfer';
   }
   return 'arbitrum';
 }
@@ -99,6 +107,9 @@ export function isTxCompleted(tx: MergedTransaction): boolean {
   if (tx.isOft) {
     return tx.status === 'success';
   }
+  if (isLzValueTransfer(tx)) {
+    return tx.status === 'success';
+  }
   if (isDeposit(tx)) {
     return tx.depositStatus === DepositStatus.L2_SUCCESS;
   }
@@ -111,6 +122,10 @@ export function isTxPending(tx: MergedTransaction) {
   }
 
   if (tx.isOft) {
+    return tx.status === 'pending';
+  }
+
+  if (isLzValueTransfer(tx)) {
     return tx.status === 'pending';
   }
 
@@ -148,6 +163,9 @@ export function isTxClaimable(tx: MergedTransaction): boolean {
   if (tx.isOft) {
     return false;
   }
+  if (isLzValueTransfer(tx)) {
+    return false;
+  }
   if (isDeposit(tx)) {
     return false;
   }
@@ -163,6 +181,10 @@ export function isTxExpired(tx: MergedTransaction): boolean {
 
 export function isTxFailed(tx: MergedTransaction): boolean {
   if (tx.isOft) {
+    return tx.status === 'failed';
+  }
+
+  if (isLzValueTransfer(tx)) {
     return tx.status === 'failed';
   }
 
@@ -702,6 +724,10 @@ export function getTxRemainingTimeInMinutes(tx: MergedTransaction) {
 
 export function getDestinationNetworkTxId(tx: MergedTransaction) {
   if (tx.isOft) {
+    return tx.destinationTxHash;
+  }
+
+  if (isLzValueTransfer(tx)) {
     return tx.destinationTxHash;
   }
 

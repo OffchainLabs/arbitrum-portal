@@ -17,6 +17,7 @@ import { useRoutesUpdater } from '../hooks/useRoutesUpdater';
 import { ArbitrumCanonicalRoute } from './ArbitrumCanonicalRoute';
 import { CctpRoute } from './CctpRoute';
 import { LifiRoute } from './LifiRoute';
+import { LzValueTransferRoute } from './LzValueTransferRoute';
 import { OftV2Route } from './OftV2Route';
 import { BadgeType } from './Route';
 
@@ -148,6 +149,8 @@ export const Routes = React.memo(() => {
           const tag = getRouteTag(route.type);
 
           switch (route.type) {
+            case 'lzValueTransfer':
+              return <LzValueTransferRoute key={`lzValueTransfer-${index}`} />;
             case 'oftV2':
               return <OftV2Route key={`oftV2-${index}`} />;
             case 'cctp':

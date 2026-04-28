@@ -9,7 +9,9 @@ import { EthDepositStarter } from './EthDepositStarter';
 import { EthTeleportStarter } from './EthTeleportStarter';
 import { EthWithdrawalStarter } from './EthWithdrawalStarter';
 import { LifiTransferStarter } from './LifiTransferStarter';
+import { LzValueTransferStarter } from './LzValueTransferStarter';
 import { OftV2TransferStarter } from './OftV2TransferStarter';
+import { getLzValueTransferConfig } from './lzValueTransferUtils';
 import { getOftV2TransferConfig } from './oftUtils';
 import { getBridgeTransferProperties, getProviderForChainId } from './utils';
 
@@ -68,6 +70,16 @@ export class BridgeTransferStarterFactory {
 
     if (typeof cacheValue !== 'undefined') {
       return cacheValue;
+    }
+
+    const isLzValueTransfer = getLzValueTransferConfig({
+      sourceChainId: props.sourceChainId,
+      destinationChainId: props.destinationChainId,
+      sourceChainErc20Address: props.sourceChainErc20Address,
+    });
+
+    if (isLzValueTransfer.isValid) {
+      return withCache(cacheKey, new LzValueTransferStarter(initProps));
     }
 
     const isOft = getOftV2TransferConfig({

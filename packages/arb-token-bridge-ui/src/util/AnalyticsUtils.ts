@@ -23,7 +23,10 @@ export type ProviderName =
   | 'Ledger'
   | 'Other';
 
-export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
+export type SimplifiedRouteType = Extract<
+  RouteType,
+  'arbitrum' | 'oftV2' | 'cctp' | 'lifi' | 'lzValueTransfer'
+>;
 type AnalyticsEventMap = {
   'Transfer Button Click': {
     type: TransferDirection;
@@ -137,6 +140,15 @@ type AnalyticsEventMap = {
   };
   'Onramp Service Click': {
     service: string;
+  };
+  'LZ Value Transfer': {
+    tokenSymbol: string;
+    assetType: string;
+    accountType: string;
+    network: string;
+    amount: number;
+    sourceChain: string;
+    destinationChain: string;
   };
 };
 

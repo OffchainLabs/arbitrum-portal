@@ -4,6 +4,7 @@ export const CommonAddress = {
   Ethereum: {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    PYUSD: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
     WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
     WETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     STETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
@@ -20,6 +21,7 @@ export const CommonAddress = {
     'USDC': '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     'USDC.e': '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
     'USDT': '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+    'PYUSD': '0x46850ad61c2b7d64d08c9c754f45254596696984',
     'WBTC': '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
     'WETH': '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
     'WSTETH': '0x5979d7b546e38e414f7e9822514be443a4800529',
