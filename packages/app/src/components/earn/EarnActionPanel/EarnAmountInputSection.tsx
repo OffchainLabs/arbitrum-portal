@@ -3,10 +3,10 @@
 import type { ReactNode } from 'react';
 
 import { Button } from '@/bridge/components/common/Button';
-import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from '../EarnActionPanelInput';
+import { EarnTokenBadge } from '../EarnTokenSelector';
 
 export interface TokenDisplay {
   symbol: string;
@@ -78,17 +78,7 @@ export function EarnAmountInputSection({
             onChange={onAmountChange}
           />
           {inputTokenSelector ?? (
-            <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
-              <SafeImage
-                src={inputToken.logoUrl}
-                alt={`${inputToken.symbol} logo`}
-                width={20}
-                height={20}
-                className="rounded-full shrink-0"
-                fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
-              />
-              <span className="text-sm font-medium text-white">{inputToken.symbol}</span>
-            </div>
+            <EarnTokenBadge symbol={inputToken.symbol} logoUrl={inputToken.logoUrl} />
           )}
         </div>
 

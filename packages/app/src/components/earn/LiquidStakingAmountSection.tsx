@@ -4,10 +4,7 @@ import { Button } from '@/bridge/components/common/Button';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from './EarnActionPanelInput';
-import {
-  TokenSelectorControl,
-  type TokenSelectorControlConfig,
-} from './LiquidStakingTokenSelector';
+import { TokenSelectorControl, type TokenSelectorControlConfig } from './EarnTokenSelector';
 
 interface LiquidStakingAmountSectionProps {
   amount: string;

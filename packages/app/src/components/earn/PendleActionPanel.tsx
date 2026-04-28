@@ -23,8 +23,8 @@ import {
   EarnTransactionDetailsSection,
   type TransactionDetail,
 } from './EarnActionPanel/EarnTransactionDetailsSection';
+import { TokenSelectorControl } from './EarnTokenSelector';
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
-import { TokenSelectorControl } from './LiquidStakingTokenSelector';
 import { PendleCapWarning } from './PendleCapWarning';
 import { PendleRolloverSection } from './PendleRolloverSection';
 import { SlippageSettingsPanel } from './SlippageSettingsPanel';
