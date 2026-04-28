@@ -1,6 +1,7 @@
 'use client';
 
 import { SparklesIcon } from '@heroicons/react/24/solid';
+import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
 
 import { isEarnEnabled } from '@/bridge/util/featureFlag';
@@ -57,18 +58,15 @@ function StatTile({
   );
 }
 
-// Decorative card shown on the homepage banner; values are static placeholders, not live data.
 function MarketCard() {
   return (
-    <div className="pointer-events-none relative -bottom-14 z-10 hidden w-[400px] rotate-[6deg] transition-all duration-300 group-hover:-bottom-10 lg:block shadow-lg">
+    <div className="pointer-events-none absolute -right-28 -bottom-24 z-10 rotate-[6deg] shadow-lg lg:relative md:right-8 md:-bottom-14 w-[400px] lg:transition-all lg:duration-300 lg:group-hover:-bottom-10 scale-75 md:scale-100">
       <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black p-4">
         {/* Header row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-11 items-center justify-center rounded-xl bg-white/10">
-              <div className="flex size-8 items-center justify-center rounded-full bg-arb-blue text-sm font-bold text-white">
-                $
-              </div>
+              <Image src="/images/UsdcLogo.svg" alt="USDC" width={32} height={32} />
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xl leading-none text-white">USDC</span>
@@ -87,7 +85,13 @@ function MarketCard() {
           <StatTile label="TVL" value="$13.3M" />
           <StatTile label="Protocol">
             <div className="flex items-center gap-2">
-              <div className="size-6 rounded-full bg-arb-blue" />
+              <Image
+                src="/images/MorphoLogo.png"
+                alt="Morpho"
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
               <span className="text-xl leading-none text-white">Morpho</span>
             </div>
           </StatTile>
@@ -108,7 +112,7 @@ export function EarnBanner() {
     <Card
       cardType="link"
       href="/earn"
-      className="group relative flex h-[200px] items-center overflow-hidden bg-arb-blue-navy p-6 lg:h-[282px] lg:p-14 justify-between"
+      className="group relative flex h-[380px] items-start lg:items-center overflow-hidden bg-arb-blue-navy p-6 md:h-[282px] lg:p-14 justify-between"
       analyticsProps={{
         eventName: 'Homepage Earn Banner Click',
       }}
@@ -117,7 +121,7 @@ export function EarnBanner() {
       <ArbitrumStripes className="absolute z-10 inset-0 size-full -scale-x-100 opacity-50 pointer-events-none" />
 
       {/* Left content */}
-      <div className="z-20 flex flex-col gap-3 lg:max-w-[620px] lg:gap-4">
+      <div className="z-20 flex flex-col gap-3 max-w-[300px] lg:max-w-[620px] lg:gap-4">
         <h2 className="text-2xl font-bold uppercase leading-tight tracking-tight lg:text-4xl lg:leading-[1.15]">
           <span className="block text-arb-cyan">Start earning today</span>
           <span className="block">on Arbitrum</span>
