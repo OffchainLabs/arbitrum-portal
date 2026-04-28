@@ -8,16 +8,21 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    fileParallelism: true,
     sequence: { concurrent: true },
     snapshotFormat: {
       escapeString: true,
     },
-    testTimeout: 15_000,
-    include: ['./src/**/*.test.ts', './src/**/*.test.tsx'],
-    exclude: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
+    testTimeout: 120_000,
+    include: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
     env: loadEnv('', '../app/', ''),
     environment: 'happy-dom',
-    setupFiles: ['./vitest.mocks.ts'],
+    environmentOptions: {
+      happyDOM: {
+        url: 'http://localhost:3000',
+      },
+    },
+    setupFiles: ['./vitest.mocks.ts', './vitest.integration.setup.tsx'],
   },
   resolve: {
     alias: {

@@ -58,6 +58,7 @@ export const CommonAddress = {
   Superposition: {
     WBTC: '0x6e142cdaefa4ba7786e8d1ff74968db67c3b910d',
     USDCe: '0x6c030c5cc283f791b26816f325b9c632d964f8a1',
+    WETH: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
   },
 } as const;
 
