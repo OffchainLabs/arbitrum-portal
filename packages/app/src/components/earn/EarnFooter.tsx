@@ -14,7 +14,7 @@ import { ExternalLink } from '@/components/ExternalLink';
 const EarnDisclaimer = () => (
   <p>
     The Arbitrum Portal is only a front-end interface for interacting with existing smart contract
-    protocols. It does not host or control the underlying Defi smart contracts being presented to
+    protocols. It does not host or control the underlying DeFi smart contracts being presented to
     you here, nor does it manage funds or make investing decisions on your behalf. You are solely
     responsible for understanding how these protocols work before using them. To learn more about
     the protocols we support and how we chose them, please visit our{' '}
