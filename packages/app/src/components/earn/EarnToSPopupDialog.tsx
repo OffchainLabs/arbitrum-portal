@@ -52,7 +52,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           <div className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/70">
             <p>
               The Arbitrum Portal is only a front-end interface for interacting with existing smart
-              contract protocols. It does not host or control the underlying Defi smart contracts
+              contract protocols. It does not host or control the underlying DeFi smart contracts
               being presented to you here, nor does it manage funds or make investing decisions on
               your behalf. You are solely responsible for understanding how these protocols work
               before using them.
