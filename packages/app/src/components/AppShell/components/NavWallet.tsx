@@ -30,7 +30,7 @@ interface WalletConnectedDropdownProps {
   account: {
     address: string;
   };
-  chain: {
+  chain?: {
     id: number;
   };
 }
@@ -157,18 +157,10 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
 }
 
 export function NavWallet() {
-  const { address, chain, isConnected, status } = useAccount();
+  const { address, chain } = useAccount();
   const { openConnectModal } = useWalletModal();
 
-  if (status === 'connecting' || status === 'reconnecting') {
-    return (
-      <div className="flex items-center">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-neutral-25" />
-      </div>
-    );
-  }
-
-  if (isConnected && address && chain) {
+  if (address) {
     return <WalletConnectedDropdown account={{ address }} chain={chain} />;
   }
 
