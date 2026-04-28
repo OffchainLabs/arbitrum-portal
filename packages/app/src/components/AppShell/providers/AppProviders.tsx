@@ -55,11 +55,10 @@ const integratorId =
 
 const wagmiConfig = getProps(targetChainKey);
 
-// Clear cache for everything related to WalletConnect v2.
-//
-// TODO: Remove this once the fix for the infinite loop / memory leak is identified.
+// Only clear stale wagmi metadata on load — preserve WalletConnect session data
+// so that Safe and other WC-connected wallets don't lose their sessions on navigation.
 Object.keys(localStorage).forEach((key) => {
-  if (key === 'wagmi.requestedChains' || key === 'wagmi.store' || key.startsWith('wc@2')) {
+  if (key === 'wagmi.requestedChains') {
     localStorage.removeItem(key);
   }
 });

@@ -1264,15 +1264,15 @@ export function TransferPanel() {
         await switchChainAsync({ chainId: sourceChainId });
       }
     } catch (error) {
+      setTransferring(false);
       if (isUserRejectedError(error)) {
         return;
       }
       return networkConnectionWarningToast();
-    } finally {
-      setTransferring(false);
     }
 
     if (!isTransferAllowed) {
+      setTransferring(false);
       return networkConnectionWarningToast();
     }
 

@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@arbitrum/sdk": "^4.0.4",
-    "@rainbow-me/rainbowkit": "^2.2.4",
+    "@rainbow-me/rainbowkit": "^2.2.10",
     "@tippyjs/react": "^4.2.6",
     "@uidotdev/usehooks": "^2.4.1",
     "dayjs": "^1.11.20",

@@ -58,7 +58,7 @@ export function useSyncConnectedChainToQueryParams() {
         setSourceChainToConnectedChain();
 
         window.alert(
-          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
+          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, you will be disconnected.\n\nPlease reconnect to continue.`,
         );
         disconnect();
       }
