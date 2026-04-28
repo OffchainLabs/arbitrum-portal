@@ -14,9 +14,9 @@ import {
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
-import { formatUSD } from '@/bridge/util/NumberUtils';
+import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 
-function formatPercentage(value: number) {
+function formatSignedPercentage(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 
@@ -239,7 +239,7 @@ export function PortfolioSummaryCards({
             {formatUSD(displayEarnings)}
           </p>
           <p className="text-xs opacity-70 italic">
-            {formatPercentage(earningsPercentage)} by {getTargetDate()}
+            {formatSignedPercentage(earningsPercentage)} by {getTargetDate()}
           </p>
         </div>
       </div>

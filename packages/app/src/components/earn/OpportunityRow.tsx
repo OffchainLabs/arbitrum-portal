@@ -10,7 +10,7 @@ import {
 } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
-import { formatUSD } from '@/bridge/util/NumberUtils';
+import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityRowProps {
   opportunity: OpportunityTableRow;
@@ -107,7 +107,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                     <span className="text-sm font-medium text-white opacity-50">Base APY</span>
                   </div>
                   <span className="ml-auto text-sm font-medium text-white">
-                    {opportunity.apyBreakdown.base.toFixed(2)} %
+                    {formatPercentage(opportunity.apyBreakdown.base)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
@@ -124,7 +124,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                     </span>
                   </div>
                   <span className="ml-auto text-sm font-medium bg-gradient-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
-                    {opportunity.apyBreakdown.reward.toFixed(2)} %
+                    {formatPercentage(opportunity.apyBreakdown.reward)}
                   </span>
                 </div>
               </div>
