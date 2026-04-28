@@ -1,9 +1,10 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
+import { PathnameEnum } from '@/bridge/constants';
 import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { TabParamEnum, isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
+import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useMode } from '../../hooks/useMode';
@@ -17,7 +18,6 @@ import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isArbitrumStatsVisible] = useLocalStorage<boolean>(statsLocalStorageKey);
   const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
@@ -33,7 +33,7 @@ export function MainContent() {
 
   // Determine which content to show based on route and query params
   const isBuyPage = showBuyPanel && isBridgeBuyOrSubpages(pathname);
-  const isTxHistory = searchParams.get('tab') === TabParamEnum.TX_HISTORY;
+  const isTxHistory = pathname === PathnameEnum.TX_HISTORY;
 
   return (
     <>
