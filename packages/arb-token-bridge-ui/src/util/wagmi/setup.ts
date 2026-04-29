@@ -117,6 +117,15 @@ export const appKit = createAppKit({
   features: {
     email: false,
     socials: false,
+    connectorTypeOrder: [
+      'injected',
+      'external',
+      'walletConnect',
+      'featured',
+      'recommended',
+      'recent',
+      'custom',
+    ],
   },
   enableWalletGuide: false,
   themeVariables: {
