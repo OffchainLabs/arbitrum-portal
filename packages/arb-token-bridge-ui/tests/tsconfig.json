@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "es2019",
     "types": [
       "./e2e/cypress.d.ts",
       "@synthetixio/synpress/support",

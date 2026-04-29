@@ -1,13 +1,12 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import Resolution from '@unstoppabledomains/resolution';
 import { useEffect, useMemo, useState } from 'react';
-import { useAccount, useDisconnect, useEnsAvatar, useEnsName } from 'wagmi';
+import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../types/ChainId';
 import { shortenAddress } from '../util/CommonUtils';
-import { onDisconnectHandler } from '../util/walletConnectUtils';
 import { useArbQueryParams } from './useArbQueryParams';
 
 type UDInfo = { name: string | null };
@@ -41,11 +40,6 @@ async function tryLookupUDName(provider: JsonRpcProvider, address: string) {
 
 export const useAccountMenu = () => {
   const { address, chain } = useAccount();
-  const { disconnect } = useDisconnect({
-    mutation: {
-      onSettled: onDisconnectHandler,
-    },
-  });
 
   const [, setQueryParams] = useArbQueryParams();
 
@@ -99,7 +93,6 @@ export const useAccountMenu = () => {
     accountShort,
     ensName,
     ensAvatar,
-    disconnect,
     udInfo,
     chain,
     setQueryParams,
