@@ -135,6 +135,3 @@ export const defaultState: AppState = {
   l2NetworkChainId: null,
   arbTokenBridgeLoaded: false,
 };
-export const state: AppState = {
-  ...defaultState,
-};

@@ -2,17 +2,14 @@ import { createConfig } from '@lifi/sdk';
 import { RainbowKitProvider, Theme, darkTheme } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import merge from 'lodash-es/merge';
-import { createOvermind } from 'overmind';
-import { Provider as OvermindProvider } from 'overmind-react';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
-import { PropsWithChildren, useMemo } from 'react';
+import { PropsWithChildren } from 'react';
 import { WagmiProvider } from 'wagmi';
 
 import { LIFI_INTEGRATOR_IDS } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { AppContextProvider } from '@/bridge/components/App/AppContext';
 import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
-import { config } from '@/bridge/state';
 
 import { initializeDayjs } from '../../../initialization';
 import { getProps } from './wagmi/setup';
@@ -70,21 +67,17 @@ createConfig({ integrator: integratorId });
 initializeDayjs();
 
 export function AppProviders({ children }: PropsWithChildren) {
-  const overmind = useMemo(() => createOvermind(config), []);
-
   return (
-    <OvermindProvider value={overmind}>
-      <PostHogProvider client={posthog}>
-        <ArbQueryParamProvider>
-          <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={queryClient}>
-              <RainbowKitProvider theme={rainbowkitTheme}>
-                <AppContextProvider>{children}</AppContextProvider>
-              </RainbowKitProvider>
-            </QueryClientProvider>
-          </WagmiProvider>
-        </ArbQueryParamProvider>
-      </PostHogProvider>
-    </OvermindProvider>
+    <PostHogProvider client={posthog}>
+      <ArbQueryParamProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <RainbowKitProvider theme={rainbowkitTheme}>
+              <AppContextProvider>{children}</AppContextProvider>
+            </RainbowKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </ArbQueryParamProvider>
+    </PostHogProvider>
   );
 }
