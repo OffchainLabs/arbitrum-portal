@@ -1,0 +1,23 @@
+packages:
+  - 'packages/*'
+
+# Supply chain security settings
+# See: https://pnpm.io/supply-chain-security
+
+# Only allow build scripts for explicitly trusted packages.
+# pnpm v10 blocks postinstall scripts by default.
+onlyBuiltDependencies:
+  - '@reown/appkit'
+  - sharp
+
+# Block transitive dependencies from using exotic sources (git repos, tarball URLs).
+# Only direct dependencies may use non-registry sources.
+blockExoticSubdeps: true
+
+# Delay installing newly published packages by 24 hours (1440 minutes).
+# Gives time for malware to be detected before installation.
+minimumReleaseAge: 1440
+
+# Prevent installing package versions with decreased trust levels
+# compared to previously published versions.
+trustPolicy: no-downgrade

@@ -7,6 +7,12 @@
       }
     ]
   },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    }
+  },
   "include": [
     "eslint.config.mjs",
     "packages/**/*.ts",
@@ -17,5 +23,5 @@
     "packages/**/*.jsx",
     "packages/**/*.d.ts"
   ],
-  "exclude": ["node_modules", "**/.next", "**/dist", "**/packages/app/build"]
+  "exclude": ["**/node_modules", "**/.next", "**/dist", "**/packages/app/build"]
 }

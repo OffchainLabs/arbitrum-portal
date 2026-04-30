@@ -54,15 +54,15 @@
     "zustand": "^4.3.9"
   },
   "scripts": {
-    "predev": "yarn generateDenylist",
+    "predev": "pnpm run generateDenylist",
     "dev": "next dev",
-    "prebuild": "yarn generateDenylist",
+    "prebuild": "pnpm run generateDenylist",
     "test": "vitest --config vitest.config.ts --watch",
     "test:ci": "vitest --config vitest.config.ts --run",
     "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
     "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
-    "generateOpenGraphImages:core": "yarn generateOpenGraphImages --core",
-    "generateOpenGraphImages:orbit": "yarn generateOpenGraphImages --orbit",
+    "generateOpenGraphImages:core": "pnpm run generateOpenGraphImages --core",
+    "generateOpenGraphImages:orbit": "pnpm run generateOpenGraphImages --orbit",
     "generateCoreChainsToMonitor": "ts-node --project ./scripts/tsconfig.json ./scripts/generateCoreChainsToMonitor.ts",
     "generateOrbitChainsToMonitor": "ts-node --project ./scripts/tsconfig.json ./scripts/generateOrbitChainsToMonitor.ts"
   },

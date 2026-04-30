@@ -17,18 +17,18 @@ Arbitrum Portal is a Next.js monorepo containing the Arbitrum ecosystem homepage
 
 ```bash
 # Development
-yarn dev              # Start dev server (runs prebuild steps automatically)
-yarn build            # Production build
+pnpm dev              # Start dev server (runs prebuild steps automatically)
+pnpm build            # Production build
 
 # Code Quality
-yarn lint             # TypeScript check + ESLint
-yarn lint:fix         # TypeScript check + ESLint with auto-fix
-yarn prettier:check   # Check formatting
-yarn prettier:format  # Format all files
+pnpm lint             # TypeScript check + ESLint
+pnpm lint:fix         # TypeScript check + ESLint with auto-fix
+pnpm prettier:check   # Check formatting
+pnpm prettier:format  # Format all files
 
 # Testing
-yarn test:ci          # Run unit tests (Vitest, bridge package)
-yarn audit:ci         # Run security audit
+pnpm test:ci          # Run unit tests (Vitest, bridge package)
+pnpm audit:ci         # Run security audit
 ```
 
 ## Architecture
@@ -40,7 +40,7 @@ yarn audit:ci         # Run security audit
 - **Zustand** for state management (custom ESLint rules enforced)
 - **RainbowKit / wagmi / viem** for wallet and blockchain interactions
 - **`@arbitrum/sdk`** for Arbitrum-specific bridge logic
-- **Yarn 1** (classic) with workspaces
+- **pnpm 10** with workspaces
 - **Node v22** (see `.nvmrc`)
 
 ### Path Aliases
@@ -71,8 +71,8 @@ See `tsconfig.base.json` for the full list.
 
 ## Testing and Quality Checklist
 
-- Run `yarn lint` and `yarn prettier:check` before considering a task complete
-- Run `yarn test:ci` to verify unit tests pass after changes
+- Run `pnpm lint` and `pnpm prettier:check` before considering a task complete
+- Run `pnpm test:ci` to verify unit tests pass after changes
 - Update existing tests when modifying related code
 
 ## Git Conventions
@@ -89,7 +89,7 @@ See `tsconfig.base.json` for the full list.
 ## Development Notes
 
 - **Environment Variables**: Copy `packages/app/.env.sample` to `packages/app/.env` and fill in keys. The bridge app requires RPC provider keys to function.
-- **Prebuild Steps**: `yarn dev` and `yarn build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
+- **Prebuild Steps**: `pnpm dev` and `pnpm build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
 - **Per-Package Context**: Check each package's own `package.json` and `tsconfig.json` for package-specific configuration.
 
 ## Working Style

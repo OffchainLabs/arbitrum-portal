@@ -26,13 +26,20 @@ jobs:
         with:
           repository: OffchainLabs/arbitrum-portal
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: 'pnpm'
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Checkout Arbitrum Monitoring repository
         uses: actions/checkout@v4
@@ -56,7 +63,7 @@ jobs:
           echo "slack_channel=$(echo $CONFIG | jq -r '.slackChannels["${{ inputs.monitor }}"]')" >> $GITHUB_OUTPUT
 
       - name: Generate chains JSON
-        run: yarn workspace arb-token-bridge-ui ${{ steps.config.outputs.generate_command }}
+        run: pnpm --filter arb-token-bridge-ui ${{ steps.config.outputs.generate_command }}
 
       - name: Copy chains JSON to Arbitrum Monitoring
         run: cp ./packages/arb-token-bridge-ui/public/${{ steps.config.outputs.config_file }} ./arbitrum-monitoring/config.json
