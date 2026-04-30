@@ -19,7 +19,6 @@ export async function fetchLifiUserPositions(params: {
 }): Promise<StandardUserPosition[]> {
   const { publicClient, opportunities, userAddress } = params;
 
-  // Resolve a single Zerion lookup per opportunity, then batch-fetch prices.
   const lookupByOppId = new Map<string, ZerionPriceLookup | null>();
   for (const opportunity of opportunities) {
     lookupByOppId.set(

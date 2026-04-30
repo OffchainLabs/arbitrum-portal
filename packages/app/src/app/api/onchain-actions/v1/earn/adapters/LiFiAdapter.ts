@@ -190,8 +190,6 @@ export class LiFiAdapter implements VendorAdapter {
     }
 
     try {
-      // Fetch historical APY/TVL data from Dune
-      // If TVL query is separate, merge the results
       const duneData =
         dataSource.duneQueryIds.tvl && dataSource.duneQueryIds.tvl !== dataSource.duneQueryIds.apy
           ? await fetchDuneHistoricalDataMerged(
@@ -232,7 +230,7 @@ export class LiFiAdapter implements VendorAdapter {
         expiresAt: now + 86400, // 24 hours
       };
     } catch (error) {
-      // If Dune fetch fails, return empty data and let UI render unknown metrics.
+      // Return empty data on Dune failure so the UI can render unknown metrics.
       console.error(`Failed to fetch Dune historical data for ${id}:`, error);
       return {
         data: [],

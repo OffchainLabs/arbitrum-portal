@@ -1,12 +1,4 @@
-/**
- * Dune Analytics Service
- *
- * Fetches APY and TVL time series from Dune Analytics public dashboard
- * queries for liquid staking opportunities (wstETH, weETH).
- *
- * Pricing has moved to Zerion — see zerionService.ts. This file no longer
- * touches Dune Sim or token-info endpoints.
- */
+// Dune APY/TVL time series for liquid staking. Pricing lives in zerionService.ts.
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

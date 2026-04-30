@@ -1,10 +1,4 @@
-/**
- * Zerion price service for Earn.
- *
- *  - Current price for user-ops: batched lookup, 30-min revalidate.
- *  - Historical price aligned to chart timestamps: per-asset chart fetch
- *    keyed off our internal granularity.
- */
+// Zerion price service. Docs: https://developers.zerion.io/reference
 import type { HistoricalGranularity, HistoricalTimeRange } from '../types';
 import { alignTimestampToGranularity, getGranularityBucketSeconds } from './historicalWindow';
 import {
@@ -82,17 +76,13 @@ function getRevalidateSecondsForPeriod(period: ZerionChartPeriod): number {
   return 86400;
 }
 
-/**
- * Batched current price lookup. Returns a Map keyed by cache key
- * (impl:chain:address or id:fungibleId). Missing lookups map to null.
- */
+// Returns a Map keyed by `getZerionLookupCacheKey`. Missing entries map to null.
 export async function fetchZerionCurrentPrices(
   lookups: ZerionPriceLookup[],
 ): Promise<Map<string, number | null>> {
   const result = new Map<string, number | null>();
   if (lookups.length === 0) return result;
 
-  // Pre-fill so callers always see every requested key.
   for (const lookup of lookups) {
     result.set(getZerionLookupCacheKey(lookup), null);
   }
@@ -141,7 +131,6 @@ export async function fetchZerionCurrentPrices(
         const payload = (await res.json()) as ZerionFungibleListResponse;
         for (const item of payload.data ?? []) {
           const price = parseFiniteNumber(item.attributes?.market_data?.price);
-          // Match every implementation on the response back to a requested key.
           for (const impl of item.attributes?.implementations ?? []) {
             const candidate = `${impl.chain_id}:${(impl.address ?? '').toLowerCase()}`;
             const requested = lookupByImplKey.get(candidate);
@@ -188,10 +177,6 @@ export async function fetchZerionCurrentPrices(
   return result;
 }
 
-/**
- * Convenience: resolve and fetch a single asset's current price.
- * Returns null on any failure or if the asset has no Zerion mapping.
- */
 export async function fetchZerionCurrentPriceByAddress(params: {
   chainId: number;
   tokenAddress?: string | null;
@@ -241,11 +226,8 @@ async function fetchZerionChart(
   return payload.data?.attributes?.points ?? [];
 }
 
-/**
- * Fetch aligned historical prices for a chart and return a lookup function.
- * Returns `() => null` if the asset has no Zerion mapping, Zerion returns no
- * points, or the chart fetch fails. The returned function never throws.
- */
+// Returns a `(timestamp) => price | null` resolver aligned to our granularity.
+// Resolver returns null if the asset has no Zerion mapping or the chart fetch fails.
 export async function fetchAlignedPriceLookup(params: {
   chainId: number;
   tokenAddress?: string | null;
@@ -299,7 +281,8 @@ export async function fetchAlignedPriceLookup(params: {
     const wanted = alignTimestampToGranularity(timestamp, params.granularity);
     const direct = priceByBucket.get(wanted);
     if (direct !== undefined) return direct;
-    // Fall back to the nearest earlier bucket — chart "step" semantics.
+    // Step semantics: fall back to nearest earlier bucket so missing points
+    // hold the last known price instead of dropping to null.
     let best: number | null = null;
     for (const bucket of sortedBuckets) {
       if (bucket > wanted) break;
