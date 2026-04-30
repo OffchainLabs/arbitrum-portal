@@ -1,14 +1,5 @@
 import { TailSpin } from 'react-loader-spinner';
-
-type BaseProps = {
-  height?: string | number;
-  width?: string | number;
-  color?: string;
-  ariaLabel?: string;
-  wrapperStyle?: { [key: string]: string };
-  wrapperClass?: string;
-  visible?: boolean;
-};
+import { BaseProps } from 'react-loader-spinner';
 
 export type LoaderProps = BaseProps & {
   size: 'small' | 'medium' | 'large' | number;

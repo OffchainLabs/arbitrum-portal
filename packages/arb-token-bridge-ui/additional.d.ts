@@ -25,7 +25,7 @@ declare module '*.json' {
 declare module 'react-loader-spinner' {
   import { FunctionComponent } from 'react';
 
-  interface BaseProps {
+  export interface BaseProps {
     height?: string | number;
     width?: string | number;
     color?: string;
