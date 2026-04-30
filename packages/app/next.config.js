@@ -21,9 +21,9 @@ module.exports = {
     const hoisted = (pkg) => path.resolve(__dirname, '../../node_modules', pkg);
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@tanstack/react-query': hoisted('@tanstack/react-query'),
-      'overmind-react': hoisted('overmind-react'),
-      overmind: hoisted('overmind'),
+      '@tanstack/react-query$': hoisted('@tanstack/react-query'),
+      'overmind-react$': hoisted('overmind-react'),
+      'overmind$': hoisted('overmind'),
     };
     return config;
   },
