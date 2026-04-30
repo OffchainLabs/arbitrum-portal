@@ -183,7 +183,7 @@ export const startWebApp = (
       cy.findAllByText('Connect Wallet').first().should('be.visible');
       if (options.connectMetamask) {
         cy.findAllByText('Connect Wallet').first().click();
-        cy.findByText('MetaMask').should('be.visible').click();
+        cy.contains('MetaMask').should('be.visible').click();
         acceptMetamaskAccess();
         cy.task('setWalletConnectedToDapp');
       }

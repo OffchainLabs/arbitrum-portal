@@ -2,7 +2,12 @@ import '@synthetixio/synpress/support';
 import logCollector from 'cypress-terminal-report/src/installLogsCollector';
 
 import './commands';
-import { getL1NetworkConfig, getL2NetworkConfig, getL2TestnetNetworkConfig } from './common';
+import {
+  getL1NetworkConfig,
+  getL1TestnetNetworkConfig,
+  getL2NetworkConfig,
+  getL2TestnetNetworkConfig,
+} from './common';
 
 logCollector({
   collectTypes: ['cy:command', 'cy:log', 'cons:debug', 'cons:error', 'cons:info', 'cons:warn'],
@@ -22,6 +27,7 @@ before(() => {
 
         // L2
         cy.addMetamaskNetwork(getL2NetworkConfig());
+        cy.addMetamaskNetwork(getL1TestnetNetworkConfig());
         cy.addMetamaskNetwork(getL2TestnetNetworkConfig());
 
         cy.task('setNetworkSetupComplete');
