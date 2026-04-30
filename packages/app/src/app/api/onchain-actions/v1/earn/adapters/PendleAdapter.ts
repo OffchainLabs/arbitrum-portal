@@ -7,6 +7,7 @@ import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
 
+import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { PENDLE_MARKET_CATEGORIES, PENDLE_MIN_TVL_USD, PendleMarketCategory } from '../lib/pendle';
 import {
   PendleAsset,
@@ -193,38 +194,12 @@ export class PendleAdapter implements VendorAdapter {
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
     options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
-    const toTimestamp = options?.toTimestamp ?? Math.floor(Date.now() / 1000);
-    let fromTimestamp: number;
-    let timeFrame: 'hour' | 'day' | 'week';
-    let granularity: HistoricalData['granularity'];
-
-    switch (range) {
-      case '1d':
-        fromTimestamp = toTimestamp - 24 * 60 * 60;
-        timeFrame = 'hour';
-        granularity = '1hour';
-        break;
-      case '1m':
-        fromTimestamp = toTimestamp - 30 * 24 * 60 * 60;
-        timeFrame = 'day';
-        granularity = '1day';
-        break;
-      case '1y':
-        fromTimestamp = toTimestamp - 365 * 24 * 60 * 60;
-        timeFrame = 'week';
-        granularity = '1week';
-        break;
-      case '7d':
-      default:
-        fromTimestamp = toTimestamp - 7 * 24 * 60 * 60;
-        timeFrame = 'day';
-        granularity = '1day';
-        break;
-    }
-
-    if (options?.fromTimestamp) {
-      fromTimestamp = options.fromTimestamp;
-    }
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveAdapterWindow(
+      range,
+      options,
+    );
+    const timeFrame: 'hour' | 'day' | 'week' =
+      granularity === '1hour' ? 'hour' : granularity === '1week' ? 'week' : 'day';
 
     assertSupportedChainId(chainId);
 
@@ -251,7 +226,7 @@ export class PendleAdapter implements VendorAdapter {
     return {
       data: dataPoints,
       granularity,
-      range,
+      range: resolvedRange,
       fromTimestamp,
       toTimestamp,
       isCached: false,

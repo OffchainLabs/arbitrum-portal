@@ -4,9 +4,13 @@ import { formatUnits } from 'viem';
 import { ChainId } from '@/bridge/types/ChainId';
 
 import { OpportunityCategory, type StandardUserPosition, Vendor } from '../types';
-import { getDunePriceLookup } from './dunePriceSources';
-import { fetchDuneCurrentPriceByAddress } from './duneService';
 import { type LiquidStakingOpportunitySeed } from './liquidStaking';
+import {
+  type ZerionPriceLookup,
+  getZerionLookupCacheKey,
+  getZerionPriceLookup,
+} from './zerionPriceSources';
+import { fetchZerionCurrentPrices } from './zerionService';
 
 export async function fetchLifiUserPositions(params: {
   publicClient: PublicClient;
@@ -14,31 +18,34 @@ export async function fetchLifiUserPositions(params: {
   userAddress: string;
 }): Promise<StandardUserPosition[]> {
   const { publicClient, opportunities, userAddress } = params;
-  const priceCache = new Map<string, number | null>();
-  const tokenPriceEntries = await Promise.all(
-    opportunities.map(async (opportunity) => {
-      const priceLookup = getDunePriceLookup({
+
+  // Resolve a single Zerion lookup per opportunity, then batch-fetch prices.
+  const lookupByOppId = new Map<string, ZerionPriceLookup | null>();
+  for (const opportunity of opportunities) {
+    lookupByOppId.set(
+      opportunity.id.toLowerCase(),
+      getZerionPriceLookup({
         chainId: ChainId.ArbitrumOne,
         tokenAddress: opportunity.id,
         assetSymbol: opportunity.token,
-      });
+      }),
+    );
+  }
 
-      if (!priceLookup) {
-        return [opportunity.id.toLowerCase(), null] as const;
-      }
-
-      const cacheKey = `${priceLookup.chainId}:${priceLookup.tokenAddress.toLowerCase()}`;
-      let price = priceCache.get(cacheKey);
-      if (price === undefined) {
-        price = await fetchDuneCurrentPriceByAddress(priceLookup.tokenAddress, priceLookup.chainId);
-        priceCache.set(cacheKey, price);
-      }
-
-      const validPrice = price !== null && Number.isFinite(price) && price > 0 ? price : null;
-      return [opportunity.id.toLowerCase(), validPrice] as const;
-    }),
+  const validLookups = Array.from(lookupByOppId.values()).filter(
+    (lookup): lookup is ZerionPriceLookup => lookup !== null,
   );
-  const tokenPriceMap = new Map<string, number | null>(tokenPriceEntries);
+  const priceMap = await fetchZerionCurrentPrices(validLookups);
+
+  const tokenPriceMap = new Map<string, number | null>();
+  for (const [oppId, lookup] of lookupByOppId) {
+    if (!lookup) {
+      tokenPriceMap.set(oppId, null);
+      continue;
+    }
+    const price = priceMap.get(getZerionLookupCacheKey(lookup)) ?? null;
+    tokenPriceMap.set(oppId, price !== null && Number.isFinite(price) && price > 0 ? price : null);
+  }
 
   const positionPromises = opportunities.map(async (opportunity) => {
     const tokenAddress = opportunity.id;

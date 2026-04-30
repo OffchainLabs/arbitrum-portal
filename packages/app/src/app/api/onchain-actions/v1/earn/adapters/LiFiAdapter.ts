@@ -6,11 +6,7 @@ import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-
 import { ChainId } from '@/bridge/types/ChainId';
 import { rpcURLs } from '@/bridge/util/networks';
 
-import {
-  fetchAlignedPriceLookup,
-  fetchDuneHistoricalData,
-  fetchDuneHistoricalDataMerged,
-} from '../lib/duneService';
+import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { fetchLifiUserPositions } from '../lib/lifiPositions';
 import { buildLifiQuoteData, buildLifiQuotePreviewData } from '../lib/lifiQuote';
@@ -24,6 +20,7 @@ import {
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
 import { ValidationError } from '../lib/validation';
+import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
   AvailableActions,
   type EarnChainId,
@@ -211,6 +208,7 @@ export class LiFiAdapter implements VendorAdapter {
         assetSymbol: opportunity?.token,
         timestamps: duneData.map((point) => point.timestamp),
         granularity,
+        range: resolvedRange,
       });
 
       const dataPoints: HistoricalDataPoint[] = duneData.map((point) => {

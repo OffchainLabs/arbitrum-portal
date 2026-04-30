@@ -1,10 +1,10 @@
 import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
 
-import { fetchAlignedPriceLookup } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
+import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
   AvailableActions,
   type EarnChainId,
@@ -145,7 +145,7 @@ export class VaultsAdapter implements VendorAdapter {
       }
     } catch (error) {
       console.warn(
-        '[earn][dune] Failed to fetch vault asset metadata for historical price lookup',
+        '[earn][zerion] Failed to fetch vault asset metadata for historical price lookup',
         {
           opportunityId: id,
           network,
@@ -162,6 +162,7 @@ export class VaultsAdapter implements VendorAdapter {
       assetSymbol,
       timestamps: rawHistoricalPoints.map((point) => point.timestamp),
       granularity,
+      range: resolvedRange,
     });
 
     const dataPoints: HistoricalDataPoint[] = rawHistoricalPoints

@@ -1,95 +1,21 @@
 /**
  * Dune Analytics Service
  *
- * Fetches APY and TVL data from Dune Analytics public dashboard queries.
+ * Fetches APY and TVL time series from Dune Analytics public dashboard
+ * queries for liquid staking opportunities (wstETH, weETH).
+ *
+ * Pricing has moved to Zerion — see zerionService.ts. This file no longer
+ * touches Dune Sim or token-info endpoints.
  */
-import { getDunePriceLookup } from './dunePriceSources';
-import { alignTimestampToGranularity, getGranularityBucketSeconds } from './historicalWindow';
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-const DUNE_SIM_API_BASE_URL = 'https://api.sim.dune.com/v1';
-const MAX_SIM_HISTORICAL_OFFSETS = 3;
-const MAX_SIM_REQUESTS_PER_SOURCE = 3;
-
-const SECONDS_PER_HOUR = 3600;
-
-function getDuneSimApiKey(): string {
-  const simApiKey = process.env.DUNE_SIM_API_KEY;
-  if (simApiKey) {
-    return simApiKey;
-  }
-
-  const duneApiKey = process.env.DUNE_API_KEY;
-  if (duneApiKey) {
-    return duneApiKey;
-  }
-
-  throw new Error(
-    'DUNE_SIM_API_KEY environment variable is not set (fallback DUNE_API_KEY is also missing)',
-  );
-}
-
-function parseOptionalFiniteNumber(value: unknown): number | null {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function chunkValues<T>(values: T[], chunkSize: number): T[][] {
-  if (values.length === 0) {
-    return [];
-  }
-
-  const chunks: T[][] = [];
-  for (let index = 0; index < values.length; index += chunkSize) {
-    chunks.push(values.slice(index, index + chunkSize));
-  }
-  return chunks;
-}
-
-function sampleOffsets(offsets: number[], maxCount: number): number[] {
-  if (offsets.length <= maxCount) {
-    return offsets;
-  }
-
-  const sampled = new Set<number>();
-  const lastIndex = offsets.length - 1;
-  for (let i = 0; i < maxCount; i += 1) {
-    const ratio = maxCount === 1 ? 0 : i / (maxCount - 1);
-    const index = Math.round(ratio * lastIndex);
-    const value = offsets[index];
-    if (value !== undefined) {
-      sampled.add(value);
-    }
-  }
-
-  return Array.from(sampled).sort((a, b) => a - b);
 }
 
 type DuneResultsResponse = {
   result?: {
     rows?: Array<Record<string, unknown>>;
   };
-};
-
-type DuneSimHistoricalPrice = {
-  offset_hours?: number;
-  price_usd?: number | string | null;
-};
-
-type DuneSimTokenInfo = {
-  chain_id?: number;
-  address?: string;
-  price_usd?: number | string | null;
-  historical_prices?: DuneSimHistoricalPrice[];
-};
-
-type DuneSimTokenInfoResponse = {
-  contract_address?: string;
-  tokens?: DuneSimTokenInfo[];
-  data?: DuneSimTokenInfo[];
 };
 
 async function fetchLatestDuneRows(queryId: number): Promise<Array<Record<string, unknown>>> {
@@ -114,164 +40,6 @@ async function fetchLatestDuneRows(queryId: number): Promise<Array<Record<string
 
   const payload = (await response.json()) as DuneResultsResponse;
   return payload.result?.rows ?? [];
-}
-
-async function fetchDuneSimTokenInfo(params: {
-  tokenAddress: string;
-  chainId: number;
-  historicalOffsetsHours?: number[];
-}): Promise<DuneSimTokenInfo | null> {
-  const apiKey = getDuneSimApiKey();
-  const normalizedAddress = params.tokenAddress.toLowerCase();
-
-  const url = new URL(
-    `${DUNE_SIM_API_BASE_URL}/evm/token-info/${encodeURIComponent(normalizedAddress)}`,
-  );
-  url.searchParams.set('chain_ids', String(params.chainId));
-
-  const offsets = (params.historicalOffsetsHours ?? []).filter(
-    (offset) => Number.isInteger(offset) && offset > 0,
-  );
-  if (offsets.length > 0) {
-    url.searchParams.set('historical_prices', offsets.join(','));
-  }
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'X-Sim-Api-Key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    next: {
-      revalidate: 300,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Dune Sim token-info request failed (${response.status} ${response.statusText})`,
-    );
-  }
-
-  const payload = (await response.json()) as DuneSimTokenInfoResponse;
-  const tokenRows = payload.tokens ?? payload.data ?? [];
-  const token =
-    tokenRows.find((item) => parseOptionalFiniteNumber(item.chain_id) === params.chainId) ??
-    tokenRows[0] ??
-    null;
-
-  return token;
-}
-
-export async function fetchDuneCurrentPriceByAddress(
-  tokenAddress: string,
-  chainId: number,
-): Promise<number | null> {
-  try {
-    const tokenInfo = await fetchDuneSimTokenInfo({ tokenAddress, chainId });
-    return parseOptionalFiniteNumber(tokenInfo?.price_usd);
-  } catch (error) {
-    console.warn(
-      `[earn][dune] Failed to fetch current token price for ${tokenAddress} on chain ${chainId}: ${getErrorMessage(error)}`,
-    );
-    return null;
-  }
-}
-
-async function fetchDunePriceAligned(params: {
-  tokenAddress: string;
-  chainId: number;
-  timestamps: number[];
-  granularity: '1hour' | '1day' | '1week';
-}): Promise<Map<number, number | null>> {
-  const { tokenAddress, chainId, timestamps, granularity } = params;
-
-  try {
-    const bucketSeconds = getGranularityBucketSeconds(granularity);
-    const nowTimestamp = Math.floor(Date.now() / 1000);
-
-    const uniqueBucketTimestamps = Array.from(
-      new Set(
-        timestamps
-          .map((timestamp) => Math.floor(timestamp / bucketSeconds) * bucketSeconds)
-          .filter((timestamp) => Number.isFinite(timestamp) && timestamp > 0),
-      ),
-    );
-
-    if (uniqueBucketTimestamps.length === 0) {
-      return new Map();
-    }
-
-    const hoursAgoByBucket = new Map<number, number>();
-    for (const bucketTimestamp of uniqueBucketTimestamps) {
-      const hoursAgo = Math.max(0, Math.round((nowTimestamp - bucketTimestamp) / SECONDS_PER_HOUR));
-      hoursAgoByBucket.set(bucketTimestamp, hoursAgo);
-    }
-
-    const historicalOffsets = Array.from(new Set(Array.from(hoursAgoByBucket.values())))
-      .filter((hoursAgo) => hoursAgo > 0)
-      .sort((a, b) => a - b);
-    const sampledOffsets = sampleOffsets(
-      historicalOffsets,
-      MAX_SIM_REQUESTS_PER_SOURCE * MAX_SIM_HISTORICAL_OFFSETS,
-    );
-    const offsetChunks = chunkValues(sampledOffsets, MAX_SIM_HISTORICAL_OFFSETS);
-
-    const tokenInfoResponses = await Promise.all(
-      offsetChunks.length > 0
-        ? offsetChunks.map((offsetChunk) =>
-            fetchDuneSimTokenInfo({
-              tokenAddress,
-              chainId,
-              historicalOffsetsHours: offsetChunk,
-            }),
-          )
-        : [fetchDuneSimTokenInfo({ tokenAddress, chainId })],
-    );
-
-    const priceByHoursAgo = new Map<number, number | null>();
-    for (const tokenInfo of tokenInfoResponses) {
-      if (!tokenInfo) {
-        continue;
-      }
-
-      if (!priceByHoursAgo.has(0)) {
-        priceByHoursAgo.set(0, parseOptionalFiniteNumber(tokenInfo.price_usd));
-      }
-
-      for (const historicalPrice of tokenInfo.historical_prices ?? []) {
-        const offsetHours = parseOptionalFiniteNumber(historicalPrice.offset_hours);
-        if (offsetHours === null || !Number.isInteger(offsetHours) || offsetHours <= 0) {
-          continue;
-        }
-        priceByHoursAgo.set(offsetHours, parseOptionalFiniteNumber(historicalPrice.price_usd));
-      }
-    }
-
-    const availableOffsets = Array.from(priceByHoursAgo.entries())
-      .filter(([, price]) => price !== null)
-      .map(([offset]) => offset)
-      .sort((a, b) => a - b);
-
-    const alignedPrices = new Map<number, number | null>();
-    for (const [bucketTimestamp, hoursAgo] of hoursAgoByBucket) {
-      let alignedPrice = priceByHoursAgo.get(hoursAgo) ?? null;
-      if (alignedPrice === null && availableOffsets.length > 0) {
-        const fallbackOffset = availableOffsets.find((offset) => offset >= hoursAgo);
-        if (fallbackOffset !== undefined) {
-          alignedPrice = priceByHoursAgo.get(fallbackOffset) ?? null;
-        }
-      }
-      alignedPrices.set(bucketTimestamp, alignedPrice);
-    }
-
-    return alignedPrices;
-  } catch (error) {
-    console.warn(
-      `[earn][dune] Failed to fetch aligned token prices for ${tokenAddress} on chain ${chainId}: ${getErrorMessage(error)}`,
-    );
-    return new Map();
-  }
 }
 
 type DuneDataPoint = { timestamp: number; apy: number | null; tvl: number | null };
@@ -520,52 +288,4 @@ export async function fetchDuneCurrentDataMerged(
       `Failed to fetch merged current Dune data for queries ${apyQueryId}/${tvlQueryId}: ${getErrorMessage(error)}`,
     );
   }
-}
-
-/**
- * Build a function that looks up a price for a given timestamp from a
- * bucket-aligned price map.
- */
-function createAlignedPriceLookup(
-  priceMap: Map<number, number | null>,
-  granularity: '1hour' | '1day' | '1week',
-): (timestamp: number) => number | null {
-  return (timestamp: number) => {
-    const bucketTimestamp = alignTimestampToGranularity(timestamp, granularity);
-    return priceMap.get(bucketTimestamp) ?? null;
-  };
-}
-
-/**
- * One-shot helper: resolve the Dune price source for a token, fetch aligned
- * historical prices, and return a lookup function.
- *
- * Combines getDunePriceLookup + fetchDunePriceAligned + createAlignedPriceLookup
- * so adapters only need a single call.
- */
-export async function fetchAlignedPriceLookup(params: {
-  chainId: number;
-  tokenAddress?: string | null;
-  assetSymbol?: string | null;
-  timestamps: number[];
-  granularity: '1hour' | '1day' | '1week';
-}): Promise<(timestamp: number) => number | null> {
-  const priceLookup = getDunePriceLookup({
-    chainId: params.chainId,
-    tokenAddress: params.tokenAddress,
-    assetSymbol: params.assetSymbol,
-  });
-
-  if (!priceLookup) {
-    return () => null;
-  }
-
-  const priceMap = await fetchDunePriceAligned({
-    tokenAddress: priceLookup.tokenAddress,
-    chainId: priceLookup.chainId,
-    timestamps: params.timestamps,
-    granularity: params.granularity,
-  });
-
-  return createAlignedPriceLookup(priceMap, params.granularity);
 }
