@@ -34,6 +34,9 @@ jobs:
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Build scripts
         run: pnpm --filter scripts build
