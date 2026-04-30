@@ -45,7 +45,8 @@
           "name": "Xai",
           "symbol": "XAI",
           "logoUrl": "/images/XaiLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -87,7 +88,8 @@
           "name": "RARI Mainnet",
           "description": "A chain designed specifically for NFT royalties and creator empowerment.",
           "logo": "/images/RARIMainnetLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -135,7 +137,8 @@
           "name": "DMT",
           "symbol": "DMT",
           "logoUrl": "/images/SankoLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 21600
       }
     },
     {
@@ -177,7 +180,8 @@
           "name": "Superposition",
           "logo": "/images/SuperpositionLogo.svg",
           "description": "Superposition is the first DeFi-native Layer-3, with shared and permissionless liquidity, AA, and minimal fees, while providing higher yields."
-        }
+        },
+        "assertionIntervalSeconds": 6300
       }
     },
     {
@@ -219,7 +223,8 @@
           "name": "Mind Network",
           "logo": "/images/MindChainLogo.webp",
           "description": "MindChain is the 1st FHE consensus chain for Mind Network, serving billions in voted TVL and millions of voters from AI partners."
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -268,7 +273,8 @@
           "symbol": "SX",
           "logoUrl": "/images/sxTokenLogo.png"
         },
-        "fastWithdrawalTime": 43200000
+        "fastWithdrawalTime": 43200000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -316,7 +322,8 @@
           "name": "ApeCoin",
           "symbol": "APE",
           "logoUrl": "/images/ApeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -364,7 +371,8 @@
           "name": "G",
           "symbol": "G",
           "logoUrl": "/images/GravityAlpha_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -414,7 +422,8 @@
           "symbol": "EDU",
           "logoUrl": "/images/EduChainTokenLogo.png"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -510,7 +519,8 @@
           "symbol": "BOUNTY",
           "logoUrl": "/images/ChainBounty_Logo.svg"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 135000
       }
     },
     {
@@ -558,7 +568,8 @@
           "name": "Miracle Play",
           "symbol": "MPT",
           "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 41400
       }
     },
     {
@@ -606,7 +617,8 @@
           "name": "Plume",
           "symbol": "PLUME",
           "logoUrl": "/images/PlumeMainnet_NativeTokenLogo.png"
-        }
+        },
+        "assertionIntervalSeconds": 86400
       }
     },
     {
@@ -653,7 +665,8 @@
           "name": "Humanity",
           "symbol": "H",
           "logoUrl": "/images/HumanityMainnet_Logo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -700,7 +713,8 @@
           "name": "GNET",
           "symbol": "GNET",
           "logoUrl": "/images/GalacticaMainnet_Logo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -747,7 +761,8 @@
           "name": "Earnm Token",
           "symbol": "EARNM",
           "logoUrl": "/images/EarnmMainnet_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -789,101 +804,8 @@
           "name": "T-REX",
           "logo": "/images/T-REX_Logo.png",
           "description": "Invisible blockchain bridging everyday digital interactions into real-world rewards."
-        }
-      }
-    },
-    {
-      "chainId": 360,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0xE1d32C985825562edAa906fAC39295370Db72195",
-        "inbox": "0x235000876bd58336C802B3546Fc0250f285fCc79",
-        "outbox": "0xb255de22d39a26D4CbcAFd6Cf660ccaCa047e95B",
-        "rollup": "0x0f28D76Ec5c62b502625351726b4A3E3F54FF5F0",
-        "sequencerInbox": "0x0fFe9ACC296ddd4De5F616Aa482C99fA4b41A3E2"
-      },
-      "nativeToken": "0x66E535e8D2ebf13F49F3D49e5c50395a97C137b1",
-      "explorerUrl": "https://molten.calderaexplorer.xyz/",
-      "rpcUrl": "https://molten.calderachain.xyz/http",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Molten",
-      "slug": "molten",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x6D3A5fc8Ba7446127FaeC9eC1597C017EC1f3Eac",
-        "parentErc20Gateway": "0x5a6f8ea5e1028C80CB98Fd8916afBBC4E6b23D80",
-        "parentGatewayRouter": "0xAeAe9616A02dA527FceA2AC444EC918C7BfB9CdF",
-        "parentMultiCall": "0x909b042B88F587d745dBF52e2569545376f6eAA4",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xEF3c26D1854922b67A7011ee8CbFcE0Ab78726a8",
-        "childErc20Gateway": "0x939b292EE930f62E3C8f7040Df9A8b3B872E1602",
-        "childGatewayRouter": "0x56f4046f9271Ec59787Ecd22b00630c028D93301",
-        "childMultiCall": "0xfBF66Ff2Be2b15180Ec5F3Abf79D8C9517120232",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#f10000",
-        "network": {
-          "name": "Molten",
-          "logo": "/images/Molten_Logo.png"
         },
-        "nativeTokenData": {
-          "name": "Molten",
-          "symbol": "MOLTEN"
-        }
-      }
-    },
-    {
-      "chainId": 98215,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0x55A1B18E0300aD707617B828E0554765dBFc8535",
-        "inbox": "0x306c4D4032862813db6554519e03DA31C1387cFf",
-        "outbox": "0x8D6513Bc0cafaa0CaEdB80dB392997E92c7FA125",
-        "rollup": "0xCE9b9DcC2D281356a7591F3D8307991546172771",
-        "sequencerInbox": "0xA672239e003124455c00FdAB7D15dD682BCe97AE"
-      },
-      "nativeToken": "0x49bef7de007b944505f5a2fac1f00737c8e4fa96",
-      "explorerUrl": "https://explorer.tiktrix.gg/",
-      "rpcUrl": "https://rpc.tiktrix.gg",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "MeerChain",
-      "slug": "meerchain",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x2A4054528972748aaaF6224Ff46F2A6349CE1426",
-        "parentErc20Gateway": "0x70e43daC8f9140752C0937251c9345DDE97183C7",
-        "parentGatewayRouter": "0x5d94E722d350579662De3Bd57298a42D148432b3",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x516892998a30e42f03940A33098a7900d2FADe3B",
-        "childErc20Gateway": "0xa074a952096c29097F83B7c9c9b30692A8fcd6Fc",
-        "childGatewayRouter": "0x8dB05c5f0625C6f6702e76781aE61f1541B1489d",
-        "childMultiCall": "0x46E941268A2bc14AeA1138E32b52CCc4cB4Ae3ad",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#c1ff72",
-        "network": {
-          "name": "MeerChain",
-          "logo": "/images/MeerChain_Logo.png",
-          "description": "MeerChain serves as the foundational blockchain for the TikTrix platform, delivering high-performance infrastructure as a Layer-3 application chain specifically engineered for GameFi and SocialFi ecosystems. Built upon Arbitrum's battle-tested security framework and inheriting Ethereum mainnet's decentralized architecture, MeerChain enables ultra-low-cost transactions and sub-second block finality, creating an optimized environment for gaming and social interactions at scale."
-        },
-        "nativeTokenData": {
-          "name": "TikTrix Token",
-          "symbol": "TRIX",
-          "logoUrl": "/images/MeerChain_NativeTokenLogo.png"
-        }
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -925,7 +847,8 @@
           "name": "HPP Mainnet",
           "logo": "/images/HPPMainnet_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
-        }
+        },
+        "assertionIntervalSeconds": 128700
       }
     },
     {
@@ -973,7 +896,8 @@
           "symbol": "xUSD",
           "logoUrl": "/images/XMTPMainnet_Logo.png"
         },
-        "fastWithdrawalTime": 3600000
+        "fastWithdrawalTime": 3600000,
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1020,7 +944,8 @@
           "name": "World Mobile Token",
           "symbol": "WMTX",
           "logoUrl": "/images/WorldMobileChainMainnet_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1061,55 +986,8 @@
         "network": {
           "name": "Syndicate Network",
           "logo": "/images/SyndicateNetwork_Logo.png"
-        }
-      }
-    },
-    {
-      "chainId": 175200,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0x7a472B48D9e9D2f6B7fF8FCBb5251849ca75D18f",
-        "inbox": "0x009060fdb0816c354F487843d275D9e1d90B1956",
-        "outbox": "0x09c35e5848B52Fa422447AD6728b328d0Aa39bA9",
-        "rollup": "0xc3074172C101b3789055912DE768d7222000836F",
-        "sequencerInbox": "0x3a1b2BDcD084f0536bEF90B8e709fbcCDBf9fEb3"
-      },
-      "nativeToken": "0xC7603786470F04D33E35f9E9B56bD0Ca8803fB95",
-      "explorerUrl": "https://lit-chain-explorer.litprotocol.com",
-      "rpcUrl": "https://lit-chain-rpc.litprotocol.com",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Lit Chain",
-      "slug": "lit-chain",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x38acac5aC57EC48e69e5Ed1dacecC444bc3699B2",
-        "parentErc20Gateway": "0x504463Bfa84E30E420389BB1973e95334d666195",
-        "parentGatewayRouter": "0x50bF4428E0b05223431B932CFE79fb46518E6190",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x25d3e0964ce42E5C343a0F5911122cBE10ed283a",
-        "childErc20Gateway": "0x024bf9Fa73C5a6880E48e0451ff0695084c3df04",
-        "childGatewayRouter": "0xf490cF5cF1303c76556C8055Defc7d98E17f3c94",
-        "childMultiCall": "0x8e3caDdF5E38779D7A6384dc8a92d9785D9d0c91",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#FF4205",
-        "network": {
-          "name": "Lit Chain",
-          "logo": "/images/LitChain_Logo.svg",
-          "description": "Lit Protocol's mainnet chain."
         },
-        "nativeTokenData": {
-          "name": "Lit Protocol",
-          "symbol": "LITKEY",
-          "logoUrl": "/images/LitChain_NativeTokenLogo.svg"
-        }
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1151,7 +1029,8 @@
           "name": "Muster Network",
           "description": "A gaming chain with cheap fees and account abstraction.",
           "logo": "/images/MusterLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -1193,7 +1072,8 @@
           "name": "Edge Mainnet",
           "logo": "/images/EdgeMainnet_Logo.png"
         },
-        "fastWithdrawalTime": 180000
+        "fastWithdrawalTime": 180000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1241,7 +1121,8 @@
           "name": "JasmyCoin",
           "symbol": "JASMY",
           "logoUrl": "/images/JasmyChain_NativeTokenLogo.jpg"
-        }
+        },
+        "assertionIntervalSeconds": 24300
       }
     },
     {
@@ -1289,7 +1170,8 @@
           "symbol": "PAX",
           "logoUrl": "/images/PanaxMainnet_NativeTokenLogo.svg"
         },
-        "fastWithdrawalTime": 900000
+        "fastWithdrawalTime": 900000,
+        "assertionIntervalSeconds": 900
       }
     },
     {
@@ -1338,7 +1220,8 @@
           "symbol": "POWER",
           "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
         },
-        "fastWithdrawalTime": 86400000
+        "fastWithdrawalTime": 86400000,
+        "assertionIntervalSeconds": 20700
       }
     },
     {
@@ -1386,7 +1269,8 @@
           "name": "Kepeng",
           "symbol": "KPG",
           "logoUrl": "/images/MandalaChain_NativeTokenLogo.svg"
-        }
+        },
+        "assertionIntervalSeconds": 18000
       }
     }
   ],

@@ -4,10 +4,7 @@ import { Button } from '@/bridge/components/common/Button';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from './EarnActionPanelInput';
-import {
-  TokenSelectorControl,
-  type TokenSelectorControlConfig,
-} from './LiquidStakingTokenSelector';
+import { TokenSelectorControl, type TokenSelectorControlConfig } from './EarnTokenSelector';
 
 interface LiquidStakingAmountSectionProps {
   amount: string;
@@ -51,7 +48,7 @@ export function LiquidStakingAmountSection({
       : null;
 
   return (
-    <div className="bg-neutral-100 rounded flex flex-col p-4">
+    <div className="bg-neutral-100 rounded flex flex-col p-4 focus-within:ring-2 focus-within:ring-white/30">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">{label}</span>

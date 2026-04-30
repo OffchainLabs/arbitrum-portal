@@ -109,6 +109,17 @@ export function HistoricalLineChart({
     return formatCompactUsd(value);
   };
 
+  const yAxisWidth = (() => {
+    const [domainMin, domainMax] = getYAxisDomain(data);
+    const sampleValues = [domainMin, domainMax].filter((v): v is number => typeof v === 'number');
+    const longestLabelLength = sampleValues.reduce(
+      (max, value) => Math.max(max, formatYAxisLabel(value).length),
+      0,
+    );
+    // ~7px per char at 12px font, floor at 40px
+    return Math.max(40, longestLabelLength * 7);
+  })();
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} accessibilityLayer>
@@ -136,7 +147,7 @@ export function HistoricalLineChart({
           tickLine={false}
           axisLine={false}
           tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
-          width={50}
+          width={yAxisWidth}
         />
         <Tooltip content={<ChartTooltipContent metricType={metricType} xFormat={xFormat} />} />
         <Line

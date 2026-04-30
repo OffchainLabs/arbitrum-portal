@@ -348,9 +348,21 @@ function TokensPanel({
             return true;
           }
 
-          // Always show official ARB token except from or to Orbit chain
+          const isArbOneNovaTransfer =
+            (networks.sourceChain.id === ChainId.ArbitrumOne &&
+              networks.destinationChain.id === ChainId.ArbitrumNova) ||
+            (networks.sourceChain.id === ChainId.ArbitrumNova &&
+              networks.destinationChain.id === ChainId.ArbitrumOne);
+
+          // Always show official ARB token except from or to Orbit chain,
+          // or when transferring between Arbitrum One and Arbitrum Nova
           if (token?.listIds.has(SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID)) {
-            return !isOrbitChain;
+            return !isOrbitChain && !isArbOneNovaTransfer;
+          }
+
+          // Show all tokens from the lifi list for Arbitrum One <> Arbitrum Nova transfers
+          if (isArbOneNovaTransfer) {
+            return true;
           }
 
           const balance = getBalance(address);

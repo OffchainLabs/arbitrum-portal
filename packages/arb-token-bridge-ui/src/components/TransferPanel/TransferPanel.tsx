@@ -16,11 +16,10 @@ import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.ty
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
-import { useTransactionHistory } from '@/bridge/hooks/useTransactionHistory';
+import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
-import { ChainId } from '@/bridge/types/ChainId';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -51,7 +50,7 @@ import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { trackEvent } from '../../util/AnalyticsUtils';
+import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
@@ -160,7 +159,7 @@ export function TransferPanel() {
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
-  const { addPendingTransaction } = useTransactionHistory(walletAddress);
+  const { addPendingTransaction } = useAddPendingTransactions(walletAddress);
   const { selectedRoute, clearRoute, context } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
@@ -629,16 +628,14 @@ export function TransferPanel() {
         wagmiConfig,
       });
 
-      const assetType =
-        addressesEqual(context.fromAmount.token.address, constants.AddressZero) &&
-        networks.sourceChain.id === ChainId.ApeChain
-          ? AssetType.ERC20
-          : AssetType.ETH;
-      const destinationAssetType =
-        addressesEqual(context.toAmount.token.address, constants.AddressZero) &&
-        networks.destinationChain.id === ChainId.ApeChain
-          ? AssetType.ERC20
-          : AssetType.ETH;
+      const assetType = getLifiAssetType({
+        tokenAddress: context.fromAmount.token.address,
+        chainId: networks.sourceChain.id,
+      });
+      const destinationAssetType = getLifiAssetType({
+        tokenAddress: context.toAmount.token.address,
+        chainId: networks.destinationChain.id,
+      });
 
       trackEvent('Lifi Transfer', {
         tokenSymbol: context.fromAmount.token.symbol,

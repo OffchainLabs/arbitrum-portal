@@ -48,10 +48,15 @@ export function login({
     const sourceChain = networkNameWithDefault.toLowerCase().replace(/ /g, '-');
 
     // when testing Orbit chains we want to set destination chain to L3
-    const destinationChain =
+    const defaultDestinationChain =
       networkType === 'parentChain' && network.chainId === 412346 ? 'nitro-testnode-l3' : '';
     startWebApp(url, {
-      query: { ...query, sourceChain, destinationChain, sanitized: 'true' },
+      query: {
+        ...query,
+        sourceChain,
+        destinationChain: query?.destinationChain ?? defaultDestinationChain,
+        sanitized: 'true',
+      },
       connectMetamask,
     });
   }

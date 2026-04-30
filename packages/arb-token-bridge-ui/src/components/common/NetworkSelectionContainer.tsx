@@ -26,7 +26,6 @@ import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
-import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -490,11 +489,6 @@ export const NetworkSelectionContainer = React.memo(
     const onNetworkRowClick = useCallback(
       (value: Chain) => {
         const pairedChain = isSource ? 'destinationChain' : 'sourceChain';
-
-        if (shouldOpenOneNovaDialog([value.id, networks[pairedChain].id])) {
-          props.onClose(false, 'one_nova_transfer');
-          return;
-        }
 
         if (networks[pairedChain].id === value.id) {
           setNetworks({

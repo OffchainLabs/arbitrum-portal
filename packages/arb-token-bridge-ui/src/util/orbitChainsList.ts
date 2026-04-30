@@ -1,16 +1,8 @@
-import { NativeCurrencyBase } from '../hooks/useNativeCurrency';
+import type { NativeCurrencyBase } from '../hooks/useNativeCurrency';
 import { ChainId } from '../types/ChainId';
-import { addressesEqual } from './AddressUtils';
 import { isE2eTestingEnvironment } from './CommonUtils';
-import { ChainWithRpcUrl } from './networks';
+import type { ChainWithRpcUrl } from './networks';
 import orbitChainsData from './orbitChainsData.json';
-
-export type NetworkType =
-  | 'Ethereum'
-  | 'Rollup'
-  | 'AnyTrust'
-  | 'Ethereum Testnet'
-  | 'Arbitrum Testnet';
 
 export type BridgeUiConfig = {
   color: `#${string}`;
@@ -21,6 +13,7 @@ export type BridgeUiConfig = {
   };
   nativeTokenData?: Omit<NativeCurrencyBase, 'decimals'>;
   fastWithdrawalTime?: number;
+  assertionIntervalSeconds?: number;
 };
 
 export type OrbitChainConfig = ChainWithRpcUrl & {
@@ -75,14 +68,5 @@ export function getOrbitChains(
 }
 
 export function getInboxAddressFromOrbitChainId(chainId: number) {
-  return (
-    getOrbitChains()
-      //
-      .find((chain) => chain.chainId === chainId)?.ethBridge.inbox
-  );
-}
-
-export function getChainIdFromInboxAddress(inboxAddress: string) {
-  return getOrbitChains().find((chain) => addressesEqual(chain.ethBridge.inbox, inboxAddress))
-    ?.chainId;
+  return getOrbitChains().find((chain) => chain.chainId === chainId)?.ethBridge.inbox;
 }

@@ -1,9 +1,8 @@
-import { useConnectModal } from '@rainbow-me/rainbowkit';
-
+import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 
 export function ConnectWalletButton({ onClick }: { onClick?: () => void }) {
-  const { openConnectModal } = useConnectModal();
+  const { openConnectModal } = useWalletModal();
 
   return (
     <Button

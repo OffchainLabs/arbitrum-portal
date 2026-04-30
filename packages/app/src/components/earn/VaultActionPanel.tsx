@@ -320,18 +320,9 @@ export function VaultActionPanel({
         opportunityName: vault.name,
         protocol: vault.protocol?.name,
         chainId: requestChainId,
-        walletConnected: isConnected,
       });
     },
-    [
-      isConnected,
-      posthog,
-      requestChainId,
-      selectedAction,
-      vault.address,
-      vault.name,
-      vault.protocol,
-    ],
+    [posthog, requestChainId, selectedAction, vault.address, vault.name, vault.protocol],
   );
 
   const currentApr = formatApr(vault.apy);
@@ -475,6 +466,7 @@ export function VaultActionPanel({
         disabled={
           !transferReadiness.isReady ||
           transactionQuoteLoading ||
+          !transactionQuote ||
           transferReadiness.isLoading ||
           !!transactionQuoteError
         }

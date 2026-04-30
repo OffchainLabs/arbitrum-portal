@@ -1,5 +1,4 @@
-import { SafeImage } from '@/bridge/components/common/SafeImage';
-
+import { EarnTokenBadge } from '../EarnTokenSelector';
 import type { TokenDisplay } from './EarnAmountInputSection';
 
 interface EarnReceiveAmountSectionProps {
@@ -41,19 +40,7 @@ export function EarnReceiveAmountSection({
               className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none h-[34px]"
             />
           )}
-          {tokenSelector ?? (
-            <div className="bg-gray-1 rounded flex gap-2 items-center px-4 py-2">
-              <SafeImage
-                src={token.logoUrl}
-                alt={token.symbol}
-                width={20}
-                height={20}
-                className="rounded-full"
-                fallback={<div className="w-5 h-5 rounded-full bg-blue-600" />}
-              />
-              <span className="text-base font-medium text-white">{token.symbol}</span>
-            </div>
-          )}
+          {tokenSelector ?? <EarnTokenBadge symbol={token.symbol} logoUrl={token.logoUrl} />}
         </div>
         {(usdValue || outputBalance) && (
           <div className="flex items-center justify-between text-xs text-white/50">

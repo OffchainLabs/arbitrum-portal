@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 
-import { ChainId } from '../../types/ChainId';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getDestinationChainIds, getSupportedChainIds, isNetwork } from '../../util/networks';
 import { DisabledFeatures } from '../useArbQueryParams';
@@ -38,15 +37,6 @@ export function useChainIdsForNetworkSelection({ isSource }: { isSource: boolean
       includeLifiEnabledChainPairs: isLifiEnabled(),
       disableTransfersToNonArbitrumChains,
     });
-
-    // if source chain is Arbitrum One, add Arbitrum Nova to destination
-    if (networks.sourceChain.id === ChainId.ArbitrumOne) {
-      destinationChainIds.push(ChainId.ArbitrumNova);
-    }
-
-    if (networks.sourceChain.id === ChainId.ArbitrumNova) {
-      destinationChainIds.push(ChainId.ArbitrumOne);
-    }
 
     if (disableTransfersToNonArbitrumChains) {
       return destinationChainIds.filter((chainId) => !isNetwork(chainId).isNonArbitrumNetwork);

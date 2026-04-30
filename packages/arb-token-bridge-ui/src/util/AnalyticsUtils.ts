@@ -1,7 +1,9 @@
+import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
@@ -9,17 +11,6 @@ type AccountType = 'EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal' | 'Teleport';
 type FastBridgeName = `${FastBridgeNames}`;
-
-// TODO: maintain these wallet names in a central constants file (like networks.ts/wallet.ts) - can be consistently accessed all throughout the app?
-export type ProviderName =
-  | 'MetaMask'
-  | 'Coinbase Wallet'
-  | 'Trust Wallet'
-  | 'WalletConnect'
-  | 'Safe' // not used yet
-  | 'Injected'
-  | 'Ledger'
-  | 'Other';
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
@@ -57,7 +48,7 @@ type AnalyticsEventMap = {
     network: string;
     amount: number;
   };
-  'Connect Wallet Click': { walletName: ProviderName };
+  'Connect Wallet Click': { walletName: string };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
     tokenSymbol?: SpecialTokenSymbol.USDC;
@@ -139,6 +130,21 @@ type AnalyticsEventMap = {
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
+
+export function getLifiAssetType({
+  tokenAddress,
+  chainId,
+}: {
+  tokenAddress: string | undefined;
+  chainId: number;
+}): 'ERC20' | 'ETH' {
+  // ApeChain uses APE token (ERC20) for native token
+  if (chainId === ChainId.ApeChain) {
+    return 'ERC20';
+  }
+
+  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
+}
 
 export function trackEvent(
   event: AnalyticsEvent,
