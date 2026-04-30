@@ -9,18 +9,18 @@ type Result = {
   isLoading: boolean;
 };
 
-export function useAccountType(addressOverride?: string): Result {
+export function useAccountType(addressOverride?: string, chainIdOverride?: number): Result {
   const { address: walletAddress } = useAccount();
-  // TODO: change to use connected chain when Safe wallet returns it correctly
-  // atm Safe UI would try to switch connected chain even when user is at the correct chain
-  // so the connected chain WAGMI returns is the wrong chain where the SCW is not deployed on
   const [{ sourceChain }] = useNetworks();
 
   const address = addressOverride ?? walletAddress;
+  // By default we resolve account type against the bridge source chain.
+  // Callers can override the chain when they need to inspect a specific connected chain instead.
+  const chainId = chainIdOverride ?? sourceChain?.id;
 
   const { data: accountType, isLoading } = useSWRImmutable(
-    address && sourceChain ? [address, sourceChain.id, 'useAccountType'] : null,
-    ([_address, chainId]) => getAccountType({ address: _address, chainId: chainId }),
+    address && chainId ? [address, chainId, 'useAccountType'] : null,
+    ([_address, currentChainId]) => getAccountType({ address: _address, chainId: currentChainId }),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,

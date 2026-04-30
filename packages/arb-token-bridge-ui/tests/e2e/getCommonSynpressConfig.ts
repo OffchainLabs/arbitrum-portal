@@ -9,6 +9,7 @@ export function getCommonSynpressConfig(shouldRecordVideo: boolean) {
     chromeWebSecurity: true,
     modifyObstructiveCode: false,
     scrollBehavior: false,
+    includeShadowDom: true,
     viewportWidth: 1366,
     viewportHeight: 850,
     env: {
