@@ -809,53 +809,6 @@
       }
     },
     {
-      "chainId": 360,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0xE1d32C985825562edAa906fAC39295370Db72195",
-        "inbox": "0x235000876bd58336C802B3546Fc0250f285fCc79",
-        "outbox": "0xb255de22d39a26D4CbcAFd6Cf660ccaCa047e95B",
-        "rollup": "0x0f28D76Ec5c62b502625351726b4A3E3F54FF5F0",
-        "sequencerInbox": "0x0fFe9ACC296ddd4De5F616Aa482C99fA4b41A3E2"
-      },
-      "nativeToken": "0x66E535e8D2ebf13F49F3D49e5c50395a97C137b1",
-      "explorerUrl": "https://molten.calderaexplorer.xyz/",
-      "rpcUrl": "https://molten.calderachain.xyz/http",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Molten",
-      "slug": "molten",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x6D3A5fc8Ba7446127FaeC9eC1597C017EC1f3Eac",
-        "parentErc20Gateway": "0x5a6f8ea5e1028C80CB98Fd8916afBBC4E6b23D80",
-        "parentGatewayRouter": "0xAeAe9616A02dA527FceA2AC444EC918C7BfB9CdF",
-        "parentMultiCall": "0x909b042B88F587d745dBF52e2569545376f6eAA4",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xEF3c26D1854922b67A7011ee8CbFcE0Ab78726a8",
-        "childErc20Gateway": "0x939b292EE930f62E3C8f7040Df9A8b3B872E1602",
-        "childGatewayRouter": "0x56f4046f9271Ec59787Ecd22b00630c028D93301",
-        "childMultiCall": "0xfBF66Ff2Be2b15180Ec5F3Abf79D8C9517120232",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#f10000",
-        "network": {
-          "name": "Molten",
-          "logo": "/images/Molten_Logo.png"
-        },
-        "nativeTokenData": {
-          "name": "Molten",
-          "symbol": "MOLTEN"
-        },
-        "assertionIntervalSeconds": 86400
-      }
-    },
-    {
       "chainId": 190415,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
@@ -1033,49 +986,6 @@
         "network": {
           "name": "Syndicate Network",
           "logo": "/images/SyndicateNetwork_Logo.png"
-        },
-        "assertionIntervalSeconds": 3600
-      }
-    },
-    {
-      "chainId": 4078,
-      "parentChainId": 42161,
-      "confirmPeriodBlocks": 7200,
-      "ethBridge": {
-        "bridge": "0xB0EC3C1368AF7d9C2CAE6B7f8E022Cc14d59D2b1",
-        "inbox": "0x18BB8310E3a3DF4EFcCb6B3E9AeCB8bE6d4af07f",
-        "outbox": "0xD17550876106645988051ffDd31dFc3cDaA29F9c",
-        "rollup": "0xE383D432F039f4377CC9AA003FfaE4c814936864",
-        "sequencerInbox": "0xfb27e42E964F3364630F76D62EB295ae792BD4FA"
-      },
-      "explorerUrl": "https://muster-explorer.alt.technology",
-      "rpcUrl": "https://muster.alt.technology",
-      "name": "Muster",
-      "slug": "muster",
-      "isCustom": true,
-      "isTestnet": false,
-      "tokenBridge": {
-        "parentCustomGateway": "0x6085B32d97be137cC2D6447DcB3BF684C0835D2F",
-        "parentErc20Gateway": "0x6551eF99126253B7a838Cf46340030C8eD5342c2",
-        "parentGatewayRouter": "0x5040981c42fD61219cc567e255129166A840938e",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x37119EAcFBc1c83DDAf80F6705b6B19630C101C4",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0x5e833dd255e2aafFcfB32E874F5e2dFA17A109Ee",
-        "childCustomGateway": "0x9FcC7aC2c40eFD0443D8B641e482F04310F113f6",
-        "childErc20Gateway": "0xFdEb5b89bb8FCA61BF77f205B9F89aC3C5fA5dB8",
-        "childGatewayRouter": "0xDcF4964Dbb526e91CD6354ac3d1247Ce93C21fc4",
-        "childMultiCall": "0xaA6669a609862871ce72c91a93E70F1ef7590271",
-        "childProxyAdmin": "0xf10D50B24eDd74ECF3B6Bc22aE74b7F9843e0fDD",
-        "childWeth": "0x869Bf8814d77106323745758135b999D34C79a87",
-        "childWethGateway": "0xB6145BFd3fA9D270871037238003c66B984787f4"
-      },
-      "bridgeUiConfig": {
-        "color": "#DF62DD",
-        "network": {
-          "name": "Muster Network",
-          "description": "A gaming chain with cheap fees and account abstraction.",
-          "logo": "/images/MusterLogo.svg"
         },
         "assertionIntervalSeconds": 3600
       }

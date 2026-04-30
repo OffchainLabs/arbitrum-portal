@@ -566,6 +566,7 @@ export class VaultsAdapter implements VendorAdapter {
           id: addressLower,
           name: position.name || 'Unknown Vault',
           protocol: position.protocol?.name || 'Unknown',
+          protocolLogo: position.protocol?.protocolLogo,
           apy,
           tvl: undefined,
         },
@@ -594,20 +595,27 @@ export class VaultsAdapter implements VendorAdapter {
     return response.data
       .map((event) => {
         const decimals = response.asset.decimals || 18;
-
-        const eventType = event.eventType === 'withdrawal' ? 'redeem' : event.eventType;
+        const assetSymbol = response.asset.symbol;
+        const assetLogo = response.asset.assetLogo;
+        const amountRaw = event.assetAmountNative || '0';
+        const isWithdraw = event.eventType === 'withdrawal';
+        const eventType = isWithdraw ? 'redeem' : event.eventType;
 
         return {
           timestamp: event.timestamp,
           eventType,
-          assetAmountRaw: event.assetAmountNative || '0',
-          assetSymbol: response.asset.symbol,
+          assetAmountRaw: amountRaw,
+          assetSymbol,
           decimals,
-          assetLogo: response.asset.assetLogo,
-          inputAssetAmountRaw: event.assetAmountNative || '0',
-          inputAssetSymbol: response.asset.symbol,
-          inputAssetDecimals: decimals,
-          inputAssetLogo: response.asset.assetLogo,
+          assetLogo,
+          inputAssetAmountRaw: isWithdraw ? undefined : amountRaw,
+          inputAssetSymbol: isWithdraw ? undefined : assetSymbol,
+          inputAssetDecimals: isWithdraw ? undefined : decimals,
+          inputAssetLogo: isWithdraw ? undefined : assetLogo,
+          outputAssetAmountRaw: isWithdraw ? amountRaw : undefined,
+          outputAssetSymbol: isWithdraw ? assetSymbol : undefined,
+          outputAssetDecimals: isWithdraw ? decimals : undefined,
+          outputAssetLogo: isWithdraw ? assetLogo : undefined,
           chainId,
           transactionHash: event.transactionHash,
         };

@@ -12,17 +12,6 @@ type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal' | 'Teleport';
 type FastBridgeName = `${FastBridgeNames}`;
 
-// TODO: maintain these wallet names in a central constants file (like networks.ts/wallet.ts) - can be consistently accessed all throughout the app?
-export type ProviderName =
-  | 'MetaMask'
-  | 'Coinbase Wallet'
-  | 'Trust Wallet'
-  | 'WalletConnect'
-  | 'Safe' // not used yet
-  | 'Injected'
-  | 'Ledger'
-  | 'Other';
-
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
   'Transfer Button Click': {
@@ -59,7 +48,7 @@ type AnalyticsEventMap = {
     network: string;
     amount: number;
   };
-  'Connect Wallet Click': { walletName: ProviderName };
+  'Connect Wallet Click': { walletName: string };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
     tokenSymbol?: SpecialTokenSymbol.USDC;

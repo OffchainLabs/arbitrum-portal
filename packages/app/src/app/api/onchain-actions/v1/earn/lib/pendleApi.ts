@@ -484,8 +484,8 @@ interface PendleTransactionHistoryResponse {
  */
 function mapActionToType(action: string): PendleTransaction['type'] {
   const actionLower = action.toLowerCase();
-  if (actionLower.includes('buypt')) return 'enter';
-  if (actionLower.includes('sellpt')) return 'exit';
+  if (actionLower.includes('buypt') || actionLower === 'transferptin') return 'enter';
+  if (actionLower.includes('sellpt') || actionLower === 'transferptout') return 'exit';
   if (actionLower.includes('add') || actionLower.includes('liquidity')) return 'add';
   if (actionLower.includes('claim')) return 'claim';
   if (actionLower.includes('rollover')) return 'rollover';

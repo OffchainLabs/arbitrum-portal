@@ -4,7 +4,8 @@ import { BigNumber, utils } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 import { usePublicClient } from 'wagmi';
 
-import { formatAmount } from '@/bridge/util/NumberUtils';
+import { useETHPrice } from '@/bridge/hooks/useETHPrice';
+import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import type { EarnChainId } from '@/earn-api/types';
 
 export interface EarnTransactionNetworkFee {
@@ -60,9 +61,10 @@ export function useEarnTransactionNetworkFee({
   providedNetworkFee,
 }: UseEarnTransactionNetworkFeeParams) {
   const publicClient = usePublicClient({ chainId });
+  const { ethToUSD } = useETHPrice();
   const normalizedProvidedNetworkFee = normalizeProvidedNetworkFee(providedNetworkFee);
 
-  return useSWRImmutable(
+  const { data: feeEth, ...swr } = useSWRImmutable(
     isOpen && !isLoading && txHash && publicClient
       ? ([txHash, publicClient, 'earn-network-fee'] as const)
       : null,
@@ -77,15 +79,23 @@ export function useEarnTransactionNetworkFee({
         : null;
 
       if (!effectiveGasPrice) {
-        return normalizedProvidedNetworkFee;
+        return null;
       }
 
       const feeWei = gasUsed.mul(effectiveGasPrice);
-      const feeEth = Number(utils.formatEther(feeWei));
-      return {
-        amount: `~${formatAmount(feeEth, { symbol: 'ETH' })}`,
-      };
+      return Number(utils.formatEther(feeWei));
     },
     { shouldRetryOnError: false },
   );
+
+  let data: EarnTransactionNetworkFee | null = normalizedProvidedNetworkFee;
+  if (typeof feeEth === 'number') {
+    const usdValue = ethToUSD(feeEth);
+    data = {
+      amount: `~${formatAmount(feeEth, { symbol: 'ETH' })}`,
+      usd: usdValue > 0 ? formatUSD(usdValue) : undefined,
+    };
+  }
+
+  return { ...swr, data };
 }

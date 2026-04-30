@@ -466,6 +466,7 @@ export function VaultActionPanel({
         disabled={
           !transferReadiness.isReady ||
           transactionQuoteLoading ||
+          !transactionQuote ||
           transferReadiness.isLoading ||
           !!transactionQuoteError
         }

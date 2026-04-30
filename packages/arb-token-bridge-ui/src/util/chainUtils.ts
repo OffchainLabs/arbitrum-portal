@@ -85,6 +85,11 @@ export function getDestinationChainIds(
     chainIds.push(...lifiChainIds);
   }
 
+  /** Allow Arbitrum Nova to reach Arbitrum One as destination (one-way only) when LiFi pairs are enabled */
+  if (includeLifiEnabledChainPairs && chainId === arbitrumNova.id) {
+    chainIds.push(arbitrum.id);
+  }
+
   /** Disabling transfers to non arbitrum chains, remove non-arbitrum chains */
   if (disableTransfersToNonArbitrumChains) {
     return sortChainIds([
