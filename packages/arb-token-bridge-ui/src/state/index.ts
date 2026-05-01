@@ -49,7 +49,9 @@ const appActions: AppActions = {
   setArbTokenBridge: initialStore.setArbTokenBridge,
 };
 
-export const useActions = (): { app: AppActions } => ({ app: appActions });
+const actions: { app: AppActions } = { app: appActions };
+
+export const useActions = (): { app: AppActions } => actions;
 
 export type Context = {
   state: { app: AppState };
