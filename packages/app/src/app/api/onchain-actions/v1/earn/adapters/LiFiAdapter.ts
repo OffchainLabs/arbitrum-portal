@@ -204,7 +204,6 @@ export class LiFiAdapter implements VendorAdapter {
         chainId,
         tokenAddress: id,
         assetSymbol: opportunity?.token,
-        timestamps: duneData.map((point) => point.timestamp),
         granularity,
         range: resolvedRange,
       });

@@ -102,18 +102,12 @@ export async function fetchZerionCurrentPrices(
     }
   }
 
-  let fetchOptions: RequestInit & { next?: { revalidate?: number } };
-  try {
-    fetchOptions = {
-      method: 'GET',
-      headers: getZerionHeaders(),
-      signal: AbortSignal.timeout(ZERION_REQUEST_TIMEOUT_MS),
-      next: { revalidate: CURRENT_PRICE_REVALIDATE_SECONDS },
-    };
-  } catch (error) {
-    console.warn('[earn][zerion] batched price fetch unavailable:', getErrorMessage(error));
-    return result;
-  }
+  const fetchOptions: RequestInit & { next?: { revalidate?: number } } = {
+    method: 'GET',
+    headers: getZerionHeaders(),
+    signal: AbortSignal.timeout(ZERION_REQUEST_TIMEOUT_MS),
+    next: { revalidate: CURRENT_PRICE_REVALIDATE_SECONDS },
+  };
 
   const requests: Promise<void>[] = [];
 
@@ -232,7 +226,6 @@ export async function fetchAlignedPriceLookup(params: {
   chainId: number;
   tokenAddress?: string | null;
   assetSymbol?: string | null;
-  timestamps: number[];
   granularity: HistoricalGranularity;
   range: HistoricalTimeRange;
 }): Promise<(timestamp: number) => number | null> {

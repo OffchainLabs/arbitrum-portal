@@ -160,7 +160,6 @@ export class VaultsAdapter implements VendorAdapter {
       chainId,
       tokenAddress: assetAddress,
       assetSymbol,
-      timestamps: rawHistoricalPoints.map((point) => point.timestamp),
       granularity,
       range: resolvedRange,
     });
