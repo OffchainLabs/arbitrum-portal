@@ -42,7 +42,7 @@ export const NAV_CONFIG: Record<NavRoute, NavConfigItem> = {
       },
       {
         label: 'Txns',
-        href: '/bridge?tab=tx_history',
+        href: '/bridge/tx-history',
         imgSrc: '/icons/navigation/transactions.svg',
         ariaLabel: 'Switch to Transaction History Tab',
       },

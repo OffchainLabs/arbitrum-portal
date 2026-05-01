@@ -199,13 +199,20 @@ export function findSelectTokenButton(text: string): Cypress.Chainable<JQuery<HT
 
 export function switchToTransferPanelTab() {
   cy.wait(1_000);
-  return cy.findAllByLabelText('Switch to Bridge Tab').click();
+  cy.findAllByLabelText('Switch to Bridge Tab').click();
+  return cy.location('pathname').should('eq', '/bridge');
 }
 
 export function switchToTransactionHistoryTab(tab: 'pending' | 'settled') {
   cy.log(`opening transactions panel on ${tab}`);
 
   cy.findAllByLabelText('Switch to Transaction History Tab').click();
+
+  // Navigation now changes the route from /bridge to /bridge/tx-history rather
+  // than toggling a tab query param. Wait for the route change and for the
+  // transaction history panel to mount before interacting with its tabs.
+  cy.location('pathname').should('eq', '/bridge/tx-history');
+  cy.findByLabelText('Transaction history wallet address input').should('be.visible');
 
   cy.selectTransactionsPanelTab(tab);
 

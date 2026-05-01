@@ -3,7 +3,7 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { getStepTransaction } from '@lifi/sdk';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
@@ -24,10 +24,10 @@ import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
+import { DOCS_DOMAIN, GET_HELP_LINK, PathnameEnum } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
-import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
@@ -114,6 +114,8 @@ export function TransferPanel() {
   ] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { embedMode } = useMode();
   const [importTokenModalStatus, setImportTokenModalStatus] = useState<ImportTokenModalStatus>(
     ImportTokenModalStatus.IDLE,
@@ -195,13 +197,13 @@ export function TransferPanel() {
 
   const { handleError } = useError();
 
-  const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
-    setQueryParams({
-      tab: tabToIndex[TabParamEnum.TX_HISTORY],
-      amount: '',
-      amount2: '',
-    });
-  }, [setQueryParams]);
+  const resetAmountAndNavigateToTransactionHistory = useCallback(() => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.delete('amount');
+    newParams.delete('amount2');
+    const query = newParams.toString();
+    router.push(`${PathnameEnum.TX_HISTORY}${query ? `?${query}` : ''}`);
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
@@ -508,7 +510,7 @@ export function TransferPanel() {
 
       addPendingTransaction(newTransfer);
       setTransferring(false);
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
       clearRoute();
     } catch (e) {
     } finally {
@@ -651,7 +653,7 @@ export function TransferPanel() {
         isSwap: isSwapTransfer,
       });
 
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
 
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we cannot show Lifi tx history for SCW
@@ -813,7 +815,7 @@ export function TransferPanel() {
         destinationChain: getNetworkName(networks.destinationChain.id),
       });
 
-      resetAmountAndSwitchToTransactionHistoryTab();
+      resetAmountAndNavigateToTransactionHistory();
 
       if (isSmartContractWallet) {
         // show the warning in case of SCW since we don't cannot show OFT tx history
@@ -1185,18 +1187,16 @@ export function TransferPanel() {
 
     if (embedMode) {
       openDialog('widget_transaction_history');
-    } else {
       setQueryParams({
-        tab: tabToIndex[TabParamEnum.TX_HISTORY],
+        amount: '',
+        amount2: '',
       });
+    } else {
+      resetAmountAndNavigateToTransactionHistory();
     }
 
     setTransferring(false);
     clearRoute();
-    setQueryParams({
-      amount: '',
-      amount2: '',
-    });
 
     await (sourceChainTransaction as TransactionResponse).wait();
 
