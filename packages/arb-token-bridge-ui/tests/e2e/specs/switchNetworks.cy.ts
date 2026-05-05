@@ -8,7 +8,7 @@ describe('Switch Networks', () => {
       cy.findDestinationChainButton(getL2NetworkName());
     });
 
-    it('should select another source network from the network popup', () => {
+    it('should select another arbitrum chain from the network popup', () => {
       cy.login({ networkType: 'parentChain' });
       cy.findSourceChainButton(getL1NetworkName()).click();
 
@@ -16,7 +16,7 @@ describe('Switch Networks', () => {
       cy.findByRole('button', { name: 'Switch to Nitro Testnode L3' }).should('be.visible').click();
 
       cy.findSourceChainButton('Nitro Testnode L3');
-      cy.findDestinationChainButton(getL2NetworkName());
+      cy.findDestinationChainButton('Nitro Testnode L2');
     });
 
     context(
