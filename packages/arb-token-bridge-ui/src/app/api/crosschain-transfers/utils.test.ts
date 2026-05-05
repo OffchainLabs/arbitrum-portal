@@ -141,6 +141,52 @@ describe('isValidLifiTransfer', () => {
     ).toBe(true);
   });
 
+  describe('PYUSD pairs', () => {
+    it('Ethereum → ArbitrumOne allows Ethereum PYUSD', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Ethereum.PYUSD,
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumOne,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    });
+
+    it('ArbitrumOne → Ethereum allows ArbitrumOne PYUSD OFT', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.ArbitrumOne.PYUSD_OFT,
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.Ethereum,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    });
+
+    it('Ethereum → Nova rejects Ethereum PYUSD', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Ethereum.PYUSD,
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumNova,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+    });
+
+    it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.ArbitrumOne.PYUSD_OFT,
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.Superposition,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+    });
+  });
+
   describe('Arbitrum Nova pairs', () => {
     it('Ethereum → Nova is allowed with native token', () => {
       expect(

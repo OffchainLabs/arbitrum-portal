@@ -33,13 +33,6 @@ function isUsdcToken(tokenAddress: string | undefined) {
   );
 }
 
-function isPyusdToken(tokenAddress: string | undefined) {
-  return (
-    addressesEqual(tokenAddress, CommonAddress.Ethereum.PYUSD) ||
-    addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.PYUSD_OFT)
-  );
-}
-
 export function isValidLifiTransfer({
   fromToken,
   sourceChainId,
@@ -70,7 +63,20 @@ export function isValidLifiTransfer({
     return true;
   }
 
-  if (isUsdcToken(fromToken) || isPyusdToken(fromToken)) {
+  if (isUsdcToken(fromToken)) {
+    return true;
+  }
+
+  const isPyusdDeposit =
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne &&
+    addressesEqual(fromToken, CommonAddress.Ethereum.PYUSD);
+  const isPyusdWithdrawal =
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(fromToken, CommonAddress.ArbitrumOne.PYUSD_OFT);
+
+  if (isPyusdDeposit || isPyusdWithdrawal) {
     return true;
   }
 
