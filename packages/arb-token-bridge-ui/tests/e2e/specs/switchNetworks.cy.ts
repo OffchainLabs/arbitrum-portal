@@ -8,7 +8,7 @@ describe('Switch Networks', () => {
       cy.findDestinationChainButton(getL2NetworkName());
     });
 
-    it('should select an Orbit source network from the network popup', () => {
+    it('should select another source network from the network popup', () => {
       cy.login({ networkType: 'parentChain' });
       cy.findSourceChainButton(getL1NetworkName()).click();
 
