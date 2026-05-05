@@ -8,6 +8,17 @@ describe('Switch Networks', () => {
       cy.findDestinationChainButton(getL2NetworkName());
     });
 
+    it('should select an Orbit source network from the network popup', () => {
+      cy.login({ networkType: 'parentChain' });
+      cy.findSourceChainButton(getL1NetworkName()).click();
+
+      cy.findByText('Select Source Network').should('be.visible');
+      cy.findByRole('button', { name: 'Switch to Nitro Testnode L3' }).should('be.visible').click();
+
+      cy.findSourceChainButton('Nitro Testnode L3');
+      cy.findDestinationChainButton(getL2NetworkName());
+    });
+
     context(
       'User is connected to Ethereum, source chain is Ethereum and destination chain is Arbitrum',
       () => {
