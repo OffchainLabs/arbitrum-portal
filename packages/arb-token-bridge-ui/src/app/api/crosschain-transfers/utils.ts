@@ -33,6 +33,13 @@ function isUsdcToken(tokenAddress: string | undefined) {
   );
 }
 
+function isPyusdToken(tokenAddress: string | undefined) {
+  return (
+    addressesEqual(tokenAddress, CommonAddress.Ethereum.PYUSD) ||
+    addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.PYUSD_OFT)
+  );
+}
+
 export function isValidLifiTransfer({
   fromToken,
   sourceChainId,
@@ -63,7 +70,7 @@ export function isValidLifiTransfer({
     return true;
   }
 
-  if (isUsdcToken(fromToken)) {
+  if (isUsdcToken(fromToken) || isPyusdToken(fromToken)) {
     return true;
   }
 
