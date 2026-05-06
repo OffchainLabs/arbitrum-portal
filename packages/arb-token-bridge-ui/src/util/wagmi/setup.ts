@@ -8,7 +8,7 @@ import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
-import { getCustomChainsFromLocalStorage, rpcURLs } from '../networks';
+import { getCustomChainsFromLocalStorage, initializeBridgeNetworks, rpcURLs } from '../networks';
 import { getOrbitChains } from '../orbitChainsList';
 import { getWagmiChain } from './getWagmiChain';
 import {
@@ -31,6 +31,8 @@ function asAppKitNetworkList(networks: AppKitNetwork[]): AppKitNetworkList {
 
   return networks as unknown as AppKitNetworkList;
 }
+
+initializeBridgeNetworks();
 
 const customChains = getCustomChainsFromLocalStorage().map((chain) => getWagmiChain(chain.chainId));
 const wagmiOrbitChains = getOrbitChains().map((chain) => getWagmiChain(chain.chainId));

@@ -1,15 +1,10 @@
-import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import dayjs from 'dayjs';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import timeZone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
-import {
-  getCustomChainsFromLocalStorage,
-  mapCustomChainToNetworkData,
-} from '@/bridge/util/networks';
-import { getOrbitChains } from '@/bridge/util/orbitChainsList';
+import { initializeBridgeNetworks } from '@/bridge/util/networks';
 
 let arbitrumSdkInitialized = false;
 
@@ -32,14 +27,6 @@ export function addOrbitChainsToArbitrumSDK() {
     return;
   }
 
-  [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
-    try {
-      registerCustomArbitrumNetwork(chain);
-      mapCustomChainToNetworkData(chain);
-    } catch (_) {
-      // already added
-    }
-  });
-
+  initializeBridgeNetworks();
   arbitrumSdkInitialized = true;
 }

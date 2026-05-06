@@ -490,6 +490,25 @@ export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
   explorerUrls[chain.chainId] = chain.explorerUrl;
 }
 
+let bridgeNetworksInitialized = false;
+
+export function initializeBridgeNetworks() {
+  if (bridgeNetworksInitialized) {
+    return;
+  }
+
+  [...Object.values(orbitChains), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    try {
+      registerCustomArbitrumNetwork(chain);
+      mapCustomChainToNetworkData(chain);
+    } catch (_) {
+      // already added
+    }
+  });
+
+  bridgeNetworksInitialized = true;
+}
+
 export function isArbitrumChain(
   chain: BlockNumberReferenceNetwork | ArbitrumNetwork,
 ): chain is ArbitrumNetwork {
