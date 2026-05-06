@@ -7,8 +7,11 @@ import { shallow } from 'zustand/shallow';
 
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
+import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
+import { OftV2TransferStarter } from '@/token-bridge-sdk/OftV2TransferStarter';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { Order } from '../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
 import {
@@ -30,6 +33,7 @@ import { useNetworksRelationship } from '../useNetworksRelationship';
 import { useSelectedToken } from '../useSelectedToken';
 
 async function fetcher([
+  routeType,
   walletAddress,
   sourceChainId,
   destinationChainId,
@@ -40,6 +44,7 @@ async function fetcher([
   wagmiConfig,
   routeContext,
 ]: [
+  routeType: RouteType,
   walletAddress: string | undefined,
   sourceChainId: number,
   destinationChainId: number,
@@ -53,14 +58,38 @@ async function fetcher([
   const _walletAddress = walletAddress ?? constants.AddressZero;
   const sourceProvider = getProviderForChainId(sourceChainId);
   const signer = sourceProvider.getSigner(_walletAddress);
-  // use chainIds to initialize the bridgeTransferStarter to save RPC calls
-  const bridgeTransferStarter = BridgeTransferStarterFactory.create({
-    sourceChainId,
-    sourceChainErc20Address,
-    destinationChainId,
-    destinationChainErc20Address,
-    lifiData: routeContext,
-  });
+  let bridgeTransferStarter;
+
+  if (isLifiRoute(routeType) && !routeContext) {
+    return undefined;
+  }
+
+  if (routeType === 'cctp') {
+    const destinationProvider = getProviderForChainId(destinationChainId);
+    bridgeTransferStarter = new CctpTransferStarter({
+      sourceChainProvider: sourceProvider,
+      sourceChainErc20Address,
+      destinationChainProvider: destinationProvider,
+      destinationChainErc20Address,
+    });
+  } else if (routeType === 'oftV2') {
+    const destinationProvider = getProviderForChainId(destinationChainId);
+    bridgeTransferStarter = new OftV2TransferStarter({
+      sourceChainProvider: sourceProvider,
+      sourceChainErc20Address,
+      destinationChainProvider: destinationProvider,
+      destinationChainErc20Address,
+    });
+  } else {
+    // canonical / teleport
+    bridgeTransferStarter = BridgeTransferStarterFactory.create({
+      sourceChainId,
+      sourceChainErc20Address,
+      destinationChainId,
+      destinationChainErc20Address,
+      lifiData: routeContext,
+    });
+  }
 
   return await bridgeTransferStarter.transferEstimateGas({
     amount,
@@ -92,17 +121,20 @@ export function useGasEstimates({
   const { address: walletAddress } = useAccount();
   const balance = useBalanceOnSourceChain(selectedToken);
   const wagmiConfig = useConfig();
-  const { context, eligibleRouteTypes } = useRouteStore(
+  const { eligibleRouteTypes, selectedRoute, context } = useRouteStore(
     (state) => ({
-      context: state.context,
       eligibleRouteTypes: state.eligibleRouteTypes,
+      selectedRoute: state.selectedRoute,
+      context: state.context,
     }),
     shallow,
   );
-  const allRoutesAreLifi = useMemo(
-    () => eligibleRouteTypes.every((route: RouteType) => isLifiRoute(route)),
-    [eligibleRouteTypes],
-  );
+  const routeTypeForGasEstimate =
+    selectedRoute &&
+    (eligibleRouteTypes.includes(selectedRoute) ||
+      (isLifiRoute(selectedRoute) && eligibleRouteTypes.includes('lifi')))
+      ? selectedRoute
+      : eligibleRouteTypes[0];
   const isLifiRouteEligible = eligibleRouteTypes.includes('lifi');
 
   const overrideSourceToken = useMemo(
@@ -167,21 +199,48 @@ export function useGasEstimates({
 
   const { data: gasEstimates, error } = useSWR(
     () => {
-      if (allRoutesAreLifi && (isLoadingLifiRoutes || lifiRoutes?.length === 0)) {
+      if (!routeTypeForGasEstimate) {
         return null;
       }
 
-      /**
-       * If route is selected, pass context from that route
-       * If no route are selected and it's a lifi only route (for example Base to Arbitrum One),
-       * pass the first lifi route as context
-       * Otherwise, default to canonical transfer
-       */
-      const lifiContext = allRoutesAreLifi
-        ? lifiRoutes?.[0] && getContextFromRoute(lifiRoutes?.[0])
-        : context;
+      const isRouteLifi = isLifiRoute(routeTypeForGasEstimate);
+
+      let routeContext: RouteContext | undefined = undefined;
+      if (isRouteLifi) {
+        if (isLoadingLifiRoutes || !lifiRoutes?.length) {
+          return null;
+        }
+
+        const lifiRoute =
+          lifiRoutes.find((route) => {
+            if (routeTypeForGasEstimate === 'lifi-cheapest') {
+              return route.protocolData.orders.includes(Order.Cheapest);
+            }
+
+            if (routeTypeForGasEstimate === 'lifi-fastest') {
+              return route.protocolData.orders.includes(Order.Fastest);
+            }
+
+            return (
+              route.protocolData.orders.includes(Order.Cheapest) &&
+              route.protocolData.orders.includes(Order.Fastest)
+            );
+          }) ?? lifiRoutes[0];
+
+        routeContext =
+          selectedRoute === routeTypeForGasEstimate && context
+            ? context
+            : lifiRoute
+              ? getContextFromRoute(lifiRoute)
+              : undefined;
+
+        if (!routeContext) {
+          return null;
+        }
+      }
 
       return [
+        routeTypeForGasEstimate,
         sourceChain.id,
         destinationChain.id,
         sourceChainErc20Address,
@@ -190,11 +249,12 @@ export function useGasEstimates({
         sanitizedDestinationAddress,
         walletAddress,
         wagmiConfig,
-        lifiContext,
+        routeContext,
         'gasEstimates',
       ] as const;
     },
     ([
+      _routeType,
       _sourceChainId,
       _destinationChainId,
       _sourceChainErc20Address,
@@ -206,6 +266,7 @@ export function useGasEstimates({
       _routeContext,
     ]) =>
       fetcher([
+        _routeType,
         _walletAddress,
         _sourceChainId,
         _destinationChainId,

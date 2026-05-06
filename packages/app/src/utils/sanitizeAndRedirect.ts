@@ -1,5 +1,7 @@
+import { constants } from 'ethers';
 import { redirect } from 'next/navigation';
 
+import { ChainId } from '@/bridge/types/ChainId';
 import { sanitizeExperimentalFeaturesQueryParam } from '@/bridge/util';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { logger } from '@/bridge/util/logger';
@@ -100,6 +102,19 @@ export async function sanitizeAndRedirect(
   },
   baseUrl: string,
 ) {
+  const redirectPath = await getSanitizedRedirectPath(searchParams, baseUrl);
+
+  if (redirectPath) {
+    redirect(redirectPath);
+  }
+}
+
+export async function getSanitizedRedirectPath(
+  searchParams: {
+    [key: string]: string | string[] | undefined;
+  },
+  baseUrl: string,
+) {
   const sourceChainId = decodeChainQueryParam(searchParams.sourceChain);
   const destinationChainId = decodeChainQueryParam(searchParams.destinationChain);
   const experiments =
@@ -115,7 +130,7 @@ export async function sanitizeAndRedirect(
 
   // If both sourceChain and destinationChain are not present, let the client sync with Metamask
   if (!sourceChainId && !destinationChainId) {
-    return;
+    return null;
   }
 
   if (!isProductionEnvironment || isE2eTestingEnvironment) {
@@ -126,19 +141,32 @@ export async function sanitizeAndRedirect(
     sourceChainId,
     destinationChainId,
   });
+  const sanitizedToken = sanitizeTokenQueryParam({
+    token,
+    sourceChainId: sanitizedChainIds.sourceChainId,
+    destinationChainId: sanitizedChainIds.destinationChainId,
+  });
+  let sanitizedDestinationToken = sanitizeTokenQueryParam({
+    token: destinationToken,
+    sourceChainId: sanitizedChainIds.sourceChainId,
+    destinationChainId: sanitizedChainIds.destinationChainId,
+  });
+
+  // Reuse the same default selection behavior as setSelectedToken(null) for ApeChain -> Superposition.
+  if (
+    sanitizedChainIds.sourceChainId === ChainId.ApeChain &&
+    sanitizedChainIds.destinationChainId === ChainId.Superposition &&
+    typeof token === 'undefined' &&
+    typeof destinationToken === 'undefined'
+  ) {
+    sanitizedDestinationToken = constants.AddressZero;
+  }
+
   const sanitized = {
     ...sanitizedChainIds,
     experiments: sanitizeExperimentalFeaturesQueryParam(experiments),
-    token: sanitizeTokenQueryParam({
-      token,
-      sourceChainId: sanitizedChainIds.sourceChainId,
-      destinationChainId: sanitizedChainIds.destinationChainId,
-    }),
-    destinationToken: sanitizeTokenQueryParam({
-      token: destinationToken,
-      sourceChainId: sanitizedChainIds.sourceChainId,
-      destinationChainId: sanitizedChainIds.destinationChainId,
-    }),
+    token: sanitizedToken,
+    destinationToken: sanitizedDestinationToken,
     tab: sanitizeTabQueryParam(tab),
     disabledFeatures: DisabledFeaturesParam.decode(disabledFeatures),
   };
@@ -161,6 +189,8 @@ export async function sanitizeAndRedirect(
       `[sanitizeAndRedirect]     sourceChain=${sanitized.sourceChainId}&destinationChain=${sanitized.destinationChainId}&experiments=${sanitized.experiments}&token=${sanitized.token}&destinationToken=${sanitized.destinationToken}&tab=${sanitized.tab}&disabledFeatures=${sanitized.disabledFeatures}&sanitized=true (after)`,
     );
 
-    redirect(getDestinationWithSanitizedQueryParams(sanitized, searchParams, baseUrl));
+    return getDestinationWithSanitizedQueryParams(sanitized, searchParams, baseUrl);
   }
+
+  return null;
 }

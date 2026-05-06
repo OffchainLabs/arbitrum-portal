@@ -203,10 +203,10 @@ function NetworkRow({
       <div className={twMerge('flex w-full flex-row items-center justify-between gap-1')}>
         <span className="truncate text-base">{network.name}</span>
 
-        <p className="text-xs leading-none text-white/70">
+        <div className="text-xs leading-none text-white/70">
           {!walletAddress && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
-              <p className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</p>
+              <span className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</span>
             </Tooltip>
           )}
 
@@ -231,7 +231,7 @@ function NetworkRow({
               </span>
             </Tooltip>
           )}
-        </p>
+        </div>
       </div>
     </button>
   );
