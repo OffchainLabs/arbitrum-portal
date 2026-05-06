@@ -67,6 +67,19 @@ export function isValidLifiTransfer({
     return true;
   }
 
+  const isPyusdDeposit =
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne &&
+    addressesEqual(fromToken, CommonAddress.Ethereum.PYUSD);
+  const isPyusdWithdrawal =
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(fromToken, CommonAddress.ArbitrumOne.PYUSD_OFT);
+
+  if (isPyusdDeposit || isPyusdWithdrawal) {
+    return true;
+  }
+
   const token = tokensFromLists[fromToken.toLowerCase()];
   return token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
 }

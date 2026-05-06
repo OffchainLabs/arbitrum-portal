@@ -121,7 +121,7 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token },
+      arbTokenBridge: { token, bridgeTokens },
       warningTokens,
     },
   } = useAppState();
@@ -218,15 +218,15 @@ export function TransferPanel() {
   }
 
   const isTokenAlreadyImported = useMemo(() => {
-    if (typeof tokenFromSearchParams === 'undefined') {
-      return true;
-    }
-
     if (isTokenNativeUSDC(tokenFromSearchParams)) {
       return true;
     }
 
     if (addressesEqual(tokenFromSearchParams, constants.AddressZero)) {
+      return true;
+    }
+
+    if (typeof tokenFromSearchParams === 'undefined') {
       return true;
     }
 
@@ -236,19 +236,16 @@ export function TransferPanel() {
 
     // only show import token dialog if the token is not part of the list
     // otherwise we show a loader in the TokenButton
-    if (!tokensFromLists) {
-      return undefined;
-    }
-
-    if (!tokensFromUser) {
+    if (!tokensFromLists || !tokensFromUser) {
       return undefined;
     }
 
     return (
+      typeof bridgeTokens?.[tokenFromSearchParams] !== 'undefined' ||
       typeof tokensFromLists[tokenFromSearchParams] !== 'undefined' ||
       typeof tokensFromUser[tokenFromSearchParams] !== 'undefined'
     );
-  }, [isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
+  }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
