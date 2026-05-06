@@ -19,7 +19,7 @@ import {
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
 } from './networksNitroTestnode';
-import { orbitChains } from './orbitChainsList';
+import { getOrbitChains, orbitChains } from './orbitChainsList';
 import { getRpcUrl } from './rpc/getRpcUrl';
 
 /** The network that you reference when calling `block.number` in solidity */
@@ -497,7 +497,7 @@ export function initializeBridgeNetworks() {
     return;
   }
 
-  [...Object.values(orbitChains), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+  [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
     try {
       registerCustomArbitrumNetwork(chain);
       mapCustomChainToNetworkData(chain);
