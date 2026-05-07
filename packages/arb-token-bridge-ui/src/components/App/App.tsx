@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { useCCTPIsBlocked } from '../../hooks/CCTP/useCCTPIsBlocked';
 import { TokenBridgeParams } from '../../hooks/useArbTokenBridge';
@@ -16,7 +16,7 @@ import { useSyncConnectedChainToQueryParams } from './useSyncConnectedChainToQue
 
 declare global {
   interface Window {
-    Cypress?: any;
+    Cypress?: unknown;
   }
 }
 
@@ -33,6 +33,21 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
   useSyncConnectedChainToQueryParams();
 
   const [tokenBridgeParams, setTokenBridgeParams] = useState<TokenBridgeParams | null>(null);
+  const nextTokenBridgeParams = useMemo<TokenBridgeParams>(
+    () => ({
+      l1: {
+        network: parentChain,
+        provider: parentChainProvider,
+      },
+      l2: {
+        network: childChain,
+        provider: childChainProvider,
+      },
+    }),
+    // Chain object references can be unstable for the same chain ID.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [parentChain.id, childChain.id, parentChainProvider, childChainProvider],
+  );
 
   // Listen for account and network changes
   useEffect(() => {
@@ -45,25 +60,8 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
       l2NetworkChainId: childChain.id,
     });
 
-    setTokenBridgeParams({
-      l1: {
-        network: parentChain,
-        provider: parentChainProvider,
-      },
-      l2: {
-        network: childChain,
-        provider: childChainProvider,
-      },
-    });
-  }, [
-    networks.sourceChain.id,
-    parentChain.id,
-    childChain.id,
-    parentChain,
-    childChain,
-    parentChainProvider,
-    childChainProvider,
-  ]);
+    setTokenBridgeParams(nextTokenBridgeParams);
+  }, [actions.app, parentChain.id, childChain.id, nextTokenBridgeParams]);
 
   useEffect(() => {
     axios
@@ -76,7 +74,7 @@ const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
       .catch((err) => {
         logger.warn('Failed to fetch warning tokens:', err);
       });
-  }, []);
+  }, [actions.app]);
 
   if (!tokenBridgeParams) {
     return null;
