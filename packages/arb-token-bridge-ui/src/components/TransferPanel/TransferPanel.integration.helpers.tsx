@@ -152,21 +152,6 @@ export type RouteTokenCase = {
   expectedDestinationToken: TokenExpectation;
 };
 
-export type TransferPanelScenarioRenderConfig = {
-  sourceChain: ChainQuerySlug;
-  destinationChain: ChainQuerySlug;
-  token?: string;
-  destinationToken?: string;
-};
-
-export type TransferPanelScenario = TransferPanelScenarioRenderConfig & {
-  name?: string;
-  expectedSourceToken: TokenExpectation;
-  expectedDestinationToken: TokenExpectation;
-  expectedSourcePanelTokens?: TokenExpectation[];
-  expectedDestinationPanelTokens?: TokenExpectation[];
-};
-
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -638,61 +623,6 @@ export async function setDestinationToken(tokenExpectation: TokenExpectation) {
     isDestination: true,
     tokenExpectation,
   });
-}
-
-async function expectTokenPanelTokens({
-  isDestination,
-  tokenExpectations,
-}: {
-  isDestination: boolean;
-  tokenExpectations: TokenExpectation[];
-}) {
-  await expectTokenPanelContent({
-    isDestination,
-    symbolsToContain: tokenExpectations.map(({ symbol }) => symbol),
-    tokenExpectations: tokenExpectations.map(withExpectedTokenLogo),
-  });
-}
-
-export async function runTransferPanelScenario({
-  sourceChain,
-  destinationChain,
-  token,
-  destinationToken,
-  expectedSourceToken,
-  expectedDestinationToken,
-  expectedSourcePanelTokens,
-  expectedDestinationPanelTokens,
-}: TransferPanelScenario) {
-  await renderTransferPanel({
-    sourceChain,
-    destinationChain,
-    token,
-    destinationToken,
-  });
-
-  await expectTokenButtonToken({
-    isDestination: false,
-    tokenExpectation: withExpectedTokenLogo(expectedSourceToken),
-  });
-  await expectTokenButtonToken({
-    isDestination: true,
-    tokenExpectation: withExpectedTokenLogo(expectedDestinationToken),
-  });
-
-  if (expectedSourcePanelTokens) {
-    await expectTokenPanelTokens({
-      isDestination: false,
-      tokenExpectations: expectedSourcePanelTokens,
-    });
-  }
-
-  if (expectedDestinationPanelTokens) {
-    await expectTokenPanelTokens({
-      isDestination: true,
-      tokenExpectations: expectedDestinationPanelTokens,
-    });
-  }
 }
 
 export function setupTransferPanelLifiIntegrationSuite() {

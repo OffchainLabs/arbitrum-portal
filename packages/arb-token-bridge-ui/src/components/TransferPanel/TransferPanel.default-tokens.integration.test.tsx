@@ -7,9 +7,11 @@ import {
   type TokenPanelExpectations,
   apeTokenExpectation,
   ethTokenExpectation,
+  expectTokenButtonToken,
+  expectTokenPanelContent,
   nativeApeTokenExpectation,
   nativeEthTokenExpectation,
-  runTransferPanelScenario,
+  renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
   usdcTokenByChain,
   usdtArbitrumOneRowTokenExpectation,
@@ -255,13 +257,29 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
       expectedSourcePanelTokens,
       expectedDestinationPanelTokens,
     }) => {
-      await runTransferPanelScenario({
+      await renderTransferPanel({
         sourceChain,
         destinationChain,
-        expectedSourceToken,
-        expectedDestinationToken,
-        expectedSourcePanelTokens,
-        expectedDestinationPanelTokens,
+      });
+
+      await expectTokenButtonToken({
+        isDestination: false,
+        tokenExpectation: expectedSourceToken,
+      });
+      await expectTokenButtonToken({
+        isDestination: true,
+        tokenExpectation: expectedDestinationToken,
+      });
+
+      await expectTokenPanelContent({
+        isDestination: false,
+        symbolsToContain: expectedSourcePanelTokens.map(({ symbol }) => symbol),
+        tokenExpectations: expectedSourcePanelTokens,
+      });
+      await expectTokenPanelContent({
+        isDestination: true,
+        symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
+        tokenExpectations: expectedDestinationPanelTokens,
       });
     },
   );
