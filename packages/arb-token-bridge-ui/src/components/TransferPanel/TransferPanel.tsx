@@ -218,15 +218,15 @@ export function TransferPanel() {
   }
 
   const isTokenAlreadyImported = useMemo(() => {
+    if (typeof tokenFromSearchParams === 'undefined') {
+      return true;
+    }
+
     if (isTokenNativeUSDC(tokenFromSearchParams)) {
       return true;
     }
 
     if (addressesEqual(tokenFromSearchParams, constants.AddressZero)) {
-      return true;
-    }
-
-    if (typeof tokenFromSearchParams === 'undefined') {
       return true;
     }
 
@@ -236,7 +236,11 @@ export function TransferPanel() {
 
     // only show import token dialog if the token is not part of the list
     // otherwise we show a loader in the TokenButton
-    if (!tokensFromLists || !tokensFromUser) {
+    if (!tokensFromLists) {
+      return undefined;
+    }
+
+    if (!tokensFromUser) {
       return undefined;
     }
 

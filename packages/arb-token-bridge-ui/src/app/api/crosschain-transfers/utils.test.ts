@@ -156,7 +156,7 @@ describe('isValidLifiTransfer', () => {
     it('ArbitrumOne → Ethereum allows ArbitrumOne PYUSD OFT', () => {
       expect(
         isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD_OFT,
+          fromToken: CommonAddress.ArbitrumOne.PYUSD,
           sourceChainId: ChainId.ArbitrumOne,
           destinationChainId: ChainId.Ethereum,
           tokensFromLists: {},
@@ -178,7 +178,7 @@ describe('isValidLifiTransfer', () => {
     it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
       expect(
         isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD_OFT,
+          fromToken: CommonAddress.ArbitrumOne.PYUSD,
           sourceChainId: ChainId.ArbitrumOne,
           destinationChainId: ChainId.Superposition,
           tokensFromLists: {},

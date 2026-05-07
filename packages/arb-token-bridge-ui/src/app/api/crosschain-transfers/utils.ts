@@ -74,7 +74,7 @@ export function isValidLifiTransfer({
   const isPyusdWithdrawal =
     sourceChainId === ChainId.ArbitrumOne &&
     destinationChainId === ChainId.Ethereum &&
-    addressesEqual(fromToken, CommonAddress.ArbitrumOne.PYUSD_OFT);
+    addressesEqual(fromToken, CommonAddress.ArbitrumOne.PYUSD);
 
   if (isPyusdDeposit || isPyusdWithdrawal) {
     return true;

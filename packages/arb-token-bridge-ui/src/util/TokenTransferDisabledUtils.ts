@@ -22,7 +22,7 @@ const transferDisabledTokens: { [chainId: number]: TransferDisabledToken[] } = {
     {
       symbol: 'PYUSD',
       l1Address: CommonAddress.Ethereum.PYUSD,
-      l2Address: CommonAddress.ArbitrumOne.PYUSD,
+      l2Address: CommonAddress.ArbitrumOne.PYUSD_CANONICAL,
     },
   ],
 };
