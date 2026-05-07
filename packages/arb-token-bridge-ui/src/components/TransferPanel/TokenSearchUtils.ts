@@ -69,13 +69,19 @@ export function tokenListsToSearchableTokenStorage(
   l1ChainId: string,
   l2ChainId: string,
 ): ContractStorage<ERC20BridgeToken> {
-  return tokenLists.reduce((acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
+  const storage = tokenLists.reduce((acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
+    let matchedL1Tokens = 0;
+    let matchedL2Tokens = 0;
+    let skippedL2WithoutBridgeInfo = 0;
+    let skippedL2WithoutL1Bridge = 0;
+
     tokenList.tokens.forEach((token) => {
       const address = token.address.toLowerCase();
       const stringifiedChainId = String(token.chainId);
       const accAddress = acc[address];
 
       if (stringifiedChainId === l1ChainId) {
+        matchedL1Tokens += 1;
         // The address is from an L1 token
         const priceUSD = token.extensions?.priceUSD as number;
         if (typeof accAddress === 'undefined') {
@@ -104,6 +110,7 @@ export function tokenListsToSearchableTokenStorage(
         // The token is an L2 token
 
         if (!token.extensions?.bridgeInfo) {
+          skippedL2WithoutBridgeInfo += 1;
           return;
         }
 
@@ -115,6 +122,7 @@ export function tokenListsToSearchableTokenStorage(
 
         const l1Bridge = bridgeInfo[l1ChainId];
         if (l1Bridge) {
+          matchedL2Tokens += 1;
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
           const priceUSD = token.extensions?.priceUSD as number;
 
@@ -156,10 +164,14 @@ export function tokenListsToSearchableTokenStorage(
 
           // acc[address] was defined in the if/else above
           acc[addressOnL1]!.listIds.add(tokenList.bridgeTokenListId);
+        } else {
+          skippedL2WithoutL1Bridge += 1;
         }
       }
     });
 
     return acc;
   }, {});
+
+  return storage;
 }

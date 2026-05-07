@@ -4,7 +4,7 @@ import { beforeAll, expect } from 'vitest';
 
 import { getBridgePageSanitizedRedirectPath } from '../../../../app/src/utils/bridgePageUtils';
 import { ETHER_TOKEN_LOGO, PathnameEnum } from '../../constants';
-import { ContractStorage, ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
+import { TokenType } from '../../hooks/arbTokenBridge.types';
 import {
   createIntegrationWrapper,
   getSearchParams,
@@ -20,6 +20,7 @@ const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
+const TOKEN_LIST_LOAD_TIMEOUT_MS = 15_000;
 
 export type TokenExpectation = {
   symbol: string;
@@ -39,6 +40,10 @@ export const USDC_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png';
 export const USDT_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png';
+export const WETH_SUPERPOSITION_ROW_LOGO =
+  'https://static.debank.com/image/eth_token/logo_url/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2/61844453e63cf81301f845d7864236f6.png';
+export const USDT_ARBITRUM_ONE_ROW_LOGO =
+  'https://static.debank.com/image/ink_token/logo_url/0x0200c29006150606b650577bbe7b6248f58470c1/8bba37fddc2774e06a94b8952e3e3ad7.png';
 
 const tokenLogosBySymbol: Record<string, string> = {
   'ETH': ETHER_TOKEN_LOGO,
@@ -90,6 +95,14 @@ export const usdtTokenExpectation = {
 export const wethTokenExpectation = {
   symbol: 'WETH',
   logoURI: WETH_TOKEN_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const wethSuperpositionRowTokenExpectation = {
+  symbol: 'WETH',
+  logoURI: WETH_SUPERPOSITION_ROW_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const usdtArbitrumOneRowTokenExpectation = {
+  symbol: 'USDT',
+  logoURI: USDT_ARBITRUM_ONE_ROW_LOGO,
 } satisfies TokenExpectationWithLogo;
 
 export const apeTokenByChain = {
@@ -144,7 +157,6 @@ export type TransferPanelScenarioRenderConfig = {
   destinationChain: ChainQuerySlug;
   token?: string;
   destinationToken?: string;
-  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
 };
 
 export type TransferPanelScenario = TransferPanelScenarioRenderConfig & {
@@ -155,16 +167,14 @@ export type TransferPanelScenario = TransferPanelScenarioRenderConfig & {
   expectedDestinationPanelTokens?: TokenExpectation[];
 };
 
-export const usdcAddressByChain: Record<ChainQuerySlug, string> = {
-  'ethereum': CommonAddress.Ethereum.USDC,
-  'arbitrum-one': CommonAddress.ArbitrumOne.USDC,
-  'base': CommonAddress.Base.USDC,
-  'apechain': CommonAddress.ApeChain.USDCe,
-  'superposition': CommonAddress.Superposition.USDCe,
-};
-
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function withoutTestingLibraryDom(error: Error): Error {
+  const htmlIndex = error.message.indexOf('\n\n<html');
+  const sanitizedMessage = htmlIndex === -1 ? error.message : error.message.slice(0, htmlIndex);
+  return new Error(sanitizedMessage);
 }
 
 function sleep(ms: number) {
@@ -207,52 +217,16 @@ async function getSearchParamsAfterSanitization({
   return getSearchParams(searchParams);
 }
 
-export function getUsdcSourceToken(sourceChain: ChainQuerySlug): ERC20BridgeToken {
-  const usesNativeUsdc =
-    sourceChain === 'ethereum' || sourceChain === 'arbitrum-one' || sourceChain === 'base';
-
-  return {
-    type: TokenType.ERC20,
-    decimals: 6,
-    name: usesNativeUsdc ? 'USD Coin' : 'Bridged USDC',
-    symbol: usesNativeUsdc ? 'USDC' : 'USDC.e',
-    address: usdcAddressByChain[sourceChain],
-    listIds: new Set<string>(),
-  };
-}
-
-function getAutoSeededBridgeTokens({
-  sourceChain,
-  token,
-}: {
-  sourceChain: ChainQuerySlug;
-  token?: string;
-}): ContractStorage<ERC20BridgeToken> | undefined {
-  if (!token) {
-    return undefined;
-  }
-
-  if (token.toLowerCase() !== usdcAddressByChain[sourceChain].toLowerCase()) {
-    return undefined;
-  }
-
-  return {
-    [token.toLowerCase()]: getUsdcSourceToken(sourceChain),
-  };
-}
-
 export async function renderTransferPanel({
   sourceChain,
   destinationChain,
   token,
   destinationToken,
-  bridgeTokens,
 }: {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   token?: string;
   destinationToken?: string;
-  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
 }) {
   const search = await getSearchParamsAfterSanitization({
     sourceChain,
@@ -261,11 +235,8 @@ export async function renderTransferPanel({
     destinationToken,
   });
 
-  const resolvedBridgeTokens = bridgeTokens ?? getAutoSeededBridgeTokens({ sourceChain, token });
-
   const wrapper = createIntegrationWrapper({
     search,
-    bridgeTokens: resolvedBridgeTokens,
   });
 
   await act(async () => {
@@ -284,73 +255,47 @@ export async function expectTokenButtonToken({
   tokenExpectation: TokenExpectation;
 }) {
   const buttonAriaLabel = isDestination ? 'Select Destination Token' : 'Select Token';
-  const symbolRegex = new RegExp(`\\b${escapeRegExp(tokenExpectation.symbol)}\\b`, 'i');
 
   type TokenButtonSnapshot = {
-    found: boolean;
     buttonText: string;
     symbolText: string;
     logoSrc: string | null;
   };
 
   const getTokenButtonSnapshot = () => {
-    try {
-      const latestTokenButton = screen.getByRole('button', {
-        name: buttonAriaLabel,
-        hidden: true,
-      });
-      const logoImage = latestTokenButton.querySelector('img');
-      const symbolElement = latestTokenButton.querySelector('span.font-light');
-      const symbolText = symbolElement?.textContent?.trim() ?? '';
+    const latestTokenButton = screen.queryByRole('button', {
+      name: buttonAriaLabel,
+      hidden: true,
+    });
 
+    if (!latestTokenButton) {
       return {
-        found: true,
-        buttonText: latestTokenButton.textContent?.trim() ?? '',
-        symbolText,
-        logoSrc: logoImage?.getAttribute('src') ?? null,
-      } satisfies TokenButtonSnapshot;
-    } catch {
-      return {
-        found: false,
         buttonText: '',
         symbolText: '',
         logoSrc: null,
       } satisfies TokenButtonSnapshot;
     }
-  };
 
-  const formatTokenButtonSnapshot = (snapshot: TokenButtonSnapshot) => {
-    if (!snapshot.found) {
-      return 'button not found yet';
-    }
+    const logoImage = latestTokenButton.querySelector('img');
+    const symbolElement = latestTokenButton.querySelector('span.font-light');
 
-    return `symbol=${JSON.stringify(snapshot.symbolText)} rawText=${JSON.stringify(snapshot.buttonText)}`;
+    return {
+      buttonText: latestTokenButton.textContent?.trim() ?? '',
+      symbolText: symbolElement?.textContent?.trim() ?? '',
+      logoSrc: logoImage?.getAttribute('src') ?? null,
+    } satisfies TokenButtonSnapshot;
   };
 
   await waitFor(
     () => {
       const snapshot = getTokenButtonSnapshot();
-      if (!snapshot.found || !snapshot.symbolText) {
-        throw new Error(
-          `Waiting for "${buttonAriaLabel}" symbol to resolve. Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
-        );
-      }
-
-      if (!symbolRegex.test(snapshot.symbolText)) {
-        throw new Error(
-          `Expected "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}", got symbol "${snapshot.symbolText}" (raw: "${snapshot.buttonText}").`,
-        );
-      }
+      expect(snapshot.symbolText).toBeTruthy();
+      expect(snapshot.symbolText).toEqual(tokenExpectation.symbol);
     },
     {
       timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
       interval: POLL_INTERVAL_MS,
-      onTimeout: () => {
-        const snapshot = getTokenButtonSnapshot();
-        return new Error(
-          `Timed out waiting for "${buttonAriaLabel}" button text to contain "${tokenExpectation.symbol}". Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
-        );
-      },
+      onTimeout: withoutTestingLibraryDom,
     },
   );
 
@@ -359,17 +304,8 @@ export async function expectTokenButtonToken({
     await waitFor(
       () => {
         const snapshot = getTokenButtonSnapshot();
-        if (!snapshot.found || !snapshot.logoSrc) {
-          throw new Error(
-            `Waiting for "${buttonAriaLabel}" logo to resolve. Current state: ${formatTokenButtonSnapshot(snapshot)}.`,
-          );
-        }
-
-        if (!snapshot.logoSrc.includes(logoURI)) {
-          throw new Error(
-            `Expected "${buttonAriaLabel}" logo to contain "${logoURI}", got "${snapshot.logoSrc}".`,
-          );
-        }
+        expect(snapshot.logoSrc).toBeTruthy();
+        expect(snapshot.logoSrc).toContain(logoURI);
       },
       {
         timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
@@ -377,7 +313,7 @@ export async function expectTokenButtonToken({
         onTimeout: () => {
           const snapshot = getTokenButtonSnapshot();
           return new Error(
-            `Timed out waiting for "${buttonAriaLabel}" button logo to contain "${logoURI}". Current state: ${formatTokenButtonSnapshot(snapshot)}, current src: ${JSON.stringify(snapshot.logoSrc)}.`,
+            `Expected ${isDestination ? 'destination' : 'source'} token button logo to contain ${JSON.stringify(logoURI)}, received ${JSON.stringify(snapshot.logoSrc)}.`,
           );
         },
       },
@@ -385,22 +321,27 @@ export async function expectTokenButtonToken({
   }
 }
 
-function getTokenPanelRowButtonBySymbol(dialog: HTMLElement, symbol: string): HTMLButtonElement {
+function queryTokenPanelRowButtonBySymbol(
+  dialog: HTMLElement,
+  symbol: string,
+): HTMLButtonElement | null {
   const symbolMatcher = new RegExp(`^${escapeRegExp(symbol)}$`, 'i');
   const symbolElements = within(dialog).queryAllByText(symbolMatcher);
 
-  const rowButton = symbolElements
-    .map((element) => element.closest('button'))
-    .find(
-      (button): button is HTMLButtonElement =>
-        button !== null && button.tagName.toLowerCase() === 'button',
-    );
+  return (
+    symbolElements
+      .map((element) => element.closest('button'))
+      .find(
+        (button): button is HTMLButtonElement =>
+          button !== null && button.tagName.toLowerCase() === 'button',
+      ) ?? null
+  );
+}
 
-  if (!rowButton) {
-    throw new Error(`Unable to find token row for symbol "${symbol}".`);
-  }
-
-  return rowButton;
+function getTokenPanelRowButtonBySymbol(dialog: HTMLElement, symbol: string): HTMLButtonElement {
+  const rowButton = queryTokenPanelRowButtonBySymbol(dialog, symbol);
+  expect(rowButton !== null).toBe(true);
+  return rowButton as HTMLButtonElement;
 }
 
 function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
@@ -432,6 +373,39 @@ function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
     });
 }
 
+function formatTokenPanelRowText(button: HTMLButtonElement): string {
+  const normalizeText = (value: string | null | undefined) =>
+    value?.replace(/\s+/g, ' ').trim() ?? '';
+  const symbolText = normalizeText(
+    button.querySelector('span.text-base.font-medium.leading-none')?.textContent,
+  );
+  const rowInfoContainers = button.querySelectorAll('div.text-left.flex.items-center');
+  const subtitleText = normalizeText(rowInfoContainers.item(1)?.textContent);
+
+  if (symbolText && subtitleText) {
+    return `${symbolText} - ${subtitleText}`;
+  }
+
+  return symbolText || normalizeText(button.textContent);
+}
+
+function getTokenPanelRowTexts(dialog: HTMLElement): string[] {
+  return getTokenPanelRowButtons(dialog).map(formatTokenPanelRowText).filter(Boolean);
+}
+
+async function waitForTokenPanelToFinishLoading(dialog: HTMLElement) {
+  await waitFor(
+    () => {
+      expect(within(dialog).queryByText('Fetching Tokens...')).toBeNull();
+    },
+    {
+      timeout: TOKEN_LIST_LOAD_TIMEOUT_MS,
+      interval: POLL_INTERVAL_MS,
+      onTimeout: withoutTestingLibraryDom,
+    },
+  );
+}
+
 export async function expectTokenPanelContent({
   isDestination,
   symbolsToContain,
@@ -454,42 +428,25 @@ export async function expectTokenPanelContent({
 
   const dialog = await screen.findByRole('dialog');
   await within(dialog).findByText(dialogTitle);
+  await waitForTokenPanelToFinishLoading(dialog);
 
   if (symbolsToContain) {
-    const getAvailableButtons = () =>
-      getTokenPanelRowButtons(dialog)
-        .map((button) => button.textContent?.replace(/\s+/g, ' ').trim() ?? '')
-        .filter(Boolean)
-        .slice(0, 20);
-
     const getMissingSymbols = () =>
-      symbolsToContain.filter((symbol) => {
-        try {
-          getTokenPanelRowButtonBySymbol(dialog, symbol);
-          return false;
-        } catch {
-          return true;
-        }
-      });
+      symbolsToContain.filter(
+        (symbol) => queryTokenPanelRowButtonBySymbol(dialog, symbol) === null,
+      );
 
     await waitFor(
       () => {
-        const missingSymbols = getMissingSymbols();
-        if (missingSymbols.length > 0) {
-          throw new Error(
-            `Missing symbol(s) "${missingSymbols.join(', ')}" in ${isDestination ? 'destination' : 'source'} token panel.`,
-          );
-        }
+        expect(getMissingSymbols()).toEqual([]);
       },
       {
         timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
         interval: POLL_INTERVAL_MS,
-        onTimeout: () => {
-          const missingSymbols = getMissingSymbols();
-          return new Error(
-            `Timed out waiting for [${missingSymbols.join(', ')}] in ${isDestination ? 'destination' : 'source'} token panel. Available rows: [${getAvailableButtons().join(' | ')}].`,
-          );
-        },
+        onTimeout: () =>
+          new Error(
+            `Expected token panel to contain ${JSON.stringify(symbolsToContain)}, received rows ${JSON.stringify(getTokenPanelRowTexts(dialog))}. isDestination=${JSON.stringify(isDestination)} title=${JSON.stringify(dialogTitle)} text=${JSON.stringify(dialog.textContent?.replace(/\s+/g, ' ').trim())}`,
+          ),
       },
     );
   }
@@ -503,24 +460,23 @@ export async function expectTokenPanelContent({
           const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
           const logoImage = tokenRowButton.querySelector('img');
           const rowLogoSrc = logoImage?.getAttribute('src') ?? '';
-
-          if (!rowLogoSrc) {
-            throw new Error(`Waiting for "${tokenExpectation.symbol}" row logo to resolve.`);
-          }
-
-          if (tokenExpectation.logoURI && !rowLogoSrc.includes(tokenExpectation.logoURI)) {
-            throw new Error(
-              `Expected "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}", got "${rowLogoSrc}".`,
-            );
-          }
+          expect(rowLogoSrc).toBeTruthy();
+          expect(rowLogoSrc).toContain(tokenExpectation.logoURI);
         },
         {
           timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
           interval: POLL_INTERVAL_MS,
-          onTimeout: () =>
-            new Error(
-              `Timed out waiting for "${tokenExpectation.symbol}" row logo to contain "${tokenExpectation.logoURI}".`,
-            ),
+          onTimeout: () => {
+            const tokenRowButton = queryTokenPanelRowButtonBySymbol(
+              dialog,
+              tokenExpectation.symbol,
+            );
+            const rowLogoSrc = tokenRowButton?.querySelector('img')?.getAttribute('src') ?? null;
+
+            return new Error(
+              `Expected "${tokenExpectation.symbol}" row logo to contain ${JSON.stringify(tokenExpectation.logoURI)}, received ${JSON.stringify(rowLogoSrc)}.`,
+            );
+          },
         },
       ),
     ),
@@ -564,12 +520,24 @@ export async function expectTokenPanelContent({
         },
         {
           timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
-          onTimeout: () =>
-            new Error(
+          onTimeout: () => {
+            const tokenRowButton = queryTokenPanelRowButtonBySymbol(
+              dialog,
+              tokenExpectation.symbol,
+            );
+            const contractHrefs =
+              tokenRowButton === null
+                ? []
+                : Array.from(tokenRowButton.querySelectorAll('a[href]')).map(
+                    (link) => link.getAttribute('href') ?? '',
+                  );
+
+            return new Error(
               expectsNativeContract
-                ? `Timed out waiting for "${tokenExpectation.symbol}" row to show native token text without token contract links.`
-                : `Timed out waiting for "${tokenExpectation.symbol}" row contract link to include "${tokenExpectation.contract}".`,
-            ),
+                ? `Timed out waiting for "${tokenExpectation.symbol}" row to show native token text without token contract links. Received hrefs ${JSON.stringify(contractHrefs)}.`
+                : `Timed out waiting for "${tokenExpectation.symbol}" row contract link to include "${tokenExpectation.contract}". Received hrefs ${JSON.stringify(contractHrefs)}.`,
+            );
+          },
         },
       );
     }),
@@ -586,9 +554,90 @@ export async function expectTokenPanelContent({
     },
     {
       timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
-      onTimeout: () => new Error('Timed out waiting for token selection dialog to close.'),
+      onTimeout: withoutTestingLibraryDom,
     },
   );
+}
+
+export async function selectTokenPanelToken({
+  isDestination,
+  tokenExpectation,
+}: {
+  isDestination: boolean;
+  tokenExpectation: TokenExpectation;
+}) {
+  const buttonAriaLabel = isDestination ? 'Select Destination Token' : 'Select Token';
+  const dialogTitle = isDestination ? 'Select Destination Token' : 'Select Token';
+
+  const openTokenPanelButton = await screen.findByRole('button', {
+    name: buttonAriaLabel,
+    hidden: true,
+  });
+  await act(async () => {
+    fireEvent.click(openTokenPanelButton);
+  });
+
+  const dialog = await screen.findByRole('dialog');
+  await within(dialog).findByText(dialogTitle);
+  await waitForTokenPanelToFinishLoading(dialog);
+
+  const searchInput = within(dialog).queryByPlaceholderText(
+    'Search by token name, symbol, or address',
+  );
+
+  if (searchInput instanceof HTMLInputElement) {
+    const searchValue =
+      tokenExpectation.contract && tokenExpectation.contract !== 'native'
+        ? tokenExpectation.contract
+        : tokenExpectation.symbol;
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: searchValue } });
+    });
+  }
+
+  await waitFor(
+    () => {
+      expect(queryTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol) !== null).toBe(true);
+    },
+    {
+      timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
+      interval: POLL_INTERVAL_MS,
+      onTimeout: () =>
+        new Error(
+          `Expected ${isDestination ? 'destination' : 'source'} token panel to contain ${JSON.stringify(tokenExpectation.symbol)}, received rows ${JSON.stringify(getTokenPanelRowTexts(dialog))}.`,
+        ),
+    },
+  );
+
+  const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+  await act(async () => {
+    fireEvent.click(tokenRowButton);
+  });
+
+  await waitFor(
+    () => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    },
+    {
+      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      onTimeout: withoutTestingLibraryDom,
+    },
+  );
+}
+
+export async function setSourceToken(tokenExpectation: TokenExpectation) {
+  await selectTokenPanelToken({
+    isDestination: false,
+    tokenExpectation,
+  });
+}
+
+export async function setDestinationToken(tokenExpectation: TokenExpectation) {
+  await selectTokenPanelToken({
+    isDestination: true,
+    tokenExpectation,
+  });
 }
 
 async function expectTokenPanelTokens({
@@ -610,7 +659,6 @@ export async function runTransferPanelScenario({
   destinationChain,
   token,
   destinationToken,
-  bridgeTokens,
   expectedSourceToken,
   expectedDestinationToken,
   expectedSourcePanelTokens,
@@ -621,7 +669,6 @@ export async function runTransferPanelScenario({
     destinationChain,
     token,
     destinationToken,
-    bridgeTokens,
   });
 
   await expectTokenButtonToken({

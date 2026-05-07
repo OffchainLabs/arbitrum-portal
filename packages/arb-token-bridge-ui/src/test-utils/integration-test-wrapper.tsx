@@ -1,6 +1,4 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createOvermindMock } from 'overmind';
-import { Provider as OvermindProvider } from 'overmind-react';
 import React, { PropsWithChildren, useMemo, useState } from 'react';
 import { SWRConfig } from 'swr';
 import {
@@ -12,9 +10,12 @@ import {
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 
-import { ContractStorage, ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
+import { useArbTokenBridgeBootstrap } from '../components/App/useArbTokenBridgeBootstrap';
+import { ArbTokenBridgeStoreSync } from '../components/syncers/ArbTokenBridgeStoreSync';
+import { TokenListSyncer } from '../components/syncers/TokenListSyncer';
 import { queryParamProviderOptions } from '../hooks/useArbQueryParams';
-import { config } from '../state';
+import { defaultState } from '../state/app/state';
+import { useAppStore } from '../state/index';
 
 function createAdapter(initialLocation: PartialLocation): QueryParamAdapterComponent {
   return ({ children }) => {
@@ -37,13 +38,20 @@ function createAdapter(initialLocation: PartialLocation): QueryParamAdapterCompo
 
 type CreateIntegrationWrapperParams = {
   search?: string;
-  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
 };
 
-export function createIntegrationWrapper({
-  search = '',
-  bridgeTokens,
-}: CreateIntegrationWrapperParams = {}) {
+function IntegrationBootstrap() {
+  const tokenBridgeParams = useArbTokenBridgeBootstrap();
+
+  return (
+    <>
+      {tokenBridgeParams ? <ArbTokenBridgeStoreSync tokenBridgeParams={tokenBridgeParams} /> : null}
+      <TokenListSyncer />
+    </>
+  );
+}
+
+export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapperParams = {}) {
   const queryClient = new QueryClient();
   const adapter = createAdapter({
     search,
@@ -57,20 +65,14 @@ export function createIntegrationWrapper({
     ssr: false,
   });
 
-  const overmind = createOvermindMock(config, (state) => {
-    if (!bridgeTokens) {
-      return;
-    }
+  const Wrapper = ({ children }: PropsWithChildren) => {
+    useState(() => {
+      useAppStore.setState({
+        ...defaultState,
+      });
+    });
 
-    state.app.arbTokenBridge = {
-      bridgeTokens,
-      eth: {} as never,
-      token: {} as never,
-    };
-  });
-
-  const Wrapper = ({ children }: PropsWithChildren) => (
-    <OvermindProvider value={overmind}>
+    return (
       <QueryParamProvider adapter={adapter} options={queryParamProviderOptions}>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
@@ -79,13 +81,14 @@ export function createIntegrationWrapper({
                 provider: () => new Map(),
               }}
             >
+              <IntegrationBootstrap />
               {children}
             </SWRConfig>
           </QueryClientProvider>
         </WagmiProvider>
       </QueryParamProvider>
-    </OvermindProvider>
-  );
+    );
+  };
 
   return Wrapper;
 }

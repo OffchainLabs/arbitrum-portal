@@ -221,7 +221,7 @@ export const localL3NetworkRpcUrl = loadEnvironmentVariableWithFallback({
   fallback: 'http://127.0.0.1:3347',
 });
 
-const defaultRpcUrls: { [chainId: number]: string } = {
+export const defaultRpcUrls: { [chainId: number]: string } = {
   // L1 Mainnet
   [ChainId.Ethereum]: loadEnvironmentVariableWithFallback({
     env: process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM,

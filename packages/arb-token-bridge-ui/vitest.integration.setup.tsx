@@ -3,9 +3,6 @@ import { mockAnimationsApi } from 'jsdom-testing-mocks';
 import React from 'react';
 import { vi } from 'vitest';
 
-import { ChainId } from './src/types/ChainId';
-import { rpcURLs } from './src/util/networks';
-
 vi.mock('@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory', async () => {
   const { BigNumber } = await import('ethers');
 
@@ -54,6 +51,13 @@ vi.mock('react-virtualized', () => ({
   }),
 }));
 
+// Avoid error when reown is making request to walletConnect endpoint
+vi.mock('./src/wallet/hooks/useWalletModal', () => ({
+  useWalletModal: () => ({
+    openConnectModal: vi.fn(),
+  }),
+}));
+
 class MockLoadedImage {
   onload: ((event: Event) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
@@ -69,27 +73,6 @@ class MockLoadedImage {
 vi.stubGlobal('Image', MockLoadedImage);
 
 mockAnimationsApi();
-
-const localhostPattern = /(?:^|\/\/)(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i;
-const publicEthereumRpcUrl = 'https://ethereum-rpc.publicnode.com';
-const publicArbitrumRpcUrl = 'https://arb1.arbitrum.io/rpc';
-
-function ensurePublicRpcEnv(key: string, publicRpcUrl: string) {
-  const currentValue = process.env[key];
-  if (!currentValue || localhostPattern.test(currentValue)) {
-    process.env[key] = publicRpcUrl;
-  }
-}
-
-// Integration tests should not depend on a local node process.
-ensurePublicRpcEnv('NEXT_PUBLIC_RPC_URL_ETHEREUM', publicEthereumRpcUrl);
-ensurePublicRpcEnv('NEXT_PUBLIC_RPC_URL_ARBITRUM_ONE', publicArbitrumRpcUrl);
-ensurePublicRpcEnv('NEXT_PUBLIC_RPC_URL_BASE', 'https://mainnet.base.org');
-
-// Keep integration tests off local nitro testnode RPCs even if local chain ids are resolved internally.
-rpcURLs[ChainId.Local] = publicEthereumRpcUrl;
-rpcURLs[ChainId.ArbitrumLocal] = publicArbitrumRpcUrl;
-rpcURLs[ChainId.L3Local] = publicArbitrumRpcUrl;
 
 axios.defaults.baseURL = 'http://localhost:3000';
 // Avoid happy-dom's XMLHttpRequest adapter to prevent async task manager abort rejections.

@@ -1,50 +1,64 @@
-import { constants } from 'ethers';
 import { describe, it } from 'vitest';
 
 import {
-  type RouteTokenCase,
-  apeTokenExpectation,
-  nativeApeTokenExpectation,
+  type ChainQuerySlug,
+  ethTokenExpectation,
+  expectTokenButtonToken,
   nativeEthTokenExpectation,
-  runTransferPanelScenario,
+  renderTransferPanel,
+  setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
   wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
-const ethWethCases: RouteTokenCase[] = [
+type EthWethSelectionCase = {
+  sourceChain: ChainQuerySlug;
+  destinationChain: ChainQuerySlug;
+  selectedSourceToken: typeof ethTokenExpectation | typeof wethTokenExpectation;
+  expectedSourceToken: typeof ethTokenExpectation | typeof wethTokenExpectation;
+  expectedDestinationToken: typeof nativeEthTokenExpectation | typeof wethTokenExpectation;
+};
+
+const ethWethCases: EthWethSelectionCase[] = [
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'superposition',
+    selectedSourceToken: ethTokenExpectation,
+    expectedSourceToken: ethTokenExpectation,
+    expectedDestinationToken: ethTokenExpectation,
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'ethereum',
+    selectedSourceToken: ethTokenExpectation,
+    expectedSourceToken: ethTokenExpectation,
+    expectedDestinationToken: ethTokenExpectation,
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'superposition',
+    selectedSourceToken: wethTokenExpectation,
+    expectedSourceToken: wethTokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
+  },
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: apeTokenExpectation,
+    selectedSourceToken: ethTokenExpectation,
+    expectedSourceToken: ethTokenExpectation,
     expectedDestinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: nativeApeTokenExpectation,
-    expectedDestinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    expectedSourceToken: nativeEthTokenExpectation,
-    expectedDestinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    expectedSourceToken: nativeEthTokenExpectation,
-    expectedDestinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    expectedSourceToken: nativeApeTokenExpectation,
-    expectedDestinationToken: nativeEthTokenExpectation,
+    selectedSourceToken: wethTokenExpectation,
+    expectedSourceToken: wethTokenExpectation,
+    expectedDestinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
+    selectedSourceToken: nativeEthTokenExpectation,
     expectedSourceToken: nativeEthTokenExpectation,
     expectedDestinationToken: wethTokenExpectation,
   },
@@ -55,13 +69,27 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
 
   it.each(ethWethCases)(
     'renders expected source and destination tokens for ETH/WETH override: $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
-      await runTransferPanelScenario({
+    async ({
+      sourceChain,
+      destinationChain,
+      selectedSourceToken,
+      expectedSourceToken,
+      expectedDestinationToken,
+    }) => {
+      await renderTransferPanel({
         sourceChain,
         destinationChain,
-        expectedSourceToken,
-        expectedDestinationToken,
-        destinationToken: constants.AddressZero,
+      });
+
+      await setSourceToken(selectedSourceToken);
+
+      await expectTokenButtonToken({
+        isDestination: false,
+        tokenExpectation: expectedSourceToken,
+      });
+      await expectTokenButtonToken({
+        isDestination: true,
+        tokenExpectation: expectedDestinationToken,
       });
     },
   );

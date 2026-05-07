@@ -23,6 +23,7 @@ export default defineConfig({
       },
     },
     setupFiles: ['./vitest.mocks.ts', './vitest.integration.setup.tsx'],
+    silent: true,
   },
   resolve: {
     alias: {

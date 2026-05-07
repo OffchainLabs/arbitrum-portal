@@ -1,53 +1,53 @@
-import { constants } from 'ethers';
 import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
+  expectTokenButtonToken,
   nativeEthTokenExpectation,
-  runTransferPanelScenario,
+  renderTransferPanel,
+  setDestinationToken,
+  setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
-  usdcAddressByChain,
-  usdcETokenExpectation,
-  usdcTokenExpectation,
-  wethTokenExpectation,
+  usdcTokenByChain,
+  wethTokenByChain,
 } from './TransferPanel.integration.helpers';
 
 const swapCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: usdcTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    expectedSourceToken: usdcTokenByChain.ethereum,
+    expectedDestinationToken: wethTokenByChain.apeChain,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: usdcETokenExpectation,
+    expectedSourceToken: usdcTokenByChain.apeChain,
     expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: usdcTokenExpectation,
+    expectedSourceToken: usdcTokenByChain.ethereum,
     expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: usdcETokenExpectation,
+    expectedSourceToken: usdcTokenByChain.superposition,
     expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: usdcETokenExpectation,
+    expectedSourceToken: usdcTokenByChain.apeChain,
     expectedDestinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: usdcETokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    expectedSourceToken: usdcTokenByChain.superposition,
+    expectedDestinationToken: wethTokenByChain.apeChain,
   },
 ];
 
@@ -57,14 +57,22 @@ describe.sequential('TransferPanel LiFi Integration - Swap (USDC -> ETH/WETH)', 
   it.each(swapCases)(
     'renders expected source and destination tokens for swap (USDC -> ETH/WETH): $sourceChain -> $destinationChain',
     async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
-      const sourceTokenAddress = usdcAddressByChain[sourceChain];
-      await runTransferPanelScenario({
+      await renderTransferPanel({
         sourceChain,
         destinationChain,
-        expectedSourceToken,
-        expectedDestinationToken,
-        token: sourceTokenAddress,
-        destinationToken: constants.AddressZero,
+      });
+
+      await setSourceToken(expectedSourceToken);
+      await setDestinationToken(expectedDestinationToken);
+
+      await expectTokenButtonToken({
+        isDestination: false,
+        tokenExpectation: expectedSourceToken,
+      });
+
+      await expectTokenButtonToken({
+        isDestination: true,
+        tokenExpectation: expectedDestinationToken,
       });
     },
   );
