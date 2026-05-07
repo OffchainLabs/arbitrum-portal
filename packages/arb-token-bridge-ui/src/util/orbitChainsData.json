@@ -1916,6 +1916,54 @@
           "logoUrl": "/images/MandalaChainTestnet_NativeTokenLogo.svg"
         }
       }
+    },
+    {
+      "chainId": 704852,
+      "confirmPeriodBlocks": 50,
+      "ethBridge": {
+        "bridge": "0xAA8bb4E9851735E07Fe6ccb29d61def136Cce3E9",
+        "inbox": "0xb78614a722431f15F47bCd873e48A5B1cf9983b1",
+        "outbox": "0xB711935AB91E8d3c3cD3bf913d8D54896397AA5a",
+        "rollup": "0xdc57101751220C05f401b9C7982B183A11B7D173",
+        "sequencerInbox": "0xca3000F9106921A14bD965428709ee9052ec10ae"
+      },
+      "nativeToken": "0xEDb8cd3aDe75A32E2741884dBde8dfeF00cDE69c",
+      "explorerUrl": "https://testnet-explorer.mars-chain.io",
+      "rpcUrl": "https://testnet-rpc.mars-chain.io",
+      "isCustom": true,
+      "isTestnet": true,
+      "name": "Mars Chain Testnet",
+      "slug": "mars-chain-testnet",
+      "parentChainId": 11155111,
+      "tokenBridge": {
+        "parentCustomGateway": "0x04db5400a7f2eb1Ca946efC507eaaFb191836dd5",
+        "parentErc20Gateway": "0xa43ff360E93fA20551C2Ef49d8cf8ea6E40586Ab",
+        "parentGatewayRouter": "0xDA4BA4BE6e32241B45Af53182e9E5606ba62A7e6",
+        "parentMultiCall": "0x73465577E9FD7Cd585E4270F23A9eBa99B92b6eD",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x09dAD352611d1390a32AfC75db053712eaA05E25",
+        "childErc20Gateway": "0x460840209DcFec3c39b22a18BDB4d5DB9cD52c51",
+        "childGatewayRouter": "0x3f242f438BF39fE1692AEfb773e7F2c2Be2a34eB",
+        "childMultiCall": "0xf646485858F2aa8C0063B628b8af4C609E7236f3",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#f17021",
+        "network": {
+          "name": "Mars Chain Testnet",
+          "logo": "/images/MarsChainTestnet_Logo.png",
+          "description": "MarsChain is a Layer 2 public chain focusing on the concepts of metaverse and Mars exploration. It aims to provide infrastructure support for the virtual world and future interstellar society through efficient and scalable blockchain technology. It adopts advanced expansion solutions to achieve high throughput and low transaction costs, and supports decentralized applications (DApps), digital asset transactions and cross-chain interoperability."
+        },
+        "nativeTokenData": {
+          "name": "Mars Coin",
+          "symbol": "MarsC",
+          "logoUrl": "/images/MarsChainTestnet_NativeTokenLogo.png"
+        }
+      }
     }
   ]
 }
