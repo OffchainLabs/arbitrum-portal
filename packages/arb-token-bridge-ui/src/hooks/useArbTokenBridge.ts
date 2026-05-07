@@ -22,6 +22,7 @@ import {
   isValidErc20,
   l1TokenIsDisabled,
 } from '../util/TokenUtils';
+import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
 import { isNetwork } from '../util/networks';
 import {
   ArbTokenBridge,
@@ -253,24 +254,18 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           return;
         }
         const existingToken = oldBridgeTokens?.[tokenToAdd.address];
-        if (!tokenToAdd.l2Address && existingToken?.l2Address) {
-          tokenToAdd.l2Address = existingToken.l2Address;
-        }
-        if (!tokenToAdd.priceUSD && existingToken?.priceUSD) {
-          tokenToAdd.priceUSD = existingToken.priceUSD;
-        }
-        const { address, l2Address } = tokenToAdd;
+        bridgeTokensToAdd[tokenAddress] = mergeBridgeTokens({
+          existingToken,
+          incomingToken: tokenToAdd,
+          incomingListId: listId,
+        });
+        const { address, l2Address } = bridgeTokensToAdd[tokenAddress];
         if (address) {
           l1Addresses.push(address);
         }
         if (l2Address) {
           l2Addresses.push(l2Address);
         }
-
-        // Add the new list id being imported (`listId`) to the existing list ids (from `oldBridgeTokens[address]`)
-        // Set the result to token added to `bridgeTokens` : `tokenToAdd.listIds`
-        const oldListIds = oldBridgeTokens?.[tokenToAdd.address]?.listIds || new Set();
-        tokenToAdd.listIds = new Set([...oldListIds, listId]);
       }
 
       updateErc20L1Balance(l1Addresses);
