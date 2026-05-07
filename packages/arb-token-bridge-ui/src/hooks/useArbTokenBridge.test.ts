@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { LIFI_TRANSFER_LIST_ID } from '../util/TokenListUtils';
+import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
 import { type ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
-import { mergeBridgeToken } from './useArbTokenBridge';
 
 const buildToken = (overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken => ({
   name: 'PayPal USD',
@@ -15,7 +15,7 @@ const buildToken = (overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken
   ...overrides,
 });
 
-describe('mergeBridgeToken', () => {
+describe('mergeBridgeTokens', () => {
   it('keeps existing fields when a later non-LiFi token merges the same token', () => {
     const lifiToken = buildToken({
       name: 'PayPal USD OFT',
@@ -30,10 +30,10 @@ describe('mergeBridgeToken', () => {
       l2Address: undefined,
     });
 
-    const mergedToken = mergeBridgeToken({
+    const mergedToken = mergeBridgeTokens({
       existingToken: lifiToken,
-      tokenToAdd,
-      listId: '1',
+      incomingToken: tokenToAdd,
+      incomingListId: '1',
     });
 
     expect(mergedToken.name).toBe('PayPal USD OFT');
@@ -57,10 +57,10 @@ describe('mergeBridgeToken', () => {
       symbol: 'PYUSD',
     });
 
-    const mergedToken = mergeBridgeToken({
+    const mergedToken = mergeBridgeTokens({
       existingToken: lifiToken,
-      tokenToAdd,
-      listId: '1',
+      incomingToken: tokenToAdd,
+      incomingListId: '1',
     });
 
     expect(mergedToken.name).toBe('PayPal USD OFT');
@@ -79,10 +79,10 @@ describe('mergeBridgeToken', () => {
       l2Address: '0x46850ad61c2b7d64d08c9c754f45254596696984',
     });
 
-    const mergedToken = mergeBridgeToken({
+    const mergedToken = mergeBridgeTokens({
       existingToken,
-      tokenToAdd,
-      listId: LIFI_TRANSFER_LIST_ID,
+      incomingToken: tokenToAdd,
+      incomingListId: LIFI_TRANSFER_LIST_ID,
     });
 
     expect(mergedToken.l2Address).toBe('0x46850ad61c2b7d64d08c9c754f45254596696984');

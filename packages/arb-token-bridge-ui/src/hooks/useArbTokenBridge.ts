@@ -14,7 +14,6 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { getL2NativeToken } from '../util/L2NativeUtils';
-import { LIFI_TRANSFER_LIST_ID } from '../util/TokenListUtils';
 import {
   fetchErc20Data,
   getL1ERC20Address,
@@ -23,6 +22,7 @@ import {
   isValidErc20,
   l1TokenIsDisabled,
 } from '../util/TokenUtils';
+import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
 import { isNetwork } from '../util/networks';
 import {
   ArbTokenBridge,
@@ -79,33 +79,6 @@ class TokenDisabledError extends Error {
 export interface TokenBridgeParams {
   l1: { provider: JsonRpcProvider; network: Chain };
   l2: { provider: JsonRpcProvider; network: Chain };
-}
-
-export function mergeBridgeToken({
-  existingToken,
-  tokenToAdd,
-  listId,
-}: {
-  existingToken: ERC20BridgeToken | undefined;
-  tokenToAdd: ERC20BridgeToken;
-  listId: string;
-}) {
-  const incomingUsesLifiTokenAddress = listId === LIFI_TRANSFER_LIST_ID;
-
-  if (existingToken && !incomingUsesLifiTokenAddress) {
-    tokenToAdd.name = existingToken.name ?? tokenToAdd.name;
-    tokenToAdd.symbol = existingToken.symbol ?? tokenToAdd.symbol;
-    tokenToAdd.address = existingToken.address ?? tokenToAdd.address;
-    tokenToAdd.decimals = existingToken.decimals ?? tokenToAdd.decimals;
-    tokenToAdd.type = existingToken.type ?? tokenToAdd.type;
-    tokenToAdd.logoURI = existingToken.logoURI ?? tokenToAdd.logoURI;
-    tokenToAdd.l2Address = existingToken.l2Address ?? tokenToAdd.l2Address;
-    tokenToAdd.priceUSD = existingToken.priceUSD ?? tokenToAdd.priceUSD;
-  }
-
-  tokenToAdd.listIds = new Set([...(existingToken?.listIds || new Set<string>()), listId]);
-
-  return tokenToAdd;
 }
 
 export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => {
@@ -281,8 +254,12 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           return;
         }
         const existingToken = oldBridgeTokens?.[tokenToAdd.address];
-        mergeBridgeToken({ existingToken, tokenToAdd, listId });
-        const { address, l2Address } = tokenToAdd;
+        bridgeTokensToAdd[tokenAddress] = mergeBridgeTokens({
+          existingToken,
+          incomingToken: tokenToAdd,
+          incomingListId: listId,
+        });
+        const { address, l2Address } = bridgeTokensToAdd[tokenAddress];
         if (address) {
           l1Addresses.push(address);
         }

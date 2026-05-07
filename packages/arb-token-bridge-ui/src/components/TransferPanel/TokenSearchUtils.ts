@@ -6,40 +6,11 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
-import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
+import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
 const emptyData = {};
-
-function mergeTokenWithPriority({
-  existingToken,
-  incomingToken,
-  incomingListId,
-}: {
-  existingToken: ERC20BridgeToken | undefined;
-  incomingToken: ERC20BridgeToken;
-  incomingListId: string;
-}) {
-  const incomingUsesLifiTokenAddress = incomingListId === LIFI_TRANSFER_LIST_ID;
-
-  if (incomingUsesLifiTokenAddress || !existingToken) {
-    return incomingToken;
-  }
-
-  return {
-    ...incomingToken,
-    name: existingToken.name ?? incomingToken.name,
-    symbol: existingToken.symbol ?? incomingToken.symbol,
-    address: existingToken.address ?? incomingToken.address,
-    decimals: existingToken.decimals ?? incomingToken.decimals,
-    type: existingToken.type ?? incomingToken.type,
-    logoURI: existingToken.logoURI ?? incomingToken.logoURI,
-    l2Address: existingToken.l2Address ?? incomingToken.l2Address,
-    priceUSD: existingToken.priceUSD ?? incomingToken.priceUSD,
-    listIds: existingToken.listIds,
-  };
-}
 
 export function useTokensFromLists(): ContractStorage<ERC20BridgeToken> {
   const [networks] = useNetworks();
@@ -166,7 +137,7 @@ export function tokenListsToSearchableTokenStorage(
             };
           } else {
             // Prefer LiFi token metadata when multiple lists map the same L1 token.
-            acc[addressOnL1] = mergeTokenWithPriority({
+            acc[addressOnL1] = mergeBridgeTokens({
               existingToken: acc[addressOnL1],
               incomingToken: {
                 name: token.name,
