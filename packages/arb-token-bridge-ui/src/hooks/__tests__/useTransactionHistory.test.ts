@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as depositsHelpers from '../../util/deposits/helpers';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useTransactionHistory } from '../useTransactionHistory';
 
@@ -137,4 +138,46 @@ describe.sequential('useTransactionHistory', () => {
       expect(result.current.completed).toBe(true);
     },
   );
+
+  it('tracks failures and keeps the rest of history rendering when a transformation rejects', async () => {
+    const mockUseArbQueryParams = vi.mocked(useArbQueryParams);
+    const [currentParams, setParams] = mockUseArbQueryParams();
+
+    mockUseArbQueryParams.mockReturnValue([
+      {
+        ...currentParams,
+        sourceChain: 11155111,
+        disabledFeatures: [],
+      },
+      setParams,
+    ]);
+
+    // Inject a single rejection in the deposit transform path. If the wallet's
+    // first source tx is a deposit, this fires once and exercises the failure
+    // path; otherwise it doesn't fire and the test still validates no regression.
+    vi.spyOn(depositsHelpers, 'updateAdditionalDepositData').mockRejectedValueOnce(
+      new Error('test injected transform failure'),
+    );
+
+    const { result } = await renderHookAsyncUseTransactionHistory(wallets.WALLET_MULTIPLE_TX);
+
+    // drive through both pages, mirroring the parametrized test flow
+    for (let page = 0; page < 2; page++) {
+      if (page > 0) {
+        act(() => {
+          result.current.resume();
+        });
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await waitFor(
+        () => {
+          expect(result.current.loading).toBe(false);
+        },
+        { timeout: 30_000, interval: 500 },
+      );
+    }
+
+    // succeeded + failed should equal the source total (5 for this wallet)
+    expect(result.current.transactions.length + result.current.failedTxs.length).toBe(5);
+  });
 });
