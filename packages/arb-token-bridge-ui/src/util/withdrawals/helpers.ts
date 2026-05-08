@@ -199,35 +199,43 @@ export async function mapTokenWithdrawalFromEventLogsToL2ToL1EventResult({
     result.childChainId,
   );
 
-  // We cannot access sender and destination from the withdrawal object.
-  // We have to get them from the receipt logs.
-  //
-  // Get hash of the topic that contains sender and destination.
-  const signatureHash = utils.id('TransferRouted(address,address,address,address)');
-  // Searching logs for the topic — find the TransferRouted log matching this specific token.
-  const allTransferRoutedLogs = txReceipt.logs.filter((log) => log?.topics[0] === signatureHash);
-  const tokenTopic = utils.hexZeroPad(result.l1Token, 32).toLowerCase();
-  const transferRoutedLog = allTransferRoutedLogs.find(
-    (log) => log.topics[1]?.toLowerCase() === tokenTopic,
-  );
+  // Prefer sender/destination from the WithdrawalInitiated event itself — it carries
+  // the original user even when the call went through the L2GatewayRouter (the gateway
+  // decodes the router-encoded original sender). Withdrawals initiated directly against
+  // the gateway (bypassing the router) won't have a TransferRouted log at all.
+  let sender: string | undefined =
+    result._from && utils.isAddress(result._from) ? result._from : undefined;
+  let destinationAddress: string | undefined =
+    result._to && utils.isAddress(result._to) ? result._to : undefined;
 
-  if (!transferRoutedLog) {
+  if (!sender || !destinationAddress) {
+    // Fall back to scanning the receipt for the matching TransferRouted log.
+    const signatureHash = utils.id('TransferRouted(address,address,address,address)');
+    const allTransferRoutedLogs = txReceipt.logs.filter((log) => log?.topics[0] === signatureHash);
+    const tokenTopic = utils.hexZeroPad(result.l1Token, 32).toLowerCase();
+    const transferRoutedLog = allTransferRoutedLogs.find(
+      (log) => log.topics[1]?.toLowerCase() === tokenTopic,
+    );
+
+    if (transferRoutedLog) {
+      let routedSender = transferRoutedLog.topics[2];
+      let routedDestination = transferRoutedLog.topics[3];
+
+      // SCW relayer won't return leading zeros, but we will get them when using EOA.
+      if (routedSender && !utils.isAddress(routedSender)) {
+        routedSender = '0x' + routedSender.slice(-40);
+      }
+      if (routedDestination && !utils.isAddress(routedDestination)) {
+        routedDestination = '0x' + routedDestination.slice(-40);
+      }
+
+      sender = sender ?? routedSender;
+      destinationAddress = destinationAddress ?? routedDestination;
+    }
+  }
+
+  if (!sender || !destinationAddress) {
     return undefined;
-  }
-
-  // We can directly access them by index, these won't change.
-  let sender = transferRoutedLog.topics[2];
-  let destinationAddress = transferRoutedLog.topics[3];
-
-  // SCW relayer won't return leading zeros, but we will get them when using EOA.
-  if (sender && !utils.isAddress(sender)) {
-    // Strips leading zeros if necessary.
-    sender = '0x' + sender.slice(-40);
-  }
-
-  if (destinationAddress && !utils.isAddress(destinationAddress)) {
-    // Strips leading zeros if necessary.
-    destinationAddress = '0x' + destinationAddress.slice(-40);
   }
 
   return {

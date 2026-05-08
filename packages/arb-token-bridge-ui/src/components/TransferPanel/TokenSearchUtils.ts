@@ -7,6 +7,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { TokenListWithId } from '../../util/TokenListUtils';
+import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
 const emptyData = {};
@@ -63,7 +64,7 @@ export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {
   return data;
 }
 
-function tokenListsToSearchableTokenStorage(
+export function tokenListsToSearchableTokenStorage(
   tokenLists: TokenListWithId[],
   l1ChainId: string,
   l2ChainId: string,
@@ -135,11 +136,22 @@ function tokenListsToSearchableTokenStorage(
               priceUSD,
             };
           } else {
-            // The token's L1 address is already on the list, just fill in its L2 address
-            acc[addressOnL1]!.l2Address = address;
-            if (!acc[addressOnL1]!.priceUSD && priceUSD) {
-              acc[addressOnL1]!.priceUSD = priceUSD;
-            }
+            // Prefer LiFi token metadata when multiple lists map the same L1 token.
+            acc[addressOnL1] = mergeBridgeTokens({
+              existingToken: acc[addressOnL1],
+              incomingToken: {
+                name: token.name,
+                symbol: token.symbol,
+                type: TokenType.ERC20,
+                logoURI: token.logoURI,
+                address: addressOnL1,
+                l2Address: address,
+                decimals: token.decimals,
+                listIds: acc[addressOnL1]?.listIds || new Set(),
+                priceUSD,
+              },
+              incomingListId: tokenList.bridgeTokenListId,
+            });
           }
 
           // acc[address] was defined in the if/else above

@@ -13,6 +13,13 @@ type CustomTokenConfig = {
 
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
+    coinKey: 'PYUSD',
+    addresses: {
+      [ChainId.Ethereum]: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
+      [ChainId.ArbitrumOne]: '0x46850ad61c2b7d64d08c9c754f45254596696984',
+    },
+  },
+  {
     coinKey: 'ENA',
     addresses: {
       [ChainId.Ethereum]: '0x57e114b691db790c35207b2e685d4a43181e6061',

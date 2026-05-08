@@ -121,7 +121,7 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token },
+      arbTokenBridge: { token, bridgeTokens },
       warningTokens,
     },
   } = useAppState();
@@ -245,10 +245,11 @@ export function TransferPanel() {
     }
 
     return (
+      typeof bridgeTokens?.[tokenFromSearchParams] !== 'undefined' ||
       typeof tokensFromLists[tokenFromSearchParams] !== 'undefined' ||
       typeof tokensFromUser[tokenFromSearchParams] !== 'undefined'
     );
-  }, [isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
+  }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
