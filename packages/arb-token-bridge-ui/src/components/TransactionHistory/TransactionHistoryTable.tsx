@@ -15,7 +15,11 @@ import { Tooltip } from '@/app-components/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import {
+  ChainPair,
+  FailedTx,
+  UseTransactionHistoryResult,
+} from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
@@ -80,25 +84,58 @@ export const HistoryLoader = () => {
   return <span className="animate-pulse">Loading transactions...</span>;
 };
 
-const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: ChainPair[] }) => {
-  if (failedChainPairs.length === 0) {
+const truncateTxId = (txId: string) => {
+  if (txId.length <= 14) return txId;
+  return `${txId.slice(0, 8)}…${txId.slice(-6)}`;
+};
+
+const FailedFetchTooltip = ({
+  failedChainPairs,
+  failedTxs,
+}: {
+  failedChainPairs: ChainPair[];
+  failedTxs: FailedTx[];
+}) => {
+  if (failedChainPairs.length === 0 && failedTxs.length === 0) {
     return null;
   }
 
   return (
     <Tooltip
       content={
-        <div className="flex flex-col space-y-1 text-xs">
-          <span>We were unable to fetch data for the following chain pairs:</span>
-          <ul className="flex list-disc flex-col pl-4">
-            {failedChainPairs.map((pair) => (
-              <li key={`${pair.parentChainId}-${pair.childChainId}`}>
-                <b>{getNetworkName(pair.parentChainId)}</b>
-                {' <> '}
-                <b>{getNetworkName(pair.childChainId)}</b>
-              </li>
-            ))}
-          </ul>
+        <div className="flex flex-col space-y-2 text-xs">
+          {failedChainPairs.length > 0 && (
+            <div className="flex flex-col space-y-1">
+              <span>We were unable to fetch data for the following chain pairs:</span>
+              <ul className="flex list-disc flex-col pl-4">
+                {failedChainPairs.map((pair) => (
+                  <li key={`${pair.parentChainId}-${pair.childChainId}`}>
+                    <b>{getNetworkName(pair.parentChainId)}</b>
+                    {' <> '}
+                    <b>{getNetworkName(pair.childChainId)}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {failedTxs.length > 0 && (
+            <div className="flex flex-col space-y-1">
+              <span>Failed to load the following transactions:</span>
+              <ul className="flex list-disc flex-col pl-4">
+                {failedTxs.map((tx) => {
+                  const chainName = tx.childChainId
+                    ? getNetworkName(tx.childChainId)
+                    : 'unknown chain';
+                  return (
+                    <li key={tx.txId}>
+                      <span className="font-mono">{truncateTxId(tx.txId)}</span> on{' '}
+                      <b>{chainName}</b>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       }
     >
@@ -119,6 +156,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
     completed,
     error,
     failedChainPairs,
+    failedTxs,
     resume,
     selectedTabIndex,
     oldestTxTimeAgoString,
@@ -191,13 +229,13 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
       >
         {loading ? (
           <div className="flex h-[28px] items-center space-x-2">
-            <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
+            <FailedFetchTooltip failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
             <HistoryLoader />
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center justify-start space-x-1">
-              <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
+              <FailedFetchTooltip failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
               <span className="text-xs">
                 Showing {transactions.length} {isPendingTab ? 'pending' : 'settled'} transactions
                 made in {oldestTxTimeAgoString}.
