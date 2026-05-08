@@ -22,6 +22,7 @@ import {
 } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
+import { shortenTxHash } from '../../util/CommonUtils';
 import { getNetworkName } from '../../util/networks';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
@@ -84,11 +85,6 @@ export const HistoryLoader = () => {
   return <span className="animate-pulse">Loading transactions...</span>;
 };
 
-const truncateTxId = (txId: string) => {
-  if (txId.length <= 14) return txId;
-  return `${txId.slice(0, 8)}…${txId.slice(-6)}`;
-};
-
 const FailedFetchTooltip = ({
   failedChainPairs,
   failedTxs,
@@ -128,7 +124,7 @@ const FailedFetchTooltip = ({
                     : 'unknown chain';
                   return (
                     <li key={tx.txId}>
-                      <span className="font-mono">{truncateTxId(tx.txId)}</span> on{' '}
+                      <span className="font-mono">{shortenTxHash(tx.txId)}</span> on{' '}
                       <b>{chainName}</b>
                     </li>
                   );
