@@ -718,13 +718,27 @@ export const useTransactionHistory = (
         }
         const tx = batch[i];
         if (!tx) return;
-        newlyFailed.push({
-          txId: getTxIdFromTransaction(tx) ?? 'unknown',
-          parentChainId: ('parentChainId' in tx ? tx.parentChainId : undefined) as
-            | ChainId
-            | undefined,
-          childChainId: ('childChainId' in tx ? tx.childChainId : undefined) as ChainId | undefined,
+        const txId = getTxIdFromTransaction(tx) ?? 'unknown';
+        const parentChainId = ('parentChainId' in tx ? tx.parentChainId : undefined) as
+          | ChainId
+          | undefined;
+        const childChainId = ('childChainId' in tx ? tx.childChainId : undefined) as
+          | ChainId
+          | undefined;
+
+        // allSettled swallows rejections; report each one to Sentry so per-tx
+        // failures remain observable.
+        captureSentryErrorWithExtraData({
+          error: result.reason,
+          originFunction: 'useTransactionHistory.transformTransaction',
+          additionalData: {
+            txId,
+            parentChainId: String(parentChainId ?? 'unknown'),
+            childChainId: String(childChainId ?? 'unknown'),
+          },
         });
+
+        newlyFailed.push({ txId, parentChainId, childChainId });
       });
 
       if (newlyFailed.length > 0) {
