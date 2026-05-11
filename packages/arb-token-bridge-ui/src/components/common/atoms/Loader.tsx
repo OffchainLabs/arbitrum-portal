@@ -1,5 +1,5 @@
 import { TailSpin } from 'react-loader-spinner';
-import { BaseProps } from 'react-loader-spinner';
+import { BaseProps } from 'react-loader-spinner/dist/type';
 
 export type LoaderProps = BaseProps & {
   size: 'small' | 'medium' | 'large' | number;
