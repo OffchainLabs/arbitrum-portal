@@ -39,6 +39,12 @@
     "GHSA-3x4c-7xq6-9pq8",
     "GHSA-q4gf-8mx6-v5v3",
     //
+    // https://github.com/advisories/GHSA-8h8q-6873-q5fj
+    // Next.js Denial of Service with Server Components (CVE-2026-23870)
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-8h8q-6873-q5fj",
+    //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
     // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
