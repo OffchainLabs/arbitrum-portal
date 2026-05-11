@@ -35,7 +35,7 @@ const defaultTokenCases: DefaultTokenCase[] = [
     sourceChain: 'base',
     destinationChain: 'apechain',
     expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    expectedDestinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,

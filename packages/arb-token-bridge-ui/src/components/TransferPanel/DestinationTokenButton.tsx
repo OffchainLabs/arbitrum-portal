@@ -1,5 +1,4 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { shallow } from 'zustand/shallow';
 
 import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
@@ -13,7 +12,6 @@ import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { TokenLogo } from './TokenLogo';
 import { useTokensFromLists } from './TokenSearchUtils';
-import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 
 export function DestinationTokenButton({
   tokenInfo,
@@ -31,13 +29,6 @@ export function DestinationTokenButton({
   });
 
   const [dialogProps, openDialog] = useDialog2();
-  const { selectedRoute, routeContext } = useRouteStore(
-    (state) => ({
-      selectedRoute: state.selectedRoute,
-      routeContext: state.context,
-    }),
-    shallow,
-  );
 
   const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
@@ -46,12 +37,9 @@ export function DestinationTokenButton({
     fromToken: destinationToken?.address,
     sourceChainId: networks.sourceChain.id,
   });
-  const routeDestinationToken =
-    selectedRoute && isLifiRoute(selectedRoute) ? routeContext?.toAmount.token : undefined;
 
   const tokenSymbol =
     tokenInfo?.symbol ||
-    routeDestinationToken?.symbol ||
     (tokenOverride.destination
       ? sanitizeTokenSymbol(tokenOverride.destination.symbol, {
           erc20L1Address: tokenOverride.destination.address,
@@ -63,7 +51,6 @@ export function DestinationTokenButton({
 
   const tokenLogoSrc =
     tokenInfo?.logoUrl ||
-    routeDestinationToken?.logoURI ||
     (tokenOverride.destination
       ? tokenOverride.destination?.logoURI
       : destinationToken

@@ -21,6 +21,7 @@ const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
 const TOKEN_LIST_LOAD_TIMEOUT_MS = 15_000;
+const TOKEN_BUTTON_STABILITY_WINDOW_MS = 500;
 
 export type TokenExpectation = {
   symbol: string;
@@ -270,11 +271,20 @@ export async function expectTokenButtonToken({
     } satisfies TokenButtonSnapshot;
   };
 
+  const expectedLogoURI = tokenExpectation.logoURI;
+  const expectSnapshotToMatch = (snapshot: TokenButtonSnapshot) => {
+    expect(snapshot.symbolText).toBeTruthy();
+    expect(snapshot.symbolText).toEqual(tokenExpectation.symbol);
+
+    if (expectedLogoURI) {
+      expect(snapshot.logoSrc).toBeTruthy();
+      expect(snapshot.logoSrc).toContain(expectedLogoURI);
+    }
+  };
+
   await waitFor(
     () => {
-      const snapshot = getTokenButtonSnapshot();
-      expect(snapshot.symbolText).toBeTruthy();
-      expect(snapshot.symbolText).toEqual(tokenExpectation.symbol);
+      expectSnapshotToMatch(getTokenButtonSnapshot());
     },
     {
       timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
@@ -283,25 +293,13 @@ export async function expectTokenButtonToken({
     },
   );
 
-  const logoURI = tokenExpectation.logoURI;
-  if (logoURI) {
-    await waitFor(
-      () => {
-        const snapshot = getTokenButtonSnapshot();
-        expect(snapshot.logoSrc).toBeTruthy();
-        expect(snapshot.logoSrc).toContain(logoURI);
-      },
-      {
-        timeout: TOKEN_BUTTON_ASSERT_TIMEOUT_MS,
-        interval: POLL_INTERVAL_MS,
-        onTimeout: () => {
-          const snapshot = getTokenButtonSnapshot();
-          return new Error(
-            `Expected ${isDestination ? 'destination' : 'source'} token button logo to contain ${JSON.stringify(logoURI)}, received ${JSON.stringify(snapshot.logoSrc)}.`,
-          );
-        },
-      },
-    );
+  // Require the token to be stable before asserting, to avoid false positives
+  // when test assert matches an intermediate state before settling on the final token
+  const stabilityDeadline = Date.now() + TOKEN_BUTTON_STABILITY_WINDOW_MS;
+  while (Date.now() < stabilityDeadline) {
+    expectSnapshotToMatch(getTokenButtonSnapshot());
+    // eslint-disable-next-line no-await-in-loop
+    await sleepInAct(POLL_INTERVAL_MS);
   }
 }
 
