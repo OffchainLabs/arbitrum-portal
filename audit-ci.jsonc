@@ -38,6 +38,7 @@
     "GHSA-ggv3-7p47-pfv8",
     "GHSA-3x4c-7xq6-9pq8",
     "GHSA-q4gf-8mx6-v5v3",
+    "GHSA-8h8q-6873-q5fj",
     //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
