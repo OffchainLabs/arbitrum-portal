@@ -86,12 +86,6 @@
     // https://github.com/advisories/GHSA-37ch-88jc-xwx2
     // path-to-regexp ReDoS via multiple route parameters
     "GHSA-37ch-88jc-xwx2",
-    // https://github.com/advisories/GHSA-q3j6-qgpj-74h6
-    // fast-uri path traversal via percent-encoded dot segments
-    "GHSA-q3j6-qgpj-74h6",
-    // https://github.com/advisories/GHSA-v39h-62p7-jpjc
-    // fast-uri host confusion via percent-encoded authority delimiters
-    "GHSA-v39h-62p7-jpjc",
     //
     // The following advisories are in vite, pulled in transitively by vitest (unit test runner).
     // Reason to ignore: vitest is a devDependency used only for local/CI unit tests. The vulnerable vite dev server is never run in production.
