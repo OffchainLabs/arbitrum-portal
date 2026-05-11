@@ -471,6 +471,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 sender: includeSentTxs ? address : undefined,
                 receiver: includeReceivedTxs ? address : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
+                parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
                 pageNumber: 0,
                 pageSize: 1000,
