@@ -51,7 +51,7 @@
     "**/defu": "6.1.6",
     "**/brace-expansion": "1.1.13",
     "@typescript-eslint/**/brace-expansion": "5.0.5",
-    "**/hono": "4.12.16",
+    "**/hono": "4.12.18",
     "**/follow-redirects": "1.16.0",
     "**/postcss": "8.5.12"
   },
