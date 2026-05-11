@@ -1,4 +1,5 @@
 // @ts-check type next.config.js
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- support the pnpm hoist workaround below; this file is CommonJS
 const path = require('path');
 
 /**
