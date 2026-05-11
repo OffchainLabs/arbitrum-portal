@@ -11,7 +11,7 @@
     "start": "pnpm --filter app start",
     "audit:ci": "audit-ci --config ./audit-ci.jsonc",
     "test:unit": "pnpm --filter arb-token-bridge-ui test:unit",
-    "test:integration": "yarn workspace arb-token-bridge-ui test:integration",
+    "test:integration": "pnpm --filter arb-token-bridge-ui test:integration",
     "test:ci": "pnpm test:unit && pnpm test:integration",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",

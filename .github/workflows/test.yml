@@ -69,8 +69,8 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Start UI and Test
-        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:ci'
+      - name: Start UI and run unit tests
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:unit'
 
   test-ui-integration:
     name: 'Test UI Integration'
@@ -94,7 +94,7 @@ jobs:
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Start UI and run integration tests
-        run: yarn start-server-and-test 'start' http://127.0.0.1:3000 'yarn workspace arb-token-bridge-ui test:integration'
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm workspace arb-token-bridge-ui test:integration'
 
   audit:
     name: 'Audit'
