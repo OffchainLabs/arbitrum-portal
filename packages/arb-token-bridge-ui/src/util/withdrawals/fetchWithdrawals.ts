@@ -48,7 +48,7 @@ export type FetchWithdrawalsParams = {
   receiver?: string;
   fromBlock?: number;
   toBlock?: number;
-  l1Provider: Provider;
+  parentChainId: number;
   l2Provider: Provider;
   pageNumber?: number;
   pageSize?: number;
@@ -59,7 +59,7 @@ export type FetchWithdrawalsParams = {
 export async function fetchWithdrawals({
   sender,
   receiver,
-  l1Provider,
+  parentChainId,
   l2Provider,
   pageNumber = 0,
   pageSize = 10,
@@ -74,7 +74,6 @@ export async function fetchWithdrawals({
 
   const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
 
-  const l1ChainID = (await l1Provider.getNetwork()).chainId;
   const l2ChainID = (await l2Provider.getNetwork()).chainId;
 
   const { isOrbitChain, isCoreChain } = isNetwork(l2ChainID);
@@ -103,7 +102,7 @@ export async function fetchWithdrawals({
         ...tx,
         direction: 'withdrawal',
         source: 'subgraph',
-        parentChainId: l1ChainID,
+        parentChainId,
         childChainId: l2ChainID,
       };
     });
@@ -140,7 +139,7 @@ export async function fetchWithdrawals({
         ...tx,
         direction: 'withdrawal',
         source: 'subgraph',
-        parentChainId: l1ChainID,
+        parentChainId,
         childChainId: l2ChainID,
       };
     });
@@ -228,7 +227,7 @@ export async function fetchWithdrawals({
       ...tx,
       direction: 'withdrawal',
       source: 'event_logs',
-      parentChainId: l1ChainID,
+      parentChainId,
       childChainId: l2ChainID,
     };
   });
@@ -239,7 +238,7 @@ export async function fetchWithdrawals({
         ...tx,
         direction: 'withdrawal',
         source: 'event_logs',
-        parentChainId: l1ChainID,
+        parentChainId,
         childChainId: l2ChainID,
       };
     });
