@@ -2,7 +2,8 @@ import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeAll, expect } from 'vitest';
 
-import { getBridgePageSanitizedRedirectPath } from '../../../../app/src/utils/bridgePageUtils';
+import { addOrbitChainsToArbitrumSDK } from '../../../../app/src/initialization';
+import { getSanitizedRedirectPath } from '../../../../app/src/utils/sanitizeAndRedirect';
 import { ETHER_TOKEN_LOGO, PathnameEnum } from '../../constants';
 import { TokenType } from '../../hooks/arbTokenBridge.types';
 import {
@@ -190,10 +191,9 @@ async function getSearchParamsAfterSanitization({
     destinationToken,
   };
 
-  const sanitizedRedirectPath = await getBridgePageSanitizedRedirectPath({
-    searchParams,
-    redirectPath: PathnameEnum.BRIDGE,
-  });
+  addOrbitChainsToArbitrumSDK();
+
+  const sanitizedRedirectPath = await getSanitizedRedirectPath(searchParams, PathnameEnum.BRIDGE);
 
   if (sanitizedRedirectPath) {
     return new URL(sanitizedRedirectPath, 'http://localhost:3000').search;

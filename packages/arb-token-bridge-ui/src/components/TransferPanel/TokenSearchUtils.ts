@@ -69,28 +69,69 @@ export function tokenListsToSearchableTokenStorage(
   l1ChainId: string,
   l2ChainId: string,
 ): ContractStorage<ERC20BridgeToken> {
-  const storage = tokenLists.reduce(
-    (acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
-      let matchedL1Tokens = 0;
-      let matchedL2Tokens = 0;
-      let skippedL2WithoutBridgeInfo = 0;
-      let skippedL2WithoutL1Bridge = 0;
+  return tokenLists.reduce((acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
+    tokenList.tokens.forEach((token) => {
+      const address = token.address.toLowerCase();
+      const stringifiedChainId = String(token.chainId);
+      const accAddress = acc[address];
 
-      tokenList.tokens.forEach((token) => {
-        const address = token.address.toLowerCase();
-        const stringifiedChainId = String(token.chainId);
-        const accAddress = acc[address];
+      if (stringifiedChainId === l1ChainId) {
+        // The address is from an L1 token
+        const priceUSD = token.extensions?.priceUSD as number;
+        if (typeof accAddress === 'undefined') {
+          // First time encountering the token through its L1 address
+          acc[address] = {
+            ...token,
+            type: TokenType.ERC20,
+            l2Address: undefined,
+            listIds: new Set(),
+            priceUSD,
+          };
+        } else {
+          // Token was already added to the map through its L2 token
+          acc[address] = {
+            ...accAddress,
+            address,
+          };
+          if (!acc[address]!.priceUSD && priceUSD) {
+            acc[address]!.priceUSD = priceUSD;
+          }
+        }
 
-        if (stringifiedChainId === l1ChainId) {
-          matchedL1Tokens += 1;
-          // The address is from an L1 token
+        // acc[address] was defined in the if/else above
+        acc[address]!.listIds.add(tokenList.bridgeTokenListId);
+      } else if (stringifiedChainId === l2ChainId) {
+        // The token is an L2 token
+
+        if (!token.extensions?.bridgeInfo) {
+          return;
+        }
+
+        // @ts-ignore TODO
+        // TODO: should we upgrade '@uniswap/token-lists'?
+        const bridgeInfo: {
+          [chainId: string]: { tokenAddress: string };
+        } = token.extensions.bridgeInfo;
+
+        const l1Bridge = bridgeInfo[l1ChainId];
+        if (l1Bridge) {
+          const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
           const priceUSD = token.extensions?.priceUSD as number;
-          if (typeof accAddress === 'undefined') {
-            // First time encountering the token through its L1 address
-            acc[address] = {
-              ...token,
+
+          if (!addressOnL1) {
+            return;
+          }
+
+          if (typeof acc[addressOnL1] === 'undefined') {
+            // Token is not on the list yet
+            acc[addressOnL1] = {
+              name: token.name,
+              symbol: token.symbol,
               type: TokenType.ERC20,
-              l2Address: undefined,
+              logoURI: token.logoURI,
+              address: addressOnL1,
+              l2Address: address,
+              decimals: token.decimals,
               listIds: new Set(),
               priceUSD,
             };
@@ -114,64 +155,11 @@ export function tokenListsToSearchableTokenStorage(
           }
 
           // acc[address] was defined in the if/else above
-          acc[address]!.listIds.add(tokenList.bridgeTokenListId);
-        } else if (stringifiedChainId === l2ChainId) {
-          // The token is an L2 token
-
-          if (!token.extensions?.bridgeInfo) {
-            skippedL2WithoutBridgeInfo += 1;
-            return;
-          }
-
-          // @ts-ignore TODO
-          // TODO: should we upgrade '@uniswap/token-lists'?
-          const bridgeInfo: {
-            [chainId: string]: { tokenAddress: string };
-          } = token.extensions.bridgeInfo;
-
-          const l1Bridge = bridgeInfo[l1ChainId];
-          if (l1Bridge) {
-            matchedL2Tokens += 1;
-            const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
-            const priceUSD = token.extensions?.priceUSD as number;
-
-            if (!addressOnL1) {
-              return;
-            }
-
-            if (typeof acc[addressOnL1] === 'undefined') {
-              // Token is not on the list yet
-              acc[addressOnL1] = {
-                name: token.name,
-                symbol: token.symbol,
-                type: TokenType.ERC20,
-                logoURI: token.logoURI,
-                address: addressOnL1,
-                l2Address: address,
-                decimals: token.decimals,
-                listIds: new Set(),
-                priceUSD,
-              };
-            } else {
-              // The token's L1 address is already on the list, just fill in its L2 address
-              acc[addressOnL1]!.l2Address = address;
-              if (!acc[addressOnL1]!.priceUSD && priceUSD) {
-                acc[addressOnL1]!.priceUSD = priceUSD;
-              }
-            }
-
-            // acc[address] was defined in the if/else above
-            acc[addressOnL1]!.listIds.add(tokenList.bridgeTokenListId);
-          } else {
-            skippedL2WithoutL1Bridge += 1;
-          }
+          acc[addressOnL1]!.listIds.add(tokenList.bridgeTokenListId);
         }
-      });
+      }
+    });
 
-      return acc;
-    },
-    {},
-  );
-
-  return storage;
+    return acc;
+  }, {});
 }

@@ -101,7 +101,10 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
       usdcTokenByChain.superposition,
-      wethTokenByChain.superposition,
+      {
+        ...wethTokenByChain.superposition,
+        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
+      },
     ],
   },
   {
@@ -141,6 +144,7 @@ const defaultTokenCases: DefaultTokenCase[] = [
       },
       {
         ...wethTokenByChain.arbitrumOne,
+        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
         contract: CommonAddress.Superposition.WETH,
       },
     ],
