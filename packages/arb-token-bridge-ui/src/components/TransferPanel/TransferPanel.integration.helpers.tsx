@@ -5,7 +5,6 @@ import { beforeAll, expect } from 'vitest';
 import { addOrbitChainsToArbitrumSDK } from '../../../../app/src/initialization';
 import { getSanitizedRedirectPath } from '../../../../app/src/utils/sanitizeAndRedirect';
 import { ETHER_TOKEN_LOGO, PathnameEnum } from '../../constants';
-import { TokenType } from '../../hooks/arbTokenBridge.types';
 import {
   createIntegrationWrapper,
   getSearchParams,
