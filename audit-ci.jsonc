@@ -45,17 +45,45 @@
     // from: app>next
     "GHSA-8h8q-6873-q5fj",
     //
+    // https://github.com/advisories/GHSA-c4j6-fc7j-m34r
+    // Server-side request forgery in applications using WebSocket upgrades (CVE-2026-44578)
+    //
+    // https://github.com/advisories/GHSA-36qx-fr4f-26g5
+    // Middleware / Proxy bypass in Pages Router applications using i18n (CVE-2026-44573)
+    //
+    // https://github.com/advisories/GHSA-ffhc-5mcf-pf4q
+    // Cross-site scripting in App Router applications using CSP nonces (CVE-2026-44581)
+    //
+    // https://github.com/advisories/GHSA-gx5p-jg67-6x7h
+    // Cross-site scripting in beforeInteractive scripts with untrusted input (CVE-2026-44584)
+    //
+    // https://github.com/advisories/GHSA-h64f-5h5j-jqjh
+    // Denial of Service in the Image Optimization API (CVE-2026-44582)
+    //
+    // https://github.com/advisories/GHSA-wfc6-r584-vfw7
+    // Cache poisoning in React Server Component responses (CVE-2026-44580)
+    //
+    // https://github.com/advisories/GHSA-vfv6-92ff-j949
+    // Cache poisoning via collisions in React Server Component cache-busting (CVE-2026-44579)
+    //
+    // https://github.com/advisories/GHSA-3g8h-86w9-wvmq
+    // Middleware / Proxy redirects can be cache-poisoned (CVE-2026-44583)
+    //
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-c4j6-fc7j-m34r",
+    "GHSA-36qx-fr4f-26g5",
+    "GHSA-ffhc-5mcf-pf4q",
+    "GHSA-gx5p-jg67-6x7h",
+    "GHSA-h64f-5h5j-jqjh",
+    "GHSA-wfc6-r584-vfw7",
+    "GHSA-vfv6-92ff-j949",
+    "GHSA-3g8h-86w9-wvmq",
+    //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
     // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
     // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/relay-auth>@stablelib/ed25519
     "GHSA-x3ff-w252-2g7j",
-    //
-    // https://github.com/advisories/GHSA-w5hq-g745-h8pq
-    // uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided
-    // Reason to ignore temporarily: Transitive dependency via wagmi, metamask, lifi, and others; current code paths do not call the vulnerable API with caller-provided buffers.
-    // TODO(security): Replace this allowlist entry by bumping the upstream dependencies or adding a Yarn `resolutions` override to a non-vulnerable `uuid` version as soon as compatibility allows, then remove this exception.
-    // from: app>wagmi>@wagmi/connectors>... and arb-token-bridge-ui>@lifi/sdk>...
-    "GHSA-w5hq-g745-h8pq",
   ],
 }
