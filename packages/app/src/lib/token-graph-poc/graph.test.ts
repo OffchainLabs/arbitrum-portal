@@ -1,10 +1,10 @@
-import { CoinKey } from '@lifi/sdk';
+import { CoinKey, getConnections } from '@lifi/sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { getRouteCandidates, getTokenId, searchTokens } from './graph';
+import { getRouteCandidates, getSwapRouteCandidates, getTokenId, searchTokens } from './graph';
 
 const mockLifiRegistry = {
   tokensByChain: {} as Record<
@@ -24,10 +24,27 @@ vi.mock('../../app/api/crosschain-transfers/lifi/tokens/registry', () => ({
   getLifiTokenRegistry: async () => mockLifiRegistry,
 }));
 
+vi.mock('@lifi/sdk', () => {
+  const CoinKey = {
+    ETH: 'ETH',
+    APE: 'APE',
+    USDC: 'USDC',
+    USDCe: 'USDCe',
+    USDT: 'USDT',
+    WETH: 'WETH',
+  } as const;
+
+  return {
+    CoinKey,
+    getConnections: vi.fn(async () => ({ connections: [] })),
+  };
+});
+
 describe('token graph destination tokens', () => {
   beforeEach(() => {
     mockLifiRegistry.tokensByChain = {};
     mockLifiRegistry.tokensByChainAndCoinKey = {};
+    vi.mocked(getConnections).mockResolvedValue({ connections: [] });
 
     vi.stubGlobal(
       'fetch',
@@ -62,6 +79,38 @@ describe('token graph destination tokens', () => {
   });
 
   it('returns direct routes first and loads lifi swap routes on demand', async () => {
+    vi.mocked(getConnections).mockResolvedValue({
+      connections: [
+        {
+          fromChainId: ChainId.Ethereum,
+          toChainId: ChainId.ArbitrumOne,
+          fromTokens: [],
+          toTokens: [
+            {
+              chainId: ChainId.ArbitrumOne,
+              address: CommonAddress.ArbitrumOne.USDC,
+              name: 'USD Coin',
+              symbol: 'USDC',
+              decimals: 6,
+              coinKey: CoinKey.USDC,
+              logoURI: undefined,
+              priceUSD: '1',
+            },
+            {
+              chainId: ChainId.ArbitrumOne,
+              address: '0x46850ad61c2b7d64d08c9c754f45254596696984',
+              name: 'PayPal USD',
+              symbol: 'PYUSD',
+              decimals: 6,
+              coinKey: 'PYUSD' as CoinKey,
+              logoURI: undefined,
+              priceUSD: '1',
+            },
+          ],
+        },
+      ],
+    });
+
     const directResponse = await getRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC),
       destinationChainId: ChainId.ArbitrumOne,
@@ -74,36 +123,20 @@ describe('token graph destination tokens', () => {
       `canonical:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne['USDC.e'])}`,
     ]);
 
-    const swapFallbackResponse = await getRouteCandidates({
+    const swapFallbackResponse = await getSwapRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC),
       destinationChainId: ChainId.ArbitrumOne,
-      includeSwapFallback: true,
     });
 
     expect(
       swapFallbackResponse.items.map((item) => `${item.provider}:${item.destinationToken.id}`),
     ).toEqual([
-      `cctp:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC)}`,
-      `canonical:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne['USDC.e'])}`,
       `lifi:${getTokenId(ChainId.ArbitrumOne, '0x46850ad61c2b7d64d08c9c754f45254596696984')}`,
-      `lifi:${getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC)}`,
     ]);
     expect(swapFallbackResponse.items.map((item) => item.routeId)).toEqual([
       `${getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC)}->${getTokenId(
         ChainId.ArbitrumOne,
-        CommonAddress.ArbitrumOne.USDC,
-      )}:cctp`,
-      `${getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC)}->${getTokenId(
-        ChainId.ArbitrumOne,
-        CommonAddress.ArbitrumOne['USDC.e'],
-      )}:canonical`,
-      `${getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC)}->${getTokenId(
-        ChainId.ArbitrumOne,
         '0x46850ad61c2b7d64d08c9c754f45254596696984',
-      )}:lifi-swap`,
-      `${getTokenId(ChainId.Ethereum, CommonAddress.Ethereum.USDC)}->${getTokenId(
-        ChainId.ArbitrumOne,
-        CommonAddress.ArbitrumOne.USDC,
       )}:lifi-swap`,
     ]);
   });
@@ -167,6 +200,38 @@ describe('token graph destination tokens', () => {
 
   it('includes lifi-only source tokens and asks destination to select token', async () => {
     const daiAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
+    vi.mocked(getConnections).mockResolvedValue({
+      connections: [
+        {
+          fromChainId: ChainId.Ethereum,
+          toChainId: ChainId.ArbitrumOne,
+          fromTokens: [
+            {
+              chainId: ChainId.Ethereum,
+              address: daiAddress,
+              name: 'Dai Stablecoin',
+              symbol: 'DAI',
+              decimals: 18,
+              coinKey: 'DAI' as CoinKey,
+              logoURI: undefined,
+              priceUSD: '1',
+            },
+          ],
+          toTokens: [
+            {
+              chainId: ChainId.ArbitrumOne,
+              address: CommonAddress.ArbitrumOne.USDC,
+              name: 'USD Coin',
+              symbol: 'USDC',
+              decimals: 6,
+              coinKey: CoinKey.USDC,
+              logoURI: undefined,
+              priceUSD: '1',
+            },
+          ],
+        },
+      ],
+    });
 
     const searchableSourceTokens = await searchTokens({
       chainId: ChainId.Ethereum,
@@ -184,15 +249,23 @@ describe('token graph destination tokens', () => {
 
     expect(destinationResponse.items).toHaveLength(0);
 
-    const swapFallbackResponse = await getRouteCandidates({
+    const swapFallbackResponse = await getSwapRouteCandidates({
       sourceTokenId: getTokenId(ChainId.Ethereum, daiAddress),
       destinationChainId: ChainId.ArbitrumOne,
-      includeSwapFallback: true,
     });
 
-    expect(swapFallbackResponse.items.length).toBeGreaterThan(0);
-    expect(swapFallbackResponse.items.every((item) => item.routeId.endsWith(':lifi-swap'))).toBe(
-      true,
-    );
+    expect(swapFallbackResponse.items.map((item) => item.destinationToken.id)).toEqual([
+      getTokenId(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC),
+    ]);
+    expect(swapFallbackResponse.items.every((item) => item.routeId.endsWith(':lifi-swap'))).toBe(true);
+  });
+
+  it('filters out lifi-only source tokens when lifi has no reachable destination', async () => {
+    const searchableSourceTokens = await searchTokens({
+      chainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(searchableSourceTokens.items.map((item) => item.symbol)).not.toContain('DAI');
   });
 });

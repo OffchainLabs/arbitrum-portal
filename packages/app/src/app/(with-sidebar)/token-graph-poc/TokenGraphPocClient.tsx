@@ -18,6 +18,7 @@ import type {
 } from '@/app-lib/token-graph-poc/types';
 import { lifiDestinationChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 const DEFAULT_SOURCE_CHAIN_ID = 1;
 const DEFAULT_DESTINATION_CHAIN_ID = 42161;
@@ -68,12 +69,7 @@ function buildSourceTokensUrl(sourceChainId: number, destinationChainId: number,
   return `/api/token-graph-poc/tokens?${params.toString()}`;
 }
 
-function buildRouteCandidatesUrl(
-  sourceTokenId: string,
-  destinationChainId: number,
-  q: string,
-  includeSwapFallback = false,
-) {
+function buildRouteCandidatesUrl(sourceTokenId: string, destinationChainId: number, q: string) {
   const params = new URLSearchParams({
     destinationChainId: String(destinationChainId),
     token: sourceTokenId,
@@ -83,11 +79,20 @@ function buildRouteCandidatesUrl(
     params.set('q', q.trim());
   }
 
-  if (includeSwapFallback) {
-    params.set('includeSwapFallback', 'true');
+  return `/api/token-graph-poc/destination?${params.toString()}`;
+}
+
+function buildSwapRouteCandidatesUrl(sourceTokenId: string, destinationChainId: number, q: string) {
+  const params = new URLSearchParams({
+    destinationChainId: String(destinationChainId),
+    token: sourceTokenId,
+  });
+
+  if (q.trim()) {
+    params.set('q', q.trim());
   }
 
-  return `/api/token-graph-poc/destination?${params.toString()}`;
+  return `/api/token-graph-poc/destination-swaps?${params.toString()}`;
 }
 
 function buildBalancesUrl(chainId: number, walletAddress: string, destinationChainId: number) {
@@ -105,8 +110,9 @@ function getVisibleTokens(params: {
   balancesResponse: BalancesResponse | undefined;
   isConnected: boolean;
   sourceQuery: string;
+  curatedTokens: TokenVariant[];
 }) {
-  const { tokensResponse, balancesResponse, isConnected, sourceQuery } = params;
+  const { tokensResponse, balancesResponse, isConnected, sourceQuery, curatedTokens } = params;
 
   if (sourceQuery.trim()) {
     return tokensResponse?.items ?? [];
@@ -116,7 +122,120 @@ function getVisibleTokens(params: {
     return balancesResponse.items.map((item) => item.token);
   }
 
-  return [];
+  return curatedTokens;
+}
+
+function getCuratedSourceTokens(sourceChainId: number): TokenVariant[] {
+  switch (sourceChainId) {
+    case ChainId.Ethereum:
+      return [
+        {
+          id: `${ChainId.Ethereum}:native`,
+          chainId: ChainId.Ethereum,
+          tokenType: 'native',
+          symbol: 'ETH',
+          name: 'Ether',
+          decimals: 18,
+          logoURI: '/images/EthereumLogoRound.svg',
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.Ethereum}:${CommonAddress.Ethereum.WBTC}`,
+          chainId: ChainId.Ethereum,
+          tokenType: 'contract',
+          address: CommonAddress.Ethereum.WBTC,
+          symbol: 'WBTC',
+          name: 'Wrapped BTC',
+          decimals: 8,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.Ethereum}:${CommonAddress.Ethereum.USDC}`,
+          chainId: ChainId.Ethereum,
+          tokenType: 'contract',
+          address: CommonAddress.Ethereum.USDC,
+          symbol: 'USDC',
+          name: 'USD Coin',
+          decimals: 6,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.Ethereum}:${CommonAddress.Ethereum.USDT}`,
+          chainId: ChainId.Ethereum,
+          tokenType: 'contract',
+          address: CommonAddress.Ethereum.USDT,
+          symbol: 'USDT',
+          name: 'Tether USD',
+          decimals: 6,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.Ethereum}:${CommonAddress.Ethereum.WETH}`,
+          chainId: ChainId.Ethereum,
+          tokenType: 'contract',
+          address: CommonAddress.Ethereum.WETH,
+          symbol: 'WETH',
+          name: 'Wrapped Ether',
+          decimals: 18,
+          supportsSwap: true,
+        },
+      ];
+    case ChainId.ArbitrumOne:
+      return [
+        {
+          id: `${ChainId.ArbitrumOne}:native`,
+          chainId: ChainId.ArbitrumOne,
+          tokenType: 'native',
+          symbol: 'ETH',
+          name: 'Ether',
+          decimals: 18,
+          logoURI: '/images/EthereumLogoRound.svg',
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WBTC}`,
+          chainId: ChainId.ArbitrumOne,
+          tokenType: 'contract',
+          address: CommonAddress.ArbitrumOne.WBTC,
+          symbol: 'WBTC',
+          name: 'Wrapped BTC',
+          decimals: 8,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.USDC}`,
+          chainId: ChainId.ArbitrumOne,
+          tokenType: 'contract',
+          address: CommonAddress.ArbitrumOne.USDC,
+          symbol: 'USDC',
+          name: 'USD Coin',
+          decimals: 6,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.USDT}`,
+          chainId: ChainId.ArbitrumOne,
+          tokenType: 'contract',
+          address: CommonAddress.ArbitrumOne.USDT,
+          symbol: 'USDT',
+          name: 'Tether USD',
+          decimals: 6,
+          supportsSwap: true,
+        },
+        {
+          id: `${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WETH}`,
+          chainId: ChainId.ArbitrumOne,
+          tokenType: 'contract',
+          address: CommonAddress.ArbitrumOne.WETH,
+          symbol: 'WETH',
+          name: 'Wrapped Ether',
+          decimals: 18,
+          supportsSwap: true,
+        },
+      ];
+    default:
+      return [];
+  }
 }
 
 function getMergedRouteCandidates(
@@ -140,26 +259,49 @@ function getMergedRouteCandidates(
   });
 }
 
-function getCachedRouteCandidateResponses(params: {
+function getUniqueDestinationTokenCount(candidates: RouteCandidatesResponse['items']) {
+  return new Set(candidates.map((candidate) => candidate.destinationToken.id)).size;
+}
+
+function getCachedDestinationTokenCount(params: {
   cache: ReturnType<typeof useSWRConfig>['cache'];
   destinationChainId: number;
 }) {
   const { cache, destinationChainId } = params;
-  const responses: RouteCandidatesResponse[] = [];
-  const destinationPrefix = `/api/token-graph-poc/destination?destinationChainId=${destinationChainId}`;
+  const destinationTokenIds = new Set<string>();
+  const destinationChainIdString = String(destinationChainId);
 
   for (const key of cache.keys()) {
-    if (typeof key !== 'string' || !key.startsWith(destinationPrefix)) {
+    if (typeof key !== 'string') {
+      continue;
+    }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(key, 'http://localhost');
+    } catch {
+      continue;
+    }
+
+    const isDestinationEndpoint =
+      parsedUrl.pathname === '/api/token-graph-poc/destination' ||
+      parsedUrl.pathname === '/api/token-graph-poc/destination-swaps';
+
+    if (!isDestinationEndpoint) {
+      continue;
+    }
+
+    if (parsedUrl.searchParams.get('destinationChainId') !== destinationChainIdString) {
       continue;
     }
 
     const entry = cache.get(key) as { data?: RouteCandidatesResponse } | undefined;
-    if (entry?.data) {
-      responses.push(entry.data);
+    for (const item of entry?.data?.items ?? []) {
+      destinationTokenIds.add(item.destinationToken.id);
     }
   }
 
-  return responses;
+  return destinationTokenIds.size;
 }
 
 function ProviderBadge({ provider }: { provider: MappingProvider }) {
@@ -368,11 +510,13 @@ export function TokenGraphPocClient() {
   const balanceByTokenId = new Map(
     (balancesResponse?.items ?? []).map((item) => [item.token.id, item.balance]),
   );
+  const curatedTokens = useMemo(() => getCuratedSourceTokens(sourceChainId), [sourceChainId]);
   const visibleTokens = getVisibleTokens({
     tokensResponse: sourceTokensResponse,
     balancesResponse,
     isConnected,
     sourceQuery: debouncedSourceQuery,
+    curatedTokens,
   });
   const selectedSourceToken = useMemo(
     () => visibleTokens.find((token) => token.id === selectedSourceTokenId) ?? null,
@@ -401,6 +545,8 @@ export function TokenGraphPocClient() {
     }
   }
   const sourceLoadedCount = sourceLoadedTokenIds.size;
+  const displayedSourceCount =
+    !isConnected && !debouncedSourceQuery.trim() ? curatedTokens.length : sourceLoadedCount;
 
   const canLoadSwapFallback =
     !!selectedSourceToken?.supportsSwap &&
@@ -417,7 +563,7 @@ export function TokenGraphPocClient() {
     selectedSourceTokenId &&
     canLoadSwapFallback &&
     !debouncedDestinationQuery.trim()
-      ? buildRouteCandidatesUrl(selectedSourceTokenId, destinationChainId, '', true)
+      ? buildSwapRouteCandidatesUrl(selectedSourceTokenId, destinationChainId, '')
       : null;
   const { data: swapRouteCandidatesResponse, isLoading: swapRouteCandidatesAreLoading } =
     useSWR<RouteCandidatesResponse>(swapRouteCandidatesUrl, fetchJson);
@@ -427,11 +573,10 @@ export function TokenGraphPocClient() {
     selectedSourceTokenId &&
     canLoadSwapFallback &&
     debouncedDestinationQuery.trim()
-      ? buildRouteCandidatesUrl(
+      ? buildSwapRouteCandidatesUrl(
           selectedSourceTokenId,
           destinationChainId,
           debouncedDestinationQuery,
-          true,
         )
       : null;
   const {
@@ -439,16 +584,6 @@ export function TokenGraphPocClient() {
     isLoading: swapRouteCandidatesSearchAreLoading,
   } = useSWR<RouteCandidatesResponse>(swapRouteCandidatesSearchUrl, fetchJson);
 
-  const cachedRouteCandidateResponses = getCachedRouteCandidateResponses({
-    cache,
-    destinationChainId,
-  });
-  const loadedRouteCandidates = getMergedRouteCandidates(
-    ...cachedRouteCandidateResponses,
-    directRouteCandidatesResponse,
-    swapRouteCandidatesResponse,
-    swapRouteCandidatesSearchResponse,
-  );
   const directRouteCandidates = useMemo(
     () => directRouteCandidatesResponse?.items ?? [],
     [directRouteCandidatesResponse?.items],
@@ -474,11 +609,28 @@ export function TokenGraphPocClient() {
     ? swapRouteCandidatesSearchAreLoading
     : swapRouteCandidatesAreLoading;
   const shouldShowSwapToButton = !!selectedSourceTokenId && canLoadSwapFallback;
-  const loadedCandidateCount = loadedRouteCandidates.length;
 
   const selectableRouteCandidates = useMemo(
     () => [...directRouteCandidates, ...availableSwapRouteCandidates],
     [availableSwapRouteCandidates, directRouteCandidates],
+  );
+  const availableSwapTokenCount = useMemo(
+    () => getUniqueDestinationTokenCount(availableSwapRouteCandidates),
+    [availableSwapRouteCandidates],
+  );
+  const loadedCandidateCount = useMemo(
+    () =>
+      getCachedDestinationTokenCount({
+        cache,
+        destinationChainId,
+      }),
+    [
+      cache,
+      destinationChainId,
+      directRouteCandidatesResponse,
+      swapRouteCandidatesResponse,
+      swapRouteCandidatesSearchResponse,
+    ],
   );
 
   useEffect(() => {
@@ -585,7 +737,7 @@ export function TokenGraphPocClient() {
                 <div className="text-xs text-white/55">`GET /api/token-graph-poc/balances`</div>
               </div>
               <div className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/55">
-                {sourceLoadedCount} loaded
+                {displayedSourceCount} loaded
               </div>
             </div>
 
@@ -616,7 +768,7 @@ export function TokenGraphPocClient() {
               ) : (
                 <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-white/50">
                   {!isConnected
-                    ? 'Connect a wallet to load source assets from balances.'
+                    ? 'Connect a wallet to load balances. Showing curated assets for now.'
                     : sourceQuery.trim()
                       ? 'No assets match this query.'
                       : 'No assets with balance on this chain.'}
@@ -663,7 +815,7 @@ export function TokenGraphPocClient() {
                         <div className="text-sm font-semibold text-white">Load LiFi candidates</div>
                         <div className="text-sm text-white/60">
                           {isDestinationDropdownOpen
-                            ? `${availableSwapRouteCandidates.length} candidate(s)`
+                            ? `${availableSwapTokenCount} token(s)`
                             : 'This source asset needs a swap destination selection'}
                         </div>
                       </div>
@@ -735,7 +887,7 @@ export function TokenGraphPocClient() {
                             </div>
                             <div className="text-sm text-white/60">
                               {isDestinationDropdownOpen
-                                ? `${availableSwapRouteCandidates.length} extra candidate(s)`
+                                ? `${availableSwapTokenCount} extra token(s)`
                                 : 'LiFi swap routes for a different destination asset'}
                             </div>
                           </div>
