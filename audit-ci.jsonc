@@ -40,75 +40,51 @@
     "GHSA-q4gf-8mx6-v5v3",
     "GHSA-8h8q-6873-q5fj",
     //
+    // https://github.com/advisories/GHSA-8h8q-6873-q5fj
+    // Next.js Denial of Service with Server Components (CVE-2026-23870)
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-8h8q-6873-q5fj",
+    //
+    // https://github.com/advisories/GHSA-c4j6-fc7j-m34r
+    // Server-side request forgery in applications using WebSocket upgrades (CVE-2026-44578)
+    //
+    // https://github.com/advisories/GHSA-36qx-fr4f-26g5
+    // Middleware / Proxy bypass in Pages Router applications using i18n (CVE-2026-44573)
+    //
+    // https://github.com/advisories/GHSA-ffhc-5mcf-pf4q
+    // Cross-site scripting in App Router applications using CSP nonces (CVE-2026-44581)
+    //
+    // https://github.com/advisories/GHSA-gx5p-jg67-6x7h
+    // Cross-site scripting in beforeInteractive scripts with untrusted input (CVE-2026-44584)
+    //
+    // https://github.com/advisories/GHSA-h64f-5h5j-jqjh
+    // Denial of Service in the Image Optimization API (CVE-2026-44582)
+    //
+    // https://github.com/advisories/GHSA-wfc6-r584-vfw7
+    // Cache poisoning in React Server Component responses (CVE-2026-44580)
+    //
+    // https://github.com/advisories/GHSA-vfv6-92ff-j949
+    // Cache poisoning via collisions in React Server Component cache-busting (CVE-2026-44579)
+    //
+    // https://github.com/advisories/GHSA-3g8h-86w9-wvmq
+    // Middleware / Proxy redirects can be cache-poisoned (CVE-2026-44583)
+    //
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-c4j6-fc7j-m34r",
+    "GHSA-36qx-fr4f-26g5",
+    "GHSA-ffhc-5mcf-pf4q",
+    "GHSA-gx5p-jg67-6x7h",
+    "GHSA-h64f-5h5j-jqjh",
+    "GHSA-wfc6-r584-vfw7",
+    "GHSA-vfv6-92ff-j949",
+    "GHSA-3g8h-86w9-wvmq",
+    //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
     // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
     // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/relay-auth>@stablelib/ed25519
     "GHSA-x3ff-w252-2g7j",
-    //
-    // https://github.com/advisories/GHSA-w5hq-g745-h8pq
-    // uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided
-    // Reason to ignore temporarily: Transitive dependency via wagmi, metamask, lifi, and others; current code paths do not call the vulnerable API with caller-provided buffers.
-    // TODO(security): Replace this allowlist entry by bumping the upstream dependencies or adding a Yarn `resolutions` override to a non-vulnerable `uuid` version as soon as compatibility allows, then remove this exception.
-    // from: app>wagmi>@wagmi/connectors>... and arb-token-bridge-ui>@lifi/sdk>...
-    "GHSA-w5hq-g745-h8pq",
-    //
-    // The following advisories are transitive dependencies of @synthetixio/synpress (e2e test runner).
-    // Reason to ignore: synpress is a devDependency used only for Cypress-based end-to-end tests. None of these packages are shipped to production or executed at runtime. synpress upstream pins old Cypress/webpack/etc. versions and cannot be deduped without a major upgrade.
-    // from: arb-token-bridge-ui>@synthetixio/synpress>...
-    //
-    // https://github.com/advisories/GHSA-pfrx-2q88-qq97
-    // got allows a redirect to a UNIX socket (CVE-2022-33987)
-    "GHSA-pfrx-2q88-qq97",
-    // https://github.com/advisories/GHSA-p8p7-x288-28g6
-    // @cypress/request Server-Side Request Forgery (CVE-2023-28155)
-    "GHSA-p8p7-x288-28g6",
-    // https://github.com/advisories/GHSA-8mmm-9v2q-x3f9
-    // gh-pages prototype pollution (CVE-2022-37611)
-    "GHSA-8mmm-9v2q-x3f9",
-    // https://github.com/advisories/GHSA-3h5v-q93c-6h6q
-    // ws DoS via many HTTP headers (CVE-2024-37890)
-    "GHSA-3h5v-q93c-6h6q",
-    // https://github.com/advisories/GHSA-rc47-6667-2j5j
-    // http-cache-semantics ReDoS (CVE-2022-25881)
-    "GHSA-rc47-6667-2j5j",
-    // https://github.com/advisories/GHSA-9jgg-88mc-972h
-    // webpack-dev-server source code disclosure (non-Chromium)
-    "GHSA-9jgg-88mc-972h",
-    // https://github.com/advisories/GHSA-4v9v-hfq4-rm2v
-    // webpack-dev-server source code disclosure
-    "GHSA-4v9v-hfq4-rm2v",
-    // https://github.com/advisories/GHSA-w7fw-mjwx-w883
-    // qs arrayLimit bypass in comma parsing (DoS)
-    "GHSA-w7fw-mjwx-w883",
-    // https://github.com/advisories/GHSA-6rw7-vpxm-498p
-    // qs arrayLimit bypass in bracket notation (DoS)
-    "GHSA-6rw7-vpxm-498p",
-    // https://github.com/advisories/GHSA-37ch-88jc-xwx2
-    // path-to-regexp ReDoS via multiple route parameters
-    "GHSA-37ch-88jc-xwx2",
-    //
-    // The following advisories are in vite, pulled in transitively by vitest (unit test runner).
-    // Reason to ignore: vitest is a devDependency used only for local/CI unit tests. The vulnerable vite dev server is never run in production.
-    // from: arb-token-bridge-ui>vitest>vite and scripts>vitest>vite
-    //
-    // https://github.com/advisories/GHSA-93m4-6634-74q7
-    // vite server.fs.deny bypass via backslash on Windows
-    "GHSA-93m4-6634-74q7",
-    // https://github.com/advisories/GHSA-4w7w-66w2-5vf9
-    // vite path traversal in optimized deps `.map` handling
-    "GHSA-4w7w-66w2-5vf9",
-    // https://github.com/advisories/GHSA-v2wj-q39q-566r
-    // vite server.fs.deny bypassed with queries
-    "GHSA-v2wj-q39q-566r",
-    // https://github.com/advisories/GHSA-p9ff-h696-f583
-    // vite arbitrary file read via dev server WebSocket
-    "GHSA-p9ff-h696-f583",
-    //
-    // https://github.com/advisories/GHSA-5j98-mcp5-4vw2
-    // glob CLI command injection via -c/--cmd with shell:true
-    // Reason to ignore: Build-time only; pulled in via tailwindcss>sucrase. The vulnerability is in the `glob` CLI command, which we do not invoke; we only consume `glob` as a library.
-    // from: app>tailwindcss>sucrase>glob
-    "GHSA-5j98-mcp5-4vw2",
   ],
 }
