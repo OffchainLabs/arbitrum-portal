@@ -53,7 +53,8 @@
     "@typescript-eslint/**/brace-expansion": "5.0.5",
     "**/hono": "4.12.18",
     "**/follow-redirects": "1.16.0",
-    "**/postcss": "8.5.12"
+    "**/postcss": "8.5.12",
+    "**/uuid": "14.0.0"
   },
   "keywords": [],
   "author": "",
