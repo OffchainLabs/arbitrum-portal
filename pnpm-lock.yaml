@@ -38,7 +38,6 @@ overrides:
   fast-uri: 3.1.2
   follow-redirects: 1.16.0
   postcss: 8.5.12
-  '@uniswap/token-lists': 1.0.0-beta.34
   uuid: 14.0.0
   vitest>vite: 7.3.3
   vite-node>vite: 7.3.3
@@ -125,7 +124,7 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uniswap/token-lists':
-        specifier: 1.0.0-beta.34
+        specifier: ^1.0.0-beta.34
         version: 1.0.0-beta.34
       '@vaultsfyi/sdk':
         specifier: ^2.1.3
@@ -243,7 +242,7 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uniswap/token-lists':
-        specifier: 1.0.0-beta.34
+        specifier: ^1.0.0-beta.34
         version: 1.0.0-beta.34
       '@unstoppabledomains/resolution':
         specifier: ^8.3.3
