@@ -58,7 +58,17 @@
       "follow-redirects": "1.16.0",
       "postcss": "8.5.12",
       "@uniswap/token-lists": "1.0.0-beta.34",
-      "uuid": "14.0.0"
+      "uuid": "14.0.0",
+      "vitest>vite": "7.3.3",
+      "vite-node>vite": "7.3.3",
+      "@vitest/mocker>vite": "7.3.3",
+      "sucrase>glob": "10.5.0",
+      "test-exclude>glob": "10.5.0",
+      "viem>ws": "8.20.0",
+      "express>qs": "6.15.1",
+      "body-parser>qs": "6.15.1",
+      "@cypress/request>qs": "6.15.1",
+      "express>path-to-regexp": "0.1.13"
     }
   },
   "keywords": [],
