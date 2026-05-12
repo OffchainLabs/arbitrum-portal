@@ -23,17 +23,23 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref_name }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Build scripts
-        run: yarn workspace scripts build
+        run: pnpm --filter scripts build
 
       - name: Get issue details
         id: issue
@@ -66,17 +72,17 @@ jobs:
         run: git checkout -b ${{ steps.branch.outputs.name }}
 
       - name: Run addOrbitChain script
-        run: yarn workspace scripts add-orbit-chain ../../packages/arb-token-bridge-ui/src/util/orbitChainsData.json
+        run: pnpm --filter scripts add-orbit-chain ../../packages/arb-token-bridge-ui/src/util/orbitChainsData.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
 
       - name: Format files
-        run: yarn prettier --write "packages/arb-token-bridge-ui/src/**/*.{ts,tsx,js,jsx,json}"
+        run: pnpm prettier --write "packages/arb-token-bridge-ui/src/**/*.{ts,tsx,js,jsx,json}"
 
       - name: Generate OG image
-        run: yarn workspace arb-token-bridge-ui generateOpenGraphImages:orbit
+        run: pnpm --filter arb-token-bridge-ui generateOpenGraphImages:orbit
         env:
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
 

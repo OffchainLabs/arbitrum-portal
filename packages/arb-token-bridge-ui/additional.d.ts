@@ -4,7 +4,7 @@ declare module '*.svg' {
   export default content;
 }
 
-// the following list is for ci yarn lint to pass
+// the following list is for ci lint to pass
 declare module '*.png' {
   import Image from 'next/image';
   const content: Image['src'];

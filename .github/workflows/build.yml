@@ -30,6 +30,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
@@ -47,11 +50,14 @@ jobs:
       - name: Install node_modules
         if: steps.cache.outputs.cache-hit != 'true'
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash
-        run: yarn build
+        run: pnpm build
         env:
           NEXT_PUBLIC_IS_E2E_TEST: true
           NEXT_PUBLIC_RPC_PROVIDER: alchemy

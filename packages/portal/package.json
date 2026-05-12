@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "fetch:data": "yarn node scripts/fetch-data.js"
+    "fetch:data": "node scripts/fetch-data.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",
