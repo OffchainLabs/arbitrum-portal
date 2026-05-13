@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: 'pnpm'
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
