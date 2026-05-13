@@ -65,7 +65,7 @@ export const CommonAddress = {
   },
 } as const;
 
-export const commonUsdcToken: ERC20BridgeToken = {
+export const commonUsdcToken = {
   decimals: 6,
   address: CommonAddress.Ethereum.USDC,
   symbol: 'placeholder',
@@ -74,7 +74,7 @@ export const commonUsdcToken: ERC20BridgeToken = {
   listIds: new Set<string>(),
   logoURI:
     'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-};
+} as const satisfies ERC20BridgeToken;
 
 export const bridgedUsdcToken: ERC20BridgeToken = {
   ...commonUsdcToken,

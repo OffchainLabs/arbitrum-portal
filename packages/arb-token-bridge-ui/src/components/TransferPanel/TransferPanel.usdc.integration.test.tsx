@@ -2,50 +2,50 @@ import { describe, it } from 'vitest';
 
 import {
   type RouteTokenCase,
-  expectTokenButtonToken,
+  expectTokenButtonContent,
   renderTransferPanel,
   setDestinationToken,
   setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
-  usdcTokenByChain,
+  tokenExpectationsByChain,
 } from './TransferPanel.integration.helpers';
 
 const usdcCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: usdcTokenByChain.ethereum,
-    expectedDestinationToken: usdcTokenByChain.apeChain,
+    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
+    destinationToken: tokenExpectationsByChain.ApeChain.USDCe,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: usdcTokenByChain.apeChain,
-    expectedDestinationToken: usdcTokenByChain.ethereum,
+    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
+    destinationToken: tokenExpectationsByChain.Ethereum.USDC,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: usdcTokenByChain.ethereum,
-    expectedDestinationToken: usdcTokenByChain.superposition,
+    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
+    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: usdcTokenByChain.superposition,
-    expectedDestinationToken: usdcTokenByChain.ethereum,
+    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
+    destinationToken: tokenExpectationsByChain.Ethereum.USDC,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: usdcTokenByChain.apeChain,
-    expectedDestinationToken: usdcTokenByChain.superposition,
+    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
+    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: usdcTokenByChain.superposition,
-    expectedDestinationToken: usdcTokenByChain.apeChain,
+    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
+    destinationToken: tokenExpectationsByChain.ApeChain.USDCe,
   },
 ];
 
@@ -54,22 +54,22 @@ describe.sequential('TransferPanel LiFi Integration - USDC', () => {
 
   it.each(usdcCases)(
     'renders expected source and destination tokens for USDC transfer: $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, expectedSourceToken, expectedDestinationToken }) => {
+    async ({ sourceChain, destinationChain, sourceToken, destinationToken }) => {
       await renderTransferPanel({
         sourceChain,
         destinationChain,
       });
 
-      await setSourceToken(expectedSourceToken);
-      await setDestinationToken(expectedDestinationToken);
+      await setSourceToken(sourceToken);
+      await setDestinationToken(destinationToken);
 
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: false,
-        tokenExpectation: expectedSourceToken,
+        tokenExpectation: sourceToken,
       });
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: true,
-        tokenExpectation: expectedDestinationToken,
+        tokenExpectation: destinationToken,
       });
     },
   );

@@ -4,13 +4,13 @@ import { beforeAll, expect } from 'vitest';
 
 import { addOrbitChainsToArbitrumSDK } from '../../../../app/src/initialization';
 import { getSanitizedRedirectPath } from '../../../../app/src/utils/sanitizeAndRedirect';
-import { ETHER_TOKEN_LOGO, PathnameEnum } from '../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, PathnameEnum, WETH_TOKEN_LOGO } from '../../constants';
 import {
   createIntegrationWrapper,
   getSearchParams,
 } from '../../test-utils/integration-test-wrapper';
 import { ChainId } from '../../types/ChainId';
-import { CommonAddress } from '../../util/CommonAddressUtils';
+import { CommonAddress, commonUsdcToken } from '../../util/CommonAddressUtils';
 import { mapCustomChainToNetworkData } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import { TransferPanel } from './TransferPanel';
@@ -34,15 +34,10 @@ export type TokenPanelExpectation = TokenExpectationWithLogo & {
 };
 export type TokenPanelExpectations = [TokenPanelExpectation, ...TokenPanelExpectation[]];
 
-export const APE_TOKEN_LOGO = '/images/ApeTokenLogo.svg';
-export const WETH_TOKEN_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
-export const USDC_TOKEN_LOGO =
-  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png';
+export const USDC_TOKEN_LOGO = commonUsdcToken.logoURI;
 export const USDT_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png';
-export const WETH_SUPERPOSITION_ROW_LOGO =
-  'https://static.debank.com/image/eth_token/logo_url/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2/61844453e63cf81301f845d7864236f6.png';
+const WETH_SUPERPOSITION_ROW_LOGO = `https://static.debank.com/image/eth_token/logo_url/${CommonAddress.Ethereum.WETH}/61844453e63cf81301f845d7864236f6.png`;
 export const USDT_ARBITRUM_ONE_ROW_LOGO =
   'https://static.debank.com/image/ink_token/logo_url/0x0200c29006150606b650577bbe7b6248f58470c1/8bba37fddc2774e06a94b8952e3e3ad7.png';
 
@@ -106,29 +101,33 @@ export const usdtArbitrumOneRowTokenExpectation = {
   logoURI: USDT_ARBITRUM_ONE_ROW_LOGO,
 } satisfies TokenExpectationWithLogo;
 
-export const apeTokenByChain = {
-  ethereum: withContract(apeTokenExpectation, CommonAddress.Ethereum.APE),
-  arbitrumOne: withContract(apeTokenExpectation, CommonAddress.ArbitrumOne.APE),
-  base: withContract(apeTokenExpectation, CommonAddress.Base.APE),
-  apeChain: nativeApeTokenExpectation,
-};
-export const usdcTokenByChain = {
-  ethereum: withContract(usdcTokenExpectation, CommonAddress.Ethereum.USDC),
-  arbitrumOne: withContract(usdcTokenExpectation, CommonAddress.ArbitrumOne.USDC),
-  apeChain: withContract(usdcETokenExpectation, CommonAddress.ApeChain.USDCe),
-  superposition: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
-};
-export const usdtTokenByChain = {
-  ethereum: withContract(usdtTokenExpectation, CommonAddress.Ethereum.USDT),
-  arbitrumOne: withContract(usdtTokenExpectation, CommonAddress.ArbitrumOne.USDT),
-  apeChain: withContract(usdtTokenExpectation, CommonAddress.ApeChain.USDT),
-};
-export const wethTokenByChain = {
-  ethereum: withContract(wethTokenExpectation, CommonAddress.Ethereum.WETH),
-  arbitrumOne: withContract(wethTokenExpectation, CommonAddress.ArbitrumOne.WETH),
-  apeChain: withContract(wethTokenExpectation, CommonAddress.ApeChain.WETH),
-  superposition: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
-};
+export const tokenExpectationsByChain = {
+  Ethereum: {
+    APE: withContract(apeTokenExpectation, CommonAddress.Ethereum.APE),
+    USDC: withContract(usdcTokenExpectation, CommonAddress.Ethereum.USDC),
+    USDT: withContract(usdtTokenExpectation, CommonAddress.Ethereum.USDT),
+    WETH: withContract(wethTokenExpectation, CommonAddress.Ethereum.WETH),
+  },
+  ArbitrumOne: {
+    APE: withContract(apeTokenExpectation, CommonAddress.ArbitrumOne.APE),
+    USDC: withContract(usdcTokenExpectation, CommonAddress.ArbitrumOne.USDC),
+    USDT: withContract(usdtTokenExpectation, CommonAddress.ArbitrumOne.USDT),
+    WETH: withContract(wethTokenExpectation, CommonAddress.ArbitrumOne.WETH),
+  },
+  Base: {
+    APE: withContract(apeTokenExpectation, CommonAddress.Base.APE),
+  },
+  ApeChain: {
+    APE: nativeApeTokenExpectation,
+    USDCe: withContract(usdcETokenExpectation, CommonAddress.ApeChain.USDCe),
+    USDT: withContract(usdtTokenExpectation, CommonAddress.ApeChain.USDT),
+    WETH: withContract(wethTokenExpectation, CommonAddress.ApeChain.WETH),
+  },
+  Superposition: {
+    USDCe: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
+    WETH: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
+  },
+} as const;
 
 export function withExpectedTokenLogo(tokenExpectation: TokenExpectation): TokenExpectation {
   if (tokenExpectation.logoURI) {
@@ -149,8 +148,8 @@ export function withExpectedTokenLogo(tokenExpectation: TokenExpectation): Token
 export type RouteTokenCase = {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
-  expectedSourceToken: TokenExpectation;
-  expectedDestinationToken: TokenExpectation;
+  sourceToken: TokenExpectation;
+  destinationToken: TokenExpectation;
 };
 
 function escapeRegExp(value: string): string {
@@ -232,7 +231,7 @@ export async function renderTransferPanel({
   await sleepInAct(0);
 }
 
-export async function expectTokenButtonToken({
+export async function expectTokenButtonContent({
   isDestination,
   tokenExpectation,
 }: {
@@ -616,7 +615,7 @@ export async function setSourceToken(tokenExpectation: TokenExpectation) {
 
   // Source token selection updates both token query params, so wait for the
   // source button to settle before opening the destination token dialog.
-  await expectTokenButtonToken({
+  await expectTokenButtonContent({
     isDestination: false,
     tokenExpectation,
   });
@@ -629,14 +628,22 @@ export async function setDestinationToken(tokenExpectation: TokenExpectation) {
   });
 }
 
+function getMainnetOrbitChain(chainId: ChainId) {
+  const chain = orbitChainsData.mainnet.find((orbitChain) => orbitChain.chainId === chainId);
+
+  if (!chain) {
+    throw new Error(`Expected orbit chain ${chainId} to exist in mainnet test data.`);
+  }
+
+  return chain;
+}
+
 export function setupTransferPanelLifiIntegrationSuite() {
   beforeAll(() => {
     process.env.NEXT_PUBLIC_FEATURE_FLAG_LIFI = 'true';
 
-    const apeChain = orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!;
-    const superposition = orbitChainsData.mainnet.find(
-      (chain) => chain.chainId === ChainId.Superposition,
-    )!;
+    const apeChain = getMainnetOrbitChain(ChainId.ApeChain);
+    const superposition = getMainnetOrbitChain(ChainId.Superposition);
 
     registerCustomArbitrumNetwork(apeChain);
     registerCustomArbitrumNetwork(superposition);

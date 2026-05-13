@@ -1,3 +1,4 @@
+import { constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PathnameEnum } from '@/bridge/constants';
@@ -27,8 +28,6 @@ vi.mock('@/bridge/util/networks', async (importActual) => {
   };
 });
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 function getRedirectedUrl() {
   const [redirectTarget] = redirectMock.mock.calls.at(-1) ?? [];
 
@@ -36,13 +35,95 @@ function getRedirectedUrl() {
     throw new Error('Expected redirect to be called.');
   }
 
-  return new URL(redirectTarget, 'https://example.com');
+  return new URL(redirectTarget, 'https://portal.arbitrum.io');
+}
+
+function expectRedirectedChains({
+  sourceChain,
+  destinationChain,
+}: {
+  sourceChain: string;
+  destinationChain: string;
+}) {
+  const redirected = getRedirectedUrl();
+
+  expect(redirected.pathname).toBe(PathnameEnum.BRIDGE);
+  expect(redirected.searchParams.get('sourceChain')).toBe(sourceChain);
+  expect(redirected.searchParams.get('destinationChain')).toBe(destinationChain);
+  expect(redirected.searchParams.get('sanitized')).toBe('true');
 }
 
 describe('initializeBridgePage sanitization', () => {
   beforeEach(() => {
     redirectMock.mockClear();
     registerLocalNetworkMock.mockClear();
+  });
+
+  it('does not redirect for the default state when no chain params are provided', async () => {
+    await initializeBridgePage({
+      searchParams: {},
+      redirectPath: PathnameEnum.BRIDGE,
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it('defaults the source chain when the destination chain is valid', async () => {
+    await initializeBridgePage({
+      searchParams: {
+        sourceChain: 'not-a-chain',
+        destinationChain: 'superposition',
+      },
+      redirectPath: PathnameEnum.BRIDGE,
+    });
+
+    expect(redirectMock).toHaveBeenCalledTimes(1);
+    expectRedirectedChains({
+      sourceChain: 'ethereum',
+      destinationChain: 'superposition',
+    });
+  });
+
+  it('defaults the destination chain when the source chain is valid', async () => {
+    await initializeBridgePage({
+      searchParams: {
+        sourceChain: 'apechain',
+        destinationChain: 'not-a-chain',
+      },
+      redirectPath: PathnameEnum.BRIDGE,
+    });
+
+    expect(redirectMock).toHaveBeenCalledTimes(1);
+    expectRedirectedChains({
+      sourceChain: 'apechain',
+      destinationChain: 'ethereum',
+    });
+  });
+
+  it('does not redirect when both networks are invalid', async () => {
+    await initializeBridgePage({
+      searchParams: {
+        sourceChain: 'not-a-chain',
+        destinationChain: 'still-not-a-chain',
+      },
+      redirectPath: PathnameEnum.BRIDGE,
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect when both networks are already valid', async () => {
+    await initializeBridgePage({
+      searchParams: {
+        sourceChain: 'apechain',
+        destinationChain: 'superposition',
+        destinationToken: constants.AddressZero,
+        sanitized: 'true',
+      },
+      redirectPath: PathnameEnum.BRIDGE,
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
   it('sets destinationToken to zero address for first-load apechain -> superposition', async () => {
@@ -60,7 +141,7 @@ describe('initializeBridgePage sanitization', () => {
     expect(redirected.pathname).toBe(PathnameEnum.BRIDGE);
     expect(redirected.searchParams.get('sourceChain')).toBe('apechain');
     expect(redirected.searchParams.get('destinationChain')).toBe('superposition');
-    expect(redirected.searchParams.get('destinationToken')).toBe(ZERO_ADDRESS);
+    expect(redirected.searchParams.get('destinationToken')).toBe(constants.AddressZero);
     expect(redirected.searchParams.get('sanitized')).toBe('true');
   });
 
@@ -79,8 +160,8 @@ describe('initializeBridgePage sanitization', () => {
     expect(redirected.pathname).toBe(PathnameEnum.BRIDGE);
     expect(redirected.searchParams.get('sourceChain')).toBe('superposition');
     expect(redirected.searchParams.get('destinationChain')).toBe('apechain');
-    expect(redirected.searchParams.get('token')).toBe(ZERO_ADDRESS);
-    expect(redirected.searchParams.get('destinationToken')).toBe(ZERO_ADDRESS);
+    expect(redirected.searchParams.get('token')).toBe(constants.AddressZero);
+    expect(redirected.searchParams.get('destinationToken')).toBe(constants.AddressZero);
     expect(redirected.searchParams.get('sanitized')).toBe('true');
   });
 });

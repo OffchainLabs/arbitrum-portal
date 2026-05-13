@@ -3,7 +3,7 @@ import { describe, it } from 'vitest';
 import {
   type ChainQuerySlug,
   ethTokenExpectation,
-  expectTokenButtonToken,
+  expectTokenButtonContent,
   nativeEthTokenExpectation,
   renderTransferPanel,
   setSourceToken,
@@ -15,8 +15,8 @@ type EthWethSelectionCase = {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   selectedSourceToken: typeof ethTokenExpectation | typeof wethTokenExpectation;
-  expectedSourceToken: typeof ethTokenExpectation | typeof wethTokenExpectation;
-  expectedDestinationToken: typeof nativeEthTokenExpectation | typeof wethTokenExpectation;
+  sourceToken: typeof ethTokenExpectation | typeof wethTokenExpectation;
+  destinationToken: typeof nativeEthTokenExpectation | typeof wethTokenExpectation;
 };
 
 const ethWethCases: EthWethSelectionCase[] = [
@@ -24,43 +24,43 @@ const ethWethCases: EthWethSelectionCase[] = [
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
     selectedSourceToken: ethTokenExpectation,
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
     selectedSourceToken: ethTokenExpectation,
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
     selectedSourceToken: wethTokenExpectation,
-    expectedSourceToken: wethTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    sourceToken: wethTokenExpectation,
+    destinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
     selectedSourceToken: ethTokenExpectation,
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
     selectedSourceToken: wethTokenExpectation,
-    expectedSourceToken: wethTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    sourceToken: wethTokenExpectation,
+    destinationToken: wethTokenExpectation,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
     selectedSourceToken: nativeEthTokenExpectation,
-    expectedSourceToken: nativeEthTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    sourceToken: nativeEthTokenExpectation,
+    destinationToken: wethTokenExpectation,
   },
 ];
 
@@ -73,8 +73,8 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
       sourceChain,
       destinationChain,
       selectedSourceToken,
-      expectedSourceToken,
-      expectedDestinationToken,
+      sourceToken,
+      destinationToken,
     }) => {
       await renderTransferPanel({
         sourceChain,
@@ -83,13 +83,13 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
 
       await setSourceToken(selectedSourceToken);
 
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: false,
-        tokenExpectation: expectedSourceToken,
+        tokenExpectation: sourceToken,
       });
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: true,
-        tokenExpectation: expectedDestinationToken,
+        tokenExpectation: destinationToken,
       });
     },
   );

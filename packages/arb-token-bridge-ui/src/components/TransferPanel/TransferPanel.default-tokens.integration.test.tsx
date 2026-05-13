@@ -7,25 +7,23 @@ import {
   type TokenPanelExpectations,
   apeTokenExpectation,
   ethTokenExpectation,
-  expectTokenButtonToken,
+  expectTokenButtonContent,
   expectTokenPanelContent,
   nativeApeTokenExpectation,
   nativeEthTokenExpectation,
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
-  usdcTokenByChain,
+  tokenExpectationsByChain,
   usdtArbitrumOneRowTokenExpectation,
-  usdtTokenByChain,
   wethSuperpositionRowTokenExpectation,
-  wethTokenByChain,
   wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
 type DefaultTokenCase = {
   sourceChain: RouteTokenCase['sourceChain'];
   destinationChain: RouteTokenCase['destinationChain'];
-  expectedSourceToken: TokenExpectation;
-  expectedDestinationToken: TokenExpectation;
+  sourceToken: TokenExpectation;
+  destinationToken: TokenExpectation;
   expectedSourcePanelTokens: TokenPanelExpectations;
   expectedDestinationPanelTokens: TokenPanelExpectations;
 };
@@ -34,27 +32,27 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'base',
     destinationChain: 'apechain',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: apeTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      usdcTokenByChain.apeChain,
-      usdtTokenByChain.apeChain,
-      wethTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.USDCe,
+      tokenExpectationsByChain.ApeChain.USDT,
+      tokenExpectationsByChain.ApeChain.WETH,
     ],
   },
   {
     sourceChain: 'base',
     destinationChain: 'superposition',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      usdcTokenByChain.superposition,
+      tokenExpectationsByChain.Superposition.USDCe,
       {
-        ...wethTokenByChain.superposition,
+        ...tokenExpectationsByChain.Superposition.WETH,
         logoURI: wethSuperpositionRowTokenExpectation.logoURI,
       },
     ],
@@ -62,18 +60,18 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'base',
     destinationChain: 'arbitrum-one',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      usdcTokenByChain.arbitrumOne,
+      tokenExpectationsByChain.ArbitrumOne.USDC,
       {
-        ...usdtTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.USDT,
         logoURI: usdtArbitrumOneRowTokenExpectation.logoURI,
       },
       {
-        ...wethTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.WETH,
         logoURI:
           'https://static.debank.com/image/era_token/logo_url/0x5aea5775959fbc2557cc8789bc1bf90a239d9a91/61844453e63cf81301f845d7864236f6.png',
       },
@@ -82,27 +80,27 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'apechain',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: apeTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      usdcTokenByChain.apeChain,
-      usdtTokenByChain.apeChain,
-      wethTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.USDCe,
+      tokenExpectationsByChain.ApeChain.USDT,
+      tokenExpectationsByChain.ApeChain.WETH,
     ],
   },
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'superposition',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      usdcTokenByChain.superposition,
+      tokenExpectationsByChain.Superposition.USDCe,
       {
-        ...wethTokenByChain.superposition,
+        ...tokenExpectationsByChain.Superposition.WETH,
         logoURI: wethSuperpositionRowTokenExpectation.logoURI,
       },
     ],
@@ -110,21 +108,21 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'apechain',
     destinationChain: 'arbitrum-one',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: apeTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
       {
-        ...usdcTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.USDC,
         contract: CommonAddress.ApeChain.USDCe,
       },
       {
-        ...usdtTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.USDT,
         contract: CommonAddress.ApeChain.USDT,
       },
       {
-        ...wethTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.WETH,
         contract: CommonAddress.ApeChain.WETH,
       },
       nativeEthTokenExpectation,
@@ -133,17 +131,17 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'superposition',
     destinationChain: 'arbitrum-one',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
       {
-        ...usdcTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.USDC,
         contract: CommonAddress.Superposition.USDCe,
       },
       {
-        ...wethTokenByChain.arbitrumOne,
+        ...tokenExpectationsByChain.ArbitrumOne.WETH,
         logoURI: wethSuperpositionRowTokenExpectation.logoURI,
         contract: CommonAddress.Superposition.WETH,
       },
@@ -152,34 +150,34 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'apechain',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: apeTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      usdcTokenByChain.apeChain,
-      usdtTokenByChain.apeChain,
-      wethTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.USDCe,
+      tokenExpectationsByChain.ApeChain.USDT,
+      tokenExpectationsByChain.ApeChain.WETH,
     ],
   },
   {
     sourceChain: 'apechain',
     destinationChain: 'ethereum',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: apeTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
       {
-        ...usdcTokenByChain.ethereum,
+        ...tokenExpectationsByChain.Ethereum.USDC,
         contract: CommonAddress.ApeChain.USDCe,
       },
       {
-        ...usdtTokenByChain.ethereum,
+        ...tokenExpectationsByChain.Ethereum.USDT,
         contract: CommonAddress.ApeChain.USDT,
       },
       {
-        ...wethTokenByChain.ethereum,
+        ...tokenExpectationsByChain.Ethereum.WETH,
         contract: CommonAddress.ApeChain.WETH,
       },
       nativeEthTokenExpectation,
@@ -188,14 +186,14 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'superposition',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      usdcTokenByChain.superposition,
+      tokenExpectationsByChain.Superposition.USDCe,
       {
-        ...wethTokenByChain.superposition,
+        ...tokenExpectationsByChain.Superposition.WETH,
         logoURI: wethSuperpositionRowTokenExpectation.logoURI,
       },
     ],
@@ -203,17 +201,17 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'superposition',
     destinationChain: 'ethereum',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
       {
-        ...usdcTokenByChain.ethereum,
+        ...tokenExpectationsByChain.Ethereum.USDC,
         contract: CommonAddress.Superposition.USDCe,
       },
       {
-        ...wethTokenByChain.ethereum,
+        ...tokenExpectationsByChain.Ethereum.WETH,
         logoURI: wethSuperpositionRowTokenExpectation.logoURI,
         contract: CommonAddress.Superposition.WETH,
       },
@@ -222,14 +220,14 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'apechain',
     destinationChain: 'superposition',
-    expectedSourceToken: apeTokenExpectation,
-    expectedDestinationToken: ethTokenExpectation,
+    sourceToken: apeTokenExpectation,
+    destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      usdcTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.USDCe,
       {
-        ...wethTokenByChain.superposition,
+        ...tokenExpectationsByChain.Superposition.WETH,
         contract: CommonAddress.ApeChain.WETH,
       },
     ],
@@ -237,13 +235,13 @@ const defaultTokenCases: DefaultTokenCase[] = [
   {
     sourceChain: 'superposition',
     destinationChain: 'apechain',
-    expectedSourceToken: ethTokenExpectation,
-    expectedDestinationToken: wethTokenExpectation,
+    sourceToken: ethTokenExpectation,
+    destinationToken: wethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
-      wethTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.WETH,
       nativeApeTokenExpectation,
-      usdcTokenByChain.apeChain,
+      tokenExpectationsByChain.ApeChain.USDCe,
     ],
   },
 ];
@@ -256,8 +254,8 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
     async ({
       sourceChain,
       destinationChain,
-      expectedSourceToken,
-      expectedDestinationToken,
+      sourceToken,
+      destinationToken,
       expectedSourcePanelTokens,
       expectedDestinationPanelTokens,
     }) => {
@@ -266,13 +264,13 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
         destinationChain,
       });
 
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: false,
-        tokenExpectation: expectedSourceToken,
+        tokenExpectation: sourceToken,
       });
-      await expectTokenButtonToken({
+      await expectTokenButtonContent({
         isDestination: true,
-        tokenExpectation: expectedDestinationToken,
+        tokenExpectation: destinationToken,
       });
 
       await expectTokenPanelContent({
