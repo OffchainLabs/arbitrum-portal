@@ -43,7 +43,7 @@ export async function fetchLifiUserPositions(params: {
       continue;
     }
     const price = priceMap.get(getZerionLookupCacheKey(lookup)) ?? null;
-    tokenPriceMap.set(oppId, !Number.isNaN(price) && price !== null && price > 0 ? price : null);
+    tokenPriceMap.set(oppId, price !== null && price > 0 ? price : null);
   }
 
   const positionPromises = opportunities.map(async (opportunity) => {
