@@ -1,4 +1,6 @@
 // Zerion price service. Docs: https://developers.zerion.io/reference
+import { parseFiniteNumber } from '@/app-lib/earn/utils';
+
 import type { HistoricalGranularity, HistoricalTimeRange } from '../types';
 import { alignTimestampToGranularity, getGranularityBucketSeconds } from './historicalWindow';
 import {
@@ -49,11 +51,6 @@ function getZerionHeaders(): HeadersInit {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function parseFiniteNumber(value: unknown): number | null {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function chunk<T>(values: T[], size: number): T[][] {

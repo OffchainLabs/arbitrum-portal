@@ -2,6 +2,7 @@ import { BigNumber } from 'ethers';
 import { Address, encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL, PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
+import { parseFiniteNumber } from '@/app-lib/earn/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
@@ -82,16 +83,13 @@ function toRawAmount(value: string | number, decimals: number): string {
   }
 }
 
-function finiteOrNull(value: number | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
 function apyAsPercentage(apy: number | undefined): number | null {
-  return typeof apy === 'number' && Number.isFinite(apy) ? apy * 100 : null;
+  const parsed = parseFiniteNumber(apy);
+  return parsed === null ? null : parsed * 100;
 }
 
 function getMarketTvl(market: PendleMarket): number | null {
-  return finiteOrNull(market.details.totalTvl) ?? finiteOrNull(market.details.liquidity);
+  return parseFiniteNumber(market.details.totalTvl) ?? parseFiniteNumber(market.details.liquidity);
 }
 
 function getTokenSymbolFromMarketName(name: string): string {
@@ -627,8 +625,8 @@ export class PendleAdapter implements VendorAdapter {
     const tvlUsd = getMarketTvl(market);
     const fixedApy = apyAsPercentage(market.details.impliedApy);
     const underlyingApy = apyAsPercentage(market.details.underlyingApy);
-    const liquidityUsd = finiteOrNull(market.details.liquidity) ?? undefined;
-    const tradingVolumeUsd = finiteOrNull(market.details.tradingVolume) ?? undefined;
+    const liquidityUsd = parseFiniteNumber(market.details.liquidity) ?? undefined;
+    const tradingVolumeUsd = parseFiniteNumber(market.details.tradingVolume) ?? undefined;
 
     return {
       id: market.address,
