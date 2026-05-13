@@ -53,7 +53,7 @@ export function SubNav() {
         )}
       >
         {items.map((item) => {
-          const isActive = getIsActiveSubNavItem(item, activeRoute, pathname, searchParams);
+          const isActive = getIsActiveSubNavItem(item, activeRoute, pathname);
           const href =
             activeRoute === '/bridge' && !item.external
               ? getBridgeLinkWithPreservedQueryParams(item, searchParams)
