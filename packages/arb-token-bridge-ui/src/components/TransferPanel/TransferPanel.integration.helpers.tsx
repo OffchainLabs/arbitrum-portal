@@ -613,6 +613,13 @@ export async function setSourceToken(tokenExpectation: TokenExpectation) {
     isDestination: false,
     tokenExpectation,
   });
+
+  // Source token selection updates both token query params, so wait for the
+  // source button to settle before opening the destination token dialog.
+  await expectTokenButtonToken({
+    isDestination: false,
+    tokenExpectation,
+  });
 }
 
 export async function setDestinationToken(tokenExpectation: TokenExpectation) {
