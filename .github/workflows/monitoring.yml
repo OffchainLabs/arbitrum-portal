@@ -11,7 +11,8 @@ on:
         type: string
 
 env:
-  NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+  NEXT_PUBLIC_RPC_PROVIDER: alchemy
+  NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.MONITORING_ALCHEMY_KEY }}
   NOVA_MONITOR_RPC_URL: ${{ secrets.NOVA_MONITOR_RPC_URL }}
   ARB_ONE_MONITOR_RPC_URL: ${{ secrets.ARB_ONE_MONITOR_RPC_URL }}
   NODE_ENV: 'CI'
@@ -33,7 +34,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: 'pnpm'
+          package-manager-cache: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
@@ -80,7 +81,8 @@ jobs:
           ASSERTION_MONITORING_SLACK_CHANNEL: ${{ secrets[steps.config.outputs.slack_channel] }}
           RETRYABLE_MONITORING_NOTION_TOKEN: ${{ secrets.RETRYABLE_MONITORING_NOTION_TOKEN }}
           RETRYABLE_MONITORING_NOTION_DB_ID: ${{ secrets.RETRYABLE_MONITORING_NOTION_DB_ID }}
-          NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+          NEXT_PUBLIC_RPC_PROVIDER: alchemy
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.MONITORING_ALCHEMY_KEY }}
           NOVA_MONITOR_RPC_URL: ${{ secrets.NOVA_MONITOR_RPC_URL }}
           ARB_ONE_MONITOR_RPC_URL: ${{ secrets.ARB_ONE_MONITOR_RPC_URL }}
 

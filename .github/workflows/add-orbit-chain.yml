@@ -27,10 +27,10 @@ jobs:
         uses: pnpm/action-setup@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'pnpm'
+          package-manager-cache: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
