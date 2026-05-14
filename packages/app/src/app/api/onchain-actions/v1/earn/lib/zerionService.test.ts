@@ -30,7 +30,6 @@ function getCallUrl(fetchMock: FetchMock, callIndex: number): URL {
 
 describe('fetchZerionCurrentPrices', () => {
   const originalApiKey = process.env.ZERION_API_KEY;
-  const originalFetch = global.fetch;
 
   beforeEach(() => {
     process.env.ZERION_API_KEY = 'test-key';
@@ -42,15 +41,13 @@ describe('fetchZerionCurrentPrices', () => {
     } else {
       process.env.ZERION_API_KEY = originalApiKey;
     }
-    global.fetch = originalFetch;
     vi.restoreAllMocks();
   });
 
   it('returns an empty map when given no lookups, without calling fetch', async () => {
     const fetchMock = vi.fn();
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([]);
+    const result = await fetchZerionCurrentPrices([], fetchMock as unknown as typeof fetch);
 
     expect(result.size).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
@@ -59,10 +56,12 @@ describe('fetchZerionCurrentPrices', () => {
   it('throws if ZERION_API_KEY is not set', async () => {
     delete process.env.ZERION_API_KEY;
     const fetchMock = vi.fn();
-    global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
-      fetchZerionCurrentPrices([{ kind: 'implementation', implementation: 'ethereum:0xabc' }]),
+      fetchZerionCurrentPrices(
+        [{ kind: 'implementation', implementation: 'ethereum:0xabc' }],
+        fetchMock as unknown as typeof fetch,
+      ),
     ).rejects.toThrow(/ZERION_API_KEY/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -81,11 +80,11 @@ describe('fetchZerionCurrentPrices', () => {
         ],
       }),
     );
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-    ]);
+    const result = await fetchZerionCurrentPrices(
+      [{ kind: 'implementation', implementation: 'ethereum:0xabc' }],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(result.get('impl:ethereum:0xabc')).toBe(1234.56);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -106,9 +105,11 @@ describe('fetchZerionCurrentPrices', () => {
         ],
       }),
     );
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([{ kind: 'fungibleId', fungibleId: 'fung-1' }]);
+    const result = await fetchZerionCurrentPrices(
+      [{ kind: 'fungibleId', fungibleId: 'fung-1' }],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(result.get('id:fung-1')).toBe(7.5);
     const url = getCallUrl(fetchMock, 0);
@@ -135,12 +136,14 @@ describe('fetchZerionCurrentPrices', () => {
         data: [{ id: 'fung-1', attributes: { market_data: { price: 200 } } }],
       });
     });
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-      { kind: 'fungibleId', fungibleId: 'fung-1' },
-    ]);
+    const result = await fetchZerionCurrentPrices(
+      [
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+        { kind: 'fungibleId', fungibleId: 'fung-1' },
+      ],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result.get('impl:ethereum:0xabc')).toBe(100);
@@ -161,13 +164,15 @@ describe('fetchZerionCurrentPrices', () => {
         ],
       }),
     );
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-    ]);
+    await fetchZerionCurrentPrices(
+      [
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+      ],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const filter = getCallUrl(fetchMock, 0).searchParams.get('filter[fungible_implementations]');
@@ -181,9 +186,8 @@ describe('fetchZerionCurrentPrices', () => {
     }));
 
     const fetchMock = vi.fn().mockResolvedValue(mockOkJson({ data: [] }));
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    await fetchZerionCurrentPrices(lookups);
+    await fetchZerionCurrentPrices(lookups, fetchMock as unknown as typeof fetch);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const firstFilter = getCallUrl(fetchMock, 0).searchParams.get(
@@ -198,12 +202,14 @@ describe('fetchZerionCurrentPrices', () => {
 
   it('leaves missing entries as null when the response omits them', async () => {
     const fetchMock = vi.fn().mockResolvedValue(mockOkJson({ data: [] }));
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-      { kind: 'fungibleId', fungibleId: 'fung-1' },
-    ]);
+    const result = await fetchZerionCurrentPrices(
+      [
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+        { kind: 'fungibleId', fungibleId: 'fung-1' },
+      ],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(result.get('impl:ethereum:0xabc')).toBeNull();
     expect(result.get('id:fung-1')).toBeNull();
@@ -220,12 +226,14 @@ describe('fetchZerionCurrentPrices', () => {
         data: [{ id: 'fung-1', attributes: { market_data: { price: 9 } } }],
       });
     });
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-      { kind: 'fungibleId', fungibleId: 'fung-1' },
-    ]);
+    const result = await fetchZerionCurrentPrices(
+      [
+        { kind: 'implementation', implementation: 'ethereum:0xabc' },
+        { kind: 'fungibleId', fungibleId: 'fung-1' },
+      ],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(result.get('impl:ethereum:0xabc')).toBeNull();
     expect(result.get('id:fung-1')).toBe(9);
@@ -245,11 +253,11 @@ describe('fetchZerionCurrentPrices', () => {
         ],
       }),
     );
-    global.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await fetchZerionCurrentPrices([
-      { kind: 'implementation', implementation: 'ethereum:0xabc' },
-    ]);
+    const result = await fetchZerionCurrentPrices(
+      [{ kind: 'implementation', implementation: 'ethereum:0xabc' }],
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(result.get('impl:ethereum:0xabc')).toBeNull();
   });

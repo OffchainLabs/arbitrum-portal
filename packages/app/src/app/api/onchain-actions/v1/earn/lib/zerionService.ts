@@ -73,9 +73,12 @@ function getRevalidateSecondsForPeriod(period: ZerionChartPeriod): number {
   return 86400;
 }
 
+type FetchFn = typeof globalThis.fetch;
+
 // Returns a Map keyed by `getZerionLookupCacheKey`. Missing entries map to null.
 export async function fetchZerionCurrentPrices(
   lookups: ZerionPriceLookup[],
+  fetchFn: FetchFn = globalThis.fetch,
 ): Promise<Map<string, number | null>> {
   const result = new Map<string, number | null>();
   if (lookups.length === 0) return result;
@@ -115,7 +118,7 @@ export async function fetchZerionCurrentPrices(
     url.searchParams.set('page[size]', String(ZERION_BATCH_SIZE));
 
     requests.push(
-      fetch(url.toString(), fetchOptions).then(async (res) => {
+      fetchFn(url.toString(), fetchOptions).then(async (res) => {
         if (!res.ok) {
           throw new Error(`Zerion fungibles list (impl) ${res.status} ${res.statusText}`);
         }
@@ -141,7 +144,7 @@ export async function fetchZerionCurrentPrices(
     url.searchParams.set('page[size]', String(ZERION_BATCH_SIZE));
 
     requests.push(
-      fetch(url.toString(), fetchOptions).then(async (res) => {
+      fetchFn(url.toString(), fetchOptions).then(async (res) => {
         if (!res.ok) {
           throw new Error(`Zerion fungibles list (id) ${res.status} ${res.statusText}`);
         }
@@ -168,16 +171,19 @@ export async function fetchZerionCurrentPrices(
   return result;
 }
 
-export async function fetchZerionCurrentPriceByAddress(params: {
-  chainId: number;
-  tokenAddress?: string | null;
-  assetSymbol?: string | null;
-}): Promise<number | null> {
+export async function fetchZerionCurrentPriceByAddress(
+  params: {
+    chainId: number;
+    tokenAddress?: string | null;
+    assetSymbol?: string | null;
+  },
+  fetchFn: FetchFn = globalThis.fetch,
+): Promise<number | null> {
   const lookup = getZerionPriceLookup(params);
   if (!lookup) return null;
 
   try {
-    const map = await fetchZerionCurrentPrices([lookup]);
+    const map = await fetchZerionCurrentPrices([lookup], fetchFn);
     return map.get(getZerionLookupCacheKey(lookup)) ?? null;
   } catch (error) {
     console.warn(
@@ -191,6 +197,7 @@ async function fetchZerionChart(
   lookup: ZerionPriceLookup,
   period: ZerionChartPeriod,
   revalidateSeconds: number,
+  fetchFn: FetchFn,
 ): Promise<Array<[number, number]>> {
   const url =
     lookup.kind === 'implementation'
@@ -204,7 +211,7 @@ async function fetchZerionChart(
   }
   url.searchParams.set('currency', 'usd');
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchFn(url.toString(), {
     method: 'GET',
     headers: getZerionHeaders(),
     signal: AbortSignal.timeout(ZERION_REQUEST_TIMEOUT_MS),
@@ -219,13 +226,16 @@ async function fetchZerionChart(
 
 // Returns a `(timestamp) => price | null` resolver aligned to our granularity.
 // Resolver returns null if the asset has no Zerion mapping or the chart fetch fails.
-export async function fetchAlignedPriceLookup(params: {
-  chainId: number;
-  tokenAddress?: string | null;
-  assetSymbol?: string | null;
-  granularity: HistoricalGranularity;
-  range: HistoricalTimeRange;
-}): Promise<(timestamp: number) => number | null> {
+export async function fetchAlignedPriceLookup(
+  params: {
+    chainId: number;
+    tokenAddress?: string | null;
+    assetSymbol?: string | null;
+    granularity: HistoricalGranularity;
+    range: HistoricalTimeRange;
+  },
+  fetchFn: FetchFn = globalThis.fetch,
+): Promise<(timestamp: number) => number | null> {
   const lookup = getZerionPriceLookup({
     chainId: params.chainId,
     tokenAddress: params.tokenAddress,
@@ -241,7 +251,7 @@ export async function fetchAlignedPriceLookup(params: {
 
   let points: Array<[number, number]>;
   try {
-    points = await fetchZerionChart(lookup, period, revalidate);
+    points = await fetchZerionChart(lookup, period, revalidate, fetchFn);
   } catch (error) {
     console.warn(
       `[earn][zerion] chart fetch failed for ${params.tokenAddress ?? params.assetSymbol}: ${getErrorMessage(error)}`,

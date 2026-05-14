@@ -34,7 +34,14 @@ export async function fetchLifiUserPositions(params: {
   const validLookups = Array.from(lookupByOppId.values()).filter(
     (lookup): lookup is ZerionPriceLookup => lookup !== null,
   );
-  const priceMap = await fetchZerionCurrentPrices(validLookups);
+  // Don't fail the whole positions endpoint if price setup is misconfigured —
+  // fall back to an empty map so balances still surface with valueUsd: null.
+  let priceMap: Map<string, number | null> = new Map();
+  try {
+    priceMap = await fetchZerionCurrentPrices(validLookups);
+  } catch (error) {
+    console.warn('[earn][lifi] price fetch failed, continuing without prices:', error);
+  }
 
   const tokenPriceMap = new Map<string, number | null>();
   for (const [oppId, lookup] of lookupByOppId) {
