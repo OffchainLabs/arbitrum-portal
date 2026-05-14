@@ -66,6 +66,7 @@ import {
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: 5_000_000, // ApeChain
   1628: 10_000, // T-REX
+  228: 10_000, // Mind Network
 };
 
 export type UseTransactionHistoryResult = {
