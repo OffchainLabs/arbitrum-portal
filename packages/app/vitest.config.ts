@@ -13,6 +13,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@/common': path.resolve(__dirname, '../portal/common'),
       '@/bridge': path.resolve(__dirname, '../arb-token-bridge-ui/src'),
       '@/app-lib': path.resolve(__dirname, './src/lib'),
       '@/app-types': path.resolve(__dirname, './src/types'),

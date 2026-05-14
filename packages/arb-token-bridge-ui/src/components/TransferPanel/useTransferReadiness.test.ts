@@ -1,6 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
+import { WETH_TOKEN_LOGO } from '@/bridge/constants';
 import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { RouteContext } from './hooks/useRouteStore';
@@ -10,8 +11,7 @@ const eth = {
   address: '0x0000000000000000000000000000000000000000',
   symbol: 'ETH',
   decimals: 18,
-  logoURI:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+  logoURI: WETH_TOKEN_LOGO,
 };
 const usdc = {
   address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -42,8 +42,7 @@ function getMock({
         address: '0x0000000000000000000000000000000000000000',
         symbol: 'ETH',
         decimals: 18,
-        logoURI:
-          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+        logoURI: WETH_TOKEN_LOGO,
       },
     },
     toolDetails: {
@@ -71,8 +70,7 @@ function getMock({
           symbol: 'ETH',
           decimals: 18,
           name: 'ETH',
-          logoURI:
-            'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+          logoURI: WETH_TOKEN_LOGO,
           priceUSD: '3731.44',
         },
         fromAmount: '306838702657301',
@@ -82,8 +80,7 @@ function getMock({
           symbol: 'ETH',
           decimals: 18,
           name: 'ETH',
-          logoURI:
-            'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+          logoURI: WETH_TOKEN_LOGO,
           priceUSD: '3731.44',
         },
         fromChainId: 1,
@@ -113,8 +110,7 @@ function getMock({
               symbol: 'ETH',
               decimals: 18,
               name: 'ETH',
-              logoURI:
-                'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+              logoURI: WETH_TOKEN_LOGO,
               priceUSD: '3731.44',
             },
           },
@@ -136,8 +132,7 @@ function getMock({
               symbol: 'ETH',
               decimals: 18,
               name: 'ETH',
-              logoURI:
-                'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+              logoURI: WETH_TOKEN_LOGO,
               priceUSD: '3731.44',
             },
             toChainId: 42161,
@@ -147,8 +142,7 @@ function getMock({
               symbol: 'ETH',
               decimals: 18,
               name: 'ETH',
-              logoURI:
-                'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+              logoURI: WETH_TOKEN_LOGO,
               priceUSD: '3731.44',
             },
             slippage: 0.005,
@@ -174,8 +168,7 @@ function getMock({
                   symbol: 'ETH',
                   decimals: 18,
                   name: 'ETH',
-                  logoURI:
-                    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+                  logoURI: WETH_TOKEN_LOGO,
                   priceUSD: '3731.44',
                 },
               },
@@ -227,8 +220,7 @@ describe('getAmountToPay', () => {
         token: {
           address: '0x0000000000000000000000000000000000000000',
           decimals: 18,
-          logoURI:
-            'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+          logoURI: WETH_TOKEN_LOGO,
           symbol: 'ETH',
         },
       },

@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
@@ -135,7 +135,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
     if (chainId === ChainId.ApeChain) {
       return {
         ...token,
-        logoURI: '/images/ApeTokenLogo.svg',
+        logoURI: APE_TOKEN_LOGO,
       };
     }
     return {
@@ -147,7 +147,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
   if (isApeToken(token.address, chainId)) {
     return {
       ...token,
-      logoURI: '/images/ApeTokenLogo.svg',
+      logoURI: APE_TOKEN_LOGO,
     };
   }
 
