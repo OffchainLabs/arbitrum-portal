@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { WETH_TOKEN_LOGO } from '@/constants';
+import { WETH_TOKEN_LOGO } from '@/bridge/constants';
 import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { RouteContext } from './hooks/useRouteStore';
