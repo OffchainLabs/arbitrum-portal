@@ -1,4 +1,3 @@
-import '@rainbow-me/rainbowkit/styles.css';
 import { PropsWithChildren } from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 

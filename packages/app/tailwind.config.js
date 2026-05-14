@@ -62,6 +62,11 @@ module.exports = {
         'banner-gradient':
           'linear-gradient(90deg, rgba(40, 160, 240, 0.5) 1.46%, rgba(239, 130, 32, 0.5) 98.51%)',
         'celebration-gradient': 'linear-gradient(to right, #1B4ADD6F, #E573106F)',
+        'earn-featured-card':
+          'linear-gradient(rgba(18, 170, 255, 0.05), rgba(27, 74, 221, 0.05)), linear-gradient(90deg, rgba(33, 33, 33, 0.8), rgba(33, 33, 33, 0.8)), linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1))',
+        'earn-featured-badge':
+          'linear-gradient(170.5deg, rgb(24, 192, 218) 16.333%, rgb(12, 74, 237) 95.811%)',
+        'arb-blue-navy': 'linear-gradient(180deg, #016BE5 0%, #05163D 100%)',
       },
       backgroundSize: {
         '1/2': '50%',
@@ -78,7 +83,8 @@ module.exports = {
         'orange': '#FFEED3',
         'lime': '#E8FFE4',
         'lavender': '#7693EB',
-        'bright-blue': '#00FBFF',
+        'bright-blue': '#18c0da',
+        'electric-blue': '#0c4aed',
         'blue': '#12aaff',
 
         // SECONDARY
@@ -147,6 +153,9 @@ module.exports = {
         'dark-hover': '#2b2e30', // (or default-black-hover)
 
         // BRAND
+        'arb-blue': '#016BE5', // primary-blue-2
+        'arb-navy': '#05163D', // primary-blue-1
+        'arb-cyan': '#10E1FF', // primary-blue-3
         'eth-dark': '#1A1C33',
         'ocl-blue': '#243145',
         'atmosphere-blue': '#152C4E',

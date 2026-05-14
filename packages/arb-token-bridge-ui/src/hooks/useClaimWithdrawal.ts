@@ -16,6 +16,7 @@ import { fetchErc20Data } from '../util/TokenUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
+import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
 import { fetchNativeCurrency } from './useNativeCurrency';
 import { useTransactionHistory } from './useTransactionHistory';
 
@@ -50,12 +51,22 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
     const childChainProvider = getProviderForChainId(tx.childChainId);
     const txReceipt = await childChainProvider.getTransactionReceipt(tx.txId);
     const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
-    const [event] = l2TxReceipt.getChildToParentEvents();
-
-    if (!event) {
-      setIsClaiming(false);
-      errorToast("Can't claim withdrawal: event not found.");
-      return;
+    const events = l2TxReceipt.getChildToParentEvents();
+    let event: (typeof events)[number] | undefined;
+    if (tx.uniqueId) {
+      event = events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!));
+      if (!event) {
+        setIsClaiming(false);
+        errorToast("Can't claim withdrawal: event not found.");
+        return;
+      }
+    } else {
+      event = events[0];
+      if (!event) {
+        setIsClaiming(false);
+        errorToast("Can't claim withdrawal: event not found.");
+        return;
+      }
     }
 
     const { symbol, decimals } =

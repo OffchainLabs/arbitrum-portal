@@ -1,4 +1,3 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useCallback } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -24,6 +23,7 @@ import { getChainIdForRedeemingRetryable } from '../../util/RetryableUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
+import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
@@ -31,18 +31,16 @@ import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar
 import { getTransactionType, isLifiTransfer } from './helpers';
 
 function ActionRowConnectButton() {
+  const { openConnectModal } = useWalletModal();
+
   return (
-    <ConnectButton.Custom>
-      {({ openConnectModal }) => (
-        <Button
-          variant="primary"
-          className="w-14 rounded bg-lime-dark p-2 text-xs text-white"
-          onClick={openConnectModal}
-        >
-          Connect
-        </Button>
-      )}
-    </ConnectButton.Custom>
+    <Button
+      variant="primary"
+      className="w-14 rounded bg-lime-dark p-2 text-xs text-white"
+      onClick={openConnectModal}
+    >
+      Connect
+    </Button>
   );
 }
 

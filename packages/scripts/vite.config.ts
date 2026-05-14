@@ -9,7 +9,16 @@ export default defineConfig({
       fileName: (format) => `scripts.${format}.js`,
     },
     rollupOptions: {
-      external: ['@actions/core', '@actions/github', 'axios', 'fs', 'commander', 'sharp', 'path'],
+      external: [
+        '@actions/core',
+        '@actions/github',
+        'axios',
+        'commander',
+        'ethers',
+        'fs',
+        'path',
+        'sharp',
+      ],
     },
   },
   optimizeDeps: {

@@ -1,4 +1,4 @@
-import { Chain } from '@rainbow-me/rainbowkit';
+import type { Chain } from 'viem';
 import { sepolia as sepoliaDefault } from 'viem/chains';
 
 import { NOVA_EXPLORER_URL } from '@/common/constants';

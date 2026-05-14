@@ -19,7 +19,7 @@ import {
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
 } from './networksNitroTestnode';
-import { orbitChains } from './orbitChainsList';
+import { getOrbitChains, orbitChains } from './orbitChainsList';
 import { getRpcUrl } from './rpc/getRpcUrl';
 
 /** The network that you reference when calling `block.number` in solidity */
@@ -342,6 +342,7 @@ export async function registerLocalNetwork() {
     rpcURLs[defaultL3Network.chainId] = localL3NetworkRpcUrl;
 
     registerCustomArbitrumNetwork(defaultL2Network);
+    registerCustomArbitrumNetwork(defaultL3Network);
 
     let isLocalCustomNativeToken = false;
 
@@ -358,9 +359,9 @@ export async function registerLocalNetwork() {
       isLocalCustomNativeToken = false;
     }
 
-    registerCustomArbitrumNetwork(
-      isLocalCustomNativeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network,
-    );
+    if (isLocalCustomNativeToken) {
+      registerCustomArbitrumNetwork(defaultL3CustomGasTokenNetwork);
+    }
   } catch (error: any) {
     logger.error(`Failed to register local network: ${error.message}`);
   }
@@ -487,6 +488,25 @@ export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
   rpcURLs[chain.chainId] = chain.rpcUrl;
   // explorer URL
   explorerUrls[chain.chainId] = chain.explorerUrl;
+}
+
+let bridgeNetworksInitialized = false;
+
+export function initializeBridgeNetworks() {
+  if (bridgeNetworksInitialized) {
+    return;
+  }
+
+  [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    try {
+      registerCustomArbitrumNetwork(chain);
+      mapCustomChainToNetworkData(chain);
+    } catch (_) {
+      // already added
+    }
+  });
+
+  bridgeNetworksInitialized = true;
 }
 
 export function isArbitrumChain(

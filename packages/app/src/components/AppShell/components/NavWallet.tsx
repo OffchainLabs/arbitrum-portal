@@ -9,17 +9,17 @@ import {
   CodeBracketIcon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 
 import { CustomBoringAvatar } from '@/bridge/components/common/CustomBoringAvatar';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { useAccountMenu } from '@/bridge/hooks/useAccountMenu';
 import { getExplorerUrl } from '@/bridge/util/networks';
+import { useWalletModal } from '@/bridge/wallet/hooks/useWalletModal';
 
 const MENU_ITEM_BUTTON_CLASSES =
   'opacity-70 hover:opacity-100 flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-white cursor-pointer transition-colors hover:bg-neutral-25/50 focus:bg-neutral-25/50 w-full';
@@ -29,15 +29,9 @@ const AVATAR_CLASSES = 'h-6 w-6 rounded-full shrink-0';
 interface WalletConnectedDropdownProps {
   account: {
     address: string;
-    displayName?: string;
-    displayBalance?: string;
-    ensAvatar?: string | null;
-    ensName?: string | null;
   };
-  chain: {
+  chain?: {
     id: number;
-    name?: string;
-    unsupported?: boolean;
   };
 }
 
@@ -163,26 +157,12 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
 }
 
 export function NavWallet() {
-  return (
-    <ConnectButton.Custom>
-      {({ account, chain, openConnectModal, mounted }) => {
-        const ready = mounted;
-        const connected = ready && account && chain;
+  const { address, chain } = useAccount();
+  const { openConnectModal } = useWalletModal();
 
-        if (!ready) {
-          return (
-            <div className="flex items-center">
-              <div className="h-10 w-24 animate-pulse rounded-lg bg-neutral-25" />
-            </div>
-          );
-        }
+  if (address) {
+    return <WalletConnectedDropdown account={{ address }} chain={chain} />;
+  }
 
-        if (connected) {
-          return <WalletConnectedDropdown account={account} chain={chain} />;
-        }
-
-        return <WalletDisconnectedButton openConnectModal={openConnectModal} />;
-      }}
-    </ConnectButton.Custom>
-  );
+  return <WalletDisconnectedButton openConnectModal={openConnectModal} />;
 }

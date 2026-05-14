@@ -2,7 +2,11 @@ import { synpressCommandsForMetaMask } from '@synthetixio/synpress/cypress/suppo
 import logCollector from 'cypress-terminal-report/src/installLogsCollector';
 
 import './commands';
-import { getL1NetworkConfig, getL2NetworkConfig, getL2TestnetNetworkConfig } from './common';
+import {
+  getL1NetworkConfig,
+  getL2NetworkConfig,
+  getL2TestnetNetworkConfig,
+} from './common';
 
 Cypress.on('uncaught:exception', () => false);
 

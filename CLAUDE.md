@@ -17,18 +17,18 @@ Arbitrum Portal is a Next.js monorepo containing the Arbitrum ecosystem homepage
 
 ```bash
 # Development
-yarn dev              # Start dev server (runs prebuild steps automatically)
-yarn build            # Production build
+pnpm dev              # Start dev server (runs prebuild steps automatically)
+pnpm build            # Production build
 
 # Code Quality
-yarn lint             # TypeScript check + ESLint
-yarn lint:fix         # TypeScript check + ESLint with auto-fix
-yarn prettier:check   # Check formatting
-yarn prettier:format  # Format all files
+pnpm lint             # TypeScript check + ESLint
+pnpm lint:fix         # TypeScript check + ESLint with auto-fix
+pnpm prettier:check   # Check formatting
+pnpm prettier:format  # Format all files
 
 # Testing
-yarn test:ci          # Run unit tests (Vitest, bridge package)
-yarn audit:ci         # Run security audit
+pnpm test:ci          # Run unit tests (Vitest, bridge package)
+pnpm audit:ci         # Run security audit
 ```
 
 ## Architecture
@@ -40,7 +40,7 @@ yarn audit:ci         # Run security audit
 - **Zustand** for state management (custom ESLint rules enforced)
 - **RainbowKit / wagmi / viem** for wallet and blockchain interactions
 - **`@arbitrum/sdk`** for Arbitrum-specific bridge logic
-- **Yarn 1** (classic) with workspaces
+- **pnpm 10** with workspaces
 - **Node v22** (see `.nvmrc`)
 
 ### Path Aliases
@@ -65,11 +65,14 @@ See `tsconfig.base.json` for the full list.
 - Prettier with `@offchainlabs/prettier-config` + Tailwind CSS plugin + import sorting
 - ESLint with `@offchainlabs/eslint-config-typescript` (base + next)
 - Zustand rules enforced: `enforce-use-setstate`, `no-state-mutation`, `use-store-selectors`
+- **Prefer `twMerge`** over template literal className concatenation in new code. Do not refactor existing usages unprompted.
+- **Avoid unnecessary `useMemo`** — reserve for expensive derivations or stabilizing referential identity. Don't memoize simple strings, booleans, or pass-through values.
+- **Object params for 4+ args** — use an object when a function has 4+ parameters, multiple optional params, or ambiguous positional args of similar types.
 
 ## Testing and Quality Checklist
 
-- Run `yarn lint` and `yarn prettier:check` before considering a task complete
-- Run `yarn test:ci` to verify unit tests pass after changes
+- Run `pnpm lint` and `pnpm prettier:check` before considering a task complete
+- Run `pnpm test:ci` to verify unit tests pass after changes
 - Update existing tests when modifying related code
 
 ## Git Conventions
@@ -91,7 +94,7 @@ See `tsconfig.base.json` for the full list.
 ## Development Notes
 
 - **Environment Variables**: Copy `packages/app/.env.sample` to `packages/app/.env` and fill in keys. The bridge app requires RPC provider keys to function.
-- **Prebuild Steps**: `yarn dev` and `yarn build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
+- **Prebuild Steps**: `pnpm dev` and `pnpm build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
 - **Per-Package Context**: Check each package's own `package.json` and `tsconfig.json` for package-specific configuration.
 
 ## Working Style
@@ -99,3 +102,10 @@ See `tsconfig.base.json` for the full list.
 - **Minimize line churn**: Keep diffs small and focused. Avoid reformatting, reordering, or touching code unrelated to the task.
 - **Linear, small PRs**: Each PR should do one thing. Prefer multiple small PRs over one large PR.
 - **App-only migration**: The `portal` and `arb-token-bridge-ui` packages are being consolidated into `packages/app/`. All new features go in `packages/app/`.
+- **Reuse existing utilities and patterns first**: Before adding new logic, search the codebase for existing helpers, utilities, and established patterns, and reuse them whenever possible.
+  - Check for existing validation logic before adding new validations.
+  - Check for existing address helpers before comparing addresses directly, for example `addressesEqual()`.
+  - Check for existing input sanitization or normalization utilities before adding new sanitization code.
+  - Check for existing helper modules for recurring logic, for example `NumberUtils.ts`.
+  - Follow existing data-fetching and caching patterns, including SWR where the codebase already uses it. All variables within SWR fetcher should come from the key. Key should have an identifier string (at the end of the array)
+  - Follow existing numeric guard conventions, for example preferring `Number.isNaN()` over `Number.isFinite()` where applicable.

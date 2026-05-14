@@ -26,7 +26,6 @@ import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
-import { shouldOpenOneNovaDialog } from '../TransferPanel/TransferPanelMain/utils';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -204,10 +203,10 @@ function NetworkRow({
       <div className={twMerge('flex w-full flex-row items-center justify-between gap-1')}>
         <span className="truncate text-base">{network.name}</span>
 
-        <p className="text-xs leading-none text-white/70">
+        <div className="text-xs leading-none text-white/70">
           {!walletAddress && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
-              <p className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</p>
+              <span className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</span>
             </Tooltip>
           )}
 
@@ -232,7 +231,7 @@ function NetworkRow({
               </span>
             </Tooltip>
           )}
-        </p>
+        </div>
       </div>
     </button>
   );
@@ -490,11 +489,6 @@ export const NetworkSelectionContainer = React.memo(
     const onNetworkRowClick = useCallback(
       (value: Chain) => {
         const pairedChain = isSource ? 'destinationChain' : 'sourceChain';
-
-        if (shouldOpenOneNovaDialog([value.id, networks[pairedChain].id])) {
-          props.onClose(false, 'one_nova_transfer');
-          return;
-        }
 
         if (networks[pairedChain].id === value.id) {
           setNetworks({

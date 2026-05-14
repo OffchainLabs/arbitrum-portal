@@ -1,3 +1,4 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -64,7 +65,6 @@ import {
 
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: 5_000_000, // ApeChain
-  4078: 10_000, // Muster
   1628: 10_000, // T-REX
 };
 
@@ -245,7 +245,21 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   if (!txId) {
     return undefined;
   }
-  return `${tx.parentChainId}-${txId.toLowerCase()}`;
+  const base = `${tx.parentChainId}-${txId.toLowerCase()}`;
+
+  // For token withdrawals from event logs, include _l2ToL1Id to preserve batch events
+  if ('_l2ToL1Id' in tx && tx._l2ToL1Id) {
+    return `${base}-${(tx._l2ToL1Id as BigNumber).toString()}`;
+  }
+  // For ETH withdrawals from event logs, include position
+  if ('position' in tx && (tx as { position: BigNumber }).position) {
+    return `${base}-${(tx as { position: BigNumber }).position.toString()}`;
+  }
+  // For subgraph withdrawals, include the entity id (unique per event)
+  if ('source' in tx && tx.source === 'subgraph' && 'id' in tx) {
+    return `${base}-${(tx as WithdrawalFromSubgraph).id}`;
+  }
+  return base;
 }
 
 // remove the duplicates from the transactions passed
@@ -296,6 +310,38 @@ export async function fetchWithdrawalsInBatches(
 
   return results.flat();
 }
+
+// SWR cache for pending transactions initiated in the current session.
+// Does not fetch; only reads/writes the `new_tx_list` cache. Use this instead
+// of `useTransactionHistory` when a component only needs to add a pending tx.
+export const useAddPendingTransactions = (address: Address | undefined) => {
+  const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
+    MergedTransaction[]
+  >(address ? ['new_tx_list', address] : null);
+
+  const addPendingTransaction = useCallback(
+    (tx: MergedTransaction) => {
+      if (!isTxPending(tx)) {
+        return;
+      }
+
+      mutateNewTransactionsData((currentNewTransactions) => {
+        if (!currentNewTransactions) {
+          return [tx];
+        }
+
+        return [tx, ...currentNewTransactions];
+      });
+    },
+    [mutateNewTransactionsData],
+  );
+
+  return {
+    newTransactionsData,
+    mutateNewTransactionsData,
+    addPendingTransaction,
+  };
+};
 
 /**
  * Fetches transaction history only for deposits and withdrawals, without their statuses.
@@ -425,6 +471,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 sender: includeSentTxs ? address : undefined,
                 receiver: includeReceivedTxs ? address : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
+                parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
                 pageNumber: 0,
                 pageSize: 1000,
@@ -672,9 +719,8 @@ export const useTransactionHistory = (
 
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
-  const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
-    MergedTransaction[]
-  >(address ? ['new_tx_list', address] : null);
+  const { newTransactionsData, mutateNewTransactionsData, addPendingTransaction } =
+    useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
     const txs = [...(newTransactionsData || []), ...(txPages || [])].flat();
@@ -683,23 +729,6 @@ export const useTransactionHistory = (
       [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(address?.toLowerCase()),
     );
   }, [newTransactionsData, txPages, address]);
-
-  const addPendingTransaction = useCallback(
-    (tx: MergedTransaction) => {
-      if (!isTxPending(tx)) {
-        return;
-      }
-
-      mutateNewTransactionsData((currentNewTransactions) => {
-        if (!currentNewTransactions) {
-          return [tx];
-        }
-
-        return [tx, ...currentNewTransactions];
-      });
-    },
-    [mutateNewTransactionsData],
-  );
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {

@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import orbitChainsData from '../orbitChainsData.json';
-import { sanitizeNullSelectedToken } from '../queryParamUtils';
+import { sanitizeNullSelectedToken, sanitizeQueryParams } from '../queryParamUtils';
 
 describe('sanitizeNullSelectedToken', () => {
   beforeAll(() => {
@@ -150,5 +150,66 @@ describe('sanitizeNullSelectedToken', () => {
 
       expect(result).toBe(null);
     });
+  });
+});
+
+describe('sanitizeQueryParams - Arbitrum Nova pairs', () => {
+  beforeAll(() => {
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
+    );
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
+    );
+  });
+
+  it('preserves Ethereum → Nova when LiFi pairs are enabled', () => {
+    const result = sanitizeQueryParams({
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumNova,
+      includeLifiEnabledChainPairs: true,
+    });
+
+    expect(result).toEqual({
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumNova,
+    });
+  });
+
+  it('preserves Nova → Ethereum', () => {
+    const result = sanitizeQueryParams({
+      sourceChainId: ChainId.ArbitrumNova,
+      destinationChainId: ChainId.Ethereum,
+      includeLifiEnabledChainPairs: true,
+    });
+
+    expect(result).toEqual({
+      sourceChainId: ChainId.ArbitrumNova,
+      destinationChainId: ChainId.Ethereum,
+    });
+  });
+
+  it('preserves Nova → ArbitrumOne', () => {
+    const result = sanitizeQueryParams({
+      sourceChainId: ChainId.ArbitrumNova,
+      destinationChainId: ChainId.ArbitrumOne,
+      includeLifiEnabledChainPairs: true,
+    });
+
+    expect(result).toEqual({
+      sourceChainId: ChainId.ArbitrumNova,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+  });
+
+  it('rejects ArbitrumOne → Nova and re-routes to a valid destination', () => {
+    const result = sanitizeQueryParams({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.ArbitrumNova,
+      includeLifiEnabledChainPairs: true,
+    });
+
+    expect(result.sourceChainId).toBe(ChainId.ArbitrumOne);
+    expect(result.destinationChainId).not.toBe(ChainId.ArbitrumNova);
   });
 });

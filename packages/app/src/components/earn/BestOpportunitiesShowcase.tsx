@@ -1,10 +1,9 @@
-import {
-  OpportunityCategory,
-  type OpportunitySelectHandler,
-  OpportunityTableRow,
-} from '@/app-types/earn/vaults';
+import { useMemo } from 'react';
+
+import { type OpportunitySelectHandler, OpportunityTableRow } from '@/app-types/earn/vaults';
 
 import { BestOpportunityCard } from './BestOpportunityCard';
+import { CATEGORY_ORDER } from './OpportunitiesTable';
 
 interface BestOpportunitiesShowcaseProps {
   opportunities: OpportunityTableRow[];
@@ -15,25 +14,21 @@ export function BestOpportunitiesShowcase({
   opportunities,
   onOpportunitySelect,
 }: BestOpportunitiesShowcaseProps) {
-  const categories: OpportunityCategory[] = [
-    OpportunityCategory.Lend,
-    OpportunityCategory.LiquidStaking,
-    OpportunityCategory.FixedYield,
-  ];
-
-  const bestOpportunities = categories
-    .map((category) =>
-      opportunities
-        .filter((opp) => opp.category === category && (opp.rawTvl ?? 0) > 0)
-        .reduce<OpportunityTableRow | null>(
-          (bestOpportunity, currentOpportunity) =>
-            !bestOpportunity || (currentOpportunity.rawTvl ?? 0) > (bestOpportunity.rawTvl ?? 0)
-              ? currentOpportunity
-              : bestOpportunity,
-          null,
-        ),
-    )
-    .filter((opportunity): opportunity is OpportunityTableRow => opportunity !== null);
+  const bestOpportunities = useMemo(
+    () =>
+      CATEGORY_ORDER.map((category) =>
+        opportunities
+          .filter((opp) => opp.category === category && (opp.rawTvl ?? 0) > 0)
+          .reduce<OpportunityTableRow | null>(
+            (bestOpportunity, currentOpportunity) =>
+              !bestOpportunity || (currentOpportunity.rawTvl ?? 0) > (bestOpportunity.rawTvl ?? 0)
+                ? currentOpportunity
+                : bestOpportunity,
+            null,
+          ),
+      ).filter((opportunity): opportunity is OpportunityTableRow => opportunity !== null),
+    [opportunities],
+  );
 
   if (bestOpportunities.length === 0) {
     return null;

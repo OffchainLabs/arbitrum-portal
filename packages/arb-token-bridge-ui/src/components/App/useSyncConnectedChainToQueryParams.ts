@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
+import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
-import { getAccountType } from '../../util/AccountUtils';
-import { getNetworkName } from '../../util/networks';
-import { onDisconnectHandler } from '../../util/walletConnectUtils';
 
 export function useSyncConnectedChainToQueryParams() {
-  const { address, chain } = useAccount();
+  const { chain } = useAccount();
+  const { accountType } = useAccountType(undefined, chain?.id);
   const [shouldSync, setShouldSync] = useState(false);
   const [didSync, setDidSync] = useState(false);
-  const { disconnect } = useDisconnect({
-    mutation: {
-      onSettled: onDisconnectHandler,
-    },
-  });
   const { isFeatureDisabled } = useDisabledFeatures();
 
   const [{ sourceChain, destinationChain }, setQueryParams] = useArbQueryParams();
@@ -26,7 +20,7 @@ export function useSyncConnectedChainToQueryParams() {
   );
 
   const setSourceChainToConnectedChain = useCallback(() => {
-    if (typeof chain === 'undefined') {
+    if (!chain) {
       return;
     }
 
@@ -41,31 +35,14 @@ export function useSyncConnectedChainToQueryParams() {
   }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
 
   useEffect(() => {
-    async function checkCorrectChainForSmartContractWallet() {
-      if (typeof chain === 'undefined') {
-        return;
-      }
-      if (!address) {
-        return;
-      }
-      const accountType = await getAccountType({
-        address,
-        chainId: chain.id,
-      });
-      if (accountType === 'smart-contract-wallet' && sourceChain !== chain.id) {
-        const chainName = getNetworkName(chain.id);
-
-        setSourceChainToConnectedChain();
-
-        window.alert(
-          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
-        );
-        disconnect();
-      }
+    if (!chain || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
+      return;
     }
 
-    checkCorrectChainForSmartContractWallet();
-  }, [address, chain, disconnect, setQueryParams, setSourceChainToConnectedChain, sourceChain]);
+    if (sourceChain !== chain.id) {
+      setSourceChainToConnectedChain();
+    }
+  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
 
   useEffect(() => {
     if (shouldSync) {
@@ -73,7 +50,7 @@ export function useSyncConnectedChainToQueryParams() {
     }
 
     // Only sync connected chain to query params if the query params were not initially provided
-    if (typeof sourceChain === 'undefined' && typeof destinationChain === 'undefined') {
+    if (sourceChain === undefined && destinationChain === undefined) {
       setShouldSync(true);
     }
   }, [shouldSync, sourceChain, destinationChain]);
@@ -84,5 +61,5 @@ export function useSyncConnectedChainToQueryParams() {
       setSourceChainToConnectedChain();
       setDidSync(true);
     }
-  }, [chain, shouldSync, didSync, setQueryParams, setSourceChainToConnectedChain]);
+  }, [chain, shouldSync, didSync, setSourceChainToConnectedChain]);
 }

@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
@@ -135,7 +135,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
     if (chainId === ChainId.ApeChain) {
       return {
         ...token,
-        logoURI: '/images/ApeTokenLogo.svg',
+        logoURI: APE_TOKEN_LOGO,
       };
     }
     return {
@@ -147,7 +147,7 @@ function overrideTokenLogo(token: Token, chainId: number): Token {
   if (isApeToken(token.address, chainId)) {
     return {
       ...token,
-      logoURI: '/images/ApeTokenLogo.svg',
+      logoURI: APE_TOKEN_LOGO,
     };
   }
 
@@ -234,7 +234,7 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   };
 }
 
-function findCheapestRoute(
+export function findCheapestRoute(
   routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const cheapestRoute = routes.reduce((currentMin, route) => {
@@ -242,7 +242,7 @@ function findCheapestRoute(
       return route;
     }
 
-    if (BigNumber.from(route.toAmount.amount).lt(BigNumber.from(currentMin.toAmount.amount))) {
+    if (BigNumber.from(route.toAmount.amount).gt(BigNumber.from(currentMin.toAmount.amount))) {
       return route;
     }
     return currentMin;
@@ -251,7 +251,7 @@ function findCheapestRoute(
   return cheapestRoute;
 }
 
-function findFastestRoute(
+export function findFastestRoute(
   routes: LifiCrosschainTransfersRoute[],
 ): LifiCrosschainTransfersRoute | undefined {
   const fastestRoute = routes.reduce((currentMin, route) => {
@@ -283,10 +283,56 @@ export type LifiParams = QueryParams & {
   denyExchanges?: string[];
 };
 
+function configureLifiSdk(integrator: string) {
+  createConfig({
+    integrator,
+    apiKey: process.env.LIFI_KEY,
+  });
+}
+
 function getIntegratorId(request: NextRequest): string {
   const referer = request.headers.get('referer');
   const isEmbedMode = referer && referer.includes('/bridge/embed');
   return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
+}
+
+export async function getLifiRoutes(params: {
+  fromChainId: number;
+  toChainId: number;
+  fromTokenAddress: string;
+  toTokenAddress: string;
+  fromAmount: string;
+  fromAddress?: string;
+  toAddress?: string;
+  slippage?: number;
+  integrator?: string;
+}) {
+  const { integrator = LIFI_INTEGRATOR_IDS.NORMAL } = params;
+
+  configureLifiSdk(integrator);
+
+  const options: RoutesRequest['options'] = {
+    integrator,
+    allowSwitchChain: false,
+    allowDestinationCall: false,
+  };
+
+  if (params.slippage !== undefined) {
+    options.slippage = params.slippage;
+  }
+
+  const { routes } = await getRoutes({
+    fromAddress: params.fromAddress,
+    fromChainId: params.fromChainId,
+    toChainId: params.toChainId,
+    fromTokenAddress: params.fromTokenAddress,
+    toTokenAddress: params.toTokenAddress,
+    fromAmount: params.fromAmount,
+    toAddress: params.toAddress,
+    options,
+  });
+
+  return routes;
 }
 
 export async function GET(
@@ -294,10 +340,7 @@ export async function GET(
 ): Promise<NextResponse<LifiCrossTransfersRoutesResponse>> {
   const integratorId = getIntegratorId(request);
 
-  createConfig({
-    integrator: integratorId,
-    apiKey: process.env.LIFI_KEY,
-  });
+  configureLifiSdk(integratorId);
 
   const { searchParams } = new URL(request.url);
   const fromToken = searchParams.get('fromToken');

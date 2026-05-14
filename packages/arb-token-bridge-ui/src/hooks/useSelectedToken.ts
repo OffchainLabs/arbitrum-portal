@@ -9,6 +9,7 @@ import {
   useTokensFromLists,
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
+import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import {
@@ -47,6 +48,11 @@ export const useSelectedToken = (): [
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
+  const {
+    app: {
+      arbTokenBridge: { bridgeTokens },
+    },
+  } = useAppState();
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
@@ -131,6 +137,7 @@ export const useSelectedToken = (): [
 
   const selectedToken = tokenFromSearchParams
     ? usdcToken ||
+      bridgeTokens?.[tokenFromSearchParams] ||
       tokensFromUser[tokenFromSearchParams] ||
       tokensFromLists[tokenFromSearchParams] ||
       null

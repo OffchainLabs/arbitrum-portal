@@ -1,6 +1,10 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import { describe, expect, it } from 'vitest';
 
-import { fetchTokenWithdrawalsFromEventLogs } from '../fetchTokenWithdrawalsFromEventLogs';
+import {
+  dedupeEvents,
+  fetchTokenWithdrawalsFromEventLogs,
+} from '../fetchTokenWithdrawalsFromEventLogs';
 import {
   getQueryCoveringClassicAndNitroWithResults,
   getQueryCoveringClassicOnlyWithResults,
@@ -46,5 +50,59 @@ describe('fetchTokenWithdrawalsFromEventLogs', () => {
         }),
       ]),
     );
+  });
+});
+
+describe('dedupeEvents', () => {
+  it('retains multiple events with same txHash but different _l2ToL1Id', () => {
+    const events = [
+      {
+        txHash: '0xabc',
+        _l2ToL1Id: BigNumber.from(1),
+        l1Token: '0xAAA',
+        _from: '0x1',
+        _to: '0x2',
+        _exitNum: BigNumber.from(0),
+        _amount: BigNumber.from(100),
+      },
+      {
+        txHash: '0xabc',
+        _l2ToL1Id: BigNumber.from(2),
+        l1Token: '0xBBB',
+        _from: '0x1',
+        _to: '0x2',
+        _exitNum: BigNumber.from(1),
+        _amount: BigNumber.from(200),
+      },
+    ] as any;
+
+    const result = dedupeEvents(events);
+    expect(result).toHaveLength(2);
+  });
+
+  it('deduplicates events with same txHash and same _l2ToL1Id', () => {
+    const events = [
+      {
+        txHash: '0xabc',
+        _l2ToL1Id: BigNumber.from(1),
+        l1Token: '0xAAA',
+        _from: '0x1',
+        _to: '0x2',
+        _exitNum: BigNumber.from(0),
+        _amount: BigNumber.from(100),
+      },
+      {
+        txHash: '0xabc',
+        _l2ToL1Id: BigNumber.from(1),
+        l1Token: '0xAAA',
+        _from: '0x1',
+        _to: '0x2',
+        _exitNum: BigNumber.from(0),
+        _amount: BigNumber.from(100),
+      },
+    ] as any;
+
+    const result = dedupeEvents(events);
+    expect(result).toHaveLength(1);
   });
 });

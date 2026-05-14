@@ -235,7 +235,7 @@ export const fetchAndProcessImage = async (
     imageBuffer = Buffer.from(response.data);
 
     const isSVG =
-      response.headers['content-type']?.includes('svg') ||
+      (response.headers['content-type'] as string)?.includes('svg') ||
       imageBuffer.toString('utf8').trim().toLowerCase().startsWith('<svg') ||
       imageBuffer.toString('utf8').includes('xmlns="http://www.w3.org/2000/svg"');
 

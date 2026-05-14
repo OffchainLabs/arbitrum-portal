@@ -6,7 +6,7 @@ export const earnBackButtonClassName =
 export function EarnBackButtonLabel() {
   return (
     <>
-      <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-[14px] bg-white/[0.08]">
+      <span className="flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-md bg-white/[0.08]">
         <ChevronLeftIcon className="h-[15px] w-[15px] text-white" />
       </span>
       Back

@@ -67,6 +67,20 @@ export function useNetworksRelationship({
       };
     }
 
+    // Nova to ArbitrumOne is a LiFi sibling transfer, not parent-child.
+    // Set Nova as parent so the LiFi token list keyed on (parent=Nova, child=One) resolves.
+    if (sourceChain.id === ChainId.ArbitrumNova && destinationChain.id === ChainId.ArbitrumOne) {
+      return {
+        childChain: destinationChain,
+        childChainProvider: destinationChainProvider,
+        parentChain: sourceChain,
+        parentChainProvider: sourceChainProvider,
+        isDepositMode: true,
+        isTeleportMode: false,
+        isLifi,
+      };
+    }
+
     if (_isDepositMode) {
       return {
         childChain: destinationChain,

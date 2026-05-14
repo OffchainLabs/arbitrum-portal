@@ -1,5 +1,6 @@
 'use client';
 
+import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { useAccount, useAccountEffect } from 'wagmi';
@@ -8,6 +9,7 @@ import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
+import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 
 import { OpportunitiesTable } from './OpportunitiesTable';
 import { PortfolioSummaryCards } from './PortfolioSummaryCards';
@@ -46,7 +48,7 @@ export function MyPositionsPage() {
   } = useUserPositions(address, [ChainId.ArbitrumOne]);
 
   const opportunitiesWithPositions = useMemo(() => {
-    return allOpportunities
+    const matched = allOpportunities
       .filter((opp) => {
         const opportunityId = opp.id.toLowerCase();
         const vaultAddress = opp.vaultAddress?.toLowerCase();
@@ -70,10 +72,47 @@ export function MyPositionsPage() {
           ...opp,
           deposited: positionData.deposited,
           depositedUsd: positionData.valueUsd,
-          projectedEarningsUsd:
-            positionData.projectedEarningsUsd > 0 ? positionData.projectedEarningsUsd : null,
+          projectedEarningsUsd: positionData.projectedEarningsUsd || null,
         } satisfies OpportunityTableRow;
       });
+
+    // Synthesize rows for positions without matching opportunities (e.g. expired/matured markets)
+    const matchedIds = new Set(matched.map((opp) => opp.id.toLowerCase()));
+    for (const [oppId, positionData] of positionsMap) {
+      if (matchedIds.has(oppId) || !positionData.opportunityName) {
+        continue;
+      }
+
+      const rawApy = positionData.opportunityApy ?? 0;
+      const rawTvl = positionData.opportunityTvl ?? null;
+      const protocol = positionData.opportunityProtocol ?? '';
+
+      matched.push({
+        id: oppId,
+        chainId: ChainId.ArbitrumOne,
+        name: positionData.opportunityName,
+        category: positionData.category,
+        token: positionData.tokenSymbol,
+        tokenIcon: positionData.tokenIcon || '',
+        tokenNetwork: 'arbitrum',
+        apy: rawApy > 0 ? formatPercentage(rawApy) : '—',
+        tvl: rawTvl != null ? formatCompactUsd(rawTvl) : '—',
+        protocol,
+        protocolIcon: positionData.opportunityProtocolLogo ?? '',
+        vaultAddress: oppId,
+        rawApy,
+        rawTvl,
+        deposited: positionData.deposited,
+        depositedUsd: positionData.valueUsd,
+        projectedEarningsUsd: positionData.projectedEarningsUsd || null,
+        maturityDate: positionData.expiryDate
+          ? dayjs(positionData.expiryDate).format('D MMM YYYY')
+          : undefined,
+        rawMaturityDate: positionData.expiryDate,
+      } satisfies OpportunityTableRow);
+    }
+
+    return matched;
   }, [allOpportunities, opportunityIds, positionsMap]);
 
   const isLoading = opportunitiesLoading || positionsLoading;

@@ -13,22 +13,12 @@ import type {
   Vendor,
 } from '@/earn-api/types';
 
-type UseEarnTransactionHistoryResult = {
-  transactions: EarnTransactionHistoryRow[];
-  isLoading: boolean;
-  error: string | null;
-  addTransaction: (params: {
-    vendor: Vendor;
-    transaction: StandardTransactionHistory;
-  }) => Promise<void>;
-};
-
 export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
   userAddress: string | null,
   chainId: EarnChainId,
-): UseEarnTransactionHistoryResult {
+) {
   const historyKey =
     userAddress && opportunityId
       ? ([category, opportunityId, userAddress, chainId, 'earn-transactions'] as const)

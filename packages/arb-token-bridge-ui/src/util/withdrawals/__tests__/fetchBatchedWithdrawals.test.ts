@@ -1,4 +1,3 @@
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
@@ -20,14 +19,12 @@ const validResult = [
   }),
 ];
 
-const l1Provider = new StaticJsonRpcProvider('https://eth.llamarpc.com');
-
 describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
   it('calls fetchWithdrawals correct number of times and returns valid data', async () => {
     const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
 
     const result = await fetchWithdrawalsInBatches({
-      l1Provider,
+      parentChainId: 1,
       ...getQueryCoveringClassicAndNitroWithResults(),
       batchSizeBlocks: 5_000_000,
     });
@@ -45,7 +42,7 @@ describe.sequential('fetchWithdrawalsInBatches single call', () => {
     const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
 
     const result = await fetchWithdrawalsInBatches({
-      l1Provider,
+      parentChainId: 1,
       ...getQueryCoveringClassicAndNitroWithResults(),
       batchSizeBlocks: 100_000_000,
     });
@@ -62,7 +59,7 @@ describe.sequential(
     it('throws an error', async () => {
       await expect(
         fetchWithdrawalsInBatches({
-          l1Provider,
+          parentChainId: 1,
           ...getQueryCoveringClassicAndNitroWithResults(),
           batchSizeBlocks: 1,
           fromBlock: 2,

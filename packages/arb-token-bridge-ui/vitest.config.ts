@@ -3,6 +3,9 @@ import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  esbuild: {
+    jsx: 'automatic',
+  },
   test: {
     globals: true,
     sequence: { concurrent: true },
@@ -11,6 +14,7 @@ export default defineConfig({
     },
     testTimeout: 15_000,
     include: ['./src/**/*.test.ts', './src/**/*.test.tsx'],
+    exclude: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
     env: loadEnv('', '../app/', ''),
     environment: 'happy-dom',
     setupFiles: ['./vitest.mocks.ts'],
@@ -20,6 +24,7 @@ export default defineConfig({
       '@/images': path.resolve(__dirname, '../app/public/images'),
       '@/icons': path.resolve(__dirname, '../app/public/icons'),
       '@/common': path.resolve(__dirname, '../portal/common'),
+      '@/components': path.resolve(__dirname, '../portal/components'),
       '@/portal': path.resolve(__dirname, '../portal'),
       '@/app-components': path.resolve(__dirname, '../app/src/components'),
       '@/token-bridge-sdk': path.resolve(__dirname, './src/token-bridge-sdk'),

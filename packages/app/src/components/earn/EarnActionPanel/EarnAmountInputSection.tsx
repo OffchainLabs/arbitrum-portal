@@ -1,12 +1,12 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { Button } from '@/bridge/components/common/Button';
-import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
 import { EarnActionPanelInput } from '../EarnActionPanelInput';
+import { EarnTokenBadge } from '../EarnTokenSelector';
 
 export interface TokenDisplay {
   symbol: string;
@@ -19,14 +19,13 @@ interface EarnAmountInputSectionProps {
   onMaxClick: () => void;
   label: string;
   inputToken: TokenDisplay;
-  inputTokenSelector?: ReactNode;
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
-  decimals?: number;
+  inputTokenSelector?: ReactNode;
 }
 
 export function EarnAmountInputSection({
@@ -35,14 +34,13 @@ export function EarnAmountInputSection({
   onMaxClick,
   label,
   inputToken,
-  inputTokenSelector,
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
-  decimals = 18,
+  inputTokenSelector,
 }: EarnAmountInputSectionProps) {
   const amountNumber = Number(amount);
   const currentBalanceNumeric =
@@ -59,7 +57,7 @@ export function EarnAmountInputSection({
       : null;
 
   return (
-    <div className="bg-neutral-100 rounded flex flex-col p-4">
+    <div className="bg-neutral-100 rounded flex flex-col p-4 focus-within:ring-2 focus-within:ring-white/30">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">{label}</span>
@@ -78,20 +76,9 @@ export function EarnAmountInputSection({
             aria-label="amount-input"
             value={amount}
             onChange={onAmountChange}
-            decimals={decimals}
           />
-          {inputTokenSelector || (
-            <div className="rounded flex gap-1 items-center px-2.5 py-[5px]">
-              <SafeImage
-                src={inputToken.logoUrl}
-                alt={`${inputToken.symbol} logo`}
-                width={20}
-                height={20}
-                className="rounded-full shrink-0"
-                fallback={<div className="w-5 h-5 rounded-full bg-blue-600 shrink-0" />}
-              />
-              <span className="text-sm font-medium text-white">{inputToken.symbol}</span>
-            </div>
+          {inputTokenSelector ?? (
+            <EarnTokenBadge symbol={inputToken.symbol} logoUrl={inputToken.logoUrl} />
           )}
         </div>
 

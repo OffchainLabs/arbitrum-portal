@@ -1,7 +1,5 @@
-import '@rainbow-me/rainbowkit/styles.css';
 import type { Metadata } from 'next';
-import { PropsWithChildren } from 'react';
-import { twMerge } from 'tailwind-merge';
+import type { CSSProperties, PropsWithChildren } from 'react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 
@@ -17,10 +15,15 @@ export const metadata: Metadata = {
   },
 };
 
+const reownFontVariables = {
+  '--apkt-fontFamily-regular': `${unica.style.fontFamily}, Roboto, sans-serif`,
+  '--apkt-fontFamily-mono': `${unica.style.fontFamily}, Roboto, sans-serif`,
+} as CSSProperties;
+
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en">
-      <body className={twMerge('relative bg-black text-white', unica.variable)}>{children}</body>
+    <html lang="en" className={unica.variable} style={reownFontVariables}>
+      <body className="relative bg-black text-white">{children}</body>
     </html>
   );
 }

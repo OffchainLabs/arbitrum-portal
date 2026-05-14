@@ -1,4 +1,5 @@
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { Tooltip } from '@/app-components/Tooltip';
@@ -8,7 +9,8 @@ import {
   OpportunityTableRow,
 } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { formatUSD } from '@/bridge/util/NumberUtils';
+import { ARBITRUM_LOGO } from '@/bridge/constants';
+import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 
 interface OpportunityCardProps {
   opportunity: OpportunityTableRow;
@@ -17,6 +19,8 @@ interface OpportunityCardProps {
 
 export function OpportunityCard({ opportunity, onOpportunitySelect }: OpportunityCardProps) {
   const categoryClass = CATEGORY_INDICATOR_CLASS[opportunity.category] ?? 'bg-gray-1';
+  const isExpired =
+    opportunity.rawMaturityDate != null && new Date(opportunity.rawMaturityDate) < new Date();
 
   return (
     <Link
@@ -26,7 +30,25 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-3 h-3 rounded-full shrink-0 ${categoryClass}`} />
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{opportunity.name}</p>
+          {isExpired && (
+            <Tooltip
+              content={
+                <p className="text-xs text-white">
+                  {opportunity.maturityDate
+                    ? `Matured on ${opportunity.maturityDate}`
+                    : 'This position has matured'}
+                </p>
+              }
+              tippyProps={{ placement: 'top' }}
+            >
+              <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default self-start">
+                Matured
+              </span>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2.5">
@@ -38,6 +60,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
             width={24}
             height={24}
             className="rounded-full shrink-0"
+            fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
           />
           <div className="flex flex-col gap-0.5">
             <p className="text-xl text-white leading-[1.15] tracking-[-0.4px]">
@@ -46,7 +69,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
             {opportunity.tokenNetwork && (
               <div className="flex items-center gap-1.5">
                 <SafeImage
-                  src="/images/ArbitrumLogo.svg"
+                  src={ARBITRUM_LOGO}
                   alt={opportunity.tokenNetwork}
                   width={12}
                   height={12}
@@ -67,25 +90,31 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
           {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
             <Tooltip
               content={
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs text-white opacity-70">Base APY</span>
-                    <span className="text-xs text-white font-medium">
-                      {opportunity.apyBreakdown.base.toFixed(2)}%
+                <div className="flex flex-col min-w-[173px]">
+                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <ChartBarIcon className="h-4 w-4 text-white opacity-50" />
+                      <span className="text-sm font-medium text-white opacity-50">Base APY</span>
+                    </div>
+                    <span className="ml-auto text-sm font-medium text-white">
+                      {formatPercentage(opportunity.apyBreakdown.base)}
                     </span>
                   </div>
-                  {opportunity.apyBreakdown.reward > 0 && (
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-xs text-white opacity-70">Reward APY</span>
-                      <span className="text-xs text-white font-medium">
-                        {opportunity.apyBreakdown.reward.toFixed(2)}%
+                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src="/images/sparkles.svg"
+                        alt="Sparkles"
+                        width={16}
+                        height={16}
+                        aria-hidden
+                      />
+                      <span className="text-sm font-medium bg-gradient-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                        Rewards
                       </span>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/10">
-                    <span className="text-xs text-white font-medium">Total APY</span>
-                    <span className="text-xs text-white font-medium">
-                      {opportunity.apyBreakdown.total.toFixed(2)}%
+                    <span className="ml-auto text-sm font-medium bg-gradient-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                      {formatPercentage(opportunity.apyBreakdown.reward)}
                     </span>
                   </div>
                 </div>
@@ -120,6 +149,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
                 width={24}
                 height={24}
                 className="shrink-0 object-contain"
+                fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
               />
               <p className="text-lg text-white leading-[1.35] tracking-[-0.36px]">
                 {opportunity.protocol}

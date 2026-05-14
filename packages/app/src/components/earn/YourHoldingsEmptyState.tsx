@@ -1,6 +1,5 @@
 'use client';
 
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePostHog } from 'posthog-js/react';
@@ -11,6 +10,7 @@ import {
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
+import { useWalletModal } from '@/bridge/wallet/hooks/useWalletModal';
 
 import { BestOpportunitiesShowcase } from './BestOpportunitiesShowcase';
 
@@ -20,7 +20,7 @@ interface YourHoldingsEmptyStateProps {
 
 export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyStateProps) {
   const { isConnected } = useAccount();
-  const { openConnectModal } = useConnectModal();
+  const { openConnectModal } = useWalletModal();
   const posthog = usePostHog();
 
   const title = isConnected ? 'No active positions yet' : 'Connect your wallet to get started';
@@ -81,7 +81,7 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
                 section: 'Your Holdings',
                 walletConnected: false,
               });
-              openConnectModal?.();
+              openConnectModal();
             }}
             className="bg-primary-cta hover:bg-primary-cta/90 px-4 flex items-center justify-center transition-colors cursor-pointer rounded border border-dark text-sm text-white py-2 no-underline"
           >

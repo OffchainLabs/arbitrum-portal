@@ -1,5 +1,6 @@
 import {
   ChildToParentMessageReader,
+  ChildToParentTransactionEvent,
   ChildTransactionReceipt,
   scaleFrom18DecimalsToNativeTokenDecimals,
 } from '@arbitrum/sdk';
@@ -21,6 +22,33 @@ import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
 import { addToLocalStorageObjectSequentially } from '../CommonUtils';
 import { fetchErc20Data } from '../TokenUtils';
 import { WithdrawalFromSubgraph } from './fetchWithdrawalsFromSubgraph';
+
+function findMatchingChildToParentEvent(
+  events: ChildToParentTransactionEvent[],
+  l2ToL1Id?: BigNumber,
+  tokenAddress?: string,
+): ChildToParentTransactionEvent | undefined {
+  if (events.length === 0) return undefined;
+  if (events.length === 1 && !l2ToL1Id && !tokenAddress) return events[0];
+
+  // Match by position (from _l2ToL1Id on WithdrawalInitiated events)
+  if (l2ToL1Id) {
+    const match = events.find((e) => 'position' in e && BigNumber.from(e.position).eq(l2ToL1Id));
+    if (match) return match;
+  }
+
+  // Fallback: match by token address in the event's data field
+  // The data field encodes finalizeInboundTransfer(l1Token, from, to, amount, extraData)
+  if (tokenAddress) {
+    const needle = tokenAddress.slice(2).toLowerCase();
+    const match = events.find((e) => e.data.toLowerCase().includes(needle));
+    if (match) return match;
+  }
+
+  // Only fall back to events[0] when no disambiguating inputs were provided
+  if (!l2ToL1Id && !tokenAddress) return events[0];
+  return undefined;
+}
 
 /**
  * `l2TxHash` exists on result from subgraph
@@ -44,7 +72,8 @@ export async function attachTimestampToTokenWithdrawal({
 }) {
   const txReceipt = await l2Provider.getTransactionReceipt(withdrawal.txHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  const event = findMatchingChildToParentEvent(events, withdrawal._l2ToL1Id);
 
   return {
     ...withdrawal,
@@ -156,8 +185,8 @@ export async function mapTokenWithdrawalFromEventLogsToL2ToL1EventResult({
   const txReceipt = await l2Provider.getTransactionReceipt(result.txHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
 
-  // TODO: length != 1
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  const event = findMatchingChildToParentEvent(events, result._l2ToL1Id, result.l1Token);
 
   if (!event) {
     return undefined;
@@ -170,32 +199,43 @@ export async function mapTokenWithdrawalFromEventLogsToL2ToL1EventResult({
     result.childChainId,
   );
 
-  // We cannot access sender and destination from the withdrawal object.
-  // We have to get them from the receipt logs.
-  //
-  // Get hash of the topic that contains sender and destination.
-  const signatureHash = utils.id('TransferRouted(address,address,address,address)');
-  // Searching logs for the topic.
-  const logs = txReceipt.logs.find((log) => {
-    if (!log) {
-      return false;
+  // Prefer sender/destination from the WithdrawalInitiated event itself — it carries
+  // the original user even when the call went through the L2GatewayRouter (the gateway
+  // decodes the router-encoded original sender). Withdrawals initiated directly against
+  // the gateway (bypassing the router) won't have a TransferRouted log at all.
+  let sender: string | undefined =
+    result._from && utils.isAddress(result._from) ? result._from : undefined;
+  let destinationAddress: string | undefined =
+    result._to && utils.isAddress(result._to) ? result._to : undefined;
+
+  if (!sender || !destinationAddress) {
+    // Fall back to scanning the receipt for the matching TransferRouted log.
+    const signatureHash = utils.id('TransferRouted(address,address,address,address)');
+    const allTransferRoutedLogs = txReceipt.logs.filter((log) => log?.topics[0] === signatureHash);
+    const tokenTopic = utils.hexZeroPad(result.l1Token, 32).toLowerCase();
+    const transferRoutedLog = allTransferRoutedLogs.find(
+      (log) => log.topics[1]?.toLowerCase() === tokenTopic,
+    );
+
+    if (transferRoutedLog) {
+      let routedSender = transferRoutedLog.topics[2];
+      let routedDestination = transferRoutedLog.topics[3];
+
+      // SCW relayer won't return leading zeros, but we will get them when using EOA.
+      if (routedSender && !utils.isAddress(routedSender)) {
+        routedSender = '0x' + routedSender.slice(-40);
+      }
+      if (routedDestination && !utils.isAddress(routedDestination)) {
+        routedDestination = '0x' + routedDestination.slice(-40);
+      }
+
+      sender = sender ?? routedSender;
+      destinationAddress = destinationAddress ?? routedDestination;
     }
-    return log.topics[0] === signatureHash;
-  });
-
-  // We can directly access them by index, these won't change.
-  let sender = logs?.topics[2];
-  let destinationAddress = logs?.topics[3];
-
-  // SCW relayer won't return leading zeros, but we will get them when using EOA.
-  if (sender && !utils.isAddress(sender)) {
-    // Strips leading zeros if necessary.
-    sender = '0x' + sender.slice(-40);
   }
 
-  if (destinationAddress && !utils.isAddress(destinationAddress)) {
-    // Strips leading zeros if necessary.
-    destinationAddress = '0x' + destinationAddress.slice(-40);
+  if (!sender || !destinationAddress) {
+    return undefined;
   }
 
   return {
@@ -227,8 +267,18 @@ export async function mapWithdrawalFromSubgraphToL2ToL1EventResult({
   const txReceipt = await l2Provider.getTransactionReceipt(withdrawal.l2TxHash);
   const l2TxReceipt = new ChildTransactionReceipt(txReceipt);
 
-  // TODO: length != 1
-  const [event] = l2TxReceipt.getChildToParentEvents();
+  const events = l2TxReceipt.getChildToParentEvents();
+  let event: ChildToParentTransactionEvent | undefined;
+
+  if (withdrawal.type === 'TokenWithdrawal' && withdrawal.l1Token?.id) {
+    event = findMatchingChildToParentEvent(events, undefined, withdrawal.l1Token.id);
+  } else if (withdrawal.type === 'EthWithdrawal') {
+    // For ETH batch withdrawals from subgraph (extremely rare), match by callvalue
+    const match = events.find((e) => e.callvalue.eq(BigNumber.from(withdrawal.ethValue)));
+    event = match ?? events[0];
+  } else {
+    event = events[0];
+  }
 
   if (!event) {
     return undefined;

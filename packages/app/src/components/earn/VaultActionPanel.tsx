@@ -3,7 +3,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type Address, getAddress } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
@@ -18,7 +17,12 @@ import {
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
-import { deriveVault, formatApr, getSelectedActionValues } from '@/app-lib/earn/utils';
+import {
+  deriveVault,
+  formatApr,
+  getSelectedActionValues,
+  normalizeTokenAddress,
+} from '@/app-lib/earn/utils';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
@@ -45,18 +49,6 @@ interface VaultActionPanelProps {
 }
 
 type ActionType = 'supply' | 'withdraw';
-
-function normalizeTokenAddress(tokenAddress: string | null): Address | undefined {
-  if (!tokenAddress || addressesEqual(tokenAddress, constants.AddressZero)) {
-    return undefined;
-  }
-
-  try {
-    return getAddress(tokenAddress);
-  } catch {
-    return undefined;
-  }
-}
 
 export function VaultActionPanel({
   opportunity,
@@ -328,18 +320,9 @@ export function VaultActionPanel({
         opportunityName: vault.name,
         protocol: vault.protocol?.name,
         chainId: requestChainId,
-        walletConnected: isConnected,
       });
     },
-    [
-      isConnected,
-      posthog,
-      requestChainId,
-      selectedAction,
-      vault.address,
-      vault.name,
-      vault.protocol,
-    ],
+    [posthog, requestChainId, selectedAction, vault.address, vault.name, vault.protocol],
   );
 
   const currentApr = formatApr(vault.apy);
@@ -463,7 +446,6 @@ export function VaultActionPanel({
         currentUsdValue={selectedActionValues.usdValue}
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
-        decimals={selectedActionValues.decimals}
         validationError={
           transferReadiness.errorMessage
             ? typeof transferReadiness.errorMessage === 'string'
@@ -484,6 +466,7 @@ export function VaultActionPanel({
         disabled={
           !transferReadiness.isReady ||
           transactionQuoteLoading ||
+          !transactionQuote ||
           transferReadiness.isLoading ||
           !!transactionQuoteError
         }

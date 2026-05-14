@@ -37,7 +37,7 @@ describe('Login Account', () => {
   it('should show connect wallet if not logged in', () => {
     cy.visit('/bridge');
     cy.findAllByText('Connect Wallet').first().should('be.visible').click();
-    cy.findByText('MetaMask').should('be.visible');
+    cy.contains('MetaMask').should('be.visible');
   });
 
   it('should connect wallet using MetaMask and display L1 and L2 balances', () => {

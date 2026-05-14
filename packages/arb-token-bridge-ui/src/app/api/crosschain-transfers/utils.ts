@@ -2,7 +2,7 @@ import { constants } from 'ethers';
 
 import { LIFI_TRANSFER_LIST_ID } from '@/bridge/util/TokenListUtils';
 
-import { ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, WETH_TOKEN_LOGO, ether } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
@@ -67,6 +67,19 @@ export function isValidLifiTransfer({
     return true;
   }
 
+  const isPyusdDeposit =
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.ArbitrumOne &&
+    addressesEqual(fromToken, CommonAddress.Ethereum.PYUSD);
+  const isPyusdWithdrawal =
+    sourceChainId === ChainId.ArbitrumOne &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(fromToken, CommonAddress.ArbitrumOne.PYUSD);
+
+  if (isPyusdDeposit || isPyusdWithdrawal) {
+    return true;
+  }
+
   const token = tokensFromLists[fromToken.toLowerCase()];
   return token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
 }
@@ -86,8 +99,7 @@ const Weth = {
   symbol: 'WETH',
   name: 'Wrapped Ether',
   decimals: 18,
-  logoURI:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+  logoURI: WETH_TOKEN_LOGO,
 };
 
 function getUsdc(chainId: number) {
@@ -126,7 +138,7 @@ const apeToken = {
   symbol: 'APE',
   name: 'ApeCoin',
   decimals: 18,
-  logoURI: '/images/ApeTokenLogo.svg',
+  logoURI: APE_TOKEN_LOGO,
   type: TokenType.ERC20,
   listIds: new Set<string>(),
 } as const;

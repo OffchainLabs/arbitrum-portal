@@ -262,14 +262,8 @@ export function DestinationNetworkBox() {
   const [networks] = useNetworks();
   const [{ destinationAddress }] = useArbQueryParams();
   const [dialogProps, openDialog] = useDialog2();
-  const openDestinationNetworkSelectionDialog = async () => {
-    const waitForInput = openDialog('destination_network_selection');
-    const [, data] = await waitForInput();
-    if (data === 'one_nova_transfer') {
-      const waitForNovaInput = openDialog('one_nova_transfer');
-      await waitForNovaInput();
-      openDestinationNetworkSelectionDialog();
-    }
+  const openDestinationNetworkSelectionDialog = () => {
+    openDialog('destination_network_selection');
   };
 
   return (
