@@ -101,7 +101,7 @@ jobs:
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Start UI and run integration tests
-        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm workspace arb-token-bridge-ui test:integration'
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:integration'
 
   audit:
     name: 'Audit'
