@@ -1,6 +1,6 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeAll, expect } from 'vitest';
+import { beforeAll, expect, vi } from 'vitest';
 
 import { addOrbitChainsToArbitrumSDK } from '../../../../app/src/initialization';
 import { getSanitizedRedirectPath } from '../../../../app/src/utils/sanitizeAndRedirect';
@@ -14,6 +14,13 @@ import { CommonAddress, commonUsdcToken } from '../../util/CommonAddressUtils';
 import { mapCustomChainToNetworkData } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import { TransferPanel } from './TransferPanel';
+
+vi.mock('../../hooks/TransferPanel/useGasEstimates', () => ({
+  useGasEstimates: () => ({
+    gasEstimates: undefined,
+    error: undefined,
+  }),
+}));
 
 export type ChainQuerySlug = 'ethereum' | 'arbitrum-one' | 'base' | 'apechain' | 'superposition';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;

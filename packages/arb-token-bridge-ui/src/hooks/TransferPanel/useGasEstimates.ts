@@ -167,10 +167,6 @@ export function useGasEstimates({
 
   const { data: gasEstimates, error } = useSWR(
     () => {
-      if (amountToTransfer.lte(0)) {
-        return null;
-      }
-
       if (allRoutesAreLifi && (isLoadingLifiRoutes || lifiRoutes?.length === 0)) {
         return null;
       }
