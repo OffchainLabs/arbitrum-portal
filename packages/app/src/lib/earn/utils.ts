@@ -5,11 +5,16 @@ import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
 import type { StandardOpportunityLend } from '@/earn-api/types';
 
+export function parseFiniteNumber(value: unknown, opts: { min?: number } = {}): number | null {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  if (opts.min !== undefined && parsed < opts.min) return null;
+  return parsed;
+}
+
 export function parseMetricNumber(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null;
-  }
-  return value;
+  return parseFiniteNumber(value, { min: 0 });
 }
 
 export function formatApyBreakdown(value: number | undefined) {
