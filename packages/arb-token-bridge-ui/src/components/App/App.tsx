@@ -20,13 +20,14 @@ declare global {
 
 const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
   const actions = useActions();
-  const tokenBridgeParams = useArbTokenBridgeBootstrap();
 
   // We want to be sure this fetch is completed by the time we open the USDC modals
   useCCTPIsBlocked();
 
   useSyncConnectedChainToAnalytics();
   useSyncConnectedChainToQueryParams();
+
+  const tokenBridgeParams = useArbTokenBridgeBootstrap();
 
   useEffect(() => {
     axios
