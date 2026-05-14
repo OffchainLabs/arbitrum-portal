@@ -1,12 +1,12 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 import { getTokenOverride, isValidLifiTransfer } from '@/bridge/app/api/crosschain-transfers/utils';
+import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
 import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';

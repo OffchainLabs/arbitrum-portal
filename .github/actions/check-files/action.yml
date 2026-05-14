@@ -40,7 +40,7 @@ runs:
             run_tests=true
           fi
 
-          if [[ "$file" == .github/workflows/e2e-tests.yml ]]; then
+          if [[ "$file" == .github/workflows/e2e-tests.yml || "$file" == .github/workflows/test.yml || "$file" == .github/actions/check-files/action.yml ]]; then
             run_tests=true
           fi
           

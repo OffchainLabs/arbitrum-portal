@@ -1,6 +1,7 @@
 import { constants } from 'ethers';
 import { describe, expect, it, test } from 'vitest';
 
+import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
@@ -285,8 +286,7 @@ describe('getTokenOverride', () => {
   const weth = {
     address: '0xf4d9235269a96aadafc9adae454a0618ebe37949',
     decimals: 18,
-    logoURI:
-      'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+    logoURI: WETH_TOKEN_LOGO,
     name: 'Wrapped Ether',
     symbol: 'WETH',
     type: 'ERC20',
@@ -305,7 +305,7 @@ describe('getTokenOverride', () => {
     address: CommonAddress.ArbitrumOne.APE,
     decimals: 18,
     listIds: new Set(),
-    logoURI: '/images/ApeTokenLogo.svg',
+    logoURI: APE_TOKEN_LOGO,
     name: 'ApeCoin',
     symbol: 'APE',
     type: 'ERC20',
