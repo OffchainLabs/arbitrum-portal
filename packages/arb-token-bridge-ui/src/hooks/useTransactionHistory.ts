@@ -29,7 +29,8 @@ import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../st
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction, isTeleportTx } from '../types/Transactions';
-import { Address } from '../util/AddressUtils';
+import { Address, getNonce } from '../util/AddressUtils';
+import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
@@ -282,13 +283,30 @@ export async function fetchWithdrawalsInBatches(
     throw new Error(`toBlock (${toBlock}) cannot be lower than fromBlock (${fromBlock})`);
   }
 
+  const childChainId = (await params.l2Provider.getNetwork()).chainId;
+  const { isOrbitChain } = isNetwork(childChainId);
+
+  // Note: same logic present inside `fetchWithdrawals` function, but this gates
+  // even earlier, before the batches are sliced.
+  //
+  // Zero sender nonce on an Orbit chain means the address has no L3 activity,
+  // so it can't have initiated any withdrawals. Escape before slicing into batches
+  // to avoid firing the per-batch nonce/subgraph/block-number calls hundreds of
+  // times. `forceFetchReceived` opts out (e.g., SCWs).
+  if (isOrbitChain && params.sender && !params.forceFetchReceived) {
+    const senderNonce = await backOff(() =>
+      getNonce(params.sender, { provider: params.l2Provider }),
+    );
+    if (senderNonce === 0) {
+      return [];
+    }
+  }
+
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
 
   // Max parallel fetches to avoid 429 errors
   const limit = pLimit(10);
-
-  const childChainId = (await params.l2Provider.getNetwork()).chainId;
 
   const promises = Array.from({ length: batchCount }, (_, i) => {
     // Math.min makes sure we don't fetch above toBlock
