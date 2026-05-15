@@ -29,9 +29,11 @@ const DEFAULT_SUMMARY = {
 export interface UserPositionData {
   category: OpportunityCategory;
   amountRaw: string;
+  tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
+  tokenPriceUsd: number | null;
   deposited: string;
   valueUsd: number | null;
   projectedEarningsUsd: number | null;
@@ -91,9 +93,11 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
     positionsMap.set(normalizedOpportunityId, {
       category: position.category,
       amountRaw: position.amount,
+      tokenAddress: position.tokenAddress,
       tokenSymbol: position.tokenSymbol,
       tokenDecimals: position.tokenDecimals,
       tokenIcon: position.tokenIcon,
+      tokenPriceUsd: position.tokenPriceUsd,
       deposited,
       valueUsd,
       projectedEarningsUsd,

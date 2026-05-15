@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 
 import { type PendleAction, getPendleSettlementTokens } from '@/app-hooks/earn/pendlePanelUtils';
 import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { useEarnPrices } from '@/app-hooks/earn/useEarnPrices';
 import { usePendlePanelControls } from '@/app-hooks/earn/usePendlePanelControls';
 import { usePendlePanelData } from '@/app-hooks/earn/usePendlePanelData';
 import { usePendlePanelExecution } from '@/app-hooks/earn/usePendlePanelExecution';
@@ -126,6 +127,7 @@ export function PendleActionPanel({
     outputTokenSymbol: data.outputTokenSymbol,
     outputTokenDecimals: data.outputTokenDecimals,
     outputTokenLogo: data.outputTokenLogo,
+    outputTokenAddress: data.outputTokenAddress,
     slippagePercent,
     estimatedTxCost: data.estimatedTxCost,
     transactionQuote: data.transactionQuote,
@@ -239,12 +241,25 @@ export function PendleActionPanel({
     logoUrl: data.fixedYield.ptTokenIcon,
   };
 
+  const { getPrice } = useEarnPrices({
+    userAddress: walletAddress ?? null,
+    chainId: opportunity.chainId,
+  });
+  // Enter: input is selectedInputToken (typically the underlying, sometimes a swap source).
+  // Exit/redeem: input is the PT — fall back to balance-derived (user always has a position here).
+  const inputTokenAddress =
+    selectedAction === 'enter' ? (selectedInputToken?.address ?? null) : null;
+  const inputTokenPriceUsd = inputTokenAddress
+    ? getPrice({ chainId: opportunity.chainId, tokenAddress: inputTokenAddress })
+    : null;
+
   const sharedAmountInputProps = {
     amount,
     onAmountChange: setAmount,
     onMaxClick: () => setAmount(data.handleMaxClick()),
     label: data.amountLabel,
     currentBalance: data.currentBalanceFormatted,
+    tokenPriceUsd: inputTokenPriceUsd,
     isAmountExceedsBalance: data.amountExceedsBalance,
     isConnected,
     validationError: data.validationError,

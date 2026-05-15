@@ -48,6 +48,9 @@ interface EarnTransactionHistoryTableProps {
   opportunityName?: string;
   protocolName?: string;
   protocolLogo?: string;
+  /** Symbol-keyed (uppercased) USD prices for the assets shown in this table.
+   * Parent assembles from the opportunity's underlying/share token info. */
+  tokenPriceBySymbol?: Record<string, number>;
 }
 
 const EVENT_TYPE_TO_ACTION: Record<string, string> = {
@@ -123,6 +126,27 @@ function getDisplayAsset(
     }
 
     if ((action === 'exit' || action === 'redeem' || action === 'rollover') && hasOutputAsset) {
+      return {
+        amountRaw: row.outputAssetAmountRaw!,
+        symbol: row.outputAssetSymbol!,
+        decimals: row.outputAssetDecimals!,
+        logo: row.outputAssetLogo ?? row.assetLogo,
+      };
+    }
+  }
+
+  if (category === OpportunityCategory.LiquidStaking) {
+    // Always denominate in the staked token (the position asset).
+    // Buy: output is the staked token (received). Sell: input is the staked token (spent).
+    if (action === 'sell' && hasInputAsset) {
+      return {
+        amountRaw: row.inputAssetAmountRaw!,
+        symbol: row.inputAssetSymbol!,
+        decimals: row.inputAssetDecimals!,
+        logo: row.inputAssetLogo ?? row.assetLogo,
+      };
+    }
+    if (hasOutputAsset) {
       return {
         amountRaw: row.outputAssetAmountRaw!,
         symbol: row.outputAssetSymbol!,
@@ -326,6 +350,7 @@ export function EarnTransactionHistoryTable({
   opportunityName,
   protocolName,
   protocolLogo,
+  tokenPriceBySymbol,
 }: EarnTransactionHistoryTableProps) {
   const posthog = usePostHog();
   const sortedRows = useMemo(() => [...rows].sort((a, b) => b.timestamp - a.timestamp), [rows]);
@@ -350,10 +375,13 @@ export function EarnTransactionHistoryTable({
 
       if (!onRowClick) return;
 
+      const tokenPriceUsd = tokenPriceBySymbol?.[displayAsset.symbol.toUpperCase()] ?? null;
+
       const transactionDetails: TransactionDetails = {
         action,
         amount: displayAsset.amountRaw || '0',
         tokenSymbol: displayAsset.symbol,
+        tokenPriceUsd,
         decimals: displayAsset.decimals,
         assetLogo: displayAsset.logo,
         txHash: row.transactionHash,
@@ -366,7 +394,15 @@ export function EarnTransactionHistoryTable({
 
       onRowClick(transactionDetails, true);
     },
-    [category, onRowClick, opportunityName, posthog, protocolLogo, protocolName],
+    [
+      category,
+      onRowClick,
+      opportunityName,
+      posthog,
+      protocolLogo,
+      protocolName,
+      tokenPriceBySymbol,
+    ],
   );
 
   const groupedByDate = useMemo(() => {

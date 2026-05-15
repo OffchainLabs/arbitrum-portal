@@ -2,7 +2,7 @@
 
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,7 +12,7 @@ import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
-import { formatAmount } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { ExternalLink } from '@/components/ExternalLink';
 import type { EarnChainId } from '@/earn-api/types';
@@ -21,6 +21,8 @@ export interface TransactionDetails {
   action: string;
   amount: string;
   tokenSymbol: string;
+  /** Pre-resolved USD price for the displayed token. Caller computes via useEarnPrices. */
+  tokenPriceUsd?: number | null;
   decimals: number;
   assetLogo?: string;
   txHash?: string;
@@ -114,6 +116,17 @@ export function EarnTransactionDetailsPopup({
     symbol: transactionDetails.tokenSymbol,
   });
 
+  const tokenPrice = transactionDetails.tokenPriceUsd ?? null;
+  const formattedUsd =
+    tokenPrice !== null && tokenPrice > 0
+      ? (() => {
+          const amountFloat = parseFloat(utils.formatUnits(amountBigNumber, tokenDecimals));
+          return Number.isFinite(amountFloat) && amountFloat > 0
+            ? formatUSD(amountFloat * tokenPrice)
+            : null;
+        })()
+      : null;
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -136,6 +149,9 @@ export function EarnTransactionDetailsPopup({
               <div className="text-[36px] font-medium text-white text-center tracking-[0.72px]">
                 {formattedAmount}
               </div>
+              {formattedUsd && (
+                <div className="text-sm text-white/40 text-center">~{formattedUsd}</div>
+              )}
             </div>
 
             <p className="text-sm text-white/50 text-center">
@@ -178,6 +194,9 @@ export function EarnTransactionDetailsPopup({
 
               <div className="flex flex-col gap-1.5 items-center justify-center w-full">
                 <div className="text-3xl font-medium text-white text-center">{formattedAmount}</div>
+                {formattedUsd && (
+                  <div className="text-sm text-white/40 text-center">~{formattedUsd}</div>
+                )}
               </div>
             </div>
 

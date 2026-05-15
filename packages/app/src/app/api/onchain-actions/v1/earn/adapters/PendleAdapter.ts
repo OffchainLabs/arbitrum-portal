@@ -13,6 +13,7 @@ import { PENDLE_MARKET_CATEGORIES, PENDLE_MIN_TVL_USD, PendleMarketCategory } fr
 import {
   PendleAsset,
   PendleMarket,
+  getPendleAssetPrices,
   getPendleAssets,
   getPendleConvertRoute,
   getPendleMarketByAddress,
@@ -153,11 +154,15 @@ export class PendleAdapter implements VendorAdapter {
     const tokenIds = filtered
       .map((market) => market.pt)
       .concat(filtered.map((market) => market.sy));
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, filtered),
+    ]);
 
     return filtered
       .map((market) => enrichMarketWithAssets(market, assetMetadataMap))
-      .map((market) => this.transformToStandard(market));
+      .map((market) => this.transformToStandard(market, priceMap));
   }
 
   async getOpportunityDetails(
@@ -176,14 +181,15 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     const tokenIds = [market.pt, market.sy];
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+    const marketWithDetailsRaw = { ...market, details: marketDetails };
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, [marketWithDetailsRaw]),
+    ]);
 
-    const marketWithDetails = enrichMarketWithAssets(
-      { ...market, details: marketDetails },
-      assetMetadataMap,
-    );
+    const marketWithDetails = enrichMarketWithAssets(marketWithDetailsRaw, assetMetadataMap);
 
-    return this.transformToStandard(marketWithDetails);
+    return this.transformToStandard(marketWithDetails, priceMap);
   }
 
   async getHistoricalData(
@@ -461,6 +467,12 @@ export class PendleAdapter implements VendorAdapter {
           : undefined;
       const expiryTime = market.expiry ? new Date(market.expiry).getTime() : null;
 
+      // Derive PT spot from Pendle's valuation. Underlying spot is left null —
+      // the UI hook resolves it from the matching opportunity record.
+      const ptAmountFloat = Number(rawAmount) / 10 ** tokenDecimals;
+      const sharePriceFromValuation =
+        ptAmountFloat > 0 && valueUsd > 0 ? valueUsd / ptAmountFloat : null;
+
       positions.push({
         opportunityId: market.address,
         category: OpportunityCategory.FixedYield,
@@ -473,6 +485,8 @@ export class PendleAdapter implements VendorAdapter {
         tokenDecimals,
         tokenIcon: market.ptToken?.icon,
         projectedEarningsUsd,
+        // tokenAddress is the PT contract — price comes from valuation/balance.
+        tokenPriceUsd: sharePriceFromValuation,
         opportunity: {
           id: market.address,
           name: market.name,
@@ -588,6 +602,32 @@ export class PendleAdapter implements VendorAdapter {
     }
   }
 
+  /**
+   * Batched USD price lookup for the underlying assets and PT tokens of the given markets.
+   * Returns an empty map if Pendle's prices endpoint fails — opportunity rendering should
+   * not block on this.
+   */
+  private async fetchMarketPrices(
+    chainId: number,
+    markets: PendleMarket[],
+  ): Promise<Map<string, number | null>> {
+    if (!markets.length) return new Map();
+
+    const addresses: string[] = [];
+    for (const market of markets) {
+      const underlying = extractAddressFromTokenId(market.underlyingAsset);
+      if (underlying) addresses.push(underlying);
+      if (market.pt) addresses.push(extractAddressFromTokenId(market.pt));
+    }
+
+    try {
+      return await getPendleAssetPrices({ chainId, addresses });
+    } catch (error) {
+      console.warn('[PendleAdapter] fetchMarketPrices failed:', error);
+      return new Map();
+    }
+  }
+
   private filterPendleMarkets(
     markets: PendleMarket[],
     filters: OpportunityFilters,
@@ -621,12 +661,18 @@ export class PendleAdapter implements VendorAdapter {
     });
   }
 
-  private transformToStandard(market: PendleMarket): StandardOpportunity {
+  private transformToStandard(
+    market: PendleMarket,
+    priceMap?: Map<string, number | null>,
+  ): StandardOpportunity {
     const tvlUsd = getMarketTvl(market);
     const fixedApy = apyAsPercentage(market.details.impliedApy);
     const underlyingApy = apyAsPercentage(market.details.underlyingApy);
     const liquidityUsd = parseFiniteNumber(market.details.liquidity) ?? undefined;
     const tradingVolumeUsd = parseFiniteNumber(market.details.tradingVolume) ?? undefined;
+
+    const underlyingAddress = extractAddressFromTokenId(market.underlyingAsset).toLowerCase();
+    const ptAddress = extractAddressFromTokenId(market.pt).toLowerCase();
 
     return {
       id: market.address,
@@ -649,6 +695,10 @@ export class PendleAdapter implements VendorAdapter {
       tokenIcon: market.ptToken?.icon || '',
       tokenNetwork: 'Arbitrum',
       protocolIcon: PENDLE_LOGO_URL,
+      underlyingTokenAddress: underlyingAddress,
+      underlyingTokenPriceUsd: priceMap?.get(underlyingAddress) ?? null,
+      shareTokenAddress: ptAddress,
+      shareTokenPriceUsd: priceMap?.get(ptAddress) ?? null,
       fixedYield: {
         pt: market.pt,
         detailsTvlUsd: tvlUsd,

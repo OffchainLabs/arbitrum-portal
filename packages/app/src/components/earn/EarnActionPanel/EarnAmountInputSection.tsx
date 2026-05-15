@@ -22,6 +22,9 @@ interface EarnAmountInputSectionProps {
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
+  /** Vendor-canonical USD price for the input token. Takes precedence over the
+   * balance-derived per-unit calculation (which requires a non-zero balance). */
+  tokenPriceUsd?: number | null;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
@@ -37,6 +40,7 @@ export function EarnAmountInputSection({
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
+  tokenPriceUsd,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
@@ -48,9 +52,11 @@ export function EarnAmountInputSection({
       ? currentBalanceAmount
       : 0;
   const perUnitUsd =
-    currentBalanceNumeric > 0 && currentUsdValue != null
-      ? currentUsdValue / currentBalanceNumeric
-      : null;
+    typeof tokenPriceUsd === 'number' && Number.isFinite(tokenPriceUsd) && tokenPriceUsd > 0
+      ? tokenPriceUsd
+      : currentBalanceNumeric > 0 && currentUsdValue != null
+        ? currentUsdValue / currentBalanceNumeric
+        : null;
   const currentInputUsdValue =
     perUnitUsd != null
       ? Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd

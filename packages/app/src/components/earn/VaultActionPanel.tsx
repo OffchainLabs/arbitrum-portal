@@ -8,6 +8,7 @@ import { useAccount, useBalance } from 'wagmi';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { useEarnPrices } from '@/app-hooks/earn/useEarnPrices';
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
@@ -207,6 +208,15 @@ export function VaultActionPanel({
     enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
   });
 
+  const { getPrice } = useEarnPrices({
+    userAddress: walletAddress ?? null,
+    chainId: requestChainId,
+  });
+  const inputTokenPriceUsd = getPrice({
+    chainId: requestChainId,
+    tokenAddress: assetTokenAddress,
+  });
+
   const onTransactionFinished = useCallback(
     async ({ txHash }: { txHash: string | undefined }) => {
       setAmount('');
@@ -260,6 +270,7 @@ export function VaultActionPanel({
         {
           action: selectedAction === 'supply' ? 'supply' : 'withdraw',
           ...transactionDetailsTemplate,
+          tokenPriceUsd: inputTokenPriceUsd,
           txHash: txHash ?? '',
           timestamp,
           networkFee,
@@ -271,6 +282,7 @@ export function VaultActionPanel({
       addTransaction,
       amountInRawUnits,
       estimatedTxCostUsd,
+      inputTokenPriceUsd,
       isConnected,
       posthog,
       refetchAssetBalance,
@@ -444,6 +456,7 @@ export function VaultActionPanel({
         currentBalance={currentBalanceFormatted}
         currentBalanceAmount={currentBalanceAmount}
         currentUsdValue={selectedActionValues.usdValue}
+        tokenPriceUsd={inputTokenPriceUsd}
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
         validationError={

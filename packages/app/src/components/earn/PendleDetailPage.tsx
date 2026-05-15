@@ -3,7 +3,7 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { BigNumber } from 'ethers';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
@@ -87,6 +87,26 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
 
   const underlyingAssetSymbol =
     opportunity.name?.replace(/^PT\s+/i, '').trim() || opportunity.token || 'PT';
+
+  const tokenPriceBySymbol = useMemo<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    if (
+      underlyingAssetSymbol &&
+      typeof opportunity.underlyingTokenPriceUsd === 'number' &&
+      opportunity.underlyingTokenPriceUsd > 0
+    ) {
+      map[underlyingAssetSymbol.toUpperCase()] = opportunity.underlyingTokenPriceUsd;
+    }
+    if (
+      typeof opportunity.shareTokenPriceUsd === 'number' &&
+      opportunity.shareTokenPriceUsd > 0 &&
+      underlyingAssetSymbol
+    ) {
+      // PT symbol convention used in TX history rows: "PT" + underlying symbol.
+      map[`PT${underlyingAssetSymbol}`.toUpperCase()] = opportunity.shareTokenPriceUsd;
+    }
+    return map;
+  }, [opportunity.shareTokenPriceUsd, opportunity.underlyingTokenPriceUsd, underlyingAssetSymbol]);
 
   const fixedApy = fixedYield.detailsImpliedApy;
   const underlyingApy = fixedYield.detailsUnderlyingApy;
@@ -262,6 +282,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
             protocolName="Pendle"
             protocolLogo={PENDLE_LOGO_URL}
             onTransactionClick={showTransactionDetails}
+            tokenPriceBySymbol={tokenPriceBySymbol}
           />
         </div>
 

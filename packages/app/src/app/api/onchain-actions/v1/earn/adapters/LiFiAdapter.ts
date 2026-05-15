@@ -8,7 +8,7 @@ import { rpcURLs } from '@/bridge/util/networks';
 
 import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
-import { fetchLifiUserPositions } from '../lib/lifiPositions';
+import { fetchLifiUserPositions, fetchLiquidStakingPriceMap } from '../lib/lifiPositions';
 import { buildLifiQuoteData, buildLifiQuotePreviewData } from '../lib/lifiQuote';
 import { toStandardTransactionHistory } from '../lib/lifiTransactions';
 import {
@@ -112,8 +112,11 @@ export class LiFiAdapter implements VendorAdapter {
     // Create a copy of opportunities array to avoid mutating the original
     const opportunities = LIQUID_STAKING_OPPORTUNITIES.map((opp) => ({ ...opp }));
 
-    // Update opportunities with current APY/TVL from Dune (in parallel)
-    await updateLiquidStakingOpportunitiesWithDuneData(opportunities);
+    // Fetch APY/TVL from Dune and current prices from Zerion in parallel.
+    const [, priceMap] = await Promise.all([
+      updateLiquidStakingOpportunitiesWithDuneData(opportunities),
+      fetchLiquidStakingPriceMap(opportunities),
+    ]);
 
     let filtered = opportunities;
     if (filters.chainId && filters.chainId !== ChainId.ArbitrumOne) {
@@ -128,7 +131,7 @@ export class LiFiAdapter implements VendorAdapter {
       filtered = filtered.filter((o) => o.rawTvl == null || o.rawTvl >= minTvl);
     }
 
-    return filtered.map((opp) => this.transformToStandard(opp));
+    return filtered.map((opp) => this.transformToStandard(opp, priceMap));
   }
 
   async getOpportunityDetails(
@@ -154,10 +157,12 @@ export class LiFiAdapter implements VendorAdapter {
     // Create a copy to avoid mutating the original
     const opportunityCopy = { ...opportunity };
 
-    // Update opportunity with current APY/TVL from Dune
-    await updateLiquidStakingOpportunityWithDuneData(opportunityCopy);
+    const [, priceMap] = await Promise.all([
+      updateLiquidStakingOpportunityWithDuneData(opportunityCopy),
+      fetchLiquidStakingPriceMap([opportunityCopy]),
+    ]);
 
-    return this.transformToStandard(opportunityCopy);
+    return this.transformToStandard(opportunityCopy, priceMap);
   }
 
   async getHistoricalData(
@@ -412,7 +417,10 @@ export class LiFiAdapter implements VendorAdapter {
     return toStandardTransactionHistory(transfers, targetTokenAddress);
   }
 
-  private transformToStandard(opp: LiquidStakingOpportunitySeed): StandardOpportunity {
+  private transformToStandard(
+    opp: LiquidStakingOpportunitySeed,
+    priceMap?: Map<string, number | null>,
+  ): StandardOpportunity {
     const network = 'arbitrum';
     const vaultAddress = opp.vaultAddress || opp.id;
     return {
@@ -436,6 +444,11 @@ export class LiFiAdapter implements VendorAdapter {
       tokenIcon: opp.tokenIcon,
       tokenNetwork: opp.tokenNetwork || 'Arbitrum One',
       protocolIcon: opp.protocolIcon,
+      // For LST the staked token IS the asset — no separate share concept.
+      underlyingTokenAddress: vaultAddress.toLowerCase(),
+      underlyingTokenPriceUsd: priceMap?.get(opp.id.toLowerCase()) ?? null,
+      shareTokenAddress: null,
+      shareTokenPriceUsd: null,
     };
   }
 }

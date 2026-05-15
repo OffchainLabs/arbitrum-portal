@@ -109,6 +109,10 @@ export function MyPositionsPage() {
           ? dayjs(positionData.expiryDate).format('D MMM YYYY')
           : undefined,
         rawMaturityDate: positionData.expiryDate,
+        underlyingTokenAddress: positionData.tokenAddress?.toLowerCase() ?? null,
+        underlyingTokenPriceUsd: positionData.tokenPriceUsd,
+        shareTokenAddress: null,
+        shareTokenPriceUsd: null,
       } satisfies OpportunityTableRow);
     }
 

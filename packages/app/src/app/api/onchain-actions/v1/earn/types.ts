@@ -115,6 +115,13 @@ export interface StandardOpportunityBase {
   tokenIcon?: string;
   tokenNetwork?: string;
   protocolIcon?: string;
+  // Canonical assets surfaced for UI price math.
+  // - underlying: the asset the opportunity yields on (USDC for a USDC vault, sUSDai for a Pendle PT-sUSDai market).
+  // - share: the receipt token the user holds post-deposit (aUSDC LP, PT). Null when share === underlying (e.g. LST).
+  underlyingTokenAddress: string | null;
+  underlyingTokenPriceUsd: number | null;
+  shareTokenAddress: string | null;
+  shareTokenPriceUsd: number | null;
 }
 
 export interface StandardOpportunityLend extends StandardOpportunityBase {
@@ -313,6 +320,9 @@ export interface StandardUserPosition {
   tokenDecimals: number;
   tokenIcon?: string;
   projectedEarningsUsd?: number;
+  // USD price for `tokenAddress` — the one token this position holds.
+  // Vaults: underlying asset spot. LiFi LST: staked-token spot. Pendle: PT spot.
+  tokenPriceUsd: number | null;
   opportunity: {
     id: string;
     name: string;

@@ -91,8 +91,10 @@ export function getLiquidStakingHistoryValues({
   currentSymbol,
   currentDecimals,
   currentLogoUrl,
+  currentTokenAddress,
   outputTokenSymbol,
   outputTokenIcon,
+  outputTokenAddress,
   selectedSellToken,
 }: {
   selectedAction: 'buy' | 'sell';
@@ -101,14 +103,25 @@ export function getLiquidStakingHistoryValues({
   currentSymbol: string;
   currentDecimals: number;
   currentLogoUrl?: string;
+  currentTokenAddress?: string | null;
   outputTokenSymbol: string;
   outputTokenIcon?: string;
+  outputTokenAddress?: string | null;
   selectedSellToken?: {
     symbol: string;
     decimals: number;
     logoUrl?: string;
+    address?: string;
   };
-}) {
+}): {
+  hasReceiveAmount: boolean;
+  inputAssetLogo?: string;
+  historyAmountRaw: string;
+  historyTokenSymbol: string;
+  historyTokenDecimals: number;
+  historyAssetLogo?: string;
+  historyTokenAddress: string | null;
+} {
   const hasReceiveAmount = Boolean(quoteReceiveAmount && /^\d+$/.test(quoteReceiveAmount));
 
   if (!hasReceiveAmount) {
@@ -119,6 +132,7 @@ export function getLiquidStakingHistoryValues({
       historyTokenSymbol: currentSymbol,
       historyTokenDecimals: currentDecimals,
       historyAssetLogo: outputTokenIcon,
+      historyTokenAddress: currentTokenAddress ?? null,
     };
   }
 
@@ -130,6 +144,7 @@ export function getLiquidStakingHistoryValues({
       historyTokenSymbol: outputTokenSymbol,
       historyTokenDecimals: 18,
       historyAssetLogo: outputTokenIcon,
+      historyTokenAddress: outputTokenAddress ?? null,
     };
   }
 
@@ -140,5 +155,6 @@ export function getLiquidStakingHistoryValues({
     historyTokenSymbol: selectedSellToken?.symbol ?? currentSymbol,
     historyTokenDecimals: selectedSellToken?.decimals ?? currentDecimals,
     historyAssetLogo: selectedSellToken?.logoUrl || outputTokenIcon,
+    historyTokenAddress: selectedSellToken?.address ?? null,
   };
 }

@@ -11,6 +11,7 @@ import { Card } from '@/components/Card';
 
 import { useEarnActionTabs } from '../../hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '../../hooks/earn/useEarnGasEstimate';
+import { useEarnPrices } from '../../hooks/earn/useEarnPrices';
 import { checkAmountExceedsBalance } from '../../hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '../../hooks/earn/useEarnTransferReadiness';
 import { useLiquidStakingPanelControls } from '../../hooks/earn/useLiquidStakingPanelControls';
@@ -212,6 +213,15 @@ export function LiquidStakingActionPanel({
     [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
 
+  const { getPrice } = useEarnPrices({
+    userAddress: walletAddress ?? null,
+    chainId: requestChainId,
+  });
+  const inputTokenPriceUsd = getPrice({
+    chainId: requestChainId,
+    tokenAddress: currentActionValues.fromTokenAddress,
+  });
+
   const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
     chainId: requestChainId,
@@ -346,6 +356,7 @@ export function LiquidStakingActionPanel({
         currentBalance={data.amountSection.currentBalance}
         currentBalanceAmount={data.amountSection.currentBalanceAmount}
         currentUsdValue={data.amountSection.currentUsdValue}
+        tokenPriceUsd={inputTokenPriceUsd}
         isAmountExceedsBalance={data.amountSection.isAmountExceedsBalance}
         isConnected={isConnected}
         validationError={data.amountSection.validationError}
