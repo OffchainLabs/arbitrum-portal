@@ -8,7 +8,7 @@ import { useAccount, useBalance } from 'wagmi';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
-import { useEarnPrices } from '@/app-hooks/earn/useEarnPrices';
+import { useEarnTokenPrice } from '@/app-hooks/earn/useEarnPrices';
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
@@ -208,11 +208,7 @@ export function VaultActionPanel({
     enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
   });
 
-  const { getPrice } = useEarnPrices({
-    userAddress: walletAddress ?? null,
-    chainId: requestChainId,
-  });
-  const inputTokenPriceUsd = getPrice({
+  const inputTokenPriceUsd = useEarnTokenPrice({
     chainId: requestChainId,
     tokenAddress: assetTokenAddress,
   });
@@ -270,7 +266,6 @@ export function VaultActionPanel({
         {
           action: selectedAction === 'supply' ? 'supply' : 'withdraw',
           ...transactionDetailsTemplate,
-          tokenPriceUsd: inputTokenPriceUsd,
           txHash: txHash ?? '',
           timestamp,
           networkFee,
@@ -282,7 +277,6 @@ export function VaultActionPanel({
       addTransaction,
       amountInRawUnits,
       estimatedTxCostUsd,
-      inputTokenPriceUsd,
       isConnected,
       posthog,
       refetchAssetBalance,

@@ -4,27 +4,19 @@ import { usePostHog } from 'posthog-js/react';
 import { useCallback } from 'react';
 
 import { getLiquidStakingHistoryValues } from '@/app-lib/earn/utils';
-import {
-  type EarnChainId,
-  OpportunityCategory,
-  type StandardTransactionHistory,
-  Vendor,
-} from '@/earn-api/types';
+import { OpportunityCategory, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
 
 import type { TransactionDetails } from '../../components/earn/EarnTransactionDetailsPopup';
-import { useEarnPrices } from './useEarnPrices';
 
 interface TokenLike {
   symbol: string;
   decimals: number;
   logoUrl?: string;
-  address?: string;
 }
 
 interface CurrentActionValues {
   logoUrl?: string;
   selectedTokenAddress: string | null;
-  fromTokenAddress?: string | null;
   isNativeAsset: boolean;
 }
 
@@ -36,7 +28,6 @@ interface UseLiquidStakingTransactionSuccessParams {
   currentActionValues: CurrentActionValues;
   outputTokenSymbol: string;
   outputTokenIcon?: string;
-  outputTokenAddress?: string | null;
   selectedSellToken?: TokenLike;
   quoteReceiveAmount?: string;
   requestChainId: number;
@@ -73,7 +64,6 @@ export function useLiquidStakingTransactionSuccess({
   currentActionValues,
   outputTokenSymbol,
   outputTokenIcon,
-  outputTokenAddress,
   selectedSellToken,
   quoteReceiveAmount,
   requestChainId,
@@ -90,10 +80,6 @@ export function useLiquidStakingTransactionSuccess({
   resetAmount,
 }: UseLiquidStakingTransactionSuccessParams) {
   const posthog = usePostHog();
-  const { getPrice } = useEarnPrices({
-    userAddress: walletAddress ?? null,
-    chainId: requestChainId as EarnChainId,
-  });
 
   return useCallback(
     async (txHash: string | undefined) => {
@@ -115,7 +101,6 @@ export function useLiquidStakingTransactionSuccess({
         historyTokenSymbol,
         historyTokenDecimals,
         historyAssetLogo,
-        historyTokenAddress,
       } = getLiquidStakingHistoryValues({
         selectedAction,
         submittedAmountRaw,
@@ -123,22 +108,15 @@ export function useLiquidStakingTransactionSuccess({
         currentSymbol,
         currentDecimals,
         currentLogoUrl: currentActionValues.logoUrl,
-        currentTokenAddress: currentActionValues.fromTokenAddress,
         outputTokenSymbol,
         outputTokenIcon,
-        outputTokenAddress,
         selectedSellToken,
       });
-
-      const tokenPriceUsd = historyTokenAddress
-        ? getPrice({ chainId: requestChainId, tokenAddress: historyTokenAddress })
-        : null;
 
       const transactionDetails: TransactionDetails = {
         action: selectedAction,
         amount: historyAmountRaw,
         tokenSymbol: historyTokenSymbol,
-        tokenPriceUsd,
         decimals: historyTokenDecimals,
         assetLogo: historyAssetLogo,
         chainId: requestChainId,
@@ -207,10 +185,8 @@ export function useLiquidStakingTransactionSuccess({
       currentDecimals,
       currentSymbol,
       estimatedTxCostUsd,
-      getPrice,
       isConnected,
       opportunity,
-      outputTokenAddress,
       outputTokenIcon,
       outputTokenSymbol,
       posthog,

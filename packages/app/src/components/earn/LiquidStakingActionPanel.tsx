@@ -11,7 +11,7 @@ import { Card } from '@/components/Card';
 
 import { useEarnActionTabs } from '../../hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '../../hooks/earn/useEarnGasEstimate';
-import { useEarnPrices } from '../../hooks/earn/useEarnPrices';
+import { useEarnTokenPrice } from '../../hooks/earn/useEarnPrices';
 import { checkAmountExceedsBalance } from '../../hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '../../hooks/earn/useEarnTransferReadiness';
 import { useLiquidStakingPanelControls } from '../../hooks/earn/useLiquidStakingPanelControls';
@@ -213,11 +213,7 @@ export function LiquidStakingActionPanel({
     [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
 
-  const { getPrice } = useEarnPrices({
-    userAddress: walletAddress ?? null,
-    chainId: requestChainId,
-  });
-  const inputTokenPriceUsd = getPrice({
+  const inputTokenPriceUsd = useEarnTokenPrice({
     chainId: requestChainId,
     tokenAddress: currentActionValues.fromTokenAddress,
   });

@@ -2,7 +2,7 @@
 
 import { BigNumber } from 'ethers';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 
@@ -59,15 +59,6 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
   const lpTokenBalanceRaw = BigNumber.from(lpToken?.balanceNative ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
 
-  const tokenPriceBySymbol = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    const underlyingSymbol = opportunity.lend?.assetSymbol ?? opportunity.token;
-    const underlyingPrice = opportunity.underlyingTokenPriceUsd;
-    if (underlyingSymbol && typeof underlyingPrice === 'number' && underlyingPrice > 0) {
-      map[underlyingSymbol.toUpperCase()] = underlyingPrice;
-    }
-    return map;
-  }, [opportunity.lend?.assetSymbol, opportunity.token, opportunity.underlyingTokenPriceUsd]);
   const hasPosition = isConnected && lpTokenBalanceRaw.gt(0);
 
   const protocolName = opportunity.lend?.protocolName ?? opportunity.protocol;
@@ -226,7 +217,6 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
             protocolName={protocolName}
             protocolLogo={opportunity.lend?.protocolLogo}
             onTransactionClick={showTransactionDetails}
-            tokenPriceBySymbol={tokenPriceBySymbol}
           />
         </div>
 

@@ -89,7 +89,6 @@ export function useLiquidStakingPanelExecution({
     currentActionValues,
     outputTokenSymbol: opportunity.token,
     outputTokenIcon: opportunity.tokenIcon,
-    outputTokenAddress: opportunity.id,
     selectedSellToken,
     quoteReceiveAmount: quoteReceiveAmount || transactionQuote?.receiveAmount,
     requestChainId,

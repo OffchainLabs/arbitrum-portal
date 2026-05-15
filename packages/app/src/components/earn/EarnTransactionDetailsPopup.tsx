@@ -6,6 +6,7 @@ import { BigNumber, utils } from 'ethers';
 import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { useEarnPrices } from '@/app-hooks/earn/useEarnPrices';
 import { useEarnTransactionNetworkFee } from '@/app-hooks/earn/useEarnTransactionNetworkFee';
 import { Dialog } from '@/bridge/components/common/Dialog';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
@@ -21,8 +22,6 @@ export interface TransactionDetails {
   action: string;
   amount: string;
   tokenSymbol: string;
-  /** Pre-resolved USD price for the displayed token. Caller computes via useEarnPrices. */
-  tokenPriceUsd?: number | null;
   decimals: number;
   assetLogo?: string;
   txHash?: string;
@@ -70,6 +69,7 @@ export function EarnTransactionDetailsPopup({
     txHash: transactionDetails?.txHash,
     providedNetworkFee: transactionDetails?.networkFee,
   });
+  const { getPriceBySymbol } = useEarnPrices({ chainId: transactionDetails?.chainId });
 
   useEffect(() => {
     if (!isLoading && transactionDetails) {
@@ -116,7 +116,7 @@ export function EarnTransactionDetailsPopup({
     symbol: transactionDetails.tokenSymbol,
   });
 
-  const tokenPrice = transactionDetails.tokenPriceUsd ?? null;
+  const tokenPrice = getPriceBySymbol({ chainId, symbol: transactionDetails.tokenSymbol });
   const formattedUsd =
     tokenPrice !== null && tokenPrice > 0
       ? (() => {

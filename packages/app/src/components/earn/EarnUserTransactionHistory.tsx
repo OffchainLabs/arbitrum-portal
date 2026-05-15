@@ -36,7 +36,6 @@ interface EarnUserTransactionHistoryProps {
   protocolName?: string;
   protocolLogo?: string;
   onTransactionClick?: (details: TransactionDetails, isCompleted?: boolean) => void;
-  tokenPriceBySymbol?: Record<string, number>;
 }
 
 const ITEMS_PER_PAGE = 5;
@@ -67,7 +66,6 @@ export function EarnUserTransactionHistory({
   protocolName,
   protocolLogo,
   onTransactionClick,
-  tokenPriceBySymbol,
 }: EarnUserTransactionHistoryProps) {
   const posthog = usePostHog();
   const { address: walletAddress } = useAccount();
@@ -150,7 +148,6 @@ export function EarnUserTransactionHistory({
         opportunityName={opportunityName}
         protocolName={protocolName}
         protocolLogo={protocolLogo}
-        tokenPriceBySymbol={tokenPriceBySymbol}
       />
       <EarnPagination
         currentPage={currentPage}

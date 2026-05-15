@@ -403,7 +403,6 @@ export function usePendlePanelData({
     outputTokenSymbol,
     outputTokenDecimals,
     outputTokenLogo,
-    outputTokenAddress,
     receiveAmount,
     outputBalance,
     validationError,

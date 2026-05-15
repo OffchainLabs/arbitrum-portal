@@ -12,7 +12,6 @@ import type { StandardOpportunityFixedYield, StandardTransactionHistory } from '
 import type { TransactionDetails } from '../../components/earn/EarnTransactionDetailsPopup';
 import type { EarnTokenOption } from '../../components/earn/earnTokenDropdownOptions';
 import type { PendleAction } from './pendlePanelUtils';
-import { useEarnPrices } from './useEarnPrices';
 
 interface UsePendlePanelExecutionParams {
   opportunity: StandardOpportunityFixedYield;
@@ -27,7 +26,6 @@ interface UsePendlePanelExecutionParams {
   outputTokenSymbol: string;
   outputTokenDecimals: number;
   outputTokenLogo?: string;
-  outputTokenAddress?: string | null;
   slippagePercent: number;
   estimatedTxCost?: {
     eth: string;
@@ -73,7 +71,6 @@ export function usePendlePanelExecution({
   outputTokenSymbol,
   outputTokenDecimals,
   outputTokenLogo,
-  outputTokenAddress,
   slippagePercent,
   estimatedTxCost,
   transactionQuote,
@@ -91,10 +88,6 @@ export function usePendlePanelExecution({
     walletAddress || null,
     opportunity.chainId,
   );
-  const { getPrice } = useEarnPrices({
-    userAddress: walletAddress ?? null,
-    chainId: opportunity.chainId,
-  });
 
   const handleTransactionSuccess = useCallback(
     async (txHash: string | undefined) => {
@@ -128,9 +121,6 @@ export function usePendlePanelExecution({
       const historyAssetLogo = hasReceiveAmount
         ? outputTokenLogo || opportunity.tokenIcon
         : inputAssetLogo;
-      const historyAssetAddress = hasReceiveAmount
-        ? (outputTokenAddress ?? null)
-        : (selectedInputToken?.address ?? null);
 
       if (walletAddress && txHash) {
         posthog?.capture('Earn Transaction Succeeded', {
@@ -177,16 +167,11 @@ export function usePendlePanelExecution({
       }
 
       if (txHash) {
-        const tokenPriceUsd = historyAssetAddress
-          ? getPrice({ chainId: opportunity.chainId, tokenAddress: historyAssetAddress })
-          : null;
-
         showTransactionDetails(
           {
             action: selectedAction,
             amount: historyAmountRaw,
             tokenSymbol: historyAssetSymbol,
-            tokenPriceUsd,
             decimals: historyAssetDecimals,
             assetLogo: historyAssetLogo,
             chainId: opportunity.chainId,
@@ -211,10 +196,8 @@ export function usePendlePanelExecution({
       currentInputDecimals,
       currentInputSymbol,
       estimatedTxCost,
-      getPrice,
       isConnected,
       opportunity,
-      outputTokenAddress,
       outputTokenDecimals,
       outputTokenLogo,
       outputTokenSymbol,
@@ -223,7 +206,6 @@ export function usePendlePanelExecution({
       refetch,
       resetAmount,
       selectedAction,
-      selectedInputToken?.address,
       selectedInputToken?.logoUrl,
       showTransactionDetails,
       slippagePercent,

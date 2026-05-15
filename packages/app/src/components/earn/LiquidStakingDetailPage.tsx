@@ -45,18 +45,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
   const requestChainId = opportunity.chainId;
   const { positionsMap } = useUserPositions(isConnected ? walletAddress : null, [requestChainId]);
 
-  const tokenPriceBySymbol = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    if (
-      opportunity.token &&
-      typeof opportunity.underlyingTokenPriceUsd === 'number' &&
-      opportunity.underlyingTokenPriceUsd > 0
-    ) {
-      map[opportunity.token.toUpperCase()] = opportunity.underlyingTokenPriceUsd;
-    }
-    return map;
-  }, [opportunity.token, opportunity.underlyingTokenPriceUsd]);
-
   const opportunityWithPosition = useMemo(() => {
     const opportunityId = opportunity.id.toLowerCase();
     const vaultAddress = opportunity.vaultAddress?.toLowerCase();
@@ -273,7 +261,6 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
             protocolName={opportunity.protocol}
             protocolLogo={opportunity.protocolIcon}
             onTransactionClick={showTransactionDetails}
-            tokenPriceBySymbol={tokenPriceBySymbol}
           />
         </div>
 
