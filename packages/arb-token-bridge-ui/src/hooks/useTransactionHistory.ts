@@ -322,7 +322,7 @@ export async function fetchWithdrawalsInBatches(
         latestBlock: latestBlockNumber,
       });
       if (firstBlock > fromBlock) {
-        fromBlock = firstBlock;
+        fromBlock = Math.max(0, firstBlock - 1);
       }
     }
   }
