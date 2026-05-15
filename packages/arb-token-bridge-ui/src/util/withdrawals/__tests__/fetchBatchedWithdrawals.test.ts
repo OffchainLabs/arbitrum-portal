@@ -122,7 +122,10 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       firstNonZeroBlock,
     });
-    const spy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
 
     await fetchWithdrawalsInBatches({
       sender: SENDER,
@@ -133,11 +136,12 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       pageSize: 1000,
     });
 
-    expect(spy).toHaveBeenCalled();
-    const firstCallFromBlock = spy.mock.calls[0]?.[0].fromBlock;
-    expect(firstCallFromBlock).toBe(firstNonZeroBlock - 1);
+    expect(searchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(firstNonZeroBlock - 1);
 
-    spy.mockRestore();
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
   });
 
   it('falls back to the default fromBlock when historical nonce lookup throws', async () => {
@@ -147,8 +151,10 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       failHistoricalLookup: true,
     });
-    const fallbackSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
 
     await fetchWithdrawalsInBatches({
       sender: SENDER,
@@ -159,12 +165,94 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       pageSize: 1000,
     });
 
-    expect(fallbackSpy).toHaveBeenCalled();
-    await expect(fallbackSpy.mock.results[0]?.value).resolves.toBe(0);
-    const firstCallFromBlock = fetchSpy.mock.calls[0]?.[0].fromBlock;
-    expect(firstCallFromBlock).toBe(1);
+    expect(searchSpy).toHaveBeenCalled();
+    await expect(searchSpy.mock.results[0]?.value).resolves.toBe(0);
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
 
-    fallbackSpy.mockRestore();
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search when batch size is above the threshold (e.g. ApeChain)', async () => {
+    const latestBlock = 38_000_000;
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock,
+      firstNonZeroBlock: 30_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 5_000_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search when sender !== receiver', async () => {
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock: 60_000_000,
+      firstNonZeroBlock: 50_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: '0x1111111111111111111111111111111111111111',
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search and the senderNonce gate when forceFetchReceived is true', async () => {
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock: 60_000_000,
+      firstNonZeroBlock: 50_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+      forceFetchReceived: true,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
     fetchSpy.mockRestore();
   });
 });
