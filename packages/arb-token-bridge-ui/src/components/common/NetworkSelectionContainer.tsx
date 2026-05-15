@@ -373,6 +373,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.core) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.core}
             chainGroup={chainGroupInfo.core}
             style={style}
             isConnected={isConnected}
@@ -383,6 +384,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.more) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.more}
             chainGroup={chainGroupInfo.more}
             style={style}
             isConnected={isConnected}
@@ -393,6 +395,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.orbit) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.orbit}
             chainGroup={chainGroupInfo.orbit}
             style={style}
             isConnected={isConnected}

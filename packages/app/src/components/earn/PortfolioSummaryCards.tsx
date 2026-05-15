@@ -6,7 +6,6 @@ import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import { usePortfolioMetrics } from '@/app-hooks/earn/usePortfolioMetrics';
 import {
   CATEGORY_INDICATOR_CLASS,
@@ -14,6 +13,7 @@ import {
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 
 function formatSignedPercentage(value: number) {
@@ -129,9 +129,7 @@ export function PortfolioSummaryCards({
                       Total value of all your positions across all protocols
                     </p>
                   }
-                  tippyProps={{
-                    placement: 'top',
-                  }}
+                  contentProps={{ side: 'top' }}
                 >
                   <div className="flex items-center justify-center cursor-pointer">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
@@ -194,9 +192,7 @@ export function PortfolioSummaryCards({
                       timeframe at the current APY
                     </p>
                   }
-                  tippyProps={{
-                    placement: 'top',
-                  }}
+                  contentProps={{ side: 'top' }}
                 >
                   <div className="flex items-center justify-center cursor-pointer">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
@@ -289,9 +285,7 @@ export function PortfolioSummaryCards({
                       )}
                     </div>
                   }
-                  tippyProps={{
-                    placement: 'top',
-                  }}
+                  contentProps={{ side: 'top' }}
                 >
                   <div className="flex items-center justify-center cursor-pointer">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />

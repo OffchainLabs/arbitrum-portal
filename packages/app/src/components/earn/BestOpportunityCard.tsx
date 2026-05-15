@@ -4,12 +4,12 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import {
   type OpportunitySelectHandler,
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 
 interface BestOpportunityCardProps {

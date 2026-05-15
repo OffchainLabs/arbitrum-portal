@@ -12,6 +12,9 @@ module.exports = {
   experimental: {
     externalDir: true,
   },
+  turbopack: {
+    root: path.resolve(__dirname, '../..'),
+  },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
     // pnpm's strict isolation can cause packages to resolve their own copy
@@ -21,6 +24,7 @@ module.exports = {
     const hoisted = (pkg) => path.resolve(__dirname, '../../node_modules', pkg);
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
       '@tanstack/react-query$': hoisted('@tanstack/react-query'),
       'overmind-react$': hoisted('overmind-react'),
       'overmind$': hoisted('overmind'),

@@ -9,9 +9,10 @@ import { DEFAULT_EARN_CHAIN_ID } from '@/earn-api/types';
 export async function generateMetadata({
   params,
 }: {
-  params: { category: string; id: string };
+  params: Promise<{ category: string; id: string }>;
 }): Promise<Metadata> {
-  const category = params.category as OpportunityCategory;
+  const { category: rawCategory, id } = await params;
+  const category = rawCategory as OpportunityCategory;
   const categoryLabel =
     category === 'lend'
       ? 'Lending Opportunity'
@@ -40,32 +41,30 @@ export async function generateMetadata({
     },
   };
 
-  if (!isAddress(params.id) || !OPPORTUNITY_CATEGORIES.includes(category)) {
+  if (!isAddress(id) || !OPPORTUNITY_CATEGORIES.includes(category)) {
     return fallbackMetadata;
   }
 
   return fallbackMetadata;
 }
 
-export default function OpportunityDetailPageRoute({
+export default async function OpportunityDetailPageRoute({
   params,
 }: {
-  params: { category: string; id: string };
+  params: Promise<{ category: string; id: string }>;
 }) {
-  if (!isAddress(params.id)) {
+  const { category: rawCategory, id } = await params;
+
+  if (!isAddress(id)) {
     return notFound();
   }
 
-  const category = params.category as OpportunityCategory;
+  const category = rawCategory as OpportunityCategory;
   if (!OPPORTUNITY_CATEGORIES.includes(category)) {
     return notFound();
   }
 
   return (
-    <OpportunityDetailPage
-      opportunityId={params.id}
-      category={category}
-      chainId={DEFAULT_EARN_CHAIN_ID}
-    />
+    <OpportunityDetailPage opportunityId={id} category={category} chainId={DEFAULT_EARN_CHAIN_ID} />
   );
 }

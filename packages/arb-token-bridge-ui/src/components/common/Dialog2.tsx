@@ -65,8 +65,9 @@ export type DialogType =
   | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
-  const resolveRef =
-    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>(null);
+  const resolveRef = useRef<
+    ((value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void) | null
+  >(null);
 
   // Whether the dialog is currently open
   const [openedDialogType, setOpenedDialogType] = useState<DialogType | null>(null);

@@ -22,7 +22,7 @@ export const FAQs = ({ content }: { content: FAQ[] }) => {
         >
           <Disclosure>
             {({ open }) => (
-              <>
+              <div>
                 <DisclosureButton className="flex w-full items-start justify-between text-left text-xl lg:items-center">
                   {c.q}
                   {open ? (
@@ -34,7 +34,7 @@ export const FAQs = ({ content }: { content: FAQ[] }) => {
                 <DisclosurePanel>
                   <div className="relative z-10 pr-[30px] pt-2 opacity-70 lg:pr-[150px]">{c.a}</div>
                 </DisclosurePanel>
-              </>
+              </div>
             )}
           </Disclosure>
         </Card>

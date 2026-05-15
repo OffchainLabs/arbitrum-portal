@@ -2,12 +2,12 @@ import { ChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import {
   CATEGORY_INDICATOR_CLASS,
   type OpportunitySelectHandler,
   OpportunityTableRow,
 } from '@/app-types/earn/vaults';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
@@ -41,7 +41,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
                     : 'This position has matured'}
                 </p>
               }
-              tippyProps={{ placement: 'top' }}
+              contentProps={{ side: 'top' }}
             >
               <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default self-start">
                 Matured
@@ -119,9 +119,7 @@ export function OpportunityCard({ opportunity, onOpportunitySelect }: Opportunit
                   </div>
                 </div>
               }
-              tippyProps={{
-                placement: 'top',
-              }}
+              contentProps={{ side: 'top' }}
             >
               <div className="w-5 h-5 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-full">
                 <SparklesIcon className="h-5 w-5 text-white opacity-50" />
