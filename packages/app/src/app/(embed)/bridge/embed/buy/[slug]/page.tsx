@@ -5,15 +5,18 @@ import { PathnameEnum } from '@/bridge/constants';
 import EmbedPageWrapper from '../../EmbedPageWrapper';
 
 type Props = {
-  searchParams: { [key: string]: string | string[] | undefined };
-  params: { slug: Slug };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ slug: Slug }>;
 };
 
-export default function EmbeddedBuyOnrampServicePage({ searchParams, params }: Props) {
+export default async function EmbeddedBuyOnrampServicePage({ searchParams, params }: Props) {
+  const resolvedSearchParams = await searchParams;
+  const { slug } = await params;
+
   return (
     <EmbedPageWrapper
-      searchParams={searchParams}
-      redirectPath={`${PathnameEnum.EMBED_BUY}/${params.slug}`}
+      searchParams={resolvedSearchParams}
+      redirectPath={`${PathnameEnum.EMBED_BUY}/${slug}`}
     />
   );
 }

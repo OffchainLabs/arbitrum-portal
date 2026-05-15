@@ -4,13 +4,13 @@ import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicon
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useMemo, useState } from 'react';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import {
   OpportunityCategory,
   type OpportunitySelectHandler,
   OpportunityTableRow,
   getCategoryDisplayName,
 } from '@/app-types/earn/vaults';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { Button } from '@/bridge/components/common/Button';
 
 import { OpportunityCard } from './OpportunityCard';
@@ -132,9 +132,7 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
                 earnings may vary and are not guaranteed, as APY rates can change over time.
               </p>
             }
-            tippyProps={{
-              placement: 'top',
-            }}
+            contentProps={{ side: 'top' }}
           >
             <div className="flex items-center justify-center cursor-pointer">
               <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
@@ -339,9 +337,7 @@ export function OpportunitiesTable({
                         {CATEGORY_DESCRIPTIONS[category]}
                       </p>
                     }
-                    tippyProps={{
-                      placement: 'top',
-                    }}
+                    contentProps={{ side: 'top' }}
                   >
                     <div className="flex items-center justify-center cursor-pointer">
                       <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />

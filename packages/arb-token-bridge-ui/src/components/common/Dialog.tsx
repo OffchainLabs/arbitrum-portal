@@ -45,8 +45,9 @@ type UseDialogParams = {
 };
 
 export function useDialog(params?: UseDialogParams): UseDialogResult {
-  const resolveRef =
-    useRef<(value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void>(null);
+  const resolveRef = useRef<
+    ((value: [boolean, unknown] | PromiseLike<[boolean, unknown]>) => void) | null
+  >(null);
 
   // Whether the dialog is currently open
   const [isOpen, setIsOpen] = useState(params?.defaultIsOpen ?? false);

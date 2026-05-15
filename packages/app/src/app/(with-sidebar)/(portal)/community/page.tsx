@@ -33,7 +33,9 @@ export function generateMetadata(): Metadata {
 
 const fetchCalendarEvents = async () => {
   try {
-    const data = await fetch('https://arbitrum.io/__auto-generated-content.json');
+    const data = await fetch('https://arbitrum.io/__auto-generated-content.json', {
+      signal: AbortSignal.timeout(5000),
+    });
     const events = (await data.json()).content.homepage.news
       .events as ArbitrumWebsiteNotionCmsRow[];
 
