@@ -315,7 +315,10 @@ export async function fetchWithdrawalsInBatches(
       typeof params.batchSizeBlocks === 'number' &&
       params.batchSizeBlocks <= SMALL_BATCH_SIZE_THRESHOLD;
 
-    if (batchSizeIsSmall && params.receiver && addressesEqual(params.sender, params.receiver)) {
+    // Apply when there are no separate receiver queries to worry about:
+    // either receiver is undefined (e.g., SCW connected to child chain — only
+    // sent txns are fetched), or receiver == sender (EOA self-withdrawal).
+    if (batchSizeIsSmall && (!params.receiver || addressesEqual(params.sender, params.receiver))) {
       const firstBlock = await findFirstBlockWithNonce({
         address: params.sender,
         provider: params.l2Provider,

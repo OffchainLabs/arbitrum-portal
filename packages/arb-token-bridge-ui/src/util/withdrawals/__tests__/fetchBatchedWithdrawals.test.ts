@@ -201,6 +201,35 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     fetchSpy.mockRestore();
   });
 
+  it('applies the binary search when receiver is undefined (SCW connected to child chain)', async () => {
+    const latestBlock = 60_000_000;
+    const firstNonZeroBlock = 50_000_000;
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock,
+      firstNonZeroBlock,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: undefined,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(firstNonZeroBlock - 1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
   it('skips the binary search when sender !== receiver', async () => {
     const provider = createMockProvider({
       chainId: MIND_CHAIN_ID,
