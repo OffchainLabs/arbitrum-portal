@@ -84,6 +84,9 @@ jobs:
       - name: Install cypress
         run: pnpm cypress install
 
+      - name: Install Playwright chromium
+        run: pnpm --filter arb-token-bridge-ui exec playwright install --with-deps chromium
+
       - name: Install linux dependencies
         run: |
           sudo apt-get update
@@ -97,12 +100,6 @@ jobs:
           fluxbox &
         env:
           DISPLAY: :0.0
-
-      - name: Build Synpress wallet cache
-        run: yarn synpress:cache
-        env:
-          DISPLAY: :0.0
-          PRIVATE_KEY_USER: ${{ secrets.E2E_PRIVATE_KEY_USER }}
 
       - name: Run nitro testnode
         if: inputs.test_type != 'cctp'

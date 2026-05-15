@@ -1,13 +1,9 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2019",
-    "types": [
-      "./e2e/cypress.d.ts",
-      "@testing-library/cypress",
-      "@types/mocha",
-      "cypress"
-    ],
+    "target": "es2020",
+    "moduleResolution": "bundler",
+    "types": ["./e2e/cypress.d.ts", "@testing-library/cypress", "@types/mocha", "cypress"],
     "outDir": "./output"
   },
   "include": ["**/*.*"],

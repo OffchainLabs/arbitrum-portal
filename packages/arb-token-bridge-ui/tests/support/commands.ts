@@ -61,7 +61,7 @@ export function login({
     });
   }
 
-  cy.switchNetwork({ networkName: networkNameWithDefault, isTestnet: true }).then(() => {
+  cy.switchNetwork(networkNameWithDefault, true).then(() => {
     _startWebApp();
   });
 }
@@ -297,8 +297,15 @@ export function findClaimButton(
   return cy.findByLabelText(`Claim ${amountToClaim}`);
 }
 
-export function confirmSpending(spendLimit: string) {
-  cy.approveTokenPermission({ spendLimit });
+export function confirmSpending(spendLimit: number | 'max' | string) {
+  const normalizedSpendLimit =
+    spendLimit === 'max' || typeof spendLimit === 'number' ? spendLimit : Number(spendLimit);
+
+  if (Number.isNaN(normalizedSpendLimit)) {
+    throw new Error(`Invalid MetaMask spend limit: ${spendLimit}`);
+  }
+
+  cy.approveTokenPermission({ spendLimit: normalizedSpendLimit });
 }
 
 export function claimCctp(amount: number, options: { accept: boolean }) {

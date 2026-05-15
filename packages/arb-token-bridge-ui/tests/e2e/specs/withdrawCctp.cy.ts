@@ -79,11 +79,11 @@ describe('Withdraw USDC through CCTP', () => {
     );
     cy.approveSwitchNetwork();
     cy.rejectTransaction();
-    cy.switchNetwork({ networkName: 'Arbitrum Sepolia', isTestnet: true });
+    cy.switchNetwork('Arbitrum Sepolia', true);
   });
 
   it('should claim deposit', () => {
-    cy.switchNetwork({ networkName: 'Sepolia', isTestnet: true });
+    cy.switchNetwork('Sepolia', true);
     cy.claimCctp(0.00012, { accept: true });
     cy.claimCctp(0.00013, { accept: true });
   });
