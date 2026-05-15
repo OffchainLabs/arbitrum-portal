@@ -12,7 +12,6 @@ export function getCommonSynpressConfig(shouldRecordVideo: boolean) {
     includeShadowDom: true,
     viewportWidth: 1366,
     viewportHeight: 850,
-    testIsolation: false,
     env: {
       coverage: false,
     },

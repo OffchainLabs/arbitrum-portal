@@ -214,6 +214,7 @@ export default defineConfig({
     specPattern: tests,
     supportFile: 'tests/support/index.ts',
     defaultCommandTimeout: 20_000,
+    testIsolation: false,
   },
 });
 
