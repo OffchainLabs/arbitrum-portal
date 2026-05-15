@@ -29,7 +29,7 @@ import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../st
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction, isTeleportTx } from '../types/Transactions';
-import { Address, getNonce } from '../util/AddressUtils';
+import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
@@ -276,7 +276,7 @@ export async function fetchWithdrawalsInBatches(
 ): Promise<Withdrawal[]> {
   const latestBlockNumber = await params.l2Provider.getBlockNumber();
 
-  const fromBlock = params.fromBlock ?? 1;
+  let fromBlock = params.fromBlock ?? 1;
   const toBlock = params.toBlock ?? latestBlockNumber;
 
   if (toBlock < fromBlock) {
@@ -299,6 +299,34 @@ export async function fetchWithdrawalsInBatches(
     );
     if (senderNonce === 0) {
       return [];
+    }
+
+    // For self-withdrawals on Orbit chains (sender == receiver), the user
+    // can't have any withdrawals before their first L2 tx. Binary-search
+    // for that block (~log2(latestBlock) RPCs) and use it as the lower bound
+    // to skip empty pre-history.
+    //
+    // Only do this when BATCH_FETCH_BLOCKS is small. On chains like ApeChain
+    // (5M batch size, ~8 total batches), the ~25 sequential probe calls cost
+    // more than they save. On Mind/T-REX (10k batch size, hundreds/thousands
+    // of batches), the savings dominate.
+    const SMALL_BATCH_SIZE_THRESHOLD = 100_000;
+    const batchSizeIsSmall =
+      typeof params.batchSizeBlocks === 'number' &&
+      params.batchSizeBlocks <= SMALL_BATCH_SIZE_THRESHOLD;
+
+    // Apply when there are no separate receiver queries to worry about:
+    // either receiver is undefined (e.g., SCW connected to child chain — only
+    // sent txns are fetched), or receiver == sender (EOA self-withdrawal).
+    if (batchSizeIsSmall && (!params.receiver || addressesEqual(params.sender, params.receiver))) {
+      const firstBlock = await findFirstBlockWithNonce({
+        address: params.sender,
+        provider: params.l2Provider,
+        latestBlock: latestBlockNumber,
+      });
+      if (firstBlock > fromBlock) {
+        fromBlock = Math.max(0, firstBlock - 1);
+      }
     }
   }
 
