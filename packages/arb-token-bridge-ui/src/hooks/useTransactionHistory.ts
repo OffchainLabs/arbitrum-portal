@@ -76,6 +76,7 @@ export type UseTransactionHistoryResult = {
   completed: boolean;
   error: unknown;
   failedChainPairs: ChainPair[];
+  failedTxs: FailedTx[];
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
@@ -83,6 +84,12 @@ export type UseTransactionHistoryResult = {
 };
 
 export type ChainPair = { parentChainId: ChainId; childChainId: ChainId };
+
+export type FailedTx = {
+  txId: string;
+  parentChainId: ChainId | undefined;
+  childChainId: ChainId | undefined;
+};
 
 export type Deposit = Transaction;
 
@@ -649,6 +656,10 @@ export const useTransactionHistory = (
     failedChainPairs,
   } = useTransactionHistoryWithoutStatuses(address);
 
+  const { data: failedTxs, mutate: mutateFailedTxs } = useSWRImmutable<FailedTx[]>(
+    address ? ['failed_txs', address] : null,
+  );
+
   const getCacheKey = useCallback(
     (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
       if (prevPageTxs) {
@@ -726,7 +737,7 @@ export const useTransactionHistory = (
     isLoading: isLoadingFirstPage,
   } = useSWRInfinite(
     getCacheKey,
-    ([, , _page, _data]) => {
+    async ([, , _page, _data]) => {
       // we get cached data and dedupe here because we need to ensure _data never mutates
       // otherwise, if we added a new tx to cache, it would return a new reference and cause the SWR key to update, resulting in refetching
       const dataWithCache = _data.concat(depositsFromCache);
@@ -740,8 +751,55 @@ export const useTransactionHistory = (
 
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
+      const batch = dedupedTransactions.slice(startIndex, endIndex);
 
-      return Promise.all(dedupedTransactions.slice(startIndex, endIndex).map(transformTransaction));
+      // allSettled so a single bad tx doesn't tank the whole page
+      const settled = await Promise.allSettled(batch.map(transformTransaction));
+
+      const succeeded: MergedTransaction[] = [];
+      const newlyFailed: FailedTx[] = [];
+
+      settled.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          succeeded.push(result.value);
+          return;
+        }
+        const tx = batch[i];
+        if (!tx) return;
+        const txId = getTxIdFromTransaction(tx) ?? 'unknown';
+        const parentChainId = ('parentChainId' in tx ? tx.parentChainId : undefined) as
+          | ChainId
+          | undefined;
+        const childChainId = ('childChainId' in tx ? tx.childChainId : undefined) as
+          | ChainId
+          | undefined;
+
+        // allSettled swallows rejections; report each one to Sentry so per-tx
+        // failures remain observable.
+        captureSentryErrorWithExtraData({
+          error: result.reason,
+          originFunction: 'useTransactionHistory.transformTransaction',
+          additionalData: {
+            txId,
+            parentChainId: String(parentChainId ?? 'unknown'),
+            childChainId: String(childChainId ?? 'unknown'),
+          },
+        });
+
+        newlyFailed.push({ txId, parentChainId, childChainId });
+      });
+
+      if (newlyFailed.length > 0) {
+        mutateFailedTxs((prev) => {
+          const merged = [...(prev ?? [])];
+          for (const f of newlyFailed) {
+            if (!merged.some((m) => m.txId === f.txId)) merged.push(f);
+          }
+          return merged;
+        }, false);
+      }
+
+      return succeeded;
     },
     {
       revalidateOnFocus: false,
@@ -987,6 +1045,7 @@ export const useTransactionHistory = (
       loading: isLoadingTxsWithoutStatus,
       error,
       failedChainPairs: [],
+      failedTxs: failedTxs ?? [],
       completed: true,
       pause,
       resume,
@@ -1001,6 +1060,7 @@ export const useTransactionHistory = (
     completed,
     error: txPagesError ?? error,
     failedChainPairs,
+    failedTxs: failedTxs ?? [],
     pause,
     resume,
     addPendingTransaction,
