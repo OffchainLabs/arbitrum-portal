@@ -61,7 +61,7 @@ export function login({
     });
   }
 
-  cy.changeMetamaskNetwork(networkNameWithDefault).then(() => {
+  cy.switchNetwork(networkNameWithDefault, true).then(() => {
     _startWebApp();
   });
 }
@@ -183,10 +183,7 @@ export function clickMoveFundsButton({
   cy.findMoveFundsButton().click();
   cy.wait(15_000);
   if (shouldConfirmInMetamask) {
-    cy.confirmMetamaskTransaction({
-      gasConfig: 'market',
-      shouldWaitForPopupClosure: true,
-    });
+    cy.confirmTransaction();
   }
 }
 
@@ -300,22 +297,15 @@ export function findClaimButton(
   return cy.findByLabelText(`Claim ${amountToClaim}`);
 }
 
-/**
- * Currently, Synpress confirmMetamaskPermissionToSpend is clicking only once
- * We need to call it twice to confirm it.
- * shouldWaitForPopupClosure needs to be set to true for the test to pass
- */
-export function confirmSpending(
-  spendLimit: Parameters<typeof cy.confirmMetamaskPermissionToSpend>[0]['spendLimit'],
-) {
-  cy.confirmMetamaskPermissionToSpend({
-    spendLimit,
-    shouldWaitForPopupClosure: true,
-  });
-  cy.confirmMetamaskPermissionToSpend({
-    spendLimit,
-    shouldWaitForPopupClosure: true,
-  });
+export function confirmSpending(spendLimit: number | 'max' | string) {
+  const normalizedSpendLimit =
+    spendLimit === 'max' || typeof spendLimit === 'number' ? spendLimit : Number(spendLimit);
+
+  if (Number.isNaN(normalizedSpendLimit)) {
+    throw new Error(`Invalid MetaMask spend limit: ${spendLimit}`);
+  }
+
+  cy.approveTokenPermission({ spendLimit: normalizedSpendLimit });
 }
 
 export function claimCctp(amount: number, options: { accept: boolean }) {
@@ -329,11 +319,11 @@ export function claimCctp(amount: number, options: { accept: boolean }) {
   });
   cy.findClaimButton(formattedAmount, { timeout: 120_000 }).click();
   if (options.accept) {
-    cy.confirmMetamaskTransaction({ gasConfig: 'aggressive' });
+    cy.confirmTransaction();
     cy.findByLabelText('show settled transactions').should('be.visible').click();
     cy.findByText(formattedAmount).should('be.visible');
   } else {
-    cy.rejectMetamaskTransaction();
+    cy.rejectTransaction();
   }
 }
 

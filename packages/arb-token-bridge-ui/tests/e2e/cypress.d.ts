@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import '@synthetixio/synpress/support/index.d.ts';
+import '@synthetixio/synpress/cypress/support';
 import 'cypress-wait-until';
 
 import {
@@ -59,7 +59,9 @@ declare global {
       findMoveFundsButton: typeof findMoveFundsButton;
       clickMoveFundsButton: typeof clickMoveFundsButton;
       findSelectTokenButton: typeof findSelectTokenButton;
-      openTransactionDetails: typeof openTransactionDetails;
+      openTransactionDetails(
+        params: Parameters<typeof openTransactionDetails>[0],
+      ): ReturnType<typeof openTransactionDetails>;
       closeTransactionDetails: typeof closeTransactionDetails;
       switchToTransferPanelTab: typeof switchToTransferPanelTab;
       switchToTransactionHistoryTab: typeof switchToTransactionHistoryTab;

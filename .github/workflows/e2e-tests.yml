@@ -84,6 +84,9 @@ jobs:
       - name: Install cypress
         run: pnpm cypress install
 
+      - name: Install Playwright chromium
+        run: pnpm --filter arb-token-bridge-ui exec playwright install --with-deps chromium
+
       - name: Install linux dependencies
         run: |
           sudo apt-get update

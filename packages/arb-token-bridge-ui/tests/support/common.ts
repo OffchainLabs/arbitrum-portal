@@ -150,14 +150,8 @@ export async function getInitialERC20Balance({
   return tokenData?.balance;
 }
 
-export const acceptMetamaskAccess = () => {
-  cy.acceptMetamaskAccess().then(() => {
-    cy.isCypressWindowActive().then((cyWindowIsActive) => {
-      if (!cyWindowIsActive) {
-        cy.switchToCypressWindow().should('be.true');
-      }
-    });
-  });
+export const connectToDapp = () => {
+  cy.connectToDapp();
 };
 
 export const startWebApp = (
@@ -183,8 +177,8 @@ export const startWebApp = (
       cy.findAllByText('Connect Wallet').first().should('be.visible');
       if (options.connectMetamask) {
         cy.findAllByText('Connect Wallet').first().click();
-        cy.contains('MetaMask').should('be.visible').click();
-        acceptMetamaskAccess();
+        cy.findByText('MetaMask').should('be.visible').click();
+        connectToDapp();
         cy.task('setWalletConnectedToDapp');
       }
     }

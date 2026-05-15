@@ -47,7 +47,7 @@ describe('Approve token for deposit', () => {
        * We add another check to make sure the test fails if needed
        */
       cy.wait(25_000);
-      cy.rejectMetamaskTransaction();
+      cy.rejectTransaction();
     });
   });
 });
