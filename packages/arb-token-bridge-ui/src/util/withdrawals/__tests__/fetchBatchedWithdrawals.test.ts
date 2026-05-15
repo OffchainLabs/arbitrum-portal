@@ -1,6 +1,9 @@
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
+import * as addressUtils from '../../AddressUtils';
+import { initializeBridgeNetworks } from '../../networks';
 import * as fetchModule from '../fetchWithdrawals';
 import { getQueryCoveringClassicAndNitroWithResults } from './fetchWithdrawalsTestHelpers';
 
@@ -69,3 +72,216 @@ describe.sequential(
     });
   },
 );
+
+describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orbit chains', () => {
+  // Register Mind/T-REX as Orbit chains for isNetwork().isOrbitChain checks
+  initializeBridgeNetworks();
+
+  const SENDER = '0x2Ce910fBba65B454bBAf6A18c952A70f3bcd8299';
+  const MIND_CHAIN_ID = 228;
+  const TREX_CHAIN_ID = 1628;
+
+  function createMockProvider({
+    chainId,
+    latestBlock,
+    firstNonZeroBlock,
+    failHistoricalLookup = false,
+  }: {
+    chainId: number;
+    latestBlock: number;
+    firstNonZeroBlock?: number;
+    failHistoricalLookup?: boolean;
+  }) {
+    const provider = new StaticJsonRpcProvider('http://test.invalid', {
+      name: 'mock',
+      chainId,
+    });
+    provider.getBlockNumber = vi.fn().mockResolvedValue(latestBlock);
+    provider.getTransactionCount = vi
+      .fn()
+      .mockImplementation((_address: string, blockTag?: number | string) => {
+        // Initial nonce lookup (no block tag) — used by the senderNonce > 0 gate
+        if (typeof blockTag === 'undefined') {
+          return Promise.resolve(5);
+        }
+        // Historical lookups — used by the binary search
+        if (failHistoricalLookup) {
+          return Promise.reject(new Error('historical state not supported'));
+        }
+        const block = typeof blockTag === 'number' ? blockTag : latestBlock;
+        return Promise.resolve(block >= (firstNonZeroBlock ?? 0) ? 1 : 0);
+      });
+    return provider;
+  }
+
+  it('sets fromBlock to firstBlock - 1 for self-withdrawals when batch size is small', async () => {
+    const latestBlock = 60_000_000;
+    const firstNonZeroBlock = 50_000_000;
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock,
+      firstNonZeroBlock,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(firstNonZeroBlock - 1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('falls back to the default fromBlock when historical nonce lookup throws', async () => {
+    const latestBlock = 100_000;
+    const provider = createMockProvider({
+      chainId: TREX_CHAIN_ID,
+      latestBlock,
+      failHistoricalLookup: true,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).toHaveBeenCalled();
+    await expect(searchSpy.mock.results[0]?.value).resolves.toBe(0);
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search when batch size is above the threshold (e.g. ApeChain)', async () => {
+    const latestBlock = 38_000_000;
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock,
+      firstNonZeroBlock: 30_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 5_000_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('applies the binary search when receiver is undefined (SCW connected to child chain)', async () => {
+    const latestBlock = 60_000_000;
+    const firstNonZeroBlock = 50_000_000;
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock,
+      firstNonZeroBlock,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: undefined,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(firstNonZeroBlock - 1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search when sender !== receiver', async () => {
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock: 60_000_000,
+      firstNonZeroBlock: 50_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: '0x1111111111111111111111111111111111111111',
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it('skips the binary search and the senderNonce gate when forceFetchReceived is true', async () => {
+    const provider = createMockProvider({
+      chainId: MIND_CHAIN_ID,
+      latestBlock: 60_000_000,
+      firstNonZeroBlock: 50_000_000,
+    });
+    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    searchSpy.mockClear();
+    const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
+    fetchSpy.mockClear();
+
+    await fetchWithdrawalsInBatches({
+      sender: SENDER,
+      receiver: SENDER,
+      parentChainId: 1,
+      l2Provider: provider,
+      batchSizeBlocks: 10_000,
+      pageSize: 1000,
+      forceFetchReceived: true,
+    });
+
+    expect(searchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls[0]?.[0].fromBlock).toBe(1);
+
+    searchSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+});
