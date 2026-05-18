@@ -627,27 +627,13 @@ export async function getPendleAssetPrices(params: {
   const response = await fetch(url.toString());
   if (!response.ok) throw new Error(await parsePendleApiError(response));
 
-  const payload = (await response.json()) as
-    | { pricesUsd?: Record<string, number | string> }
-    | { prices?: Record<string, number | string> }
-    | { data?: Array<{ address?: string; priceUsd?: number | string; price?: number | string }> };
+  const payload = (await response.json()) as {
+    pricesUsd?: Record<string, number | string>;
+  };
 
-  const priceMap =
-    ('pricesUsd' in payload && payload.pricesUsd) ||
-    ('prices' in payload && payload.prices) ||
-    null;
-
-  if (priceMap) {
-    for (const [addr, raw] of Object.entries(priceMap)) {
-      const num = Number(raw);
-      result.set(addr.toLowerCase(), Number.isFinite(num) ? num : null);
-    }
-  } else if ('data' in payload && Array.isArray(payload.data)) {
-    for (const item of payload.data) {
-      if (!item?.address) continue;
-      const num = Number(item.priceUsd ?? item.price);
-      result.set(item.address.toLowerCase(), Number.isFinite(num) ? num : null);
-    }
+  for (const [addr, raw] of Object.entries(payload.pricesUsd ?? {})) {
+    const num = Number(raw);
+    result.set(addr.toLowerCase(), Number.isFinite(num) ? num : null);
   }
 
   return result;

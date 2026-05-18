@@ -58,7 +58,6 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
   const lpTokenDecimals = lpToken?.decimals || 18;
   const lpTokenBalanceRaw = BigNumber.from(lpToken?.balanceNative ?? '0');
   const lpTokenUsdValue = parseFloat(lpToken?.balanceUsd ?? '0');
-
   const hasPosition = isConnected && lpTokenBalanceRaw.gt(0);
 
   const protocolName = opportunity.lend?.protocolName ?? opportunity.protocol;

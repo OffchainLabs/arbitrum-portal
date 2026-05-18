@@ -602,6 +602,13 @@ export class PendleAdapter implements VendorAdapter {
     }
   }
 
+  private getMarketAddresses(market: PendleMarket): { underlying: string; pt: string } {
+    return {
+      underlying: extractAddressFromTokenId(market.underlyingAsset).toLowerCase(),
+      pt: extractAddressFromTokenId(market.pt).toLowerCase(),
+    };
+  }
+
   /**
    * Batched USD price lookup for the underlying assets and PT tokens of the given markets.
    * Returns an empty map if Pendle's prices endpoint fails — opportunity rendering should
@@ -615,9 +622,9 @@ export class PendleAdapter implements VendorAdapter {
 
     const addresses: string[] = [];
     for (const market of markets) {
-      const underlying = extractAddressFromTokenId(market.underlyingAsset);
+      const { underlying, pt } = this.getMarketAddresses(market);
       if (underlying) addresses.push(underlying);
-      if (market.pt) addresses.push(extractAddressFromTokenId(market.pt));
+      if (pt) addresses.push(pt);
     }
 
     try {
@@ -671,8 +678,7 @@ export class PendleAdapter implements VendorAdapter {
     const liquidityUsd = parseFiniteNumber(market.details.liquidity) ?? undefined;
     const tradingVolumeUsd = parseFiniteNumber(market.details.tradingVolume) ?? undefined;
 
-    const underlyingAddress = extractAddressFromTokenId(market.underlyingAsset).toLowerCase();
-    const ptAddress = extractAddressFromTokenId(market.pt).toLowerCase();
+    const { underlying: underlyingAddress, pt: ptAddress } = this.getMarketAddresses(market);
 
     return {
       id: market.address,

@@ -1,7 +1,7 @@
 'use client';
 
 import { constants } from 'ethers';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { useETHPrice } from '@/bridge/hooks/useETHPrice';
@@ -50,7 +50,7 @@ export interface UseEarnPricesResult {
 /**
  * USD price snapshot for any asset surfaced by Earn opportunities or positions.
  * Pure derivation — no extra fetch. Use for input × price previews, balance USD
- * lines, and TX history USD math.
+ * lines, and TX history USD math. Native ETH is handled by `useEarnTokenPrice`.
  */
 export function useEarnPrices(params?: {
   userAddress?: string | null;
@@ -61,9 +61,6 @@ export function useEarnPrices(params?: {
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(params?.userAddress, [
     chainId,
   ]);
-  // Native ETH is not in the Earn catalog — but it's a common LST swap source.
-  // Use the bridge-side useETHPrice (LiFi → Coinbase fallback) to fill that gap.
-  const { ethPrice } = useETHPrice();
 
   const { priceByAddress, priceBySymbol } = useMemo(() => {
     const byAddress = new Map<string, number>();
@@ -104,25 +101,33 @@ export function useEarnPrices(params?: {
     return { priceByAddress: byAddress, priceBySymbol: bySymbol };
   }, [opportunities, positionsMap, chainId]);
 
-  return {
-    getPrice: (asset) => {
+  const getPrice = useCallback(
+    (asset: AssetDescriptor) => {
       if (!asset.tokenAddress) return null;
-      if (isNativeEth(asset.tokenAddress)) {
-        return isPositiveFiniteNumber(ethPrice) ? ethPrice : null;
-      }
       return priceByAddress.get(makeAddressKey(asset.chainId, asset.tokenAddress)) ?? null;
     },
-    getPriceBySymbol: (asset) => {
+    [priceByAddress],
+  );
+
+  const getPriceBySymbol = useCallback(
+    (asset: SymbolDescriptor) => {
       if (!asset.symbol) return null;
       return priceBySymbol.get(makeSymbolKey(asset.chainId, asset.symbol)) ?? null;
     },
+    [priceBySymbol],
+  );
+
+  return {
+    getPrice,
+    getPriceBySymbol,
     isLoading: opportunitiesLoading || positionsLoading,
   };
 }
 
 /**
  * One-shot price lookup for a single `(chainId, tokenAddress)`. Resolves the
- * connected wallet so position-derived prices flow in automatically.
+ * connected wallet so position-derived prices flow in automatically, and falls
+ * back to the bridge-side ETH price (LiFi → Coinbase) for native ETH inputs.
  */
 export function useEarnTokenPrice(asset: {
   chainId: EarnChainId;
@@ -130,5 +135,9 @@ export function useEarnTokenPrice(asset: {
 }): number | null {
   const { address } = useAccount();
   const { getPrice } = useEarnPrices({ chainId: asset.chainId, userAddress: address ?? null });
+  const { ethPrice } = useETHPrice();
+  if (asset.tokenAddress && isNativeEth(asset.tokenAddress)) {
+    return isPositiveFiniteNumber(ethPrice) ? ethPrice : null;
+  }
   return getPrice(asset);
 }

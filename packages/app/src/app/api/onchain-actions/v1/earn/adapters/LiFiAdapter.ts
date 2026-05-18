@@ -423,6 +423,9 @@ export class LiFiAdapter implements VendorAdapter {
   ): StandardOpportunity {
     const network = 'arbitrum';
     const vaultAddress = opp.vaultAddress || opp.id;
+    // For LST the staked token IS the asset — `opp.id` is the canonical key used
+    // both for price-map registration and for downstream consumer lookups.
+    const stakedTokenAddress = opp.id.toLowerCase();
     return {
       id: vaultAddress,
       chainId: ChainId.ArbitrumOne,
@@ -444,9 +447,8 @@ export class LiFiAdapter implements VendorAdapter {
       tokenIcon: opp.tokenIcon,
       tokenNetwork: opp.tokenNetwork || 'Arbitrum One',
       protocolIcon: opp.protocolIcon,
-      // For LST the staked token IS the asset — no separate share concept.
-      underlyingTokenAddress: vaultAddress.toLowerCase(),
-      underlyingTokenPriceUsd: priceMap?.get(opp.id.toLowerCase()) ?? null,
+      underlyingTokenAddress: stakedTokenAddress,
+      underlyingTokenPriceUsd: priceMap?.get(stakedTokenAddress) ?? null,
       shareTokenAddress: null,
       shareTokenPriceUsd: null,
     };
