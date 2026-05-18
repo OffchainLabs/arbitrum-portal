@@ -4,6 +4,7 @@ import { constants } from 'ethers';
 import { useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
+import { parseFiniteNumber } from '@/app-lib/earn/utils';
 import { useETHPrice } from '@/bridge/hooks/useETHPrice';
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
@@ -28,10 +29,6 @@ function makeAddressKey(chainId: number, tokenAddress: string): string {
 
 function makeSymbolKey(chainId: number, symbol: string): string {
   return `${chainId}:${symbol.toUpperCase()}`;
-}
-
-function isPositiveFiniteNumber(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
 function isNativeEth(tokenAddress: string): boolean {
@@ -59,34 +56,31 @@ export function useEarnPrices(params?: {
     const bySymbol = new Map<string, number>();
 
     for (const row of opportunities) {
-      if (row.underlyingTokenAddress && isPositiveFiniteNumber(row.underlyingTokenPriceUsd)) {
-        byAddress.set(
-          makeAddressKey(row.chainId, row.underlyingTokenAddress),
-          row.underlyingTokenPriceUsd,
-        );
+      const underlyingPrice = parseFiniteNumber(row.underlyingTokenPriceUsd, { min: 0 });
+      const sharePrice = parseFiniteNumber(row.shareTokenPriceUsd, { min: 0 });
+
+      if (row.underlyingTokenAddress && underlyingPrice) {
+        byAddress.set(makeAddressKey(row.chainId, row.underlyingTokenAddress), underlyingPrice);
       }
-      if (row.shareTokenAddress && isPositiveFiniteNumber(row.shareTokenPriceUsd)) {
-        byAddress.set(makeAddressKey(row.chainId, row.shareTokenAddress), row.shareTokenPriceUsd);
+      if (row.shareTokenAddress && sharePrice) {
+        byAddress.set(makeAddressKey(row.chainId, row.shareTokenAddress), sharePrice);
       }
-      if (row.token && isPositiveFiniteNumber(row.underlyingTokenPriceUsd)) {
-        bySymbol.set(makeSymbolKey(row.chainId, row.token), row.underlyingTokenPriceUsd);
+      if (row.token && underlyingPrice) {
+        bySymbol.set(makeSymbolKey(row.chainId, row.token), underlyingPrice);
       }
       // Pendle's tx history uses the "PT"+underlying convention as the row symbol.
-      if (
-        row.category === OpportunityCategory.FixedYield &&
-        row.token &&
-        isPositiveFiniteNumber(row.shareTokenPriceUsd)
-      ) {
-        bySymbol.set(makeSymbolKey(row.chainId, `PT${row.token}`), row.shareTokenPriceUsd);
+      if (row.category === OpportunityCategory.FixedYield && row.token && sharePrice) {
+        bySymbol.set(makeSymbolKey(row.chainId, `PT${row.token}`), sharePrice);
       }
     }
 
     for (const position of positionsMap.values()) {
-      if (!position.tokenAddress || !isPositiveFiniteNumber(position.tokenPriceUsd)) continue;
+      const positionPrice = parseFiniteNumber(position.tokenPriceUsd, { min: 0 });
+      if (!position.tokenAddress || !positionPrice) continue;
       const key = makeAddressKey(chainId, position.tokenAddress);
       // Don't overwrite a richer opportunity-derived price.
       if (!byAddress.has(key)) {
-        byAddress.set(key, position.tokenPriceUsd);
+        byAddress.set(key, positionPrice);
       }
     }
 
@@ -124,7 +118,7 @@ export function useEarnTokenPrice(asset: {
   const { getPrice } = useEarnPrices({ chainId: asset.chainId, userAddress: address ?? null });
   const { ethPrice } = useETHPrice();
   if (asset.tokenAddress && isNativeEth(asset.tokenAddress)) {
-    return isPositiveFiniteNumber(ethPrice) ? ethPrice : null;
+    return parseFiniteNumber(ethPrice, { min: 0 }) || null;
   }
   return getPrice(asset);
 }
