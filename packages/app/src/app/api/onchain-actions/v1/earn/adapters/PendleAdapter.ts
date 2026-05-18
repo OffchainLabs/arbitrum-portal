@@ -467,8 +467,6 @@ export class PendleAdapter implements VendorAdapter {
           : undefined;
       const expiryTime = market.expiry ? new Date(market.expiry).getTime() : null;
 
-      // Derive PT spot from Pendle's valuation. Underlying spot is left null —
-      // the UI hook resolves it from the matching opportunity record.
       const ptAmountFloat = parseFloat(utils.formatUnits(rawAmount, tokenDecimals));
       const sharePriceFromValuation =
         ptAmountFloat > 0 && valueUsd > 0 ? valueUsd / ptAmountFloat : null;
@@ -485,7 +483,6 @@ export class PendleAdapter implements VendorAdapter {
         tokenDecimals,
         tokenIcon: market.ptToken?.icon,
         projectedEarningsUsd,
-        // tokenAddress is the PT contract — price comes from valuation/balance.
         tokenPriceUsd: sharePriceFromValuation,
         opportunity: {
           id: market.address,
@@ -609,11 +606,7 @@ export class PendleAdapter implements VendorAdapter {
     };
   }
 
-  /**
-   * Batched USD price lookup for the underlying assets and PT tokens of the given markets.
-   * Returns an empty map if Pendle's prices endpoint fails — opportunity rendering should
-   * not block on this.
-   */
+  // Swallow failures: opportunity rendering must not block on the prices endpoint.
   private async fetchMarketPrices(
     chainId: number,
     markets: PendleMarket[],

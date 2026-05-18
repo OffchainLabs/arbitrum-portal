@@ -84,11 +84,7 @@ export function normalizeTokenAddress(tokenAddress: string | null): Address | un
   }
 }
 
-/**
- * Resolve the USD value of an input amount for an Earn action panel.
- * Prefers a vendor-canonical `tokenPriceUsd`; falls back to deriving a per-unit
- * price from the user's existing balance × its USD value.
- */
+// Prefers `tokenPriceUsd`; falls back to `currentUsdValue / currentBalanceAmount`.
 export function getEarnInputUsdValue(params: {
   amount: string;
   tokenPriceUsd?: number | null;

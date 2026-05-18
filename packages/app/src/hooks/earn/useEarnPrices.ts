@@ -39,19 +39,11 @@ function isNativeEth(tokenAddress: string): boolean {
 }
 
 export interface UseEarnPricesResult {
-  /** Latest USD price for `(chainId, tokenAddress)`. Null if not yet known. */
   getPrice: (asset: AssetDescriptor) => number | null;
-  /** Latest USD price for `(chainId, symbol)`. Used where addresses aren't on hand
-   * (e.g. transaction history rows). Handles Pendle's "PT"+underlying convention. */
   getPriceBySymbol: (asset: SymbolDescriptor) => number | null;
   isLoading: boolean;
 }
 
-/**
- * USD price snapshot for any asset surfaced by Earn opportunities or positions.
- * Pure derivation — no extra fetch. Use for input × price previews, balance USD
- * lines, and TX history USD math. Native ETH is handled by `useEarnTokenPrice`.
- */
 export function useEarnPrices(params?: {
   userAddress?: string | null;
   chainId?: EarnChainId;
@@ -124,11 +116,6 @@ export function useEarnPrices(params?: {
   };
 }
 
-/**
- * One-shot price lookup for a single `(chainId, tokenAddress)`. Resolves the
- * connected wallet so position-derived prices flow in automatically, and falls
- * back to the bridge-side ETH price (LiFi → Coinbase) for native ETH inputs.
- */
 export function useEarnTokenPrice(asset: {
   chainId: EarnChainId;
   tokenAddress?: string | null;

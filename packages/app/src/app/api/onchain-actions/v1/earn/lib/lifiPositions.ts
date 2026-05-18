@@ -12,10 +12,6 @@ import {
 } from './zerionPriceSources';
 import { fetchZerionCurrentPrices } from './zerionService';
 
-/**
- * Batched Zerion price lookup for a set of liquid-staking opportunities.
- * Returns a Map keyed by lowercased opportunity id (token address).
- */
 export async function fetchLiquidStakingPriceMap(
   opportunities: LiquidStakingOpportunitySeed[],
 ): Promise<Map<string, number | null>> {
@@ -105,7 +101,6 @@ export async function fetchLifiUserPositions(params: {
         tokenDecimals: decimalsNumber,
         tokenIcon: opportunity.tokenIcon,
         projectedEarningsUsd: projectedEarningsUsdNumber,
-        // tokenAddress is the staked token; for LST it doubles as the underlying.
         tokenPriceUsd: effectivePrice,
         opportunity: {
           id: tokenAddress,

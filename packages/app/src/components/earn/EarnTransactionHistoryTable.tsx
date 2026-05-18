@@ -133,8 +133,7 @@ function getDisplayAsset(
   }
 
   if (category === OpportunityCategory.LiquidStaking) {
-    // Always denominate in the staked token (the position asset).
-    // Buy: output is the staked token (received). Sell: input is the staked token (spent).
+    // Always denominate in the staked token: input on sell, output on buy.
     if (action === 'sell' && hasInputAsset) {
       return {
         amountRaw: row.inputAssetAmountRaw!,

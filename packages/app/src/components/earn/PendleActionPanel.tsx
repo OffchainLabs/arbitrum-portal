@@ -240,8 +240,6 @@ export function PendleActionPanel({
     logoUrl: data.fixedYield.ptTokenIcon,
   };
 
-  // Enter: input is selectedInputToken (typically the underlying, sometimes a swap source).
-  // Exit/redeem/rollover: input is the PT — price comes from the opportunity's share token.
   const inputTokenPriceUsd = useEarnTokenPrice({
     chainId: opportunity.chainId,
     tokenAddress:
@@ -249,8 +247,7 @@ export function PendleActionPanel({
         ? (selectedInputToken?.address ?? null)
         : (opportunity.shareTokenAddress ?? null),
   });
-  // Enter: receive is the PT. Exit/redeem: receive is the selected payout token.
-  // Rollover is skipped — receive is the target market's PT and not on hand here.
+  // Rollover skipped: receive is the target market's PT, not on hand here.
   const receiveTokenPriceUsd = useEarnTokenPrice({
     chainId: opportunity.chainId,
     tokenAddress:

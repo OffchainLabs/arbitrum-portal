@@ -605,11 +605,7 @@ export async function getPendleTransactionHistory({
   };
 }
 
-/**
- * Batched USD price lookup for Pendle assets (PT, SY, YT, underlying).
- * Returns a Map keyed by lowercased address. Missing entries map to null.
- * Docs: https://api-v2.pendle.finance/core/docs#tag/assets/get/v1/prices/assets
- */
+// Docs: https://api-v2.pendle.finance/core/docs#tag/assets/get/v1/prices/assets
 export async function getPendleAssetPrices(params: {
   chainId: number;
   addresses: string[];

@@ -112,7 +112,6 @@ export class LiFiAdapter implements VendorAdapter {
     // Create a copy of opportunities array to avoid mutating the original
     const opportunities = LIQUID_STAKING_OPPORTUNITIES.map((opp) => ({ ...opp }));
 
-    // Fetch APY/TVL from Dune and current prices from Zerion in parallel.
     const [, priceMap] = await Promise.all([
       updateLiquidStakingOpportunitiesWithDuneData(opportunities),
       fetchLiquidStakingPriceMap(opportunities),
@@ -423,8 +422,7 @@ export class LiFiAdapter implements VendorAdapter {
   ): StandardOpportunity {
     const network = 'arbitrum';
     const vaultAddress = opp.vaultAddress || opp.id;
-    // For LST the staked token IS the asset — `opp.id` is the canonical key used
-    // both for price-map registration and for downstream consumer lookups.
+    // Canonical price-map key; consumers also look up by the staked-token address.
     const stakedTokenAddress = opp.id.toLowerCase();
     return {
       id: vaultAddress,

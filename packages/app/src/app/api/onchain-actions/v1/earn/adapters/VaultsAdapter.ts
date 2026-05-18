@@ -562,7 +562,6 @@ export class VaultsAdapter implements VendorAdapter {
         tokenDecimals: lpTokenDecimals,
         tokenIcon: position.asset?.assetLogo,
         projectedEarningsUsd,
-        // tokenAddress points to the underlying asset for Vaults positions.
         tokenPriceUsd: parseOptionalNumber(position.asset?.assetPriceInUsd),
         opportunity: {
           id: addressLower,

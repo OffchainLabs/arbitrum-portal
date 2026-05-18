@@ -217,8 +217,6 @@ export function LiquidStakingActionPanel({
     chainId: requestChainId,
     tokenAddress: currentActionValues.fromTokenAddress,
   });
-  // Receive token price: on buy the user receives the LST; on sell they receive
-  // the selected payout token (which may be native ETH — useEarnPrices handles it).
   const receiveTokenPriceUsd = useEarnTokenPrice({
     chainId: requestChainId,
     tokenAddress:

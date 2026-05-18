@@ -15,8 +15,6 @@ interface LiquidStakingAmountSectionProps {
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
-  /** Vendor-canonical USD price for the input token. Takes precedence over the
-   * balance-derived per-unit calculation (which requires a non-zero balance). */
   tokenPriceUsd?: number | null;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
