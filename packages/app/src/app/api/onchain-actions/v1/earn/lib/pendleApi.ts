@@ -605,7 +605,7 @@ export async function getPendleTransactionHistory({
   };
 }
 
-// Docs: https://api-v2.pendle.finance/core/docs#tag/assets/get/v1/prices/assets
+// GET /v1/{chainId}/assets/prices?addresses=0x... → { prices: { "0x...": number } }
 export async function getPendleAssetPrices(params: {
   chainId: number;
   addresses: string[];
@@ -624,10 +624,10 @@ export async function getPendleAssetPrices(params: {
   if (!response.ok) throw new Error(await parsePendleApiError(response));
 
   const payload = (await response.json()) as {
-    pricesUsd?: Record<string, number | string>;
+    prices?: Record<string, number | string>;
   };
 
-  for (const [addr, raw] of Object.entries(payload.pricesUsd ?? {})) {
+  for (const [addr, raw] of Object.entries(payload.prices ?? {})) {
     const num = Number(raw);
     result.set(addr.toLowerCase(), Number.isFinite(num) ? num : null);
   }
