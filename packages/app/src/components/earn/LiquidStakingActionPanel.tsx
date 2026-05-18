@@ -6,7 +6,7 @@ import { useAccount, useBalance } from 'wagmi';
 
 import { normalizeTokenAddress, sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
+import { formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 
 import { useEarnActionTabs } from '../../hooks/earn/useEarnActionTabs';
@@ -217,6 +217,13 @@ export function LiquidStakingActionPanel({
     chainId: requestChainId,
     tokenAddress: currentActionValues.fromTokenAddress,
   });
+  // Receive token price: on buy the user receives the LST; on sell they receive
+  // the selected payout token (which may be native ETH — useEarnPrices handles it).
+  const receiveTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress:
+      controls.selectedAction === 'buy' ? outputTokenAddress : controls.selectedSellToken.address,
+  });
 
   const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
@@ -230,6 +237,13 @@ export function LiquidStakingActionPanel({
     selectedAction: controls.selectedAction,
     selectedSellTokenDecimals: controls.selectedSellToken.decimals,
   });
+
+  const receiveUsdValue = useMemo(() => {
+    if (!receiveAmount || receiveTokenPriceUsd === null) return undefined;
+    const amt = parseFloat(receiveAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return undefined;
+    return `~${formatUSD(amt * receiveTokenPriceUsd)}`;
+  }, [receiveAmount, receiveTokenPriceUsd]);
 
   const transferReadiness = useEarnTransferReadiness({
     amount: controls.amount,
@@ -365,7 +379,7 @@ export function LiquidStakingActionPanel({
         isLoading={data.receiveSection.isLoading}
         token={data.receiveSection.token}
         tokenControl={data.receiveSection.tokenControl}
-        usdValue={data.receiveSection.usdValue}
+        usdValue={receiveUsdValue ?? data.receiveSection.usdValue}
       />
 
       <div className="flex flex-col gap-3">

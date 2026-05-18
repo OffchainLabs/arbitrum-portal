@@ -289,6 +289,15 @@ export async function fetchAlignedPriceLookup(
       const price = priceByBucket.get(bucket);
       if (price !== undefined) best = price;
     }
+    // If `wanted` is earlier than every Zerion bucket (e.g. Dune's daily point
+    // pre-dates Zerion's 24h "day" window on 1D), anchor to the earliest known
+    // price instead of dropping to null — better than a missing chart.
+    if (best === null) {
+      const earliest = sortedBuckets[0];
+      if (earliest !== undefined) {
+        best = priceByBucket.get(earliest) ?? null;
+      }
+    }
     return best;
   };
 }
