@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { Address, encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL, PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
@@ -469,7 +469,7 @@ export class PendleAdapter implements VendorAdapter {
 
       // Derive PT spot from Pendle's valuation. Underlying spot is left null —
       // the UI hook resolves it from the matching opportunity record.
-      const ptAmountFloat = Number(rawAmount) / 10 ** tokenDecimals;
+      const ptAmountFloat = parseFloat(utils.formatUnits(rawAmount, tokenDecimals));
       const sharePriceFromValuation =
         ptAmountFloat > 0 && valueUsd > 0 ? valueUsd / ptAmountFloat : null;
 

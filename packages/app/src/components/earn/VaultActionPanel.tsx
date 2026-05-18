@@ -208,9 +208,17 @@ export function VaultActionPanel({
     enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
   });
 
+  // Withdraw input is the LP/share token (not in the price catalog) — fall back to
+  // the balance-derived per-unit USD inside the amount section. For supply, pass
+  // AddressZero on native ETH so useEarnPrices hits its ETH fallback.
   const inputTokenPriceUsd = useEarnTokenPrice({
     chainId: requestChainId,
-    tokenAddress: assetTokenAddress,
+    tokenAddress:
+      selectedAction === 'supply'
+        ? isNativeAsset
+          ? constants.AddressZero
+          : assetTokenAddress
+        : null,
   });
 
   const onTransactionFinished = useCallback(
