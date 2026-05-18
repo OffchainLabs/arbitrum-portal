@@ -605,7 +605,8 @@ export async function getPendleTransactionHistory({
   };
 }
 
-// GET /v1/{chainId}/assets/prices?addresses=0x... → { prices: { "0x...": number } }
+// Docs: https://api-v2.pendle.finance/core/docs#tag/assets/get/v1/prices/assets
+// Response keys are "{chainId}-{address}"; we strip the prefix so consumers look up by plain address.
 export async function getPendleAssetPrices(params: {
   chainId: number;
   addresses: string[];
@@ -617,7 +618,8 @@ export async function getPendleAssetPrices(params: {
   const unique = Array.from(new Set(addresses.map((a) => a.toLowerCase())));
   for (const addr of unique) result.set(addr, null);
 
-  const url = new URL(`${PENDLE_API_BASE_URL}/v1/${chainId}/assets/prices`);
+  const url = new URL(`${PENDLE_API_BASE_URL}/v1/prices/assets`);
+  url.searchParams.set('chainId', chainId.toString());
   url.searchParams.set('addresses', unique.join(','));
 
   const response = await fetch(url.toString());
@@ -627,7 +629,8 @@ export async function getPendleAssetPrices(params: {
     prices?: Record<string, number | string>;
   };
 
-  for (const [addr, raw] of Object.entries(payload.prices ?? {})) {
+  for (const [key, raw] of Object.entries(payload.prices ?? {})) {
+    const addr = key.split('-')[1] ?? key;
     const num = Number(raw);
     result.set(addr.toLowerCase(), Number.isFinite(num) ? num : null);
   }
