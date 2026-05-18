@@ -241,10 +241,13 @@ export function PendleActionPanel({
   };
 
   // Enter: input is selectedInputToken (typically the underlying, sometimes a swap source).
-  // Exit/redeem: input is the PT — fall back to balance-derived (user always has a position here).
+  // Exit/redeem/rollover: input is the PT — price comes from the opportunity's share token.
   const inputTokenPriceUsd = useEarnTokenPrice({
     chainId: opportunity.chainId,
-    tokenAddress: selectedAction === 'enter' ? (selectedInputToken?.address ?? null) : null,
+    tokenAddress:
+      selectedAction === 'enter'
+        ? (selectedInputToken?.address ?? null)
+        : (opportunity.shareTokenAddress ?? null),
   });
 
   const sharedAmountInputProps = {
