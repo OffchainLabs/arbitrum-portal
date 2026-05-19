@@ -1,5 +1,5 @@
-import offchainBase from '@offchainlabs/eslint-config-typescript/base';
-import offchainNext from '@offchainlabs/eslint-config-typescript/next';
+import offchainBase from '@offchainlabs/eslint-config-typescript/base.js';
+import offchainNext from '@offchainlabs/eslint-config-typescript/next.js';
 import tsParser from '@typescript-eslint/parser';
 import jestPlugin from 'eslint-plugin-jest';
 import zustandRules from 'eslint-plugin-zustand-rules';
