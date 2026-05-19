@@ -47,7 +47,7 @@ export const useAccountMenu = () => {
 
   const [udInfo, setUDInfo] = useState<UDInfo>(udInfoDefaults);
   const { data: ensName } = useEnsName({
-    address: ecosystem === 'evm' ? address : undefined,
+    address: ecosystem === 'evm' ? (address as `0x${string}`) : undefined,
     chainId: ChainId.Ethereum,
   });
 

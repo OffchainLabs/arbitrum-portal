@@ -172,7 +172,7 @@ describe('SolanaPocTransferPanel', () => {
       isLoading: false,
       mutate: vi.fn(),
       isValidating: false,
-    } as LifiRouteResult);
+    } as unknown as LifiRouteResult);
     vi.mocked(getStepTransaction).mockResolvedValue({
       transactionRequest: {
         data: 'serialized-solana-transaction',

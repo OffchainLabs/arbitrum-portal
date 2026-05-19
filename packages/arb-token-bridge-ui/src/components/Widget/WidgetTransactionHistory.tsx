@@ -32,7 +32,9 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
       account: { address: walletAddress },
     },
   } = useWallets();
-  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(walletAddress);
+  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(
+    walletAddress as `0x${string}`,
+  );
   const currentTx = transactions[0];
   const isLoading = transactions.length ? false : isLoadingTransactions;
 
