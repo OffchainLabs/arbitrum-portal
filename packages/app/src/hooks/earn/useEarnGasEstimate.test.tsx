@@ -241,7 +241,7 @@ describe('useEarnGasEstimate', () => {
       });
 
       expect(result.current.estimate?.eth).toBe('0.000021');
-      expect(result.current.estimate?.usd).toBe('0.08');
+      expect(result.current.estimate?.usd).toBe('0.084000');
     });
   });
 
@@ -365,7 +365,7 @@ describe('useEarnGasEstimate', () => {
       });
 
       expect(result.current.estimate?.eth).toBe('0.001000');
-      expect(result.current.estimate?.usd).toBe('4.00');
+      expect(result.current.estimate?.usd).toBe('4.000000');
       expect(result.current.error).toBeNull();
     });
 
@@ -433,7 +433,7 @@ describe('useEarnGasEstimate', () => {
       );
 
       // No onchain estimate possible (no steps), so API fallback kicks in
-      expect(result.current.estimate).toEqual({ eth: '—', usd: '2.50' });
+      expect(result.current.estimate).toEqual({ eth: '—', usd: '2.500000' });
       expect(result.current.isLoading).toBe(false);
     });
 
@@ -472,7 +472,7 @@ describe('useEarnGasEstimate', () => {
 
       // Onchain ETH cost converted via ETH price (21000 * 1 gwei = 0.000021 ETH * $4000)
       expect(result.current.estimate?.eth).toBe('0.000021');
-      expect(result.current.estimate?.usd).toBe('0.08');
+      expect(result.current.estimate?.usd).toBe('0.084000');
     });
   });
 });

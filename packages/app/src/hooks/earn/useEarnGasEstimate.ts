@@ -133,7 +133,7 @@ export function useEarnGasEstimate({
     const usdValue = ethToUSD(onchainEstimateEth);
     return {
       eth: onchainEstimateEth.toFixed(6),
-      usd: usdValue > 0 ? usdValue.toFixed(2) : null,
+      usd: usdValue > 0 ? usdValue.toFixed(6) : null,
     };
   }, [onchainEstimateEth, ethToUSD]);
 
@@ -146,7 +146,7 @@ export function useEarnGasEstimate({
     if (cost == null || cost <= 0) {
       return null;
     }
-    return { eth: '—', usd: cost.toFixed(2) };
+    return { eth: '—', usd: cost.toFixed(6) };
   }, [apiEstimate, onchainEstimate, isOnchainLoading]);
 
   return {

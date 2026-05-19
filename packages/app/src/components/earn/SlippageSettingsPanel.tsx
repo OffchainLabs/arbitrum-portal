@@ -94,7 +94,7 @@ export function SlippageSettingsPanel({
       </div>
       {open && (
         <>
-          <div className="flex flex-nowrap items-center gap-1 text-xs">
+          <div className="flex flex-nowrap items-start gap-1 text-xs py-2">
             {slippageIsTooLow ? (
               <>
                 <ExclamationCircleIcon className="h-4 w-4 shrink-0 text-orange" />
@@ -112,7 +112,7 @@ export function SlippageSettingsPanel({
             ) : (
               <>
                 <InformationCircleIcon className="h-4 w-4 shrink-0 text-gray-650" />
-                <span className="flex flex-nowrap gap-1 text-gray-650">
+                <span className="flex flex-wrap gap-1 whitespace-nowrap text-gray-650">
                   0.5% - 1% is the recommended range for slippage.{' '}
                   <ExternalLink
                     href="https://www.ledger.com/academy/what-is-slippage-in-crypto"
