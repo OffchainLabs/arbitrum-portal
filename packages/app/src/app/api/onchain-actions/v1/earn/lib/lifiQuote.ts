@@ -24,6 +24,20 @@ type LifiQuoteBuildResult = {
   priceImpact: number;
 };
 
+// LiFi liquid-staking flows on Arbitrum typically use 230-470k gas direct via
+// the LiFi diamond (0x1231deb6...); aggregator-routed flows (0xdb9b1e94...)
+// can spike to ~1.3M.
+// Sampled Lido wstETH via LiFi diamond (~300k):
+//   https://arbiscan.io/tx/0x7cb99bff05fc8c8a05e0674726e29e75f5fe1408a798ae040b4af036ef21cbac
+// Sampled Lido wstETH via aggregator (~1.1-1.3M):
+//   https://arbiscan.io/tx/0x8ae4b5e2dec77dce3c3405c229e6c33392cf41039e2567d6f1e29c9d04254c4b
+//   https://arbiscan.io/tx/0xc6e188198a79a41a26b6fc5fb0aaab5b79649c6dd1dffa3c471310d0b6c93c30
+// Sampled Ether.fi weETH via aggregator (~435k):
+//   https://arbiscan.io/tx/0xb40ede2bdcd4ec599963d870f7de6d223fdfc2cdf35b58a924d02c3d35f99c2e
+// Use 700k as a middle-ground fallback when on-chain simulation fails.
+const LIFI_APPROVAL_GAS_FALLBACK = 80_000;
+const LIFI_TRANSACTION_GAS_FALLBACK = 700_000;
+
 async function buildTransactionSteps({
   amount,
   inputTokenAddress,
@@ -64,6 +78,7 @@ async function buildTransactionSteps({
           value: '0',
           chainId: ChainId.ArbitrumOne,
           description: `Approve ${step.action.fromToken.symbol}`,
+          gasLimitFallback: LIFI_APPROVAL_GAS_FALLBACK,
         });
       }
     } catch (error) {
@@ -81,6 +96,7 @@ async function buildTransactionSteps({
     value: transactionValue,
     chainId: ChainId.ArbitrumOne,
     description: `Swap ${step.action.fromToken.symbol} to ${step.action.toToken.symbol}`,
+    gasLimitFallback: LIFI_TRANSACTION_GAS_FALLBACK,
   });
 
   return transactionSteps;

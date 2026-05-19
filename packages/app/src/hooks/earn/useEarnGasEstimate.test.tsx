@@ -9,6 +9,7 @@ import { useEarnGasEstimate } from './useEarnGasEstimate';
 
 const mockEstimateGas = vi.fn();
 const mockGetGasPrice = vi.fn();
+const mockEthPrice = vi.fn(() => 0);
 
 vi.mock('@uidotdev/usehooks', () => ({
   useDebounce: <T,>(value: T) => value,
@@ -21,6 +22,15 @@ vi.mock('wagmi', () => ({
 
 vi.mock('wagmi/actions', () => ({
   estimateGas: (...args: unknown[]) => mockEstimateGas(...args),
+}));
+
+vi.mock('@/bridge/hooks/useETHPrice', () => ({
+  useETHPrice: () => ({
+    ethPrice: mockEthPrice(),
+    ethToUSD: (eth: number) => eth * mockEthPrice(),
+    isValidating: false,
+    mutate: vi.fn(),
+  }),
 }));
 
 /**
@@ -56,6 +66,7 @@ const defaultParams = {
 
 afterEach(() => {
   vi.clearAllMocks();
+  mockEthPrice.mockReturnValue(0);
 });
 
 describe('useEarnGasEstimate', () => {
@@ -209,16 +220,18 @@ describe('useEarnGasEstimate', () => {
       expect(result.current.estimate?.eth).toBe('0.000021');
     });
 
-    it('includes USD estimate from apiEstimate when provided', async () => {
+    it('derives USD estimate from onchain ETH cost and ETH price', async () => {
+      // gasPrice = 1 gwei, gasLimit = 21000 => 0.000021 ETH * $4000 = $0.084
       mockGetGasPrice.mockResolvedValue(BigInt(1_000_000_000));
       mockEstimateGas.mockResolvedValue(BigInt(21_000));
+      mockEthPrice.mockReturnValue(4000);
 
       const { result } = renderHook(
         () =>
           useEarnGasEstimate({
             ...defaultParams,
             transactionSteps: [makeStep()],
-            apiEstimate: '1.5',
+            apiEstimate: '0',
           }),
         { wrapper: testWrapper },
       );
@@ -228,7 +241,7 @@ describe('useEarnGasEstimate', () => {
       });
 
       expect(result.current.estimate?.eth).toBe('0.000021');
-      expect(result.current.estimate?.usd).toBe('1.50');
+      expect(result.current.estimate?.usd).toBe('0.08');
     });
   });
 
@@ -332,9 +345,11 @@ describe('useEarnGasEstimate', () => {
   });
 
   describe('non-allowance errors', () => {
-    it('surfaces non-allowance errors', async () => {
+    it('falls back to heuristic gas estimate for non-allowance simulation failures', async () => {
+      // gasPrice = 1 gwei; transaction fallback = 1_000_000 gas => 0.001 ETH @ $4000 = $4.00
       mockGetGasPrice.mockResolvedValue(BigInt(1_000_000_000));
       mockEstimateGas.mockRejectedValue(new Error('execution reverted'));
+      mockEthPrice.mockReturnValue(4000);
 
       const { result } = renderHook(
         () =>
@@ -346,11 +361,62 @@ describe('useEarnGasEstimate', () => {
       );
 
       await waitFor(() => {
-        expect(result.current.error).not.toBeNull();
+        expect(result.current.estimate).not.toBeNull();
       });
 
-      expect(result.current.error?.message).toBe('execution reverted');
-      expect(result.current.estimate).toBeNull();
+      expect(result.current.estimate?.eth).toBe('0.001000');
+      expect(result.current.estimate?.usd).toBe('4.00');
+      expect(result.current.error).toBeNull();
+    });
+
+    it('falls back to heuristic gas estimate when one step in a multi-step quote fails', async () => {
+      // First (approval) step: 21000 gas; second (transaction) step: simulation reverts → 1_000_000 fallback
+      mockGetGasPrice.mockResolvedValue(BigInt(1_000_000_000));
+      mockEstimateGas
+        .mockResolvedValueOnce(BigInt(21_000))
+        .mockRejectedValueOnce(new Error('execution reverted'));
+
+      const { result } = renderHook(
+        () =>
+          useEarnGasEstimate({
+            ...defaultParams,
+            transactionSteps: [
+              makeStep({ step: 1, type: 'approval' }),
+              makeStep({ step: 2, type: 'transaction' }),
+            ],
+          }),
+        { wrapper: testWrapper },
+      );
+
+      await waitFor(() => {
+        expect(result.current.estimate).not.toBeNull();
+      });
+
+      // 21_000 + 1_000_000 = 1_021_000 gas at 1 gwei = 0.001021 ETH
+      expect(result.current.estimate?.eth).toBe('0.001021');
+      expect(result.current.error).toBeNull();
+    });
+
+    it('prefers the step-level gasLimitFallback over the generic default', async () => {
+      // Adapter attaches a vendor-specific fallback (e.g. Vaults: 250_000)
+      mockGetGasPrice.mockResolvedValue(BigInt(1_000_000_000));
+      mockEstimateGas.mockRejectedValue(new Error('execution reverted'));
+
+      const { result } = renderHook(
+        () =>
+          useEarnGasEstimate({
+            ...defaultParams,
+            transactionSteps: [makeStep({ gasLimitFallback: 250_000 })],
+          }),
+        { wrapper: testWrapper },
+      );
+
+      await waitFor(() => {
+        expect(result.current.estimate).not.toBeNull();
+      });
+
+      // 250_000 gas at 1 gwei = 0.000250 ETH (not the generic 1M default)
+      expect(result.current.estimate?.eth).toBe('0.000250');
     });
   });
 
@@ -388,6 +454,7 @@ describe('useEarnGasEstimate', () => {
     it('prefers onchain estimate over API fallback', async () => {
       mockGetGasPrice.mockResolvedValue(BigInt(1_000_000_000));
       mockEstimateGas.mockResolvedValue(BigInt(21_000));
+      mockEthPrice.mockReturnValue(4000);
 
       const { result } = renderHook(
         () =>
@@ -403,9 +470,9 @@ describe('useEarnGasEstimate', () => {
         expect(result.current.estimate).not.toBeNull();
       });
 
-      // Onchain estimate is used, with USD from apiEstimate
+      // Onchain ETH cost converted via ETH price (21000 * 1 gwei = 0.000021 ETH * $4000)
       expect(result.current.estimate?.eth).toBe('0.000021');
-      expect(result.current.estimate?.usd).toBe('5.00');
+      expect(result.current.estimate?.usd).toBe('0.08');
     });
   });
 });

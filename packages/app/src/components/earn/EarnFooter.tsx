@@ -1,5 +1,7 @@
 'use client';
 
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+
 import {
   ARBITRUM_TECHNOLOGY_LINK,
   DISCORD_LINK,
@@ -12,17 +14,26 @@ import {
 import { ExternalLink } from '@/components/ExternalLink';
 
 const EarnDisclaimer = () => (
-  <p>
-    The Arbitrum Portal is only a front-end interface for interacting with existing smart contract
-    protocols. It does not host or control the underlying DeFi smart contracts being presented to
-    you here, nor does it manage funds or make investing decisions on your behalf. You are solely
-    responsible for understanding how these protocols work before using them. To learn more about
-    the protocols we support and how we chose them, please visit our{' '}
-    <ExternalLink href={TERMS_OF_SERVICE_LINK} className="arb-hover text-white/50 underline">
-      terms of service page
-    </ExternalLink>
-    .
-  </p>
+  <div className="flex flex-col lg:flex-row items-start gap-5 rounded-2xl lg:bg-neutral-25 lg:p-8 py-8">
+    <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-2xl bg-neutral-50">
+      <ExclamationTriangleIcon className="h-6 w-6 text-white/50" />
+    </div>
+    <div className="flex flex-col gap-4 pt-3">
+      <p className="flex flex-wrap items-baseline gap-x-4">
+        <span className="font-medium text-white">Non-custodial interface.</span>
+        <span>
+          Third-party protocols only. Do your own independent research and proceed at your own risk.
+        </span>
+      </p>
+      <p>
+        Arbitrum Earn is a non-custodial interface for interacting with 3rd party protocols. Any
+        transactions are facilitated by 3rd party protocols that are not controlled by Arbitrum
+        Earn. Base APY, Rewards or any other amounts are provided by such protocols, not Arbitrum
+        Earn. Data is provided by 3rd parties for informational purposes only. Do your own research
+        and proceed at your own risk.
+      </p>
+    </div>
+  </div>
 );
 
 const footerLinks = [

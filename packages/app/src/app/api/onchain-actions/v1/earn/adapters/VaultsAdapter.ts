@@ -37,6 +37,17 @@ export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
 export type VaultsActionType = 'deposit' | 'redeem';
 
+// Vault deposit/redeem on Arbitrum is ~180-190k gas across Aave/Compound/Fluid/Morpho.
+// Sampled Aave v3 USDC deposits (~189k):
+//   https://arbiscan.io/tx/0xecb229fb75e36d8f64173b9d1466b48fb4aa549d3f7852dbdfe8e0f6cbc3e88d
+//   https://arbiscan.io/tx/0x39c358dbfe1e7da8ddd98555babebc42450f4d088a97c408f3dcd1362f2400f9
+// Sampled Aave v3 USDC redeems (~180k):
+//   https://arbiscan.io/tx/0x2d3d66b161b4119f5d433100c67051e5eb87bd6d8545691bfd222a6eacb2706c
+//   https://arbiscan.io/tx/0x4eb667a100ff1a1587e5ce6acb995e28bc86fa856834623e81c1d3d50370e0f0
+// Buffer to 250k to cover slower vaults (Morpho / Fluid).
+const VAULTS_APPROVAL_GAS_FALLBACK = 80_000;
+const VAULTS_TRANSACTION_GAS_FALLBACK = 250_000;
+
 type VaultHistoricalPoint = {
   timestamp: number;
   apy?: { total?: number } | null;
@@ -75,24 +86,22 @@ export class VaultsAdapter implements VendorAdapter {
       query: {
         allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
         allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] satisfies VaultsProtocol[],
+        onlyTransactional: true,
         minTvl: filters.minTvl,
         allowedAssets: [...DEFAULT_ALLOWED_ASSETS],
         perPage: filters.perPage || 50,
       },
     });
 
-    const vaults = response.data;
-
-    let filtered = vaults;
-    if (filters.minApy) {
-      filtered = filtered.filter((vault) => {
-        const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
-        const apyPercentage = parseOptionalPercentage(apyData?.total);
-        return (
-          apyPercentage !== null && filters.minApy !== undefined && apyPercentage >= filters.minApy
-        );
-      });
-    }
+    const minApy = filters.minApy ?? 0;
+    const filtered = response.data.filter((vault) => {
+      const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
+      const apyPercentage = parseOptionalPercentage(apyData?.total);
+      if (apyPercentage === null || apyPercentage <= 0) {
+        return false;
+      }
+      return apyPercentage >= minApy;
+    });
 
     return filtered.map((vault) => this.transformToStandard(vault));
   }
@@ -412,6 +421,10 @@ export class VaultsAdapter implements VendorAdapter {
           value: tx.value || '0',
           chainId: tx.chainId,
           description,
+          gasLimitFallback:
+            stepType === 'approval'
+              ? VAULTS_APPROVAL_GAS_FALLBACK
+              : VAULTS_TRANSACTION_GAS_FALLBACK,
         };
       },
     );
