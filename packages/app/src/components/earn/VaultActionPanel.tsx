@@ -8,6 +8,7 @@ import { useAccount, useBalance } from 'wagmi';
 import { useAvailableActions } from '@/app-hooks/earn/useAvailableActions';
 import { useEarnActionTabs } from '@/app-hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { useEarnTokenPrice } from '@/app-hooks/earn/useEarnPrices';
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import {
@@ -205,6 +206,18 @@ export function VaultActionPanel({
     walletAddress: walletAddress || undefined,
     apiEstimate: transactionQuote?.estimatedGasUsd,
     enabled: isConnected && !!walletAddress && chainId !== 0 && !amountExceedsBalance,
+  });
+
+  // Withdraw passes null → amount section falls back to balance-derived USD
+  // (LP token isn't in the price catalog). Supply uses AddressZero for the ETH fallback.
+  const inputTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress:
+      selectedAction === 'supply'
+        ? isNativeAsset
+          ? constants.AddressZero
+          : assetTokenAddress
+        : null,
   });
 
   const onTransactionFinished = useCallback(
@@ -444,6 +457,7 @@ export function VaultActionPanel({
         currentBalance={currentBalanceFormatted}
         currentBalanceAmount={currentBalanceAmount}
         currentUsdValue={selectedActionValues.usdValue}
+        tokenPriceUsd={inputTokenPriceUsd}
         isAmountExceedsBalance={amountExceedsBalance}
         isConnected={isConnected}
         validationError={

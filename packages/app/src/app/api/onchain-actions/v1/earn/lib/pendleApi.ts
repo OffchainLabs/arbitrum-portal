@@ -1,6 +1,6 @@
 import { ChainId } from '@/bridge/types/ChainId';
 
-import { PENDLE_API_BASE_URL } from './pendle';
+import { PENDLE_API_BASE_URL, extractAddressFromTokenId } from './pendle';
 
 async function parsePendleApiError(response: Response): Promise<string> {
   const fallback = `Pendle API error: ${response.status} ${response.statusText}`;
@@ -27,6 +27,8 @@ export interface PendleMarket {
   yt: string;
   sy: string;
   underlyingAsset: string;
+  ptAddress: string;
+  underlyingAddress: string;
   details: PendleMarketDetails;
   isNew: boolean;
   isPrime: boolean;
@@ -85,15 +87,21 @@ function normalizeMarketDetails(raw: RawPendleMarketDetails): PendleMarketDetail
 
 /** Lowercase all address fields so downstream code can use === instead of .toLowerCase() */
 function normalizeMarket(
-  market: Omit<PendleMarket, 'details'> & { details: RawPendleMarketDetails },
+  market: Omit<PendleMarket, 'details' | 'ptAddress' | 'underlyingAddress'> & {
+    details: RawPendleMarketDetails;
+  },
 ): PendleMarket {
+  const pt = market.pt.toLowerCase();
+  const underlyingAsset = market.underlyingAsset.toLowerCase();
   return {
     ...market,
     address: market.address.toLowerCase(),
-    pt: market.pt.toLowerCase(),
+    pt,
     yt: market.yt.toLowerCase(),
     sy: market.sy.toLowerCase(),
-    underlyingAsset: market.underlyingAsset.toLowerCase(),
+    underlyingAsset,
+    ptAddress: extractAddressFromTokenId(pt).toLowerCase(),
+    underlyingAddress: extractAddressFromTokenId(underlyingAsset).toLowerCase(),
     details: normalizeMarketDetails(market.details),
   };
 }
@@ -118,8 +126,11 @@ export async function getPendleMarkets(
   const response = await fetch(url.toString());
   if (!response.ok) throw new Error(await parsePendleApiError(response));
 
-  const data: { results: (Omit<PendleMarket, 'details'> & { details: RawPendleMarketDetails })[] } =
-    await response.json();
+  const data: {
+    results: (Omit<PendleMarket, 'details' | 'ptAddress' | 'underlyingAddress'> & {
+      details: RawPendleMarketDetails;
+    })[];
+  } = await response.json();
   return { markets: data.results.map(normalizeMarket) };
 }
 
@@ -135,8 +146,11 @@ export async function getPendleMarketByAddress(
   const response = await fetch(url.toString());
   if (!response.ok) throw new Error(await parsePendleApiError(response));
 
-  const data: { results: (Omit<PendleMarket, 'details'> & { details: RawPendleMarketDetails })[] } =
-    await response.json();
+  const data: {
+    results: (Omit<PendleMarket, 'details' | 'ptAddress' | 'underlyingAddress'> & {
+      details: RawPendleMarketDetails;
+    })[];
+  } = await response.json();
   const market = data.results[0];
   if (!market) return null;
   return normalizeMarket(market);
@@ -603,4 +617,37 @@ export async function getPendleTransactionHistory({
     page: rawData.page || page,
     pageSize: rawData.pageSize || pageSize,
   };
+}
+
+// Docs: https://api-v2.pendle.finance/core/docs#tag/assets/get/v1/prices/assets
+// Response keys are "{chainId}-{address}"; we strip the prefix so consumers look up by plain address.
+export async function getPendleAssetPrices(params: {
+  chainId: number;
+  addresses: string[];
+}): Promise<Map<string, number | null>> {
+  const { chainId, addresses } = params;
+  const result = new Map<string, number | null>();
+  if (addresses.length === 0) return result;
+
+  const unique = Array.from(new Set(addresses.map((a) => a.toLowerCase())));
+  for (const addr of unique) result.set(addr, null);
+
+  const url = new URL(`${PENDLE_API_BASE_URL}/v1/prices/assets`);
+  url.searchParams.set('chainId', chainId.toString());
+  url.searchParams.set('addresses', unique.join(','));
+
+  const response = await fetch(url.toString());
+  if (!response.ok) throw new Error(await parsePendleApiError(response));
+
+  const payload = (await response.json()) as {
+    prices?: Record<string, number | string>;
+  };
+
+  for (const [key, raw] of Object.entries(payload.prices ?? {})) {
+    const addr = key.split('-')[1] ?? key;
+    const num = Number(raw);
+    result.set(addr.toLowerCase(), Number.isFinite(num) ? num : null);
+  }
+
+  return result;
 }

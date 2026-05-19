@@ -5,10 +5,11 @@ import { useAccount } from 'wagmi';
 
 import { type PendleAction, getPendleSettlementTokens } from '@/app-hooks/earn/pendlePanelUtils';
 import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { useEarnTokenPrice } from '@/app-hooks/earn/useEarnPrices';
 import { usePendlePanelControls } from '@/app-hooks/earn/usePendlePanelControls';
 import { usePendlePanelData } from '@/app-hooks/earn/usePendlePanelData';
 import { usePendlePanelExecution } from '@/app-hooks/earn/usePendlePanelExecution';
-import { formatPercentage } from '@/bridge/util/NumberUtils';
+import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { StandardOpportunityFixedYield } from '@/earn-api/types';
 
@@ -239,12 +240,37 @@ export function PendleActionPanel({
     logoUrl: data.fixedYield.ptTokenIcon,
   };
 
+  const inputTokenPriceUsd = useEarnTokenPrice({
+    chainId: opportunity.chainId,
+    tokenAddress:
+      selectedAction === 'enter'
+        ? (selectedInputToken?.address ?? null)
+        : opportunity.shareTokenAddress,
+  });
+  // Rollover skipped: receive is the target market's PT, not on hand here.
+  const receiveTokenPriceUsd = useEarnTokenPrice({
+    chainId: opportunity.chainId,
+    tokenAddress:
+      selectedAction === 'enter'
+        ? opportunity.shareTokenAddress
+        : selectedAction === 'exit' || selectedAction === 'redeem'
+          ? (selectedRedeemOutputToken?.address ?? null)
+          : null,
+  });
+  const receiveUsdValue = useMemo(() => {
+    if (!data.receiveAmount || receiveTokenPriceUsd === null) return undefined;
+    const amt = parseFloat(data.receiveAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return undefined;
+    return `~${formatUSD(amt * receiveTokenPriceUsd)}`;
+  }, [data.receiveAmount, receiveTokenPriceUsd]);
+
   const sharedAmountInputProps = {
     amount,
     onAmountChange: setAmount,
     onMaxClick: () => setAmount(data.handleMaxClick()),
     label: data.amountLabel,
     currentBalance: data.currentBalanceFormatted,
+    tokenPriceUsd: inputTokenPriceUsd,
     isAmountExceedsBalance: data.amountExceedsBalance,
     isConnected,
     validationError: data.validationError,
@@ -257,6 +283,7 @@ export function PendleActionPanel({
       symbol: data.outputTokenSymbol,
       logoUrl: data.outputTokenLogo,
     },
+    usdValue: receiveUsdValue,
     outputBalance: data.outputBalance,
   };
 

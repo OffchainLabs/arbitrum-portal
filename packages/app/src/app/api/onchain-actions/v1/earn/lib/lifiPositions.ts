@@ -12,13 +12,9 @@ import {
 } from './zerionPriceSources';
 import { fetchZerionCurrentPrices } from './zerionService';
 
-export async function fetchLifiUserPositions(params: {
-  publicClient: PublicClient;
-  opportunities: LiquidStakingOpportunitySeed[];
-  userAddress: string;
-}): Promise<StandardUserPosition[]> {
-  const { publicClient, opportunities, userAddress } = params;
-
+export async function fetchLiquidStakingPriceMap(
+  opportunities: LiquidStakingOpportunitySeed[],
+): Promise<Map<string, number | null>> {
   const lookupByOppId = new Map<string, ZerionPriceLookup | null>();
   for (const opportunity of opportunities) {
     lookupByOppId.set(
@@ -52,6 +48,17 @@ export async function fetchLifiUserPositions(params: {
     const price = priceMap.get(getZerionLookupCacheKey(lookup)) ?? null;
     tokenPriceMap.set(oppId, price !== null && price > 0 ? price : null);
   }
+  return tokenPriceMap;
+}
+
+export async function fetchLifiUserPositions(params: {
+  publicClient: PublicClient;
+  opportunities: LiquidStakingOpportunitySeed[];
+  userAddress: string;
+}): Promise<StandardUserPosition[]> {
+  const { publicClient, opportunities, userAddress } = params;
+
+  const tokenPriceMap = await fetchLiquidStakingPriceMap(opportunities);
 
   const positionPromises = opportunities.map(async (opportunity) => {
     const tokenAddress = opportunity.id;
@@ -94,6 +101,7 @@ export async function fetchLifiUserPositions(params: {
         tokenDecimals: decimalsNumber,
         tokenIcon: opportunity.tokenIcon,
         projectedEarningsUsd: projectedEarningsUsdNumber,
+        tokenPriceUsd: effectivePrice,
         opportunity: {
           id: tokenAddress,
           name: opportunity.name,

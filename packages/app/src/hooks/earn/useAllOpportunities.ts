@@ -61,6 +61,10 @@ export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     rawTvl,
     maturityDate: formatMaturityDate(m?.maturityDate),
     rawMaturityDate: m?.maturityDate,
+    underlyingTokenAddress: opp.underlyingTokenAddress,
+    underlyingTokenPriceUsd: opp.underlyingTokenPriceUsd,
+    shareTokenAddress: opp.shareTokenAddress,
+    shareTokenPriceUsd: opp.shareTokenPriceUsd,
   };
 }
 

@@ -15,8 +15,7 @@ import { usePendlePosition } from '@/app-hooks/earn/usePendlePosition';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { normalizeTokenAddress } from '@/app-lib/earn/utils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
-import { formatAmount, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
+import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { OpportunityCategory } from '@/earn-api/types';
 import type { RolloverTarget, StandardOpportunityFixedYield } from '@/earn-api/types';
 
@@ -52,7 +51,7 @@ export function usePendlePanelData({
 }: UsePendlePanelDataParams) {
   const fixedYield = opportunity.fixedYield;
   const chainId = opportunity.chainId;
-  const ptTokenAddress = useMemo(() => extractAddressFromTokenId(fixedYield.pt), [fixedYield.pt]);
+  const ptTokenAddress = opportunity.shareTokenAddress;
   const underlyingAssetSymbol = useMemo(
     () => getPendleUnderlyingSymbol(opportunity),
     [opportunity],
@@ -65,6 +64,7 @@ export function usePendlePanelData({
     hasPosition,
     balance: ptPositionBalance,
     state: positionState,
+    position: pendlePosition,
     isLoading: isPositionLoading,
     refetch: refetchPosition,
   } = usePendlePosition(opportunity.id, fixedYield.expiry ?? null, walletAddress, chainId);
@@ -317,15 +317,27 @@ export function usePendlePanelData({
       return undefined;
     }
 
+    const positionValueUsd = pendlePosition?.valueUsd;
     return {
       amount: formatAmount(ptPositionBalance, {
         decimals: ptTokenDecimals,
         symbol: ptSymbol,
       }),
+      usdValue:
+        typeof positionValueUsd === 'number' && positionValueUsd > 0
+          ? `~${formatUSD(positionValueUsd)}`
+          : undefined,
       status: positionState === 'ended' ? 'Maturity Reached' : 'Active',
       label: 'Your Position',
     };
-  }, [isConnected, positionState, ptPositionBalance, ptTokenDecimals, ptSymbol]);
+  }, [
+    isConnected,
+    pendlePosition?.valueUsd,
+    positionState,
+    ptPositionBalance,
+    ptTokenDecimals,
+    ptSymbol,
+  ]);
 
   const currentBalanceFormatted = formatAmount(currentInputBalanceRaw, {
     decimals: currentInputDecimals,

@@ -562,6 +562,7 @@ export class VaultsAdapter implements VendorAdapter {
         tokenDecimals: lpTokenDecimals,
         tokenIcon: position.asset?.assetLogo,
         projectedEarningsUsd,
+        tokenPriceUsd: parseOptionalNumber(position.asset?.assetPriceInUsd),
         opportunity: {
           id: addressLower,
           name: position.name || 'Unknown Vault',
@@ -660,6 +661,10 @@ export class VaultsAdapter implements VendorAdapter {
       tokenIcon: vault.asset?.assetLogo || '',
       tokenNetwork: networkName,
       protocolIcon: vault.protocol?.protocolLogo || '',
+      underlyingTokenAddress: vault.asset?.address?.toLowerCase() ?? null,
+      underlyingTokenPriceUsd: parseOptionalNumber(vault.asset?.assetPriceInUsd),
+      shareTokenAddress: vault.lpToken?.address?.toLowerCase() ?? null,
+      shareTokenPriceUsd: null,
       lend: {
         assetSymbol: vault.asset?.symbol,
         assetLogo: vault.asset?.assetLogo,

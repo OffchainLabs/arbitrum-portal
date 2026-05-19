@@ -6,11 +6,12 @@ import { useAccount, useBalance } from 'wagmi';
 
 import { normalizeTokenAddress, sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
+import { formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 
 import { useEarnActionTabs } from '../../hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '../../hooks/earn/useEarnGasEstimate';
+import { useEarnTokenPrice } from '../../hooks/earn/useEarnPrices';
 import { checkAmountExceedsBalance } from '../../hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '../../hooks/earn/useEarnTransferReadiness';
 import { useLiquidStakingPanelControls } from '../../hooks/earn/useLiquidStakingPanelControls';
@@ -212,6 +213,16 @@ export function LiquidStakingActionPanel({
     [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
 
+  const inputTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress: currentActionValues.fromTokenAddress,
+  });
+  const receiveTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress:
+      controls.selectedAction === 'buy' ? outputTokenAddress : controls.selectedSellToken.address,
+  });
+
   const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
     chainId: requestChainId,
@@ -224,6 +235,13 @@ export function LiquidStakingActionPanel({
     selectedAction: controls.selectedAction,
     selectedSellTokenDecimals: controls.selectedSellToken.decimals,
   });
+
+  const receiveUsdValue = useMemo(() => {
+    if (!receiveAmount || receiveTokenPriceUsd === null) return undefined;
+    const amt = parseFloat(receiveAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return undefined;
+    return `~${formatUSD(amt * receiveTokenPriceUsd)}`;
+  }, [receiveAmount, receiveTokenPriceUsd]);
 
   const transferReadiness = useEarnTransferReadiness({
     amount: controls.amount,
@@ -346,6 +364,7 @@ export function LiquidStakingActionPanel({
         currentBalance={data.amountSection.currentBalance}
         currentBalanceAmount={data.amountSection.currentBalanceAmount}
         currentUsdValue={data.amountSection.currentUsdValue}
+        tokenPriceUsd={inputTokenPriceUsd}
         isAmountExceedsBalance={data.amountSection.isAmountExceedsBalance}
         isConnected={isConnected}
         validationError={data.amountSection.validationError}
@@ -358,7 +377,7 @@ export function LiquidStakingActionPanel({
         isLoading={data.receiveSection.isLoading}
         token={data.receiveSection.token}
         tokenControl={data.receiveSection.tokenControl}
-        usdValue={data.receiveSection.usdValue}
+        usdValue={receiveUsdValue ?? data.receiveSection.usdValue}
       />
 
       <div className="flex flex-col gap-3">

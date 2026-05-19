@@ -1,5 +1,6 @@
 'use client';
 
+import { getEarnInputUsdValue } from '@/app-lib/earn/utils';
 import { Button } from '@/bridge/components/common/Button';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
@@ -14,6 +15,7 @@ interface LiquidStakingAmountSectionProps {
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
+  tokenPriceUsd?: number | null;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
@@ -28,24 +30,18 @@ export function LiquidStakingAmountSection({
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
+  tokenPriceUsd,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
   tokenControl,
 }: LiquidStakingAmountSectionProps) {
-  const amountNumber = Number(amount);
-  const currentBalanceNumeric =
-    typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
-      ? currentBalanceAmount
-      : 0;
-  const perUnitUsd =
-    currentBalanceNumeric > 0 && currentUsdValue != null
-      ? currentUsdValue / currentBalanceNumeric
-      : null;
-  const currentInputUsdValue =
-    perUnitUsd != null
-      ? Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd
-      : null;
+  const currentInputUsdValue = getEarnInputUsdValue({
+    amount,
+    tokenPriceUsd,
+    currentBalanceAmount,
+    currentUsdValue,
+  });
 
   return (
     <div className="bg-neutral-100 rounded flex flex-col p-4 focus-within:ring-2 focus-within:ring-white/30">

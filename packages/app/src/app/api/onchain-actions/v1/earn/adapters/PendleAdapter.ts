@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { Address, encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL, PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
@@ -6,13 +6,13 @@ import { parseFiniteNumber } from '@/app-lib/earn/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
 
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { PENDLE_MARKET_CATEGORIES, PENDLE_MIN_TVL_USD, PendleMarketCategory } from '../lib/pendle';
 import {
   PendleAsset,
   PendleMarket,
+  getPendleAssetPrices,
   getPendleAssets,
   getPendleConvertRoute,
   getPendleMarketByAddress,
@@ -153,11 +153,15 @@ export class PendleAdapter implements VendorAdapter {
     const tokenIds = filtered
       .map((market) => market.pt)
       .concat(filtered.map((market) => market.sy));
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, filtered),
+    ]);
 
     return filtered
       .map((market) => enrichMarketWithAssets(market, assetMetadataMap))
-      .map((market) => this.transformToStandard(market));
+      .map((market) => this.transformToStandard(market, priceMap));
   }
 
   async getOpportunityDetails(
@@ -176,14 +180,15 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     const tokenIds = [market.pt, market.sy];
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+    const marketWithDetailsRaw = { ...market, details: marketDetails };
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, [marketWithDetailsRaw]),
+    ]);
 
-    const marketWithDetails = enrichMarketWithAssets(
-      { ...market, details: marketDetails },
-      assetMetadataMap,
-    );
+    const marketWithDetails = enrichMarketWithAssets(marketWithDetailsRaw, assetMetadataMap);
 
-    return this.transformToStandard(marketWithDetails);
+    return this.transformToStandard(marketWithDetails, priceMap);
   }
 
   async getHistoricalData(
@@ -461,6 +466,10 @@ export class PendleAdapter implements VendorAdapter {
           : undefined;
       const expiryTime = market.expiry ? new Date(market.expiry).getTime() : null;
 
+      const ptAmountFloat = parseFloat(utils.formatUnits(rawAmount, tokenDecimals));
+      const sharePriceFromValuation =
+        ptAmountFloat > 0 && valueUsd > 0 ? valueUsd / ptAmountFloat : null;
+
       positions.push({
         opportunityId: market.address,
         category: OpportunityCategory.FixedYield,
@@ -468,11 +477,12 @@ export class PendleAdapter implements VendorAdapter {
         network: 'arbitrum',
         amount: rawAmount,
         valueUsd,
-        tokenAddress: market.pt,
+        tokenAddress: market.ptAddress,
         tokenSymbol,
         tokenDecimals,
         tokenIcon: market.ptToken?.icon,
         projectedEarningsUsd,
+        tokenPriceUsd: sharePriceFromValuation,
         opportunity: {
           id: market.address,
           name: market.name,
@@ -588,6 +598,27 @@ export class PendleAdapter implements VendorAdapter {
     }
   }
 
+  // Swallow failures: opportunity rendering must not block on the prices endpoint.
+  private async fetchMarketPrices(
+    chainId: number,
+    markets: PendleMarket[],
+  ): Promise<Map<string, number | null>> {
+    if (!markets.length) return new Map();
+
+    const addresses: string[] = [];
+    for (const market of markets) {
+      if (market.underlyingAddress) addresses.push(market.underlyingAddress);
+      if (market.ptAddress) addresses.push(market.ptAddress);
+    }
+
+    try {
+      return await getPendleAssetPrices({ chainId, addresses });
+    } catch (error) {
+      console.warn('[PendleAdapter] fetchMarketPrices failed:', error);
+      return new Map();
+    }
+  }
+
   private filterPendleMarkets(
     markets: PendleMarket[],
     filters: OpportunityFilters,
@@ -621,7 +652,10 @@ export class PendleAdapter implements VendorAdapter {
     });
   }
 
-  private transformToStandard(market: PendleMarket): StandardOpportunity {
+  private transformToStandard(
+    market: PendleMarket,
+    priceMap?: Map<string, number | null>,
+  ): StandardOpportunity {
     const tvlUsd = getMarketTvl(market);
     const fixedApy = apyAsPercentage(market.details.impliedApy);
     const underlyingApy = apyAsPercentage(market.details.underlyingApy);
@@ -649,6 +683,10 @@ export class PendleAdapter implements VendorAdapter {
       tokenIcon: market.ptToken?.icon || '',
       tokenNetwork: 'Arbitrum',
       protocolIcon: PENDLE_LOGO_URL,
+      underlyingTokenAddress: market.underlyingAddress,
+      underlyingTokenPriceUsd: priceMap?.get(market.underlyingAddress) ?? null,
+      shareTokenAddress: market.ptAddress,
+      shareTokenPriceUsd: priceMap?.get(market.ptAddress) ?? null,
       fixedYield: {
         pt: market.pt,
         detailsTvlUsd: tvlUsd,
@@ -670,13 +708,12 @@ export class PendleAdapter implements VendorAdapter {
 
   private buildSettlementTokens(market: PendleMarket): SettlementToken[] {
     const tokens: SettlementToken[] = [];
-    const underlyingAddress = extractAddressFromTokenId(market.underlyingAsset);
     const tokenSymbol = getTokenSymbolFromMarketName(market.name);
 
-    if (underlyingAddress) {
+    if (market.underlyingAddress) {
       tokens.push({
         symbol: tokenSymbol,
-        address: underlyingAddress,
+        address: market.underlyingAddress,
         decimals: market.syToken?.decimals ?? DEFAULT_PENDLE_DECIMALS,
         logoUrl: market.ptToken?.icon,
       });
@@ -741,7 +778,7 @@ export class PendleAdapter implements VendorAdapter {
         id: candidate.id,
         name: candidate.name,
         tokenSymbol: candidate.token,
-        ptTokenAddress: extractAddressFromTokenId(candidate.fixedYield.pt),
+        ptTokenAddress: candidate.shareTokenAddress,
         ptTokenDecimals: candidate.fixedYield.ptTokenDecimals,
         ptTokenIcon: candidate.fixedYield.ptTokenIcon || candidate.tokenIcon,
         expiry: candidate.fixedYield.expiry,

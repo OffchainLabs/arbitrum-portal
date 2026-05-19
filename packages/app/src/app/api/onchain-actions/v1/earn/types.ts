@@ -115,6 +115,11 @@ export interface StandardOpportunityBase {
   tokenIcon?: string;
   tokenNetwork?: string;
   protocolIcon?: string;
+  // share === underlying for LST; set share fields to null in that case.
+  underlyingTokenAddress: string | null;
+  underlyingTokenPriceUsd: number | null;
+  shareTokenAddress: string | null;
+  shareTokenPriceUsd: number | null;
 }
 
 export interface StandardOpportunityLend extends StandardOpportunityBase {
@@ -128,6 +133,7 @@ export interface StandardOpportunityLiquidStaking extends StandardOpportunityBas
 
 export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
   category: typeof OpportunityCategory.FixedYield;
+  shareTokenAddress: string;
   fixedYield: StandardOpportunityFixedYieldDetail;
 }
 
@@ -313,6 +319,7 @@ export interface StandardUserPosition {
   tokenDecimals: number;
   tokenIcon?: string;
   projectedEarningsUsd?: number;
+  tokenPriceUsd: number | null;
   opportunity: {
     id: string;
     name: string;

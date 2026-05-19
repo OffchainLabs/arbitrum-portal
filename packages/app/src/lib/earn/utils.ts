@@ -84,6 +84,29 @@ export function normalizeTokenAddress(tokenAddress: string | null): Address | un
   }
 }
 
+// Prefers `tokenPriceUsd`; falls back to `currentUsdValue / currentBalanceAmount`.
+export function getEarnInputUsdValue(params: {
+  amount: string;
+  tokenPriceUsd?: number | null;
+  currentBalanceAmount?: number;
+  currentUsdValue?: number;
+}): number | null {
+  const { amount, tokenPriceUsd, currentBalanceAmount, currentUsdValue } = params;
+  const amountNumber = Number(amount);
+  const balanceNumeric =
+    typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
+      ? currentBalanceAmount
+      : 0;
+  const perUnitUsd =
+    typeof tokenPriceUsd === 'number' && Number.isFinite(tokenPriceUsd) && tokenPriceUsd > 0
+      ? tokenPriceUsd
+      : balanceNumeric > 0 && currentUsdValue != null
+        ? currentUsdValue / balanceNumeric
+        : null;
+  if (perUnitUsd == null) return null;
+  return Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd;
+}
+
 export function getLiquidStakingHistoryValues({
   selectedAction,
   submittedAmountRaw,
