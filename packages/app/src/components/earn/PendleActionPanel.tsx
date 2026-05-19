@@ -245,14 +245,14 @@ export function PendleActionPanel({
     tokenAddress:
       selectedAction === 'enter'
         ? (selectedInputToken?.address ?? null)
-        : (opportunity.shareTokenAddress ?? null),
+        : opportunity.shareTokenAddress,
   });
   // Rollover skipped: receive is the target market's PT, not on hand here.
   const receiveTokenPriceUsd = useEarnTokenPrice({
     chainId: opportunity.chainId,
     tokenAddress:
       selectedAction === 'enter'
-        ? (opportunity.shareTokenAddress ?? null)
+        ? opportunity.shareTokenAddress
         : selectedAction === 'exit' || selectedAction === 'redeem'
           ? (selectedRedeemOutputToken?.address ?? null)
           : null,

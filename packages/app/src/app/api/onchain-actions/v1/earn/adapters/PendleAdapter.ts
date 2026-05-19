@@ -6,7 +6,6 @@ import { parseFiniteNumber } from '@/app-lib/earn/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
 
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { PENDLE_MARKET_CATEGORIES, PENDLE_MIN_TVL_USD, PendleMarketCategory } from '../lib/pendle';
@@ -478,7 +477,7 @@ export class PendleAdapter implements VendorAdapter {
         network: 'arbitrum',
         amount: rawAmount,
         valueUsd,
-        tokenAddress: market.pt,
+        tokenAddress: market.ptAddress,
         tokenSymbol,
         tokenDecimals,
         tokenIcon: market.ptToken?.icon,
@@ -599,13 +598,6 @@ export class PendleAdapter implements VendorAdapter {
     }
   }
 
-  private getMarketAddresses(market: PendleMarket): { underlying: string; pt: string } {
-    return {
-      underlying: extractAddressFromTokenId(market.underlyingAsset).toLowerCase(),
-      pt: extractAddressFromTokenId(market.pt).toLowerCase(),
-    };
-  }
-
   // Swallow failures: opportunity rendering must not block on the prices endpoint.
   private async fetchMarketPrices(
     chainId: number,
@@ -615,9 +607,8 @@ export class PendleAdapter implements VendorAdapter {
 
     const addresses: string[] = [];
     for (const market of markets) {
-      const { underlying, pt } = this.getMarketAddresses(market);
-      if (underlying) addresses.push(underlying);
-      if (pt) addresses.push(pt);
+      if (market.underlyingAddress) addresses.push(market.underlyingAddress);
+      if (market.ptAddress) addresses.push(market.ptAddress);
     }
 
     try {
@@ -671,8 +662,6 @@ export class PendleAdapter implements VendorAdapter {
     const liquidityUsd = parseFiniteNumber(market.details.liquidity) ?? undefined;
     const tradingVolumeUsd = parseFiniteNumber(market.details.tradingVolume) ?? undefined;
 
-    const { underlying: underlyingAddress, pt: ptAddress } = this.getMarketAddresses(market);
-
     return {
       id: market.address,
       category: OpportunityCategory.FixedYield,
@@ -694,10 +683,10 @@ export class PendleAdapter implements VendorAdapter {
       tokenIcon: market.ptToken?.icon || '',
       tokenNetwork: 'Arbitrum',
       protocolIcon: PENDLE_LOGO_URL,
-      underlyingTokenAddress: underlyingAddress,
-      underlyingTokenPriceUsd: priceMap?.get(underlyingAddress) ?? null,
-      shareTokenAddress: ptAddress,
-      shareTokenPriceUsd: priceMap?.get(ptAddress) ?? null,
+      underlyingTokenAddress: market.underlyingAddress,
+      underlyingTokenPriceUsd: priceMap?.get(market.underlyingAddress) ?? null,
+      shareTokenAddress: market.ptAddress,
+      shareTokenPriceUsd: priceMap?.get(market.ptAddress) ?? null,
       fixedYield: {
         pt: market.pt,
         detailsTvlUsd: tvlUsd,
@@ -719,13 +708,12 @@ export class PendleAdapter implements VendorAdapter {
 
   private buildSettlementTokens(market: PendleMarket): SettlementToken[] {
     const tokens: SettlementToken[] = [];
-    const underlyingAddress = extractAddressFromTokenId(market.underlyingAsset);
     const tokenSymbol = getTokenSymbolFromMarketName(market.name);
 
-    if (underlyingAddress) {
+    if (market.underlyingAddress) {
       tokens.push({
         symbol: tokenSymbol,
-        address: underlyingAddress,
+        address: market.underlyingAddress,
         decimals: market.syToken?.decimals ?? DEFAULT_PENDLE_DECIMALS,
         logoUrl: market.ptToken?.icon,
       });
@@ -790,7 +778,7 @@ export class PendleAdapter implements VendorAdapter {
         id: candidate.id,
         name: candidate.name,
         tokenSymbol: candidate.token,
-        ptTokenAddress: extractAddressFromTokenId(candidate.fixedYield.pt),
+        ptTokenAddress: candidate.shareTokenAddress,
         ptTokenDecimals: candidate.fixedYield.ptTokenDecimals,
         ptTokenIcon: candidate.fixedYield.ptTokenIcon || candidate.tokenIcon,
         expiry: candidate.fixedYield.expiry,

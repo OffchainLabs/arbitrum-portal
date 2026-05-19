@@ -133,6 +133,7 @@ export interface StandardOpportunityLiquidStaking extends StandardOpportunityBas
 
 export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
   category: typeof OpportunityCategory.FixedYield;
+  shareTokenAddress: string;
   fixedYield: StandardOpportunityFixedYieldDetail;
 }
 

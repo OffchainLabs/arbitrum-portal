@@ -16,7 +16,6 @@ import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import { normalizeTokenAddress } from '@/app-lib/earn/utils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { formatAmount, formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
 import { OpportunityCategory } from '@/earn-api/types';
 import type { RolloverTarget, StandardOpportunityFixedYield } from '@/earn-api/types';
 
@@ -52,7 +51,7 @@ export function usePendlePanelData({
 }: UsePendlePanelDataParams) {
   const fixedYield = opportunity.fixedYield;
   const chainId = opportunity.chainId;
-  const ptTokenAddress = useMemo(() => extractAddressFromTokenId(fixedYield.pt), [fixedYield.pt]);
+  const ptTokenAddress = opportunity.shareTokenAddress;
   const underlyingAssetSymbol = useMemo(
     () => getPendleUnderlyingSymbol(opportunity),
     [opportunity],
