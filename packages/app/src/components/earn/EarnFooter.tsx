@@ -14,7 +14,7 @@ import {
 import { ExternalLink } from '@/components/ExternalLink';
 
 const EarnDisclaimer = () => (
-  <div className="flex flex-col lg:flex-row items-start gap-5 rounded-2xl lg:bg-neutral-25 lg:p-8 py-8">
+  <div className="flex flex-col lg:flex-row items-start gap-5 rounded-2xl lg:bg-neutral-25 bg-transparent lg:p-8 py-8">
     <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-2xl bg-neutral-50">
       <ExclamationTriangleIcon className="h-6 w-6 text-white/50" />
     </div>
