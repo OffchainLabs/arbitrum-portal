@@ -124,6 +124,7 @@ export function PortfolioSummaryCards({
 
               <div className="hidden lg:block">
                 <Tooltip
+                  as="div"
                   content={
                     <p className="text-xs text-white leading-relaxed">
                       Total value of all your positions across all protocols
@@ -186,6 +187,7 @@ export function PortfolioSummaryCards({
               </p>
               <div className="hidden lg:block">
                 <Tooltip
+                  as="div"
                   content={
                     <p className="text-xs text-white leading-relaxed">
                       Expected earnings if current holdings are maintained for the selected
@@ -249,6 +251,7 @@ export function PortfolioSummaryCards({
               </p>
               <div className="hidden lg:block">
                 <Tooltip
+                  as="div"
                   content={
                     <div className="flex flex-col gap-2">
                       <p className="text-xs text-white leading-relaxed">
