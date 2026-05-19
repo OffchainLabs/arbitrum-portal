@@ -8,6 +8,7 @@ export type TooltipProps = {
   show?: boolean;
   children: React.ReactNode;
   content?: React.ReactNode;
+  as?: React.ElementType;
   wrapperClassName?: string;
   tooltipProps?: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>;
   contentProps?: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>;
@@ -18,6 +19,7 @@ export const TooltipProvider = TooltipPrimitive.Provider;
 export function Tooltip({
   show = true,
   content,
+  as: Wrapper = 'span',
   wrapperClassName = 'inline-block',
   tooltipProps,
   contentProps,
@@ -34,15 +36,15 @@ export function Tooltip({
   return (
     <TooltipPrimitive.Root {...tooltipProps}>
       <TooltipPrimitive.Trigger asChild>
-        <span className={twMerge('inline-block', wrapperClassName)}>{children}</span>
+        <Wrapper className={twMerge('inline-block', wrapperClassName)}>{children}</Wrapper>
       </TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           sideOffset={4}
           {...contentProps}
           className={twMerge(
-            contentProps?.className,
             'tooltip-animated z-[1102] min-w-0 max-w-[300px] bg-gray-8 overflow-hidden rounded-[5px] px-2 py-1 text-sm leading-5 border border-[#777] whitespace-normal break-words',
+            contentProps?.className,
           )}
         >
           {content}

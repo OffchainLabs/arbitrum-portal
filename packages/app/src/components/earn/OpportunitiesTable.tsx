@@ -126,6 +126,7 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
             onSort={onSort}
           />
           <Tooltip
+            as="div"
             content={
               <p className="text-xs text-white leading-relaxed">
                 Projected earnings are annualized estimates based on current APY rates. Actual
@@ -332,6 +333,7 @@ export function OpportunitiesTable({
                     <p className="sr-only">{CATEGORY_DESCRIPTIONS[category]}</p>
                   </div>
                   <Tooltip
+                    as="div"
                     content={
                       <p className="text-xs text-white leading-relaxed">
                         {CATEGORY_DESCRIPTIONS[category]}

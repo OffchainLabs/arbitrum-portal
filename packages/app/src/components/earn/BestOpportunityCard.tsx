@@ -50,6 +50,7 @@ export function BestOpportunityCard({
           </div>
         </div>
         <Tooltip
+          as="div"
           content={
             <p className="text-xs leading-relaxed text-white">
               This opportunity has the highest total value locked (TVL) in its category, making it

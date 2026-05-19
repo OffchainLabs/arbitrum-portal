@@ -99,6 +99,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         </p>
         {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
           <Tooltip
+            as="div"
             content={
               <div className="flex flex-col min-w-[173px]">
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
