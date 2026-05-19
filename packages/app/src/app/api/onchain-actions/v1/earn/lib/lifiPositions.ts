@@ -1,5 +1,4 @@
-import { PublicClient, erc20Abi, getAddress } from 'viem';
-import { formatUnits } from 'viem';
+import { PublicClient, erc20Abi, formatUnits, getAddress } from 'viem';
 
 import { ChainId } from '@/bridge/types/ChainId';
 

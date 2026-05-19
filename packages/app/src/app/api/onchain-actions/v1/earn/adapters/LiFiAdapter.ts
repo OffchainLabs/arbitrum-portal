@@ -51,6 +51,7 @@ export class LiFiAdapter implements VendorAdapter {
     return createPublicClient({
       chain: arbitrum,
       transport: http(rpcURLs[ChainId.ArbitrumOne]),
+      batch: { multicall: true },
     });
   }
 
