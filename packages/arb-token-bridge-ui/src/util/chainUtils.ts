@@ -30,6 +30,7 @@ export function isSupportedChainId(chainId: ChainId | undefined): chainId is Cha
   const customChainIds = getCustomChainsFromLocalStorage().map((chain) => chain.chainId);
 
   return [
+    ChainId.Solana,
     mainnet.id,
     sepolia.id,
     arbitrum.id,

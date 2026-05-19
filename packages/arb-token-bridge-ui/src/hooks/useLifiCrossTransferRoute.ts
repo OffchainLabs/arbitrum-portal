@@ -1,6 +1,5 @@
 import { useDeferredValue, useMemo } from 'react';
 import useSWR from 'swr';
-import { Address } from 'viem';
 
 import {
   LifiCrosschainTransfersRoute,
@@ -20,7 +19,7 @@ export type UseLifiCrossTransfersRouteParams = Pick<
   | 'denyExchanges'
 > & {
   enabled?: boolean;
-  toAddress: Address | undefined;
+  toAddress: string | undefined;
   fromChainId: number;
   toChainId: number;
 };

@@ -1,12 +1,13 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import Resolution from '@unstoppabledomains/resolution';
 import { useEffect, useMemo, useState } from 'react';
-import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
+import { useEnsAvatar, useEnsName } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../types/ChainId';
 import { shortenAddress } from '../util/CommonUtils';
+import { useWallets } from '../wallet/hooks/useWallets';
 import { useArbQueryParams } from './useArbQueryParams';
 
 type UDInfo = { name: string | null };
@@ -39,23 +40,28 @@ async function tryLookupUDName(provider: JsonRpcProvider, address: string) {
 }
 
 export const useAccountMenu = () => {
-  const { address, chain } = useAccount();
+  const { sourceWallet } = useWallets();
+  const { address, chain, ecosystem } = sourceWallet.account;
 
   const [, setQueryParams] = useArbQueryParams();
 
   const [udInfo, setUDInfo] = useState<UDInfo>(udInfoDefaults);
   const { data: ensName } = useEnsName({
-    address,
+    address: ecosystem === 'evm' ? (address as `0x${string}`) : undefined,
     chainId: ChainId.Ethereum,
   });
 
   const { data: ensAvatar } = useEnsAvatar({
-    name: ensName ?? '',
+    name: ecosystem === 'evm' ? (ensName ?? '') : '',
     chainId: ChainId.Ethereum,
   });
 
   useEffect(() => {
-    if (!address) return;
+    if (!address || ecosystem !== 'evm') {
+      setUDInfo(udInfoDefaults);
+      return;
+    }
+
     async function resolveUdName() {
       const udName = await tryLookupUDName(
         getProviderForChainId(ChainId.Ethereum),
@@ -65,7 +71,7 @@ export const useAccountMenu = () => {
       setUDInfo({ name: udName });
     }
     resolveUdName();
-  }, [address]);
+  }, [address, ecosystem]);
 
   const accountShort = useMemo(() => {
     if (typeof address === 'undefined') {
@@ -73,19 +79,6 @@ export const useAccountMenu = () => {
     }
 
     return shortenAddress(address);
-  }, [address]);
-
-  useEffect(() => {
-    if (!address) return;
-    async function resolveUdName() {
-      const udName = await tryLookupUDName(
-        getProviderForChainId(ChainId.Ethereum),
-        address as string,
-      );
-
-      setUDInfo({ name: udName });
-    }
-    resolveUdName();
   }, [address]);
 
   return {

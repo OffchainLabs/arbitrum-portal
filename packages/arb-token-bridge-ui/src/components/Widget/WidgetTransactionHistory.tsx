@@ -1,9 +1,9 @@
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
-import { useAccount } from 'wagmi';
 
 import { TabParamEnum } from '@/bridge/util/queryParamUtils';
 
 import { useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionDetailsContent } from '../TransactionHistory/TransactionDetailsContent';
 import { Button } from '../common/Button';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -27,8 +27,14 @@ const WidgetTransactionHistoryLoadingPlaceholder = () => {
 };
 
 export const WidgetTransactionHistory = (props: UseDialogProps) => {
-  const { address: walletAddress } = useAccount();
-  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(walletAddress);
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
+  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(
+    walletAddress as `0x${string}`,
+  );
   const currentTx = transactions[0];
   const isLoading = transactions.length ? false : isLoadingTransactions;
 

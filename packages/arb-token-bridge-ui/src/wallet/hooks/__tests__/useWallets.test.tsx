@@ -5,14 +5,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { ChainId } from '../../../types/ChainId';
 import { isSolanaEnabled } from '../../../util/featureFlag';
-import { EvmWalletContext } from '../../contexts/EvmWalletContext';
+import { EvmWalletContext } from '../../providers/EvmWalletProvider';
 import {
   SolanaWalletContext,
   defaultSolanaWalletContextValue,
-} from '../../contexts/SolanaWalletContext';
+} from '../../providers/SolanaWalletProvider';
 import type { WalletHandle } from '../../types';
-import { createNetworksState } from './utils';
 import { useWallets } from '../useWallets';
+import { createNetworksState } from './utils';
 
 vi.mock('../../../hooks/useNetworks', () => ({
   useNetworks: vi.fn(),
