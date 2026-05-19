@@ -52,7 +52,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       <ArbQueryParamProvider>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <AppContextProvider>{children}</AppContextProvider>
+            <WalletProvider>
+              <AppContextProvider>{children}</AppContextProvider>
+            </WalletProvider>
           </QueryClientProvider>
         </WagmiProvider>
       </ArbQueryParamProvider>
