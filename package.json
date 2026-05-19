@@ -65,7 +65,7 @@
       "@vitest/mocker>vite": "7.3.3",
       "sucrase>glob": "10.5.0",
       "test-exclude>glob": "10.5.0",
-      "viem>ws": "8.20.0",
+      "ws@>=8.0.0 <8.20.1": "8.20.1",
       "express>qs": "6.15.1",
       "body-parser>qs": "6.15.1",
       "@cypress/request>qs": "6.15.1",
