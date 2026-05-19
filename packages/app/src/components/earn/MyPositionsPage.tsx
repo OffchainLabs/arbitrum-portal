@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { useAccount, useAccountEffect } from 'wagmi';
 
-import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
+import { DEFAULT_EARN_MIN_TVL, useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { ChainId } from '@/bridge/types/ChainId';
@@ -30,7 +30,7 @@ export function MyPositionsPage() {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
-  } = useAllOpportunities({ chainId: ChainId.ArbitrumOne, minTvl: 5_000_000 });
+  } = useAllOpportunities({ chainId: ChainId.ArbitrumOne, minTvl: DEFAULT_EARN_MIN_TVL });
 
   const {
     positionsMap,
