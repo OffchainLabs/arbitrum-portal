@@ -104,6 +104,9 @@
     // https://github.com/advisories/GHSA-4v9v-hfq4-rm2v
     // webpack-dev-server users' source code may be stolen via malicious site (CVE-2025-30359)
     //
+    // https://github.com/advisories/GHSA-79cf-xcqc-c78w
+    // webpack-dev-server cross-origin source code exposure on non-HTTPS origins (CVE-2026-6402)
+    //
     // Reason to ignore: All from @synthetixio/synpress, an E2E test devDependency.
     // Each fix requires a major bump deep in the synpress chain that would risk
     // breaking E2E tooling. Not used in production builds or runtime code.
@@ -114,5 +117,18 @@
     "GHSA-8mmm-9v2q-x3f9",
     "GHSA-9jgg-88mc-972h",
     "GHSA-4v9v-hfq4-rm2v",
+    "GHSA-79cf-xcqc-c78w",
+    //
+    // https://github.com/advisories/GHSA-58qx-3vcg-4xpx
+    // ws uninitialized memory disclosure when TypedArray is passed as the reason
+    // argument to websocket.close() (CVE-2026-45736)
+    // Reason to ignore: Only triggered by server-side misuse passing a TypedArray
+    // to close(); none of our code paths invoke close() this way. ws is pulled in
+    // transitively by SDKs (ethers, viem/@reown/appkit, @metamask/sdk) and a fix
+    // requires upstream releases.
+    // from: app>@arbitrum/sdk>ethers>@ethersproject/providers>ws
+    // from: app>@reown/appkit>...>@solana/rpc-subscriptions-channel-websocket>ws
+    // from: app>@reown/appkit-adapter-wagmi>@wagmi/connectors>@metamask/sdk>socket.io-client>engine.io-client>ws
+    "GHSA-58qx-3vcg-4xpx",
   ],
 }
