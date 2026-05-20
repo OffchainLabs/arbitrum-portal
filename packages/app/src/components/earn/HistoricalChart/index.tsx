@@ -72,20 +72,24 @@ function HistoricalChartContent({
     range,
     assetSymbol,
   });
+  const historicalDataPoints = data?.data;
 
   const availableMetrics = useMemo(
-    () => (data?.data?.length ? getMetricsWithData(data.data) : []),
-    [data?.data],
+    () => (historicalDataPoints?.length ? getMetricsWithData(historicalDataPoints) : []),
+    [historicalDataPoints],
   );
 
-  const activeMetric: MetricType = availableMetrics.includes(metric)
-    ? metric
-    : (availableMetrics[0] ?? 'apy');
+  const activeMetric = useMemo<MetricType>(
+    () => (availableMetrics.includes(metric) ? metric : (availableMetrics[0] ?? 'apy')),
+    [availableMetrics, metric],
+  );
 
   const chartData = useMemo(() => {
-    if (!data?.data) return [] as Array<{ timestamp: number; value: number }>;
+    if (!historicalDataPoints) {
+      return [] as Array<{ timestamp: number; value: number }>;
+    }
 
-    return data.data
+    return historicalDataPoints
       .filter((d) => {
         if (activeMetric === 'apy') return d.apy !== null;
         if (activeMetric === 'tvl') return d.tvl !== null;
@@ -103,15 +107,19 @@ function HistoricalChartContent({
                 ? (d.price ?? 0)
                 : 0,
       }));
-  }, [data, activeMetric]);
+  }, [activeMetric, historicalDataPoints]);
 
   const currentValue = useMemo(() => computeCurrentMetricValue(chartData), [chartData]);
   const metricsToRender = availableMetrics.length > 0 ? availableMetrics : ALL_METRICS;
   const xFormat =
     data?.range === '1d' ? 'HH:mm' : data?.range === '1y' ? 'MMM D, YYYY' : config.dateFormat;
+  const fallbackFromTimestamp = data?.fromTimestamp;
+  const fallbackToTimestamp = data?.toTimestamp;
   const xDomain = useMemo<[number, number] | undefined>(() => {
     if (!chartData.length) {
-      return data ? [data.fromTimestamp, data.toTimestamp] : undefined;
+      return typeof fallbackFromTimestamp === 'number' && typeof fallbackToTimestamp === 'number'
+        ? [fallbackFromTimestamp, fallbackToTimestamp]
+        : undefined;
     }
 
     const timestamps = chartData.map((point) => point.timestamp);
@@ -119,7 +127,9 @@ function HistoricalChartContent({
     const maxTimestamp = Math.max(...timestamps);
 
     if (!Number.isFinite(minTimestamp) || !Number.isFinite(maxTimestamp)) {
-      return data ? [data.fromTimestamp, data.toTimestamp] : undefined;
+      return typeof fallbackFromTimestamp === 'number' && typeof fallbackToTimestamp === 'number'
+        ? [fallbackFromTimestamp, fallbackToTimestamp]
+        : undefined;
     }
 
     if (minTimestamp === maxTimestamp) {
@@ -127,7 +137,7 @@ function HistoricalChartContent({
     }
 
     return [minTimestamp, maxTimestamp];
-  }, [chartData, data]);
+  }, [chartData, fallbackFromTimestamp, fallbackToTimestamp]);
 
   const formatCurrentValue = (value: number): string => formatMetricValue(activeMetric, value);
 

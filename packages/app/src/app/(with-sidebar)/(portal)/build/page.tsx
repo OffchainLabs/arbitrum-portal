@@ -34,7 +34,9 @@ export function generateMetadata(): Metadata {
 
 const fetchStatus = async () => {
   try {
-    const data = await fetch('https://status.arbitrum.io/summary.json');
+    const data = await fetch('https://status.arbitrum.io/summary.json', {
+      signal: AbortSignal.timeout(5000),
+    });
     const status = (await data.json()).page.status;
 
     if (Object.values(ArbitrumStatus).includes(status as ArbitrumStatus)) {

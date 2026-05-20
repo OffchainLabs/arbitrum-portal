@@ -8,10 +8,10 @@ import {
 } from '@/bridge/app/api/crosschain-transfers/constants';
 
 import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
-import { LIFI_TOKENS_REVALIDATE_SECONDS, getLifiTokenRegistry } from './registry';
+import { getLifiTokenRegistry } from './registry';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = LIFI_TOKENS_REVALIDATE_SECONDS;
+export const revalidate = 30;
 
 const TOKEN_LIST_NAME = 'LiFi Transfer Tokens';
 const TOKEN_LIST_VERSION = { major: 1, minor: 0, patch: 0 };

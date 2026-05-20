@@ -39,7 +39,9 @@ const sortBlogs = (blogs: Blog[]) => {
 
 const fetchBlogs = async () => {
   try {
-    const data = await fetch('https://arbitrum.io/__blog.json');
+    const data = await fetch('https://arbitrum.io/__blog.json', {
+      signal: AbortSignal.timeout(5000),
+    });
     const blogs = sortBlogs((await data.json()).content);
 
     return blogs;

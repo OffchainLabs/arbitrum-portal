@@ -1,6 +1,5 @@
 import { constants } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLatest } from 'react-use';
 import { create } from 'zustand';
 
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
@@ -51,7 +50,10 @@ type TokenImportDialogProps = Omit<UseDialogProps, 'isOpen'> & {
   tokenAddress: string;
 };
 
-export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogProps): JSX.Element {
+export function TokenImportDialog({
+  onClose,
+  tokenAddress,
+}: TokenImportDialogProps): React.JSX.Element {
   const {
     app: {
       arbTokenBridge: { bridgeTokens, token },
@@ -62,12 +64,7 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
   const { childChainProvider, parentChainProvider } = useNetworksRelationship(networks);
 
   const tokensFromUser = useTokensFromUser();
-  const latestTokensFromUser = useLatest(tokensFromUser);
-
   const tokensFromLists = useTokensFromLists();
-  const latestTokensFromLists = useLatest(tokensFromLists);
-
-  const latestBridgeTokens = useLatest(bridgeTokens);
 
   const [status, setStatus] = useState<ImportStatus>(ImportStatus.LOADING);
   const [isImportingToken, setIsImportingToken] = useState<boolean>(false);
@@ -119,12 +116,11 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
   const searchForTokenInLists = useCallback(
     (erc20L1Address: string): TokenListSearchResult => {
       // We found the token in an imported list
-      const currentBridgeTokens = latestBridgeTokens.current;
-      if (typeof currentBridgeTokens === 'undefined') {
+      if (typeof bridgeTokens === 'undefined') {
         return { found: false };
       }
 
-      const l1Token = currentBridgeTokens[erc20L1Address];
+      const l1Token = bridgeTokens[erc20L1Address];
       if (typeof l1Token !== 'undefined') {
         return {
           found: true,
@@ -134,8 +130,8 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
       }
 
       const tokens = {
-        ...latestTokensFromLists.current,
-        ...latestTokensFromUser.current,
+        ...tokensFromLists,
+        ...tokensFromUser,
       };
 
       const token = tokens[erc20L1Address];
@@ -150,7 +146,7 @@ export function TokenImportDialog({ onClose, tokenAddress }: TokenImportDialogPr
 
       return { found: false };
     },
-    [latestBridgeTokens, latestTokensFromLists, latestTokensFromUser],
+    [bridgeTokens, tokensFromLists, tokensFromUser],
   );
 
   const selectToken = useCallback(
