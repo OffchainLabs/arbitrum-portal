@@ -1,11 +1,7 @@
 import { createConfig, getStepTransaction, getTransactionHistory } from '@lifi/sdk';
-import { createPublicClient, fallback, http } from 'viem';
-import { arbitrum } from 'viem/chains';
 
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
-import { PORTAL_DOMAIN } from '@/bridge/constants';
 import { ChainId } from '@/bridge/types/ChainId';
-import { rpcURLs } from '@/bridge/util/networks';
 
 import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
@@ -20,6 +16,7 @@ import {
   updateLiquidStakingOpportunitiesWithDuneData,
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
+import { createEarnPublicClient } from '../lib/serverPublicClient';
 import { ValidationError } from '../lib/validation';
 import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
@@ -49,21 +46,7 @@ export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
-    const isNonProd = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production';
-
-    // Server-side RPC requests have no browser Origin header, which makes Alchemy reject keys without allowlisted Origins.
-    // Hence, set the origin explicitly to the portal domain that would be allowlisted by the Alchemy key.
-    const origin =
-      isNonProd && process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : PORTAL_DOMAIN;
-    return createPublicClient({
-      chain: arbitrum,
-      transport: fallback([
-        http(rpcURLs[ChainId.ArbitrumOne], {
-          fetchOptions: { headers: { Origin: origin } },
-        }),
-        http('https://arb1.arbitrum.io/rpc'), // public Arbitrum RPC as a fallback in case Alchemy RPC ever fails for whatever reason
-      ]),
-    });
+    return createEarnPublicClient(ChainId.ArbitrumOne);
   }
 
   private async getQuoteStep(params: {
