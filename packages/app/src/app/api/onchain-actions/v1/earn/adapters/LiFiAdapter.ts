@@ -1,5 +1,5 @@
 import { createConfig, getStepTransaction, getTransactionHistory } from '@lifi/sdk';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, fallback, http } from 'viem';
 import { arbitrum } from 'viem/chains';
 
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
@@ -39,6 +39,10 @@ import {
   VendorAdapter,
 } from '../types';
 
+// Public Arbitrum RPC used as a safety net when Alchemy returns HTML / rate
+// limits this serverless function's egress IP.
+const ARBITRUM_PUBLIC_RPC_URL = 'https://arb1.arbitrum.io/rpc';
+
 createConfig({
   integrator: LIFI_INTEGRATOR_IDS.NORMAL,
   apiKey: process.env.LIFI_KEY,
@@ -48,16 +52,13 @@ export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
+    const transportOptions = { timeout: 10_000, retryCount: 2, retryDelay: 200 } as const;
     return createPublicClient({
       chain: arbitrum,
-      // Vercel egress sometimes gets partial Alchemy responses (5xx / HTML
-      // error bodies). retryCount covers status-based retries; lib/lifiPositions
-      // covers JSON-parse failures viem can't detect.
-      transport: http(rpcURLs[ChainId.ArbitrumOne], {
-        timeout: 10_000,
-        retryCount: 3,
-        retryDelay: 200,
-      }),
+      transport: fallback([
+        http(rpcURLs[ChainId.ArbitrumOne], transportOptions),
+        http(ARBITRUM_PUBLIC_RPC_URL, transportOptions),
+      ]),
     });
   }
 
