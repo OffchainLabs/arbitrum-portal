@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
+import { enforceEarnRateLimit } from '../lib/rateLimit';
 import {
   ValidationError,
   parseOptionalEarnChainId,
@@ -23,6 +24,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimited = await enforceEarnRateLimit(request);
+    if (rateLimited) return rateLimited;
+
     const searchParams = request.nextUrl.searchParams;
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const orderByParam = searchParams.get('orderBy');

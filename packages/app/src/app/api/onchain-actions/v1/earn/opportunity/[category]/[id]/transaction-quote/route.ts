@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
+import { enforceEarnRateLimit } from '../../../../lib/rateLimit';
 import {
   ValidationError,
   assertAddress,
@@ -135,6 +136,11 @@ export async function GET(
 ) {
   try {
     const url = new URL(request.url);
+    const rateLimited = await enforceEarnRateLimit(request, {
+      key: url.searchParams.get('userAddress'),
+    });
+    if (rateLimited) return rateLimited;
+
     const quoteInput = {
       category: params.category,
       opportunityId: params.id,
