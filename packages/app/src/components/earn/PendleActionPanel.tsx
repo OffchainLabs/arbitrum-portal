@@ -4,7 +4,6 @@ import { useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { type PendleAction, getPendleSettlementTokens } from '@/app-hooks/earn/pendlePanelUtils';
-import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
 import { useEarnTokenPrice } from '@/app-hooks/earn/useEarnPrices';
 import { usePendlePanelControls } from '@/app-hooks/earn/usePendlePanelControls';
 import { usePendlePanelData } from '@/app-hooks/earn/usePendlePanelData';
@@ -32,32 +31,16 @@ import { SlippageSettingsPanel } from './SlippageSettingsPanel';
 
 function PendleTransactionInfo({
   transactionDetails,
-  estimatedTxCost,
-  isGasEstimateLoading,
-  gasEstimateError,
   slippagePercent,
   onSlippageChange,
 }: {
   transactionDetails: TransactionDetail[];
-  estimatedTxCost: GasEstimate | null;
-  isGasEstimateLoading: boolean;
-  gasEstimateError: Error | null;
   slippagePercent: number;
   onSlippageChange: (value: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
       <EarnTransactionDetailsSection details={transactionDetails} />
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-white/40">Transaction Cost</span>
-        <span className="text-xs text-white">
-          <EarnGasEstimateDisplay
-            estimate={estimatedTxCost}
-            isLoading={isGasEstimateLoading}
-            error={gasEstimateError}
-          />
-        </span>
-      </div>
       <SlippageSettingsPanel
         slippagePercent={slippagePercent}
         onSlippageChange={onSlippageChange}
@@ -212,8 +195,25 @@ export function PendleActionPanel({
       });
     }
 
+    details.push({
+      label: 'Transaction Cost',
+      value: (
+        <EarnGasEstimateDisplay
+          estimate={data.estimatedTxCost}
+          isLoading={data.isGasEstimateLoading}
+          error={data.gasEstimateError}
+        />
+      ),
+    });
+
     return details;
-  }, [data.fixedApy, data.priceImpact]);
+  }, [
+    data.estimatedTxCost,
+    data.fixedApy,
+    data.gasEstimateError,
+    data.isGasEstimateLoading,
+    data.priceImpact,
+  ]);
 
   const enterTokenControl =
     selectedInputToken != null
@@ -289,9 +289,6 @@ export function PendleActionPanel({
 
   const sharedTransactionInfoProps = {
     transactionDetails,
-    estimatedTxCost: data.estimatedTxCost,
-    isGasEstimateLoading: data.isGasEstimateLoading,
-    gasEstimateError: data.gasEstimateError,
     slippagePercent,
     onSlippageChange,
   };

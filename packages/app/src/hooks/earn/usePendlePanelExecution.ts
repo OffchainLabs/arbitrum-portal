@@ -179,12 +179,7 @@ export function usePendlePanelExecution({
             timestamp,
             protocolName: 'Pendle',
             protocolLogo: opportunity.protocolIcon,
-            networkFee: estimatedTxCost
-              ? {
-                  amount: estimatedTxCost.eth,
-                  usd: estimatedTxCost.usd ?? '0.00',
-                }
-              : undefined,
+            networkFee: estimatedTxCost ? { amount: estimatedTxCost.eth } : undefined,
             opportunityName: opportunity.name ?? opportunity.token,
           },
           true,
