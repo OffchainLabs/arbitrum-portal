@@ -4,7 +4,7 @@ import { getAddress } from 'viem';
 
 import { earnCacheTags } from '@/earn-api/lib/cache';
 import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
-import { createEarnPublicClient } from '@/earn-api/lib/serverPublicClient';
+import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient';
 import {
   ValidationError,
   assertAddress,
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
     if (rateLimited) return rateLimited;
 
-    const client = createEarnPublicClient(chainId);
+    const client = createServerSidePublicClient(chainId);
     const receipt = await client.waitForTransactionReceipt({
       hash: txHash,
       timeout: 5_000,
