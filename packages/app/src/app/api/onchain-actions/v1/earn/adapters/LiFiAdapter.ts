@@ -50,7 +50,14 @@ export class LiFiAdapter implements VendorAdapter {
   private getArbitrumPublicClient() {
     return createPublicClient({
       chain: arbitrum,
-      transport: http(rpcURLs[ChainId.ArbitrumOne]),
+      // Vercel egress sometimes gets partial Alchemy responses (5xx / HTML
+      // error bodies). retryCount covers status-based retries; lib/lifiPositions
+      // covers JSON-parse failures viem can't detect.
+      transport: http(rpcURLs[ChainId.ArbitrumOne], {
+        timeout: 10_000,
+        retryCount: 3,
+        retryDelay: 200,
+      }),
     });
   }
 

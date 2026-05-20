@@ -11,6 +11,56 @@ import {
 } from './zerionPriceSources';
 import { fetchZerionCurrentPrices } from './zerionService';
 
+// Alchemy occasionally returns HTML ("Unspecified error") with a non-JSON body
+// during partial outages. viem doesn't retry these (no HTTP status, just a JSON
+// parse failure), so we retry transient-looking RPC failures ourselves.
+const TRANSIENT_RPC_PATTERNS = [
+  /http request failed/i,
+  /is not valid json/i,
+  /fetch failed/i,
+  /socket hang up/i,
+  /etimedout/i,
+  /econnreset/i,
+  /\b50\d\b/,
+];
+
+function isTransientRpcError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = `${error.message} ${
+    (error as { cause?: { message?: string } }).cause?.message ?? ''
+  }`;
+  return TRANSIENT_RPC_PATTERNS.some((re) => re.test(message));
+}
+
+async function readErc20BalanceWithRetry(params: {
+  publicClient: PublicClient;
+  tokenAddress: string;
+  userAddress: string;
+  attempts?: number;
+}): Promise<bigint> {
+  const { publicClient, tokenAddress, userAddress, attempts = 3 } = params;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      // eslint-disable-next-line no-await-in-loop -- retry must be sequential
+      return await publicClient.readContract({
+        address: getAddress(tokenAddress),
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [getAddress(userAddress)],
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts - 1 || !isTransientRpcError(error)) {
+        throw error;
+      }
+      // eslint-disable-next-line no-await-in-loop -- intentional backoff
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export async function fetchLiquidStakingPriceMap(
   opportunities: LiquidStakingOpportunitySeed[],
 ): Promise<Map<string, number | null>> {
@@ -66,11 +116,10 @@ export async function fetchLifiUserPositions(params: {
 
     try {
       // eslint-disable-next-line no-await-in-loop -- intentionally sequential to avoid bursting the RPC
-      const balance = await publicClient.readContract({
-        address: getAddress(tokenAddress),
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [getAddress(userAddress)],
+      const balance = await readErc20BalanceWithRetry({
+        publicClient,
+        tokenAddress,
+        userAddress,
       });
 
       if (balance === BigInt(0)) {
@@ -114,7 +163,11 @@ export async function fetchLifiUserPositions(params: {
         },
       });
     } catch (error) {
-      console.error(`Failed to fetch balance for ${tokenAddress}:`, error);
+      const shortMessage =
+        error instanceof Error
+          ? ((error as { shortMessage?: string }).shortMessage ?? error.message.split('\n')[0])
+          : String(error);
+      console.error(`Failed to fetch balance for ${tokenAddress}: ${shortMessage}`);
     }
   }
 
