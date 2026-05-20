@@ -5,7 +5,8 @@ import { useCallback, useState } from 'react';
 
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
-import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
+import { reportEarnError } from '@/app-lib/earn/errorUtils';
+import { isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardOpportunityFixedYield, StandardTransactionHistory } from '@/earn-api/types';
 
@@ -81,7 +82,7 @@ export function usePendlePanelExecution({
   resetAmount,
 }: UsePendlePanelExecutionParams) {
   const posthog = usePostHog();
-  const [txError, setTxError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<unknown>(null);
   const { addTransaction } = useEarnTransactionHistory(
     OpportunityCategory.FixedYield,
     opportunity.id,
@@ -248,12 +249,22 @@ export function usePendlePanelExecution({
       await executeTx();
     } catch (error) {
       if (!isUserRejectedError(error)) {
-        setTxError(formatTransactionError(error));
+        setTxError(error);
+        reportEarnError(error, {
+          label: `earn_pendle_${selectedAction}`,
+          category: 'earn_transaction',
+          opportunityId: opportunity.id,
+          vendor: Vendor.Pendle,
+          chainId: opportunity.chainId,
+        });
       }
     }
   }, [
     checkAndShowToS,
     executeTx,
+    opportunity.chainId,
+    opportunity.id,
+    selectedAction,
     transactionQuote?.transactionSteps,
     transferReadiness.isReady,
     walletAddress,

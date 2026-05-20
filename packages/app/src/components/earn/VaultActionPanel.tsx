@@ -18,6 +18,7 @@ import {
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
+import { reportEarnError } from '@/app-lib/earn/errorUtils';
 import {
   deriveVault,
   formatApr,
@@ -27,7 +28,6 @@ import {
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
-import { formatTransactionError } from '@/bridge/util/isUserRejectedError';
 import { Card } from '@/components/Card';
 import { type StandardOpportunityLend, Vendor } from '@/earn-api/types';
 
@@ -64,7 +64,7 @@ export function VaultActionPanel({
 
   const [amount, setAmount] = useState('');
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
-  const [txError, setTxError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<unknown>(null);
   const requestChainId = vault.chainId;
 
   useEffect(() => {
@@ -384,7 +384,14 @@ export function VaultActionPanel({
     try {
       await executeTx();
     } catch (error) {
-      setTxError(formatTransactionError(error));
+      setTxError(error);
+      reportEarnError(error, {
+        label: `earn_vault_${selectedAction}`,
+        category: 'earn_transaction',
+        opportunityId: opportunity.id,
+        vendor: Vendor.Vaults,
+        chainId: requestChainId,
+      });
     }
   };
 
@@ -471,7 +478,7 @@ export function VaultActionPanel({
 
       <EarnTransactionDetailsSection details={transactionDetailsRows} />
 
-      <EarnErrorDisplay error={txError || transactionQuoteError?.message || null} />
+      <EarnErrorDisplay error={txError ?? transactionQuoteError ?? null} />
 
       <EarnActionSubmitButton
         label={submitLabel}

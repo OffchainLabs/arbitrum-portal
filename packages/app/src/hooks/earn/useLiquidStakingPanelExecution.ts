@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from 'react';
 
+import { reportEarnError } from '@/app-lib/earn/errorUtils';
 import type { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
-import { OpportunityCategory } from '@/earn-api/types';
+import { isUserRejectedError } from '@/bridge/util/isUserRejectedError';
+import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { TransactionStep } from '@/earn-api/types';
 
 import type { TransactionDetails } from '../../components/earn/EarnTransactionDetailsPopup';
@@ -73,7 +74,7 @@ export function useLiquidStakingPanelExecution({
   resetAmount,
   refetchBalances,
 }: UseLiquidStakingPanelExecutionParams) {
-  const [txError, setTxError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<unknown>(null);
   const { addTransaction } = useEarnTransactionHistory(
     OpportunityCategory.LiquidStaking,
     opportunity.id,
@@ -164,10 +165,25 @@ export function useLiquidStakingPanelExecution({
       await executeTx();
     } catch (error) {
       if (!isUserRejectedError(error)) {
-        setTxError(formatTransactionError(error));
+        setTxError(error);
+        reportEarnError(error, {
+          label: `earn_liquid_staking_${selectedAction}`,
+          category: 'earn_transaction',
+          opportunityId: opportunity.id,
+          vendor: Vendor.LiFi,
+          chainId: requestChainId,
+        });
       }
     }
-  }, [canSubmit, checkAndShowToS, executeTx, walletAddress]);
+  }, [
+    canSubmit,
+    checkAndShowToS,
+    executeTx,
+    opportunity.id,
+    requestChainId,
+    selectedAction,
+    walletAddress,
+  ]);
 
   return {
     txError,
