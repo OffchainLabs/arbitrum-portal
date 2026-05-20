@@ -4,7 +4,7 @@ import { usePostHog } from 'posthog-js/react';
 import { useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
-import { useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
+import { DEFAULT_EARN_MIN_TVL, useAllOpportunities } from '@/app-hooks/earn/useAllOpportunities';
 import { useUserPositions } from '@/app-hooks/earn/useUserPositions';
 import {
   type OpportunitySelectHandler,
@@ -25,7 +25,7 @@ export function AllOpportunitiesPage() {
     opportunities: allOpportunities,
     isLoading: opportunitiesLoading,
     error: opportunitiesError,
-  } = useAllOpportunities({ chainId: ChainId.ArbitrumOne, minTvl: 5_000_000 });
+  } = useAllOpportunities({ chainId: ChainId.ArbitrumOne, minTvl: DEFAULT_EARN_MIN_TVL });
 
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(
     isConnected ? (address ?? null) : null,
