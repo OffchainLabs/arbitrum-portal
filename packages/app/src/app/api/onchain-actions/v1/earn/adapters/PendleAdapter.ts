@@ -51,6 +51,17 @@ const DEFAULT_PENDLE_DECIMALS = 18;
 const PENDLE_TX_HISTORY_DEFAULT_PAGE = 1;
 const PENDLE_TX_HISTORY_DEFAULT_PAGE_SIZE = 50;
 
+// Pendle enter/exit on Arbitrum routes through the Pendle aggregator
+// (enableAggregator: true) which consistently uses 950k-1.2M gas.
+// Sampled sUSDai market enters via aggregator (0xdb9b1e94...):
+//   https://arbiscan.io/tx/0x8fc4f73a8e2e63a34375f4f54b6740a6755cab666c98a25ca0a13f8b03438487 (950k)
+//   https://arbiscan.io/tx/0xc74c8f4329c6924d3f31245feeec0000818807767083b3033021cde78078dfba (1.18M)
+//   https://arbiscan.io/tx/0xca6f8f35abc177a38124a5e596fdeab6047de1088d493f79444becfcc72e065e (1.20M)
+// Use 1.2M as the worst-case fallback when on-chain simulation fails
+// (slippage edges, router pre-conditions, etc.).
+const PENDLE_APPROVAL_GAS_FALLBACK = 80_000;
+const PENDLE_TRANSACTION_GAS_FALLBACK = 1_200_000;
+
 function isSupportedChainId(chainId: EarnChainId): boolean {
   return chainId === ChainId.ArbitrumOne;
 }
@@ -383,6 +394,7 @@ export class PendleAdapter implements VendorAdapter {
         data: approvalData,
         value: '0',
         chainId,
+        gasLimitFallback: PENDLE_APPROVAL_GAS_FALLBACK,
       });
 
       stepNumber += 1;
@@ -395,6 +407,7 @@ export class PendleAdapter implements VendorAdapter {
       data: firstRoute.tx.data,
       value: firstRoute.tx.value || '0',
       chainId,
+      gasLimitFallback: PENDLE_TRANSACTION_GAS_FALLBACK,
     });
 
     const receiveAmount = firstRoute.outputs?.[0]?.amount;

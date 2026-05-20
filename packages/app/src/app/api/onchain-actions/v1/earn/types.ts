@@ -206,6 +206,10 @@ export interface TransactionStep {
   value?: string;
   chainId: number;
   description?: string;
+  // Per-vendor gas-limit hint, used as a fallback when on-chain `estimateGas`
+  // simulation fails (e.g., Pendle router pre-conditions, slippage edges).
+  // Derived from observed on-chain history per vendor; see useEarnGasEstimate.
+  gasLimitFallback?: number;
 }
 
 /** Pre-built template for the transaction details popup (minus runtime fields). */
