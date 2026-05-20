@@ -16,7 +16,7 @@ import {
   updateLiquidStakingOpportunitiesWithDuneData,
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
-import { createEarnPublicClient } from '../lib/serverPublicClient';
+import { createServerSidePublicClient } from '../lib/serverPublicClient';
 import { ValidationError } from '../lib/validation';
 import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
@@ -46,7 +46,7 @@ export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
-    return createEarnPublicClient(ChainId.ArbitrumOne);
+    return createServerSidePublicClient(ChainId.ArbitrumOne);
   }
 
   private async getQuoteStep(params: {

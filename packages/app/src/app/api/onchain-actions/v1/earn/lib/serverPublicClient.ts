@@ -23,7 +23,7 @@ function getEarnChain(chainId: EarnChainId) {
   throw new ValidationError('UNSUPPORTED_CHAIN_ID', `Unsupported chainId ${chainId}`);
 }
 
-export function createEarnPublicClient(chainId: EarnChainId) {
+export function createServerSidePublicClient(chainId: EarnChainId) {
   const chain = getEarnChain(chainId);
   const primaryRpcUrl = rpcURLs[chainId];
   const publicRpcUrl = chain.rpcUrls.default.http[0];
