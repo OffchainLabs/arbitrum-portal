@@ -13,7 +13,9 @@ const MAX_RESULTS = 50;
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
 const router = new CategoryRouter();
 
-export const revalidate = 3600;
+// Reads `request.nextUrl.searchParams`, so this route can't be statically
+// rendered. CDN caching is handled by the `Cache-Control` header below.
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {

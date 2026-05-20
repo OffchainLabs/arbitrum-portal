@@ -8,6 +8,8 @@ import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
+export const DEFAULT_EARN_MIN_TVL = 5_000_000;
+
 interface UseAllOpportunitiesResult {
   opportunities: OpportunityTableRow[];
   isLoading: boolean;

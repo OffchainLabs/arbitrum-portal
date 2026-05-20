@@ -66,21 +66,23 @@ const PRICE_BY_SYMBOL: Record<string, ZerionPriceLookup> = {
 // Keyed by `${chainId}:${lowercaseAddress}` — used when the exact contract
 // is known from on-chain or vendor metadata.
 const PRICE_BY_ADDRESS: Record<string, ZerionPriceLookup> = {
+  // Zerion's Arbitrum impls for WETH/WSTETH/WBTC resolve to a multi-chain
+  // fungible with no chart attached, so route to the Ethereum impl instead.
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WETH.toLowerCase()}`]: impl(
-    ARB,
-    CommonAddress.ArbitrumOne.WETH,
+    ETH,
+    CommonAddress.Ethereum.WETH,
   ),
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WSTETH.toLowerCase()}`]: impl(
-    ARB,
-    CommonAddress.ArbitrumOne.WSTETH,
+    ETH,
+    CommonAddress.Ethereum.WSTETH,
   ),
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WEETH.toLowerCase()}`]: impl(
     ARB,
     CommonAddress.ArbitrumOne.WEETH,
   ),
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.WBTC.toLowerCase()}`]: impl(
-    ARB,
-    CommonAddress.ArbitrumOne.WBTC,
+    ETH,
+    CommonAddress.Ethereum.WBTC,
   ),
   [`${ChainId.ArbitrumOne}:${CommonAddress.ArbitrumOne.ARB.toLowerCase()}`]: impl(
     ARB,

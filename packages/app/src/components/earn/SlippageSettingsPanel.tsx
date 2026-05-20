@@ -1,7 +1,15 @@
 'use client';
 
-import { Cog6ToothIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowTopRightOnSquareIcon,
+  Cog6ToothIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { useCallback, useState } from 'react';
+
+import { ExternalLink } from '@/components/ExternalLink';
 
 const SLIPPAGE_PRESETS = [0.2, 0.25, 0.5, 1] as const;
 const SLIPPAGE_MIN = 0.01;
@@ -35,6 +43,8 @@ export function SlippageSettingsPanel({
 
   const isSlippageValid = Number.isFinite(draft) && draft >= SLIPPAGE_MIN && draft <= SLIPPAGE_MAX;
   const activePreset = customInput === '' && isPreset(draft) ? draft : null;
+  const slippageIsTooLow = isSlippageValid && draft <= SLIPPAGE_MIN;
+  const slippageIsTooHigh = isSlippageValid && draft > 1;
 
   const handleUpdate = useCallback(() => {
     if (!isSlippageValid) return;
@@ -84,9 +94,37 @@ export function SlippageSettingsPanel({
       </div>
       {open && (
         <>
-          <p className="text-xs text-gray-650">
-            Select the maximum amount of slippage you&apos;re willing to accept on this swap.
-          </p>
+          <div className="flex flex-nowrap items-start gap-1 text-xs py-2">
+            {slippageIsTooLow ? (
+              <>
+                <ExclamationCircleIcon className="h-4 w-4 shrink-0 text-orange" />
+                <span className="text-orange">
+                  Slippage amount is low. You may see very limited route options.
+                </span>
+              </>
+            ) : slippageIsTooHigh ? (
+              <>
+                <ExclamationCircleIcon className="h-4 w-4 shrink-0 text-orange" />
+                <span className="text-orange">
+                  Slippage amount is high. Industry recommendation is 0.5% or less.
+                </span>
+              </>
+            ) : (
+              <>
+                <InformationCircleIcon className="h-4 w-4 shrink-0 text-gray-650" />
+                <span className="flex flex-wrap gap-1 whitespace-nowrap text-gray-650">
+                  0.5% - 1% is the recommended range for slippage.{' '}
+                  <ExternalLink
+                    href="https://www.ledger.com/academy/what-is-slippage-in-crypto"
+                    className="arb-hover flex items-center underline"
+                  >
+                    Read more
+                    <ArrowTopRightOnSquareIcon className="ml-[2px] h-3 w-3" />
+                  </ExternalLink>
+                </span>
+              </>
+            )}
+          </div>
           <div className="grid grid-cols-6 gap-2">
             {SLIPPAGE_PRESETS.map((p) => (
               <button

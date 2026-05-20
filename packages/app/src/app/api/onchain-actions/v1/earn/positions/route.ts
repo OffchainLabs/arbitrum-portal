@@ -13,6 +13,10 @@ import { StandardUserPosition, Vendor } from '../types';
 
 const router = new CategoryRouter();
 
+// Reads `request.nextUrl.searchParams`, so this route can't be statically
+// rendered. The handler still memoizes per-user results via `unstable_cache`.
+export const dynamic = 'force-dynamic';
+
 const ALL_CATEGORIES: readonly OpportunityCategory[] = [
   OpportunityCategory.Lend,
   OpportunityCategory.LiquidStaking,

@@ -10,7 +10,7 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { type EarnChainId, OpportunityCategory } from '@/earn-api/types';
 
-import { useAllOpportunities } from './useAllOpportunities';
+import { DEFAULT_EARN_MIN_TVL, useAllOpportunities } from './useAllOpportunities';
 import { useUserPositions } from './useUserPositions';
 
 type AssetDescriptor = {
@@ -46,7 +46,10 @@ export function useEarnPrices(params?: {
   chainId?: EarnChainId;
 }): UseEarnPricesResult {
   const chainId = params?.chainId ?? ChainId.ArbitrumOne;
-  const { opportunities, isLoading: opportunitiesLoading } = useAllOpportunities({ chainId });
+  const { opportunities, isLoading: opportunitiesLoading } = useAllOpportunities({
+    chainId,
+    minTvl: DEFAULT_EARN_MIN_TVL,
+  });
   const { positionsMap, isLoading: positionsLoading } = useUserPositions(params?.userAddress, [
     chainId,
   ]);
