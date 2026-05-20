@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
+import { useRevalidateEarnAction } from '@/app-hooks/earn/useRevalidateEarnAction';
 import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardOpportunityFixedYield, StandardTransactionHistory } from '@/earn-api/types';
@@ -82,6 +83,7 @@ export function usePendlePanelExecution({
 }: UsePendlePanelExecutionParams) {
   const posthog = usePostHog();
   const [txError, setTxError] = useState<string | null>(null);
+  const revalidateEarnAction = useRevalidateEarnAction();
   const { addTransaction } = useEarnTransactionHistory(
     OpportunityCategory.FixedYield,
     opportunity.id,
@@ -164,6 +166,13 @@ export function usePendlePanelExecution({
           vendor: Vendor.Pendle,
           transaction: historyItem,
         });
+        revalidateEarnAction({
+          category: OpportunityCategory.FixedYield,
+          chainId: opportunity.chainId,
+          opportunityId: opportunity.id,
+          userAddress: walletAddress,
+          txHash,
+        });
       }
 
       if (txHash) {
@@ -199,6 +208,7 @@ export function usePendlePanelExecution({
       posthog,
       quoteAmountRaw,
       refetch,
+      revalidateEarnAction,
       resetAmount,
       selectedAction,
       selectedInputToken?.logoUrl,

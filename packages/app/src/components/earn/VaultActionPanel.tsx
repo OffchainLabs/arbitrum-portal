@@ -17,6 +17,7 @@ import {
   parseAmountToRawUnits,
 } from '@/app-hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '@/app-hooks/earn/useEarnTransferReadiness';
+import { useRevalidateEarnAction } from '@/app-hooks/earn/useRevalidateEarnAction';
 import { useTransactionQuote } from '@/app-hooks/earn/useTransactionQuote';
 import {
   deriveVault,
@@ -66,6 +67,7 @@ export function VaultActionPanel({
   const [selectedAction, setSelectedAction] = useState<ActionType>(initialAction);
   const [txError, setTxError] = useState<string | null>(null);
   const requestChainId = vault.chainId;
+  const revalidateEarnAction = useRevalidateEarnAction();
 
   useEffect(() => {
     setAmount('');
@@ -261,6 +263,13 @@ export function VaultActionPanel({
             vendor: Vendor.Vaults,
             transaction: historyRecord,
           });
+          revalidateEarnAction({
+            category: OpportunityCategory.Lend,
+            chainId: vault.chainId,
+            opportunityId: vault.address,
+            userAddress: walletAddress,
+            txHash,
+          });
         }
       }
 
@@ -288,6 +297,7 @@ export function VaultActionPanel({
       posthog,
       refetchAssetBalance,
       refetchLpTokenBalance,
+      revalidateEarnAction,
       selectedAction,
       showTransactionDetails,
       transactionQuote,

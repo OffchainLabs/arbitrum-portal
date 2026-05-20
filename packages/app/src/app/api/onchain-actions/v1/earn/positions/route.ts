@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
 import {
   assertAddress,
   parseEarnChainId,
@@ -184,8 +185,8 @@ export async function GET(request: NextRequest) {
       },
       [cacheKey],
       {
-        revalidate: 300, // 5 minutes (positions change frequently)
-        tags: ['positions', userAddress, cacheKey],
+        revalidate: EARN_CACHE_SECONDS.positions,
+        tags: earnCacheTags.positions(userAddress),
       },
     );
 
@@ -193,7 +194,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=300',
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
       },
     });
   } catch (error) {
