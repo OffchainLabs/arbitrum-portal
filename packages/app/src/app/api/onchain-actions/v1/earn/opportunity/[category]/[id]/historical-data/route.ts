@@ -1,12 +1,13 @@
+import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
+import { EARN_CACHE_SECONDS, earnCacheTags } from '@/earn-api/lib/cache';
 import {
   alignTimestampToGranularity,
   buildWindowFromRange,
   deriveGranularityFromWindow,
   deriveRangeFromWindow,
-  getSuggestedCacheTtlSeconds,
 } from '@/earn-api/lib/historicalWindow';
 import {
   ValidationError,
@@ -18,7 +19,6 @@ import {
   parseOptionalTimestamp,
 } from '@/earn-api/lib/validation';
 import {
-  HISTORICAL_VENDOR_TTL_SECONDS,
   type HistoricalData,
   type HistoricalGranularity,
   type HistoricalTimeRange,
@@ -66,8 +66,6 @@ function resolveWindow(
   };
 }
 
-export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
-
 const router = new CategoryRouter();
 
 export async function GET(
@@ -90,23 +88,34 @@ export async function GET(
       toTimestampParam,
     );
 
-    const adapter = router.routeToAdapter(category);
+    const cacheTtlSeconds =
+      resolvedRange === '1d'
+        ? EARN_CACHE_SECONDS.historical1d
+        : EARN_CACHE_SECONDS.historicalDefault;
 
-    const historicalData: HistoricalData = await adapter.getHistoricalData(
-      opportunityId,
-      resolvedRange,
-      chainId,
-      { assetSymbol, fromTimestamp, toTimestamp, granularity, resolvedRange },
+    const adapter = router.routeToAdapter(category);
+    const getCachedHistoricalData = unstable_cache(
+      () =>
+        adapter.getHistoricalData(opportunityId, resolvedRange, chainId, {
+          assetSymbol,
+          fromTimestamp,
+          toTimestamp,
+          granularity,
+          resolvedRange,
+        }),
+      [
+        `earn:historical:${category}:${chainId}:${opportunityId.toLowerCase()}:${resolvedRange}:${fromTimestamp}:${toTimestamp}:${assetSymbol ?? 'default'}`,
+      ],
+      {
+        revalidate: cacheTtlSeconds,
+        tags: earnCacheTags.historicalOpportunity(opportunityId),
+      },
     );
+    const historicalData: HistoricalData = await getCachedHistoricalData();
 
     if (!historicalData) {
       throw new ValidationError('HISTORICAL_DATA_NOT_FOUND', 'No historical data found', 404);
     }
-
-    const cacheTtlSeconds = Math.min(
-      HISTORICAL_VENDOR_TTL_SECONDS,
-      getSuggestedCacheTtlSeconds(granularity),
-    );
 
     return NextResponse.json(historicalData, {
       headers: {
