@@ -43,8 +43,8 @@ export function SlippageSettingsPanel({
 
   const isSlippageValid = Number.isFinite(draft) && draft >= SLIPPAGE_MIN && draft <= SLIPPAGE_MAX;
   const activePreset = customInput === '' && isPreset(draft) ? draft : null;
-  const slippageIsTooLow = isSlippageValid && draft <= 0.01;
-  const slippageIsTooHigh = isSlippageValid && draft >= 1;
+  const slippageIsTooLow = isSlippageValid && draft <= SLIPPAGE_MIN;
+  const slippageIsTooHigh = isSlippageValid && draft > 1;
 
   const handleUpdate = useCallback(() => {
     if (!isSlippageValid) return;
