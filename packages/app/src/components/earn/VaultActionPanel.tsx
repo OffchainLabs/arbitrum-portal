@@ -155,15 +155,11 @@ export function VaultActionPanel({
     lpTokenBalance,
   );
 
-  const amountExceedsBalance = useMemo(
-    () =>
-      checkAmountExceedsBalance(
-        amountInRawUnits,
-        selectedActionValues.balanceRaw,
-        isConnected,
-        walletAddress,
-      ),
-    [amountInRawUnits, selectedActionValues.balanceRaw, isConnected, walletAddress],
+  const amountExceedsBalance = checkAmountExceedsBalance(
+    amountInRawUnits,
+    selectedActionValues.balanceRaw,
+    isConnected,
+    walletAddress,
   );
 
   const {
@@ -182,10 +178,8 @@ export function VaultActionPanel({
     enabled: amountInRawUnits !== '0' && isConnected && !!walletAddress && !amountExceedsBalance,
   });
 
-  const chainId = useMemo(
-    () => getChainIdFromQuote(transactionQuote?.transactionSteps),
-    [transactionQuote],
-  );
+  const transactionSteps = transactionQuote?.transactionSteps;
+  const chainId = useMemo(() => getChainIdFromQuote(transactionSteps), [transactionSteps]);
   const fallbackChainIdFromQuote = chainId || networkChainId;
 
   const shouldFetchNativeBalance = canFetchBalance && chainId !== 0;
@@ -222,40 +216,42 @@ export function VaultActionPanel({
         : null,
   });
 
-  const onTransactionFinished = useCallback(
-    async ({ txHash }: { txHash: string | undefined }) => {
-      setAmount('');
-      refetchAssetBalance();
-      refetchLpTokenBalance();
+  async function onTransactionFinished({ txHash }: { txHash: string | undefined }) {
+    setAmount('');
+    refetchAssetBalance();
+    refetchLpTokenBalance();
 
-      if (
-        !transactionQuote?.transactionDetailsTemplate ||
-        !transactionQuote.pendingHistoryTemplate
-      ) {
-        return;
-      }
+    if (!transactionQuote?.transactionDetailsTemplate || !transactionQuote.pendingHistoryTemplate) {
+      return;
+    }
 
-      const { transactionDetailsTemplate, pendingHistoryTemplate } = transactionQuote;
-      const timestamp = Math.floor(Date.now() / 1000);
+    const { transactionDetailsTemplate, pendingHistoryTemplate } = transactionQuote;
+    const timestamp = Math.floor(Date.now() / 1000);
 
-      if (txHash) {
-        const historyRecord = { ...pendingHistoryTemplate, timestamp, transactionHash: txHash };
+    if (txHash) {
+      const historyRecord = { ...pendingHistoryTemplate, timestamp, transactionHash: txHash };
 
-        posthog?.capture('Earn Transaction Succeeded', {
-          page: 'Earn',
-          section: 'Action Panel',
-          category: OpportunityCategory.Lend,
-          action: selectedAction,
-          opportunityId: vault.address,
-          opportunityName: transactionDetailsTemplate.opportunityName ?? vault.name,
-          protocol: transactionDetailsTemplate.protocolName ?? vault.protocol?.name,
-          chainId: vault.chainId,
-          transactionHash: txHash,
-          inputToken: historyRecord.inputAssetSymbol ?? transactionDetailsTemplate.tokenSymbol,
-          inputAmountRaw: historyRecord.inputAssetAmountRaw ?? amountInRawUnits,
-          outputToken: historyRecord.outputAssetSymbol,
-          outputAmountRaw: historyRecord.outputAssetAmountRaw,
-          walletConnected: isConnected,
+      posthog?.capture('Earn Transaction Succeeded', {
+        page: 'Earn',
+        section: 'Action Panel',
+        category: OpportunityCategory.Lend,
+        action: selectedAction,
+        opportunityId: vault.address,
+        opportunityName: transactionDetailsTemplate.opportunityName ?? vault.name,
+        protocol: transactionDetailsTemplate.protocolName ?? vault.protocol?.name,
+        chainId: vault.chainId,
+        transactionHash: txHash,
+        inputToken: historyRecord.inputAssetSymbol ?? transactionDetailsTemplate.tokenSymbol,
+        inputAmountRaw: historyRecord.inputAssetAmountRaw ?? amountInRawUnits,
+        outputToken: historyRecord.outputAssetSymbol,
+        outputAmountRaw: historyRecord.outputAssetAmountRaw,
+        walletConnected: isConnected,
+      });
+
+      if (walletAddress) {
+        await addTransaction({
+          vendor: Vendor.Vaults,
+          transaction: historyRecord,
         });
 
         if (walletAddress) {
@@ -272,42 +268,24 @@ export function VaultActionPanel({
           });
         }
       }
+    }
 
-      const networkFee =
-        estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
-          ? { amount: `~${estimatedTxCostUsd.eth} ETH` }
-          : undefined;
+    const networkFee =
+      estimatedTxCostUsd?.eth && estimatedTxCostUsd.eth !== '—'
+        ? { amount: `~${estimatedTxCostUsd.eth} ETH` }
+        : undefined;
 
-      showTransactionDetails(
-        {
-          action: selectedAction === 'supply' ? 'supply' : 'withdraw',
-          ...transactionDetailsTemplate,
-          txHash: txHash ?? '',
-          timestamp,
-          networkFee,
-        },
-        true,
-      );
-    },
-    [
-      addTransaction,
-      amountInRawUnits,
-      estimatedTxCostUsd,
-      isConnected,
-      posthog,
-      refetchAssetBalance,
-      refetchLpTokenBalance,
-      revalidateEarnAction,
-      selectedAction,
-      showTransactionDetails,
-      transactionQuote,
-      vault.address,
-      vault.chainId,
-      vault.name,
-      vault.protocol?.name,
-      walletAddress,
-    ],
-  );
+    showTransactionDetails(
+      {
+        action: selectedAction === 'supply' ? 'supply' : 'withdraw',
+        ...transactionDetailsTemplate,
+        txHash: txHash ?? '',
+        timestamp,
+        networkFee,
+      },
+      true,
+    );
+  }
 
   const { executeTx, isExecuting } = useEarnTransactionExecution({
     chainId,

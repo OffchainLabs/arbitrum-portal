@@ -1,6 +1,7 @@
+import { FlatCompat } from '@eslint/eslintrc';
 import offchainBase from '@offchainlabs/eslint-config-typescript/base.js';
-import offchainNext from '@offchainlabs/eslint-config-typescript/next.js';
 import tsParser from '@typescript-eslint/parser';
+import nextConfig from 'eslint-config-next';
 import jestPlugin from 'eslint-plugin-jest';
 import zustandRules from 'eslint-plugin-zustand-rules';
 import { globalIgnores } from 'eslint/config';
@@ -9,6 +10,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const disabledJestRules = Object.fromEntries(
   Object.keys(jestPlugin?.configs?.recommended?.rules ?? {}).map((rule) => [rule, 'off']),
@@ -60,6 +62,8 @@ const mainRules = {
       reportUsedIgnorePattern: false,
     },
   ],
+  'react-hooks/purity': 'off',
+  'react-hooks/set-state-in-effect': 'off',
   'zustand-rules/enforce-use-setstate': 'error',
   'zustand-rules/no-state-mutation': 'error',
   'zustand-rules/use-store-selectors': 'error',
@@ -73,8 +77,8 @@ const mainRules = {
 };
 
 const config = [
-  ...offchainBase,
-  ...offchainNext,
+  ...compat.config(offchainBase),
+  ...nextConfig,
   {
     settings: {
       next: {
