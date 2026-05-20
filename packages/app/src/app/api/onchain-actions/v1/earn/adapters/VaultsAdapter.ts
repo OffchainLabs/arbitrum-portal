@@ -75,24 +75,22 @@ export class VaultsAdapter implements VendorAdapter {
       query: {
         allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
         allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] satisfies VaultsProtocol[],
+        onlyTransactional: true,
         minTvl: filters.minTvl,
         allowedAssets: [...DEFAULT_ALLOWED_ASSETS],
         perPage: filters.perPage || 50,
       },
     });
 
-    const vaults = response.data;
-
-    let filtered = vaults;
-    if (filters.minApy) {
-      filtered = filtered.filter((vault) => {
-        const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
-        const apyPercentage = parseOptionalPercentage(apyData?.total);
-        return (
-          apyPercentage !== null && filters.minApy !== undefined && apyPercentage >= filters.minApy
-        );
-      });
-    }
+    const minApy = filters.minApy ?? 0;
+    const filtered = response.data.filter((vault) => {
+      const apyData = vault.apy?.['30day'] ?? vault.apy?.['7day'] ?? vault.apy?.['1day'];
+      const apyPercentage = parseOptionalPercentage(apyData?.total);
+      if (apyPercentage === null || apyPercentage <= 0) {
+        return false;
+      }
+      return apyPercentage >= minApy;
+    });
 
     return filtered.map((vault) => this.transformToStandard(vault));
   }

@@ -18,7 +18,6 @@ export const DEFAULT_ALLOWED_ASSETS = [
   'osETH',
   'pufETH',
   'rETH',
-  'rsETH',
   'stETH',
   'tETH',
   'UETH',
