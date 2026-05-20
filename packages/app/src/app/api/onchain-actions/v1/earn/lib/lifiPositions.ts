@@ -59,10 +59,13 @@ export async function fetchLifiUserPositions(params: {
 
   const tokenPriceMap = await fetchLiquidStakingPriceMap(opportunities);
 
-  const positionPromises = opportunities.map(async (opportunity) => {
+  const positions: StandardUserPosition[] = [];
+
+  for (const opportunity of opportunities) {
     const tokenAddress = opportunity.id;
 
     try {
+      // eslint-disable-next-line no-await-in-loop -- intentionally sequential to avoid bursting the RPC
       const balance = await publicClient.readContract({
         address: getAddress(tokenAddress),
         abi: erc20Abi,
@@ -71,7 +74,7 @@ export async function fetchLifiUserPositions(params: {
       });
 
       if (balance === BigInt(0)) {
-        return null;
+        continue;
       }
 
       const decimalsNumber = opportunity.tokenDecimals;
@@ -88,7 +91,7 @@ export async function fetchLifiUserPositions(params: {
           ? (valueUsdNumber * apy) / 100
           : undefined;
 
-      const position: StandardUserPosition = {
+      positions.push({
         opportunityId: tokenAddress,
         category: OpportunityCategory.LiquidStaking,
         vendor: Vendor.LiFi,
@@ -109,14 +112,11 @@ export async function fetchLifiUserPositions(params: {
           apy,
           tvl: opportunity.rawTvl ?? undefined,
         },
-      };
-      return position;
+      });
     } catch (error) {
       console.error(`Failed to fetch balance for ${tokenAddress}:`, error);
-      return null;
     }
-  });
+  }
 
-  const results = await Promise.all(positionPromises);
-  return results.filter((pos): pos is StandardUserPosition => pos !== null);
+  return positions;
 }
