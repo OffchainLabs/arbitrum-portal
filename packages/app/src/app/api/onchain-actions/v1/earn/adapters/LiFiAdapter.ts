@@ -52,13 +52,9 @@ export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
-    const transportOptions = { timeout: 10_000, retryCount: 2, retryDelay: 200 } as const;
     return createPublicClient({
       chain: arbitrum,
-      transport: fallback([
-        http(rpcURLs[ChainId.ArbitrumOne], transportOptions),
-        http(ARBITRUM_PUBLIC_RPC_URL, transportOptions),
-      ]),
+      transport: fallback([http(rpcURLs[ChainId.ArbitrumOne]), http(ARBITRUM_PUBLIC_RPC_URL)]),
     });
   }
 
