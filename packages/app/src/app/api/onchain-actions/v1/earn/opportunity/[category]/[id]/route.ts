@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '@/earn-api/lib/cache';
+import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import {
   assertAddress,
   parseEarnChainId,
@@ -16,6 +17,9 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
+    const rateLimited = await enforceEarnRateLimit(request);
+    if (rateLimited) return rateLimited;
+
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));

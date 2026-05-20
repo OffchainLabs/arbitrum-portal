@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAddress } from 'viem';
 
 import { earnCacheTags } from '@/earn-api/lib/cache';
+import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import { createEarnPublicClient } from '@/earn-api/lib/serverPublicClient';
 import {
   ValidationError,
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
     const chainId = parseEarnChainId(getRequestString(body, 'chainId'));
     const userAddress = assertAddress(getRequestString(body, 'userAddress'), 'userAddress');
     const txHash = assertTxHash(assertString(body.txHash, 'txHash'));
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
+    if (rateLimited) return rateLimited;
 
     const client = createEarnPublicClient(chainId);
     const receipt = await client.waitForTransactionReceipt({

@@ -9,6 +9,7 @@ import {
   deriveGranularityFromWindow,
   deriveRangeFromWindow,
 } from '@/earn-api/lib/historicalWindow';
+import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import {
   ValidationError,
   assertAddress,
@@ -73,6 +74,9 @@ export async function GET(
   { params }: { params: { category: string; id: string } },
 ) {
   try {
+    const rateLimited = await enforceEarnRateLimit(request);
+    if (rateLimited) return rateLimited;
+
     const searchParams = request.nextUrl.searchParams;
     const category = parseOpportunityCategory(params.category);
     const chainId = parseEarnChainId(searchParams.get('chainId'));

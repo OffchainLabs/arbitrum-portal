@@ -5,6 +5,7 @@ import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
+import { enforceEarnRateLimit } from '../lib/rateLimit';
 import {
   assertAddress,
   parseEarnChainId,
@@ -126,6 +127,9 @@ export async function GET(request: NextRequest) {
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const chainId = parseEarnChainId(searchParams.get('chainId'));
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
+    if (rateLimited) return rateLimited;
 
     const cacheKey = `positions:${userAddress.toLowerCase()}:${category ?? 'all'}:${chainId}`;
 
