@@ -25,6 +25,10 @@ import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
 import { EarnErrorDisplay } from './EarnActionPanel/EarnErrorDisplay';
 import { EarnGasEstimateDisplay } from './EarnActionPanel/EarnGasEstimateDisplay';
 import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
+import {
+  EarnTransactionDetailsSection,
+  type TransactionDetail,
+} from './EarnActionPanel/EarnTransactionDetailsSection';
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 import { LiquidStakingAmountSection } from './LiquidStakingAmountSection';
 import { LiquidStakingReceiveSection } from './LiquidStakingReceiveSection';
@@ -385,27 +389,23 @@ export function LiquidStakingActionPanel({
           slippagePercent={controls.slippagePercent}
           onSlippageChange={controls.onSlippageChange}
         />
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center">
-            <span className="text-xs text-white">Transaction Details</span>
-          </div>
-          {opportunity.apy && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/40">APY</span>
-              <span className="text-xs text-white">{opportunity.apy}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/40">Transaction Cost</span>
-            <span className="text-xs text-white">
-              <EarnGasEstimateDisplay
-                estimate={data.estimatedTxCostUsd}
-                isLoading={data.isGasEstimateLoading}
-                error={data.gasEstimateError}
-              />
-            </span>
-          </div>
-        </div>
+        <EarnTransactionDetailsSection
+          details={[
+            ...(opportunity.apy
+              ? [{ label: 'APY', value: opportunity.apy } satisfies TransactionDetail]
+              : []),
+            {
+              label: 'Transaction Cost',
+              value: (
+                <EarnGasEstimateDisplay
+                  estimate={data.estimatedTxCostUsd}
+                  isLoading={data.isGasEstimateLoading}
+                  error={data.gasEstimateError}
+                />
+              ),
+            },
+          ]}
+        />
       </div>
 
       <EarnErrorDisplay error={execution.txError} />
