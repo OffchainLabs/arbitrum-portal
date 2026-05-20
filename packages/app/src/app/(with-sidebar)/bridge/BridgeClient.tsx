@@ -5,13 +5,9 @@ import { ComponentType } from 'react';
 
 import { Loader } from '@/bridge/components/common/atoms/Loader';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
-import { initializeSentry } from '@/bridge/util/SentryUtils';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 
 import { addOrbitChainsToArbitrumSDK } from '../../../initialization';
-
-// Initialize Sentry for error tracking
-initializeSentry(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 const App = dynamic(
   () => {
