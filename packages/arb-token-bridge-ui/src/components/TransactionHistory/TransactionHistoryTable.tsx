@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
@@ -136,20 +137,35 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
 
   const contentWrapperRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<Table | null>(null);
+  const [tableHeight, setTableHeight] = useState(
+    TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT,
+  );
 
-  const tableHeight = useMemo(() => {
-    if (window.innerWidth < 768) {
-      return TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT;
-    }
-    const SIDE_PANEL_HEADER_HEIGHT = 125;
-    const viewportHeight = window.innerHeight;
-    const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0;
-    return Math.max(
-      // we subtract a little padding at the end so that the table doesn't end at the edge of the screen
-      viewportHeight - contentWrapperOffsetTop - SIDE_PANEL_HEADER_HEIGHT,
-      0,
-    );
-  }, [contentWrapperRef.current?.offsetTop, transactions.length]);
+  useEffect(() => {
+    const updateTableHeight = () => {
+      if (window.innerWidth < 768) {
+        setTableHeight(TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT);
+        return;
+      }
+
+      const SIDE_PANEL_HEADER_HEIGHT = 125;
+      const viewportHeight = window.innerHeight;
+      const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0;
+
+      setTableHeight(
+        Math.max(
+          // we subtract a little padding at the end so that the table doesn't end at the edge of the screen
+          viewportHeight - contentWrapperOffsetTop - SIDE_PANEL_HEADER_HEIGHT,
+          0,
+        ),
+      );
+    };
+
+    updateTableHeight();
+    window.addEventListener('resize', updateTableHeight);
+
+    return () => window.removeEventListener('resize', updateTableHeight);
+  }, [transactions.length]);
 
   const pendingTokenDepositsCount = useMemo(() => {
     return transactions.filter((tx) => isTokenDeposit(tx) && isTxPending(tx)).length;
@@ -162,12 +178,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
   // recalculate table height when tx number changes, or when user selects different tab
   useEffect(() => {
     tableRef.current?.recomputeRowHeights();
-  }, [
-    transactions.length,
-    selectedTabIndex,
-    isTxHistoryEmpty,
-    contentWrapperRef.current?.offsetTop,
-  ]);
+  }, [transactions.length, selectedTabIndex, isTxHistoryEmpty, tableHeight]);
 
   if (isTxHistoryEmpty) {
     return (

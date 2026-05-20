@@ -227,13 +227,10 @@ export function usePendlePanelExecution({
     setTxError(null);
   }, []);
 
+  const transactionSteps = transactionQuote?.transactionSteps;
+
   const handleTransaction = useCallback(async () => {
-    if (
-      !transferReadiness.isReady ||
-      !transactionQuote?.transactionSteps ||
-      transactionQuote.transactionSteps.length === 0 ||
-      !walletAddress
-    ) {
+    if (!transferReadiness.isReady || !transactionSteps?.length || !walletAddress) {
       return;
     }
 
@@ -251,13 +248,7 @@ export function usePendlePanelExecution({
         setTxError(formatTransactionError(error));
       }
     }
-  }, [
-    checkAndShowToS,
-    executeTx,
-    transactionQuote?.transactionSteps,
-    transferReadiness.isReady,
-    walletAddress,
-  ]);
+  }, [checkAndShowToS, executeTx, transferReadiness.isReady, transactionSteps, walletAddress]);
 
   return {
     txError,
