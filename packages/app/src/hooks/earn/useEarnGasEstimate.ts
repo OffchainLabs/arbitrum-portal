@@ -103,7 +103,7 @@ export function useEarnGasEstimate({
 
             return BigNumber.from(gasLimit.toString()).mul(gasPrice);
           } catch (err) {
-            if (step.type === 'approval' || isAllowanceRelatedError(err)) {
+            if (isAllowanceRelatedError(err)) {
               return BigNumber.from(0);
             }
             return getFallbackGasLimit(step).mul(gasPrice);
