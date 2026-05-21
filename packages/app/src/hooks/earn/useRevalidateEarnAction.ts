@@ -48,18 +48,15 @@ export function useRevalidateEarnAction() {
         });
       }
 
+      // Intentionally NOT revalidating earnTransactions here: vendor indexers can
+      // lag a few seconds behind the chain, and an immediate refetch would replace
+      // the locally-added optimistic row with stale server history. The row stays
+      // via useEarnTransactionHistory's addTransaction, and the server tag was
+      // already busted so the next natural fetch picks up the indexed tx.
       await Promise.allSettled([
         mutate(earnSwrKeys.userPositions(params.userAddress, params.chainId)),
         mutate(
           earnSwrKeys.availableActions(
-            params.category,
-            params.opportunityId,
-            params.userAddress,
-            params.chainId,
-          ),
-        ),
-        mutate(
-          earnSwrKeys.earnTransactions(
             params.category,
             params.opportunityId,
             params.userAddress,
