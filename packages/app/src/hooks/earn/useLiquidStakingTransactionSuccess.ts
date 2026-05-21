@@ -7,6 +7,7 @@ import { getLiquidStakingHistoryValues } from '@/app-lib/earn/utils';
 import { OpportunityCategory, type StandardTransactionHistory, Vendor } from '@/earn-api/types';
 
 import type { TransactionDetails } from '../../components/earn/EarnTransactionDetailsPopup';
+import { useRevalidateEarnAction } from './useRevalidateEarnAction';
 
 interface TokenLike {
   symbol: string;
@@ -80,6 +81,7 @@ export function useLiquidStakingTransactionSuccess({
   resetAmount,
 }: UseLiquidStakingTransactionSuccessParams) {
   const posthog = usePostHog();
+  const revalidateEarnAction = useRevalidateEarnAction();
 
   return useCallback(
     async (txHash: string | undefined) => {
@@ -173,6 +175,13 @@ export function useLiquidStakingTransactionSuccess({
             transactionHash: txHash,
           },
         });
+        revalidateEarnAction({
+          category: OpportunityCategory.LiquidStaking,
+          chainId: requestChainId,
+          opportunityId: opportunity.id,
+          userAddress: walletAddress,
+          txHash,
+        });
       }
 
       if (txHash) {
@@ -194,6 +203,7 @@ export function useLiquidStakingTransactionSuccess({
       refetchErc20Balance,
       refetchEthBalance,
       refetchUserBalance,
+      revalidateEarnAction,
       requestChainId,
       resetAmount,
       selectedAction,

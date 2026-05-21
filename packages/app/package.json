@@ -13,6 +13,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@uniswap/token-lists": "^1.0.0-beta.34",
     "@vaultsfyi/sdk": "^2.1.3",
+    "@vercel/firewall": "^1.2.1",
     "@wagmi/core": "^2.22.1",
     "dayjs": "^1.11.20",
     "next": "^14.2.35",
