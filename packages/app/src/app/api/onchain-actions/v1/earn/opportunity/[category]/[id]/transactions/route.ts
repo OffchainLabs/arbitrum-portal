@@ -29,7 +29,7 @@ export async function GET(
 
     const adapter = router.routeToAdapter(category);
 
-    const cacheKey = `transactions:${category}:${chainId}:${opportunityId}:${userAddress}`;
+    const cacheKey = `transactions:${category}:${chainId}:${opportunityId.toLowerCase()}:${userAddress.toLowerCase()}`;
 
     const getCachedTransactions = unstable_cache(
       async () => {
@@ -39,7 +39,7 @@ export async function GET(
       [cacheKey],
       {
         revalidate: EARN_CACHE_SECONDS.transactions,
-        tags: earnCacheTags.transactions(userAddress),
+        tags: earnCacheTags.transactions(userAddress, opportunityId),
       },
     );
 

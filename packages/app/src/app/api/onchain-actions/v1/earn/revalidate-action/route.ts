@@ -8,6 +8,7 @@ import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient'
 import {
   ValidationError,
   assertAddress,
+  assertOptionalAddress,
   assertPlainObject,
   assertString,
   parseEarnChainId,
@@ -31,6 +32,10 @@ export async function POST(request: NextRequest) {
     const chainId = parseEarnChainId(getRequestString(body, 'chainId'));
     const userAddress = assertAddress(getRequestString(body, 'userAddress'), 'userAddress');
     const txHash = assertTxHash(assertString(body.txHash, 'txHash'));
+    const opportunityId = assertOptionalAddress(
+      getRequestString(body, 'opportunityId'),
+      'opportunityId',
+    );
 
     const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
     if (rateLimited) return rateLimited;
@@ -53,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    for (const tag of earnCacheTags.userAction(userAddress)) revalidateTag(tag);
+    for (const tag of earnCacheTags.userAction(userAddress, opportunityId)) revalidateTag(tag);
 
     return NextResponse.json(
       { revalidated: true },

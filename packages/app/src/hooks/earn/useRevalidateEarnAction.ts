@@ -5,10 +5,13 @@ import { useSWRConfig } from 'swr';
 
 import type { OpportunityCategory } from '@/app-types/earn/vaults';
 import { captureSentryErrorWithExtraData } from '@/bridge/util/SentryUtils';
+import type { EarnChainId } from '@/earn-api/types';
+
+import { earnSwrKeys } from './earnSwrKeys';
 
 interface RevalidateEarnActionParams {
   category: OpportunityCategory;
-  chainId: number;
+  chainId: EarnChainId;
   opportunityId: string;
   userAddress: string;
   txHash: string;
@@ -26,6 +29,7 @@ export function useRevalidateEarnAction() {
           body: JSON.stringify({
             chainId: params.chainId,
             userAddress: params.userAddress,
+            opportunityId: params.opportunityId,
             txHash: params.txHash,
           }),
         });
@@ -45,21 +49,23 @@ export function useRevalidateEarnAction() {
       }
 
       await Promise.allSettled([
-        mutate([params.userAddress, params.chainId, 'userPositions']),
-        mutate([
-          'available-actions',
-          params.category,
-          params.opportunityId,
-          params.userAddress,
-          params.chainId,
-        ]),
-        mutate([
-          params.category,
-          params.opportunityId,
-          params.userAddress,
-          params.chainId,
-          'earn-transactions',
-        ]),
+        mutate(earnSwrKeys.userPositions(params.userAddress, params.chainId)),
+        mutate(
+          earnSwrKeys.availableActions(
+            params.category,
+            params.opportunityId,
+            params.userAddress,
+            params.chainId,
+          ),
+        ),
+        mutate(
+          earnSwrKeys.earnTransactions(
+            params.category,
+            params.opportunityId,
+            params.userAddress,
+            params.chainId,
+          ),
+        ),
       ]);
     },
     [mutate],

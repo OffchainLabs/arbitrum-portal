@@ -18,13 +18,17 @@ export const earnCacheTags = {
     `earn:historical:${normalize(id)}`,
   ],
   positions: (wallet: string) => ['earn', 'earn:positions', `earn:positions:${normalize(wallet)}`],
-  transactions: (wallet: string) => [
-    'earn',
-    'earn:transactions',
-    `earn:transactions:${normalize(wallet)}`,
-  ],
-  userAction: (wallet: string) => [
+  transactions: (wallet: string, opportunityId?: string) => {
+    const tags = ['earn', 'earn:transactions', `earn:transactions:${normalize(wallet)}`];
+    if (opportunityId) {
+      tags.push(`earn:transactions:${normalize(wallet)}:${normalize(opportunityId)}`);
+    }
+    return tags;
+  },
+  userAction: (wallet: string, opportunityId?: string) => [
     `earn:positions:${normalize(wallet)}`,
-    `earn:transactions:${normalize(wallet)}`,
+    opportunityId
+      ? `earn:transactions:${normalize(wallet)}:${normalize(opportunityId)}`
+      : `earn:transactions:${normalize(wallet)}`,
   ],
 };

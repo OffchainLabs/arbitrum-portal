@@ -9,8 +9,12 @@ import type { EarnChainId } from '../types';
 import { ValidationError } from './validation';
 
 function getServerOrigin() {
+  // VERCEL_URL is also set in production (to the deployment URL, not the
+  // custom domain), so only use it in non-prod envs — prod must hit the
+  // canonical PORTAL_DOMAIN to satisfy Alchemy's Origin allowlist.
+  const isNonProd = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production';
   const vercelUrl = process.env.VERCEL_URL?.trim();
-  if (vercelUrl) {
+  if (isNonProd && vercelUrl) {
     return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
   }
 
