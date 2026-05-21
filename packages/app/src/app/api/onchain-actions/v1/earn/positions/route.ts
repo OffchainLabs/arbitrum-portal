@@ -1,4 +1,4 @@
-import { unstable_cache } from 'next/cache';
+import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { OpportunityCategory } from '@/app-types/earn/vaults';
@@ -14,10 +14,6 @@ import {
 import { StandardUserPosition, Vendor } from '../types';
 
 const router = new CategoryRouter();
-
-// Reads `request.nextUrl.searchParams`, so this route can't be statically
-// rendered. The handler still memoizes per-user results via `unstable_cache`.
-export const dynamic = 'force-dynamic';
 
 const ALL_CATEGORIES: readonly OpportunityCategory[] = [
   OpportunityCategory.Lend,
@@ -122,6 +118,7 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 }
 
 export async function GET(request: NextRequest) {
+  noStore();
   try {
     const searchParams = request.nextUrl.searchParams;
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');

@@ -1,4 +1,4 @@
-import { unstable_cache } from 'next/cache';
+import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
@@ -18,11 +18,8 @@ const CACHE_HEADERS = {
 };
 const router = new CategoryRouter();
 
-// Reads `request.nextUrl.searchParams`, so this route can't be statically
-// rendered. CDN caching is handled by the `Cache-Control` header below.
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
+  noStore();
   try {
     const rateLimited = await enforceEarnRateLimit(request);
     if (rateLimited) return rateLimited;
