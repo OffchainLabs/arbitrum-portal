@@ -252,7 +252,6 @@ export function usePendlePanelData({
         : !!inputTokenAddressForQuote &&
           !!outputTokenAddress &&
           quoteAmountRaw !== '0' &&
-          !!walletAddress &&
           !amountExceedsBalance,
   });
 
