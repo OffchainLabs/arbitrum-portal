@@ -320,8 +320,8 @@ export class PendleAdapter implements VendorAdapter {
       );
     }
 
-    if (!userAddress) {
-      throw new ValidationError('INVALID_QUOTE_PARAMS', 'userAddress is required');
+    if ((action === 'rollover' || action === 'redeem') && !userAddress) {
+      throw new ValidationError('INVALID_QUOTE_PARAMS', `userAddress is required for ${action}`);
     }
 
     if (!amount || !/^\d+$/.test(amount) || BigNumber.from(amount).lte(0)) {
@@ -329,25 +329,28 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     assertSupportedChainId(chainId);
-    const availableActions = await this.getAvailableActions(id, userAddress, chainId);
 
-    if (!availableActions.availableActions.includes(action)) {
-      throw new ValidationError(
-        'ACTION_NOT_AVAILABLE',
-        `Action "${action}" is not available for this Pendle position`,
-      );
-    }
+    if (userAddress) {
+      const availableActions = await this.getAvailableActions(id, userAddress, chainId);
 
-    if (
-      action === 'rollover' &&
-      !availableActions.rolloverTargets?.some(
-        (target) => target.id === rolloverTargetOpportunityId?.toLowerCase(),
-      )
-    ) {
-      throw new ValidationError(
-        'INVALID_ROLLOVER_TARGET',
-        'Selected rollover target is not available for this Pendle position',
-      );
+      if (!availableActions.availableActions.includes(action)) {
+        throw new ValidationError(
+          'ACTION_NOT_AVAILABLE',
+          `Action "${action}" is not available for this Pendle position`,
+        );
+      }
+
+      if (
+        action === 'rollover' &&
+        !availableActions.rolloverTargets?.some(
+          (target) => target.id === rolloverTargetOpportunityId?.toLowerCase(),
+        )
+      ) {
+        throw new ValidationError(
+          'INVALID_ROLLOVER_TARGET',
+          'Selected rollover target is not available for this Pendle position',
+        );
+      }
     }
 
     const clampedSlippage = Math.min(Math.max(slippage, 0), 50) / 100;

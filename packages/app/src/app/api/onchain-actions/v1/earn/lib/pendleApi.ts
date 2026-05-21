@@ -219,7 +219,7 @@ interface PendleConvertRouteParams {
   tokensIn: string[];
   amountsIn: string[];
   tokensOut: string[];
-  receiver: string;
+  receiver?: string;
   slippage?: number;
   enableAggregator?: boolean;
 }
