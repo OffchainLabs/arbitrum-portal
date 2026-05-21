@@ -321,10 +321,7 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     if ((action === 'rollover' || action === 'redeem') && !userAddress) {
-      throw new ValidationError(
-        'INVALID_QUOTE_PARAMS',
-        `userAddress is required for ${action}`,
-      );
+      throw new ValidationError('INVALID_QUOTE_PARAMS', `userAddress is required for ${action}`);
     }
 
     if (!amount || !/^\d+$/.test(amount) || BigNumber.from(amount).lte(0)) {
