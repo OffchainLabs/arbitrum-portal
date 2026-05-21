@@ -16,9 +16,6 @@ export function isUserRejectedError(error: unknown) {
   const hasUserCancelledMessage =
     typeof candidate.message === 'string' && /User Cancelled/.test(candidate.message);
 
-  // viem wraps rejections from some wallets (e.g. Frame) in a higher-level
-  // class like TransactionExecutionError, with UserRejectedRequestError buried
-  // in the .cause chain. Walk the chain to catch them.
   const hasWrappedUserRejection =
     error instanceof BaseError && !!error.walk((e) => e instanceof UserRejectedRequestError);
 
