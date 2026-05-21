@@ -9,6 +9,8 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type UserPositionsResponse } from '@/earn-api/types';
 
+import { earnSwrKeys } from './earnSwrKeys';
+
 const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
   [OpportunityCategory.Lend]: { count: 0, valueUsd: 0 },
   [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: 0 },
@@ -148,7 +150,7 @@ export function useUserPositions(
   allowedChainIds: EarnChainId[] = [ChainId.ArbitrumOne],
 ): UseUserPositionsResult {
   const primaryChainId = allowedChainIds[0] ?? ChainId.ArbitrumOne;
-  const swrKey = userAddress ? ([userAddress, primaryChainId, 'userPositions'] as const) : null;
+  const swrKey = userAddress ? earnSwrKeys.userPositions(userAddress, primaryChainId) : null;
 
   const {
     data: rawData,
