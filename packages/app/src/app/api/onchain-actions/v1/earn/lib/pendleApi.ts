@@ -138,10 +138,20 @@ export async function getPendleMarketByAddress(
   chainId: number,
   marketAddress: string,
 ): Promise<PendleMarket | null> {
-  const marketId = `${chainId}-${marketAddress}`;
+  const markets = await getPendleMarketsByAddresses(chainId, [marketAddress]);
+  return markets[0] ?? null;
+}
+
+export async function getPendleMarketsByAddresses(
+  chainId: number,
+  marketAddresses: string[],
+): Promise<PendleMarket[]> {
+  if (!marketAddresses.length) return [];
+
+  const ids = marketAddresses.map((address) => `${chainId}-${address.toLowerCase()}`).join(',');
   const url = new URL(`${PENDLE_API_BASE_URL}/v2/markets/all`);
-  url.searchParams.set('ids', marketId);
-  url.searchParams.set('limit', '1');
+  url.searchParams.set('ids', ids);
+  url.searchParams.set('limit', marketAddresses.length.toString());
 
   const response = await fetch(url.toString());
   if (!response.ok) throw new Error(await parsePendleApiError(response));
@@ -151,9 +161,7 @@ export async function getPendleMarketByAddress(
       details: RawPendleMarketDetails;
     })[];
   } = await response.json();
-  const market = data.results[0];
-  if (!market) return null;
-  return normalizeMarket(market);
+  return data.results.map(normalizeMarket);
 }
 
 export async function getPendleMarketDetails(
