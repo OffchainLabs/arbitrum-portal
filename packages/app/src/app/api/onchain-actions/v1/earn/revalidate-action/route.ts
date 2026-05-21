@@ -58,7 +58,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    for (const tag of earnCacheTags.userAction(userAddress, opportunityId)) revalidateTag(tag);
+    for (const tag of earnCacheTags.userAction(userAddress, opportunityId)) {
+      revalidateTag(tag, 'max');
+    }
 
     return NextResponse.json(
       { revalidated: true },
