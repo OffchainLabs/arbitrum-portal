@@ -35,10 +35,7 @@ export default defineConfig({
       '@/app-store': path.resolve(__dirname, '../app/src/store'),
       '@/app-types': path.resolve(__dirname, '../app/src/types'),
       '@/app-lib': path.resolve(__dirname, '../app/src/lib'),
-      '@/earn-api': path.resolve(
-        __dirname,
-        '../app/src/app/api/onchain-actions/v1/earn',
-      ),
+      '@/earn-api': path.resolve(__dirname, '../app/src/app/api/onchain-actions/v1/earn'),
       '@/token-bridge-sdk': path.resolve(__dirname, './src/token-bridge-sdk'),
       '@/bridge': path.resolve(__dirname, './src'),
     },
