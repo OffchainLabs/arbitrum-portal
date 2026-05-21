@@ -19,6 +19,7 @@ import {
   getPendleMarketDetails,
   getPendleMarketHistoricalData,
   getPendleMarkets,
+  getPendleMarketsByAddresses,
   getPendleTransactionHistory,
   getPendleUserPositions,
 } from '../lib/pendleApi';
@@ -255,13 +256,12 @@ export class PendleAdapter implements VendorAdapter {
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
   ): Promise<AvailableActions> {
     assertSupportedChainId(chainId);
-    const [positions, marketsResponse] = await Promise.all([
-      this.getUserPositions(userAddress, chainId),
-      getPendleMarkets(chainId, false),
-    ]);
     const normalizedId = id.toLowerCase();
+    const [positions, market] = await Promise.all([
+      this.getUserPositions(userAddress, chainId),
+      getPendleMarketByAddress(chainId, normalizedId),
+    ]);
     const position = positions.find((item) => item.opportunityId === normalizedId);
-    const market = marketsResponse.markets.find((m) => m.address === normalizedId);
     const isMarketExpired = market?.expiry
       ? Date.now() >= new Date(market.expiry).getTime()
       : position?.expiryDate
@@ -433,11 +433,7 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
-    const [marketsResponse, userPositionsResponse] = await Promise.all([
-      getPendleMarkets(chainId, false),
-      getPendleUserPositions(userAddress),
-    ]);
-
+    const userPositionsResponse = await getPendleUserPositions(userAddress);
     const chainPositions = userPositionsResponse.positions.find(
       (entry) => entry.chainId === chainId,
     );
@@ -445,13 +441,25 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
+    const allPositions = chainPositions.openPositions.concat(chainPositions.closedPositions);
+    // Fetch only the markets the user actually has positions in. Listing /v2/markets/all
+    // is capped at PENDLE_MARKETS_LIMIT, which would silently drop positions in markets
+    // ranked past the cap (e.g. USDai, sUSDai).
+    const marketAddresses = Array.from(
+      new Set(
+        allPositions
+          .map((position) => position.marketId.split('-').pop()?.toLowerCase())
+          .filter((address): address is string => Boolean(address)),
+      ),
+    );
+    const markets = await getPendleMarketsByAddresses(chainId, marketAddresses);
     const marketByAddress = new Map<string, PendleMarket>();
-    for (const market of marketsResponse.markets) {
+    for (const market of markets) {
       marketByAddress.set(market.address, market);
     }
 
     const positions: StandardUserPosition[] = [];
-    for (const position of chainPositions.openPositions.concat(chainPositions.closedPositions)) {
+    for (const position of allPositions) {
       const marketAddress = position.marketId.split('-').pop()?.toLowerCase();
       if (!marketAddress) {
         continue;
@@ -522,10 +530,9 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
-    const marketsResponse = await getPendleMarkets(chainId, false);
-    const rawMarket = marketsResponse.markets.find(
-      (candidate) => candidate.address === id.toLowerCase(),
-    );
+    // Targeted lookup by address — `/v2/markets/all` caps results at PENDLE_MARKETS_LIMIT,
+    // so listing-and-finding silently drops markets ranked past that cap (e.g. USDai).
+    const rawMarket = await getPendleMarketByAddress(chainId, id.toLowerCase());
 
     const market = rawMarket
       ? enrichMarketWithAssets(
