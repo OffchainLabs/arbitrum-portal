@@ -118,5 +118,13 @@
     "GHSA-9jgg-88mc-972h",
     "GHSA-4v9v-hfq4-rm2v",
     "GHSA-79cf-xcqc-c78w",
+    //
+    // https://github.com/advisories/GHSA-qjx8-664m-686j
+    // js-cookie prototype hijack in assign() enables cookie-attribute injection (CVE-2026-46625)
+    // Reason to ignore: Only pulled in transitively via react-use's useCookie hook,
+    // which we never import. The vulnerable js-cookie code path is not reached.
+    // Patched version (3.0.7) is a major bump from react-use's pinned 2.x.
+    // from: react-use>js-cookie
+    "GHSA-qjx8-664m-686j",
   ],
 }
