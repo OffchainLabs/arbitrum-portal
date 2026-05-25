@@ -53,6 +53,7 @@ function findColumn(
 
 /** APY columns that are already expressed as percentages (not decimals). */
 const PERCENTAGE_APY_MATCHERS: Array<(name: string) => boolean> = [
+  (n) => n === 'lido staking apr (ma_7)' || n === 'lido staking apr(ma_7)',
   (n) => n === 'lido staking apr (instant)' || n === 'lido staking apr(instant)',
   (n) => n === 'steth apy',
 ];
@@ -96,12 +97,16 @@ function transformDuneResults(rows: Array<Record<string, unknown>>): DuneDataPoi
 
   const apyColumn = findColumn(
     allColumns,
-    // wstETH new query (already percentage)
+    // wstETH new query — 7-day moving average (already percentage)
+    (n) => n === 'lido staking apr (ma_7)' || n === 'lido staking apr(ma_7)',
+    // wstETH new query — instant fallback (already percentage)
     (n) => n === 'lido staking apr (instant)' || n === 'lido staking apr(instant)',
     // wstETH old query (already percentage)
     (n) => n === 'steth apy',
-    // weETH (decimal format)
-    (n) => n === 'avg_7day_apr' || n === 'daily_apr',
+    // weETH 7-day average (decimal format)
+    (n) => n === 'avg_7day_apr',
+    // weETH daily fallback (decimal format)
+    (n) => n === 'daily_apr',
     // Generic fallback
     (n) => n.includes('apy') || n.includes('apr') || n.includes('yield'),
   );
