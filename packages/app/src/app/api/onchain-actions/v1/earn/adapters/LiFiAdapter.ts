@@ -279,7 +279,7 @@ export class LiFiAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = ChainId.ArbitrumOne,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     if (chainId !== ChainId.ArbitrumOne) {
       throw new ValidationError(
         'UNSUPPORTED_CHAIN_ID',
@@ -319,15 +319,7 @@ export class LiFiAdapter implements VendorAdapter {
     });
 
     if (!step) {
-      return {
-        opportunityId: id,
-        vendor: Vendor.LiFi,
-        action: 'swap',
-        canExecute: false,
-        estimatedGas: '0',
-        estimatedGasUsd: '0',
-        transactionSteps: [],
-      };
+      return null;
     }
 
     if (!userAddress) {

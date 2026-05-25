@@ -291,7 +291,7 @@ export class PendleAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     const {
       action,
       amount,
@@ -366,15 +366,7 @@ export class PendleAdapter implements VendorAdapter {
 
     const firstRoute = route.routes?.[0];
     if (!firstRoute) {
-      return {
-        opportunityId: id,
-        vendor: Vendor.Pendle,
-        action,
-        canExecute: false,
-        estimatedGas: '0',
-        estimatedGasUsd: '0',
-        transactionSteps: [],
-      };
+      return null;
     }
 
     const transactionSteps: TransactionStep[] = [];

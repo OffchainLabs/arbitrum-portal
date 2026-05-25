@@ -314,7 +314,7 @@ export function LiquidStakingActionPanel({
     slippagePercent: controls.slippagePercent,
     walletAddress: walletAddress || undefined,
     isConnected,
-    transactionQuote,
+    transactionQuote: transactionQuote ?? undefined,
     canSubmit: !data.submitDisabled,
     checkAndShowToS,
     showTransactionDetails,

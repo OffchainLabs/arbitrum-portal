@@ -112,7 +112,7 @@ export function PendleActionPanel({
     outputTokenLogo: data.outputTokenLogo,
     slippagePercent,
     estimatedTxCost: data.estimatedTxCost,
-    transactionQuote: data.transactionQuote,
+    transactionQuote: data.transactionQuote ?? undefined,
     transferReadiness: data.transferReadiness,
     refetch: data.refetch,
     checkAndShowToS,
