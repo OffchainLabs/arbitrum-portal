@@ -57,13 +57,15 @@ export function EarnAmountInputSection({
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">{label}</span>
-          <Button
-            variant="secondary"
-            onClick={onMaxClick}
-            className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
-          >
-            MAX
-          </Button>
+          {isConnected && (
+            <Button
+              variant="secondary"
+              onClick={onMaxClick}
+              className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
+            >
+              MAX
+            </Button>
+          )}
         </div>
         <div className="flex items-center justify-between gap-2">
           <EarnActionPanelInput
