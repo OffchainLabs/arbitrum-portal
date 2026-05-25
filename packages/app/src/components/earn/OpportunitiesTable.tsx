@@ -113,9 +113,13 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
             content={<p className="text-xs text-white leading-relaxed">7-day average APY.</p>}
             tippyProps={{ placement: 'top' }}
           >
-            <div className="flex items-center justify-center cursor-pointer">
+            <button
+              type="button"
+              aria-label="APY methodology"
+              className="flex items-center justify-center cursor-pointer"
+            >
               <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
-            </div>
+            </button>
           </Tooltip>
         )}
       </div>
