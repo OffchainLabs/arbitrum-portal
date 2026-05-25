@@ -366,10 +366,15 @@ export class PendleAdapter implements VendorAdapter {
 
     const firstRoute = route.routes?.[0];
     if (!firstRoute) {
-      throw new ValidationError(
-        'QUOTE_ROUTE_NOT_FOUND',
-        'No route found in Pendle convert response',
-      );
+      return {
+        opportunityId: id,
+        vendor: Vendor.Pendle,
+        action,
+        canExecute: false,
+        estimatedGas: '0',
+        estimatedGasUsd: '0',
+        transactionSteps: [],
+      };
     }
 
     const transactionSteps: TransactionStep[] = [];

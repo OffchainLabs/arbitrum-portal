@@ -163,14 +163,16 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error preparing transaction:', error);
     const routeError = error as { message?: string; code?: string; status?: number };
+    const status = routeError.status ?? 500;
+    const log = status >= 500 ? console.error : console.warn;
+    log('Error preparing transaction:', error);
     return NextResponse.json(
       {
         message: routeError.message ?? 'Failed to get transaction quote',
         code: routeError.code ?? 'TRANSACTION_QUOTE_ERROR',
       },
-      { status: routeError.status ?? 500 },
+      { status },
     );
   }
 }

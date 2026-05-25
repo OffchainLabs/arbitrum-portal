@@ -3,6 +3,7 @@ import { ChainId } from '@/bridge/types/ChainId';
 
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
+import { ValidationError } from '../lib/validation';
 import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
@@ -326,7 +327,10 @@ export class VaultsAdapter implements VendorAdapter {
     const { action, amount, userAddress, simulate = false } = request;
 
     if (!userAddress) {
-      throw new Error('userAddress is required for vault transactions');
+      throw new ValidationError(
+        'USER_ADDRESS_REQUIRED',
+        'userAddress is required for vault transactions',
+      );
     }
 
     if (action !== 'deposit' && action !== 'redeem') {
