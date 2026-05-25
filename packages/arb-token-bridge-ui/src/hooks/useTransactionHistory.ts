@@ -7,7 +7,6 @@ import useSWRInfinite from 'swr/infinite';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 
-import { isValidTeleportChainPair } from '@/token-bridge-sdk/teleport';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import {
@@ -16,7 +15,6 @@ import {
   getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
   getUpdatedRetryableDeposit,
-  getUpdatedTeleportTransfer,
   getUpdatedWithdrawal,
   isCctpTransfer,
   isLifiTransfer,
@@ -28,7 +26,7 @@ import { MergedTransaction } from '../state/app/state';
 import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
-import { Transaction, isTeleportTx } from '../types/Transactions';
+import { Transaction } from '../types/Transactions';
 import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
@@ -38,11 +36,6 @@ import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
-import { TeleportFromSubgraph, fetchTeleports } from '../util/teleports/fetchTeleports';
-import {
-  isTransferTeleportFromSubgraph,
-  transformTeleportFromSubgraph,
-} from '../util/teleports/helpers';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
@@ -89,7 +82,7 @@ export type Deposit = Transaction;
 export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
 
 type DepositOrWithdrawal = Deposit | Withdrawal;
-export type Transfer = DepositOrWithdrawal | MergedTransaction | TeleportFromSubgraph;
+export type Transfer = DepositOrWithdrawal | MergedTransaction;
 
 type ForceFetchReceivedStore = {
   forceFetchReceived: boolean;
@@ -112,10 +105,6 @@ function getTransactionTimestamp(tx: Transfer) {
 
   if (isOftTransfer(tx)) {
     return normalizeTimestamp(tx.createdAt ?? 0);
-  }
-
-  if (isTransferTeleportFromSubgraph(tx)) {
-    return normalizeTimestamp(tx.timestamp);
   }
 
   if (isDeposit(tx)) {
@@ -168,11 +157,6 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
     return tx;
   }
 
-  // teleport-from-subgraph doesn't have a child-chain-id, we detect it later, hence, an early return
-  if (isTransferTeleportFromSubgraph(tx)) {
-    return await transformTeleportFromSubgraph(tx);
-  }
-
   const parentProvider = getProviderForChainId(tx.parentChainId);
   const childProvider = getProviderForChainId(tx.childChainId);
 
@@ -223,10 +207,6 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
 }
 
 function getTxIdFromTransaction(tx: Transfer) {
-  if (isTransferTeleportFromSubgraph(tx)) {
-    return tx.transactionHash;
-  }
-
   if (isCctpTransfer(tx) || isOftTransfer(tx)) {
     return tx.txId;
   }
@@ -539,27 +519,6 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
               isConnectedToParentChain,
             });
             try {
-              // early check for fetching teleport
-              if (
-                !isIndexerExperimentEnabled &&
-                isValidTeleportChainPair({
-                  sourceChainId: chainPair.parentChainId,
-                  destinationChainId: chainPair.childChainId,
-                })
-              ) {
-                // teleporter does not support withdrawals
-                if (type === 'withdrawals') return [];
-
-                return await fetchTeleports({
-                  sender: includeSentTxs ? address : undefined,
-                  receiver: includeReceivedTxs ? address : undefined,
-                  parentChainProvider: getProviderForChainId(chainPair.parentChainId),
-                  childChainProvider: getProviderForChainId(chainPair.childChainId),
-                  pageNumber: 0,
-                  pageSize: 1000,
-                });
-              }
-
               const batchSizeBlocks = BATCH_FETCH_BLOCKS[chainPair.childChainId];
 
               const withdrawalFn =
@@ -902,12 +861,6 @@ export const useTransactionHistory = (
       if (!isTxPending(tx)) {
         // if not pending we don't need to check for status, we accept whatever status is passed in
         updateCachedTransaction(tx);
-        return;
-      }
-
-      if (isTeleportTx(tx)) {
-        const updatedTeleportTransfer = await getUpdatedTeleportTransfer(tx);
-        updateCachedTransaction(updatedTeleportTransfer);
         return;
       }
 

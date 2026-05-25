@@ -9,12 +9,11 @@ import { useIsSwapTransfer } from './useIsSwapTransfer';
 export const useIsOftV2Transfer = function () {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { isTeleportMode, isDepositMode } = useNetworksRelationship(networks);
+  const { isDepositMode } = useNetworksRelationship(networks);
   const isSwapTransfer = useIsSwapTransfer();
 
   const { data: isOft = false } = useSWRImmutable(
-    // Only create cache key if we have all required params
-    selectedToken && !isTeleportMode
+    selectedToken
       ? [
           isDepositMode ? selectedToken.address : selectedToken.l2Address,
           networks.sourceChain.id,

@@ -9,15 +9,9 @@ import { twMerge } from 'tailwind-merge';
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { isTeleportTx } from '../../types/Transactions';
-import {
-  firstRetryableLegRequiresRedeem,
-  secondRetryableLegForTeleportRequiresRedeem,
-} from '../../util/RetryableUtils';
 import { getExplorerUrl, getNetworkName } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
-import { TransactionsTableDetailsTeleporterSteps } from './TransactionsTableDetailsTeleporterSteps';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import {
   getDestinationNetworkTxId,
@@ -106,7 +100,6 @@ export const Step = ({
 const LastStepEndItem = ({ tx }: { tx: MergedTransaction }) => {
   const destinationNetworkTxId = getDestinationNetworkTxId(tx);
   const destinationChainId = tx.isWithdrawal ? tx.parentChainId : tx.childChainId;
-  const isTeleport = isTeleportTx(tx);
 
   if (destinationNetworkTxId) {
     return (
@@ -118,10 +111,7 @@ const LastStepEndItem = ({ tx }: { tx: MergedTransaction }) => {
     );
   }
 
-  if (
-    (!isTeleport && isDepositReadyToRedeem(tx)) ||
-    (isTeleport && secondRetryableLegForTeleportRequiresRedeem(tx))
-  ) {
+  if (isDepositReadyToRedeem(tx)) {
     return <TransactionsTableRowAction type="deposits" isError={true} tx={tx} />;
   }
 
@@ -154,10 +144,6 @@ function isDestinationChainStatusFailure(tx: MergedTransaction) {
     );
   }
 
-  if (isTeleportTx(tx)) {
-    return secondRetryableLegForTeleportRequiresRedeem(tx);
-  }
-
   return !isSourceChainStatusFailure(tx) && isTxFailed(tx);
 }
 
@@ -170,8 +156,6 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
 
   const isSourceChainDepositFailure = isSourceChainStatusFailure(tx);
 
-  const isTeleport = isTeleportTx(tx);
-
   const isDestinationChainFailure = isDestinationChainStatusFailure(tx);
   const isLifiRefunded = isLifiTransfer(tx) && tx.destinationStatus === WithdrawalStatus.REFUNDED;
 
@@ -181,9 +165,6 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
 
     if (isTxExpired(tx)) {
       return `Transaction expired on ${networkName}`;
-    }
-    if (isTeleport && firstRetryableLegRequiresRedeem(tx)) {
-      return fundsArrivedText;
     }
 
     if (isDepositReadyToRedeem(tx)) {
@@ -196,7 +177,7 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
       return `Transaction failed on ${networkName}.`;
     }
     return fundsArrivedText;
-  }, [tx, isDestinationChainFailure, isTeleport, sourceNetworkName, isLifiRefunded]);
+  }, [tx, isDestinationChainFailure, sourceNetworkName, isLifiRefunded]);
 
   return (
     <div className="flex flex-col text-xs">
@@ -217,16 +198,12 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
       />
 
       {/* Pending transfer showing the remaining time */}
-      {!isTeleportTx(tx) && (
-        <Step
-          pending={isTxPending(tx)}
-          done={!isTxPending(tx) && !isSourceChainDepositFailure}
-          text={`Wait ~${minutesToHumanReadableTime(approximateDurationInMinutes)}`}
-          endItem={isTxPending(tx) && <TransferCountdown tx={tx} textAfterTime="remaining" />}
-        />
-      )}
-
-      {isTeleportTx(tx) && <TransactionsTableDetailsTeleporterSteps tx={tx} />}
+      <Step
+        pending={isTxPending(tx)}
+        done={!isTxPending(tx) && !isSourceChainDepositFailure}
+        text={`Wait ~${minutesToHumanReadableTime(approximateDurationInMinutes)}`}
+        endItem={isTxPending(tx) && <TransferCountdown tx={tx} textAfterTime="remaining" />}
+      />
 
       {/* If claiming is required we show this step */}
       {needsToClaimTransfer(tx) && (
