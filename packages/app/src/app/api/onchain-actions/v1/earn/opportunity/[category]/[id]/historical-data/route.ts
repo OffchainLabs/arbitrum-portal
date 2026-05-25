@@ -133,7 +133,7 @@ export async function GET(
     log('Error fetching historical data:', {
       message: routeError.message,
       code: routeError.code,
-      status: routeError.status,
+      status,
       error,
     });
     return NextResponse.json(
