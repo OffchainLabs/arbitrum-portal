@@ -55,6 +55,8 @@ enum ChainGroupName {
   orbit = 'Arbitrum Chains',
 }
 
+const NOVA_WARNING_ROW = 'nova_warning_row';
+
 type ChainGroupInfo = {
   name: ChainGroupName;
   description?: React.ReactNode;
@@ -328,7 +330,7 @@ export function NetworksPanel({
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
   const { isConnected } = useAccount();
-  const showNovaWarningBanner = type === 'destination' && chainIds.includes(ChainId.ArbitrumNova);
+  const showNovaWarningBanner = chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
@@ -368,32 +370,47 @@ export function NetworksPanel({
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
-  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName)[] = useMemo(() => {
-    if (isNetworkSearchResult) {
-      return networksToShow;
-    }
+  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName | typeof NOVA_WARNING_ROW)[] =
+    useMemo(() => {
+      if (isNetworkSearchResult) {
+        return networksToShow.flatMap((chainId) =>
+          chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+            ? [chainId, NOVA_WARNING_ROW]
+            : [chainId],
+        );
+      }
 
-    const groupedNetworks = [];
+      const groupedNetworks = [];
 
-    if (networksToShow.core.length > 0) {
-      groupedNetworks.push(ChainGroupName.core, ...networksToShow.core);
-    }
+      if (networksToShow.core.length > 0) {
+        groupedNetworks.push(
+          ChainGroupName.core,
+          ...networksToShow.core.flatMap((chainId) =>
+            chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+              ? [chainId, NOVA_WARNING_ROW]
+              : [chainId],
+          ),
+        );
+      }
 
-    if (networksToShow.more.length > 0) {
-      groupedNetworks.push(ChainGroupName.more, ...networksToShow.more);
-    }
+      if (networksToShow.more.length > 0) {
+        groupedNetworks.push(ChainGroupName.more, ...networksToShow.more);
+      }
 
-    if (networksToShow.orbit.length > 0) {
-      groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit);
-    }
+      if (networksToShow.orbit.length > 0) {
+        groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit);
+      }
 
-    return groupedNetworks;
-  }, [isNetworkSearchResult, networksToShow]);
+      return groupedNetworks;
+    }, [isNetworkSearchResult, networksToShow, showNovaWarningBanner]);
 
   function getRowHeight({ index }: { index: number }) {
     const rowItemOrChainId = networkRowsWithChainInfoRows[index];
     if (!rowItemOrChainId) {
       return 0;
+    }
+    if (rowItemOrChainId === NOVA_WARNING_ROW) {
+      return 88;
     }
     if (typeof rowItemOrChainId === 'string') {
       return rowItemOrChainId === ChainGroupName.core ? 45 : 132;
@@ -447,6 +464,17 @@ export function NetworksPanel({
         );
       }
 
+      if (networkOrChainTypeName === NOVA_WARNING_ROW) {
+        return (
+          <div style={style} className="px-5">
+            <Banner warn href="#">
+              Arbitrum Nova is losing support. Please bridge to{' '}
+              <span className="font-semibold">Arbitrum One.</span>
+            </Banner>
+          </div>
+        );
+      }
+
       if (
         networkOrChainTypeName === (70700 as ChainId) ||
         networkOrChainTypeName === (70701 as ChainId)
@@ -490,28 +518,20 @@ export function NetworksPanel({
         showSearch={showSearch}
         isDialog
       >
-        <div className="flex h-full flex-col gap-3">
-          {showNovaWarningBanner && (
-            <Banner warn href="#">
-              Arbitrum Nova is losing support. Please bridge to{' '}
-              <span className="font-semibold">Arbitrum One.</span>
-            </Banner>
-          )}
-          <div className="min-h-0 flex-1">
-            <AutoSizer>
-              {({ height, width }) => (
-                <List
-                  ref={listRef}
-                  width={width - 2}
-                  height={height}
-                  rowCount={networkRowsWithChainInfoRows.length}
-                  rowHeight={getRowHeight}
-                  rowRenderer={rowRenderer}
-                  listRef={listRef}
-                />
-              )}
-            </AutoSizer>
-          </div>
+        <div className="min-h-0 h-full flex-1">
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                ref={listRef}
+                width={width - 2}
+                height={height}
+                rowCount={networkRowsWithChainInfoRows.length}
+                rowHeight={getRowHeight}
+                rowRenderer={rowRenderer}
+                listRef={listRef}
+              />
+            )}
+          </AutoSizer>
         </div>
       </SearchPanelTable>
       {!embedMode && showFooter && (
