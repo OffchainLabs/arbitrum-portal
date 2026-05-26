@@ -296,12 +296,10 @@ export function TransferPanel() {
     const [confirmed] = await waitForInput();
 
     if (!confirmed) {
-      if (latestNetworks.current.sourceChain.id !== ChainId.ArbitrumOne) {
-        setNetworks({
-          sourceChainId: latestNetworks.current.sourceChain.id,
-          destinationChainId: ChainId.ArbitrumOne,
-        });
-      }
+      setNetworks({
+        sourceChainId: latestNetworks.current.sourceChain.id,
+        destinationChainId: ChainId.ArbitrumOne,
+      });
       return false;
     }
 
