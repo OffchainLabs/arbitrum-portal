@@ -291,7 +291,7 @@ export class PendleAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     const {
       action,
       amount,
@@ -366,10 +366,7 @@ export class PendleAdapter implements VendorAdapter {
 
     const firstRoute = route.routes?.[0];
     if (!firstRoute) {
-      throw new ValidationError(
-        'QUOTE_ROUTE_NOT_FOUND',
-        'No route found in Pendle convert response',
-      );
+      return null;
     }
 
     const transactionSteps: TransactionStep[] = [];

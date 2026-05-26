@@ -128,10 +128,12 @@ export async function GET(
     });
   } catch (error) {
     const routeError = error as { message?: string; code?: string; status?: number };
-    console.error('Error fetching historical data:', {
+    const status = routeError.status ?? 500;
+    const log = status >= 500 ? console.error : console.warn;
+    log('Error fetching historical data:', {
       message: routeError.message,
       code: routeError.code,
-      status: routeError.status,
+      status,
       error,
     });
     return NextResponse.json(
@@ -139,7 +141,7 @@ export async function GET(
         message: routeError.message ?? 'Failed to fetch historical data',
         code: routeError.code ?? 'HISTORICAL_DATA_FETCH_ERROR',
       },
-      { status: routeError.status ?? 500 },
+      { status },
     );
   }
 }

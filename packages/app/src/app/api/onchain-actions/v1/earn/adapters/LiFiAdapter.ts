@@ -67,7 +67,7 @@ export class LiFiAdapter implements VendorAdapter {
       integrator: LIFI_INTEGRATOR_IDS.NORMAL,
     });
     if (!routes || routes.length === 0) {
-      throw new Error('No routes found');
+      return { step: null };
     }
 
     const quote = routes[0];
@@ -84,7 +84,7 @@ export class LiFiAdapter implements VendorAdapter {
   }
 
   private async getQuoteStepWithTransaction(
-    step: Awaited<ReturnType<LiFiAdapter['getQuoteStep']>>['step'],
+    step: NonNullable<Awaited<ReturnType<LiFiAdapter['getQuoteStep']>>['step']>,
   ) {
     const { transactionRequest } = await getStepTransaction(step);
     const to = transactionRequest?.to;
@@ -279,7 +279,7 @@ export class LiFiAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = ChainId.ArbitrumOne,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     if (chainId !== ChainId.ArbitrumOne) {
       throw new ValidationError(
         'UNSUPPORTED_CHAIN_ID',
@@ -317,6 +317,10 @@ export class LiFiAdapter implements VendorAdapter {
       userAddress,
       slippage,
     });
+
+    if (!step) {
+      return null;
+    }
 
     if (!userAddress) {
       const { transactionSteps, estimatedGas, estimatedGasUsd, receiveAmount, priceImpact } =

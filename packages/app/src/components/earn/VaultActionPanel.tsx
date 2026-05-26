@@ -179,7 +179,7 @@ export function VaultActionPanel({
     inputTokenAddress:
       selectedAction === 'supply' ? asset?.address || vault.asset?.address : vault.asset?.address,
     chainId: requestChainId,
-    enabled: amountInRawUnits !== '0' && (!isConnected || !amountExceedsBalance),
+    enabled: amountInRawUnits !== '0' && isConnected && !!walletAddress && !amountExceedsBalance,
   });
 
   const chainId = useMemo(

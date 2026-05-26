@@ -404,7 +404,7 @@ export interface VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId,
-  ): Promise<TransactionQuoteResponse>;
+  ): Promise<TransactionQuoteResponse | null>;
   getUserPositions(userAddress: string, chainId: EarnChainId): Promise<StandardUserPosition[]>;
   getUserTransactions(
     id: string,

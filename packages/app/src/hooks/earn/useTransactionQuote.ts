@@ -126,7 +126,7 @@ export function useTransactionQuote({
         );
       }
 
-      return (await response.json()) as TransactionQuoteResponse;
+      return (await response.json()) as TransactionQuoteResponse | null;
     },
     {
       refreshInterval: 20_000,
