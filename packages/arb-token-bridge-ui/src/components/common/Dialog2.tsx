@@ -12,8 +12,8 @@ import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/Cus
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
-import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { NovaDepositWarningDialog } from '../TransferPanel/NovaDepositWarningDialog';
+import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';

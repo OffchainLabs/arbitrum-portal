@@ -47,6 +47,7 @@ import { normalizeTimestamp } from '../../state/app/utils';
 import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
+import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -89,7 +90,6 @@ import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
-import { ChainId } from '../../types/ChainId';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -296,10 +296,12 @@ export function TransferPanel() {
     const [confirmed] = await waitForInput();
 
     if (!confirmed) {
-      setNetworks({
-        sourceChainId: latestNetworks.current.sourceChain.id,
-        destinationChainId: ChainId.ArbitrumOne,
-      });
+      if (latestNetworks.current.sourceChain.id !== ChainId.ArbitrumOne) {
+        setNetworks({
+          sourceChainId: latestNetworks.current.sourceChain.id,
+          destinationChainId: ChainId.ArbitrumOne,
+        });
+      }
       return false;
     }
 
@@ -1293,10 +1295,7 @@ export function TransferPanel() {
       return networkConnectionWarningToast();
     }
 
-    if (
-      isDepositMode &&
-      latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova
-    ) {
+    if (isDepositMode && latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova) {
       const shouldProceedToNova = await confirmNovaDepositWarning();
 
       if (!shouldProceedToNova) {
