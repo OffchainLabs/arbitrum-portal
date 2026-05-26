@@ -56,6 +56,7 @@ enum ChainGroupName {
 }
 
 const NOVA_WARNING_ROW = 'nova_warning_row';
+type NetworkRowItem = ChainId | ChainGroupName | typeof NOVA_WARNING_ROW;
 
 type ChainGroupInfo = {
   name: ChainGroupName;
@@ -336,9 +337,7 @@ export function NetworksPanel({
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
     const proofOfPlayNetworks =
-      !isTestnetMode && type === 'source'
-        ? [70700, 70701] // PoP Apex, PoP Boss
-        : [];
+      !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
 
     if (_networkSearched) {
       return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
@@ -370,38 +369,39 @@ export function NetworksPanel({
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
-  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName | typeof NOVA_WARNING_ROW)[] =
-    useMemo(() => {
-      if (isNetworkSearchResult) {
-        return networksToShow.flatMap((chainId) =>
+  const networkRowsWithChainInfoRows: NetworkRowItem[] = useMemo(() => {
+    if (isNetworkSearchResult) {
+      return networksToShow.flatMap(
+        (chainId): NetworkRowItem[] =>
           chainId === ChainId.ArbitrumNova && showNovaWarningBanner
             ? [chainId, NOVA_WARNING_ROW]
             : [chainId],
-        );
-      }
+      );
+    }
 
-      const groupedNetworks = [];
+    const groupedNetworks: NetworkRowItem[] = [];
 
-      if (networksToShow.core.length > 0) {
-        groupedNetworks.push(
-          ChainGroupName.core,
-          ...networksToShow.core.flatMap((chainId) =>
+    if (networksToShow.core.length > 0) {
+      groupedNetworks.push(
+        ChainGroupName.core,
+        ...networksToShow.core.flatMap(
+          (chainId): NetworkRowItem[] =>
             chainId === ChainId.ArbitrumNova && showNovaWarningBanner
               ? [chainId, NOVA_WARNING_ROW]
               : [chainId],
-          ),
-        );
-      }
+        ),
+      );
+    }
 
-      if (networksToShow.more.length > 0) {
-        groupedNetworks.push(ChainGroupName.more, ...networksToShow.more);
-      }
+    if (networksToShow.more.length > 0) {
+      groupedNetworks.push(ChainGroupName.more, ...networksToShow.more);
+    }
 
-      if (networksToShow.orbit.length > 0) {
-        groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit);
-      }
+    if (networksToShow.orbit.length > 0) {
+      groupedNetworks.push(ChainGroupName.orbit, ...networksToShow.orbit);
+    }
 
-      return groupedNetworks;
+    return groupedNetworks;
     }, [isNetworkSearchResult, networksToShow, showNovaWarningBanner]);
 
   function getRowHeight({ index }: { index: number }) {
