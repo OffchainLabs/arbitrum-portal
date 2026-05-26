@@ -1,10 +1,19 @@
 import {
+  ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
   ExclamationCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
-import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  CSSProperties,
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -30,6 +39,7 @@ import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
+import { ExternalLink } from './ExternalLink';
 import { NetworkImage } from './NetworkImage';
 import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
@@ -50,6 +60,41 @@ type ChainGroupInfo = {
   description?: React.ReactNode;
 };
 
+function Banner({
+  warn,
+  href,
+  children,
+}: PropsWithChildren<{
+  warn?: true;
+  href?: string;
+}>) {
+  const className = twMerge(
+    'mt-2 flex gap-1 whitespace-normal rounded px-6 py-4 text-xs',
+    warn ? 'bg-destructive/20 text-destructive' : 'bg-white/10 text-white',
+  );
+
+  if (warn && href) {
+    return (
+      <ExternalLink href={href} className={twMerge(className, 'items-center justify-between')}>
+        <span className="flex items-center gap-1">
+          <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
+          <span>{children}</span>
+        </span>
+        <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
+      </ExternalLink>
+    );
+  }
+
+  return (
+    <p className={className}>
+      <ShieldExclamationIcon
+        className={twMerge('h-4 w-4 shrink-0', warn ? 'text-destructive' : 'text-white')}
+      />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   core: {
     name: ChainGroupName.core,
@@ -57,25 +102,23 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   more: {
     name: ChainGroupName.more,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
-        <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
+      <Banner>
         <span>
           Independent projects using non-Arbitrum technology. These chains have varying degrees of
           decentralization. <span className="font-semibold">Bridge at your own risk.</span>
         </span>
-      </p>
+      </Banner>
     ),
   },
   orbit: {
     name: ChainGroupName.orbit,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
-        <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
+      <Banner>
         <span>
           Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
           decentralization. <span className="font-semibold">Bridge at your own risk.</span>
         </span>
-      </p>
+      </Banner>
     ),
   },
 };
@@ -285,6 +328,7 @@ export function NetworksPanel({
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
   const { isConnected } = useAccount();
+  const showNovaWarningBanner = type === 'destination' && chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
@@ -352,7 +396,7 @@ export function NetworksPanel({
       return 0;
     }
     if (typeof rowItemOrChainId === 'string') {
-      return rowItemOrChainId === ChainGroupName.core ? 45 : 90;
+      return rowItemOrChainId === ChainGroupName.core ? 45 : 132;
     }
 
     return 50;
@@ -446,19 +490,29 @@ export function NetworksPanel({
         showSearch={showSearch}
         isDialog
       >
-        <AutoSizer>
-          {({ height, width }) => (
-            <List
-              ref={listRef}
-              width={width - 2}
-              height={height}
-              rowCount={networkRowsWithChainInfoRows.length}
-              rowHeight={getRowHeight}
-              rowRenderer={rowRenderer}
-              listRef={listRef}
-            />
+        <div className="flex h-full flex-col gap-3">
+          {showNovaWarningBanner && (
+            <Banner warn href="#">
+              Arbitrum Nova is losing support. Please bridge to{' '}
+              <span className="font-semibold">Arbitrum One.</span>
+            </Banner>
           )}
-        </AutoSizer>
+          <div className="min-h-0 flex-1">
+            <AutoSizer>
+              {({ height, width }) => (
+                <List
+                  ref={listRef}
+                  width={width - 2}
+                  height={height}
+                  rowCount={networkRowsWithChainInfoRows.length}
+                  rowHeight={getRowHeight}
+                  rowRenderer={rowRenderer}
+                  listRef={listRef}
+                />
+              )}
+            </AutoSizer>
+          </div>
+        </div>
       </SearchPanelTable>
       {!embedMode && showFooter && (
         <div className="flex justify-between pb-2">

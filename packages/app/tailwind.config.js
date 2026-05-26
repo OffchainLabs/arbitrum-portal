@@ -81,6 +81,7 @@ module.exports = {
         // PRIMARY
         'cyan': '#DDEAFA',
         'brick': '#ff9f8b',
+        'destructive': '#D26A6A',
         'orange': '#FFEED3',
         'lime': '#E8FFE4',
         'lavender': '#7693EB',

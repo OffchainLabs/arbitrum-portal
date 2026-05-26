@@ -89,6 +89,7 @@ import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
+import { ChainId } from '../../types/ChainId';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -132,7 +133,7 @@ export function TransferPanel() {
   });
   // do not use `useChainId` because it won't detect chains outside of our wagmi config
   const latestChain = useLatest(chain);
-  const [networks] = useNetworks();
+  const [networks, setNetworks] = useNetworks();
   const latestNetworks = useLatest(networks);
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
@@ -288,6 +289,21 @@ export function TransferPanel() {
     const waitForInput = openDialog(dialogType);
     const [confirmed] = await waitForInput();
     return confirmed;
+  };
+
+  const confirmNovaDepositWarning = async () => {
+    const waitForInput = openDialog('nova_deposit_warning');
+    const [confirmed] = await waitForInput();
+
+    if (!confirmed) {
+      setNetworks({
+        sourceChainId: latestNetworks.current.sourceChain.id,
+        destinationChainId: ChainId.ArbitrumOne,
+      });
+      return false;
+    }
+
+    return true;
   };
 
   const showDelayInSmartContractTransaction = () => {
@@ -1275,6 +1291,17 @@ export function TransferPanel() {
 
     if (!isTransferAllowed) {
       return networkConnectionWarningToast();
+    }
+
+    if (
+      isDepositMode &&
+      latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova
+    ) {
+      const shouldProceedToNova = await confirmNovaDepositWarning();
+
+      if (!shouldProceedToNova) {
+        return;
+      }
     }
 
     if (selectedRoute == 'oftV2') {

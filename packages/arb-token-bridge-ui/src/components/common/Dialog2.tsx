@@ -13,6 +13,7 @@ import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApp
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
 import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
+import { NovaDepositWarningDialog } from '../TransferPanel/NovaDepositWarningDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
@@ -62,6 +63,7 @@ export type DialogType =
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
   | 'pop_disabled'
+  | 'nova_deposit_warning'
   | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
@@ -163,6 +165,8 @@ export function DialogWrapper(props: DialogProps) {
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
     case 'pop_disabled':
       return <PoPDisabledDialog {...commonProps} />;
+    case 'nova_deposit_warning':
+      return <NovaDepositWarningDialog {...commonProps} />;
     case 'earn_tos':
       return <EarnToSPopupDialog {...commonProps} />;
     default:
