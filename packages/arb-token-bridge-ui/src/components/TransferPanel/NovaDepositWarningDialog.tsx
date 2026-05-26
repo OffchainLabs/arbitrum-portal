@@ -13,7 +13,7 @@ export function NovaDepositWarningDialog(props: DialogProps) {
         <p>
           Nova is now in a minimized maintenance state.
           <br />
-          We strongly advice to bridge your funds to{' '}
+          We strongly advise to bridge your funds to{' '}
           <span className="font-semibold">Arbitrum One</span> instead.
           <br />
           <br /> Are you sure you still want to bridge to Arbitrum Nova?
