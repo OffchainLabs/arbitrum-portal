@@ -2,6 +2,7 @@ import {
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
   ExclamationCircleIcon,
+  InformationCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
@@ -105,23 +106,19 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   more: {
     name: ChainGroupName.more,
     description: (
-      <Banner>
-        <span>
-          Independent projects using non-Arbitrum technology. These chains have varying degrees of
-          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
-        </span>
-      </Banner>
+      <>
+        Independent projects using non-Arbitrum technology. These chains have varying degrees of
+        decentralization. <span className="font-semibold">Bridge at your own risk.</span>
+      </>
     ),
   },
   orbit: {
     name: ChainGroupName.orbit,
     description: (
-      <Banner>
-        <span>
-          Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
-          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
-        </span>
-      </Banner>
+      <>
+        Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
+        decentralization. <span className="font-semibold">Bridge at your own risk.</span>
+      </>
     ),
   },
 };
@@ -151,10 +148,20 @@ function ChainTypeInfoRow({
       )}
     >
       <div className="flex flex-row flex-nowrap items-center justify-between">
-        <p className="text-sm text-white/70">{name}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm text-white/70">{name}</p>
+          {description ? (
+            <Tooltip
+              as="span"
+              wrapperClassName="inline-flex"
+              content={<span className="block max-w-[260px] text-xs">{description}</span>}
+            >
+              <InformationCircleIcon className="h-4 w-4 text-white/50" />
+            </Tooltip>
+          ) : null}
+        </div>
         <p className="text-xs text-white/50">{isConnected ? 'Native Balance' : 'Native Token'}</p>
       </div>
-      {description}
     </div>
   );
 }
@@ -402,7 +409,7 @@ export function NetworksPanel({
     }
 
     return groupedNetworks;
-    }, [isNetworkSearchResult, networksToShow, showNovaWarningBanner]);
+  }, [isNetworkSearchResult, networksToShow, showNovaWarningBanner]);
 
   function getRowHeight({ index }: { index: number }) {
     const rowItemOrChainId = networkRowsWithChainInfoRows[index];
@@ -413,7 +420,7 @@ export function NetworksPanel({
       return 88;
     }
     if (typeof rowItemOrChainId === 'string') {
-      return rowItemOrChainId === ChainGroupName.core ? 45 : 132;
+      return 45;
     }
 
     return 50;
