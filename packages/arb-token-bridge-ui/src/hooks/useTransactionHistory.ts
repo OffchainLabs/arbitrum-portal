@@ -270,10 +270,8 @@ function dedupeTransactions(txs: Transfer[]) {
 }
 
 function getMergedTransactionIdentity(tx: MergedTransaction) {
-  const uniqueId = tx.uniqueId?.toString();
-  return uniqueId
-    ? `${tx.parentChainId}-${tx.childChainId}-${tx.txId}-${uniqueId}`
-    : `${tx.parentChainId}-${tx.childChainId}-${tx.txId}`;
+  const normalizedTxId = tx.txId?.toLowerCase();
+  return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
 }
 
 function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
