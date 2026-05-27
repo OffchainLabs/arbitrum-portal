@@ -247,6 +247,7 @@ export const DyorChecklist = ({
                       <input
                         type="checkbox"
                         checked={projectState.includes(check.id)}
+                        readOnly
                         hidden
                         aria-hidden={false}
                         className="peer [&:checked~label_.checkIcon]:visible [&:checked~label_span:first-child]:border-white [&:checked~label_span:first-child]:bg-white"

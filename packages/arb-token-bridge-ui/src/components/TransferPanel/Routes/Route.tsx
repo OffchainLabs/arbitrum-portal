@@ -4,7 +4,7 @@ import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';

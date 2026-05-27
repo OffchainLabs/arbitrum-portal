@@ -1,21 +1,20 @@
 import { Metadata } from 'next';
-import React from 'react';
 
 import { getMetaData } from '@/portal/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/portal/common/getServerSideAppParams';
 import { Projects } from '@/portal/components/Projects';
-import { useFilteredProjects } from '@/portal/hooks/useFilteredProjects';
+import { getFilteredProjects } from '@/portal/hooks/useFilteredProjects';
 
 // Generate server-side metadata for this page
-export function generateMetadata(props: ServerSideAppProps): Metadata {
+export function generateMetadata(props: ServerSideAppProps): Promise<Metadata> {
   return getMetaData(props);
 }
 
-export default function ProjectsPage(props: ServerSideAppProps) {
+export default async function ProjectsPage(props: ServerSideAppProps) {
   const { selectedCategory, selectedSubcategories, selectedChains, selectedSort } =
-    getServerSideAppParams(props);
+    await getServerSideAppParams(props);
 
-  const projects = useFilteredProjects({
+  const projects = getFilteredProjects({
     selectedCategory,
     selectedSubcategories,
     selectedChains,

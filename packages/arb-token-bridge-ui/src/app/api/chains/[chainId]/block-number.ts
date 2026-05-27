@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import {
   getL1SubgraphClient,
@@ -32,10 +32,10 @@ function getSubgraphClient(chainId: number) {
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { chainId: string } },
+  request: Request,
+  { params }: { params: Promise<{ chainId: string }> },
 ): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
-  const { chainId } = params;
+  const { chainId } = await params;
 
   try {
     const subgraphClient = getSubgraphClient(Number(chainId));

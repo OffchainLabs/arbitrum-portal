@@ -64,7 +64,7 @@ export function OftV2Route() {
       fee: oftFeeEstimates.sourceChainGasFee.toString(),
       token: { ...ether, address: constants.AddressZero },
     };
-  }, [oftFeeEstimates?.sourceChainGasFee]);
+  }, [oftFeeEstimates]);
 
   if (oftFeeEstimatesError || !oftV2Data) {
     return null;

@@ -132,7 +132,7 @@ async function getTransactionQuote(input: {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
     const url = new URL(request.url);
@@ -141,9 +141,10 @@ export async function GET(
     });
     if (rateLimited) return rateLimited;
 
+    const { category, id } = await params;
     const quoteInput = {
-      category: params.category,
-      opportunityId: params.id,
+      category,
+      opportunityId: id,
       action: url.searchParams.get('action'),
       amount: url.searchParams.get('amount'),
       chainId: parseOptionalNumberQuery(url.searchParams.get('chainId')),

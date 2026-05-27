@@ -10,6 +10,13 @@ import { isOnrampServiceEnabled } from '../../util/featureFlag';
 import { SafeImage } from '../common/SafeImage';
 import { BackButton } from './BackButton';
 
+const MoonPayBuyWidget = dynamic(
+  () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayBuyWidget),
+  {
+    ssr: false,
+  },
+);
+
 export function MoonPaySkeleton({ children }: PropsWithChildren) {
   const { embedMode } = useMode();
 
@@ -67,13 +74,6 @@ export const MoonPayPanel = memo(function MoonPayPanel() {
   if (!showMoonPay) {
     return null;
   }
-
-  const MoonPayBuyWidget = dynamic(
-    () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayBuyWidget),
-    {
-      ssr: false,
-    },
-  );
 
   return (
     <MoonPaySkeleton>

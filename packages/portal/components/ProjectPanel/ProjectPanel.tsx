@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { usePostHog } from 'posthog-js/react';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { LIVE_INCENTIVES_END_DATE, LIVE_INCENTIVES_START_DATE } from '@/common/constants';
 import { getProjectDetailsById, hasLiveIncentives as hasLiveIncentivesFn } from '@/common/projects';
 import { EntityType } from '@/common/types';

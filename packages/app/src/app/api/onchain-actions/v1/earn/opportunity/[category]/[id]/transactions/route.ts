@@ -15,13 +15,14 @@ const router = new CategoryRouter();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const category = parseOpportunityCategory(params.category);
+    const { category: rawCategory, id } = await params;
+    const category = parseOpportunityCategory(rawCategory);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const opportunityId = assertAddress(params.id, 'opportunityId');
+    const opportunityId = assertAddress(id, 'opportunityId');
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
 
     const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });

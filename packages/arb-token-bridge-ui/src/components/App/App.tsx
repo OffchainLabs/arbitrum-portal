@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-const ArbTokenBridgeStoreSyncWrapper = (): JSX.Element | null => {
+const ArbTokenBridgeStoreSyncWrapper = (): React.JSX.Element | null => {
   const actions = useActions();
 
   // We want to be sure this fetch is completed by the time we open the USDC modals

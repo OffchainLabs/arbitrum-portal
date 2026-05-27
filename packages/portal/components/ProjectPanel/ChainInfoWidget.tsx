@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getChainDetailsById, getChainSlugFromTitle } from '@/common/chains';
 import { EntityType, FullProject } from '@/common/types';
 import { useEntitySidePanel } from '@/hooks/useEntitySidePanel';
@@ -25,11 +25,7 @@ export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
           const clickable = chainDetails.isOrbitChain;
 
           return (
-            <Tooltip
-              key={chainDetails.slug}
-              content={<p>{chainDetails.description}</p>}
-              tippyProps={{ placement: 'bottom' }}
-            >
+            <Tooltip key={chainDetails.slug} content={<p>{chainDetails.description}</p>}>
               <div
                 className={twMerge(
                   'flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md p-1 px-2',

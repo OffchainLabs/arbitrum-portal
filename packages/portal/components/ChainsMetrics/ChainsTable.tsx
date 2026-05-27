@@ -10,7 +10,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Fragment } from 'react';
 import ReactDOM from 'react-dom';
@@ -272,6 +272,7 @@ const Toast = ({
 };
 
 export const ChainsTable = () => {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -437,10 +438,16 @@ export const ChainsTable = () => {
       }
     });
 
-    // Build the new URL and navigate
-    const newUrl = `${window.location.pathname}?${newParams.toString()}`;
+    const nextQueryString = newParams.toString();
+    const currentQueryString = searchParams.toString();
+
+    if (nextQueryString === currentQueryString) {
+      return;
+    }
+
+    const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
     router.push(newUrl, { scroll: false });
-  }, [searchQuery, sortField, sortDirection, activeFilters, router, searchParams]);
+  }, [activeFilters, pathname, router, searchParams, searchQuery, sortDirection, sortField]);
 
   const handleSort = (field: keyof ChainData) => {
     if (sortField === field) {

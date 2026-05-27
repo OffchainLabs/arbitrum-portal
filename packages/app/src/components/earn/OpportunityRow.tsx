@@ -2,12 +2,12 @@ import { ChartBarIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Tooltip } from '@/app-components/Tooltip';
 import {
   CATEGORY_INDICATOR_CLASS,
   type OpportunitySelectHandler,
   OpportunityTableRow,
 } from '@/app-types/earn/vaults';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
 import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
@@ -44,7 +44,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                       : 'This position has matured'}
                   </p>
                 }
-                tippyProps={{ placement: 'top' }}
+                contentProps={{ side: 'top' }}
               >
                 <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default">
                   Matured
@@ -99,6 +99,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         </p>
         {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
           <Tooltip
+            as="div"
             content={
               <div className="flex flex-col min-w-[173px]">
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
@@ -129,9 +130,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                 </div>
               </div>
             }
-            tippyProps={{
-              placement: 'top',
-            }}
+            contentProps={{ side: 'top' }}
           >
             <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded p-0.5">
               <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />

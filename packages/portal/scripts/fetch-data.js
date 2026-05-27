@@ -20,26 +20,30 @@ const filesToFetch = [
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https
-      .get(url, (response) => {
-        let data = '';
+    const request = https.get(url, (response) => {
+      let data = '';
 
-        response.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        response.on('end', () => {
-          try {
-            const jsonData = JSON.parse(data);
-            resolve(jsonData);
-          } catch (error) {
-            reject(new Error(`Failed to parse JSON from ${url}: ${error.message}`));
-          }
-        });
-      })
-      .on('error', (error) => {
-        reject(new Error(`Failed to fetch ${url}: ${error.message}`));
+      response.on('data', (chunk) => {
+        data += chunk;
       });
+
+      response.on('end', () => {
+        try {
+          const jsonData = JSON.parse(data);
+          resolve(jsonData);
+        } catch (error) {
+          reject(new Error(`Failed to parse JSON from ${url}: ${error.message}`));
+        }
+      });
+    });
+
+    request.setTimeout(5000, () => {
+      request.destroy(new Error(`Request timed out for ${url}`));
+    });
+
+    request.on('error', (error) => {
+      reject(new Error(`Failed to fetch ${url}: ${error.message}`));
+    });
   });
 }
 
@@ -89,6 +93,12 @@ async function fetchAllData() {
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
       console.log(`✅ Saved ${filename}`);
     } catch (error) {
+      if (fs.existsSync(filePath)) {
+        console.warn(`⚠️ Error fetching ${filename}:`, error.message);
+        console.warn(`⚠️ Keeping existing local copy of ${filename}`);
+        return;
+      }
+
       console.error(`❌ Error fetching ${filename}:`, error.message);
       process.exit(1);
     }
