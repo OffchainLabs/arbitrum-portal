@@ -6,14 +6,7 @@ import {
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
