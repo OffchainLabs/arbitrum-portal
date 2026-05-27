@@ -8,7 +8,6 @@ import {
 import { useDebounce } from '@uidotdev/usehooks';
 import React, {
   CSSProperties,
-  PropsWithChildren,
   useCallback,
   useEffect,
   useMemo,
@@ -63,41 +62,6 @@ type ChainGroupInfo = {
   name: ChainGroupName;
   description?: React.ReactNode;
 };
-
-function Banner({
-  warn,
-  href,
-  children,
-}: PropsWithChildren<{
-  warn?: true;
-  href?: string;
-}>) {
-  const className = twMerge(
-    'mt-2 flex gap-1 whitespace-normal rounded px-6 py-4 text-xs',
-    warn ? 'bg-destructive/20 text-destructive' : 'bg-white/10 text-white',
-  );
-
-  if (warn && href) {
-    return (
-      <ExternalLink href={href} className={twMerge(className, 'items-center justify-between')}>
-        <span className="flex items-center gap-1">
-          <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
-          <span>{children}</span>
-        </span>
-        <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
-      </ExternalLink>
-    );
-  }
-
-  return (
-    <p className={className}>
-      <ShieldExclamationIcon
-        className={twMerge('h-4 w-4 shrink-0', warn ? 'text-destructive' : 'text-white')}
-      />
-      <span>{children}</span>
-    </p>
-  );
-}
 
 const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   core: {
@@ -343,8 +307,7 @@ export function NetworksPanel({
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
-    const proofOfPlayNetworks =
-      !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
+    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
 
     if (_networkSearched) {
       return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
@@ -378,11 +341,10 @@ export function NetworksPanel({
 
   const networkRowsWithChainInfoRows: NetworkRowItem[] = useMemo(() => {
     if (isNetworkSearchResult) {
-      return networksToShow.flatMap(
-        (chainId): NetworkRowItem[] =>
-          chainId === ChainId.ArbitrumNova && showNovaWarningBanner
-            ? [chainId, NOVA_WARNING_ROW]
-            : [chainId],
+      return networksToShow.flatMap((chainId): NetworkRowItem[] =>
+        chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+          ? [chainId, NOVA_WARNING_ROW]
+          : [chainId],
       );
     }
 
@@ -391,11 +353,10 @@ export function NetworksPanel({
     if (networksToShow.core.length > 0) {
       groupedNetworks.push(
         ChainGroupName.core,
-        ...networksToShow.core.flatMap(
-          (chainId): NetworkRowItem[] =>
-            chainId === ChainId.ArbitrumNova && showNovaWarningBanner
-              ? [chainId, NOVA_WARNING_ROW]
-              : [chainId],
+        ...networksToShow.core.flatMap((chainId): NetworkRowItem[] =>
+          chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+            ? [chainId, NOVA_WARNING_ROW]
+            : [chainId],
         ),
       );
     }
@@ -474,10 +435,19 @@ export function NetworksPanel({
       if (networkOrChainTypeName === NOVA_WARNING_ROW) {
         return (
           <div style={style} className="px-5">
-            <Banner warn href="#">
-              Arbitrum Nova is losing support. Please bridge to{' '}
-              <span className="font-semibold">Arbitrum One.</span>
-            </Banner>
+            <ExternalLink
+              href="#"
+              className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-6 py-4 text-xs text-destructive"
+            >
+              <span className="flex items-center gap-1">
+                <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
+                <span>
+                  Arbitrum Nova is losing support. Please bridge to{' '}
+                  <span className="font-semibold">Arbitrum One.</span>
+                </span>
+              </span>
+              <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
+            </ExternalLink>
           </div>
         );
       }
