@@ -49,6 +49,7 @@ overrides:
   body-parser>qs: 6.15.1
   '@cypress/request>qs': 6.15.1
   express>path-to-regexp: 0.1.13
+  tmp: 0.2.6
 
 importers:
 
@@ -9232,8 +9233,8 @@ packages:
     resolution: {integrity: sha512-azl+t0z7pw/z958Gy9svOTuzqIk6xq+NSheJzn5MMWtWTFywIacg2wUlzKFGtt3cthx0r2SxMK0yzJOR0IES7Q==}
     engines: {node: '>=14.0.0'}
 
-  tmp@0.2.5:
-    resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
+  tmp@0.2.6:
+    resolution: {integrity: sha512-5sJPdPjfI5Kx+qbrDesxkglRBxW//g7hCsqspEjwkewGvBMGIKMOTKzLt1hFVJzyadba3lDUN20O9qhvbQUSTA==}
     engines: {node: '>=14.14'}
 
   to-buffer@1.2.2:
@@ -16594,7 +16595,7 @@ snapshots:
       request-progress: 3.0.0
       semver: 7.7.3
       supports-color: 8.1.1
-      tmp: 0.2.5
+      tmp: 0.2.6
       untildify: 4.0.0
       yauzl: 2.10.0
 
@@ -21230,7 +21231,7 @@ snapshots:
 
   tinyspy@4.0.4: {}
 
-  tmp@0.2.5: {}
+  tmp@0.2.6: {}
 
   to-buffer@1.2.2:
     dependencies:

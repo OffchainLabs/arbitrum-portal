@@ -69,7 +69,8 @@
       "express>qs": "6.15.1",
       "body-parser>qs": "6.15.1",
       "@cypress/request>qs": "6.15.1",
-      "express>path-to-regexp": "0.1.13"
+      "express>path-to-regexp": "0.1.13",
+      "tmp": "0.2.6"
     }
   },
   "keywords": [],
