@@ -269,6 +269,60 @@ function dedupeTransactions(txs: Transfer[]) {
   return Array.from(new Map(txs.map((tx) => [getCacheKeyFromTransaction(tx), tx])).values());
 }
 
+function getMergedTransactionIdentity(tx: MergedTransaction) {
+  const normalizedTxId = tx.txId?.toLowerCase();
+  return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
+}
+
+function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
+  // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
+  const normalizedAddress = address?.toLowerCase();
+  return [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(normalizedAddress);
+}
+
+export function mergeTransactions({
+  address,
+  newTransactions = [],
+  fetchedTransactions = [],
+}: {
+  address?: Address;
+  newTransactions?: MergedTransaction[];
+  fetchedTransactions?: MergedTransaction[][];
+}) {
+  const flattenedFetchedTransactions = fetchedTransactions.flat();
+  const fetchedByIdentity = new Map<string, MergedTransaction[]>();
+
+  for (const tx of flattenedFetchedTransactions) {
+    if (!isTransactionForAddress(tx, address)) {
+      continue;
+    }
+
+    const identity = getMergedTransactionIdentity(tx);
+    const existingTransactions = fetchedByIdentity.get(identity) ?? [];
+    fetchedByIdentity.set(identity, [...existingTransactions, tx]);
+  }
+
+  const pendingOnlyTransactions = newTransactions.filter((tx) => {
+    if (!isTransactionForAddress(tx, address)) {
+      return false;
+    }
+
+    const fetchedTransactionsWithSameIdentity =
+      fetchedByIdentity.get(getMergedTransactionIdentity(tx)) ?? [];
+
+    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) =>
+      isSameTransaction(
+        { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
+        { ...tx, txId: tx.txId.toLowerCase() },
+      ),
+    );
+  });
+
+  return [...Array.from(fetchedByIdentity.values()).flat(), ...pendingOnlyTransactions].sort(
+    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
+  );
+}
+
 export async function fetchWithdrawalsInBatches(
   params: FetchWithdrawalsParams & {
     batchSizeBlocks?: number;
@@ -770,11 +824,11 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
-    const txs = [...(newTransactionsData || []), ...(txPages || [])].flat();
-    // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
-    return txs.filter((tx) =>
-      [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(address?.toLowerCase()),
-    );
+    return mergeTransactions({
+      address,
+      newTransactions: newTransactionsData,
+      fetchedTransactions: txPages,
+    });
   }, [newTransactionsData, txPages, address]);
 
   const updateCachedTransaction = useCallback(
