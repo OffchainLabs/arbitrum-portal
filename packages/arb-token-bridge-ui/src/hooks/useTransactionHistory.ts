@@ -290,13 +290,16 @@ export function mergeTransactions({
   fetchedTransactions?: MergedTransaction[][];
 }) {
   const flattenedFetchedTransactions = fetchedTransactions.flat();
-  const fetchedByIdentity = new Map<string, MergedTransaction>();
+  const fetchedByIdentity = new Map<string, MergedTransaction[]>();
 
   for (const tx of flattenedFetchedTransactions) {
     if (!isTransactionForAddress(tx, address)) {
       continue;
     }
-    fetchedByIdentity.set(getMergedTransactionIdentity(tx), tx);
+
+    const identity = getMergedTransactionIdentity(tx);
+    const existingTransactions = fetchedByIdentity.get(identity) ?? [];
+    fetchedByIdentity.set(identity, [...existingTransactions, tx]);
   }
 
   const pendingOnlyTransactions = newTransactions.filter((tx) => {
@@ -304,10 +307,18 @@ export function mergeTransactions({
       return false;
     }
 
-    return !fetchedByIdentity.has(getMergedTransactionIdentity(tx));
+    const fetchedTransactionsWithSameIdentity =
+      fetchedByIdentity.get(getMergedTransactionIdentity(tx)) ?? [];
+
+    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) =>
+      isSameTransaction(
+        { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
+        { ...tx, txId: tx.txId.toLowerCase() },
+      ),
+    );
   });
 
-  return [...fetchedByIdentity.values(), ...pendingOnlyTransactions].sort(
+  return [...Array.from(fetchedByIdentity.values()).flat(), ...pendingOnlyTransactions].sort(
     (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
   );
 }
