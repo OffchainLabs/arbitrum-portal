@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 
 import { useEarnTransactionExecution } from '@/app-hooks/earn/useEarnTransactionExecution';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
+import { useRevalidateEarnAction } from '@/app-hooks/earn/useRevalidateEarnAction';
 import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { OpportunityCategory, Vendor } from '@/earn-api/types';
 import type { StandardOpportunityFixedYield, StandardTransactionHistory } from '@/earn-api/types';
@@ -82,6 +83,7 @@ export function usePendlePanelExecution({
 }: UsePendlePanelExecutionParams) {
   const posthog = usePostHog();
   const [txError, setTxError] = useState<string | null>(null);
+  const revalidateEarnAction = useRevalidateEarnAction();
   const { addTransaction } = useEarnTransactionHistory(
     OpportunityCategory.FixedYield,
     opportunity.id,
@@ -164,6 +166,13 @@ export function usePendlePanelExecution({
           vendor: Vendor.Pendle,
           transaction: historyItem,
         });
+        revalidateEarnAction({
+          category: OpportunityCategory.FixedYield,
+          chainId: opportunity.chainId,
+          opportunityId: opportunity.id,
+          userAddress: walletAddress,
+          txHash,
+        });
       }
 
       if (txHash) {
@@ -179,12 +188,7 @@ export function usePendlePanelExecution({
             timestamp,
             protocolName: 'Pendle',
             protocolLogo: opportunity.protocolIcon,
-            networkFee: estimatedTxCost
-              ? {
-                  amount: estimatedTxCost.eth,
-                  usd: estimatedTxCost.usd ?? '0.00',
-                }
-              : undefined,
+            networkFee: estimatedTxCost ? { amount: estimatedTxCost.eth } : undefined,
             opportunityName: opportunity.name ?? opportunity.token,
           },
           true,
@@ -204,6 +208,7 @@ export function usePendlePanelExecution({
       posthog,
       quoteAmountRaw,
       refetch,
+      revalidateEarnAction,
       resetAmount,
       selectedAction,
       selectedInputToken?.logoUrl,
@@ -227,13 +232,10 @@ export function usePendlePanelExecution({
     setTxError(null);
   }, []);
 
+  const transactionSteps = transactionQuote?.transactionSteps;
+
   const handleTransaction = useCallback(async () => {
-    if (
-      !transferReadiness.isReady ||
-      !transactionQuote?.transactionSteps ||
-      transactionQuote.transactionSteps.length === 0 ||
-      !walletAddress
-    ) {
+    if (!transferReadiness.isReady || !transactionSteps?.length || !walletAddress) {
       return;
     }
 
@@ -251,13 +253,7 @@ export function usePendlePanelExecution({
         setTxError(formatTransactionError(error));
       }
     }
-  }, [
-    checkAndShowToS,
-    executeTx,
-    transactionQuote?.transactionSteps,
-    transferReadiness.isReady,
-    walletAddress,
-  ]);
+  }, [checkAndShowToS, executeTx, transferReadiness.isReady, transactionSteps, walletAddress]);
 
   return {
     txError,

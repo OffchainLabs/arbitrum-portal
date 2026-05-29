@@ -19,7 +19,7 @@ import {
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
 } from './networksNitroTestnode';
-import { orbitChains } from './orbitChainsList';
+import { getOrbitChains, orbitChains } from './orbitChainsList';
 import { getRpcUrl } from './rpc/getRpcUrl';
 
 /** The network that you reference when calling `block.number` in solidity */
@@ -102,6 +102,18 @@ export type ChainWithRpcUrl = ArbitrumNetwork & {
   nativeTokenData?: Erc20Data;
 };
 
+function getAvailableLocalStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
+  if (
+    typeof localStorage === 'undefined' ||
+    typeof localStorage.getItem !== 'function' ||
+    typeof localStorage.setItem !== 'function'
+  ) {
+    return null;
+  }
+
+  return localStorage;
+}
+
 export function getBlockNumberReferenceChainIdByChainId({ chainId }: { chainId: number }): number {
   // the chain provided is an L1 chain or Base chain, so we can return early
   if (isBlockNumberReferenceNetwork({ chainId })) {
@@ -135,9 +147,10 @@ export function getBlockNumberReferenceChainIdByChainId({ chainId }: { chainId: 
 }
 
 export function getCustomChainsFromLocalStorage(): ChainWithRpcUrl[] {
-  if (typeof localStorage === 'undefined') return []; // required so that it does not fail test-runners
+  const storage = getAvailableLocalStorage();
+  if (!storage) return []; // required so that it does not fail outside browser runtime
 
-  const customChainsFromLocalStorage = localStorage.getItem(customChainLocalStorageKey);
+  const customChainsFromLocalStorage = storage.getItem(customChainLocalStorageKey);
 
   if (!customChainsFromLocalStorage) {
     return [];
@@ -172,6 +185,9 @@ export function getCustomChainFromLocalStorageById(chainId: ChainId) {
 }
 
 export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
+  const storage = getAvailableLocalStorage();
+  if (!storage) return;
+
   const customChains = getCustomChainsFromLocalStorage();
 
   if (customChains.findIndex((chain) => chain.chainId === newCustomChain.chainId) > -1) {
@@ -181,15 +197,18 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
 
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
-  localStorage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
+  const storage = getAvailableLocalStorage();
+  if (!storage) return;
+
   const newCustomChains = getCustomChainsFromLocalStorage().filter(
     (chain) => chain.chainId !== chainId,
   );
 
-  localStorage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
 }
 
 export const supportedCustomOrbitParentChains = [
@@ -488,6 +507,25 @@ export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
   rpcURLs[chain.chainId] = chain.rpcUrl;
   // explorer URL
   explorerUrls[chain.chainId] = chain.explorerUrl;
+}
+
+let bridgeNetworksInitialized = false;
+
+export function initializeBridgeNetworks() {
+  if (bridgeNetworksInitialized) {
+    return;
+  }
+
+  [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    try {
+      registerCustomArbitrumNetwork(chain);
+      mapCustomChainToNetworkData(chain);
+    } catch (_) {
+      // already added
+    }
+  });
+
+  bridgeNetworksInitialized = true;
 }
 
 export function isArbitrumChain(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
+import { enforceEarnRateLimit } from '../../../../lib/rateLimit';
 import {
   ValidationError,
   assertAddress,
@@ -131,13 +132,19 @@ async function getTransactionQuote(input: {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
     const url = new URL(request.url);
+    const rateLimited = await enforceEarnRateLimit(request, {
+      key: url.searchParams.get('userAddress'),
+    });
+    if (rateLimited) return rateLimited;
+
+    const { category, id } = await params;
     const quoteInput = {
-      category: params.category,
-      opportunityId: params.id,
+      category,
+      opportunityId: id,
       action: url.searchParams.get('action'),
       amount: url.searchParams.get('amount'),
       chainId: parseOptionalNumberQuery(url.searchParams.get('chainId')),
@@ -157,14 +164,16 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error preparing transaction:', error);
     const routeError = error as { message?: string; code?: string; status?: number };
+    const status = routeError.status ?? 500;
+    const log = status >= 500 ? console.error : console.warn;
+    log('Error preparing transaction:', error);
     return NextResponse.json(
       {
         message: routeError.message ?? 'Failed to get transaction quote',
         code: routeError.code ?? 'TRANSACTION_QUOTE_ERROR',
       },
-      { status: routeError.status ?? 500 },
+      { status },
     );
   }
 }

@@ -71,75 +71,68 @@ function getDisplayAction(eventType: string, category: OpportunityCategory): str
   return EVENT_TYPE_TO_ACTION[normalized] ?? normalized;
 }
 
+type DisplayAsset = { amountRaw: string; symbol: string; decimals: number; logo?: string };
+
+function getInputAsset(row: EarnTransactionHistoryRow): DisplayAsset | null {
+  if (
+    !row.inputAssetAmountRaw ||
+    !row.inputAssetSymbol ||
+    typeof row.inputAssetDecimals !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    amountRaw: row.inputAssetAmountRaw,
+    symbol: row.inputAssetSymbol,
+    decimals: row.inputAssetDecimals,
+    logo: row.inputAssetLogo ?? row.assetLogo,
+  };
+}
+
+function getOutputAsset(row: EarnTransactionHistoryRow): DisplayAsset | null {
+  if (
+    !row.outputAssetAmountRaw ||
+    !row.outputAssetSymbol ||
+    typeof row.outputAssetDecimals !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    amountRaw: row.outputAssetAmountRaw,
+    symbol: row.outputAssetSymbol,
+    decimals: row.outputAssetDecimals,
+    logo: row.outputAssetLogo ?? row.assetLogo,
+  };
+}
+
 function getDisplayAsset(
   row: EarnTransactionHistoryRow,
   category: OpportunityCategory,
   action: string,
-): { amountRaw: string; symbol: string; decimals: number; logo?: string } {
-  const hasInputAsset =
-    row.inputAssetAmountRaw && row.inputAssetSymbol && typeof row.inputAssetDecimals === 'number';
-  const hasOutputAsset =
-    row.outputAssetAmountRaw &&
-    row.outputAssetSymbol &&
-    typeof row.outputAssetDecimals === 'number';
+): DisplayAsset {
+  const input = getInputAsset(row);
+  const output = getOutputAsset(row);
 
   if (category === OpportunityCategory.Lend) {
-    if (action === 'withdraw' && hasOutputAsset) {
-      return {
-        amountRaw: row.outputAssetAmountRaw!,
-        symbol: row.outputAssetSymbol!,
-        decimals: row.outputAssetDecimals!,
-        logo: row.outputAssetLogo ?? row.assetLogo,
-      };
-    }
-
-    if (hasInputAsset) {
-      return {
-        amountRaw: row.inputAssetAmountRaw!,
-        symbol: row.inputAssetSymbol!,
-        decimals: row.inputAssetDecimals!,
-        logo: row.inputAssetLogo ?? row.assetLogo,
-      };
-    }
-
-    if (hasOutputAsset) {
-      return {
-        amountRaw: row.outputAssetAmountRaw!,
-        symbol: row.outputAssetSymbol!,
-        decimals: row.outputAssetDecimals!,
-        logo: row.outputAssetLogo ?? row.assetLogo,
-      };
-    }
+    if (action === 'withdraw' && output) return output;
+    if (input) return input;
+    if (output) return output;
   }
 
   if (category === OpportunityCategory.FixedYield) {
-    if (action === 'enter' && hasInputAsset) {
-      return {
-        amountRaw: row.inputAssetAmountRaw!,
-        symbol: row.inputAssetSymbol!,
-        decimals: row.inputAssetDecimals!,
-        logo: row.inputAssetLogo ?? row.assetLogo,
-      };
-    }
-
-    if ((action === 'exit' || action === 'redeem' || action === 'rollover') && hasOutputAsset) {
-      return {
-        amountRaw: row.outputAssetAmountRaw!,
-        symbol: row.outputAssetSymbol!,
-        decimals: row.outputAssetDecimals!,
-        logo: row.outputAssetLogo ?? row.assetLogo,
-      };
+    if (action === 'enter' && input) return input;
+    if ((action === 'exit' || action === 'redeem' || action === 'rollover') && output) {
+      return output;
     }
   }
 
-  if (category !== OpportunityCategory.Lend && hasOutputAsset) {
-    return {
-      amountRaw: row.outputAssetAmountRaw!,
-      symbol: row.outputAssetSymbol!,
-      decimals: row.outputAssetDecimals!,
-      logo: row.outputAssetLogo ?? row.assetLogo,
-    };
+  if (category === OpportunityCategory.LiquidStaking) {
+    // Always denominate in the staked token: input on sell, output on buy.
+    if (action === 'sell' && input) return input;
+    if (output) return output;
   }
+
+  if (category !== OpportunityCategory.Lend && output) return output;
 
   return {
     amountRaw: row.assetAmountRaw || '0',

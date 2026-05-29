@@ -6,8 +6,8 @@ import { PathnameEnum } from '@/bridge/constants';
 import BridgePageWrapper from '../../BridgePageWrapper';
 
 type Props = {
-  searchParams: { [key: string]: string | string[] | undefined };
-  params: { slug: Slug };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ slug: Slug }>;
 };
 
 export const metadata: Metadata = {
@@ -16,11 +16,14 @@ export const metadata: Metadata = {
     "On-ramp directly to Arbitrum with one of several third party providers. Built to scale Ethereum, Arbitrum brings you 10x lower costs while inheriting Ethereum's security model. Arbitrum is a Layer 2 Optimistic Rollup.",
 };
 
-export default function BridgeBuyOnrampServicePage({ searchParams, params }: Props) {
+export default async function BridgeBuyOnrampServicePage({ searchParams, params }: Props) {
+  const resolvedSearchParams = await searchParams;
+  const { slug } = await params;
+
   return (
     <BridgePageWrapper
-      searchParams={searchParams}
-      redirectPath={`${PathnameEnum.BUY}/${params.slug}`}
+      searchParams={resolvedSearchParams}
+      redirectPath={`${PathnameEnum.BUY}/${slug}`}
     />
   );
 }

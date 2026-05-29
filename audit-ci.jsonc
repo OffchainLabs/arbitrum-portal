@@ -39,17 +39,96 @@
     "GHSA-3x4c-7xq6-9pq8",
     "GHSA-q4gf-8mx6-v5v3",
     //
+    // https://github.com/advisories/GHSA-8h8q-6873-q5fj
+    // Next.js Denial of Service with Server Components (CVE-2026-23870)
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-8h8q-6873-q5fj",
+    //
+    // https://github.com/advisories/GHSA-c4j6-fc7j-m34r
+    // Server-side request forgery in applications using WebSocket upgrades (CVE-2026-44578)
+    //
+    // https://github.com/advisories/GHSA-36qx-fr4f-26g5
+    // Middleware / Proxy bypass in Pages Router applications using i18n (CVE-2026-44573)
+    //
+    // https://github.com/advisories/GHSA-ffhc-5mcf-pf4q
+    // Cross-site scripting in App Router applications using CSP nonces (CVE-2026-44581)
+    //
+    // https://github.com/advisories/GHSA-gx5p-jg67-6x7h
+    // Cross-site scripting in beforeInteractive scripts with untrusted input (CVE-2026-44584)
+    //
+    // https://github.com/advisories/GHSA-h64f-5h5j-jqjh
+    // Denial of Service in the Image Optimization API (CVE-2026-44582)
+    //
+    // https://github.com/advisories/GHSA-wfc6-r584-vfw7
+    // Cache poisoning in React Server Component responses (CVE-2026-44580)
+    //
+    // https://github.com/advisories/GHSA-vfv6-92ff-j949
+    // Cache poisoning via collisions in React Server Component cache-busting (CVE-2026-44579)
+    //
+    // https://github.com/advisories/GHSA-3g8h-86w9-wvmq
+    // Middleware / Proxy redirects can be cache-poisoned (CVE-2026-44583)
+    //
+    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
+    // from: app>next
+    "GHSA-c4j6-fc7j-m34r",
+    "GHSA-36qx-fr4f-26g5",
+    "GHSA-ffhc-5mcf-pf4q",
+    "GHSA-gx5p-jg67-6x7h",
+    "GHSA-h64f-5h5j-jqjh",
+    "GHSA-wfc6-r584-vfw7",
+    "GHSA-vfv6-92ff-j949",
+    "GHSA-3g8h-86w9-wvmq",
+    //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
     // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
     // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/relay-auth>@stablelib/ed25519
     "GHSA-x3ff-w252-2g7j",
     //
-    // https://github.com/advisories/GHSA-w5hq-g745-h8pq
-    // uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided
-    // Reason to ignore temporarily: Transitive dependency via wagmi, metamask, lifi, and others; current code paths do not call the vulnerable API with caller-provided buffers.
-    // TODO(security): Replace this allowlist entry by bumping the upstream dependencies or adding a Yarn `resolutions` override to a non-vulnerable `uuid` version as soon as compatibility allows, then remove this exception.
-    // from: app>wagmi>@wagmi/connectors>... and arb-token-bridge-ui>@lifi/sdk>...
-    "GHSA-w5hq-g745-h8pq",
+    // https://github.com/advisories/GHSA-pfrx-2q88-qq97
+    // got allows a redirect to a UNIX socket (CVE-2022-33987)
+    //
+    // https://github.com/advisories/GHSA-rc47-6667-2j5j
+    // http-cache-semantics vulnerable to Regular Expression Denial of Service (CVE-2022-25881)
+    //
+    // https://github.com/advisories/GHSA-p8p7-x288-28g6
+    // Server-Side Request Forgery in @cypress/request (CVE-2023-28155)
+    //
+    // https://github.com/advisories/GHSA-8mmm-9v2q-x3f9
+    // tschaub gh-pages vulnerable to prototype pollution (CVE-2022-37611)
+    //
+    // https://github.com/advisories/GHSA-9jgg-88mc-972h
+    // webpack-dev-server users' source code may be stolen via malicious site, non-Chromium (CVE-2025-30360)
+    //
+    // https://github.com/advisories/GHSA-4v9v-hfq4-rm2v
+    // webpack-dev-server users' source code may be stolen via malicious site (CVE-2025-30359)
+    //
+    // https://github.com/advisories/GHSA-79cf-xcqc-c78w
+    // webpack-dev-server cross-origin source code exposure on non-HTTPS origins (CVE-2026-6402)
+    //
+    // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
+    // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
+    //
+    // Reason to ignore: All from @synthetixio/synpress, an E2E test devDependency.
+    // Each fix requires a major bump deep in the synpress chain that would risk
+    // breaking E2E tooling. Not used in production builds or runtime code.
+    // from: arb-token-bridge-ui>@synthetixio/synpress>...
+    "GHSA-pfrx-2q88-qq97",
+    "GHSA-rc47-6667-2j5j",
+    "GHSA-p8p7-x288-28g6",
+    "GHSA-8mmm-9v2q-x3f9",
+    "GHSA-9jgg-88mc-972h",
+    "GHSA-4v9v-hfq4-rm2v",
+    "GHSA-79cf-xcqc-c78w",
+    "GHSA-q8mj-m7cp-5q26",
+    //
+    // https://github.com/advisories/GHSA-qjx8-664m-686j
+    // js-cookie prototype hijack in assign() enables cookie-attribute injection (CVE-2026-46625)
+    // Reason to ignore: Only pulled in transitively via react-use's useCookie hook,
+    // which we never import. The vulnerable js-cookie code path is not reached.
+    // Patched version (3.0.7) is a major bump from react-use's pinned 2.x.
+    // from: react-use>js-cookie
+    "GHSA-qjx8-664m-686j",
   ],
 }

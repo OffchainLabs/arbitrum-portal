@@ -10,7 +10,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useChainIdsForNetworkSelection } from '../../hooks/TransferPanel/useChainIdsForNetworkSelection';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -203,10 +203,10 @@ function NetworkRow({
       <div className={twMerge('flex w-full flex-row items-center justify-between gap-1')}>
         <span className="truncate text-base">{network.name}</span>
 
-        <p className="text-xs leading-none text-white/70">
+        <div className="text-xs leading-none text-white/70">
           {!walletAddress && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
-              <p className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</p>
+              <span className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</span>
             </Tooltip>
           )}
 
@@ -231,7 +231,7 @@ function NetworkRow({
               </span>
             </Tooltip>
           )}
-        </p>
+        </div>
       </div>
     </button>
   );
@@ -373,6 +373,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.core) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.core}
             chainGroup={chainGroupInfo.core}
             style={style}
             isConnected={isConnected}
@@ -383,6 +384,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.more) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.more}
             chainGroup={chainGroupInfo.more}
             style={style}
             isConnected={isConnected}
@@ -393,6 +395,7 @@ export function NetworksPanel({
       if (networkOrChainTypeName === ChainGroupName.orbit) {
         return (
           <ChainTypeInfoRow
+            key={ChainGroupName.orbit}
             chainGroup={chainGroupInfo.orbit}
             style={style}
             isConnected={isConnected}

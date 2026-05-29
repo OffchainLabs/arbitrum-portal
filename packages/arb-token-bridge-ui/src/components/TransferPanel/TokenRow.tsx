@@ -31,8 +31,8 @@ import { getNetworkName } from '../../util/networks';
 import { SafeImage } from '../common/SafeImage';
 import { StatusBadge } from '../common/StatusBadge';
 import { Loader } from '../common/atoms/Loader';
+import { BlockExplorerTokenLink } from './BlockExplorerTokenLink';
 import { TokenLogoFallback } from './TokenInfo';
-import { BlockExplorerTokenLink } from './TokenInfoTooltip';
 import { useTokensFromLists } from './TokenSearchUtils';
 
 function tokenListIdsToNames(ids: string[]): string {
@@ -98,10 +98,7 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
-    if (
-      (sourceChainNativeCurrency.isCustom && destinationChainNativeCurrency.isCustom) ||
-      networks.sourceChain.id === ChainId.ApeChain
-    ) {
+    if (sourceChainNativeCurrency.isCustom && destinationChainNativeCurrency.isCustom) {
       return <span className="flex text-xs text-white/70">{tokenListInfo}</span>;
     }
 
@@ -438,7 +435,7 @@ export function TokenRow({
   onTokenSelected,
   token,
   isDestination = false,
-}: TokenRowProps): JSX.Element {
+}: TokenRowProps): React.JSX.Element {
   const {
     name: tokenName,
     symbol: tokenSymbol,

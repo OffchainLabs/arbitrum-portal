@@ -8,6 +8,8 @@ import { OpportunityTableRow } from '@/app-types/earn/vaults';
 import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type StandardOpportunity } from '@/earn-api/types';
 
+export const DEFAULT_EARN_MIN_TVL = 5_000_000;
+
 interface UseAllOpportunitiesResult {
   opportunities: OpportunityTableRow[];
   isLoading: boolean;
@@ -61,6 +63,10 @@ export function toTableRow(opp: StandardOpportunity): OpportunityTableRow {
     rawTvl,
     maturityDate: formatMaturityDate(m?.maturityDate),
     rawMaturityDate: m?.maturityDate,
+    underlyingTokenAddress: opp.underlyingTokenAddress,
+    underlyingTokenPriceUsd: opp.underlyingTokenPriceUsd,
+    shareTokenAddress: opp.shareTokenAddress,
+    shareTokenPriceUsd: opp.shareTokenPriceUsd,
   };
 }
 

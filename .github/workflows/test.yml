@@ -36,7 +36,7 @@ jobs:
     secrets: inherit
 
   test-ui:
-    name: 'Test UI'
+    name: 'Test UI Unit'
     runs-on: ubuntu-4
     needs: [build, check-files]
     if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
@@ -51,19 +51,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Start UI and Test
-        run: yarn start-server-and-test 'start' http://127.0.0.1:3000 'yarn test:ci'
+      - name: Start UI and run unit tests
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:unit'
+
+  test-ui-integration:
+    name: 'Test UI Integration'
+    runs-on: ubuntu-4
+    needs: [build, check-files]
+    if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
+    env: *app_env
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Restore build artifacts
+        uses: ./.github/actions/restore-build-artifacts
+
+      - name: Start UI and run integration tests
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm test:integration'
 
   audit:
     name: 'Audit'
@@ -72,16 +110,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Run audit
-        run: yarn audit:ci
+        run: pnpm audit:ci
 
   check-formatting:
     name: 'Check Formatting'
@@ -92,24 +137,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
       - name: Check formatting with Prettier
-        run: yarn prettier:check
+        run: pnpm prettier:check
 
       - name: Check formatting with ESLint
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
-        run: yarn lint
+        run: pnpm lint
 
   e2e-tests:
     name: 'E2E Tests'

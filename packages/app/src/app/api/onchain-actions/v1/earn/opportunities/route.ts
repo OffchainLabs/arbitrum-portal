@@ -1,6 +1,9 @@
+import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
+import { enforceEarnRateLimit } from '../lib/rateLimit';
 import {
   ValidationError,
   parseOptionalEarnChainId,
@@ -10,13 +13,17 @@ import {
 import { OpportunityFilters, StandardOpportunity } from '../types';
 
 const MAX_RESULTS = 50;
-const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' };
+const CACHE_HEADERS = {
+  'Cache-Control': `public, s-maxage=${EARN_CACHE_SECONDS.opportunities}, stale-while-revalidate=${EARN_CACHE_SECONDS.opportunities}`,
+};
 const router = new CategoryRouter();
 
-export const revalidate = 3600;
-
 export async function GET(request: NextRequest) {
+  noStore();
   try {
+    const rateLimited = await enforceEarnRateLimit(request);
+    if (rateLimited) return rateLimited;
+
     const searchParams = request.nextUrl.searchParams;
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
     const orderByParam = searchParams.get('orderBy');
@@ -43,33 +50,46 @@ export async function GET(request: NextRequest) {
       perPage: MAX_RESULTS,
     };
 
-    let opportunities: StandardOpportunity[] = [];
+    // keyParts must encode every closure-captured input; missed fields cause cross-request collisions.
+    const getCachedOpportunities = unstable_cache(
+      async () => {
+        let opportunities: StandardOpportunity[] = [];
 
-    if (category) {
-      const adapter = router.routeToAdapter(category);
-      opportunities = await adapter.getOpportunities(filters);
-    } else {
-      const adapters = router.getAllAdapters();
-      const results = await Promise.allSettled(
-        adapters.map((adapter) => adapter.getOpportunities(filters)),
-      );
-      for (const result of results) {
-        if (result.status === 'fulfilled') opportunities.push(...result.value);
-      }
-    }
+        if (category) {
+          const adapter = router.routeToAdapter(category);
+          opportunities = await adapter.getOpportunities(filters);
+        } else {
+          const adapters = router.getAllAdapters();
+          const results = await Promise.allSettled(
+            adapters.map((adapter) => adapter.getOpportunities(filters)),
+          );
+          for (const result of results) {
+            if (result.status === 'fulfilled') opportunities.push(...result.value);
+          }
+        }
 
-    const sortKey = orderBy === 'rawTvl' ? 'rawTvl' : 'rawApy';
-    opportunities.sort((a, b) => (b.metrics[sortKey] ?? 0) - (a.metrics[sortKey] ?? 0));
+        const sortKey = orderBy === 'rawTvl' ? 'rawTvl' : 'rawApy';
+        opportunities.sort((a, b) => (b.metrics[sortKey] ?? 0) - (a.metrics[sortKey] ?? 0));
 
-    const capped = opportunities.slice(0, MAX_RESULTS);
+        const capped = opportunities.slice(0, MAX_RESULTS);
 
-    const result = {
-      opportunities: capped,
-      total: opportunities.length,
-      vendors: Array.from(new Set(capped.map((o) => o.vendor))),
-      categories: Array.from(new Set(capped.map((o) => o.category))),
-    };
+        return {
+          opportunities: capped,
+          total: opportunities.length,
+          vendors: Array.from(new Set(capped.map((o) => o.vendor))),
+          categories: Array.from(new Set(capped.map((o) => o.category))),
+        };
+      },
+      [
+        `earn:opportunities:${category ?? 'all'}:${filters.chainId ?? 'all'}:${minTvl ?? 'all'}:${minApy ?? 'all'}:${orderBy}`,
+      ],
+      {
+        revalidate: EARN_CACHE_SECONDS.opportunities,
+        tags: earnCacheTags.opportunities(),
+      },
+    );
 
+    const result = await getCachedOpportunities();
     return NextResponse.json(result, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching opportunities:', error);

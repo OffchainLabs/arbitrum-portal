@@ -2,6 +2,8 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
+import { EARN_CACHE_SECONDS, earnCacheTags } from '@/earn-api/lib/cache';
+import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import {
   assertAddress,
   parseEarnChainId,
@@ -13,32 +15,36 @@ const router = new CategoryRouter();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const category = parseOpportunityCategory(params.category);
+    const { category: rawCategory, id } = await params;
+    const category = parseOpportunityCategory(rawCategory);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const opportunityId = assertAddress(params.id, 'opportunityId');
+    const opportunityId = assertAddress(id, 'opportunityId');
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
+    if (rateLimited) return rateLimited;
 
     const adapter = router.routeToAdapter(category);
 
-    const rateLimitKey = `transactions-rl:${category}:${chainId}:${opportunityId}:${userAddress}`;
+    const cacheKey = `transactions:${category}:${chainId}:${opportunityId.toLowerCase()}:${userAddress.toLowerCase()}`;
 
-    const getRateLimitedTransactions = unstable_cache(
+    const getCachedTransactions = unstable_cache(
       async () => {
         const transactions = await adapter.getUserTransactions(opportunityId, userAddress, chainId);
         return transactions;
       },
-      [rateLimitKey],
+      [cacheKey],
       {
-        revalidate: 30, // 30 seconds - rate limiting only
-        tags: ['transactions-rl', rateLimitKey],
+        revalidate: EARN_CACHE_SECONDS.transactions,
+        tags: earnCacheTags.transactions(userAddress, opportunityId),
       },
     );
 
-    const transactions = await getRateLimitedTransactions();
+    const transactions = await getCachedTransactions();
 
     const response: TransactionHistoryResponse = {
       opportunityId,

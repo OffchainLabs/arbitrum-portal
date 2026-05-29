@@ -58,6 +58,10 @@ export interface OpportunityTableRow {
   rawTvl: number | null;
   maturityDate?: string;
   rawMaturityDate?: string;
+  underlyingTokenAddress?: string | null;
+  underlyingTokenPriceUsd?: number | null;
+  shareTokenAddress?: string | null;
+  shareTokenPriceUsd?: number | null;
 }
 
 export type OpportunitySelectSurface = 'featured-card' | 'table-card' | 'table-row';

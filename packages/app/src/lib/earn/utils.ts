@@ -5,11 +5,16 @@ import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
 import type { StandardOpportunityLend } from '@/earn-api/types';
 
+export function parseFiniteNumber(value: unknown, opts: { min?: number } = {}): number | null {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  if (opts.min !== undefined && parsed < opts.min) return null;
+  return parsed;
+}
+
 export function parseMetricNumber(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null;
-  }
-  return value;
+  return parseFiniteNumber(value, { min: 0 });
 }
 
 export function formatApyBreakdown(value: number | undefined) {
@@ -77,6 +82,29 @@ export function normalizeTokenAddress(tokenAddress: string | null): Address | un
   } catch {
     return undefined;
   }
+}
+
+// Prefers `tokenPriceUsd`; falls back to `currentUsdValue / currentBalanceAmount`.
+export function getEarnInputUsdValue(params: {
+  amount: string;
+  tokenPriceUsd?: number | null;
+  currentBalanceAmount?: number;
+  currentUsdValue?: number;
+}): number | null {
+  const { amount, tokenPriceUsd, currentBalanceAmount, currentUsdValue } = params;
+  const amountNumber = Number(amount);
+  const balanceNumeric =
+    typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
+      ? currentBalanceAmount
+      : 0;
+  const perUnitUsd =
+    typeof tokenPriceUsd === 'number' && Number.isFinite(tokenPriceUsd) && tokenPriceUsd > 0
+      ? tokenPriceUsd
+      : balanceNumeric > 0 && currentUsdValue != null
+        ? currentUsdValue / balanceNumeric
+        : null;
+  if (perUnitUsd == null) return null;
+  return Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd;
 }
 
 export function getLiquidStakingHistoryValues({

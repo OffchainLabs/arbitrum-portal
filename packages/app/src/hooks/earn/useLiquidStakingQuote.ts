@@ -51,24 +51,21 @@ export function useLiquidStakingQuote({
     slippage,
     enabled: isQuoteActive,
   });
+  const receiveAmountRaw = transactionQuote?.receiveAmount;
 
   const receiveAmount = useMemo(() => {
-    if (!isQuoteActive) {
-      return null;
-    }
-
-    if (!transactionQuote?.receiveAmount) {
+    if (!isQuoteActive || !receiveAmountRaw) {
       return null;
     }
 
     const receiveDecimals = selectedAction === 'sell' ? (selectedSellTokenDecimals ?? 18) : 18;
 
     try {
-      return utils.formatUnits(transactionQuote.receiveAmount, receiveDecimals);
+      return utils.formatUnits(receiveAmountRaw, receiveDecimals);
     } catch {
       return null;
     }
-  }, [isQuoteActive, transactionQuote?.receiveAmount, selectedAction, selectedSellTokenDecimals]);
+  }, [isQuoteActive, receiveAmountRaw, selectedAction, selectedSellTokenDecimals]);
 
   return {
     transactionQuote: isQuoteActive ? transactionQuote : undefined,

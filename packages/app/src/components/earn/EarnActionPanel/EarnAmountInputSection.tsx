@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import { getEarnInputUsdValue } from '@/app-lib/earn/utils';
 import { Button } from '@/bridge/components/common/Button';
 import { formatUSD } from '@/bridge/util/NumberUtils';
 
@@ -22,6 +23,7 @@ interface EarnAmountInputSectionProps {
   currentBalance: string;
   currentBalanceAmount?: number;
   currentUsdValue?: number;
+  tokenPriceUsd?: number | null;
   isAmountExceedsBalance: boolean;
   isConnected?: boolean;
   validationError?: string | null;
@@ -37,37 +39,33 @@ export function EarnAmountInputSection({
   currentBalance,
   currentBalanceAmount,
   currentUsdValue,
+  tokenPriceUsd,
   isAmountExceedsBalance,
   isConnected = false,
   validationError,
   inputTokenSelector,
 }: EarnAmountInputSectionProps) {
-  const amountNumber = Number(amount);
-  const currentBalanceNumeric =
-    typeof currentBalanceAmount === 'number' && Number.isFinite(currentBalanceAmount)
-      ? currentBalanceAmount
-      : 0;
-  const perUnitUsd =
-    currentBalanceNumeric > 0 && currentUsdValue != null
-      ? currentUsdValue / currentBalanceNumeric
-      : null;
-  const currentInputUsdValue =
-    perUnitUsd != null
-      ? Math.max(0, Number.isFinite(amountNumber) ? amountNumber : 0) * perUnitUsd
-      : null;
+  const currentInputUsdValue = getEarnInputUsdValue({
+    amount,
+    tokenPriceUsd,
+    currentBalanceAmount,
+    currentUsdValue,
+  });
 
   return (
     <div className="bg-neutral-100 rounded flex flex-col p-4 focus-within:ring-2 focus-within:ring-white/30">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">{label}</span>
-          <Button
-            variant="secondary"
-            onClick={onMaxClick}
-            className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
-          >
-            MAX
-          </Button>
+          {isConnected && (
+            <Button
+              variant="secondary"
+              onClick={onMaxClick}
+              className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
+            >
+              MAX
+            </Button>
+          )}
         </div>
         <div className="flex items-center justify-between gap-2">
           <EarnActionPanelInput

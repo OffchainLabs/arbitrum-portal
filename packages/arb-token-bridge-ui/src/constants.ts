@@ -28,6 +28,9 @@ export const MULTICALL_TESTNET_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976
 
 export const ETHER_TOKEN_LOGO = '/images/EthereumLogoRound.svg';
 export const ARBITRUM_LOGO = '/images/ArbitrumLogo.svg';
+export const APE_TOKEN_LOGO = '/images/ApeTokenLogo.svg';
+export const WETH_TOKEN_LOGO =
+  'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png';
 
 export const ether = { name: 'Ether', symbol: 'ETH', decimals: 18 } as const;
 

@@ -1,13 +1,15 @@
+import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
+import { EARN_CACHE_SECONDS, earnCacheTags } from '@/earn-api/lib/cache';
 import {
   alignTimestampToGranularity,
   buildWindowFromRange,
   deriveGranularityFromWindow,
   deriveRangeFromWindow,
-  getSuggestedCacheTtlSeconds,
 } from '@/earn-api/lib/historicalWindow';
+import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import {
   ValidationError,
   assertAddress,
@@ -18,7 +20,6 @@ import {
   parseOptionalTimestamp,
 } from '@/earn-api/lib/validation';
 import {
-  HISTORICAL_VENDOR_TTL_SECONDS,
   type HistoricalData,
   type HistoricalGranularity,
   type HistoricalTimeRange,
@@ -66,19 +67,21 @@ function resolveWindow(
   };
 }
 
-export const revalidate = HISTORICAL_VENDOR_TTL_SECONDS;
-
 const router = new CategoryRouter();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
+    const rateLimited = await enforceEarnRateLimit(request);
+    if (rateLimited) return rateLimited;
+
     const searchParams = request.nextUrl.searchParams;
-    const category = parseOpportunityCategory(params.category);
+    const { category: rawCategory, id } = await params;
+    const category = parseOpportunityCategory(rawCategory);
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const opportunityId = assertAddress(params.id, 'opportunityId');
+    const opportunityId = assertAddress(id, 'opportunityId');
     const range = parseHistoricalRange(searchParams.get('range'));
     const assetSymbol = parseOptionalAssetSymbol(searchParams.get('assetSymbol'));
     const fromTimestampParam = parseOptionalTimestamp(searchParams.get('from'), 'from');
@@ -90,23 +93,34 @@ export async function GET(
       toTimestampParam,
     );
 
-    const adapter = router.routeToAdapter(category);
+    const cacheTtlSeconds =
+      resolvedRange === '1d'
+        ? EARN_CACHE_SECONDS.historical1d
+        : EARN_CACHE_SECONDS.historicalDefault;
 
-    const historicalData: HistoricalData = await adapter.getHistoricalData(
-      opportunityId,
-      resolvedRange,
-      chainId,
-      { assetSymbol, fromTimestamp, toTimestamp, granularity, resolvedRange },
+    const adapter = router.routeToAdapter(category);
+    const getCachedHistoricalData = unstable_cache(
+      () =>
+        adapter.getHistoricalData(opportunityId, resolvedRange, chainId, {
+          assetSymbol,
+          fromTimestamp,
+          toTimestamp,
+          granularity,
+          resolvedRange,
+        }),
+      [
+        `earn:historical:${category}:${chainId}:${opportunityId.toLowerCase()}:${resolvedRange}:${fromTimestamp}:${toTimestamp}:${assetSymbol ?? 'default'}`,
+      ],
+      {
+        revalidate: cacheTtlSeconds,
+        tags: earnCacheTags.historicalOpportunity(opportunityId),
+      },
     );
+    const historicalData: HistoricalData = await getCachedHistoricalData();
 
     if (!historicalData) {
       throw new ValidationError('HISTORICAL_DATA_NOT_FOUND', 'No historical data found', 404);
     }
-
-    const cacheTtlSeconds = Math.min(
-      HISTORICAL_VENDOR_TTL_SECONDS,
-      getSuggestedCacheTtlSeconds(granularity),
-    );
 
     return NextResponse.json(historicalData, {
       headers: {
@@ -115,10 +129,12 @@ export async function GET(
     });
   } catch (error) {
     const routeError = error as { message?: string; code?: string; status?: number };
-    console.error('Error fetching historical data:', {
+    const status = routeError.status ?? 500;
+    const log = status >= 500 ? console.error : console.warn;
+    log('Error fetching historical data:', {
       message: routeError.message,
       code: routeError.code,
-      status: routeError.status,
+      status,
       error,
     });
     return NextResponse.json(
@@ -126,7 +142,7 @@ export async function GET(
         message: routeError.message ?? 'Failed to fetch historical data',
         code: routeError.code ?? 'HISTORICAL_DATA_FETCH_ERROR',
       },
-      { status: routeError.status ?? 500 },
+      { status },
     );
   }
 }

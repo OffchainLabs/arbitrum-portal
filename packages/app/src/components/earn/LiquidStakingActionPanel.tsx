@@ -6,11 +6,12 @@ import { useAccount, useBalance } from 'wagmi';
 
 import { normalizeTokenAddress, sanitizeOutputTokenAddress } from '@/app-lib/earn/utils';
 import { OpportunityTableRow } from '@/app-types/earn/vaults';
-import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
+import { formatUSD, truncateExtraDecimals } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 
 import { useEarnActionTabs } from '../../hooks/earn/useEarnActionTabs';
 import { useEarnGasEstimate } from '../../hooks/earn/useEarnGasEstimate';
+import { useEarnTokenPrice } from '../../hooks/earn/useEarnPrices';
 import { checkAmountExceedsBalance } from '../../hooks/earn/useEarnTransactionUtils';
 import { useEarnTransferReadiness } from '../../hooks/earn/useEarnTransferReadiness';
 import { useLiquidStakingPanelControls } from '../../hooks/earn/useLiquidStakingPanelControls';
@@ -24,6 +25,10 @@ import { EarnActionTabs } from './EarnActionPanel/EarnActionTabs';
 import { EarnErrorDisplay } from './EarnActionPanel/EarnErrorDisplay';
 import { EarnGasEstimateDisplay } from './EarnActionPanel/EarnGasEstimateDisplay';
 import { EarnPositionValueCard } from './EarnActionPanel/EarnPositionValueCard';
+import {
+  EarnTransactionDetailsSection,
+  type TransactionDetail,
+} from './EarnActionPanel/EarnTransactionDetailsSection';
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';
 import { LiquidStakingAmountSection } from './LiquidStakingAmountSection';
 import { LiquidStakingReceiveSection } from './LiquidStakingReceiveSection';
@@ -212,6 +217,16 @@ export function LiquidStakingActionPanel({
     [amountInRawUnits, currentActionValues.balanceRaw, isConnected, walletAddress],
   );
 
+  const inputTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress: currentActionValues.fromTokenAddress,
+  });
+  const receiveTokenPriceUsd = useEarnTokenPrice({
+    chainId: requestChainId,
+    tokenAddress:
+      controls.selectedAction === 'buy' ? outputTokenAddress : controls.selectedSellToken.address,
+  });
+
   const { transactionQuote, receiveAmount, routeError, isLoading } = useLiquidStakingQuote({
     opportunityId: opportunity.id,
     chainId: requestChainId,
@@ -224,6 +239,13 @@ export function LiquidStakingActionPanel({
     selectedAction: controls.selectedAction,
     selectedSellTokenDecimals: controls.selectedSellToken.decimals,
   });
+
+  const receiveUsdValue = useMemo(() => {
+    if (!receiveAmount || receiveTokenPriceUsd === null) return undefined;
+    const amt = parseFloat(receiveAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return undefined;
+    return `~${formatUSD(amt * receiveTokenPriceUsd)}`;
+  }, [receiveAmount, receiveTokenPriceUsd]);
 
   const transferReadiness = useEarnTransferReadiness({
     amount: controls.amount,
@@ -292,7 +314,7 @@ export function LiquidStakingActionPanel({
     slippagePercent: controls.slippagePercent,
     walletAddress: walletAddress || undefined,
     isConnected,
-    transactionQuote,
+    transactionQuote: transactionQuote ?? undefined,
     canSubmit: !data.submitDisabled,
     checkAndShowToS,
     showTransactionDetails,
@@ -346,6 +368,7 @@ export function LiquidStakingActionPanel({
         currentBalance={data.amountSection.currentBalance}
         currentBalanceAmount={data.amountSection.currentBalanceAmount}
         currentUsdValue={data.amountSection.currentUsdValue}
+        tokenPriceUsd={inputTokenPriceUsd}
         isAmountExceedsBalance={data.amountSection.isAmountExceedsBalance}
         isConnected={isConnected}
         validationError={data.amountSection.validationError}
@@ -358,7 +381,7 @@ export function LiquidStakingActionPanel({
         isLoading={data.receiveSection.isLoading}
         token={data.receiveSection.token}
         tokenControl={data.receiveSection.tokenControl}
-        usdValue={data.receiveSection.usdValue}
+        usdValue={receiveUsdValue ?? data.receiveSection.usdValue}
       />
 
       <div className="flex flex-col gap-3">
@@ -366,27 +389,23 @@ export function LiquidStakingActionPanel({
           slippagePercent={controls.slippagePercent}
           onSlippageChange={controls.onSlippageChange}
         />
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center">
-            <span className="text-xs text-white">Transaction Details</span>
-          </div>
-          {opportunity.apy && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/40">APY</span>
-              <span className="text-xs text-white">{opportunity.apy}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/40">Transaction Cost</span>
-            <span className="text-xs text-white">
-              <EarnGasEstimateDisplay
-                estimate={data.estimatedTxCostUsd}
-                isLoading={data.isGasEstimateLoading}
-                error={data.gasEstimateError}
-              />
-            </span>
-          </div>
-        </div>
+        <EarnTransactionDetailsSection
+          details={[
+            ...(opportunity.apy
+              ? [{ label: 'APY', value: opportunity.apy } satisfies TransactionDetail]
+              : []),
+            {
+              label: 'Transaction Cost',
+              value: (
+                <EarnGasEstimateDisplay
+                  estimate={data.estimatedTxCostUsd}
+                  isLoading={data.isGasEstimateLoading}
+                  error={data.gasEstimateError}
+                />
+              ),
+            },
+          ]}
+        />
       </div>
 
       <EarnErrorDisplay error={execution.txError} />

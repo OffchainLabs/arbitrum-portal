@@ -29,7 +29,8 @@ import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../st
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction, isTeleportTx } from '../types/Transactions';
-import { Address } from '../util/AddressUtils';
+import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
+import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
@@ -66,6 +67,7 @@ import {
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: 5_000_000, // ApeChain
   1628: 10_000, // T-REX
+  228: 10_000, // Mind Network
 };
 
 export type UseTransactionHistoryResult = {
@@ -267,6 +269,60 @@ function dedupeTransactions(txs: Transfer[]) {
   return Array.from(new Map(txs.map((tx) => [getCacheKeyFromTransaction(tx), tx])).values());
 }
 
+function getMergedTransactionIdentity(tx: MergedTransaction) {
+  const normalizedTxId = tx.txId?.toLowerCase();
+  return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
+}
+
+function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
+  // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
+  const normalizedAddress = address?.toLowerCase();
+  return [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(normalizedAddress);
+}
+
+export function mergeTransactions({
+  address,
+  newTransactions = [],
+  fetchedTransactions = [],
+}: {
+  address?: Address;
+  newTransactions?: MergedTransaction[];
+  fetchedTransactions?: MergedTransaction[][];
+}) {
+  const flattenedFetchedTransactions = fetchedTransactions.flat();
+  const fetchedByIdentity = new Map<string, MergedTransaction[]>();
+
+  for (const tx of flattenedFetchedTransactions) {
+    if (!isTransactionForAddress(tx, address)) {
+      continue;
+    }
+
+    const identity = getMergedTransactionIdentity(tx);
+    const existingTransactions = fetchedByIdentity.get(identity) ?? [];
+    fetchedByIdentity.set(identity, [...existingTransactions, tx]);
+  }
+
+  const pendingOnlyTransactions = newTransactions.filter((tx) => {
+    if (!isTransactionForAddress(tx, address)) {
+      return false;
+    }
+
+    const fetchedTransactionsWithSameIdentity =
+      fetchedByIdentity.get(getMergedTransactionIdentity(tx)) ?? [];
+
+    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) =>
+      isSameTransaction(
+        { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
+        { ...tx, txId: tx.txId.toLowerCase() },
+      ),
+    );
+  });
+
+  return [...Array.from(fetchedByIdentity.values()).flat(), ...pendingOnlyTransactions].sort(
+    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
+  );
+}
+
 export async function fetchWithdrawalsInBatches(
   params: FetchWithdrawalsParams & {
     batchSizeBlocks?: number;
@@ -274,11 +330,58 @@ export async function fetchWithdrawalsInBatches(
 ): Promise<Withdrawal[]> {
   const latestBlockNumber = await params.l2Provider.getBlockNumber();
 
-  const fromBlock = params.fromBlock ?? 1;
+  let fromBlock = params.fromBlock ?? 1;
   const toBlock = params.toBlock ?? latestBlockNumber;
 
   if (toBlock < fromBlock) {
     throw new Error(`toBlock (${toBlock}) cannot be lower than fromBlock (${fromBlock})`);
+  }
+
+  const childChainId = (await params.l2Provider.getNetwork()).chainId;
+  const { isOrbitChain } = isNetwork(childChainId);
+
+  // Note: same logic present inside `fetchWithdrawals` function, but this gates
+  // even earlier, before the batches are sliced.
+  //
+  // Zero sender nonce on an Orbit chain means the address has no L3 activity,
+  // so it can't have initiated any withdrawals. Escape before slicing into batches
+  // to avoid firing the per-batch nonce/subgraph/block-number calls hundreds of
+  // times. `forceFetchReceived` opts out (e.g., SCWs).
+  if (isOrbitChain && params.sender && !params.forceFetchReceived) {
+    const senderNonce = await backOff(() =>
+      getNonce(params.sender, { provider: params.l2Provider }),
+    );
+    if (senderNonce === 0) {
+      return [];
+    }
+
+    // For self-withdrawals on Orbit chains (sender == receiver), the user
+    // can't have any withdrawals before their first L2 tx. Binary-search
+    // for that block (~log2(latestBlock) RPCs) and use it as the lower bound
+    // to skip empty pre-history.
+    //
+    // Only do this when BATCH_FETCH_BLOCKS is small. On chains like ApeChain
+    // (5M batch size, ~8 total batches), the ~25 sequential probe calls cost
+    // more than they save. On Mind/T-REX (10k batch size, hundreds/thousands
+    // of batches), the savings dominate.
+    const SMALL_BATCH_SIZE_THRESHOLD = 100_000;
+    const batchSizeIsSmall =
+      typeof params.batchSizeBlocks === 'number' &&
+      params.batchSizeBlocks <= SMALL_BATCH_SIZE_THRESHOLD;
+
+    // Apply when there are no separate receiver queries to worry about:
+    // either receiver is undefined (e.g., SCW connected to child chain — only
+    // sent txns are fetched), or receiver == sender (EOA self-withdrawal).
+    if (batchSizeIsSmall && (!params.receiver || addressesEqual(params.sender, params.receiver))) {
+      const firstBlock = await findFirstBlockWithNonce({
+        address: params.sender,
+        provider: params.l2Provider,
+        latestBlock: latestBlockNumber,
+      });
+      if (firstBlock > fromBlock) {
+        fromBlock = Math.max(0, firstBlock - 1);
+      }
+    }
   }
 
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
@@ -286,8 +389,6 @@ export async function fetchWithdrawalsInBatches(
 
   // Max parallel fetches to avoid 429 errors
   const limit = pLimit(10);
-
-  const childChainId = (await params.l2Provider.getNetwork()).chainId;
 
   const promises = Array.from({ length: batchCount }, (_, i) => {
     // Math.min makes sure we don't fetch above toBlock
@@ -471,6 +572,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 sender: includeSentTxs ? address : undefined,
                 receiver: includeReceivedTxs ? address : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
+                parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
                 pageNumber: 0,
                 pageSize: 1000,
@@ -722,11 +824,11 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
-    const txs = [...(newTransactionsData || []), ...(txPages || [])].flat();
-    // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
-    return txs.filter((tx) =>
-      [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(address?.toLowerCase()),
-    );
+    return mergeTransactions({
+      address,
+      newTransactions: newTransactionsData,
+      fetchedTransactions: txPages,
+    });
   }, [newTransactionsData, txPages, address]);
 
   const updateCachedTransaction = useCallback(

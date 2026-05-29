@@ -2,7 +2,7 @@ import {
   ARBITRUM_TECHNOLOGY_LINK,
   DISCORD_LINK,
   MEDIA_KIT_LINK,
-  OFFCHAIN_LABS_LINK,
+  OFFCHAIN_LINK,
   PRIVACY_POLICY_LINK,
   STATUS_LINK,
   TERMS_OF_SERVICE_LINK,
@@ -43,8 +43,8 @@ export const SocialsFooter = () => {
       <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
         <div>
           Built with love by{' '}
-          <ExternalLink className="underline hover:no-underline" href={OFFCHAIN_LABS_LINK}>
-            Offchain Labs
+          <ExternalLink className="underline hover:no-underline" href={OFFCHAIN_LINK}>
+            Offchain
           </ExternalLink>
           , builders of{' '}
           <ExternalLink className="underline hover:no-underline" href={ARBITRUM_TECHNOLOGY_LINK}>

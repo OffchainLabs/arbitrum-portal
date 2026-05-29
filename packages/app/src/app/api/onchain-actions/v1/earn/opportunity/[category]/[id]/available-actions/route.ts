@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
+import { enforceEarnRateLimit } from '../../../../lib/rateLimit';
 import {
   assertAddress,
   parseEarnChainId,
@@ -12,14 +13,18 @@ const router = new CategoryRouter();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; id: string } },
+  { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const category = parseOpportunityCategory(params.category);
+    const { category: rawCategory, id } = await params;
+    const category = parseOpportunityCategory(rawCategory);
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const chainId = parseEarnChainId(searchParams.get('chainId'));
-    const opportunityId = assertAddress(params.id, 'opportunityId');
+    const opportunityId = assertAddress(id, 'opportunityId');
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
+    if (rateLimited) return rateLimited;
 
     const adapter = router.routeToAdapter(category);
     const availableActions: AvailableActions = await adapter.getAvailableActions(

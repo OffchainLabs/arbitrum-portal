@@ -10,6 +10,8 @@ import {
   type LiquidStakingAvailableActions,
 } from '@/earn-api/types';
 
+import { earnSwrKeys } from './earnSwrKeys';
+
 export type { FixedYieldAvailableActions, LendAvailableActions, LiquidStakingAvailableActions };
 
 type AvailableActionsByCategory = {
@@ -31,7 +33,7 @@ export function useAvailableActions<C extends OpportunityCategory>(
   const { opportunityId, category, userAddress, chainId } = params;
   const swrKey =
     opportunityId && category && userAddress
-      ? (['available-actions', category, opportunityId, userAddress, chainId] as const)
+      ? earnSwrKeys.availableActions(category, opportunityId, userAddress, chainId)
       : null;
 
   return useSWRImmutable(

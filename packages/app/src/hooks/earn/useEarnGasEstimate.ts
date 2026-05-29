@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { useConfig, usePublicClient } from 'wagmi';
 import { estimateGas } from 'wagmi/actions';
 
+import { useETHPrice } from '@/bridge/hooks/useETHPrice';
 import type { TransactionStep } from '@/earn-api/types';
 
 interface UseEarnGasEstimateParams {
@@ -45,6 +46,21 @@ function isAllowanceRelatedError(err: unknown): boolean {
   );
 }
 
+// Generic fallback gas limits used when on-chain simulation throws AND the
+// adapter didn't attach a vendor-specific `gasLimitFallback` to the step.
+// Adapters set their own values based on observed history; this is a safety
+// net only. Surfacing a rough estimate is better than showing "-" — real
+// submit-time errors still bubble up to the user from the transaction
+// execution path.
+const FALLBACK_GAS_LIMITS: Record<'approval' | 'transaction', number> = {
+  approval: 80_000,
+  transaction: 1_000_000,
+};
+
+function getFallbackGasLimit(step: TransactionStep): BigNumber {
+  return BigNumber.from(step.gasLimitFallback ?? FALLBACK_GAS_LIMITS[step.type]);
+}
+
 export function useEarnGasEstimate({
   transactionSteps,
   chainId,
@@ -54,24 +70,18 @@ export function useEarnGasEstimate({
 }: UseEarnGasEstimateParams): UseEarnGasEstimateResult {
   const wagmiConfig = useConfig();
   const publicClient = usePublicClient({ chainId });
+  const { ethToUSD } = useETHPrice();
   const hasSteps = transactionSteps && transactionSteps.length > 0;
 
   const {
-    data: onchainEstimate,
+    data: onchainEstimateEth,
     error: onchainError,
     isLoading: isOnchainLoading,
   } = useSWR(
     enabled && hasSteps && walletAddress && publicClient && chainId !== 0
-      ? ([
-          transactionSteps,
-          walletAddress,
-          chainId,
-          apiEstimate,
-          publicClient,
-          'earn-gas-estimate',
-        ] as const)
+      ? ([transactionSteps, walletAddress, chainId, publicClient, 'earn-gas-estimate'] as const)
       : null,
-    async ([_steps, _walletAddress, _chainId, _apiEstimate, _publicClient]) => {
+    async ([_steps, _walletAddress, _chainId, _publicClient]) => {
       const chainSteps = _steps.filter((step) => step.chainId === _chainId);
 
       if (chainSteps.length === 0) {
@@ -80,7 +90,6 @@ export function useEarnGasEstimate({
 
       const gasPrice = BigNumber.from((await _publicClient.getGasPrice()).toString());
 
-      // Estimate gas for each step; approval/allowance failures are treated as zero-cost
       const perStepCosts = await Promise.all(
         chainSteps.map(async (step) => {
           try {
@@ -94,27 +103,19 @@ export function useEarnGasEstimate({
 
             return BigNumber.from(gasLimit.toString()).mul(gasPrice);
           } catch (err) {
-            if (step.type === 'approval' || isAllowanceRelatedError(err)) {
+            if (isAllowanceRelatedError(err)) {
               return BigNumber.from(0);
             }
-            throw err;
+            return getFallbackGasLimit(step).mul(gasPrice);
           }
         }),
       );
 
-      const hasValidEstimate = perStepCosts.some((cost) => !cost.isZero());
-      if (!hasValidEstimate && perStepCosts.length > 0) {
+      const totalGasCostWei = perStepCosts.reduce((sum, cost) => sum.add(cost), BigNumber.from(0));
+      if (totalGasCostWei.isZero()) {
         return null;
       }
-
-      const totalGasCostWei = perStepCosts.reduce((sum, cost) => sum.add(cost), BigNumber.from(0));
-      const totalGasCostEth = Number(utils.formatEther(totalGasCostWei));
-      const apiEstimateUsd = parseApiEstimateUsd(_apiEstimate);
-
-      return {
-        eth: totalGasCostEth.toFixed(6),
-        usd: apiEstimateUsd != null ? apiEstimateUsd.toFixed(2) : null,
-      } satisfies GasEstimate;
+      return Number(utils.formatEther(totalGasCostWei));
     },
     {
       revalidateOnFocus: false,
@@ -125,16 +126,27 @@ export function useEarnGasEstimate({
     },
   );
 
+  const onchainEstimate = useMemo<GasEstimate | null>(() => {
+    if (typeof onchainEstimateEth !== 'number') {
+      return null;
+    }
+    const usdValue = ethToUSD(onchainEstimateEth);
+    return {
+      eth: onchainEstimateEth.toFixed(6),
+      usd: usdValue > 0 ? usdValue.toFixed(6) : null,
+    };
+  }, [onchainEstimateEth, ethToUSD]);
+
   // --- API fallback: used only when onchain estimation is unavailable ---
   const apiGasEstimate = useMemo<GasEstimate | null>(() => {
     if (onchainEstimate || isOnchainLoading) {
       return null;
     }
     const cost = parseApiEstimateUsd(apiEstimate);
-    if (cost == null) {
+    if (cost == null || cost <= 0) {
       return null;
     }
-    return { eth: '—', usd: cost.toFixed(2) };
+    return { eth: '—', usd: cost.toFixed(6) };
   }, [apiEstimate, onchainEstimate, isOnchainLoading]);
 
   return {

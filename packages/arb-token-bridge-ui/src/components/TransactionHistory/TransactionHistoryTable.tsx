@@ -7,11 +7,12 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
-import { Column, Table } from 'react-virtualized';
+import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -64,6 +65,9 @@ const TableHeader = ({ children, className }: PropsWithChildren<{ className?: st
     {children}
   </div>
 );
+
+const tableCellDataGetter: TableCellDataGetter = ({ rowData, dataKey }) => rowData?.[dataKey];
+const tableCellRenderer = () => null;
 
 export const LoadMoreButton = (props: ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
@@ -133,20 +137,35 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
 
   const contentWrapperRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<Table | null>(null);
+  const [tableHeight, setTableHeight] = useState(
+    TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT,
+  );
 
-  const tableHeight = useMemo(() => {
-    if (window.innerWidth < 768) {
-      return TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT;
-    }
-    const SIDE_PANEL_HEADER_HEIGHT = 125;
-    const viewportHeight = window.innerHeight;
-    const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0;
-    return Math.max(
-      // we subtract a little padding at the end so that the table doesn't end at the edge of the screen
-      viewportHeight - contentWrapperOffsetTop - SIDE_PANEL_HEADER_HEIGHT,
-      0,
-    );
-  }, [contentWrapperRef.current?.offsetTop, transactions.length]);
+  useEffect(() => {
+    const updateTableHeight = () => {
+      if (window.innerWidth < 768) {
+        setTableHeight(TABLE_ROW_HEIGHT * (transactions.length + 1) + TABLE_HEADER_HEIGHT);
+        return;
+      }
+
+      const SIDE_PANEL_HEADER_HEIGHT = 125;
+      const viewportHeight = window.innerHeight;
+      const contentWrapperOffsetTop = contentWrapperRef.current?.offsetTop ?? 0;
+
+      setTableHeight(
+        Math.max(
+          // we subtract a little padding at the end so that the table doesn't end at the edge of the screen
+          viewportHeight - contentWrapperOffsetTop - SIDE_PANEL_HEADER_HEIGHT,
+          0,
+        ),
+      );
+    };
+
+    updateTableHeight();
+    window.addEventListener('resize', updateTableHeight);
+
+    return () => window.removeEventListener('resize', updateTableHeight);
+  }, [transactions.length]);
 
   const pendingTokenDepositsCount = useMemo(() => {
     return transactions.filter((tx) => isTokenDeposit(tx) && isTxPending(tx)).length;
@@ -159,12 +178,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
   // recalculate table height when tx number changes, or when user selects different tab
   useEffect(() => {
     tableRef.current?.recomputeRowHeights();
-  }, [
-    transactions.length,
-    selectedTabIndex,
-    isTxHistoryEmpty,
-    contentWrapperRef.current?.offsetTop,
-  ]);
+  }, [transactions.length, selectedTabIndex, isTxHistoryEmpty, tableHeight]);
 
   if (isTxHistoryEmpty) {
     return (
@@ -255,36 +269,60 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           label="time"
           dataKey="time"
           width={100}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TIME</TableHeader>}
         />
         <Column
           label="token"
           dataKey="token"
           width={140}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>FROM TOKEN</TableHeader>}
         />
         <Column
           label="to-token"
           dataKey="to-token"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TO TOKEN</TableHeader>}
         />
         <Column
           label="from"
           dataKey="from"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>FROM</TableHeader>}
         />
         <Column
           label="to"
           dataKey="to"
           width={120}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>TO</TableHeader>}
         />
         <Column
           label="status"
           dataKey="status"
           width={90}
+          cellDataGetter={tableCellDataGetter}
+          cellRenderer={tableCellRenderer}
+          flexGrow={0}
+          flexShrink={1}
           headerRenderer={() => <TableHeader>STATUS</TableHeader>}
         />
       </Table>

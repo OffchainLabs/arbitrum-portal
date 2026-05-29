@@ -447,7 +447,7 @@ export async function fetchTeleporterDepositStatusData({
   function isEthTeleport(
     status: EthL1L3DepositStatus | Erc20L1L3DepositStatus,
   ): status is EthL1L3DepositStatus {
-    return isNativeCurrencyTransfer;
+    return isNativeCurrencyTransfer && 'l2Retryable' in status;
   }
 
   try {

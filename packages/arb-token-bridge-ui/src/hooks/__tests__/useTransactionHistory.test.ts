@@ -1,15 +1,36 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { BigNumber } from 'ethers';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import { AssetType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
-import { useTransactionHistory } from '../useTransactionHistory';
+import { mergeTransactions, useTransactionHistory } from '../useTransactionHistory';
 
 const wallets = {
   WALLET_MULTIPLE_TX: '0x1798440327d78ebb19db0c8999e2368eaed8f413',
   WALLET_SINGLE_TX: '0x6d051646D4A9df8679E9AD3429e70415f75f6499',
   WALLET_EMPTY: '0xa5801D65537dF15e90D284E5E917AE84e3F3201c',
 } as const;
+
+const MERGE_TEST_ADDRESS = '0x1111111111111111111111111111111111111111';
+
+const mergeTestBaseTx = {
+  asset: 'ETH',
+  assetType: AssetType.ETH,
+  blockNum: null,
+  resolvedAt: null,
+  uniqueId: null as BigNumber | null,
+  value: '1',
+  tokenAddress: null,
+  parentChainId: 1,
+  childChainId: 42161,
+  sourceChainId: 1,
+  destinationChainId: 42161,
+  sender: MERGE_TEST_ADDRESS,
+  destination: MERGE_TEST_ADDRESS,
+};
 
 /**
  * Creates a test case configuration for transaction history testing.
@@ -137,4 +158,104 @@ describe.sequential('useTransactionHistory', () => {
       expect(result.current.completed).toBe(true);
     },
   );
+});
+
+describe('mergeTransactions', () => {
+  it('dedupes a pending session tx once the same tx appears in fetched history', () => {
+    const pendingTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_200,
+      txId: '0xabc',
+      direction: 'deposit',
+      status: 'success',
+      isWithdrawal: false,
+      depositStatus: DepositStatus.L1_PENDING,
+    };
+
+    const fetchedTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_100,
+      txId: '0xabc',
+      direction: 'deposit',
+      status: 'success',
+      isWithdrawal: false,
+      depositStatus: DepositStatus.L2_SUCCESS,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [pendingTx],
+      fetchedTransactions: [[fetchedTx]],
+    });
+
+    expect(transactions).toEqual([fetchedTx]);
+  });
+
+  it('keeps batched fetched withdrawals with the same tx id but different unique ids', () => {
+    const firstFetchedTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_300,
+      txId: '0xbatched',
+      direction: 'withdraw',
+      status: WithdrawalStatus.UNCONFIRMED,
+      isWithdrawal: true,
+      uniqueId: BigNumber.from(1),
+    };
+
+    const secondFetchedTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_200,
+      txId: '0xbatched',
+      direction: 'withdraw',
+      status: WithdrawalStatus.UNCONFIRMED,
+      isWithdrawal: true,
+      uniqueId: BigNumber.from(2),
+    };
+
+    const pendingTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_400,
+      txId: '0xbatched',
+      direction: 'withdraw',
+      status: WithdrawalStatus.UNCONFIRMED,
+      isWithdrawal: true,
+      uniqueId: null,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [pendingTx],
+      fetchedTransactions: [[firstFetchedTx, secondFetchedTx]],
+    });
+
+    expect(transactions).toEqual([firstFetchedTx, secondFetchedTx]);
+  });
+
+  it('keeps distinct transactions and sorts them, newest first', () => {
+    const olderTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_000,
+      txId: '0xolder',
+      direction: 'withdraw',
+      status: WithdrawalStatus.UNCONFIRMED,
+      isWithdrawal: true,
+    };
+
+    const newerTx: MergedTransaction = {
+      ...mergeTestBaseTx,
+      createdAt: 1_700_000_000_500,
+      txId: '0xnewer',
+      direction: 'withdraw',
+      status: WithdrawalStatus.UNCONFIRMED,
+      isWithdrawal: true,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [olderTx],
+      fetchedTransactions: [[newerTx]],
+    });
+
+    expect(transactions).toEqual([newerTx, olderTx]);
+  });
 });

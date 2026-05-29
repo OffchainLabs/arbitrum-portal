@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import type { CSSProperties, PropsWithChildren } from 'react';
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light.css';
 
 import { unica } from '@/bridge/components/common/Font';
 import { PORTAL_DOMAIN } from '@/bridge/constants';

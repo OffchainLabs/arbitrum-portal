@@ -1,18 +1,11 @@
 import { createConfig, getStepTransaction, getTransactionHistory } from '@lifi/sdk';
-import { createPublicClient, http } from 'viem';
-import { arbitrum } from 'viem/chains';
 
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
-import { rpcURLs } from '@/bridge/util/networks';
 
-import {
-  fetchAlignedPriceLookup,
-  fetchDuneHistoricalData,
-  fetchDuneHistoricalDataMerged,
-} from '../lib/duneService';
+import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
-import { fetchLifiUserPositions } from '../lib/lifiPositions';
+import { fetchLifiUserPositions, fetchLiquidStakingPriceMap } from '../lib/lifiPositions';
 import { buildLifiQuoteData, buildLifiQuotePreviewData } from '../lib/lifiQuote';
 import { toStandardTransactionHistory } from '../lib/lifiTransactions';
 import {
@@ -23,7 +16,9 @@ import {
   updateLiquidStakingOpportunitiesWithDuneData,
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
+import { createServerSidePublicClient } from '../lib/serverPublicClient';
 import { ValidationError } from '../lib/validation';
+import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
   AvailableActions,
   type EarnChainId,
@@ -51,10 +46,7 @@ export class LiFiAdapter implements VendorAdapter {
   vendor = Vendor.LiFi;
 
   private getArbitrumPublicClient() {
-    return createPublicClient({
-      chain: arbitrum,
-      transport: http(rpcURLs[ChainId.ArbitrumOne]),
-    });
+    return createServerSidePublicClient(ChainId.ArbitrumOne);
   }
 
   private async getQuoteStep(params: {
@@ -75,7 +67,7 @@ export class LiFiAdapter implements VendorAdapter {
       integrator: LIFI_INTEGRATOR_IDS.NORMAL,
     });
     if (!routes || routes.length === 0) {
-      throw new Error('No routes found');
+      return { step: null };
     }
 
     const quote = routes[0];
@@ -92,7 +84,7 @@ export class LiFiAdapter implements VendorAdapter {
   }
 
   private async getQuoteStepWithTransaction(
-    step: Awaited<ReturnType<LiFiAdapter['getQuoteStep']>>['step'],
+    step: NonNullable<Awaited<ReturnType<LiFiAdapter['getQuoteStep']>>['step']>,
   ) {
     const { transactionRequest } = await getStepTransaction(step);
     const to = transactionRequest?.to;
@@ -115,8 +107,10 @@ export class LiFiAdapter implements VendorAdapter {
     // Create a copy of opportunities array to avoid mutating the original
     const opportunities = LIQUID_STAKING_OPPORTUNITIES.map((opp) => ({ ...opp }));
 
-    // Update opportunities with current APY/TVL from Dune (in parallel)
-    await updateLiquidStakingOpportunitiesWithDuneData(opportunities);
+    const [, priceMap] = await Promise.all([
+      updateLiquidStakingOpportunitiesWithDuneData(opportunities),
+      fetchLiquidStakingPriceMap(opportunities),
+    ]);
 
     let filtered = opportunities;
     if (filters.chainId && filters.chainId !== ChainId.ArbitrumOne) {
@@ -131,7 +125,7 @@ export class LiFiAdapter implements VendorAdapter {
       filtered = filtered.filter((o) => o.rawTvl == null || o.rawTvl >= minTvl);
     }
 
-    return filtered.map((opp) => this.transformToStandard(opp));
+    return filtered.map((opp) => this.transformToStandard(opp, priceMap));
   }
 
   async getOpportunityDetails(
@@ -157,10 +151,12 @@ export class LiFiAdapter implements VendorAdapter {
     // Create a copy to avoid mutating the original
     const opportunityCopy = { ...opportunity };
 
-    // Update opportunity with current APY/TVL from Dune
-    await updateLiquidStakingOpportunityWithDuneData(opportunityCopy);
+    const [, priceMap] = await Promise.all([
+      updateLiquidStakingOpportunityWithDuneData(opportunityCopy),
+      fetchLiquidStakingPriceMap([opportunityCopy]),
+    ]);
 
-    return this.transformToStandard(opportunityCopy);
+    return this.transformToStandard(opportunityCopy, priceMap);
   }
 
   async getHistoricalData(
@@ -193,8 +189,6 @@ export class LiFiAdapter implements VendorAdapter {
     }
 
     try {
-      // Fetch historical APY/TVL data from Dune
-      // If TVL query is separate, merge the results
       const duneData =
         dataSource.duneQueryIds.tvl && dataSource.duneQueryIds.tvl !== dataSource.duneQueryIds.apy
           ? await fetchDuneHistoricalDataMerged(
@@ -209,8 +203,8 @@ export class LiFiAdapter implements VendorAdapter {
         chainId,
         tokenAddress: id,
         assetSymbol: opportunity?.token,
-        timestamps: duneData.map((point) => point.timestamp),
         granularity,
+        range: resolvedRange,
       });
 
       const dataPoints: HistoricalDataPoint[] = duneData.map((point) => {
@@ -234,7 +228,7 @@ export class LiFiAdapter implements VendorAdapter {
         expiresAt: now + 86400, // 24 hours
       };
     } catch (error) {
-      // If Dune fetch fails, return empty data and let UI render unknown metrics.
+      // Return empty data on Dune failure so the UI can render unknown metrics.
       console.error(`Failed to fetch Dune historical data for ${id}:`, error);
       return {
         data: [],
@@ -285,7 +279,7 @@ export class LiFiAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = ChainId.ArbitrumOne,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     if (chainId !== ChainId.ArbitrumOne) {
       throw new ValidationError(
         'UNSUPPORTED_CHAIN_ID',
@@ -323,6 +317,10 @@ export class LiFiAdapter implements VendorAdapter {
       userAddress,
       slippage,
     });
+
+    if (!step) {
+      return null;
+    }
 
     if (!userAddress) {
       const { transactionSteps, estimatedGas, estimatedGasUsd, receiveAmount, priceImpact } =
@@ -417,9 +415,14 @@ export class LiFiAdapter implements VendorAdapter {
     return toStandardTransactionHistory(transfers, targetTokenAddress);
   }
 
-  private transformToStandard(opp: LiquidStakingOpportunitySeed): StandardOpportunity {
+  private transformToStandard(
+    opp: LiquidStakingOpportunitySeed,
+    priceMap?: Map<string, number | null>,
+  ): StandardOpportunity {
     const network = 'arbitrum';
     const vaultAddress = opp.vaultAddress || opp.id;
+    // Canonical price-map key; consumers also look up by the staked-token address.
+    const stakedTokenAddress = opp.id.toLowerCase();
     return {
       id: vaultAddress,
       chainId: ChainId.ArbitrumOne,
@@ -441,6 +444,10 @@ export class LiFiAdapter implements VendorAdapter {
       tokenIcon: opp.tokenIcon,
       tokenNetwork: opp.tokenNetwork || 'Arbitrum One',
       protocolIcon: opp.protocolIcon,
+      underlyingTokenAddress: stakedTokenAddress,
+      underlyingTokenPriceUsd: priceMap?.get(stakedTokenAddress) ?? null,
+      shareTokenAddress: null,
+      shareTokenPriceUsd: null,
     };
   }
 }

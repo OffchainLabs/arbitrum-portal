@@ -4,7 +4,7 @@ import { PathnameEnum } from '@/bridge/constants';
 import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const url = req.nextUrl;
   const isEarnApiRequest = url.pathname.startsWith('/api/onchain-actions/v1/earn');
 

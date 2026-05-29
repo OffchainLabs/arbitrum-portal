@@ -1,4 +1,4 @@
-import { UserRejectedRequestError } from 'viem';
+import { BaseError, UserRejectedRequestError } from 'viem';
 
 /**
  * This should only be used to conditionally act on errors,
@@ -16,11 +16,15 @@ export function isUserRejectedError(error: unknown) {
   const hasUserCancelledMessage =
     typeof candidate.message === 'string' && /User Cancelled/.test(candidate.message);
 
+  const hasWrappedUserRejection =
+    error instanceof BaseError && !!error.walk((e) => e instanceof UserRejectedRequestError);
+
   return (
     candidate.code === 4001 ||
     candidate.code === 'ACTION_REJECTED' ||
     hasUserCancelledMessage ||
     error instanceof UserRejectedRequestError ||
+    hasWrappedUserRejection ||
     candidate.details === 'MetaMask Tx Signature: User denied transaction signature.' ||
     isBundleRejectedError(error)
   );

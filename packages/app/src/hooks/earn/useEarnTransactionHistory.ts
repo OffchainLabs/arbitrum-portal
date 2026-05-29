@@ -13,6 +13,8 @@ import type {
   Vendor,
 } from '@/earn-api/types';
 
+import { earnSwrKeys } from './earnSwrKeys';
+
 export function useEarnTransactionHistory(
   category: OpportunityCategory,
   opportunityId: string,
@@ -21,7 +23,7 @@ export function useEarnTransactionHistory(
 ) {
   const historyKey =
     userAddress && opportunityId
-      ? ([category, opportunityId, userAddress, chainId, 'earn-transactions'] as const)
+      ? earnSwrKeys.earnTransactions(category, opportunityId, userAddress, chainId)
       : null;
 
   const { data, error, isLoading, mutate } = useSWRImmutable(

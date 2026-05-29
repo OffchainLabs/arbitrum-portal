@@ -115,6 +115,11 @@ export interface StandardOpportunityBase {
   tokenIcon?: string;
   tokenNetwork?: string;
   protocolIcon?: string;
+  // share === underlying for LST; set share fields to null in that case.
+  underlyingTokenAddress: string | null;
+  underlyingTokenPriceUsd: number | null;
+  shareTokenAddress: string | null;
+  shareTokenPriceUsd: number | null;
 }
 
 export interface StandardOpportunityLend extends StandardOpportunityBase {
@@ -128,6 +133,7 @@ export interface StandardOpportunityLiquidStaking extends StandardOpportunityBas
 
 export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
   category: typeof OpportunityCategory.FixedYield;
+  shareTokenAddress: string;
   fixedYield: StandardOpportunityFixedYieldDetail;
 }
 
@@ -200,6 +206,10 @@ export interface TransactionStep {
   value?: string;
   chainId: number;
   description?: string;
+  // Per-vendor gas-limit hint, used as a fallback when on-chain `estimateGas`
+  // simulation fails (e.g., Pendle router pre-conditions, slippage edges).
+  // Derived from observed on-chain history per vendor; see useEarnGasEstimate.
+  gasLimitFallback?: number;
 }
 
 /** Pre-built template for the transaction details popup (minus runtime fields). */
@@ -313,6 +323,7 @@ export interface StandardUserPosition {
   tokenDecimals: number;
   tokenIcon?: string;
   projectedEarningsUsd?: number;
+  tokenPriceUsd: number | null;
   opportunity: {
     id: string;
     name: string;
@@ -393,7 +404,7 @@ export interface VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId,
-  ): Promise<TransactionQuoteResponse>;
+  ): Promise<TransactionQuoteResponse | null>;
   getUserPositions(userAddress: string, chainId: EarnChainId): Promise<StandardUserPosition[]>;
   getUserTransactions(
     id: string,

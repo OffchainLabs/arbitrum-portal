@@ -1,22 +1,25 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { Address, encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { ARB_USDC_LOGO_URL, ARB_USDT_LOGO_URL, PENDLE_LOGO_URL } from '@/app-lib/earn/constants';
+import { parseFiniteNumber } from '@/app-lib/earn/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { truncateExtraDecimals } from '@/bridge/util/NumberUtils';
-import { extractAddressFromTokenId } from '@/earn-api/lib/pendle';
 
+import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { PENDLE_MARKET_CATEGORIES, PENDLE_MIN_TVL_USD, PendleMarketCategory } from '../lib/pendle';
 import {
   PendleAsset,
   PendleMarket,
+  getPendleAssetPrices,
   getPendleAssets,
   getPendleConvertRoute,
   getPendleMarketByAddress,
   getPendleMarketDetails,
   getPendleMarketHistoricalData,
   getPendleMarkets,
+  getPendleMarketsByAddresses,
   getPendleTransactionHistory,
   getPendleUserPositions,
 } from '../lib/pendleApi';
@@ -48,6 +51,17 @@ const DEFAULT_CHAIN_ID = ChainId.ArbitrumOne;
 const DEFAULT_PENDLE_DECIMALS = 18;
 const PENDLE_TX_HISTORY_DEFAULT_PAGE = 1;
 const PENDLE_TX_HISTORY_DEFAULT_PAGE_SIZE = 50;
+
+// Pendle enter/exit on Arbitrum routes through the Pendle aggregator
+// (enableAggregator: true) which consistently uses 950k-1.2M gas.
+// Sampled sUSDai market enters via aggregator (0xdb9b1e94...):
+//   https://arbiscan.io/tx/0x8fc4f73a8e2e63a34375f4f54b6740a6755cab666c98a25ca0a13f8b03438487 (950k)
+//   https://arbiscan.io/tx/0xc74c8f4329c6924d3f31245feeec0000818807767083b3033021cde78078dfba (1.18M)
+//   https://arbiscan.io/tx/0xca6f8f35abc177a38124a5e596fdeab6047de1088d493f79444becfcc72e065e (1.20M)
+// Use 1.2M as the worst-case fallback when on-chain simulation fails
+// (slippage edges, router pre-conditions, etc.).
+const PENDLE_APPROVAL_GAS_FALLBACK = 80_000;
+const PENDLE_TRANSACTION_GAS_FALLBACK = 1_200_000;
 
 function isSupportedChainId(chainId: EarnChainId): boolean {
   return chainId === ChainId.ArbitrumOne;
@@ -81,16 +95,13 @@ function toRawAmount(value: string | number, decimals: number): string {
   }
 }
 
-function finiteOrNull(value: number | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
 function apyAsPercentage(apy: number | undefined): number | null {
-  return typeof apy === 'number' && Number.isFinite(apy) ? apy * 100 : null;
+  const parsed = parseFiniteNumber(apy);
+  return parsed === null ? null : parsed * 100;
 }
 
 function getMarketTvl(market: PendleMarket): number | null {
-  return finiteOrNull(market.details.totalTvl) ?? finiteOrNull(market.details.liquidity);
+  return parseFiniteNumber(market.details.totalTvl) ?? parseFiniteNumber(market.details.liquidity);
 }
 
 function getTokenSymbolFromMarketName(name: string): string {
@@ -154,11 +165,15 @@ export class PendleAdapter implements VendorAdapter {
     const tokenIds = filtered
       .map((market) => market.pt)
       .concat(filtered.map((market) => market.sy));
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, filtered),
+    ]);
 
     return filtered
       .map((market) => enrichMarketWithAssets(market, assetMetadataMap))
-      .map((market) => this.transformToStandard(market));
+      .map((market) => this.transformToStandard(market, priceMap));
   }
 
   async getOpportunityDetails(
@@ -177,14 +192,15 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     const tokenIds = [market.pt, market.sy];
-    const assetMetadataMap = await this.fetchAssetMetadata(chainId, tokenIds);
+    const marketWithDetailsRaw = { ...market, details: marketDetails };
+    const [assetMetadataMap, priceMap] = await Promise.all([
+      this.fetchAssetMetadata(chainId, tokenIds),
+      this.fetchMarketPrices(chainId, [marketWithDetailsRaw]),
+    ]);
 
-    const marketWithDetails = enrichMarketWithAssets(
-      { ...market, details: marketDetails },
-      assetMetadataMap,
-    );
+    const marketWithDetails = enrichMarketWithAssets(marketWithDetailsRaw, assetMetadataMap);
 
-    return this.transformToStandard(marketWithDetails);
+    return this.transformToStandard(marketWithDetails, priceMap);
   }
 
   async getHistoricalData(
@@ -193,38 +209,12 @@ export class PendleAdapter implements VendorAdapter {
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
     options?: HistoricalDataRequestOptions,
   ): Promise<HistoricalData> {
-    const toTimestamp = options?.toTimestamp ?? Math.floor(Date.now() / 1000);
-    let fromTimestamp: number;
-    let timeFrame: 'hour' | 'day' | 'week';
-    let granularity: HistoricalData['granularity'];
-
-    switch (range) {
-      case '1d':
-        fromTimestamp = toTimestamp - 24 * 60 * 60;
-        timeFrame = 'hour';
-        granularity = '1hour';
-        break;
-      case '1m':
-        fromTimestamp = toTimestamp - 30 * 24 * 60 * 60;
-        timeFrame = 'day';
-        granularity = '1day';
-        break;
-      case '1y':
-        fromTimestamp = toTimestamp - 365 * 24 * 60 * 60;
-        timeFrame = 'week';
-        granularity = '1week';
-        break;
-      case '7d':
-      default:
-        fromTimestamp = toTimestamp - 7 * 24 * 60 * 60;
-        timeFrame = 'day';
-        granularity = '1day';
-        break;
-    }
-
-    if (options?.fromTimestamp) {
-      fromTimestamp = options.fromTimestamp;
-    }
+    const { fromTimestamp, toTimestamp, granularity, resolvedRange } = resolveAdapterWindow(
+      range,
+      options,
+    );
+    const timeFrame: 'hour' | 'day' | 'week' =
+      granularity === '1hour' ? 'hour' : granularity === '1week' ? 'week' : 'day';
 
     assertSupportedChainId(chainId);
 
@@ -251,7 +241,7 @@ export class PendleAdapter implements VendorAdapter {
     return {
       data: dataPoints,
       granularity,
-      range,
+      range: resolvedRange,
       fromTimestamp,
       toTimestamp,
       isCached: false,
@@ -266,13 +256,12 @@ export class PendleAdapter implements VendorAdapter {
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
   ): Promise<AvailableActions> {
     assertSupportedChainId(chainId);
-    const [positions, marketsResponse] = await Promise.all([
-      this.getUserPositions(userAddress, chainId),
-      getPendleMarkets(chainId, false),
-    ]);
     const normalizedId = id.toLowerCase();
+    const [positions, market] = await Promise.all([
+      this.getUserPositions(userAddress, chainId),
+      getPendleMarketByAddress(chainId, normalizedId),
+    ]);
     const position = positions.find((item) => item.opportunityId === normalizedId);
-    const market = marketsResponse.markets.find((m) => m.address === normalizedId);
     const isMarketExpired = market?.expiry
       ? Date.now() >= new Date(market.expiry).getTime()
       : position?.expiryDate
@@ -302,7 +291,7 @@ export class PendleAdapter implements VendorAdapter {
     id: string,
     request: TransactionQuoteRequest,
     chainId: EarnChainId = DEFAULT_CHAIN_ID,
-  ): Promise<TransactionQuoteResponse> {
+  ): Promise<TransactionQuoteResponse | null> {
     const {
       action,
       amount,
@@ -331,8 +320,8 @@ export class PendleAdapter implements VendorAdapter {
       );
     }
 
-    if (!userAddress) {
-      throw new ValidationError('INVALID_QUOTE_PARAMS', 'userAddress is required');
+    if ((action === 'rollover' || action === 'redeem') && !userAddress) {
+      throw new ValidationError('INVALID_QUOTE_PARAMS', `userAddress is required for ${action}`);
     }
 
     if (!amount || !/^\d+$/.test(amount) || BigNumber.from(amount).lte(0)) {
@@ -340,25 +329,28 @@ export class PendleAdapter implements VendorAdapter {
     }
 
     assertSupportedChainId(chainId);
-    const availableActions = await this.getAvailableActions(id, userAddress, chainId);
 
-    if (!availableActions.availableActions.includes(action)) {
-      throw new ValidationError(
-        'ACTION_NOT_AVAILABLE',
-        `Action "${action}" is not available for this Pendle position`,
-      );
-    }
+    if (userAddress) {
+      const availableActions = await this.getAvailableActions(id, userAddress, chainId);
 
-    if (
-      action === 'rollover' &&
-      !availableActions.rolloverTargets?.some(
-        (target) => target.id === rolloverTargetOpportunityId?.toLowerCase(),
-      )
-    ) {
-      throw new ValidationError(
-        'INVALID_ROLLOVER_TARGET',
-        'Selected rollover target is not available for this Pendle position',
-      );
+      if (!availableActions.availableActions.includes(action)) {
+        throw new ValidationError(
+          'ACTION_NOT_AVAILABLE',
+          `Action "${action}" is not available for this Pendle position`,
+        );
+      }
+
+      if (
+        action === 'rollover' &&
+        !availableActions.rolloverTargets?.some(
+          (target) => target.id === rolloverTargetOpportunityId?.toLowerCase(),
+        )
+      ) {
+        throw new ValidationError(
+          'INVALID_ROLLOVER_TARGET',
+          'Selected rollover target is not available for this Pendle position',
+        );
+      }
     }
 
     const clampedSlippage = Math.min(Math.max(slippage, 0), 50) / 100;
@@ -374,10 +366,7 @@ export class PendleAdapter implements VendorAdapter {
 
     const firstRoute = route.routes?.[0];
     if (!firstRoute) {
-      throw new ValidationError(
-        'QUOTE_ROUTE_NOT_FOUND',
-        'No route found in Pendle convert response',
-      );
+      return null;
     }
 
     const transactionSteps: TransactionStep[] = [];
@@ -405,6 +394,7 @@ export class PendleAdapter implements VendorAdapter {
         data: approvalData,
         value: '0',
         chainId,
+        gasLimitFallback: PENDLE_APPROVAL_GAS_FALLBACK,
       });
 
       stepNumber += 1;
@@ -417,6 +407,7 @@ export class PendleAdapter implements VendorAdapter {
       data: firstRoute.tx.data,
       value: firstRoute.tx.value || '0',
       chainId,
+      gasLimitFallback: PENDLE_TRANSACTION_GAS_FALLBACK,
     });
 
     const receiveAmount = firstRoute.outputs?.[0]?.amount;
@@ -442,11 +433,7 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
-    const [marketsResponse, userPositionsResponse] = await Promise.all([
-      getPendleMarkets(chainId, false),
-      getPendleUserPositions(userAddress),
-    ]);
-
+    const userPositionsResponse = await getPendleUserPositions(userAddress);
     const chainPositions = userPositionsResponse.positions.find(
       (entry) => entry.chainId === chainId,
     );
@@ -454,13 +441,25 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
+    const allPositions = chainPositions.openPositions.concat(chainPositions.closedPositions);
+    // Fetch only the markets the user actually has positions in. Listing /v2/markets/all
+    // is capped at PENDLE_MARKETS_LIMIT, which would silently drop positions in markets
+    // ranked past the cap (e.g. USDai, sUSDai).
+    const marketAddresses = Array.from(
+      new Set(
+        allPositions
+          .map((position) => position.marketId.split('-').pop()?.toLowerCase())
+          .filter((address): address is string => Boolean(address)),
+      ),
+    );
+    const markets = await getPendleMarketsByAddresses(chainId, marketAddresses);
     const marketByAddress = new Map<string, PendleMarket>();
-    for (const market of marketsResponse.markets) {
+    for (const market of markets) {
       marketByAddress.set(market.address, market);
     }
 
     const positions: StandardUserPosition[] = [];
-    for (const position of chainPositions.openPositions.concat(chainPositions.closedPositions)) {
+    for (const position of allPositions) {
       const marketAddress = position.marketId.split('-').pop()?.toLowerCase();
       if (!marketAddress) {
         continue;
@@ -488,6 +487,10 @@ export class PendleAdapter implements VendorAdapter {
           : undefined;
       const expiryTime = market.expiry ? new Date(market.expiry).getTime() : null;
 
+      const ptAmountFloat = parseFloat(utils.formatUnits(rawAmount, tokenDecimals));
+      const sharePriceFromValuation =
+        ptAmountFloat > 0 && valueUsd > 0 ? valueUsd / ptAmountFloat : null;
+
       positions.push({
         opportunityId: market.address,
         category: OpportunityCategory.FixedYield,
@@ -495,11 +498,12 @@ export class PendleAdapter implements VendorAdapter {
         network: 'arbitrum',
         amount: rawAmount,
         valueUsd,
-        tokenAddress: market.pt,
+        tokenAddress: market.ptAddress,
         tokenSymbol,
         tokenDecimals,
         tokenIcon: market.ptToken?.icon,
         projectedEarningsUsd,
+        tokenPriceUsd: sharePriceFromValuation,
         opportunity: {
           id: market.address,
           name: market.name,
@@ -526,10 +530,9 @@ export class PendleAdapter implements VendorAdapter {
       return [];
     }
 
-    const marketsResponse = await getPendleMarkets(chainId, false);
-    const rawMarket = marketsResponse.markets.find(
-      (candidate) => candidate.address === id.toLowerCase(),
-    );
+    // Targeted lookup by address — `/v2/markets/all` caps results at PENDLE_MARKETS_LIMIT,
+    // so listing-and-finding silently drops markets ranked past that cap (e.g. USDai).
+    const rawMarket = await getPendleMarketByAddress(chainId, id.toLowerCase());
 
     const market = rawMarket
       ? enrichMarketWithAssets(
@@ -615,6 +618,27 @@ export class PendleAdapter implements VendorAdapter {
     }
   }
 
+  // Swallow failures: opportunity rendering must not block on the prices endpoint.
+  private async fetchMarketPrices(
+    chainId: number,
+    markets: PendleMarket[],
+  ): Promise<Map<string, number | null>> {
+    if (!markets.length) return new Map();
+
+    const addresses: string[] = [];
+    for (const market of markets) {
+      if (market.underlyingAddress) addresses.push(market.underlyingAddress);
+      if (market.ptAddress) addresses.push(market.ptAddress);
+    }
+
+    try {
+      return await getPendleAssetPrices({ chainId, addresses });
+    } catch (error) {
+      console.warn('[PendleAdapter] fetchMarketPrices failed:', error);
+      return new Map();
+    }
+  }
+
   private filterPendleMarkets(
     markets: PendleMarket[],
     filters: OpportunityFilters,
@@ -648,12 +672,15 @@ export class PendleAdapter implements VendorAdapter {
     });
   }
 
-  private transformToStandard(market: PendleMarket): StandardOpportunity {
+  private transformToStandard(
+    market: PendleMarket,
+    priceMap?: Map<string, number | null>,
+  ): StandardOpportunity {
     const tvlUsd = getMarketTvl(market);
     const fixedApy = apyAsPercentage(market.details.impliedApy);
     const underlyingApy = apyAsPercentage(market.details.underlyingApy);
-    const liquidityUsd = finiteOrNull(market.details.liquidity) ?? undefined;
-    const tradingVolumeUsd = finiteOrNull(market.details.tradingVolume) ?? undefined;
+    const liquidityUsd = parseFiniteNumber(market.details.liquidity) ?? undefined;
+    const tradingVolumeUsd = parseFiniteNumber(market.details.tradingVolume) ?? undefined;
 
     return {
       id: market.address,
@@ -676,6 +703,10 @@ export class PendleAdapter implements VendorAdapter {
       tokenIcon: market.ptToken?.icon || '',
       tokenNetwork: 'Arbitrum',
       protocolIcon: PENDLE_LOGO_URL,
+      underlyingTokenAddress: market.underlyingAddress,
+      underlyingTokenPriceUsd: priceMap?.get(market.underlyingAddress) ?? null,
+      shareTokenAddress: market.ptAddress,
+      shareTokenPriceUsd: priceMap?.get(market.ptAddress) ?? null,
       fixedYield: {
         pt: market.pt,
         detailsTvlUsd: tvlUsd,
@@ -697,13 +728,12 @@ export class PendleAdapter implements VendorAdapter {
 
   private buildSettlementTokens(market: PendleMarket): SettlementToken[] {
     const tokens: SettlementToken[] = [];
-    const underlyingAddress = extractAddressFromTokenId(market.underlyingAsset);
     const tokenSymbol = getTokenSymbolFromMarketName(market.name);
 
-    if (underlyingAddress) {
+    if (market.underlyingAddress) {
       tokens.push({
         symbol: tokenSymbol,
-        address: underlyingAddress,
+        address: market.underlyingAddress,
         decimals: market.syToken?.decimals ?? DEFAULT_PENDLE_DECIMALS,
         logoUrl: market.ptToken?.icon,
       });
@@ -768,7 +798,7 @@ export class PendleAdapter implements VendorAdapter {
         id: candidate.id,
         name: candidate.name,
         tokenSymbol: candidate.token,
-        ptTokenAddress: extractAddressFromTokenId(candidate.fixedYield.pt),
+        ptTokenAddress: candidate.shareTokenAddress,
         ptTokenDecimals: candidate.fixedYield.ptTokenDecimals,
         ptTokenIcon: candidate.fixedYield.ptTokenIcon || candidate.tokenIcon,
         expiry: candidate.fixedYield.expiry,

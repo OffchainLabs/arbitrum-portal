@@ -4,11 +4,11 @@ import { useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { type PendleAction, getPendleSettlementTokens } from '@/app-hooks/earn/pendlePanelUtils';
-import type { GasEstimate } from '@/app-hooks/earn/useEarnGasEstimate';
+import { useEarnTokenPrice } from '@/app-hooks/earn/useEarnPrices';
 import { usePendlePanelControls } from '@/app-hooks/earn/usePendlePanelControls';
 import { usePendlePanelData } from '@/app-hooks/earn/usePendlePanelData';
 import { usePendlePanelExecution } from '@/app-hooks/earn/usePendlePanelExecution';
-import { formatPercentage } from '@/bridge/util/NumberUtils';
+import { formatPercentage, formatUSD } from '@/bridge/util/NumberUtils';
 import { Card } from '@/components/Card';
 import type { StandardOpportunityFixedYield } from '@/earn-api/types';
 
@@ -31,32 +31,16 @@ import { SlippageSettingsPanel } from './SlippageSettingsPanel';
 
 function PendleTransactionInfo({
   transactionDetails,
-  estimatedTxCost,
-  isGasEstimateLoading,
-  gasEstimateError,
   slippagePercent,
   onSlippageChange,
 }: {
   transactionDetails: TransactionDetail[];
-  estimatedTxCost: GasEstimate | null;
-  isGasEstimateLoading: boolean;
-  gasEstimateError: Error | null;
   slippagePercent: number;
   onSlippageChange: (value: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
       <EarnTransactionDetailsSection details={transactionDetails} />
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-white/40">Transaction Cost</span>
-        <span className="text-xs text-white">
-          <EarnGasEstimateDisplay
-            estimate={estimatedTxCost}
-            isLoading={isGasEstimateLoading}
-            error={gasEstimateError}
-          />
-        </span>
-      </div>
       <SlippageSettingsPanel
         slippagePercent={slippagePercent}
         onSlippageChange={onSlippageChange}
@@ -128,7 +112,7 @@ export function PendleActionPanel({
     outputTokenLogo: data.outputTokenLogo,
     slippagePercent,
     estimatedTxCost: data.estimatedTxCost,
-    transactionQuote: data.transactionQuote,
+    transactionQuote: data.transactionQuote ?? undefined,
     transferReadiness: data.transferReadiness,
     refetch: data.refetch,
     checkAndShowToS,
@@ -211,8 +195,25 @@ export function PendleActionPanel({
       });
     }
 
+    details.push({
+      label: 'Transaction Cost',
+      value: (
+        <EarnGasEstimateDisplay
+          estimate={data.estimatedTxCost}
+          isLoading={data.isGasEstimateLoading}
+          error={data.gasEstimateError}
+        />
+      ),
+    });
+
     return details;
-  }, [data.fixedApy, data.priceImpact]);
+  }, [
+    data.estimatedTxCost,
+    data.fixedApy,
+    data.gasEstimateError,
+    data.isGasEstimateLoading,
+    data.priceImpact,
+  ]);
 
   const enterTokenControl =
     selectedInputToken != null
@@ -239,12 +240,37 @@ export function PendleActionPanel({
     logoUrl: data.fixedYield.ptTokenIcon,
   };
 
+  const inputTokenPriceUsd = useEarnTokenPrice({
+    chainId: opportunity.chainId,
+    tokenAddress:
+      selectedAction === 'enter'
+        ? (selectedInputToken?.address ?? null)
+        : opportunity.shareTokenAddress,
+  });
+  // Rollover skipped: receive is the target market's PT, not on hand here.
+  const receiveTokenPriceUsd = useEarnTokenPrice({
+    chainId: opportunity.chainId,
+    tokenAddress:
+      selectedAction === 'enter'
+        ? opportunity.shareTokenAddress
+        : selectedAction === 'exit' || selectedAction === 'redeem'
+          ? (selectedRedeemOutputToken?.address ?? null)
+          : null,
+  });
+  const receiveUsdValue = useMemo(() => {
+    if (!data.receiveAmount || receiveTokenPriceUsd === null) return undefined;
+    const amt = parseFloat(data.receiveAmount);
+    if (!Number.isFinite(amt) || amt <= 0) return undefined;
+    return `~${formatUSD(amt * receiveTokenPriceUsd)}`;
+  }, [data.receiveAmount, receiveTokenPriceUsd]);
+
   const sharedAmountInputProps = {
     amount,
     onAmountChange: setAmount,
     onMaxClick: () => setAmount(data.handleMaxClick()),
     label: data.amountLabel,
     currentBalance: data.currentBalanceFormatted,
+    tokenPriceUsd: inputTokenPriceUsd,
     isAmountExceedsBalance: data.amountExceedsBalance,
     isConnected,
     validationError: data.validationError,
@@ -257,14 +283,12 @@ export function PendleActionPanel({
       symbol: data.outputTokenSymbol,
       logoUrl: data.outputTokenLogo,
     },
+    usdValue: receiveUsdValue,
     outputBalance: data.outputBalance,
   };
 
   const sharedTransactionInfoProps = {
     transactionDetails,
-    estimatedTxCost: data.estimatedTxCost,
-    isGasEstimateLoading: data.isGasEstimateLoading,
-    gasEstimateError: data.gasEstimateError,
     slippagePercent,
     onSlippageChange,
   };

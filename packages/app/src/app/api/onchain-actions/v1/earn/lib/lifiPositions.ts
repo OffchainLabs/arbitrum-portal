@@ -4,9 +4,52 @@ import { formatUnits } from 'viem';
 import { ChainId } from '@/bridge/types/ChainId';
 
 import { OpportunityCategory, type StandardUserPosition, Vendor } from '../types';
-import { getDunePriceLookup } from './dunePriceSources';
-import { fetchDuneCurrentPriceByAddress } from './duneService';
 import { type LiquidStakingOpportunitySeed } from './liquidStaking';
+import {
+  type ZerionPriceLookup,
+  getZerionLookupCacheKey,
+  getZerionPriceLookup,
+} from './zerionPriceSources';
+import { fetchZerionCurrentPrices } from './zerionService';
+
+export async function fetchLiquidStakingPriceMap(
+  opportunities: LiquidStakingOpportunitySeed[],
+): Promise<Map<string, number | null>> {
+  const lookupByOppId = new Map<string, ZerionPriceLookup | null>();
+  for (const opportunity of opportunities) {
+    lookupByOppId.set(
+      opportunity.id.toLowerCase(),
+      getZerionPriceLookup({
+        chainId: ChainId.ArbitrumOne,
+        tokenAddress: opportunity.id,
+        assetSymbol: opportunity.token,
+      }),
+    );
+  }
+
+  const validLookups = Array.from(lookupByOppId.values()).filter(
+    (lookup): lookup is ZerionPriceLookup => lookup !== null,
+  );
+  // Don't fail the whole positions endpoint if price setup is misconfigured —
+  // fall back to an empty map so balances still surface with valueUsd: null.
+  let priceMap: Map<string, number | null> = new Map();
+  try {
+    priceMap = await fetchZerionCurrentPrices(validLookups);
+  } catch (error) {
+    console.warn('[earn][lifi] price fetch failed, continuing without prices:', error);
+  }
+
+  const tokenPriceMap = new Map<string, number | null>();
+  for (const [oppId, lookup] of lookupByOppId) {
+    if (!lookup) {
+      tokenPriceMap.set(oppId, null);
+      continue;
+    }
+    const price = priceMap.get(getZerionLookupCacheKey(lookup)) ?? null;
+    tokenPriceMap.set(oppId, price !== null && price > 0 ? price : null);
+  }
+  return tokenPriceMap;
+}
 
 export async function fetchLifiUserPositions(params: {
   publicClient: PublicClient;
@@ -14,31 +57,8 @@ export async function fetchLifiUserPositions(params: {
   userAddress: string;
 }): Promise<StandardUserPosition[]> {
   const { publicClient, opportunities, userAddress } = params;
-  const priceCache = new Map<string, number | null>();
-  const tokenPriceEntries = await Promise.all(
-    opportunities.map(async (opportunity) => {
-      const priceLookup = getDunePriceLookup({
-        chainId: ChainId.ArbitrumOne,
-        tokenAddress: opportunity.id,
-        assetSymbol: opportunity.token,
-      });
 
-      if (!priceLookup) {
-        return [opportunity.id.toLowerCase(), null] as const;
-      }
-
-      const cacheKey = `${priceLookup.chainId}:${priceLookup.tokenAddress.toLowerCase()}`;
-      let price = priceCache.get(cacheKey);
-      if (price === undefined) {
-        price = await fetchDuneCurrentPriceByAddress(priceLookup.tokenAddress, priceLookup.chainId);
-        priceCache.set(cacheKey, price);
-      }
-
-      const validPrice = price !== null && Number.isFinite(price) && price > 0 ? price : null;
-      return [opportunity.id.toLowerCase(), validPrice] as const;
-    }),
-  );
-  const tokenPriceMap = new Map<string, number | null>(tokenPriceEntries);
+  const tokenPriceMap = await fetchLiquidStakingPriceMap(opportunities);
 
   const positionPromises = opportunities.map(async (opportunity) => {
     const tokenAddress = opportunity.id;
@@ -81,6 +101,7 @@ export async function fetchLifiUserPositions(params: {
         tokenDecimals: decimalsNumber,
         tokenIcon: opportunity.tokenIcon,
         projectedEarningsUsd: projectedEarningsUsdNumber,
+        tokenPriceUsd: effectivePrice,
         opportunity: {
           id: tokenAddress,
           name: opportunity.name,

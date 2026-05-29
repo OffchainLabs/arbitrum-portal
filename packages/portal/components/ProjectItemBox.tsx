@@ -8,7 +8,7 @@ import React from 'react';
 import LazyLoad from 'react-lazyload';
 import { twMerge } from 'tailwind-merge';
 
-import { Tooltip } from '@/app-components/Tooltip';
+import { Tooltip } from '@/app/components/common/Tooltip';
 import { formatOptionalDate } from '@/common/dateUtils';
 import { getProjectDetailsById, hasLiveIncentives } from '@/common/projects';
 import { EntityCardDisplayMode, EntityType, FullProject, SearchableData } from '@/common/types';

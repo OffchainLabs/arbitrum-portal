@@ -9,6 +9,8 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { type EarnChainId, type UserPositionsResponse } from '@/earn-api/types';
 
+import { earnSwrKeys } from './earnSwrKeys';
+
 const DEFAULT_BY_CATEGORY: Record<OpportunityCategory, { count: number; valueUsd: number }> = {
   [OpportunityCategory.Lend]: { count: 0, valueUsd: 0 },
   [OpportunityCategory.LiquidStaking]: { count: 0, valueUsd: 0 },
@@ -29,9 +31,11 @@ const DEFAULT_SUMMARY = {
 export interface UserPositionData {
   category: OpportunityCategory;
   amountRaw: string;
+  tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
   tokenIcon?: string;
+  tokenPriceUsd: number | null;
   deposited: string;
   valueUsd: number | null;
   projectedEarningsUsd: number | null;
@@ -91,9 +95,11 @@ export function mapUserPositionsData(rawData: UserPositionsResponse): MappedUser
     positionsMap.set(normalizedOpportunityId, {
       category: position.category,
       amountRaw: position.amount,
+      tokenAddress: position.tokenAddress,
       tokenSymbol: position.tokenSymbol,
       tokenDecimals: position.tokenDecimals,
       tokenIcon: position.tokenIcon,
+      tokenPriceUsd: position.tokenPriceUsd,
       deposited,
       valueUsd,
       projectedEarningsUsd,
@@ -144,7 +150,7 @@ export function useUserPositions(
   allowedChainIds: EarnChainId[] = [ChainId.ArbitrumOne],
 ): UseUserPositionsResult {
   const primaryChainId = allowedChainIds[0] ?? ChainId.ArbitrumOne;
-  const swrKey = userAddress ? ([userAddress, primaryChainId, 'userPositions'] as const) : null;
+  const swrKey = userAddress ? earnSwrKeys.userPositions(userAddress, primaryChainId) : null;
 
   const {
     data: rawData,
