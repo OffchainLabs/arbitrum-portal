@@ -1,14 +1,14 @@
+import { SearchParamsProps } from '@/app/src/types';
 import { PathnameEnum } from '@/bridge/constants';
 
-import BridgePageWrapper from '../BridgePageWrapper';
+import { initializeBridgePage } from '../../../../utils/bridgePageUtils';
 import { generateMetadata } from '../page';
-
-type Props = {
-  searchParams: { [key: string]: string | string[] | undefined };
-};
 
 export { generateMetadata };
 
-export default function BridgeTxHistoryPage({ searchParams }: Props) {
-  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.TX_HISTORY} />;
+export default async function BridgeTxHistoryPage(props: SearchParamsProps) {
+  const searchParams = await props.searchParams;
+  await initializeBridgePage({ searchParams, redirectPath: PathnameEnum.TX_HISTORY });
+  // The App is rendered by the bridge layout; the page only initializes it.
+  return null;
 }
