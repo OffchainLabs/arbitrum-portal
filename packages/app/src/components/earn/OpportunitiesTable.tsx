@@ -111,7 +111,7 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
           category === OpportunityCategory.LiquidStaking) && (
           <Tooltip
             content={<p className="text-xs text-white leading-relaxed">7-day average APY.</p>}
-            tippyProps={{ placement: 'top' }}
+            contentProps={{ side: 'top' }}
           >
             <button
               type="button"
