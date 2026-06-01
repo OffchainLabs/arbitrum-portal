@@ -39,9 +39,10 @@ export function formatCompactNumber(n: number): string {
 
 export function formatPercentage(value: number): string {
   if (value === 0) return '0%';
-  if (value < 0.01) return `${value.toFixed(4)}%`;
-  if (value < 1) return `${value.toFixed(3)}%`;
-  return `${value.toFixed(2)}%`;
+  // `Number` drops the trailing zeros `toFixed` pads (e.g. 0.05 -> "0.050").
+  if (value < 0.01) return `${Number(value.toFixed(4))}%`;
+  if (value < 1) return `${Number(value.toFixed(3))}%`;
+  return `${Number(value.toFixed(2))}%`;
 }
 
 export enum MaximumFractionDigits {

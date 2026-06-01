@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount, truncateExtraDecimals } from '../NumberUtils';
+import { formatAmount, formatPercentage, truncateExtraDecimals } from '../NumberUtils';
 
 describe('formatAmount', () => {
   describe('for short token symbol', () => {
@@ -164,5 +164,29 @@ describe('truncateExtraDecimals', () => {
 
   it('should throw when decimals is negative', () => {
     expect(() => truncateExtraDecimals('1.2345', -1)).toThrow('decimals must be non-negative');
+  });
+});
+
+describe('formatPercentage', () => {
+  it('should render exact zero as 0%', () => {
+    expect(formatPercentage(0)).toBe('0%');
+  });
+
+  it('should not pad trailing zeros', () => {
+    expect(formatPercentage(0.05)).toBe('0.05%');
+    expect(formatPercentage(2.5)).toBe('2.5%');
+    expect(formatPercentage(5)).toBe('5%');
+    expect(formatPercentage(0.005)).toBe('0.005%');
+  });
+
+  it('should round to more decimals for smaller values', () => {
+    expect(formatPercentage(0.0123)).toBe('0.012%');
+    expect(formatPercentage(0.00456)).toBe('0.0046%');
+    expect(formatPercentage(2.4689)).toBe('2.47%');
+  });
+
+  it('should keep significant decimals that are not trailing zeros', () => {
+    expect(formatPercentage(2.75)).toBe('2.75%');
+    expect(formatPercentage(12.3456)).toBe('12.35%');
   });
 });
