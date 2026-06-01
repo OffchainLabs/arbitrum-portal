@@ -106,7 +106,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-xs font-medium text-white">Current APR</span>
+            <span className="text-xs font-medium text-white">Current APY</span>
             <span className="text-xs font-medium text-earn-success">{currentApr}</span>
           </div>
         </div>
