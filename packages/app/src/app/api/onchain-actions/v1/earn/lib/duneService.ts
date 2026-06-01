@@ -1,4 +1,5 @@
 // Dune APY/TVL time series for liquid staking. Pricing lives in zerionService.ts.
+import { convertAprToApy } from '@/bridge/util/NumberUtils';
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -139,12 +140,14 @@ function transformDuneResults(rows: Array<Record<string, unknown>>): DuneDataPoi
         return null;
       }
 
-      // Extract APY (may be percentage or decimal)
+      // Extract APR (may be percentage or decimal) and compound into the APY the
+      // UI shows — Dune exposes APR for liquid staking.
       let apy: number | null = null;
       if (apyColumn && row[apyColumn] !== null && row[apyColumn] !== undefined) {
         const apyValue = Number(row[apyColumn]);
         if (Number.isFinite(apyValue)) {
-          apy = apyIsPercentage || apyValue >= 1 ? apyValue : apyValue * 100;
+          const apr = apyIsPercentage || apyValue >= 1 ? apyValue : apyValue * 100;
+          apy = convertAprToApy(apr);
         }
       }
 

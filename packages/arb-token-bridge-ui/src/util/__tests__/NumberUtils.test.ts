@@ -1,7 +1,12 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { formatAmount, formatPercentage, truncateExtraDecimals } from '../NumberUtils';
+import {
+  convertAprToApy,
+  formatAmount,
+  formatPercentage,
+  truncateExtraDecimals,
+} from '../NumberUtils';
 
 describe('formatAmount', () => {
   describe('for short token symbol', () => {
@@ -188,5 +193,17 @@ describe('formatPercentage', () => {
   it('should keep significant decimals that are not trailing zeros', () => {
     expect(formatPercentage(2.75)).toBe('2.75%');
     expect(formatPercentage(12.3456)).toBe('12.35%');
+  });
+});
+
+describe('convertAprToApy', () => {
+  it('should return 0 for an APR of 0', () => {
+    expect(convertAprToApy(0)).toBe(0);
+  });
+
+  it('should convert APR to a daily-compounded APY', () => {
+    expect(formatPercentage(convertAprToApy(2.39))).toBe('2.42%');
+    expect(formatPercentage(convertAprToApy(5))).toBe('5.13%');
+    expect(formatPercentage(convertAprToApy(10))).toBe('10.52%');
   });
 });

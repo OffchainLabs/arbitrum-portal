@@ -45,6 +45,14 @@ export function formatPercentage(value: number): string {
   return `${Number(value.toFixed(2))}%`;
 }
 
+/**
+ * Convert an APR percentage to an APY percentage assuming daily compounding
+ * (n = 365). Useful for yields published as APR that the UI surfaces as APY.
+ */
+export function convertAprToApy(aprPercentage: number): number {
+  return ((1 + aprPercentage / 100 / 365) ** 365 - 1) * 100;
+}
+
 export enum MaximumFractionDigits {
   None = 0,
   Short = 1,

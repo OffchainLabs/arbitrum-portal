@@ -8,7 +8,7 @@ export const DUNE_QUERY_IDS = {
   // Lido wstETH APY query
   // Query: https://dune.com/queries/570874/1068499
   // Returns: time, protocol_apr, Lido staking APR (instant), Lido staking APR (ma_7), Lido staking APR (ma_30), protocol APR (ma_7)
-  // We use "Lido staking APR (ma_7)" (7-day moving average) for APY
+  // We use "Lido staking APR (ma_7)" (7-day moving average), converted to APY in duneService
   WSTETH_APY: 570874,
 
   // Lido wstETH TVL query
