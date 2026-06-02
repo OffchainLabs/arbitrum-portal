@@ -14,16 +14,6 @@ import { useSelectedToken } from '../useSelectedToken';
 type BridgeToken = NonNullable<ReturnType<typeof useSelectedToken>[0]>;
 const Erc20Type = 'ERC20' as BridgeToken['type'];
 
-const defaultSelectedToken = {
-  type: Erc20Type,
-  decimals: 18,
-  name: 'random',
-  symbol: 'RAND',
-  address: '0x123',
-  l2Address: '0x234',
-  listIds: new Set(['1']),
-};
-
 vi.mock('../useNetworks', () => ({
   useNetworks: vi.fn(),
 }));
