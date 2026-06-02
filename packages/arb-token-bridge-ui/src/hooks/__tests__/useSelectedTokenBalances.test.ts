@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { BigNumber, constants } from 'ethers';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
@@ -33,7 +33,18 @@ vi.mock('../useBalances', () => ({
 }));
 
 vi.mock('../useSelectedToken', () => ({
-  useSelectedToken: vi.fn(),
+  useSelectedToken: vi.fn().mockReturnValue([
+    {
+      type: 'ERC20',
+      decimals: 18,
+      name: 'random',
+      symbol: 'RAND',
+      address: '0x123',
+      l2Address: '0x234',
+      listIds: new Set(['1']),
+    },
+    vi.fn(),
+  ]),
 }));
 
 vi.mock('wagmi', async () => ({
@@ -43,16 +54,10 @@ vi.mock('wagmi', async () => ({
   }),
 }));
 
-describe('useSelectedTokenBalances', () => {
+describe.sequential('useSelectedTokenBalances', () => {
   const mockedUseNetworks = vi.mocked(useNetworks);
   const mockedUseBalances = vi.mocked(useBalances);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
-
-  beforeEach(() => {
-    // Reset to the default selected token before each test so leftover async
-    // re-renders (SWR) from a previous test can't leak into this one.
-    mockedUseSelectedToken.mockReturnValue([{ ...defaultSelectedToken }, vi.fn()]);
-  });
 
   beforeAll(() => {
     mockedUseBalances.mockReturnValue({
@@ -107,14 +112,14 @@ describe('useSelectedTokenBalances', () => {
   });
 
   it('should return ERC20 parent balance as source balance and zero as destination balance when source chain is Sepolia and destination chain is Arbitrum Sepolia, and selected token address on Sepolia is 0x222 but without child chain address (unbridged token)', () => {
-    mockedUseSelectedToken.mockReturnValue([
+    mockedUseSelectedToken.mockReturnValueOnce([
       {
         type: Erc20Type,
         decimals: 18,
         name: 'random',
         symbol: 'RAND',
         address: '0x222',
-        listIds: new Set('2'),
+        listIds: new Set(['2']),
       },
       vi.fn(),
     ]);
@@ -137,14 +142,14 @@ describe('useSelectedTokenBalances', () => {
   });
 
   it('should return zero as source balance and ERC20 parent balance as destination balance when source chain is Arbitrum Sepolia and destination chain is Sepolia, and selected token address on Sepolia is 0x222 but without child chain address (unbridged token)', () => {
-    mockedUseSelectedToken.mockReturnValue([
+    mockedUseSelectedToken.mockReturnValueOnce([
       {
         type: Erc20Type,
         decimals: 18,
         name: 'random',
         symbol: 'RAND',
         address: '0x222',
-        listIds: new Set('2'),
+        listIds: new Set(['2']),
       },
       vi.fn(),
     ]);
@@ -167,7 +172,7 @@ describe('useSelectedTokenBalances', () => {
   });
 
   it('should return null as source balance and null as destination balance when source chain is Sepolia and destination chain is Arbitrum Sepolia, and selected token is null', () => {
-    mockedUseSelectedToken.mockReturnValue([null, vi.fn()]);
+    mockedUseSelectedToken.mockReturnValueOnce([null, vi.fn()]);
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -187,7 +192,7 @@ describe('useSelectedTokenBalances', () => {
   });
 
   it('should return null as source balance and null as destination balance when source chain is Arbitrum Sepolia and destination chain is Sepolia, and selected token is null', () => {
-    mockedUseSelectedToken.mockReturnValue([null, vi.fn()]);
+    mockedUseSelectedToken.mockReturnValueOnce([null, vi.fn()]);
 
     mockedUseNetworks.mockReturnValue([
       {
