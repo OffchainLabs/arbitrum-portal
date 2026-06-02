@@ -43,7 +43,7 @@ vi.mock('wagmi', async () => ({
   }),
 }));
 
-describe('useSelectedTokenBalances', () => {
+describe.sequential('useSelectedTokenBalances', () => {
   const mockedUseNetworks = vi.mocked(useNetworks);
   const mockedUseBalances = vi.mocked(useBalances);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
@@ -114,7 +114,7 @@ describe('useSelectedTokenBalances', () => {
         name: 'random',
         symbol: 'RAND',
         address: '0x222',
-        listIds: new Set('2'),
+        listIds: new Set(['2']),
       },
       vi.fn(),
     ]);
@@ -144,7 +144,7 @@ describe('useSelectedTokenBalances', () => {
         name: 'random',
         symbol: 'RAND',
         address: '0x222',
-        listIds: new Set('2'),
+        listIds: new Set(['2']),
       },
       vi.fn(),
     ]);
