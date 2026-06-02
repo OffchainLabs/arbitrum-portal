@@ -21,7 +21,7 @@ const defaultSelectedToken = {
   symbol: 'RAND',
   address: '0x123',
   l2Address: '0x234',
-  listIds: new Set('1'),
+  listIds: new Set(['1']),
 };
 
 vi.mock('../useNetworks', () => ({
