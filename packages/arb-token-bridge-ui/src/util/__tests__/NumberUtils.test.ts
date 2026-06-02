@@ -182,6 +182,8 @@ describe('formatPercentage', () => {
     expect(formatPercentage(2.5)).toBe('2.5%');
     expect(formatPercentage(5)).toBe('5%');
     expect(formatPercentage(0.005)).toBe('0.005%');
+    expect(formatPercentage(5.05)).toBe('5.05%');
+    expect(formatPercentage(5.1)).toBe('5.1%');
   });
 
   it('should round to more decimals for smaller values', () => {
