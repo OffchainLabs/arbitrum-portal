@@ -2,6 +2,7 @@ import { BigNumber, constants } from 'ethers';
 import { type Address, getAddress } from 'viem';
 
 import { addressesEqual } from '@/bridge/util/AddressUtils';
+import { formatPercentage } from '@/bridge/util/NumberUtils';
 import { LIQUID_STAKING_OPPORTUNITIES } from '@/earn-api/lib/liquidStaking';
 import type { StandardOpportunityLend } from '@/earn-api/types';
 
@@ -18,14 +19,14 @@ export function parseMetricNumber(value: number | null | undefined): number | nu
 }
 
 export function formatApyBreakdown(value: number | undefined) {
-  return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(1)}%` : '—';
+  return typeof value === 'number' && Number.isFinite(value) ? formatPercentage(value) : '—';
 }
 
 export function formatApr(apy: number | undefined) {
   if (apy == null || !Number.isFinite(apy)) {
     return '—';
   }
-  return `${(apy * 100).toFixed(2)}%`;
+  return formatPercentage(apy * 100);
 }
 
 export function deriveVault(opportunity: StandardOpportunityLend) {

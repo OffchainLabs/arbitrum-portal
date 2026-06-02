@@ -1,4 +1,4 @@
-import { formatCompactUsd } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 
 function getPriceMaximumFractionDigits(value: number): number {
   const abs = Math.abs(value);
@@ -23,7 +23,7 @@ export type MetricType = 'apy' | 'tvl' | 'price';
 
 export function formatMetricValue(metricType: MetricType | undefined, value: number): string {
   if (metricType === 'apy') {
-    return `${value.toFixed(2)}%`;
+    return formatPercentage(value);
   }
 
   if (metricType === 'price') {
