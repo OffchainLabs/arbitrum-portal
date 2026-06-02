@@ -8,7 +8,7 @@ const resourceCards = [
     title: 'Developer Docs',
     description: 'Learn how to build decentralized apps with Arbitrum',
     className: 'col-span-1 lg:col-span-3',
-    link: 'https://docs.arbitrum.io/welcome/get-started',
+    link: 'https://docs.arbitrum.io',
   },
   {
     title: 'Arbitrum Tutorials',
@@ -20,7 +20,7 @@ const resourceCards = [
     title: 'Arbitrum Stylus',
     description: 'Write smart contracts on Arbitrum in Rust, C, C++ and more',
     className: 'col-span-1',
-    link: 'https://docs.arbitrum.io/stylus/stylus-overview',
+    link: 'https://docs.arbitrum.io/stylus/gentle-introduction',
   },
   {
     title: 'Infra and Tool Apps',
