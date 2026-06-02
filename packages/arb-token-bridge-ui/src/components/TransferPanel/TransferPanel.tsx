@@ -190,7 +190,7 @@ export function TransferPanel() {
   const { handleError } = useError();
 
   const resetAmountAndNavigateToTransactionHistory = useCallback(() => {
-    const newParams = new URLSearchParams(searchParams.toString());
+    const newParams = new URLSearchParams(searchParams);
     newParams.delete('amount');
     newParams.delete('amount2');
     const query = newParams.toString();
