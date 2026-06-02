@@ -17,7 +17,6 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
-import { isTeleportEnabledToken } from '../../util/TokenTeleportEnabledUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
@@ -35,7 +34,6 @@ import {
   TransferReadinessRichErrorMessage,
   getInsufficientFundsErrorMessage,
   getInsufficientFundsForGasFeesErrorMessage,
-  getSmartContractWalletTeleportTransfersNotSupportedErrorMessage,
   getWithdrawOnlyChainErrorMessage,
 } from './useTransferReadinessUtils';
 
@@ -44,7 +42,9 @@ import {
 export const DISABLED_CHAIN_IDS: number[] = [];
 
 // withdraw-only chains (will also display error message in the transfer panel)
-const WITHDRAW_ONLY_CHAIN_IDS: number[] = [];
+const WITHDRAW_ONLY_CHAIN_IDS: number[] = [
+  228, // Mind Network - being sunset, withdrawals supported until end of June
+];
 
 type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage;
@@ -205,8 +205,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     layout: { isTransferring },
   } = useAppContextState();
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode, isTeleportMode } =
-    useNetworksRelationship(networks);
+  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
@@ -366,15 +365,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       });
     }
 
-    // teleport transfers using SC wallets not enabled yet
-    if (isSmartContractWallet && isTeleportMode) {
-      return notReady({
-        errorMessages: {
-          inputAmount1: getSmartContractWalletTeleportTransfersNotSupportedErrorMessage(),
-        },
-      });
-    }
-
     // Check if destination address is valid for ERC20 transfers
     if (destinationAddressError) {
       return notReady();
@@ -382,10 +372,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
 
     // ERC-20
     if (selectedToken) {
-      const selectedTokenIsDisabled =
-        isTransferDisabledToken(selectedToken.address, childChain.id) ||
-        (isTeleportMode &&
-          !isTeleportEnabledToken(selectedToken.address, parentChain.id, childChain.id));
+      const selectedTokenIsDisabled = isTransferDisabledToken(selectedToken.address, childChain.id);
       const isValidLifiRoute =
         isLifiEnabled() &&
         isValidLifiTransfer({
@@ -726,14 +713,12 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     isTransferring,
     childChain.id,
     childChain.name,
-    isTeleportMode,
     destinationAddressError,
     selectedToken,
     tosAccepted,
     networks.sourceChain.name,
     networks.sourceChain.id,
     networks.destinationChain.id,
-    parentChain.id,
     tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,

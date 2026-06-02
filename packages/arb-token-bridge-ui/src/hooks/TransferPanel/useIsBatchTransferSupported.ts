@@ -9,7 +9,7 @@ import { useSelectedToken } from '../useSelectedToken';
 
 export const useIsBatchTransferSupported = () => {
   const [networks] = useNetworks();
-  const { isDepositMode, isTeleportMode, isLifi } = useNetworksRelationship(networks);
+  const { isDepositMode, isLifi } = useNetworksRelationship(networks);
   const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
   const [selectedToken] = useSelectedToken();
   const isOftTransfer = useIsOftV2Transfer();
@@ -25,10 +25,6 @@ export const useIsBatchTransferSupported = () => {
     return false;
   }
   if (isTokenNativeUSDC(selectedToken.address)) {
-    return false;
-  }
-  // TODO: teleport is disabled for now but it needs to be looked into more to check whether it is or can be supported
-  if (isTeleportMode) {
     return false;
   }
 

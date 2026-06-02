@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import { formatCompactUsd } from '@/bridge/util/NumberUtils';
+import { formatCompactUsd, formatPercentage } from '@/bridge/util/NumberUtils';
 
 import type { ChartConfig } from './chartConfig';
 import { type MetricType, formatMetricValue, formatPriceUsd } from './formatters';
@@ -98,9 +98,7 @@ export function HistoricalLineChart({
 
   const formatYAxisLabel = (value: number): string => {
     if (metricType === 'apy') {
-      const abs = Math.abs(value);
-      const decimals = abs < 1 ? 3 : 2;
-      return `${value.toFixed(decimals)}%`;
+      return formatPercentage(value);
     }
     if (metricType === 'price') {
       return formatPriceUsd(value);
@@ -115,8 +113,8 @@ export function HistoricalLineChart({
       (max, value) => Math.max(max, formatYAxisLabel(value).length),
       0,
     );
-    // ~7px per char at 12px font, floor at 40px
-    return Math.max(40, longestLabelLength * 7);
+    // ~7px per char at 12px font, floor at 48px
+    return Math.max(48, longestLabelLength * 7);
   })();
 
   return (

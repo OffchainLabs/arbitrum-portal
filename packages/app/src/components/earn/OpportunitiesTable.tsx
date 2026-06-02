@@ -87,9 +87,10 @@ interface TableHeaderProps {
   sortColumn: SortColumn;
   sortDirection: SortDirection;
   onSort: (column: NonNullable<SortColumn>) => void;
+  category?: OpportunityCategory;
 }
 
-function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
+function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeaderProps) {
   return (
     <div className="hidden lg:flex gap-4 items-center pt-4 px-4 pb-0">
       <div className="w-[150px] shrink-0">
@@ -106,6 +107,21 @@ function TableHeader({ sortColumn, sortDirection, onSort }: TableHeaderProps) {
           sortDirection={sortDirection}
           onSort={onSort}
         />
+        {(category === OpportunityCategory.Lend ||
+          category === OpportunityCategory.LiquidStaking) && (
+          <Tooltip
+            content={<p className="text-xs text-white leading-relaxed">7-day average APY.</p>}
+            contentProps={{ side: 'top' }}
+          >
+            <button
+              type="button"
+              aria-label="APY methodology"
+              className="flex items-center justify-center cursor-pointer"
+            >
+              <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
+            </button>
+          </Tooltip>
+        )}
       </div>
       <div className="flex-1 flex gap-2.5 items-center min-w-0">
         <SortableColumnHeader
@@ -379,6 +395,7 @@ export function OpportunitiesTable({
                       sortColumn={sortColumn}
                       sortDirection={sortDirection}
                       onSort={handleSort}
+                      category={category}
                     />
                     {displayedOpportunities.map((opportunity) => (
                       <OpportunityRow

@@ -112,19 +112,6 @@ describe('useIsCctpTransfer', () => {
     expect(result.current).toBe(false);
   });
 
-  it('returns false when teleport mode is active', () => {
-    setQueryParams({
-      sourceChain: ChainId.Ethereum,
-      destinationChain: ChainId.Superposition,
-      token: CommonAddress.Ethereum.USDC,
-      destinationToken: CommonAddress.Ethereum.USDC,
-    });
-
-    const { result } = renderHook(() => useIsCctpTransfer());
-
-    expect(result.current).toBe(false);
-  });
-
   it('returns true for deposit of mainnet USDC to Arbitrum One', () => {
     setQueryParams({
       sourceChain: ChainId.Ethereum,

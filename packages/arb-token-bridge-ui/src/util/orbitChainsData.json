@@ -146,7 +146,7 @@
         "sequencerInbox": "0xD00d2ef101d86C570dA8f38801f236b79a7a2A93"
       },
       "explorerUrl": "https://explorer.mindnetwork.xyz",
-      "rpcUrl": "https://rpc-mainnet.mindnetwork.xyz",
+      "rpcUrl": "https://rpc-mainnet-internal.mindnetwork.xyz",
       "isCustom": true,
       "isTestnet": false,
       "name": "Mind Network",

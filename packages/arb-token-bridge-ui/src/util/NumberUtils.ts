@@ -38,9 +38,19 @@ export function formatCompactNumber(n: number): string {
 }
 
 export function formatPercentage(value: number): string {
-  if (value < 0.01) return `${value.toFixed(4)}%`;
-  if (value < 1) return `${value.toFixed(3)}%`;
-  return `${value.toFixed(2)}%`;
+  if (value === 0) return '0%';
+  // `Number` drops the trailing zeros `toFixed` pads (e.g. 0.05 -> "0.050").
+  if (value < 0.01) return `${Number(value.toFixed(4))}%`;
+  if (value < 1) return `${Number(value.toFixed(3))}%`;
+  return `${Number(value.toFixed(2))}%`;
+}
+
+/**
+ * Convert an APR percentage to an APY percentage assuming daily compounding
+ * (n = 365). Useful for yields published as APR that the UI surfaces as APY.
+ */
+export function convertAprToApy(aprPercentage: number): number {
+  return ((1 + aprPercentage / 100 / 365) ** 365 - 1) * 100;
 }
 
 export enum MaximumFractionDigits {

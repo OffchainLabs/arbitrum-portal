@@ -10,7 +10,7 @@ import { LifiData } from './LifiTransferStarter';
 import { getChainIdFromProvider } from './utils';
 
 type Asset = 'erc20' | 'eth';
-type TxType = 'deposit' | 'withdrawal' | 'teleport';
+type TxType = 'deposit' | 'withdrawal';
 type Chain = 'source_chain' | 'destination_chain';
 type TxStatus = 'pending' | 'success' | 'error';
 

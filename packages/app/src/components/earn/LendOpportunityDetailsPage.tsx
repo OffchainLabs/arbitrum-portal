@@ -106,7 +106,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-xs font-medium text-white">Current APR</span>
+            <span className="text-xs font-medium text-white">Current APY</span>
             <span className="text-xs font-medium text-earn-success">{currentApr}</span>
           </div>
         </div>
@@ -179,7 +179,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <div className="text-xs text-white/50 mb-1">7d APY</div>
               <div className="text-base font-medium text-white">
                 {typeof apy7day === 'number' && Number.isFinite(apy7day)
-                  ? `${apy7day.toFixed(1)}%`
+                  ? formatPercentage(apy7day)
                   : '—'}
               </div>
             </div>
@@ -187,7 +187,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
               <div className="text-xs text-white/50 mb-1">30d APY</div>
               <div className="text-base font-medium text-white">
                 {typeof apy30day === 'number' && Number.isFinite(apy30day)
-                  ? `${apy30day.toFixed(1)}%`
+                  ? formatPercentage(apy30day)
                   : '—'}
               </div>
             </div>
