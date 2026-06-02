@@ -88,7 +88,6 @@ import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
-import { getSmartContractWalletTeleportTransfersNotSupportedErrorMessage } from './useTransferReadinessUtils';
 
 const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
@@ -137,14 +136,7 @@ export function TransferPanel() {
   const tokensFromLists = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
   const {
-    current: {
-      childChain,
-      childChainProvider,
-      parentChain,
-      parentChainProvider,
-      isDepositMode,
-      isTeleportMode,
-    },
+    current: { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode },
   } = useLatest(useNetworksRelationship(latestNetworks.current));
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
@@ -878,12 +870,6 @@ export function TransferPanel() {
       throw new Error(signerUndefinedError);
     }
 
-    // SC Teleport transfers aren't enabled yet. Safety check, shouldn't be able to get here.
-    if (isSmartContractWallet && isTeleportMode) {
-      logger.error(getSmartContractWalletTeleportTransfersNotSupportedErrorMessage());
-      return;
-    }
-
     const childChainName = getNetworkName(childChain.id);
 
     setTransferring(true);
@@ -1058,7 +1044,7 @@ export function TransferPanel() {
       if (isSmartContractWallet) {
         showDelayInSmartContractTransaction();
 
-        trackEvent(isTeleportMode ? 'Teleport' : isDepositMode ? 'Deposit' : 'Withdraw', {
+        trackEvent(isDepositMode ? 'Deposit' : 'Withdraw', {
           tokenSymbol: selectedToken?.symbol,
           assetType: 'ERC-20',
           accountType: 'Smart Contract',
@@ -1123,7 +1109,7 @@ export function TransferPanel() {
     const destinationAddress = latestDestinationAddress.current;
 
     if (!isSmartContractWallet) {
-      trackEvent(isTeleportMode ? 'Teleport' : isDepositMode ? 'Deposit' : 'Withdraw', {
+      trackEvent(isDepositMode ? 'Deposit' : 'Withdraw', {
         tokenSymbol: selectedToken?.symbol,
         assetType: selectedToken ? 'ERC-20' : 'ETH',
         accountType: 'EOA',
@@ -1215,7 +1201,7 @@ export function TransferPanel() {
 
   const trackTransferButtonClick = useCallback(() => {
     trackEvent('Transfer Button Click', {
-      type: isTeleportMode ? 'Teleport' : isDepositMode ? 'Deposit' : 'Withdrawal',
+      type: isDepositMode ? 'Deposit' : 'Withdrawal',
       selectedRoute,
       tokenSymbol: selectedToken?.symbol,
       assetType: selectedToken ? 'ERC-20' : 'ETH',
@@ -1233,7 +1219,6 @@ export function TransferPanel() {
     isBatchTransfer,
     isDepositMode,
     isSmartContractWallet,
-    isTeleportMode,
     selectedToken,
     isCustomDestinationTransfer,
     selectedRoute,
@@ -1253,7 +1238,7 @@ export function TransferPanel() {
       setTransferring(true);
       if (isConnectedToTheWrongChain) {
         trackEvent('Switch Network and Transfer', {
-          type: isTeleportMode ? 'Teleport' : isDepositMode ? 'Deposit' : 'Withdrawal',
+          type: isDepositMode ? 'Deposit' : 'Withdrawal',
           tokenSymbol: selectedToken?.symbol,
           assetType: selectedToken ? 'ERC-20' : 'ETH',
           accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',

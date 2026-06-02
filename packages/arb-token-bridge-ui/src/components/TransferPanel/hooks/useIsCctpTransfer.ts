@@ -13,7 +13,7 @@ import { useIsSwapTransfer } from './useIsSwapTransfer';
 export const useIsCctpTransfer = function () {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChain, isDepositMode, isTeleportMode } = useNetworksRelationship(networks);
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const { isArbitrumOne, isArbitrumSepolia } = isNetwork(childChain.id);
   const isSwap = useIsSwapTransfer();
 
@@ -22,10 +22,6 @@ export const useIsCctpTransfer = function () {
   }
 
   if (!selectedToken) {
-    return false;
-  }
-
-  if (isTeleportMode) {
     return false;
   }
 

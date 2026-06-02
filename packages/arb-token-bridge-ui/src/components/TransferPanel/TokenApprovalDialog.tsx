@@ -1,4 +1,3 @@
-import { Erc20L1L3Bridger } from '@arbitrum/sdk';
 import { BigNumber, constants, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
@@ -8,7 +7,6 @@ import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferS
 import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 import { getCctpContracts } from '@/token-bridge-sdk/cctp';
-import { getBridger } from '@/token-bridge-sdk/utils';
 
 import { TOKEN_APPROVAL_ARTICLE_LINK, ether } from '../../constants';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
@@ -45,7 +43,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
 
   const [networks] = useNetworks();
   const { sourceChain, destinationChain, sourceChainProvider, destinationChainProvider } = networks;
-  const { childChainProvider, parentChain, parentChainProvider, isDepositMode, isTeleportMode } =
+  const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
   const provider = isDepositMode ? parentChainProvider : childChainProvider;
@@ -206,20 +204,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
         return;
       }
 
-      if (isTeleportMode) {
-        const l1L3Bridger = await getBridger({
-          sourceChainId: sourceChain.id,
-          destinationChainId: destinationChain.id,
-        });
-
-        if (!(l1L3Bridger instanceof Erc20L1L3Bridger)) {
-          throw new Error('Error initializing L1L3Bridger.');
-        }
-
-        setContractAddress(l1L3Bridger.teleporter.l1Teleporter);
-        return;
-      }
-
       if (isDepositMode) {
         setContractAddress(
           await fetchErc20ParentChainGatewayAddress({
@@ -248,7 +232,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     token?.l2Address,
     sourceChain.id,
     destinationChain.id,
-    isTeleportMode,
     isOft,
     isLifi,
     context,

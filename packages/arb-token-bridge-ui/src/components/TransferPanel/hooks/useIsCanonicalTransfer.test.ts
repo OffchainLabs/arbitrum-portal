@@ -18,8 +18,6 @@ const usdcToken: ERC20BridgeToken = {
   listIds: new Set<string>(),
 };
 
-const rariChainId = 1380012617;
-
 describe('isArbitrumCanonicalTransfer', () => {
   beforeAll(() => {
     registerCustomArbitrumNetwork(
@@ -27,9 +25,6 @@ describe('isArbitrumCanonicalTransfer', () => {
     );
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
-    );
-    registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === rariChainId)!,
     );
   });
 
@@ -171,7 +166,7 @@ describe('isArbitrumCanonicalTransfer', () => {
     });
 
     it('Should return true for USDC transfers', () => {
-      const ethTeleport = isArbitrumCanonicalTransfer({
+      const usdcDeposit = isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,
         parentChainId: ChainId.Ethereum,
         sourceChainId: ChainId.Ethereum,
@@ -185,7 +180,7 @@ describe('isArbitrumCanonicalTransfer', () => {
         },
         isSwap: false,
       });
-      expect(ethTeleport).toBe(true);
+      expect(usdcDeposit).toBe(true);
     });
   });
 
@@ -327,81 +322,6 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSwap: false,
       });
       expect(usdcWithdraw).toBe(true);
-    });
-  });
-
-  describe('teleport mode', () => {
-    it('should return true from Ethereum to Rari for ETH', () => {
-      const teleport = isArbitrumCanonicalTransfer({
-        childChainId: rariChainId,
-        parentChainId: ChainId.Ethereum,
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: rariChainId,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null,
-        isSwap: false,
-      });
-      expect(teleport).toBe(true);
-    });
-    it('should return false from Ethereum to Rari for ERC20', () => {
-      const teleport = isArbitrumCanonicalTransfer({
-        childChainId: rariChainId,
-        parentChainId: ChainId.Ethereum,
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: rariChainId,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken,
-        isSwap: false,
-      });
-      expect(teleport).toBe(false);
-    });
-    it('should return true from Ethereum to Rari for enabled token', () => {
-      const teleport = isArbitrumCanonicalTransfer({
-        childChainId: rariChainId,
-        parentChainId: ChainId.Ethereum,
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: rariChainId,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: {
-          address: '0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF', // RARI
-          decimals: 18,
-          symbol: 'RARI',
-          type: TokenType.ERC20,
-          name: 'RARI',
-          listIds: new Set<string>(),
-        },
-        isSwap: false,
-      });
-      expect(teleport).toBe(true);
-    });
-
-    it('should return false from Ethereum to ApeChain', () => {
-      const ethTeleport = isArbitrumCanonicalTransfer({
-        childChainId: ChainId.ApeChain,
-        parentChainId: ChainId.Ethereum,
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: ChainId.ApeChain,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null,
-        isSwap: false,
-      });
-      expect(ethTeleport).toBe(false);
-
-      const erc20Teleport = isArbitrumCanonicalTransfer({
-        childChainId: ChainId.ApeChain,
-        parentChainId: ChainId.Ethereum,
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: ChainId.ApeChain,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: usdcToken,
-        isSwap: false,
-      });
-      expect(erc20Teleport).toBe(false);
     });
   });
 
