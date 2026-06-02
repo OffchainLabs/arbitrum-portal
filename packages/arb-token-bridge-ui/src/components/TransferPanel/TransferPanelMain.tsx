@@ -195,8 +195,7 @@ export function NetworkContainer({
 
 export function TransferPanelMain() {
   const [networks] = useNetworks();
-  const { parentChain, childChain, childChainProvider, isTeleportMode } =
-    useNetworksRelationship(networks);
+  const { parentChain, childChain, childChainProvider } = useNetworksRelationship(networks);
 
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const [selectedToken] = useSelectedToken();
@@ -233,11 +232,10 @@ export function TransferPanelMain() {
     }
 
     if (
-      !isTeleportMode &&
-      (isTokenMainnetUSDC(selectedToken.address) ||
-        isTokenSepoliaUSDC(selectedToken.address) ||
-        isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
-        isTokenArbitrumSepoliaNativeUSDC(selectedToken.address))
+      isTokenMainnetUSDC(selectedToken.address) ||
+      isTokenSepoliaUSDC(selectedToken.address) ||
+      isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
+      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address)
     ) {
       updateUsdcBalances();
       return;
@@ -253,7 +251,6 @@ export function TransferPanelMain() {
     updateErc20ChildBalances,
     destinationAddressOrWalletAddress,
     updateUsdcBalances,
-    isTeleportMode,
   ]);
 
   const isCustomMainnetChain = useMemo(() => {
