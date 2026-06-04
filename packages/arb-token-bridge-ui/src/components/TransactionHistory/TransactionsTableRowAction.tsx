@@ -6,20 +6,13 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { GET_HELP_LINK } from '../../constants';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
 import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
-import { useRedeemTeleporter } from '../../hooks/useRedeemTeleporter';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
-import {
-  DepositStatus,
-  MergedTransaction,
-  TeleporterMergedTransaction,
-} from '../../state/app/state';
+import { DepositStatus, MergedTransaction } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
 import { useClaimCctp } from '../../state/cctpState';
-import { isTeleportTx } from '../../types/Transactions';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { formatAmount } from '../../util/NumberUtils';
-import { getChainIdForRedeemingRetryable } from '../../util/RetryableUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
@@ -49,7 +42,7 @@ export function TransactionsTableRowAction({
   isError,
   type,
 }: {
-  tx: MergedTransaction | TeleporterMergedTransaction;
+  tx: MergedTransaction;
   isError: boolean;
   type: 'deposits' | 'withdrawals';
 }) {
@@ -68,45 +61,26 @@ export function TransactionsTableRowAction({
 
   const { claim, isClaiming } = useClaimWithdrawal(tx);
   const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming: isRetryableRedeeming } = useRedeemRetryable(tx, searchedAddress);
-  const { redeem: teleporterRedeem, isRedeeming: isTeleporterRedeeming } = useRedeemTeleporter(
-    tx,
-    searchedAddress,
-  );
-
-  const isRedeeming = isRetryableRedeeming || isTeleporterRedeeming;
-
-  const chainIdForRedeemingRetryable = getChainIdForRedeemingRetryable(tx);
+  const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
-    ? chain?.id === chainIdForRedeemingRetryable // for redemption actions, we can have different chain id
+    ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain
     : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
 
   const handleRedeemRetryable = useCallback(async () => {
     try {
       if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: chainIdForRedeemingRetryable });
+        await switchChainAsync({ chainId: tx.childChainId });
       }
 
-      if (isTeleportTx(tx)) {
-        await teleporterRedeem();
-      } else {
-        await redeem();
-      }
+      await redeem();
     } catch (error: any) {
       if (isUserRejectedError(error)) {
         return;
       }
       errorToast(`Can't retry the deposit: ${error?.message ?? error}`);
     }
-  }, [
-    tx,
-    isConnectedToCorrectNetworkForAction,
-    chainIdForRedeemingRetryable,
-    redeem,
-    switchChainAsync,
-    teleporterRedeem,
-  ]);
+  }, [tx, isConnectedToCorrectNetworkForAction, redeem, switchChainAsync]);
 
   const handleClaim = useCallback(async () => {
     try {

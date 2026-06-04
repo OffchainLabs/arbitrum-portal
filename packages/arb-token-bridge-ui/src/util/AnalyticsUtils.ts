@@ -9,7 +9,7 @@ import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
 type AccountType = 'EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
-type TransferDirection = 'Deposit' | 'Withdrawal' | 'Teleport';
+type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
@@ -41,13 +41,6 @@ type AnalyticsEventMap = {
     network: string;
     amount: number;
   };
-  'Teleport': {
-    tokenSymbol?: string;
-    assetType: AssetType;
-    accountType: AccountType;
-    network: string;
-    amount: number;
-  };
   'Connect Wallet Click': { walletName: string };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
@@ -71,7 +64,6 @@ type AnalyticsEventMap = {
     version: number;
   };
   'Redeem Retryable': { network: string };
-  'Redeem Teleport Retryable': { network: string };
   'Search Tx for Address Click': {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;

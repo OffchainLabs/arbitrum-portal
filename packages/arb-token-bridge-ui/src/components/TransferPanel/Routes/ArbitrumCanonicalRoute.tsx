@@ -23,20 +23,14 @@ import { getGasCostAndToken } from './getGasCostAndToken';
 function getDuration({
   isTestnet,
   sourceChainId,
-  isTeleportMode,
   isWithdrawal,
   isOrbitChain,
 }: {
   isTestnet: boolean;
   sourceChainId: number;
-  isTeleportMode: boolean;
   isWithdrawal: boolean;
   isOrbitChain: boolean;
 }) {
-  if (isTeleportMode) {
-    return getStandardDepositDuration(isTestnet) + getOrbitDepositDuration(isTestnet);
-  }
-
   if (isWithdrawal) {
     return getWithdrawalDuration({
       createdAt: dayjs().valueOf(),
@@ -53,7 +47,7 @@ function getDuration({
 
 export function ArbitrumCanonicalRoute() {
   const [networks] = useNetworks();
-  const { childChain, isTeleportMode, childChainProvider, parentChainProvider, isDepositMode } =
+  const { childChain, childChainProvider, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const {
     status: gasSummaryStatus,
@@ -114,7 +108,6 @@ export function ArbitrumCanonicalRoute() {
       isTestnet,
       isWithdrawal: !isDepositMode,
       sourceChainId: networks.sourceChain.id,
-      isTeleportMode,
       isOrbitChain,
     }) *
     60 *

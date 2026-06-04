@@ -141,6 +141,10 @@ describe.sequential('useBalance', () => {
 });
 
 describe.sequential('ERC20 Balance', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('getter returns ERC20 balance for valid tuple (walletAddress, chainId)', async () => {
     const getBalanceSpy = vi
       .spyOn(provider, 'getBalance')
