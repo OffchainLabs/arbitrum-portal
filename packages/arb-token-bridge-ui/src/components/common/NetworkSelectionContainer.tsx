@@ -1,6 +1,8 @@
 import {
+  ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
   ExclamationCircleIcon,
+  InformationCircleIcon,
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@uidotdev/usehooks';
@@ -30,6 +32,7 @@ import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
+import { ExternalLink } from './ExternalLink';
 import { NetworkImage } from './NetworkImage';
 import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
@@ -45,6 +48,9 @@ enum ChainGroupName {
   orbit = 'Arbitrum Chains',
 }
 
+const NOVA_WARNING_ROW = 'nova_warning_row';
+type NetworkRowItem = ChainId | ChainGroupName | typeof NOVA_WARNING_ROW;
+
 type ChainGroupInfo = {
   name: ChainGroupName;
   description?: React.ReactNode;
@@ -57,25 +63,19 @@ const chainGroupInfo: { [key in NetworkType]: ChainGroupInfo } = {
   more: {
     name: ChainGroupName.more,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
-        <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
-        <span>
-          Independent projects using non-Arbitrum technology. These chains have varying degrees of
-          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
-        </span>
-      </p>
+      <>
+        Independent projects using non-Arbitrum technology. These chains have varying degrees of
+        decentralization. <span className="font-semibold">Bridge at your own risk.</span>
+      </>
     ),
   },
   orbit: {
     name: ChainGroupName.orbit,
     description: (
-      <p className="mt-2 flex gap-1 whitespace-normal rounded bg-orange-dark px-2 py-1 text-xs text-orange">
-        <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
-        <span>
-          Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
-          decentralization. <span className="font-semibold">Bridge at your own risk.</span>
-        </span>
-      </p>
+      <>
+        Independent projects using Arbitrum technology. Arbitrum chains have varying degrees of
+        decentralization. <span className="font-semibold">Bridge at your own risk.</span>
+      </>
     ),
   },
 };
@@ -105,10 +105,20 @@ function ChainTypeInfoRow({
       )}
     >
       <div className="flex flex-row flex-nowrap items-center justify-between">
-        <p className="text-sm text-white/70">{name}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm text-white/70">{name}</p>
+          {description ? (
+            <Tooltip
+              as="span"
+              wrapperClassName="inline-flex"
+              content={<span className="block max-w-[260px] text-xs">{description}</span>}
+            >
+              <InformationCircleIcon className="h-4 w-4 text-white/50" />
+            </Tooltip>
+          ) : null}
+        </div>
         <p className="text-xs text-white/50">{isConnected ? 'Native Balance' : 'Native Token'}</p>
       </div>
-      {description}
     </div>
   );
 }
@@ -285,14 +295,12 @@ export function NetworksPanel({
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
   const { isConnected } = useAccount();
+  const showNovaWarningBanner = chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
-    const proofOfPlayNetworks =
-      !isTestnetMode && type === 'source'
-        ? [70700, 70701] // PoP Apex, PoP Boss
-        : [];
+    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
 
     if (_networkSearched) {
       return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
@@ -324,15 +332,26 @@ export function NetworksPanel({
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
-  const networkRowsWithChainInfoRows: (ChainId | ChainGroupName)[] = useMemo(() => {
+  const networkRowsWithChainInfoRows: NetworkRowItem[] = useMemo(() => {
     if (isNetworkSearchResult) {
-      return networksToShow;
+      return networksToShow.flatMap((chainId): NetworkRowItem[] =>
+        chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+          ? [chainId, NOVA_WARNING_ROW]
+          : [chainId],
+      );
     }
 
-    const groupedNetworks = [];
+    const groupedNetworks: NetworkRowItem[] = [];
 
     if (networksToShow.core.length > 0) {
-      groupedNetworks.push(ChainGroupName.core, ...networksToShow.core);
+      groupedNetworks.push(
+        ChainGroupName.core,
+        ...networksToShow.core.flatMap((chainId): NetworkRowItem[] =>
+          chainId === ChainId.ArbitrumNova && showNovaWarningBanner
+            ? [chainId, NOVA_WARNING_ROW]
+            : [chainId],
+        ),
+      );
     }
 
     if (networksToShow.more.length > 0) {
@@ -344,15 +363,18 @@ export function NetworksPanel({
     }
 
     return groupedNetworks;
-  }, [isNetworkSearchResult, networksToShow]);
+  }, [isNetworkSearchResult, networksToShow, showNovaWarningBanner]);
 
   function getRowHeight({ index }: { index: number }) {
     const rowItemOrChainId = networkRowsWithChainInfoRows[index];
     if (!rowItemOrChainId) {
       return 0;
     }
+    if (rowItemOrChainId === NOVA_WARNING_ROW) {
+      return 88;
+    }
     if (typeof rowItemOrChainId === 'string') {
-      return rowItemOrChainId === ChainGroupName.core ? 45 : 90;
+      return 45;
     }
 
     return 50;
@@ -403,6 +425,26 @@ export function NetworksPanel({
         );
       }
 
+      if (networkOrChainTypeName === NOVA_WARNING_ROW) {
+        return (
+          <div style={style} className="px-5">
+            <ExternalLink
+              href="https://forum.arbitrum.foundation/t/constitutional-aip-minimize-arbitrum-nova/30880"
+              className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-[10px] py-[15px] text-xs text-destructive"
+            >
+              <span className="flex items-center gap-1">
+                <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
+                <span>
+                  Arbitrum Nova is losing support. Please bridge to{' '}
+                  <span className="font-semibold">Arbitrum One.</span>
+                </span>
+              </span>
+              <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
+            </ExternalLink>
+          </div>
+        );
+      }
+
       if (
         networkOrChainTypeName === (70700 as ChainId) ||
         networkOrChainTypeName === (70701 as ChainId)
@@ -446,19 +488,21 @@ export function NetworksPanel({
         showSearch={showSearch}
         isDialog
       >
-        <AutoSizer>
-          {({ height, width }) => (
-            <List
-              ref={listRef}
-              width={width - 2}
-              height={height}
-              rowCount={networkRowsWithChainInfoRows.length}
-              rowHeight={getRowHeight}
-              rowRenderer={rowRenderer}
-              listRef={listRef}
-            />
-          )}
-        </AutoSizer>
+        <div className="min-h-0 h-full flex-1">
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                ref={listRef}
+                width={width - 2}
+                height={height}
+                rowCount={networkRowsWithChainInfoRows.length}
+                rowHeight={getRowHeight}
+                rowRenderer={rowRenderer}
+                listRef={listRef}
+              />
+            )}
+          </AutoSizer>
+        </div>
       </SearchPanelTable>
       {!embedMode && showFooter && (
         <div className="flex justify-between pb-2">

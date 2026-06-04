@@ -83,6 +83,7 @@ export type DialogProps = {
   title?: string | React.JSX.Element;
   initialFocus?: React.MutableRefObject<HTMLElement | null>;
   cancelButtonProps?: Partial<ButtonProps>;
+  cancelButtonTitle?: string;
   actionButtonProps?: Partial<ButtonProps>;
   actionButtonTitle?: string;
   isFooterHidden?: boolean;
@@ -197,11 +198,11 @@ export function Dialog(props: DialogProps) {
                 ref={cancelButtonRef}
                 variant="tertiary"
                 onClick={() => handleClose(false)}
-                aria-label="Dialog Cancel"
+                aria-label={props.cancelButtonTitle || 'Dialog Cancel'}
                 className="text-white w-full h-full text-center"
                 {...(props.cancelButtonProps || {})}
               >
-                Cancel
+                {props.cancelButtonTitle || 'Cancel'}
               </Button>
             )}
             <Button
