@@ -429,7 +429,7 @@ export function NetworksPanel({
         return (
           <div style={style} className="px-5">
             <ExternalLink
-              href="https://forum.arbitrum.foundation/t/constitutional-aip-minimize-arbitrum-nova/30880"
+              href="https://snapshot.org/#/s:arbitrumfoundation.eth/proposal/0x002b8264f83d19f88d17dc48a92d1e92638285a6592c491255fa7b14c955da81"
               className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-[10px] py-[15px] text-xs text-destructive"
             >
               <span className="flex items-center gap-1">
