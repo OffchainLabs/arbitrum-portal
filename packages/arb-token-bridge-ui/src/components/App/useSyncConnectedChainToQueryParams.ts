@@ -72,17 +72,20 @@ export function useSyncConnectedChainToQueryParams() {
       return;
     }
 
+    const connectedAddress = address;
+    const connectedChain = chain;
+
     async function checkCorrectChainForSmartContractWallet() {
       const connectedAccountType = await getAccountType({
-        address: address,
-        chainId: chain.id,
+        address: connectedAddress,
+        chainId: connectedChain.id,
       });
 
       if (connectedAccountType !== 'smart-contract-wallet') {
         return;
       }
 
-      const chainName = getNetworkName(chain.id);
+      const chainName = getNetworkName(connectedChain.id);
 
       setSourceChainToConnectedChain();
 
