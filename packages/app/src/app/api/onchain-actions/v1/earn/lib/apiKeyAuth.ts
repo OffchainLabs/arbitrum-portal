@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 
 /**
  * Simple, opt-in API-key gate for the Earn API.
@@ -50,12 +50,18 @@ function isSameOriginRequest(request: Request): boolean {
   return fetchSite === 'same-origin' || fetchSite === 'same-site';
 }
 
-// Hash both inputs to a fixed-length digest so the constant-time comparison
-// doesn't leak key length, then compare without short-circuiting.
+// Constant-time comparison of the raw bytes. Keys are high-entropy random
+// tokens (not user passwords), so a slow KDF isn't warranted; the only thing
+// that matters is not short-circuiting on the first differing byte. Lengths
+// must match before `timingSafeEqual` (it throws on differing lengths), and a
+// length mismatch on a random token leaks nothing useful.
 function keysMatch(expected: string, presented: string): boolean {
-  const expectedHash = createHash('sha256').update(expected).digest();
-  const presentedHash = createHash('sha256').update(presented).digest();
-  return timingSafeEqual(expectedHash, presentedHash);
+  const expectedBytes = Buffer.from(expected, 'utf8');
+  const presentedBytes = Buffer.from(presented, 'utf8');
+  if (expectedBytes.length !== presentedBytes.length) {
+    return false;
+  }
+  return timingSafeEqual(expectedBytes, presentedBytes);
 }
 
 function unauthorized(message: string, code: string): NextResponse {
