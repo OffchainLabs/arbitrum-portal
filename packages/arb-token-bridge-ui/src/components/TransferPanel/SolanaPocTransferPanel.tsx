@@ -1,11 +1,14 @@
 import { getStepTransaction } from '@lifi/sdk';
+import { switchChain } from '@wagmi/core';
 import { BigNumber, utils } from 'ethers';
 import React, { useEffect, useMemo, useState } from 'react';
 import { zeroAddress } from 'viem';
+import { useConfig } from 'wagmi';
 
 import type {
   LifiCrosschainTransfersRoute,
   Order,
+  TransactionRequest,
 } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
 
@@ -16,64 +19,87 @@ import {
 } from '../../app/api/crosschain-transfers/utils';
 import { useLifiCrossTransfersRoute } from '../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../hooks/useNetworks';
-import { SolanaTransferStarter } from '../../token-bridge-sdk/SolanaTransferStarter';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { useSigners } from '../../wallet/hooks/useSigners';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { useWallets } from '../../wallet/hooks/useWallets';
+import type { FetchBalanceResult, WalletHandle } from '../../wallet/types';
 import { Button } from '../common/Button';
-import { SafeImage } from '../common/SafeImage';
 import { Loader } from '../common/atoms/Loader';
 
 type PocBridgeToken = {
   symbol: string;
   address: string;
   decimals: number;
-  chainId: number;
 };
 
-const sourceBridgeTokens = [
-  {
-    symbol: 'SOL',
-    address: solanaNativeTokenAddress,
-    decimals: 9,
-    chainId: ChainId.Solana,
+const chainConfigs = {
+  [ChainId.Solana]: {
+    label: 'Solana',
+    tokens: [
+      { symbol: 'SOL', address: solanaNativeTokenAddress, decimals: 9 },
+      { symbol: 'USDC', address: solanaUsdcTokenAddress, decimals: 6 },
+      { symbol: 'USDT', address: solanaUsdtTokenAddress, decimals: 6 },
+    ],
   },
-  {
-    symbol: 'USDC',
-    address: solanaUsdcTokenAddress,
-    decimals: 6,
-    chainId: ChainId.Solana,
+  [ChainId.Ethereum]: {
+    label: 'Ethereum',
+    tokens: [
+      { symbol: 'ETH', address: zeroAddress, decimals: 18 },
+      { symbol: 'USDC', address: CommonAddress.Ethereum.USDC, decimals: 6 },
+      { symbol: 'USDT', address: CommonAddress.Ethereum.USDT, decimals: 6 },
+    ],
   },
-  {
-    symbol: 'USDT',
-    address: solanaUsdtTokenAddress,
-    decimals: 6,
-    chainId: ChainId.Solana,
+  [ChainId.ArbitrumOne]: {
+    label: 'Arbitrum One',
+    tokens: [
+      { symbol: 'ETH', address: zeroAddress, decimals: 18 },
+      { symbol: 'USDC', address: CommonAddress.ArbitrumOne.USDC, decimals: 6 },
+      { symbol: 'USDT', address: CommonAddress.ArbitrumOne.USDT, decimals: 6 },
+    ],
   },
-] as const satisfies readonly PocBridgeToken[];
+} as const satisfies Partial<Record<ChainId, { label: string; tokens: readonly PocBridgeToken[] }>>;
 
-const destinationBridgeTokens = [
+type PocChainId = keyof typeof chainConfigs;
+
+function getFirstBridgeToken(chainId: PocChainId): PocBridgeToken {
+  const token = chainConfigs[chainId].tokens[0];
+
+  if (!token) {
+    throw new Error(`Missing PoC token config for chain: ${chainId}`);
+  }
+
+  return token;
+}
+
+const pocTransferPresets = [
   {
-    symbol: 'ETH',
-    address: zeroAddress,
-    decimals: 18,
-    chainId: ChainId.ArbitrumOne,
+    id: 'solana-to-arbitrum',
+    label: 'Solana -> EVM',
+    sourceChainId: ChainId.Solana,
+    destinationChainId: ChainId.ArbitrumOne,
   },
   {
-    symbol: 'USDC',
-    address: CommonAddress.ArbitrumOne.USDC,
-    decimals: 6,
-    chainId: ChainId.ArbitrumOne,
+    id: 'arbitrum-to-solana',
+    label: 'EVM -> Solana',
+    sourceChainId: ChainId.ArbitrumOne,
+    destinationChainId: ChainId.Solana,
   },
   {
-    symbol: 'USDT',
-    address: CommonAddress.ArbitrumOne.USDT,
-    decimals: 6,
-    chainId: ChainId.ArbitrumOne,
+    id: 'ethereum-to-arbitrum',
+    label: 'EVM -> EVM',
+    sourceChainId: ChainId.Ethereum,
+    destinationChainId: ChainId.ArbitrumOne,
   },
-] as const satisfies readonly PocBridgeToken[];
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  sourceChainId: PocChainId;
+  destinationChainId: PocChainId;
+}[];
+
+type PocTransferPreset = (typeof pocTransferPresets)[number];
+type PocTransferPresetId = PocTransferPreset['id'];
 
 function truncateAddress(address?: string) {
   if (!address) {
@@ -95,16 +121,69 @@ function formatBalance(balance: BigNumber | undefined, decimals: number) {
   }
 }
 
-function WalletButtonLabel({ icon, label }: { icon?: string; label: string }) {
+function WalletCard({
+  chainId,
+  label,
+  wallet,
+  openConnectModal,
+}: {
+  chainId: PocChainId;
+  label: string;
+  wallet: WalletHandle;
+  openConnectModal: (chainId: ChainId) => void;
+}) {
+  const chainLabel = chainConfigs[chainId].label;
+
   return (
-    <span className="inline-flex items-center gap-2">
-      {icon ? (
-        <SafeImage src={icon} alt="" className="h-4 w-4 rounded-full" />
+    <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-wide text-white/50">{label} Wallet</p>
+        <span className="text-[11px] uppercase tracking-wide text-white/40">{chainLabel}</span>
+      </div>
+      <p className="text-xs text-white/60">{wallet.account.walletInfo?.name ?? 'Unknown wallet'}</p>
+      <p className="text-xs text-white/60">{truncateAddress(wallet.account.address)}</p>
+      <Button
+        variant="secondary"
+        className="w-full justify-center"
+        onClick={() => (wallet.isConnected ? wallet.disconnect() : openConnectModal(chainId))}
+      >
+        {wallet.isConnected
+          ? truncateAddress(wallet.account.address)
+          : `Connect ${chainLabel} Wallet`}
+      </Button>
+    </div>
+  );
+}
+
+function BalanceCard({
+  balances,
+  chainId,
+  error,
+  label,
+  tokens,
+}: {
+  balances: FetchBalanceResult | undefined;
+  chainId: PocChainId;
+  error: Error | undefined;
+  label: string;
+  tokens: readonly PocBridgeToken[];
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded border border-white/10 bg-black/30 p-3">
+      <p className="text-xs uppercase tracking-wide text-white/50">
+        {label} Balances ({chainConfigs[chainId].label})
+      </p>
+      {error ? (
+        <p className="text-sm text-red-400">{error.message}</p>
       ) : (
-        <span className="h-4 w-4 rounded-full bg-white/20" />
+        tokens.map((token) => (
+          <div key={token.address} className="flex items-center justify-between text-sm">
+            <span>{token.symbol}</span>
+            <span>{formatBalance(balances?.[token.address], token.decimals)}</span>
+          </div>
+        ))
       )}
-      <span>{label}</span>
-    </span>
+    </div>
   );
 }
 
@@ -120,32 +199,67 @@ function getPreferredRoute(
   );
 }
 
-export function SolanaPocTransferPanel() {
-  const sourceChainId = sourceBridgeTokens[0].chainId;
-  const destinationChainId = destinationBridgeTokens[0].chainId;
+function getEvmTransactionPayload(transactionRequest: unknown): TransactionRequest {
+  if (!transactionRequest) {
+    throw new Error('EVM transaction payload is missing.');
+  }
+
+  return transactionRequest as TransactionRequest;
+}
+
+function getSolanaTransactionPayload(transactionRequest: unknown): string {
+  if (
+    typeof transactionRequest !== 'object' ||
+    transactionRequest === null ||
+    !('data' in transactionRequest) ||
+    typeof transactionRequest.data !== 'string'
+  ) {
+    throw new Error('Solana transaction payload is missing.');
+  }
+
+  return transactionRequest.data;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Failed to execute transfer.';
+}
+
+export function SolanaPocTransferPanel({
+  initialPresetId = pocTransferPresets[0].id,
+}: {
+  initialPresetId?: PocTransferPresetId;
+}) {
+  const [selectedPresetId, setSelectedPresetId] = useState<PocTransferPresetId>(initialPresetId);
+
+  const selectedPreset = useMemo(
+    () =>
+      pocTransferPresets.find((preset) => preset.id === selectedPresetId) ?? pocTransferPresets[0],
+    [selectedPresetId],
+  );
+
   const [networks, setNetworks] = useNetworks();
 
   useEffect(() => {
     if (
-      networks.sourceChain.id !== sourceChainId ||
-      networks.destinationChain.id !== destinationChainId
+      networks.sourceChain.id !== selectedPreset.sourceChainId ||
+      networks.destinationChain.id !== selectedPreset.destinationChainId
     ) {
       setNetworks({
-        sourceChainId,
-        destinationChainId,
+        sourceChainId: selectedPreset.sourceChainId,
+        destinationChainId: selectedPreset.destinationChainId,
       });
     }
   }, [
-    destinationChainId,
     networks.destinationChain.id,
     networks.sourceChain.id,
+    selectedPreset.destinationChainId,
+    selectedPreset.sourceChainId,
     setNetworks,
-    sourceChainId,
   ]);
 
   const isPoCNetworkReady =
-    networks.sourceChain.id === sourceChainId &&
-    networks.destinationChain.id === destinationChainId;
+    networks.sourceChain.id === selectedPreset.sourceChainId &&
+    networks.destinationChain.id === selectedPreset.destinationChainId;
 
   if (!isPoCNetworkReady) {
     return (
@@ -162,60 +276,56 @@ export function SolanaPocTransferPanel() {
 
   return (
     <SolanaPocTransferPanelContent
-      sourceChainId={sourceChainId}
-      destinationChainId={destinationChainId}
+      key={selectedPreset.id}
+      selectedPreset={selectedPreset}
+      onSelectPreset={setSelectedPresetId}
     />
   );
 }
 
 function SolanaPocTransferPanelContent({
-  sourceChainId,
-  destinationChainId,
+  selectedPreset,
+  onSelectPreset,
 }: {
-  sourceChainId: number;
-  destinationChainId: number;
+  selectedPreset: PocTransferPreset;
+  onSelectPreset: (presetId: PocTransferPresetId) => void;
 }) {
   const { openConnectModal } = useWalletModal();
   const { sourceWallet, destinationWallet } = useWallets();
-  const { sourceSigner } = useSigners();
-  const solanaWallet = sourceWallet.ecosystem === 'solana' ? sourceWallet : destinationWallet;
-  const evmWallet = sourceWallet.ecosystem === 'evm' ? sourceWallet : destinationWallet;
+  const wagmiConfig = useConfig();
+  const { sourceChainId, destinationChainId } = selectedPreset;
+  const sourceConfig = chainConfigs[sourceChainId];
+  const destinationConfig = chainConfigs[destinationChainId];
+  const sourceTokens = sourceConfig.tokens;
+  const destinationTokens = destinationConfig.tokens;
+  const fromToken = getFirstBridgeToken(sourceChainId);
+  const toToken = getFirstBridgeToken(destinationChainId);
 
   const [amount, setAmount] = useState('');
-  const [destinationAddress, setDestinationAddress] = useState('');
-  const [hasEditedDestination, setHasEditedDestination] = useState(false);
+  const [destinationAddressOverride, setDestinationAddressOverride] = useState<string>();
   const [isExecuting, setIsExecuting] = useState(false);
+  const [executionError, setExecutionError] = useState<string>();
   const [transactionHash, setTransactionHash] = useState<string>();
-
-  useEffect(() => {
-    if (!hasEditedDestination && evmWallet.account.address) {
-      setDestinationAddress(evmWallet.account.address);
-    }
-  }, [evmWallet.account.address, hasEditedDestination]);
-
-  const isDestinationAddressValid = useMemo(
-    () => destinationAddress.length > 0 && utils.isAddress(destinationAddress),
-    [destinationAddress],
-  );
+  const destinationAddress = destinationAddressOverride ?? destinationWallet.account.address ?? '';
 
   const fromAmount = useMemo(() => {
     try {
-      return utils.parseUnits(amount || '0', 9).toString();
+      return utils.parseUnits(amount || '0', fromToken.decimals).toString();
     } catch {
       return '0';
     }
-  }, [amount]);
+  }, [amount, fromToken.decimals]);
 
   const { data: sourceBalances, error: sourceBalanceError } = useTokenBalances({
     chainId: sourceChainId,
     walletAddress: sourceWallet.account.address,
-    tokenAddresses: sourceBridgeTokens.map(({ address }) => address),
+    tokenAddresses: sourceTokens.map(({ address }) => address),
   });
 
   const { data: destinationBalances, error: destinationBalanceError } = useTokenBalances({
     chainId: destinationChainId,
     walletAddress: destinationWallet.account.address,
-    tokenAddresses: destinationBridgeTokens.map(({ address }) => address),
+    tokenAddresses: destinationTokens.map(({ address }) => address),
   });
 
   const {
@@ -223,50 +333,21 @@ function SolanaPocTransferPanelContent({
     isLoading: isLoadingRoutes,
     error: routesError,
   } = useLifiCrossTransfersRoute({
-    enabled: sourceWallet.isConnected && isDestinationAddressValid,
+    enabled: sourceWallet.isConnected && fromAmount !== '0' && destinationAddress.length > 0,
     fromAmount,
-    fromToken: solanaNativeTokenAddress,
-    toToken: zeroAddress,
+    fromToken: fromToken.address,
+    toToken: toToken.address,
     fromChainId: sourceChainId,
     toChainId: destinationChainId,
     fromAddress: sourceWallet.account.address,
     toAddress: destinationAddress,
-    slippage: '0.003',
+    slippage: '0.005',
   });
 
   const selectedRoute = useMemo(() => getPreferredRoute(routes), [routes]);
 
-  const routeHint = useMemo(() => {
-    if (routesError || isLoadingRoutes || selectedRoute) {
-      return null;
-    }
-
-    if (!sourceWallet.isConnected) {
-      return 'Connect the source wallet to fetch a route.';
-    }
-
-    if (fromAmount === '0') {
-      return 'Enter an amount to fetch a route.';
-    }
-
-    if (!destinationAddress.length) {
-      return 'Enter a destination address to fetch a route.';
-    }
-
-    if (!isDestinationAddressValid) {
-      return 'Enter a valid Arbitrum One address.';
-    }
-
-    return 'No route available for the current inputs.';
-  }, [
-    destinationAddress.length,
-    fromAmount,
-    isDestinationAddressValid,
-    isLoadingRoutes,
-    routesError,
-    selectedRoute,
-    sourceWallet.isConnected,
-  ]);
+  const canRequestRoute =
+    sourceWallet.isConnected && fromAmount !== '0' && destinationAddress.length > 0;
 
   const executeTransfer = async () => {
     if (!selectedRoute) {
@@ -274,23 +355,30 @@ function SolanaPocTransferPanelContent({
     }
 
     setIsExecuting(true);
+    setExecutionError(undefined);
 
     try {
       const { transactionRequest } = await getStepTransaction(selectedRoute.protocolData.step);
-      const serializedTransaction = transactionRequest?.data;
 
-      if (!serializedTransaction) {
-        throw new Error('LI.FI did not return a Solana transaction payload.');
+      if (sourceWallet.account.chain?.id !== sourceChainId) {
+        await switchChain(wagmiConfig, { chainId: sourceChainId });
       }
 
-      const starter = new SolanaTransferStarter();
-      const result = await starter.transfer({
-        signer: sourceSigner,
-        serializedTransaction,
-      });
+      const result =
+        sourceWallet.ecosystem === 'solana'
+          ? await sourceWallet.sendTransaction({
+              ecosystem: 'solana',
+              serializedTransaction: getSolanaTransactionPayload(transactionRequest),
+            })
+          : await sourceWallet.sendTransaction({
+              ecosystem: 'evm',
+              txRequest: getEvmTransactionPayload(transactionRequest),
+            });
 
       setTransactionHash(result.hash);
       await result.wait?.();
+    } catch (error) {
+      setExecutionError(getErrorMessage(error));
     } finally {
       setIsExecuting(false);
     }
@@ -302,98 +390,71 @@ function SolanaPocTransferPanelContent({
         <p className="text-xs uppercase tracking-wide text-white/50">
           Solana Wallet Interactions PoC
         </p>
-        <p className="text-sm text-white/70">
-          Hardcoded flow: native SOL on Solana to native ETH on Arbitrum One.
-        </p>
+      </div>
+
+      <div className="grid gap-2 md:grid-cols-3">
+        {pocTransferPresets.map((preset) => {
+          const isSelected = preset.id === selectedPreset.id;
+
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={`rounded border px-3 py-2 text-left text-sm transition ${
+                isSelected
+                  ? 'border-white/40 bg-white/10 text-white'
+                  : 'border-white/10 bg-black/20 text-white/70 hover:border-white/30 hover:text-white'
+              }`}
+              onClick={() => {
+                setTransactionHash(undefined);
+                onSelectPreset(preset.id);
+              }}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">Solana Wallet</p>
-          <p className="text-xs text-white/60">
-            {solanaWallet.account.walletInfo?.name ?? 'Unknown wallet'}
-          </p>
-          <p className="text-xs text-white/60">{truncateAddress(solanaWallet.account.address)}</p>
-          <Button
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={() =>
-              solanaWallet.isConnected
-                ? solanaWallet.disconnect()
-                : openConnectModal(ChainId.Solana)
-            }
-          >
-            <WalletButtonLabel
-              icon={solanaWallet.account.walletInfo?.icon}
-              label={
-                solanaWallet.isConnected
-                  ? truncateAddress(solanaWallet.account.address)
-                  : 'Connect Solana Wallet'
-              }
-            />
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">EVM Wallet</p>
-          <p className="text-xs text-white/60">
-            {evmWallet.account.walletInfo?.name ?? 'Unknown wallet'}
-          </p>
-          <p className="text-xs text-white/60">{truncateAddress(evmWallet.account.address)}</p>
-          <Button
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={() =>
-              evmWallet.isConnected ? evmWallet.disconnect() : openConnectModal(destinationChainId)
-            }
-          >
-            <WalletButtonLabel
-              icon={evmWallet.account.walletInfo?.icon}
-              label={
-                evmWallet.isConnected
-                  ? truncateAddress(evmWallet.account.address)
-                  : 'Connect EVM Wallet'
-              }
-            />
-          </Button>
-        </div>
+        <WalletCard
+          chainId={sourceChainId}
+          label="Source"
+          wallet={sourceWallet}
+          openConnectModal={openConnectModal}
+        />
+        <WalletCard
+          chainId={destinationChainId}
+          label="Destination"
+          wallet={destinationWallet}
+          openConnectModal={openConnectModal}
+        />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="flex flex-col gap-2 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">Source Balances</p>
-          {sourceBalanceError ? (
-            <p className="text-sm text-red-400">{sourceBalanceError.message}</p>
-          ) : (
-            sourceBridgeTokens.map((token) => (
-              <div key={token.address} className="flex items-center justify-between text-sm">
-                <span>{token.symbol}</span>
-                <span>{formatBalance(sourceBalances?.[token.address], token.decimals)}</span>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2 rounded border border-white/10 bg-black/30 p-3">
-          <p className="text-xs uppercase tracking-wide text-white/50">Destination Balances</p>
-          {destinationBalanceError ? (
-            <p className="text-sm text-red-400">{destinationBalanceError.message}</p>
-          ) : (
-            destinationBridgeTokens.map((token) => (
-              <div key={token.address} className="flex items-center justify-between text-sm">
-                <span>{token.symbol}</span>
-                <span>{formatBalance(destinationBalances?.[token.address], token.decimals)}</span>
-              </div>
-            ))
-          )}
-        </div>
+        <BalanceCard
+          balances={sourceBalances}
+          chainId={sourceChainId}
+          error={sourceBalanceError}
+          label="Source"
+          tokens={sourceTokens}
+        />
+        <BalanceCard
+          balances={destinationBalances}
+          chainId={destinationChainId}
+          error={destinationBalanceError}
+          label="Destination"
+          tokens={destinationTokens}
+        />
       </div>
 
       <div className="flex flex-col gap-3 rounded border border-white/10 bg-black/30 p-3">
-        <p className="text-xs uppercase tracking-wide text-white/50">Transfer</p>
+        <div className="rounded border border-white/10 bg-black/40 p-3 text-sm text-white/70">
+          {sourceConfig.label} {fromToken.symbol} {'->'} {destinationConfig.label} {toToken.symbol}
+        </div>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span>Amount (SOL)</span>
+          <span>Amount ({fromToken.symbol})</span>
           <input
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
@@ -403,15 +464,12 @@ function SolanaPocTransferPanelContent({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span>Destination Address (Arbitrum One)</span>
+          <span>Destination Address ({destinationConfig.label})</span>
           <input
             value={destinationAddress}
-            onChange={(event) => {
-              setHasEditedDestination(true);
-              setDestinationAddress(event.target.value);
-            }}
+            onChange={(event) => setDestinationAddressOverride(event.target.value)}
             className="rounded border border-white/10 bg-black/40 px-3 py-2 text-white outline-none"
-            placeholder="0x..."
+            placeholder={destinationChainId === ChainId.Solana ? 'Base58...' : '0x...'}
           />
         </label>
 
@@ -423,17 +481,28 @@ function SolanaPocTransferPanelContent({
         ) : null}
 
         {routesError ? <p className="text-sm text-red-400">{routesError.message}</p> : null}
-        {routeHint ? <p className="text-sm text-white/70">{routeHint}</p> : null}
+        {executionError ? <p className="text-sm text-red-400">{executionError}</p> : null}
+        {!routesError && !isLoadingRoutes && !selectedRoute && canRequestRoute ? (
+          <p className="text-sm text-white/70">No route available for the current inputs.</p>
+        ) : null}
+        {!routesError && !isLoadingRoutes && !selectedRoute && !canRequestRoute ? (
+          <p className="text-sm text-white/70">
+            Connect wallets, enter an amount, and provide a destination address.
+          </p>
+        ) : null}
 
         {selectedRoute ? (
           <div className="flex flex-col gap-1 rounded border border-white/10 bg-black/40 p-3 text-sm">
             <div>Tool: {selectedRoute.protocolData.tool.name}</div>
-            <div>To amount: {utils.formatUnits(selectedRoute.toAmount.amount, 18)} ETH</div>
+            <div>
+              To amount: {utils.formatUnits(selectedRoute.toAmount.amount, toToken.decimals)}{' '}
+              {toToken.symbol}
+            </div>
           </div>
         ) : null}
 
         {transactionHash ? (
-          <p className="text-sm text-white/70 break-all">Last transaction: {transactionHash}</p>
+          <p className="break-all text-sm text-white/70">Last transaction: {transactionHash}</p>
         ) : null}
 
         <Button

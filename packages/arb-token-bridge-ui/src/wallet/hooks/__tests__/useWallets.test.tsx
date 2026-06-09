@@ -5,12 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { ChainId } from '../../../types/ChainId';
 import { isSolanaEnabled } from '../../../util/featureFlag';
-import { EvmWalletContext } from '../../providers/EvmWalletProvider';
-import {
-  SolanaWalletContext,
-  defaultSolanaWalletContextValue,
-} from '../../providers/SolanaWalletProvider';
-import type { WalletHandle } from '../../types';
+import { WalletContext, defaultWalletContextValue } from '../../providers/WalletProvider';
+import type { EvmWalletHandle, SolanaWalletHandle } from '../../types';
 import { useWallets } from '../useWallets';
 import { createNetworksState } from './utils';
 
@@ -22,7 +18,7 @@ vi.mock('../../../util/featureFlag', () => ({
   isSolanaEnabled: vi.fn(),
 }));
 
-const evmWallet: WalletHandle = {
+const evmWallet: EvmWalletHandle = {
   ecosystem: 'evm',
   account: {
     ecosystem: 'evm',
@@ -32,9 +28,10 @@ const evmWallet: WalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  sendTransaction: async () => ({ hash: '0xhash' }),
 };
 
-const solanaWallet: WalletHandle = {
+const solanaWallet: SolanaWalletHandle = {
   ecosystem: 'solana',
   account: {
     ecosystem: 'solana',
@@ -44,21 +41,18 @@ const solanaWallet: WalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  sendTransaction: async () => ({ hash: 'solana-hash' }),
 };
 
 function createWrapper({
   evm = evmWallet,
-  solana = defaultSolanaWalletContextValue,
+  solana = defaultWalletContextValue.solana,
 }: {
-  evm?: WalletHandle;
-  solana?: WalletHandle;
+  evm?: EvmWalletHandle;
+  solana?: SolanaWalletHandle;
 }) {
   return function Wrapper({ children }: PropsWithChildren) {
-    return (
-      <EvmWalletContext.Provider value={evm}>
-        <SolanaWalletContext.Provider value={solana}>{children}</SolanaWalletContext.Provider>
-      </EvmWalletContext.Provider>
-    );
+    return <WalletContext.Provider value={{ evm, solana }}>{children}</WalletContext.Provider>;
   };
 }
 
@@ -118,5 +112,41 @@ describe('wallet/hooks/useWallets', () => {
     });
 
     expect(result.current.sourceWallet).toBe(evmWallet);
+  });
+
+  it('returns the provider sendTransaction implementation unchanged', async () => {
+    const sendTransaction = vi.fn().mockResolvedValue({ hash: 'solana-hash' });
+    const wallet: SolanaWalletHandle = {
+      ...solanaWallet,
+      sendTransaction,
+    };
+
+    vi.mocked(useNetworks).mockReturnValue([
+      createNetworksState({
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+      vi.fn(),
+    ]);
+    vi.mocked(isSolanaEnabled).mockReturnValue(true);
+
+    const { result } = renderHook(() => useWallets(), {
+      wrapper: createWrapper({ evm: evmWallet, solana: wallet }),
+    });
+    const input = {
+      ecosystem: 'solana' as const,
+      serializedTransaction: 'serialized-transaction',
+    };
+    const { sourceWallet } = result.current;
+
+    expect(sourceWallet.ecosystem).toBe('solana');
+
+    if (sourceWallet.ecosystem !== 'solana') {
+      throw new Error('Expected a Solana source wallet.');
+    }
+
+    await sourceWallet.sendTransaction(input);
+
+    expect(sendTransaction).toHaveBeenCalledWith(input);
   });
 });

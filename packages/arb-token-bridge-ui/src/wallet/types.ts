@@ -40,24 +40,38 @@ export type SignerHandle =
       sendTransaction: (input: SolanaSendTransactionInput) => Promise<SendTransactionResult>;
     };
 
-export type BalanceHandle = {
-  ecosystem: WalletEcosystem;
+type BalanceHandleBase<Ecosystem extends WalletEcosystem> = {
+  ecosystem: Ecosystem;
   fetchBalance: (input: FetchBalanceInput) => Promise<FetchBalanceResult>;
 };
 
-export interface WalletAccount {
+export type EvmBalanceHandle = BalanceHandleBase<'evm'>;
+export type SolanaBalanceHandle = BalanceHandleBase<'solana'>;
+export type BalanceHandle = EvmBalanceHandle | SolanaBalanceHandle;
+
+export interface WalletAccount<Ecosystem extends WalletEcosystem = WalletEcosystem> {
   address?: string;
   chain?: {
     id: number;
   };
-  ecosystem: WalletEcosystem;
+  ecosystem: Ecosystem;
   status: WalletStatus;
   walletInfo?: ConnectedWalletInfo;
 }
 
-export interface WalletHandle {
-  ecosystem: WalletEcosystem;
-  account: WalletAccount;
+type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
+  ecosystem: Ecosystem;
+  account: WalletAccount<Ecosystem>;
   isConnected: boolean;
   disconnect: () => Promise<void>;
-}
+};
+
+export type EvmWalletHandle = WalletHandleBase<'evm'> & {
+  sendTransaction: (input: EvmSendTransactionInput) => Promise<SendTransactionResult>;
+};
+
+export type SolanaWalletHandle = WalletHandleBase<'solana'> & {
+  sendTransaction: (input: SolanaSendTransactionInput) => Promise<SendTransactionResult>;
+};
+
+export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;

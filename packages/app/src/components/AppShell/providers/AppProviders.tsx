@@ -13,6 +13,7 @@ import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
+import { BalanceProvider } from '@/bridge/wallet/providers/BalanceProvider';
 import { WalletProvider } from '@/bridge/wallet/providers/WalletProvider';
 
 import { initializeDayjs } from '../../../initialization';
@@ -53,7 +54,9 @@ export function AppProviders({ children }: PropsWithChildren) {
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
             <WalletProvider>
-              <AppContextProvider>{children}</AppContextProvider>
+              <BalanceProvider>
+                <AppContextProvider>{children}</AppContextProvider>
+              </BalanceProvider>
             </WalletProvider>
           </QueryClientProvider>
         </WagmiProvider>

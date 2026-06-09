@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
 
 import { ChainId } from '../../types/ChainId';
-import { useEvmBalanceContext } from '../providers/EvmBalanceProvider';
-import { useSolanaBalanceContext } from '../providers/SolanaBalanceProvider';
+import { useBalanceContext } from '../providers/BalanceProvider';
 
 type UseBalanceProps = {
   chainId: number;
@@ -14,8 +13,8 @@ type FetchBalanceArgs = {
 };
 
 export function useBalance({ chainId }: UseBalanceProps) {
-  const evmBalance = useEvmBalanceContext();
-  const solanaBalance = useSolanaBalanceContext();
+  const evmBalance = useBalanceContext('evm');
+  const solanaBalance = useBalanceContext('solana');
 
   const balanceProvider = useMemo(
     () => (chainId === ChainId.Solana ? solanaBalance : evmBalance),

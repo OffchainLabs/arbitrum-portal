@@ -41,9 +41,13 @@ export function useSyncConnectedChainToQueryParams() {
       });
 
     setQueryParams({ sourceChain, destinationChain });
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains, shouldDisableConnectedChainSync]);
+  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync) {
+      return;
+    }
+
     if (!chain || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
       return;
     }
@@ -51,36 +55,52 @@ export function useSyncConnectedChainToQueryParams() {
     if (sourceChain !== chain.id) {
       setSourceChainToConnectedChain();
     }
-  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
+  }, [
+    accountType,
+    chain,
+    setSourceChainToConnectedChain,
+    shouldDisableConnectedChainSync,
+    sourceChain,
+  ]);
 
   useEffect(() => {
+    if (shouldDisableConnectedChainSync || typeof chain === 'undefined' || !address) {
+      return;
+    }
+
+    if (sourceChain === chain.id) {
+      return;
+    }
+
     async function checkCorrectChainForSmartContractWallet() {
-      if (typeof chain === 'undefined') {
-        return;
-      }
-      if (!address) {
-        return;
-      }
-      const accountType = await getAccountType({
+      const connectedAccountType = await getAccountType({
         address: address,
         chainId: chain.id,
       });
-      if (accountType === 'smart-contract-wallet' && sourceChain !== chain.id) {
-        const chainName = getNetworkName(chain.id);
 
-        setSourceChainToConnectedChain();
-
-        window.alert(
-          `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
-        );
-        await disconnect({ namespace: 'eip155' });
+      if (connectedAccountType !== 'smart-contract-wallet') {
+        return;
       }
+
+      const chainName = getNetworkName(chain.id);
+
+      setSourceChainToConnectedChain();
+
+      window.alert(
+        `You're connected to the app with a smart contract wallet on ${chainName}. In order to properly enable transfers, the app will now reload.\n\nPlease reconnect after the reload.`,
+      );
+      await disconnect({ namespace: 'eip155' });
     }
 
-    if (sourceChain !== chain?.id) {
-      setSourceChainToConnectedChain();
-    }
-  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
+    void checkCorrectChainForSmartContractWallet();
+  }, [
+    address,
+    chain,
+    disconnect,
+    setSourceChainToConnectedChain,
+    shouldDisableConnectedChainSync,
+    sourceChain,
+  ]);
 
   useEffect(() => {
     if (shouldDisableConnectedChainSync) {
@@ -107,5 +127,5 @@ export function useSyncConnectedChainToQueryParams() {
       setSourceChainToConnectedChain();
       setDidSync(true);
     }
-  }, [chain, shouldSync, didSync, setSourceChainToConnectedChain]);
+  }, [chain, didSync, setSourceChainToConnectedChain, shouldDisableConnectedChainSync, shouldSync]);
 }
