@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
+import { requireEarnApiKey } from '../../../../lib/apiKeyAuth';
 import { enforceEarnRateLimit } from '../../../../lib/rateLimit';
 import {
   assertAddress,
-  parseEarnChainId,
+  parseChainIdForCategory,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
 import { AvailableActions } from '../../../../types';
@@ -16,11 +17,14 @@ export async function GET(
   { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
     const searchParams = request.nextUrl.searchParams;
     const { category: rawCategory, id } = await params;
     const category = parseOpportunityCategory(rawCategory);
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
-    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const chainId = parseChainIdForCategory(searchParams.get('chainId'), category);
     const opportunityId = assertAddress(id, 'opportunityId');
 
     const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { OpportunityCategory } from '@/app-types/earn/vaults';
+
 import {
   ValidationError,
   assertAddress,
@@ -10,10 +12,13 @@ import {
   assertPlainObject,
   assertPositiveNumberString,
   assertString,
+  parseChainIdForCategory,
   parseEarnChainId,
+  parseEvmChainId,
   parseHistoricalRange,
   parseOpportunityCategory,
   parseOptionalAssetSymbol,
+  parseOptionalChainIdForCategory,
   parseOptionalEarnChainId,
   parseOptionalNumber,
   parseOptionalOpportunityCategory,
@@ -97,6 +102,65 @@ describe('parseOptionalEarnChainId', () => {
 
   it('throws for invalid non-empty value', () => {
     expect(() => parseOptionalEarnChainId('999')).toThrow(ValidationError);
+  });
+});
+
+describe('parseEvmChainId', () => {
+  it('accepts any positive integer EVM chain id', () => {
+    expect(parseEvmChainId('1')).toBe(1);
+    expect(parseEvmChainId('8453')).toBe(8453); // Base
+    expect(parseEvmChainId('137')).toBe(137); // Polygon
+    expect(parseEvmChainId('80094')).toBe(80094); // Berachain
+  });
+
+  it('throws MISSING_CHAIN_ID for null or empty', () => {
+    expect(() => parseEvmChainId(null)).toThrow('chainId is required');
+    expect(() => parseEvmChainId('')).toThrow(ValidationError);
+  });
+
+  it('throws INVALID_CHAIN_ID for non-positive or non-integer values', () => {
+    expect(() => parseEvmChainId('0')).toThrow(ValidationError);
+    expect(() => parseEvmChainId('-1')).toThrow(ValidationError);
+    expect(() => parseEvmChainId('1.5')).toThrow(ValidationError);
+    expect(() => parseEvmChainId('abc')).toThrow(ValidationError);
+  });
+});
+
+describe('parseChainIdForCategory', () => {
+  it('accepts any EVM chain id for Lend (Vaults)', () => {
+    expect(parseChainIdForCategory('8453', OpportunityCategory.Lend)).toBe(8453);
+    expect(parseChainIdForCategory('137', OpportunityCategory.Lend)).toBe(137);
+  });
+
+  it('treats a missing category as permissive (aggregate includes Vaults)', () => {
+    expect(parseChainIdForCategory('8453')).toBe(8453);
+  });
+
+  it('restricts non-vault categories to the Arbitrum/Ethereum allowlist', () => {
+    expect(parseChainIdForCategory('42161', OpportunityCategory.FixedYield)).toBe(42161);
+    expect(() => parseChainIdForCategory('8453', OpportunityCategory.FixedYield)).toThrow(
+      ValidationError,
+    );
+    expect(() => parseChainIdForCategory('8453', OpportunityCategory.LiquidStaking)).toThrow(
+      ValidationError,
+    );
+  });
+});
+
+describe('parseOptionalChainIdForCategory', () => {
+  it('returns undefined for null or empty', () => {
+    expect(parseOptionalChainIdForCategory(null, OpportunityCategory.Lend)).toBeUndefined();
+    expect(parseOptionalChainIdForCategory('', OpportunityCategory.Lend)).toBeUndefined();
+  });
+
+  it('parses any EVM chain id for Lend', () => {
+    expect(parseOptionalChainIdForCategory('8453', OpportunityCategory.Lend)).toBe(8453);
+  });
+
+  it('restricts non-vault categories', () => {
+    expect(() => parseOptionalChainIdForCategory('8453', OpportunityCategory.FixedYield)).toThrow(
+      ValidationError,
+    );
   });
 });
 

@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '@/earn-api/CategoryRouter';
+import { requireEarnApiKey } from '@/earn-api/lib/apiKeyAuth';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '@/earn-api/lib/cache';
 import {
   alignTimestampToGranularity,
@@ -13,7 +14,7 @@ import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import {
   ValidationError,
   assertAddress,
-  parseEarnChainId,
+  parseChainIdForCategory,
   parseHistoricalRange,
   parseOpportunityCategory,
   parseOptionalAssetSymbol,
@@ -74,13 +75,16 @@ export async function GET(
   { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
-    const rateLimited = await enforceEarnRateLimit(request);
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: auth.key });
     if (rateLimited) return rateLimited;
 
     const searchParams = request.nextUrl.searchParams;
     const { category: rawCategory, id } = await params;
     const category = parseOpportunityCategory(rawCategory);
-    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const chainId = parseChainIdForCategory(searchParams.get('chainId'), category);
     const opportunityId = assertAddress(id, 'opportunityId');
     const range = parseHistoricalRange(searchParams.get('range'));
     const assetSymbol = parseOptionalAssetSymbol(searchParams.get('assetSymbol'));

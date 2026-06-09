@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../../../../CategoryRouter';
+import { requireEarnApiKey } from '../../../../lib/apiKeyAuth';
 import { enforceEarnRateLimit } from '../../../../lib/rateLimit';
 import {
   ValidationError,
@@ -11,7 +12,7 @@ import {
   assertOptionalString,
   assertPositiveNumberString,
   assertString,
-  parseEarnChainId,
+  parseChainIdForCategory,
   parseOpportunityCategory,
 } from '../../../../lib/validation';
 import { EARN_TRANSACTION_ACTIONS, type EarnTransactionAction } from '../../../../types';
@@ -98,7 +99,10 @@ async function getTransactionQuote(input: {
   if (rawChainId !== undefined && !Number.isInteger(rawChainId)) {
     throw new ValidationError('INVALID_CHAIN_ID', 'chainId must be an integer');
   }
-  const chainId = parseEarnChainId(rawChainId === undefined ? null : String(rawChainId));
+  const chainId = parseChainIdForCategory(
+    rawChainId === undefined ? null : String(rawChainId),
+    pathCategory,
+  );
   const opportunityId = assertAddress(input.opportunityId, 'opportunityId');
   const inputTokenAddress = assertOptionalAddress(rawInputTokenAddress, 'inputTokenAddress');
   const outputTokenAddress = assertOptionalAddress(rawOutputTokenAddress, 'outputTokenAddress');
@@ -135,6 +139,9 @@ export async function GET(
   { params }: { params: Promise<{ category: string; id: string }> },
 ) {
   try {
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
     const url = new URL(request.url);
     const rateLimited = await enforceEarnRateLimit(request, {
       key: url.searchParams.get('userAddress'),

@@ -1,5 +1,8 @@
-import { type DetailedVault, OpportunityCategory } from '@/app-types/earn/vaults';
-import { ChainId } from '@/bridge/types/ChainId';
+import {
+  type DetailedVault,
+  OpportunityCategory,
+  type VaultsSdkInstance,
+} from '@/app-types/earn/vaults';
 
 import { resolveAdapterWindow } from '../lib/historicalWindow';
 import { parseOptionalNumber, parseOptionalPercentage } from '../lib/metricParsers';
@@ -8,6 +11,7 @@ import { DEFAULT_ALLOWED_ASSETS, vaultsSdk } from '../lib/vaultsSdk';
 import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {
   AvailableActions,
+  DEFAULT_EARN_CHAIN_ID,
   type EarnChainId,
   type EarnTransactionAction,
   HISTORICAL_VENDOR_TTL_SECONDS,
@@ -29,10 +33,12 @@ import {
   VaultsAction,
   Vendor,
   VendorAdapter,
-  getEarnNetworkFromChainId,
 } from '../types';
 
-export type VaultsNetwork = 'mainnet' | 'arbitrum';
+// vaults.fyi accepts CAIP-2 network identifiers (`eip155:<chainId>`) in addition
+// to its named networks, so we forward any EVM chain id as CAIP. This is the
+// exact union the SDK expects for `network`/`allowedNetworks` params.
+type VaultsNetwork = NonNullable<Parameters<VaultsSdkInstance['getVault']>[0]['path']>['network'];
 
 export type VaultsProtocol = 'aave' | 'compound' | 'fluid' | 'morpho';
 
@@ -59,18 +65,8 @@ export class VaultsAdapter implements VendorAdapter {
   vendor = Vendor.Vaults;
 
   private toVaultsNetwork(chainId: EarnChainId): VaultsNetwork {
-    return getEarnNetworkFromChainId(chainId) as VaultsNetwork;
-  }
-
-  private toEarnChainId(networkName: string | undefined): EarnChainId {
-    const normalizedNetwork = networkName?.trim().toLowerCase();
-    if (normalizedNetwork === 'mainnet' || normalizedNetwork === 'ethereum') {
-      return ChainId.Ethereum;
-    }
-    if (normalizedNetwork === 'arbitrum' || normalizedNetwork === 'arbitrum one') {
-      return ChainId.ArbitrumOne;
-    }
-    throw new Error(`Unsupported vault network: ${networkName ?? 'undefined'}`);
+    // CAIP-2 lets vaults.fyi resolve any EVM chain without a name mapping.
+    return `eip155:${chainId}` as VaultsNetwork;
   }
 
   private normalizeUsdValue(rawValue: string | undefined): string {
@@ -85,7 +81,7 @@ export class VaultsAdapter implements VendorAdapter {
     const network = filters.chainId ? this.toVaultsNetwork(filters.chainId) : undefined;
     const response = await vaultsSdk.getAllVaults({
       query: {
-        allowedNetworks: network ? ([network] as VaultsNetwork[]) : undefined,
+        allowedNetworks: network ? [network] : undefined,
         allowedProtocols: ['aave', 'compound', 'fluid', 'morpho'] satisfies VaultsProtocol[],
         onlyTransactional: true,
         minTvl: filters.minTvl,
@@ -653,7 +649,9 @@ export class VaultsAdapter implements VendorAdapter {
       : undefined;
     const tvlUsd = parseOptionalNumber(vault.tvl?.usd);
     const networkName = vault.network?.name || '';
-    const chainId = this.toEarnChainId(vault.network?.name);
+    // vaults.fyi returns the numeric chain id directly, so any EVM chain is
+    // represented faithfully (no name→id mapping needed).
+    const chainId: EarnChainId = vault.network?.chainId ?? DEFAULT_EARN_CHAIN_ID;
     const protocolName = vault.protocol?.name || '';
 
     const addressLower = vault.address.toLowerCase();

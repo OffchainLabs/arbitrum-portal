@@ -1,13 +1,14 @@
 import { isAddress } from 'viem';
 import { z } from 'zod';
 
-import { OPPORTUNITY_CATEGORIES, type OpportunityCategory } from '@/app-types/earn/vaults';
+import { OPPORTUNITY_CATEGORIES, OpportunityCategory } from '@/app-types/earn/vaults';
 
 import {
   ALLOWED_HISTORICAL_RANGES,
   EARN_CHAIN_IDS,
   type EarnChainId,
   type HistoricalTimeRange,
+  type RestrictedEarnChainId,
 } from '../types';
 
 export class ValidationError extends Error {
@@ -38,9 +39,22 @@ const opportunityCategorySchema = z
 const earnChainIdSchema = z.coerce
   .number()
   .int()
-  .refine((value): value is EarnChainId => EARN_CHAIN_IDS.includes(value as EarnChainId), {
-    message: `Must be one of: ${EARN_CHAIN_IDS.join(', ')}`,
-  })
+  .refine(
+    (value): value is RestrictedEarnChainId =>
+      EARN_CHAIN_IDS.includes(value as RestrictedEarnChainId),
+    {
+      message: `Must be one of: ${EARN_CHAIN_IDS.join(', ')}`,
+    },
+  )
+  .transform((value) => value as EarnChainId);
+
+// Vaults (Lend) opportunities exist on any EVM chain (forwarded to vaults.fyi as
+// a CAIP-2 `eip155:<chainId>` identifier), so we accept any positive-integer
+// chain id rather than the restricted Arbitrum/Ethereum allowlist.
+const evmChainIdSchema = z.coerce
+  .number()
+  .int()
+  .positive()
   .transform((value) => value as EarnChainId);
 
 const historicalRangeSchema = z
@@ -131,6 +145,48 @@ export function parseOptionalEarnChainId(rawValue: string | null): EarnChainId |
     return undefined;
   }
   return parseEarnChainId(rawValue);
+}
+
+export function parseEvmChainId(rawValue: string | null): EarnChainId {
+  const normalized = normalizeQueryValue(rawValue);
+  if (!normalized) {
+    throw new ValidationError('MISSING_CHAIN_ID', 'chainId is required');
+  }
+
+  const parsed = evmChainIdSchema.safeParse(normalized);
+  if (!parsed.success) {
+    throw new ValidationError(
+      'INVALID_CHAIN_ID',
+      'chainId must be a positive integer EVM chain id',
+    );
+  }
+
+  return parsed.data;
+}
+
+// Vaults (Lend) is available on any EVM chain; non-vault vendors are restricted to
+// the Arbitrum/Ethereum allowlist (and guard their supported chains at runtime).
+// A missing category (the aggregate endpoints) includes Vaults, so it is treated
+// as permissive.
+function isAllEvmChainCategory(category?: OpportunityCategory): boolean {
+  return category === undefined || category === OpportunityCategory.Lend;
+}
+
+export function parseChainIdForCategory(
+  rawValue: string | null,
+  category?: OpportunityCategory,
+): EarnChainId {
+  return isAllEvmChainCategory(category) ? parseEvmChainId(rawValue) : parseEarnChainId(rawValue);
+}
+
+export function parseOptionalChainIdForCategory(
+  rawValue: string | null,
+  category?: OpportunityCategory,
+): EarnChainId | undefined {
+  if (!normalizeQueryValue(rawValue)) {
+    return undefined;
+  }
+  return parseChainIdForCategory(rawValue, category);
 }
 
 export function assertAddress(value: string | null, field: string): string {

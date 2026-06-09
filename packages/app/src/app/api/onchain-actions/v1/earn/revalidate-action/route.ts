@@ -2,6 +2,7 @@ import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAddress } from 'viem';
 
+import { requireEarnApiKey } from '@/earn-api/lib/apiKeyAuth';
 import { earnCacheTags } from '@/earn-api/lib/cache';
 import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
 import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient';
@@ -28,6 +29,9 @@ function assertTxHash(value: unknown): `0x${string}` {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
     const body = assertPlainObject(await request.json());
     const chainId = parseEarnChainId(getRequestString(body, 'chainId'));
     const userAddress = assertAddress(getRequestString(body, 'userAddress'), 'userAddress');
