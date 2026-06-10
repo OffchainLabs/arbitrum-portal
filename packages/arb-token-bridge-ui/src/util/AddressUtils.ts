@@ -2,7 +2,7 @@ import { Provider } from '@ethersproject/providers';
 
 import { getAPIBaseUrl } from '.';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
-import { addressAdapter } from '../wallet/addressEcosystem';
+import { AddressAdapter } from '../wallet/addressEcosystem';
 import { logger } from './logger';
 
 export type Address = `0x${string}`;
@@ -12,8 +12,8 @@ export function addressesEqual(address1: string | undefined, address2: string | 
     return address1 === address2;
   }
 
-  const normalizedAddress1 = addressAdapter.normalize(address1);
-  const normalizedAddress2 = addressAdapter.normalize(address2);
+  const normalizedAddress1 = new AddressAdapter(address1).normalize();
+  const normalizedAddress2 = new AddressAdapter(address2).normalize();
 
   if (!normalizedAddress1 || !normalizedAddress2) {
     return false;

@@ -8,7 +8,6 @@ import { useConfig } from 'wagmi';
 import type {
   LifiCrosschainTransfersRoute,
   Order,
-  TransactionRequest,
 } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
 
@@ -199,27 +198,6 @@ function getPreferredRoute(
   );
 }
 
-function getEvmTransactionPayload(transactionRequest: unknown): TransactionRequest {
-  if (!transactionRequest) {
-    throw new Error('EVM transaction payload is missing.');
-  }
-
-  return transactionRequest as TransactionRequest;
-}
-
-function getSolanaTransactionPayload(transactionRequest: unknown): string {
-  if (
-    typeof transactionRequest !== 'object' ||
-    transactionRequest === null ||
-    !('data' in transactionRequest) ||
-    typeof transactionRequest.data !== 'string'
-  ) {
-    throw new Error('Solana transaction payload is missing.');
-  }
-
-  return transactionRequest.data;
-}
-
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Failed to execute transfer.';
 }
@@ -364,16 +342,7 @@ function SolanaPocTransferPanelContent({
         await switchChain(wagmiConfig, { chainId: sourceChainId });
       }
 
-      const result =
-        sourceWallet.ecosystem === 'solana'
-          ? await sourceWallet.sendTransaction({
-              ecosystem: 'solana',
-              serializedTransaction: getSolanaTransactionPayload(transactionRequest),
-            })
-          : await sourceWallet.sendTransaction({
-              ecosystem: 'evm',
-              txRequest: getEvmTransactionPayload(transactionRequest),
-            });
+      const result = await sourceWallet.sendTransaction(transactionRequest);
 
       setTransactionHash(result.hash);
       await result.wait?.();

@@ -74,4 +74,8 @@ export type SolanaWalletHandle = WalletHandleBase<'solana'> & {
   sendTransaction: (input: SolanaSendTransactionInput) => Promise<SendTransactionResult>;
 };
 
-export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;
+type AdaptedWalletHandle<Ecosystem extends WalletEcosystem> = WalletHandleBase<Ecosystem> & {
+  sendTransaction: (transactionRequest: unknown) => Promise<SendTransactionResult>;
+};
+
+export type WalletHandle = AdaptedWalletHandle<'evm'> | AdaptedWalletHandle<'solana'>;

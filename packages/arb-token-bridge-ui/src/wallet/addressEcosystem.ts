@@ -3,37 +3,40 @@ import { utils } from 'ethers';
 
 import type { WalletEcosystem } from './types';
 
-export type AddressEcosystemAdapter = {
-  isAddress: (address: string) => boolean;
-  normalize: (address: string) => string;
+type AddressEcosystemHandler = {
+  normalize: (address: string) => string | undefined;
 };
 
-export const addressEcosystemAdapters = {
+const addressEcosystemHandlers = {
   evm: {
-    isAddress: (address: string) => utils.isAddress(address.trim()),
-    normalize: (address: string) => address.trim().toLowerCase(),
+    normalize: (address) => (utils.isAddress(address) ? address.toLowerCase() : undefined),
   },
   solana: {
-    isAddress: (address: string) => {
+    normalize: (address) => {
       try {
-        new PublicKey(address.trim());
-        return true;
+        return new PublicKey(address).toBase58();
       } catch {
-        return false;
+        return undefined;
       }
     },
-    normalize: (address: string) => address.trim(),
   },
-} as const satisfies Record<WalletEcosystem, AddressEcosystemAdapter>;
+} satisfies Record<WalletEcosystem, AddressEcosystemHandler>;
 
-export const addressAdapter = {
-  normalize(address: string): string | undefined {
-    for (const adapter of Object.values(addressEcosystemAdapters)) {
-      if (adapter.isAddress(address)) {
-        return adapter.normalize(address);
-      }
-    }
+export class AddressAdapter {
+  private readonly normalizedAddress: string | undefined;
 
-    return undefined;
-  },
-};
+  constructor(address: string) {
+    const trimmedAddress = address.trim();
+    this.normalizedAddress = Object.values(addressEcosystemHandlers)
+      .map((handler) => handler.normalize(trimmedAddress))
+      .find((normalizedAddress) => normalizedAddress !== undefined);
+  }
+
+  isValid(): boolean {
+    return this.normalizedAddress !== undefined;
+  }
+
+  normalize(): string | undefined {
+    return this.normalizedAddress;
+  }
+}
