@@ -13,44 +13,18 @@ export function useWallets(): {
   const [networks] = useNetworks();
   const evmWalletContext = useWalletContext('evm');
   const solanaWalletContext = useWalletContext('solana');
-  const evmWallet = useMemo<WalletHandle>(
-    () => ({
-      ...evmWalletContext,
-      sendTransaction: (input) => {
-        if (!input.txRequest) {
-          throw new Error('Invalid transaction: expected an EVM transaction.');
-        }
-
-        return evmWalletContext.sendTransaction(input);
-      },
-    }),
-    [evmWalletContext],
-  );
-  const solanaWallet = useMemo<WalletHandle>(
-    () => ({
-      ...solanaWalletContext,
-      sendTransaction: (input) => {
-        if (!input.serializedTransaction) {
-          throw new Error('Invalid transaction: expected a Solana transaction.');
-        }
-
-        return solanaWalletContext.sendTransaction(input);
-      },
-    }),
-    [solanaWalletContext],
-  );
 
   const getWalletForChainId = useCallback(
     (chainId: number): WalletHandle => {
       switch (chainId) {
         case ChainId.Solana:
-          return isSolanaEnabled() ? solanaWallet : evmWallet;
+          return (isSolanaEnabled() ? solanaWalletContext : evmWalletContext) as WalletHandle;
 
         default:
-          return evmWallet;
+          return evmWalletContext as WalletHandle;
       }
     },
-    [evmWallet, solanaWallet],
+    [evmWalletContext, solanaWalletContext],
   );
 
   const sourceWallet = useMemo<WalletHandle>(

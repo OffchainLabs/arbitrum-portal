@@ -199,9 +199,9 @@ describe('SolanaPocTransferPanel', () => {
     cleanup();
   });
 
-  it('shows the default Solana -> EVM flow and executes through the Solana signer', async () => {
+  it('shows the default Solana -> EVM flow and executes through the Solana wallet provider', async () => {
     const waitForTransaction = vi.fn().mockResolvedValue(undefined);
-    const sendTransaction = vi.fn().mockResolvedValue({
+    const providerSendTransaction = vi.fn().mockResolvedValue({
       hash: 'solana-hash',
       wait: waitForTransaction,
     });
@@ -248,7 +248,7 @@ describe('SolanaPocTransferPanel', () => {
         },
         solanaWalletValue: {
           ...solanaWallet,
-          sendTransaction,
+          sendTransaction: providerSendTransaction,
         },
       }),
     });
@@ -265,7 +265,7 @@ describe('SolanaPocTransferPanel', () => {
 
     await waitFor(() => {
       expect(getStepTransaction).toHaveBeenCalledWith(route.protocolData.step);
-      expect(sendTransaction).toHaveBeenCalledWith({
+      expect(providerSendTransaction).toHaveBeenCalledWith({
         serializedTransaction: 'serialized-solana-transaction',
       });
       expect(solanaFetchBalance).toHaveBeenCalledWith({
@@ -288,7 +288,7 @@ describe('SolanaPocTransferPanel', () => {
   });
 
   it('switches to Arbitrum One before executing EVM -> Solana', async () => {
-    const sendTransaction = vi.fn().mockImplementation(async () => {
+    const providerSendTransaction = vi.fn().mockImplementation(async () => {
       expect(switchChain).toHaveBeenCalledWith(expect.anything(), {
         chainId: ChainId.ArbitrumOne,
       });
@@ -319,7 +319,7 @@ describe('SolanaPocTransferPanel', () => {
       evmWalletValue: {
         ...evmWallet,
         account: { ...evmWallet.account, chain: { id: ChainId.Ethereum } },
-        sendTransaction,
+        sendTransaction: providerSendTransaction,
       },
     });
 
@@ -332,7 +332,7 @@ describe('SolanaPocTransferPanel', () => {
       expect(switchChain).toHaveBeenCalledWith(expect.anything(), {
         chainId: ChainId.ArbitrumOne,
       });
-      expect(sendTransaction).toHaveBeenCalledWith({
+      expect(providerSendTransaction).toHaveBeenCalledWith({
         txRequest: expect.objectContaining({ chainId: ChainId.ArbitrumOne }),
       });
       expect(screen.getByText('Last transaction: 0xhash')).toBeTruthy();
