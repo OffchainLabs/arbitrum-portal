@@ -1,5 +1,3 @@
-import { useCallback, useMemo } from 'react';
-
 import { useNetworks } from '../../hooks/useNetworks';
 import { ChainId } from '../../types/ChainId';
 import { isSolanaEnabled } from '../../util/featureFlag';
@@ -14,31 +12,16 @@ export function useWallets(): {
   const evmWalletContext = useWalletContext('evm');
   const solanaWalletContext = useWalletContext('solana');
 
-  const getWalletForChainId = useCallback(
-    (chainId: number): WalletHandle => {
-      switch (chainId) {
-        case ChainId.Solana:
-          return (isSolanaEnabled() ? solanaWalletContext : evmWalletContext) as WalletHandle;
+  const getWalletForChainId = (chainId: number): WalletHandle => {
+    const wallet =
+      chainId === ChainId.Solana && isSolanaEnabled() ? solanaWalletContext : evmWalletContext;
 
-        default:
-          return evmWalletContext as WalletHandle;
-      }
-    },
-    [evmWalletContext, solanaWalletContext],
-  );
-
-  const sourceWallet = useMemo<WalletHandle>(
-    () => getWalletForChainId(networks.sourceChain.id),
-    [getWalletForChainId, networks.sourceChain.id],
-  );
-
-  const destinationWallet = useMemo<WalletHandle>(
-    () => getWalletForChainId(networks.destinationChain.id),
-    [getWalletForChainId, networks.destinationChain.id],
-  );
+    // Expose one caller API while preserving the provider wallet and its transaction implementation.
+    return wallet as WalletHandle;
+  };
 
   return {
-    sourceWallet,
-    destinationWallet,
+    sourceWallet: getWalletForChainId(networks.sourceChain.id),
+    destinationWallet: getWalletForChainId(networks.destinationChain.id),
   };
 }
