@@ -1,28 +1,18 @@
-import type {
-  SendTransactionResult,
-  SignerHandle,
-  SolanaSendTransactionInput,
-} from '../wallet/types';
-
-type SolanaTransferProps = {
-  signer: SignerHandle;
-  serializedTransaction: string;
-};
+import type { SolanaSendTransactionInput } from '../wallet/types';
 
 export class SolanaTransferStarter {
-  public async transfer({
-    signer,
-    serializedTransaction,
-  }: SolanaTransferProps): Promise<SendTransactionResult> {
-    if (signer.ecosystem !== 'solana') {
-      throw new Error('Invalid signer: expected a Solana signer.');
+  public static prepareTransaction(transactionRequest: unknown): SolanaSendTransactionInput {
+    if (
+      typeof transactionRequest !== 'object' ||
+      transactionRequest === null ||
+      !('data' in transactionRequest) ||
+      typeof transactionRequest.data !== 'string'
+    ) {
+      throw new Error('Solana transaction payload is missing.');
     }
 
-    const input: SolanaSendTransactionInput = {
-      ecosystem: 'solana',
-      serializedTransaction,
+    return {
+      serializedTransaction: transactionRequest.data,
     };
-
-    return signer.sendTransaction(input);
   }
 }

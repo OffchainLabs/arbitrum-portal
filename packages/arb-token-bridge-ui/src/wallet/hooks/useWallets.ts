@@ -4,28 +4,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { ChainId } from '../../types/ChainId';
 import { isSolanaEnabled } from '../../util/featureFlag';
 import { useWalletContext } from '../providers/WalletProvider';
-import type { EvmWalletHandle, WalletHandle } from '../types';
-
-function getEvmTransactionRequest(transactionRequest: unknown) {
-  if (!transactionRequest) {
-    throw new Error('EVM transaction payload is missing.');
-  }
-
-  return transactionRequest as Parameters<EvmWalletHandle['sendTransaction']>[0]['txRequest'];
-}
-
-function getSolanaSerializedTransaction(transactionRequest: unknown): string {
-  if (
-    typeof transactionRequest !== 'object' ||
-    transactionRequest === null ||
-    !('data' in transactionRequest) ||
-    typeof transactionRequest.data !== 'string'
-  ) {
-    throw new Error('Solana transaction payload is missing.');
-  }
-
-  return transactionRequest.data;
-}
+import type { WalletHandle } from '../types';
 
 export function useWallets(): {
   sourceWallet: WalletHandle;
@@ -37,22 +16,26 @@ export function useWallets(): {
   const evmWallet = useMemo<WalletHandle>(
     () => ({
       ...evmWalletContext,
-      sendTransaction: (transactionRequest) =>
-        evmWalletContext.sendTransaction({
-          ecosystem: 'evm',
-          txRequest: getEvmTransactionRequest(transactionRequest),
-        }),
+      sendTransaction: (input) => {
+        if (!input.txRequest) {
+          throw new Error('Invalid transaction: expected an EVM transaction.');
+        }
+
+        return evmWalletContext.sendTransaction(input);
+      },
     }),
     [evmWalletContext],
   );
   const solanaWallet = useMemo<WalletHandle>(
     () => ({
       ...solanaWalletContext,
-      sendTransaction: (transactionRequest) =>
-        solanaWalletContext.sendTransaction({
-          ecosystem: 'solana',
-          serializedTransaction: getSolanaSerializedTransaction(transactionRequest),
-        }),
+      sendTransaction: (input) => {
+        if (!input.serializedTransaction) {
+          throw new Error('Invalid transaction: expected a Solana transaction.');
+        }
+
+        return solanaWalletContext.sendTransaction(input);
+      },
     }),
     [solanaWalletContext],
   );

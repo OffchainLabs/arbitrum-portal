@@ -266,7 +266,6 @@ describe('SolanaPocTransferPanel', () => {
     await waitFor(() => {
       expect(getStepTransaction).toHaveBeenCalledWith(route.protocolData.step);
       expect(sendTransaction).toHaveBeenCalledWith({
-        ecosystem: 'solana',
         serializedTransaction: 'serialized-solana-transaction',
       });
       expect(solanaFetchBalance).toHaveBeenCalledWith({
@@ -308,6 +307,11 @@ describe('SolanaPocTransferPanel', () => {
       transactionRequest: {
         chainId: ChainId.ArbitrumOne,
         to: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
+        from: evmWallet.account.address,
+        value: '2000000000000000',
+        data: '0x1234',
+        gasPrice: '1000000000',
+        gasLimit: '21000',
       },
     } as GetStepTransactionResult);
 
@@ -329,7 +333,6 @@ describe('SolanaPocTransferPanel', () => {
         chainId: ChainId.ArbitrumOne,
       });
       expect(sendTransaction).toHaveBeenCalledWith({
-        ecosystem: 'evm',
         txRequest: expect.objectContaining({ chainId: ChainId.ArbitrumOne }),
       });
       expect(screen.getByText('Last transaction: 0xhash')).toBeTruthy();

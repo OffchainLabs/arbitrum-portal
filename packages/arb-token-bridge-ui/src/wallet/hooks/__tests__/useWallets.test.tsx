@@ -114,7 +114,7 @@ describe('wallet/hooks/useWallets', () => {
     expect(result.current.sourceWallet.ecosystem).toBe('evm');
   });
 
-  it('adapts a LI.FI Solana transaction request for the Solana provider', async () => {
+  it('forwards a prepared Solana transaction to the Solana provider', async () => {
     const sendTransaction = vi.fn().mockResolvedValue({ hash: 'solana-hash' });
     const wallet: SolanaWalletHandle = {
       ...solanaWallet,
@@ -133,23 +133,25 @@ describe('wallet/hooks/useWallets', () => {
     const { result } = renderHook(() => useWallets(), {
       wrapper: createWrapper({ evm: evmWallet, solana: wallet }),
     });
-    await result.current.sourceWallet.sendTransaction({ data: 'serialized-transaction' });
-
-    expect(sendTransaction).toHaveBeenCalledWith({
-      ecosystem: 'solana',
+    const input = {
       serializedTransaction: 'serialized-transaction',
-    });
+    };
+    await result.current.sourceWallet.sendTransaction(input);
+
+    expect(sendTransaction).toHaveBeenCalledWith(input);
   });
 
-  it('adapts a LI.FI EVM transaction request for the EVM provider', async () => {
+  it('forwards a prepared EVM transaction to the EVM provider', async () => {
     const sendTransaction = vi.fn().mockResolvedValue({ hash: '0xhash' });
     const wallet: EvmWalletHandle = {
       ...evmWallet,
       sendTransaction,
     };
-    const transactionRequest = {
-      chainId: ChainId.ArbitrumOne,
-      to: '0x1234',
+    const input = {
+      txRequest: {
+        chainId: ChainId.ArbitrumOne,
+        to: '0x1234',
+      },
     };
 
     vi.mocked(useNetworks).mockReturnValue([
@@ -162,11 +164,50 @@ describe('wallet/hooks/useWallets', () => {
       wrapper: createWrapper({ evm: wallet }),
     });
 
-    await result.current.sourceWallet.sendTransaction(transactionRequest);
+    await result.current.sourceWallet.sendTransaction(input);
 
-    expect(sendTransaction).toHaveBeenCalledWith({
-      ecosystem: 'evm',
-      txRequest: transactionRequest,
+    expect(sendTransaction).toHaveBeenCalledWith(input);
+  });
+
+  it('rejects a Solana transaction sent through the EVM wallet', () => {
+    vi.mocked(useNetworks).mockReturnValue([
+      createNetworksState({ sourceChainId: ChainId.ArbitrumOne }),
+      vi.fn(),
+    ]);
+    vi.mocked(isSolanaEnabled).mockReturnValue(true);
+
+    const { result } = renderHook(() => useWallets(), {
+      wrapper: createWrapper({ evm: evmWallet }),
     });
+
+    expect(() =>
+      result.current.sourceWallet.sendTransaction({
+        serializedTransaction: 'serialized-transaction',
+      }),
+    ).toThrow('Invalid transaction: expected an EVM transaction.');
+  });
+
+  it('rejects an EVM transaction sent through the Solana wallet', () => {
+    vi.mocked(useNetworks).mockReturnValue([
+      createNetworksState({
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+      vi.fn(),
+    ]);
+    vi.mocked(isSolanaEnabled).mockReturnValue(true);
+
+    const { result } = renderHook(() => useWallets(), {
+      wrapper: createWrapper({ evm: evmWallet, solana: solanaWallet }),
+    });
+
+    expect(() =>
+      result.current.sourceWallet.sendTransaction({
+        txRequest: {
+          chainId: ChainId.ArbitrumOne,
+          to: '0x1234',
+        },
+      }),
+    ).toThrow('Invalid transaction: expected a Solana transaction.');
   });
 });

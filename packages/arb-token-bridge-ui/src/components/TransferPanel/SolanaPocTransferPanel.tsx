@@ -18,6 +18,8 @@ import {
 } from '../../app/api/crosschain-transfers/utils';
 import { useLifiCrossTransfersRoute } from '../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../hooks/useNetworks';
+import { LifiTransferStarter } from '../../token-bridge-sdk/LifiTransferStarter';
+import { SolanaTransferStarter } from '../../token-bridge-sdk/SolanaTransferStarter';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
@@ -342,7 +344,10 @@ function SolanaPocTransferPanelContent({
         await switchChain(wagmiConfig, { chainId: sourceChainId });
       }
 
-      const result = await sourceWallet.sendTransaction(transactionRequest);
+      const transferStarter =
+        sourceWallet.ecosystem === 'solana' ? SolanaTransferStarter : LifiTransferStarter;
+      const preparedTransaction = transferStarter.prepareTransaction(transactionRequest);
+      const result = await sourceWallet.sendTransaction(preparedTransaction);
 
       setTransactionHash(result.hash);
       await result.wait?.();

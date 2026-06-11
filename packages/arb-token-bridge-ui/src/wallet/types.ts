@@ -21,24 +21,16 @@ export type FetchBalanceInput = {
 };
 
 export type EvmSendTransactionInput = {
-  ecosystem: 'evm';
   txRequest: TransactionRequest;
+  serializedTransaction?: never;
 };
 
 export type SolanaSendTransactionInput = {
-  ecosystem: 'solana';
   serializedTransaction: string;
+  txRequest?: never;
 };
 
-export type SignerHandle =
-  | {
-      ecosystem: 'evm';
-      sendTransaction: (input: EvmSendTransactionInput) => Promise<SendTransactionResult>;
-    }
-  | {
-      ecosystem: 'solana';
-      sendTransaction: (input: SolanaSendTransactionInput) => Promise<SendTransactionResult>;
-    };
+export type SendTransactionInput = EvmSendTransactionInput | SolanaSendTransactionInput;
 
 type BalanceHandleBase<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
@@ -74,8 +66,10 @@ export type SolanaWalletHandle = WalletHandleBase<'solana'> & {
   sendTransaction: (input: SolanaSendTransactionInput) => Promise<SendTransactionResult>;
 };
 
-type AdaptedWalletHandle<Ecosystem extends WalletEcosystem> = WalletHandleBase<Ecosystem> & {
-  sendTransaction: (transactionRequest: unknown) => Promise<SendTransactionResult>;
-};
-
-export type WalletHandle = AdaptedWalletHandle<'evm'> | AdaptedWalletHandle<'solana'>;
+export type WalletHandle =
+  | (WalletHandleBase<'evm'> & {
+      sendTransaction: (input: SendTransactionInput) => Promise<SendTransactionResult>;
+    })
+  | (WalletHandleBase<'solana'> & {
+      sendTransaction: (input: SendTransactionInput) => Promise<SendTransactionResult>;
+    });
