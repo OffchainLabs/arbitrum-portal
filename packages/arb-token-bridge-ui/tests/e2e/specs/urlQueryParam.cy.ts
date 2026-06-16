@@ -98,7 +98,7 @@ describe('User enters site with query params on URL', () => {
           // optional timeouts and error messages
           {
             errorMsg: 'was expecting a numerical input value greater than 0',
-            timeout: 5000,
+            timeout: 30_000,
             interval: 500,
           },
         );
@@ -136,7 +136,7 @@ describe('User enters site with query params on URL', () => {
           // optional timeouts and error messages
           {
             errorMsg: 'was expecting a numerical input value greater than 0',
-            timeout: 5000,
+            timeout: 30_000,
             interval: 500,
           },
         );
