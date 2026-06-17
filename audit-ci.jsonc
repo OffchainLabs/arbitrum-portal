@@ -110,6 +110,9 @@
     // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
     // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
     //
+    // https://github.com/advisories/GHSA-v6wh-96g9-6wx3
+    // launch-editor leaks NTLMv2 hashes via unvalidated Windows UNC paths on the dev-server __open-in-editor endpoint (CVE-2026-53632)
+    //
     // Reason to ignore: All from @synthetixio/synpress, an E2E test devDependency.
     // Each fix requires a major bump deep in the synpress chain that would risk
     // breaking E2E tooling. Not used in production builds or runtime code.
@@ -122,6 +125,7 @@
     "GHSA-4v9v-hfq4-rm2v",
     "GHSA-79cf-xcqc-c78w",
     "GHSA-q8mj-m7cp-5q26",
+    "GHSA-v6wh-96g9-6wx3",
     //
     // https://github.com/advisories/GHSA-qjx8-664m-686j
     // js-cookie prototype hijack in assign() enables cookie-attribute injection (CVE-2026-46625)
