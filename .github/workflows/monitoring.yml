@@ -52,7 +52,7 @@ jobs:
       - name: Setup Node and install dependencies
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: 22
       - run: cd ./arbitrum-monitoring && yarn install
 
       - name: Load configuration
