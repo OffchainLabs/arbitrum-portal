@@ -7,8 +7,9 @@ import { shallow } from 'zustand/shallow';
 import { Order } from '../../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
+import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
-import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../../hooks/useNetworks';
@@ -71,6 +72,7 @@ function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undef
 interface GetEligibleRoutesParams {
   isOftV2Transfer: boolean;
   isNativeUsdcTransfer: boolean;
+  isBatchTransfer: boolean;
   amount: string;
   isDepositMode: boolean;
   sourceChainId: number;
@@ -83,6 +85,7 @@ interface GetEligibleRoutesParams {
 function getEligibleRoutes({
   isOftV2Transfer,
   isNativeUsdcTransfer,
+  isBatchTransfer,
   amount,
   isDepositMode,
   sourceChainId,
@@ -97,6 +100,12 @@ function getEligibleRoutes({
 
   if (Number(amount) === 0) {
     return [];
+  }
+
+  // Only the canonical route can carry the extra native amount (as the retryable's
+  // L2 callvalue), so skip LiFi/CCTP/OFT quotes for batches.
+  if (isBatchTransfer) {
+    return isArbitrumCanonicalTransfer ? ['arbitrum'] : [];
   }
 
   if (isOftV2Transfer) {
@@ -155,9 +164,13 @@ function getEligibleRoutes({
 export function useRoutesUpdater() {
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
-  const [{ amount }] = useArbQueryParams();
+  const [{ amount, amount2 }] = useArbQueryParams();
   const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
+  const isBatchTransferSupported = useIsBatchTransferSupported();
+  // `amount2` can be the literal "max" deep-link value, which resolves to a positive amount.
+  const isBatchTransfer =
+    isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
   const [selectedToken] = useSelectedToken();
   const destinationToken = useDestinationToken();
   const tokensFromLists = useTokensFromLists();
@@ -187,6 +200,7 @@ export function useRoutesUpdater() {
       getEligibleRoutes({
         isOftV2Transfer,
         isNativeUsdcTransfer,
+        isBatchTransfer,
         amount,
         isDepositMode,
         sourceChainId: networks.sourceChain.id,
@@ -198,6 +212,7 @@ export function useRoutesUpdater() {
     [
       isOftV2Transfer,
       isNativeUsdcTransfer,
+      isBatchTransfer,
       amount,
       isDepositMode,
       networks.sourceChain.id,
