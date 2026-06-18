@@ -162,8 +162,6 @@ const Input1 = React.memo(() => {
 Input1.displayName = 'Input1';
 
 const Input2 = React.memo(() => {
-  const { showAmount2Input } = useAmount2InputVisibility();
-
   const [networks] = useNetworks();
   const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
@@ -172,7 +170,6 @@ const Input2 = React.memo(() => {
   const [{ amount2 }] = useArbQueryParams();
   const { setAmount2 } = useSetInputAmount();
   const { maxAmount2 } = useMaxAmount();
-  const isBatchTransferSupported = useIsBatchTransferSupported();
   const { errorMessages } = useTransferReadiness();
 
   const isMaxAmount2 = amount2 === AmountQueryParamEnum.MAX;
@@ -182,12 +179,6 @@ const Input2 = React.memo(() => {
       setAmount2(maxAmount2);
     }
   }, [amount2, maxAmount2, isMaxAmount2, setAmount2]);
-
-  useEffect(() => {
-    if (isBatchTransferSupported && Number(amount2) > 0) {
-      showAmount2Input();
-    }
-  }, [isBatchTransferSupported, amount2, showAmount2Input]);
 
   const amount2MaxButtonOnClick = useCallback(() => {
     if (typeof maxAmount2 !== 'undefined') {
@@ -266,11 +257,21 @@ export function SourceNetworkBox() {
   const openSourceNetworkSelectionDialog = () => {
     openDialog('source_network_selection');
   };
-  const { isAmount2InputVisible } = useAmount2InputVisibility();
+  const { isAmount2InputVisible, showAmount2Input } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const isCctpTransfer = useIsCctpTransfer();
   const isOft = useIsOftV2Transfer();
   const { embedMode } = useMode();
+  const [{ amount2 }] = useArbQueryParams();
+
+  // Must run from an always-mounted component: the input only renders once it's open,
+  // so it can't open itself for an amount2 deep-link (incl. the "max" value).
+  const hasBatchAmount = amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0;
+  useEffect(() => {
+    if (isBatchTransferSupported && hasBatchAmount && !isAmount2InputVisible) {
+      showAmount2Input();
+    }
+  }, [isBatchTransferSupported, hasBatchAmount, isAmount2InputVisible, showAmount2Input]);
 
   return (
     <>
