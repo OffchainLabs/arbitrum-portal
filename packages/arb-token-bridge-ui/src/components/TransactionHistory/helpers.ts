@@ -566,6 +566,44 @@ export async function getUpdatedCctpTransfer(tx: MergedTransaction): Promise<Mer
   return { ...tx, status: WithdrawalStatus.UNCONFIRMED };
 }
 
+// A LiFi entry is cached optimistically once the wallet returns a source tx hash. If that
+// transaction never actually lands on-chain (reverted, or dropped from the mempool and never
+// mined), the entry would otherwise sit "pending" forever — LiFi's status API keeps reporting
+// PENDING for a hash it never saw. We only give up after a grace window, so a tx that is merely
+// still propagating isn't reconciled away prematurely.
+const LIFI_SOURCE_TX_DROPPED_THRESHOLD_MS = 1000 * 60 * 30; // 30 minutes
+
+/**
+ * Corroborating on-chain check, used only when LiFi's status API has no record of the source tx
+ * executing. Returns true only when the cached source tx definitively did not succeed: it
+ * reverted, or (past the grace window) is neither mined nor still in the mempool. A transient RPC
+ * error returns false, so a healthy transfer is never turned terminal on a single bad read.
+ */
+async function isLifiSourceTxDropped(tx: LifiMergedTransaction): Promise<boolean> {
+  if (
+    typeof tx.createdAt !== 'number' ||
+    dayjs().valueOf() - tx.createdAt <= LIFI_SOURCE_TX_DROPPED_THRESHOLD_MS
+  ) {
+    return false;
+  }
+
+  try {
+    const sourceChainProvider = getProviderForChainId(tx.sourceChainId);
+    const sourceTxReceipt = await sourceChainProvider.getTransactionReceipt(tx.txId);
+
+    if (sourceTxReceipt) {
+      // Mined: only counts as failed if it reverted on-chain.
+      return sourceTxReceipt.status === 0;
+    }
+
+    // No receipt: dropped only if the node no longer knows the tx (not mined, not in mempool).
+    const pendingSourceTx = await sourceChainProvider.getTransaction(tx.txId);
+    return !pendingSourceTx;
+  } catch {
+    return false;
+  }
+}
+
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
 ): Promise<MergedTransaction> {
@@ -610,7 +648,13 @@ export async function getUpdatedLifiTransfer(
       sourceStatus = WithdrawalStatus.CONFIRMED;
       destinationStatus = WithdrawalStatus.UNCONFIRMED;
     } else {
-      sourceStatus = WithdrawalStatus.UNCONFIRMED;
+      // LiFi has no record of the source tx executing. Past the grace window, corroborate against
+      // the chain: if it reverted or was dropped (never mined, not in mempool), fail it instead of
+      // leaving it pending forever. Both signals are required, so a transfer LiFi simply hasn't
+      // indexed yet — or a transient RPC miss — won't be turned terminal.
+      sourceStatus = (await isLifiSourceTxDropped(tx))
+        ? WithdrawalStatus.FAILURE
+        : WithdrawalStatus.UNCONFIRMED;
       destinationStatus = WithdrawalStatus.UNCONFIRMED;
     }
     if ('txHash' in statusResponse.receiving) {
