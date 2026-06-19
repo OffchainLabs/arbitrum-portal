@@ -1,13 +1,13 @@
 import { Chain, PublicClient, createPublicClient, fallback, http } from 'viem';
 import { arbitrum, mainnet } from 'viem/chains';
 
-import { PORTAL_DOMAIN } from '@/bridge/constants';
-import { ChainId } from '@/bridge/types/ChainId';
-import { rpcURLs } from '@/bridge/util/networks';
+import { PORTAL_DOMAIN } from '../../constants';
+import { ChainId } from '../../types/ChainId';
+import { rpcURLs } from '../networks';
 
 // Alchemy keys are Origin-allowlisted, so server requests must present the
 // canonical domain (prod) or the preview URL (non-prod). VERCEL_URL is set in
-// prod too, so only use it off-prod — prod must hit PORTAL_DOMAIN.
+// prod too, so only use it off-prod; prod must hit PORTAL_DOMAIN.
 function getServerOrigin(): string {
   const isNonProd = process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production';
   const vercelUrl = process.env.VERCEL_URL?.trim();

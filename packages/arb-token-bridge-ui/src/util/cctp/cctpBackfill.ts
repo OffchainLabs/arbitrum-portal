@@ -8,8 +8,6 @@
  */
 import { Hex, getAddress, hexToBigInt, hexToNumber, keccak256, parseAbiItem, slice } from 'viem';
 
-import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient';
-
 import type {
   ChainDomain,
   CompletedCCTPTransfer,
@@ -19,6 +17,7 @@ import type {
 import { ChainId } from '../../types/ChainId';
 import { Address } from '../AddressUtils';
 import { logger } from '../logger';
+import { createServerSidePublicClient } from '../rpc/serverPublicClient';
 
 type CctpTransfers = {
   pending: PendingCCTPTransfer[];

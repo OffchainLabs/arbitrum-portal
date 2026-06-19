@@ -2,6 +2,7 @@ import { createConfig, getStepTransaction, getTransactionHistory } from '@lifi/s
 
 import { LIFI_INTEGRATOR_IDS, getLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 import { ChainId } from '@/bridge/types/ChainId';
+import { createServerSidePublicClient } from '@/bridge/util/rpc/serverPublicClient';
 
 import { fetchDuneHistoricalData, fetchDuneHistoricalDataMerged } from '../lib/duneService';
 import { resolveAdapterWindow } from '../lib/historicalWindow';
@@ -16,7 +17,6 @@ import {
   updateLiquidStakingOpportunitiesWithDuneData,
   updateLiquidStakingOpportunityWithDuneData,
 } from '../lib/liquidStaking';
-import { createServerSidePublicClient } from '../lib/serverPublicClient';
 import { ValidationError } from '../lib/validation';
 import { fetchAlignedPriceLookup } from '../lib/zerionService';
 import {

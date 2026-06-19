@@ -2,9 +2,9 @@ import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAddress } from 'viem';
 
+import { createServerSidePublicClient } from '@/bridge/util/rpc/serverPublicClient';
 import { earnCacheTags } from '@/earn-api/lib/cache';
 import { enforceEarnRateLimit } from '@/earn-api/lib/rateLimit';
-import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient';
 import {
   ValidationError,
   assertAddress,
