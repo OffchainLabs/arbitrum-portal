@@ -10,7 +10,7 @@ import { Hex, getAddress, hexToBigInt, hexToNumber, keccak256, parseAbiItem, sli
 
 import { createServerSidePublicClient } from '@/earn-api/lib/serverPublicClient';
 
-import {
+import type {
   ChainDomain,
   CompletedCCTPTransfer,
   MessageSent,
@@ -25,12 +25,18 @@ type CctpTransfers = {
   completed: CompletedCCTPTransfer[];
 };
 
-type CctpBackfillMeta = {
+export type CctpBackfillMeta = {
   enabled: boolean;
   addedPending?: number;
   addedCompleted?: number;
+  upgraded?: number;
   error?: string;
 };
+
+// CCTP domain IDs, kept local so this module has no runtime dependency on the
+// route's `ChainDomain` enum (which imports back from here → module cycle).
+const DOMAIN_ETHEREUM = 0;
+const DOMAIN_ARBITRUM_ONE = 3;
 
 const MESSAGE_SENT_EVENT = parseAbiItem('event MessageSent(bytes message)');
 const MESSAGE_RECEIVED_EVENT = parseAbiItem(
@@ -44,8 +50,8 @@ const MESSAGE_TRANSMITTER: Partial<Record<ChainId, Address>> = {
 };
 
 /**
- * How far back to re-read from head on every request. Must cover the worst-case
- * indexer lag (a stale indexer can sit ~1 week behind); widen if that grows.
+ * How far back to re-read from head. Must cover the worst-case indexer lag (a
+ * stale indexer can sit ~1 week behind); widen if that grows.
  */
 const RECENT_WINDOW_BLOCKS: Partial<Record<ChainId, number>> = {
   [ChainId.Ethereum]: 60_000, // ~8 days
@@ -72,7 +78,77 @@ function decodeCctpMessage(message: Hex) {
   };
 }
 
+type DecodedSent = {
+  blockNumber: bigint;
+  transactionHash: Address;
+  message: Hex;
+  decoded: ReturnType<typeof decodeCctpMessage>;
+};
+
 type ServerClient = ReturnType<typeof createServerSidePublicClient>;
+
+/**
+ * The wallet-independent recent `MessageSent` scan is the expensive part (a wide
+ * getLogs), so cache it briefly and share it across requests. In-memory and
+ * per-instance (e.g. per serverless lambda) — absorbs bursts, not a cross-instance
+ * cache.
+ */
+const RECENT_SENT_TTL_MS = 30_000;
+const recentSentCache = new Map<ChainId, { expiresAt: number; value: Promise<DecodedSent[]> }>();
+
+async function fetchRecentSent(
+  chainId: ChainId,
+  transmitter: Address,
+  windowBlocks: number,
+): Promise<DecodedSent[]> {
+  const client = createServerSidePublicClient(chainId);
+  const head = Number(await client.getBlockNumber());
+  const expectedDestinationDomain =
+    chainId === ChainId.ArbitrumOne ? DOMAIN_ETHEREUM : DOMAIN_ARBITRUM_ONE;
+
+  const logs = await client.getLogs({
+    address: transmitter,
+    event: MESSAGE_SENT_EVENT,
+    fromBlock: BigInt(Math.max(0, head - windowBlocks)),
+    toBlock: BigInt(head),
+  });
+
+  return logs.flatMap((log) => {
+    const message = log.args.message;
+    if (!message) return [];
+    try {
+      const decoded = decodeCctpMessage(message);
+      if (decoded.destinationDomain !== expectedDestinationDomain) return [];
+      return [
+        {
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash as Address,
+          message,
+          decoded,
+        },
+      ];
+    } catch {
+      return [];
+    }
+  });
+}
+
+function getRecentSent(
+  chainId: ChainId,
+  transmitter: Address,
+  windowBlocks: number,
+): Promise<DecodedSent[]> {
+  const cached = recentSentCache.get(chainId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const value = fetchRecentSent(chainId, transmitter, windowBlocks);
+  recentSentCache.set(chainId, { expiresAt: Date.now() + RECENT_SENT_TTL_MS, value });
+  // evict on failure so the next request retries rather than serving a rejection
+  value.catch(() => {
+    if (recentSentCache.get(chainId)?.value === value) recentSentCache.delete(chainId);
+  });
+  return value;
+}
 
 async function fetchBlockTimestamps(
   client: ServerClient,
@@ -88,19 +164,15 @@ async function fetchBlockTimestamps(
   return new Map(entries);
 }
 
-type BackfillParams = {
-  type: 'deposits' | 'withdrawals';
-  walletAddress: Address;
-  sourceChainId: ChainId;
-  targetChainId: ChainId;
-};
-
 async function fetchCctpGapBackfill({
-  type,
   walletAddress,
   sourceChainId,
   targetChainId,
-}: BackfillParams): Promise<CctpTransfers> {
+}: {
+  walletAddress: Address;
+  sourceChainId: ChainId;
+  targetChainId: ChainId;
+}): Promise<CctpTransfers> {
   const sourceTransmitter = MESSAGE_TRANSMITTER[sourceChainId];
   const targetTransmitter = MESSAGE_TRANSMITTER[targetChainId];
   const recentWindowBlocks = RECENT_WINDOW_BLOCKS[sourceChainId];
@@ -108,44 +180,18 @@ async function fetchCctpGapBackfill({
     return { pending: [], completed: [] };
   }
 
-  const sourceClient = createServerSidePublicClient(sourceChainId);
-  const targetClient = createServerSidePublicClient(targetChainId);
   const wallet = walletAddress.toLowerCase();
-  const expectedDestinationDomain =
-    type === 'withdrawals' ? ChainDomain.Ethereum : ChainDomain.ArbitrumOne;
-
-  const sourceHead = Number(await sourceClient.getBlockNumber());
-  const scanFrom = Math.max(0, sourceHead - recentWindowBlocks);
-
-  // MessageSent has no indexed user topic, so fetch all in the gap and filter here.
-  const sentLogs = await sourceClient.getLogs({
-    address: sourceTransmitter,
-    event: MESSAGE_SENT_EVENT,
-    fromBlock: BigInt(scanFrom),
-    toBlock: BigInt(sourceHead),
-  });
-
-  const sent = sentLogs.flatMap((log) => {
-    const message = log.args.message;
-    if (!message) return [];
-    let decoded: ReturnType<typeof decodeCctpMessage>;
-    try {
-      decoded = decodeCctpMessage(message);
-    } catch {
-      return [];
-    }
-    if (decoded.destinationDomain !== expectedDestinationDomain) return [];
-    if (decoded.sender.toLowerCase() !== wallet && decoded.recipient.toLowerCase() !== wallet) {
-      return [];
-    }
-    return [{ log, message, decoded }];
-  });
-
+  const recentSent = await getRecentSent(sourceChainId, sourceTransmitter, recentWindowBlocks);
+  const sent = recentSent.filter(
+    (s) =>
+      s.decoded.sender.toLowerCase() === wallet || s.decoded.recipient.toLowerCase() === wallet,
+  );
   if (sent.length === 0) return { pending: [], completed: [] };
 
-  // Filter the (high-volume) MessageReceived query by the indexed nonces we found,
-  // so the response stays small enough for a wide block range. `nonce` is unique
-  // only per source domain, so we still key the map by sourceDomain + nonce.
+  // Completion: query MessageReceived on the target by the indexed nonces we found
+  // (keeps the response tiny so a wide range is safe). `nonce` is unique only per
+  // source domain, so the map is keyed by sourceDomain + nonce.
+  const targetClient = createServerSidePublicClient(targetChainId);
   const targetHead = Number(await targetClient.getBlockNumber());
   const targetWindow = RECENT_WINDOW_BLOCKS[targetChainId] ?? recentWindowBlocks;
   const sentNonces = Array.from(new Set(sent.map((s) => BigInt(s.decoded.nonce))));
@@ -167,9 +213,10 @@ async function fetchCctpGapBackfill({
     });
   }
 
+  const sourceClient = createServerSidePublicClient(sourceChainId);
   const sourceTimestamps = await fetchBlockTimestamps(
     sourceClient,
-    sent.map((s) => s.log.blockNumber),
+    sent.map((s) => s.blockNumber),
   );
   const matchedTargetBlocks = sent
     .map((s) => received.get(`${s.decoded.sourceDomain}-${s.decoded.nonce}`)?.blockNumber)
@@ -179,19 +226,19 @@ async function fetchCctpGapBackfill({
   const pending: PendingCCTPTransfer[] = [];
   const completed: CompletedCCTPTransfer[] = [];
 
-  for (const { log, message, decoded } of sent) {
+  for (const { blockNumber, transactionHash, message, decoded } of sent) {
     const attestationHash = keccak256(message);
     const messageSent: MessageSent = {
       attestationHash,
-      blockNumber: log.blockNumber.toString(),
-      blockTimestamp: String(sourceTimestamps.get(log.blockNumber.toString()) ?? 0),
+      blockNumber: blockNumber.toString(),
+      blockTimestamp: String(sourceTimestamps.get(blockNumber.toString()) ?? 0),
       id: attestationHash,
       message,
       nonce: decoded.nonce,
       sender: decoded.sender,
       recipient: decoded.recipient,
       sourceDomain: String(decoded.sourceDomain) as `${ChainDomain}`,
-      transactionHash: log.transactionHash as Address,
+      transactionHash,
       amount: decoded.amount,
     };
 
@@ -220,9 +267,10 @@ async function fetchCctpGapBackfill({
 }
 
 /**
- * Merge subgraph CCTP results with the chain-log backfill, deduped by tx hash
- * (subgraph wins). Enable-gated and fail-open: any backfill error returns the
- * subgraph results untouched.
+ * Merge subgraph CCTP results with the chain-log backfill, deduped by tx hash.
+ * Completed wins over pending for the same tx (so the backfill's mint upgrades a
+ * stale subgraph "pending"); among the same status the subgraph wins. Enable-gated
+ * and fail-open: any backfill error returns the subgraph results untouched.
  */
 export async function mergeCctpBackfill({
   type,
@@ -243,29 +291,38 @@ export async function mergeCctpBackfill({
 
   try {
     const backfill = await fetchCctpGapBackfill({
-      type,
       walletAddress,
       sourceChainId: type === 'deposits' ? l1ChainId : l2ChainId,
       targetChainId: type === 'deposits' ? l2ChainId : l1ChainId,
     });
 
-    const seen = new Set(
-      [...subgraph.pending, ...subgraph.completed].map((t) =>
-        t.messageSent.transactionHash.toLowerCase(),
-      ),
-    );
-    const isNew = (t: PendingCCTPTransfer) =>
-      !seen.has(t.messageSent.transactionHash.toLowerCase());
-    const addedPending = backfill.pending.filter(isNew);
-    const addedCompleted = backfill.completed.filter(isNew);
+    const txKey = (t: PendingCCTPTransfer) => t.messageSent.transactionHash.toLowerCase();
+
+    // completed wins over pending for the same tx; subgraph wins within a status
+    const completedByTx = new Map<string, CompletedCCTPTransfer>();
+    for (const t of [...subgraph.completed, ...backfill.completed]) {
+      const key = txKey(t);
+      if (!completedByTx.has(key)) completedByTx.set(key, t);
+    }
+    const pendingByTx = new Map<string, PendingCCTPTransfer>();
+    for (const t of [...subgraph.pending, ...backfill.pending]) {
+      const key = txKey(t);
+      if (!completedByTx.has(key) && !pendingByTx.has(key)) pendingByTx.set(key, t);
+    }
+
+    const pending = [...pendingByTx.values()];
+    const completed = [...completedByTx.values()];
+    const subgraphKeys = new Set([...subgraph.pending, ...subgraph.completed].map(txKey));
+    const subgraphPendingKeys = new Set(subgraph.pending.map(txKey));
 
     return {
-      pending: [...subgraph.pending, ...addedPending],
-      completed: [...subgraph.completed, ...addedCompleted],
+      pending,
+      completed,
       meta: {
         enabled: true,
-        addedPending: addedPending.length,
-        addedCompleted: addedCompleted.length,
+        addedPending: pending.filter((t) => !subgraphKeys.has(txKey(t))).length,
+        addedCompleted: completed.filter((t) => !subgraphKeys.has(txKey(t))).length,
+        upgraded: completed.filter((t) => subgraphPendingKeys.has(txKey(t))).length,
       },
     };
   } catch (error) {

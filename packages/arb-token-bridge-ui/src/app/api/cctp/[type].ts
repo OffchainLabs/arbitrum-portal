@@ -7,7 +7,7 @@ import {
 } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
 import { Address } from '../../../util/AddressUtils';
-import { mergeCctpBackfill } from '../../../util/cctp/cctpBackfill';
+import { CctpBackfillMeta, mergeCctpBackfill } from '../../../util/cctp/cctpBackfill';
 
 export enum ChainDomain {
   Ethereum = 0,
@@ -52,6 +52,7 @@ export type Response =
   | {
       meta?: {
         source: string | null;
+        backfill?: CctpBackfillMeta;
       };
       data: {
         pending: PendingCCTPTransfer[];
