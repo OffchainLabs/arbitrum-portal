@@ -285,7 +285,7 @@ export async function mergeCctpBackfill({
   l2ChainId: ChainId;
   subgraph: CctpTransfers;
 }): Promise<CctpTransfers & { meta: CctpBackfillMeta }> {
-  if (process.env.CCTP_GAP_BACKFILL_ENABLED === 'false') {
+  if (process.env.CCTP_GAP_BACKFILL_ENABLED !== 'true') {
     return { ...subgraph, meta: { enabled: false } };
   }
 
