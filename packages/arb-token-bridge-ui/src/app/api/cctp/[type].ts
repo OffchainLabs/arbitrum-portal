@@ -7,6 +7,7 @@ import {
 } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
 import { Address } from '../../../util/AddressUtils';
+import { mergeCctpBackfill } from '../../../util/cctp/cctpBackfill';
 
 export enum ChainDomain {
   Ethereum = 0,
@@ -216,19 +217,13 @@ export async function GET(
       messageReceiveds.map((messageReceived) => [messageReceived.id, messageReceived]),
     );
 
-    const { pending, completed } = messageSents.reduce(
+    const subgraphTransfers = messageSents.reduce(
       (acc, messageSent) => {
-        // If the MessageSent has a corresponding MessageReceived
         const messageReceived = messagesReceivedMap.get(messageSent.id);
         if (messageReceived) {
-          acc.completed.push({
-            messageReceived,
-            messageSent,
-          });
+          acc.completed.push({ messageReceived, messageSent });
         } else {
-          acc.pending.push({
-            messageSent,
-          });
+          acc.pending.push({ messageSent });
         }
         return acc;
       },
@@ -238,15 +233,27 @@ export async function GET(
       },
     );
 
+    // The subgraph flaps across indexers and intermittently drops recent
+    // transfers; augment it with a chain-log backfill of the recent window.
+    const {
+      pending,
+      completed,
+      meta: backfill,
+    } = await mergeCctpBackfill({
+      type,
+      walletAddress,
+      l1ChainId,
+      l2ChainId,
+      subgraph: subgraphTransfers,
+    });
+
     return NextResponse.json(
       {
         meta: {
           source: getSourceFromSubgraphClient(l1Subgraph),
+          backfill,
         },
-        data: {
-          pending,
-          completed,
-        },
+        data: { pending, completed },
         error: null,
       },
       { status: 200 },
