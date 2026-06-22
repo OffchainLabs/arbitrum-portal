@@ -1,8 +1,8 @@
-import type { StatusResponse, Token } from '@lifi/types';
+import type { FullStatusData, StatusResponse, Token } from '@lifi/types';
 import { describe, expect, it } from 'vitest';
 
 import { WithdrawalStatus } from '../../../../state/app/state';
-import { transformLifiHistoryTransaction } from './transactions';
+import { transformLifiHistoryTransaction, transformLifiHistoryTransactions } from './transactions';
 
 const wallet = '0x1111111111111111111111111111111111111111';
 const usdcToken: Token = {
@@ -20,7 +20,15 @@ const arbUsdcToken: Token = {
   chainId: 42161,
 };
 
-function createStatusResponse(): StatusResponse {
+function createStatusResponse({
+  sourceChainId = 1,
+  destinationChainId = 42161,
+  amount = '1000000',
+}: {
+  sourceChainId?: number;
+  destinationChainId?: number;
+  amount?: string;
+} = {}): FullStatusData {
   return {
     status: 'DONE',
     substatus: 'COMPLETED',
@@ -28,9 +36,9 @@ function createStatusResponse(): StatusResponse {
     transactionId: 'lifi-transaction-id',
     sending: {
       txHash: '0xsource',
-      chainId: 1,
+      chainId: sourceChainId,
       txLink: '',
-      amount: '1000000',
+      amount,
       amountUSD: '1',
       token: usdcToken,
       gasPrice: '0',
@@ -56,7 +64,7 @@ function createStatusResponse(): StatusResponse {
     },
     receiving: {
       txHash: '0xdestination',
-      chainId: 42161,
+      chainId: destinationChainId,
       txLink: '',
       amount: '990000',
       amountUSD: '0.99',
@@ -94,6 +102,38 @@ describe('transformLifiHistoryTransaction', () => {
     });
   });
 
+  it('maps withdrawals to withdraw direction with parent/child chains resolved', () => {
+    const statusResponse = createStatusResponse({ sourceChainId: 42161, destinationChainId: 1 });
+
+    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+      direction: 'withdraw',
+      isWithdrawal: true,
+      sourceChainId: 42161,
+      destinationChainId: 1,
+      parentChainId: 1,
+      childChainId: 42161,
+    });
+  });
+
+  it('keys Nova->ArbitrumOne sibling transfers like the UI (parent=Nova, child=One)', () => {
+    // Nova->One is a LiFi sibling transfer; useNetworksRelationship sets Nova as the
+    // parent, so the history transform must agree or the cached and API copies fail to
+    // dedupe and the transfer shows twice.
+    const statusResponse = createStatusResponse({
+      sourceChainId: 42170,
+      destinationChainId: 42161,
+    });
+
+    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+      direction: 'deposit',
+      isWithdrawal: false,
+      sourceChainId: 42170,
+      destinationChainId: 42161,
+      parentChainId: 42170,
+      childChainId: 42161,
+    });
+  });
+
   it('skips LiFi history when required display data is missing', () => {
     const statusResponse: StatusResponse = {
       status: 'FAILED',
@@ -106,5 +146,18 @@ describe('transformLifiHistoryTransaction', () => {
     };
 
     expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
+  });
+
+  it('skips malformed LiFi history rows without dropping the batch', () => {
+    const transactions = transformLifiHistoryTransactions({
+      wallet,
+      statusResponses: [createStatusResponse({ amount: 'not-a-number' }), createStatusResponse()],
+    });
+
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]).toMatchObject({
+      txId: '0xsource',
+      value: '1.0',
+    });
   });
 });

@@ -8,9 +8,13 @@ import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
 import { normalizeTimestamp } from '../../../../state/app/utils';
 import { addressesEqual } from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
-import { isDepositMode } from '../../../../util/isDepositMode';
+import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
 import type { Token } from '../types';
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+};
 
 type LifiTransactionHistoryAmount = {
   amount: string;
@@ -47,7 +51,7 @@ export type LifiTransactionHistoryItem = {
   destinationTxId: string | null;
 };
 
-type LifiTransactionHistoryResponse =
+export type LifiTransactionHistoryResponse =
   | {
       message: string;
       data: null;
@@ -119,9 +123,14 @@ export function transformLifiHistoryTransaction({
   const createdAt = sending.timestamp ? normalizeTimestamp(sending.timestamp) : null;
   const resolvedAt = receiving?.timestamp ? normalizeTimestamp(receiving.timestamp) : null;
   const { status, destinationStatus, destinationTxId } = getLifiTransferStatus(statusResponse);
-  const isWithdrawal = !isDepositMode({ sourceChainId, destinationChainId });
-  const parentChainId = isWithdrawal ? destinationChainId : sourceChainId;
-  const childChainId = isWithdrawal ? sourceChainId : destinationChainId;
+  // Use the same parent/child resolution as the UI (`useNetworksRelationship`) so a
+  // transfer is keyed identically whether it comes from the local cache or this API,
+  // otherwise dedup fails and the transfer shows twice in history.
+  const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
+    sourceChainId,
+    destinationChainId,
+  });
+  const isWithdrawal = !isDepositMode;
 
   return {
     txId: statusResponse.sending.txHash,
@@ -163,6 +172,24 @@ export function transformLifiHistoryTransaction({
   };
 }
 
+export function transformLifiHistoryTransactions({
+  wallet,
+  statusResponses,
+}: {
+  wallet: string;
+  statusResponses: StatusResponse[];
+}): LifiTransactionHistoryItem[] {
+  return statusResponses
+    .map((statusResponse) => {
+      try {
+        return transformLifiHistoryTransaction({ wallet, statusResponse });
+      } catch {
+        return null;
+      }
+    })
+    .filter((tx): tx is LifiTransactionHistoryItem => tx !== null);
+}
+
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiTransactionHistoryResponse>> {
@@ -172,7 +199,7 @@ export async function GET(
   if (!wallet || !utils.isAddress(wallet)) {
     return NextResponse.json(
       { message: 'wallet is not a valid address', data: null },
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -189,9 +216,13 @@ export async function GET(
     fromTimestamp,
   });
 
-  return NextResponse.json({
-    data: (response.transfers ?? [])
-      .map((statusResponse) => transformLifiHistoryTransaction({ wallet, statusResponse }))
-      .filter((tx): tx is LifiTransactionHistoryItem => tx !== null),
-  });
+  return NextResponse.json(
+    {
+      data: transformLifiHistoryTransactions({
+        wallet,
+        statusResponses: response.transfers ?? [],
+      }),
+    },
+    { headers: NO_STORE_HEADERS },
+  );
 }

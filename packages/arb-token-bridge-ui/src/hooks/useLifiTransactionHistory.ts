@@ -1,18 +1,13 @@
 import { BigNumber } from 'ethers';
 import useSWRImmutable from 'swr/immutable';
 
-import type { LifiTransactionHistoryItem } from '../app/api/crosschain-transfers/lifi/transactions';
+import type {
+  LifiTransactionHistoryItem,
+  LifiTransactionHistoryResponse,
+} from '../app/api/crosschain-transfers/lifi/transactions';
 import type { LifiMergedTransaction } from '../state/app/state';
 import { getAPIBaseUrl } from '../util';
-
-type LifiTransactionHistoryResponse =
-  | {
-      message: string;
-      data: null;
-    }
-  | {
-      data: LifiTransactionHistoryItem[];
-    };
+import { useError } from './useError';
 
 function deserializeLifiHistoryTransaction(
   transaction: LifiTransactionHistoryItem,
@@ -35,6 +30,7 @@ export function useLifiTransactionHistory({
 }: {
   walletAddress: string | undefined;
 }) {
+  const { handleError } = useError();
   return useSWRImmutable(
     walletAddress ? ([walletAddress, 'useLifiTransactionHistory'] as const) : null,
     async ([walletAddress]) => {
@@ -54,6 +50,15 @@ export function useLifiTransactionHistory({
       }
 
       return body.data.map(deserializeLifiHistoryTransaction);
+    },
+    {
+      onError(error) {
+        handleError({
+          error,
+          label: 'useLifiTransactionHistory',
+          category: 'network_request',
+        });
+      },
     },
   );
 }

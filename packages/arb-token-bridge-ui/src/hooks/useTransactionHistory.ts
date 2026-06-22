@@ -121,7 +121,7 @@ function getTransactionTimestamp(tx: Transfer) {
 }
 
 function sortByTimestampDescending(a: Transfer, b: Transfer) {
-  return getTransactionTimestamp(a) > getTransactionTimestamp(b) ? -1 : 1;
+  return getTransactionTimestamp(b) - getTransactionTimestamp(a);
 }
 
 function getMultiChainFetchList(): ChainPair[] {
