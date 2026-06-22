@@ -3,10 +3,19 @@ import { BigNumber } from 'ethers';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import {
+  DepositStatus,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
 import { AssetType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
-import { mergeTransactions, useTransactionHistory } from '../useTransactionHistory';
+import {
+  getDedupedTransactionsForPagination,
+  mergeTransactions,
+  useTransactionHistory,
+} from '../useTransactionHistory';
 
 const wallets = {
   WALLET_MULTIPLE_TX: '0x1798440327d78ebb19db0c8999e2368eaed8f413',
@@ -30,6 +39,42 @@ const mergeTestBaseTx = {
   destinationChainId: 42161,
   sender: MERGE_TEST_ADDRESS,
   destination: MERGE_TEST_ADDRESS,
+};
+
+const lifiTestBaseTx: LifiMergedTransaction = {
+  ...mergeTestBaseTx,
+  txId: '0xlifi',
+  createdAt: 1_700_000_000_000,
+  direction: 'deposit',
+  status: WithdrawalStatus.UNCONFIRMED,
+  destinationStatus: WithdrawalStatus.UNCONFIRMED,
+  isWithdrawal: false,
+  isLifi: true,
+  tokenAddress: '0x0000000000000000000000000000000000000000',
+  depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
+  toolDetails: { key: 'across', name: 'Across', logoURI: '' },
+  durationMs: 0,
+  fromAmount: {
+    amount: BigNumber.from(1),
+    amountUSD: '1',
+    token: {
+      address: '0x0000000000000000000000000000000000000000',
+      decimals: 18,
+      logoURI: '',
+      symbol: 'ETH',
+    },
+  },
+  toAmount: {
+    amount: BigNumber.from(1),
+    amountUSD: '1',
+    token: {
+      address: '0x0000000000000000000000000000000000000000',
+      decimals: 18,
+      logoURI: '',
+      symbol: 'ETH',
+    },
+  },
+  destinationTxId: null,
 };
 
 /**
@@ -257,5 +302,29 @@ describe('mergeTransactions', () => {
     });
 
     expect(transactions).toEqual([newerTx, olderTx]);
+  });
+});
+
+describe('getDedupedTransactionsForPagination', () => {
+  it('dedupes local LiFi cache when API history returns the same transaction', () => {
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      status: WithdrawalStatus.UNCONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+    };
+    const apiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+      destinationTxId: '0xdestination',
+    };
+
+    const transactions = getDedupedTransactionsForPagination({
+      fetchedTransactions: [apiLifiTx],
+      cachedDeposits: [],
+      cachedLifiTransactions: [cachedLifiTx],
+    });
+
+    expect(transactions).toEqual([apiLifiTx]);
   });
 });

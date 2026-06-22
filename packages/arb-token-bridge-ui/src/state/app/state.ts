@@ -43,7 +43,7 @@ export type MergedTransactionLifiData = {
   fromAmount: AmountWithToken;
   toAmount: AmountWithToken;
   destinationTxId: string | null;
-  transactionRequest: TransactionRequest;
+  transactionRequest?: TransactionRequest;
 };
 export interface BaseMergedTransaction {
   // TODO: https://github.com/OffchainLabs/arbitrum-token-bridge/blob/master/packages/arb-token-bridge-ui/src/util/withdrawals/helpers.ts#L31

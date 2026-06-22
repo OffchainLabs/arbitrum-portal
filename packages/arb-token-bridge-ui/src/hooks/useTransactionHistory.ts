@@ -51,6 +51,7 @@ import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
 import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
+import { useLifiTransactionHistory } from './useLifiTransactionHistory';
 import {
   getUpdatedOftTransfer,
   updateAdditionalLayerZeroData,
@@ -208,7 +209,7 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
 }
 
 function getTxIdFromTransaction(tx: Transfer) {
-  if (isCctpTransfer(tx) || isOftTransfer(tx)) {
+  if (isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)) {
     return tx.txId;
   }
   if (isDeposit(tx)) {
@@ -248,6 +249,22 @@ function getCacheKeyFromTransaction(tx: Transfer) {
 // remove the duplicates from the transactions passed
 function dedupeTransactions(txs: Transfer[]) {
   return Array.from(new Map(txs.map((tx) => [getCacheKeyFromTransaction(tx), tx])).values());
+}
+
+export function getDedupedTransactionsForPagination({
+  fetchedTransactions,
+  cachedDeposits,
+  cachedLifiTransactions,
+}: {
+  fetchedTransactions: Transfer[];
+  cachedDeposits: Transfer[];
+  cachedLifiTransactions: Transfer[];
+}) {
+  return dedupeTransactions([
+    ...cachedLifiTransactions,
+    ...fetchedTransactions,
+    ...cachedDeposits,
+  ]).sort(sortByTimestampDescending);
 }
 
 function getMergedTransactionIdentity(tx: MergedTransaction) {
@@ -481,6 +498,12 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     walletAddress: isTxHistoryEnabled && !isIndexerExperimentEnabled ? address : undefined,
     isTestnet: isTestnetMode,
   });
+  const { data: lifiHistoryTransfers, isLoading: lifiHistoryLoading } = useLifiTransactionHistory({
+    walletAddress:
+      isTxHistoryEnabled && !isIndexerExperimentEnabled && !isSmartContractWallet && !isTestnetMode
+        ? address
+        : undefined,
+  });
 
   const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
     address ? ['failed_chain_pairs', address] : null,
@@ -608,6 +631,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const deposits = (depositsData || []).flat();
 
   const withdrawals = (withdrawalsData || []).flat();
+  const lifiHistoryTransactions = lifiHistoryTransfers || [];
 
   // merge deposits and withdrawals and sort them by date
   const transactions: Transfer[] = [
@@ -615,12 +639,18 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     ...withdrawals,
     ...(isTestnetMode ? combinedCctpTestnetTransfers : combinedCctpMainnetTransfers),
     ...oftTransfers,
+    ...lifiHistoryTransactions,
   ].flat();
 
   return {
     data: transactions,
     loading:
-      isLoadingAccountType || depositsLoading || withdrawalsLoading || cctpLoading || oftLoading,
+      isLoadingAccountType ||
+      depositsLoading ||
+      withdrawalsLoading ||
+      cctpLoading ||
+      oftLoading ||
+      lifiHistoryLoading,
     error: depositsError ?? withdrawalsError,
     failedChainPairs: failedChainPairs || [],
   };
@@ -743,14 +773,14 @@ export const useTransactionHistory = (
     ([, , _page, _data]) => {
       // we get cached data and dedupe here because we need to ensure _data never mutates
       // otherwise, if we added a new tx to cache, it would return a new reference and cause the SWR key to update, resulting in refetching
-      const dataWithCache = _data.concat(depositsFromCache);
-
       // duplicates may occur when txs are taken from the local storage
       // we don't use Set because it wouldn't dedupe objects with different reference (we fetch them from different sources)
-      // Lifi transactions don't need deduping from other transactions, they are only fetched from localStorage
-      const dedupedTransactions = dedupeTransactions(dataWithCache)
-        .concat(lifiTransactionsFromCache)
-        .sort(sortByTimestampDescending);
+      // LiFi history is fetched from the API and local cache; putting cache first lets fresher API records win.
+      const dedupedTransactions = getDedupedTransactionsForPagination({
+        fetchedTransactions: _data,
+        cachedDeposits: depositsFromCache,
+        cachedLifiTransactions: lifiTransactionsFromCache,
+      });
 
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
