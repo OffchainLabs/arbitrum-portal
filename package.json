@@ -43,6 +43,7 @@
       "@eslint/plugin-kit": "0.3.4",
       "@types/react": "19.2.14",
       "@types/react-dom": "19.2.3",
+      "@types/node": "22.19.19",
       "js-yaml": "4.2.0",
       "undici": "6.27.0",
       "h3": "1.15.10",
