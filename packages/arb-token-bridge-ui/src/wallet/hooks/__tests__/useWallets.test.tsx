@@ -5,14 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { ChainId } from '../../../types/ChainId';
 import { isSolanaEnabled } from '../../../util/featureFlag';
-import { EvmWalletContext } from '../../contexts/EvmWalletContext';
-import {
-  SolanaWalletContext,
-  defaultSolanaWalletContextValue,
-} from '../../contexts/SolanaWalletContext';
-import type { WalletHandle } from '../../types';
-import { createNetworksState } from './utils';
+import { WalletContext, defaultWalletContextValue } from '../../providers/WalletProvider';
+import type { EvmWalletHandle, SolanaWalletHandle } from '../../types';
 import { useWallets } from '../useWallets';
+import { createNetworksState } from './utils';
 
 vi.mock('../../../hooks/useNetworks', () => ({
   useNetworks: vi.fn(),
@@ -22,7 +18,7 @@ vi.mock('../../../util/featureFlag', () => ({
   isSolanaEnabled: vi.fn(),
 }));
 
-const evmWallet: WalletHandle = {
+const evmWallet: EvmWalletHandle = {
   ecosystem: 'evm',
   account: {
     ecosystem: 'evm',
@@ -32,9 +28,10 @@ const evmWallet: WalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  sendTransaction: async () => ({ hash: '0xhash' }),
 };
 
-const solanaWallet: WalletHandle = {
+const solanaWallet: SolanaWalletHandle = {
   ecosystem: 'solana',
   account: {
     ecosystem: 'solana',
@@ -44,21 +41,18 @@ const solanaWallet: WalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  sendTransaction: async () => ({ hash: 'solana-hash' }),
 };
 
 function createWrapper({
   evm = evmWallet,
-  solana = defaultSolanaWalletContextValue,
+  solana = defaultWalletContextValue.solana,
 }: {
-  evm?: WalletHandle;
-  solana?: WalletHandle;
+  evm?: EvmWalletHandle;
+  solana?: SolanaWalletHandle;
 }) {
   return function Wrapper({ children }: PropsWithChildren) {
-    return (
-      <EvmWalletContext.Provider value={evm}>
-        <SolanaWalletContext.Provider value={solana}>{children}</SolanaWalletContext.Provider>
-      </EvmWalletContext.Provider>
-    );
+    return <WalletContext.Provider value={{ evm, solana }}>{children}</WalletContext.Provider>;
   };
 }
 
@@ -118,5 +112,6 @@ describe('wallet/hooks/useWallets', () => {
     });
 
     expect(result.current.sourceWallet).toBe(evmWallet);
+    expect(result.current.destinationWallet).toBe(evmWallet);
   });
 });

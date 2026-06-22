@@ -17,15 +17,15 @@ export function useWalletModal() {
         return;
       }
 
-      if (appKit && networks.sourceChain) {
-        const caipNetwork = appKit.getCaipNetwork('eip155', networks.sourceChain.id);
+      if (appKit) {
+        const caipNetwork = appKit.getCaipNetwork('eip155', chainId);
         if (caipNetwork) {
           appKit.setCaipNetwork(caipNetwork);
         }
       }
       await open({ view: 'Connect', namespace: 'eip155' });
     },
-    [networks.sourceChain, open],
+    [networks.sourceChain.id, open],
   );
 
   return {

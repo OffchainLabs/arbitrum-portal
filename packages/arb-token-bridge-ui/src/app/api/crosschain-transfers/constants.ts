@@ -6,12 +6,19 @@ export const lifiDestinationChainIds: Record<number, number[]> = {
     ChainId.ArbitrumNova,
     ChainId.ApeChain,
     ChainId.Superposition,
+    ChainId.Solana,
   ],
-  [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.Superposition],
+  [ChainId.ArbitrumOne]: [
+    ChainId.Ethereum,
+    ChainId.ApeChain,
+    ChainId.Superposition,
+    ChainId.Solana,
+  ],
   [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
   [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Superposition],
   [ChainId.Superposition]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
   [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition],
+  [ChainId.Solana]: [ChainId.ArbitrumOne, ChainId.Ethereum],
 };
 
 export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationChainIds).map((id) =>

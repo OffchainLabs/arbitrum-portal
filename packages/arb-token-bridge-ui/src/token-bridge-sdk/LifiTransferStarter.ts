@@ -8,6 +8,8 @@ import { Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { fetchErc20Allowance } from '../util/TokenUtils';
 import { isDepositMode } from '../util/isDepositMode';
+import { isValidTransactionRequest } from '../util/isValidTransactionRequest';
+import type { EvmSendTransactionInput } from '../wallet/types';
 import {
   ApproveTokenProps,
   BridgeTransferStarter,
@@ -43,6 +45,16 @@ export class LifiTransferStarter extends BridgeTransferStarter {
       gas: props.lifiData.gas,
       fee: props.lifiData.fee,
       transactionRequest: props.lifiData.transactionRequest,
+    };
+  }
+
+  public static prepareTransaction(transactionRequest: unknown): EvmSendTransactionInput {
+    if (!isValidTransactionRequest(transactionRequest)) {
+      throw new Error('EVM transaction payload is missing.');
+    }
+
+    return {
+      txRequest: transactionRequest,
     };
   }
 

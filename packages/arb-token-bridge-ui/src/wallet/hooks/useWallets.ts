@@ -1,44 +1,27 @@
-import { useCallback, useMemo } from 'react';
-
 import { useNetworks } from '../../hooks/useNetworks';
 import { ChainId } from '../../types/ChainId';
 import { isSolanaEnabled } from '../../util/featureFlag';
-import { useEvmWalletContext } from '../contexts/EvmWalletContext';
-import { useSolanaWalletContext } from '../contexts/SolanaWalletContext';
-import { WalletHandle } from '../types';
+import { useWalletContext } from '../providers/WalletProvider';
+import type { WalletHandle } from '../types';
 
 export function useWallets(): {
   sourceWallet: WalletHandle;
   destinationWallet: WalletHandle;
 } {
   const [networks] = useNetworks();
-  const evmWallet = useEvmWalletContext();
-  const solanaWallet = useSolanaWalletContext();
-  const getWalletForChainId = useCallback(
-    (chainId: number): WalletHandle => {
-      switch (chainId) {
-        case ChainId.Solana:
-          return isSolanaEnabled() ? solanaWallet : evmWallet;
+  const evmWalletContext = useWalletContext('evm');
+  const solanaWalletContext = useWalletContext('solana');
 
-        default:
-          return evmWallet;
-      }
-    },
-    [evmWallet, solanaWallet],
-  );
+  const getWalletForChainId = (chainId: number): WalletHandle => {
+    const wallet =
+      chainId === ChainId.Solana && isSolanaEnabled() ? solanaWalletContext : evmWalletContext;
 
-  const sourceWallet = useMemo<WalletHandle>(
-    () => getWalletForChainId(networks.sourceChain.id),
-    [getWalletForChainId, networks.sourceChain.id],
-  );
-
-  const destinationWallet = useMemo<WalletHandle>(
-    () => getWalletForChainId(networks.destinationChain.id),
-    [getWalletForChainId, networks.destinationChain.id],
-  );
+    // Expose one caller API while preserving the provider wallet and its transaction implementation.
+    return wallet as WalletHandle;
+  };
 
   return {
-    sourceWallet,
-    destinationWallet,
+    sourceWallet: getWalletForChainId(networks.sourceChain.id),
+    destinationWallet: getWalletForChainId(networks.destinationChain.id),
   };
 }

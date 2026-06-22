@@ -8,6 +8,7 @@ import {
   StepToolDetails,
   createConfig,
   getRoutes,
+  isSVMAddress,
 } from '@lifi/sdk';
 import { BigNumber, constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,7 +19,7 @@ import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, ether } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
-import { isValidLifiTransfer } from './utils';
+import { isValidLifiTransfer, solanaNativeTokenAddress } from './utils';
 
 export const LIFI_INTEGRATOR_IDS = {
   NORMAL: '_arbitrum',
@@ -356,14 +357,24 @@ export async function GET(
 
   try {
     // Validate parameters
-    if (!fromToken || !utils.isAddress(fromToken)) {
+    const isValidFromTokenAddress =
+      Number(fromChainId) === ChainId.Solana
+        ? fromToken === solanaNativeTokenAddress || (fromToken ? isSVMAddress(fromToken) : false)
+        : !!fromToken && utils.isAddress(fromToken);
+
+    if (!isValidFromTokenAddress) {
       return NextResponse.json(
         { message: 'fromToken is not a valid address', data: null },
         { status: 400 },
       );
     }
 
-    if (!toToken || !utils.isAddress(toToken)) {
+    const isValidToTokenAddress =
+      Number(toChainId) === ChainId.Solana
+        ? toToken === solanaNativeTokenAddress || (toToken ? isSVMAddress(toToken) : false)
+        : !!toToken && utils.isAddress(toToken);
+
+    if (!isValidToTokenAddress) {
       return NextResponse.json(
         { message: 'toToken is not a valid address', data: null },
         { status: 400 },
@@ -380,7 +391,7 @@ export async function GET(
 
     if (
       !isValidLifiTransfer({
-        fromToken,
+        fromToken: fromToken ?? undefined,
         sourceChainId: Number(fromChainId),
         destinationChainId: Number(toChainId),
       })
@@ -406,13 +417,16 @@ export async function GET(
       );
     }
 
+    const normalizedFromToken = fromToken ?? '';
+    const normalizedToToken = toToken ?? '';
+
     const parameters: RoutesRequest = {
       fromAddress,
       fromAmount,
-      fromTokenAddress: fromToken,
+      fromTokenAddress: normalizedFromToken,
       fromChainId: Number(fromChainId),
       toChainId: Number(toChainId),
-      toTokenAddress: toToken,
+      toTokenAddress: normalizedToToken,
       toAddress,
     };
 
