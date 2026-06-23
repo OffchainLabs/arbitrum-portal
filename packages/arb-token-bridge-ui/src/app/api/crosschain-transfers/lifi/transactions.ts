@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
-import { normalizeTimestamp } from '../../../../state/app/utils';
 import { addressesEqual } from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
+import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
 import type { Token } from '../types';
 
