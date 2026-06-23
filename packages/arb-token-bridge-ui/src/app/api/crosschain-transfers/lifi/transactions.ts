@@ -16,6 +16,13 @@ const NO_STORE_HEADERS = {
   'Cache-Control': 'private, no-cache, no-store, must-revalidate',
 };
 
+const UNKNOWN_DESTINATION_TOKEN: Token = {
+  address: constants.AddressZero,
+  decimals: 0,
+  logoURI: '',
+  symbol: 'Unknown',
+};
+
 type LifiTransactionHistoryAmount = {
   amount: string;
   amountUSD: string;
@@ -97,15 +104,17 @@ export function transformLifiHistoryTransaction({
   const destinationChainId = Number(
     receiving ? receiving.chainId || lastStep?.toToken.chainId : lastStep?.toToken.chainId,
   );
+  const isPending = statusResponse.status === 'PENDING';
 
   if (!sourceChainId || !destinationChainId) {
     return null;
   }
 
   const fromToken = sending.token || firstStep?.fromToken;
-  const toToken = receiving?.token || lastStep?.toToken;
+  const toToken =
+    receiving?.token || lastStep?.toToken || (isPending ? UNKNOWN_DESTINATION_TOKEN : undefined);
   const fromAmount = sending.amount || firstStep?.fromAmount;
-  const toAmount = receiving?.amount || lastStep?.toAmount;
+  const toAmount = receiving?.amount || lastStep?.toAmount || (isPending ? '0' : undefined);
   const toolDetails =
     firstStep?.toolDetails ??
     ('tool' in statusResponse

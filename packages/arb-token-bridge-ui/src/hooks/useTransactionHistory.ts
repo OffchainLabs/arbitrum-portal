@@ -22,7 +22,7 @@ import {
   isSameTransaction,
   isTxPending,
 } from '../components/TransactionHistory/helpers';
-import { MergedTransaction } from '../state/app/state';
+import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
@@ -33,6 +33,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
+import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
@@ -229,6 +230,11 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   if (!txId) {
     return undefined;
   }
+
+  if (isLifiTransfer(tx)) {
+    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${txId.toLowerCase()}`;
+  }
+
   const base = `${tx.parentChainId}-${txId.toLowerCase()}`;
 
   // For token withdrawals from event logs, include _l2ToL1Id to preserve batch events
@@ -246,9 +252,87 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   return base;
 }
 
+const UNKNOWN_LIFI_TOKEN_SYMBOL = 'Unknown';
+
+function mergeLifiTransaction({
+  apiTx,
+  localTx,
+}: {
+  apiTx: LifiMergedTransaction;
+  localTx: LifiMergedTransaction;
+}): LifiMergedTransaction {
+  const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
+    sourceChainId: apiTx.sourceChainId,
+    destinationChainId: apiTx.destinationChainId,
+  });
+  const apiFromToken =
+    apiTx.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+      ? undefined
+      : apiTx.fromAmount.token;
+  const apiToToken =
+    apiTx.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL ? undefined : apiTx.toAmount.token;
+  const apiToAmount = apiToToken ? apiTx.toAmount : undefined;
+
+  return {
+    ...localTx,
+    ...apiTx,
+    parentChainId,
+    childChainId,
+    direction: isDepositMode ? 'deposit' : 'withdraw',
+    isWithdrawal: !isDepositMode,
+    resolvedAt: apiTx.resolvedAt ?? localTx.resolvedAt,
+    destinationTxId: apiTx.destinationTxId ?? localTx.destinationTxId,
+    durationMs: apiTx.durationMs || localTx.durationMs,
+    fromAmount: {
+      amount: apiTx.fromAmount.amount || localTx.fromAmount.amount,
+      amountUSD: apiTx.fromAmount.amountUSD || localTx.fromAmount.amountUSD || '0',
+      token: {
+        address: apiFromToken?.address || localTx.fromAmount.token.address || '',
+        decimals: apiFromToken?.decimals || localTx.fromAmount.token.decimals || 0,
+        logoURI: apiFromToken?.logoURI || localTx.fromAmount.token.logoURI || '',
+        symbol:
+          apiFromToken?.symbol || localTx.fromAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
+      },
+    },
+    toAmount: {
+      amount: apiToAmount?.amount || localTx.toAmount.amount,
+      amountUSD: apiToAmount?.amountUSD || localTx.toAmount.amountUSD || '0',
+      token: {
+        address: apiToToken?.address || localTx.toAmount.token.address || '',
+        decimals: apiToToken?.decimals || localTx.toAmount.token.decimals || 0,
+        logoURI: apiToToken?.logoURI || localTx.toAmount.token.logoURI || '',
+        symbol: apiToToken?.symbol || localTx.toAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
+      },
+    },
+    toolDetails: {
+      key: apiTx.toolDetails.key || localTx.toolDetails.key || '',
+      name: apiTx.toolDetails.name || localTx.toolDetails.name || '',
+      logoURI: apiTx.toolDetails.logoURI || localTx.toolDetails.logoURI || '',
+    },
+    transactionRequest: apiTx.transactionRequest ?? localTx.transactionRequest,
+  };
+}
+
 // remove the duplicates from the transactions passed
 function dedupeTransactions(txs: Transfer[]) {
-  return Array.from(new Map(txs.map((tx) => [getCacheKeyFromTransaction(tx), tx])).values());
+  const transactionsByCacheKey = new Map<string | undefined, Transfer>();
+
+  for (const tx of txs) {
+    const cacheKey = getCacheKeyFromTransaction(tx);
+    const existingTx = transactionsByCacheKey.get(cacheKey);
+
+    if (existingTx && isLifiTransfer(existingTx) && isLifiTransfer(tx)) {
+      transactionsByCacheKey.set(
+        cacheKey,
+        mergeLifiTransaction({ localTx: existingTx, apiTx: tx }),
+      );
+      continue;
+    }
+
+    transactionsByCacheKey.set(cacheKey, tx);
+  }
+
+  return Array.from(transactionsByCacheKey.values());
 }
 
 export function getDedupedTransactionsForPagination({
@@ -269,6 +353,11 @@ export function getDedupedTransactionsForPagination({
 
 function getMergedTransactionIdentity(tx: MergedTransaction) {
   const normalizedTxId = tx.txId?.toLowerCase();
+
+  if (isLifiTransfer(tx)) {
+    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${normalizedTxId}`;
+  }
+
   return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
 }
 
@@ -297,6 +386,18 @@ export function mergeTransactions({
 
     const identity = getMergedTransactionIdentity(tx);
     const existingTransactions = fetchedByIdentity.get(identity) ?? [];
+
+    if (isLifiTransfer(tx)) {
+      const [existingTx] = existingTransactions;
+      fetchedByIdentity.set(
+        identity,
+        existingTx && isLifiTransfer(existingTx)
+          ? [mergeLifiTransaction({ localTx: existingTx, apiTx: tx })]
+          : [tx],
+      );
+      continue;
+    }
+
     fetchedByIdentity.set(identity, [...existingTransactions, tx]);
   }
 
@@ -307,13 +408,25 @@ export function mergeTransactions({
 
     const fetchedTransactionsWithSameIdentity =
       fetchedByIdentity.get(getMergedTransactionIdentity(tx)) ?? [];
+    const [fetchedTx] = fetchedTransactionsWithSameIdentity;
 
-    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) =>
-      isSameTransaction(
+    if (isLifiTransfer(tx) && fetchedTx && isLifiTransfer(fetchedTx)) {
+      fetchedByIdentity.set(getMergedTransactionIdentity(tx), [
+        mergeLifiTransaction({ localTx: tx, apiTx: fetchedTx }),
+      ]);
+      return false;
+    }
+
+    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) => {
+      if (isLifiTransfer(fetchedTx) && isLifiTransfer(tx)) {
+        return getMergedTransactionIdentity(fetchedTx) === getMergedTransactionIdentity(tx);
+      }
+
+      return isSameTransaction(
         { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
         { ...tx, txId: tx.txId.toLowerCase() },
-      ),
-    );
+      );
+    });
   });
 
   return [...Array.from(fetchedByIdentity.values()).flat(), ...pendingOnlyTransactions].sort(

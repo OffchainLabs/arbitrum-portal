@@ -77,6 +77,17 @@ const lifiTestBaseTx: LifiMergedTransaction = {
   destinationTxId: null,
 };
 
+const unknownLifiDestinationAmount: LifiMergedTransaction['toAmount'] = {
+  amount: BigNumber.from(0),
+  amountUSD: '0',
+  token: {
+    address: '0x0000000000000000000000000000000000000000',
+    decimals: 0,
+    logoURI: '',
+    symbol: 'Unknown',
+  },
+};
+
 /**
  * Creates a test case configuration for transaction history testing.
  * @param config - Test case configuration
@@ -303,6 +314,73 @@ describe('mergeTransactions', () => {
 
     expect(transactions).toEqual([newerTx, olderTx]);
   });
+
+  it('dedupes fetched LiFi rows and keeps cached destination token metadata over pending API unknown metadata', () => {
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-duplicate',
+      parentChainId: 42161,
+      childChainId: 1,
+      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      fromAmount: {
+        ...lifiTestBaseTx.fromAmount,
+        token: {
+          ...lifiTestBaseTx.fromAmount.token,
+          logoURI: 'https://example.com/source-token.png',
+        },
+      },
+      toAmount: {
+        amount: BigNumber.from(99),
+        amountUSD: '9',
+        token: {
+          address: '0x2222222222222222222222222222222222222222',
+          decimals: 18,
+          logoURI: 'https://example.com/token.png',
+          symbol: 'APE',
+        },
+      },
+    };
+    const pendingApiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-duplicate',
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      fromAmount: {
+        ...lifiTestBaseTx.fromAmount,
+        amount: BigNumber.from(2),
+        amountUSD: '2',
+        token: {
+          ...lifiTestBaseTx.fromAmount.token,
+          logoURI: '',
+        },
+      },
+      toAmount: unknownLifiDestinationAmount,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      fetchedTransactions: [[cachedLifiTx, pendingApiLifiTx]],
+    });
+
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]).toMatchObject({
+      txId: '0xlifi-duplicate',
+      parentChainId: 1,
+      childChainId: 42161,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      toolDetails: {
+        ...pendingApiLifiTx.toolDetails,
+        logoURI: cachedLifiTx.toolDetails.logoURI,
+      },
+      fromAmount: {
+        ...pendingApiLifiTx.fromAmount,
+        token: cachedLifiTx.fromAmount.token,
+      },
+      toAmount: cachedLifiTx.toAmount,
+    });
+  });
 });
 
 describe('getDedupedTransactionsForPagination', () => {
@@ -326,5 +404,73 @@ describe('getDedupedTransactionsForPagination', () => {
     });
 
     expect(transactions).toEqual([apiLifiTx]);
+  });
+
+  it('dedupes local LiFi cache with pending API history that has unknown destination token metadata', () => {
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-pending-unknown',
+      parentChainId: 42161,
+      childChainId: 1,
+      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      fromAmount: {
+        ...lifiTestBaseTx.fromAmount,
+        token: {
+          ...lifiTestBaseTx.fromAmount.token,
+          logoURI: 'https://example.com/source-token.png',
+        },
+      },
+      toAmount: {
+        amount: BigNumber.from(99),
+        amountUSD: '9',
+        token: {
+          address: '0x2222222222222222222222222222222222222222',
+          decimals: 18,
+          logoURI: 'https://example.com/token.png',
+          symbol: 'APE',
+        },
+      },
+    };
+    const pendingApiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-pending-unknown',
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      fromAmount: {
+        ...lifiTestBaseTx.fromAmount,
+        amount: BigNumber.from(2),
+        amountUSD: '2',
+        token: {
+          ...lifiTestBaseTx.fromAmount.token,
+          logoURI: '',
+        },
+      },
+      toAmount: unknownLifiDestinationAmount,
+    };
+
+    const transactions = getDedupedTransactionsForPagination({
+      fetchedTransactions: [pendingApiLifiTx],
+      cachedDeposits: [],
+      cachedLifiTransactions: [cachedLifiTx],
+    });
+
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]).toMatchObject({
+      txId: '0xlifi-pending-unknown',
+      parentChainId: 1,
+      childChainId: 42161,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      toolDetails: {
+        ...pendingApiLifiTx.toolDetails,
+        logoURI: cachedLifiTx.toolDetails.logoURI,
+      },
+      fromAmount: {
+        ...pendingApiLifiTx.fromAmount,
+        token: cachedLifiTx.fromAmount.token,
+      },
+      toAmount: cachedLifiTx.toAmount,
+    });
   });
 });

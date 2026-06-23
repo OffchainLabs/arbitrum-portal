@@ -19,6 +19,15 @@ const arbUsdcToken: Token = {
   address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
   chainId: 42161,
 };
+const apeToken: Token = {
+  address: '0x4d224452801ACEd8B2F0aebE155379bb5D594381',
+  chainId: 1,
+  decimals: 18,
+  logoURI: 'https://etherscan.io/token/images/apecoin_32.png',
+  name: 'ApeCoin',
+  priceUSD: '0.133701',
+  symbol: 'APE',
+};
 
 function createStatusResponse({
   sourceChainId = 1,
@@ -146,6 +155,65 @@ describe('transformLifiHistoryTransaction', () => {
     };
 
     expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
+  });
+
+  it('keeps pending LiFi history when destination token metadata is missing', () => {
+    const statusResponse: StatusResponse = {
+      status: 'PENDING',
+      substatus: 'WAIT_DESTINATION_TRANSACTION',
+      tool: 'glacis',
+      transactionId: '0x5b5218c219951ef22b03135a7f2bb94af15c0eeb80af2f55b57f2b739fe1e339',
+      sending: {
+        txHash: '0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
+        txLink:
+          'https://etherscan.io/tx/0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
+        token: apeToken,
+        chainId: 1,
+        gasPrice: '230492707',
+        gasUsed: '592879',
+        gasToken: usdcToken,
+        gasAmount: '136654285633453',
+        gasAmountUSD: '0.2254',
+        amountUSD: '168.1311',
+        value: '61424531524806',
+        includedSteps: [],
+        amount: '1257515872749456957793',
+        timestamp: 1_781_830_547,
+      },
+      receiving: {
+        chainId: 42161,
+      },
+      lifiExplorerLink:
+        'https://scan.li.fi/tx/0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
+      fromAddress: wallet,
+      toAddress: wallet,
+      metadata: {
+        integrator: '_arbitrum',
+      },
+      feeCosts: [],
+    };
+
+    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+      txId: '0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      value: '1257.515872749456957793',
+      direction: 'deposit',
+      isWithdrawal: false,
+      sourceChainId: 1,
+      destinationChainId: 42161,
+      toAmount: {
+        amount: '0',
+        amountUSD: '0',
+        token: {
+          address: '0x0000000000000000000000000000000000000000',
+          decimals: 0,
+          logoURI: '',
+          symbol: 'Unknown',
+        },
+      },
+      destinationTxId: null,
+    });
   });
 
   it('skips malformed LiFi history rows without dropping the batch', () => {
