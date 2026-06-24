@@ -20,6 +20,7 @@ import {
   defaultL3Network,
 } from './networksNitroTestnode';
 import { getOrbitChains, orbitChains } from './orbitChainsList';
+import { getAuthenticatedAlchemyRpcUrl } from './rpc/alchemy';
 import { getRpcUrl } from './rpc/getRpcUrl';
 
 /** The network that you reference when calling `block.number` in solidity */
@@ -504,7 +505,7 @@ export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
   // custom chain details need to be added to various objects to make it work with the UI
   //
   // add RPC
-  rpcURLs[chain.chainId] = chain.rpcUrl;
+  rpcURLs[chain.chainId] = getAuthenticatedAlchemyRpcUrl(chain.chainId, chain.rpcUrl);
   // explorer URL
   explorerUrls[chain.chainId] = chain.explorerUrl;
 }
