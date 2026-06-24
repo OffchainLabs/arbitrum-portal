@@ -9,9 +9,10 @@ const authenticatedAlchemyOrbitRpcUrls: { [chainId: number]: string } = {
 
 export function getAuthenticatedAlchemyRpcUrl(chainId: number, fallbackRpcUrl: string): string {
   const baseUrl = authenticatedAlchemyOrbitRpcUrls[chainId];
-  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
+  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY?.trim();
 
-  if (!baseUrl || !alchemyKey) {
+  // only upgrade the throttled public Alchemy endpoint; leave any custom RPC alone
+  if (!baseUrl || !alchemyKey || !fallbackRpcUrl.includes('.g.alchemy.com/public')) {
     return fallbackRpcUrl;
   }
 
