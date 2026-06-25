@@ -5,7 +5,7 @@ import { PORTAL_DOMAIN, PathnameEnum } from '@/bridge/constants';
 import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
 import { isNetwork } from '@/bridge/util/networks';
 
-import BridgePageWrapper from './BridgePageWrapper';
+import { initializeBridgePage } from '../../../utils/bridgePageUtils';
 
 export async function generateMetadata(props: SearchParamsProps): Promise<Metadata> {
   const searchParams = await props.searchParams;
@@ -70,5 +70,7 @@ export async function generateMetadata(props: SearchParamsProps): Promise<Metada
 
 export default async function BridgePage(props: SearchParamsProps) {
   const searchParams = await props.searchParams;
-  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BRIDGE} />;
+  await initializeBridgePage({ searchParams, redirectPath: PathnameEnum.BRIDGE });
+  // The App is rendered by the bridge layout; the page only initializes it.
+  return null;
 }

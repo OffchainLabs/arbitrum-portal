@@ -1,44 +1,31 @@
 import type { SubNavItem } from '../config/navConfig';
 import type { NavRoute } from '../types';
 
-function parseHref(href: string): { pathname: string; searchParams: URLSearchParams } {
-  const [pathname, search] = href.split('?');
-  return {
-    pathname: pathname || href,
-    searchParams: new URLSearchParams(search),
-  };
+function getPathnameFromHref(href: string): string {
+  const [pathname] = href.split('?');
+  return pathname || href;
 }
 
 export function getIsActiveSubNavItem(
   item: SubNavItem,
   activeRoute: NavRoute | null,
   pathname: string,
-  searchParams: URLSearchParams,
 ): boolean {
   if (item.external) return false;
 
   if (activeRoute === '/bridge') {
-    const itemUrl = parseHref(item.href);
-    const itemTab = itemUrl.searchParams.get('tab');
+    const itemPathname = getPathnameFromHref(item.href);
 
-    if (itemUrl.pathname === '/bridge/buy') {
+    if (itemPathname === '/bridge/buy') {
       return pathname.startsWith('/bridge/buy');
     }
 
-    if (itemUrl.pathname === '/bridge') {
-      const currentTab = searchParams.get('tab');
+    if (itemPathname === '/bridge/tx-history') {
+      return pathname.startsWith('/bridge/tx-history');
+    }
 
-      if (itemTab === 'tx_history') {
-        return pathname === '/bridge' && currentTab === 'tx_history';
-      }
-
-      if (itemTab === 'bridge' || !itemTab) {
-        return (
-          pathname === '/bridge' &&
-          !pathname.startsWith('/bridge/buy') &&
-          currentTab !== 'tx_history'
-        );
-      }
+    if (itemPathname === '/bridge') {
+      return pathname === '/bridge';
     }
   }
 

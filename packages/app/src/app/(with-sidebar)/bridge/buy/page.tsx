@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { SearchParamsProps } from '@/app/src/types';
 import { PathnameEnum } from '@/bridge/constants';
 
-import BridgePageWrapper from '../BridgePageWrapper';
+import { initializeBridgePage } from '../../../../utils/bridgePageUtils';
 
 export const metadata: Metadata = {
   title: 'On-Ramp to Arbitrum',
@@ -13,5 +13,7 @@ export const metadata: Metadata = {
 
 export default async function BridgeBuyPage(props: SearchParamsProps) {
   const searchParams = await props.searchParams;
-  return <BridgePageWrapper searchParams={searchParams} redirectPath={PathnameEnum.BUY} />;
+  await initializeBridgePage({ searchParams, redirectPath: PathnameEnum.BUY });
+  // The App is rendered by the bridge layout; the page only initializes it.
+  return null;
 }
