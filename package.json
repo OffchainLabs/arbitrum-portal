@@ -19,13 +19,10 @@
     "lint:fix": "tsc && eslint --quiet --fix",
     "postinstall": "pnpm run install:chromium",
     "install:chromium": "pnpm dlx @puppeteer/browsers install chrome@$npm_package_config_chromeVersion --path $npm_package_config_chromePath",
-    "test:e2e": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec synpress run --configFile synpress.config.ts",
-    "test:e2e:cctp": "pnpm run test:e2e --configFile synpress.cctp.config.ts",
+    "test:e2e": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec playwright test",
+    "test:e2e:cctp": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec playwright test --config playwright.cctp.config.ts",
     "test:e2e:orbit": "E2E_ORBIT=true pnpm run test:e2e",
-    "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true pnpm run test:e2e",
-    "test:e2e:pw": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec playwright test",
-    "test:e2e:pw:orbit": "E2E_ORBIT=true pnpm run test:e2e:pw",
-    "test:e2e:pw:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true pnpm run test:e2e:pw"
+    "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true pnpm run test:e2e"
   },
   "pnpm": {
     "overrides": {

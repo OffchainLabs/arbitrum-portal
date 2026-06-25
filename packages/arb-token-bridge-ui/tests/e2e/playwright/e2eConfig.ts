@@ -11,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 
 export type E2EConfig = {
+  // RPC urls + identity
   ETH_RPC_URL: string;
   ARB_RPC_URL: string;
   ETH_SEPOLIA_RPC_URL: string;
@@ -19,9 +20,20 @@ export type E2EConfig = {
   PRIVATE_KEY: string;
   INFURA_KEY?: string;
   ORBIT_TEST: '0' | '1';
+  // native token
   NATIVE_TOKEN_SYMBOL: string;
   NATIVE_TOKEN_ADDRESS?: string;
   NATIVE_TOKEN_DECIMALS: number;
+  // deployed test tokens (regular / orbit suite)
+  ERC20_TOKEN_ADDRESS_PARENT_CHAIN?: string;
+  ERC20_TOKEN_ADDRESS_CHILD_CHAIN?: string;
+  L1_WETH_ADDRESS?: string;
+  L2_WETH_ADDRESS?: string;
+  CUSTOM_DESTINATION_ADDRESS?: string;
+  REDEEM_RETRYABLE_TEST_TX?: string;
+  LOCAL_WALLET_PRIVATE_KEY?: string;
+  // which networks the MetaMask fixture should add. CCTP runs only on testnets.
+  IS_CCTP?: boolean;
 };
 
 // Written by globalSetup, read by the `e2eEnv` fixture. Gitignored.
