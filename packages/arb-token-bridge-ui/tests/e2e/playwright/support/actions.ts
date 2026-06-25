@@ -238,8 +238,9 @@ export async function findTransactionInTransactionHistory(
 ): Promise<Locator> {
   const timeout = 120_000;
 
-  // Replace . with \.
-  const parsedAmount = amount.toString().replace(/\./g, '\\.');
+  // Escape RegExp metacharacters (including the backslash itself) so the amount
+  // is matched literally, e.g. "0.1" matches a literal dot rather than any char.
+  const parsedAmount = amount.toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const rowId = new RegExp(
     `(claimable|deposit)-row-[0-9xabcdef]*-${parsedAmount}${symbol}${
