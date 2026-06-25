@@ -1,0 +1,15 @@
+name: Chain Uptime Monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */4 * * *' # Run every 4 hours
+
+jobs:
+  run-monitoring:
+    name: Chain Uptime Monitor (Orbit)
+    uses: ./.github/workflows/monitoring.yml
+    with:
+      chain: orbit
+      monitor: chain-uptime
+    secrets: inherit
