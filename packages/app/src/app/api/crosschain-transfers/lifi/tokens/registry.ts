@@ -182,9 +182,13 @@ export interface LifiTokenRegistry {
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
+const lifiTokenRegistryChainIds = allowedLifiSourceChainIds.filter(
+  (chainId) => chainId !== ChainId.Robinhood,
+);
+
 const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const response = await getTokens({
-    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
+    chains: lifiTokenRegistryChainIds as unknown as LiFiChainId[],
   });
 
   if (!response.tokens) {
@@ -197,7 +201,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
   const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
 
-  for (const chainId of allowedLifiSourceChainIds) {
+  for (const chainId of lifiTokenRegistryChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
     const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(

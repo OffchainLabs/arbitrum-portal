@@ -33,6 +33,7 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "55244": "",
       "8453": "https://base-mainnet.infura.io/v3/123456",
       "84532": "https://base-sepolia.infura.io/v3/123456",
+      "999999999": "",
     }
   `);
 });

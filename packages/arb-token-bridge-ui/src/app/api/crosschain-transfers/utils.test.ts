@@ -80,6 +80,40 @@ function generateBaseDepositTestCases() {
     .flatMap((testCase) => testCase);
 }
 
+function generateRobinhoodDepositTestCases() {
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Base]
+    .map((sourceChainId) => [
+      {
+        fromToken: undefined,
+        sourceChainId,
+        destinationChainId: ChainId.Robinhood,
+      },
+      {
+        fromToken: constants.AddressZero,
+        sourceChainId,
+        destinationChainId: ChainId.Robinhood,
+      },
+    ])
+    .flatMap((testCase) => testCase);
+}
+
+function generateRobinhoodWithdrawTestCases() {
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition]
+    .map((destinationChainId) => [
+      {
+        fromToken: undefined,
+        sourceChainId: ChainId.Robinhood,
+        destinationChainId,
+      },
+      {
+        fromToken: constants.AddressZero,
+        sourceChainId: ChainId.Robinhood,
+        destinationChainId,
+      },
+    ])
+    .flatMap((testCase) => testCase);
+}
+
 describe('isValidLifiTransfer', () => {
   test.each([
     ...generateTestCases({
@@ -118,6 +152,23 @@ describe('isValidLifiTransfer', () => {
       expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
     },
   );
+
+  test.each([...generateRobinhoodDepositTestCases(), ...generateRobinhoodWithdrawTestCases()])(
+    `Robinhood route from $sourceChainId to $destinationChainId with token $fromToken should return true`,
+    ({ destinationChainId, fromToken, sourceChainId }) => {
+      expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
+    },
+  );
+
+  it('Robinhood to Base should return false', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: undefined,
+        sourceChainId: ChainId.Robinhood,
+        destinationChainId: ChainId.Base,
+      }),
+    ).toBe(false);
+  });
 
   it('ArbitrumOne to ApeChain with Ape should return true', () => {
     expect(
@@ -276,6 +327,26 @@ describe('isLifiTransfer', () => {
         isLifiTransfer({
           sourceChainId: ChainId.ArbitrumOne,
           destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(false);
+    });
+  });
+
+  describe('Robinhood pairs', () => {
+    it('Base → Robinhood is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.Robinhood,
+        }),
+      ).toBe(true);
+    });
+
+    it('Robinhood → Base is not a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.Robinhood,
+          destinationChainId: ChainId.Base,
         }),
       ).toBe(false);
     });

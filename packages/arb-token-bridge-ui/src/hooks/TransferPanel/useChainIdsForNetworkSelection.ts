@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { allowedLifiSourceChainIds } from '../../app/api/crosschain-transfers/constants';
 import { isLifiEnabled } from '../../util/featureFlag';
 import {
   getDestinationChainIds,
@@ -23,17 +24,25 @@ export function useChainIdsForNetworkSelection({ isSource }: { isSource: boolean
   );
 
   return useMemo(() => {
+    const isLifiFeatureEnabled = isLifiEnabled();
+
     if (isSource) {
-      const sourceChainIds = getSupportedChainIds({
-        includeMainnets: !isTestnetMode,
-        includeTestnets: isTestnetMode,
-      });
+      const sourceChainIds = Array.from(
+        new Set([
+          ...getSupportedChainIds({
+            includeMainnets: !isTestnetMode,
+            includeTestnets: isTestnetMode,
+          }),
+          ...(isLifiFeatureEnabled && !isTestnetMode ? allowedLifiSourceChainIds : []),
+        ]),
+      );
 
       // do not display chains that have no destination chains
       return sortChainIds(
         sourceChainIds.filter(
           (chainId) =>
             getDestinationChainIds(chainId, {
+              includeLifiEnabledChainPairs: isLifiFeatureEnabled,
               disableTransfersToNonArbitrumChains,
             }).length > 0,
         ),
@@ -41,7 +50,7 @@ export function useChainIdsForNetworkSelection({ isSource }: { isSource: boolean
     }
 
     const destinationChainIds = getDestinationChainIds(networks.sourceChain.id, {
-      includeLifiEnabledChainPairs: isLifiEnabled(),
+      includeLifiEnabledChainPairs: isLifiFeatureEnabled,
       disableTransfersToNonArbitrumChains,
     });
 

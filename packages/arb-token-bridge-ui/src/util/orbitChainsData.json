@@ -272,6 +272,49 @@
       }
     },
     {
+      "chainId": 999999999,
+      "confirmPeriodBlocks": 45818,
+      "ethBridge": {
+        "bridge": "0x0000000000000000000000000000000000000000",
+        "inbox": "0x0000000000000000000000000000000000000000",
+        "outbox": "0x0000000000000000000000000000000000000000",
+        "rollup": "0x0000000000000000000000000000000000000000",
+        "sequencerInbox": "0x0000000000000000000000000000000000000000"
+      },
+      "explorerUrl": "https://explorer.robinhood.example",
+      "rpcUrl": "https://rpc.robinhood.example",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "Robinhood",
+      "slug": "robinhood",
+      "parentChainId": 42161,
+      "tokenBridge": {
+        "parentCustomGateway": "0x0000000000000000000000000000000000000000",
+        "parentErc20Gateway": "0x0000000000000000000000000000000000000000",
+        "parentGatewayRouter": "0x0000000000000000000000000000000000000000",
+        "parentMultiCall": "0x0000000000000000000000000000000000000000",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x0000000000000000000000000000000000000000",
+        "childErc20Gateway": "0x0000000000000000000000000000000000000000",
+        "childGatewayRouter": "0x0000000000000000000000000000000000000000",
+        "childMultiCall": "0x0000000000000000000000000000000000000000",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#00C805",
+        "network": {
+          "name": "Robinhood",
+          "logo": "/images/OrbitLogo.svg",
+          "description": "Robinhood Orbit chain."
+        },
+        "assertionIntervalSeconds": 3600
+      }
+    },
+    {
       "chainId": 33139,
       "confirmPeriodBlocks": 45818,
       "ethBridge": {
