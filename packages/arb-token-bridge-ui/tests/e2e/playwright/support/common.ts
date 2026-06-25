@@ -1,16 +1,22 @@
 /*
-  All the utility functions and configs related to our testing
-*/
+ * Playwright port of tests/support/common.ts.
+ *
+ * The original is Cypress-shaped: it reads `Cypress.env(...)` and registers `cy.task`s. This
+ * version takes an explicit `E2EConfig` object (provided by the `e2eEnv` fixture) and exposes
+ * the same network helpers plus the node-side funding/balance/activity helpers used by
+ * globalSetup. Nothing here touches the browser; page interactions live in actions.ts.
+ */
 import { EthBridger, MultiCaller } from '@arbitrum/sdk';
 import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Signer, Wallet, ethers, utils } from 'ethers';
 
-import { MULTICALL_TESTNET_ADDRESS } from '../../src/constants';
+import { MULTICALL_TESTNET_ADDRESS } from '../../../../src/constants';
 import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
-} from '../../src/util/networksNitroTestnode';
+} from '../../../../src/util/networksNitroTestnode';
+import { type E2EConfig } from '../e2eConfig';
 
 export type NetworkType = 'parentChain' | 'childChain';
 export type NetworkName =
@@ -21,7 +27,7 @@ export type NetworkName =
   | 'Ethereum'
   | 'Sepolia';
 
-type NetworkConfig = {
+export type NetworkConfig = {
   networkName: NetworkName;
   rpcUrl: string;
   chainId: number;
@@ -30,25 +36,20 @@ type NetworkConfig = {
   multiCall: string;
 };
 
-export const getL1NetworkName = () => {
-  return getL1NetworkConfig().networkName;
-};
+export const getL1NetworkName = (cfg: E2EConfig) => getL1NetworkConfig(cfg).networkName;
+export const getL2NetworkName = (cfg: E2EConfig) => getL2NetworkConfig(cfg).networkName;
 
-export const getL2NetworkName = () => {
-  return getL2NetworkConfig().networkName;
-};
-
-export const getNetworkSlug = (network: 'parent' | 'child') => {
-  const networkName = network === 'parent' ? getL1NetworkName() : getL2NetworkName();
+export const getNetworkSlug = (cfg: E2EConfig, network: 'parent' | 'child') => {
+  const networkName = network === 'parent' ? getL1NetworkName(cfg) : getL2NetworkName(cfg);
   return networkName.toLowerCase().replace(' ', '-');
 };
 
-export const getL1NetworkConfig = (): NetworkConfig => {
-  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1';
+export const getL1NetworkConfig = (cfg: E2EConfig): NetworkConfig => {
+  const isOrbitTest = cfg.ORBIT_TEST === '1';
 
   return {
     networkName: isOrbitTest ? 'Nitro Testnode L2' : 'Nitro Testnode L1',
-    rpcUrl: Cypress.env('ETH_RPC_URL'),
+    rpcUrl: cfg.ETH_RPC_URL,
     chainId: isOrbitTest ? 412346 : 1337,
     symbol: 'ETH',
     isTestnet: true,
@@ -58,16 +59,16 @@ export const getL1NetworkConfig = (): NetworkConfig => {
   };
 };
 
-export const getL2NetworkConfig = (): NetworkConfig => {
-  const isOrbitTest = Cypress.env('ORBIT_TEST') == '1';
-  const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH';
+export const getL2NetworkConfig = (cfg: E2EConfig): NetworkConfig => {
+  const isOrbitTest = cfg.ORBIT_TEST === '1';
+  const nativeTokenSymbol = cfg.NATIVE_TOKEN_SYMBOL ?? 'ETH';
   const isCustomFeeToken = nativeTokenSymbol !== 'ETH';
 
   const l3Network = isCustomFeeToken ? defaultL3CustomGasTokenNetwork : defaultL3Network;
 
   return {
     networkName: isOrbitTest ? 'Nitro Testnode L3' : 'Nitro Testnode L2',
-    rpcUrl: Cypress.env('ARB_RPC_URL'),
+    rpcUrl: cfg.ARB_RPC_URL,
     chainId: isOrbitTest ? 333333 : 412346,
     symbol: nativeTokenSymbol,
     isTestnet: true,
@@ -77,10 +78,10 @@ export const getL2NetworkConfig = (): NetworkConfig => {
   };
 };
 
-export const getL1TestnetNetworkConfig = (): NetworkConfig => {
+export const getL1TestnetNetworkConfig = (cfg: E2EConfig): NetworkConfig => {
   return {
     networkName: 'Sepolia',
-    rpcUrl: Cypress.env('ETH_SEPOLIA_RPC_URL'),
+    rpcUrl: cfg.ETH_SEPOLIA_RPC_URL,
     chainId: 11155111,
     symbol: 'ETH',
     isTestnet: true,
@@ -88,10 +89,10 @@ export const getL1TestnetNetworkConfig = (): NetworkConfig => {
   };
 };
 
-export const getL2TestnetNetworkConfig = (): NetworkConfig => {
+export const getL2TestnetNetworkConfig = (cfg: E2EConfig): NetworkConfig => {
   return {
     networkName: 'Arbitrum Sepolia',
-    rpcUrl: Cypress.env('ARB_SEPOLIA_RPC_URL'),
+    rpcUrl: cfg.ARB_SEPOLIA_RPC_URL,
     chainId: 421614,
     symbol: 'ETH',
     isTestnet: true,
@@ -110,25 +111,12 @@ export function getZeroToLessThanOneToken(symbol: string) {
   return new RegExp(`0(\\.\\d+)* ${symbol}`);
 }
 
-export const importTokenThroughUI = (address: string) => {
-  // Click on the ETH dropdown (Select token button)
-  cy.findSelectTokenButton(Cypress.env('NATIVE_TOKEN_SYMBOL') ?? 'ETH').click();
-
-  // open the Select Token popup
-  cy.findByPlaceholderText(/Search by token name/i)
-    .should('be.visible')
-    .type(address);
-
-  // Click on the Add new token button
-  return cy.findByRole('button', { name: 'Add New Token' }).should('be.visible').click();
-};
-
 export async function getInitialETHBalance(
   rpcURL: string,
-  walletAddress?: string,
+  walletAddress: string,
 ): Promise<BigNumber> {
   const provider = new StaticJsonRpcProvider(rpcURL);
-  return await provider.getBalance(walletAddress ?? Cypress.env('ADDRESS'));
+  return await provider.getBalance(walletAddress);
 }
 
 export async function getInitialERC20Balance({
@@ -150,57 +138,67 @@ export async function getInitialERC20Balance({
   return tokenData?.balance;
 }
 
-export const acceptMetamaskAccess = () => {
-  cy.acceptMetamaskAccess().then(() => {
-    cy.isCypressWindowActive().then((cyWindowIsActive) => {
-      if (!cyWindowIsActive) {
-        cy.switchToCypressWindow().should('be.true');
-      }
-    });
-  });
-};
-
-export const startWebApp = (
-  url = '/bridge',
-  options: {
-    query: { [s: string]: string };
-    connectMetamask: boolean;
-  },
-) => {
-  // once all the metamask setup is done, we can start the actual web-app for testing
-  // clear local storage for terms to always have it pop up
-  cy.clearLocalStorage('arbitrum:bridge:tos-v2');
-  cy.visit(url, {
-    qs: options.query,
-  });
-  if (Cypress.currentRetry > 0) {
-    // ensures we don't test with the same state that could have caused the test to fail
-    cy.reload(true);
-  }
-
-  cy.task('getWalletConnectedToDapp').then((connected) => {
-    if (!connected) {
-      cy.findAllByText('Connect Wallet').first().should('be.visible');
-      if (options.connectMetamask) {
-        cy.findAllByText('Connect Wallet').first().click();
-        cy.contains('MetaMask').should('be.visible').click();
-        acceptMetamaskAccess();
-        cy.task('setWalletConnectedToDapp');
-      }
-    }
-  });
-};
-
-export const visitAfterSomeDelay = (url: string, options?: Partial<Cypress.VisitOptions>) => {
-  cy.wait(15_000); // let all the race conditions settle, let UI load well first
-  cy.visit(url, options);
-  cy.wait(15_000);
-};
-
 export const wait = (ms = 0): Promise<void> => {
   return new Promise((res) => setTimeout(res, ms));
 };
 
+export async function getCustomDestinationAddress() {
+  console.log('Getting custom destination address...');
+  return (await Wallet.createRandom().getAddress()).toLowerCase();
+}
+
+export async function fundEth({
+  address, // wallet address where funding is required
+  provider,
+  sourceWallet, // source wallet that will fund the `address`
+  networkType,
+  amount,
+}: {
+  address: string;
+  provider: Provider;
+  sourceWallet: Wallet;
+  networkType: NetworkType;
+  amount: BigNumber;
+}) {
+  console.log(`Funding ETH ${address} on ${networkType}...`);
+  const balance = await provider.getBalance(address);
+  // Fund only if the balance is less than the requested amount
+  if (balance.lt(amount)) {
+    const tx = await sourceWallet.connect(provider).sendTransaction({
+      to: address,
+      value: amount,
+    });
+    await tx.wait();
+  }
+}
+
+export async function getNativeTokenDecimals({
+  parentProvider,
+  childProvider,
+}: {
+  parentProvider: Provider;
+  childProvider: Provider;
+}) {
+  const multiCaller = await MultiCaller.fromProvider(parentProvider);
+  const ethBridger = await EthBridger.fromProvider(childProvider);
+  const isCustomFeeToken = typeof ethBridger.nativeToken !== 'undefined';
+
+  const nativeToken = isCustomFeeToken
+    ? (
+        await multiCaller.getTokenData([ethBridger.nativeToken!], {
+          decimals: true,
+        })
+      )[0]
+    : undefined;
+
+  return nativeToken?.decimals ?? 18;
+}
+
+/**
+ * Keeps mining on both chains so batches get posted sooner (deposits confirm faster). This is
+ * started fire-and-forget from globalSetup and runs for the whole test run, exactly like the
+ * Cypress `setupNodeEvents` did.
+ */
 export async function generateActivityOnChains({
   parentProvider,
   childProvider,
@@ -257,6 +255,10 @@ export async function generateActivityOnChains({
   await Promise.allSettled([keepMining(minerParent), keepMining(minerChild)]);
 }
 
+/**
+ * Keeps logging assertion status so withdrawals become claimable. Started fire-and-forget from
+ * globalSetup.
+ */
 export async function checkForAssertions({
   parentProvider,
   testType,
@@ -300,89 +302,4 @@ export async function checkForAssertions({
   } catch (e) {
     console.log(`Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`, e);
   }
-}
-
-export async function fundEth({
-  address, // wallet address where funding is required
-  provider,
-  sourceWallet, // source wallet that will fund the `address`,
-  networkType,
-  amount,
-}: {
-  address: string;
-  provider: Provider;
-  sourceWallet: Wallet;
-  networkType: NetworkType;
-  amount: BigNumber;
-}) {
-  console.log(`Funding ETH ${address} on ${networkType}...`);
-  const balance = await provider.getBalance(address);
-  // Fund only if the balance is less than 2 eth
-  if (balance.lt(amount)) {
-    const tx = await sourceWallet.connect(provider).sendTransaction({
-      to: address,
-      value: amount,
-    });
-    await tx.wait();
-  }
-}
-
-export async function getCustomDestinationAddress() {
-  console.log('Getting custom destination address...');
-  return (await Wallet.createRandom().getAddress()).toLowerCase();
-}
-
-export function setupCypressTasks(
-  on: Cypress.PluginEvents,
-  { requiresNetworkSetup }: { requiresNetworkSetup: boolean },
-) {
-  let currentNetworkName: NetworkName | null = null;
-  let networkSetupComplete = !requiresNetworkSetup;
-  let walletConnectedToDapp = false;
-
-  on('task', {
-    setCurrentNetworkName: (networkName: NetworkName) => {
-      currentNetworkName = networkName;
-      return null;
-    },
-    getCurrentNetworkName: () => {
-      return currentNetworkName;
-    },
-    setNetworkSetupComplete: () => {
-      networkSetupComplete = true;
-      return null;
-    },
-    getNetworkSetupComplete: () => {
-      return networkSetupComplete;
-    },
-    setWalletConnectedToDapp: () => {
-      walletConnectedToDapp = true;
-      return null;
-    },
-    getWalletConnectedToDapp: () => {
-      return walletConnectedToDapp;
-    },
-  });
-}
-
-export async function getNativeTokenDecimals({
-  parentProvider,
-  childProvider,
-}: {
-  parentProvider: Provider;
-  childProvider: Provider;
-}) {
-  const multiCaller = await MultiCaller.fromProvider(parentProvider);
-  const ethBridger = await EthBridger.fromProvider(childProvider);
-  const isCustomFeeToken = typeof ethBridger.nativeToken !== 'undefined';
-
-  const nativeToken = isCustomFeeToken
-    ? (
-        await multiCaller.getTokenData([ethBridger.nativeToken!], {
-          decimals: true,
-        })
-      )[0]
-    : undefined;
-
-  return nativeToken?.decimals ?? 18;
 }

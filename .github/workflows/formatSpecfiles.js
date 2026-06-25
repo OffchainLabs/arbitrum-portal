@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const specFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/specfiles.json');
-const cctpFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/cctp.json');
 
 const tests = [];
 
@@ -41,7 +40,7 @@ switch (testType) {
     tests.push({
       name: 'cctp',
       typeName: '',
-      file: 'tests/e2e/specs/**/*Cctp.cy.{js,jsx,ts,tsx}',
+      file: '*Cctp.spec.ts',
       recordVideo: false,
       type: 'cctp',
     });
