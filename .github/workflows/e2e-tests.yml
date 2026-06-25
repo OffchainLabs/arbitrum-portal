@@ -83,8 +83,8 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Install cypress
-        run: pnpm cypress install
+      - name: Install Playwright chromium
+        run: pnpm --filter arb-token-bridge-ui exec playwright install --with-deps chromium
 
       - name: Install linux dependencies
         run: |
@@ -106,24 +106,20 @@ jobs:
       - name: Fetch testnode config
         run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
-      - name: Run e2e tests via cypress-io/github-action
-        uses: cypress-io/github-action@0da3c06ed8217b912deea9d8ee69630baed1737e # pin@v6.7.6
-        with:
-          start: pnpm start
-          command: >-
-            ${{
-              (matrix.test.type == 'orbit-eth') && 'pnpm test:e2e:orbit' ||
-              (matrix.test.type == 'orbit-custom-6dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-18dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-20dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              'pnpm test:e2e'
-            }}
-          wait-on: http://127.0.0.1:3000
-          wait-on-timeout: 120
-          spec: ./packages/arb-token-bridge-ui/tests/e2e/specs/*
+      - name: Run e2e tests (Playwright)
+        run: |
+          pnpm start &
+          npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
+          ${{
+            (matrix.test.type == 'cctp') && 'pnpm test:e2e:cctp' ||
+            format('pnpm test:e2e {0}', matrix.test.file)
+          }}
         env:
           DISPLAY: :0.0
-          TEST_FILE: ${{ matrix.test.file }}
+          E2E_ORBIT: ${{ matrix.test.type == 'orbit-eth' }}
+          E2E_ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}
+          ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}
+          METAMASK_VERSION: 11.15.0
           SKIP_METAMASK_SETUP: true
           CYPRESS_RECORD_VIDEO: ${{ matrix.test.recordVideo }}
           PRIVATE_KEY_CUSTOM: ${{ secrets.E2E_PRIVATE_KEY }}
@@ -143,8 +139,8 @@ jobs:
         with:
           name: e2e-artifacts-${{ github.sha }}-${{ matrix.test.name }}-${{ matrix.test.type }}
           path: |
-            ./packages/arb-token-bridge-ui/cypress/videos
-            ./packages/arb-token-bridge-ui/cypress/screenshots
+            ./packages/arb-token-bridge-ui/test-results
+            ./packages/arb-token-bridge-ui/playwright-report
           if-no-files-found: 'ignore'
         continue-on-error: true
 
