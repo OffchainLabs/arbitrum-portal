@@ -1,74 +1,62 @@
-# Playwright e2e (Cypress -> Playwright migration POC)
+# Playwright e2e
 
-This directory holds the Playwright version of the bridge e2e suite. It runs on
-**Synpress v3** (same version as the Cypress suite) using Synpress's Playwright plugin. It
-lives **alongside** the existing Cypress suite (`tests/e2e/specs/*.cy.ts`,
-`synpress.config.ts`) so nothing is removed until the Playwright path is verified.
-
-Currently ported: `specs/login.spec.ts` (POC, ported from `tests/e2e/specs/login.cy.ts`).
-
-See [`CYPRESS_TO_PLAYWRIGHT_MIGRATION_PLAN.md`](../../../../../CYPRESS_TO_PLAYWRIGHT_MIGRATION_PLAN.md)
-at the repo root for the full plan.
+The bridge e2e suite, running on **Playwright** with the **Synpress v3** MetaMask plugin
+(`@synthetixio/synpress` 3.7.3). This replaced the Cypress suite; see
+[`CYPRESS_TO_PLAYWRIGHT_MIGRATION_PLAN.md`](../../../../../CYPRESS_TO_PLAYWRIGHT_MIGRATION_PLAN.md)
+at the repo root.
 
 ## Layout
 
-| File                            | Role                                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------------- |
-| `../../../playwright.config.ts` | Playwright runner config (in the package root)                                          |
-| `globalSetup.ts`                | on-chain prep + funding, writes `.e2e-config.json` (replaces Cypress `setupNodeEvents`) |
-| `e2eConfig.ts`                  | typed read/write of the JSON config (replaces `config.env` / `Cypress.env`)             |
-| `fixtures.ts`                   | MetaMask persistent-context fixture + `e2eEnv` worker fixture                           |
-| `support/common.ts`             | network configs + chain helpers, ported without `cy` / `Cypress.env`                    |
-| `support/actions.ts`            | custom commands (`login`, chain-button finders, ...) as async functions                 |
-| `synpress.d.ts`                 | ambient module declarations for the Synpress v3 Playwright command paths                |
-| `specs/login.spec.ts`           | the POC spec                                                                            |
+| File                                 | Role                                                                                                                                                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `../../../playwright.config.ts`      | runner config (regular / orbit suite)                                                                                                                                                                 |
+| `../../../playwright.cctp.config.ts` | runner config for the CCTP suite (testnets)                                                                                                                                                           |
+| `globalSetup.ts`                     | on-chain prep (deploy/fund ERC20 + WETH, approvals, redeem-retryable tx, custom-gas-token) and the activity/assertion background loops; writes `.e2e-config.json`. Replaces Cypress `setupNodeEvents` |
+| `globalSetup.cctp.ts`                | CCTP prep: funds a fresh wallet on Sepolia/Arb Sepolia and pre-creates CCTP burns                                                                                                                     |
+| `e2eConfig.ts`                       | typed read/write of `.e2e-config.json` (replaces `Cypress.env`)                                                                                                                                       |
+| `fixtures.ts`                        | worker-scoped MetaMask persistent context + `e2eEnv` fixture                                                                                                                                          |
+| `support/common.ts`                  | network configs + node-side chain/balance/activity helpers (no `cy`)                                                                                                                                  |
+| `support/actions.ts`                 | the former Cypress custom commands as async `(page, ...)` functions                                                                                                                                   |
+| `synpress.d.ts`                      | ambient module declarations for the Synpress v3 command paths                                                                                                                                         |
+| `specs/*.spec.ts`                    | the tests (1:1 with the old `*.cy.ts`)                                                                                                                                                                |
+
+## Architecture notes
+
+- **MetaMask is worker-scoped**: it is set up once per worker (not per test), which is the main
+  speed win. With a single worker the whole run shares one MetaMask, matching Cypress's
+  `testIsolation: false`. Each test still gets a fresh `page` (tab). The wallet is connected once
+  per worker (a module-level flag in `actions.ts`, mirroring the old `walletConnectedToDapp` task).
+- **MetaMask version is pinned to `11.15.0`** (Synpress 3.7.3's default). Do not let it default to
+  "latest" — newer MetaMask UIs don't match Synpress 3.7.3's selectors. Override with
+  `METAMASK_VERSION` if needed.
+- **The activity / assertion loops** run fire-and-forget inside `globalSetup` (Playwright's main
+  process stays alive for the run), exactly as the Cypress config did.
 
 ## One-time setup
 
-The current `synpress-migration` branch has Synpress **4.1.2** installed on disk (from the
-paused v4 attempt), but this POC needs **3.7.3** (what `package.json` declares and what the
-Cypress suite uses). Make sure 3.7.3 is what's installed, then install Playwright + its browser:
-
 ```bash
 # from repo root
-pnpm install                       # resolves @synthetixio/synpress@3.7.3 + @playwright/test
+pnpm install
 pnpm --filter arb-token-bridge-ui exec playwright install chromium
 ```
 
-You also need a `.e2e.env` file in `packages/arb-token-bridge-ui/` (same one the Cypress suite
-uses). See `.e2e.env.sample` for the variable names.
+You also need a `.e2e.env` file in `packages/arb-token-bridge-ui/` (see `.e2e.env.sample`). A valid
+`NEXT_PUBLIC_INFURA_KEY` (or `NEXT_PUBLIC_RPC_URL_SEPOLIA`) is required because the suite adds the
+Sepolia / Arbitrum Sepolia networks and the tx-history / CCTP specs run on those testnets.
 
 ## Running
 
-A local Nitro test node and the bridge app must be running, exactly as for the Cypress suite:
+A local Nitro test node and the bridge app must be running (same as the Cypress suite):
 
 ```bash
 # 1. start a local nitro test node (see DEVELOPMENT.md / CI for the exact ref)
 # 2. start the app
-pnpm start                         # serves the bridge on http://localhost:3000
+pnpm start                                  # http://localhost:3000
 
-# 3. in another terminal, run the Playwright login POC
-pnpm test:e2e:pw
+# 3. in another terminal:
+pnpm test:e2e                               # whole regular suite
+pnpm test:e2e login                         # a single spec (filter by filename)
+pnpm test:e2e:orbit                         # orbit (L3 ETH) variant
+pnpm test:e2e:orbit:custom-gas-token        # orbit custom-gas-token variant
+pnpm test:e2e:cctp                          # CCTP suite (uses playwright.cctp.config.ts)
 ```
-
-Variants (mirror the Cypress scripts):
-
-```bash
-pnpm test:e2e:pw:orbit
-pnpm test:e2e:pw:orbit:custom-gas-token
-```
-
-`globalSetup` runs first (funds the wallet, writes `.e2e-config.json`), then the
-`fixtures.ts` context launches headed Chromium with the MetaMask extension and restores the
-funded wallet via Synpress's `initialSetup`. On CI this needs a virtual display (xvfb), the
-same as Cypress.
-
-## Notes / known limitations of the POC
-
-- MetaMask is set up per test (the `context` fixture is test-scoped, per the Synpress docs).
-  This is slower than necessary; making it worker-scoped is a later optimization.
-- Only the login flow's setup is implemented in `globalSetup`. Transactional specs need the
-  rest of the Cypress `setupNodeEvents` prep (ERC20 deploy, WETH, approvals, the
-  generate-activity / check-assertions background loops). That is Phase 1 in the plan.
-- API signatures for the Synpress Playwright commands should be confirmed against the installed
-  3.7.3 types; the published v3 docs lag the code in places.

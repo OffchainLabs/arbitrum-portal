@@ -11,15 +11,18 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e/playwright/specs',
+  // CCTP runs on a different setup (testnets, funded random wallet); it has its own config.
+  testIgnore: '**/*Cctp.spec.ts',
   globalSetup: './tests/e2e/playwright/globalSetup',
-  // MetaMask automation is slow; give specs room.
-  timeout: 120_000,
+  // MetaMask automation is slow and claim tests wait for assertions; give specs room.
+  timeout: 300_000,
   expect: {
     timeout: 30_000,
   },
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  // matches the Cypress suite's `retries: 2` (skipped when recording video)
+  retries: process.env.CYPRESS_RECORD_VIDEO === 'true' ? 0 : 2,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   outputDir: 'test-results',
   use: {
