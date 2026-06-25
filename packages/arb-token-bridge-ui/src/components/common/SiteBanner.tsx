@@ -1,6 +1,7 @@
 'use client';
 
 import dayjs from 'dayjs';
+import { usePathname } from 'next/navigation';
 import useSWR from 'swr';
 
 import { ArbitrumStatusResponse } from '@/bridge/app/api/status';
@@ -123,6 +124,11 @@ function getShowInfoBanner(children?: React.ReactNode, expiryDate?: string): boo
 // indexers are back in sync.
 const SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER = true;
 
+function getShowCctpSubgraphBanner(pathname: string | null): boolean {
+  // Bridge-only — the banner refers to CCTP transfer history on the bridge UI.
+  return SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER && !!pathname?.startsWith('/bridge');
+}
+
 async function fetchArbitrumStatus(): Promise<ArbitrumStatusResponse> {
   const response = await fetch(`${getAPIBaseUrl()}/api/status`, {
     method: 'GET',
@@ -151,10 +157,11 @@ function useArbitrumStatus() {
 }
 
 export function useSiteBannerVisible(): boolean {
+  const pathname = usePathname();
   const { data: arbitrumStatus, error } = useArbitrumStatus();
 
   // CCTP incident is a manual toggle, independent of the status API.
-  if (SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER) {
+  if (getShowCctpSubgraphBanner(pathname)) {
     return true;
   }
 
@@ -173,10 +180,11 @@ export const SiteBanner = ({
   expiryDate, // date in utc
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { expiryDate?: string }) => {
+  const pathname = usePathname();
   const { data: arbitrumStatus, error } = useArbitrumStatus();
 
   // CCTP incident is a manual toggle, independent of the status API.
-  if (SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER) {
+  if (getShowCctpSubgraphBanner(pathname)) {
     return <SiteBannerCctpSubgraphIncident />;
   }
 
