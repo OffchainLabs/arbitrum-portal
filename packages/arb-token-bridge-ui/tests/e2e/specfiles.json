@@ -1,67 +1,15 @@
 [
-  {
-    "name": "Login and balance check",
-    "file": "tests/e2e/specs/**/login.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Deposit native token",
-    "file": "tests/e2e/specs/**/depositNativeToken.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Withdraw native token",
-    "file": "tests/e2e/specs/**/withdrawNativeToken.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Deposit ERC20",
-    "file": "tests/e2e/specs/**/depositERC20.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Withdraw ERC20",
-    "file": "tests/e2e/specs/**/withdrawERC20.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Batch deposit",
-    "file": "tests/e2e/specs/**/batchDeposit.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "TX history",
-    "file": "tests/e2e/specs/**/txHistory.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Approve ERC20",
-    "file": "tests/e2e/specs/**/approveToken.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Import test ERC20",
-    "file": "tests/e2e/specs/**/importToken.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Read classic deposits",
-    "file": "tests/e2e/specs/**/readClassicDeposits.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Redeem Retryable",
-    "file": "tests/e2e/specs/**/redeemRetryable.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "Switch network",
-    "file": "tests/e2e/specs/**/switchNetworks.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  },
-  {
-    "name": "URL query param",
-    "file": "tests/e2e/specs/**/urlQueryParam.cy.{js,jsx,ts,tsx}",
-    "recordVideo": "false"
-  }
+  { "name": "Login and balance check", "file": "login.spec.ts" },
+  { "name": "Deposit native token", "file": "depositNativeToken.spec.ts" },
+  { "name": "Withdraw native token", "file": "withdrawNativeToken.spec.ts" },
+  { "name": "Deposit ERC20", "file": "depositERC20.spec.ts" },
+  { "name": "Withdraw ERC20", "file": "withdrawERC20.spec.ts" },
+  { "name": "Batch deposit", "file": "batchDeposit.spec.ts" },
+  { "name": "TX history", "file": "txHistory.spec.ts" },
+  { "name": "Approve ERC20", "file": "approveToken.spec.ts" },
+  { "name": "Import test ERC20", "file": "importToken.spec.ts" },
+  { "name": "Read classic deposits", "file": "readClassicDeposits.spec.ts" },
+  { "name": "Redeem Retryable", "file": "redeemRetryable.spec.ts" },
+  { "name": "Switch network", "file": "switchNetworks.spec.ts" },
+  { "name": "URL query param", "file": "urlQueryParam.spec.ts" }
 ]
