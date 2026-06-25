@@ -14,7 +14,14 @@ export enum Vendor {
 export const EARN_NETWORKS = ['arbitrum', 'mainnet'] as const;
 export type EarnNetwork = (typeof EARN_NETWORKS)[number];
 export const EARN_CHAIN_IDS = [ChainId.ArbitrumOne, ChainId.Ethereum] as const;
-export type EarnChainId = (typeof EARN_CHAIN_IDS)[number];
+/**
+ * Chains supported across every earn vendor (Pendle/LiFi). The Vaults (Lend)
+ * vendor is available on any EVM chain via vaults.fyi, so a vault opportunity's
+ * chainId is widened to `number`; non-vault vendors guard their own chains at
+ * runtime. See `parseChainIdForCategory` in `lib/validation`.
+ */
+export type RestrictedEarnChainId = (typeof EARN_CHAIN_IDS)[number];
+export type EarnChainId = number;
 export const DEFAULT_EARN_CHAIN_ID: EarnChainId = ChainId.ArbitrumOne;
 export const EARN_NETWORK_TO_CHAIN_ID: Record<EarnNetwork, EarnChainId> = {
   arbitrum: ChainId.ArbitrumOne,

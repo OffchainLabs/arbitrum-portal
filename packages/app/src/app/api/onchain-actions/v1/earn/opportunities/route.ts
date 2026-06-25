@@ -2,11 +2,12 @@ import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { requireEarnApiKey } from '../lib/apiKeyAuth';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
 import { enforceEarnRateLimit } from '../lib/rateLimit';
 import {
   ValidationError,
-  parseOptionalEarnChainId,
+  parseOptionalChainIdForCategory,
   parseOptionalNumber,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
@@ -21,7 +22,10 @@ const router = new CategoryRouter();
 export async function GET(request: NextRequest) {
   noStore();
   try {
-    const rateLimited = await enforceEarnRateLimit(request);
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
+    const rateLimited = await enforceEarnRateLimit(request, { key: auth.key });
     if (rateLimited) return rateLimited;
 
     const searchParams = request.nextUrl.searchParams;
@@ -44,7 +48,7 @@ export async function GET(request: NextRequest) {
     });
 
     const filters: OpportunityFilters = {
-      chainId: parseOptionalEarnChainId(searchParams.get('chainId')),
+      chainId: parseOptionalChainIdForCategory(searchParams.get('chainId'), category),
       minTvl,
       minApy,
       perPage: MAX_RESULTS,

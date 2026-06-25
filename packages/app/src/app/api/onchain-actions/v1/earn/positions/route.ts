@@ -4,11 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 
 import { CategoryRouter } from '../CategoryRouter';
+import { requireEarnApiKey } from '../lib/apiKeyAuth';
 import { EARN_CACHE_SECONDS, earnCacheTags } from '../lib/cache';
 import { enforceEarnRateLimit } from '../lib/rateLimit';
 import {
   assertAddress,
-  parseEarnChainId,
+  parseChainIdForCategory,
   parseOptionalOpportunityCategory,
 } from '../lib/validation';
 import { StandardUserPosition, Vendor } from '../types';
@@ -120,10 +121,13 @@ function calculatePositionsSummary(positions: StandardUserPosition[]) {
 export async function GET(request: NextRequest) {
   noStore();
   try {
+    const auth = requireEarnApiKey(request);
+    if (auth instanceof NextResponse) return auth;
+
     const searchParams = request.nextUrl.searchParams;
     const userAddress = assertAddress(searchParams.get('userAddress'), 'userAddress');
     const category = parseOptionalOpportunityCategory(searchParams.get('category'));
-    const chainId = parseEarnChainId(searchParams.get('chainId'));
+    const chainId = parseChainIdForCategory(searchParams.get('chainId'), category);
 
     const rateLimited = await enforceEarnRateLimit(request, { key: userAddress });
     if (rateLimited) return rateLimited;
