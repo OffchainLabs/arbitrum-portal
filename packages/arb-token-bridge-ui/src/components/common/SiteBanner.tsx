@@ -119,17 +119,9 @@ function getShowInfoBanner(children?: React.ReactNode, expiryDate?: string): boo
 
 // Manual toggle for the CCTP subgraph incident banner. We deploy the CCTP v1
 // Ethereum subgraph, but it's served by third-party indexers (not part of our
-// status API), so this is flipped on/off by hand. Set `enabled` to false (or
-// let `expiryDate` pass) once the indexers are back in sync.
-const CCTP_SUBGRAPH_INCIDENT = {
-  enabled: true,
-  expiryDate: '2026-07-02', // date in utc — auto-hides after this as a safety net
-};
-
-function getShowCctpSubgraphBanner(): boolean {
-  if (!CCTP_SUBGRAPH_INCIDENT.enabled) return false;
-  return dayjs.utc().isBefore(dayjs(CCTP_SUBGRAPH_INCIDENT.expiryDate).utc(true));
-}
+// status API), so this is flipped on/off by hand. Set to false once the
+// indexers are back in sync.
+const SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER = true;
 
 async function fetchArbitrumStatus(): Promise<ArbitrumStatusResponse> {
   const response = await fetch(`${getAPIBaseUrl()}/api/status`, {
@@ -162,7 +154,7 @@ export function useSiteBannerVisible(): boolean {
   const { data: arbitrumStatus, error } = useArbitrumStatus();
 
   // CCTP incident is a manual toggle, independent of the status API.
-  if (getShowCctpSubgraphBanner()) {
+  if (SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER) {
     return true;
   }
 
@@ -184,7 +176,7 @@ export const SiteBanner = ({
   const { data: arbitrumStatus, error } = useArbitrumStatus();
 
   // CCTP incident is a manual toggle, independent of the status API.
-  if (getShowCctpSubgraphBanner()) {
+  if (SHOW_CCTP_SUBGRAPH_INCIDENT_BANNER) {
     return <SiteBannerCctpSubgraphIncident />;
   }
 
