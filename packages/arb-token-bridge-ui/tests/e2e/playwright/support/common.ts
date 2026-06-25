@@ -3,11 +3,12 @@
  *
  * The original is Cypress-shaped: it reads `Cypress.env(...)` and registers `cy.task`s. This
  * version takes an explicit `E2EConfig` object (provided by the `e2eEnv` fixture) and exposes
- * the same network helpers plus the node-side funding/balance helpers used by globalSetup.
+ * the same network helpers plus the node-side funding/balance/activity helpers used by
+ * globalSetup. Nothing here touches the browser; page interactions live in actions.ts.
  */
 import { EthBridger, MultiCaller } from '@arbitrum/sdk';
 import { Provider, StaticJsonRpcProvider } from '@ethersproject/providers';
-import { BigNumber, Wallet } from 'ethers';
+import { BigNumber, Signer, Wallet, ethers, utils } from 'ethers';
 
 import { MULTICALL_TESTNET_ADDRESS } from '../../../../src/constants';
 import {
@@ -37,6 +38,11 @@ export type NetworkConfig = {
 
 export const getL1NetworkName = (cfg: E2EConfig) => getL1NetworkConfig(cfg).networkName;
 export const getL2NetworkName = (cfg: E2EConfig) => getL2NetworkConfig(cfg).networkName;
+
+export const getNetworkSlug = (cfg: E2EConfig, network: 'parent' | 'child') => {
+  const networkName = network === 'parent' ? getL1NetworkName(cfg) : getL2NetworkName(cfg);
+  return networkName.toLowerCase().replace(' ', '-');
+};
 
 export const getL1NetworkConfig = (cfg: E2EConfig): NetworkConfig => {
   const isOrbitTest = cfg.ORBIT_TEST === '1';
@@ -97,6 +103,9 @@ export const getL2TestnetNetworkConfig = (cfg: E2EConfig): NetworkConfig => {
 export const ERC20TokenName = 'Test Arbitrum Token';
 export const ERC20TokenSymbol = 'TESTARB';
 export const ERC20TokenDecimals = 18;
+export const invalidTokenAddress = utils.computeAddress(utils.randomBytes(32));
+
+export const moreThanZeroBalance = /0(\.\d+)/;
 
 export function getZeroToLessThanOneToken(symbol: string) {
   return new RegExp(`0(\\.\\d+)* ${symbol}`);
@@ -132,6 +141,11 @@ export async function getInitialERC20Balance({
 export const wait = (ms = 0): Promise<void> => {
   return new Promise((res) => setTimeout(res, ms));
 };
+
+export async function getCustomDestinationAddress() {
+  console.log('Getting custom destination address...');
+  return (await Wallet.createRandom().getAddress()).toLowerCase();
+}
 
 export async function fundEth({
   address, // wallet address where funding is required
@@ -178,4 +192,114 @@ export async function getNativeTokenDecimals({
     : undefined;
 
   return nativeToken?.decimals ?? 18;
+}
+
+/**
+ * Keeps mining on both chains so batches get posted sooner (deposits confirm faster). This is
+ * started fire-and-forget from globalSetup and runs for the whole test run, exactly like the
+ * Cypress `setupNodeEvents` did.
+ */
+export async function generateActivityOnChains({
+  parentProvider,
+  childProvider,
+  wallet,
+}: {
+  parentProvider: Provider;
+  childProvider: Provider;
+  wallet: Wallet;
+}) {
+  const keepMining = async (miner: Signer) => {
+    /* eslint-disable no-await-in-loop */
+    while (true) {
+      await (
+        await miner.sendTransaction({
+          to: await miner.getAddress(),
+          value: 0,
+          // random data to make the tx heavy, so that batches are posted sooner (since they're posted according to calldata size)
+          data: '0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000010c3c627574746f6e20636c6173733d226e61766261722d746f67676c65722220747970653d22627574746f6e2220646174612d746f67676c653d22636f6c6c617073652220646174612d7461726765743d22236e6176626172537570706f72746564436f6e74656e742220617269612d636f6e74726f6c733d226e6176626172537570706f72746564436f6e74656e742220617269612d657870616e6465643d2266616c73652220617269612d6c6162656c3d223c253d20676574746578742822546f67676c65206e617669676174696f6e222920253e223e203c7370616e20636c6173733d226e61766261722d746f67676c65722d69636f6e223e3c2f7370616e3e203c2f627574746f6e3e0000000000000000000000000000000000000000',
+        })
+      ).wait();
+
+      await wait(100);
+    }
+    /* eslint-enable no-await-in-loop */
+  };
+  // whilst waiting for status we mine on both parentChain and childChain
+  console.log('Generating activity on parentChain...');
+  const minerParent = Wallet.createRandom().connect(parentProvider);
+
+  const decimals = await getNativeTokenDecimals({
+    parentProvider,
+    childProvider,
+  });
+
+  await fundEth({
+    address: await minerParent.getAddress(),
+    provider: parentProvider,
+    sourceWallet: wallet,
+    networkType: 'parentChain',
+    amount: utils.parseUnits('0.2', decimals),
+  });
+
+  console.log('Generating activity on childChain...');
+  const minerChild = Wallet.createRandom().connect(childProvider);
+
+  await fundEth({
+    address: await minerChild.getAddress(),
+    provider: childProvider,
+    sourceWallet: wallet,
+    networkType: 'childChain',
+    amount: utils.parseEther('0.2'),
+  });
+
+  await Promise.allSettled([keepMining(minerParent), keepMining(minerChild)]);
+}
+
+/**
+ * Keeps logging assertion status so withdrawals become claimable. Started fire-and-forget from
+ * globalSetup.
+ */
+export async function checkForAssertions({
+  parentProvider,
+  testType,
+}: {
+  parentProvider: Provider;
+  testType: 'regular' | 'orbit-eth' | 'orbit-custom';
+}) {
+  const abi = [
+    'function latestConfirmed() public view returns (uint64)',
+    'function latestNodeCreated() public view returns (uint64)',
+  ];
+
+  let rollupAddress: string;
+
+  switch (testType) {
+    case 'orbit-eth':
+      rollupAddress = defaultL3Network.ethBridge.rollup;
+      break;
+    case 'orbit-custom':
+      rollupAddress = defaultL3CustomGasTokenNetwork.ethBridge.rollup;
+      break;
+    default:
+      rollupAddress = defaultL2Network.ethBridge.rollup;
+  }
+
+  const rollupContract = new ethers.Contract(rollupAddress, abi, parentProvider);
+
+  const parentChainId = (await parentProvider.getNetwork()).chainId;
+
+  try {
+    /* eslint-disable no-await-in-loop */
+    while (true) {
+      console.log(
+        `***** Assertion status on ChainId ${parentChainId}: ${(
+          await rollupContract.latestNodeCreated()
+        ).toString()} created / ${(await rollupContract.latestConfirmed()).toString()} confirmed`,
+      );
+      await wait(10000);
+    }
+    /* eslint-enable no-await-in-loop */
+  } catch (e) {
+    console.log(`Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`, e);
+  }
 }
