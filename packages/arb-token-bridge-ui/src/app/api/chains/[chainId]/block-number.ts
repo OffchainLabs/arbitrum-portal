@@ -28,7 +28,7 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   }
 
   const status = (await response.json()) as IndexerStatus;
-  const chain = Object.values(status).find((entry) => entry.id === chainId);
+  const chain = Object.values(status).find((entry) => Number(entry.id) === chainId);
 
   return chain?.block?.number ?? 0;
 }

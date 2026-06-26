@@ -215,6 +215,8 @@ export async function fetchWithdrawals({
 
   const indexedBoundary = lastIndexedBlock > 0 ? Math.min(lastIndexedBlock, head) : fromBlock;
 
+  let eventLogsFromBlock = indexedBoundary;
+
   let indexedWithdrawals: Withdrawal[] = [];
   try {
     indexedWithdrawals = (
@@ -237,12 +239,13 @@ export async function fetchWithdrawals({
     }));
   } catch (error) {
     logger.info('Error fetching withdrawals from indexed source', error);
+    eventLogsFromBlock = fromBlock;
   }
 
   const eventLogWithdrawals = await fetchWithdrawalsUsingEventLogs({
     sender,
     receiver,
-    fromBlock: indexedBoundary,
+    fromBlock: eventLogsFromBlock,
     toBlock,
     parentChainId,
     l2ChainId: l2ChainID,
