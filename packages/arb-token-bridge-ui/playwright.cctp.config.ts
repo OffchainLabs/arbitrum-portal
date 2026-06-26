@@ -17,7 +17,7 @@ export default defineConfig({
   },
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CYPRESS_RECORD_VIDEO === 'true' ? 0 : 2,
+  retries: process.env.RECORD_VIDEO === 'true' ? 0 : 2,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   outputDir: 'test-results',
   use: {
@@ -26,6 +26,6 @@ export default defineConfig({
     navigationTimeout: 30_000,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: process.env.CYPRESS_RECORD_VIDEO === 'true' ? 'on' : 'off',
+    video: process.env.RECORD_VIDEO === 'true' ? 'on' : 'off',
   },
 });
