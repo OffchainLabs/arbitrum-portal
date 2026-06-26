@@ -1,6 +1,13 @@
 const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
+// LayerZero classifies a token whose own contract implements the OFT interface
+// (i.e. responds to `oftVersion()` on-chain) as `NativeOFT`. Plain ERC20s that
+// are bridged through a separate OFT Adapter are typed `ERC20` and do NOT
+// implement `oftVersion()` themselves, so they must not be treated as native OFTs.
+const LAYERZERO_NATIVE_OFT_TYPE = 'NativeOFT';
+
 type LayerZeroTokenMetadata = {
+  type?: unknown;
   peggedTo?: unknown;
 };
 
@@ -54,17 +61,10 @@ function getLayerZeroTokenMetadata(
     return null;
   }
 
-  const tokenAddressLowerCase = tokenAddress.toLowerCase();
+  // The metadata keys tokens by their lower-cased address, so look it up directly.
+  const tokenMetadata = chainMetadata.tokens[tokenAddress.toLowerCase()];
 
-  for (const [metadataTokenAddress, tokenMetadata] of Object.entries(chainMetadata.tokens)) {
-    if (metadataTokenAddress.toLowerCase() !== tokenAddressLowerCase || !isRecord(tokenMetadata)) {
-      continue;
-    }
-
-    return tokenMetadata;
-  }
-
-  return null;
+  return isRecord(tokenMetadata) ? tokenMetadata : null;
 }
 
 async function getLayerZeroMetadata() {
@@ -74,7 +74,15 @@ async function getLayerZeroMetadata() {
       .catch(() => null);
   }
 
-  return layerZeroMetadataPromise;
+  const metadata = await layerZeroMetadataPromise;
+
+  // Don't cache a failed/empty response — clear the cache so the next caller
+  // retries instead of being stuck with `null` for the rest of the session.
+  if (metadata === null) {
+    layerZeroMetadataPromise = null;
+  }
+
+  return metadata;
 }
 
 export async function getLayerZeroNativeTokenStatus({
@@ -107,7 +115,19 @@ export function getLayerZeroNativeTokenStatusFromMetadata(
     return null;
   }
 
-  return !tokenMetadata.peggedTo;
+  // A pegged token is a representation of an OFT that lives natively on another
+  // chain, so it is explicitly not a native OFT here.
+  if (tokenMetadata.peggedTo) {
+    return false;
+  }
+
+  // Only tokens whose own contract is the OFT count as native. Anything else
+  // (e.g. plain ERC20s using an OFT Adapter) is left to the on-chain fallback.
+  if (tokenMetadata.type === LAYERZERO_NATIVE_OFT_TYPE) {
+    return true;
+  }
+
+  return null;
 }
 
 export function resetLayerZeroMetadataCache() {
