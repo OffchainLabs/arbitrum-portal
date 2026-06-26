@@ -213,7 +213,8 @@ export async function fetchWithdrawals({
     logger.info('Error fetching latest indexed block number', error);
   }
 
-  const indexedBoundary = lastIndexedBlock > 0 ? Math.min(lastIndexedBlock, head) : fromBlock;
+  const indexedBoundary =
+    lastIndexedBlock > 0 ? Math.max(fromBlock, Math.min(lastIndexedBlock, head)) : fromBlock;
 
   let eventLogsFromBlock = indexedBoundary;
 

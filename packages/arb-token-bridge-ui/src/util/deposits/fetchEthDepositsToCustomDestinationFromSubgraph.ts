@@ -67,7 +67,7 @@ export const fetchEthDepositsToCustomDestinationFromSubgraph = async ({
   );
 
   if (!hasL1Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    return [];
+    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
   }
 
   if (pageSize === 0) return []; // don't query subgraph if nothing requested

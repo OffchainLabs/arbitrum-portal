@@ -44,6 +44,11 @@ export const getAPIBaseUrl = () => {
 const featureFlags: readonly string[] = [];
 
 export const isExperimentalFeatureEnabled = (flag: string) => {
+  // only allowlisted flags can be enabled, consistent with sanitizeExperimentalFeaturesQueryParam
+  if (!featureFlags.includes(flag)) {
+    return false;
+  }
+
   const query = new URLSearchParams(window.location.search);
   const flags = query.get('experiments');
 

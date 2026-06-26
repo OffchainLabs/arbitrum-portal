@@ -65,10 +65,19 @@ export async function GET(
 
   try {
     if (isChildChainIndexed(numericChainId)) {
+      const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId);
+
+      if (indexerBlockNumber === 0) {
+        return NextResponse.json(
+          { message: 'Unable to fetch indexer block number' },
+          { status: 502 },
+        );
+      }
+
       return NextResponse.json(
         {
           meta: { source: 'arbitrum-indexer' },
-          data: await fetchIndexerBlockNumber(numericChainId),
+          data: indexerBlockNumber,
         },
         { status: 200 },
       );

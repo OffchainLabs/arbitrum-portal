@@ -57,7 +57,7 @@ export const fetchDepositsFromSubgraph = async ({
   searchString?: string;
 }): Promise<FetchDepositsFromSubgraphResult[]> => {
   if (!hasL1Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    return [];
+    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
   }
 
   if (toBlock && fromBlock >= toBlock) {

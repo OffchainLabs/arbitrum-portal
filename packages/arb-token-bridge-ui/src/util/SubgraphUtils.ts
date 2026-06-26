@@ -31,7 +31,12 @@ export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<nu
     headers: { 'Content-Type': 'application/json' },
   });
 
-  return ((await response.json()) as { data: number }).data;
+  if (!response.ok) {
+    return 0;
+  }
+
+  const blockNumber = ((await response.json()) as { data?: number }).data;
+  return Number.isFinite(blockNumber) ? (blockNumber as number) : 0;
 };
 
 export const shouldIncludeSentTxs = ({

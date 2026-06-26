@@ -55,7 +55,7 @@ export async function fetchWithdrawalsFromSubgraph({
   searchString?: string;
 }): Promise<WithdrawalFromSubgraph[]> {
   if (!hasL2Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    return [];
+    throw new Error(`L2 subgraph not available for network: ${l2ChainId}`);
   }
 
   if (fromBlock >= toBlock) {
