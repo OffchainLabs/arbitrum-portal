@@ -8,6 +8,7 @@ import { ChainId } from '../types/ChainId';
 import { isNetwork } from '../util/networks';
 import { CommonAddress } from './CommonAddressUtils';
 import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe } from './TokenUtils';
+import { getLayerZeroNativeTokenStatus } from './layerZeroMetadata';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -285,6 +286,15 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
 };
 
 async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: number) {
+  const layerZeroNativeTokenStatus = await getLayerZeroNativeTokenStatus({
+    chainId: parentChainId,
+    tokenAddress: parentChainErc20Address,
+  });
+
+  if (layerZeroNativeTokenStatus !== null) {
+    return layerZeroNativeTokenStatus;
+  }
+
   const parentProvider = getProviderForChainId(parentChainId);
 
   // https://github.com/LayerZero-Labs/LayerZero-v2/blob/592625b9e5967643853476445ffe0e777360b906/packages/layerzero-v2/evm/oapp/contracts/oft/OFT.sol#L37
