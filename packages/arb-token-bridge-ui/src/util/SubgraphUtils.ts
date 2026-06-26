@@ -25,7 +25,7 @@ export function hasL2Subgraph(l2ChainId: number) {
   }
 }
 
-export const fetchLatestSubgraphBlockNumber = async (chainId: number): Promise<number> => {
+export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },

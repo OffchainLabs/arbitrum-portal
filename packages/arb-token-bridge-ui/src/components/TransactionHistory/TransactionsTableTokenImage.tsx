@@ -5,33 +5,36 @@ import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { MergedTransaction } from '../../state/app/state';
+import { ChainId } from '../../types/ChainId';
 import { TokenListWithId } from '../../util/TokenListUtils';
 import { orbitChains } from '../../util/orbitChainsList';
 
-// TODO: cache
-function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
-  if (!tokenLists) {
-    return {};
+function createTokenLogoByAddressMap(tokenLists: TokenListWithId[] | undefined) {
+  const map: { [address: string]: string | undefined } = {};
+  for (const list of tokenLists ?? []) {
+    for (const token of list.tokens) {
+      map[token.address.toLowerCase()] = token.logoURI;
+    }
   }
-  const arrayOfTokens = tokenLists.flatMap((tkn) => tkn.tokens) || [];
-  return arrayOfTokens.reduce(
-    (acc, tkn) => {
-      acc[tkn.address.toLowerCase()] = tkn.logoURI;
-      return acc;
-    },
-    {} as { [key in string]: string | undefined },
-  );
+  return map;
+}
+
+function createTokenLogoBySymbolMap(tokenLists: TokenListWithId[] | undefined) {
+  const map: { [symbol: string]: string | undefined } = {};
+  for (const list of tokenLists ?? []) {
+    for (const token of list.tokens) {
+      const symbol = token.symbol?.toLowerCase();
+      if (symbol && !map[symbol]) {
+        map[symbol] = token.logoURI;
+      }
+    }
+  }
+  return map;
 }
 
 export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) => {
-  // we need to take token image from mainnet by symbol, some token images don't exists on other networks
-  const tokenLists = useTokenLists(tx.sourceChainId);
-
-  const tokenAddressToLogoSrcMap = createTokenLogoMapFromTokenLists(tokenLists.data);
-
-  const tokenLogoSrc = tx.tokenAddress
-    ? tokenAddressToLogoSrcMap[tx.tokenAddress.toLowerCase()]
-    : undefined;
+  const sourceChainTokenLists = useTokenLists(tx.sourceChainId);
+  const mainnetTokenLists = useTokenLists(ChainId.ArbitrumOne);
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
@@ -48,6 +51,13 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
 
     return <Image height={20} width={20} alt="ETH logo" src={EthereumLogoRoundLight} />;
   }
+
+  const logoByAddress = createTokenLogoByAddressMap(sourceChainTokenLists.data);
+  const logoBySymbol = createTokenLogoBySymbolMap(mainnetTokenLists.data);
+
+  const tokenLogoSrc =
+    (tx.tokenAddress ? logoByAddress[tx.tokenAddress.toLowerCase()] : undefined) ??
+    (tx.asset ? logoBySymbol[tx.asset.toLowerCase()] : undefined);
 
   if (!tokenLogoSrc) {
     return <div className="h-[20px] w-[20px] rounded-full bg-white/20" />;

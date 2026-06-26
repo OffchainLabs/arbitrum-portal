@@ -7,6 +7,31 @@ import {
   getSourceFromSubgraphClient,
 } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
+import { isChildChainIndexed } from '../../../../util/txHistory/sources';
+
+type IndexerStatus = Record<string, { id: number; block: { number: number } }>;
+
+async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
+  const indexerUrl = process.env.INDEXER_API_URL;
+  if (!indexerUrl) {
+    return 0;
+  }
+
+  const response = await fetch(`${indexerUrl}/status`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    return 0;
+  }
+
+  const status = (await response.json()) as IndexerStatus;
+  const chain = Object.values(status).find((entry) => entry.id === chainId);
+
+  return chain?.block?.number ?? 0;
+}
 
 function getSubgraphClient(chainId: number) {
   switch (chainId) {
@@ -36,9 +61,20 @@ export async function GET(
   { params }: { params: Promise<{ chainId: string }> },
 ): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
   const { chainId } = await params;
+  const numericChainId = Number(chainId);
 
   try {
-    const subgraphClient = getSubgraphClient(Number(chainId));
+    if (isChildChainIndexed(numericChainId)) {
+      return NextResponse.json(
+        {
+          meta: { source: 'arbitrum-indexer' },
+          data: await fetchIndexerBlockNumber(numericChainId),
+        },
+        { status: 200 },
+      );
+    }
+
+    const subgraphClient = getSubgraphClient(numericChainId);
 
     const result: {
       data: {

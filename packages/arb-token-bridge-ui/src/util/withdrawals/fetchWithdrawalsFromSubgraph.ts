@@ -1,4 +1,5 @@
 import { hasL2Subgraph } from '../SubgraphUtils';
+import { isChildChainIndexed } from '../txHistory/sources';
 import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
 
 export type WithdrawalFromSubgraph = {
@@ -53,8 +54,8 @@ export async function fetchWithdrawalsFromSubgraph({
   pageNumber?: number;
   searchString?: string;
 }): Promise<WithdrawalFromSubgraph[]> {
-  if (!hasL2Subgraph(Number(l2ChainId))) {
-    throw new Error(`L2 subgraph not available for network: ${l2ChainId}`);
+  if (!hasL2Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
+    return [];
   }
 
   if (fromBlock >= toBlock) {
