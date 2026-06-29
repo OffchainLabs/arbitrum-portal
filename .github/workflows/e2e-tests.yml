@@ -83,8 +83,15 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Install Playwright chromium
-        run: pnpm --filter arb-token-bridge-ui exec playwright install --with-deps chromium
+      - name: Install browser system dependencies
+        run: pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+
+      # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
+      # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
+      # node_modules/.cache/synpress instead, so install it explicitly here (idempotent) rather
+      # than relying on the postinstall hook surviving the node_modules cache.
+      - name: Install pinned Chrome for Testing
+        run: pnpm run install:chromium
 
       - name: Install linux dependencies
         run: |
@@ -172,8 +179,15 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Install Playwright chromium
-        run: pnpm --filter arb-token-bridge-ui exec playwright install --with-deps chromium
+      - name: Install browser system dependencies
+        run: pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+
+      # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
+      # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
+      # node_modules/.cache/synpress instead, so install it explicitly here (idempotent) rather
+      # than relying on the postinstall hook surviving the node_modules cache.
+      - name: Install pinned Chrome for Testing
+        run: pnpm run install:chromium
 
       - name: Install linux dependencies
         run: |
