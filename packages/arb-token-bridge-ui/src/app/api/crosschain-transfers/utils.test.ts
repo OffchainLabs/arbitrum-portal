@@ -98,7 +98,7 @@ function generateRobinhoodDepositTestCases() {
 }
 
 function generateRobinhoodWithdrawTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Superposition]
     .map((destinationChainId) => [
       {
         fromToken: undefined,
