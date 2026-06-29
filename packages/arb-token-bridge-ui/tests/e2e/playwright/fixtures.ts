@@ -26,7 +26,10 @@ import {
 } from '@playwright/test';
 import { addNetwork, initialSetup } from '@synthetixio/synpress/commands/metamask';
 import { prepareMetamask } from '@synthetixio/synpress/helpers';
+import fs from 'fs';
+import path from 'path';
 
+import { config as packageConfig } from '../../../../../package.json';
 import { type E2EConfig, readE2EConfig } from './e2eConfig';
 import {
   getL1NetworkConfig,
@@ -34,6 +37,34 @@ import {
   getL2NetworkConfig,
   getL2TestnetNetworkConfig,
 } from './support/common';
+
+// MetaMask 11.15.0 is a Manifest V2 extension, which Playwright's bundled (newer) Chromium refuses
+// to load ("unsupported manifest version"). Reuse the Chrome for Testing pinned by the root
+// `install:chromium` script (Chrome 128 still supports MV2), matching the browser the
+// Cypress/Synpress suite used. See the migration plan (decision #4) and the old browser.config.ts.
+function getPinnedChromePath(): string {
+  const workspaceRoot = path.resolve(__dirname, '../../../../..');
+  const chromeDir = path.join(workspaceRoot, packageConfig.chromePath, 'chrome');
+  const executablePath =
+    process.platform === 'darwin'
+      ? path.join(
+          chromeDir,
+          `mac_arm-${packageConfig.chromeVersion}`,
+          'chrome-mac-arm64',
+          'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
+        )
+      : path.join(chromeDir, `linux-${packageConfig.chromeVersion}`, 'chrome-linux64', 'chrome');
+
+  if (!fs.existsSync(executablePath)) {
+    throw new Error(
+      `Pinned Chrome for Testing not found at ${executablePath}. ` +
+        `Run \`pnpm run install:chromium\` (or \`pnpm install\`) to download Chrome ` +
+        `${packageConfig.chromeVersion}.`,
+    );
+  }
+
+  return executablePath;
+}
 
 type WorkerFixtures = {
   e2eEnv: E2EConfig;
@@ -79,6 +110,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
       const context = await chromium.launchPersistentContext('', {
         headless: false,
+        executablePath: getPinnedChromePath(),
         args: browserArgs,
       });
 
