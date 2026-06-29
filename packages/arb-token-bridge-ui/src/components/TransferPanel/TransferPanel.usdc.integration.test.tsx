@@ -49,28 +49,87 @@ const usdcCases: RouteTokenCase[] = [
   },
 ];
 
+/**
+ * Robinhood Chain is not yet live on LiFi and its bridged-USDC address is a
+ * placeholder (see CommonAddress.RobinhoodChain.USDCe). Fill in the real
+ * address and remove `.skip` once the chain is live. ApeChain <> Robinhood
+ * is intentionally omitted for now, and Robinhood -> Base is not a supported
+ * route.
+ */
+const robinhoodUsdcCases: RouteTokenCase[] = [
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+  },
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'ethereum',
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+    destinationToken: tokenExpectationsByChain.Ethereum.USDC,
+  },
+  {
+    sourceChain: 'arbitrum-one',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.ArbitrumOne.USDC,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+  },
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'arbitrum-one',
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+    destinationToken: tokenExpectationsByChain.ArbitrumOne.USDC,
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+  },
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'superposition',
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.USDCe,
+    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
+  },
+];
+
+async function assertUsdcRouteTokens({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+}: RouteTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await setSourceToken(sourceToken);
+  await setDestinationToken(destinationToken);
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+}
+
 describe.sequential('TransferPanel LiFi Integration - USDC', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(usdcCases)(
     'renders expected source and destination tokens for USDC transfer: $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, sourceToken, destinationToken }) => {
-      await renderTransferPanel({
-        sourceChain,
-        destinationChain,
-      });
+    assertUsdcRouteTokens,
+  );
 
-      await setSourceToken(sourceToken);
-      await setDestinationToken(destinationToken);
-
-      await expectTokenButtonContent({
-        isDestination: false,
-        tokenExpectation: sourceToken,
-      });
-      await expectTokenButtonContent({
-        isDestination: true,
-        tokenExpectation: destinationToken,
-      });
-    },
+  // Enable once Robinhood Chain is live on LiFi (see robinhoodUsdcCases note).
+  it.skip.each(robinhoodUsdcCases)(
+    'renders expected source and destination tokens for Robinhood USDC transfer: $sourceChain -> $destinationChain',
+    assertUsdcRouteTokens,
   );
 });

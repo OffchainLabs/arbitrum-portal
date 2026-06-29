@@ -86,12 +86,12 @@ function generateRobinhoodDepositTestCases() {
       {
         fromToken: undefined,
         sourceChainId,
-        destinationChainId: ChainId.Robinhood,
+        destinationChainId: ChainId.RobinhoodChain,
       },
       {
         fromToken: constants.AddressZero,
         sourceChainId,
-        destinationChainId: ChainId.Robinhood,
+        destinationChainId: ChainId.RobinhoodChain,
       },
     ])
     .flatMap((testCase) => testCase);
@@ -102,12 +102,12 @@ function generateRobinhoodWithdrawTestCases() {
     .map((destinationChainId) => [
       {
         fromToken: undefined,
-        sourceChainId: ChainId.Robinhood,
+        sourceChainId: ChainId.RobinhoodChain,
         destinationChainId,
       },
       {
         fromToken: constants.AddressZero,
-        sourceChainId: ChainId.Robinhood,
+        sourceChainId: ChainId.RobinhoodChain,
         destinationChainId,
       },
     ])
@@ -164,7 +164,7 @@ describe('isValidLifiTransfer', () => {
     expect(
       isValidLifiTransfer({
         fromToken: undefined,
-        sourceChainId: ChainId.Robinhood,
+        sourceChainId: ChainId.RobinhoodChain,
         destinationChainId: ChainId.Base,
       }),
     ).toBe(false);
@@ -337,7 +337,7 @@ describe('isLifiTransfer', () => {
       expect(
         isLifiTransfer({
           sourceChainId: ChainId.Base,
-          destinationChainId: ChainId.Robinhood,
+          destinationChainId: ChainId.RobinhoodChain,
         }),
       ).toBe(true);
     });
@@ -345,7 +345,7 @@ describe('isLifiTransfer', () => {
     it('Robinhood → Base is not a valid LiFi pair', () => {
       expect(
         isLifiTransfer({
-          sourceChainId: ChainId.Robinhood,
+          sourceChainId: ChainId.RobinhoodChain,
           destinationChainId: ChainId.Base,
         }),
       ).toBe(false);

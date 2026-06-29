@@ -183,7 +183,7 @@ export interface LifiTokenRegistry {
 }
 
 const lifiTokenRegistryChainIds = allowedLifiSourceChainIds.filter(
-  (chainId) => chainId !== ChainId.Robinhood,
+  (chainId) => chainId !== ChainId.RobinhoodChain,
 );
 
 const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
