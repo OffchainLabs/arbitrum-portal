@@ -47,6 +47,7 @@ import {
   mapWithdrawalFromSubgraphToL2ToL1EventResult,
 } from '../util/withdrawals/helpers';
 import { AssetType, L2ToL1EventResultPlus, WithdrawalInitiated } from './arbTokenBridge.types';
+import { canFetchTransactionHistory } from './canFetchTransactionHistory';
 import { useAccountType } from './useAccountType';
 import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
@@ -618,10 +619,21 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
     address ? ['failed_chain_pairs', address] : null,
   );
+  const connectedChainId = chain?.id;
+  const canFetch = canFetchTransactionHistory({
+    address,
+    isLoadingAccountType,
+    isTxHistoryEnabled,
+    isSmartContractWallet,
+    connectedChainId,
+  });
+  // SCW history is network-specific, so scope the cache by the connected chain
+  // to revalidate on network switch. EOA history is network-agnostic.
+  const smartContractWalletChainScope = isSmartContractWallet ? connectedChainId : undefined;
 
   const fetcher = useCallback(
     (type: 'deposits' | 'withdrawals') => {
-      if (!chain) {
+      if (!canFetch) {
         return [];
       }
 
@@ -629,8 +641,11 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
         getMultiChainFetchList()
           .filter((chainPair) => {
             if (isSmartContractWallet) {
+              if (typeof connectedChainId === 'undefined') {
+                return false;
+              }
               // only fetch txs from the connected network
-              return [chainPair.parentChainId, chainPair.childChainId].includes(chain.id);
+              return [chainPair.parentChainId, chainPair.childChainId].includes(connectedChainId);
             }
 
             return isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode;
@@ -639,7 +654,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
             // SCW address is tied to a specific network
             // that's why we need to limit shown txs either to sent or received funds
             // otherwise we'd display funds for a different network, which could be someone else's account
-            const isConnectedToParentChain = chainPair.parentChainId === chain.id;
+            const isConnectedToParentChain = chainPair.parentChainId === connectedChainId;
 
             const includeSentTxs = shouldIncludeSentTxs({
               type,
@@ -696,17 +711,26 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           }),
       );
     },
-    [address, isTestnetMode, addFailedChainPair, isSmartContractWallet, chain, forceFetchReceived],
+    [
+      addFailedChainPair,
+      address,
+      canFetch,
+      connectedChainId,
+      forceFetchReceived,
+      isSmartContractWallet,
+      isTestnetMode,
+    ],
   );
-
-  const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
 
   const {
     data: depositsData,
     error: depositsError,
     isLoading: depositsLoading,
-  } = useSWRImmutable(shouldFetch ? ['tx_list', 'deposits', address, isTestnetMode] : null, () =>
-    fetcher('deposits'),
+  } = useSWRImmutable(
+    canFetch
+      ? ['tx_list', 'deposits', address, isTestnetMode, smartContractWalletChainScope]
+      : null,
+    () => fetcher('deposits'),
   );
 
   const {
@@ -714,7 +738,16 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     error: withdrawalsError,
     isLoading: withdrawalsLoading,
   } = useSWRImmutable(
-    shouldFetch ? ['tx_list', 'withdrawals', address, isTestnetMode, forceFetchReceived] : null,
+    canFetch
+      ? [
+          'tx_list',
+          'withdrawals',
+          address,
+          isTestnetMode,
+          forceFetchReceived,
+          smartContractWalletChainScope,
+        ]
+      : null,
     () => fetcher('withdrawals'),
   );
 
