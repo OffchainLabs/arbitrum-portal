@@ -1,6 +1,8 @@
 import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 
+import { isRecord } from '../../util';
+
 const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
 const CACHE_SECONDS = 60 * 60;
@@ -14,10 +16,6 @@ type TrimmedChainMetadata = {
   chainDetails: { nativeChainId: number };
   tokens: Record<string, TrimmedTokenMetadata>;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 // The upstream payload is ~3.8MB; keep only what the client needs so the cached
 // response stays under the data cache size limit and isn't shipped in full.

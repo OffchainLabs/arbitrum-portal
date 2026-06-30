@@ -1,4 +1,4 @@
-import { getAPIBaseUrl } from '.';
+import { getAPIBaseUrl, isRecord } from '.';
 
 // Our own cached route handler, not the LayerZero API directly (see app/api/layerzero-metadata).
 const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
@@ -21,10 +21,6 @@ type LayerZeroChainMetadata = {
 };
 
 let layerZeroMetadataPromise: Promise<unknown> | null = null;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 function getLayerZeroChainMetadata(
   metadata: unknown,
