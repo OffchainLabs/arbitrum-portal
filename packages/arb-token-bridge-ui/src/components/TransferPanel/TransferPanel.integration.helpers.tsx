@@ -140,9 +140,10 @@ export const tokenExpectationsByChain = {
     USDCe: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
     WETH: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
   },
-  // Placeholder addresses until Robinhood Chain is live — see CommonAddress.RobinhoodChain.
+  // Robinhood Chain uses native USDC (not USDC.e); its USDC address is still a
+  // placeholder — see CommonAddress.RobinhoodChain.
   RobinhoodChain: {
-    USDCe: withContract(usdcETokenExpectation, CommonAddress.RobinhoodChain.USDCe),
+    USDC: withContract(usdcTokenExpectation, CommonAddress.RobinhoodChain.USDC),
     WETH: withContract(wethTokenExpectation, CommonAddress.RobinhoodChain.WETH),
   },
 } as const;

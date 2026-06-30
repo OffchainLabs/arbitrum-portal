@@ -67,13 +67,12 @@ const ethWethCases: EthWethSelectionCase[] = [
 ];
 
 /**
- * Robinhood Chain is ETH-native and not yet live on LiFi; its WETH address is a
- * placeholder (see CommonAddress.RobinhoodChain.WETH). These cases
- * bridge WETH across the Robinhood pairs (the Robinhood-source cases select via
- * its WETH address). Fill in the real address and remove `.skip` once the chain
- * is live — and double-check the expected source/destination tokens against the
- * live ETH/WETH override behavior. ApeChain <> Robinhood is omitted for now and
- * Robinhood -> Base is not a supported route.
+ * Robinhood Chain is ETH-native and not yet live on LiFi (its WETH address is set
+ * in CommonAddress.RobinhoodChain). These cases bridge WETH across the Robinhood
+ * pairs (the Robinhood-source cases select via its WETH address). Remove `.skip`
+ * once the chain is live — and double-check the expected source/destination tokens
+ * against the live ETH/WETH override behavior. ApeChain <> Robinhood is omitted
+ * for now and Robinhood -> Base is not a supported route.
  */
 const robinhoodEthWethCases: EthWethSelectionCase[] = [
   {
