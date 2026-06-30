@@ -188,11 +188,9 @@ export async function clickMoveFundsButton(
 }
 
 /**
- * Currently, Synpress confirmPermissionToSpend clicks only once, so we call it twice. The
  * shouldWaitForPopupClosure flag needs to be set to true for the test to pass.
  */
 export async function confirmSpending(spendLimit: string) {
-  await metamask.confirmPermissionToSpend({ spendLimit, shouldWaitForPopupClosure: true });
   await metamask.confirmPermissionToSpend({ spendLimit, shouldWaitForPopupClosure: true });
 }
 
