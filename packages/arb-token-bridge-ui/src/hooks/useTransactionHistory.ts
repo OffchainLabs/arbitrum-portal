@@ -22,6 +22,11 @@ import {
   isSameTransaction,
   isTxPending,
 } from '../components/TransactionHistory/helpers';
+import {
+  isChainFilterActive,
+  matchesChainFilter,
+  useTransactionHistoryChainFilterStore,
+} from '../components/TransactionHistory/useTransactionHistoryChainFilterStore';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
@@ -128,7 +133,7 @@ function sortByTimestampDescending(a: Transfer, b: Transfer) {
   return getTransactionTimestamp(b) - getTransactionTimestamp(a);
 }
 
-function getMultiChainFetchList(): ChainPair[] {
+export function getMultiChainFetchList(): ChainPair[] {
   return getChains().flatMap((chain) => {
     // We only grab child chains because we don't want duplicates and we need the parent chain
     // Although the type is correct here we default to an empty array for custom networks backwards compatibility
@@ -571,6 +576,10 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
+  const selectedChainIds = useTransactionHistoryChainFilterStore((state) => state.selectedChainIds);
+  // Stable identifier for the selected chains so SWR refetches when the filter changes.
+  const selectedChainIdsKey = [...selectedChainIds].sort((a, b) => a - b).join(',');
+
   const cctpTransfersMainnet = useCctpFetching({
     walletAddress: address,
     l1ChainId: ChainId.Ethereum,
@@ -642,6 +651,17 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
       return Promise.all(
         getMultiChainFetchList()
           .filter((chainPair) => {
+            // When the user narrows tx history to specific chains, only fetch chain pairs
+            // that involve a selected chain. This shifts RPC load away from all chains and
+            // onto the heavily-used ones the user selected (e.g. a single Orbit chain).
+            if (
+              isChainFilterActive(selectedChainIds) &&
+              !selectedChainIds.includes(chainPair.parentChainId) &&
+              !selectedChainIds.includes(chainPair.childChainId)
+            ) {
+              return false;
+            }
+
             if (isSmartContractWallet) {
               if (typeof connectedChainId === 'undefined') {
                 return false;
@@ -721,6 +741,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
       forceFetchReceived,
       isSmartContractWallet,
       isTestnetMode,
+      selectedChainIds,
     ],
   );
 
@@ -730,7 +751,14 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     isLoading: depositsLoading,
   } = useSWRImmutable(
     canFetch
-      ? ['tx_list', 'deposits', address, isTestnetMode, smartContractWalletChainScope]
+      ? [
+          'tx_list',
+          'deposits',
+          address,
+          isTestnetMode,
+          smartContractWalletChainScope,
+          selectedChainIdsKey,
+        ]
       : null,
     () => fetcher('deposits'),
   );
@@ -748,6 +776,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           isTestnetMode,
           forceFetchReceived,
           smartContractWalletChainScope,
+          selectedChainIdsKey,
         ]
       : null,
     () => fetcher('withdrawals'),
@@ -798,6 +827,8 @@ export const useTransactionHistory = (
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
 
+  const selectedChainIds = useTransactionHistoryChainFilterStore((state) => state.selectedChainIds);
+
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
     (state) => state.updateTransaction,
@@ -840,6 +871,13 @@ export const useTransactionHistory = (
     }
     return getDepositsWithoutStatusesFromCache(address)
       .filter((tx) => isNetwork(tx.parentChainId).isTestnet === isTestnetMode)
+      .filter((tx) =>
+        matchesChainFilter({
+          selectedChainIds,
+          sourceChainId: tx.parentChainId,
+          destinationChainId: tx.childChainId,
+        }),
+      )
       .filter((tx) => {
         const chainPairExists = getMultiChainFetchList().some((chainPair) => {
           return (
@@ -871,6 +909,7 @@ export const useTransactionHistory = (
     isSmartContractWallet,
     chain,
     isTxHistoryEnabled,
+    selectedChainIds,
   ]);
 
   const lifiTransactionsFromCache = useMemo(() => {
@@ -939,12 +978,23 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
-    return mergeTransactions({
+    const mergedTransactions = mergeTransactions({
       address,
       newTransactions: newTransactionsData,
       fetchedTransactions: txPages,
     });
-  }, [newTransactionsData, txPages, address]);
+
+    // CCTP and OFT transfers are fetched independently of the chain fetch list,
+    // so we filter the merged result to keep the displayed txs consistent with
+    // the selected chains.
+    return mergedTransactions.filter((tx) =>
+      matchesChainFilter({
+        selectedChainIds,
+        sourceChainId: tx.sourceChainId,
+        destinationChainId: tx.destinationChainId,
+      }),
+    );
+  }, [newTransactionsData, txPages, address, selectedChainIds]);
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {
