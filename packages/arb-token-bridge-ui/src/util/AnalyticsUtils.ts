@@ -68,6 +68,7 @@ type AnalyticsEventMap = {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;
   };
+  'Tx History Network Filter': { network: string };
   'Tx Error: Get Help Click': {
     network: string;
     transactionType: SimplifiedRouteType;

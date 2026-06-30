@@ -11,6 +11,7 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { Button } from '../common/Button';
+import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
   INVALID_ADDRESS = 'That doesn’t seem to be a valid address, please try again.',
@@ -127,6 +128,7 @@ export function TransactionHistorySearchBar() {
           Search
         </Button>
       </form>
+      <TransactionHistoryChainFilter />
     </div>
   );
 }
