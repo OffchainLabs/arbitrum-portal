@@ -1,4 +1,8 @@
-const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
+import { getAPIBaseUrl } from '.';
+
+// Served by our own cached route handler (see app/api/layerzero-metadata) rather
+// than hitting the LayerZero API directly, so responses are cached server-side.
+const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
 
 // LayerZero classifies a token whose own contract implements the OFT interface
 // (i.e. responds to `oftVersion()` on-chain) as `NativeOFT`. Plain ERC20s that
