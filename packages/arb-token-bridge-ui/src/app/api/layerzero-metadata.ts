@@ -1,5 +1,7 @@
-import { unstable_cache } from 'next/cache';
+import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
+
+import { isRecord } from '../../util/isRecord';
 
 const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
@@ -16,10 +18,6 @@ type TrimmedChainMetadata = {
   chainDetails: { nativeChainId: unknown };
   tokens: Record<string, TrimmedTokenMetadata>;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 // The upstream payload is ~3.8MB; the client only needs each chain's
 // `nativeChainId` and, per token, its `type` and whether it is pegged. Trimming
@@ -74,13 +72,28 @@ const getCachedLayerZeroMetadata = unstable_cache(
       throw new Error(`LayerZero metadata request failed with status ${response.status}`);
     }
 
-    return trimLayerZeroMetadata(await response.json());
+    const trimmed = trimLayerZeroMetadata(await response.json());
+
+    // An empty result means the upstream payload was missing or in an
+    // unexpected shape. Throw so it isn't cached — otherwise a single bad
+    // response would disable native-OFT detection for the whole revalidate
+    // window. The next request then retries.
+    if (Object.keys(trimmed).length === 0) {
+      throw new Error('LayerZero metadata response was empty or malformed');
+    }
+
+    return trimmed;
   },
   ['layerzero-metadata'],
   { revalidate: CACHE_SECONDS },
 );
 
 export async function GET(): Promise<NextResponse> {
+  // Opt out of static rendering so the handler runs per request and the
+  // `unstable_cache` revalidation/retry above is the source of truth (matches
+  // the other unstable_cache-backed routes in this app).
+  noStore();
+
   try {
     const metadata = await getCachedLayerZeroMetadata();
 
