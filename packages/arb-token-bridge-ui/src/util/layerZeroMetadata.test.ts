@@ -9,8 +9,8 @@ describe('getLayerZeroNativeTokenStatus', () => {
     vi.restoreAllMocks();
     vi.resetModules();
 
-    // Import every export from the same freshly-reset module instance so the
-    // module-level cache is consistent across the pure and cached helpers.
+    // Import everything from the same freshly-reset module instance so the
+    // module-level cache is shared across the helpers under test.
     ({
       getLayerZeroNativeTokenStatus,
       getLayerZeroNativeTokenStatusFromMetadata,

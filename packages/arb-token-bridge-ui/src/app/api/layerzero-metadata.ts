@@ -5,8 +5,6 @@ import { isRecord } from '../../util/isRecord';
 
 const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
-// LayerZero token/chain metadata changes rarely, so cache it for an hour to
-// avoid hammering the upstream API on every client request.
 const CACHE_SECONDS = 60 * 60;
 
 type TrimmedTokenMetadata = {
@@ -15,14 +13,12 @@ type TrimmedTokenMetadata = {
 };
 
 type TrimmedChainMetadata = {
-  chainDetails: { nativeChainId: unknown };
+  chainDetails: { nativeChainId: number };
   tokens: Record<string, TrimmedTokenMetadata>;
 };
 
-// The upstream payload is ~3.8MB; the client only needs each chain's
-// `nativeChainId` and, per token, its `type` and whether it is pegged. Trimming
-// here keeps the cached response small (well under the data cache size limit)
-// and avoids shipping the full payload to every client.
+// The upstream payload is ~3.8MB; keep only what the client needs so the cached
+// response stays under the data cache size limit and isn't shipped in full.
 function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMetadata> {
   const trimmed: Record<string, TrimmedChainMetadata> = {};
 
@@ -46,14 +42,19 @@ function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMe
         continue;
       }
 
-      trimmedTokens[tokenAddress] = {
+      // Lower-case the key so the client can look tokens up by address.
+      trimmedTokens[tokenAddress.toLowerCase()] = {
         type: tokenMetadata.type,
         peggedTo: Boolean(tokenMetadata.peggedTo),
       };
     }
 
+    // Coerce so the client's strict `=== chainId` holds even if upstream sends a
+    // numeric string; a non-numeric value becomes NaN and never matches.
+    const nativeChainId = Number(chainDetails.nativeChainId);
+
     trimmed[chainKey] = {
-      chainDetails: { nativeChainId: chainDetails.nativeChainId },
+      chainDetails: { nativeChainId },
       tokens: trimmedTokens,
     };
   }
@@ -61,9 +62,8 @@ function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMe
   return trimmed;
 }
 
-// Cache the trimmed metadata in the Next.js data cache so the upstream API is
-// hit at most once per `CACHE_SECONDS` across the whole deployment. A failed
-// fetch throws and is not cached, so the next request retries.
+// Cache in the data cache so upstream is hit at most once per `CACHE_SECONDS`
+// across the deployment. Failures throw (below) and aren't cached, so they retry.
 const getCachedLayerZeroMetadata = unstable_cache(
   async () => {
     const response = await fetch(LAYERZERO_METADATA_URL, { cache: 'no-store' });
@@ -74,10 +74,8 @@ const getCachedLayerZeroMetadata = unstable_cache(
 
     const trimmed = trimLayerZeroMetadata(await response.json());
 
-    // An empty result means the upstream payload was missing or in an
-    // unexpected shape. Throw so it isn't cached — otherwise a single bad
-    // response would disable native-OFT detection for the whole revalidate
-    // window. The next request then retries.
+    // Empty means a missing/unexpected payload — throw so it isn't cached for
+    // the whole revalidate window.
     if (Object.keys(trimmed).length === 0) {
       throw new Error('LayerZero metadata response was empty or malformed');
     }
@@ -89,9 +87,7 @@ const getCachedLayerZeroMetadata = unstable_cache(
 );
 
 export async function GET(): Promise<NextResponse> {
-  // Opt out of static rendering so the handler runs per request and the
-  // `unstable_cache` revalidation/retry above is the source of truth (matches
-  // the other unstable_cache-backed routes in this app).
+  // Opt out of static rendering so `unstable_cache` above stays the source of truth.
   noStore();
 
   try {

@@ -1,14 +1,12 @@
 import { getAPIBaseUrl } from '.';
 import { isRecord } from './isRecord';
 
-// Served by our own cached route handler (see app/api/layerzero-metadata) rather
-// than hitting the LayerZero API directly, so responses are cached server-side.
+// Our own cached route handler, not the LayerZero API directly (see app/api/layerzero-metadata).
 const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
 
-// LayerZero classifies a token whose own contract implements the OFT interface
-// (i.e. responds to `oftVersion()` on-chain) as `NativeOFT`. Plain ERC20s that
-// are bridged through a separate OFT Adapter are typed `ERC20` and do NOT
-// implement `oftVersion()` themselves, so they must not be treated as native OFTs.
+// `NativeOFT` is a token whose own contract implements the OFT interface (responds to
+// `oftVersion()` on-chain). Plain ERC20s bridged via a separate OFT Adapter are typed
+// `ERC20` and don't, so they must not be treated as native OFTs.
 const LAYERZERO_NATIVE_OFT_TYPE = 'NativeOFT';
 
 type LayerZeroTokenMetadata = {
@@ -62,7 +60,6 @@ function getLayerZeroTokenMetadata(
     return null;
   }
 
-  // The metadata keys tokens by their lower-cased address, so look it up directly.
   const tokenMetadata = chainMetadata.tokens[tokenAddress.toLowerCase()];
 
   return isRecord(tokenMetadata) ? tokenMetadata : null;
@@ -77,8 +74,7 @@ async function getLayerZeroMetadata() {
 
   const metadata = await layerZeroMetadataPromise;
 
-  // Don't cache a failed/empty response — clear the cache so the next caller
-  // retries instead of being stuck with `null` for the rest of the session.
+  // Don't cache a failed response — let the next caller retry.
   if (metadata === null) {
     layerZeroMetadataPromise = null;
   }
@@ -116,18 +112,16 @@ export function getLayerZeroNativeTokenStatusFromMetadata(
     return null;
   }
 
-  // A pegged token is a representation of an OFT that lives natively on another
-  // chain, so it is explicitly not a native OFT here.
+  // A pegged token is a representation of an OFT native to another chain.
   if (tokenMetadata.peggedTo) {
     return false;
   }
 
-  // Only tokens whose own contract is the OFT count as native. Anything else
-  // (e.g. plain ERC20s using an OFT Adapter) is left to the on-chain fallback.
   if (tokenMetadata.type === LAYERZERO_NATIVE_OFT_TYPE) {
     return true;
   }
 
+  // Unknown (e.g. an ERC20 using an OFT Adapter) — defer to the on-chain check.
   return null;
 }
 
