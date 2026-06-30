@@ -1,4 +1,5 @@
 import { getAPIBaseUrl } from '.';
+import { isRecord } from './isRecord';
 
 // Served by our own cached route handler (see app/api/layerzero-metadata) rather
 // than hitting the LayerZero API directly, so responses are cached server-side.
@@ -23,10 +24,6 @@ type LayerZeroChainMetadata = {
 };
 
 let layerZeroMetadataPromise: Promise<unknown> | null = null;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 function getLayerZeroChainMetadata(
   metadata: unknown,
