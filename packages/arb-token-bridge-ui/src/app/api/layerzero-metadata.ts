@@ -42,15 +42,12 @@ function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMe
         continue;
       }
 
-      // Lower-case the key so the client can look tokens up by address.
       trimmedTokens[tokenAddress.toLowerCase()] = {
         type: tokenMetadata.type,
         peggedTo: Boolean(tokenMetadata.peggedTo),
       };
     }
 
-    // Coerce so the client's strict `=== chainId` holds even if upstream sends a
-    // numeric string; a non-numeric value becomes NaN and never matches.
     const nativeChainId = Number(chainDetails.nativeChainId);
 
     trimmed[chainKey] = {

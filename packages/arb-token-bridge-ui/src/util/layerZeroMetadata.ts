@@ -41,7 +41,7 @@ function getLayerZeroChainMetadata(
       continue;
     }
 
-    if (chainDetails.nativeChainId === chainId) {
+    if (Number(chainDetails.nativeChainId) === chainId) {
       return chainMetadata;
     }
   }
