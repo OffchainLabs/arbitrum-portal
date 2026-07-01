@@ -10,10 +10,10 @@ import { Provider, TransactionReceipt } from '@ethersproject/providers';
 import { utils } from 'ethers';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { normalizeTimestamp } from '../../state/app/utils';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { Transaction, TxnStatus } from '../../types/Transactions';
 import { fetchErc20Data } from '../TokenUtils';
+import { normalizeTimestamp } from '../normalizeTimestamp';
 
 export function isEthDepositMessage(
   message: EthDepositMessage | ParentToChildMessageReader | ParentToChildMessageReaderClassic,

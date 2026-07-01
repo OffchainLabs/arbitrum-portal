@@ -3,8 +3,7 @@ import { useMemo } from 'react';
 import { Chain } from 'wagmi/chains';
 
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
-import { ChainId } from '../types/ChainId';
-import { isDepositMode } from '../util/isDepositMode';
+import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { UseNetworksState } from './useNetworks';
 
 type UseNetworksRelationshipState = {
@@ -23,7 +22,7 @@ export function useNetworksRelationship({
   destinationChainProvider,
 }: UseNetworksState): UseNetworksRelationshipState {
   return useMemo(() => {
-    const _isDepositMode = isDepositMode({
+    const { parentChainId, isDepositMode } = getNetworksRelationship({
       sourceChainId: sourceChain.id,
       destinationChainId: destinationChain.id,
     });
@@ -33,60 +32,14 @@ export function useNetworksRelationship({
       destinationChainId: destinationChain.id,
     });
 
-    // Ape to Superposition, set Superposition as parent chain
-    if (sourceChain.id === ChainId.ApeChain && destinationChain.id === ChainId.Superposition) {
-      return {
-        childChain: sourceChain,
-        childChainProvider: sourceChainProvider,
-        parentChain: destinationChain,
-        parentChainProvider: destinationChainProvider,
-        isDepositMode: false,
-        isLifi,
-      };
-    }
-
-    // Superposition to Ape, set Superposition as parent chain
-    if (sourceChain.id === ChainId.Superposition && destinationChain.id === ChainId.ApeChain) {
-      return {
-        childChain: destinationChain,
-        childChainProvider: destinationChainProvider,
-        parentChain: sourceChain,
-        parentChainProvider: sourceChainProvider,
-        isDepositMode: true,
-        isLifi,
-      };
-    }
-
-    // Nova to ArbitrumOne is a LiFi sibling transfer, not parent-child.
-    // Set Nova as parent so the LiFi token list keyed on (parent=Nova, child=One) resolves.
-    if (sourceChain.id === ChainId.ArbitrumNova && destinationChain.id === ChainId.ArbitrumOne) {
-      return {
-        childChain: destinationChain,
-        childChainProvider: destinationChainProvider,
-        parentChain: sourceChain,
-        parentChainProvider: sourceChainProvider,
-        isDepositMode: true,
-        isLifi,
-      };
-    }
-
-    if (_isDepositMode) {
-      return {
-        childChain: destinationChain,
-        childChainProvider: destinationChainProvider,
-        parentChain: sourceChain,
-        parentChainProvider: sourceChainProvider,
-        isDepositMode: _isDepositMode,
-        isLifi,
-      };
-    }
+    const isParentSource = parentChainId === sourceChain.id;
 
     return {
-      childChain: sourceChain,
-      childChainProvider: sourceChainProvider,
-      parentChain: destinationChain,
-      parentChainProvider: destinationChainProvider,
-      isDepositMode: _isDepositMode,
+      parentChain: isParentSource ? sourceChain : destinationChain,
+      parentChainProvider: isParentSource ? sourceChainProvider : destinationChainProvider,
+      childChain: isParentSource ? destinationChain : sourceChain,
+      childChainProvider: isParentSource ? destinationChainProvider : sourceChainProvider,
+      isDepositMode,
       isLifi,
     };
   }, [sourceChain, destinationChain, destinationChainProvider, sourceChainProvider]);
