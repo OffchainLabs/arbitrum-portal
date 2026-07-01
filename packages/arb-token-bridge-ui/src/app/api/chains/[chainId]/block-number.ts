@@ -9,7 +9,7 @@ import {
 import { ChainId } from '../../../../types/ChainId';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
 
-type IndexerStatus = Record<string, { id: number; block: { number: number } }>;
+type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 
 async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   const indexerUrl = process.env.INDEXER_API_URL;
