@@ -23,7 +23,7 @@ import {
   isTxPending,
 } from '../components/TransactionHistory/helpers';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
-import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../state/app/utils';
+import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
@@ -37,6 +37,7 @@ import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
+import { normalizeTimestamp } from '../util/normalizeTimestamp';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {

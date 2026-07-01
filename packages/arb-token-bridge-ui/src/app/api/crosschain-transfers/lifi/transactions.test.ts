@@ -86,7 +86,6 @@ function createStatusResponse({
       timestamp: 1_700_000_060,
     },
     feeCosts: [],
-    lifiExplorerLink: '',
     fromAddress: wallet,
     toAddress: wallet,
     metadata: {
@@ -157,6 +156,15 @@ describe('transformLifiHistoryTransaction', () => {
     expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
   });
 
+  it('skips same-chain LiFi history (Earn)', () => {
+    const statusResponse = createStatusResponse({
+      sourceChainId: 42161,
+      destinationChainId: 42161,
+    });
+
+    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
+  });
+
   it('keeps pending LiFi history when destination token metadata is missing', () => {
     const statusResponse: StatusResponse = {
       status: 'PENDING',
@@ -183,8 +191,6 @@ describe('transformLifiHistoryTransaction', () => {
       receiving: {
         chainId: 42161,
       },
-      lifiExplorerLink:
-        'https://scan.li.fi/tx/0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
       fromAddress: wallet,
       toAddress: wallet,
       metadata: {

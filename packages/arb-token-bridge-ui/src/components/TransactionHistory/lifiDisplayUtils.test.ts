@@ -21,6 +21,18 @@ describe('getLifiToAmountDisplay', () => {
     expect(getLifiToAmountDisplay({ isPending: true, toAmount: unknownToAmount })).toBe('Pending');
   });
 
+  it('shows pending for pending LiFi transfers with unknown destination symbol', () => {
+    expect(
+      getLifiToAmountDisplay({
+        isPending: true,
+        toAmount: {
+          ...unknownToAmount,
+          amount: BigNumber.from(990000),
+        },
+      }),
+    ).toBe('Pending');
+  });
+
   it('keeps formatting known destination amounts', () => {
     expect(
       getLifiToAmountDisplay({

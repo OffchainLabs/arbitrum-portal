@@ -11,11 +11,7 @@ export function getLifiToAmountDisplay({
   isPending: boolean;
   toAmount: AmountWithToken;
 }) {
-  if (
-    isPending &&
-    toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL &&
-    toAmount.amount.isZero()
-  ) {
+  if (isPending && toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL) {
     return 'Pending';
   }
 

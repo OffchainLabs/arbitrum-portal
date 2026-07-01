@@ -16,7 +16,6 @@ import { DepositStatus, MergedTransaction } from './state';
 
 export const TX_DATE_FORMAT = 'MMM DD, YYYY';
 export const TX_TIME_FORMAT = 'hh:mm A (z)';
-export { normalizeTimestamp };
 
 export const outgoingStateToString = {
   [OutgoingMessageState.UNCONFIRMED]: 'Unconfirmed',

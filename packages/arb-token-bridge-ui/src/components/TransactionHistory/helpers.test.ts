@@ -59,7 +59,6 @@ describe('getLifiTransferStatus', () => {
       },
       feeCosts: [],
       fromAddress: '0x1111111111111111111111111111111111111111',
-      lifiExplorerLink: '',
       metadata: { integrator: '_arbitrum' },
       toAddress: '0x1111111111111111111111111111111111111111',
     };
@@ -139,7 +138,6 @@ describe('getLifiTransferStatus', () => {
       },
       feeCosts: [],
       fromAddress: '0x1111111111111111111111111111111111111111',
-      lifiExplorerLink: '',
       metadata: { integrator: '_arbitrum' },
       toAddress: '0x1111111111111111111111111111111111111111',
     };

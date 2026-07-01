@@ -110,6 +110,11 @@ export function transformLifiHistoryTransaction({
     return null;
   }
 
+  // Ignore earn transactions (same chain swap)
+  if (sourceChainId === destinationChainId) {
+    return null;
+  }
+
   const fromToken = sending.token || firstStep?.fromToken;
   const toToken =
     receiving?.token || lastStep?.toToken || (isPending ? UNKNOWN_DESTINATION_TOKEN : undefined);

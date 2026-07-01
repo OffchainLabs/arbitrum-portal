@@ -25,9 +25,9 @@ import { CommonAddress } from '../util/CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../util/cctp/fetchCCTP';
 import { getL1BlockTime, getNetworkName, isNetwork } from '../util/networks';
+import { normalizeTimestamp } from '../util/normalizeTimestamp';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from './app/state';
-import { normalizeTimestamp } from './app/utils';
 
 // see https://developers.circle.com/stablecoin/docs/cctp-technical-reference#block-confirmations-for-attestations
 // Blocks need to be awaited on the L1 whether it's a deposit or a withdrawal
