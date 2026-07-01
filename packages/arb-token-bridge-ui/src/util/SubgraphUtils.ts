@@ -25,13 +25,18 @@ export function hasL2Subgraph(l2ChainId: number) {
   }
 }
 
-export const fetchLatestSubgraphBlockNumber = async (chainId: number): Promise<number> => {
+export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
 
-  return ((await response.json()) as { data: number }).data;
+  if (!response.ok) {
+    return 0;
+  }
+
+  const blockNumber = ((await response.json()) as { data?: number }).data;
+  return Number.isFinite(blockNumber) ? (blockNumber as number) : 0;
 };
 
 export const shouldIncludeSentTxs = ({

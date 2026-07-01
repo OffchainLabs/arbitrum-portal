@@ -34,7 +34,6 @@ import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/Subgraph
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
-import { isExperimentalFeatureEnabled } from '../util/index';
 import { logger } from '../util/logger';
 import { getChains, getChildChainIds, isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
@@ -566,7 +565,6 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
-  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
@@ -575,7 +573,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -584,7 +582,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -609,14 +607,12 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     cctpTransfersTestnet.isLoadingWithdrawals;
 
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled && !isIndexerExperimentEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled ? address : undefined,
     isTestnet: isTestnetMode,
   });
   const { data: lifiHistoryTransfers, isLoading: lifiHistoryLoading } = useLifiTransactionHistory({
     walletAddress:
-      isTxHistoryEnabled && !isIndexerExperimentEnabled && !isSmartContractWallet && !isTestnetMode
-        ? address
-        : undefined,
+      isTxHistoryEnabled && !isSmartContractWallet && !isTestnetMode ? address : undefined,
   });
 
   const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
@@ -700,15 +696,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
           }),
       );
     },
-    [
-      address,
-      isTestnetMode,
-      addFailedChainPair,
-      isSmartContractWallet,
-      chain,
-      forceFetchReceived,
-      isIndexerExperimentEnabled,
-    ],
+    [address, isTestnetMode, addFailedChainPair, isSmartContractWallet, chain, forceFetchReceived],
   );
 
   const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
@@ -717,11 +705,8 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     data: depositsData,
     error: depositsError,
     isLoading: depositsLoading,
-  } = useSWRImmutable(
-    shouldFetch
-      ? ['tx_list', 'deposits', address, isTestnetMode, isIndexerExperimentEnabled]
-      : null,
-    () => fetcher('deposits'),
+  } = useSWRImmutable(shouldFetch ? ['tx_list', 'deposits', address, isTestnetMode] : null, () =>
+    fetcher('deposits'),
   );
 
   const {
@@ -729,16 +714,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     error: withdrawalsError,
     isLoading: withdrawalsLoading,
   } = useSWRImmutable(
-    shouldFetch
-      ? [
-          'tx_list',
-          'withdrawals',
-          address,
-          isTestnetMode,
-          forceFetchReceived,
-          isIndexerExperimentEnabled,
-        ]
-      : null,
+    shouldFetch ? ['tx_list', 'withdrawals', address, isTestnetMode, forceFetchReceived] : null,
     () => fetcher('withdrawals'),
   );
 
