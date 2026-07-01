@@ -9,20 +9,29 @@ import { TokenListWithId } from '../../util/TokenListUtils';
 import { orbitChains } from '../../util/orbitChainsList';
 
 // TODO: cache
-function createTokenLogoByAddressMap(tokenLists: TokenListWithId[] | undefined) {
-  const map: { [address: string]: string | undefined } = {};
-  for (const list of tokenLists ?? []) {
-    for (const token of list.tokens) {
-      map[token.address.toLowerCase()] = token.logoURI;
-    }
+function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
+  if (!tokenLists) {
+    return {};
   }
-  return map;
+  const arrayOfTokens = tokenLists.flatMap((tkn) => tkn.tokens) || [];
+  return arrayOfTokens.reduce(
+    (acc, tkn) => {
+      acc[tkn.address.toLowerCase()] = tkn.logoURI;
+      return acc;
+    },
+    {} as { [key in string]: string | undefined },
+  );
 }
 
 export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) => {
-  // tokenAddress is the parent-chain address for both directions, and parent chains
-  // have the most complete token lists, so we key the logo lookup off the parent chain.
-  const parentChainTokenLists = useTokenLists(tx.parentChainId);
+  // we need to take token image from mainnet by symbol, some token images don't exists on other networks
+  const tokenLists = useTokenLists(tx.sourceChainId);
+
+  const tokenAddressToLogoSrcMap = createTokenLogoMapFromTokenLists(tokenLists.data);
+
+  const tokenLogoSrc = tx.tokenAddress
+    ? tokenAddressToLogoSrcMap[tx.tokenAddress.toLowerCase()]
+    : undefined;
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
@@ -40,21 +49,12 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
     return <Image height={20} width={20} alt="ETH logo" src={EthereumLogoRoundLight} />;
   }
 
-  // Resolve by address only — symbol matches can be spoofed by fake tokens.
-  const logoByAddress = createTokenLogoByAddressMap(parentChainTokenLists.data);
-
-  const tokenLogoSrc = tx.tokenAddress ? logoByAddress[tx.tokenAddress.toLowerCase()] : undefined;
-
   if (!tokenLogoSrc) {
     return <div className="h-[20px] w-[20px] rounded-full bg-white/20" />;
   }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="w-[20px]"
-      alt={tx.asset ? `${tx.asset} logo` : 'Token logo'}
-      src={tokenLogoSrc}
-    />
+    <img className="w-[20px]" alt={tx.asset + ' logo'} src={tokenLogoSrc} />
   );
 };
