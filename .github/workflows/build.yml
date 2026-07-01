@@ -11,6 +11,12 @@ on:
       # https://github.com/reviewdog/action-eslint/issues/29#issuecomment-985939887
       - ready_for_review
   workflow_call:
+    inputs:
+      artifact_name:
+        description: Name to publish the build artifacts under
+        required: false
+        type: string
+        default: build-artifacts
 
 env:
   NEXT_PUBLIC_RPC_PROVIDER: alchemy
@@ -39,24 +45,13 @@ jobs:
           node-version: 22
           package-manager-cache: false
 
-      - name: Check cache for build artifacts
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ./packages/app/build
-            ./packages/app/public/__auto-generated-*
-          key: build-artifacts-${{ github.run_id }}
-
       - name: Install node_modules
-        if: steps.cache.outputs.cache-hit != 'true'
         uses: OffchainLabs/actions/node-modules/install@main
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Build
-        if: steps.cache.outputs.cache-hit != 'true'
         shell: bash
         run: pnpm build
         env:
@@ -67,11 +62,19 @@ jobs:
           NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
           THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
 
-      - name: Cache build artifacts
-        if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+      # Pass the build to dependent jobs via run-scoped artifacts instead of the
+      # shared GH cache. Cache restore (with fail-on-cache-miss) was unreliable
+      # across the many jobs that consume the build in a full E2E run.
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
+          name: ${{ inputs.artifact_name || 'build-artifacts' }}
+          # packages/app/package.json anchors the archive root at packages/app so
+          # the build/ and public/ paths are preserved even if the glob is empty.
           path: |
+            ./packages/app/package.json
             ./packages/app/build
             ./packages/app/public/__auto-generated-*
-          key: build-artifacts-${{ github.run_id }}
+          retention-days: 1
+          include-hidden-files: true
+          if-no-files-found: error

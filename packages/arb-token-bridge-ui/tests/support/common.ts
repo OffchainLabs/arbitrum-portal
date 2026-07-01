@@ -264,9 +264,17 @@ export async function checkForAssertions({
   parentProvider: Provider;
   testType: 'regular' | 'orbit-eth' | 'orbit-custom';
 }) {
-  const abi = [
+  // Classic rollup ABI (pre-BoLD)
+  const classicAbi = [
     'function latestConfirmed() public view returns (uint64)',
     'function latestNodeCreated() public view returns (uint64)',
+  ];
+
+  // BoLD rollup ABI — latestConfirmed returns bytes32, no latestNodeCreated
+  const boldAbi = [
+    'function latestConfirmed() public view returns (bytes32)',
+    'function getAssertion(bytes32) public view returns (tuple(uint64 firstChildBlock, uint64 secondChildBlock, uint64 createdAtBlock, bool isFirstChild, uint8 status, bytes32 configHash))',
+    'event AssertionCreated(bytes32 indexed assertionHash, bytes32 indexed parentAssertionHash, tuple(tuple(bytes32 globalState, uint8 machineStatus) beforeState, tuple(bytes32 globalState, uint8 machineStatus) afterState) assertion, bytes32 afterInboxBatchAcc, uint256 inboxMaxCount, bytes32 wasmModuleRoot, uint256 requiredStake, address challengeManager, uint64 confirmPeriodBlocks)',
   ];
 
   let rollupAddress: string;
@@ -282,24 +290,60 @@ export async function checkForAssertions({
       rollupAddress = defaultL2Network.ethBridge.rollup;
   }
 
-  const rollupContract = new ethers.Contract(rollupAddress, abi, parentProvider);
-
   const parentChainId = (await parentProvider.getNetwork()).chainId;
 
+  // Detect BoLD vs classic by trying the classic latestNodeCreated()
+  const classicContract = new ethers.Contract(rollupAddress, classicAbi, parentProvider);
+  let isBold = false;
   try {
+    await classicContract.latestNodeCreated();
+  } catch {
+    isBold = true;
+    console.log(`Rollup ${rollupAddress} on ChainId ${parentChainId} is a BoLD rollup`);
+  }
+
+  if (isBold) {
+    const boldContract = new ethers.Contract(rollupAddress, boldAbi, parentProvider);
     /* eslint-disable no-await-in-loop */
     while (true) {
-      console.log(
-        `***** Assertion status on ChainId ${parentChainId}: ${(
-          await rollupContract.latestNodeCreated()
-        ).toString()} created / ${(await rollupContract.latestConfirmed()).toString()} confirmed`,
-      );
+      try {
+        const latestConfirmed = await boldContract.latestConfirmed();
+        const assertion = await boldContract.getAssertion(latestConfirmed);
+        const createdAtBlock = assertion.createdAtBlock.toNumber();
+        // Count assertions created since the latest confirmed
+        const events = await boldContract.queryFilter('AssertionCreated', createdAtBlock, 'latest');
+        console.log(
+          `***** BoLD assertion status on ChainId ${parentChainId}: ${events.length} assertions since confirmed block ${createdAtBlock}, latest confirmed: ${latestConfirmed.slice(0, 10)}...`,
+        );
+      } catch (e) {
+        console.log(
+          `Could not fetch BoLD assertions for '${rollupAddress}' on ChainId ${parentChainId}`,
+          e,
+        );
+      }
       await wait(10000);
     }
     /* eslint-enable no-await-in-loop */
-  } catch (e) {
-    console.log(`Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`, e);
+  } else {
+    /* eslint-disable no-await-in-loop */
+    while (true) {
+      try {
+        console.log(
+          `***** Assertion status on ChainId ${parentChainId}: ${(
+            await classicContract.latestNodeCreated()
+          ).toString()} created / ${(await classicContract.latestConfirmed()).toString()} confirmed`,
+        );
+      } catch (e) {
+        console.log(
+          `Could not fetch assertions for '${rollupAddress}' on ChainId ${parentChainId}`,
+          e,
+        );
+      }
+      await wait(10000);
+    }
+    /* eslint-enable no-await-in-loop */
   }
+  /* eslint-enable no-await-in-loop */
 }
 
 export async function fundEth({
