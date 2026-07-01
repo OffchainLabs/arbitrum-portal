@@ -143,7 +143,6 @@ export const tokenExpectationsByChain = {
   // Robinhood Chain uses native USDC (not USDC.e); its USDC address is still a
   // placeholder — see CommonAddress.RobinhoodChain.
   RobinhoodChain: {
-    USDC: withContract(usdcTokenExpectation, CommonAddress.RobinhoodChain.USDC),
     WETH: withContract(wethTokenExpectation, CommonAddress.RobinhoodChain.WETH),
   },
 } as const;
