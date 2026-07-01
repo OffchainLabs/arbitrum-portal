@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 
 import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 type CustomTokenConfig = {
   coinKey: string;
@@ -13,25 +14,81 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
     coinKey: 'PYUSD',
     addresses: {
-      [ChainId.Ethereum]: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
-      [ChainId.ArbitrumOne]: '0x46850ad61c2b7d64d08c9c754f45254596696984',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.PYUSD,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.PYUSD,
     },
   },
   {
     coinKey: 'ENA',
     addresses: {
-      [ChainId.Ethereum]: '0x57e114b691db790c35207b2e685d4a43181e6061',
-      [ChainId.Base]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
-      [ChainId.ArbitrumOne]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.ENA,
+      [ChainId.Base]: CommonAddress.Base.ENA,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.ENA,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.ENA,
+    },
+  },
+  {
+    coinKey: 'USDe',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDe,
+      [ChainId.Base]: CommonAddress.Base.USDe,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDe,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.USDe,
+    },
+  },
+  {
+    coinKey: 'sUSDe',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.sUSDe,
+      [ChainId.Base]: CommonAddress.Base.sUSDe,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.sUSDe,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.sUSDe,
+    },
+  },
+  {
+    coinKey: 'USDG',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.USDG,
+    },
+  },
+  {
+    coinKey: 'spUSDG',
+    addresses: {
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.spUSDG,
+    },
+  },
+  {
+    coinKey: 'weETH',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.WEETH,
+      [ChainId.Base]: CommonAddress.Base.WEETH,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.WEETH,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.WEETH,
+    },
+  },
+  {
+    coinKey: 'syrupUSDG',
+    addresses: {
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.SyrupUSDG,
+    },
+  },
+  {
+    coinKey: 'wstETH',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.WSTETH,
+      [ChainId.Base]: CommonAddress.Base.WSTETH,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.WSTETH,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.WSTETH,
     },
   },
   {
     coinKey: 'USDT',
     addresses: {
-      [ChainId.Ethereum]: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-      [ChainId.Base]: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
-      [ChainId.ArbitrumOne]: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
-      [ChainId.ApeChain]: '0x674843C06FF83502ddb4D37c2E09C01cdA38cbc8',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDT,
+      [ChainId.Base]: CommonAddress.Base.USDT,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDT,
+      [ChainId.ApeChain]: CommonAddress.ApeChain.USDT,
     },
   },
 ];
@@ -48,6 +105,10 @@ for (const customToken of CUSTOM_TOKENS) {
 }
 
 const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
+  [ChainId.Ethereum]: new Set([
+    // LiFi marks this PulseChain-wrapped token as CoinKey.WETH, which duplicates canonical Ethereum WETH in child token lists.
+    '0xb1a7f8b3ada1cbd7752c1306725b07d2f8b4e726',
+  ]),
   [ChainId.ArbitrumOne]: new Set([
     '0x74885b4d524d497261259b38900f54e6dbad2210', // Old Ape token
     '0xb9c8f0d3254007ee4b98970b94544e473cd610ec', // Old QiDao token
@@ -125,6 +186,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const response = await getTokens({
     chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
   });
+
   if (!response.tokens) {
     return {
       tokensByChain: {},
