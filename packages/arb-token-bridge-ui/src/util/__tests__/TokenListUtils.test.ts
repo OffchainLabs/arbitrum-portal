@@ -3,12 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import {
-  LIFI_TRANSFER_LIST_ID,
   ROBINHOOD_CHAIN_TOKEN_LIST_ID,
   fetchBridgeTokenList,
   getBridgeTokenListsForNetworks,
   getDefaultBridgeTokenLists,
-  getLifiTokenListForNetworks,
 } from '../TokenListUtils';
 
 describe('TokenListUtils helpers', () => {
