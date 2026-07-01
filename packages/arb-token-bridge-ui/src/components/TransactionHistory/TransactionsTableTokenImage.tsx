@@ -20,7 +20,9 @@ function createTokenLogoByAddressMap(tokenLists: TokenListWithId[] | undefined) 
 }
 
 export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) => {
-  const sourceChainTokenLists = useTokenLists(tx.sourceChainId);
+  // tokenAddress is the parent-chain address for both directions, and parent chains
+  // have the most complete token lists, so we key the logo lookup off the parent chain.
+  const parentChainTokenLists = useTokenLists(tx.parentChainId);
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
@@ -39,7 +41,7 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
   }
 
   // Resolve by address only — symbol matches can be spoofed by fake tokens.
-  const logoByAddress = createTokenLogoByAddressMap(sourceChainTokenLists.data);
+  const logoByAddress = createTokenLogoByAddressMap(parentChainTokenLists.data);
 
   const tokenLogoSrc = tx.tokenAddress ? logoByAddress[tx.tokenAddress.toLowerCase()] : undefined;
 
