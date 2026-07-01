@@ -25,6 +25,18 @@ const transferDisabledTokens: { [chainId: number]: TransferDisabledToken[] } = {
       l2Address: CommonAddress.ArbitrumOne.PYUSD_CANONICAL,
     },
   ],
+  [ChainId.RobinhoodChain]: [
+    {
+      symbol: 'USDe',
+      l1Address: CommonAddress.Ethereum.USDe,
+      l2Address: CommonAddress.RobinhoodChain.USDe,
+    },
+    {
+      symbol: 'USDG',
+      l1Address: CommonAddress.Ethereum.USDG,
+      l2Address: CommonAddress.RobinhoodChain.USDG,
+    },
+  ],
 };
 
 export function isTransferDisabledToken(erc20L1Address: string, childChainId: number) {

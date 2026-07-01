@@ -22,7 +22,13 @@ vi.mock('../../hooks/TransferPanel/useGasEstimates', () => ({
   }),
 }));
 
-export type ChainQuerySlug = 'ethereum' | 'arbitrum-one' | 'base' | 'apechain' | 'superposition';
+export type ChainQuerySlug =
+  | 'ethereum'
+  | 'arbitrum-one'
+  | 'base'
+  | 'apechain'
+  | 'superposition'
+  | 'robinhood-chain';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
@@ -133,6 +139,11 @@ export const tokenExpectationsByChain = {
   Superposition: {
     USDCe: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
     WETH: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
+  },
+  // Robinhood Chain uses native USDC (not USDC.e); its USDC address is still a
+  // placeholder — see CommonAddress.RobinhoodChain.
+  RobinhoodChain: {
+    WETH: withContract(wethTokenExpectation, CommonAddress.RobinhoodChain.WETH),
   },
 } as const;
 
@@ -649,12 +660,15 @@ export function setupTransferPanelLifiIntegrationSuite() {
   beforeAll(() => {
     process.env.NEXT_PUBLIC_FEATURE_FLAG_LIFI = 'true';
 
-    const apeChain = getMainnetOrbitChain(ChainId.ApeChain);
-    const superposition = getMainnetOrbitChain(ChainId.Superposition);
+    const chains = [
+      getMainnetOrbitChain(ChainId.ApeChain),
+      getMainnetOrbitChain(ChainId.Superposition),
+      getMainnetOrbitChain(ChainId.RobinhoodChain),
+    ];
 
-    registerCustomArbitrumNetwork(apeChain);
-    registerCustomArbitrumNetwork(superposition);
-    mapCustomChainToNetworkData(apeChain);
-    mapCustomChainToNetworkData(superposition);
+    chains.forEach((chain) => {
+      registerCustomArbitrumNetwork(chain);
+      mapCustomChainToNetworkData(chain);
+    });
   });
 }

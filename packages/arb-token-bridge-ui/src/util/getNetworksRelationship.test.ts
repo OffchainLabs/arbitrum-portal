@@ -26,6 +26,26 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
+      label: 'Robinhood Chain to Superposition special deposit',
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Superposition,
+      expected: {
+        parentChainId: ChainId.RobinhoodChain,
+        childChainId: ChainId.Superposition,
+        isDepositMode: true,
+      },
+    },
+    {
+      label: 'Superposition to Robinhood Chain special withdrawal',
+      sourceChainId: ChainId.Superposition,
+      destinationChainId: ChainId.RobinhoodChain,
+      expected: {
+        parentChainId: ChainId.RobinhoodChain,
+        childChainId: ChainId.Superposition,
+        isDepositMode: false,
+      },
+    },
+    {
       label: 'Nova to ArbitrumOne sibling transfer',
       sourceChainId: ChainId.ArbitrumNova,
       destinationChainId: ChainId.ArbitrumOne,

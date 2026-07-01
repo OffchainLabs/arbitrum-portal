@@ -4,7 +4,7 @@ import { useInterval } from 'react-use';
 import { useAppState } from '../state';
 import {
   LIFI_TRANSFER_LIST_ID,
-  fetchTokenListFromURL,
+  fetchBridgeTokenList,
   getLifiTokenListForNetworks,
 } from '../util/TokenListUtils';
 import { useNetworks } from './useNetworks';
@@ -43,7 +43,7 @@ export function useTokenListPriceUpdater({
         return current;
       }
 
-      const { data } = await fetchTokenListFromURL(lifiTokenList.url);
+      const { data } = await fetchBridgeTokenList(lifiTokenList);
       if (!data) {
         return current;
       }

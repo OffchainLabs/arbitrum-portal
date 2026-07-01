@@ -22,7 +22,7 @@ export function useNetworksRelationship({
   destinationChainProvider,
 }: UseNetworksState): UseNetworksRelationshipState {
   return useMemo(() => {
-    const { parentChainId, isDepositMode } = getNetworksRelationship({
+    const { childChainId, parentChainId, isDepositMode } = getNetworksRelationship({
       sourceChainId: sourceChain.id,
       destinationChainId: destinationChain.id,
     });
@@ -32,13 +32,14 @@ export function useNetworksRelationship({
       destinationChainId: destinationChain.id,
     });
 
-    const isParentSource = parentChainId === sourceChain.id;
+    const sourceChainIsParent = sourceChain.id === parentChainId;
+    const sourceChainIsChild = sourceChain.id === childChainId;
 
     return {
-      parentChain: isParentSource ? sourceChain : destinationChain,
-      parentChainProvider: isParentSource ? sourceChainProvider : destinationChainProvider,
-      childChain: isParentSource ? destinationChain : sourceChain,
-      childChainProvider: isParentSource ? destinationChainProvider : sourceChainProvider,
+      childChain: sourceChainIsChild ? sourceChain : destinationChain,
+      childChainProvider: sourceChainIsChild ? sourceChainProvider : destinationChainProvider,
+      parentChain: sourceChainIsParent ? sourceChain : destinationChain,
+      parentChainProvider: sourceChainIsParent ? sourceChainProvider : destinationChainProvider,
       isDepositMode,
       isLifi,
     };

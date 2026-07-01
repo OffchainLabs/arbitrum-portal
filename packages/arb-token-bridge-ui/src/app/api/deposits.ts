@@ -6,7 +6,7 @@ import {
   getSourceFromSubgraphClient,
 } from '../../api-utils/ServerSubgraphUtils';
 import { FetchDepositsFromSubgraphResult } from '../../util/deposits/fetchDepositsFromSubgraph';
-import { isIndexerApiExperimentEnabled, proxyToIndexer } from './indexer';
+import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
 type DepositsResponse = {
   meta?: { source: string | null };
@@ -17,7 +17,7 @@ type DepositsResponse = {
 export async function GET(request: NextRequest): Promise<NextResponse<DepositsResponse>> {
   try {
     const { searchParams } = new URL(request.url);
-    if (isIndexerApiExperimentEnabled(request)) {
+    if (isIndexerEnabledForRequest(request)) {
       return proxyToIndexer(request, '/api/bridge-history/deposits');
     }
     const sender = searchParams.get('sender') || undefined;

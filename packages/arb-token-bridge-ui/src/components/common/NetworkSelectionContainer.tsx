@@ -26,7 +26,7 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
-import { getNetworkName, isNetwork } from '../../util/networks';
+import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
@@ -315,12 +315,12 @@ export function NetworksPanel({
       });
     }
 
-    const coreNetworks = chainIds.filter((chainId) => isNetwork(chainId).isCoreChain);
+    const coreNetworks = chainIds.filter((chainId) => isCoreChainForDisplay(chainId));
     const moreNetworks = chainIds.filter(
-      (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
+      (chainId) => !isCoreChainForDisplay(chainId) && !isNetwork(chainId).isOrbitChain,
     );
     const orbitNetworks = chainIds
-      .filter((chainId) => isNetwork(chainId).isOrbitChain)
+      .filter((chainId) => isNetwork(chainId).isOrbitChain && !isCoreChainForDisplay(chainId))
       .concat(proofOfPlayNetworks);
 
     return {

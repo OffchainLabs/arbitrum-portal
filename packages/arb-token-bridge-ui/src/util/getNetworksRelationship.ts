@@ -20,6 +20,30 @@ export function getNetworksRelationship({
   childChainId: number;
   isDepositMode: boolean;
 } {
+  // Robinhood to Superposition, set Robinhood as parent chain
+  if (
+    sourceChainId === ChainId.RobinhoodChain &&
+    destinationChainId === ChainId.Superposition
+  ) {
+    return {
+      parentChainId: sourceChainId,
+      childChainId: destinationChainId,
+      isDepositMode: true,
+    };
+  }
+
+  // Superposition to Robinhood, set Robinhood as parent chain
+  if (
+    sourceChainId === ChainId.Superposition &&
+    destinationChainId === ChainId.RobinhoodChain
+  ) {
+    return {
+      parentChainId: destinationChainId,
+      childChainId: sourceChainId,
+      isDepositMode: false,
+    };
+  }
+
   // Ape to Superposition, set Superposition as parent chain
   if (sourceChainId === ChainId.ApeChain && destinationChainId === ChainId.Superposition) {
     return {

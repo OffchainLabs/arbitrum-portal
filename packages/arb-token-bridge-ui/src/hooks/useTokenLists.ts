@@ -3,7 +3,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import {
   TokenListWithId,
-  fetchTokenListFromURL,
+  fetchBridgeTokenList,
   getBridgeTokenListsForNetworks,
 } from '../util/TokenListUtils';
 import { isNetwork } from '../util/networks';
@@ -25,7 +25,7 @@ function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<T
     });
 
     Promise.allSettled(
-      requestListArray.map((bridgeTokenList) => fetchTokenListFromURL(bridgeTokenList.url)),
+      requestListArray.map((bridgeTokenList) => fetchBridgeTokenList(bridgeTokenList)),
     ).then((responses) => {
       const tokenListsWithBridgeTokenListId = responses.reduce<TokenListWithId[]>(
         (acc, response, index) => {

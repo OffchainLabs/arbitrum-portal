@@ -6,9 +6,11 @@ import {
   allowedLifiSourceChainIds,
   lifiDestinationChainIds,
 } from '@/bridge/app/api/crosschain-transfers/constants';
+import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
-import { getLifiTokenRegistry } from './registry';
+import { type LifiTokenWithCoinKey, getLifiTokenRegistry } from './registry';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 30;
@@ -23,11 +25,39 @@ const BASE_TOKEN_LIST = {
   logoURI: '/icons/lifi.svg',
 } as const;
 
+const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
+  [
+    CommonAddress.RobinhoodChain.WETH,
+    CommonAddress.RobinhoodChain.USDe,
+    CommonAddress.RobinhoodChain.sUSDe,
+    CommonAddress.RobinhoodChain.USDG,
+    CommonAddress.RobinhoodChain.ENA,
+    CommonAddress.RobinhoodChain.WEETH,
+    CommonAddress.RobinhoodChain.WSTETH,
+  ].map((address) => address.toLowerCase()),
+);
+
 const parseChainParam = (value: string | null) => {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
+
+function getParentTokensForRoute({
+  parentChainId,
+  tokens,
+}: {
+  parentChainId: number;
+  tokens: LifiTokenWithCoinKey[];
+}) {
+  if (parentChainId !== ChainId.RobinhoodChain) {
+    return tokens;
+  }
+
+  return tokens.filter((token) =>
+    ROBINHOOD_SOURCE_TOKEN_ADDRESSES.has(token.address.toLowerCase()),
+  );
+}
 
 export async function GET(request: NextRequest): Promise<NextResponse<TokenList>> {
   const { searchParams } = new URL(request.url);
@@ -57,7 +87,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   try {
     const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
 
-    const parentTokens = tokensByChain[parentChainId] ?? [];
+    const parentTokens = getParentTokensForRoute({
+      parentChainId,
+      tokens: tokensByChain[parentChainId] ?? [],
+    });
     const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId];
 
     if (
