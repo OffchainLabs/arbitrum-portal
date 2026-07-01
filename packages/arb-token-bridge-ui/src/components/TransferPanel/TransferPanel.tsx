@@ -244,6 +244,11 @@ export function TransferPanel() {
     );
   }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
+  const shouldShowTokenImportDialog =
+    networks.sourceChain.id !== ChainId.RobinhoodChain &&
+    isTokenAlreadyImported === false &&
+    typeof tokenFromSearchParams !== 'undefined';
+
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
       selectedToken !== null && typeof selectedToken.l2Address === 'undefined';
@@ -1311,7 +1316,7 @@ export function TransferPanel() {
         openDialog={openDialog}
         dialogProps={dialogProps}
         moveFundsButtonOnClick={moveFundsButtonOnClick}
-        isTokenAlreadyImported={isTokenAlreadyImported}
+        shouldShowTokenImportDialog={shouldShowTokenImportDialog}
         tokenFromSearchParams={tokenFromSearchParams}
         tokenImportDialogProps={tokenImportDialogProps}
         closeWithResetTokenImportDialog={closeWithResetTokenImportDialog}
@@ -1371,7 +1376,7 @@ export function TransferPanel() {
           <ConnectWalletButton />
         )}
 
-        {isTokenAlreadyImported === false && tokenFromSearchParams && (
+        {shouldShowTokenImportDialog && tokenFromSearchParams && (
           <TokenImportDialog
             {...tokenImportDialogProps}
             onClose={closeWithResetTokenImportDialog}

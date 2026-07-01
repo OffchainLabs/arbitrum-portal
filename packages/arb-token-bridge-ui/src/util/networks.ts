@@ -549,17 +549,48 @@ export function getChildChainIds(chain: ArbitrumNetwork | BlockNumberReferenceNe
   return Array.from(new Set(childChainIds));
 }
 
+// Orbit chains surfaced in the Core Chains section of the UI (purely cosmetic; they remain
+// Orbit chains for all bridging logic).
+const uiCoreChainIds: number[] = [ChainId.RobinhoodChain];
+
+// Whether a chain is shown in the Core Chains UI section. Superset of isCoreChain that also
+// includes Orbit chains we want to surface as core (e.g. Robinhood Chain).
+export function isCoreChainForDisplay(chainId: number) {
+  return isNetwork(chainId).isCoreChain || uiCoreChainIds.includes(chainId);
+}
+
+// Core chains not listed here sort after these, by ascending chainId.
+const coreChainSortOrder: number[] = [
+  ChainId.Ethereum,
+  ChainId.Local,
+  ChainId.Sepolia,
+  ChainId.ArbitrumOne,
+  ChainId.RobinhoodChain,
+  ChainId.ArbitrumNova,
+  ChainId.ArbitrumLocal,
+  ChainId.ArbitrumSepolia,
+];
+
+function getCoreChainRank(chainId: number) {
+  const index = coreChainSortOrder.indexOf(chainId);
+  return index === -1 ? coreChainSortOrder.length : index;
+}
+
 /**
  * Sorts an array of chain IDs in ascending order (default) but keep core chains on top.
  * This is helpful e.g. when we grab the default chain which is the first chain on top.
  */
 export function sortChainIds(chainIds: number[]) {
   return chainIds.sort((a, b) => {
-    const { isCoreChain: isCoreChainA } = isNetwork(a);
-    const { isCoreChain: isCoreChainB } = isNetwork(b);
+    const isCoreChainA = isCoreChainForDisplay(a);
+    const isCoreChainB = isCoreChainForDisplay(b);
 
     if (isCoreChainA && isCoreChainB) {
-      // Both are core chains, sort in ascending order
+      const rankA = getCoreChainRank(a);
+      const rankB = getCoreChainRank(b);
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
       return a - b;
     } else if (isCoreChainA) {
       // Only A is core chain, it should come first

@@ -30,7 +30,7 @@ export const NetworkImage = ({
       <Image
         src={network.logo}
         alt={`${networkName} logo`}
-        className="h-full w-auto"
+        className="h-full w-auto rounded-full"
         width={imageSize}
         height={imageSize}
       />

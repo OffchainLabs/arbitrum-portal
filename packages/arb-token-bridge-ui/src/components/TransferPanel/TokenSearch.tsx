@@ -440,6 +440,11 @@ function TokensPanel({
     let error = 'Token not found on this network.';
     let isSuccessful = false;
 
+    if (networks.sourceChain.id === ChainId.RobinhoodChain) {
+      setErrorMessage(error);
+      return;
+    }
+
     try {
       // Try to add the token as an L2-native token
       token.addL2NativeToken(newToken);

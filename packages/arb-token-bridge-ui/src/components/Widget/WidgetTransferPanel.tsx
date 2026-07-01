@@ -14,7 +14,7 @@ import { WidgetRoutes } from './WidgetRoutes';
 
 type WidgetTransferPanelProps = {
   moveFundsButtonOnClick: () => void;
-  isTokenAlreadyImported?: boolean;
+  shouldShowTokenImportDialog: boolean;
   tokenFromSearchParams?: string;
   tokenImportDialogProps: UseDialogProps;
   openDialog: OpenDialogFunction;
@@ -26,7 +26,7 @@ export function WidgetTransferPanel({
   dialogProps,
   openDialog,
   moveFundsButtonOnClick,
-  isTokenAlreadyImported,
+  shouldShowTokenImportDialog,
   tokenFromSearchParams,
   tokenImportDialogProps,
   closeWithResetTokenImportDialog,
@@ -73,7 +73,7 @@ export function WidgetTransferPanel({
         </div>
       </div>
 
-      {isTokenAlreadyImported === false && tokenFromSearchParams && (
+      {shouldShowTokenImportDialog && tokenFromSearchParams && (
         <TokenImportDialog
           {...tokenImportDialogProps}
           onClose={closeWithResetTokenImportDialog}

@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 
 import { isLifiEnabled } from '../../util/featureFlag';
-import { getDestinationChainIds, getSupportedChainIds, isNetwork } from '../../util/networks';
+import {
+  getDestinationChainIds,
+  getSupportedChainIds,
+  isNetwork,
+  sortChainIds,
+} from '../../util/networks';
 import { DisabledFeatures } from '../useArbQueryParams';
 import { useDisabledFeatures } from '../useDisabledFeatures';
 import { useIsTestnetMode } from '../useIsTestnetMode';
@@ -25,11 +30,13 @@ export function useChainIdsForNetworkSelection({ isSource }: { isSource: boolean
       });
 
       // do not display chains that have no destination chains
-      return sourceChainIds.filter(
-        (chainId) =>
-          getDestinationChainIds(chainId, {
-            disableTransfersToNonArbitrumChains,
-          }).length > 0,
+      return sortChainIds(
+        sourceChainIds.filter(
+          (chainId) =>
+            getDestinationChainIds(chainId, {
+              disableTransfersToNonArbitrumChains,
+            }).length > 0,
+        ),
       );
     }
 
