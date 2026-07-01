@@ -26,6 +26,9 @@ describe('isArbitrumCanonicalTransfer', () => {
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
     );
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.RobinhoodChain)!,
+    );
   });
 
   describe('for deposits', () => {
@@ -182,6 +185,38 @@ describe('isArbitrumCanonicalTransfer', () => {
       });
       expect(usdcDeposit).toBe(true);
     });
+
+    it.each([
+      {
+        symbol: 'USDe',
+        address: CommonAddress.Ethereum.USDe,
+        l2Address: CommonAddress.RobinhoodChain.USDe,
+      },
+      {
+        symbol: 'USDG',
+        address: CommonAddress.Ethereum.USDG,
+        l2Address: CommonAddress.RobinhoodChain.USDG,
+      },
+    ])('should return false for Robinhood LiFi-only $symbol deposits', (token) => {
+      const deposit = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.RobinhoodChain,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.RobinhoodChain,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...token,
+          decimals: 18,
+          name: token.symbol,
+          type: TokenType.ERC20,
+          listIds: new Set<string>(),
+        },
+        isSwap: false,
+      });
+
+      expect(deposit).toBe(false);
+    });
   });
 
   describe('for withdrawals', () => {
@@ -322,6 +357,38 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSwap: false,
       });
       expect(usdcWithdraw).toBe(true);
+    });
+
+    it.each([
+      {
+        symbol: 'USDe',
+        address: CommonAddress.Ethereum.USDe,
+        l2Address: CommonAddress.RobinhoodChain.USDe,
+      },
+      {
+        symbol: 'USDG',
+        address: CommonAddress.Ethereum.USDG,
+        l2Address: CommonAddress.RobinhoodChain.USDG,
+      },
+    ])('should return false for Robinhood LiFi-only $symbol withdrawals', (token) => {
+      const withdrawal = isArbitrumCanonicalTransfer({
+        childChainId: ChainId.RobinhoodChain,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...token,
+          decimals: 18,
+          name: token.symbol,
+          type: TokenType.ERC20,
+          listIds: new Set<string>(),
+        },
+        isSwap: false,
+      });
+
+      expect(withdrawal).toBe(false);
     });
   });
 
