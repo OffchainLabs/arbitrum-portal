@@ -32,13 +32,14 @@ import {
   getParentToChildMessageDataFromParentTxHash,
   isEthDepositMessage,
 } from '../../util/deposits/helpers';
-import { getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
+import { getExplorerUrl, getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
 import { getOutgoingMessageState } from '../../util/withdrawals/helpers';
 import { warningToast } from '../common/atoms/Toast';
 
 const PARENT_CHAIN_TX_DETAILS_OF_CLAIM_TX = 'arbitrum:bridge:claim:parent:tx:details';
 const DEPOSITS_LOCAL_STORAGE_KEY = 'arbitrum:bridge:deposits';
 const LIFI_REFUND_TOAST_KEY_PREFIX = 'arbitrum:bridge:lifi:refund:';
+const LIFI_SCAN_URL = 'https://scan.li.fi';
 
 function showLifiRefundToastOnce(tx: LifiMergedTransaction) {
   if (typeof window === 'undefined') {
@@ -595,6 +596,8 @@ export async function getUpdatedLifiTransfer(
   return {
     ...tx,
     destinationTxId,
+    lifiExplorerLink:
+      'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : tx.lifiExplorerLink,
     status,
     destinationStatus,
   };
@@ -657,4 +660,39 @@ export function getDestinationNetworkTxId(tx: MergedTransaction) {
   return tx.isWithdrawal
     ? tx.childToParentMsgData?.uniqueId.toString()
     : tx.parentToChildMsgData?.childTxId;
+}
+
+function getLifiTransactionUrl(tx: LifiMergedTransaction, txId: string | null | undefined) {
+  if (!txId) {
+    return '';
+  }
+
+  if (tx.lifiExplorerLink) {
+    return tx.lifiExplorerLink;
+  }
+
+  return `${LIFI_SCAN_URL}/tx/${txId}`;
+}
+
+export function getSourceTransactionUrl(tx: MergedTransaction) {
+  if (isLifiTransfer(tx)) {
+    return getLifiTransactionUrl(tx, tx.txId);
+  }
+
+  return `${getExplorerUrl(tx.sourceChainId)}/tx/${tx.txId}`;
+}
+
+export function getDestinationTransactionUrl(tx: MergedTransaction) {
+  const destinationNetworkTxId = getDestinationNetworkTxId(tx);
+
+  if (isLifiTransfer(tx)) {
+    return getLifiTransactionUrl(tx, destinationNetworkTxId);
+  }
+
+  if (!destinationNetworkTxId) {
+    return '';
+  }
+
+  const destinationChainId = tx.isWithdrawal ? tx.parentChainId : tx.childChainId;
+  return `${getExplorerUrl(destinationChainId)}/tx/${destinationNetworkTxId}`;
 }

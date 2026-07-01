@@ -1,8 +1,11 @@
 import type { StatusResponse, Token } from '@lifi/types';
+import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { WithdrawalStatus } from '../../state/app/state';
+import { AssetType } from '../../hooks/arbTokenBridge.types';
+import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
+import { getDestinationTransactionUrl, getSourceTransactionUrl } from './helpers';
 
 const token: Token = {
   address: '0x0000000000000000000000000000000000000000',
@@ -24,6 +27,43 @@ const baseStatusResponse = {
   receiving: {
     chainId: 42161,
   },
+};
+
+const baseLifiTransaction: LifiMergedTransaction = {
+  txId: '0xsource',
+  asset: 'ETH',
+  assetType: AssetType.ETH,
+  blockNum: null,
+  createdAt: 1_700_000_000_000,
+  direction: 'deposit',
+  isWithdrawal: false,
+  resolvedAt: null,
+  status: WithdrawalStatus.CONFIRMED,
+  destinationStatus: WithdrawalStatus.CONFIRMED,
+  uniqueId: null,
+  value: '1',
+  depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
+  destination: '0x1111111111111111111111111111111111111111',
+  sender: '0x1111111111111111111111111111111111111111',
+  isLifi: true,
+  tokenAddress: '0x0000000000000000000000000000000000000000',
+  parentChainId: 1,
+  childChainId: 42161,
+  sourceChainId: 1,
+  destinationChainId: 42161,
+  toolDetails: { key: 'across', name: 'Across', logoURI: '' },
+  durationMs: 0,
+  fromAmount: {
+    amount: BigNumber.from('1000000000000000000'),
+    amountUSD: '1',
+    token,
+  },
+  toAmount: {
+    amount: BigNumber.from('1000000000000000000'),
+    amountUSD: '1',
+    token,
+  },
+  destinationTxId: '0xdestination',
 };
 
 describe('getLifiTransferStatus', () => {
@@ -147,5 +187,33 @@ describe('getLifiTransferStatus', () => {
       destinationStatus: WithdrawalStatus.REFUNDED,
       destinationTxId: '0xrefund',
     });
+  });
+});
+
+describe('transaction urls', () => {
+  it('uses chain explorers for non-LiFi transfers', () => {
+    expect(
+      getSourceTransactionUrl({
+        ...baseLifiTransaction,
+        isLifi: false,
+        depositStatus: DepositStatus.L2_SUCCESS,
+      }),
+    ).toBe('https://etherscan.io/tx/0xsource');
+  });
+
+  it('uses LiFi Scan for LiFi source and destination tx hashes', () => {
+    expect(getSourceTransactionUrl(baseLifiTransaction)).toBe('https://scan.li.fi/tx/0xsource');
+    expect(getDestinationTransactionUrl(baseLifiTransaction)).toBe(
+      'https://scan.li.fi/tx/0xdestination',
+    );
+  });
+
+  it('uses the LiFi explorer link from the API when present', () => {
+    expect(
+      getSourceTransactionUrl({
+        ...baseLifiTransaction,
+        lifiExplorerLink: 'https://scan.li.fi/tx/lifi-transaction-id',
+      }),
+    ).toBe('https://scan.li.fi/tx/lifi-transaction-id');
   });
 });

@@ -56,6 +56,7 @@ export type LifiTransactionHistoryItem = {
   fromAmount: LifiTransactionHistoryAmount;
   toAmount: LifiTransactionHistoryAmount;
   destinationTxId: string | null;
+  lifiExplorerLink?: string;
 };
 
 export type LifiTransactionHistoryResponse =
@@ -183,6 +184,8 @@ export function transformLifiHistoryTransaction({
       token: toToken,
     },
     destinationTxId,
+    lifiExplorerLink:
+      'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : undefined,
   };
 }
 

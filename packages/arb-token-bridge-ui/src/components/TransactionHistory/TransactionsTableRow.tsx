@@ -30,6 +30,8 @@ import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
 import {
   getDestinationNetworkTxId,
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
   isLifiTransfer,
   isTxClaimable,
   isTxExpired,
@@ -39,12 +41,10 @@ import {
 import { getLifiToAmountDisplay } from './lifiDisplayUtils';
 
 const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
-  const { sourceChainId, destinationChainId } = tx;
-
   if (isTxFailed(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex shrink-0 items-center space-x-1 text-red-400"
       >
@@ -58,7 +58,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxExpired(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex shrink-0 items-center space-x-1 text-red-400"
       >
@@ -72,7 +72,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxPending(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex items-center space-x-1 text-yellow-400"
       >
@@ -86,7 +86,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxClaimable(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex items-center space-x-1 text-green-400"
       >
@@ -98,15 +98,12 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   }
 
   const destinationNetworkTxId = getDestinationNetworkTxId(tx);
+  const destinationTransactionUrl = getDestinationTransactionUrl(tx);
 
   // Success
   return (
     <ExternalLink
-      href={
-        destinationNetworkTxId
-          ? `${getExplorerUrl(destinationChainId)}/tx/${destinationNetworkTxId}`
-          : ''
-      }
+      href={destinationTransactionUrl}
       aria-label="Transaction status"
       className={destinationNetworkTxId ? 'arb-hover' : 'pointer-events-none'}
     >

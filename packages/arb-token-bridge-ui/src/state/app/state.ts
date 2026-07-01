@@ -43,6 +43,7 @@ export type MergedTransactionLifiData = {
   fromAmount: AmountWithToken;
   toAmount: AmountWithToken;
   destinationTxId: string | null;
+  lifiExplorerLink?: string;
   transactionRequest?: TransactionRequest;
 };
 export interface BaseMergedTransaction {
