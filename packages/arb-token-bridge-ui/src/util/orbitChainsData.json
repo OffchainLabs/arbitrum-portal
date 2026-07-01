@@ -1,6 +1,49 @@
 {
   "mainnet": [
     {
+      "chainId": 4663,
+      "confirmPeriodBlocks": 45818,
+      "ethBridge": {
+        "bridge": "0xDf8755334ce7A73cCF6b581C02eA649AE3E864b3",
+        "inbox": "0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D",
+        "outbox": "0xf0ce991ea4A0d2400A4AB49b20ae333f6Dce3DE9",
+        "rollup": "0x23A19d23e89166adedbDcB432518AB01e4272D94",
+        "sequencerInbox": "0xBd0D173EEb87D57A09521c24388a12789F33ba96"
+      },
+      "explorerUrl": "https://robinhoodchain.blockscout.com",
+      "rpcUrl": "https://rpc.mainnet.chain.robinhood.com",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "Robinhood Chain",
+      "slug": "robinhood-chain",
+      "parentChainId": 1,
+      "tokenBridge": {
+        "parentCustomGateway": "0x9368EAEbFe6E063C69dcF8126711A6997E0eCeE1",
+        "parentErc20Gateway": "0x85001CC4867C5e1C22dA4B79BB8852B9e2a06da0",
+        "parentGatewayRouter": "0x6a2E3a1e16FC29f27Ce61429746D558d656975bB",
+        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "parentWethGateway": "0xF7e12b9614b509C747ab4423bC4ACF923759Cf1B",
+        "childCustomGateway": "0x912285144fC0f6e89d3Ed16F5Ab72f87A1878959",
+        "childErc20Gateway": "0xfd9b17206278C16DdaacF6AC8f05dBf97EdCb31e",
+        "childGatewayRouter": "0x1E324B9316138CA9a73F960213621AD1aaf01B89",
+        "childMultiCall": "0x2cAC2D899eCC914d704FeaAE33ac1bF36277DaD1",
+        "childProxyAdmin": "0xa3Acd31AFb851B4eB9DAD00F5204c01D924267dF",
+        "childWeth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "childWethGateway": "0x1D187C3E2dA52D72BC9C41e3AbA0fdFa6a7bF055"
+      },
+      "bridgeUiConfig": {
+        "color": "#CCFF00",
+        "network": {
+          "name": "Robinhood Chain",
+          "logo": "/images/RobinhoodChain_Logo.png",
+          "description": "An Arbitrum chain settling to Ethereum, serving as the canonical bridge for Robinhood Chain."
+        },
+        "assertionIntervalSeconds": 3600
+      }
+    },
+    {
       "chainId": 660279,
       "confirmPeriodBlocks": 45818,
       "ethBridge": {
@@ -472,55 +515,6 @@
         },
         "fastWithdrawalTime": 3600000,
         "assertionIntervalSeconds": 135000
-      }
-    },
-    {
-      "chainId": 92278,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0xaF25849aEb040bEab7a0c783fc6861d26aE49796",
-        "inbox": "0xc7b143E5E4Bf1893BA33007ecb3Db9c1092dab38",
-        "outbox": "0xA5b6E1DbA5c9037cCd2013D7dd7BD173AFc90d4c",
-        "rollup": "0x0DA5198b8ae8aE9354061649D08BE1c53ec8a377",
-        "sequencerInbox": "0x21f9c31eD91612B48A8ae450Bdd0f19F8f5Bea40"
-      },
-      "nativeToken": "0xa4f63404b58C3efD9Db6D53352BD386fFa174e5A",
-      "explorerUrl": "https://explorer-miracle-chain-dqfxgxhidy.t.conduit.xyz/",
-      "rpcUrl": "https://rpc-miracle-chain-dqfxgxhidy.t.conduit.xyz",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Miracle Chain",
-      "slug": "miracle-chain",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x7f8FBbDEAB9Dca3114809EE55ff465d770E0f839",
-        "parentErc20Gateway": "0x841C2f295fAd92eD08c52CD5304Ec5BC88962124",
-        "parentGatewayRouter": "0xb7dd0d29CB25D825aF320A09eA8Fc28A13E15F2B",
-        "parentMultiCall": "0xb7dd0d29CB25D825aF320A09eA8Fc28A13E15F2B",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x54A15cb513e07F6f28B983C91950c86B264d304e",
-        "childErc20Gateway": "0x7Ef6D4be278A4d87c940B17177dcB6DA1CF07593",
-        "childGatewayRouter": "0xf4Bd41665cc15a6e7240643ea6E45881de9831dA",
-        "childMultiCall": "0xA0b0aF7b5ABB99760A4B045b922518c8de7F4475",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#5d2f69",
-        "network": {
-          "name": "Miracle Chain",
-          "logo": "/images/MiracleChain_Logo.png",
-          "description": "Miracle Chain powers the MiraclePlay Universe, enabling cross-chain interactions, fostering collaboration among blockchain communities, and delivering a competitive, immersive gaming experience."
-        },
-        "nativeTokenData": {
-          "name": "Miracle Play",
-          "symbol": "MPT",
-          "logoUrl": "/images/MiracleChain_NativeTokenLogo.png"
-        },
-        "assertionIntervalSeconds": 41400
       }
     },
     {

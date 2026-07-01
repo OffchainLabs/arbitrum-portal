@@ -7,7 +7,7 @@ import { Signer } from '@ethersproject/abstract-signer';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import dayjs from 'dayjs';
 
-import { normalizeTimestamp } from '../state/app/utils';
+import { normalizeTimestamp } from './normalizeTimestamp';
 
 type GetRetryableTicketParams = {
   parentChainTxHash: string;

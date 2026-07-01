@@ -8,6 +8,7 @@ import {
   getBlockNumberReferenceChainIdByChainId,
   getDestinationChainIds,
   getSupportedChainIds,
+  sortChainIds,
 } from '../networks';
 import { orbitMainnets, orbitTestnets } from '../orbitChainsList';
 
@@ -421,5 +422,34 @@ describe('getDestinationChainIds', () => {
       });
       expect(result4).toEqual([ChainId.ArbitrumOne]);
     });
+  });
+});
+
+describe('sortChainIds core chain priority', () => {
+  it('ranks Robinhood Chain above Arbitrum Nova but below Arbitrum One', () => {
+    const sorted = sortChainIds([
+      ChainId.ArbitrumNova,
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumOne,
+      ChainId.Ethereum,
+    ]);
+
+    expect(sorted).toEqual([
+      ChainId.Ethereum,
+      ChainId.ArbitrumOne,
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumNova,
+    ]);
+  });
+
+  it('keeps Arbitrum One as the default destination from Ethereum, not Robinhood Chain', () => {
+    const sortedFromEthereum = sortChainIds([
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumOne,
+      ChainId.ArbitrumNova,
+    ]);
+
+    expect(sortedFromEthereum[0]).toBe(ChainId.ArbitrumOne);
+    expect(sortedFromEthereum[0]).not.toBe(ChainId.RobinhoodChain);
   });
 });
