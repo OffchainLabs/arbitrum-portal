@@ -9,12 +9,14 @@ import { twMerge } from 'tailwind-merge';
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { getExplorerUrl, getNetworkName } from '../../util/networks';
+import { getNetworkName } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import {
   getDestinationNetworkTxId,
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
   isLifiTransfer,
   isTxClaimable,
   isTxCompleted,
@@ -99,13 +101,10 @@ export const Step = ({
 
 const LastStepEndItem = ({ tx }: { tx: MergedTransaction }) => {
   const destinationNetworkTxId = getDestinationNetworkTxId(tx);
-  const destinationChainId = tx.isWithdrawal ? tx.parentChainId : tx.childChainId;
 
   if (destinationNetworkTxId) {
     return (
-      <ExternalLink
-        href={`${getExplorerUrl(destinationChainId)}/tx/${getDestinationNetworkTxId(tx)}`}
-      >
+      <ExternalLink href={getDestinationTransactionUrl(tx)}>
         <ArrowTopRightOnSquareIcon height={12} />
       </ExternalLink>
     );
@@ -191,7 +190,7 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
             : `Transaction initiated on ${sourceNetworkName}`
         }
         endItem={
-          <ExternalLink href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}>
+          <ExternalLink href={getSourceTransactionUrl(tx)}>
             <ArrowTopRightOnSquareIcon height={12} />
           </ExternalLink>
         }

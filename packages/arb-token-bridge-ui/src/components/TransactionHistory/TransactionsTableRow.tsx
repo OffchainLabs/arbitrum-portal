@@ -4,7 +4,6 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
-import { BigNumber } from 'ethers';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useInterval } from 'react-use';
@@ -31,20 +30,21 @@ import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
 import {
   getDestinationNetworkTxId,
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
   isLifiTransfer,
   isTxClaimable,
   isTxExpired,
   isTxFailed,
   isTxPending,
 } from './helpers';
+import { getLifiToAmountDisplay } from './lifiDisplayUtils';
 
 const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
-  const { sourceChainId, destinationChainId } = tx;
-
   if (isTxFailed(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex shrink-0 items-center space-x-1 text-red-400"
       >
@@ -58,7 +58,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxExpired(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex shrink-0 items-center space-x-1 text-red-400"
       >
@@ -72,7 +72,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxPending(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex items-center space-x-1 text-yellow-400"
       >
@@ -86,7 +86,7 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   if (isTxClaimable(tx)) {
     return (
       <ExternalLink
-        href={`${getExplorerUrl(sourceChainId)}/tx/${tx.txId}`}
+        href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
         className="arb-hover flex items-center space-x-1 text-green-400"
       >
@@ -98,15 +98,12 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
   }
 
   const destinationNetworkTxId = getDestinationNetworkTxId(tx);
+  const destinationTransactionUrl = getDestinationTransactionUrl(tx);
 
   // Success
   return (
     <ExternalLink
-      href={
-        destinationNetworkTxId
-          ? `${getExplorerUrl(destinationChainId)}/tx/${destinationNetworkTxId}`
-          : ''
-      }
+      href={destinationTransactionUrl}
       aria-label="Transaction status"
       className={destinationNetworkTxId ? 'arb-hover' : 'pointer-events-none'}
     >
@@ -152,15 +149,10 @@ export function TransactionsTableRow({
   const lifiToAmount = isLifiTransfer(tx) ? tx.toAmount : undefined;
   const toTokenSymbol = lifiToAmount?.token?.symbol ?? tokenSymbol;
   const toTokenLogoSrc = lifiToAmount?.token?.logoURI;
-  const toTokenBigNumber = lifiToAmount?.amount
-    ? BigNumber.isBigNumber(lifiToAmount.amount)
-      ? lifiToAmount.amount
-      : BigNumber.from(lifiToAmount.amount)
-    : undefined;
-  const toTokenAmount = toTokenBigNumber
-    ? formatAmount(toTokenBigNumber, {
-        decimals: lifiToAmount?.token?.decimals,
-        symbol: toTokenSymbol,
+  const toTokenAmount = lifiToAmount
+    ? getLifiToAmountDisplay({
+        isPending: isTxPending(tx),
+        toAmount: lifiToAmount,
       })
     : toTokenSymbol;
   const nonLifiReceivedAmount = formatAmount(Number(tx.value), { symbol: tokenSymbol });

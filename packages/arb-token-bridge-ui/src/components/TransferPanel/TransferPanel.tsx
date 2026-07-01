@@ -43,7 +43,6 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
-import { normalizeTimestamp } from '../../state/app/utils';
 import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
@@ -57,6 +56,7 @@ import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
 import { useAppContextActions } from '../App/AppContext';

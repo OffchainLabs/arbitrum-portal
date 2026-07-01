@@ -158,6 +158,9 @@ importers:
       dayjs:
         specifier: ^1.11.20
         version: 1.11.20
+      ethers:
+        specifier: ^5.8.0
+        version: 5.8.0(bufferutil@4.0.9)(utf-8-validate@6.0.6)
       next:
         specifier: ^16.2.6
         version: 16.2.6(@babel/core@7.29.6)(@playwright/test@1.61.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
