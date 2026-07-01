@@ -86,6 +86,7 @@ function createStatusResponse({
       timestamp: 1_700_000_060,
     },
     feeCosts: [],
+    lifiExplorerLink: '',
     fromAddress: wallet,
     toAddress: wallet,
     metadata: {
