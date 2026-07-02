@@ -29,6 +29,18 @@ describe('canFetchTransactionHistory', () => {
     ).toBe(false);
   });
 
+  it('allows fetching for smart contract wallets with a connected chain', () => {
+    expect(
+      canFetchTransactionHistory({
+        address,
+        isLoadingAccountType: false,
+        isTxHistoryEnabled: true,
+        isSmartContractWallet: true,
+        connectedChainId: 11155111,
+      }),
+    ).toBe(true);
+  });
+
   it('prefers the shared fetch guards before chain-specific logic', () => {
     expect(
       canFetchTransactionHistory({
