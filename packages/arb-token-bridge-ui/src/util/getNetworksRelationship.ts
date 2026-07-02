@@ -21,10 +21,7 @@ export function getNetworksRelationship({
   isDepositMode: boolean;
 } {
   // Robinhood to Superposition, set Robinhood as parent chain
-  if (
-    sourceChainId === ChainId.RobinhoodChain &&
-    destinationChainId === ChainId.Superposition
-  ) {
+  if (sourceChainId === ChainId.RobinhoodChain && destinationChainId === ChainId.Superposition) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,
@@ -33,10 +30,7 @@ export function getNetworksRelationship({
   }
 
   // Superposition to Robinhood, set Robinhood as parent chain
-  if (
-    sourceChainId === ChainId.Superposition &&
-    destinationChainId === ChainId.RobinhoodChain
-  ) {
+  if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.RobinhoodChain) {
     return {
       parentChainId: destinationChainId,
       childChainId: sourceChainId,
