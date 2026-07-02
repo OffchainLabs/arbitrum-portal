@@ -42,11 +42,12 @@ export async function isDisabledCanonicalTransfer({
   }
 
   if (
-    await isBlockedOftDeposit({
+    isDepositMode &&
+    (await isBlockedOftDeposit({
       parentChainErc20Address: selectedToken.address,
       parentChainId,
       childChainId,
-    })
+    }))
   ) {
     return true;
   }
