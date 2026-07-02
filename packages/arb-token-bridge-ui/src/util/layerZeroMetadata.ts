@@ -3,65 +3,108 @@ import { getAPIBaseUrl, isRecord } from '.';
 // Our own cached route handler, not the LayerZero API directly (see app/api/layerzero-metadata).
 const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
 
-// `NativeOFT` is a token whose own contract implements the OFT interface (responds to
-// `oftVersion()` on-chain). Plain ERC20s bridged via a separate OFT Adapter are typed
-// `ERC20` and don't, so they must not be treated as native OFTs.
-const LAYERZERO_NATIVE_OFT_TYPE = 'NativeOFT';
-
-type LayerZeroTokenMetadata = {
-  type?: unknown;
-  peggedTo?: unknown;
+type LayerZeroPeggedTo = {
+  address: string;
+  chainName: string;
 };
 
-type LayerZeroChainMetadata = {
-  chainDetails?: {
-    nativeChainId?: unknown;
-  };
-  tokens?: Record<string, LayerZeroTokenMetadata>;
+export type LayerZeroOftInfo = {
+  // Whether the token has a LayerZero OFT deployment on the parent chain.
+  isOft: boolean;
+  // Lower-cased addresses of the same token's OFT deployments on the child chain.
+  childTokenAddresses: string[];
 };
 
 let layerZeroMetadataPromise: Promise<unknown> | null = null;
 
-function getLayerZeroChainMetadata(
+// The chain + address a token is natively deployed on (its own address if native,
+// else its `peggedTo` target).
+type TokenRoot = LayerZeroPeggedTo;
+
+function getChainByNativeChainId(
   metadata: unknown,
   chainId: number,
-): LayerZeroChainMetadata | null {
+): { chainName: string; tokens: Record<string, unknown> } | null {
   if (!isRecord(metadata)) {
     return null;
   }
 
-  for (const chainMetadata of Object.values(metadata)) {
-    if (!isRecord(chainMetadata)) {
+  for (const [chainName, chainMetadata] of Object.entries(metadata)) {
+    if (!isRecord(chainMetadata) || !isRecord(chainMetadata.chainDetails)) {
       continue;
     }
 
-    const chainDetails = chainMetadata.chainDetails;
-    if (!isRecord(chainDetails)) {
-      continue;
-    }
-
-    if (Number(chainDetails.nativeChainId) === chainId) {
-      return chainMetadata;
+    if (Number(chainMetadata.chainDetails.nativeChainId) === chainId) {
+      return {
+        chainName,
+        tokens: isRecord(chainMetadata.tokens) ? chainMetadata.tokens : {},
+      };
     }
   }
 
   return null;
 }
 
-function getLayerZeroTokenMetadata(
-  metadata: unknown,
-  chainId: number,
-  tokenAddress: string,
-): LayerZeroTokenMetadata | null {
-  const chainMetadata = getLayerZeroChainMetadata(metadata, chainId);
-
-  if (!chainMetadata?.tokens || !isRecord(chainMetadata.tokens)) {
+function getPeggedTo(tokenMetadata: unknown): LayerZeroPeggedTo | null {
+  if (!isRecord(tokenMetadata) || !isRecord(tokenMetadata.peggedTo)) {
     return null;
   }
 
-  const tokenMetadata = chainMetadata.tokens[tokenAddress.toLowerCase()];
+  const { address, chainName } = tokenMetadata.peggedTo;
+  if (typeof address !== 'string' || typeof chainName !== 'string') {
+    return null;
+  }
 
-  return isRecord(tokenMetadata) ? tokenMetadata : null;
+  return { address: address.toLowerCase(), chainName };
+}
+
+export function getLayerZeroOftInfoFromMetadata(
+  metadata: unknown,
+  {
+    parentChainId,
+    parentTokenAddress,
+    childChainId,
+  }: {
+    parentChainId: number;
+    parentTokenAddress: string;
+    childChainId: number;
+  },
+): LayerZeroOftInfo {
+  const notOft: LayerZeroOftInfo = { isOft: false, childTokenAddresses: [] };
+
+  const parentChain = getChainByNativeChainId(metadata, parentChainId);
+  if (!parentChain) {
+    return notOft;
+  }
+
+  const parentTokenMetadata = parentChain.tokens[parentTokenAddress.toLowerCase()];
+  if (!isRecord(parentTokenMetadata)) {
+    return notOft;
+  }
+
+  const root: TokenRoot = getPeggedTo(parentTokenMetadata) ?? {
+    chainName: parentChain.chainName,
+    address: parentTokenAddress.toLowerCase(),
+  };
+
+  const childChain = getChainByNativeChainId(metadata, childChainId);
+  if (!childChain) {
+    return { isOft: true, childTokenAddresses: [] };
+  }
+
+  const childTokenAddresses: string[] = [];
+  for (const [address, tokenMetadata] of Object.entries(childChain.tokens)) {
+    const peggedTo = getPeggedTo(tokenMetadata);
+    const matchesRoot = peggedTo
+      ? peggedTo.chainName === root.chainName && peggedTo.address === root.address
+      : childChain.chainName === root.chainName && address.toLowerCase() === root.address;
+
+    if (matchesRoot) {
+      childTokenAddresses.push(address.toLowerCase());
+    }
+  }
+
+  return { isOft: true, childTokenAddresses };
 }
 
 async function getLayerZeroMetadata() {
@@ -81,47 +124,13 @@ async function getLayerZeroMetadata() {
   return metadata;
 }
 
-export async function getLayerZeroNativeTokenStatus({
-  chainId,
-  tokenAddress,
-}: {
-  chainId: number;
-  tokenAddress: string;
-}) {
+export async function getLayerZeroOftInfo(params: {
+  parentChainId: number;
+  parentTokenAddress: string;
+  childChainId: number;
+}): Promise<LayerZeroOftInfo> {
   const metadata = await getLayerZeroMetadata();
-  return getLayerZeroNativeTokenStatusFromMetadata(metadata, {
-    chainId,
-    tokenAddress,
-  });
-}
-
-export function getLayerZeroNativeTokenStatusFromMetadata(
-  metadata: unknown,
-  {
-    chainId,
-    tokenAddress,
-  }: {
-    chainId: number;
-    tokenAddress: string;
-  },
-) {
-  const tokenMetadata = getLayerZeroTokenMetadata(metadata, chainId, tokenAddress);
-
-  if (!tokenMetadata) {
-    return null;
-  }
-
-  // A pegged token is a representation of an OFT native to another chain.
-  if (tokenMetadata.peggedTo) {
-    return false;
-  }
-
-  if (tokenMetadata.type === LAYERZERO_NATIVE_OFT_TYPE) {
-    return true;
-  }
-
-  // Unknown (e.g. an ERC20 using an OFT Adapter) — defer to the on-chain check.
-  return null;
+  return getLayerZeroOftInfoFromMetadata(metadata, params);
 }
 
 export function resetLayerZeroMetadataCache() {

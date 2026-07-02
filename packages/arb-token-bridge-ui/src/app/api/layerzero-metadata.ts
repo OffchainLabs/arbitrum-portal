@@ -7,9 +7,9 @@ const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
 const CACHE_SECONDS = 60 * 60;
 
+// `peggedTo` links a representation token back to its native chain + address.
 type TrimmedTokenMetadata = {
-  type?: unknown;
-  peggedTo: boolean;
+  peggedTo?: { address: string; chainName: string };
 };
 
 type TrimmedChainMetadata = {
@@ -42,10 +42,13 @@ function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMe
         continue;
       }
 
-      trimmedTokens[tokenAddress.toLowerCase()] = {
-        type: tokenMetadata.type,
-        peggedTo: Boolean(tokenMetadata.peggedTo),
-      };
+      const { peggedTo } = tokenMetadata;
+      trimmedTokens[tokenAddress.toLowerCase()] =
+        isRecord(peggedTo) &&
+        typeof peggedTo.address === 'string' &&
+        typeof peggedTo.chainName === 'string'
+          ? { peggedTo: { address: peggedTo.address.toLowerCase(), chainName: peggedTo.chainName } }
+          : {};
     }
 
     const nativeChainId = Number(chainDetails.nativeChainId);

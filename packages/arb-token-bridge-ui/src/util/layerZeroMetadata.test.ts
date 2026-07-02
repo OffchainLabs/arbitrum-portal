@@ -1,169 +1,154 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-let getLayerZeroNativeTokenStatus: typeof import('./layerZeroMetadata').getLayerZeroNativeTokenStatus;
-let getLayerZeroNativeTokenStatusFromMetadata: typeof import('./layerZeroMetadata').getLayerZeroNativeTokenStatusFromMetadata;
-let resetLayerZeroMetadataCache: typeof import('./layerZeroMetadata').resetLayerZeroMetadataCache;
+import {
+  getLayerZeroOftInfo,
+  getLayerZeroOftInfoFromMetadata,
+  resetLayerZeroMetadataCache,
+} from './layerZeroMetadata';
 
-describe('getLayerZeroNativeTokenStatus', () => {
-  beforeEach(async () => {
-    vi.restoreAllMocks();
-    vi.resetModules();
+// Trimmed-metadata shape returned by /api/layerzero-metadata, using real addresses.
+const ENA_L1 = '0x57e114b691db790c35207b2e685d4a43181e6061';
+const ENA_ARB = '0x58538e6a46e07434d7e7375bc268d3cb839c0133';
+const USDC_L1 = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+const USDC_E_ARB = '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8';
+const USDC_NATIVE_ARB = '0xaf88d065e77c8cc2239327c5edb3a432268e5831';
 
-    // Import everything from the same freshly-reset module instance so the
-    // module-level cache is shared across the helpers under test.
-    ({
-      getLayerZeroNativeTokenStatus,
-      getLayerZeroNativeTokenStatusFromMetadata,
-      resetLayerZeroMetadataCache,
-    } = await import('./layerZeroMetadata'));
+const metadata = {
+  ethereum: {
+    chainDetails: { nativeChainId: 1 },
+    tokens: {
+      [ENA_L1]: {}, // native ENA (no peggedTo)
+      [USDC_L1]: {}, // native USDC
+    },
+  },
+  arbitrum: {
+    chainDetails: { nativeChainId: 42161 },
+    tokens: {
+      [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } },
+      [USDC_E_ARB]: { peggedTo: { address: USDC_L1, chainName: 'ethereum' } },
+      [USDC_NATIVE_ARB]: { peggedTo: { address: USDC_L1, chainName: 'ethereum' } },
+    },
+  },
+};
 
-    resetLayerZeroMetadataCache();
-  });
+beforeEach(() => {
+  vi.restoreAllMocks();
+  resetLayerZeroMetadataCache();
+});
 
-  it('returns true for a native OFT token on the matching chain', () => {
+describe('getLayerZeroOftInfoFromMetadata', () => {
+  it('reports a token that is not in the metadata as not OFT', () => {
     expect(
-      getLayerZeroNativeTokenStatusFromMetadata(
-        {
-          ethereum: {
-            chainDetails: { nativeChainId: 1 },
-            tokens: {
-              '0x6c3ea9036406852006290770bedfcaba0e23a0e8': { type: 'NativeOFT' },
-            },
-          },
-        },
-        {
-          chainId: 1,
-          tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
-        },
-      ),
-    ).toBe(true);
-  });
-
-  it('returns null for a non-pegged ERC20 that uses an OFT Adapter (defers to on-chain check)', () => {
-    expect(
-      getLayerZeroNativeTokenStatusFromMetadata(
-        {
-          ethereum: {
-            chainDetails: { nativeChainId: 1 },
-            tokens: {
-              // e.g. SUSHI — listed in metadata but the token itself is not an
-              // OFT, so it must not be classified as a native OFT.
-              '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2': {
-                type: 'ERC20',
-                proxyAddresses: ['0x0000000000000000000000000000000000000001'],
-              },
-            },
-          },
-        },
-        {
-          chainId: 1,
-          tokenAddress: '0x6B3595068778DD592e39A122f4f5a5cf09C90fE2',
-        },
-      ),
-    ).toBeNull();
-  });
-
-  it('returns false for a non-native OFT representation token', () => {
-    expect(
-      getLayerZeroNativeTokenStatusFromMetadata(
-        {
-          arbitrum: {
-            chainDetails: { nativeChainId: 42161 },
-            tokens: {
-              '0x46850ad61c2b7d64d08c9c754f45254596696984': {
-                peggedTo: {
-                  eid: 30101,
-                  address: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
-                },
-              },
-            },
-          },
-        },
-        {
-          chainId: 42161,
-          tokenAddress: '0x46850AD61C2b7D64d08C9C754F45254596696984',
-        },
-      ),
-    ).toBe(false);
-  });
-
-  it('returns null when the token is not present in metadata', () => {
-    expect(
-      getLayerZeroNativeTokenStatusFromMetadata(
-        {
-          ethereum: {
-            chainDetails: { nativeChainId: 1 },
-            tokens: {},
-          },
-        },
-        {
-          chainId: 1,
-          tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
-        },
-      ),
-    ).toBeNull();
-  });
-
-  it('caches the metadata response', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        ethereum: {
-          chainDetails: { nativeChainId: 1 },
-          tokens: {
-            '0x6c3ea9036406852006290770bedfcaba0e23a0e8': {},
-          },
-        },
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 1,
+        parentTokenAddress: '0x1111111111111111111111111111111111111111',
+        childChainId: 42161,
       }),
-    } as Response);
-
-    await getLayerZeroNativeTokenStatus({
-      chainId: 1,
-      tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
-    });
-    await getLayerZeroNativeTokenStatus({
-      chainId: 1,
-      tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
-    });
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    ).toEqual({ isOft: false, childTokenAddresses: [] });
   });
 
-  it('retries the fetch after a failed response instead of caching the failure', async () => {
-    // Local counter rather than the spy's call count, which can carry over
-    // from a previous test's `vi.spyOn(globalThis, 'fetch')`.
+  it('finds the single child deployment of a native OFT (ENA)', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 1,
+        parentTokenAddress: ENA_L1,
+        childChainId: 42161,
+      }),
+    ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+  });
+
+  it('finds every child deployment linked to the same native token (USDC)', () => {
+    const { isOft, childTokenAddresses } = getLayerZeroOftInfoFromMetadata(metadata, {
+      parentChainId: 1,
+      parentTokenAddress: USDC_L1,
+      childChainId: 42161,
+    });
+
+    expect(isOft).toBe(true);
+    expect([...childTokenAddresses].sort()).toEqual([USDC_NATIVE_ARB, USDC_E_ARB].sort());
+  });
+
+  it('matches the parent token case-insensitively', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 1,
+        parentTokenAddress: '0x57E114B691DB790C35207B2E685D4A43181E6061',
+        childChainId: 42161,
+      }),
+    ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+  });
+
+  it('reports OFT with no child deployments when the destination chain is unknown', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 1,
+        parentTokenAddress: ENA_L1,
+        childChainId: 999999, // not in metadata
+      }),
+    ).toEqual({ isOft: true, childTokenAddresses: [] });
+  });
+
+  it('resolves the native root when the parent token is itself a representation', () => {
+    // parent = ENA on Arbitrum (pegged to ethereum), child = ethereum → the root token itself
+    expect(
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 42161,
+        parentTokenAddress: ENA_ARB,
+        childChainId: 1,
+      }),
+    ).toEqual({ isOft: true, childTokenAddresses: [ENA_L1] });
+  });
+});
+
+describe('getLayerZeroOftInfo (cached fetch)', () => {
+  it('caches the metadata response across calls', async () => {
+    resetLayerZeroMetadataCache();
+    // Local counter rather than the spy's call count, which can carry over from
+    // another test's `vi.spyOn(globalThis, 'fetch')`.
     let fetchCallCount = 0;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       fetchCallCount += 1;
+      return { ok: true, json: async () => metadata } as Response;
+    });
 
+    await getLayerZeroOftInfo({
+      parentChainId: 1,
+      parentTokenAddress: ENA_L1,
+      childChainId: 42161,
+    });
+    await getLayerZeroOftInfo({
+      parentChainId: 1,
+      parentTokenAddress: USDC_L1,
+      childChainId: 42161,
+    });
+
+    expect(fetchCallCount).toBe(1);
+  });
+
+  it('retries the fetch after a failed response instead of caching the failure', async () => {
+    resetLayerZeroMetadataCache();
+    let fetchCallCount = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      fetchCallCount += 1;
       if (fetchCallCount === 1) {
         return { ok: false } as Response;
       }
-
-      return {
-        ok: true,
-        json: async () => ({
-          ethereum: {
-            chainDetails: { nativeChainId: 1 },
-            tokens: {
-              '0x6c3ea9036406852006290770bedfcaba0e23a0e8': { type: 'NativeOFT' },
-            },
-          },
-        }),
-      } as Response;
+      return { ok: true, json: async () => metadata } as Response;
     });
 
-    const first = await getLayerZeroNativeTokenStatus({
-      chainId: 1,
-      tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
+    const first = await getLayerZeroOftInfo({
+      parentChainId: 1,
+      parentTokenAddress: ENA_L1,
+      childChainId: 42161,
     });
-    const second = await getLayerZeroNativeTokenStatus({
-      chainId: 1,
-      tokenAddress: '0x6C3EA9036406852006290770BEdFcAbA0e23A0e8',
+    const second = await getLayerZeroOftInfo({
+      parentChainId: 1,
+      parentTokenAddress: ENA_L1,
+      childChainId: 42161,
     });
 
-    expect(first).toBeNull();
-    expect(second).toBe(true);
+    expect(first).toEqual({ isOft: false, childTokenAddresses: [] }); // null metadata → not found
+    expect(second).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
     expect(fetchCallCount).toBe(2);
   });
 });

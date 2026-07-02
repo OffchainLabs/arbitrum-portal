@@ -6,9 +6,14 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../types/ChainId';
 import { isNetwork } from '../util/networks';
+import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
-import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe } from './TokenUtils';
-import { getLayerZeroNativeTokenStatus } from './layerZeroMetadata';
+import {
+  getL2ERC20Address,
+  isTokenArbitrumOneUSDCe,
+  isTokenArbitrumSepoliaUSDCe,
+} from './TokenUtils';
+import { getLayerZeroOftInfo } from './layerZeroMetadata';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -285,16 +290,8 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
   ],
 };
 
-async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: number) {
-  const layerZeroNativeTokenStatus = await getLayerZeroNativeTokenStatus({
-    chainId: parentChainId,
-    tokenAddress: parentChainErc20Address,
-  });
-
-  if (layerZeroNativeTokenStatus !== null) {
-    return layerZeroNativeTokenStatus;
-  }
-
+// On-chain OFT probe — fallback for tokens not yet in the LayerZero metadata.
+async function isOftTokenOnChain(parentChainErc20Address: string, parentChainId: number) {
   const parentProvider = getProviderForChainId(parentChainId);
 
   // https://github.com/LayerZero-Labs/LayerZero-v2/blob/592625b9e5967643853476445ffe0e777360b906/packages/layerzero-v2/evm/oapp/contracts/oft/OFT.sol#L37
@@ -310,6 +307,84 @@ async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: 
   } catch (error) {
     return false;
   }
+}
+
+// The address a canonical deposit would land on; null when unresolvable (e.g. no gateway).
+async function getCanonicalChildTokenAddress({
+  parentChainErc20Address,
+  parentChainId,
+  childChainId,
+}: {
+  parentChainErc20Address: string;
+  parentChainId: number;
+  childChainId: number;
+}): Promise<string | null> {
+  try {
+    return await getL2ERC20Address({
+      erc20L1Address: parentChainErc20Address,
+      l1Provider: getProviderForChainId(parentChainId),
+      l2Provider: getProviderForChainId(childChainId),
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+// A canonical deposit of an OFT token is safe only when it lands on the OFT
+// token itself (adapter over the canonical token, e.g. WETH, USDC.e); otherwise
+// it must move via OFT/LiFi.
+export function isCanonicalDepositBlocked({
+  childTokenAddresses,
+  canonicalChildTokenAddress,
+}: {
+  childTokenAddresses: string[];
+  canonicalChildTokenAddress: string | null;
+}): boolean {
+  // No canonical route to the destination (e.g. USDT has no gateway).
+  if (
+    !canonicalChildTokenAddress ||
+    addressesEqual(canonicalChildTokenAddress, ethers.constants.AddressZero)
+  ) {
+    return true;
+  }
+
+  // No OFT deployment on the destination — canonical is the only path.
+  if (childTokenAddresses.length === 0) {
+    return false;
+  }
+
+  return !childTokenAddresses.some((address) =>
+    addressesEqual(address, canonicalChildTokenAddress),
+  );
+}
+
+async function isBlockedOftDeposit({
+  parentChainErc20Address,
+  parentChainId,
+  childChainId,
+}: {
+  parentChainErc20Address: string;
+  parentChainId: number;
+  childChainId: number;
+}) {
+  const { isOft, childTokenAddresses } = await getLayerZeroOftInfo({
+    parentChainId,
+    parentTokenAddress: parentChainErc20Address,
+    childChainId,
+  });
+
+  // Not listed in the LayerZero metadata — fall back to the on-chain probe.
+  if (!isOft) {
+    return isOftTokenOnChain(parentChainErc20Address, parentChainId);
+  }
+
+  const canonicalChildTokenAddress = await getCanonicalChildTokenAddress({
+    parentChainErc20Address,
+    parentChainId,
+    childChainId,
+  });
+
+  return isCanonicalDepositBlocked({ childTokenAddresses, canonicalChildTokenAddress });
 }
 
 /**
@@ -343,7 +418,7 @@ export async function isWithdrawOnlyToken({
     return true;
   }
 
-  if (await isLayerZeroToken(parentChainErc20Address, parentChainId)) {
+  if (await isBlockedOftDeposit({ parentChainErc20Address, parentChainId, childChainId })) {
     return true;
   }
 
