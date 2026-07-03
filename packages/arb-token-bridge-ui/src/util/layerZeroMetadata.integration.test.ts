@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest';
+
+import { getLayerZeroOftInfoFromMetadata } from './layerZeroMetadata';
+
+// Hits the live LayerZero metadata endpoint (excluded from the unit suite via
+// vitest.integration.config.ts). Guards against upstream schema drift breaking
+// our OFT detection, and validates the parser against real data.
+const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
+
+// Ethena's ENA — a stable, flagship LayerZero OFT (native on Ethereum, OFT on Arbitrum).
+const ENA_ETHEREUM = '0x57e114b691db790c35207b2e685d4a43181e6061';
+
+describe('layerZeroMetadata against live LayerZero metadata', () => {
+  it('detects a known OFT and its destination deployment from live metadata', async () => {
+    const response = await fetch(LAYERZERO_METADATA_URL);
+    expect(response.ok).toBe(true);
+
+    const metadata = await response.json();
+    expect(typeof metadata).toBe('object');
+    expect(metadata).not.toBeNull();
+
+    const { isOft, childTokenAddresses } = getLayerZeroOftInfoFromMetadata(metadata, {
+      parentChainId: 1, // Ethereum
+      parentTokenAddress: ENA_ETHEREUM,
+      childChainId: 42161, // Arbitrum One
+    });
+
+    expect(isOft).toBe(true);
+    expect(childTokenAddresses.length).toBeGreaterThan(0);
+    // every resolved deployment is a well-formed, lower-cased address
+    expect(childTokenAddresses.every((address) => /^0x[0-9a-f]{40}$/.test(address))).toBe(true);
+  });
+
+  it('reports a non-listed token as not OFT from live metadata', async () => {
+    const response = await fetch(LAYERZERO_METADATA_URL);
+    const metadata = await response.json();
+
+    expect(
+      getLayerZeroOftInfoFromMetadata(metadata, {
+        parentChainId: 1,
+        parentTokenAddress: '0x1111111111111111111111111111111111111111',
+        childChainId: 42161,
+      }),
+    ).toEqual({ isOft: false, childTokenAddresses: [] });
+  });
+});
