@@ -6,27 +6,33 @@ import {
   resetLayerZeroMetadataCache,
 } from './layerZeroMetadata';
 
-// Trimmed-metadata shape returned by /api/layerzero-metadata, using real addresses.
-const ENA_L1 = '0x57e114b691db790c35207b2e685d4a43181e6061';
-const ENA_ARB = '0x58538e6a46e07434d7e7375bc268d3cb839c0133';
-const USDC_L1 = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-const USDC_E_ARB = '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8';
-const USDC_NATIVE_ARB = '0xaf88d065e77c8cc2239327c5edb3a432268e5831';
+// Synthetic trimmed-metadata fixtures — these exercise the parsing/root-linking
+// logic against controlled input. Real-token, live-network behavior is covered
+// in layerZeroMetadata.integration.test.ts.
+const PARENT_CHAIN_ID = 111;
+const CHILD_CHAIN_ID = 222;
+
+const NATIVE_TOKEN = '0x00000000000000000000000000000000000000a1'; // native on parent chain
+const NATIVE_TOKEN_ON_CHILD = '0x00000000000000000000000000000000000000b1';
+const MULTI_TOKEN = '0x00000000000000000000000000000000000000a2'; // native, with 2 child deployments
+const MULTI_TOKEN_ON_CHILD_1 = '0x00000000000000000000000000000000000000b2';
+const MULTI_TOKEN_ON_CHILD_2 = '0x00000000000000000000000000000000000000b3';
+const UNLISTED_TOKEN = '0x00000000000000000000000000000000000000ff';
 
 const metadata = {
-  ethereum: {
-    chainDetails: { nativeChainId: 1 },
+  parent: {
+    chainDetails: { nativeChainId: PARENT_CHAIN_ID },
     tokens: {
-      [ENA_L1]: {}, // native ENA (no peggedTo)
-      [USDC_L1]: {}, // native USDC
+      [NATIVE_TOKEN]: {}, // no peggedTo → native/home token
+      [MULTI_TOKEN]: {},
     },
   },
-  arbitrum: {
-    chainDetails: { nativeChainId: 42161 },
+  child: {
+    chainDetails: { nativeChainId: CHILD_CHAIN_ID },
     tokens: {
-      [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } },
-      [USDC_E_ARB]: { peggedTo: { address: USDC_L1, chainName: 'ethereum' } },
-      [USDC_NATIVE_ARB]: { peggedTo: { address: USDC_L1, chainName: 'ethereum' } },
+      [NATIVE_TOKEN_ON_CHILD]: { peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' } },
+      [MULTI_TOKEN_ON_CHILD_1]: { peggedTo: { address: MULTI_TOKEN, chainName: 'parent' } },
+      [MULTI_TOKEN_ON_CHILD_2]: { peggedTo: { address: MULTI_TOKEN, chainName: 'parent' } },
     },
   },
 };
@@ -41,53 +47,55 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
     it('reports a token that is not in the metadata as not OFT', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(metadata, {
-          parentChainId: 1,
-          parentTokenAddress: '0x1111111111111111111111111111111111111111',
-          childChainId: 42161,
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: UNLISTED_TOKEN,
+          childChainId: CHILD_CHAIN_ID,
         }),
       ).toEqual({ isOft: false, childTokenAddresses: [] });
     });
 
     it('finds every child deployment linked to the same native token', () => {
       const { isOft, childTokenAddresses } = getLayerZeroOftInfoFromMetadata(metadata, {
-        parentChainId: 1,
-        parentTokenAddress: USDC_L1,
-        childChainId: 42161,
+        parentChainId: PARENT_CHAIN_ID,
+        parentTokenAddress: MULTI_TOKEN,
+        childChainId: CHILD_CHAIN_ID,
       });
 
       expect(isOft).toBe(true);
-      expect([...childTokenAddresses].sort()).toEqual([USDC_NATIVE_ARB, USDC_E_ARB].sort());
+      expect([...childTokenAddresses].sort()).toEqual(
+        [MULTI_TOKEN_ON_CHILD_1, MULTI_TOKEN_ON_CHILD_2].sort(),
+      );
     });
 
     it('matches the parent token case-insensitively', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(metadata, {
-          parentChainId: 1,
-          parentTokenAddress: ENA_L1.toUpperCase().replace('0X', '0x'),
-          childChainId: 42161,
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: NATIVE_TOKEN.toUpperCase().replace('0X', '0x'),
+          childChainId: CHILD_CHAIN_ID,
         }),
-      ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
     });
 
     it('reports OFT with no child deployments when the destination chain is unknown', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(metadata, {
-          parentChainId: 1,
-          parentTokenAddress: ENA_L1,
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: NATIVE_TOKEN,
           childChainId: 999999, // not in metadata
         }),
       ).toEqual({ isOft: true, childTokenAddresses: [] });
     });
 
     it('resolves the native root when the parent token is itself a representation', () => {
-      // parent = ENA on Arbitrum (pegged to ethereum), child = ethereum → the root token itself
+      // parent = the child-chain representation, child = the home chain → the root token itself
       expect(
         getLayerZeroOftInfoFromMetadata(metadata, {
-          parentChainId: 42161,
-          parentTokenAddress: ENA_ARB,
-          childChainId: 1,
+          parentChainId: CHILD_CHAIN_ID,
+          parentTokenAddress: NATIVE_TOKEN_ON_CHILD,
+          childChainId: PARENT_CHAIN_ID,
         }),
-      ).toEqual({ isOft: true, childTokenAddresses: [ENA_L1] });
+      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN] });
     });
   });
 
@@ -96,9 +104,9 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
     it.each([null, undefined, 42, 'not-an-object', []])('treats %p as not OFT', (badMetadata) => {
       expect(
         getLayerZeroOftInfoFromMetadata(badMetadata, {
-          parentChainId: 1,
-          parentTokenAddress: ENA_L1,
-          childChainId: 42161,
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: NATIVE_TOKEN,
+          childChainId: CHILD_CHAIN_ID,
         }),
       ).toEqual({ isOft: false, childTokenAddresses: [] });
     });
@@ -107,22 +115,34 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
           {
-            ethereum: { chainDetails: { nativeChainId: '1' }, tokens: { [ENA_L1]: {} } },
-            arbitrum: {
-              chainDetails: { nativeChainId: '42161' },
-              tokens: { [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } } },
+            parent: { chainDetails: { nativeChainId: '111' }, tokens: { [NATIVE_TOKEN]: {} } },
+            child: {
+              chainDetails: { nativeChainId: '222' },
+              tokens: {
+                [NATIVE_TOKEN_ON_CHILD]: {
+                  peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },
+                },
+              },
             },
           },
-          { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+          {
+            parentChainId: PARENT_CHAIN_ID,
+            parentTokenAddress: NATIVE_TOKEN,
+            childChainId: CHILD_CHAIN_ID,
+          },
         ),
-      ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
     });
 
     it('ignores chains with missing or invalid chainDetails', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
-          { ethereum: { tokens: { [ENA_L1]: {} } } }, // no chainDetails
-          { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+          { parent: { tokens: { [NATIVE_TOKEN]: {} } } }, // no chainDetails
+          {
+            parentChainId: PARENT_CHAIN_ID,
+            parentTokenAddress: NATIVE_TOKEN,
+            childChainId: CHILD_CHAIN_ID,
+          },
         ),
       ).toEqual({ isOft: false, childTokenAddresses: [] });
     });
@@ -131,19 +151,28 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
           {
-            ethereum: { chainDetails: { nativeChainId: 1 }, tokens: { [ENA_L1]: {} } },
-            arbitrum: {
-              chainDetails: { nativeChainId: 42161 },
+            parent: {
+              chainDetails: { nativeChainId: PARENT_CHAIN_ID },
+              tokens: { [NATIVE_TOKEN]: {} },
+            },
+            child: {
+              chainDetails: { nativeChainId: CHILD_CHAIN_ID },
               tokens: {
-                [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } },
-                '0x000000000000000000000000000000000000dead': null, // malformed entry
-                '0x000000000000000000000000000000000000beef': { peggedTo: { address: ENA_L1 } }, // missing chainName
+                [NATIVE_TOKEN_ON_CHILD]: {
+                  peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },
+                },
+                [MULTI_TOKEN_ON_CHILD_1]: null, // malformed entry
+                [MULTI_TOKEN_ON_CHILD_2]: { peggedTo: { address: NATIVE_TOKEN } }, // missing chainName
               },
             },
           },
-          { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+          {
+            parentChainId: PARENT_CHAIN_ID,
+            parentTokenAddress: NATIVE_TOKEN,
+            childChainId: CHILD_CHAIN_ID,
+          },
         ),
-      ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
     });
   });
 });
@@ -161,14 +190,14 @@ describe.sequential('getLayerZeroOftInfo (fetch + cache)', () => {
     });
 
     await getLayerZeroOftInfo({
-      parentChainId: 1,
-      parentTokenAddress: ENA_L1,
-      childChainId: 42161,
+      parentChainId: PARENT_CHAIN_ID,
+      parentTokenAddress: NATIVE_TOKEN,
+      childChainId: CHILD_CHAIN_ID,
     });
     await getLayerZeroOftInfo({
-      parentChainId: 1,
-      parentTokenAddress: USDC_L1,
-      childChainId: 42161,
+      parentChainId: PARENT_CHAIN_ID,
+      parentTokenAddress: MULTI_TOKEN,
+      childChainId: CHILD_CHAIN_ID,
     });
 
     expect(fetchCallCount).toBe(1);
@@ -185,18 +214,18 @@ describe.sequential('getLayerZeroOftInfo (fetch + cache)', () => {
     });
 
     const first = await getLayerZeroOftInfo({
-      parentChainId: 1,
-      parentTokenAddress: ENA_L1,
-      childChainId: 42161,
+      parentChainId: PARENT_CHAIN_ID,
+      parentTokenAddress: NATIVE_TOKEN,
+      childChainId: CHILD_CHAIN_ID,
     });
     const second = await getLayerZeroOftInfo({
-      parentChainId: 1,
-      parentTokenAddress: ENA_L1,
-      childChainId: 42161,
+      parentChainId: PARENT_CHAIN_ID,
+      parentTokenAddress: NATIVE_TOKEN,
+      childChainId: CHILD_CHAIN_ID,
     });
 
     expect(first).toEqual({ isOft: false, childTokenAddresses: [] }); // null metadata → not found
-    expect(second).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+    expect(second).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
     expect(fetchCallCount).toBe(2);
   });
 });

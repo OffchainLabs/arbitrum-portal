@@ -1,4 +1,5 @@
 import { getAPIBaseUrl, isRecord } from '.';
+import { addressesEqual } from './AddressUtils';
 
 // Our own cached route handler, not the LayerZero API directly (see app/api/layerzero-metadata).
 const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
@@ -96,8 +97,8 @@ export function getLayerZeroOftInfoFromMetadata(
   for (const [address, tokenMetadata] of Object.entries(childChain.tokens)) {
     const peggedTo = getPeggedTo(tokenMetadata);
     const matchesRoot = peggedTo
-      ? peggedTo.chainName === root.chainName && peggedTo.address === root.address
-      : childChain.chainName === root.chainName && address.toLowerCase() === root.address;
+      ? peggedTo.chainName === root.chainName && addressesEqual(peggedTo.address, root.address)
+      : childChain.chainName === root.chainName && addressesEqual(address, root.address);
 
     if (matchesRoot) {
       childTokenAddresses.push(address.toLowerCase());

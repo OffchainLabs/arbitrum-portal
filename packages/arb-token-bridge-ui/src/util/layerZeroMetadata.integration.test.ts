@@ -9,9 +9,10 @@ const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
 // Ethena's ENA — a stable, flagship LayerZero OFT (native on Ethereum, OFT on Arbitrum).
 const ENA_ETHEREUM = '0x57e114b691db790c35207b2e685d4a43181e6061';
+const ENA_ARBITRUM_OFT = '0x58538e6a46e07434d7e7375bc268d3cb839c0133';
 
 describe('layerZeroMetadata against live LayerZero metadata', () => {
-  it('detects a known OFT and its destination deployment from live metadata', async () => {
+  it('flags a known OFT and returns its real Arbitrum deployment from live metadata', async () => {
     const response = await fetch(LAYERZERO_METADATA_URL);
     expect(response.ok).toBe(true);
 
@@ -26,7 +27,7 @@ describe('layerZeroMetadata against live LayerZero metadata', () => {
     });
 
     expect(isOft).toBe(true);
-    expect(childTokenAddresses.length).toBeGreaterThan(0);
+    expect(childTokenAddresses).toContain(ENA_ARBITRUM_OFT);
     expect(childTokenAddresses.every((address) => /^0x[0-9a-f]{40}$/.test(address))).toBe(true);
   });
 
