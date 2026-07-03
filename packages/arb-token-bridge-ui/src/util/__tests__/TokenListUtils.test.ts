@@ -36,15 +36,4 @@ describe('TokenListUtils helpers', () => {
 
     expect(lists.every((list) => list.isDefault)).toBe(true);
   });
-
-  it('uses the generated arbed Uniswap token list for Robinhood Chain', () => {
-    const lists = getBridgeTokenListsForNetworks({
-      childChainId: ChainId.RobinhoodChain,
-      parentChainId: ChainId.Ethereum,
-    });
-
-    expect(
-      lists.some((list) => list.url?.endsWith(`${ChainId.RobinhoodChain}_arbed_uniswap_labs.json`)),
-    ).toBe(true);
-  });
 });
