@@ -65,6 +65,9 @@ const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   1628: 10_000, // T-REX
   228: 10_000, // Mind Network
   869: 10_000, // World Mobile Chain
+  680: 10_000, // JASMY Chain
+  20010: 10_000, // Mandala Chain
+  704851: 10_000, // Mars Chain
 };
 
 export type UseTransactionHistoryResult = {
