@@ -7,7 +7,6 @@ const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
 const CACHE_SECONDS = 60 * 60;
 
-// `peggedTo` links a representation token back to its native chain + address.
 type TrimmedTokenMetadata = {
   peggedTo?: { address: string; chainName: string };
 };

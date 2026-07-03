@@ -21,8 +21,7 @@ describe('isCanonicalDepositBlocked', () => {
     expect(
       isCanonicalDepositBlocked({
         childTokenAddresses: [USDC_E_ARB],
-        // returned checksummed to prove the comparison is case-insensitive
-        canonicalChildTokenAddress: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+        canonicalChildTokenAddress: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // checksummed
       }),
     ).toBe(false);
   });

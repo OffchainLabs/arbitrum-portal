@@ -27,7 +27,6 @@ describe('layerZeroMetadata against live LayerZero metadata', () => {
 
     expect(isOft).toBe(true);
     expect(childTokenAddresses.length).toBeGreaterThan(0);
-    // every resolved deployment is a well-formed, lower-cased address
     expect(childTokenAddresses.every((address) => /^0x[0-9a-f]{40}$/.test(address))).toBe(true);
   });
 

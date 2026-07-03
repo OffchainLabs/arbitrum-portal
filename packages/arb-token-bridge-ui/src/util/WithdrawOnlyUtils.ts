@@ -309,7 +309,6 @@ async function isOftTokenOnChain(parentChainErc20Address: string, parentChainId:
   }
 }
 
-// The address a canonical deposit would land on; null when unresolvable (e.g. no gateway).
 async function getCanonicalChildTokenAddress({
   parentChainErc20Address,
   parentChainId,
