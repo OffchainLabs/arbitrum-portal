@@ -98,6 +98,63 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
       }),
     ).toEqual({ isOft: true, childTokenAddresses: [ENA_L1] });
   });
+
+  // The metadata is untrusted external JSON, so malformed shapes must be tolerated.
+  it.each([null, undefined, 42, 'not-an-object', []])(
+    'treats malformed metadata (%p) as not OFT',
+    (badMetadata) => {
+      expect(
+        getLayerZeroOftInfoFromMetadata(badMetadata, {
+          parentChainId: 1,
+          parentTokenAddress: ENA_L1,
+          childChainId: 42161,
+        }),
+      ).toEqual({ isOft: false, childTokenAddresses: [] });
+    },
+  );
+
+  it('matches chains whose nativeChainId is a numeric string', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(
+        {
+          ethereum: { chainDetails: { nativeChainId: '1' }, tokens: { [ENA_L1]: {} } },
+          arbitrum: {
+            chainDetails: { nativeChainId: '42161' },
+            tokens: { [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } } },
+          },
+        },
+        { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+      ),
+    ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+  });
+
+  it('ignores chains with missing or invalid chainDetails', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(
+        { ethereum: { tokens: { [ENA_L1]: {} } } }, // no chainDetails
+        { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+      ),
+    ).toEqual({ isOft: false, childTokenAddresses: [] });
+  });
+
+  it('skips malformed token entries and incomplete pegged links on the child chain', () => {
+    expect(
+      getLayerZeroOftInfoFromMetadata(
+        {
+          ethereum: { chainDetails: { nativeChainId: 1 }, tokens: { [ENA_L1]: {} } },
+          arbitrum: {
+            chainDetails: { nativeChainId: 42161 },
+            tokens: {
+              [ENA_ARB]: { peggedTo: { address: ENA_L1, chainName: 'ethereum' } },
+              '0x000000000000000000000000000000000000dead': null, // malformed entry
+              '0x000000000000000000000000000000000000beef': { peggedTo: { address: ENA_L1 } }, // missing chainName
+            },
+          },
+        },
+        { parentChainId: 1, parentTokenAddress: ENA_L1, childChainId: 42161 },
+      ),
+    ).toEqual({ isOft: true, childTokenAddresses: [ENA_ARB] });
+  });
 });
 
 describe('getLayerZeroOftInfo (cached fetch)', () => {
