@@ -3,10 +3,8 @@ import axios from 'axios';
 import { ImageProps } from 'next/image';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
-import { WETH_TOKEN_LOGO } from '../constants';
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { CommonAddress } from './CommonAddressUtils';
 import { logger } from './logger';
 import { getOrbitChains } from './orbitChainsList';
 
@@ -17,7 +15,6 @@ const UniswapLogo = '/images/lists/uniswap.png';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
 export const LIFI_TRANSFER_LIST_ID = 'lifi-token-list';
-export const ROBINHOOD_CHAIN_TOKEN_LIST_ID = '4663_robinhood_default';
 
 export interface BridgeTokenList {
   // string is required here to avoid duplicates when mapping orbit chains to tokenlists
@@ -31,92 +28,6 @@ export interface BridgeTokenList {
   parentChainID?: number; // For LiFi token lists, stores the parent chain ID
   tokenList?: TokenList;
 }
-
-const robinhoodEthereumTokens = [
-  {
-    address: CommonAddress.RobinhoodChain.WETH,
-    parentAddress: CommonAddress.Ethereum.WETH,
-    name: 'Wrapped Ether',
-    symbol: 'WETH',
-    decimals: 18,
-    logoURI: WETH_TOKEN_LOGO,
-  },
-  {
-    address: CommonAddress.RobinhoodChain.sUSDe,
-    parentAddress: CommonAddress.Ethereum.sUSDe,
-    name: 'Staked USDe',
-    symbol: 'sUSDe',
-    decimals: 18,
-    logoURI:
-      'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9D39A5DE30e57443BfF2A8307A4256c8797A3497/logo.png',
-  },
-  {
-    address: CommonAddress.RobinhoodChain.ENA,
-    parentAddress: CommonAddress.Ethereum.ENA,
-    name: 'Ethena',
-    symbol: 'ENA',
-    decimals: 18,
-    logoURI:
-      'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x57e114B691Db790C35207b2e685D4A43181e6061/logo.png',
-  },
-  {
-    address: CommonAddress.RobinhoodChain.WEETH,
-    parentAddress: CommonAddress.Ethereum.WEETH,
-    name: 'Wrapped eETH',
-    symbol: 'weETH',
-    decimals: 18,
-    logoURI:
-      'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee/logo.png',
-  },
-  {
-    address: CommonAddress.RobinhoodChain.WSTETH,
-    parentAddress: CommonAddress.Ethereum.WSTETH,
-    name: 'Wrapped liquid staked Ether 2.0',
-    symbol: 'wstETH',
-    decimals: 18,
-    logoURI:
-      'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0/logo.png',
-  },
-];
-
-const ROBINHOOD_CHAIN_TOKEN_LIST: BridgeTokenList = {
-  id: ROBINHOOD_CHAIN_TOKEN_LIST_ID,
-  originChainID: ChainId.RobinhoodChain,
-  name: 'Robinhood Chain Default List',
-  isDefault: true,
-  logoURI: '/images/RobinhoodChain_Logo.png',
-  tokenList: {
-    name: 'Robinhood Chain Default List',
-    timestamp: '2026-06-30T00:00:00.000Z',
-    version: {
-      major: 1,
-      minor: 0,
-      patch: 0,
-    },
-    logoURI: '/images/RobinhoodChain_Logo.png',
-    tokens: robinhoodEthereumTokens.map(
-      ({ address, parentAddress, name, symbol, decimals, logoURI }) => ({
-        chainId: ChainId.RobinhoodChain,
-        address,
-        name,
-        symbol,
-        decimals,
-        logoURI,
-        extensions: {
-          bridgeInfo: {
-            [ChainId.Ethereum]: {
-              tokenAddress: parentAddress,
-              name,
-              symbol,
-              decimals,
-              logoURI,
-            },
-          },
-        },
-      }),
-    ),
-  },
-};
 
 export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
   {
@@ -256,31 +167,9 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
 
 export const listIdsToNames: { [key: string]: string } = {};
 
-[...BRIDGE_TOKEN_LISTS, ROBINHOOD_CHAIN_TOKEN_LIST].forEach((bridgeTokenList) => {
+BRIDGE_TOKEN_LISTS.forEach((bridgeTokenList) => {
   listIdsToNames[bridgeTokenList.id] = bridgeTokenList.name;
 });
-
-function getRobinhoodTokenListsForNetworks({
-  childChainId,
-  parentChainId,
-}: {
-  childChainId: number;
-  parentChainId: number;
-}): BridgeTokenList[] {
-  if (childChainId === ChainId.RobinhoodChain && parentChainId === ChainId.Ethereum) {
-    return [ROBINHOOD_CHAIN_TOKEN_LIST];
-  }
-
-  return [];
-}
-
-function isRobinhoodGeneratedArbedTokenList(bridgeTokenList: BridgeTokenList): boolean {
-  return !!(
-    bridgeTokenList.originChainID === ChainId.RobinhoodChain &&
-    (bridgeTokenList.url?.endsWith(`${ChainId.RobinhoodChain}_arbed_native_list.json`) ||
-      bridgeTokenList.url?.endsWith(`${ChainId.RobinhoodChain}_arbed_uniswap_labs.json`))
-  );
-}
 
 export const getBridgeTokenListsForNetworks = ({
   childChainId,
@@ -289,27 +178,20 @@ export const getBridgeTokenListsForNetworks = ({
   childChainId: number;
   parentChainId: number;
 }): BridgeTokenList[] => {
-  return [
-    ...getRobinhoodTokenListsForNetworks({ childChainId, parentChainId }),
-    ...BRIDGE_TOKEN_LISTS.filter((bridgeTokenList) => {
-      if (isRobinhoodGeneratedArbedTokenList(bridgeTokenList)) {
-        return false;
-      }
+  return BRIDGE_TOKEN_LISTS.filter((bridgeTokenList) => {
+    if (bridgeTokenList.isArbitrumTokenTokenList) {
+      return true;
+    }
 
-      if (bridgeTokenList.isArbitrumTokenTokenList) {
-        return true;
-      }
+    if (bridgeTokenList.parentChainID !== undefined) {
+      return (
+        bridgeTokenList.parentChainID === parentChainId &&
+        bridgeTokenList.originChainID === childChainId
+      );
+    }
 
-      if (bridgeTokenList.parentChainID !== undefined) {
-        return (
-          bridgeTokenList.parentChainID === parentChainId &&
-          bridgeTokenList.originChainID === childChainId
-        );
-      }
-
-      return bridgeTokenList.originChainID === childChainId;
-    }),
-  ];
+    return bridgeTokenList.originChainID === childChainId;
+  });
 };
 
 export const getLifiTokenListForNetworks = ({
