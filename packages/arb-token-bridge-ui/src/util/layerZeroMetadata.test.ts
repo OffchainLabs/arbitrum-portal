@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getLayerZeroOftInfo,
   getLayerZeroOftInfoFromMetadata,
+  isKnownLayerZeroTokenFromMetadata,
   resetLayerZeroMetadataCache,
 } from './layerZeroMetadata';
 
@@ -196,6 +197,35 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
         hasOftChildDeployment: true,
       });
     });
+  });
+});
+
+describe('isKnownLayerZeroTokenFromMetadata', () => {
+  it('returns true for a token LayerZero lists on the chain', () => {
+    expect(
+      isKnownLayerZeroTokenFromMetadata(metadata, {
+        chainId: CHILD_CHAIN_ID,
+        tokenAddress: NATIVE_TOKEN_ON_CHILD.toUpperCase().replace('0X', '0x'),
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false for an address LayerZero does not list on the chain', () => {
+    expect(
+      isKnownLayerZeroTokenFromMetadata(metadata, {
+        chainId: CHILD_CHAIN_ID,
+        tokenAddress: UNLISTED_TOKEN,
+      }),
+    ).toBe(false);
+  });
+
+  it('returns false when the chain is not in the metadata', () => {
+    expect(
+      isKnownLayerZeroTokenFromMetadata(metadata, {
+        chainId: 999999,
+        tokenAddress: NATIVE_TOKEN_ON_CHILD,
+      }),
+    ).toBe(false);
   });
 });
 

@@ -13,7 +13,7 @@ import {
   isTokenArbitrumOneUSDCe,
   isTokenArbitrumSepoliaUSDCe,
 } from './TokenUtils';
-import { getLayerZeroOftInfo } from './layerZeroMetadata';
+import { getLayerZeroOftInfo, isKnownLayerZeroToken } from './layerZeroMetadata';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -329,18 +329,20 @@ async function getCanonicalChildTokenAddress({
   }
 }
 
-// Allow when the canonical deposit lands on a representation LayerZero recognizes
-// (e.g. WETH, USDC.e). If it lands somewhere unrecognized, block only when a real
-// OFT deployment exists to route through instead — a plain ERC20 LayerZero merely
-// tracks (e.g. FRAX) has no OFT alternative, so blocking would just strand it.
+// Allow when the canonical deposit lands on a token LayerZero recognizes on the
+// destination (this token's own deployment, or another real listed token — e.g.
+// ARB, whose L2 token LayerZero lists but doesn't peg to its L1 address). Block
+// only when it lands on an unrecognized counterfactual AND a real OFT deployment
+// exists to route through instead; a plain ERC20 LayerZero merely tracks (e.g.
+// FRAX) has no OFT alternative, so blocking would just strand it.
 export function isCanonicalDepositBlocked({
-  childTokenAddresses,
-  hasOftChildDeployment,
   canonicalChildTokenAddress,
+  canonicalIsKnownLayerZeroToken,
+  hasOftChildDeployment,
 }: {
-  childTokenAddresses: string[];
-  hasOftChildDeployment: boolean;
   canonicalChildTokenAddress: string | null;
+  canonicalIsKnownLayerZeroToken: boolean;
+  hasOftChildDeployment: boolean;
 }): boolean {
   // No canonical route to the destination (e.g. USDT has no gateway).
   if (
@@ -350,8 +352,8 @@ export function isCanonicalDepositBlocked({
     return true;
   }
 
-  // Canonical deposit lands on a recognized representation → safe to allow.
-  if (childTokenAddresses.some((address) => addressesEqual(address, canonicalChildTokenAddress))) {
+  // Canonical deposit lands on a token LayerZero recognizes → safe to allow.
+  if (canonicalIsKnownLayerZeroToken) {
     return false;
   }
 
@@ -367,7 +369,7 @@ async function isBlockedOftDeposit({
   parentChainId: number;
   childChainId: number;
 }) {
-  const { isOft, childTokenAddresses, hasOftChildDeployment } = await getLayerZeroOftInfo({
+  const { isOft, hasOftChildDeployment } = await getLayerZeroOftInfo({
     parentChainId,
     parentTokenAddress: parentChainErc20Address,
     childChainId,
@@ -384,10 +386,17 @@ async function isBlockedOftDeposit({
     childChainId,
   });
 
+  const canonicalIsKnownLayerZeroToken = canonicalChildTokenAddress
+    ? await isKnownLayerZeroToken({
+        chainId: childChainId,
+        tokenAddress: canonicalChildTokenAddress,
+      })
+    : false;
+
   return isCanonicalDepositBlocked({
-    childTokenAddresses,
-    hasOftChildDeployment,
     canonicalChildTokenAddress,
+    canonicalIsKnownLayerZeroToken,
+    hasOftChildDeployment,
   });
 }
 

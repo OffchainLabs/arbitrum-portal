@@ -114,6 +114,17 @@ export function getLayerZeroOftInfoFromMetadata(
   return { isOft: true, childTokenAddresses, hasOftChildDeployment };
 }
 
+// Whether LayerZero lists `tokenAddress` as a real token on `chainId` (regardless
+// of what it's pegged to) — i.e. a canonical deposit landing there hits a token
+// LayerZero recognizes, not a dead counterfactual.
+export function isKnownLayerZeroTokenFromMetadata(
+  metadata: unknown,
+  { chainId, tokenAddress }: { chainId: number; tokenAddress: string },
+): boolean {
+  const chain = getChainMetadata(metadata, chainId);
+  return !!chain && Boolean(chain.tokens[tokenAddress.toLowerCase()]);
+}
+
 async function getLayerZeroMetadata() {
   if (!layerZeroMetadataPromise) {
     layerZeroMetadataPromise = fetch(LAYERZERO_METADATA_URL)
@@ -138,6 +149,14 @@ export async function getLayerZeroOftInfo(params: {
 }): Promise<LayerZeroOftInfo> {
   const metadata = await getLayerZeroMetadata();
   return getLayerZeroOftInfoFromMetadata(metadata, params);
+}
+
+export async function isKnownLayerZeroToken(params: {
+  chainId: number;
+  tokenAddress: string;
+}): Promise<boolean> {
+  const metadata = await getLayerZeroMetadata();
+  return isKnownLayerZeroTokenFromMetadata(metadata, params);
 }
 
 export function resetLayerZeroMetadataCache() {

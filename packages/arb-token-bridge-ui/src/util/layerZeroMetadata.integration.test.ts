@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { trimLayerZeroMetadata } from '../app/api/layerzero-metadata';
-import { getLayerZeroOftInfoFromMetadata } from './layerZeroMetadata';
+import {
+  getLayerZeroOftInfoFromMetadata,
+  isKnownLayerZeroTokenFromMetadata,
+} from './layerZeroMetadata';
 
 // Hits the live LayerZero metadata endpoint (excluded from the unit suite via
 // vitest.integration.config.ts). Runs the real trim + parse pipeline against live
@@ -14,6 +17,11 @@ const ENA_ARBITRUM_OFT = '0x58538e6a46e07434d7e7375bc268d3cb839c0133';
 
 // FRAX — tracked by LayerZero on both chains as a plain ERC20, not an OFT.
 const FRAX_ETHEREUM = '0x853d955acef822db058eb8505911ed77f175b99e';
+
+// ARB's real Arbitrum token: LayerZero lists it (so a canonical deposit lands on a
+// recognized token), unlike ENA's standard-gateway counterfactual.
+const ARB_ON_ARBITRUM = '0x912ce59144191c1204e64559fe8253a0e49e6548';
+const ENA_ARBITRUM_CANONICAL = '0xdf8f0c63d9335a0abd89f9f752d293a98ea977d8';
 
 async function fetchTrimmedMetadata() {
   const response = await fetch(LAYERZERO_METADATA_URL);
@@ -53,6 +61,26 @@ describe('layerZeroMetadata against live LayerZero metadata', () => {
     // must not force it off the canonical route.
     expect(isOft).toBe(true);
     expect(hasOftChildDeployment).toBe(false);
+  });
+
+  it('recognizes a real listed token but not a gateway counterfactual from live metadata', async () => {
+    const metadata = await fetchTrimmedMetadata();
+
+    // ARB's canonical L2 token is listed → a canonical deposit lands on a real token.
+    expect(
+      isKnownLayerZeroTokenFromMetadata(metadata, {
+        chainId: 42161,
+        tokenAddress: ARB_ON_ARBITRUM,
+      }),
+    ).toBe(true);
+
+    // ENA's standard-gateway counterfactual is not a token LayerZero lists.
+    expect(
+      isKnownLayerZeroTokenFromMetadata(metadata, {
+        chainId: 42161,
+        tokenAddress: ENA_ARBITRUM_CANONICAL,
+      }),
+    ).toBe(false);
   });
 
   it('reports a non-listed token as not OFT from live metadata', async () => {
