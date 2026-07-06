@@ -1,48 +1,66 @@
 import { unstable_noStore as noStore, unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 
+import { ChainId } from '../../types/ChainId';
 import { isRecord } from '../../util';
 
 const LAYERZERO_METADATA_URL = 'https://metadata.layerzero-api.com/v1/metadata';
 
 const CACHE_SECONDS = 60 * 60;
 
+// LayerZero's `nativeChainId` is not unique (e.g. both Aptos and Ethereum report
+// `1`), so we map each chain we bridge to its `chainKey` explicitly — dropping the
+// chains we don't care about and avoiding that ambiguity.
+const LZ_CHAIN_KEY_BY_CHAIN_ID: { chainId: number; chainKey: string }[] = [
+  { chainId: ChainId.Ethereum, chainKey: 'ethereum' },
+  { chainId: ChainId.Sepolia, chainKey: 'sepolia-testnet' },
+  { chainId: ChainId.ArbitrumOne, chainKey: 'arbitrum' },
+  { chainId: ChainId.ArbitrumNova, chainKey: 'nova' },
+  { chainId: ChainId.ArbitrumSepolia, chainKey: 'arbitrum-sepolia' },
+  { chainId: ChainId.Base, chainKey: 'base' },
+  { chainId: ChainId.BaseSepolia, chainKey: 'base-sepolia' },
+  { chainId: ChainId.ApeChain, chainKey: 'ape' },
+  { chainId: ChainId.RobinhoodChain, chainKey: 'robinhood' },
+  { chainId: ChainId.Superposition, chainKey: 'superposition' },
+  { chainId: 98866, chainKey: 'plumephoenix' }, // Plume
+  { chainId: 1625, chainKey: 'gravity' }, // Gravity Alpha
+  { chainId: 1380012617, chainKey: 'rarible' }, // RARI
+  { chainId: 41923, chainKey: 'edu' }, // Edu Chain
+  { chainId: 660279, chainKey: 'xai' }, // Xai
+  { chainId: 6985385, chainKey: 'humanity' }, // Humanity
+];
+
 type TrimmedTokenMetadata = {
   peggedTo?: { address: string; chainName: string };
 };
 
 type TrimmedChainMetadata = {
-  chainDetails: { nativeChainId: number };
+  chainKey: string;
   tokens: Record<string, TrimmedTokenMetadata>;
 };
 
-// The upstream payload is ~3.8MB; keep only what the client needs so the cached
-// response stays under the data cache size limit and isn't shipped in full.
-function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMetadata> {
-  const trimmed: Record<string, TrimmedChainMetadata> = {};
+// Reduce the ~3.8MB LayerZero payload to the chains we bridge, keyed by our chain id.
+export function trimLayerZeroMetadata(metadata: unknown): Record<number, TrimmedChainMetadata> {
+  const trimmed: Record<number, TrimmedChainMetadata> = {};
 
   if (!isRecord(metadata)) {
     return trimmed;
   }
 
-  for (const [chainKey, chainMetadata] of Object.entries(metadata)) {
-    if (!isRecord(chainMetadata)) {
+  for (const { chainId, chainKey } of LZ_CHAIN_KEY_BY_CHAIN_ID) {
+    const chainMetadata = metadata[chainKey];
+    if (!isRecord(chainMetadata) || !isRecord(chainMetadata.tokens)) {
       continue;
     }
 
-    const { chainDetails, tokens } = chainMetadata;
-    if (!isRecord(chainDetails) || !isRecord(tokens)) {
-      continue;
-    }
-
-    const trimmedTokens: Record<string, TrimmedTokenMetadata> = {};
-    for (const [tokenAddress, tokenMetadata] of Object.entries(tokens)) {
+    const tokens: Record<string, TrimmedTokenMetadata> = {};
+    for (const [tokenAddress, tokenMetadata] of Object.entries(chainMetadata.tokens)) {
       if (!isRecord(tokenMetadata)) {
         continue;
       }
 
       const { peggedTo } = tokenMetadata;
-      trimmedTokens[tokenAddress.toLowerCase()] =
+      tokens[tokenAddress.toLowerCase()] =
         isRecord(peggedTo) &&
         typeof peggedTo.address === 'string' &&
         typeof peggedTo.chainName === 'string'
@@ -50,12 +68,7 @@ function trimLayerZeroMetadata(metadata: unknown): Record<string, TrimmedChainMe
           : {};
     }
 
-    const nativeChainId = Number(chainDetails.nativeChainId);
-
-    trimmed[chainKey] = {
-      chainDetails: { nativeChainId },
-      tokens: trimmedTokens,
-    };
+    trimmed[chainId] = { chainKey, tokens };
   }
 
   return trimmed;

@@ -6,9 +6,10 @@ import {
   resetLayerZeroMetadataCache,
 } from './layerZeroMetadata';
 
-// Synthetic trimmed-metadata fixtures — these exercise the parsing/root-linking
-// logic against controlled input. Real-token, live-network behavior is covered
-// in layerZeroMetadata.integration.test.ts.
+// Synthetic trimmed-metadata fixtures (the shape produced by trimLayerZeroMetadata:
+// keyed by chain id, with the LayerZero chainKey + tokens). These exercise the
+// parsing/root-linking logic; real-token, live-network behavior is covered in
+// layerZeroMetadata.integration.test.ts.
 const PARENT_CHAIN_ID = 111;
 const CHILD_CHAIN_ID = 222;
 
@@ -20,15 +21,15 @@ const MULTI_TOKEN_ON_CHILD_2 = '0x00000000000000000000000000000000000000b3';
 const UNLISTED_TOKEN = '0x00000000000000000000000000000000000000ff';
 
 const metadata = {
-  parent: {
-    chainDetails: { nativeChainId: PARENT_CHAIN_ID },
+  [PARENT_CHAIN_ID]: {
+    chainKey: 'parent',
     tokens: {
       [NATIVE_TOKEN]: {}, // no peggedTo → native/home token
       [MULTI_TOKEN]: {},
     },
   },
-  child: {
-    chainDetails: { nativeChainId: CHILD_CHAIN_ID },
+  [CHILD_CHAIN_ID]: {
+    chainKey: 'child',
     tokens: {
       [NATIVE_TOKEN_ON_CHILD]: { peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' } },
       [MULTI_TOKEN_ON_CHILD_1]: { peggedTo: { address: MULTI_TOKEN, chainName: 'parent' } },
@@ -111,33 +112,10 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
       ).toEqual({ isOft: false, childTokenAddresses: [] });
     });
 
-    it('matches chains whose nativeChainId is a numeric string', () => {
+    it('ignores a chain entry that is missing its chainKey', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
-          {
-            parent: { chainDetails: { nativeChainId: '111' }, tokens: { [NATIVE_TOKEN]: {} } },
-            child: {
-              chainDetails: { nativeChainId: '222' },
-              tokens: {
-                [NATIVE_TOKEN_ON_CHILD]: {
-                  peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },
-                },
-              },
-            },
-          },
-          {
-            parentChainId: PARENT_CHAIN_ID,
-            parentTokenAddress: NATIVE_TOKEN,
-            childChainId: CHILD_CHAIN_ID,
-          },
-        ),
-      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
-    });
-
-    it('ignores chains with missing or invalid chainDetails', () => {
-      expect(
-        getLayerZeroOftInfoFromMetadata(
-          { parent: { tokens: { [NATIVE_TOKEN]: {} } } }, // no chainDetails
+          { [PARENT_CHAIN_ID]: { tokens: { [NATIVE_TOKEN]: {} } } }, // no chainKey
           {
             parentChainId: PARENT_CHAIN_ID,
             parentTokenAddress: NATIVE_TOKEN,
@@ -151,12 +129,9 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
           {
-            parent: {
-              chainDetails: { nativeChainId: PARENT_CHAIN_ID },
-              tokens: { [NATIVE_TOKEN]: {} },
-            },
-            child: {
-              chainDetails: { nativeChainId: CHILD_CHAIN_ID },
+            [PARENT_CHAIN_ID]: { chainKey: 'parent', tokens: { [NATIVE_TOKEN]: {} } },
+            [CHILD_CHAIN_ID]: {
+              chainKey: 'child',
               tokens: {
                 [NATIVE_TOKEN_ON_CHILD]: {
                   peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },

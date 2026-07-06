@@ -1,7 +1,7 @@
 import { getAPIBaseUrl, isRecord } from '.';
 import { addressesEqual } from './AddressUtils';
 
-// Our own cached route handler, not the LayerZero API directly (see app/api/layerzero-metadata).
+// Our own cached route handler (already trimmed + chain-id-keyed), not the LayerZero API directly.
 const LAYERZERO_METADATA_URL = `${getAPIBaseUrl()}/api/layerzero-metadata`;
 
 type LayerZeroPeggedTo = {
@@ -10,40 +10,34 @@ type LayerZeroPeggedTo = {
 };
 
 export type LayerZeroOftInfo = {
-  // Whether the token has a LayerZero OFT deployment on the parent chain.
   isOft: boolean;
-  // Lower-cased addresses of the same token's OFT deployments on the child chain.
   childTokenAddresses: string[];
 };
 
 let layerZeroMetadataPromise: Promise<unknown> | null = null;
 
-// The chain + address a token is natively deployed on (its own address if native,
-// else its `peggedTo` target).
+// The chain + address a token is natively deployed on (`chainName` = LayerZero chainKey).
 type TokenRoot = LayerZeroPeggedTo;
 
-function getChainByNativeChainId(
+// The metadata is keyed by our own chain id (see trimLayerZeroMetadata), so we
+// look it up directly rather than scanning LayerZero's non-unique `nativeChainId`.
+function getChainMetadata(
   metadata: unknown,
   chainId: number,
-): { chainName: string; tokens: Record<string, unknown> } | null {
+): { chainKey: string; tokens: Record<string, unknown> } | null {
   if (!isRecord(metadata)) {
     return null;
   }
 
-  for (const [chainName, chainMetadata] of Object.entries(metadata)) {
-    if (!isRecord(chainMetadata) || !isRecord(chainMetadata.chainDetails)) {
-      continue;
-    }
-
-    if (Number(chainMetadata.chainDetails.nativeChainId) === chainId) {
-      return {
-        chainName,
-        tokens: isRecord(chainMetadata.tokens) ? chainMetadata.tokens : {},
-      };
-    }
+  const chainMetadata = metadata[chainId];
+  if (!isRecord(chainMetadata) || typeof chainMetadata.chainKey !== 'string') {
+    return null;
   }
 
-  return null;
+  return {
+    chainKey: chainMetadata.chainKey,
+    tokens: isRecord(chainMetadata.tokens) ? chainMetadata.tokens : {},
+  };
 }
 
 function getPeggedTo(tokenMetadata: unknown): LayerZeroPeggedTo | null {
@@ -73,7 +67,7 @@ export function getLayerZeroOftInfoFromMetadata(
 ): LayerZeroOftInfo {
   const notOft: LayerZeroOftInfo = { isOft: false, childTokenAddresses: [] };
 
-  const parentChain = getChainByNativeChainId(metadata, parentChainId);
+  const parentChain = getChainMetadata(metadata, parentChainId);
   if (!parentChain) {
     return notOft;
   }
@@ -84,11 +78,13 @@ export function getLayerZeroOftInfoFromMetadata(
   }
 
   const root: TokenRoot = getPeggedTo(parentTokenMetadata) ?? {
-    chainName: parentChain.chainName,
+    chainName: parentChain.chainKey,
     address: parentTokenAddress.toLowerCase(),
   };
 
-  const childChain = getChainByNativeChainId(metadata, childChainId);
+  // No OFT deployment data for the destination → no OFT alternative there, so the
+  // caller allows the canonical route (blocking would strand a token with no other path).
+  const childChain = getChainMetadata(metadata, childChainId);
   if (!childChain) {
     return { isOft: true, childTokenAddresses: [] };
   }
@@ -98,7 +94,7 @@ export function getLayerZeroOftInfoFromMetadata(
     const peggedTo = getPeggedTo(tokenMetadata);
     const matchesRoot = peggedTo
       ? peggedTo.chainName === root.chainName && addressesEqual(peggedTo.address, root.address)
-      : childChain.chainName === root.chainName && addressesEqual(address, root.address);
+      : childChain.chainKey === root.chainName && addressesEqual(address, root.address);
 
     if (matchesRoot) {
       childTokenAddresses.push(address.toLowerCase());
