@@ -7,9 +7,9 @@ import {
 } from './layerZeroMetadata';
 
 // Synthetic trimmed-metadata fixtures (the shape produced by trimLayerZeroMetadata:
-// keyed by chain id, with the LayerZero chainKey + tokens). These exercise the
-// parsing/root-linking logic; real-token, live-network behavior is covered in
-// layerZeroMetadata.integration.test.ts.
+// keyed by chain id, with the LayerZero chainKey + tokens carrying an `isOft` flag
+// and optional `peggedTo`). These exercise the parsing/root-linking logic; real-token,
+// live-network behavior is covered in layerZeroMetadata.integration.test.ts.
 const PARENT_CHAIN_ID = 111;
 const CHILD_CHAIN_ID = 222;
 
@@ -18,22 +18,38 @@ const NATIVE_TOKEN_ON_CHILD = '0x00000000000000000000000000000000000000b1';
 const MULTI_TOKEN = '0x00000000000000000000000000000000000000a2'; // native, with 2 child deployments
 const MULTI_TOKEN_ON_CHILD_1 = '0x00000000000000000000000000000000000000b2';
 const MULTI_TOKEN_ON_CHILD_2 = '0x00000000000000000000000000000000000000b3';
+const ERC20_TOKEN = '0x00000000000000000000000000000000000000a3'; // tracked by LZ but not an OFT
+const ERC20_TOKEN_ON_CHILD = '0x00000000000000000000000000000000000000b4';
 const UNLISTED_TOKEN = '0x00000000000000000000000000000000000000ff';
 
 const metadata = {
   [PARENT_CHAIN_ID]: {
     chainKey: 'parent',
     tokens: {
-      [NATIVE_TOKEN]: {}, // no peggedTo → native/home token
-      [MULTI_TOKEN]: {},
+      [NATIVE_TOKEN]: { isOft: true }, // no peggedTo → native/home token
+      [MULTI_TOKEN]: { isOft: true },
+      [ERC20_TOKEN]: { isOft: false },
     },
   },
   [CHILD_CHAIN_ID]: {
     chainKey: 'child',
     tokens: {
-      [NATIVE_TOKEN_ON_CHILD]: { peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' } },
-      [MULTI_TOKEN_ON_CHILD_1]: { peggedTo: { address: MULTI_TOKEN, chainName: 'parent' } },
-      [MULTI_TOKEN_ON_CHILD_2]: { peggedTo: { address: MULTI_TOKEN, chainName: 'parent' } },
+      [NATIVE_TOKEN_ON_CHILD]: {
+        isOft: true,
+        peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },
+      },
+      [MULTI_TOKEN_ON_CHILD_1]: {
+        isOft: true,
+        peggedTo: { address: MULTI_TOKEN, chainName: 'parent' },
+      },
+      [MULTI_TOKEN_ON_CHILD_2]: {
+        isOft: true,
+        peggedTo: { address: MULTI_TOKEN, chainName: 'parent' },
+      },
+      [ERC20_TOKEN_ON_CHILD]: {
+        isOft: false,
+        peggedTo: { address: ERC20_TOKEN, chainName: 'parent' },
+      },
     },
   },
 };
@@ -52,20 +68,38 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
           parentTokenAddress: UNLISTED_TOKEN,
           childChainId: CHILD_CHAIN_ID,
         }),
-      ).toEqual({ isOft: false, childTokenAddresses: [] });
+      ).toEqual({ isOft: false, childTokenAddresses: [], hasOftChildDeployment: false });
     });
 
     it('finds every child deployment linked to the same native token', () => {
-      const { isOft, childTokenAddresses } = getLayerZeroOftInfoFromMetadata(metadata, {
-        parentChainId: PARENT_CHAIN_ID,
-        parentTokenAddress: MULTI_TOKEN,
-        childChainId: CHILD_CHAIN_ID,
-      });
+      const { isOft, childTokenAddresses, hasOftChildDeployment } = getLayerZeroOftInfoFromMetadata(
+        metadata,
+        {
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: MULTI_TOKEN,
+          childChainId: CHILD_CHAIN_ID,
+        },
+      );
 
       expect(isOft).toBe(true);
+      expect(hasOftChildDeployment).toBe(true);
       expect([...childTokenAddresses].sort()).toEqual(
         [MULTI_TOKEN_ON_CHILD_1, MULTI_TOKEN_ON_CHILD_2].sort(),
       );
+    });
+
+    it('reports hasOftChildDeployment false when the only child rep is a plain ERC20', () => {
+      expect(
+        getLayerZeroOftInfoFromMetadata(metadata, {
+          parentChainId: PARENT_CHAIN_ID,
+          parentTokenAddress: ERC20_TOKEN,
+          childChainId: CHILD_CHAIN_ID,
+        }),
+      ).toEqual({
+        isOft: true,
+        childTokenAddresses: [ERC20_TOKEN_ON_CHILD],
+        hasOftChildDeployment: false,
+      });
     });
 
     it('matches the parent token case-insensitively', () => {
@@ -75,7 +109,11 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
           parentTokenAddress: NATIVE_TOKEN.toUpperCase().replace('0X', '0x'),
           childChainId: CHILD_CHAIN_ID,
         }),
-      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
+      ).toEqual({
+        isOft: true,
+        childTokenAddresses: [NATIVE_TOKEN_ON_CHILD],
+        hasOftChildDeployment: true,
+      });
     });
 
     it('reports OFT with no child deployments when the destination chain is unknown', () => {
@@ -85,7 +123,7 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
           parentTokenAddress: NATIVE_TOKEN,
           childChainId: 999999, // not in metadata
         }),
-      ).toEqual({ isOft: true, childTokenAddresses: [] });
+      ).toEqual({ isOft: true, childTokenAddresses: [], hasOftChildDeployment: false });
     });
 
     it('resolves the native root when the parent token is itself a representation', () => {
@@ -96,7 +134,11 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
           parentTokenAddress: NATIVE_TOKEN_ON_CHILD,
           childChainId: PARENT_CHAIN_ID,
         }),
-      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN] });
+      ).toEqual({
+        isOft: true,
+        childTokenAddresses: [NATIVE_TOKEN],
+        hasOftChildDeployment: true,
+      });
     });
   });
 
@@ -109,31 +151,32 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
           parentTokenAddress: NATIVE_TOKEN,
           childChainId: CHILD_CHAIN_ID,
         }),
-      ).toEqual({ isOft: false, childTokenAddresses: [] });
+      ).toEqual({ isOft: false, childTokenAddresses: [], hasOftChildDeployment: false });
     });
 
     it('ignores a chain entry that is missing its chainKey', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
-          { [PARENT_CHAIN_ID]: { tokens: { [NATIVE_TOKEN]: {} } } }, // no chainKey
+          { [PARENT_CHAIN_ID]: { tokens: { [NATIVE_TOKEN]: { isOft: true } } } }, // no chainKey
           {
             parentChainId: PARENT_CHAIN_ID,
             parentTokenAddress: NATIVE_TOKEN,
             childChainId: CHILD_CHAIN_ID,
           },
         ),
-      ).toEqual({ isOft: false, childTokenAddresses: [] });
+      ).toEqual({ isOft: false, childTokenAddresses: [], hasOftChildDeployment: false });
     });
 
     it('skips malformed token entries and incomplete pegged links on the child chain', () => {
       expect(
         getLayerZeroOftInfoFromMetadata(
           {
-            [PARENT_CHAIN_ID]: { chainKey: 'parent', tokens: { [NATIVE_TOKEN]: {} } },
+            [PARENT_CHAIN_ID]: { chainKey: 'parent', tokens: { [NATIVE_TOKEN]: { isOft: true } } },
             [CHILD_CHAIN_ID]: {
               chainKey: 'child',
               tokens: {
                 [NATIVE_TOKEN_ON_CHILD]: {
+                  isOft: true,
                   peggedTo: { address: NATIVE_TOKEN, chainName: 'parent' },
                 },
                 [MULTI_TOKEN_ON_CHILD_1]: null, // malformed entry
@@ -147,7 +190,11 @@ describe('getLayerZeroOftInfoFromMetadata', () => {
             childChainId: CHILD_CHAIN_ID,
           },
         ),
-      ).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
+      ).toEqual({
+        isOft: true,
+        childTokenAddresses: [NATIVE_TOKEN_ON_CHILD],
+        hasOftChildDeployment: true,
+      });
     });
   });
 });
@@ -199,8 +246,12 @@ describe.sequential('getLayerZeroOftInfo (fetch + cache)', () => {
       childChainId: CHILD_CHAIN_ID,
     });
 
-    expect(first).toEqual({ isOft: false, childTokenAddresses: [] }); // null metadata → not found
-    expect(second).toEqual({ isOft: true, childTokenAddresses: [NATIVE_TOKEN_ON_CHILD] });
+    expect(first).toEqual({ isOft: false, childTokenAddresses: [], hasOftChildDeployment: false }); // null metadata → not found
+    expect(second).toEqual({
+      isOft: true,
+      childTokenAddresses: [NATIVE_TOKEN_ON_CHILD],
+      hasOftChildDeployment: true,
+    });
     expect(fetchCallCount).toBe(2);
   });
 });

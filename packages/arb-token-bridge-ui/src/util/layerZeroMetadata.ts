@@ -12,6 +12,9 @@ type LayerZeroPeggedTo = {
 export type LayerZeroOftInfo = {
   isOft: boolean;
   childTokenAddresses: string[];
+  // Whether any child representation is a real OFT deployment (vs a plain ERC20
+  // LayerZero merely tracks) — i.e. an OFT route actually exists on the destination.
+  hasOftChildDeployment: boolean;
 };
 
 let layerZeroMetadataPromise: Promise<unknown> | null = null;
@@ -65,7 +68,11 @@ export function getLayerZeroOftInfoFromMetadata(
     childChainId: number;
   },
 ): LayerZeroOftInfo {
-  const notOft: LayerZeroOftInfo = { isOft: false, childTokenAddresses: [] };
+  const notOft: LayerZeroOftInfo = {
+    isOft: false,
+    childTokenAddresses: [],
+    hasOftChildDeployment: false,
+  };
 
   const parentChain = getChainMetadata(metadata, parentChainId);
   if (!parentChain) {
@@ -82,14 +89,14 @@ export function getLayerZeroOftInfoFromMetadata(
     address: parentTokenAddress.toLowerCase(),
   };
 
-  // No OFT deployment data for the destination → no OFT alternative there, so the
-  // caller allows the canonical route (blocking would strand a token with no other path).
+  // No metadata for the destination → we can't tell whether an OFT route exists there.
   const childChain = getChainMetadata(metadata, childChainId);
   if (!childChain) {
-    return { isOft: true, childTokenAddresses: [] };
+    return { isOft: true, childTokenAddresses: [], hasOftChildDeployment: false };
   }
 
   const childTokenAddresses: string[] = [];
+  let hasOftChildDeployment = false;
   for (const [address, tokenMetadata] of Object.entries(childChain.tokens)) {
     const peggedTo = getPeggedTo(tokenMetadata);
     const matchesRoot = peggedTo
@@ -98,10 +105,13 @@ export function getLayerZeroOftInfoFromMetadata(
 
     if (matchesRoot) {
       childTokenAddresses.push(address.toLowerCase());
+      if (isRecord(tokenMetadata) && tokenMetadata.isOft === true) {
+        hasOftChildDeployment = true;
+      }
     }
   }
 
-  return { isOft: true, childTokenAddresses };
+  return { isOft: true, childTokenAddresses, hasOftChildDeployment };
 }
 
 async function getLayerZeroMetadata() {

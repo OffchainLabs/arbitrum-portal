@@ -30,7 +30,12 @@ const LZ_CHAIN_KEY_BY_CHAIN_ID: { chainId: number; chainKey: string }[] = [
   { chainId: 6985385, chainKey: 'humanity' }, // Humanity
 ];
 
+// LayerZero `type` values that denote an actual OFT deployment, as opposed to a
+// plain ERC20/NativeToken canonical representation that LayerZero merely tracks.
+const OFT_TOKEN_TYPES = new Set(['OFT', 'NativeOFT', 'ProxyOFT']);
+
 type TrimmedTokenMetadata = {
+  isOft: boolean;
   peggedTo?: { address: string; chainName: string };
 };
 
@@ -59,13 +64,17 @@ export function trimLayerZeroMetadata(metadata: unknown): Record<number, Trimmed
         continue;
       }
 
-      const { peggedTo } = tokenMetadata;
+      const { peggedTo, type } = tokenMetadata;
+      const isOft = typeof type === 'string' && OFT_TOKEN_TYPES.has(type);
       tokens[tokenAddress.toLowerCase()] =
         isRecord(peggedTo) &&
         typeof peggedTo.address === 'string' &&
         typeof peggedTo.chainName === 'string'
-          ? { peggedTo: { address: peggedTo.address.toLowerCase(), chainName: peggedTo.chainName } }
-          : {};
+          ? {
+              isOft,
+              peggedTo: { address: peggedTo.address.toLowerCase(), chainName: peggedTo.chainName },
+            }
+          : { isOft };
     }
 
     trimmed[chainId] = { chainKey, tokens };
