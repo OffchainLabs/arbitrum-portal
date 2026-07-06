@@ -74,11 +74,11 @@ describe.sequential(
 );
 
 describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orbit chains', () => {
-  // Register Mind/T-REX as Orbit chains for isNetwork().isOrbitChain checks
+  // Register JASMY/T-REX as Orbit chains for isNetwork().isOrbitChain checks
   initializeBridgeNetworks();
 
   const SENDER = '0x2Ce910fBba65B454bBAf6A18c952A70f3bcd8299';
-  const MIND_CHAIN_ID = 228;
+  const JASMY_CHAIN_ID = 680;
   const TREX_CHAIN_ID = 1628;
 
   function createMockProvider({
@@ -118,7 +118,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     const latestBlock = 60_000_000;
     const firstNonZeroBlock = 50_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock,
     });
@@ -176,7 +176,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
   it('skips the binary search when batch size is above the threshold (e.g. ApeChain)', async () => {
     const latestBlock = 38_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock: 30_000_000,
     });
@@ -205,7 +205,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     const latestBlock = 60_000_000;
     const firstNonZeroBlock = 50_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock,
     });
@@ -232,7 +232,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
 
   it('skips the binary search when sender !== receiver', async () => {
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });
@@ -259,7 +259,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
 
   it('skips the binary search and the senderNonce gate when forceFetchReceived is true', async () => {
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });
