@@ -222,8 +222,8 @@ describe('isArbitrumCanonicalTransfer', () => {
         address: CommonAddress.Ethereum.USDG,
         l2Address: CommonAddress.RobinhoodChain.USDG,
       },
-    ])('should return false for Robinhood LiFi-only $symbol deposits', (token) => {
-      const deposit = isArbitrumCanonicalTransfer({
+    ])('should return false for Robinhood LiFi-only $symbol deposits', async (token) => {
+      const deposit = await isArbitrumCanonicalTransfer({
         childChainId: ChainId.RobinhoodChain,
         parentChainId: ChainId.Ethereum,
         sourceChainId: ChainId.Ethereum,
