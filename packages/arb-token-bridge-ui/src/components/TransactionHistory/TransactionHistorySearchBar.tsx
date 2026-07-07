@@ -80,7 +80,13 @@ export function TransactionHistorySearchBar() {
   }, [address, setSanitizedAddress, setSearchError, isTestnetMode, connectedAddress]);
 
   return (
-    <div className="mb-4 flex flex-row items-stretch gap-1 pr-4 md:pr-0">
+    <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:items-center md:justify-between md:pr-0">
+      <div className="flex items-center gap-2">
+        <span className="whitespace-nowrap text-sm font-light text-white/60">
+          Showing history for:
+        </span>
+        <TransactionHistoryChainFilter />
+      </div>
       <form
         className={twMerge(
           'relative flex w-full items-center justify-center overflow-hidden rounded border border-gray-dark bg-black text-white md:w-1/2',
@@ -128,7 +134,6 @@ export function TransactionHistorySearchBar() {
           Search
         </Button>
       </form>
-      <TransactionHistoryChainFilter />
     </div>
   );
 }

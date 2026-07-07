@@ -7,7 +7,6 @@ import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTra
 import { MergedTransaction } from '../../state/app/state';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
-import { TransactionHistoryChainFilterNotice } from './TransactionHistoryChainFilter';
 import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
 import { ContentWrapper, TransactionHistoryTable } from './TransactionHistoryTable';
@@ -106,10 +105,6 @@ export function TransactionHistorySearchResults() {
     <>
       <div className="pr-4 md:pr-0">
         <TransactionStatusInfo />
-      </div>
-
-      <div className="pr-4 md:pr-0">
-        <TransactionHistoryChainFilterNotice />
       </div>
 
       <div className="mb-4">
