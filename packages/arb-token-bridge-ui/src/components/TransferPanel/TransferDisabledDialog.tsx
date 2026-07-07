@@ -54,7 +54,7 @@ export function TransferDisabledDialog() {
     }
 
     return [
-      selectedToken.address,
+      selectedToken.address.toLowerCase(),
       isDepositMode,
       parentChain.id,
       childChain.id,
