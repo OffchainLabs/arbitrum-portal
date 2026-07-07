@@ -182,9 +182,18 @@ export function TransactionHistoryChainFilter() {
   const selectedChainNames = filterableChainIds
     .filter((chainId) => selectedChainIds.includes(chainId))
     .map((chainId) => getNetworkName(chainId));
-  const firstSelectedName = selectedChainNames[0];
   // Fall back to "All Chains" when nothing specific is selected.
-  const showAllChainsLabel = allChainsSelected || !firstSelectedName;
+  const showAllChainsLabel = allChainsSelected || selectedChainNames.length === 0;
+  // Show up to the first two chains by name, then " and N others" for the rest.
+  const visibleChainNames = selectedChainNames.slice(0, 2);
+  const hiddenChainCount = selectedChainNames.length - visibleChainNames.length;
+  const triggerLabel = showAllChainsLabel
+    ? 'All Chains'
+    : hiddenChainCount > 0
+      ? `${visibleChainNames.join(', ')} and ${hiddenChainCount} other${
+          hiddenChainCount === 1 ? '' : 's'
+        }`
+      : visibleChainNames.join(', ');
 
   const query = search.trim().toLowerCase();
   const visibleChainIds = query
@@ -205,20 +214,9 @@ export function TransactionHistoryChainFilter() {
           >
             <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1] h-[36px]">
               <FunnelIcon width={16} className="shrink-0 text-white/70" />
-              {showAllChainsLabel ? (
-                <span className="font-light">All Chains</span>
-              ) : (
-                <>
-                  <span className="truncate font-light" style={{ maxWidth: 140 }}>
-                    {firstSelectedName}
-                  </span>
-                  {selectedChainNames.length > 1 && (
-                    <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-xs font-medium text-white">
-                      +{selectedChainNames.length - 1}
-                    </span>
-                  )}
-                </>
-              )}
+              <span className="truncate font-light" style={{ maxWidth: 220 }}>
+                {triggerLabel}
+              </span>
               <ChevronDownIcon width={12} className={open ? 'rotate-180' : ''} />
             </div>
           </PopoverButton>
@@ -250,7 +248,12 @@ export function TransactionHistoryChainFilter() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+              <div
+                // Cap the scrollable list directly (Headless overrides the
+                // panel's max-height via the anchor), so the dropdown stays short.
+                style={{ maxHeight: 260 }}
+                className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+              >
                 {!query && (
                   <button
                     className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"

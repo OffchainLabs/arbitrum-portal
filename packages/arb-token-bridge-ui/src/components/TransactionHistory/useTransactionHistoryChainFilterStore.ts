@@ -57,9 +57,15 @@ export function isChainFilterActive(selectedChainIds: number[]) {
 }
 
 /**
- * Whether a transaction belongs to the selected chain set. A transaction is kept
- * if either its source or destination chain is selected. When no chains are
- * selected, every transaction passes.
+ * Whether a transaction (or chain pair) belongs to the selected chain set.
+ *
+ * - No chains selected: everything passes ("All Chains").
+ * - One chain selected: keep txns that touch it on either endpoint, e.g. all
+ *   Ethereum deposits/withdrawals. (Requiring both endpoints to be that single
+ *   chain would match nothing, since a transfer always crosses two chains.)
+ * - Multiple chains selected: keep only txns whose route is fully within the
+ *   selection, i.e. both endpoints are selected. So {Ethereum, Arbitrum One}
+ *   shows only Eth <> Arbitrum One, not every chain that hangs off Arbitrum One.
  */
 export function matchesChainFilter({
   selectedChainIds,
@@ -74,5 +80,11 @@ export function matchesChainFilter({
     return true;
   }
 
-  return selectedChainIds.includes(sourceChainId) || selectedChainIds.includes(destinationChainId);
+  if (selectedChainIds.length === 1) {
+    return (
+      selectedChainIds.includes(sourceChainId) || selectedChainIds.includes(destinationChainId)
+    );
+  }
+
+  return selectedChainIds.includes(sourceChainId) && selectedChainIds.includes(destinationChainId);
 }

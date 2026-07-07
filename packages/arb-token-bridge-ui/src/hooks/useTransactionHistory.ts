@@ -1,4 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
+import { useDebounce } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -23,7 +24,6 @@ import {
   isTxPending,
 } from '../components/TransactionHistory/helpers';
 import {
-  isChainFilterActive,
   matchesChainFilter,
   useTransactionHistoryChainFilterStore,
 } from '../components/TransactionHistory/useTransactionHistoryChainFilterStore';
@@ -576,7 +576,12 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
-  const selectedChainIds = useTransactionHistoryChainFilterStore((state) => state.selectedChainIds);
+  // Debounce the selection that drives fetching so rapidly toggling several
+  // chains coalesces into a single refetch instead of one per checkbox click.
+  const selectedChainIds = useDebounce(
+    useTransactionHistoryChainFilterStore((state) => state.selectedChainIds),
+    500,
+  );
   // Stable identifier for the selected chains so SWR refetches when the filter changes.
   const selectedChainIdsKey = [...selectedChainIds].sort((a, b) => a - b).join(',');
 
@@ -651,13 +656,18 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
       return Promise.all(
         getMultiChainFetchList()
           .filter((chainPair) => {
-            // When the user narrows tx history to specific chains, only fetch chain pairs
-            // that involve a selected chain. This shifts RPC load away from all chains and
-            // onto the heavily-used ones the user selected (e.g. a single Orbit chain).
+            // When the user narrows tx history to specific chains, only fetch the
+            // relevant chain pairs. This shifts RPC load away from all chains and
+            // onto the ones the user selected. Uses the same rule as the display
+            // filter (single chain: either endpoint; multiple: both endpoints) so
+            // e.g. selecting Ethereum + Arbitrum One fetches only that pair rather
+            // than every Orbit chain that settles to Arbitrum One.
             if (
-              isChainFilterActive(selectedChainIds) &&
-              !selectedChainIds.includes(chainPair.parentChainId) &&
-              !selectedChainIds.includes(chainPair.childChainId)
+              !matchesChainFilter({
+                selectedChainIds,
+                sourceChainId: chainPair.parentChainId,
+                destinationChainId: chainPair.childChainId,
+              })
             ) {
               return false;
             }
