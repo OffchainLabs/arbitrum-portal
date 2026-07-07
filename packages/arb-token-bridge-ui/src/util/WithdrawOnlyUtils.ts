@@ -360,7 +360,7 @@ export function isCanonicalDepositBlocked({
   return hasOftChildDeployment;
 }
 
-async function isBlockedOftDeposit({
+export async function isBlockedOftDeposit({
   parentChainErc20Address,
   parentChainId,
   childChainId,
@@ -402,16 +402,14 @@ async function isBlockedOftDeposit({
 
 /**
  *
- * @param erc20L1Address
+ * @param parentChainErc20Address
  * @param childChainId
  */
-export async function isWithdrawOnlyToken({
+export function isWithdrawOnlyToken({
   parentChainErc20Address,
-  parentChainId,
   childChainId,
 }: {
   parentChainErc20Address: string;
-  parentChainId: number;
   childChainId: number;
 }) {
   // disable USDC.e deposits for Orbit chains
@@ -428,10 +426,6 @@ export async function isWithdrawOnlyToken({
     .includes(parentChainErc20Address.toLowerCase());
 
   if (inWithdrawOnlyList) {
-    return true;
-  }
-
-  if (await isBlockedOftDeposit({ parentChainErc20Address, parentChainId, childChainId })) {
     return true;
   }
 
