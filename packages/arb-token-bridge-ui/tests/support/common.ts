@@ -304,16 +304,31 @@ export async function checkForAssertions({
 
   if (isBold) {
     const boldContract = new ethers.Contract(rollupAddress, boldAbi, parentProvider);
+    // For orbit tests the rollup lives on the Nitro L2, where `block.number` (and therefore
+    // `createdAtBlock`) is the L1 block number, so it can't be used as a block range on the L2
+    // directly. Map it via the NodeInterface precompile, like the SDK's
+    // ChildToParentMessageNitro.getBlockFromAssertionId does.
+    const nodeInterface = new ethers.Contract(
+      '0x00000000000000000000000000000000000000C8',
+      [
+        'function l2BlockRangeForL1(uint64 blockNum) view returns (uint64 firstBlock, uint64 lastBlock)',
+      ],
+      parentProvider,
+    );
     /* eslint-disable no-await-in-loop */
     while (true) {
       try {
         const latestConfirmed = await boldContract.latestConfirmed();
         const assertion = await boldContract.getAssertion(latestConfirmed);
         const createdAtBlock = assertion.createdAtBlock.toNumber();
+        const fromBlock =
+          testType === 'regular'
+            ? createdAtBlock
+            : (await nodeInterface.l2BlockRangeForL1(createdAtBlock)).firstBlock.toNumber();
         // Count assertions created since the latest confirmed
-        const events = await boldContract.queryFilter('AssertionCreated', createdAtBlock, 'latest');
+        const events = await boldContract.queryFilter('AssertionCreated', fromBlock, 'latest');
         console.log(
-          `***** BoLD assertion status on ChainId ${parentChainId}: ${events.length} assertions since confirmed block ${createdAtBlock}, latest confirmed: ${latestConfirmed.slice(0, 10)}...`,
+          `***** BoLD assertion status on ChainId ${parentChainId}: ${events.length} assertions since confirmed block ${fromBlock}, latest confirmed: ${latestConfirmed.slice(0, 10)}...`,
         );
       } catch (e) {
         console.log(
