@@ -1,67 +1,20 @@
-import { constants } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
-import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
-import { isBlockedOftDeposit, withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
+import { withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { useTokensFromLists } from './TokenSearchUtils';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
-
-export async function isDisabledCanonicalTransfer({
-  selectedToken,
-  isDepositMode,
-  parentChainId,
-  childChainId,
-  isSelectedTokenWithdrawOnly,
-  isSelectedTokenWithdrawOnlyLoading,
-}: {
-  selectedToken: ERC20BridgeToken | null;
-  isDepositMode: boolean;
-  parentChainId: ChainId;
-  childChainId: ChainId;
-  isSelectedTokenWithdrawOnly: boolean | undefined;
-  isSelectedTokenWithdrawOnlyLoading: boolean;
-}) {
-  if (!selectedToken) {
-    return false;
-  }
-
-  if (isTransferDisabledToken(selectedToken.address, childChainId)) {
-    return true;
-  }
-
-  if (
-    isDepositMode &&
-    (await isBlockedOftDeposit({
-      parentChainErc20Address: selectedToken.address,
-      parentChainId,
-      childChainId,
-    }))
-  ) {
-    return true;
-  }
-
-  if (
-    parentChainId === ChainId.ArbitrumOne &&
-    childChainId === ChainId.ApeChain &&
-    addressesEqual(selectedToken.address, constants.AddressZero)
-  ) {
-    return true;
-  }
-
-  return !!(isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading);
-}
+import { isDisabledCanonicalTransfer } from './isDisabledCanonicalTransfer';
 
 export function TransferDisabledDialog() {
   const [networks] = useNetworks();

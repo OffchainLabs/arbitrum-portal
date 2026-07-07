@@ -6,7 +6,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { isDepositMode } from '../../../util/isDepositMode';
 import { getDestinationChainIds } from '../../../util/networks';
-import { isDisabledCanonicalTransfer } from '../TransferDisabledDialog';
+import { isDisabledCanonicalTransfer } from '../isDisabledCanonicalTransfer';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
 import { useSelectedTokenIsWithdrawOnly } from './useSelectedTokenIsWithdrawOnly';
 
@@ -40,11 +40,11 @@ export async function isArbitrumCanonicalTransfer({
   }
 
   return !(await isDisabledCanonicalTransfer({
-    childChainId: childChainId,
+    childChainId,
     isDepositMode: isDeposit,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    parentChainId: parentChainId,
+    parentChainId,
     selectedToken,
   }));
 }
