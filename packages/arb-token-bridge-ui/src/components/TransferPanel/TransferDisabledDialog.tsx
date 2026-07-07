@@ -1,14 +1,12 @@
-import { constants } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
+import useSWRImmutable from 'swr/immutable';
 
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
-import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
-import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
@@ -16,40 +14,7 @@ import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { useTokensFromLists } from './TokenSearchUtils';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
-
-export function isDisabledCanonicalTransfer({
-  selectedToken,
-  isDepositMode,
-  parentChainId,
-  childChainId,
-  isSelectedTokenWithdrawOnly,
-  isSelectedTokenWithdrawOnlyLoading,
-}: {
-  selectedToken: ERC20BridgeToken | null;
-  isDepositMode: boolean;
-  parentChainId: ChainId;
-  childChainId: ChainId;
-  isSelectedTokenWithdrawOnly: boolean | undefined;
-  isSelectedTokenWithdrawOnlyLoading: boolean;
-}) {
-  if (!selectedToken) {
-    return false;
-  }
-
-  if (isTransferDisabledToken(selectedToken.address, childChainId)) {
-    return true;
-  }
-
-  if (
-    parentChainId === ChainId.ArbitrumOne &&
-    childChainId === ChainId.ApeChain &&
-    addressesEqual(selectedToken.address, constants.AddressZero)
-  ) {
-    return true;
-  }
-
-  return !!(isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading);
-}
+import { isDisabledCanonicalTransfer } from './isDisabledCanonicalTransfer';
 
 export function TransferDisabledDialog() {
   const [networks] = useNetworks();
@@ -67,12 +32,12 @@ export function TransferDisabledDialog() {
     chainId: networks.sourceChain.id,
   });
 
-  const shouldShowDialog = useMemo(() => {
+  const queryKey = useMemo(() => {
     if (
       !selectedToken ||
       addressesEqual(selectedToken?.address, selectedTokenAddressLocalValue ?? undefined)
     ) {
-      return false;
+      return null;
     }
 
     // If a lifi route exists, don't show any dialog
@@ -85,17 +50,18 @@ export function TransferDisabledDialog() {
         tokensFromLists,
       })
     ) {
-      return false;
+      return null;
     }
 
-    return isDisabledCanonicalTransfer({
-      selectedToken,
+    return [
+      selectedToken.address.toLowerCase(),
       isDepositMode,
-      parentChainId: parentChain.id,
-      childChainId: childChain.id,
+      parentChain.id,
+      childChain.id,
       isSelectedTokenWithdrawOnly,
       isSelectedTokenWithdrawOnlyLoading,
-    });
+      'isDisabledCanonicalTransfer',
+    ] as const;
   }, [
     childChain.id,
     isDepositMode,
@@ -108,6 +74,26 @@ export function TransferDisabledDialog() {
     networks.sourceChain.id,
     networks.destinationChain.id,
   ]);
+
+  const { data: shouldShowDialog = false } = useSWRImmutable(
+    queryKey,
+    ([
+      ,
+      _isDepositMode,
+      parentChainId,
+      childChainId,
+      _isSelectedTokenWithdrawOnly,
+      _isSelectedTokenWithdrawOnlyLoading,
+    ]) =>
+      isDisabledCanonicalTransfer({
+        selectedToken,
+        isDepositMode: _isDepositMode,
+        parentChainId,
+        childChainId,
+        isSelectedTokenWithdrawOnly: _isSelectedTokenWithdrawOnly,
+        isSelectedTokenWithdrawOnlyLoading: _isSelectedTokenWithdrawOnlyLoading,
+      }),
+  );
 
   const isGHO =
     selectedToken &&

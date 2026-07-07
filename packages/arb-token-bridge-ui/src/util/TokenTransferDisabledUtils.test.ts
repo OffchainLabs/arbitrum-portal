@@ -9,7 +9,15 @@ describe('isTransferDisabledToken', () => {
     expect(isTransferDisabledToken(CommonAddress.Ethereum.PYUSD, ChainId.ArbitrumOne)).toBe(true);
   });
 
+  it.each([CommonAddress.Ethereum.USDe, CommonAddress.Ethereum.USDG])(
+    'disables canonical %s transfers on Robinhood Chain',
+    (tokenAddress) => {
+      expect(isTransferDisabledToken(tokenAddress, ChainId.RobinhoodChain)).toBe(true);
+    },
+  );
+
   it('keeps the disable list scoped to the configured child chain', () => {
     expect(isTransferDisabledToken(CommonAddress.Ethereum.PYUSD, ChainId.ArbitrumNova)).toBe(false);
+    expect(isTransferDisabledToken(CommonAddress.Ethereum.USDe, ChainId.ArbitrumOne)).toBe(false);
   });
 });

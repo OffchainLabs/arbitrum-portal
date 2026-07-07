@@ -1,6 +1,3 @@
-import { useMemo } from 'react';
-import useSWRImmutable from 'swr/immutable';
-
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
@@ -9,35 +6,18 @@ import { isWithdrawOnlyToken } from '../../../util/WithdrawOnlyUtils';
 export function useSelectedTokenIsWithdrawOnly() {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { isDepositMode, parentChain, childChain } = useNetworksRelationship(networks);
+  const { isDepositMode, childChain } = useNetworksRelationship(networks);
 
-  const queryKey = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-    if (!isDepositMode) {
-      return null;
-    }
-    return [
-      selectedToken.address.toLowerCase(),
-      parentChain.id,
-      childChain.id,
-      'useSelectedTokenIsWithdrawOnly',
-    ] as const;
-  }, [selectedToken, isDepositMode, parentChain.id, childChain.id]);
-
-  const { data: isSelectedTokenWithdrawOnly, isLoading } = useSWRImmutable(
-    queryKey,
-    ([parentChainErc20Address, parentChainId, childChainId]) =>
-      isWithdrawOnlyToken({
-        parentChainErc20Address,
-        parentChainId,
-        childChainId,
-      }),
-  );
+  const isSelectedTokenWithdrawOnly =
+    !!selectedToken &&
+    isDepositMode &&
+    isWithdrawOnlyToken({
+      parentChainErc20Address: selectedToken.address,
+      childChainId: childChain.id,
+    });
 
   return {
-    isSelectedTokenWithdrawOnly: !!isSelectedTokenWithdrawOnly,
-    isSelectedTokenWithdrawOnlyLoading: isLoading,
+    isSelectedTokenWithdrawOnly,
+    isSelectedTokenWithdrawOnlyLoading: false,
   };
 }

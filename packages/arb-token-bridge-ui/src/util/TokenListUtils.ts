@@ -20,12 +20,13 @@ export interface BridgeTokenList {
   // string is required here to avoid duplicates when mapping orbit chains to tokenlists
   id: string;
   originChainID: number;
-  url: string;
+  url?: string;
   name: string;
   isDefault: boolean;
   isArbitrumTokenTokenList?: boolean;
   logoURI: ImageProps['src'];
   parentChainID?: number; // For LiFi token lists, stores the parent chain ID
+  tokenList?: TokenList;
 }
 
 export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
@@ -226,7 +227,7 @@ export const addBridgeTokenListToBridge = (
   bridgeTokenList: BridgeTokenList,
   arbTokenBridge: ArbTokenBridge,
 ) => {
-  fetchTokenListFromURL(bridgeTokenList.url).then(({ data: tokenList }) => {
+  fetchBridgeTokenList(bridgeTokenList).then(({ data: tokenList }) => {
     if (!tokenList) {
       return;
     }
@@ -234,6 +235,20 @@ export const addBridgeTokenListToBridge = (
     arbTokenBridge.token.addTokensFromList(tokenList, bridgeTokenList.id);
   });
 };
+
+export async function fetchBridgeTokenList(bridgeTokenList: BridgeTokenList): Promise<{
+  data: TokenList | undefined;
+}> {
+  if (bridgeTokenList.tokenList) {
+    return { data: bridgeTokenList.tokenList };
+  }
+
+  if (!bridgeTokenList.url) {
+    return { data: undefined };
+  }
+
+  return fetchTokenListFromURL(bridgeTokenList.url);
+}
 
 export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
   data: TokenList | undefined;

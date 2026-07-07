@@ -49,28 +49,35 @@ const usdcCases: RouteTokenCase[] = [
   },
 ];
 
+async function assertUsdcRouteTokens({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+}: RouteTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await setSourceToken(sourceToken);
+  await setDestinationToken(destinationToken);
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+}
+
 describe.sequential('TransferPanel LiFi Integration - USDC', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(usdcCases)(
     'renders expected source and destination tokens for USDC transfer: $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, sourceToken, destinationToken }) => {
-      await renderTransferPanel({
-        sourceChain,
-        destinationChain,
-      });
-
-      await setSourceToken(sourceToken);
-      await setDestinationToken(destinationToken);
-
-      await expectTokenButtonContent({
-        isDestination: false,
-        tokenExpectation: sourceToken,
-      });
-      await expectTokenButtonContent({
-        isDestination: true,
-        tokenExpectation: destinationToken,
-      });
-    },
+    assertUsdcRouteTokens,
   );
 });

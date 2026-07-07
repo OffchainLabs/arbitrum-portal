@@ -246,43 +246,119 @@ const defaultTokenCases: DefaultTokenCase[] = [
   },
 ];
 
+/**
+ * Robinhood Chain is ETH-native and not yet live on LiFi. Until then we only
+ * assert that the native ETH entry is present on both sides (its full token
+ * list isn't known yet). Remove `.skip` to run these once the chain is live,
+ * and tighten the expected panel tokens at that point. ApeChain <> Robinhood is
+ * intentionally omitted for now, and Robinhood -> Base is not a supported route.
+ */
+const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
+  // Deposits into Robinhood Chain
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  {
+    sourceChain: 'arbitrum-one',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  {
+    sourceChain: 'superposition',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  {
+    sourceChain: 'base',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  // Withdrawals from Robinhood Chain (Base intentionally excluded)
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'ethereum',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'arbitrum-one',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'superposition',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+  },
+];
+
+async function assertDefaultTokenCase({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+  expectedSourcePanelTokens,
+  expectedDestinationPanelTokens,
+}: DefaultTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+
+  await expectTokenPanelContent({
+    isDestination: false,
+    symbolsToContain: expectedSourcePanelTokens.map(({ symbol }) => symbol),
+    tokenExpectations: expectedSourcePanelTokens,
+  });
+  await expectTokenPanelContent({
+    isDestination: true,
+    symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
+    tokenExpectations: expectedDestinationPanelTokens,
+  });
+}
+
 describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(defaultTokenCases)(
     'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      sourceToken,
-      destinationToken,
-      expectedSourcePanelTokens,
-      expectedDestinationPanelTokens,
-    }) => {
-      await renderTransferPanel({
-        sourceChain,
-        destinationChain,
-      });
+    assertDefaultTokenCase,
+  );
 
-      await expectTokenButtonContent({
-        isDestination: false,
-        tokenExpectation: sourceToken,
-      });
-      await expectTokenButtonContent({
-        isDestination: true,
-        tokenExpectation: destinationToken,
-      });
-
-      await expectTokenPanelContent({
-        isDestination: false,
-        symbolsToContain: expectedSourcePanelTokens.map(({ symbol }) => symbol),
-        tokenExpectations: expectedSourcePanelTokens,
-      });
-      await expectTokenPanelContent({
-        isDestination: true,
-        symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
-        tokenExpectations: expectedDestinationPanelTokens,
-      });
-    },
+  // Enable once Robinhood Chain is live on LiFi (see robinhoodDefaultTokenCases note).
+  it.skip.each(robinhoodDefaultTokenCases)(
+    'opens source and destination token panels for Robinhood default token transfer: $sourceChain -> $destinationChain',
+    assertDefaultTokenCase,
   );
 });

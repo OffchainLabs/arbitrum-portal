@@ -34,6 +34,10 @@ export const sanitizeQueryParams = (data: any) => {
   return JSON.parse(JSON.stringify(data));
 };
 
+export const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
 export const getAPIBaseUrl = () => {
   // if dev environment, eg. tests, then prepend actual running environment
   // Resolves: next-js-error-only-absolute-urls-are-supported in test:ci
@@ -41,11 +45,14 @@ export const getAPIBaseUrl = () => {
 };
 
 // add feature flags to the array
-const featureFlags = ['indexer'] as const;
+const featureFlags: readonly string[] = [];
 
-type FeatureFlag = (typeof featureFlags)[number];
+export const isExperimentalFeatureEnabled = (flag: string) => {
+  // only allowlisted flags can be enabled, consistent with sanitizeExperimentalFeaturesQueryParam
+  if (!featureFlags.includes(flag)) {
+    return false;
+  }
 
-export const isExperimentalFeatureEnabled = (flag: FeatureFlag) => {
   const query = new URLSearchParams(window.location.search);
   const flags = query.get('experiments');
 
@@ -74,7 +81,7 @@ export const sanitizeExperimentalFeaturesQueryParam = (flags: string | null | un
     return undefined;
   }
 
-  const validFlagsArray = flagsArray.filter((f) => featureFlags.includes(f as FeatureFlag));
+  const validFlagsArray = flagsArray.filter((f) => featureFlags.includes(f));
 
   if (validFlagsArray.length === 0) {
     return undefined;

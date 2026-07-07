@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { logger } from '../../util/logger';
+import { isChildChainIndexed } from '../../util/txHistory/sources';
 
-export function isIndexerApiExperimentEnabled(request: NextRequest): boolean {
-  const experiments = new URL(request.url).searchParams.get('experiments');
-  return experiments?.split(',').includes('indexer') ?? false;
+export function isIndexerEnabledForRequest(request: NextRequest): boolean {
+  const l2ChainId = new URL(request.url).searchParams.get('l2ChainId');
+
+  return l2ChainId ? isChildChainIndexed(Number(l2ChainId)) : false;
 }
 
 function buildIndexerBridgeHistoryUrl(request: NextRequest, path: string) {
   const requestUrl = new URL(request.url);
   const indexerApiBaseUrl = process.env.INDEXER_API_URL;
-  requestUrl.searchParams.delete('experiments');
   return `${indexerApiBaseUrl}${path}?${requestUrl.searchParams.toString()}`;
 }
 

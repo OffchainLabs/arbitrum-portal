@@ -1,14 +1,16 @@
+import useSWRImmutable from 'swr/immutable';
+
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { isDepositMode } from '../../../util/isDepositMode';
 import { getDestinationChainIds } from '../../../util/networks';
-import { isDisabledCanonicalTransfer } from '../TransferDisabledDialog';
+import { isDisabledCanonicalTransfer } from '../isDisabledCanonicalTransfer';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
 import { useSelectedTokenIsWithdrawOnly } from './useSelectedTokenIsWithdrawOnly';
 
-export function isArbitrumCanonicalTransfer({
+export async function isArbitrumCanonicalTransfer({
   sourceChainId,
   destinationChainId,
   childChainId,
@@ -26,7 +28,7 @@ export function isArbitrumCanonicalTransfer({
   isSelectedTokenWithdrawOnlyLoading: boolean;
   selectedToken: ERC20BridgeToken | null;
   isSwap: boolean;
-}): boolean {
+}): Promise<boolean> {
   const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
   const isValidPair = getDestinationChainIds(sourceChainId).includes(destinationChainId);
 
@@ -37,14 +39,14 @@ export function isArbitrumCanonicalTransfer({
     return false;
   }
 
-  return !isDisabledCanonicalTransfer({
-    childChainId: childChainId,
+  return !(await isDisabledCanonicalTransfer({
+    childChainId,
     isDepositMode: isDeposit,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
-    parentChainId: parentChainId,
+    parentChainId,
     selectedToken,
-  });
+  }));
 }
 
 export const useIsArbitrumCanonicalTransfer = function () {
@@ -55,14 +57,39 @@ export const useIsArbitrumCanonicalTransfer = function () {
     useSelectedTokenIsWithdrawOnly();
   const isSwap = useIsSwapTransfer();
 
-  return isArbitrumCanonicalTransfer({
-    sourceChainId: networks.sourceChain.id,
-    destinationChainId: networks.destinationChain.id,
-    childChainId: childChain.id,
-    parentChainId: parentChain.id,
-    isSelectedTokenWithdrawOnly,
-    isSelectedTokenWithdrawOnlyLoading,
-    selectedToken,
-    isSwap,
-  });
+  const { data: isCanonicalTransfer = false } = useSWRImmutable(
+    [
+      networks.sourceChain.id,
+      networks.destinationChain.id,
+      childChain.id,
+      parentChain.id,
+      isSelectedTokenWithdrawOnly,
+      isSelectedTokenWithdrawOnlyLoading,
+      selectedToken?.address ?? null,
+      isSwap,
+      'useIsArbitrumCanonicalTransfer',
+    ] as const,
+    ([
+      sourceChainId,
+      destinationChainId,
+      childChainId,
+      parentChainId,
+      _isSelectedTokenWithdrawOnly,
+      _isSelectedTokenWithdrawOnlyLoading,
+      ,
+      _isSwap,
+    ]) =>
+      isArbitrumCanonicalTransfer({
+        sourceChainId,
+        destinationChainId,
+        childChainId,
+        parentChainId,
+        isSelectedTokenWithdrawOnly: _isSelectedTokenWithdrawOnly,
+        isSelectedTokenWithdrawOnlyLoading: _isSelectedTokenWithdrawOnlyLoading,
+        selectedToken,
+        isSwap: _isSwap,
+      }),
+  );
+
+  return isCanonicalTransfer;
 };

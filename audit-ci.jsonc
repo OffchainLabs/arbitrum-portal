@@ -13,73 +13,6 @@
     // Reason to ignore: Low severity vulnerability with no patched version available yet
     "GHSA-848j-6mx2-7j84",
     //
-    // https://github.com/advisories/GHSA-9g9p-9gw9-jx7f
-    // Next.js Image Optimizer DoS via unbounded memory consumption (CVE-2025-59471)
-    //
-    // https://github.com/advisories/GHSA-h25m-26qc-wcjf
-    // Next.js HTTP request deserialization DoS on App Router Server Functions (CVE-2026-21607)
-    //
-    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
-    // from: app>next
-    "GHSA-9g9p-9gw9-jx7f",
-    "GHSA-h25m-26qc-wcjf",
-    //
-    // https://github.com/advisories/GHSA-ggv3-7p47-pfv8
-    // Next.js Server-Side Request Forgery in Server Actions (CVE-2026-27980)
-    //
-    // https://github.com/advisories/GHSA-3x4c-7xq6-9pq8
-    // Next.js: Unbounded next/image disk cache growth can exhaust storage
-    //
-    // https://github.com/advisories/GHSA-q4gf-8mx6-v5v3
-    // Next.js HTTP request deserialization DoS on App Router Server Functions (CVE-2026-23869)
-    //
-    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
-    // from: app>next
-    "GHSA-ggv3-7p47-pfv8",
-    "GHSA-3x4c-7xq6-9pq8",
-    "GHSA-q4gf-8mx6-v5v3",
-    //
-    // https://github.com/advisories/GHSA-8h8q-6873-q5fj
-    // Next.js Denial of Service with Server Components (CVE-2026-23870)
-    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
-    // from: app>next
-    "GHSA-8h8q-6873-q5fj",
-    //
-    // https://github.com/advisories/GHSA-c4j6-fc7j-m34r
-    // Server-side request forgery in applications using WebSocket upgrades (CVE-2026-44578)
-    //
-    // https://github.com/advisories/GHSA-36qx-fr4f-26g5
-    // Middleware / Proxy bypass in Pages Router applications using i18n (CVE-2026-44573)
-    //
-    // https://github.com/advisories/GHSA-ffhc-5mcf-pf4q
-    // Cross-site scripting in App Router applications using CSP nonces (CVE-2026-44581)
-    //
-    // https://github.com/advisories/GHSA-gx5p-jg67-6x7h
-    // Cross-site scripting in beforeInteractive scripts with untrusted input (CVE-2026-44584)
-    //
-    // https://github.com/advisories/GHSA-h64f-5h5j-jqjh
-    // Denial of Service in the Image Optimization API (CVE-2026-44582)
-    //
-    // https://github.com/advisories/GHSA-wfc6-r584-vfw7
-    // Cache poisoning in React Server Component responses (CVE-2026-44580)
-    //
-    // https://github.com/advisories/GHSA-vfv6-92ff-j949
-    // Cache poisoning via collisions in React Server Component cache-busting (CVE-2026-44579)
-    //
-    // https://github.com/advisories/GHSA-3g8h-86w9-wvmq
-    // Middleware / Proxy redirects can be cache-poisoned (CVE-2026-44583)
-    //
-    // Reason to ignore: Will be resolved in a separate Next.js upgrade PR
-    // from: app>next
-    "GHSA-c4j6-fc7j-m34r",
-    "GHSA-36qx-fr4f-26g5",
-    "GHSA-ffhc-5mcf-pf4q",
-    "GHSA-gx5p-jg67-6x7h",
-    "GHSA-h64f-5h5j-jqjh",
-    "GHSA-wfc6-r584-vfw7",
-    "GHSA-vfv6-92ff-j949",
-    "GHSA-3g8h-86w9-wvmq",
-    //
     // https://github.com/advisories/GHSA-x3ff-w252-2g7j
     // @stablelib/ed25519 side-channel timing vulnerability
     // Reason to ignore: No patched version available. Transitive dependency via WalletConnect.
@@ -110,6 +43,19 @@
     // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
     // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
     //
+    // https://github.com/advisories/GHSA-v6wh-96g9-6wx3
+    // launch-editor leaks NTLMv2 hashes via unvalidated Windows UNC paths on the dev-server __open-in-editor endpoint (CVE-2026-53632)
+    //
+    // https://github.com/advisories/GHSA-mx8g-39q3-5c79
+    // webpack-dev-server HMR WebSocket interception via permissive user proxies leaks credentials (CVE-2026-9595)
+    //
+    // https://github.com/advisories/GHSA-64mm-vxmg-q3vj
+    // http-proxy-middleware host-header-driven backend routing bypass via substring matching in router rules (CVE-2026-55602)
+    //
+    // https://github.com/advisories/GHSA-mp2f-45pm-3cg9
+    // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
+    // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
+    //
     // Reason to ignore: All from @synthetixio/synpress, an E2E test devDependency.
     // Each fix requires a major bump deep in the synpress chain that would risk
     // breaking E2E tooling. Not used in production builds or runtime code.
@@ -122,6 +68,10 @@
     "GHSA-4v9v-hfq4-rm2v",
     "GHSA-79cf-xcqc-c78w",
     "GHSA-q8mj-m7cp-5q26",
+    "GHSA-v6wh-96g9-6wx3",
+    "GHSA-mx8g-39q3-5c79",
+    "GHSA-64mm-vxmg-q3vj",
+    "GHSA-mp2f-45pm-3cg9",
     //
     // https://github.com/advisories/GHSA-qjx8-664m-686j
     // js-cookie prototype hijack in assign() enables cookie-attribute injection (CVE-2026-46625)
