@@ -402,7 +402,7 @@ export async function isBlockedOftDeposit({
 
 /**
  *
- * @param erc20L1Address
+ * @param parentChainErc20Address
  * @param childChainId
  */
 export function isWithdrawOnlyToken({
