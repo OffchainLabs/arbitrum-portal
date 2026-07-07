@@ -292,7 +292,8 @@ export async function findTransactionDetailsCustomDestinationAddress(
 }
 
 export async function clickClaimButton(page: Page, amountToClaim: string) {
-  await expect(findClaimButton(page, amountToClaim)).toBeVisible();
+  // claim button can take ~(20 blocks * 10 blocks/sec) to activate
+  await expect(findClaimButton(page, amountToClaim)).toBeVisible({ timeout: 200_000 });
   await page.waitForTimeout(10_000);
   await findClaimButton(page, amountToClaim).click();
 }

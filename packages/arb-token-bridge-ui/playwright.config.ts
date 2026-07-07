@@ -14,7 +14,9 @@ export default defineConfig({
   // CCTP runs on a different setup (testnets, funded random wallet); it has its own config.
   testIgnore: '**/*Cctp.spec.ts',
   globalSetup: './tests/e2e/playwright/globalSetup',
-  // MetaMask automation is slow and claim tests wait for assertions; give specs room.
+  // Overall per-test ceiling, not a per-assertion timeout: MetaMask automation is slow, so give
+  // specs room to complete all their steps. Long individual waits (e.g. claim button activation)
+  // still need an explicit `{ timeout }` on that assertion, since expect.timeout below applies otherwise.
   timeout: 300_000,
   expect: {
     timeout: 30_000,
