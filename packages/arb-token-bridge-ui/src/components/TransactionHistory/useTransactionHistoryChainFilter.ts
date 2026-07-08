@@ -10,9 +10,7 @@ import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryCh
 
 /**
  * The default chain to filter by: the child chain of the pair selected in the
- * bridge's chain selector (the URL query params). Defaulting to the child (e.g.
- * Arbitrum One for Eth <> Arbitrum One, Robinhood for Eth <> Robinhood) and
- * matching on either endpoint means the history shows every direct route to and
+ * bridge. Combined with either-endpoint matching, this shows every route to and
  * from that chain — and never comes up empty for a non-canonical pair.
  *
  * We read the raw params rather than `useNetworks()` because the latter
@@ -32,12 +30,10 @@ export function useBridgeDefaultChainIds(): number[] {
 }
 
 /**
- * The effective chain filter selection: the user's explicit selection when it
- * was made in the current testnet mode, otherwise the bridge default. Derived
- * at read time rather than synced into the store, so the very first render is
- * already scoped (no unfiltered fetch can fire before a default lands) and
- * changing the bridge pair or toggling testnet mode re-defaults automatically
- * until the user makes an explicit choice.
+ * The effective chain filter selection. Derived at read time rather than synced
+ * into the store, so the very first render is already scoped (no unfiltered
+ * fetch can fire before a default lands) and changing the bridge pair or
+ * toggling testnet mode re-defaults automatically.
  */
 export function useSelectedChainIds(): number[] {
   const selection = useTransactionHistoryChainFilterStore((state) => state.selection);
@@ -50,12 +46,8 @@ export function useSelectedChainIds(): number[] {
   );
 }
 
-/**
- * The selected chains, debounced, for driving the (expensive) transaction fetch.
- * `useSelectedChainIds` stays instant for the checkboxes and the display filter;
- * this only delays refetching so toggling several chains in a row coalesces into
- * a single fetch instead of one per checkbox click.
- */
+// Debounced variant for the (expensive) fetch: toggling several chains in a
+// row coalesces into a single refetch while the checkboxes stay instant.
 export function useDebouncedSelectedChainIds(): number[] {
   return useDebounce(useSelectedChainIds(), 500);
 }

@@ -34,11 +34,9 @@ export function getMultiChainFetchList(): ChainPair[] {
     const isParentChain = childChainIds.length > 0;
 
     if (!isParentChain) {
-      // Skip non-parent chains
       return [];
     }
 
-    // For each destination chain, map to an array of ChainPair objects
     return childChainIds.map((childChainId) => ({
       parentChainId: chain.chainId,
       childChainId: childChainId,
@@ -76,10 +74,8 @@ function getRouteKey(chainIdA: number, chainIdB: number): string {
 }
 
 /**
- * Every transfer route the app can show transaction history for, across all
- * sources — canonical bridge, CCTP, OFT and LiFi — deduplicated to undirected
- * pairs. Single source of truth for "which routes exist", used by the chain
- * filter's eligible-routes tooltip.
+ * Every transfer route the app can show transaction history for — canonical
+ * bridge, CCTP, OFT and LiFi — deduplicated to undirected pairs.
  */
 export function getAllTxHistoryRoutes(): TxHistoryRoute[] {
   const seen = new Set<string>();
@@ -103,10 +99,8 @@ export function getAllTxHistoryRoutes(): TxHistoryRoute[] {
 }
 
 /**
- * The transfer routes eligible for the current selection and network mode: every
- * route (canonical, CCTP, OFT, LiFi) for the given testnet/mainnet mode, narrowed
- * to those the selection matches. Passing an empty selection yields every route
- * for the mode. This is the shared source of truth for the chain filter's
+ * The routes eligible for the current selection and network mode; an empty
+ * selection yields every route for the mode. Drives both the chain filter's
  * checkbox list and its eligible-routes tooltip.
  */
 export function getEligibleTxHistoryRoutes({

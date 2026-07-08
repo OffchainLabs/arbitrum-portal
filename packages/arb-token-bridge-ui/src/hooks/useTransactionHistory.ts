@@ -630,11 +630,9 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
       return Promise.all(
         getMultiChainFetchList()
           .filter((chainPair) => {
-            // When the user narrows tx history to specific chains, only fetch the
-            // chain pairs touching a selected chain on either endpoint. This
-            // shifts RPC load away from all chains and onto the ones the user
-            // selected, and uses the same rule as the display filter so the fetch
-            // list and the shown transactions can't disagree.
+            // Only fetch chain pairs touching a selected chain — the same rule
+            // as the display filter, so the fetch list and the shown
+            // transactions can't disagree.
             if (
               !matchesChainFilter({
                 selectedChainIds,
@@ -962,10 +960,9 @@ export const useTransactionHistory = (
 
   const transactions: MergedTransaction[] = useMemo(() => {
     // CCTP, OFT and LiFi transfers are fetched independently of the chain fetch
-    // list, so we filter the fetched pages to keep the displayed txs consistent
-    // with the selected chains. Transfers initiated during this session
-    // (newTransactions) are exempt so a just-submitted transfer is always
-    // visible, even when the filter doesn't cover its chains.
+    // list, so filter the fetched pages to match the selected chains. Transfers
+    // initiated this session (newTransactions) are exempt so a just-submitted
+    // transfer is always visible.
     const filteredTxPages = txPages?.map((txPage) =>
       txPage.filter((tx) =>
         matchesChainFilter({

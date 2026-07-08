@@ -33,7 +33,6 @@ function useFilterableChainIds() {
   return useMemo(() => {
     const chainIds = new Set<number>();
 
-    // Empty selection => every route for the current mode.
     getEligibleTxHistoryRoutes({ selectedChainIds: [], isTestnetMode }).forEach((route) => {
       chainIds.add(route.parentChainId);
       chainIds.add(route.childChainId);
@@ -43,12 +42,8 @@ function useFilterableChainIds() {
   }, [isTestnetMode]);
 }
 
-/**
- * The transfer routes whose transactions will be shown for the current
- * selection: every route (canonical, CCTP, OFT, LiFi) for the current
- * testnet/mainnet mode, narrowed by the same rule the display filter uses.
- * Surfaced in a tooltip so it's clear which routes are covered.
- */
+// The routes whose transactions will be shown for the current selection,
+// surfaced in the eligible-routes tooltip.
 function useEligibleChainPairs(selectedChainIds: number[]): TxHistoryRoute[] {
   const [isTestnetMode] = useIsTestnetMode();
 
@@ -104,8 +99,6 @@ function ChainRow({
   );
 }
 
-// Info tooltip listing the chain pairs (routes) that will actually be fetched
-// for the current selection.
 function EligibleRoutesTooltip({
   chainPairs,
   allChainsSelected,
@@ -144,8 +137,6 @@ export function TransactionHistoryChainFilter() {
   const [isTestnetMode] = useIsTestnetMode();
   const defaultChainIds = useBridgeDefaultChainIds();
   const filterableChainIds = useFilterableChainIds();
-  // The effective selection: the user's explicit choice, or the bridge default
-  // (the selected pair's child chain) until they make one.
   const selectedChainIds = useSelectedChainIds();
   const setSelection = useTransactionHistoryChainFilterStore((state) => state.setSelection);
 
@@ -153,8 +144,6 @@ export function TransactionHistoryChainFilter() {
 
   const [search, setSearch] = useState('');
 
-  // Empty selection means "All Chains" (no filtering). When every chain is
-  // selected we also represent it as "All Chains" so the two states stay in sync.
   const allChainsSelected = !isChainFilterActive(selectedChainIds);
 
   const isChainChecked = (chainId: number) =>
@@ -175,8 +164,8 @@ export function TransactionHistoryChainFilter() {
     setSelection({ chainIds: isAllChains ? [] : Array.from(next), isTestnetMode });
   };
 
-  // Toggles between "All Chains" and the bridge's default chains (the ones in
-  // the URL query params, i.e. source + destination).
+  // Unchecking "All Chains" falls back to the bridge default rather than an
+  // empty selection.
   const toggleAllChains = () => {
     if (allChainsSelected) {
       trackEvent('Tx History Network Filter', { network: 'default' });
@@ -190,9 +179,7 @@ export function TransactionHistoryChainFilter() {
   const selectedChainNames = filterableChainIds
     .filter((chainId) => selectedChainIds.includes(chainId))
     .map((chainId) => getNetworkName(chainId));
-  // Fall back to "All Chains" when nothing specific is selected.
   const showAllChainsLabel = allChainsSelected || selectedChainNames.length === 0;
-  // Show up to the first two chains by name, then " and N others" for the rest.
   const visibleChainNames = selectedChainNames.slice(0, 2);
   const hiddenChainCount = selectedChainNames.length - visibleChainNames.length;
   const triggerLabel = showAllChainsLabel
