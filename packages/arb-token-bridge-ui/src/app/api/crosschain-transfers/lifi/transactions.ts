@@ -106,13 +106,14 @@ export function transformLifiHistoryTransaction({
     receiving ? receiving.chainId || lastStep?.toToken.chainId : lastStep?.toToken.chainId,
   );
   const isPending = statusResponse.status === 'PENDING';
+  const isRefunded = statusResponse.status === 'DONE' && statusResponse.substatus === 'REFUNDED';
 
   if (!sourceChainId || !destinationChainId) {
     return null;
   }
 
   // Ignore earn transactions (same chain swap)
-  if (sourceChainId === destinationChainId) {
+  if (sourceChainId === destinationChainId && !isRefunded) {
     return null;
   }
 
