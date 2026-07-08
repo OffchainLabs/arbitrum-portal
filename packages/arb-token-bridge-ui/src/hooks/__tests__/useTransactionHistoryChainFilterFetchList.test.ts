@@ -1,8 +1,7 @@
 /**
- * Verifies the chain filter actually narrows the RPC fetch list — the core
- * promise of tx-history chain filtering. `fetchDeposits` is mocked, so these
- * tests assert exactly which chain pairs the fetcher fans out to for a given
- * filter selection, without hitting any RPC.
+ * Verifies the chain filter narrows the RPC fetch list — the core promise of
+ * tx-history chain filtering. `fetchDeposits` is mocked to capture exactly
+ * which chain pairs the fetcher fans out to for a given selection.
  */
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -46,7 +45,6 @@ vi.mock('../../util/withdrawals/fetchWithdrawals', async (importActual) => ({
   fetchWithdrawals: vi.fn().mockResolvedValue([]),
 }));
 
-// The chain pairs the deposits fetcher actually fanned out to, as "parent-child" keys.
 function fetchedDepositPairs(): string[] {
   return vi.mocked(fetchDeposits).mock.calls.map(([params]) => {
     const parentChainId = (params.l1Provider as StaticJsonRpcProvider).network.chainId;
@@ -89,7 +87,6 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
     await renderAndWaitForFetch();
 
     const pairs = fetchedDepositPairs();
-    // Set equality: everything touching the default chain, and nothing else.
     const expected = mainnetPairsMatching(
       (parent, child) => parent === ChainId.ArbitrumOne || child === ChainId.ArbitrumOne,
     );
