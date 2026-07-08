@@ -35,10 +35,7 @@ export function resolveSelectedChainIds({
   return selection.chainIds;
 }
 
-/**
- * Whether the chain filter is active. An empty selection means "All Chains" —
- * no filtering — matching the default (unfiltered) transaction-history behavior.
- */
+// An empty selection means "All Chains" (no filtering).
 export function isChainFilterActive(selectedChainIds: number[]): boolean {
   return selectedChainIds.length > 0;
 }

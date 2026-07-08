@@ -22,12 +22,6 @@ import { TestnetToggle } from '../common/TestnetToggle';
 import { useBridgeDefaultChainIds, useSelectedChainIds } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
-/**
- * The routes of the current testnet/mainnet mode, derived for the filter:
- * `filterableChainIds` is every chain appearing in any route (the checkbox
- * list), `eligibleRoutes` is the subset matching the selection (the
- * eligible-routes tooltip).
- */
 function useTxHistoryRoutes(selectedChainIds: number[]) {
   const [isTestnetMode] = useIsTestnetMode();
 
@@ -213,14 +207,10 @@ export function TransactionHistoryChainFilter() {
               </div>
             </PopoverButton>
             <PopoverPanel
-              // `anchor` portals the panel to the document body and positions it
-              // relative to the button, so it isn't clipped by the transaction
-              // history panel's overflow (which cut it off on mobile). `padding`
-              // keeps it clear of the viewport edges.
+              // Portal + anchor to the button so the panel escapes the tx history
+              // panel's overflow (which clipped it on mobile); padding keeps it off the edges.
               anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
               transition
-              // Cap the height to the space the anchor leaves us (respecting the
-              // padding above), clamped so it never grows taller than 420px.
               className="z-20 flex w-[280px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
             >
               <div className="flex min-h-0 flex-1 flex-col">
@@ -239,8 +229,7 @@ export function TransactionHistoryChainFilter() {
                 </div>
 
                 <div
-                  // Cap the scrollable list directly (Headless overrides the
-                  // panel's max-height via the anchor), so the dropdown stays short.
+                  // Cap the list directly — Headless overrides the panel's max-height via `anchor`.
                   className="max-h-[260px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
                   {!query && (
