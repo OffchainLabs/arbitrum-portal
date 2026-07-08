@@ -768,13 +768,25 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const withdrawals = (withdrawalsData || []).flat();
   const lifiHistoryTransactions = lifiHistoryTransfers || [];
 
+  // CCTP, OFT and LiFi are fetched by single API calls rather than the scoped
+  // chain-pair fan-out, so filter them here — before pagination — to keep
+  // unrelated transfers from consuming page slots and per-tx mapping work.
+  const matchesSelectedChains = (tx: MergedTransaction) =>
+    matchesChainFilter({
+      selectedChainIds,
+      sourceChainId: tx.sourceChainId,
+      destinationChainId: tx.destinationChainId,
+    });
+
   // merge deposits and withdrawals and sort them by date
   const transactions: Transfer[] = [
     ...deposits,
     ...withdrawals,
-    ...(isTestnetMode ? combinedCctpTestnetTransfers : combinedCctpMainnetTransfers),
-    ...oftTransfers,
-    ...lifiHistoryTransactions,
+    ...(isTestnetMode ? combinedCctpTestnetTransfers : combinedCctpMainnetTransfers).filter(
+      matchesSelectedChains,
+    ),
+    ...oftTransfers.filter(matchesSelectedChains),
+    ...lifiHistoryTransactions.filter(matchesSelectedChains),
   ].flat();
 
   return {
@@ -902,8 +914,14 @@ export const useTransactionHistory = (
       return [];
     }
 
-    return lifiTransactions[address] || [];
-  }, [address, lifiTransactions, isTxHistoryEnabled]);
+    return (lifiTransactions[address] || []).filter((tx) =>
+      matchesChainFilter({
+        selectedChainIds,
+        sourceChainId: tx.sourceChainId,
+        destinationChainId: tx.destinationChainId,
+      }),
+    );
+  }, [address, lifiTransactions, isTxHistoryEnabled, selectedChainIds]);
 
   const {
     data: txPages,
@@ -959,10 +977,10 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
-    // CCTP, OFT and LiFi transfers are fetched independently of the chain fetch
-    // list, so filter the fetched pages to match the selected chains. Transfers
-    // initiated this session (newTransactions) are exempt so a just-submitted
-    // transfer is always visible.
+    // The fetch inputs are scoped with the debounced selection, so this filter
+    // keeps already-built pages consistent with the instant selection during
+    // the debounce window. Transfers initiated this session (newTransactions)
+    // are exempt so a just-submitted transfer is always visible.
     const filteredTxPages = txPages?.map((txPage) =>
       txPage.filter((tx) =>
         matchesChainFilter({
