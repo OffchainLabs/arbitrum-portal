@@ -277,10 +277,7 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-      },
+      tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
     ],
   },
   {
@@ -325,10 +322,7 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-      },
+      tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
     ],
   },
 ];
