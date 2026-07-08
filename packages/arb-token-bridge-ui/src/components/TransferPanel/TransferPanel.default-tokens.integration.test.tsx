@@ -244,24 +244,18 @@ const defaultTokenCases: DefaultTokenCase[] = [
       tokenExpectationsByChain.ApeChain.USDCe,
     ],
   },
-];
-
-/**
- * Robinhood Chain is ETH-native and not yet live on LiFi. Until then we only
- * assert that the native ETH entry is present on both sides (its full token
- * list isn't known yet). Remove `.skip` to run these once the chain is live,
- * and tighten the expected panel tokens at that point. ApeChain <> Robinhood is
- * intentionally omitted for now, and Robinhood -> Base is not a supported route.
- */
-const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
-  // Deposits into Robinhood Chain
   {
     sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
+    ],
   },
   {
     sourceChain: 'arbitrum-one',
@@ -269,7 +263,11 @@ const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+    ],
   },
   {
     sourceChain: 'superposition',
@@ -277,7 +275,13 @@ const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      {
+        ...tokenExpectationsByChain.Superposition.WETH,
+        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
+      },
+    ],
   },
   {
     sourceChain: 'base',
@@ -285,16 +289,22 @@ const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+    ],
   },
-  // Withdrawals from Robinhood Chain (Base intentionally excluded)
   {
     sourceChain: 'robinhood-chain',
     destinationChain: 'ethereum',
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+    ],
   },
   {
     sourceChain: 'robinhood-chain',
@@ -302,7 +312,10 @@ const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+    ],
   },
   {
     sourceChain: 'robinhood-chain',
@@ -310,7 +323,13 @@ const robinhoodDefaultTokenCases: DefaultTokenCase[] = [
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      {
+        ...tokenExpectationsByChain.Superposition.WETH,
+        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
+      },
+    ],
   },
 ];
 
@@ -353,12 +372,6 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
 
   it.each(defaultTokenCases)(
     'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',
-    assertDefaultTokenCase,
-  );
-
-  // Enable once Robinhood Chain is live on LiFi (see robinhoodDefaultTokenCases note).
-  it.skip.each(robinhoodDefaultTokenCases)(
-    'opens source and destination token panels for Robinhood default token transfer: $sourceChain -> $destinationChain',
     assertDefaultTokenCase,
   );
 });

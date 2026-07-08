@@ -64,58 +64,47 @@ const ethWethCases: EthWethSelectionCase[] = [
     sourceToken: nativeEthTokenExpectation,
     destinationToken: wethTokenExpectation,
   },
-];
-
-/**
- * Robinhood Chain is ETH-native and not yet live on LiFi (its WETH address is set
- * in CommonAddress.RobinhoodChain). These cases bridge WETH across the Robinhood
- * pairs (the Robinhood-source cases select via its WETH address). Remove `.skip`
- * once the chain is live — and double-check the expected source/destination tokens
- * against the live ETH/WETH override behavior. ApeChain <> Robinhood is omitted
- * for now and Robinhood -> Base is not a supported route.
- */
-const robinhoodEthWethCases: EthWethSelectionCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
-    selectedSourceToken: tokenExpectationsByChain.Ethereum.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    selectedSourceToken: tokenExpectationsByChain.Ethereum.WETHWithRobinhoodLogo,
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETH,
   },
   {
     sourceChain: 'robinhood-chain',
     destinationChain: 'ethereum',
     selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETH,
   },
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'robinhood-chain',
-    selectedSourceToken: tokenExpectationsByChain.ArbitrumOne.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    selectedSourceToken: tokenExpectationsByChain.ArbitrumOne.WETHWithRobinhoodLogo,
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETH,
   },
   {
     sourceChain: 'robinhood-chain',
     destinationChain: 'arbitrum-one',
     selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETH,
   },
   {
     sourceChain: 'superposition',
     destinationChain: 'robinhood-chain',
-    selectedSourceToken: tokenExpectationsByChain.Superposition.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    selectedSourceToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
+    sourceToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
+    destinationToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
   },
   {
     sourceChain: 'robinhood-chain',
     destinationChain: 'superposition',
-    selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
+    selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
+    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
+    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
   },
 ];
 
@@ -148,12 +137,6 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
 
   it.each(ethWethCases)(
     'renders expected source and destination tokens for ETH/WETH override: $sourceChain -> $destinationChain',
-    assertEthWethSelection,
-  );
-
-  // Enable once Robinhood Chain is live on LiFi (see robinhoodEthWethCases note).
-  it.skip.each(robinhoodEthWethCases)(
-    'renders expected source and destination tokens for Robinhood WETH transfer: $sourceChain -> $destinationChain',
     assertEthWethSelection,
   );
 });

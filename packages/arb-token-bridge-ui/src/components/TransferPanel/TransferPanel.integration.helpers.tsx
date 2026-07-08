@@ -51,6 +51,11 @@ export const USDC_TOKEN_LOGO = commonUsdcToken.logoURI;
 export const USDT_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png';
 const WETH_SUPERPOSITION_ROW_LOGO = `https://static.debank.com/image/eth_token/logo_url/${CommonAddress.Ethereum.WETH}/61844453e63cf81301f845d7864236f6.png`;
+const WETH_ROBINHOOD_ROW_LOGO =
+  'https://static.debank.com/image/uni_token/logo_url/uni/48bfb74adddd170e936578aec422836d.png';
+const USDE_ROBINHOOD_ROW_LOGO =
+  'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/tokens/unknown.svg';
+const USDG_ROBINHOOD_ROW_LOGO = 'https://s2.coinmarketcap.com/static/img/coins/64x64/33793.png';
 export const USDT_ARBITRUM_ONE_ROW_LOGO =
   'https://static.debank.com/image/ink_token/logo_url/0x0200c29006150606b650577bbe7b6248f58470c1/8bba37fddc2774e06a94b8952e3e3ad7.png';
 
@@ -109,6 +114,18 @@ export const wethSuperpositionRowTokenExpectation = {
   symbol: 'WETH',
   logoURI: WETH_SUPERPOSITION_ROW_LOGO,
 } satisfies TokenExpectationWithLogo;
+export const wethRobinhoodRowTokenExpectation = {
+  symbol: 'WETH',
+  logoURI: WETH_ROBINHOOD_ROW_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const usdeRobinhoodRowTokenExpectation = {
+  symbol: 'USDe',
+  logoURI: USDE_ROBINHOOD_ROW_LOGO,
+} satisfies TokenExpectationWithLogo;
+export const usdgRobinhoodRowTokenExpectation = {
+  symbol: 'USDG',
+  logoURI: USDG_ROBINHOOD_ROW_LOGO,
+} satisfies TokenExpectationWithLogo;
 export const usdtArbitrumOneRowTokenExpectation = {
   symbol: 'USDT',
   logoURI: USDT_ARBITRUM_ONE_ROW_LOGO,
@@ -118,17 +135,29 @@ export const tokenExpectationsByChain = {
   Ethereum: {
     APE: withContract(apeTokenExpectation, CommonAddress.Ethereum.APE),
     USDC: withContract(usdcTokenExpectation, CommonAddress.Ethereum.USDC),
+    USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.Ethereum.USDe),
     USDT: withContract(usdtTokenExpectation, CommonAddress.Ethereum.USDT),
     WETH: withContract(wethTokenExpectation, CommonAddress.Ethereum.WETH),
+    WETHWithRobinhoodLogo: withContract(
+      wethRobinhoodRowTokenExpectation,
+      CommonAddress.Ethereum.WETH,
+    ),
+    USDG: withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.Ethereum.USDG),
   },
   ArbitrumOne: {
     APE: withContract(apeTokenExpectation, CommonAddress.ArbitrumOne.APE),
     USDC: withContract(usdcTokenExpectation, CommonAddress.ArbitrumOne.USDC),
+    USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.ArbitrumOne.USDe),
     USDT: withContract(usdtTokenExpectation, CommonAddress.ArbitrumOne.USDT),
     WETH: withContract(wethTokenExpectation, CommonAddress.ArbitrumOne.WETH),
+    WETHWithRobinhoodLogo: withContract(
+      wethRobinhoodRowTokenExpectation,
+      CommonAddress.ArbitrumOne.WETH,
+    ),
   },
   Base: {
     APE: withContract(apeTokenExpectation, CommonAddress.Base.APE),
+    USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.Base.USDe),
   },
   ApeChain: {
     APE: nativeApeTokenExpectation,
@@ -139,11 +168,19 @@ export const tokenExpectationsByChain = {
   Superposition: {
     USDCe: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
     WETH: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
+    WETHWithSuperpositionLogo: withContract(
+      wethSuperpositionRowTokenExpectation,
+      CommonAddress.Superposition.WETH,
+    ),
   },
-  // Robinhood Chain uses native USDC (not USDC.e); its USDC address is still a
-  // placeholder — see CommonAddress.RobinhoodChain.
   RobinhoodChain: {
-    WETH: withContract(wethTokenExpectation, CommonAddress.RobinhoodChain.WETH),
+    USDG: withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDG),
+    USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDe),
+    WETH: withContract(wethRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.WETH),
+    WETHWithSuperpositionLogo: withContract(
+      wethSuperpositionRowTokenExpectation,
+      CommonAddress.RobinhoodChain.WETH,
+    ),
   },
 } as const;
 
