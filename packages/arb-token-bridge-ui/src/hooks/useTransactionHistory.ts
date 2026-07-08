@@ -963,11 +963,11 @@ export const useTransactionHistory = (
         if (isLifiTransfer(newTx)) {
           updateLifiTransactionInCache(newTx);
         }
-        return;
       }
 
-      // tx not found in the new user initiated transaction list
-      // look in the paginated historical data
+      // the same tx can also exist in the paginated history (txPages, seeded from the
+      // localStorage deposits cache), and mergeTransactions displays that copy, so it
+      // must be updated too
       mutateTxPages((prevTxPages) => {
         if (!prevTxPages) {
           return;
