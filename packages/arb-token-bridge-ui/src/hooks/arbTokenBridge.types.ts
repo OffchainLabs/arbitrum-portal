@@ -71,6 +71,8 @@ export interface BridgeToken {
   logoURI?: string;
   listIds: Set<string>; // no listID indicates added by user
   isL2Native?: boolean;
+  /** This token is only available as swap destination (for example Robinhood stock token) */
+  isLifiDestinationOnly?: boolean;
   priceUSD?: number;
 }
 

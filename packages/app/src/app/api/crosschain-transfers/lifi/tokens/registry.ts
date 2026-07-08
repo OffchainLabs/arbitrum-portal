@@ -5,6 +5,8 @@ import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
+import { ADDITIONAL_ROUTE_TOKEN_CHAIN_IDS } from './additionalRouteTokens';
+
 type CustomTokenConfig = {
   coinKey: string;
   addresses: Partial<Record<number, string>>;
@@ -115,6 +117,10 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
   ]),
 };
 
+export type LifiAdditionalRouteToken = Pick<
+  LiFiToken,
+  'chainId' | 'address' | 'name' | 'symbol' | 'decimals' | 'logoURI' | 'priceUSD' | 'coinKey'
+>;
 export type LifiTokenWithCoinKey = LiFiToken & { coinKey: CoinKey };
 
 function isExcludedToken(token: LiFiToken, chainId: number): boolean {
@@ -178,6 +184,7 @@ function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinK
 }
 
 export interface LifiTokenRegistry {
+  additionalTokensByChain: Record<number, LifiAdditionalRouteToken[]>;
   tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
@@ -189,40 +196,42 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
 
   if (!response.tokens) {
     return {
+      additionalTokensByChain: {},
       tokensByChain: {},
       tokensByChainAndCoinKey: {},
     };
   }
 
+  const additionalRouteTokenChainIds = new Set(ADDITIONAL_ROUTE_TOKEN_CHAIN_IDS);
+  const additionalTokensByChain: LifiTokenRegistry['additionalTokensByChain'] = {};
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
   const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
 
   for (const chainId of allowedLifiSourceChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
+    const rawTokens = response.tokens[chainId] ?? [];
+    const includedTokens = rawTokens.filter((token) => !isExcludedToken(token, chainId));
+    additionalTokensByChain[chainId] = additionalRouteTokenChainIds.has(chainId)
+      ? includedTokens
+      : [];
 
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
-      (acc, token) => {
-        // Exclude tokens on the exclude list
-        if (isExcludedToken(token, chainId)) return acc;
+    const filteredTokens = includedTokens.reduce<LifiTokenWithCoinKey[]>((acc, token) => {
+      const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
+      if (!tokenWithCoinKey) return acc;
 
-        const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
-        if (!tokenWithCoinKey) return acc;
+      const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+      const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
 
-        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
-        const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
-
-        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-        acc.push(normalizedToken);
-        return acc;
-      },
-      [],
-    );
+      tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+      acc.push(normalizedToken);
+      return acc;
+    }, []);
 
     tokensByChain[chainId] = filteredTokens;
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
   }
 
-  return { tokensByChain, tokensByChainAndCoinKey };
+  return { additionalTokensByChain, tokensByChain, tokensByChainAndCoinKey };
 };
 
 export const getLifiTokenRegistry = unstable_cache(fetchRegistry, ['lifi-token-registry'], {

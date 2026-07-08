@@ -325,6 +325,10 @@ function TokensPanel({
           return false;
         }
 
+        if (token?.isLifiDestinationOnly) {
+          return false;
+        }
+
         /**
          * Lifi token lists contain both WETH and ETH token on parent chain mapped to WETH on ApeChain.
          * This check is for ApeChain token row to only show WETH.

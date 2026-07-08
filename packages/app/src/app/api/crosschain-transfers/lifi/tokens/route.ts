@@ -6,11 +6,10 @@ import {
   allowedLifiSourceChainIds,
   lifiDestinationChainIds,
 } from '@/bridge/app/api/crosschain-transfers/constants';
-import { ChainId } from '@/bridge/types/ChainId';
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
-import { type LifiTokenWithCoinKey, getLifiTokenRegistry } from './registry';
+import { getLifiTokenRegistry } from './registry';
+import { appendAdditionalRouteTokens, getParentTokensForRoute } from './routeTokenUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 30;
@@ -25,51 +24,37 @@ const BASE_TOKEN_LIST = {
   logoURI: '/icons/lifi.svg',
 } as const;
 
-const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
-  [
-    CommonAddress.RobinhoodChain.WETH,
-    CommonAddress.RobinhoodChain.USDe,
-    CommonAddress.RobinhoodChain.sUSDe,
-    CommonAddress.RobinhoodChain.USDG,
-    CommonAddress.RobinhoodChain.ENA,
-    CommonAddress.RobinhoodChain.WEETH,
-    CommonAddress.RobinhoodChain.WSTETH,
-  ].map((address) => address.toLowerCase()),
-);
-
 const parseChainParam = (value: string | null) => {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-function getParentTokensForRoute({
-  parentChainId,
-  tokens,
-}: {
-  parentChainId: number;
-  tokens: LifiTokenWithCoinKey[];
-}) {
-  if (parentChainId !== ChainId.RobinhoodChain) {
-    return tokens;
-  }
-
-  return tokens.filter((token) =>
-    ROBINHOOD_SOURCE_TOKEN_ADDRESSES.has(token.address.toLowerCase()),
-  );
-}
-
 export async function GET(request: NextRequest): Promise<NextResponse<TokenList>> {
   const { searchParams } = new URL(request.url);
   const parentChainId = parseChainParam(searchParams.get('parentChainId'));
   const childChainId = parseChainParam(searchParams.get('childChainId'));
 
-  const isInvalidChainId = parentChainId === null || childChainId === null;
-  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId!);
-  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId!);
-  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId!]?.includes(childChainId!);
+  if (parentChainId === null || childChainId === null) {
+    return NextResponse.json(
+      {
+        ...BASE_TOKEN_LIST,
+        tokens: [],
+      },
+      {
+        status: 400,
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=60',
+        },
+      },
+    );
+  }
 
-  if (isInvalidChainId || isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
+  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId);
+  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId);
+  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId]?.includes(childChainId);
+
+  if (isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,
@@ -85,7 +70,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   }
 
   try {
-    const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
+    const { additionalTokensByChain, tokensByChain, tokensByChainAndCoinKey } =
+      await getLifiTokenRegistry();
 
     const parentTokens = getParentTokensForRoute({
       parentChainId,
@@ -112,9 +98,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
       );
     }
 
-    const tokens = groupChildTokensAndParentTokens({
-      parentTokens,
-      childTokensByCoinKey,
+    const tokens = appendAdditionalRouteTokens({
+      tokens: groupChildTokensAndParentTokens({
+        parentTokens,
+        childTokensByCoinKey,
+        parentChainId,
+        childChainId,
+      }),
+      childAdditionalTokens: additionalTokensByChain[childChainId] ?? [],
       parentChainId,
       childChainId,
     });
