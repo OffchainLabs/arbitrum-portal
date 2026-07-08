@@ -1,7 +1,7 @@
 /**
  * Pure chain-filter selection predicates, kept free of any network/provider
- * imports so they stay unit-testable (importing `util/networks` pulls in the
- * token-bridge-sdk chain, which the test runner can't resolve).
+ * imports so they stay trivially unit-testable (`util/networks` chain data is
+ * incomplete in the test environment — runtime-registered chains misreport).
  */
 
 /**
