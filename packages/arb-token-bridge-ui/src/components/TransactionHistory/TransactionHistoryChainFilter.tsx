@@ -13,9 +13,9 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isChainFilterActive } from '../../util/chainFilter';
+import { isChainFilterActive, matchesChainFilter } from '../../util/chainFilter';
 import { getNetworkName, isCoreChainForDisplay, sortChainIds } from '../../util/networks';
-import { TxHistoryRoute, getEligibleTxHistoryRoutes } from '../../util/txHistoryRoutes';
+import { ChainPair, getTxHistoryRoutes } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
 import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
@@ -23,34 +23,31 @@ import { useBridgeDefaultChainIds, useSelectedChainIds } from './useTransactionH
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
 /**
- * The chains the user can filter transaction history by: every chain that
- * appears in any transfer route (canonical, CCTP, OFT, LiFi) for the current
- * testnet/mainnet mode.
+ * The routes of the current testnet/mainnet mode, derived for the filter:
+ * `filterableChainIds` is every chain appearing in any route (the checkbox
+ * list), `eligibleRoutes` is the subset matching the selection (the
+ * eligible-routes tooltip).
  */
-function useFilterableChainIds() {
+function useTxHistoryRoutes(selectedChainIds: number[]) {
   const [isTestnetMode] = useIsTestnetMode();
 
   return useMemo(() => {
-    const chainIds = new Set<number>();
+    const routes = getTxHistoryRoutes({ isTestnetMode });
 
-    getEligibleTxHistoryRoutes({ selectedChainIds: [], isTestnetMode }).forEach((route) => {
-      chainIds.add(route.parentChainId);
-      chainIds.add(route.childChainId);
-    });
+    const filterableChainIds = sortChainIds(
+      Array.from(new Set(routes.flatMap((route) => [route.parentChainId, route.childChainId]))),
+    );
 
-    return sortChainIds(Array.from(chainIds));
-  }, [isTestnetMode]);
-}
+    const eligibleRoutes = routes.filter((route) =>
+      matchesChainFilter({
+        selectedChainIds,
+        sourceChainId: route.parentChainId,
+        destinationChainId: route.childChainId,
+      }),
+    );
 
-// The routes whose transactions will be shown for the current selection,
-// surfaced in the eligible-routes tooltip.
-function useEligibleChainPairs(selectedChainIds: number[]): TxHistoryRoute[] {
-  const [isTestnetMode] = useIsTestnetMode();
-
-  return useMemo(
-    () => getEligibleTxHistoryRoutes({ selectedChainIds, isTestnetMode }),
-    [isTestnetMode, selectedChainIds],
-  );
+    return { filterableChainIds, eligibleRoutes };
+  }, [isTestnetMode, selectedChainIds]);
 }
 
 function CheckboxBox({ checked }: { checked: boolean }) {
@@ -103,7 +100,7 @@ function EligibleRoutesTooltip({
   chainPairs,
   allChainsSelected,
 }: {
-  chainPairs: TxHistoryRoute[];
+  chainPairs: ChainPair[];
   allChainsSelected: boolean;
 }) {
   return (
@@ -136,11 +133,10 @@ function EligibleRoutesTooltip({
 export function TransactionHistoryChainFilter() {
   const [isTestnetMode] = useIsTestnetMode();
   const defaultChainIds = useBridgeDefaultChainIds();
-  const filterableChainIds = useFilterableChainIds();
   const selectedChainIds = useSelectedChainIds();
   const setSelection = useTransactionHistoryChainFilterStore((state) => state.setSelection);
 
-  const eligibleChainPairs = useEligibleChainPairs(selectedChainIds);
+  const { filterableChainIds, eligibleRoutes } = useTxHistoryRoutes(selectedChainIds);
 
   const [search, setSearch] = useState('');
 
@@ -293,10 +289,7 @@ export function TransactionHistoryChainFilter() {
           </>
         )}
       </Popover>
-      <EligibleRoutesTooltip
-        chainPairs={eligibleChainPairs}
-        allChainsSelected={allChainsSelected}
-      />
+      <EligibleRoutesTooltip chainPairs={eligibleRoutes} allChainsSelected={allChainsSelected} />
     </div>
   );
 }
