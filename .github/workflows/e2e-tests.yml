@@ -33,8 +33,6 @@ jobs:
     name: 'Build'
     uses: ./.github/workflows/build.yml
     secrets: inherit
-    with:
-      artifact_name: build-artifacts-e2e
 
   test-e2e:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
@@ -95,8 +93,6 @@ jobs:
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
-        with:
-          name: build-artifacts-e2e
 
       - name: Install cypress
         run: pnpm cypress install
@@ -261,8 +257,6 @@ jobs:
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
-        with:
-          name: build-artifacts-e2e
 
       - name: Install cypress
         run: pnpm cypress install
