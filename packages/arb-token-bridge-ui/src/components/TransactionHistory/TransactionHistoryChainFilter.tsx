@@ -105,13 +105,15 @@ function EligibleRoutesTooltip({
 }) {
   return (
     <Tooltip
+      // Focusable trigger so keyboard users can reveal the tooltip.
+      as="button"
       content={
         <div className="flex flex-col gap-1 text-xs">
           {allChainsSelected ? (
-            <span>Fetching transaction history for all supported routes.</span>
+            <span>Showing transaction history for all supported routes.</span>
           ) : (
             <>
-              <span className="font-medium">Fetching history for these routes:</span>
+              <span className="font-medium">Showing history for these routes:</span>
               {chainPairs.map((pair) => (
                 <span key={`${pair.parentChainId}-${pair.childChainId}`}>
                   {getNetworkName(pair.parentChainId)} ↔ {getNetworkName(pair.childChainId)}
@@ -124,7 +126,7 @@ function EligibleRoutesTooltip({
     >
       <InformationCircleIcon
         className="h-4 w-4 shrink-0 text-white/50"
-        aria-label="Which routes are fetched"
+        aria-label="Which routes are shown"
       />
     </Tooltip>
   );
