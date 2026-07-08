@@ -251,7 +251,7 @@ export function TransactionHistoryChainFilter() {
                       onClick={toggleAllChains}
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
-                        <span className="h-4 w-4 shrink-0 rounded-full bg-[linear-gradient(135deg,#34d399,#22d3ee,#3b82f6)]" />
+                        <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
                         <span className="truncate text-sm text-white">All Chains</span>
                       </div>
                       <CheckboxBox checked={allChainsSelected} />

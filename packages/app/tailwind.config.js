@@ -51,6 +51,7 @@ module.exports = {
         '3/1': '3 / 1',
       },
       backgroundImage: {
+        'all-chains-gradient': 'linear-gradient(135deg, #34d399, #22d3ee, #3b82f6)',
         'live-incentives-gradient': 'linear-gradient(180deg, #99f24e 0%, #08d6f3 100%)',
         'live-incentives-dimmed-gradient':
           'linear-gradient(180deg, rgba(153, 242, 78, 0.05) 0%, rgba(8, 214, 243, 0.05) 100%)',
