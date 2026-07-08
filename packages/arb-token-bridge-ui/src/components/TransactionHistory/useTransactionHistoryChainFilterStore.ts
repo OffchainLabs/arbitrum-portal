@@ -1,3 +1,4 @@
+import { useDebounce } from '@uidotdev/usehooks';
 import { create } from 'zustand';
 
 type TransactionHistoryChainFilterStore = {
@@ -46,6 +47,17 @@ export const useTransactionHistoryChainFilterStore = create<TransactionHistoryCh
       }),
   }),
 );
+
+/**
+ * The selected chains, debounced, for driving the (expensive) transaction fetch.
+ * The store value stays instant for the checkboxes and the display filter; this
+ * only delays refetching so toggling several chains in a row coalesces into a
+ * single fetch instead of one per checkbox click.
+ */
+export function useDebouncedSelectedChainIds() {
+  const selectedChainIds = useTransactionHistoryChainFilterStore((state) => state.selectedChainIds);
+  return useDebounce(selectedChainIds, 500);
+}
 
 /**
  * Returns true if the chain filter is active (i.e. the user has narrowed the

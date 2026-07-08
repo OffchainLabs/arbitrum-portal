@@ -1,5 +1,4 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { useDebounce } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -25,6 +24,7 @@ import {
 } from '../components/TransactionHistory/helpers';
 import {
   matchesChainFilter,
+  useDebouncedSelectedChainIds,
   useTransactionHistoryChainFilterStore,
 } from '../components/TransactionHistory/useTransactionHistoryChainFilterStore';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
@@ -576,12 +576,8 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
-  // Debounce the selection that drives fetching so rapidly toggling several
-  // chains coalesces into a single refetch instead of one per checkbox click.
-  const selectedChainIds = useDebounce(
-    useTransactionHistoryChainFilterStore((state) => state.selectedChainIds),
-    500,
-  );
+  // Debounced so rapidly toggling several chains coalesces into a single refetch.
+  const selectedChainIds = useDebouncedSelectedChainIds();
   // Stable identifier for the selected chains so SWR refetches when the filter changes.
   const selectedChainIdsKey = [...selectedChainIds].sort((a, b) => a - b).join(',');
 

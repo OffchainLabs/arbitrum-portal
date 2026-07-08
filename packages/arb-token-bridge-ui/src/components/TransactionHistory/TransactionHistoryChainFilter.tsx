@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { shallow } from 'zustand/shallow';
 
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { getMultiChainFetchList } from '../../hooks/useTransactionHistory';
@@ -49,6 +50,24 @@ function useFilterableChainIds() {
 }
 
 /**
+ * The chains selected in the bridge's chain selector, straight from the URL
+ * query params. We read the raw params rather than `useNetworks()` because the
+ * latter sanitizes the pair to a canonical bridge route (e.g. Eth <> Orbit
+ * collapses to Eth <> Arbitrum One), which would make the filter default to the
+ * wrong chains. Falls back to the sanitized chains when a param is absent.
+ */
+function useBridgeDefaultChainIds() {
+  const [{ sourceChain: sourceChainParam, destinationChain: destinationChainParam }] =
+    useArbQueryParams();
+  const [{ sourceChain, destinationChain }] = useNetworks();
+
+  const sourceChainId = sourceChainParam ?? sourceChain.id;
+  const destinationChainId = destinationChainParam ?? destinationChain.id;
+
+  return useMemo(() => [sourceChainId, destinationChainId], [sourceChainId, destinationChainId]);
+}
+
+/**
  * Defaults the filter to the chains currently selected in the bridge (the URL
  * query selector), so the initial fetch is scoped to the chains the user is
  * actively bridging between. Becomes a no-op once the user changes the filter.
@@ -56,7 +75,7 @@ function useFilterableChainIds() {
  * "All Chains" to avoid filtering by chains that don't exist in the new mode.
  */
 function useSyncChainFilterWithBridge() {
-  const [{ sourceChain, destinationChain }] = useNetworks();
+  const defaultChainIds = useBridgeDefaultChainIds();
   const [isTestnetMode] = useIsTestnetMode();
   const { initializeFromBridgeChains, clearSelectedChainIds } =
     useTransactionHistoryChainFilterStore(
@@ -68,8 +87,8 @@ function useSyncChainFilterWithBridge() {
     );
 
   useEffect(() => {
-    initializeFromBridgeChains([sourceChain.id, destinationChain.id]);
-  }, [sourceChain.id, destinationChain.id, initializeFromBridgeChains]);
+    initializeFromBridgeChains(defaultChainIds);
+  }, [defaultChainIds, initializeFromBridgeChains]);
 
   const previousTestnetMode = useRef(isTestnetMode);
   useEffect(() => {
@@ -127,7 +146,7 @@ function ChainRow({
 export function TransactionHistoryChainFilter() {
   useSyncChainFilterWithBridge();
 
-  const [{ sourceChain, destinationChain }] = useNetworks();
+  const defaultChainIds = useBridgeDefaultChainIds();
   const filterableChainIds = useFilterableChainIds();
   const { selectedChainIds, setSelectedChainIds, clearSelectedChainIds } =
     useTransactionHistoryChainFilterStore(
@@ -172,7 +191,7 @@ export function TransactionHistoryChainFilter() {
   const toggleAllChains = () => {
     if (allChainsSelected) {
       trackEvent('Tx History Network Filter', { network: 'default' });
-      setSelectedChainIds([sourceChain.id, destinationChain.id]);
+      setSelectedChainIds(defaultChainIds);
       return;
     }
     trackEvent('Tx History Network Filter', { network: 'all' });
