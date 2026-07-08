@@ -6,23 +6,20 @@ import {
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { shallow } from 'zustand/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
-import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
-import { useNetworks } from '../../hooks/useNetworks';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isChainFilterActive } from '../../util/chainFilter';
-import { getNetworksRelationship } from '../../util/getNetworksRelationship';
 import { getNetworkName, isCoreChainForDisplay, sortChainIds } from '../../util/networks';
 import { TxHistoryRoute, getEligibleTxHistoryRoutes } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
 import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
+import { useBridgeDefaultChainIds, useSelectedChainIds } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
 /**
@@ -61,61 +58,6 @@ function useEligibleChainPairs(selectedChainIds: number[]): TxHistoryRoute[] {
   );
 }
 
-/**
- * The default chain to filter by: the child chain of the pair selected in the
- * bridge's chain selector (the URL query params). Defaulting to the child (e.g.
- * Arbitrum One for Eth <> Arbitrum One, Robinhood for Eth <> Robinhood) and
- * matching on either endpoint means the history shows every direct route to and
- * from that chain — and never comes up empty for a non-canonical pair.
- *
- * We read the raw params rather than `useNetworks()` because the latter
- * sanitizes the pair to a canonical bridge route (e.g. Eth <> Orbit collapses to
- * Eth <> Arbitrum One). Falls back to the sanitized chains when a param is absent.
- */
-function useBridgeDefaultChainIds() {
-  const [{ sourceChain: sourceChainParam, destinationChain: destinationChainParam }] =
-    useArbQueryParams();
-  const [{ sourceChain, destinationChain }] = useNetworks();
-
-  const sourceChainId = sourceChainParam ?? sourceChain.id;
-  const destinationChainId = destinationChainParam ?? destinationChain.id;
-  const { childChainId } = getNetworksRelationship({ sourceChainId, destinationChainId });
-
-  return useMemo(() => [childChainId], [childChainId]);
-}
-
-/**
- * Defaults the filter to the child chain of the bridge's selected pair (the URL
- * query selector), so the initial fetch is scoped to the chain the user is
- * actively bridging to/from. Becomes a no-op once the user changes the filter.
- * When the user switches between testnet and mainnet, the selection is
- * re-defaulted to that mode's child chain (e.g. Arbitrum Sepolia), since the
- * previously selected chain doesn't exist in the new mode.
- */
-function useSyncChainFilterWithBridge() {
-  const defaultChainIds = useBridgeDefaultChainIds();
-  const [isTestnetMode] = useIsTestnetMode();
-  const { initializeFromBridgeChains, setSelectedChainIds } = useTransactionHistoryChainFilterStore(
-    (state) => ({
-      initializeFromBridgeChains: state.initializeFromBridgeChains,
-      setSelectedChainIds: state.setSelectedChainIds,
-    }),
-    shallow,
-  );
-
-  useEffect(() => {
-    initializeFromBridgeChains(defaultChainIds);
-  }, [defaultChainIds, initializeFromBridgeChains]);
-
-  const previousTestnetMode = useRef(isTestnetMode);
-  useEffect(() => {
-    if (previousTestnetMode.current !== isTestnetMode) {
-      previousTestnetMode.current = isTestnetMode;
-      setSelectedChainIds(defaultChainIds);
-    }
-  }, [isTestnetMode, defaultChainIds, setSelectedChainIds]);
-}
-
 function CheckboxBox({ checked }: { checked: boolean }) {
   return (
     <span
@@ -148,6 +90,8 @@ function ChainRow({
 }) {
   return (
     <button
+      role="checkbox"
+      aria-checked={checked}
       className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
       onClick={onClick}
     >
@@ -197,19 +141,13 @@ function EligibleRoutesTooltip({
 }
 
 export function TransactionHistoryChainFilter() {
-  useSyncChainFilterWithBridge();
-
+  const [isTestnetMode] = useIsTestnetMode();
   const defaultChainIds = useBridgeDefaultChainIds();
   const filterableChainIds = useFilterableChainIds();
-  const { selectedChainIds, setSelectedChainIds, clearSelectedChainIds } =
-    useTransactionHistoryChainFilterStore(
-      (state) => ({
-        selectedChainIds: state.selectedChainIds,
-        setSelectedChainIds: state.setSelectedChainIds,
-        clearSelectedChainIds: state.clearSelectedChainIds,
-      }),
-      shallow,
-    );
+  // The effective selection: the user's explicit choice, or the bridge default
+  // (the selected pair's child chain) until they make one.
+  const selectedChainIds = useSelectedChainIds();
+  const setSelection = useTransactionHistoryChainFilterStore((state) => state.setSelection);
 
   const eligibleChainPairs = useEligibleChainPairs(selectedChainIds);
 
@@ -233,12 +171,8 @@ export function TransactionHistoryChainFilter() {
     }
 
     // Collapse "none" and "all" back to the All Chains state.
-    if (next.size === 0 || next.size === filterableChainIds.length) {
-      clearSelectedChainIds();
-      return;
-    }
-
-    setSelectedChainIds(Array.from(next));
+    const isAllChains = next.size === 0 || next.size === filterableChainIds.length;
+    setSelection({ chainIds: isAllChains ? [] : Array.from(next), isTestnetMode });
   };
 
   // Toggles between "All Chains" and the bridge's default chains (the ones in
@@ -246,11 +180,11 @@ export function TransactionHistoryChainFilter() {
   const toggleAllChains = () => {
     if (allChainsSelected) {
       trackEvent('Tx History Network Filter', { network: 'default' });
-      setSelectedChainIds(defaultChainIds);
+      setSelection({ chainIds: defaultChainIds, isTestnetMode });
       return;
     }
     trackEvent('Tx History Network Filter', { network: 'all' });
-    clearSelectedChainIds();
+    setSelection({ chainIds: [], isTestnetMode });
   };
 
   const selectedChainNames = filterableChainIds
@@ -289,9 +223,7 @@ export function TransactionHistoryChainFilter() {
             >
               <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
                 <FunnelIcon width={16} className="shrink-0 text-white/70" />
-                <span className="truncate font-light" style={{ maxWidth: 220 }}>
-                  {triggerLabel}
-                </span>
+                <span className="max-w-[220px] truncate font-light">{triggerLabel}</span>
                 <ChevronDownIcon width={12} className={open ? 'rotate-180' : ''} />
               </div>
             </PopoverButton>
@@ -304,9 +236,7 @@ export function TransactionHistoryChainFilter() {
               transition
               // Cap the height to the space the anchor leaves us (respecting the
               // padding above), clamped so it never grows taller than 420px.
-              // Set inline so it holds even before Tailwind regenerates this file.
-              style={{ width: 280, maxHeight: 'min(var(--anchor-max-height, 420px), 420px)' }}
-              className="z-20 flex origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+              className="z-20 flex w-[280px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
             >
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="p-2">
@@ -326,21 +256,17 @@ export function TransactionHistoryChainFilter() {
                 <div
                   // Cap the scrollable list directly (Headless overrides the
                   // panel's max-height via the anchor), so the dropdown stays short.
-                  style={{ maxHeight: 260 }}
-                  className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+                  className="max-h-[260px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
                   {!query && (
                     <button
+                      role="checkbox"
+                      aria-checked={allChainsSelected}
                       className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
                       onClick={toggleAllChains}
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
-                        <span
-                          className="h-4 w-4 shrink-0 rounded-full"
-                          style={{
-                            background: 'linear-gradient(135deg, #34d399, #22d3ee, #3b82f6)',
-                          }}
-                        />
+                        <span className="h-4 w-4 shrink-0 rounded-full bg-[linear-gradient(135deg,#34d399,#22d3ee,#3b82f6)]" />
                         <span className="truncate text-sm text-white">All Chains</span>
                       </div>
                       <CheckboxBox checked={allChainsSelected} />

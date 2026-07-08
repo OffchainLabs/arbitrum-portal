@@ -18,6 +18,34 @@ import { getChains, getChildChainIds, isNetwork } from './networks';
  */
 export type TxHistoryRoute = { parentChainId: number; childChainId: number };
 
+export type ChainPair = { parentChainId: ChainId; childChainId: ChainId };
+
+/**
+ * Every canonical-bridge parent -> child pair across all registered chains: the
+ * list of chain pairs the transaction-history fetcher queries, and the canonical
+ * subset of `getAllTxHistoryRoutes`.
+ */
+export function getMultiChainFetchList(): ChainPair[] {
+  return getChains().flatMap((chain) => {
+    // We only grab child chains because we don't want duplicates and we need the parent chain
+    // Although the type is correct here we default to an empty array for custom networks backwards compatibility
+    const childChainIds = getChildChainIds(chain);
+
+    const isParentChain = childChainIds.length > 0;
+
+    if (!isParentChain) {
+      // Skip non-parent chains
+      return [];
+    }
+
+    // For each destination chain, map to an array of ChainPair objects
+    return childChainIds.map((childChainId) => ({
+      parentChainId: chain.chainId,
+      childChainId: childChainId,
+    }));
+  });
+}
+
 // CCTP (native USDC) is supported only between Ethereum and Arbitrum One, and
 // their testnets. Mirrors `CCTPSupportedChainId` / the `contracts` map in
 // token-bridge-sdk/cctp.ts.
@@ -31,16 +59,6 @@ const cctpRoutes: TxHistoryRoute[] = [
 const oftRoutes: TxHistoryRoute[] = [
   { parentChainId: ChainId.Ethereum, childChainId: ChainId.ArbitrumOne },
 ];
-
-// Canonical bridge routes: every parent -> child pair across all registered chains.
-function getCanonicalTxHistoryRoutes(): TxHistoryRoute[] {
-  return getChains().flatMap((chain) =>
-    getChildChainIds(chain).map((childChainId) => ({
-      parentChainId: chain.chainId,
-      childChainId,
-    })),
-  );
-}
 
 // LiFi cross-chain routes, from the static source -> destinations adjacency map.
 function getLifiTxHistoryRoutes(): TxHistoryRoute[] {
@@ -68,7 +86,7 @@ export function getAllTxHistoryRoutes(): TxHistoryRoute[] {
   const routes: TxHistoryRoute[] = [];
 
   for (const route of [
-    ...getCanonicalTxHistoryRoutes(),
+    ...getMultiChainFetchList(),
     ...cctpRoutes,
     ...oftRoutes,
     ...getLifiTxHistoryRoutes(),
@@ -82,16 +100,6 @@ export function getAllTxHistoryRoutes(): TxHistoryRoute[] {
   }
 
   return routes;
-}
-
-/**
- * All transfer routes that involve the given chain on either endpoint, i.e.
- * every route to or from that chain across all transfer types.
- */
-export function getTxHistoryRoutesForChain(chainId: number): TxHistoryRoute[] {
-  return getAllTxHistoryRoutes().filter(
-    (route) => route.parentChainId === chainId || route.childChainId === chainId,
-  );
 }
 
 /**

@@ -5,83 +5,32 @@ import { useTransactionHistoryChainFilterStore } from '../useTransactionHistoryC
 
 describe('useTransactionHistoryChainFilterStore', () => {
   beforeEach(() => {
-    useTransactionHistoryChainFilterStore.setState({
-      selectedChainIds: [],
-      hasUserModified: false,
-    });
+    useTransactionHistoryChainFilterStore.setState({ selection: null });
   });
 
-  it('defaults to All Chains with no user modification', () => {
-    const state = useTransactionHistoryChainFilterStore.getState();
-    expect(state.selectedChainIds).toEqual([]);
-    expect(state.hasUserModified).toBe(false);
+  it('starts with no selection, meaning the filter follows the bridge default', () => {
+    expect(useTransactionHistoryChainFilterStore.getState().selection).toBeNull();
   });
 
-  it('setSelectedChainIds replaces the selection and marks it user-modified', () => {
+  it('setSelection stores the chains along with the mode they were selected in', () => {
     useTransactionHistoryChainFilterStore
       .getState()
-      .setSelectedChainIds([ChainId.Ethereum, ChainId.ArbitrumOne]);
+      .setSelection({ chainIds: [ChainId.Ethereum, ChainId.ArbitrumOne], isTestnetMode: false });
 
-    const state = useTransactionHistoryChainFilterStore.getState();
-    expect(state.selectedChainIds).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne]);
-    expect(state.hasUserModified).toBe(true);
-  });
-
-  it('toggleChainId adds then removes a chain and marks it user-modified', () => {
-    const { toggleChainId } = useTransactionHistoryChainFilterStore.getState();
-
-    toggleChainId(ChainId.ArbitrumOne);
-    expect(useTransactionHistoryChainFilterStore.getState().selectedChainIds).toEqual([
-      ChainId.ArbitrumOne,
-    ]);
-    expect(useTransactionHistoryChainFilterStore.getState().hasUserModified).toBe(true);
-
-    toggleChainId(ChainId.ArbitrumOne);
-    expect(useTransactionHistoryChainFilterStore.getState().selectedChainIds).toEqual([]);
-  });
-
-  it('clearSelectedChainIds resets to All Chains but keeps it user-modified', () => {
-    const store = useTransactionHistoryChainFilterStore.getState();
-    store.setSelectedChainIds([ChainId.Ethereum]);
-    store.clearSelectedChainIds();
-
-    const state = useTransactionHistoryChainFilterStore.getState();
-    expect(state.selectedChainIds).toEqual([]);
-    expect(state.hasUserModified).toBe(true);
-  });
-
-  describe('initializeFromBridgeChains', () => {
-    it('sets the default selection when the user has not modified the filter', () => {
-      useTransactionHistoryChainFilterStore
-        .getState()
-        .initializeFromBridgeChains([ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
-
-      expect(useTransactionHistoryChainFilterStore.getState().selectedChainIds).toEqual([
-        ChainId.ArbitrumOne,
-        ChainId.RobinhoodChain,
-      ]);
-      // initializing from the bridge is not a user modification
-      expect(useTransactionHistoryChainFilterStore.getState().hasUserModified).toBe(false);
+    expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
+      chainIds: [ChainId.Ethereum, ChainId.ArbitrumOne],
+      isTestnetMode: false,
     });
+  });
 
-    it('does not override an explicit user selection', () => {
-      const store = useTransactionHistoryChainFilterStore.getState();
-      store.setSelectedChainIds([ChainId.Ethereum]);
-      store.initializeFromBridgeChains([ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
+  it('setSelection replaces the previous selection', () => {
+    const { setSelection } = useTransactionHistoryChainFilterStore.getState();
+    setSelection({ chainIds: [ChainId.Ethereum], isTestnetMode: false });
+    setSelection({ chainIds: [], isTestnetMode: false });
 
-      expect(useTransactionHistoryChainFilterStore.getState().selectedChainIds).toEqual([
-        ChainId.Ethereum,
-      ]);
-    });
-
-    it('re-initializes after the selection was reset (e.g. on testnet toggle)', () => {
-      const store = useTransactionHistoryChainFilterStore.getState();
-      store.setSelectedChainIds([ChainId.Ethereum]);
-      // clearing keeps hasUserModified true, so a plain re-init would be ignored
-      store.clearSelectedChainIds();
-      store.initializeFromBridgeChains([ChainId.ArbitrumOne]);
-      // still respects the user modification
-      expect(useTransactionHistoryChainFilterStore.getState().selectedChainIds).toEqual([]);
+    expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
+      chainIds: [],
+      isTestnetMode: false,
     });
   });
 });

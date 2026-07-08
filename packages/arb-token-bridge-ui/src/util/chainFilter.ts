@@ -5,6 +5,37 @@
  */
 
 /**
+ * The user's explicit filter selection, tagged with the testnet mode it was
+ * made in. `chainIds: []` means an explicit "All Chains" (no filtering).
+ */
+export type TxHistoryChainSelection = {
+  chainIds: number[];
+  isTestnetMode: boolean;
+};
+
+/**
+ * Resolves the effective chain selection. `null` means the user hasn't touched
+ * the filter, so it follows the bridge default (the selected pair's child
+ * chain). A selection made in the other testnet mode also falls back to the
+ * default — its chains don't exist in the current mode — which re-defaults the
+ * filter whenever the user switches between testnet and mainnet.
+ */
+export function resolveSelectedChainIds({
+  selection,
+  isTestnetMode,
+  defaultChainIds,
+}: {
+  selection: TxHistoryChainSelection | null;
+  isTestnetMode: boolean;
+  defaultChainIds: number[];
+}): number[] {
+  if (selection === null || selection.isTestnetMode !== isTestnetMode) {
+    return defaultChainIds;
+  }
+  return selection.chainIds;
+}
+
+/**
  * Whether the chain filter is active. An empty selection means "All Chains" —
  * no filtering — matching the default (unfiltered) transaction-history behavior.
  */

@@ -24,8 +24,8 @@ import {
 } from '../components/TransactionHistory/helpers';
 import {
   useDebouncedSelectedChainIds,
-  useTransactionHistoryChainFilterStore,
-} from '../components/TransactionHistory/useTransactionHistoryChainFilterStore';
+  useSelectedChainIds,
+} from '../components/TransactionHistory/useTransactionHistoryChainFilter';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
@@ -40,8 +40,9 @@ import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { logger } from '../util/logger';
-import { getChains, getChildChainIds, isNetwork } from '../util/networks';
+import { isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
+import { ChainPair, getMultiChainFetchList } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
@@ -86,8 +87,6 @@ export type UseTransactionHistoryResult = {
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
 
-export type ChainPair = { parentChainId: ChainId; childChainId: ChainId };
-
 export type Deposit = Transaction;
 
 export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
@@ -131,27 +130,6 @@ function getTransactionTimestamp(tx: Transfer) {
 
 function sortByTimestampDescending(a: Transfer, b: Transfer) {
   return getTransactionTimestamp(b) - getTransactionTimestamp(a);
-}
-
-export function getMultiChainFetchList(): ChainPair[] {
-  return getChains().flatMap((chain) => {
-    // We only grab child chains because we don't want duplicates and we need the parent chain
-    // Although the type is correct here we default to an empty array for custom networks backwards compatibility
-    const childChainIds = getChildChainIds(chain);
-
-    const isParentChain = childChainIds.length > 0;
-
-    if (!isParentChain) {
-      // Skip non-parent chains
-      return [];
-    }
-
-    // For each destination chain, map to an array of ChainPair objects
-    return childChainIds.map((childChainId) => ({
-      parentChainId: chain.chainId,
-      childChainId: childChainId,
-    }));
-  });
 }
 
 function isWithdrawalFromSubgraph(tx: Withdrawal): tx is WithdrawalFromSubgraph {
@@ -653,11 +631,10 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
         getMultiChainFetchList()
           .filter((chainPair) => {
             // When the user narrows tx history to specific chains, only fetch the
-            // relevant chain pairs. This shifts RPC load away from all chains and
-            // onto the ones the user selected. Uses the same rule as the display
-            // filter (single chain: either endpoint; multiple: both endpoints) so
-            // e.g. selecting Ethereum + Arbitrum One fetches only that pair rather
-            // than every Orbit chain that settles to Arbitrum One.
+            // chain pairs touching a selected chain on either endpoint. This
+            // shifts RPC load away from all chains and onto the ones the user
+            // selected, and uses the same rule as the display filter so the fetch
+            // list and the shown transactions can't disagree.
             if (
               !matchesChainFilter({
                 selectedChainIds,
@@ -833,7 +810,7 @@ export const useTransactionHistory = (
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
 
-  const selectedChainIds = useTransactionHistoryChainFilterStore((state) => state.selectedChainIds);
+  const selectedChainIds = useSelectedChainIds();
 
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
@@ -984,22 +961,26 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
-    const mergedTransactions = mergeTransactions({
+    // CCTP, OFT and LiFi transfers are fetched independently of the chain fetch
+    // list, so we filter the fetched pages to keep the displayed txs consistent
+    // with the selected chains. Transfers initiated during this session
+    // (newTransactions) are exempt so a just-submitted transfer is always
+    // visible, even when the filter doesn't cover its chains.
+    const filteredTxPages = txPages?.map((txPage) =>
+      txPage.filter((tx) =>
+        matchesChainFilter({
+          selectedChainIds,
+          sourceChainId: tx.sourceChainId,
+          destinationChainId: tx.destinationChainId,
+        }),
+      ),
+    );
+
+    return mergeTransactions({
       address,
       newTransactions: newTransactionsData,
-      fetchedTransactions: txPages,
+      fetchedTransactions: filteredTxPages,
     });
-
-    // CCTP and OFT transfers are fetched independently of the chain fetch list,
-    // so we filter the merged result to keep the displayed txs consistent with
-    // the selected chains.
-    return mergedTransactions.filter((tx) =>
-      matchesChainFilter({
-        selectedChainIds,
-        sourceChainId: tx.sourceChainId,
-        destinationChainId: tx.destinationChainId,
-      }),
-    );
   }, [newTransactionsData, txPages, address, selectedChainIds]);
 
   const updateCachedTransaction = useCallback(
