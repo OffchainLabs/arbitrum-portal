@@ -23,7 +23,6 @@ import {
   isTxPending,
 } from '../components/TransactionHistory/helpers';
 import {
-  matchesChainFilter,
   useDebouncedSelectedChainIds,
   useTransactionHistoryChainFilterStore,
 } from '../components/TransactionHistory/useTransactionHistoryChainFilterStore';
@@ -36,6 +35,7 @@ import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../u
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import { matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';

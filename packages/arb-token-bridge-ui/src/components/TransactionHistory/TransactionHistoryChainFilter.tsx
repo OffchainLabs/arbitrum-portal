@@ -3,34 +3,32 @@ import {
   CheckIcon,
   ChevronDownIcon,
   FunnelIcon,
+  InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { shallow } from 'zustand/shallow';
 
+import { Tooltip } from '@/app/components/common/Tooltip';
+
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { useNetworks } from '../../hooks/useNetworks';
-import { getMultiChainFetchList } from '../../hooks/useTransactionHistory';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import {
-  getNetworkName,
-  isCoreChainForDisplay,
-  isNetwork,
-  sortChainIds,
-} from '../../util/networks';
+import { isChainFilterActive } from '../../util/chainFilter';
+import { getNetworksRelationship } from '../../util/getNetworksRelationship';
+import { getNetworkName, isCoreChainForDisplay, sortChainIds } from '../../util/networks';
+import { TxHistoryRoute, getEligibleTxHistoryRoutes } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
 import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
-import {
-  isChainFilterActive,
-  useTransactionHistoryChainFilterStore,
-} from './useTransactionHistoryChainFilterStore';
+import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
 /**
  * The chains the user can filter transaction history by: every chain that
- * appears in the multi-chain fetch list for the current testnet/mainnet mode.
+ * appears in any transfer route (canonical, CCTP, OFT, LiFi) for the current
+ * testnet/mainnet mode.
  */
 function useFilterableChainIds() {
   const [isTestnetMode] = useIsTestnetMode();
@@ -38,23 +36,41 @@ function useFilterableChainIds() {
   return useMemo(() => {
     const chainIds = new Set<number>();
 
-    getMultiChainFetchList()
-      .filter((chainPair) => isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode)
-      .forEach((chainPair) => {
-        chainIds.add(chainPair.parentChainId);
-        chainIds.add(chainPair.childChainId);
-      });
+    // Empty selection => every route for the current mode.
+    getEligibleTxHistoryRoutes({ selectedChainIds: [], isTestnetMode }).forEach((route) => {
+      chainIds.add(route.parentChainId);
+      chainIds.add(route.childChainId);
+    });
 
     return sortChainIds(Array.from(chainIds));
   }, [isTestnetMode]);
 }
 
 /**
- * The chains selected in the bridge's chain selector, straight from the URL
- * query params. We read the raw params rather than `useNetworks()` because the
- * latter sanitizes the pair to a canonical bridge route (e.g. Eth <> Orbit
- * collapses to Eth <> Arbitrum One), which would make the filter default to the
- * wrong chains. Falls back to the sanitized chains when a param is absent.
+ * The transfer routes whose transactions will be shown for the current
+ * selection: every route (canonical, CCTP, OFT, LiFi) for the current
+ * testnet/mainnet mode, narrowed by the same rule the display filter uses.
+ * Surfaced in a tooltip so it's clear which routes are covered.
+ */
+function useEligibleChainPairs(selectedChainIds: number[]): TxHistoryRoute[] {
+  const [isTestnetMode] = useIsTestnetMode();
+
+  return useMemo(
+    () => getEligibleTxHistoryRoutes({ selectedChainIds, isTestnetMode }),
+    [isTestnetMode, selectedChainIds],
+  );
+}
+
+/**
+ * The default chain to filter by: the child chain of the pair selected in the
+ * bridge's chain selector (the URL query params). Defaulting to the child (e.g.
+ * Arbitrum One for Eth <> Arbitrum One, Robinhood for Eth <> Robinhood) and
+ * matching on either endpoint means the history shows every direct route to and
+ * from that chain — and never comes up empty for a non-canonical pair.
+ *
+ * We read the raw params rather than `useNetworks()` because the latter
+ * sanitizes the pair to a canonical bridge route (e.g. Eth <> Orbit collapses to
+ * Eth <> Arbitrum One). Falls back to the sanitized chains when a param is absent.
  */
 function useBridgeDefaultChainIds() {
   const [{ sourceChain: sourceChainParam, destinationChain: destinationChainParam }] =
@@ -63,17 +79,18 @@ function useBridgeDefaultChainIds() {
 
   const sourceChainId = sourceChainParam ?? sourceChain.id;
   const destinationChainId = destinationChainParam ?? destinationChain.id;
+  const { childChainId } = getNetworksRelationship({ sourceChainId, destinationChainId });
 
-  return useMemo(() => [sourceChainId, destinationChainId], [sourceChainId, destinationChainId]);
+  return useMemo(() => [childChainId], [childChainId]);
 }
 
 /**
- * Defaults the filter to the chains currently selected in the bridge (the URL
- * query selector), so the initial fetch is scoped to the chains the user is
- * actively bridging between. Becomes a no-op once the user changes the filter.
+ * Defaults the filter to the child chain of the bridge's selected pair (the URL
+ * query selector), so the initial fetch is scoped to the chain the user is
+ * actively bridging to/from. Becomes a no-op once the user changes the filter.
  * When the user switches between testnet and mainnet, the selection is
- * re-defaulted to that mode's bridge chains (e.g. Sepolia + Arbitrum Sepolia),
- * since the previously selected chains don't exist in the new mode.
+ * re-defaulted to that mode's child chain (e.g. Arbitrum Sepolia), since the
+ * previously selected chain doesn't exist in the new mode.
  */
 function useSyncChainFilterWithBridge() {
   const defaultChainIds = useBridgeDefaultChainIds();
@@ -143,6 +160,42 @@ function ChainRow({
   );
 }
 
+// Info tooltip listing the chain pairs (routes) that will actually be fetched
+// for the current selection.
+function EligibleRoutesTooltip({
+  chainPairs,
+  allChainsSelected,
+}: {
+  chainPairs: TxHistoryRoute[];
+  allChainsSelected: boolean;
+}) {
+  return (
+    <Tooltip
+      content={
+        <div className="flex flex-col gap-1 text-xs">
+          {allChainsSelected ? (
+            <span>Fetching transaction history for all supported routes.</span>
+          ) : (
+            <>
+              <span className="font-medium">Fetching history for these routes:</span>
+              {chainPairs.map((pair) => (
+                <span key={`${pair.parentChainId}-${pair.childChainId}`}>
+                  {getNetworkName(pair.parentChainId)} ↔ {getNetworkName(pair.childChainId)}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+      }
+    >
+      <InformationCircleIcon
+        className="h-4 w-4 shrink-0 text-white/50"
+        aria-label="Which routes are fetched"
+      />
+    </Tooltip>
+  );
+}
+
 export function TransactionHistoryChainFilter() {
   useSyncChainFilterWithBridge();
 
@@ -157,6 +210,8 @@ export function TransactionHistoryChainFilter() {
       }),
       shallow,
     );
+
+  const eligibleChainPairs = useEligibleChainPairs(selectedChainIds);
 
   const [search, setSearch] = useState('');
 
@@ -222,107 +277,113 @@ export function TransactionHistoryChainFilter() {
   const moreChainIds = visibleChainIds.filter((chainId) => !isCoreChainForDisplay(chainId));
 
   return (
-    <Popover className="relative">
-      {({ open }) => (
-        <>
-          <PopoverButton
-            as={Button}
-            variant="secondary"
-            className="px-[10px] py-[5px] h-[36px]"
-            aria-label="Filter transaction history by network"
-          >
-            <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
-              <FunnelIcon width={16} className="shrink-0 text-white/70" />
-              <span className="truncate font-light" style={{ maxWidth: 220 }}>
-                {triggerLabel}
-              </span>
-              <ChevronDownIcon width={12} className={open ? 'rotate-180' : ''} />
-            </div>
-          </PopoverButton>
-          <PopoverPanel
-            // `anchor` portals the panel to the document body and positions it
-            // relative to the button, so it isn't clipped by the transaction
-            // history panel's overflow (which cut it off on mobile). `padding`
-            // keeps it clear of the viewport edges.
-            anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
-            transition
-            // Cap the height to the space the anchor leaves us (respecting the
-            // padding above), clamped so it never grows taller than 420px.
-            // Set inline so it holds even before Tailwind regenerates this file.
-            style={{ width: 280, maxHeight: 'min(var(--anchor-max-height, 420px), 420px)' }}
-            className="z-20 flex origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
-          >
-            <div className="flex min-h-0 flex-1 flex-col">
-              <div className="p-2">
-                <div className="relative flex w-full items-center rounded bg-black/50 text-white shadow-input">
-                  <MagnifyingGlassIcon className="absolute left-3 top-[11px] h-3 w-3 shrink-0" />
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search by network name"
-                    aria-label="Search networks"
-                    className="w-full rounded bg-transparent py-2 pl-8 pr-2 text-sm font-light placeholder:text-sm placeholder:text-white"
-                  />
+    <div className="flex items-center gap-1.5">
+      <Popover className="relative">
+        {({ open }) => (
+          <>
+            <PopoverButton
+              as={Button}
+              variant="secondary"
+              className="px-[10px] py-[5px] h-[36px]"
+              aria-label="Filter transaction history by network"
+            >
+              <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
+                <FunnelIcon width={16} className="shrink-0 text-white/70" />
+                <span className="truncate font-light" style={{ maxWidth: 220 }}>
+                  {triggerLabel}
+                </span>
+                <ChevronDownIcon width={12} className={open ? 'rotate-180' : ''} />
+              </div>
+            </PopoverButton>
+            <PopoverPanel
+              // `anchor` portals the panel to the document body and positions it
+              // relative to the button, so it isn't clipped by the transaction
+              // history panel's overflow (which cut it off on mobile). `padding`
+              // keeps it clear of the viewport edges.
+              anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+              transition
+              // Cap the height to the space the anchor leaves us (respecting the
+              // padding above), clamped so it never grows taller than 420px.
+              // Set inline so it holds even before Tailwind regenerates this file.
+              style={{ width: 280, maxHeight: 'min(var(--anchor-max-height, 420px), 420px)' }}
+              className="z-20 flex origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+            >
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="p-2">
+                  <div className="relative flex w-full items-center rounded bg-black/50 text-white shadow-input">
+                    <MagnifyingGlassIcon className="absolute left-3 top-[11px] h-3 w-3 shrink-0" />
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search by network name"
+                      aria-label="Search networks"
+                      className="w-full rounded bg-transparent py-2 pl-8 pr-2 text-sm font-light placeholder:text-sm placeholder:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  // Cap the scrollable list directly (Headless overrides the
+                  // panel's max-height via the anchor), so the dropdown stays short.
+                  style={{ maxHeight: 260 }}
+                  className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+                >
+                  {!query && (
+                    <button
+                      className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
+                      onClick={toggleAllChains}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span
+                          className="h-4 w-4 shrink-0 rounded-full"
+                          style={{
+                            background: 'linear-gradient(135deg, #34d399, #22d3ee, #3b82f6)',
+                          }}
+                        />
+                        <span className="truncate text-sm text-white">All Chains</span>
+                      </div>
+                      <CheckboxBox checked={allChainsSelected} />
+                    </button>
+                  )}
+
+                  {coreChainIds.length > 0 && <SectionLabel>Core Chains</SectionLabel>}
+                  {coreChainIds.map((chainId) => (
+                    <ChainRow
+                      key={chainId}
+                      chainId={chainId}
+                      checked={isChainChecked(chainId)}
+                      onClick={() => toggleChain(chainId)}
+                    />
+                  ))}
+
+                  {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
+                  {moreChainIds.map((chainId) => (
+                    <ChainRow
+                      key={chainId}
+                      chainId={chainId}
+                      checked={isChainChecked(chainId)}
+                      onClick={() => toggleChain(chainId)}
+                    />
+                  ))}
+
+                  {visibleChainIds.length === 0 && (
+                    <div className="px-2 py-3 text-sm text-white/40">No networks found.</div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/10 px-3 py-3">
+                  <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
                 </div>
               </div>
-
-              <div
-                // Cap the scrollable list directly (Headless overrides the
-                // panel's max-height via the anchor), so the dropdown stays short.
-                style={{ maxHeight: 260 }}
-                className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
-              >
-                {!query && (
-                  <button
-                    className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
-                    onClick={toggleAllChains}
-                  >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <span
-                        className="h-4 w-4 shrink-0 rounded-full"
-                        style={{
-                          background: 'linear-gradient(135deg, #34d399, #22d3ee, #3b82f6)',
-                        }}
-                      />
-                      <span className="truncate text-sm text-white">All Chains</span>
-                    </div>
-                    <CheckboxBox checked={allChainsSelected} />
-                  </button>
-                )}
-
-                {coreChainIds.length > 0 && <SectionLabel>Core Chains</SectionLabel>}
-                {coreChainIds.map((chainId) => (
-                  <ChainRow
-                    key={chainId}
-                    chainId={chainId}
-                    checked={isChainChecked(chainId)}
-                    onClick={() => toggleChain(chainId)}
-                  />
-                ))}
-
-                {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
-                {moreChainIds.map((chainId) => (
-                  <ChainRow
-                    key={chainId}
-                    chainId={chainId}
-                    checked={isChainChecked(chainId)}
-                    onClick={() => toggleChain(chainId)}
-                  />
-                ))}
-
-                {visibleChainIds.length === 0 && (
-                  <div className="px-2 py-3 text-sm text-white/40">No networks found.</div>
-                )}
-              </div>
-
-              <div className="border-t border-white/10 px-3 py-3">
-                <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
-              </div>
-            </div>
-          </PopoverPanel>
-        </>
-      )}
-    </Popover>
+            </PopoverPanel>
+          </>
+        )}
+      </Popover>
+      <EligibleRoutesTooltip
+        chainPairs={eligibleChainPairs}
+        allChainsSelected={allChainsSelected}
+      />
+    </div>
   );
 }
