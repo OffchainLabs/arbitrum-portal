@@ -71,20 +71,20 @@ function useBridgeDefaultChainIds() {
  * Defaults the filter to the chains currently selected in the bridge (the URL
  * query selector), so the initial fetch is scoped to the chains the user is
  * actively bridging between. Becomes a no-op once the user changes the filter.
- * When the user switches between testnet and mainnet, the selection is reset to
- * "All Chains" to avoid filtering by chains that don't exist in the new mode.
+ * When the user switches between testnet and mainnet, the selection is
+ * re-defaulted to that mode's bridge chains (e.g. Sepolia + Arbitrum Sepolia),
+ * since the previously selected chains don't exist in the new mode.
  */
 function useSyncChainFilterWithBridge() {
   const defaultChainIds = useBridgeDefaultChainIds();
   const [isTestnetMode] = useIsTestnetMode();
-  const { initializeFromBridgeChains, clearSelectedChainIds } =
-    useTransactionHistoryChainFilterStore(
-      (state) => ({
-        initializeFromBridgeChains: state.initializeFromBridgeChains,
-        clearSelectedChainIds: state.clearSelectedChainIds,
-      }),
-      shallow,
-    );
+  const { initializeFromBridgeChains, setSelectedChainIds } = useTransactionHistoryChainFilterStore(
+    (state) => ({
+      initializeFromBridgeChains: state.initializeFromBridgeChains,
+      setSelectedChainIds: state.setSelectedChainIds,
+    }),
+    shallow,
+  );
 
   useEffect(() => {
     initializeFromBridgeChains(defaultChainIds);
@@ -94,9 +94,9 @@ function useSyncChainFilterWithBridge() {
   useEffect(() => {
     if (previousTestnetMode.current !== isTestnetMode) {
       previousTestnetMode.current = isTestnetMode;
-      clearSelectedChainIds();
+      setSelectedChainIds(defaultChainIds);
     }
-  }, [isTestnetMode, clearSelectedChainIds]);
+  }, [isTestnetMode, defaultChainIds, setSelectedChainIds]);
 }
 
 function CheckboxBox({ checked }: { checked: boolean }) {
@@ -228,10 +228,10 @@ export function TransactionHistoryChainFilter() {
           <PopoverButton
             as={Button}
             variant="secondary"
-            className="px-[10px] py-[5px]"
+            className="px-[10px] py-[5px] h-[36px]"
             aria-label="Filter transaction history by network"
           >
-            <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1] h-[36px]">
+            <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
               <FunnelIcon width={16} className="shrink-0 text-white/70" />
               <span className="truncate font-light" style={{ maxWidth: 220 }}>
                 {triggerLabel}
