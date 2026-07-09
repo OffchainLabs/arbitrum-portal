@@ -38,6 +38,10 @@ jobs:
     name: 'Test E2E - ${{ matrix.test.typeName }}'
     needs: [build, load-e2e-files]
     runs-on: ubuntu-8
+    # Healthy variant jobs finish in ~35m. A testnode that boots with a stalled
+    # validator makes every withdrawal spec burn its full timeout (~90m job);
+    # cap it so sick chains fail fast and can be rerun.
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
