@@ -57,9 +57,13 @@ describe('Read classic deposit messages', () => {
       );
 
       // log in to metamask
+      // Pin the destination so the ORBIT_TEST login doesn't default it to the
+      // L3, which would scope the tx history filter away from the seeded
+      // Ethereum <> Arbitrum One deposit.
       cy.login({
         networkType: 'parentChain',
         networkName: 'Ethereum',
+        query: { destinationChain: 'arbitrum-one' },
       });
 
       cy.switchToTransactionHistoryTab('settled');
@@ -94,6 +98,7 @@ describe('Read classic deposit messages', () => {
       cy.login({
         networkType: 'parentChain',
         networkName: 'Ethereum',
+        query: { destinationChain: 'arbitrum-one' },
       });
 
       cy.switchToTransactionHistoryTab('settled');
