@@ -267,6 +267,14 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
     },
   ],
   [ChainId.ArbitrumNova]: [],
+  [ChainId.RobinhoodChain]: [
+    {
+      symbol: 'USDC',
+      l2CustomAddr: '',
+      l1Address: CommonAddress.Ethereum.USDC,
+      l2Address: '0x80e0e24718dbFcad49ECAA6F1e6C89A190586cA8',
+    },
+  ],
   // Plume
   98866: [
     {
