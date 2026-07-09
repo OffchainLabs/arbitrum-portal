@@ -36,9 +36,9 @@ export function getLifiTransferStatus(statusResponse: StatusResponse): {
   } else {
     if ('timestamp' in statusResponse.sending) {
       status = WithdrawalStatus.CONFIRMED;
-      destinationStatus = WithdrawalStatus.FAILURE;
+      destinationStatus = WithdrawalStatus.REFUNDED;
     } else {
-      status = WithdrawalStatus.FAILURE;
+      status = WithdrawalStatus.REFUNDED;
       destinationStatus = WithdrawalStatus.UNCONFIRMED;
     }
   }
