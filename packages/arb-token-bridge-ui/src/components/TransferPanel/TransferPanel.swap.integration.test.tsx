@@ -48,31 +48,28 @@ const swapCases: RouteTokenCase[] = [
     sourceToken: tokenExpectationsByChain.Superposition.USDCe,
     destinationToken: tokenExpectationsByChain.ApeChain.WETH,
   },
-];
-
-/**
- * Robinhood Chain is ETH-native and not yet live on LiFi. These deposit cases
- * (stablecoin -> ETH) mirror the swaps above; remove `.skip` to run them once
- * the chain is live. ApeChain <> Robinhood is intentionally omitted for now,
- * and Robinhood -> Base is not a supported route.
- */
-const robinhoodSwapCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
+    sourceToken: tokenExpectationsByChain.Ethereum.USDe,
+    destinationToken: nativeEthTokenExpectation,
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.Ethereum.USDG,
     destinationToken: nativeEthTokenExpectation,
   },
   {
     sourceChain: 'arbitrum-one',
     destinationChain: 'robinhood-chain',
-    sourceToken: tokenExpectationsByChain.ArbitrumOne.USDC,
+    sourceToken: tokenExpectationsByChain.ArbitrumOne.USDe,
     destinationToken: nativeEthTokenExpectation,
   },
   {
-    sourceChain: 'superposition',
+    sourceChain: 'base',
     destinationChain: 'robinhood-chain',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
+    sourceToken: tokenExpectationsByChain.Base.USDe,
     destinationToken: nativeEthTokenExpectation,
   },
 ];
@@ -102,17 +99,11 @@ async function assertSwapRouteTokens({
   });
 }
 
-describe.sequential('TransferPanel LiFi Integration - Swap (USDC -> ETH/WETH)', () => {
+describe.sequential('TransferPanel LiFi Integration - Swap', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(swapCases)(
-    'renders expected source and destination tokens for swap (USDC -> ETH/WETH): $sourceChain -> $destinationChain',
-    assertSwapRouteTokens,
-  );
-
-  // Enable once Robinhood Chain is live on LiFi (see robinhoodSwapCases note).
-  it.skip.each(robinhoodSwapCases)(
-    'renders expected source and destination tokens for Robinhood swap (USDC -> ETH): $sourceChain -> $destinationChain',
+    'renders expected source and destination tokens for swap: $sourceChain -> $destinationChain',
     assertSwapRouteTokens,
   );
 });
