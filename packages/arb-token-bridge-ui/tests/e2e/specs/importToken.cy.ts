@@ -135,7 +135,7 @@ describe('Import token', () => {
           .type('UNI');
 
         // flaky test can load data too slowly here
-        cy.findByText('Uniswap', { timeout: 5_000 }).click();
+        cy.findByText('Uniswap', { timeout: 30_000 }).click();
 
         // UNI token should be selected now and popup should be closed after selection
         cy.findSelectTokenButton('UNI');

@@ -24,7 +24,11 @@ const validResult = [
 
 describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
   it('calls fetchWithdrawals correct number of times and returns valid data', async () => {
-    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
+    const mock = vi
+      .spyOn(fetchModule, 'fetchWithdrawals')
+      .mockResolvedValueOnce(validResult.slice(0, 2) as any)
+      .mockResolvedValueOnce(validResult.slice(2, 3) as any)
+      .mockResolvedValueOnce(validResult.slice(3) as any);
 
     const result = await fetchWithdrawalsInBatches({
       parentChainId: 1,
@@ -42,7 +46,7 @@ describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
 
 describe.sequential('fetchWithdrawalsInBatches single call', () => {
   it('calls a large range once and returns valid data', async () => {
-    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
+    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue(validResult as any);
 
     const result = await fetchWithdrawalsInBatches({
       parentChainId: 1,
@@ -53,6 +57,8 @@ describe.sequential('fetchWithdrawalsInBatches single call', () => {
     expect(mock).toHaveBeenCalledTimes(1);
     expect(result).toHaveLength(4);
     expect(result).toEqual(expect.arrayContaining(validResult));
+
+    mock.mockRestore();
   });
 });
 
