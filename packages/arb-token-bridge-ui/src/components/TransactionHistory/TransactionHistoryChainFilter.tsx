@@ -78,6 +78,7 @@ function ChainRow({
     <button
       role="checkbox"
       aria-checked={checked}
+      aria-label={`Toggle ${getNetworkName(chainId)} filter`}
       className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
       onClick={onClick}
     >
@@ -236,6 +237,7 @@ export function TransactionHistoryChainFilter() {
                     <button
                       role="checkbox"
                       aria-checked={allChainsSelected}
+                      aria-label="Toggle All Chains filter"
                       className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
                       onClick={toggleAllChains}
                     >
