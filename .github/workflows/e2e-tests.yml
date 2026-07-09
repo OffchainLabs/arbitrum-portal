@@ -231,7 +231,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install gh-actions-cache
         run: gh extension install actions/gh-actions-cache
+      # Keep the cache when anything failed: re-runs reuse the run_id and the
+      # succeeded build job does not re-run, so a rerun's restore would miss.
       - name: Delete build artifacts
+        if: needs.test-e2e.result != 'failure' && needs.test-e2e-cctp.result != 'failure'
         run: |
           if gh actions-cache list | grep build-artifacts-${{ github.run_id }}
           then
