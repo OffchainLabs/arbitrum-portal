@@ -1,52 +1,24 @@
 #!/usr/bin/env node
-const specFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/specfiles.json');
-const cctpFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/cctp.json');
 
 const tests = [];
 
-// Map variant type to testnode image tag
-const tagMap = {
-  'regular': 'l2',
-  'orbit-eth': 'l3-eth',
-  'orbit-custom-6dec': 'l3-custom-6',
-  'orbit-custom-18dec': 'l3-custom-18',
-  'orbit-custom-20dec': 'l3-custom-20',
-};
+// One matrix entry per testnode variant. Each job runs the full spec list
+// (synpress.config.ts falls back to all of specfiles.json when TEST_FILE is
+// unset), so the per-job testnode boot, app start, and chain setup are paid
+// once per variant instead of once per spec.
+const variants = [
+  { type: 'regular', typeName: 'Regular', tag: 'l2' },
+  { type: 'orbit-eth', typeName: 'with L3 (ETH)', tag: 'l3-eth' },
+  { type: 'orbit-custom-6dec', typeName: 'with L3 (6 decimals custom)', tag: 'l3-custom-6' },
+  { type: 'orbit-custom-18dec', typeName: 'with L3 (18 decimals custom)', tag: 'l3-custom-18' },
+  { type: 'orbit-custom-20dec', typeName: 'with L3 (20 decimals custom)', tag: 'l3-custom-20' },
+];
 
 const testType = process.argv[2];
 switch (testType) {
   case 'regular': {
-    specFiles.forEach((spec) => {
-      tests.push({
-        ...spec,
-        type: 'regular',
-        typeName: '',
-        tag: tagMap['regular'],
-      });
-      tests.push({
-        ...spec,
-        type: 'orbit-eth',
-        typeName: 'with L3 (ETH)',
-        tag: tagMap['orbit-eth'],
-      });
-      tests.push({
-        ...spec,
-        type: 'orbit-custom-6dec',
-        typeName: 'with L3 (6 decimals custom)',
-        tag: tagMap['orbit-custom-6dec'],
-      });
-      tests.push({
-        ...spec,
-        type: 'orbit-custom-18dec',
-        typeName: 'with L3 (18 decimals custom)',
-        tag: tagMap['orbit-custom-18dec'],
-      });
-      tests.push({
-        ...spec,
-        type: 'orbit-custom-20dec',
-        typeName: 'with L3 (20 decimals custom)',
-        tag: tagMap['orbit-custom-20dec'],
-      });
+    variants.forEach((variant) => {
+      tests.push({ ...variant, recordVideo: false });
     });
     break;
   }
