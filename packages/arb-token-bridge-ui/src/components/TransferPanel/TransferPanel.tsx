@@ -416,7 +416,7 @@ export function TransferPanel() {
     if (!signer) {
       throw new Error(signerUndefinedError);
     }
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
@@ -535,7 +535,7 @@ export function TransferPanel() {
       if (!signer) {
         throw new Error(signerUndefinedError);
       }
-      if (!isTransferAllowed) {
+      if (!isTransferAllowed.current) {
         throw new Error(transferNotAllowedError);
       }
       if (!context) {
@@ -752,7 +752,7 @@ export function TransferPanel() {
     if (!signer) {
       throw new Error(signerUndefinedError);
     }
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
@@ -883,7 +883,7 @@ export function TransferPanel() {
   const transfer = async () => {
     const sourceChainId = latestNetworks.current.sourceChain.id;
 
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
@@ -1279,7 +1279,7 @@ export function TransferPanel() {
       setTransferring(false);
     }
 
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       return networkConnectionWarningToast();
     }
 
