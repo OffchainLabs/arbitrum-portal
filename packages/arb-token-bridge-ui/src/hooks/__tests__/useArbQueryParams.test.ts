@@ -324,11 +324,11 @@ describe('sanitizeTokenQueryParam', () => {
     });
 
     it('should be stripped if the destination chain is an Orbit chain with ETH as the gas token', () => {
-      const rariChainId = 1380012617;
+      const superpositionChainId = 55244;
 
       const result = sanitizeTokenQueryParam({
         sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: rariChainId,
+        destinationChainId: superpositionChainId,
         token: 'eth',
       });
       expect(result).toBeUndefined();
