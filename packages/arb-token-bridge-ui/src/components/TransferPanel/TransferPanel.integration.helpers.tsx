@@ -5,7 +5,6 @@ import { beforeAll, expect, vi } from 'vitest';
 import { addOrbitChainsToArbitrumSDK } from '../../../../app/src/initialization';
 import { getSanitizedRedirectPath } from '../../../../app/src/utils/sanitizeAndRedirect';
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, PathnameEnum, WETH_TOKEN_LOGO } from '../../constants';
-import { type ArbTokenBridge } from '../../hooks/arbTokenBridge.types';
 import {
   createIntegrationWrapper,
   getSearchParams,
@@ -288,13 +287,11 @@ export async function renderTransferPanel({
   destinationChain,
   token,
   destinationToken,
-  initialArbTokenBridge,
 }: {
   sourceChain: ChainQuerySlug;
   destinationChain: ChainQuerySlug;
   token?: string;
   destinationToken?: string;
-  initialArbTokenBridge?: ArbTokenBridge;
 }) {
   const search = await getSearchParamsAfterSanitization({
     sourceChain,
@@ -303,10 +300,7 @@ export async function renderTransferPanel({
     destinationToken,
   });
 
-  const wrapper = createIntegrationWrapper({
-    search,
-    initialArbTokenBridge,
-  });
+  const wrapper = createIntegrationWrapper({ search });
 
   await act(async () => {
     render(<TransferPanel />, { wrapper });
