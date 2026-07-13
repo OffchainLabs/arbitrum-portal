@@ -85,6 +85,15 @@ describe('isWithdrawOnlyToken', () => {
     ).toBe(true);
   });
 
+  it('disables USDT deposits to Robinhood Chain', () => {
+    expect(
+      isWithdrawOnlyToken({
+        parentChainErc20Address: CommonAddress.Ethereum.USDT,
+        childChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
   it('keeps USDC deposits enabled for Arbitrum One', () => {
     expect(
       isWithdrawOnlyToken({
