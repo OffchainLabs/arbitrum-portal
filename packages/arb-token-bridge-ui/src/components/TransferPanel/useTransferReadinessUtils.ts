@@ -43,3 +43,7 @@ export function getInsufficientFundsForGasFeesErrorMessage({
 export function getWithdrawOnlyChainErrorMessage(chainName: string) {
   return `${chainName} has currently suspended deposits. You can only withdraw assets from this chain.`;
 }
+
+export function getTrustWalletDisabledErrorMessage() {
+  return 'Bridging with Trust Wallet is temporarily disabled due to a high rate of failed transactions. Please connect with a different wallet to continue.';
+}
