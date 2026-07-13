@@ -58,6 +58,13 @@ vi.mock('./src/wallet/hooks/useWalletModal', () => ({
   }),
 }));
 
+// Avoid error from appkit hooks requiring createAppKit to be called first
+vi.mock('@reown/appkit/react', () => ({
+  createAppKit: vi.fn(),
+  useAppKit: () => ({ open: vi.fn() }),
+  useWalletInfo: () => ({ walletInfo: undefined }),
+}));
+
 class MockLoadedImage {
   onload: ((event: Event) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
