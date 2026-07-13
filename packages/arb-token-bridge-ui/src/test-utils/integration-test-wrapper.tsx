@@ -13,6 +13,7 @@ import { mainnet } from 'wagmi/chains';
 import { useArbTokenBridgeBootstrap } from '../components/App/useArbTokenBridgeBootstrap';
 import { ArbTokenBridgeStoreSync } from '../components/syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../components/syncers/TokenListSyncer';
+import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { queryParamProviderOptions } from '../hooks/useArbQueryParams';
 import { defaultState } from '../state/app/state';
 import { useAppStore } from '../state/index';
@@ -38,6 +39,7 @@ function createAdapter(initialLocation: PartialLocation): QueryParamAdapterCompo
 
 type CreateIntegrationWrapperParams = {
   search?: string;
+  initialArbTokenBridge?: ArbTokenBridge;
 };
 
 function IntegrationBootstrap() {
@@ -51,7 +53,10 @@ function IntegrationBootstrap() {
   );
 }
 
-export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapperParams = {}) {
+export function createIntegrationWrapper({
+  search = '',
+  initialArbTokenBridge,
+}: CreateIntegrationWrapperParams = {}) {
   const queryClient = new QueryClient();
   const adapter = createAdapter({
     search,
@@ -69,6 +74,8 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
     useState(() => {
       useAppStore.setState({
         ...defaultState,
+        arbTokenBridge: initialArbTokenBridge ?? defaultState.arbTokenBridge,
+        arbTokenBridgeLoaded: Boolean(initialArbTokenBridge),
       });
     });
 
@@ -81,7 +88,7 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
                 provider: () => new Map(),
               }}
             >
-              <IntegrationBootstrap />
+              {!initialArbTokenBridge && <IntegrationBootstrap />}
               {children}
             </SWRConfig>
           </QueryClientProvider>
