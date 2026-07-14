@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ChainId } from '../types/ChainId';
 import { isNetwork } from './networks';
+import orbitChainsData from './orbitChainsData.json';
 import { getTxHistoryRoutes } from './txHistoryRoutes';
 
 function getUndirectedKey(chainIdA: number, chainIdB: number): string {
@@ -9,18 +11,25 @@ function getUndirectedKey(chainIdA: number, chainIdB: number): string {
 }
 
 describe('getTxHistoryRoutes', () => {
+  beforeAll(() => {
+    // Orbit chains referenced by LiFi routes are registered at runtime in the app.
+    for (const chainId of [ChainId.ApeChain, ChainId.Superposition, ChainId.RobinhoodChain]) {
+      registerCustomArbitrumNetwork(
+        orbitChainsData.mainnet.find((chain) => chain.chainId === chainId)!,
+      );
+    }
+  });
+
   it('returns routes for both network modes', () => {
     expect(getTxHistoryRoutes({ isTestnetMode: false }).length).toBeGreaterThan(0);
     expect(getTxHistoryRoutes({ isTestnetMode: true }).length).toBeGreaterThan(0);
   });
 
-  it('only returns routes whose parent endpoint matches the requested mode', () => {
-    // Child endpoints aren't asserted: some LiFi destinations (e.g. ApeChain,
-    // Superposition) are registered at runtime, so `isNetwork` misreports them
-    // in the unit-test environment.
+  it('only returns routes whose endpoints match the requested mode', () => {
     for (const isTestnetMode of [false, true]) {
       for (const route of getTxHistoryRoutes({ isTestnetMode })) {
         expect(isNetwork(route.parentChainId).isTestnet).toBe(isTestnetMode);
+        expect(isNetwork(route.childChainId).isTestnet).toBe(isTestnetMode);
       }
     }
   });
@@ -45,5 +54,13 @@ describe('getTxHistoryRoutes', () => {
       getUndirectedKey(route.parentChainId, route.childChainId),
     );
     expect(testnetKeys).toContain(getUndirectedKey(ChainId.Sepolia, ChainId.ArbitrumSepolia));
+  });
+
+  it('includes LiFi-only routes (e.g. Arbitrum Nova <> Arbitrum One)', () => {
+    const mainnetKeys = getTxHistoryRoutes({ isTestnetMode: false }).map((route) =>
+      getUndirectedKey(route.parentChainId, route.childChainId),
+    );
+    expect(mainnetKeys).toContain(getUndirectedKey(ChainId.ArbitrumNova, ChainId.ArbitrumOne));
+    expect(mainnetKeys).toContain(getUndirectedKey(ChainId.Ethereum, ChainId.ApeChain));
   });
 });

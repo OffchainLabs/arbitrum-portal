@@ -1,13 +1,11 @@
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
-  CheckIcon,
   ChevronDownIcon,
   FunnelIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import { useMemo, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { PropsWithChildren, useMemo, useState } from 'react';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
@@ -17,6 +15,7 @@ import { isChainFilterActive, matchesChainFilter } from '../../util/chainFilter'
 import { getNetworkName, isCoreChainForDisplay, sortChainIds } from '../../util/networks';
 import { ChainPair, getTxHistoryRoutes } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
+import { Checkbox } from '../common/Checkbox';
 import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
 import { useBridgeDefaultChainIds, useSelectedChainIds } from './useTransactionHistoryChainFilter';
@@ -44,20 +43,7 @@ function useTxHistoryRoutes(selectedChainIds: number[]) {
   }, [isTestnetMode, selectedChainIds]);
 }
 
-function CheckboxBox({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={twMerge(
-        'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-sm border-[1px]',
-        checked ? 'border-dark bg-white' : 'border-gray-6 bg-dark',
-      )}
-    >
-      {checked && <CheckIcon className="h-[10px] w-[10px] stroke-[5] text-dark" />}
-    </span>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: PropsWithChildren) {
   return (
     <div className="px-2 pb-1 pt-3 text-xs font-medium uppercase tracking-wider text-white/40">
       {children}
@@ -68,28 +54,31 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function ChainRow({
   chainId,
   checked,
-  onClick,
+  onToggle,
 }: {
   chainId: number;
   checked: boolean;
-  onClick: () => void;
+  onToggle: (chainId: number) => void;
 }) {
   return (
-    <button
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={`Toggle ${getNetworkName(chainId)} filter`}
-      className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-2 overflow-hidden">
-        <NetworkImage chainId={chainId} />
-        <span className="truncate text-sm text-white">{getNetworkName(chainId)}</span>
-      </div>
-      <CheckboxBox checked={checked} />
-    </button>
+    <div className="rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10">
+      <Checkbox
+        label={
+          <div className="flex items-center gap-2 overflow-hidden">
+            <NetworkImage chainId={chainId} />
+            <span className="truncate text-sm">{getNetworkName(chainId)}</span>
+          </div>
+        }
+        labelClassName="min-w-0 flex-1"
+        checked={checked}
+        onChange={() => onToggle(chainId)}
+      />
+    </div>
   );
 }
+
+// A hub chain can match dozens of routes; an over-tall tooltip renders off-screen.
+const MAX_TOOLTIP_ROUTES = 6;
 
 function EligibleRoutesTooltip({
   chainPairs,
@@ -98,6 +87,9 @@ function EligibleRoutesTooltip({
   chainPairs: ChainPair[];
   allChainsSelected: boolean;
 }) {
+  const visibleRoutes = chainPairs.slice(0, MAX_TOOLTIP_ROUTES);
+  const hiddenRouteCount = chainPairs.length - visibleRoutes.length;
+
   return (
     <Tooltip
       // Focusable trigger so keyboard users can reveal the tooltip.
@@ -109,11 +101,16 @@ function EligibleRoutesTooltip({
           ) : (
             <>
               <span className="font-medium">Showing history for these routes:</span>
-              {chainPairs.map((pair) => (
+              {visibleRoutes.map((pair) => (
                 <span key={`${pair.parentChainId}-${pair.childChainId}`}>
                   {getNetworkName(pair.parentChainId)} ↔ {getNetworkName(pair.childChainId)}
                 </span>
               ))}
+              {hiddenRouteCount > 0 && (
+                <span className="text-white/70">
+                  and {hiddenRouteCount} more route{hiddenRouteCount === 1 ? '' : 's'}
+                </span>
+              )}
             </>
           )}
         </div>
@@ -234,19 +231,19 @@ export function TransactionHistoryChainFilter() {
                   className="max-h-[260px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
                   {!query && (
-                    <button
-                      role="checkbox"
-                      aria-checked={allChainsSelected}
-                      aria-label="Toggle All Chains filter"
-                      className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-left transition-[background] duration-200 hover:bg-white/10"
-                      onClick={toggleAllChains}
-                    >
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
-                        <span className="truncate text-sm text-white">All Chains</span>
-                      </div>
-                      <CheckboxBox checked={allChainsSelected} />
-                    </button>
+                    <div className="rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10">
+                      <Checkbox
+                        label={
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
+                            <span className="truncate text-sm">All Chains</span>
+                          </div>
+                        }
+                        labelClassName="min-w-0 flex-1"
+                        checked={allChainsSelected}
+                        onChange={toggleAllChains}
+                      />
+                    </div>
                   )}
 
                   {coreChainIds.length > 0 && <SectionLabel>Core Chains</SectionLabel>}
@@ -255,7 +252,7 @@ export function TransactionHistoryChainFilter() {
                       key={chainId}
                       chainId={chainId}
                       checked={isChainChecked(chainId)}
-                      onClick={() => toggleChain(chainId)}
+                      onToggle={toggleChain}
                     />
                   ))}
 
@@ -265,7 +262,7 @@ export function TransactionHistoryChainFilter() {
                       key={chainId}
                       chainId={chainId}
                       checked={isChainChecked(chainId)}
-                      onClick={() => toggleChain(chainId)}
+                      onToggle={toggleChain}
                     />
                   ))}
 

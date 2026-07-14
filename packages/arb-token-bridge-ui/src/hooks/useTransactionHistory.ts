@@ -1,4 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
+import { useDebounce } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -22,10 +23,7 @@ import {
   isSameTransaction,
   isTxPending,
 } from '../components/TransactionHistory/helpers';
-import {
-  useDebouncedSelectedChainIds,
-  useSelectedChainIds,
-} from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+import { useSelectedChainIds } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
@@ -130,6 +128,15 @@ function getTransactionTimestamp(tx: Transfer) {
 
 function sortByTimestampDescending(a: Transfer, b: Transfer) {
   return getTransactionTimestamp(b) - getTransactionTimestamp(a);
+}
+
+function makeMatchesSelectedChains(selectedChainIds: number[]) {
+  return (tx: MergedTransaction) =>
+    matchesChainFilter({
+      selectedChainIds,
+      sourceChainId: tx.sourceChainId,
+      destinationChainId: tx.destinationChainId,
+    });
 }
 
 function isWithdrawalFromSubgraph(tx: Withdrawal): tx is WithdrawalFromSubgraph {
@@ -555,7 +562,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
   // Debounced so rapidly toggling several chains coalesces into a single refetch.
-  const selectedChainIds = useDebouncedSelectedChainIds();
+  const selectedChainIds = useDebounce(useSelectedChainIds(), 500);
   // Stable identifier for the selected chains so SWR refetches when the filter changes.
   const selectedChainIdsKey = [...selectedChainIds].sort((a, b) => a - b).join(',');
 
@@ -771,12 +778,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
   // CCTP, OFT and LiFi are fetched by single API calls rather than the scoped
   // chain-pair fan-out, so filter them here — before pagination — to keep
   // unrelated transfers from consuming page slots and per-tx mapping work.
-  const matchesSelectedChains = (tx: MergedTransaction) =>
-    matchesChainFilter({
-      selectedChainIds,
-      sourceChainId: tx.sourceChainId,
-      destinationChainId: tx.destinationChainId,
-    });
+  const matchesSelectedChains = makeMatchesSelectedChains(selectedChainIds);
 
   // merge deposits and withdrawals and sort them by date
   const transactions: Transfer[] = [
