@@ -128,7 +128,7 @@ describe('getLifiTransferStatus', () => {
     });
   });
 
-  it('maps failed transfers after source execution to destination failure', () => {
+  it('maps failed transfers after source execution to refunded destination', () => {
     const statusResponse: StatusResponse = {
       ...baseStatusResponse,
       status: 'FAILED',
@@ -141,7 +141,21 @@ describe('getLifiTransferStatus', () => {
 
     expect(getLifiTransferStatus(statusResponse)).toEqual({
       status: WithdrawalStatus.CONFIRMED,
-      destinationStatus: WithdrawalStatus.FAILURE,
+      destinationStatus: WithdrawalStatus.REFUNDED,
+      destinationTxId: null,
+    });
+  });
+
+  it('maps failed transfers before source execution to refunded source', () => {
+    const statusResponse: StatusResponse = {
+      ...baseStatusResponse,
+      status: 'FAILED',
+      substatus: 'UNKNOWN_FAILED_ERROR',
+    };
+
+    expect(getLifiTransferStatus(statusResponse)).toEqual({
+      status: WithdrawalStatus.REFUNDED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
       destinationTxId: null,
     });
   });
