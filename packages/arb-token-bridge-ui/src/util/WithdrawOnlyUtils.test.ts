@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from './CommonAddressUtils';
-import { isCanonicalDepositBlocked, isWithdrawOnlyToken } from './WithdrawOnlyUtils';
+import {
+  isBlockedOftDeposit,
+  isCanonicalDepositBlocked,
+  isWithdrawOnlyToken,
+} from './WithdrawOnlyUtils';
 
 const CANONICAL_ENA_ARB = '0xdf8f0c63d9335a0abd89f9f752d293a98ea977d8'; // standard-gateway address
 const USDC_E_ARB = '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8';
@@ -72,6 +76,18 @@ describe('isCanonicalDepositBlocked', () => {
         hasOftChildDeployment: false,
       }),
     ).toBe(false);
+  });
+});
+
+describe('isBlockedOftDeposit', () => {
+  it('does not block when the destination is not a canonical child of the source', async () => {
+    await expect(
+      isBlockedOftDeposit({
+        parentChainErc20Address: CommonAddress.ArbitrumOne.WETH,
+        parentChainId: ChainId.ArbitrumOne,
+        childChainId: ChainId.RobinhoodChain,
+      }),
+    ).resolves.toBe(false);
   });
 });
 

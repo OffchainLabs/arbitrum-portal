@@ -1,5 +1,6 @@
 // tokens that can't be bridged to Arbitrum (maybe coz they have their native protocol bridges and custom implementation or they are being discontinued)
 // the UI doesn't let users deposit such tokens. If bridged already, these can only be withdrawn.
+import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { ethers } from 'ethers';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -375,6 +376,14 @@ export function isCanonicalDepositBlocked({
   return hasOftChildDeployment;
 }
 
+function getParentChainId(chainId: number): number | undefined {
+  try {
+    return getArbitrumNetwork(chainId).parentChainId;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function isBlockedOftDeposit({
   parentChainErc20Address,
   parentChainId,
@@ -384,6 +393,12 @@ export async function isBlockedOftDeposit({
   parentChainId: number;
   childChainId: number;
 }) {
+  // Only a real parent/child deposit has a canonical route to evaluate; skip pairs
+  // like Arbitrum One to Robinhood Chain, whose canonical parent is Ethereum.
+  if (getParentChainId(childChainId) !== parentChainId) {
+    return false;
+  }
+
   const { isOft, hasOftChildDeployment } = await getLayerZeroOftInfo({
     parentChainId,
     parentTokenAddress: parentChainErc20Address,
