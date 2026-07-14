@@ -79,7 +79,7 @@ const Input1 = React.memo(() => {
   const decimals = useSelectedTokenDecimals();
   const { errorMessages } = useTransferReadiness();
   const [selectedToken] = useSelectedToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const isMaxAmount = amount === AmountQueryParamEnum.MAX;
 
@@ -165,7 +165,7 @@ const Input2 = React.memo(() => {
   const [networks] = useNetworks();
   const { childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const { ethPrice } = useETHPrice();
   const [{ amount2 }] = useArbQueryParams();
   const { setAmount2 } = useSetInputAmount();

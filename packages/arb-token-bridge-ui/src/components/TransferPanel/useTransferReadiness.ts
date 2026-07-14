@@ -228,9 +228,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
-  const tokensFromLists = useTokensFromLists();
   const { walletInfo } = useWalletInfo('eip155');
   const isTrustWalletConnection = (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))

@@ -350,7 +350,7 @@ export const Route = React.memo(
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
     const { ethPrice } = useETHPrice();
-    const tokensFromLists = useTokensFromLists();
+    const { data: tokensFromLists } = useTokensFromLists();
 
     const token = overrideToken || _token || childNativeCurrency;
 

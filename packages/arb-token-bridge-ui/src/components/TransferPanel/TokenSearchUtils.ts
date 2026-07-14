@@ -10,15 +10,15 @@ import { TokenListWithId } from '../../util/TokenListUtils';
 import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
-const emptyData = {};
+const emptyData: ContractStorage<ERC20BridgeToken> = {};
 
-export function useTokensFromLists(): ContractStorage<ERC20BridgeToken> {
+export function useTokensFromLists() {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
-  const { data: tokenLists = [] } = useTokenLists(childChain.id);
+  const { data: tokenLists } = useTokenLists(childChain.id);
 
-  const { data = emptyData } = useSWRImmutable(
-    [tokenLists, parentChain.id, childChain.id, 'useTokensFromLists'],
+  const { data = emptyData, isLoading } = useSWRImmutable(
+    [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
     ([_tokenLists, _parentChainId, _childChainId]) =>
       tokenListsToSearchableTokenStorage(
         _tokenLists,
@@ -27,7 +27,7 @@ export function useTokensFromLists(): ContractStorage<ERC20BridgeToken> {
       ),
   );
 
-  return data;
+  return { data, isLoading: tokenLists === undefined || isLoading };
 }
 
 export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {

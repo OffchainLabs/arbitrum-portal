@@ -134,7 +134,7 @@ export function TransferPanel() {
   const latestChain = useLatest(chain);
   const [networks, setNetworks] = useNetworks();
   const latestNetworks = useLatest(networks);
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
   const {
     current: { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode },

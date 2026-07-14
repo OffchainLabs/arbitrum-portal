@@ -47,7 +47,7 @@ function BalanceRow({
   const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
   const symbol = useMemo(() => {
@@ -105,7 +105,7 @@ function BalancesContainer() {
   const [{ amount2 }] = useArbQueryParams();
   const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const { ethPrice } = useETHPrice();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
