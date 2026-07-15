@@ -110,23 +110,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v5
-
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
           package-manager-cache: false
 
-      - name: Install node_modules
-        uses: OffchainLabs/actions/node-modules/install@main
-        with:
-          install-command: pnpm install --frozen-lockfile
-          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # npm retired the legacy audit endpoints (HTTP 410), which breaks
+      # `pnpm audit` on pnpm 10. The fix shipped in pnpm 11 (pnpm/pnpm#11268),
+      # so run the audit under pnpm 11 while the repo stays pinned to pnpm 10
+      # everywhere else. Aligning `packageManager` for this job keeps pnpm from
+      # switching back to 10 for the `pnpm audit` subprocess that audit-ci runs.
+      - name: Use pnpm 11 for audit
+        run: npm pkg set packageManager=pnpm@11.13.0
 
+      - name: Install pnpm 11
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11.13.0
+          run_install: false
+
+      # No project install: `pnpm audit` reads pnpm-lock.yaml directly, and a
+      # full pnpm 11 install would fail here on this repo's trustPolicy /
+      # overrides settings. audit-ci is fetched on demand via npx.
       - name: Run audit
-        run: pnpm audit:ci
+        run: npx --yes audit-ci@6.3.0 --config ./audit-ci.jsonc
 
   check-formatting:
     name: 'Check Formatting'
