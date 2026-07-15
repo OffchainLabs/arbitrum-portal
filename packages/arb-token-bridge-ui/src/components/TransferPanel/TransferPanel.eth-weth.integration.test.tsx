@@ -1,7 +1,8 @@
+import { screen } from '@testing-library/react';
 import { afterEach, describe, it, vi } from 'vitest';
 
-import { type ArbTokenBridge, TokenType } from '../../hooks/arbTokenBridge.types';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { LIFI_TRANSFER_LIST_ID, type TokenListWithId } from '../../util/TokenListUtils';
 import {
   type ChainQuerySlug,
   type TokenExpectation,
@@ -16,27 +17,9 @@ import {
   wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
-const mockedArbTokenBridge = vi.hoisted(() => ({
-  current: undefined as ArbTokenBridge | undefined,
-}));
 const mockedTokenLists = vi.hoisted(() => ({
-  unresolved: false,
+  current: undefined as TokenListWithId[] | undefined,
 }));
-const mockedOftBlock = vi.hoisted(() => ({
-  enabled: false,
-}));
-
-vi.mock('../../hooks/useArbTokenBridge', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../hooks/useArbTokenBridge')>();
-
-  return {
-    ...actual,
-    useArbTokenBridge: (...args: Parameters<typeof actual.useArbTokenBridge>) => {
-      const arbTokenBridge = actual.useArbTokenBridge(...args);
-      return mockedArbTokenBridge.current ?? arbTokenBridge;
-    },
-  };
-});
 
 vi.mock('../../hooks/useTokenLists', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../hooks/useTokenLists')>();
@@ -46,20 +29,15 @@ vi.mock('../../hooks/useTokenLists', async (importOriginal) => {
     useTokenLists: (...args: Parameters<typeof actual.useTokenLists>) => {
       const tokenLists = actual.useTokenLists(...args);
 
-      return mockedTokenLists.unresolved
-        ? { ...tokenLists, data: undefined, isValidating: false }
+      return mockedTokenLists.current
+        ? {
+            ...tokenLists,
+            data: mockedTokenLists.current,
+            isLoading: false,
+            isValidating: false,
+          }
         : tokenLists;
     },
-  };
-});
-
-vi.mock('../../util/WithdrawOnlyUtils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../util/WithdrawOnlyUtils')>();
-
-  return {
-    ...actual,
-    isBlockedOftDeposit: (...args: Parameters<typeof actual.isBlockedOftDeposit>) =>
-      mockedOftBlock.enabled ? Promise.resolve(true) : actual.isBlockedOftDeposit(...args),
   };
 });
 
@@ -158,30 +136,6 @@ const ethWethCases: EthWethSelectionCase[] = [
   },
 ];
 
-const cachedArbitrumWethBridge = {
-  bridgeTokens: {
-    [CommonAddress.ArbitrumOne.WETH]: {
-      address: CommonAddress.ArbitrumOne.WETH,
-      decimals: 18,
-      listIds: new Set<string>(),
-      name: 'Wrapped Ether',
-      symbol: 'WETH',
-      type: TokenType.ERC20,
-    },
-  },
-  eth: {
-    triggerOutbox: async () => undefined,
-  },
-  token: {
-    add: async () => undefined,
-    addL2NativeToken: () => undefined,
-    addTokensFromList: () => undefined,
-    removeTokensFromList: () => undefined,
-    triggerOutbox: async () => undefined,
-    updateTokenData: async () => undefined,
-  },
-} satisfies ArbTokenBridge;
-
 async function assertEthWethSelection({
   sourceChain,
   destinationChain,
@@ -210,9 +164,7 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
   setupTransferPanelLifiIntegrationSuite();
 
   afterEach(() => {
-    mockedArbTokenBridge.current = undefined;
-    mockedOftBlock.enabled = false;
-    mockedTokenLists.unresolved = false;
+    mockedTokenLists.current = undefined;
   });
 
   it.each(ethWethCases)(
@@ -220,19 +172,66 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
     assertEthWethSelection,
   );
 
-  it('does not show the disabled-transfer dialog while LiFi token lists are unresolved', async () => {
-    mockedArbTokenBridge.current = cachedArbitrumWethBridge;
-    mockedOftBlock.enabled = true;
-    mockedTokenLists.unresolved = true;
+  it('does not show the disabled-transfer dialog for a valid LiFi token', async () => {
+    mockedTokenLists.current = [
+      {
+        bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+        l2ChainId: '42161',
+        name: 'Test token list',
+        tokens: [
+          {
+            address: CommonAddress.Ethereum.WETH,
+            chainId: 1,
+            decimals: 18,
+            name: 'Wrapped Ether',
+            symbol: 'WETH',
+          },
+        ],
+        timestamp: '2026-07-15T00:00:00.000Z',
+        version: { major: 1, minor: 0, patch: 0 },
+      },
+    ];
 
     await renderTransferPanel({
       sourceChain: 'arbitrum-one',
       destinationChain: 'robinhood-chain',
-      token: CommonAddress.ArbitrumOne.WETH,
-      destinationToken: CommonAddress.ArbitrumOne.WETH,
+      token: CommonAddress.Ethereum.WETH,
+      destinationToken: CommonAddress.Ethereum.WETH,
     });
 
     await expectDialogToStayClosed({
+      name: 'Token cannot be bridged here',
+    });
+  });
+
+  it('shows the disabled-transfer dialog for an invalid token', async () => {
+    mockedTokenLists.current = [
+      {
+        bridgeTokenListId: 'test-list',
+        l2ChainId: '42161',
+        name: 'Test token list',
+        tokens: [
+          {
+            address: CommonAddress.Ethereum.PYUSD,
+            chainId: 1,
+            decimals: 6,
+            name: 'PayPal USD',
+            symbol: 'PYUSD',
+          },
+        ],
+        timestamp: '2026-07-15T00:00:00.000Z',
+        version: { major: 1, minor: 0, patch: 0 },
+      },
+    ];
+
+    await renderTransferPanel({
+      sourceChain: 'arbitrum-one',
+      destinationChain: 'ethereum',
+      token: CommonAddress.Ethereum.PYUSD,
+      destinationToken: CommonAddress.Ethereum.PYUSD,
+    });
+
+    await screen.findByRole('dialog', {
       name: 'Token cannot be bridged here',
     });
   });

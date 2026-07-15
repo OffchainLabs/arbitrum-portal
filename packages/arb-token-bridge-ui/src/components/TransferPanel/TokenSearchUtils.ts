@@ -15,7 +15,7 @@ const emptyData: ContractStorage<ERC20BridgeToken> = {};
 export function useTokensFromLists() {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
-  const { data: tokenLists } = useTokenLists(childChain.id);
+  const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
 
   const { data = emptyData, isLoading } = useSWRImmutable(
     [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
@@ -27,7 +27,7 @@ export function useTokensFromLists() {
       ),
   );
 
-  return { data, isLoading: tokenLists === undefined || isLoading };
+  return { data, isLoading: isLoadingTokenLists || isLoading };
 }
 
 export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {
