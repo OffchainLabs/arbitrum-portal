@@ -16,6 +16,7 @@ import {
   tokenExpectationsByChain,
   wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
+import { ChainId } from '@/bridge/types/ChainId';
 
 const mockedTokenLists = vi.hoisted(() => ({
   current: undefined as TokenListWithId[] | undefined,
@@ -180,8 +181,8 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
         name: 'Test token list',
         tokens: [
           {
-            address: CommonAddress.Ethereum.WETH,
-            chainId: 1,
+            address: CommonAddress.ArbitrumOne.WETH,
+            chainId: ChainId.ArbitrumOne,
             decimals: 18,
             name: 'Wrapped Ether',
             symbol: 'WETH',
@@ -197,6 +198,21 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
       destinationChain: 'robinhood-chain',
       token: CommonAddress.Ethereum.WETH,
       destinationToken: CommonAddress.Ethereum.WETH,
+    });
+
+    await expectDialogToStayClosed({
+      name: 'Token cannot be bridged here',
+    });
+  });
+
+  it('does not show the disabled-transfer dialog for the default ETH/WETH transfer from Superposition to ApeChain', async () => {
+    // Reflects production: token lists finish loading but tokensFromLists is empty for this pair
+    mockedTokenLists.current = [];
+
+    // The default case: sanitization resolves token and destinationToken to the zero address
+    await renderTransferPanel({
+      sourceChain: 'superposition',
+      destinationChain: 'apechain',
     });
 
     await expectDialogToStayClosed({
