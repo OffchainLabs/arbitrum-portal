@@ -23,18 +23,26 @@ export function useTokensFromLists() {
     error,
   } = useSWRImmutable(
     [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
-    ([_tokenLists, _parentChainId, _childChainId]) =>
-      tokenListsToSearchableTokenStorage(
+    ([_tokenLists, _parentChainId, _childChainId]) => {
+      // TODO: remove diagnostics
+      const storage = tokenListsToSearchableTokenStorage(
         _tokenLists,
         String(_parentChainId),
         String(_childChainId),
-      ),
+      );
+      console.error(
+        `[token-search-diag] storage computed lists=${_tokenLists.length} entries=${
+          Object.keys(storage).length
+        }`,
+      );
+      return storage;
+    },
   );
 
   // TODO: remove diagnostics
-  if (error) {
-    console.error(`[token-search-diag] fromLists ERROR`, error);
-  }
+  console.error(
+    `[token-search-diag] fromLists render tokenLists=${tokenLists?.length ?? 'undef'} isLoadingLists=${isLoadingTokenLists} data=${Object.keys(data).length} err=${String(error ?? '')}`,
+  );
 
   return { data, isLoading: isLoadingTokenLists || isLoading };
 }
