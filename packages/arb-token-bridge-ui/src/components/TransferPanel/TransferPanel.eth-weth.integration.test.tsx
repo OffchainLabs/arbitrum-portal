@@ -1,6 +1,8 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, it, vi } from 'vitest';
 
+import { ChainId } from '@/bridge/types/ChainId';
+
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { LIFI_TRANSFER_LIST_ID, type TokenListWithId } from '../../util/TokenListUtils';
 import {
@@ -16,7 +18,6 @@ import {
   tokenExpectationsByChain,
   wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
-import { ChainId } from '@/bridge/types/ChainId';
 
 const mockedTokenLists = vi.hoisted(() => ({
   current: undefined as TokenListWithId[] | undefined,
