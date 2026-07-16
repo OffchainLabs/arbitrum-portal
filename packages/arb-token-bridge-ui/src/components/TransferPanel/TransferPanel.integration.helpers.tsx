@@ -35,6 +35,7 @@ const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
 const TOKEN_LIST_LOAD_TIMEOUT_MS = 15_000;
 const TOKEN_BUTTON_STABILITY_WINDOW_MS = 500;
+const DIALOG_STABILITY_WINDOW_MS = 500;
 
 export type TokenExpectation = {
   symbol: string;
@@ -383,6 +384,32 @@ export async function expectTokenButtonContent({
   const stabilityDeadline = Date.now() + TOKEN_BUTTON_STABILITY_WINDOW_MS;
   while (Date.now() < stabilityDeadline) {
     expectSnapshotToMatch(getTokenButtonSnapshot());
+    // eslint-disable-next-line no-await-in-loop
+    await sleepInAct(POLL_INTERVAL_MS);
+  }
+}
+
+export async function expectDialogToStayClosed({
+  name,
+  durationMs = DIALOG_STABILITY_WINDOW_MS,
+}: {
+  name: string;
+  durationMs?: number;
+}) {
+  const origin = captureIntegrationAssertionOrigin();
+  const deadline = Date.now() + durationMs;
+
+  while (Date.now() < deadline) {
+    const dialog = screen.queryByRole('dialog', { name });
+    if (dialog) {
+      throw createIntegrationAssertionError({
+        description: `Dialog "${name}" opened unexpectedly.`,
+        expected: { dialogOpen: false },
+        received: { dialogOpen: true },
+        origin,
+      });
+    }
+
     // eslint-disable-next-line no-await-in-loop
     await sleepInAct(POLL_INTERVAL_MS);
   }

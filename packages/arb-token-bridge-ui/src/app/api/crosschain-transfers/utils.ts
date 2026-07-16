@@ -59,6 +59,14 @@ export function isValidLifiTransfer({
     return true;
   }
 
+  // On ApeChain routes the zero address represents ETH (WETH on ApeChain)
+  if (
+    (sourceChainId === ChainId.ApeChain || destinationChainId === ChainId.ApeChain) &&
+    addressesEqual(fromToken, constants.AddressZero)
+  ) {
+    return true;
+  }
+
   if (!tokensFromLists) {
     return true;
   }

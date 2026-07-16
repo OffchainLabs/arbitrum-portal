@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
+import { isLifiTransfer, isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -26,7 +26,7 @@ export function TransferDisabledDialog() {
   >(null);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists, isLoading: isLoadingTokensFromLists } = useTokensFromLists();
   const unsupportedToken = sanitizeTokenSymbol(selectedToken?.symbol ?? '', {
     erc20L1Address: selectedToken?.address,
     chainId: networks.sourceChain.id,
@@ -40,9 +40,19 @@ export function TransferDisabledDialog() {
       return null;
     }
 
+    const isLifiRoute =
+      isLifiEnabled() &&
+      isLifiTransfer({
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      });
+    if (isLifiRoute && isLoadingTokensFromLists) {
+      return null;
+    }
+
     // If a lifi route exists, don't show any dialog
     if (
-      isLifiEnabled() &&
+      isLifiRoute &&
       isValidLifiTransfer({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
@@ -71,6 +81,7 @@ export function TransferDisabledDialog() {
     selectedToken,
     selectedTokenAddressLocalValue,
     tokensFromLists,
+    isLoadingTokensFromLists,
     networks.sourceChain.id,
     networks.destinationChain.id,
   ]);

@@ -173,7 +173,7 @@ export function useRoutesUpdater() {
     isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
   const [selectedToken] = useSelectedToken();
   const destinationToken = useDestinationToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();

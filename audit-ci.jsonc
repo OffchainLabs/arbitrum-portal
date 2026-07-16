@@ -56,6 +56,12 @@
     // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
     // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
     //
+    // https://github.com/advisories/GHSA-xv26-6w52-cph6
+    // websocket-driver message corruption via abuse of protocol length headers
+    //
+    // https://github.com/advisories/GHSA-mp7j-qc5w-4988
+    // websocket-driver resource limit bypass via message compression
+    //
     // Reason to ignore: All from @synthetixio/synpress, an E2E test devDependency.
     // Each fix requires a major bump deep in the synpress chain that would risk
     // breaking E2E tooling. Not used in production builds or runtime code.
@@ -72,6 +78,8 @@
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-mp2f-45pm-3cg9",
+    "GHSA-xv26-6w52-cph6",
+    "GHSA-mp7j-qc5w-4988",
     //
     // https://github.com/advisories/GHSA-qjx8-664m-686j
     // js-cookie prototype hijack in assign() enables cookie-attribute injection (CVE-2026-46625)

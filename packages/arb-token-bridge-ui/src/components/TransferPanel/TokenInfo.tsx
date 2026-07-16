@@ -37,7 +37,7 @@ export const TokenInfo = ({
 }) => {
   const [networks] = useNetworks();
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const tokenOverride = getTokenOverride({
     fromToken: token?.address,
