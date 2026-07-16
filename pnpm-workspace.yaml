@@ -1,23 +1,80 @@
 packages:
   - 'packages/*'
 
+overrides:
+  'node-forge': 1.4.0
+  '@types/node-forge': 1.3.14
+  '@walletconnect/ethereum-provider': 2.13.1
+  '@octokit/core>@octokit/request-error': 5.1.1
+  '@octokit/core>@octokit/request': 8.4.1
+  '@octokit/graphql>@octokit/request': 8.4.1
+  '@actions/github>@octokit/plugin-paginate-rest': 9.2.2
+  'react-syntax-highlighter>prismjs': 1.30.0
+  'refractor>prismjs': 1.30.0
+  '@babel/runtime': 7.26.10
+  'tar-fs': 2.1.4
+  'sharp>tar-fs': 3.0.9
+  'form-data': 4.0.6
+  'axios': 1.16.0
+  '@eslint/plugin-kit': 0.3.4
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
+  '@types/node': 22.19.19
+  'js-yaml': 4.2.0
+  'undici': 6.27.0
+  'h3': 1.15.10
+  'lodash': 4.18.1
+  'lodash-es': 4.18.1
+  'sha.js': 2.4.12
+  'bn.js': 5.2.3
+  'flatted': 3.4.2
+  'defu': 6.1.6
+  'brace-expansion': 1.1.13
+  '@typescript-eslint/*>brace-expansion': 5.0.5
+  'utf-8-validate': 6.0.6
+  'hono': 4.12.25
+  'fast-uri': 3.1.2
+  'follow-redirects': 1.16.0
+  'postcss': 8.5.12
+  'uuid': 14.0.0
+  'vite@>=7.0.0 <7.3.5': 7.3.5
+  'vite@>=6.0.0 <6.4.3': 6.4.3
+  'esbuild': 0.28.1
+  'sucrase>glob': 10.5.0
+  'test-exclude>glob': 10.5.0
+  'ws@>=8.0.0 <8.21.0': 8.21.0
+  'ws@>=7.0.0 <7.5.11': 7.5.11
+  'express>qs': 6.15.1
+  'body-parser>qs': 6.15.1
+  '@cypress/request>qs': 6.15.1
+  'express>path-to-regexp': 0.1.13
+  'tmp': 0.2.7
+  'shell-quote': 1.8.4
+  'joi@>=17.0.0 <17.13.4': 17.13.4
+  'joi@>=18.0.0 <18.2.1': 18.2.1
+  '@babel/core': 7.29.6
+
+autoInstallPeers: true
+shamefullyHoist: true
+dedupePeerDependents: true
+resolvePeersFromWorkspaceRoot: true
+
 # Supply chain security settings
 # See: https://pnpm.io/supply-chain-security
 
 # Only allow build scripts for explicitly trusted packages.
-# pnpm v10 blocks postinstall scripts by default.
-onlyBuiltDependencies:
-  - '@reown/appkit'
-  - bufferutil
-  - core-js
-  - core-js-pure
-  - cypress
-  - esbuild
-  - keccak
-  - protobufjs
-  - sharp
-  - unrs-resolver
-  - utf-8-validate
+allowBuilds:
+  '@reown/appkit': true
+  bufferutil: true
+  core-js: true
+  core-js-pure: true
+  cypress: true
+  esbuild: true
+  keccak: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true
+  utf-8-validate: true
 
 # Block transitive dependencies from using exotic sources (git repos, tarball URLs).
 # Only direct dependencies may use non-registry sources.
@@ -30,3 +87,21 @@ minimumReleaseAge: 1440
 # Prevent installing package versions with decreased trust levels
 # compared to previously published versions.
 trustPolicy: no-downgrade
+# Exact-version exemptions for pinned versions published before their package
+# adopted npm attestation — they read as "downgrades" vs newer attested releases
+# but are legitimate. Being exact pins, they don't exempt any future version.
+# When a package below is upgraded past its pinned version, delete its entry.
+trustPolicyExclude:
+  - '@coinbase/cdp-sdk@1.38.4'
+  - '@noble/curves@1.8.0'
+  - '@noble/hashes@1.7.0'
+  - '@octokit/endpoint@9.0.6'
+  - '@octokit/plugin-paginate-rest@9.2.2'
+  - '@reduxjs/toolkit@2.9.2'
+  - 'eslint-import-resolver-typescript@3.10.1'
+  - 'react-redux@9.2.0'
+  - 'reselect@5.1.1'
+  - 'semver@5.7.2'
+  - 'semver@6.3.1'
+  - 'slow-redact@0.3.2'
+  - 'undici-types@6.21.0'
