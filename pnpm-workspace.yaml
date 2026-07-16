@@ -87,6 +87,10 @@ minimumReleaseAge: 1440
 # Prevent installing package versions with decreased trust levels
 # compared to previously published versions.
 trustPolicy: no-downgrade
+# Exact-version exemptions for pinned versions published before their package
+# adopted npm attestation — they read as "downgrades" vs newer attested releases
+# but are legitimate. Being exact pins, they don't exempt any future version.
+# When a package below is upgraded past its pinned version, delete its entry.
 trustPolicyExclude:
   - '@coinbase/cdp-sdk@1.38.4'
   - '@noble/curves@1.8.0'
