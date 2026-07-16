@@ -17,7 +17,11 @@ export function useTokensFromLists() {
   const { childChain, parentChain } = useNetworksRelationship(networks);
   const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
 
-  const { data = emptyData, isLoading } = useSWRImmutable(
+  const {
+    data = emptyData,
+    isLoading,
+    error,
+  } = useSWRImmutable(
     [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
     ([_tokenLists, _parentChainId, _childChainId]) =>
       tokenListsToSearchableTokenStorage(
@@ -26,6 +30,11 @@ export function useTokensFromLists() {
         String(_childChainId),
       ),
   );
+
+  // TODO: remove diagnostics
+  if (error) {
+    console.error(`[token-search-diag] fromLists ERROR`, error);
+  }
 
   return { data, isLoading: isLoadingTokenLists || isLoading };
 }

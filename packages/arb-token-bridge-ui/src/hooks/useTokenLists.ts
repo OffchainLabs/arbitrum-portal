@@ -55,6 +55,10 @@ function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<T
         [],
       );
 
+      // TODO: remove diagnostics
+      console.error(
+        `[token-list-diag] settled child=${forL2ChainId} parent=${parentChainId} lists=${tokenListsWithBridgeTokenListId.length} ids=${tokenListsWithBridgeTokenListId.map((l) => l.bridgeTokenListId).join(',')}`,
+      );
       resolve(tokenListsWithBridgeTokenListId);
     });
   });

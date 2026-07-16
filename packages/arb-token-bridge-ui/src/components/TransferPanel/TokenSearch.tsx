@@ -2,7 +2,7 @@ import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { constants } from 'ethers';
 import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
-import React, { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import React, { FormEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
@@ -435,6 +435,15 @@ function TokensPanel({
     childChain.id,
     getBalance,
   ]);
+
+  // TODO: remove diagnostics
+  useEffect(() => {
+    console.error(
+      `[token-search-diag] parent=${parentChain.id} child=${childChain.id} fromLists=${
+        Object.keys(tokensFromLists).length
+      } fromUser=${Object.keys(tokensFromUser).length} show=${tokensToShow.length} search="${newToken}"`,
+    );
+  }, [parentChain.id, childChain.id, tokensFromLists, tokensFromUser, tokensToShow, newToken]);
 
   const storeNewToken = async () => {
     let error = 'Token not found on this network.';
