@@ -19,7 +19,7 @@ export function DestinationTokenButton({
   const destinationToken = useDestinationToken();
   const [networks] = useNetworks();
   const [selectedToken] = useSelectedToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const isLifiTransfer = isValidLifiTransfer({
     destinationChainId: networks.destinationChain.id,

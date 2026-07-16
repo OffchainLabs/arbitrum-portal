@@ -37,7 +37,7 @@ function DestinationTokensPanel({
     childWalletAddress: walletAddress,
   });
 
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const [searchValue, setSearchValue] = useState('');
 

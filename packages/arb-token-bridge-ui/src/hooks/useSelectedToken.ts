@@ -53,7 +53,7 @@ export const useSelectedToken = (): [
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
   const { data: usdcToken } = useSWRImmutable(

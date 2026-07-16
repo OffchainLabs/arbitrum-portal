@@ -64,7 +64,7 @@ export function TokenImportDialog({
   const { childChainProvider, parentChainProvider } = useNetworksRelationship(networks);
 
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const [status, setStatus] = useState<ImportStatus>(ImportStatus.LOADING);
   const [isImportingToken, setIsImportingToken] = useState<boolean>(false);

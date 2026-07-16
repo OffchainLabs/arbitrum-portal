@@ -24,7 +24,7 @@ export const TokenLogo = ({
   fallback?: React.JSX.Element;
 }) => {
   const [selectedToken] = useSelectedToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
   const [networks] = useNetworks();

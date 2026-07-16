@@ -446,7 +446,7 @@ export function TokenRow({
     decimals,
   } = useTokenInfo(token, { isDestination });
   const [networks] = useNetworks();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const sourceNativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
   const destinationNativeCurrency = useNativeCurrency({
     provider: networks.destinationChainProvider,
