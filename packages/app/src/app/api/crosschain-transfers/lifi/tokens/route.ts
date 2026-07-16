@@ -84,8 +84,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
     );
   }
 
+  // TODO: remove diagnostics
+  const startedAt = Date.now();
   try {
     const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
+    console.log(
+      `[lifi-tokens-diag] registry ready in ${Date.now() - startedAt}ms parent=${parentChainId} child=${childChainId}`,
+    );
 
     const parentTokens = getParentTokensForRoute({
       parentChainId,
@@ -132,6 +137,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
       },
     );
   } catch (error: unknown) {
+    console.log(`[lifi-tokens-diag] registry FAILED in ${Date.now() - startedAt}ms`, error);
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,

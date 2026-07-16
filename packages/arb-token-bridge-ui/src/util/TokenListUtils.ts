@@ -253,6 +253,8 @@ export async function fetchBridgeTokenList(bridgeTokenList: BridgeTokenList): Pr
 export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
   data: TokenList | undefined;
 }> {
+  // TODO: remove diagnostics (console.error is visible in CI E2E logs, logger is not)
+  const startedAt = Date.now();
   try {
     const { data } = await axios.get(tokenListURL, {
       headers: {
@@ -260,8 +262,12 @@ export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
       },
     });
 
+    console.error(
+      `[token-list-diag] ok ${tokenListURL} ${Date.now() - startedAt}ms tokens=${data?.tokens?.length}`,
+    );
     return { data };
   } catch (error) {
+    console.error(`[token-list-diag] fail ${tokenListURL} ${Date.now() - startedAt}ms`, error);
     logger.warn('Token List URL Invalid', tokenListURL);
     return { data: undefined };
   }
