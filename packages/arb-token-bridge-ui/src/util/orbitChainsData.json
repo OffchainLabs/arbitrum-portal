@@ -294,8 +294,8 @@
         "sequencerInbox": "0xA3464bf0ed52cFe6676D3e34ab1F4DF53f193631"
       },
       "nativeToken": "0xf8173a39c56a554837C4C7f104153A005D284D11",
-      "explorerUrl": "https://educhain.blockscout.com",
-      "rpcUrl": "https://rpc.edu-chain.raas.gelato.cloud",
+      "explorerUrl": "https://explorer.educhain.xyz",
+      "rpcUrl": "https://rpc.educhain.xyz",
       "isArbitrum": true,
       "isCustom": true,
       "isTestnet": false,
