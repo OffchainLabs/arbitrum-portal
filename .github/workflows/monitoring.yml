@@ -89,7 +89,8 @@ jobs:
         with:
           name: retryable-run-report-${{ inputs.chain }}
           path: arbitrum-monitoring/packages/retryable-monitor/retryable-run-report.json
-          if-no-files-found: ignore
+          if-no-files-found: 'ignore'
+        continue-on-error: true
 
       - name: Send Slack notification on failure
         if: failure()
