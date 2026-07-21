@@ -56,14 +56,14 @@ beforeAll(() => {
 
   registerCustomArbitrumNetwork(xaiTestnet);
 
-  const uniteTestnetChainId = 888991;
-  const uniteTestnet = orbitTestnets[uniteTestnetChainId];
+  const worldMobileTestnetChainId = 323432;
+  const worldMobileTestnet = orbitTestnets[worldMobileTestnetChainId];
 
-  if (!uniteTestnet) {
-    throw new Error(`Could not find Unite Testnet in the Orbit chains list.`);
+  if (!worldMobileTestnet) {
+    throw new Error(`Could not find World Mobile Testnet in the Orbit chains list.`);
   }
 
-  registerCustomArbitrumNetwork(uniteTestnet);
+  registerCustomArbitrumNetwork(worldMobileTestnet);
 
   const apeChain = orbitMainnets[ChainId.ApeChain];
 
@@ -313,7 +313,7 @@ describe('getDestinationChainIds', () => {
     const defaultChainId = destinationChainIds[0];
     const nonDefaultChainIds = destinationChainIds.slice(1);
 
-    expect(defaultChainId).toBe(888991);
+    expect(defaultChainId).toBe(323432);
     expect(isAscending(nonDefaultChainIds)).toBe(true);
   });
 
