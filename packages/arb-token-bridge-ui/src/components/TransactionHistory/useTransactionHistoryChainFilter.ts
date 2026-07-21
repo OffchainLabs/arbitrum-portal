@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
-import { useAccountType } from '../../hooks/useAccountType';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -19,32 +17,24 @@ export function useCoreChainIds(): number[] {
 }
 
 /**
- * Surfaces where the "All Core Chains" default would hide the only relevant
- * history default to a single chain instead: the embed widget is scoped to its
- * bridge pair and renders no filter UI to recover with, and a smart-contract
- * wallet's history is scoped to its connected chain by design, so a longtail
- * connected chain would otherwise intersect to an empty fetch list.
+ * Overrides the "All Core Chains" default with the bridge pair's child chain
+ * when that would hide the user's own transactions: a pair targeting a
+ * longtail chain (via query params, including smart-contract wallets whose
+ * connected chain is synced into the pair) means the user's history lives on
+ * a chain the core-only default excludes. The embed widget always follows its
+ * pair — it renders no filter UI to recover with.
  */
 function useDefaultChainIdOverride(): number | undefined {
   const { embedMode } = useMode();
   const [{ sourceChain, destinationChain }] = useNetworks();
-  const { chain } = useAccount();
-  const { accountType } = useAccountType();
 
-  if (embedMode) {
-    const { childChainId } = getNetworksRelationship({
-      sourceChainId: sourceChain.id,
-      destinationChainId: destinationChain.id,
-    });
+  const { childChainId } = getNetworksRelationship({
+    sourceChainId: sourceChain.id,
+    destinationChainId: destinationChain.id,
+  });
+
+  if (embedMode || !isCoreChainForDisplay(childChainId)) {
     return childChainId;
-  }
-
-  if (
-    accountType === 'smart-contract-wallet' &&
-    typeof chain !== 'undefined' &&
-    !isCoreChainForDisplay(chain.id)
-  ) {
-    return chain.id;
   }
 
   return undefined;
@@ -52,8 +42,8 @@ function useDefaultChainIdOverride(): number | undefined {
 
 /**
  * The effective chain filter, derived at read time: the first render is
- * already scoped to the "All Core Chains" default, and testnet-mode changes
- * re-default automatically.
+ * already scoped to the default, and bridge-pair or testnet-mode changes
+ * re-default automatically until the user makes an explicit selection.
  */
 export function useTxHistoryChainFilter(): TxHistoryChainFilter {
   const selection = useTransactionHistoryChainFilterStore((state) => state.selection);
