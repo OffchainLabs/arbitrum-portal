@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCanonicalDepositBlocked } from './WithdrawOnlyUtils';
+import { ChainId } from '../types/ChainId';
+import { CommonAddress } from './CommonAddressUtils';
+import { isCanonicalDepositBlocked, isWithdrawOnlyToken } from './WithdrawOnlyUtils';
 
 const CANONICAL_ENA_ARB = '0xdf8f0c63d9335a0abd89f9f752d293a98ea977d8'; // standard-gateway address
 const USDC_E_ARB = '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8';
@@ -68,6 +70,35 @@ describe('isCanonicalDepositBlocked', () => {
         canonicalChildTokenAddress: CANONICAL_FRAX_ARB,
         canonicalIsKnownLayerZeroToken: false,
         hasOftChildDeployment: false,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('isWithdrawOnlyToken', () => {
+  it('disables USDC deposits to Robinhood Chain', () => {
+    expect(
+      isWithdrawOnlyToken({
+        parentChainErc20Address: CommonAddress.Ethereum.USDC,
+        childChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('disables USDT deposits to Robinhood Chain', () => {
+    expect(
+      isWithdrawOnlyToken({
+        parentChainErc20Address: CommonAddress.Ethereum.USDT,
+        childChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps USDC deposits enabled for Arbitrum One', () => {
+    expect(
+      isWithdrawOnlyToken({
+        parentChainErc20Address: CommonAddress.Ethereum.USDC,
+        childChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(false);
   });

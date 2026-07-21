@@ -157,13 +157,33 @@ describe('transformLifiHistoryTransaction', () => {
     expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
   });
 
-  it('skips same-chain LiFi history (Earn)', () => {
+  it('skips non-refunded same-chain LiFi history (Earn)', () => {
     const statusResponse = createStatusResponse({
       sourceChainId: 42161,
       destinationChainId: 42161,
     });
 
     expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toBeNull();
+  });
+
+  it('keeps refunded same-chain LiFi history', () => {
+    const statusResponse = {
+      ...createStatusResponse({
+        sourceChainId: 42161,
+        destinationChainId: 42161,
+      }),
+      substatus: 'REFUNDED',
+    } satisfies FullStatusData;
+
+    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+      txId: '0xsource',
+      sourceChainId: 42161,
+      destinationChainId: 42161,
+      status: WithdrawalStatus.REFUNDED,
+      destinationStatus: WithdrawalStatus.REFUNDED,
+      destinationTxId: '0xdestination',
+      isLifi: true,
+    });
   });
 
   it('keeps pending LiFi history when destination token metadata is missing', () => {

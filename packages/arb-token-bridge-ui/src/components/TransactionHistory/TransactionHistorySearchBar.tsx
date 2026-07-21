@@ -11,6 +11,7 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { Button } from '../common/Button';
+import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
   INVALID_ADDRESS = 'That doesn’t seem to be a valid address, please try again.',
@@ -79,10 +80,17 @@ export function TransactionHistorySearchBar() {
   }, [address, setSanitizedAddress, setSearchError, isTestnetMode, connectedAddress]);
 
   return (
-    <div className="mb-4 flex flex-row items-stretch gap-1 pr-4 md:pr-0">
+    <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:justify-between md:pr-0">
+      <div className="flex items-center gap-2">
+        <span className="whitespace-nowrap text-sm font-light text-white/60">
+          Showing history for:
+        </span>
+        <TransactionHistoryChainFilter />
+      </div>
       <form
         className={twMerge(
           'relative flex w-full items-center justify-center overflow-hidden rounded border border-gray-dark bg-black text-white md:w-1/2',
+          'focus-within:ring-2 focus-within:ring-inset focus-within:ring-white',
         )}
         onSubmit={(event) => event.preventDefault()}
       >
@@ -106,7 +114,7 @@ export function TransactionHistorySearchBar() {
             inputMode="search"
             placeholder="Search any wallet address"
             aria-label="Transaction history wallet address input"
-            className="h-full w-full bg-transparent py-1 pl-6 pr-3 text-sm font-light placeholder:text-white/60"
+            className="h-full w-full bg-transparent py-1 pl-6 pr-3 text-sm font-light outline-none placeholder:text-white/60"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"

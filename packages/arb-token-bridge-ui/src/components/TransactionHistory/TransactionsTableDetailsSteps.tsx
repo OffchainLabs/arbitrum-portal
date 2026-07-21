@@ -82,9 +82,11 @@ export const Step = ({
       )}
     >
       <div className={twMerge('flex items-center space-x-3', extendHeight && 'items-start')}>
-        {done && <CheckCircleIcon className={iconClassName} height={18} />}
-        {failure && <XCircleIcon className={iconClassName} height={18} />}
-        {!done && !failure && (
+        {failure ? (
+          <XCircleIcon className={iconClassName} height={18} />
+        ) : done ? (
+          <CheckCircleIcon className={iconClassName} height={18} />
+        ) : (
           <div
             className={twMerge(
               'ml-[2px] h-[15px] w-[15px] shrink-0 rounded-full border',

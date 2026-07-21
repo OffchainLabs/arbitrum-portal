@@ -51,17 +51,20 @@ vi.mock('../TokenSearchUtils', () => ({
   useTokensFromLists: () => {
     const token = mocks.queryParams.token;
     if (!token) {
-      return {};
+      return { data: {}, isLoading: false };
     }
     return {
-      [token]: {
-        address: token,
-        decimals: 6,
-        symbol: 'MOCK',
-        name: 'Mock Token',
-        type: TokenType.ERC20,
-        listIds: new Set<string>(['1']),
+      data: {
+        [token]: {
+          address: token,
+          decimals: 6,
+          symbol: 'MOCK',
+          name: 'Mock Token',
+          type: TokenType.ERC20,
+          listIds: new Set<string>(['1']),
+        },
       },
+      isLoading: false,
     };
   },
   useTokensFromUser: () => ({}),

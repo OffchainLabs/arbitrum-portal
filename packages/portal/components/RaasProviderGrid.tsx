@@ -6,7 +6,7 @@ export const RaasProviderGrid = () => {
       <RaasProviderCard
         name="Caldera"
         description="Supports AnyTrust and Rollup chains"
-        caption="Powering Treasure, Hychain, Rari"
+        caption="Powering Treasure, Hychain"
         link="https://caldera.xyz/"
         logo="/images/Caldera.svg"
       />

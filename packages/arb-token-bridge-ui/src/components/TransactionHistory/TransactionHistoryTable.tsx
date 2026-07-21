@@ -16,10 +16,11 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
+import { ChainPair } from '../../util/txHistoryRoutes';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';

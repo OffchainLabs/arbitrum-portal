@@ -184,7 +184,7 @@ function TokensPanel({
   } = isNetwork(parentChain.id);
   const { isArbitrumOne, isArbitrumSepolia, isOrbitChain } = isNetwork(childChain.id);
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const [newToken, setNewToken] = useState('');
   const [errorMessage, setErrorMessage] = useState('');

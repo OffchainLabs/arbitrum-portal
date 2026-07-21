@@ -15,15 +15,30 @@ type SubgraphKey = keyof typeof subgraphs;
 
 type TheGraphNetworkSubgraphId = (typeof subgraphs)[SubgraphKey]['theGraphNetworkSubgraphId'];
 
+type Subgraph = {
+  selfHostedSubgraph: string;
+  theGraphNetworkSubgraphId: string;
+  // pin queries to a single known-good indexer, e.g. while others serve incomplete data
+  // due to https://github.com/graphprotocol/graph-node/issues/6683
+  deploymentId?: string;
+  pinnedIndexer?: string;
+};
+
 const subgraphs = {
   // CCTP Mainnet Subgraphs
   'cctp-ethereum': {
     selfHostedSubgraph: '',
     theGraphNetworkSubgraphId: 'E6iPLnDGEgrcc4gu9uiHJxENSRAAzTvUJqQqJcHZqJT1',
+    deploymentId: 'QmWgi6hNfwCGiTAhH7gTSMSfvvYUPRbBQSjRmvuviRGGwy',
+    // Lunanova (https://thegraph.lunanova.tech), verified serving complete data
+    pinnedIndexer: '0xe13840a2e92e0cb17a246609b432d0fa2e418774',
   },
   'cctp-arbitrum-one': {
     selfHostedSubgraph: '',
     theGraphNetworkSubgraphId: '9DgSggKVrvfi4vdyYTdmSBuPgDfm3D7zfLZ1qaQFjYYW',
+    deploymentId: 'QmQtNd36amtQ8h8GF5rwkLLWyyBGwqad3j3WgZAMuLvDMd',
+    // Lunanova (https://thegraph.lunanova.tech), verified serving complete data
+    pinnedIndexer: '0xe13840a2e92e0cb17a246609b432d0fa2e418774',
   },
   // CCTP Testnet Subgraphs
   'cctp-sepolia': {
@@ -63,13 +78,14 @@ const subgraphs = {
     selfHostedSubgraph: '',
     theGraphNetworkSubgraphId: 'AaUuKWWuQbCXbvRkXpVDEpw9B7oVicYrovNyMLPZtLPw',
   },
-} as const;
+} satisfies Record<string, Subgraph>;
 
-function createApolloClient(uri: string) {
+function createApolloClient(uri: string, headers?: Record<string, string>) {
   const timeoutLink = new ApolloLinkTimeout();
   const httpLink = timeoutLink.concat(
     new HttpLink({
       uri,
+      headers,
       fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
     }),
   );
@@ -93,7 +109,9 @@ function createSelfHostedSubgraphClient(subgraphName: string) {
 
 function createTheGraphNetworkClient(subgraphId: TheGraphNetworkSubgraphId) {
   if (typeof theGraphNetworkApiKey === 'undefined' || theGraphNetworkApiKey === '') {
-    throw new Error(`[createTheGraphNetworkClient] missing "GRAPH_NETWORK_API_KEY" env variable"`);
+    throw new Error(
+      `[createTheGraphNetworkClient] missing "THE_GRAPH_NETWORK_API_KEY" env variable`,
+    );
   }
 
   return createApolloClient(
@@ -101,13 +119,38 @@ function createTheGraphNetworkClient(subgraphId: TheGraphNetworkSubgraphId) {
   );
 }
 
+function createPinnedIndexerClient(deploymentId: string, indexerAddress: string) {
+  if (typeof theGraphNetworkApiKey === 'undefined' || theGraphNetworkApiKey === '') {
+    throw new Error(`[createPinnedIndexerClient] missing "THE_GRAPH_NETWORK_API_KEY" env variable`);
+  }
+
+  return createApolloClient(
+    `https://gateway.thegraph.com/api/deployments/id/${deploymentId}/indexers/id/${indexerAddress}`,
+    { Authorization: `Bearer ${theGraphNetworkApiKey}` },
+  );
+}
+
 function createSubgraphClient(key: SubgraphKey) {
   logger.debug(`[createSubgraphClient] key=${key}`);
 
-  const { theGraphNetworkSubgraphId, selfHostedSubgraph } = subgraphs[key];
+  const { theGraphNetworkSubgraphId, selfHostedSubgraph, deploymentId, pinnedIndexer }: Subgraph =
+    subgraphs[key];
 
   if (selfHostedSubgraph !== '') {
     return createSelfHostedSubgraphClient(selfHostedSubgraph);
+  }
+
+  if ((typeof deploymentId === 'undefined') !== (typeof pinnedIndexer === 'undefined')) {
+    throw new Error(
+      `[createSubgraphClient] both "deploymentId" and "pinnedIndexer" must be set for "${key}"`,
+    );
+  }
+
+  if (typeof deploymentId !== 'undefined' && typeof pinnedIndexer !== 'undefined') {
+    logger.debug(
+      `[createSubgraphClient] using deployment "${deploymentId}" pinned to indexer "${pinnedIndexer}"`,
+    );
+    return createPinnedIndexerClient(deploymentId, pinnedIndexer);
   }
 
   logger.debug(

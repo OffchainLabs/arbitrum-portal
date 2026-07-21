@@ -121,11 +121,13 @@ export class LifiTransferStarter extends BridgeTransferStarter {
       throw new Error('LifiTransferStarter is missing transaction request.');
     }
 
-    const { to, data, value } = this.lifiData.transactionRequest;
+    const { to, data, value, chainId } = this.lifiData.transactionRequest;
+    // pinning chainId propagates viem's active-chain assertion to the send
     const txHash = await sendTransaction(wagmiConfig, {
       to: to as Address,
       data: data as Address,
       value: BigInt(value),
+      chainId,
     });
     const fullTx = await this.sourceChainProvider.getTransaction(txHash);
 

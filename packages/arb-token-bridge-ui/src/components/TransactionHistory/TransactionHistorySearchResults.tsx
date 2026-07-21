@@ -70,7 +70,7 @@ export function TransactionHistorySearchResults() {
           if (isTxClaimable(tx)) {
             acc.claimable.push(tx);
           }
-          if (isTxFailed(tx)) {
+          if (isTxFailed(tx) && !isTxCompleted(tx)) {
             acc.failed.push(tx);
           }
           return acc;

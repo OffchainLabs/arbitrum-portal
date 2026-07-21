@@ -267,6 +267,21 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
     },
   ],
   [ChainId.ArbitrumNova]: [],
+  [ChainId.RobinhoodChain]: [
+    {
+      symbol: 'USDC',
+      l2CustomAddr: '',
+      l1Address: CommonAddress.Ethereum.USDC,
+      l2Address: '0x80e0e24718dbFcad49ECAA6F1e6C89A190586cA8',
+    },
+    {
+      // USDT reaches Robinhood Chain via LayerZero (USDT0); block the canonical route.
+      symbol: 'USDT',
+      l2CustomAddr: '',
+      l1Address: CommonAddress.Ethereum.USDT,
+      l2Address: '0xE246BC49b0598d7Cd9f0eAD48B885034f1254380',
+    },
+  ],
   // Plume
   98866: [
     {

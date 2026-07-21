@@ -60,7 +60,7 @@ export const ORBIT_RAAS_CONFIG = [
     link: 'https://www.caldera.xyz/',
     title: 'Caldera',
     chainType: 'Supports AnyTrust and Rollup chains',
-    appLabel: 'Powering Treasure, Hychain & Rari',
+    appLabel: 'Powering Treasure & Hychain',
     image: '/images/orbit/raas_caldera.webp',
   },
   {

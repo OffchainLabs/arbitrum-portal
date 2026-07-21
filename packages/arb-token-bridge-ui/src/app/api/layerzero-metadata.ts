@@ -24,10 +24,8 @@ const LZ_CHAIN_KEY_BY_CHAIN_ID: { chainId: number; chainKey: string }[] = [
   { chainId: ChainId.Superposition, chainKey: 'superposition' },
   { chainId: 98866, chainKey: 'plumephoenix' }, // Plume
   { chainId: 1625, chainKey: 'gravity' }, // Gravity Alpha
-  { chainId: 1380012617, chainKey: 'rarible' }, // RARI
   { chainId: 41923, chainKey: 'edu' }, // Edu Chain
   { chainId: 660279, chainKey: 'xai' }, // Xai
-  { chainId: 6985385, chainKey: 'humanity' }, // Humanity
 ];
 
 // LayerZero `type` values that denote an actual OFT deployment, as opposed to a

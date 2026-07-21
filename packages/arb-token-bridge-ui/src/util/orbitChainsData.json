@@ -93,49 +93,6 @@
       }
     },
     {
-      "chainId": 1380012617,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0x255f80Ef2F09FCE0944faBb292b8510F01316Cf0",
-        "inbox": "0x37e60F80d921dc5E7f501a7130F31f6548dBa564",
-        "outbox": "0x91591BB66075BCfF94AA128B003134165C3Ab83a",
-        "rollup": "0x2e988Ea0873C9d712628F0bf38DAFdE754927C89",
-        "sequencerInbox": "0xA436f1867adD490BF1530c636f2FB090758bB6B3"
-      },
-      "explorerUrl": "https://mainnet.explorer.rarichain.org",
-      "rpcUrl": "https://mainnet.rpc.rarichain.org/http",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "RARI Mainnet",
-      "slug": "rari-mainnet",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0x8bE956aB42274056ef4471BEb211b33e258b7324",
-        "parentErc20Gateway": "0x46406c88285AD9BE2fB23D9aD96Cb578d824cAb6",
-        "parentGatewayRouter": "0x2623C144B4d167f70893f6A8968B98c89a6C5F97",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x003e70b041abb993006c03e56c8515622a02928c",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0x8DF47DAe3313663C80f5E94A893190710A719224",
-        "childCustomGateway": "0x90E43f5d772e50B01B3F9596f65AD5653467d010",
-        "childErc20Gateway": "0x0CA4c24079a191e08F659699292e5C75274EF253",
-        "childGatewayRouter": "0x9a2859B2a83148b8DE25d26643B5407555D219E1",
-        "childMultiCall": "0x4c753F58Ee9E83B38170abAbBEa8B47976C7ee1b",
-        "childProxyAdmin": "0x18AB1fE7CBeB5F40d2eAf8A3906A966d59E79767",
-        "childWeth": "0xf037540e51D71b2D2B1120e8432bA49F29EDFBD0",
-        "childWethGateway": "0xd0C21F7960ea9835E7B2E636548f4deDD9E2309C"
-      },
-      "bridgeUiConfig": {
-        "color": "#B16EFF",
-        "network": {
-          "name": "RARI Mainnet",
-          "description": "A chain designed specifically for NFT royalties and creator empowerment.",
-          "logo": "/images/RARIMainnetLogo.svg"
-        },
-        "assertionIntervalSeconds": 3600
-      }
-    },
-    {
       "chainId": 55244,
       "confirmPeriodBlocks": 40320,
       "ethBridge": {
@@ -337,8 +294,8 @@
         "sequencerInbox": "0xA3464bf0ed52cFe6676D3e34ab1F4DF53f193631"
       },
       "nativeToken": "0xf8173a39c56a554837C4C7f104153A005D284D11",
-      "explorerUrl": "https://educhain.blockscout.com",
-      "rpcUrl": "https://rpc.edu-chain.raas.gelato.cloud",
+      "explorerUrl": "https://explorer.educhain.xyz",
+      "rpcUrl": "https://rpc.educhain.xyz",
       "isArbitrum": true,
       "isCustom": true,
       "isTestnet": false,
@@ -521,54 +478,6 @@
           "logoUrl": "/images/PlumeMainnet_NativeTokenLogo.png"
         },
         "assertionIntervalSeconds": 86400
-      }
-    },
-    {
-      "chainId": 6985385,
-      "confirmPeriodBlocks": 45818,
-      "ethBridge": {
-        "bridge": "0x8620F893F6321C31909e4a58bcEb6948A289e0fD",
-        "inbox": "0xe7D7C04885f460e0c58504D617C65ab064A4879D",
-        "outbox": "0x74045319D890f0C0CD7914F2DE757F25492331f0",
-        "rollup": "0x4ef3463F0Ffc1E9bfe30f72D705C259A0A0cCb56",
-        "sequencerInbox": "0xa80dD081B83399614fa0BB497174Bdcb3EF4Efe6"
-      },
-      "nativeToken": "0xcf5104d094e3864cfcbda43b82e1cefd26a016eb",
-      "explorerUrl": "https://humanity-mainnet.explorer.alchemy.com/",
-      "rpcUrl": "https://humanity-mainnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Humanity Mainnet",
-      "slug": "humanity-mainnet",
-      "parentChainId": 1,
-      "tokenBridge": {
-        "parentCustomGateway": "0xdbcC9e1e24C0b8f9b7bEE5b32E0A9332D9818686",
-        "parentErc20Gateway": "0xa84A5f9565DB67129Be5bEb7fA94dB0F74098f37",
-        "parentGatewayRouter": "0x0266191d2a5ED66A308874E9266099039AF19cD2",
-        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xc8a8eCF060e219B6CADe249562933479c6097a89",
-        "childErc20Gateway": "0x5214401CE33cdeBd33F46eD479133eB35731E095",
-        "childGatewayRouter": "0x38Fa669dE4442F65c2cE4a324bA7e004E3b7A653",
-        "childMultiCall": "0xB40f50Ba0fCF0237b717135c71423F3f2BA027f2",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#BA5400",
-        "network": {
-          "name": "Humanity Mainnet",
-          "logo": "/images/HumanityMainnet_Logo.svg"
-        },
-        "nativeTokenData": {
-          "name": "Humanity",
-          "symbol": "H",
-          "logoUrl": "/images/HumanityMainnet_Logo.svg"
-        },
-        "assertionIntervalSeconds": 3600
       }
     },
     {
@@ -846,48 +755,6 @@
           "name": "World Mobile Token",
           "symbol": "WMTX",
           "logoUrl": "/images/WorldMobileChainMainnet_NativeTokenLogo.svg"
-        },
-        "assertionIntervalSeconds": 3600
-      }
-    },
-    {
-      "chainId": 510,
-      "confirmPeriodBlocks": 50400,
-      "ethBridge": {
-        "bridge": "0x3C8cF0ae6E89AC0796f29B3a58e7dEa1cD072277",
-        "inbox": "0x5EA55Fd41D42Eb307D281bdE78E4e7572A35ea13",
-        "outbox": "0xf555Bc86D1C953414F676479Bf7C979b1A737E8C",
-        "rollup": "0x451bD7813909B899DA6EbEC55E8fF823c057e14A",
-        "sequencerInbox": "0x12ad349e5d72B582856290736e0f13FE5fA57Aa4"
-      },
-      "explorerUrl": "https://synd-mainnet.explorer.alchemy.com/",
-      "rpcUrl": "https://synd-mainnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Syndicate Network",
-      "slug": "syndicate-network",
-      "parentChainId": 1,
-      "tokenBridge": {
-        "parentCustomGateway": "0x85C88ddc2f525459E243AB27D6059f55Ce80EB0c",
-        "parentErc20Gateway": "0x6CA109706c6EBe5379c45f20B3311441D50cb711",
-        "parentGatewayRouter": "0x534Eb1F79C8df3aB1E507e408EeF4e99D53A1239",
-        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xdb0a2E87eE6bAe0fa6Ce6f213B6B6664174a4416",
-        "childErc20Gateway": "0xBE9eF55Cb610d13324341654bd623B0B5EC11976",
-        "childGatewayRouter": "0xD96323e3ce7556Dc5119653DCe1BB73F22562F6C",
-        "childMultiCall": "0x6AcFa1BF5d8230134Ce2Fc3027f305c2952051A0",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#161616",
-        "network": {
-          "name": "Syndicate Network",
-          "logo": "/images/SyndicateNetwork_Logo.png"
         },
         "assertionIntervalSeconds": 3600
       }
