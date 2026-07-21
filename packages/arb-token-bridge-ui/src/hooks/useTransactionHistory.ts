@@ -71,6 +71,10 @@ const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   680: 10_000, // JASMY Chain
   20010: 10_000, // Mandala Chain
   704851: 10_000, // Mars Chain
+  1962: 10_000, // T-Rex Testnet
+  681: 10_000, // JASMY Chain Testnet
+  20011: 10_000, // Mandala Chain Testnet
+  704852: 10_000, // Mars Chain Testnet
 };
 
 export type UseTransactionHistoryResult = {
