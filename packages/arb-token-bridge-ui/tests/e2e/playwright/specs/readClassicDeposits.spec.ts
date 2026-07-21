@@ -76,7 +76,14 @@ test.describe('Read classic deposit messages', () => {
       }),
     );
 
-    await login(page, e2eEnv, { networkType: 'parentChain', networkName: 'Ethereum' });
+    // Pin the destination so the ORBIT_TEST login doesn't default it to the
+    // L3, which would scope the tx history filter away from the seeded
+    // Ethereum <> Arbitrum One deposit.
+    await login(page, e2eEnv, {
+      networkType: 'parentChain',
+      networkName: 'Ethereum',
+      query: { destination: 'arbitrum-one' },
+    });
 
     await switchToTransactionHistoryTab(page, 'settled');
 
