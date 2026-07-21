@@ -8,28 +8,28 @@ describe('useTransactionHistoryChainFilterStore', () => {
     useTransactionHistoryChainFilterStore.setState({ selection: null });
   });
 
-  it('starts with no selection, meaning the filter follows the bridge default', () => {
+  it('starts with no selection, meaning the filter defaults to All Core Chains', () => {
     expect(useTransactionHistoryChainFilterStore.getState().selection).toBeNull();
   });
 
-  it('setSelection stores the chains along with the mode they were selected in', () => {
+  it('setSelection stores the chain along with the mode it was selected in', () => {
     useTransactionHistoryChainFilterStore
       .getState()
-      .setSelection({ chainIds: [ChainId.Ethereum, ChainId.ArbitrumOne], isTestnetMode: false });
+      .setSelection({ chainId: ChainId.ArbitrumOne, isTestnetMode: false });
 
     expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
-      chainIds: [ChainId.Ethereum, ChainId.ArbitrumOne],
+      chainId: ChainId.ArbitrumOne,
       isTestnetMode: false,
     });
   });
 
   it('setSelection replaces the previous selection', () => {
     const { setSelection } = useTransactionHistoryChainFilterStore.getState();
-    setSelection({ chainIds: [ChainId.Ethereum], isTestnetMode: false });
-    setSelection({ chainIds: [], isTestnetMode: false });
+    setSelection({ chainId: ChainId.ArbitrumOne, isTestnetMode: false });
+    setSelection({ chainId: null, isTestnetMode: false });
 
     expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
-      chainIds: [],
+      chainId: null,
       isTestnetMode: false,
     });
   });

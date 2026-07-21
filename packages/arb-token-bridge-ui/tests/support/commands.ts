@@ -202,10 +202,29 @@ export function switchToTransferPanelTab() {
   return cy.findAllByLabelText('Switch to Bridge Tab').click();
 }
 
-export function switchToTransactionHistoryTab(tab: 'pending' | 'settled') {
+export function selectTransactionHistoryChain(networkName: string) {
+  cy.log(`selecting ${networkName} in the transaction history chain filter`);
+
+  cy.findByLabelText('Filter transaction history by network').click();
+  cy.findByLabelText('Search networks').type(networkName);
+  cy.findByRole('radio', { name: networkName }).click();
+  // close the filter popover so it doesn't cover the table
+  cy.get('body').type('{esc}');
+}
+
+export function switchToTransactionHistoryTab(
+  tab: 'pending' | 'settled',
+  // The history defaults to core chains only; pass the chain under test so
+  // seeded or prior-session transactions on a longtail chain are fetched.
+  options?: { chainFilter?: string },
+) {
   cy.log(`opening transactions panel on ${tab}`);
 
   cy.findAllByLabelText('Switch to Transaction History Tab').click();
+
+  if (options?.chainFilter) {
+    cy.selectTransactionHistoryChain(options.chainFilter);
+  }
 
   cy.selectTransactionsPanelTab(tab);
 
@@ -365,6 +384,7 @@ Cypress.Commands.addAll({
   findSelectTokenButton,
   switchToTransferPanelTab,
   switchToTransactionHistoryTab,
+  selectTransactionHistoryChain,
   openTransactionDetails,
   closeTransactionDetails,
   findTransactionInTransactionHistory,

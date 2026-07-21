@@ -1,46 +1,54 @@
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { Popover, PopoverButton, PopoverPanel, Radio, RadioGroup } from '@headlessui/react';
 import {
   ChevronDownIcon,
   FunnelIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import { PropsWithChildren, useMemo, useState } from 'react';
+import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isChainFilterActive, matchesChainFilter } from '../../util/chainFilter';
-import { getNetworkName, isCoreChainForDisplay, sortChainIds } from '../../util/networks';
-import { ChainPair, getTxHistoryRoutes } from '../../util/txHistoryRoutes';
+import { TxHistoryChainFilter, matchesChainFilter } from '../../util/chainFilter';
+import { getNetworkName, isCoreChainForDisplay } from '../../util/networks';
+import {
+  ChainPair,
+  getTxHistoryFilterableChainIds,
+  getTxHistoryRoutes,
+} from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
-import { Checkbox } from '../common/Checkbox';
 import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
-import { useBridgeDefaultChainIds, useSelectedChainIds } from './useTransactionHistoryChainFilter';
+import { useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
-function useTxHistoryRoutes(selectedChainIds: number[]) {
+// The radio value is the selected chain id; `null` is "All Core Chains",
+// mirroring the store's selection shape.
+type ChainFilterOption = number | null;
+
+function useTxHistoryRoutes(filter: TxHistoryChainFilter) {
   const [isTestnetMode] = useIsTestnetMode();
 
-  return useMemo(() => {
-    const routes = getTxHistoryRoutes({ isTestnetMode });
+  const filterableChainIds = useMemo(
+    () => getTxHistoryFilterableChainIds({ isTestnetMode }),
+    [isTestnetMode],
+  );
 
-    const filterableChainIds = sortChainIds(
-      Array.from(new Set(routes.flatMap((route) => [route.parentChainId, route.childChainId]))),
-    );
+  const eligibleRoutes = useMemo(
+    () =>
+      getTxHistoryRoutes({ isTestnetMode }).filter((route) =>
+        matchesChainFilter({
+          filter,
+          sourceChainId: route.parentChainId,
+          destinationChainId: route.childChainId,
+        }),
+      ),
+    [isTestnetMode, filter],
+  );
 
-    const eligibleRoutes = routes.filter((route) =>
-      matchesChainFilter({
-        selectedChainIds,
-        sourceChainId: route.parentChainId,
-        destinationChainId: route.childChainId,
-      }),
-    );
-
-    return { filterableChainIds, eligibleRoutes };
-  }, [isTestnetMode, selectedChainIds]);
+  return { filterableChainIds, eligibleRoutes };
 }
 
 function SectionLabel({ children }: PropsWithChildren) {
@@ -51,42 +59,35 @@ function SectionLabel({ children }: PropsWithChildren) {
   );
 }
 
-function ChainRow({
-  chainId,
-  checked,
-  onToggle,
-}: {
-  chainId: number;
-  checked: boolean;
-  onToggle: (chainId: number) => void;
-}) {
+function ChainRadioRow({ value, label }: { value: ChainFilterOption; label: ReactNode }) {
   return (
-    <div className="rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10">
-      <Checkbox
-        label={
-          <div className="flex items-center gap-2 overflow-hidden">
-            <NetworkImage chainId={chainId} />
-            <span className="truncate text-sm">{getNetworkName(chainId)}</span>
-          </div>
-        }
-        labelClassName="min-w-0 flex-1"
-        checked={checked}
-        onChange={() => onToggle(chainId)}
-      />
-    </div>
+    <Radio
+      value={value}
+      className="group arb-hover flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10"
+    >
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1px] border-gray-6 bg-dark group-data-[checked]:border-white">
+        <span className="hidden h-2 w-2 rounded-full bg-white group-data-[checked]:block" />
+      </span>
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-gray-3 group-data-[checked]:text-white">
+        {label}
+      </div>
+    </Radio>
+  );
+}
+
+function ChainLabel({ chainId }: { chainId: number }) {
+  return (
+    <>
+      <NetworkImage chainId={chainId} />
+      <span className="truncate text-sm">{getNetworkName(chainId)}</span>
+    </>
   );
 }
 
 // A hub chain can match dozens of routes; an over-tall tooltip renders off-screen.
 const MAX_TOOLTIP_ROUTES = 6;
 
-function EligibleRoutesTooltip({
-  chainPairs,
-  allChainsSelected,
-}: {
-  chainPairs: ChainPair[];
-  allChainsSelected: boolean;
-}) {
+function EligibleRoutesTooltip({ chainPairs }: { chainPairs: ChainPair[] }) {
   const visibleRoutes = chainPairs.slice(0, MAX_TOOLTIP_ROUTES);
   const hiddenRouteCount = chainPairs.length - visibleRoutes.length;
 
@@ -96,22 +97,16 @@ function EligibleRoutesTooltip({
       as="button"
       content={
         <div className="flex flex-col gap-1 text-xs">
-          {allChainsSelected ? (
-            <span>Showing transaction history for all supported routes.</span>
-          ) : (
-            <>
-              <span className="font-medium">Showing history for these routes:</span>
-              {visibleRoutes.map((pair) => (
-                <span key={`${pair.parentChainId}-${pair.childChainId}`}>
-                  {getNetworkName(pair.parentChainId)} ↔ {getNetworkName(pair.childChainId)}
-                </span>
-              ))}
-              {hiddenRouteCount > 0 && (
-                <span className="text-white/70">
-                  and {hiddenRouteCount} more route{hiddenRouteCount === 1 ? '' : 's'}
-                </span>
-              )}
-            </>
+          <span className="font-medium">Showing history for these routes:</span>
+          {visibleRoutes.map((pair) => (
+            <span key={`${pair.parentChainId}-${pair.childChainId}`}>
+              {getNetworkName(pair.parentChainId)} ↔ {getNetworkName(pair.childChainId)}
+            </span>
+          ))}
+          {hiddenRouteCount > 0 && (
+            <span className="text-white/70">
+              and {hiddenRouteCount} more route{hiddenRouteCount === 1 ? '' : 's'}
+            </span>
           )}
         </div>
       }
@@ -126,59 +121,24 @@ function EligibleRoutesTooltip({
 
 export function TransactionHistoryChainFilter() {
   const [isTestnetMode] = useIsTestnetMode();
-  const defaultChainIds = useBridgeDefaultChainIds();
-  const selectedChainIds = useSelectedChainIds();
+  const filter = useTxHistoryChainFilter();
   const setSelection = useTransactionHistoryChainFilterStore((state) => state.setSelection);
 
-  const { filterableChainIds, eligibleRoutes } = useTxHistoryRoutes(selectedChainIds);
+  const { filterableChainIds, eligibleRoutes } = useTxHistoryRoutes(filter);
 
   const [search, setSearch] = useState('');
 
-  const allChainsSelected = !isChainFilterActive(selectedChainIds);
+  const allCoreChainsSelected = filter.type === 'all-core';
+  const selectedOption: ChainFilterOption = allCoreChainsSelected ? null : filter.chainId;
 
-  const isChainChecked = (chainId: number) =>
-    allChainsSelected || selectedChainIds.includes(chainId);
-
-  const toggleChain = (chainId: number) => {
-    trackEvent('Tx History Network Filter', { network: getNetworkName(chainId) });
-
-    const next = new Set(allChainsSelected ? filterableChainIds : selectedChainIds);
-    if (next.has(chainId)) {
-      next.delete(chainId);
-    } else {
-      next.add(chainId);
-    }
-
-    // Collapse "none" and "all" back to the All Chains state.
-    const isAllChains = next.size === 0 || next.size === filterableChainIds.length;
-    setSelection({ chainIds: isAllChains ? [] : Array.from(next), isTestnetMode });
+  const selectOption = (option: ChainFilterOption) => {
+    trackEvent('Tx History Network Filter', {
+      network: option === null ? 'all core chains' : getNetworkName(option),
+    });
+    setSelection({ chainId: option, isTestnetMode });
   };
 
-  // Unchecking "All Chains" falls back to the bridge default rather than an
-  // empty selection.
-  const toggleAllChains = () => {
-    if (allChainsSelected) {
-      trackEvent('Tx History Network Filter', { network: 'default' });
-      setSelection({ chainIds: defaultChainIds, isTestnetMode });
-      return;
-    }
-    trackEvent('Tx History Network Filter', { network: 'all' });
-    setSelection({ chainIds: [], isTestnetMode });
-  };
-
-  const selectedChainNames = filterableChainIds
-    .filter((chainId) => selectedChainIds.includes(chainId))
-    .map((chainId) => getNetworkName(chainId));
-  const showAllChainsLabel = allChainsSelected || selectedChainNames.length === 0;
-  const visibleChainNames = selectedChainNames.slice(0, 2);
-  const hiddenChainCount = selectedChainNames.length - visibleChainNames.length;
-  const triggerLabel = showAllChainsLabel
-    ? 'All Chains'
-    : hiddenChainCount > 0
-      ? `${visibleChainNames.join(', ')} and ${hiddenChainCount} other${
-          hiddenChainCount === 1 ? '' : 's'
-        }`
-      : visibleChainNames.join(', ');
+  const triggerLabel = allCoreChainsSelected ? 'All Core Chains' : getNetworkName(filter.chainId);
 
   const query = search.trim().toLowerCase();
   const visibleChainIds = query
@@ -226,50 +186,47 @@ export function TransactionHistoryChainFilter() {
                   </div>
                 </div>
 
-                <div
+                <RadioGroup
+                  value={selectedOption}
+                  onChange={selectOption}
+                  aria-label="Networks"
                   // Cap the list directly — Headless overrides the panel's max-height via `anchor`.
                   className="max-h-[260px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
                   {!query && (
-                    <div className="rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10">
-                      <Checkbox
-                        label={
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
-                            <span className="truncate text-sm">All Chains</span>
-                          </div>
-                        }
-                        labelClassName="min-w-0 flex-1"
-                        checked={allChainsSelected}
-                        onChange={toggleAllChains}
-                      />
-                    </div>
+                    <ChainRadioRow
+                      value={null}
+                      label={
+                        <>
+                          <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
+                          <span className="truncate text-sm">All Core Chains</span>
+                        </>
+                      }
+                    />
                   )}
 
                   {coreChainIds.length > 0 && <SectionLabel>Core Chains</SectionLabel>}
                   {coreChainIds.map((chainId) => (
-                    <ChainRow
+                    <ChainRadioRow
                       key={chainId}
-                      chainId={chainId}
-                      checked={isChainChecked(chainId)}
-                      onToggle={toggleChain}
+                      value={chainId}
+                      label={<ChainLabel chainId={chainId} />}
                     />
                   ))}
 
                   {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
                   {moreChainIds.map((chainId) => (
-                    <ChainRow
+                    <ChainRadioRow
                       key={chainId}
-                      chainId={chainId}
-                      checked={isChainChecked(chainId)}
-                      onToggle={toggleChain}
+                      value={chainId}
+                      label={<ChainLabel chainId={chainId} />}
                     />
                   ))}
 
                   {visibleChainIds.length === 0 && (
                     <div className="px-2 py-3 text-sm text-white/40">No networks found.</div>
                   )}
-                </div>
+                </RadioGroup>
 
                 <div className="border-t border-white/10 px-3 py-3">
                   <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
@@ -279,7 +236,7 @@ export function TransactionHistoryChainFilter() {
           </>
         )}
       </Popover>
-      <EligibleRoutesTooltip chainPairs={eligibleRoutes} allChainsSelected={allChainsSelected} />
+      <EligibleRoutesTooltip chainPairs={eligibleRoutes} />
     </div>
   );
 }

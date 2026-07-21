@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { MergedTransaction } from '../../state/app/state';
+import { CoreChainsFilterBanner } from './CoreChainsFilterBanner';
 import { TransactionHistorySearchBar } from './TransactionHistorySearchBar';
 import { TransactionHistorySearchResults } from './TransactionHistorySearchResults';
 
@@ -34,6 +35,8 @@ export const TransactionHistory = () => {
   return (
     <div className="m-auto w-full max-w-[100vw] bg-[#191919] p-4 md:max-w-[1000px] rounded">
       <TransactionHistorySearchBar />
+
+      <CoreChainsFilterBanner />
 
       <TransactionHistorySearchResults />
     </div>
