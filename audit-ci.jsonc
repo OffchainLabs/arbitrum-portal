@@ -40,6 +40,12 @@
     // https://github.com/advisories/GHSA-79cf-xcqc-c78w
     // webpack-dev-server cross-origin source code exposure on non-HTTPS origins (CVE-2026-6402)
     //
+    // https://github.com/advisories/GHSA-f5vj-f2hx-8m93
+    // webpack-dev-server cross-site request forgery via internal endpoints
+    //
+    // https://github.com/advisories/GHSA-m28w-2pqf-7qgj
+    // webpack-dev-server denial of service via a malformed Host header
+    //
     // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
     // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
     //
@@ -73,6 +79,8 @@
     "GHSA-9jgg-88mc-972h",
     "GHSA-4v9v-hfq4-rm2v",
     "GHSA-79cf-xcqc-c78w",
+    "GHSA-f5vj-f2hx-8m93",
+    "GHSA-m28w-2pqf-7qgj",
     "GHSA-q8mj-m7cp-5q26",
     "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
