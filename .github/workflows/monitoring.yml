@@ -83,6 +83,15 @@ jobs:
           RETRYABLE_MONITORING_NOTION_TOKEN: ${{ secrets.RETRYABLE_MONITORING_NOTION_TOKEN }}
           RETRYABLE_MONITORING_NOTION_DB_ID: ${{ secrets.RETRYABLE_MONITORING_NOTION_DB_ID }}
 
+      - name: Upload retryable run report
+        if: inputs.monitor == 'retryable' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retryable-run-report-${{ inputs.chain }}
+          path: arbitrum-monitoring/packages/retryable-monitor/retryable-run-report.json
+          if-no-files-found: 'ignore'
+        continue-on-error: true
+
       - name: Send Slack notification on failure
         if: failure()
         uses: slackapi/slack-github-action@v1.27.0
