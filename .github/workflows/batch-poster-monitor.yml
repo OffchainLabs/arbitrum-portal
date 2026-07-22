@@ -10,7 +10,7 @@ jobs:
     name: Batch Poster Monitor (${{ matrix.chain == 'orbit' && 'Orbit' || matrix.chain == 'core' && 'Core' || matrix.chain }})
     strategy:
       matrix:
-        chain: [core, orbit]
+        chain: [core, orbit, enterprise]
     uses: ./.github/workflows/monitoring.yml
     with:
       chain: ${{ matrix.chain }}
