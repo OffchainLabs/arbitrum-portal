@@ -1,11 +1,13 @@
 import { Popover, PopoverButton, PopoverPanel, Radio, RadioGroup } from '@headlessui/react';
 import {
+  CheckIcon,
   ChevronDownIcon,
   FunnelIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
@@ -19,7 +21,6 @@ import {
   getTxHistoryRoutes,
 } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
-import { NetworkImage } from '../common/NetworkImage';
 import { TestnetToggle } from '../common/TestnetToggle';
 import { useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
@@ -53,34 +54,69 @@ function useTxHistoryRoutes(filter: TxHistoryChainFilter) {
 
 function SectionLabel({ children }: PropsWithChildren) {
   return (
-    <div className="px-2 pb-1 pt-3 text-xs font-medium uppercase tracking-wider text-white/40">
+    <div className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wider text-white/40">
       {children}
     </div>
   );
 }
 
-function ChainRadioRow({ value, label }: { value: ChainFilterOption; label: ReactNode }) {
+function RadioIndicator() {
+  return (
+    <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-[checked]:border-[#3A96FF]">
+      <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-[checked]:block" />
+    </span>
+  );
+}
+
+function CheckboxIndicator() {
+  return (
+    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-[checked]:border-0 group-data-[checked]:bg-arb-blue">
+      <CheckIcon className="hidden h-3 w-3 stroke-[3] text-white group-data-[checked]:block" />
+    </span>
+  );
+}
+
+function ChainFilterRow({
+  value,
+  label,
+  indicator,
+  nested = false,
+  endContent,
+}: {
+  value: ChainFilterOption;
+  label: string;
+  // Visual only — every row is semantically a radio (single-select).
+  indicator: 'radio' | 'checkbox';
+  nested?: boolean;
+  endContent?: ReactNode;
+}) {
   return (
     <Radio
       value={value}
-      className="group arb-hover flex w-full cursor-pointer items-center gap-2 rounded px-2 py-2 transition-[background] duration-200 hover:bg-white/10"
+      className={twMerge(
+        'group flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] px-3 transition-[background] duration-200 hover:bg-white/10',
+        indicator === 'radio' && 'data-[checked]:bg-[#0B2046]',
+        nested && 'pl-7',
+      )}
     >
-      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1px] border-gray-6 bg-dark group-data-[checked]:border-white">
-        <span className="hidden h-2 w-2 rounded-full bg-white group-data-[checked]:block" />
-      </span>
-      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-gray-3 group-data-[checked]:text-white">
-        {label}
+      <div className="flex min-w-0 items-center gap-3">
+        {indicator === 'radio' ? <RadioIndicator /> : <CheckboxIndicator />}
+        <span className="truncate text-sm font-medium text-white">{label}</span>
       </div>
+      {endContent}
     </Radio>
   );
 }
 
-function ChainLabel({ chainId }: { chainId: number }) {
+function IncludedTag() {
   return (
-    <>
-      <NetworkImage chainId={chainId} />
-      <span className="truncate text-sm">{getNetworkName(chainId)}</span>
-    </>
+    <span
+      // Hidden from the a11y tree so the row's accessible name stays the chain name.
+      aria-hidden="true"
+      className="shrink-0 rounded-[4px] bg-arb-blue/10 px-2 py-[3px] text-[11px] font-medium text-[#3A96FF]"
+    >
+      included
+    </span>
   );
 }
 
@@ -147,6 +183,10 @@ export function TransactionHistoryChainFilter() {
   const coreChainIds = visibleChainIds.filter((chainId) => isCoreChainForDisplay(chainId));
   const moreChainIds = visibleChainIds.filter((chainId) => !isCoreChainForDisplay(chainId));
 
+  // Searching flattens the core section: the "All Core Chains" parent row and
+  // the indent under it only render for the full, unfiltered list.
+  const showAllCoreChainsRow = !query;
+
   return (
     <div className="flex items-center gap-1.5">
       <Popover className="relative">
@@ -169,7 +209,7 @@ export function TransactionHistoryChainFilter() {
               // panel's overflow (which clipped it on mobile); padding keeps it off the edges.
               anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
               transition
-              className="z-20 flex w-[280px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+              className="z-20 flex w-[340px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
             >
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="p-2">
@@ -191,35 +231,47 @@ export function TransactionHistoryChainFilter() {
                   onChange={selectOption}
                   aria-label="Networks"
                   // Cap the list directly — Headless overrides the panel's max-height via `anchor`.
-                  className="max-h-[260px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+                  className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
-                  {!query && (
-                    <ChainRadioRow
-                      value={null}
-                      label={
-                        <>
-                          <span className="h-4 w-4 shrink-0 rounded-full bg-all-chains-gradient" />
-                          <span className="truncate text-sm">All Core Chains</span>
-                        </>
-                      }
-                    />
+                  {(showAllCoreChainsRow || coreChainIds.length > 0) && (
+                    <SectionLabel>Core Chains</SectionLabel>
                   )}
 
-                  {coreChainIds.length > 0 && <SectionLabel>Core Chains</SectionLabel>}
-                  {coreChainIds.map((chainId) => (
-                    <ChainRadioRow
-                      key={chainId}
-                      value={chainId}
-                      label={<ChainLabel chainId={chainId} />}
-                    />
-                  ))}
+                  {showAllCoreChainsRow && (
+                    <ChainFilterRow value={null} label="All Core Chains" indicator="radio" />
+                  )}
+
+                  {coreChainIds.length > 0 && (
+                    <div className="relative">
+                      {showAllCoreChainsRow && (
+                        <span
+                          aria-hidden="true"
+                          className={twMerge(
+                            'absolute inset-y-0 left-[21px] w-px',
+                            allCoreChainsSelected ? 'bg-[#3A96FF]' : 'bg-white/20',
+                          )}
+                        />
+                      )}
+                      {coreChainIds.map((chainId) => (
+                        <ChainFilterRow
+                          key={chainId}
+                          value={chainId}
+                          label={getNetworkName(chainId)}
+                          indicator="checkbox"
+                          nested={showAllCoreChainsRow}
+                          endContent={allCoreChainsSelected ? <IncludedTag /> : undefined}
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
                   {moreChainIds.map((chainId) => (
-                    <ChainRadioRow
+                    <ChainFilterRow
                       key={chainId}
                       value={chainId}
-                      label={<ChainLabel chainId={chainId} />}
+                      label={getNetworkName(chainId)}
+                      indicator="radio"
                     />
                   ))}
 
