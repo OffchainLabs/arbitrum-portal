@@ -4,8 +4,6 @@ import { isEnterpriseChain } from '../src/util/enterpriseChains';
 import { getOrbitChains } from '../src/util/orbitChainsList';
 import { getChainToMonitor } from './utils';
 
-// enterprise chains alert to their own slack channels, so they are monitored
-// in a separate run from the other orbit chains
 const enterpriseMode = process.env.MONITOR_ENTERPRISE_CHAINS === 'true';
 
 function getOrbitChainsToMonitor() {
