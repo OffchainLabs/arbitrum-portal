@@ -10,6 +10,7 @@ import {
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
 import { useAppState } from '../state';
+import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import {
   getL2ERC20Address,
@@ -63,12 +64,17 @@ export const useSelectedToken = (): [
       networks.destinationChain.id,
       'useSelectedToken_usdc',
     ],
-    async ([_tokenAddress, _parentChainId, _childChainId]) => {
+    async ([_tokenAddress, _parentChainId, _childChainId, _destinationChainId]) => {
       if (!_tokenAddress) {
         return null;
       }
 
       if (!isTokenNativeUSDC(_tokenAddress)) {
+        return null;
+      }
+
+      // USDC for lifi chains, use bridgeTokens
+      if (_destinationChainId === ChainId.ApeChain) {
         return null;
       }
 

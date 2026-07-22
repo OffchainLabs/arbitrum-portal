@@ -283,10 +283,6 @@ function TokensPanel({
     /**
      * Add native currency if not already included
      * For chains with custom native tokens, always add it even if AddressZero is present
-     *
-     * For lifi chains, the destination chain might not be the direct parent or child chain and might not have the native token.
-     * (legacy example e.g., APE token in Superposition for ApeChain <> Superposition transfers)
-     * We still allow token to be selected (it will default to swap)
      */
     if (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) {
       tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
