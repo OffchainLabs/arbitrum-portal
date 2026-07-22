@@ -63,15 +63,11 @@ jobs:
           echo "config_file=$(echo $CONFIG | jq -r '.configFile')" >> $GITHUB_OUTPUT
           echo "slack_token=$(echo $CONFIG | jq -r '.slackTokens["${{ inputs.monitor }}"]')" >> $GITHUB_OUTPUT
           echo "slack_channel=$(echo $CONFIG | jq -r '.slackChannels["${{ inputs.monitor }}"]')" >> $GITHUB_OUTPUT
-          echo "include_chain_ids=$(echo $CONFIG | jq -r '.includeChainIds // [] | join(",")')" >> $GITHUB_OUTPUT
-          echo "exclude_chain_ids=$(echo $CONFIG | jq -r '.excludeChainIds // [] | join(",")')" >> $GITHUB_OUTPUT
 
       - name: Generate chains JSON
         run: pnpm --filter arb-token-bridge-ui ${{ steps.config.outputs.generate_command }}
         env:
-          MONITOR_INCLUDE_CHAIN_IDS: ${{ steps.config.outputs.include_chain_ids }}
-          MONITOR_EXCLUDE_CHAIN_IDS: ${{ steps.config.outputs.exclude_chain_ids }}
-          MONITOR_OUTPUT_FILE: ${{ steps.config.outputs.config_file }}
+          MONITOR_ENTERPRISE_CHAINS: ${{ inputs.chain == 'enterprise' }}
 
       - name: Copy chains JSON to Arbitrum Monitoring
         run: cp ./packages/arb-token-bridge-ui/public/${{ steps.config.outputs.config_file }} ./arbitrum-monitoring/config.json

@@ -1,28 +1,34 @@
 import fs from 'fs';
 
+import { isEnterpriseChain } from '../src/util/enterpriseChains';
 import { getOrbitChains } from '../src/util/orbitChainsList';
 import { getChainToMonitor } from './utils';
 
-function parseChainIds(envValue: string | undefined) {
-  if (typeof envValue !== 'string' || envValue === '') {
-    return undefined;
+// enterprise chains alert to their own slack channels, so they are monitored
+// in a separate run from the other orbit chains
+const enterpriseMode = process.env.MONITOR_ENTERPRISE_CHAINS === 'true';
+
+function getOrbitChainsToMonitor() {
+  const orbitChains = getOrbitChains({ mainnet: true, testnet: false });
+
+  if (enterpriseMode) {
+    return orbitChains.filter((orbitChain) => isEnterpriseChain(orbitChain.chainId));
   }
-  return envValue.split(',').map((chainId) => Number(chainId.trim()));
+
+  return orbitChains.filter((orbitChain) => !isEnterpriseChain(orbitChain.chainId));
+}
+
+function getOutputFile() {
+  if (enterpriseMode) {
+    return '__auto-generated-enterprise-chains.json';
+  }
+
+  return '__auto-generated-orbit-chains.json';
 }
 
 async function generateOrbitChainsToMonitor() {
-  const includeChainIds = parseChainIds(process.env.MONITOR_INCLUDE_CHAIN_IDS);
-  const excludeChainIds = parseChainIds(process.env.MONITOR_EXCLUDE_CHAIN_IDS);
-  const outputFile = process.env.MONITOR_OUTPUT_FILE || '__auto-generated-orbit-chains.json';
-
-  const orbitChains = getOrbitChains({ mainnet: true, testnet: false }).filter(
-    (orbitChain) =>
-      (!includeChainIds || includeChainIds.includes(orbitChain.chainId)) &&
-      !excludeChainIds?.includes(orbitChain.chainId),
-  );
-
   // make the orbit chain data compatible with the orbit-data required by the retryable-monitoring script
-  const orbitChainsToMonitor = orbitChains.map((orbitChain) => {
+  const orbitChainsToMonitor = getOrbitChainsToMonitor().map((orbitChain) => {
     return getChainToMonitor({
       chain: orbitChain,
       rpcUrl: orbitChain.rpcUrl,
@@ -35,7 +41,7 @@ async function generateOrbitChainsToMonitor() {
     fs.mkdirSync(publicDir, { recursive: true });
   }
 
-  // write to orbit-chains.json, we will use this json as an input to the retryable-monitoring script
+  // write the chains json, we will use it as an input to the retryable-monitoring script
   const resultsJson = JSON.stringify(
     {
       childChains: orbitChainsToMonitor,
@@ -43,7 +49,7 @@ async function generateOrbitChainsToMonitor() {
     null,
     2,
   );
-  fs.writeFileSync(`./public/${outputFile}`, resultsJson);
+  fs.writeFileSync(`./public/${getOutputFile()}`, resultsJson);
 }
 
 generateOrbitChainsToMonitor();

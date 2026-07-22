@@ -16,7 +16,6 @@
   "orbit": {
     "generateCommand": "generateOrbitChainsToMonitor",
     "configFile": "__auto-generated-orbit-chains.json",
-    "excludeChainIds": [4663],
     "slackTokens": {
       "assertion": "ORBIT_CHAIN_ASSERTION_MONITORING_SLACK_TOKEN",
       "batch-poster": "ORBIT_CHAIN_BATCH_POSTER_MONITORING_SLACK_TOKEN",
@@ -31,7 +30,6 @@
   "enterprise": {
     "generateCommand": "generateOrbitChainsToMonitor",
     "configFile": "__auto-generated-enterprise-chains.json",
-    "includeChainIds": [4663],
     "slackTokens": {
       "assertion": "ENTERPRISE_CHAIN_MONITORING_SLACK_TOKEN",
       "batch-poster": "ENTERPRISE_CHAIN_MONITORING_SLACK_TOKEN",
