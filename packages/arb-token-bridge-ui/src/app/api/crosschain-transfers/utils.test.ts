@@ -14,7 +14,7 @@ function generateTestCases({
   sourceChainId: ChainId;
   usdcAddress: string;
 }) {
-  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+  return [ChainId.ApeChain, ChainId.ArbitrumOne, ChainId.Ethereum]
     .filter((chain) => sourceChainId !== chain)
     .map((destinationChainId) => [
       {
@@ -35,16 +35,14 @@ function generateTestCases({
 }
 
 function generateBaseWithdrawTestCases() {
-  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+  return [ChainId.ApeChain, ChainId.ArbitrumOne, ChainId.Ethereum]
     .map((sourceChainId) => {
       const usdcToken =
         sourceChainId === ChainId.ApeChain
           ? CommonAddress.Base.USDC
-          : sourceChainId === ChainId.Superposition
-            ? CommonAddress.Superposition.USDCe
-            : sourceChainId === ChainId.Ethereum
-              ? CommonAddress.Ethereum.USDC
-              : CommonAddress.ArbitrumOne.USDC;
+          : sourceChainId === ChainId.Ethereum
+            ? CommonAddress.Ethereum.USDC
+            : CommonAddress.ArbitrumOne.USDC;
       return [
         {
           fromToken: usdcToken,
@@ -64,7 +62,7 @@ function generateBaseWithdrawTestCases() {
 }
 
 function generateBaseDepositTestCases() {
-  return [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition]
+  return [ChainId.ArbitrumOne, ChainId.ApeChain]
     .map((destinationChainId) => [
       {
         fromToken: CommonAddress.Base.USDC,
@@ -98,7 +96,7 @@ function generateRobinhoodDepositTestCases() {
 }
 
 function generateRobinhoodWithdrawTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Superposition]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne]
     .map((destinationChainId) => [
       {
         fromToken: undefined,
@@ -127,10 +125,6 @@ describe('isValidLifiTransfer', () => {
     ...generateTestCases({
       sourceChainId: ChainId.ApeChain,
       usdcAddress: CommonAddress.ApeChain.USDCe,
-    }),
-    ...generateTestCases({
-      sourceChainId: ChainId.Superposition,
-      usdcAddress: CommonAddress.Superposition.USDCe,
     }),
   ])(
     `from $sourceChainId to $destinationChainId with token $fromToken should return true`,
@@ -180,12 +174,12 @@ describe('isValidLifiTransfer', () => {
     ).toBe(true);
   });
 
-  it('Ethereum → Superposition with the zero address should not skip the token list check', () => {
+  it('Ethereum → ArbitrumOne with the zero address should not skip the token list check', () => {
     expect(
       isValidLifiTransfer({
         fromToken: constants.AddressZero,
         sourceChainId: ChainId.Ethereum,
-        destinationChainId: ChainId.Superposition,
+        destinationChainId: ChainId.ArbitrumOne,
         tokensFromLists: {},
       }),
     ).toBe(false);
@@ -488,10 +482,10 @@ describe('getTokenOverride', () => {
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.Superposition,
     });
-    const superpositionToMainnetOverride = getTokenOverride({
-      fromToken: CommonAddress.Ethereum.USDC,
+    const superpositionToArbOverride = getTokenOverride({
+      fromToken: CommonAddress.Superposition.USDCe,
       sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
     });
 
     const nativeUsdcToken = {
@@ -521,13 +515,13 @@ describe('getTokenOverride', () => {
       address: CommonAddress.Superposition.USDCe,
     });
 
-    expect(superpositionToMainnetOverride.source).toEqual({
+    expect(superpositionToArbOverride.source).toEqual({
       ...bridgedUsdcToken,
       address: CommonAddress.Superposition.USDCe,
     });
-    expect(superpositionToMainnetOverride.destination).toEqual({
+    expect(superpositionToArbOverride.destination).toEqual({
       ...nativeUsdcToken,
-      address: CommonAddress.Ethereum.USDC,
+      address: CommonAddress.ArbitrumOne.USDC,
     });
   });
 });
