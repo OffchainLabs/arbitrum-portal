@@ -1,28 +1,6 @@
 import fs from 'fs';
 
-import { isEnterpriseChain } from '../src/util/enterpriseChains';
-import { getOrbitChains } from '../src/util/orbitChainsList';
-import { getChainToMonitor } from './utils';
-
-const enterpriseMode = process.env.MONITOR_ENTERPRISE_CHAINS === 'true';
-
-function getOrbitChainsToMonitor() {
-  const orbitChains = getOrbitChains({ mainnet: true, testnet: false });
-
-  if (enterpriseMode) {
-    return orbitChains.filter((orbitChain) => isEnterpriseChain(orbitChain.chainId));
-  }
-
-  return orbitChains.filter((orbitChain) => !isEnterpriseChain(orbitChain.chainId));
-}
-
-function getOutputFile() {
-  if (enterpriseMode) {
-    return '__auto-generated-enterprise-chains.json';
-  }
-
-  return '__auto-generated-orbit-chains.json';
-}
+import { getChainToMonitor, getOrbitChainsOutputFile, getOrbitChainsToMonitor } from './utils';
 
 async function generateOrbitChainsToMonitor() {
   // make the orbit chain data compatible with the orbit-data required by the retryable-monitoring script
@@ -47,7 +25,7 @@ async function generateOrbitChainsToMonitor() {
     null,
     2,
   );
-  fs.writeFileSync(`./public/${getOutputFile()}`, resultsJson);
+  fs.writeFileSync(`./public/${getOrbitChainsOutputFile()}`, resultsJson);
 }
 
 generateOrbitChainsToMonitor();
