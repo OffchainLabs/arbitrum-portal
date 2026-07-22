@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../src/types/ChainId';
+import { isEnterpriseChain } from '../src/util/networks';
 import { getOrbitChainsOutputFile, getOrbitChainsToMonitor } from './utils';
 
 describe('getOrbitChainsToMonitor', () => {
@@ -16,6 +17,14 @@ describe('getOrbitChainsToMonitor', () => {
     expect(chainIds.length).toBeGreaterThan(0);
     expect(chainIds).not.toContain(ChainId.RobinhoodChain);
     expect(getOrbitChainsOutputFile()).toBe('__auto-generated-orbit-chains.json');
+  });
+
+  it('does not include any enterprise chains in the orbit chains output', () => {
+    vi.stubEnv('MONITOR_ENTERPRISE_CHAINS', '');
+
+    const chainIds = getOrbitChainsToMonitor().map((orbitChain) => orbitChain.chainId);
+
+    expect(chainIds.filter(isEnterpriseChain)).toEqual([]);
   });
 
   it('returns only enterprise chains in enterprise mode', () => {
