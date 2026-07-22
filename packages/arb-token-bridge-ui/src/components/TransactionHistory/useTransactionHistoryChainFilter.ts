@@ -55,7 +55,7 @@ export function useTxHistoryChainFilter(): TxHistoryChainFilter {
     const effectiveSelection =
       selection ??
       (typeof defaultChainIdOverride !== 'undefined'
-        ? { chainId: defaultChainIdOverride, isTestnetMode }
+        ? { chainIds: [defaultChainIdOverride], isTestnetMode }
         : null);
 
     return resolveChainFilter({ selection: effectiveSelection, isTestnetMode, coreChainIds });

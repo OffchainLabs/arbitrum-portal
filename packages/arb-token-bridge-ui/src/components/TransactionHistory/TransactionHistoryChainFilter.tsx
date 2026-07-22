@@ -1,4 +1,11 @@
-import { Popover, PopoverButton, PopoverPanel, Radio, RadioGroup } from '@headlessui/react';
+import {
+  Checkbox,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+  Radio,
+  RadioGroup,
+} from '@headlessui/react';
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -6,7 +13,7 @@ import {
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
+import { PropsWithChildren, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
@@ -25,9 +32,11 @@ import { TestnetToggle } from '../common/TestnetToggle';
 import { useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
-// The radio value is the selected chain id; `null` is "All Core Chains",
-// mirroring the store's selection shape.
-type ChainFilterOption = number | null;
+// The radio value is the selected chain id; `null` is "All Core Chains".
+// Core chains are checkboxes, not radios — when a core subset is checked, no
+// radio is selected, expressed by a sentinel no radio can ever have as value.
+type ChainRadioOption = number | null;
+const NO_RADIO_SELECTED = -1;
 
 function useTxHistoryRoutes(filter: TxHistoryChainFilter) {
   const [isTestnetMode] = useIsTestnetMode();
@@ -60,64 +69,76 @@ function SectionLabel({ children }: PropsWithChildren) {
   );
 }
 
-function RadioIndicator() {
-  return (
-    <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-[checked]:border-[#3A96FF]">
-      <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-[checked]:block" />
-    </span>
-  );
+const ROW_CLASSNAME =
+  'group flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] px-3 transition-[background] duration-200 hover:bg-white/10';
+
+function RowLabel({ label }: { label: string }) {
+  return <span className="truncate text-sm font-medium text-white">{label}</span>;
 }
 
-function CheckboxIndicator() {
+function ChainRadioRow({ value, label }: { value: ChainRadioOption; label: string }) {
   return (
-    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-[checked]:border-0 group-data-[checked]:bg-arb-blue">
-      <CheckIcon className="hidden h-3 w-3 stroke-[3] text-white group-data-[checked]:block" />
-    </span>
-  );
-}
-
-function ChainFilterRow({
-  value,
-  label,
-  indicator,
-  nested = false,
-  endContent,
-}: {
-  value: ChainFilterOption;
-  label: string;
-  // Visual only — every row is semantically a radio (single-select).
-  indicator: 'radio' | 'checkbox';
-  nested?: boolean;
-  endContent?: ReactNode;
-}) {
-  return (
-    <Radio
-      value={value}
-      className={twMerge(
-        'group flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] px-3 transition-[background] duration-200 hover:bg-white/10',
-        indicator === 'radio' && 'data-[checked]:bg-[#0B2046]',
-        nested && 'pl-7',
-      )}
-    >
+    <Radio value={value} className={twMerge(ROW_CLASSNAME, 'data-[checked]:bg-[#0B2046]')}>
       <div className="flex min-w-0 items-center gap-3">
-        {indicator === 'radio' ? <RadioIndicator /> : <CheckboxIndicator />}
-        <span className="truncate text-sm font-medium text-white">{label}</span>
+        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-[checked]:border-[#3A96FF]">
+          <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-[checked]:block" />
+        </span>
+        <RowLabel label={label} />
       </div>
-      {endContent}
     </Radio>
   );
 }
 
-function IncludedTag() {
+function CoreChainCheckboxRow({
+  label,
+  checked,
+  onChange,
+  nested,
+  showIncludedTag,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+  nested: boolean;
+  showIncludedTag: boolean;
+}) {
   return (
-    <span
-      // Hidden from the a11y tree so the row's accessible name stays the chain name.
-      aria-hidden="true"
-      className="shrink-0 rounded-[4px] bg-arb-blue/10 px-2 py-[3px] text-[11px] font-medium text-[#3A96FF]"
+    <Checkbox
+      checked={checked}
+      onChange={onChange}
+      className={twMerge(ROW_CLASSNAME, nested && 'pl-7')}
     >
-      included
-    </span>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-[checked]:border-0 group-data-[checked]:bg-arb-blue">
+          <CheckIcon className="hidden h-3 w-3 stroke-[3] text-white group-data-[checked]:block" />
+        </span>
+        <RowLabel label={label} />
+      </div>
+      {showIncludedTag && (
+        <span
+          // Hidden from the a11y tree so the row's accessible name stays the chain name.
+          aria-hidden="true"
+          className="shrink-0 rounded-[4px] bg-arb-blue/10 px-2 py-[3px] text-[11px] font-medium text-[#3A96FF]"
+        >
+          included
+        </span>
+      )}
+    </Checkbox>
   );
+}
+
+function getTriggerLabel(filter: TxHistoryChainFilter): string {
+  if (filter.type === 'all-core') {
+    return 'All Core Chains';
+  }
+  if (filter.type === 'longtail-chain') {
+    return getNetworkName(filter.chainId);
+  }
+  const [firstChainId] = filter.chainIds;
+  if (filter.chainIds.length === 1 && typeof firstChainId !== 'undefined') {
+    return getNetworkName(firstChainId);
+  }
+  return `${filter.chainIds.length} Core Chains`;
 }
 
 // A hub chain can match dozens of routes; an over-tall tooltip renders off-screen.
@@ -165,16 +186,31 @@ export function TransactionHistoryChainFilter() {
   const [search, setSearch] = useState('');
 
   const allCoreChainsSelected = filter.type === 'all-core';
-  const selectedOption: ChainFilterOption = allCoreChainsSelected ? null : filter.chainId;
+  const selectedCoreChainIds = filter.type === 'core-chains' ? filter.chainIds : [];
+  const selectedRadioOption: ChainRadioOption = allCoreChainsSelected
+    ? null
+    : filter.type === 'longtail-chain'
+      ? filter.chainId
+      : NO_RADIO_SELECTED;
 
-  const selectOption = (option: ChainFilterOption) => {
+  const selectRadioOption = (option: ChainRadioOption) => {
     trackEvent('Tx History Network Filter', {
       network: option === null ? 'all core chains' : getNetworkName(option),
     });
-    setSelection({ chainId: option, isTestnetMode });
+    setSelection({ chainIds: option === null ? null : [option], isTestnetMode });
   };
 
-  const triggerLabel = allCoreChainsSelected ? 'All Core Chains' : getNetworkName(filter.chainId);
+  const toggleCoreChain = (chainId: number) => {
+    const next = selectedCoreChainIds.includes(chainId)
+      ? selectedCoreChainIds.filter((id) => id !== chainId)
+      : [...selectedCoreChainIds, chainId];
+
+    trackEvent('Tx History Network Filter', { network: getNetworkName(chainId) });
+    // Unchecking the last core chain falls back to "All Core Chains".
+    setSelection({ chainIds: next.length > 0 ? next : null, isTestnetMode });
+  };
+
+  const triggerLabel = getTriggerLabel(filter);
 
   const query = search.trim().toLowerCase();
   const visibleChainIds = query
@@ -227,8 +263,8 @@ export function TransactionHistoryChainFilter() {
                 </div>
 
                 <RadioGroup
-                  value={selectedOption}
-                  onChange={selectOption}
+                  value={selectedRadioOption}
+                  onChange={selectRadioOption}
                   aria-label="Networks"
                   // Cap the list directly — Headless overrides the panel's max-height via `anchor`.
                   className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
@@ -237,9 +273,7 @@ export function TransactionHistoryChainFilter() {
                     <SectionLabel>Core Chains</SectionLabel>
                   )}
 
-                  {showAllCoreChainsRow && (
-                    <ChainFilterRow value={null} label="All Core Chains" indicator="radio" />
-                  )}
+                  {showAllCoreChainsRow && <ChainRadioRow value={null} label="All Core Chains" />}
 
                   {coreChainIds.length > 0 && (
                     <div className="relative">
@@ -253,13 +287,13 @@ export function TransactionHistoryChainFilter() {
                         />
                       )}
                       {coreChainIds.map((chainId) => (
-                        <ChainFilterRow
+                        <CoreChainCheckboxRow
                           key={chainId}
-                          value={chainId}
                           label={getNetworkName(chainId)}
-                          indicator="checkbox"
+                          checked={selectedCoreChainIds.includes(chainId)}
+                          onChange={() => toggleCoreChain(chainId)}
                           nested={showAllCoreChainsRow}
-                          endContent={allCoreChainsSelected ? <IncludedTag /> : undefined}
+                          showIncludedTag={allCoreChainsSelected}
                         />
                       ))}
                     </div>
@@ -267,12 +301,7 @@ export function TransactionHistoryChainFilter() {
 
                   {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
                   {moreChainIds.map((chainId) => (
-                    <ChainFilterRow
-                      key={chainId}
-                      value={chainId}
-                      label={getNetworkName(chainId)}
-                      indicator="radio"
-                    />
+                    <ChainRadioRow key={chainId} value={chainId} label={getNetworkName(chainId)} />
                   ))}
 
                   {visibleChainIds.length === 0 && (

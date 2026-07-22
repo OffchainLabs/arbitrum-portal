@@ -32,10 +32,21 @@ describe('resolveChainFilter', () => {
     );
   });
 
-  it('keeps an explicit "All Core Chains" (null chainId) selection', () => {
+  it('keeps an explicit "All Core Chains" (null chainIds) selection', () => {
     expect(
       resolveChainFilter({
-        selection: { chainId: null, isTestnetMode: false },
+        selection: { chainIds: null, isTestnetMode: false },
+        isTestnetMode: false,
+        coreChainIds,
+      }),
+    ).toEqual(allCoreFilter);
+  });
+
+  it('treats an empty chainIds selection as All Core Chains', () => {
+    // unchecking the last core chain leaves nothing selected
+    expect(
+      resolveChainFilter({
+        selection: { chainIds: [], isTestnetMode: false },
         isTestnetMode: false,
         coreChainIds,
       }),
@@ -47,27 +58,39 @@ describe('resolveChainFilter', () => {
     // chain doesn't exist there, so the filter re-defaults to All Core Chains
     expect(
       resolveChainFilter({
-        selection: { chainId: ChainId.ArbitrumOne, isTestnetMode: false },
+        selection: { chainIds: [ChainId.ArbitrumOne], isTestnetMode: false },
         isTestnetMode: true,
         coreChainIds: [ChainId.Sepolia, ChainId.ArbitrumSepolia],
       }),
     ).toEqual({ type: 'all-core', coreChainIds: [ChainId.Sepolia, ChainId.ArbitrumSepolia] });
   });
 
-  it('resolves a core chain to a core-chain filter', () => {
+  it('resolves core chains to a core-chains filter', () => {
     expect(
       resolveChainFilter({
-        selection: { chainId: ChainId.ArbitrumOne, isTestnetMode: false },
+        selection: { chainIds: [ChainId.ArbitrumOne], isTestnetMode: false },
         isTestnetMode: false,
         coreChainIds,
       }),
-    ).toEqual({ type: 'core-chain', chainId: ChainId.ArbitrumOne, coreChainIds });
+    ).toEqual({ type: 'core-chains', chainIds: [ChainId.ArbitrumOne], coreChainIds });
+
+    expect(
+      resolveChainFilter({
+        selection: { chainIds: [ChainId.ArbitrumOne, ChainId.Ethereum], isTestnetMode: false },
+        isTestnetMode: false,
+        coreChainIds,
+      }),
+    ).toEqual({
+      type: 'core-chains',
+      chainIds: [ChainId.ArbitrumOne, ChainId.Ethereum],
+      coreChainIds,
+    });
   });
 
   it('resolves a longtail chain to a longtail-chain filter', () => {
     expect(
       resolveChainFilter({
-        selection: { chainId: ChainId.ApeChain, isTestnetMode: false },
+        selection: { chainIds: [ChainId.ApeChain], isTestnetMode: false },
         isTestnetMode: false,
         coreChainIds,
       }),
@@ -82,8 +105,23 @@ describe('getChainFilterKey', () => {
       `chain-${ChainId.ApeChain}`,
     );
     expect(
-      getChainFilterKey({ type: 'core-chain', chainId: ChainId.ArbitrumOne, coreChainIds }),
-    ).toBe(`chain-${ChainId.ArbitrumOne}-core-${coreChainIds.join('_')}`);
+      getChainFilterKey({ type: 'core-chains', chainIds: [ChainId.ArbitrumOne], coreChainIds }),
+    ).toBe(`chains-${ChainId.ArbitrumOne}-core-${coreChainIds.join('_')}`);
+  });
+
+  it('is insensitive to the order core chains were checked in', () => {
+    const checkedForward = getChainFilterKey({
+      type: 'core-chains',
+      chainIds: [ChainId.Ethereum, ChainId.ArbitrumOne],
+      coreChainIds,
+    });
+    const checkedBackward = getChainFilterKey({
+      type: 'core-chains',
+      chainIds: [ChainId.ArbitrumOne, ChainId.Ethereum],
+      coreChainIds,
+    });
+
+    expect(checkedForward).toBe(checkedBackward);
   });
 
   it('differs between network modes for the default filter', () => {
@@ -109,10 +147,10 @@ describe('matchesChainFilter', () => {
     expect(matches(allCoreFilter, ChainId.Base, ChainId.ApeChain)).toBe(false);
   });
 
-  it('a core-chain filter matches only that chain’s routes with other core chains', () => {
+  it('a core-chains filter matches only the selected chains’ routes with other core chains', () => {
     const arbOneFilter: TxHistoryChainFilter = {
-      type: 'core-chain',
-      chainId: ChainId.ArbitrumOne,
+      type: 'core-chains',
+      chainIds: [ChainId.ArbitrumOne],
       coreChainIds,
     };
 
@@ -122,6 +160,22 @@ describe('matchesChainFilter', () => {
     expect(matches(arbOneFilter, ChainId.ArbitrumOne, ChainId.ApeChain)).toBe(false);
     // routes between other core chains are excluded
     expect(matches(arbOneFilter, ChainId.Ethereum, ChainId.ArbitrumNova)).toBe(false);
+  });
+
+  it('a multi-chain core-chains filter matches routes touching any selected chain', () => {
+    const arbOneAndNovaFilter: TxHistoryChainFilter = {
+      type: 'core-chains',
+      chainIds: [ChainId.ArbitrumOne, ChainId.ArbitrumNova],
+      coreChainIds,
+    };
+
+    expect(matches(arbOneAndNovaFilter, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(true);
+    expect(matches(arbOneAndNovaFilter, ChainId.Ethereum, ChainId.ArbitrumNova)).toBe(true);
+    expect(matches(arbOneAndNovaFilter, ChainId.ArbitrumOne, ChainId.ArbitrumNova)).toBe(true);
+    // routes between other core chains are excluded
+    expect(matches(arbOneAndNovaFilter, ChainId.Ethereum, ChainId.RobinhoodChain)).toBe(false);
+    // core <> longtail routes stay excluded
+    expect(matches(arbOneAndNovaFilter, ChainId.ArbitrumOne, ChainId.ApeChain)).toBe(false);
   });
 
   it('a longtail-chain filter matches every route touching that chain, in either direction', () => {

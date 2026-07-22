@@ -12,24 +12,24 @@ describe('useTransactionHistoryChainFilterStore', () => {
     expect(useTransactionHistoryChainFilterStore.getState().selection).toBeNull();
   });
 
-  it('setSelection stores the chain along with the mode it was selected in', () => {
+  it('setSelection stores the chains along with the mode they were selected in', () => {
     useTransactionHistoryChainFilterStore
       .getState()
-      .setSelection({ chainId: ChainId.ArbitrumOne, isTestnetMode: false });
+      .setSelection({ chainIds: [ChainId.ArbitrumOne, ChainId.Ethereum], isTestnetMode: false });
 
     expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
-      chainId: ChainId.ArbitrumOne,
+      chainIds: [ChainId.ArbitrumOne, ChainId.Ethereum],
       isTestnetMode: false,
     });
   });
 
   it('setSelection replaces the previous selection', () => {
     const { setSelection } = useTransactionHistoryChainFilterStore.getState();
-    setSelection({ chainId: ChainId.ArbitrumOne, isTestnetMode: false });
-    setSelection({ chainId: null, isTestnetMode: false });
+    setSelection({ chainIds: [ChainId.ArbitrumOne], isTestnetMode: false });
+    setSelection({ chainIds: null, isTestnetMode: false });
 
     expect(useTransactionHistoryChainFilterStore.getState().selection).toEqual({
-      chainId: null,
+      chainIds: null,
       isTestnetMode: false,
     });
   });

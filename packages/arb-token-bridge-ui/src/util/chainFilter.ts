@@ -6,10 +6,12 @@
 
 /**
  * The user's explicit filter selection, tagged with the testnet mode it was
- * made in. `chainId: null` means an explicit "All Core Chains" selection.
+ * made in. `chainIds: null` (or empty) means an explicit "All Core Chains"
+ * selection. Core chains are multi-selectable; a longtail selection is always
+ * a single chain id.
  */
 export type TxHistoryChainSelection = {
-  chainId: number | null;
+  chainIds: number[] | null;
   isTestnetMode: boolean;
 };
 
@@ -19,15 +21,16 @@ export type TxHistoryChainSelection = {
  * - `all-core`: only routes where both endpoints are core chains. This is the
  *   default view: core chains are expected to be indexed (see the note on
  *   `uiCoreChainIds` in util/networks.ts), keeping RPC scanning off it.
- * - `core-chain`: only that chain's routes with the other core chains, so a
- *   core selection stays fully indexed too.
+ * - `core-chains`: only the selected core chains' routes with the other core
+ *   chains (a route matches when it touches any selected chain), so a core
+ *   selection stays fully indexed too.
  * - `longtail-chain`: every route touching that chain — otherwise its
  *   non-canonical routes (e.g. LiFi) would be viewable under no selection.
  *   RPC scanning stays bounded to this one unindexed chain at a time.
  */
 export type TxHistoryChainFilter =
   | { type: 'all-core'; coreChainIds: number[] }
-  | { type: 'core-chain'; chainId: number; coreChainIds: number[] }
+  | { type: 'core-chains'; chainIds: number[]; coreChainIds: number[] }
   | { type: 'longtail-chain'; chainId: number };
 
 /**
@@ -49,18 +52,22 @@ export function resolveChainFilter({
   if (
     selection === null ||
     selection.isTestnetMode !== isTestnetMode ||
-    selection.chainId === null
+    selection.chainIds === null ||
+    selection.chainIds.length === 0
   ) {
     return { type: 'all-core', coreChainIds };
   }
 
-  const { chainId } = selection;
+  const { chainIds } = selection;
 
-  if (coreChainIds.includes(chainId)) {
-    return { type: 'core-chain', chainId, coreChainIds };
+  // The UI never mixes longtail with core chains: a longtail selection is a
+  // single chain id, so any non-core id present wins.
+  const longtailChainId = chainIds.find((chainId) => !coreChainIds.includes(chainId));
+  if (typeof longtailChainId !== 'undefined') {
+    return { type: 'longtail-chain', chainId: longtailChainId };
   }
 
-  return { type: 'longtail-chain', chainId };
+  return { type: 'core-chains', chainIds, coreChainIds };
 }
 
 /**
@@ -75,16 +82,18 @@ export function getChainFilterKey(filter: TxHistoryChainFilter): string {
     return `chain-${filter.chainId}`;
   }
   const coreChainIdsKey = filter.coreChainIds.join('_');
-  if (filter.type === 'core-chain') {
-    return `chain-${filter.chainId}-core-${coreChainIdsKey}`;
+  if (filter.type === 'core-chains') {
+    // Sorted so the key is insensitive to the order chains were checked in.
+    const chainIdsKey = [...filter.chainIds].sort((a, b) => a - b).join('_');
+    return `chains-${chainIdsKey}-core-${coreChainIdsKey}`;
   }
   return `all-core-${coreChainIdsKey}`;
 }
 
 /**
  * Whether a transaction (or route) passes the filter. A tx is kept when its
- * endpoints form an allowed route: both core for "All Core Chains", the
- * selected chain with another core chain for a core selection, or any route
+ * endpoints form an allowed route: both core for "All Core Chains", a selected
+ * chain with another core chain for a core-chains selection, or any route
  * touching the selected chain for a longtail selection.
  */
 export function matchesChainFilter({
@@ -103,15 +112,12 @@ export function matchesChainFilter({
     );
   }
 
-  const touchesSelectedChain =
-    sourceChainId === filter.chainId || destinationChainId === filter.chainId;
-
   if (filter.type === 'longtail-chain') {
-    return touchesSelectedChain;
+    return sourceChainId === filter.chainId || destinationChainId === filter.chainId;
   }
 
   return (
-    touchesSelectedChain &&
+    (filter.chainIds.includes(sourceChainId) || filter.chainIds.includes(destinationChainId)) &&
     filter.coreChainIds.includes(sourceChainId) &&
     filter.coreChainIds.includes(destinationChainId)
   );

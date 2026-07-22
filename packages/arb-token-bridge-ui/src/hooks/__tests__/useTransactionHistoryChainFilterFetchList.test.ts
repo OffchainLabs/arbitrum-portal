@@ -90,9 +90,9 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
     expect(pairs).toContain(`${ChainId.Ethereum}-${ChainId.ArbitrumOne}`);
   }, 40_000);
 
-  it('a core-chain selection fetches only that chain’s pairs with other core chains', async () => {
+  it('a core-chains selection fetches only those chains’ pairs with other core chains', async () => {
     useTransactionHistoryChainFilterStore.setState({
-      selection: { chainId: ChainId.Ethereum, isTestnetMode: false },
+      selection: { chainIds: [ChainId.Ethereum], isTestnetMode: false },
     });
     await renderAndWaitForFetch();
 
@@ -100,6 +100,23 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
       mainnetPairsMatching(
         (parent, child) =>
           (parent === ChainId.Ethereum || child === ChainId.Ethereum) &&
+          isCoreChainForDisplay(parent) &&
+          isCoreChainForDisplay(child),
+      ).sort(),
+    );
+  }, 40_000);
+
+  it('a multi-chain core selection fetches the pairs touching any selected chain', async () => {
+    const selectedChainIds = [ChainId.ArbitrumOne, ChainId.ArbitrumNova];
+    useTransactionHistoryChainFilterStore.setState({
+      selection: { chainIds: selectedChainIds, isTestnetMode: false },
+    });
+    await renderAndWaitForFetch();
+
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) =>
+          (selectedChainIds.includes(parent) || selectedChainIds.includes(child)) &&
           isCoreChainForDisplay(parent) &&
           isCoreChainForDisplay(child),
       ).sort(),
@@ -114,7 +131,7 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
 
     const longtailChainId = longtailPair.childChainId;
     useTransactionHistoryChainFilterStore.setState({
-      selection: { chainId: longtailChainId, isTestnetMode: false },
+      selection: { chainIds: [longtailChainId], isTestnetMode: false },
     });
     await renderAndWaitForFetch();
 
