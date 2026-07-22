@@ -180,17 +180,6 @@ describe('isValidLifiTransfer', () => {
     ).toBe(true);
   });
 
-  it('Superposition → ApeChain with the zero address (ETH/WETH) should return true', () => {
-    expect(
-      isValidLifiTransfer({
-        fromToken: constants.AddressZero,
-        sourceChainId: ChainId.Superposition,
-        destinationChainId: ChainId.ApeChain,
-        tokensFromLists: {},
-      }),
-    ).toBe(true);
-  });
-
   it('Ethereum → Superposition with the zero address should not skip the token list check', () => {
     expect(
       isValidLifiTransfer({

@@ -470,11 +470,6 @@ export function sanitizeNullSelectedToken({
       return erc20ParentAddress;
     }
 
-    // Superposition doesn't have ApeToken, so we default to AddressZero only when ApeChain is the destination
-    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
-      return constants.AddressZero;
-    }
-
     // All other LiFi pairs: default to null (native token of destination chain)
     return null;
   }

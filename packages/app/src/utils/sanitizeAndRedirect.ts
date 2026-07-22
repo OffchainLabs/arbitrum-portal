@@ -146,22 +146,11 @@ export async function getSanitizedRedirectPath(
     sourceChainId: sanitizedChainIds.sourceChainId,
     destinationChainId: sanitizedChainIds.destinationChainId,
   });
-  let sanitizedDestinationToken = sanitizeTokenQueryParam({
+  const sanitizedDestinationToken = sanitizeTokenQueryParam({
     token: destinationToken,
     sourceChainId: sanitizedChainIds.sourceChainId,
     destinationChainId: sanitizedChainIds.destinationChainId,
   });
-
-  // Reuse the same default selection behavior as setSelectedToken(null) for ApeChain -> Superposition.
-  if (
-    sanitizedChainIds.sourceChainId === ChainId.ApeChain &&
-    sanitizedChainIds.destinationChainId === ChainId.Superposition &&
-    typeof token === 'undefined' &&
-    typeof destinationToken === 'undefined'
-  ) {
-    sanitizedDestinationToken = constants.AddressZero;
-  }
-
   const sanitized = {
     ...sanitizedChainIds,
     experiments: sanitizeExperimentalFeaturesQueryParam(experiments),

@@ -26,52 +26,12 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
-      label: 'Robinhood Chain to Superposition special deposit',
-      sourceChainId: ChainId.RobinhoodChain,
-      destinationChainId: ChainId.Superposition,
-      expected: {
-        parentChainId: ChainId.RobinhoodChain,
-        childChainId: ChainId.Superposition,
-        isDepositMode: true,
-      },
-    },
-    {
-      label: 'Superposition to Robinhood Chain special withdrawal',
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.RobinhoodChain,
-      expected: {
-        parentChainId: ChainId.RobinhoodChain,
-        childChainId: ChainId.Superposition,
-        isDepositMode: false,
-      },
-    },
-    {
       label: 'Nova to ArbitrumOne sibling transfer',
       sourceChainId: ChainId.ArbitrumNova,
       destinationChainId: ChainId.ArbitrumOne,
       expected: {
         parentChainId: ChainId.ArbitrumNova,
         childChainId: ChainId.ArbitrumOne,
-        isDepositMode: true,
-      },
-    },
-    {
-      label: 'ApeChain to Superposition special withdrawal',
-      sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.Superposition,
-      expected: {
-        parentChainId: ChainId.Superposition,
-        childChainId: ChainId.ApeChain,
-        isDepositMode: false,
-      },
-    },
-    {
-      label: 'Superposition to ApeChain special deposit',
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.ApeChain,
-      expected: {
-        parentChainId: ChainId.Superposition,
-        childChainId: ChainId.ApeChain,
         isDepositMode: true,
       },
     },

@@ -428,14 +428,14 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result).toEqual([3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result).toEqual([3333, ChainId.ApeChain]);
 
       // disableTransfersToNonArbitrumChains takes precedence over includeLifiEnabledChainPairs
       const result2 = getDestinationChainIds(ChainId.ArbitrumOne, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result2).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result2).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: true,

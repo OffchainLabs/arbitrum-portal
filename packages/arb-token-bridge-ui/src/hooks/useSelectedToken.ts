@@ -73,14 +73,6 @@ export const useSelectedToken = (): [
         return null;
       }
 
-      // USDC for lifi chains, use bridgeTokens
-      if (
-        _destinationChainId === ChainId.ApeChain ||
-        _destinationChainId === ChainId.Superposition
-      ) {
-        return null;
-      }
-
       const parentProvider = getProviderForChainId(_parentChainId);
       const childProvider = getProviderForChainId(_childChainId);
 
@@ -106,19 +98,6 @@ export const useSelectedToken = (): [
             return {
               token: sanitizedTokenAddress,
               destinationToken: sanitizedTokenAddress,
-            };
-          }
-
-          /**
-           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
-           */
-          if (
-            latestQuery.sourceChain === ChainId.ApeChain &&
-            latestQuery.destinationChain === ChainId.Superposition
-          ) {
-            return {
-              token: sanitizeTokenAddress(erc20ParentAddress),
-              destinationToken: constants.AddressZero,
             };
           }
 
