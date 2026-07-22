@@ -11,7 +11,6 @@ import {
   ethTokenExpectation,
   expectDialogToStayClosed,
   expectTokenButtonContent,
-  nativeEthTokenExpectation,
   renderTransferPanel,
   setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
