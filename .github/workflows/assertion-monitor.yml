@@ -7,7 +7,7 @@ on:
 
 jobs:
   run-monitoring:
-    name: Assertion Monitor (${{ matrix.chain == 'orbit' && 'Orbit' || matrix.chain == 'core' && 'Core' || matrix.chain }})
+    name: Assertion Monitor (${{ matrix.chain == 'orbit' && 'Orbit' || matrix.chain == 'core' && 'Core' || matrix.chain == 'enterprise' && 'Enterprise' || matrix.chain }})
     strategy:
       matrix:
         chain: [core, orbit, enterprise]
