@@ -1,7 +1,5 @@
-import { constants } from 'ethers';
 import { redirect } from 'next/navigation';
 
-import { ChainId } from '@/bridge/types/ChainId';
 import { sanitizeExperimentalFeaturesQueryParam } from '@/bridge/util';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { logger } from '@/bridge/util/logger';

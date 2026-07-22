@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers';
-import { constants, utils } from 'ethers';
+import { utils } from 'ethers';
 import { useCallback } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
@@ -10,7 +10,6 @@ import {
   useTokensFromUser,
 } from '../components/TransferPanel/TokenSearchUtils';
 import { useAppState } from '../state';
-import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import {
   getL2ERC20Address,
@@ -64,7 +63,7 @@ export const useSelectedToken = (): [
       networks.destinationChain.id,
       'useSelectedToken_usdc',
     ],
-    async ([_tokenAddress, _parentChainId, _childChainId, _destinationChainId]) => {
+    async ([_tokenAddress, _parentChainId, _childChainId]) => {
       if (!_tokenAddress) {
         return null;
       }
