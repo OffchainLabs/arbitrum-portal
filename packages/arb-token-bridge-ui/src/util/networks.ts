@@ -559,7 +559,6 @@ export function isCoreChainForDisplay(chainId: number) {
   return isNetwork(chainId).isCoreChain || uiCoreChainIds.includes(chainId);
 }
 
-// Orbit chains operated for enterprise partners; monitored separately with dedicated alert channels.
 const enterpriseChainIds: number[] = [ChainId.RobinhoodChain];
 
 export function isEnterpriseChain(chainId: number) {
