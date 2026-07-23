@@ -1,7 +1,7 @@
 import { ArbitrumNetwork } from '@arbitrum/sdk';
 
-import { getExplorerUrl, rpcURLs } from '../src/util/networks';
-import { OrbitChainConfig } from '../src/util/orbitChainsList';
+import { getExplorerUrl, isEnterpriseChain, rpcURLs } from '../src/util/networks';
+import { OrbitChainConfig, getOrbitChains } from '../src/util/orbitChainsList';
 
 export interface ChainToMonitor extends ArbitrumNetwork {
   parentRpcUrl: string;
@@ -49,3 +49,23 @@ export const getChainToMonitor = ({
   parentRpcUrl: sanitizeRpcUrl(rpcURLs[chain.parentChainId] as string),
   parentExplorerUrl: sanitizeExplorerUrl(getExplorerUrl(chain.parentChainId)),
 });
+
+const isEnterpriseMode = () => process.env.MONITOR_ENTERPRISE_CHAINS === 'true';
+
+export function getOrbitChainsToMonitor() {
+  const orbitChains = getOrbitChains({ mainnet: true, testnet: false });
+
+  if (isEnterpriseMode()) {
+    return orbitChains.filter((orbitChain) => isEnterpriseChain(orbitChain.chainId));
+  }
+
+  return orbitChains.filter((orbitChain) => !isEnterpriseChain(orbitChain.chainId));
+}
+
+export function getOrbitChainsOutputFile() {
+  if (isEnterpriseMode()) {
+    return '__auto-generated-enterprise-chains.json';
+  }
+
+  return '__auto-generated-orbit-chains.json';
+}
