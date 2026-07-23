@@ -23,9 +23,6 @@ if (typeof INFURA_KEY === 'undefined') {
 if (!process.env.PRIVATE_KEY_CCTP) {
   throw new Error('PRIVATE_KEY_CCTP variable missing.');
 }
-if (!process.env.PRIVATE_KEY_USER) {
-  throw new Error('PRIVATE_KEY_USER variable missing.');
-}
 
 const SEPOLIA_INFURA_RPC_URL = `https://sepolia.infura.io/v3/${INFURA_KEY}`;
 const sepoliaRpcUrl = process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA ?? SEPOLIA_INFURA_RPC_URL;
