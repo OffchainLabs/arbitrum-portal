@@ -49,7 +49,16 @@ const defaultChains: AppKitNetworkList = [
 
 function getChainList(): AppKitNetworkList {
   if (isE2eTestingEnvironment) {
-    return asAppKitNetworkList([local, arbitrumLocal, l3Local, sepolia, arbitrumSepolia, mainnet]);
+    return asAppKitNetworkList([
+      local,
+      arbitrumLocal,
+      l3Local,
+      sepolia,
+      arbitrumSepolia,
+      // mainnet chains are required for the import token test
+      mainnet,
+      arbitrum,
+    ]);
   }
 
   if (isDevelopmentEnvironment) {

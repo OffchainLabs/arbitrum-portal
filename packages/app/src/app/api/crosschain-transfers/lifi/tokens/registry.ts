@@ -1,7 +1,10 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken, getTokens } from '@lifi/sdk';
 import { unstable_cache } from 'next/cache';
 
-import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
+import {
+  allowedLifiSourceChainIds,
+  lifiDestinationChainIds,
+} from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
@@ -182,25 +185,89 @@ export interface LifiTokenRegistry {
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
-const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
+// LiFi returns extra metadata (e.g. verification status breakdowns) that nothing downstream reads
+function toSlimToken(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
+  return {
+    chainId: token.chainId,
+    address: token.address,
+    symbol: token.symbol,
+    decimals: token.decimals,
+    name: token.name,
+    coinKey: token.coinKey,
+    logoURI: token.logoURI,
+    priceUSD: token.priceUSD,
+  };
+}
+
+// Chains reachable from each chain, in either direction
+const PARTNER_CHAIN_IDS: Record<number, Set<number>> = {};
+for (const [sourceChainId, destinationChainIds] of Object.entries(lifiDestinationChainIds)) {
+  const sourceChainIdNum = Number(sourceChainId);
+  for (const destinationChainId of destinationChainIds) {
+    (PARTNER_CHAIN_IDS[sourceChainIdNum] ??= new Set()).add(destinationChainId);
+    (PARTNER_CHAIN_IDS[destinationChainId] ??= new Set()).add(sourceChainIdNum);
+  }
+}
+
+/**
+ * Tokens are matched across chains by coinKey (see groupChildTokensAndParentTokens),
+ * so a token whose coinKey doesn't exist on any partner chain can never appear
+ * in a route and only bloats the cache. LiFi returns thousands of such tokens
+ * (e.g. Ethereum-only meme tokens).
+ */
+function keepRoutableTokens(
+  tokensByChain: LifiTokenRegistry['tokensByChain'],
+): LifiTokenRegistry['tokensByChain'] {
+  const coinKeysByChain: Record<number, Set<CoinKey>> = {};
+  for (const chainId of allowedLifiSourceChainIds) {
+    coinKeysByChain[chainId] = new Set(
+      (tokensByChain[chainId] ?? []).map((token) => token.coinKey),
+    );
+  }
+
+  const routableTokensByChain: LifiTokenRegistry['tokensByChain'] = {};
+
+  for (const chainId of allowedLifiSourceChainIds) {
+    const partnerCoinKeys = new Set<CoinKey>();
+    for (const partnerChainId of PARTNER_CHAIN_IDS[chainId] ?? []) {
+      for (const coinKey of coinKeysByChain[partnerChainId] ?? []) {
+        partnerCoinKeys.add(coinKey);
+      }
+
+      // ETH on a parent chain routes to WETH on ApeChain (see groupChildTokensAndParentTokens)
+      if (
+        partnerChainId === ChainId.ApeChain &&
+        coinKeysByChain[partnerChainId]?.has(CoinKey.WETH)
+      ) {
+        partnerCoinKeys.add(CoinKey.ETH);
+      }
+    }
+
+    if (chainId === ChainId.ApeChain && partnerCoinKeys.has(CoinKey.ETH)) {
+      partnerCoinKeys.add(CoinKey.WETH);
+    }
+
+    routableTokensByChain[chainId] = (tokensByChain[chainId] ?? []).filter((token) =>
+      partnerCoinKeys.has(token.coinKey),
+    );
+  }
+
+  return routableTokensByChain;
+}
+
+const fetchTokensByChain = async (): Promise<LifiTokenRegistry['tokensByChain']> => {
   const response = await getTokens({
     chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
   });
 
   if (!response.tokens) {
-    return {
-      tokensByChain: {},
-      tokensByChainAndCoinKey: {},
-    };
+    return {};
   }
 
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
-  const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
 
   for (const chainId of allowedLifiSourceChainIds) {
-    const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
-
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
+    tokensByChain[chainId] = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
       (acc, token) => {
         // Exclude tokens on the exclude list
         if (isExcludedToken(token, chainId)) return acc;
@@ -211,20 +278,40 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
         const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
         const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
 
-        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-        acc.push(normalizedToken);
+        acc.push(toSlimToken(normalizedToken));
         return acc;
       },
       [],
     );
+  }
 
-    tokensByChain[chainId] = filteredTokens;
+  return keepRoutableTokens(tokensByChain);
+};
+
+/**
+ * The serialized value must stay under Next.js' 2MB unstable_cache item limit,
+ * otherwise every cache write fails and every request refetches from LiFi.
+ * So we cache only the slimmed per-chain token arrays and rebuild the
+ * coinKey lookup (which duplicates almost every token) on read.
+ */
+const getCachedTokensByChain = unstable_cache(fetchTokensByChain, ['lifi-tokens-by-chain'], {
+  revalidate: 30,
+});
+
+export async function getLifiTokenRegistry(): Promise<LifiTokenRegistry> {
+  const tokensByChain = await getCachedTokensByChain();
+
+  const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
+
+  for (const chainId of allowedLifiSourceChainIds) {
+    const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
+
+    for (const token of tokensByChain[chainId] ?? []) {
+      tokensGroupedByCoinKey[token.coinKey] ??= token;
+    }
+
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
   }
 
   return { tokensByChain, tokensByChainAndCoinKey };
-};
-
-export const getLifiTokenRegistry = unstable_cache(fetchRegistry, ['lifi-token-registry'], {
-  revalidate: 30,
-});
+}
