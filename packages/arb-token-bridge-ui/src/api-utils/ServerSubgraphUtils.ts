@@ -159,23 +159,62 @@ function createSubgraphClient(key: SubgraphKey) {
   return createTheGraphNetworkClient(theGraphNetworkSubgraphId);
 }
 
-export function getCctpSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.Ethereum:
-      return createSubgraphClient('cctp-ethereum');
+/** The subset of the Apollo client surface the CCTP route consumes. */
+export type CctpSubgraphClient = Pick<ApolloClient<NormalizedCacheObject>, 'query' | 'link'>;
 
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('cctp-arbitrum-one');
+/**
+ * Queries the arbitrum-indexer's drop-in replica of the Circle CCTP v1
+ * subgraphs, falling back to the Circle subgraph on failure. The fallback
+ * client is created lazily so environments without a Graph API key work as
+ * long as the indexer is reachable.
+ */
+function createIndexerClientWithSubgraphFallback(
+  indexerUri: string,
+  fallbackSubgraphKey: SubgraphKey,
+): CctpSubgraphClient {
+  const indexerClient = createApolloClient(indexerUri);
 
-    case ChainId.Sepolia:
-      return createSubgraphClient('cctp-sepolia');
+  const query: CctpSubgraphClient['query'] = async (options) => {
+    try {
+      return await indexerClient.query(options);
+    } catch (error) {
+      logger.warn(
+        `[getCctpSubgraphClient] indexer query failed, falling back to "${fallbackSubgraphKey}"`,
+        error,
+      );
+      return createSubgraphClient(fallbackSubgraphKey).query(options);
+    }
+  };
 
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('cctp-arbitrum-sepolia');
+  return { link: indexerClient.link, query };
+}
 
-    default:
-      throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
+const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {
+  [ChainId.Ethereum]: 'cctp-ethereum',
+  [ChainId.ArbitrumOne]: 'cctp-arbitrum-one',
+  [ChainId.Sepolia]: 'cctp-sepolia',
+  [ChainId.ArbitrumSepolia]: 'cctp-arbitrum-sepolia',
+};
+
+export function getCctpSubgraphClient(chainId: number): CctpSubgraphClient {
+  const subgraphKey = cctpSubgraphKeyByChainId[chainId];
+
+  if (typeof subgraphKey === 'undefined') {
+    throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
   }
+
+  const indexerApiBaseUrl = process.env.INDEXER_API_URL;
+
+  if (typeof indexerApiBaseUrl === 'undefined' || indexerApiBaseUrl === '') {
+    return createSubgraphClient(subgraphKey);
+  }
+
+  // The indexer serves the CCTP replica under /api/v1 only — it shipped after
+  // the indexer's API versioning, so no legacy /api alias exists for it.
+  return createIndexerClientWithSubgraphFallback(
+    `${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`,
+    subgraphKey,
+  );
 }
 
 export function getL1SubgraphClient(l2ChainId: number) {
@@ -211,7 +250,7 @@ export function getL2SubgraphClient(l2ChainId: number) {
 }
 
 export function getSourceFromSubgraphClient(
-  subgraphClient: ApolloClient<NormalizedCacheObject>,
+  subgraphClient: Pick<ApolloClient<NormalizedCacheObject>, 'link'>,
 ): string | null {
   const uri = (subgraphClient.link as any).options?.uri;
 
