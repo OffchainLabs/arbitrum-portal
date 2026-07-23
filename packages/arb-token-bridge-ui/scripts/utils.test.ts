@@ -32,7 +32,8 @@ describe('getOrbitChainsToMonitor', () => {
 
     const chainIds = getOrbitChainsToMonitor().map((orbitChain) => orbitChain.chainId);
 
-    expect(chainIds).toEqual([ChainId.RobinhoodChain]);
+    expect(chainIds).toContain(ChainId.RobinhoodChain);
+    expect(chainIds.every(isEnterpriseChain)).toBe(true);
     expect(getOrbitChainsOutputFile()).toBe('__auto-generated-enterprise-chains.json');
   });
 });

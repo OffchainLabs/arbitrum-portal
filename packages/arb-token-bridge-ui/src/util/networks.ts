@@ -559,6 +559,7 @@ export function isCoreChainForDisplay(chainId: number) {
   return isNetwork(chainId).isCoreChain || uiCoreChainIds.includes(chainId);
 }
 
+// monitoring alert routing only — independent of the uiCoreChainIds display grouping above
 const enterpriseChainIds: number[] = [ChainId.RobinhoodChain];
 
 export function isEnterpriseChain(chainId: number) {
