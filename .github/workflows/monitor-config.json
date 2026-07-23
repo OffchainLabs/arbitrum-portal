@@ -26,5 +26,19 @@
       "batch-poster": "ORBIT_CHAIN_BATCH_POSTER_MONITORING_SLACK_CHANNEL",
       "retryable": "ORBIT_RETRYABLE_MONITORING_SLACK_CHANNEL"
     }
+  },
+  "enterprise": {
+    "generateCommand": "generateOrbitChainsToMonitor",
+    "configFile": "__auto-generated-enterprise-chains.json",
+    "slackTokens": {
+      "assertion": "ENTERPRISE_CHAIN_MONITORING_SLACK_TOKEN",
+      "batch-poster": "ENTERPRISE_CHAIN_MONITORING_SLACK_TOKEN",
+      "retryable": "ENTERPRISE_CHAIN_MONITORING_SLACK_TOKEN"
+    },
+    "slackChannels": {
+      "assertion": "ENTERPRISE_CHAIN_MONITORING_SLACK_CHANNEL",
+      "batch-poster": "ENTERPRISE_CHAIN_MONITORING_SLACK_CHANNEL",
+      "retryable": "ENTERPRISE_CHAIN_MONITORING_SLACK_CHANNEL"
+    }
   }
 }

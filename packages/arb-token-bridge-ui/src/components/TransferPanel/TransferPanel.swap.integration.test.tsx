@@ -26,30 +26,6 @@ const swapCases: RouteTokenCase[] = [
   },
   {
     sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
-    destinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
-    destinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.ApeChain.WETH,
-  },
-  {
-    sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
     sourceToken: tokenExpectationsByChain.Ethereum.USDe,
     destinationToken: nativeEthTokenExpectation,

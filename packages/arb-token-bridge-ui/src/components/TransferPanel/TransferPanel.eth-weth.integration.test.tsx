@@ -11,7 +11,6 @@ import {
   ethTokenExpectation,
   expectDialogToStayClosed,
   expectTokenButtonContent,
-  nativeEthTokenExpectation,
   renderTransferPanel,
   setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
@@ -54,27 +53,6 @@ type EthWethSelectionCase = {
 const ethWethCases: EthWethSelectionCase[] = [
   {
     sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    selectedSourceToken: ethTokenExpectation,
-    sourceToken: ethTokenExpectation,
-    destinationToken: ethTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    selectedSourceToken: ethTokenExpectation,
-    sourceToken: ethTokenExpectation,
-    destinationToken: ethTokenExpectation,
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    selectedSourceToken: wethTokenExpectation,
-    sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
-  },
-  {
-    sourceChain: 'ethereum',
     destinationChain: 'apechain',
     selectedSourceToken: ethTokenExpectation,
     sourceToken: ethTokenExpectation,
@@ -85,13 +63,6 @@ const ethWethCases: EthWethSelectionCase[] = [
     destinationChain: 'ethereum',
     selectedSourceToken: wethTokenExpectation,
     sourceToken: wethTokenExpectation,
-    destinationToken: wethTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    selectedSourceToken: nativeEthTokenExpectation,
-    sourceToken: nativeEthTokenExpectation,
     destinationToken: wethTokenExpectation,
   },
   {
@@ -121,20 +92,6 @@ const ethWethCases: EthWethSelectionCase[] = [
     selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
     sourceToken: tokenExpectationsByChain.RobinhoodChain.WETH,
     destinationToken: tokenExpectationsByChain.RobinhoodChain.WETH,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'robinhood-chain',
-    selectedSourceToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
-    sourceToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
-    destinationToken: tokenExpectationsByChain.Superposition.WETHWithSuperpositionLogo,
-  },
-  {
-    sourceChain: 'robinhood-chain',
-    destinationChain: 'superposition',
-    selectedSourceToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
-    sourceToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
-    destinationToken: tokenExpectationsByChain.RobinhoodChain.WETHWithSuperpositionLogo,
   },
 ];
 
@@ -199,21 +156,6 @@ describe.sequential('TransferPanel LiFi Integration - ETH/WETH Override', () => 
       destinationChain: 'robinhood-chain',
       token: CommonAddress.Ethereum.WETH,
       destinationToken: CommonAddress.Ethereum.WETH,
-    });
-
-    await expectDialogToStayClosed({
-      name: 'Token cannot be bridged here',
-    });
-  });
-
-  it('does not show the disabled-transfer dialog for the default ETH/WETH transfer from Superposition to ApeChain', async () => {
-    // Reflects production: token lists finish loading but tokensFromLists is empty for this pair
-    mockedTokenLists.current = [];
-
-    // The default case: sanitization resolves token and destinationToken to the zero address
-    await renderTransferPanel({
-      sourceChain: 'superposition',
-      destinationChain: 'apechain',
     });
 
     await expectDialogToStayClosed({
