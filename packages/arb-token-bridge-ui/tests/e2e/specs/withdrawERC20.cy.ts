@@ -141,7 +141,8 @@ describe('Withdraw ERC20 Token', () => {
 
         cy.login({ networkType: 'parentChain' }); // login to L1 to claim the funds (otherwise would need to change network after clicking on claim)
 
-        cy.switchToTransactionHistoryTab('pending');
+        // select the child chain so the prior-session withdrawal is in the filter scope
+        cy.switchToTransactionHistoryTab('pending', { chainFilter: getL2NetworkName() });
 
         cy.clickClaimButton(
           formatAmount(ERC20AmountToSend, {

@@ -24,6 +24,7 @@ import {
   openTransactionDetails,
   searchAndSelectToken,
   selectRoute,
+  selectTransactionHistoryChain,
   selectTransactionsPanelTab,
   switchToTransactionHistoryTab,
   switchToTransferPanelTab,
@@ -63,6 +64,7 @@ declare global {
       closeTransactionDetails: typeof closeTransactionDetails;
       switchToTransferPanelTab: typeof switchToTransferPanelTab;
       switchToTransactionHistoryTab: typeof switchToTransactionHistoryTab;
+      selectTransactionHistoryChain: typeof selectTransactionHistoryChain;
       findTransactionDetailsCustomDestinationAddress: typeof findTransactionDetailsCustomDestinationAddress;
       findTransactionInTransactionHistory: typeof findTransactionInTransactionHistory;
       findClaimButton: typeof findClaimButton;

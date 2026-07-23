@@ -1,7 +1,7 @@
 import { AssetType } from '../../../src/hooks/arbTokenBridge.types';
 import { Transaction } from '../../../src/types/Transactions';
 import { formatAmount } from '../../../src/util/NumberUtils';
-import { getInitialERC20Balance, getL2NetworkConfig } from '../../support/common';
+import { getInitialERC20Balance, getL2NetworkConfig, getL2NetworkName } from '../../support/common';
 
 const wethAmountToDeposit = 0.001;
 
@@ -65,8 +65,9 @@ describe('Redeem ERC20 Deposit', () => {
       });
 
       context('deposit should be redeemed', () => {
-        // open transaction history and wait for deposit to fetch data
-        cy.switchToTransactionHistoryTab('pending');
+        // open transaction history and wait for deposit to fetch data;
+        // select the child chain so the seeded deposit is in the filter scope
+        cy.switchToTransactionHistoryTab('pending', { chainFilter: getL2NetworkName() });
 
         // give ci more time to fetch the transactions
         cy.wait(15_000);
