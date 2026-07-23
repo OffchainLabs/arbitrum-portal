@@ -1,15 +1,9 @@
 name: Cache build artifacts
 
+# Only runs via workflow_call: the build cache key is scoped to the calling
+# run's run_id, so a standalone pull_request run would build into a cache no
+# other workflow can ever read.
 on:
-  pull_request:
-    branches: ['master']
-    types:
-      - opened
-      - reopened
-      - synchronize
-      # we skip ci for draft PRs
-      # https://github.com/reviewdog/action-eslint/issues/29#issuecomment-985939887
-      - ready_for_review
   workflow_call:
 
 env:
