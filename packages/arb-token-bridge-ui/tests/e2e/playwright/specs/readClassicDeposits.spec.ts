@@ -82,7 +82,7 @@ test.describe('Read classic deposit messages', () => {
     await login(page, e2eEnv, {
       networkType: 'parentChain',
       networkName: 'Ethereum',
-      query: { destination: 'arbitrum-one' },
+      query: { destinationChain: 'arbitrum-one' },
     });
 
     await switchToTransactionHistoryTab(page, 'settled');
