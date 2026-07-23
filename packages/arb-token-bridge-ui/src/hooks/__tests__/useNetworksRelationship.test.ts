@@ -54,31 +54,6 @@ const cases: RelationshipCase[] = [
     destinationChainId: ChainId.RobinhoodChain,
     isDepositMode: true,
   },
-  {
-    label: 'Robinhood Chain -> Superposition treats Robinhood Chain as parent (deposit)',
-    sourceChainId: ChainId.RobinhoodChain,
-    destinationChainId: ChainId.Superposition,
-    isDepositMode: true,
-  },
-  {
-    label: 'Superposition -> Robinhood Chain is a withdrawal',
-    sourceChainId: ChainId.Superposition,
-    destinationChainId: ChainId.RobinhoodChain,
-    isDepositMode: false,
-  },
-  // ApeChain <> Superposition sibling pair (Superposition is the parent).
-  {
-    label: 'Superposition -> ApeChain treats Superposition as parent (deposit)',
-    sourceChainId: ChainId.Superposition,
-    destinationChainId: ChainId.ApeChain,
-    isDepositMode: true,
-  },
-  {
-    label: 'ApeChain -> Superposition is a withdrawal',
-    sourceChainId: ChainId.ApeChain,
-    destinationChainId: ChainId.Superposition,
-    isDepositMode: false,
-  },
   // Nova -> Arbitrum One sibling (Nova is the parent).
   {
     label: 'Arbitrum Nova -> Arbitrum One treats Nova as parent (deposit)',

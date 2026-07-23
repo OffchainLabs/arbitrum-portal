@@ -1,5 +1,4 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { constants } from 'ethers';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
@@ -360,26 +359,10 @@ describe('sanitizeTokenQueryParam', () => {
           token: null,
         });
         expect(resultToEthereum).toEqual(null);
-
-        const resultToSuperposition = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.ApeChain,
-          destinationChainId: ChainId.Superposition,
-          token: null,
-        });
-        expect(resultToSuperposition).toEqual(null);
       });
     });
 
     describe('to ApeChain', () => {
-      it('should return AddressZero for source chains without APE token', () => {
-        const resultFromSuperposition = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.Superposition,
-          destinationChainId: ChainId.ApeChain,
-          token: null,
-        });
-        expect(resultFromSuperposition).toEqual(constants.AddressZero);
-      });
-
       it('should return APE token (null) from other chains', () => {
         const resultFromBase = sanitizeTokenQueryParam({
           sourceChainId: ChainId.Base,
@@ -410,16 +393,6 @@ describe('sanitizeTokenQueryParam', () => {
         const result = sanitizeTokenQueryParam({
           sourceChainId: ChainId.ApeChain,
           destinationChainId: ChainId.ArbitrumOne,
-          token: testAddress,
-        });
-        expect(result).toEqual(testAddress.toLowerCase());
-      });
-
-      it('should preserve specified token address for other LiFi pairs', () => {
-        const testAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
-        const result = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.Base,
-          destinationChainId: ChainId.Superposition,
           token: testAddress,
         });
         expect(result).toEqual(testAddress.toLowerCase());
