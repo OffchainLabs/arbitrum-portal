@@ -18,6 +18,15 @@ vi.mock('@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory', async () => {
 vi.mock('next/navigation', async (importActual) => ({
   ...(await importActual()),
   usePathname: vi.fn().mockReturnValue('/bridge'),
+  useRouter: vi.fn().mockReturnValue({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+  }),
+  useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),
 }));
 
 vi.mock('react-virtualized', () => ({

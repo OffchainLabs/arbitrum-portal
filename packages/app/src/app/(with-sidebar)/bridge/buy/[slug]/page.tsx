@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import { Slug } from 'packages/app/src/utils/bridgePageUtils';
+import { Slug, initializeBridgePage } from 'packages/app/src/utils/bridgePageUtils';
 
 import { PathnameEnum } from '@/bridge/constants';
-
-import BridgePageWrapper from '../../BridgePageWrapper';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -20,10 +18,10 @@ export default async function BridgeBuyOnrampServicePage({ searchParams, params 
   const resolvedSearchParams = await searchParams;
   const { slug } = await params;
 
-  return (
-    <BridgePageWrapper
-      searchParams={resolvedSearchParams}
-      redirectPath={`${PathnameEnum.BUY}/${slug}`}
-    />
-  );
+  await initializeBridgePage({
+    searchParams: resolvedSearchParams,
+    redirectPath: `${PathnameEnum.BUY}/${slug}`,
+  });
+  // The App is rendered by the bridge layout; the page only initializes it.
+  return null;
 }
