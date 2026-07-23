@@ -129,4 +129,37 @@ describe('tokenListsToSearchableTokenStorage', () => {
     expect(tokens[l1Address]?.l2Address).toBe(lifiL2Address);
     expect(tokens[l1Address]?.listIds).toEqual(new Set([LIFI_TRANSFER_LIST_ID, '1']));
   });
+
+  it('preserves LiFi destination-only tokens from token list extensions', () => {
+    const tokenAddress = '0xaf3d76f1834a1d425780943c99ea8a608f8a93f9';
+
+    const lifiList: TokenListWithId = {
+      name: 'LiFi Tokens',
+      timestamp: new Date().toISOString(),
+      version: { major: 1, minor: 0, patch: 0 },
+      tokens: [
+        {
+          chainId: 4663,
+          address: tokenAddress,
+          name: 'Apple Stock',
+          symbol: 'AAPL',
+          decimals: 18,
+          extensions: {
+            isLifiDestinationOnly: true,
+            bridgeInfo: {
+              '1': {
+                tokenAddress,
+              },
+            },
+          },
+        },
+      ],
+      l2ChainId: '4663',
+      bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+    };
+
+    const tokens = tokenListsToSearchableTokenStorage([lifiList], '1', '4663');
+
+    expect(tokens[tokenAddress]?.isLifiDestinationOnly).toBe(true);
+  });
 });

@@ -107,6 +107,8 @@ export function tokenListsToSearchableTokenStorage(
           return;
         }
 
+        const isLifiDestinationOnly = token.extensions?.isLifiDestinationOnly === true;
+
         // @ts-ignore TODO
         // TODO: should we upgrade '@uniswap/token-lists'?
         const bridgeInfo: {
@@ -134,6 +136,7 @@ export function tokenListsToSearchableTokenStorage(
               decimals: token.decimals,
               listIds: new Set(),
               priceUSD,
+              isLifiDestinationOnly,
             };
           } else {
             // Prefer LiFi token metadata when multiple lists map the same L1 token.
@@ -149,6 +152,7 @@ export function tokenListsToSearchableTokenStorage(
                 decimals: token.decimals,
                 listIds: acc[addressOnL1]?.listIds || new Set(),
                 priceUSD,
+                isLifiDestinationOnly,
               },
               incomingListId: tokenList.bridgeTokenListId,
             });

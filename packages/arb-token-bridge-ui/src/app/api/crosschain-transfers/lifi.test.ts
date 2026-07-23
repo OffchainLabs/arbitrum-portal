@@ -1,7 +1,12 @@
 import { constants, utils } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { LifiCrosschainTransfersRoute, findCheapestRoute, findFastestRoute } from './lifi';
+import {
+  LifiCrosschainTransfersRoute,
+  findCheapestRoute,
+  findFastestRoute,
+  parseLifiRouteToCrosschainTransfersQuoteWithLifiData,
+} from './lifi';
 
 const eth = (value: string) => utils.parseEther(value).toString();
 
@@ -32,6 +37,71 @@ function createMockRoute(
       orders: [],
       tool: { key: 'test', name: 'Test', logoURI: '' },
       step: {} as LifiCrosschainTransfersRoute['protocolData']['step'],
+    },
+  };
+}
+
+type LifiRoute = Parameters<
+  typeof parseLifiRouteToCrosschainTransfersQuoteWithLifiData
+>[0]['route'];
+
+type MockLifiToken = {
+  chainId: number;
+  address: string;
+  symbol: string;
+  decimals: number;
+  logoURI: string;
+};
+
+type MockGasCost = {
+  estimate: string;
+  amountUSD: string;
+  token: MockLifiToken;
+};
+
+type MockFeeCost = {
+  amount: string;
+  amountUSD: string;
+  included: boolean;
+  token: MockLifiToken;
+};
+
+function createMockLifiStep({
+  fromToken,
+  toToken,
+  fromAmount,
+  toAmount,
+  executionDuration = 30,
+  feeCosts = [],
+  gasCosts = [],
+}: {
+  fromToken: MockLifiToken;
+  toToken: MockLifiToken;
+  fromAmount: string;
+  toAmount: string;
+  executionDuration?: number;
+  feeCosts?: MockFeeCost[];
+  gasCosts?: MockGasCost[];
+}) {
+  return {
+    action: {
+      fromAmount,
+      fromToken,
+      toToken,
+    },
+    estimate: {
+      approvalAddress: constants.AddressZero,
+      executionDuration,
+      feeCosts,
+      fromAmountUSD: '1',
+      gasCosts,
+      toAmount,
+      toAmountUSD: '2',
+    },
+    toolDetails: {
+      key: 'test',
+      name: 'Test',
+      logoURI: '',
     },
   };
 }
@@ -103,5 +173,115 @@ describe('findFastestRoute', () => {
 
   it('returns undefined for empty array', () => {
     expect(findFastestRoute([])).toBeUndefined();
+  });
+});
+
+describe('parseLifiRouteToCrosschainTransfersQuoteWithLifiData', () => {
+  it('uses the first step for source, the last step for destination, and totals gas and fees', () => {
+    const ethToken = {
+      chainId: 1,
+      address: constants.AddressZero,
+      symbol: 'ETH',
+      decimals: 18,
+      logoURI: '',
+    };
+    const robinhoodEthToken = {
+      ...ethToken,
+      chainId: 4663,
+    };
+    const muToken = {
+      chainId: 4663,
+      address: '0x00000000000000000000000000000000000000aa',
+      symbol: 'MU',
+      decimals: 18,
+      logoURI: '',
+    };
+    const gasToken = {
+      chainId: 1,
+      address: '0x00000000000000000000000000000000000000bb',
+      symbol: 'GAS',
+      decimals: 18,
+      logoURI: '',
+    };
+    const feeToken = {
+      chainId: 1,
+      address: '0x00000000000000000000000000000000000000cc',
+      symbol: 'FEE',
+      decimals: 18,
+      logoURI: '',
+    };
+    const route = {
+      steps: [
+        createMockLifiStep({
+          fromToken: ethToken,
+          toToken: robinhoodEthToken,
+          fromAmount: eth('1.1'),
+          toAmount: eth('1'),
+          executionDuration: 20,
+          gasCosts: [
+            {
+              estimate: eth('0.01'),
+              amountUSD: '1',
+              token: gasToken,
+            },
+          ],
+          feeCosts: [
+            {
+              amount: eth('0.02'),
+              amountUSD: '4',
+              included: false,
+              token: feeToken,
+            },
+            {
+              amount: eth('0.5'),
+              amountUSD: '100',
+              included: true,
+              token: feeToken,
+            },
+          ],
+        }),
+        createMockLifiStep({
+          fromToken: robinhoodEthToken,
+          toToken: muToken,
+          fromAmount: eth('1'),
+          toAmount: eth('42'),
+          executionDuration: 40,
+          gasCosts: [
+            {
+              estimate: eth('0.03'),
+              amountUSD: '2',
+              token: gasToken,
+            },
+          ],
+          feeCosts: [
+            {
+              amount: eth('0.04'),
+              amountUSD: '6',
+              included: false,
+              token: feeToken,
+            },
+          ],
+        }),
+      ],
+    } as unknown as LifiRoute;
+
+    const result = parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
+      route,
+      fromChainId: '1',
+      toChainId: '4663',
+    });
+
+    expect(result.fromAmount.token.symbol).toBe('ETH');
+    expect(result.fromAmount.amount).toBe(eth('1.1'));
+    expect(result.toAmount.token.symbol).toBe('MU');
+    expect(result.toAmount.token.address).toBe(muToken.address);
+    expect(result.toAmount.amount).toBe(eth('42'));
+    expect(result.durationMs).toBe(60_000);
+    expect(result.gas.amount).toBe(eth('0.04'));
+    expect(result.gas.amountUSD).toBe('3');
+    expect(result.gas.token.address).toBe(gasToken.address);
+    expect(result.fee.amount).toBe(eth('0.06'));
+    expect(result.fee.amountUSD).toBe('10');
+    expect(result.fee.token.address).toBe(feeToken.address);
   });
 });
