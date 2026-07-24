@@ -53,6 +53,7 @@ function getMock({
     },
     durationMs: 4000,
     destinationTxId: null,
+    route: {} as RouteContext['route'],
     step: {
       type: 'lifi',
       id: 'ef70a077-0322-4b80-b2c4-7117eaf544d4:0',
