@@ -15,7 +15,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
-import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
+import { isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { TokenRow } from './TokenRow';
@@ -114,10 +114,9 @@ function DestinationTokensPanel({
         const getPriority = (address: string): number => {
           if (address === NATIVE_CURRENCY_IDENTIFIER) return 0;
           if (addressesEqual(address, constants.AddressZero)) return 1;
-          if (isTokenNativeUSDC(address)) return 2;
-          if (isTokenUSDT(address)) return 3;
-          if (isTokenWBTC(address)) return 4;
-          return 5;
+          if (isTokenUSDT(address)) return 2;
+          if (isTokenWBTC(address)) return 3;
+          return 4;
         };
 
         const priority1 = getPriority(address1);

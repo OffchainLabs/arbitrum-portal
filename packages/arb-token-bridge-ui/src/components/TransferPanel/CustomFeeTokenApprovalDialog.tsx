@@ -67,8 +67,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
       if (l1Signer) {
         /*
          Note:
-          1. we do not consider CCTP case here, since we are not using it with custom fee token approval
-          2. we are assuming deposits only (withdrawals will return `requiresNativeCurrencyApproval` as false)
+          We are assuming deposits only (withdrawals will return `requiresNativeCurrencyApproval` as false).
           These will need to be supported on a case-by-case basis later, with checks like in `TokenApprovalDialogue.tsx`
         */
         const bridgeTransferStarter = BridgeTransferStarterFactory.create({

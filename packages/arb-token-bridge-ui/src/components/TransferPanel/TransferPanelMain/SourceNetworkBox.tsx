@@ -4,7 +4,7 @@ import React, { ChangeEventHandler, useCallback, useEffect, useMemo } from 'reac
 import { create } from 'zustand';
 
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
-import { ETH_BALANCE_ARTICLE_LINK, USDC_LEARN_MORE_LINK } from '../../../constants';
+import { ETH_BALANCE_ARTICLE_LINK } from '../../../constants';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useSelectedTokenDecimals } from '../../../hooks/TransferPanel/useSelectedTokenDecimals';
 import { useSetInputAmount } from '../../../hooks/TransferPanel/useSetInputAmount';
@@ -27,7 +27,6 @@ import { LifiSettingsButton } from '../LifiSettingsButton';
 import { useTokensFromLists } from '../TokenSearchUtils';
 import { NetworkContainer } from '../TransferPanelMain';
 import { TransferPanelMainInput } from '../TransferPanelMainInput';
-import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { useTransferReadiness } from '../useTransferReadiness';
 import { useMaxAmount } from './useMaxAmount';
@@ -259,7 +258,6 @@ export function SourceNetworkBox() {
   };
   const { isAmount2InputVisible, showAmount2Input } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();
-  const isCctpTransfer = useIsCctpTransfer();
   const isOft = useIsOftV2Transfer();
   const { embedMode } = useMode();
   const [{ amount2 }] = useArbQueryParams();
@@ -297,16 +295,6 @@ export function SourceNetworkBox() {
                 You can transfer {nativeCurrency.symbol} in the same transaction if you wish to.
               </p>
             </>
-          )}
-
-          {isCctpTransfer && (
-            <p className="mt-1 text-xs font-light text-white">
-              Bridged USDC (USDC.e) will work but is different from Native USDC.{' '}
-              <ExternalLink href={USDC_LEARN_MORE_LINK} className="arb-hover underline">
-                Learn more
-              </ExternalLink>
-              .
-            </p>
           )}
 
           {isDepositMode && selectedToken && !isOft && (

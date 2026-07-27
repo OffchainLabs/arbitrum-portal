@@ -2,11 +2,9 @@ import { useMemo } from 'react';
 import { useDebounce, useInterval, useLatest } from 'react-use';
 import { useAccount } from 'wagmi';
 
-import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
 import { useBalances } from '../../hooks/useBalances';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useAppState } from '../../state';
-import { isTokenNativeUSDC } from '../../util/TokenUtils';
 
 // Updates all balances periodically
 export function useBalanceUpdater() {
@@ -22,10 +20,6 @@ export function useBalanceUpdater() {
   const { updateErc20ParentBalances, updateErc20ChildBalances } = useBalances({
     parentWalletAddress: walletAddress,
     childWalletAddress: walletAddress,
-  });
-
-  const { updateUsdcBalances } = useUpdateUsdcBalances({
-    walletAddress,
   });
 
   const parentErc20Addresses = useMemo(
@@ -60,8 +54,8 @@ export function useBalanceUpdater() {
 
   useInterval(() => {
     if (selectedToken) {
-      if (isTokenNativeUSDC(selectedToken.address)) {
-        updateUsdcBalances();
+      if (selectedToken.isL2Native) {
+        updateErc20ChildBalances([selectedToken.address]);
         return;
       }
 

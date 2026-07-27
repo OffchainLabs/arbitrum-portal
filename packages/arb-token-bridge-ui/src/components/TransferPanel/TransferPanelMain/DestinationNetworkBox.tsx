@@ -1,4 +1,3 @@
-import { constants } from 'ethers';
 import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -6,27 +5,21 @@ import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useBalanceOnDestinationChain } from '../../../hooks/useBalanceOnDestinationChain';
-import { useBalances } from '../../../hooks/useBalances';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
-import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
-import { isNetwork } from '../../../util/networks';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { NetworkButton } from '../../common/NetworkSelectionContainer';
 import { Loader } from '../../common/atoms/Loader';
 import { DestinationTokenButton } from '../DestinationTokenButton';
 import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils';
 import { NetworkContainer } from '../TransferPanelMain';
-import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useReceivedAmount } from '../hooks/useReceivedAmount';
-import { useRouteStore } from '../hooks/useRouteStore';
-import { isLifiRoute } from '../hooks/useRouteStore';
 import { useAmount2InputVisibility } from './SourceNetworkBox';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
@@ -98,49 +91,20 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
-  const { isArbitrumOne } = isNetwork(childChain.id);
-  const isCctpTransfer = useIsCctpTransfer();
+  const { childChainProvider } = useNetworksRelationship(networks);
   const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
   const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const { ethPrice } = useETHPrice();
   const { data: tokensFromLists } = useTokensFromLists();
 
-  const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
 
-  const { erc20ChildBalances, erc20ParentBalances } = useBalances();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const { isAmount2InputVisible } = useAmount2InputVisibility();
 
   const nativeCurrencyBalances = useNativeCurrencyBalances();
   const destinationBalance = useBalanceOnDestinationChain(destinationToken);
-
-  // For cctp transfer, if no route are selected, display USDC balance on destination chain
-  const showNativeUsdcBalance =
-    (isCctpTransfer && (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
-    (isCctpTransfer && !selectedRoute);
-
-  const nativeUsdcDestinationBalance = useMemo(() => {
-    if (!showNativeUsdcBalance) return constants.Zero;
-
-    if (isArbitrumOne) {
-      return isDepositMode
-        ? (erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC] ?? constants.Zero)
-        : (erc20ParentBalances?.[CommonAddress.Ethereum.USDC] ?? constants.Zero);
-    } else {
-      return isDepositMode
-        ? (erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC] ?? constants.Zero)
-        : (erc20ParentBalances?.[CommonAddress.Sepolia.USDC] ?? constants.Zero);
-    }
-  }, [
-    showNativeUsdcBalance,
-    isArbitrumOne,
-    isDepositMode,
-    erc20ParentBalances,
-    erc20ChildBalances,
-  ]);
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
@@ -198,38 +162,26 @@ function BalancesContainer() {
           </div>
         )}
         <div className="flex flex-col gap-1">
-          {showNativeUsdcBalance ? (
-            <BalanceRow
-              parentErc20Address={
-                isArbitrumOne ? CommonAddress.Ethereum.USDC : CommonAddress.Sepolia.USDC
-              }
-              balance={formatAmount(nativeUsdcDestinationBalance, {
-                decimals: destinationToken?.decimals,
-              })}
-              symbolOverride="USDC"
-            />
-          ) : (
-            <BalanceRow
-              parentErc20Address={destinationToken?.address}
-              balance={
-                destinationBalance
-                  ? formatAmount(destinationBalance, {
-                      decimals: destinationToken ? destinationToken.decimals : 18,
+          <BalanceRow
+            parentErc20Address={destinationToken?.address}
+            balance={
+              destinationBalance
+                ? formatAmount(destinationBalance, {
+                    decimals: destinationToken ? destinationToken.decimals : 18,
+                  })
+                : undefined
+            }
+            symbolOverride={
+              tokenOverride
+                ? tokenOverride.symbol
+                : destinationToken
+                  ? sanitizeTokenSymbol(destinationToken.symbol, {
+                      chainId: networks.destinationChain.id,
+                      erc20L1Address: destinationToken.address,
                     })
                   : undefined
-              }
-              symbolOverride={
-                tokenOverride
-                  ? tokenOverride.symbol
-                  : destinationToken
-                    ? sanitizeTokenSymbol(destinationToken.symbol, {
-                        chainId: networks.destinationChain.id,
-                        erc20L1Address: destinationToken.address,
-                      })
-                    : undefined
-              }
-            />
-          )}
+            }
+          />
         </div>
       </div>
 

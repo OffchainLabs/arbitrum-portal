@@ -3,12 +3,6 @@ import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { addressesEqual } from '../../util/AddressUtils';
-import { CommonAddress } from '../../util/CommonAddressUtils';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-} from '../../util/TokenUtils';
-import { isNetwork } from '../../util/networks';
 import { useBalance } from '../useBalance';
 import { useBalances } from '../useBalances';
 import { useNativeCurrency } from '../useNativeCurrency';
@@ -46,27 +40,6 @@ export function useSelectedTokenBalances(): Balances {
     chainId: networks.destinationChain.id,
     walletAddress: walletAddress,
   });
-
-  const {
-    isArbitrumOne: isSourceChainArbitrumOne,
-    isEthereumMainnet: isSourceChainEthereum,
-    isSepolia: isSourceChainSepolia,
-    isArbitrumSepolia: isSourceChainArbitrumSepolia,
-  } = isNetwork(networks.sourceChain.id);
-  const {
-    isArbitrumOne: isDestinationChainArbitrumOne,
-    isEthereumMainnet: isDestinationChainEthereum,
-    isSepolia: isDestinationChainSepolia,
-    isArbitrumSepolia: isDestinationChainArbitrumSepolia,
-  } = isNetwork(networks.destinationChain.id);
-
-  const isSepoliaArbSepoliaPair =
-    (isSourceChainSepolia && isDestinationChainArbitrumSepolia) ||
-    (isSourceChainArbitrumSepolia && isDestinationChainSepolia);
-
-  const isEthereumArbitrumOnePair =
-    (isSourceChainEthereum && isDestinationChainArbitrumOne) ||
-    (isSourceChainArbitrumOne && isDestinationChainEthereum);
 
   const { erc20ParentBalances, erc20ChildBalances } = useBalances();
 
@@ -125,18 +98,6 @@ export function useSelectedTokenBalances(): Balances {
       childBalance = constants.Zero;
     }
 
-    if (isTokenArbitrumOneNativeUSDC(selectedToken.address) && isEthereumArbitrumOnePair) {
-      parentBalance = erc20ParentBalances?.[CommonAddress.Ethereum.USDC.toLowerCase()] ?? null;
-      childBalance = erc20ChildBalances?.[selectedToken.address.toLowerCase()] ?? null;
-    }
-    if (
-      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address.toLowerCase()) &&
-      isSepoliaArbSepoliaPair
-    ) {
-      parentBalance = erc20ParentBalances?.[CommonAddress.Sepolia.USDC.toLowerCase()] ?? null;
-      childBalance = erc20ChildBalances?.[selectedToken.address.toLowerCase()] ?? null;
-    }
-
     if (isDepositMode) {
       return {
         sourceBalance: parentBalance,
@@ -152,8 +113,6 @@ export function useSelectedTokenBalances(): Balances {
     selectedToken,
     erc20ParentBalances,
     erc20ChildBalances,
-    isEthereumArbitrumOnePair,
-    isSepoliaArbSepoliaPair,
     isDepositMode,
     sourceNativeCurrency.isCustom,
     destinationNativeCurrency.isCustom,

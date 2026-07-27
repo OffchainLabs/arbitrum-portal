@@ -11,7 +11,6 @@ import { useAccount } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { CommonAddress } from '../util/CommonAddressUtils';
 import { getL2NativeToken } from '../util/L2NativeUtils';
 import {
   fetchErc20Data,
@@ -20,8 +19,9 @@ import {
   isValidErc20,
   l1TokenIsDisabled,
 } from '../util/TokenUtils';
+import { CANONICAL_TOKEN_OVERRIDES_BY_CHAIN_PAIR } from '../util/canonicalTokenOverrides';
+import { L2_NATIVE_TOKENS_BY_CHAIN } from '../util/l2NativeTokens';
 import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
-import { isNetwork } from '../util/networks';
 import {
   ArbTokenBridge,
   ContractStorage,
@@ -232,19 +232,16 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
       }
     }
 
+    const canonicalTokenOverrides =
+      CANONICAL_TOKEN_OVERRIDES_BY_CHAIN_PAIR[`${l1ChainID}:${l2ChainID}`] ?? {};
+
     // Callback is used here, so we can add listId to the set of listIds rather than creating a new set everytime
     setBridgeTokens((oldBridgeTokens) => {
       const l1Addresses: string[] = [];
       const l2Addresses: string[] = [];
+      const canonicalTokensToAdd: ContractStorage<ERC20BridgeToken> = {};
 
-      // USDC is not on any token list as it's unbridgeable
-      // but we still want to detect its balance on user's wallet
-      if (isNetwork(l2ChainID).isArbitrumOne) {
-        l2Addresses.push(CommonAddress.ArbitrumOne.USDC);
-      }
-      if (isNetwork(l2ChainID).isArbitrumSepolia) {
-        l2Addresses.push(CommonAddress.ArbitrumSepolia.USDC);
-      }
+      l2Addresses.push(...Object.keys(L2_NATIVE_TOKENS_BY_CHAIN[l2ChainID] ?? {}));
 
       for (const tokenAddress in bridgeTokensToAdd) {
         const tokenToAdd = bridgeTokensToAdd[tokenAddress];
@@ -266,12 +263,32 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
         }
       }
 
+      for (const [address, canonicalToken] of Object.entries(canonicalTokenOverrides)) {
+        if (!canonicalToken) {
+          continue;
+        }
+
+        const existingToken = bridgeTokensToAdd[address] ?? oldBridgeTokens?.[address];
+        canonicalTokensToAdd[address] = {
+          ...canonicalToken,
+          ...existingToken,
+          address: canonicalToken.address,
+          l2Address: canonicalToken.l2Address,
+          listIds: existingToken?.listIds ?? canonicalToken.listIds,
+        };
+        l1Addresses.push(canonicalToken.address);
+        if (canonicalToken.l2Address) {
+          l2Addresses.push(canonicalToken.l2Address);
+        }
+      }
+
       updateErc20L1Balance(l1Addresses);
       updateErc20L2Balance(l2Addresses);
 
       return {
         ...oldBridgeTokens,
         ...bridgeTokensToAdd,
+        ...canonicalTokensToAdd,
       };
     });
   };

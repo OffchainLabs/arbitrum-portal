@@ -334,6 +334,7 @@ export function claimCctp(amount: number, options: { accept: boolean }) {
     cy.findByText(formattedAmount).should('be.visible');
   } else {
     cy.rejectMetamaskTransaction();
+    cy.findClaimButton(formattedAmount).should('be.visible');
   }
 }
 
@@ -343,7 +344,7 @@ export function clickClaimButton(amountToClaim: string) {
   cy.findClaimButton(amountToClaim).click();
 }
 
-export function selectRoute(type: 'arbitrum' | 'oftV2' | 'cctp') {
+export function selectRoute(type: 'arbitrum' | 'oftV2') {
   cy.findByLabelText(`Route ${type}`).scrollIntoView().should('be.visible').click();
 }
 

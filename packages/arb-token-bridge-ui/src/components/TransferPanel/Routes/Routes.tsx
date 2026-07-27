@@ -15,7 +15,6 @@ import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { useRouteStore } from '../hooks/useRouteStore';
 import { useRoutesUpdater } from '../hooks/useRoutesUpdater';
 import { ArbitrumCanonicalRoute } from './ArbitrumCanonicalRoute';
-import { CctpRoute } from './CctpRoute';
 import { LifiRoute } from './LifiRoute';
 import { OftV2Route } from './OftV2Route';
 import { BadgeType } from './Route';
@@ -66,51 +65,24 @@ export const Routes = React.memo(() => {
     setShowHiddenRoutes(false);
   }, [selectedToken]);
 
-  const getRouteTag = useCallback(
-    (routeType: string): BadgeType | undefined => {
-      switch (routeType) {
-        case 'cctp':
-          // Tag as "Best Deal" when shown with LiFi routes OR when shown with Canonical
-          if (eligibleRouteTypes.includes('lifi') || eligibleRouteTypes.includes('arbitrum')) {
-            return 'best-deal';
-          }
-          return undefined;
+  const getRouteTag = useCallback((routeType: string): BadgeType | undefined => {
+    switch (routeType) {
+      case 'arbitrum':
+        // Always show "Security guaranteed by Arbitrum" for security
+        return 'security-guaranteed';
 
-        case 'arbitrum':
-          // Always show "Security guaranteed by Arbitrum" for security
-          return 'security-guaranteed';
+      case 'lifi-cheapest':
+      case 'lifi':
+        return 'best-deal';
 
-        case 'lifi-cheapest':
-          if (eligibleRouteTypes.includes('cctp')) {
-            // LiFi + CCTP: CCTP = "Best Deal", Cheapest LiFi = no tag
-            return undefined;
-          } else {
-            // LiFi only: Show "best deal"
-            // LiFi + Canonical: Cheapest LiFi = "Best Deal"
-            return 'best-deal';
-          }
+      case 'lifi-fastest':
+        // Fastest always gets "fastest" tag
+        return 'fastest';
 
-        case 'lifi-fastest':
-          // Fastest always gets "fastest" tag
-          return 'fastest';
-
-        case 'lifi':
-          // Single LiFi route (when fastest and cheapest are the same)
-          if (eligibleRouteTypes.includes('cctp')) {
-            // LiFi + CCTP: CCTP = "Best Deal", LiFi = 'fastest'
-            return 'fastest';
-          } else {
-            // LiFi only: Show "best deal"
-            // LiFi + Canonical: LiFi = "Best Deal"
-            return 'best-deal';
-          }
-
-        default:
-          return undefined;
-      }
-    },
-    [eligibleRouteTypes],
-  );
+      default:
+        return undefined;
+    }
+  }, []);
 
   if (eligibleRouteTypes.length === 0) {
     return null;
@@ -150,8 +122,6 @@ export const Routes = React.memo(() => {
           switch (route.type) {
             case 'oftV2':
               return <OftV2Route key={`oftV2-${index}`} />;
-            case 'cctp':
-              return <CctpRoute key={`cctp-${index}`} />;
             case 'lifi':
             case 'lifi-fastest':
             case 'lifi-cheapest':

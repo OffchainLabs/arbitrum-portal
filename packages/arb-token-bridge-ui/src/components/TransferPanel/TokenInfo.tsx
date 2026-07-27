@@ -9,10 +9,13 @@ import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
 } from '../../util/TokenUtils';
+import {
+  ARB_ONE_NATIVE_USDC_TOKEN,
+  ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+} from '../../util/l2NativeTokens';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { SafeImage } from '../common/SafeImage';
-import { ARB_ONE_NATIVE_USDC_TOKEN, ARB_SEPOLIA_NATIVE_USDC_TOKEN } from './TokenSearch';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 export function TokenLogoFallback({ className }: { className?: string }) {

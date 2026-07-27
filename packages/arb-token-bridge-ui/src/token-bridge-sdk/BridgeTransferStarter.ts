@@ -1,11 +1,8 @@
-import { Provider, TransactionRequest } from '@ethersproject/providers';
-import { SimulateContractReturnType } from '@wagmi/core';
+import { Provider } from '@ethersproject/providers';
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
 import { Config } from 'wagmi';
 
 import { DepositGasEstimates, GasEstimates } from '../hooks/arbTokenBridge.types';
-import { MergedTransaction } from '../state/app/state';
-import { Address } from '../util/AddressUtils';
 import { LifiData } from './LifiTransferStarter';
 import { getChainIdFromProvider } from './utils';
 
@@ -15,12 +12,7 @@ type Chain = 'source_chain' | 'destination_chain';
 type TxStatus = 'pending' | 'success' | 'error';
 
 export type BridgeTransferStatus = `${Chain}_tx_${TxStatus}`;
-export type TransferType = `${Asset}_${TxType}` | 'cctp' | 'oftV2' | 'lifi';
-
-export type MergedTransactionCctp = MergedTransaction & {
-  messageBytes: Address | null;
-  attestationHash: Address | null;
-};
+export type TransferType = `${Asset}_${TxType}` | 'oftV2' | 'lifi';
 
 export type BridgeTransfer = {
   transferType: TransferType;
@@ -56,14 +48,6 @@ export type TransferEstimateGasProps = {
 export type TransferOverrides = {
   maxSubmissionCost?: BigNumber;
   excessFeeRefundAddress?: string;
-};
-
-export type TransferPrepareTxRequestProps = {
-  amount: BigNumber;
-  from: string;
-  destinationAddress?: string;
-  overrides?: TransferOverrides;
-  wagmiConfig?: Config;
 };
 
 export type TransferProps = {
@@ -102,10 +86,6 @@ export type RequiresTokenApprovalProps = {
   amount: BigNumber;
   owner: string;
   destinationAddress?: string;
-};
-
-export type ApproveTokenPrepareTxRequestProps = {
-  amount?: BigNumber;
 };
 
 export type ApproveTokenProps = {
@@ -152,29 +132,9 @@ export abstract class BridgeTransferStarter {
 
   public abstract requiresTokenApproval(props: RequiresTokenApprovalProps): Promise<boolean>;
 
-  // not marking this as abstract for now, as we need a dummy implementation for every class
-  // only cctp is going to override it for now, and we'll do the same for others one by one
-  // finally, once we have all implementations we'll mark it as abstract
-  public async approveTokenPrepareTxRequest(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    props?: ApproveTokenPrepareTxRequestProps,
-  ): Promise<TransactionRequest> {
-    return {} as TransactionRequest;
-  }
-
   public abstract approveTokenEstimateGas(props: ApproveTokenProps): Promise<BigNumber | void>;
 
   public abstract approveToken(props: ApproveTokenProps): Promise<ContractTransaction | void>;
-
-  // not marking this as abstract for now, as we need a dummy implementation for every class
-  // only cctp is going to override it for now, and we'll do the same for others one by one
-  // finally, once we have all implementations we'll mark it as abstract
-  public async transferPrepareTxRequest(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    props?: TransferPrepareTxRequestProps,
-  ): Promise<TransactionRequest | SimulateContractReturnType> {
-    return {} as TransactionRequest | SimulateContractReturnType;
-  }
 
   public abstract transferEstimateGas(
     props: TransferEstimateGasProps,

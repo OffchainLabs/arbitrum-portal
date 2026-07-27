@@ -18,9 +18,7 @@ import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
 import { TokenSearch } from '../TransferPanel/TokenSearch';
-import { CctpUsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/CctpUsdcDepositConfirmationDialog';
 import { UsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/UsdcDepositConfirmationDialog';
-import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithdrawal/CctpUsdcWithdrawalConfirmationDialog';
 import { WithdrawalConfirmationDialog } from '../TransferPanel/WithdrawalConfirmationDialog';
 import { WidgetTransactionHistory } from '../Widget/WidgetTransactionHistory';
 import { NetworkSelectionContainer } from './NetworkSelectionContainer';
@@ -44,14 +42,11 @@ type UseDialogResult = [DialogProps, OpenDialogFunction];
 
 export type DialogType =
   | 'approve_token'
-  | 'approve_cctp_usdc'
   | 'approve_custom_fee_token'
   | 'withdraw'
   | 'deposit_token_new_token'
   | 'deposit_token_user_added_token'
   | 'scw_custom_destination_address'
-  | 'confirm_cctp_withdrawal'
-  | 'confirm_cctp_deposit'
   | 'confirm_usdc_deposit'
   | 'high_slippage_warning'
   | 'widget_transaction_history'
@@ -119,7 +114,6 @@ export function DialogWrapper(props: DialogProps) {
 
   switch (openedDialogType) {
     case 'approve_token':
-    case 'approve_cctp_usdc':
       return <TokenApprovalDialog {...commonProps} token={selectedToken} />;
     case 'approve_custom_fee_token':
       if (nativeCurrency.isCustom) {
@@ -130,10 +124,6 @@ export function DialogWrapper(props: DialogProps) {
       return <WithdrawalConfirmationDialog {...commonProps} amount={amount} />;
     case 'scw_custom_destination_address':
       return <CustomDestinationAddressConfirmationDialog {...commonProps} />;
-    case 'confirm_cctp_withdrawal':
-      return <CctpUsdcWithdrawalConfirmationDialog {...commonProps} />;
-    case 'confirm_cctp_deposit':
-      return <CctpUsdcDepositConfirmationDialog {...commonProps} />;
     case 'confirm_usdc_deposit':
       return <UsdcDepositConfirmationDialog {...commonProps} />;
     case 'deposit_token_new_token':

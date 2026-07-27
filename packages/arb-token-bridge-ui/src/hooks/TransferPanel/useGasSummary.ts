@@ -6,14 +6,6 @@ import { DEFAULT_GAS_PRICE_PERCENT_INCREASE } from '@/token-bridge-sdk/Erc20Depo
 import { percentIncrease } from '@/token-bridge-sdk/utils';
 
 import { useAmountBigNumber } from '../../components/TransferPanel/hooks/useAmountBigNumber';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-} from '../../util/TokenUtils';
-import {
-  isWithdrawalFromArbOneToEthereum,
-  isWithdrawalFromArbSepoliaToSepolia,
-} from '../../util/networks';
 import { DepositGasEstimates } from '../arbTokenBridge.types';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
 import { useGasPrice } from '../useGasPrice';
@@ -36,35 +28,14 @@ export type UseGasSummaryResult = {
 };
 
 export function getGasSummaryStatus({
-  selectedTokenAddress,
   amountBigNumber,
   balance,
   gasEstimatesError,
-  sourceChainId,
-  destinationChainId,
 }: {
-  selectedTokenAddress: string | undefined;
   amountBigNumber: BigNumber;
   balance: BigNumber | null;
   gasEstimatesError: any;
-  sourceChainId: number;
-  destinationChainId: number;
 }): GasEstimationStatus {
-  if (
-    (isTokenArbitrumOneNativeUSDC(selectedTokenAddress) &&
-      isWithdrawalFromArbOneToEthereum({
-        sourceChainId,
-        destinationChainId,
-      })) ||
-    (isTokenArbitrumSepoliaNativeUSDC(selectedTokenAddress) &&
-      isWithdrawalFromArbSepoliaToSepolia({
-        sourceChainId,
-        destinationChainId,
-      }))
-  ) {
-    return 'unavailable';
-  }
-
   if (balance === null) {
     return 'loading';
   }
@@ -93,12 +64,7 @@ export function useGasSummary(): UseGasSummaryResult {
 
   const { gasEstimates: estimateGasResult, error: gasEstimatesError } = useGasEstimates({
     amount: amountBigNumber,
-    sourceChainErc20Address: isDepositMode
-      ? selectedToken?.address
-      : isTokenArbitrumOneNativeUSDC(selectedToken?.address) ||
-          isTokenArbitrumSepoliaNativeUSDC(selectedToken?.address)
-        ? selectedToken?.address
-        : selectedToken?.l2Address,
+    sourceChainErc20Address: isDepositMode ? selectedToken?.address : selectedToken?.l2Address,
     destinationChainErc20Address: isDepositMode ? selectedToken?.l2Address : selectedToken?.address,
   });
 
@@ -132,14 +98,11 @@ export function useGasSummary(): UseGasSummaryResult {
   const gasSummaryStatus = useMemo(
     () =>
       getGasSummaryStatus({
-        selectedTokenAddress: selectedToken?.address,
         amountBigNumber,
         balance,
         gasEstimatesError,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
       }),
-    [selectedToken, amountBigNumber, balance, gasEstimatesError, networks],
+    [amountBigNumber, balance, gasEstimatesError],
   );
 
   return {

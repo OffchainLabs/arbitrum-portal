@@ -4,9 +4,7 @@ import { useAccount, useChainId } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
-import { getCctpContracts } from '@/token-bridge-sdk/cctp';
 
 import { TOKEN_APPROVAL_ARTICLE_LINK, ether } from '../../constants';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
@@ -57,7 +55,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     }),
     shallow,
   );
-  const isCctp = selectedRoute === 'cctp';
   const isLifi = isLifiRoute(selectedRoute);
   const isOft = selectedRoute === 'oftV2';
 
@@ -111,15 +108,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
           signer,
           amount: constants.MaxUint256,
         });
-      } else if (isCctp) {
-        const cctpTransferStarter = new CctpTransferStarter({
-          sourceChainProvider,
-          destinationChainProvider,
-        });
-        gasEstimate = await cctpTransferStarter.approveTokenEstimateGas({
-          amount: constants.MaxUint256,
-          signer,
-        });
       } else if (isOft) {
         const oftTransferStarter = new OftV2TransferStarter({
           sourceChainProvider,
@@ -162,7 +150,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     destinationChain,
     destinationChainProvider,
     chainId,
-    isCctp,
     isOft,
     isLifi,
     context,
@@ -193,12 +180,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
         setContractAddress(oftTransferConfig.sourceChainAdapterAddress);
         return;
       }
-      if (isCctp) {
-        setContractAddress(
-          getCctpContracts({ sourceChainId: chainId })?.tokenMessengerContractAddress,
-        );
-        return;
-      }
       if (!token?.address) {
         setContractAddress('');
         return;
@@ -225,7 +206,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
   }, [
     chainId,
     childChainProvider,
-    isCctp,
     isDepositMode,
     parentChainProvider,
     token?.address,

@@ -8,7 +8,6 @@ import { Address } from 'viem';
 
 import { ChainDomain } from './src/app/api/cctp/[type]';
 import { CommonAddress } from './src/util/CommonAddressUtils';
-import { TokenMessengerAbi } from './src/util/cctp/TokenMessengerAbi';
 import { browserConfig } from './tests/e2e/browser.config';
 import specFiles from './tests/e2e/cctp.json';
 import { getCommonSynpressConfig } from './tests/e2e/getCommonSynpressConfig';
@@ -18,6 +17,11 @@ import {
   getCustomDestinationAddress,
   setupCypressTasks,
 } from './tests/support/common';
+
+const tokenMessengerAbi = [
+  'function depositForBurn(uint256 amount, uint32 destinationDomain, bytes32 mintRecipient, address burnToken) returns (uint64 nonce)',
+];
+const tokenMessengerContractAddress = '0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5';
 
 export async function fundUsdc({
   address, // wallet address where funding is required
@@ -155,10 +159,6 @@ async function createCctpTx(
   const provider = type === 'deposit' ? sepoliaProvider : arbSepoliaProvider;
   const usdcAddress =
     type === 'deposit' ? CommonAddress.Sepolia.USDC : CommonAddress.ArbitrumSepolia.USDC;
-  const tokenMessengerContractAddress =
-    type === 'deposit'
-      ? CommonAddress.Sepolia.tokenMessengerContractAddress
-      : CommonAddress.ArbitrumSepolia.tokenMessengerContractAddress;
 
   const signer = userWallet.connect(provider);
   const usdcContract = ERC20__factory.connect(usdcAddress, signer);
@@ -170,7 +170,7 @@ async function createCctpTx(
 
   await tx.wait();
 
-  const tokenMessenger = new Contract(tokenMessengerContractAddress, TokenMessengerAbi, signer);
+  const tokenMessenger = new Contract(tokenMessengerContractAddress, tokenMessengerAbi, signer);
 
   await tokenMessenger.deployed();
 

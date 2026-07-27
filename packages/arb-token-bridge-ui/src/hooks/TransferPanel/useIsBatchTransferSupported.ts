@@ -1,6 +1,5 @@
 import { useIsArbitrumCanonicalTransfer } from '../../components/TransferPanel/hooks/useIsCanonicalTransfer';
 import { useIsOftV2Transfer } from '../../components/TransferPanel/hooks/useIsOftV2Transfer';
-import { isTokenNativeUSDC } from '../../util/TokenUtils';
 import { DisabledFeatures } from '../useArbQueryParams';
 import { useDisabledFeatures } from '../useDisabledFeatures';
 import { useNetworks } from '../useNetworks';
@@ -24,10 +23,6 @@ export const useIsBatchTransferSupported = () => {
   if (!isDepositMode) {
     return false;
   }
-  if (isTokenNativeUSDC(selectedToken.address)) {
-    return false;
-  }
-
   if (isLifi && !isArbitrumCanonicalTransfer) {
     return false;
   }
