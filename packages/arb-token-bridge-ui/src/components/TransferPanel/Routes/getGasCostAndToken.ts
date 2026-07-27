@@ -61,12 +61,15 @@ export function getGasCostAndToken({
   if (sameNativeCurrency) {
     return {
       isLoading: false,
-      gasCost: [
-        {
-          gasCost: estimatedTotalGasFees,
-          gasToken: childChainNativeCurrencyWithAddress,
-        },
-      ],
+      gasCost:
+        estimatedTotalGasFees > 0
+          ? [
+              {
+                gasCost: estimatedTotalGasFees,
+                gasToken: childChainNativeCurrencyWithAddress,
+              },
+            ]
+          : [],
     };
   }
 
@@ -94,7 +97,7 @@ export function getGasCostAndToken({
         gasCost: estimatedChildChainGasFees!,
         gasToken: childChainNativeCurrencyWithAddress,
       },
-    ];
+    ].filter(({ gasCost }) => gasCost > 0);
 
     return {
       gasCost,
@@ -104,11 +107,14 @@ export function getGasCostAndToken({
 
   return {
     isLoading: false,
-    gasCost: [
-      {
-        gasCost: estimatedChildChainGasFees!,
-        gasToken: childChainNativeCurrencyWithAddress,
-      },
-    ],
+    gasCost:
+      estimatedChildChainGasFees! > 0
+        ? [
+            {
+              gasCost: estimatedChildChainGasFees!,
+              gasToken: childChainNativeCurrencyWithAddress,
+            },
+          ]
+        : [],
   };
 }
