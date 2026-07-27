@@ -29,7 +29,7 @@ import {
 } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
 import { TestnetToggle } from '../common/TestnetToggle';
-import { useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
+import { useCoreChainIds, useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
 // The radio value is the selected chain id; `null` is "All Core Chains".
@@ -185,8 +185,16 @@ export function TransactionHistoryChainFilter() {
 
   const [search, setSearch] = useState('');
 
+  const allCoreChainIds = useCoreChainIds();
+
   const allCoreChainsSelected = filter.type === 'all-core';
-  const selectedCoreChainIds = filter.type === 'core-chains' ? filter.chainIds : [];
+  // "All Core Chains" implicitly checks every core chain, so unchecking one
+  // from there selects the rest.
+  const checkedCoreChainIds = allCoreChainsSelected
+    ? allCoreChainIds
+    : filter.type === 'core-chains'
+      ? filter.chainIds
+      : [];
   const selectedRadioOption: ChainRadioOption = allCoreChainsSelected
     ? null
     : filter.type === 'longtail-chain'
@@ -201,13 +209,18 @@ export function TransactionHistoryChainFilter() {
   };
 
   const toggleCoreChain = (chainId: number) => {
-    const next = selectedCoreChainIds.includes(chainId)
-      ? selectedCoreChainIds.filter((id) => id !== chainId)
-      : [...selectedCoreChainIds, chainId];
+    const next = checkedCoreChainIds.includes(chainId)
+      ? checkedCoreChainIds.filter((id) => id !== chainId)
+      : [...checkedCoreChainIds, chainId];
 
     trackEvent('Tx History Network Filter', { network: getNetworkName(chainId) });
-    // Unchecking the last core chain falls back to "All Core Chains".
-    setSelection({ chainIds: next.length > 0 ? next : null, isTestnetMode });
+    // Unchecking the last core chain and checking all of them both land on
+    // "All Core Chains".
+    const isEveryCoreChainChecked = allCoreChainIds.every((id) => next.includes(id));
+    setSelection({
+      chainIds: next.length === 0 || isEveryCoreChainChecked ? null : next,
+      isTestnetMode,
+    });
   };
 
   const triggerLabel = getTriggerLabel(filter);
@@ -290,7 +303,7 @@ export function TransactionHistoryChainFilter() {
                         <CoreChainCheckboxRow
                           key={chainId}
                           label={getNetworkName(chainId)}
-                          checked={selectedCoreChainIds.includes(chainId)}
+                          checked={checkedCoreChainIds.includes(chainId)}
                           onChange={() => toggleCoreChain(chainId)}
                           nested={showAllCoreChainsRow}
                           showIncludedTag={allCoreChainsSelected}

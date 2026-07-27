@@ -207,9 +207,17 @@ export function selectTransactionHistoryChain(networkName: string) {
 
   cy.findByLabelText('Filter transaction history by network').click();
   cy.findByLabelText('Search networks').type(networkName);
-  // core chains render as checkboxes, longtail chains as radios, so click the
-  // row by its exact name instead of by role
-  cy.findByText(networkName).click();
+  // core chains render as checkboxes, longtail chains as radios, so find the
+  // row by its exact name instead of by role. Clicking a checked checkbox
+  // would exclude the chain (the default checks every core chain), so only
+  // click rows that aren't already selected.
+  cy.findByText(networkName)
+    .closest('[role="radio"], [role="checkbox"]')
+    .then(($row) => {
+      if ($row.attr('aria-checked') !== 'true') {
+        cy.wrap($row).click();
+      }
+    });
   // close the filter popover so it doesn't cover the table
   cy.get('body').type('{esc}');
 }
