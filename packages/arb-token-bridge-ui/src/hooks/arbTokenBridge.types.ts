@@ -70,6 +70,8 @@ export interface BridgeToken {
   l2Address?: string;
   logoURI?: string;
   listIds: Set<string>; // no listID indicates added by user
+  /** Set only for unmatched tokens that can be transferred through LiFi on this chain. */
+  lifiOnlyChainId?: number;
   isL2Native?: boolean;
   priceUSD?: number;
 }
@@ -102,6 +104,7 @@ export interface ArbTokenBridgeEth {
 
 export interface ArbTokenBridgeToken {
   add: (erc20L1orL2Address: string) => Promise<void>;
+  addLifiTokenForChain: (erc20Address: string, chainId: number) => Promise<void>;
   addL2NativeToken: (erc20L2Address: string) => void;
   addTokensFromList: (tokenList: TokenList, listID: string) => void;
   removeTokensFromList: (listID: string) => void;
