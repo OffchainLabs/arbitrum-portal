@@ -93,18 +93,24 @@ function CoreChainCheckboxRow({
   checked,
   onChange,
   disabled,
+  nested,
 }: {
   label: string;
   checked: boolean;
   onChange: () => void;
   disabled?: boolean;
+  nested?: boolean;
 }) {
   return (
     <Checkbox
       checked={checked}
       onChange={onChange}
       disabled={disabled}
-      className={twMerge(ROW_CLASSNAME, disabled && 'cursor-default hover:bg-transparent')}
+      className={twMerge(
+        ROW_CLASSNAME,
+        nested && 'pl-7',
+        disabled && 'cursor-default hover:bg-transparent',
+      )}
     >
       <div className="flex min-w-0 items-center gap-3">
         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-[checked]:border-0 group-data-[checked]:bg-arb-blue">
@@ -285,14 +291,28 @@ export function TransactionHistoryChainFilter() {
                     />
                   )}
 
-                  {coreChainIds.map((chainId) => (
-                    <CoreChainCheckboxRow
-                      key={chainId}
-                      label={getNetworkName(chainId)}
-                      checked={checkedCoreChainIds.includes(chainId)}
-                      onChange={() => toggleCoreChain(chainId)}
-                    />
-                  ))}
+                  {coreChainIds.length > 0 && (
+                    <div className="relative">
+                      {showAllCoreChainsRow && (
+                        <span
+                          aria-hidden="true"
+                          className={twMerge(
+                            'absolute inset-y-0 left-[21px] w-px',
+                            allCoreChainsSelected ? 'bg-[#3A96FF]' : 'bg-white/20',
+                          )}
+                        />
+                      )}
+                      {coreChainIds.map((chainId) => (
+                        <CoreChainCheckboxRow
+                          key={chainId}
+                          label={getNetworkName(chainId)}
+                          checked={checkedCoreChainIds.includes(chainId)}
+                          onChange={() => toggleCoreChain(chainId)}
+                          nested={showAllCoreChainsRow}
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   {moreChainIds.length > 0 && <SectionLabel>Other Chains</SectionLabel>}
                   {moreChainIds.map((chainId) => (
