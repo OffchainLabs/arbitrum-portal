@@ -68,15 +68,9 @@ function DestinationTokensPanel({
       return token?.listIds.has(LIFI_TRANSFER_LIST_ID);
     });
 
-    const isApeChainToSuperposition =
-      networks.sourceChain.id === ChainId.ApeChain &&
-      networks.destinationChain.id === ChainId.Superposition;
     // Add native currency if not already included
     // For chains with custom native tokens, always add it even if AddressZero is present
-    if (
-      (nativeCurrency.isCustom || !lifiTokenAddresses.includes(constants.AddressZero)) &&
-      !isApeChainToSuperposition
-    ) {
+    if (nativeCurrency.isCustom || !lifiTokenAddresses.includes(constants.AddressZero)) {
       lifiTokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
     }
 

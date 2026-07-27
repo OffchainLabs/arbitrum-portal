@@ -13,7 +13,7 @@ export default defineConfig({
       escapeString: true,
     },
     testTimeout: 15_000,
-    include: ['./src/**/*.test.ts', './src/**/*.test.tsx'],
+    include: ['./src/**/*.test.ts', './src/**/*.test.tsx', './scripts/**/*.test.ts'],
     exclude: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
     env: loadEnv('', '../app/', ''),
     environment: 'happy-dom',

@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers';
-import { constants, utils } from 'ethers';
+import { utils } from 'ethers';
 import { useCallback } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
@@ -74,10 +74,7 @@ export const useSelectedToken = (): [
       }
 
       // USDC for lifi chains, use bridgeTokens
-      if (
-        _destinationChainId === ChainId.ApeChain ||
-        _destinationChainId === ChainId.Superposition
-      ) {
+      if (_destinationChainId === ChainId.ApeChain) {
         return null;
       }
 
@@ -106,19 +103,6 @@ export const useSelectedToken = (): [
             return {
               token: sanitizedTokenAddress,
               destinationToken: sanitizedTokenAddress,
-            };
-          }
-
-          /**
-           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
-           */
-          if (
-            latestQuery.sourceChain === ChainId.ApeChain &&
-            latestQuery.destinationChain === ChainId.Superposition
-          ) {
-            return {
-              token: sanitizeTokenAddress(erc20ParentAddress),
-              destinationToken: constants.AddressZero,
             };
           }
 

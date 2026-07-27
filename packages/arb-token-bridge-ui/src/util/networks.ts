@@ -562,6 +562,13 @@ export function isCoreChainForDisplay(chainId: number) {
   return isNetwork(chainId).isCoreChain || uiCoreChainIds.includes(chainId);
 }
 
+// monitoring alert routing only — independent of the uiCoreChainIds display grouping above
+const enterpriseChainIds: number[] = [ChainId.RobinhoodChain];
+
+export function isEnterpriseChain(chainId: number) {
+  return enterpriseChainIds.includes(chainId);
+}
+
 // Core chains not listed here sort after these, by ascending chainId.
 const coreChainSortOrder: number[] = [
   ChainId.Ethereum,

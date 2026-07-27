@@ -7,6 +7,18 @@
     // Reason to ignore: Not used directly. Patched version is a major bump (v1.2.0).
     // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
     "GHSA-vqpr-j7v3-hqw9",
+    //
+    // https://github.com/advisories/GHSA-5qjj-4xww-7phc
+    // Valibot record() issue paths can make flatten() throw for inherited Object property names
+    // Reason to ignore: Not used directly and we never call valibot's flatten(). Patched version (1.4.2) is a major bump the parents don't support (they pin ^0.36/^0.38).
+    // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
+    "GHSA-5qjj-4xww-7phc",
+    //
+    // https://github.com/advisories/GHSA-mh99-v99m-4gvg
+    // brace-expansion DoS via unbounded expansion length causing an out-of-memory process crash (CVE-2026-14257)
+    // Reason to ignore: Only reachable via dev tooling (eslint plugins, typescript-estree, glob in test coverage), where expansion patterns come from our own config, not attacker input. The only patched version (5.0.8) is a major bump whose CJS export shape is incompatible with the minimatch 3.x consumers in the eslint chain.
+    // from: eslint>minimatch>brace-expansion
+    "GHSA-mh99-v99m-4gvg",
     // https://github.com/advisories/GHSA-848j-6mx2-7j84
     // Elliptic Uses a Cryptographic Primitive with a Risky Implementation
     // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
