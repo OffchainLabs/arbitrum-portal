@@ -29,8 +29,10 @@ import {
 } from '../../util/txHistoryRoutes';
 import { Button } from '../common/Button';
 import { TestnetToggle } from '../common/TestnetToggle';
-import { useTxHistoryChainFilter } from './useTransactionHistoryChainFilter';
-import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
+import {
+  useSetTxHistoryChainSelection,
+  useTxHistoryChainFilter,
+} from './useTransactionHistoryChainFilter';
 
 // The radio value is the selected chain id; `null` is "All Core Chains".
 // Core chains are checkboxes, not radios — when a core subset is checked, no
@@ -180,7 +182,7 @@ function EligibleRoutesTooltip({ chainPairs }: { chainPairs: ChainPair[] }) {
 export function TransactionHistoryChainFilter() {
   const [isTestnetMode] = useIsTestnetMode();
   const filter = useTxHistoryChainFilter();
-  const setSelection = useTransactionHistoryChainFilterStore((state) => state.setSelection);
+  const setSelection = useSetTxHistoryChainSelection();
 
   const { filterableChainIds, eligibleRoutes } = useTxHistoryRoutes(filter);
 

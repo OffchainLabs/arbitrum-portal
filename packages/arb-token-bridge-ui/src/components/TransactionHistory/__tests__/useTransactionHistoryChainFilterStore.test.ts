@@ -5,7 +5,10 @@ import { useTransactionHistoryChainFilterStore } from '../useTransactionHistoryC
 
 describe('useTransactionHistoryChainFilterStore', () => {
   beforeEach(() => {
-    useTransactionHistoryChainFilterStore.setState({ selection: null });
+    useTransactionHistoryChainFilterStore.setState({
+      selection: null,
+      selectionDefaultChainId: undefined,
+    });
   });
 
   it('starts with no selection, meaning the filter defaults to All Core Chains', () => {
@@ -32,5 +35,19 @@ describe('useTransactionHistoryChainFilterStore', () => {
       chainIds: null,
       isTestnetMode: false,
     });
+  });
+
+  it('setSelection records the pair default it was made under, replacing the previous one', () => {
+    const { setSelection } = useTransactionHistoryChainFilterStore.getState();
+
+    setSelection({ chainIds: [ChainId.ArbitrumOne], isTestnetMode: false }, ChainId.ArbitrumNova);
+    expect(useTransactionHistoryChainFilterStore.getState().selectionDefaultChainId).toBe(
+      ChainId.ArbitrumNova,
+    );
+
+    setSelection({ chainIds: [ChainId.ArbitrumOne], isTestnetMode: false });
+    expect(
+      useTransactionHistoryChainFilterStore.getState().selectionDefaultChainId,
+    ).toBeUndefined();
   });
 });
