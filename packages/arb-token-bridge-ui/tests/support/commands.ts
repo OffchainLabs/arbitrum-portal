@@ -206,15 +206,16 @@ export function selectTransactionHistoryChain(networkName: string) {
   cy.log(`selecting ${networkName} in the transaction history chain filter`);
 
   cy.findByLabelText('Filter transaction history by network').click();
-  cy.findByLabelText('Search networks').type(networkName);
+  // the search text persists between popover openings, so drop any previous query
+  cy.findByLabelText('Search networks').clear().type(networkName);
   // core chains render as checkboxes, longtail chains as radios, so find the
-  // row by its exact name instead of by role. Clicking a checked checkbox
-  // would exclude the chain (the default checks every core chain), so only
-  // click rows that aren't already selected.
+  // row by its exact name instead of by role. Skip rows that are already
+  // selected, and core rows tagged "included" (implicitly covered by the
+  // default "All Core Chains"), so the helper never narrows the filter.
   cy.findByText(networkName)
     .closest('[role="radio"], [role="checkbox"]')
     .then(($row) => {
-      if ($row.attr('aria-checked') !== 'true') {
+      if ($row.attr('aria-checked') !== 'true' && !$row.text().includes('included')) {
         cy.wrap($row).click();
       }
     });

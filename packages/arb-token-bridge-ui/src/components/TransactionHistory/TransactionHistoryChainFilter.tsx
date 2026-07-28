@@ -262,10 +262,10 @@ export function TransactionHistoryChainFilter() {
                   </div>
                 </div>
 
-                <RadioGroup
-                  value={selectedRadioOption}
-                  onChange={selectRadioOption}
-                  aria-label="Networks"
+                {/* A radiogroup may only contain radios, so the core-chain
+                    checkboxes live in their own labelled group and each radio
+                    section gets its own RadioGroup sharing the same selection. */}
+                <div
                   // Cap the list directly — Headless overrides the panel's max-height via `anchor`.
                   className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
@@ -273,10 +273,18 @@ export function TransactionHistoryChainFilter() {
                     <SectionLabel>Core Chains</SectionLabel>
                   )}
 
-                  {showAllCoreChainsRow && <ChainRadioRow value={null} label="All Core Chains" />}
+                  {showAllCoreChainsRow && (
+                    <RadioGroup
+                      value={selectedRadioOption}
+                      onChange={selectRadioOption}
+                      aria-label="All core chains"
+                    >
+                      <ChainRadioRow value={null} label="All Core Chains" />
+                    </RadioGroup>
+                  )}
 
                   {coreChainIds.length > 0 && (
-                    <div className="relative">
+                    <div role="group" aria-label="Core chains" className="relative">
                       {showAllCoreChainsRow && (
                         <span
                           aria-hidden="true"
@@ -300,14 +308,26 @@ export function TransactionHistoryChainFilter() {
                   )}
 
                   {moreChainIds.length > 0 && <SectionLabel>More Chains</SectionLabel>}
-                  {moreChainIds.map((chainId) => (
-                    <ChainRadioRow key={chainId} value={chainId} label={getNetworkName(chainId)} />
-                  ))}
+                  {moreChainIds.length > 0 && (
+                    <RadioGroup
+                      value={selectedRadioOption}
+                      onChange={selectRadioOption}
+                      aria-label="More chains"
+                    >
+                      {moreChainIds.map((chainId) => (
+                        <ChainRadioRow
+                          key={chainId}
+                          value={chainId}
+                          label={getNetworkName(chainId)}
+                        />
+                      ))}
+                    </RadioGroup>
+                  )}
 
                   {visibleChainIds.length === 0 && (
                     <div className="px-2 py-3 text-sm text-white/40">No networks found.</div>
                   )}
-                </RadioGroup>
+                </div>
 
                 <div className="border-t border-white/10 px-3 py-3">
                   <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
