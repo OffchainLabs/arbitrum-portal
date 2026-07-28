@@ -152,6 +152,7 @@ function EligibleRoutesTooltip({ chainPairs }: { chainPairs: ChainPair[] }) {
     <Tooltip
       // Focusable trigger so keyboard users can reveal the tooltip.
       as="button"
+      tooltipProps={{ delayDuration: 0 }}
       content={
         <div className="flex flex-col gap-1 text-xs">
           <span className="font-medium">Showing history for these routes:</span>
