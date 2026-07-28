@@ -209,10 +209,17 @@ export function selectTransactionHistoryChain(networkName: string) {
   // the search text persists between popover openings, so drop any previous query
   cy.findByLabelText('Search networks').clear().type(networkName);
   // core chains render as checkboxes, longtail chains as radios, so find the
-  // row by its exact name instead of by role. Skip rows that are already
-  // selected, and core rows tagged "included" (implicitly covered by the
-  // default "All Core Chains"), so the helper never narrows the filter.
-  cy.findByText(networkName)
+  // row by its exact name instead of by role. The name can also appear
+  // outside the dropdown (trigger label, history table), so only match text
+  // inside a selectable row. Skip rows that are already selected, and core
+  // rows tagged "included" (implicitly covered by the default "All Core
+  // Chains"), so the helper never narrows the filter.
+  cy.findAllByText(networkName)
+    .filter(
+      (_index, element) =>
+        Cypress.$(element).closest('[role="radio"], [role="checkbox"]').length > 0,
+    )
+    .first()
     .closest('[role="radio"], [role="checkbox"]')
     .then(($row) => {
       if ($row.attr('aria-checked') !== 'true' && !$row.text().includes('included')) {
