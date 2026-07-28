@@ -19,12 +19,7 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-} from '../../util/TokenUtils';
 import { isLifiEnabled } from '../../util/featureFlag';
-import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
 import { useTokensFromLists } from './TokenSearchUtils';
@@ -73,11 +68,6 @@ function sanitizeEstimatedGasFees(
 
   // For smart contract wallets, the relayer pays the gas fees
   if (options.isSmartContractWallet) {
-    // For CCTP, the relayer pays for everything
-    if (options.selectedRoute === 'cctp') {
-      return { estimatedL1GasFees: 0, estimatedL2GasFees: 0 };
-    }
-
     if (options.isDepositMode) {
       // The L2 fee is paid in callvalue and needs to come from the smart contract wallet for retryable cost estimation to succeed
       return {
@@ -271,16 +261,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return parseFloat(utils.formatEther(ethChildBalance));
     }
 
-    const { isOrbitChain } = isNetwork(childChain.id);
-
-    const isL2NativeUSDC =
-      isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
-      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address);
-
-    const selectedTokenL2Address =
-      isL2NativeUSDC && !isOrbitChain
-        ? selectedToken.address.toLowerCase()
-        : (selectedToken.l2Address || '').toLowerCase();
+    const selectedTokenL2Address = (selectedToken.l2Address || '').toLowerCase();
 
     const balance = erc20ChildBalances?.[selectedTokenL2Address];
 
@@ -289,7 +270,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, childChain.id, erc20ChildBalances, ethChildBalance]);
+  }, [selectedToken, erc20ChildBalances, ethChildBalance]);
 
   const customFeeTokenL1BalanceFloat = useMemo(() => {
     if (!nativeCurrency.isCustom) {

@@ -19,7 +19,6 @@ import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship'
 import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
-import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -37,18 +36,10 @@ import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChain
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
-import {
-  DepositStatus,
-  LifiMergedTransaction,
-  MergedTransaction,
-  WithdrawalStatus,
-} from '../../state/app/state';
-import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
+import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
-import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
-import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
@@ -215,7 +206,7 @@ export function TransferPanel() {
       return true;
     }
 
-    if (isTokenNativeUSDC(tokenFromSearchParams)) {
+    if (selectedToken?.isL2Native) {
       return true;
     }
 
@@ -242,7 +233,14 @@ export function TransferPanel() {
       typeof tokensFromLists[tokenFromSearchParams] !== 'undefined' ||
       typeof tokensFromUser[tokenFromSearchParams] !== 'undefined'
     );
-  }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
+  }, [
+    bridgeTokens,
+    isLoadingTokenLists,
+    selectedToken?.isL2Native,
+    tokenFromSearchParams,
+    tokensFromLists,
+    tokensFromUser,
+  ]);
 
   const shouldShowTokenImportDialog =
     networks.sourceChain.id !== ChainId.RobinhoodChain &&
@@ -358,176 +356,6 @@ export function TransferPanel() {
     }
 
     return true;
-  };
-
-  const stepExecutor: UiDriverStepExecutor = async (context, step) => {
-    logger.debug(step);
-
-    if (step.type === 'return') {
-      throw Error(`[stepExecutor] "return" step should be handled outside the executor`);
-    }
-
-    switch (step.type) {
-      case 'start': {
-        setTransferring(true);
-        return;
-      }
-
-      case 'dialog': {
-        return confirmDialog(step.payload);
-      }
-
-      case 'scw_tooltip': {
-        showDelayedSmartContractTxRequest();
-        return;
-      }
-
-      case 'tx_ethers': {
-        try {
-          const tx = await signer!.sendTransaction(step.payload.txRequest);
-          const txReceipt = await tx.wait();
-
-          return { data: txReceipt };
-        } catch (error) {
-          // capture error and show toast for anything that's not user rejecting error
-          if (!isUserRejectedError(error)) {
-            handleError({
-              error,
-              label: step.payload.txRequestLabel,
-              category: 'transaction_signing',
-            });
-
-            errorToast(`${(error as Error)?.message ?? error}`);
-          }
-
-          return { error: error as unknown as Error };
-        }
-      }
-    }
-  };
-
-  const transferCctp = async () => {
-    if (!selectedToken) {
-      return;
-    }
-    if (!walletAddress) {
-      throw new Error(`walletAddress is undefined`);
-    }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
-    if (!isTransferAllowed.current) {
-      throw new Error(transferNotAllowedError);
-    }
-
-    const destinationAddress = latestDestinationAddress.current;
-
-    try {
-      const { sourceChainProvider, destinationChainProvider, sourceChain } = latestNetworks.current;
-
-      const cctpTransferStarter = new CctpTransferStarter({
-        sourceChainProvider,
-        destinationChainProvider,
-      });
-
-      const returnEarly = await drive(stepGeneratorForCctp, stepExecutor, {
-        amountBigNumber,
-        isDepositMode,
-        isSmartContractWallet,
-        walletAddress,
-        destinationAddress,
-        transferStarter: cctpTransferStarter,
-      });
-
-      // this is only necessary while we are migrating to the ui driver
-      // so we can know when to stop the execution of the rest of the function
-      //
-      // after we are done, we can change the return type of `drive` to `void`
-      if (returnEarly) {
-        return;
-      }
-
-      let depositForBurnTx;
-
-      try {
-        if (isSmartContractWallet) {
-          showDelayedSmartContractTxRequest();
-        }
-        const transfer = await cctpTransferStarter.transfer({
-          amount: amountBigNumber,
-          signer,
-          destinationAddress,
-          wagmiConfig,
-        });
-        depositForBurnTx = transfer.sourceChainTransaction;
-      } catch (error) {
-        if (isUserRejectedError(error)) {
-          return;
-        }
-        handleError({
-          error,
-          label: 'cctp_transfer',
-          category: 'transaction_signing',
-        });
-        errorToast(
-          `USDC ${
-            isDepositMode ? 'Deposit' : 'Withdrawal'
-          } transaction failed: ${(error as Error)?.message ?? error}`,
-        );
-      }
-
-      const childChainName = getNetworkName(childChain.id);
-
-      if (!depositForBurnTx) {
-        return;
-      }
-
-      trackEvent(isDepositMode ? 'CCTP Deposit' : 'CCTP Withdrawal', {
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
-        network: childChainName,
-        amount: Number(amount),
-        complete: false,
-        version: 2,
-      });
-
-      const newTransfer: MergedTransaction = {
-        txId: depositForBurnTx.hash,
-        asset: 'USDC',
-        assetType: AssetType.ERC20,
-        blockNum: null,
-        createdAt: dayjs().valueOf(),
-        direction: isDepositMode ? 'deposit' : 'withdraw',
-        isWithdrawal: !isDepositMode,
-        resolvedAt: null,
-        status: 'pending',
-        uniqueId: null,
-        value: amount,
-        depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
-        sender: walletAddress,
-        isCctp: true,
-        tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
-        cctpData: {
-          sourceChainId: sourceChain.id,
-          attestationHash: null,
-          messageBytes: null,
-          receiveMessageTransactionHash: null,
-          receiveMessageTimestamp: null,
-        },
-        parentChainId: parentChain.id,
-        childChainId: childChain.id,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-      };
-
-      addPendingTransaction(newTransfer);
-      setTransferring(false);
-      resetAmountAndSwitchToTransactionHistoryTab();
-      clearRoute();
-    } catch (e) {
-    } finally {
-      setTransferring(false);
-    }
   };
 
   const transferLifi = async () => {
@@ -1293,9 +1121,6 @@ export function TransferPanel() {
 
     if (selectedRoute == 'oftV2') {
       return transferOft();
-    }
-    if (selectedRoute === 'cctp') {
-      return transferCctp();
     }
     if (isLifiRoute(selectedRoute)) {
       return transferLifi();

@@ -20,7 +20,6 @@ import { isNetwork } from '../../../util/networks';
 import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
 import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
-import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
 import {
@@ -38,24 +37,19 @@ import {
  * Route Selection Priority:
  * 1. OFT V2 (highest priority) - LayerZero protocol for supported OFT tokens
  *    (excluded when swapping from USDT to a different token)
- * 2. CCTP (second priority) - Circle's native USDC transfers
- * 3. LiFi cheapest (third priority) - Best deal from LiFi aggregator
- * 4. LiFi single route (fourth priority) - When fastest and cheapest are the same
- * 5. First available route (fallback) - Any other route that was successfully fetched
+ * 2. LiFi cheapest - Best deal from LiFi aggregator
+ * 3. LiFi single route - When fastest and cheapest are the same
+ * 4. First available route (fallback) - Any other route that was successfully fetched
  *
  * @param routes - Array of successfully fetched routes
  * @returns The best route type or undefined if no routes available
  */
-function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undefined {
+export function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undefined {
   // 1. OFT V2 (highest priority)
   const oftV2Route = routes.find((route) => route.type === 'oftV2');
   if (oftV2Route) return 'oftV2';
 
-  // 2. CCTP (second priority)
-  const cctpRoute = routes.find((route) => route.type === 'cctp');
-  if (cctpRoute) return 'cctp';
-
-  // 3. LiFi best deal (third priority)
+  // 2. LiFi best deal
   const lifiCheapestRoute = routes.find((route) => route.type === 'lifi-cheapest');
   if (lifiCheapestRoute) return 'lifi-cheapest';
 
@@ -65,16 +59,14 @@ function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undef
   const lifiRoute = routes.find((route) => route.type === 'lifi');
   if (lifiRoute) return 'lifi';
 
-  // 4. First available route (fallback)
+  // 3. First available route (fallback)
   return routes[0]?.type;
 }
 
-interface GetEligibleRoutesParams {
+export interface GetEligibleRoutesParams {
   isOftV2Transfer: boolean;
-  isNativeUsdcTransfer: boolean;
   isBatchTransfer: boolean;
   amount: string;
-  isDepositMode: boolean;
   sourceChainId: number;
   destinationChainId: number;
   selectedToken: ERC20BridgeToken | null;
@@ -82,12 +74,10 @@ interface GetEligibleRoutesParams {
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
 
-function getEligibleRoutes({
+export function getEligibleRoutes({
   isOftV2Transfer,
-  isNativeUsdcTransfer,
   isBatchTransfer,
   amount,
-  isDepositMode,
   sourceChainId,
   destinationChainId,
   selectedToken,
@@ -103,7 +93,7 @@ function getEligibleRoutes({
   }
 
   // Only the canonical route can carry the extra native amount (as the retryable's
-  // L2 callvalue), so skip LiFi/CCTP/OFT quotes for batches.
+  // L2 callvalue), so skip LiFi/OFT quotes for batches.
   if (isBatchTransfer) {
     return isArbitrumCanonicalTransfer ? ['arbitrum'] : [];
   }
@@ -122,20 +112,6 @@ function getEligibleRoutes({
       if (isValidLifiRoute) {
         eligibleRouteTypes.push('lifi');
       }
-    }
-
-    return eligibleRouteTypes;
-  }
-
-  if (isNativeUsdcTransfer) {
-    eligibleRouteTypes.push('cctp');
-
-    if (isLifiEnabled) {
-      eligibleRouteTypes.push('lifi');
-    }
-
-    if (isDepositMode) {
-      eligibleRouteTypes.push('arbitrum');
     }
 
     return eligibleRouteTypes;
@@ -165,7 +141,6 @@ export function useRoutesUpdater() {
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
   const [{ amount, amount2 }] = useArbQueryParams();
-  const isNativeUsdcTransfer = useIsCctpTransfer();
   const isOftV2Transfer = useIsOftV2Transfer();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   // `amount2` can be the literal "max" deep-link value, which resolves to a positive amount.
@@ -199,10 +174,8 @@ export function useRoutesUpdater() {
     () =>
       getEligibleRoutes({
         isOftV2Transfer,
-        isNativeUsdcTransfer,
         isBatchTransfer,
         amount,
-        isDepositMode,
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
         selectedToken,
@@ -211,10 +184,8 @@ export function useRoutesUpdater() {
       }),
     [
       isOftV2Transfer,
-      isNativeUsdcTransfer,
       isBatchTransfer,
       amount,
-      isDepositMode,
       networks.sourceChain.id,
       networks.destinationChain.id,
       selectedToken,
@@ -279,16 +250,6 @@ export function useRoutesUpdater() {
     if (eligibleRouteTypes.includes('oftV2')) {
       routes.push({
         type: 'oftV2',
-        data: {
-          amountReceived: amount,
-        },
-      });
-    }
-
-    // CCTP route data
-    if (eligibleRouteTypes.includes('cctp')) {
-      routes.push({
-        type: 'cctp',
         data: {
           amountReceived: amount,
         },

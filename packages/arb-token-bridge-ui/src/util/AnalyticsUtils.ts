@@ -11,8 +11,9 @@ type AccountType = 'EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
+type TxRouteType = RouteType | 'cctp';
 
-export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
+export type SimplifiedRouteType = Extract<TxRouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
   'Transfer Button Click': {
     type: TransferDirection;
@@ -47,10 +48,6 @@ type AnalyticsEventMap = {
     tokenSymbol?: SpecialTokenSymbol.USDC;
   };
   'Use Arbitrum Bridge Click': {
-    tokenSymbol: SpecialTokenSymbol.USDC;
-    type: TransferDirection;
-  };
-  'Use CCTP Click': {
     tokenSymbol: SpecialTokenSymbol.USDC;
     type: TransferDirection;
   };

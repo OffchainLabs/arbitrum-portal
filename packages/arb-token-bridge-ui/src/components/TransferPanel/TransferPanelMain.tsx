@@ -2,11 +2,9 @@ import { ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
 import React, { useEffect, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { isAddress } from 'viem';
 import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
-import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
@@ -18,12 +16,6 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-  isTokenMainnetUSDC,
-  isTokenSepoliaUSDC,
-} from '../../util/TokenUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getDestinationChainIds, getExplorerUrl, isNetwork } from '../../util/networks';
@@ -209,13 +201,6 @@ export function TransferPanelMain() {
 
   const { updateErc20ParentBalances, updateErc20ChildBalances } = useBalances();
 
-  const { updateUsdcBalances } = useUpdateUsdcBalances({
-    walletAddress:
-      destinationAddressOrWalletAddress && isAddress(destinationAddressOrWalletAddress)
-        ? destinationAddressOrWalletAddress
-        : undefined,
-  });
-
   useEffect(() => {
     if (nativeCurrency.isCustom) {
       updateErc20ParentBalances([nativeCurrency.address]);
@@ -231,16 +216,6 @@ export function TransferPanelMain() {
       return;
     }
 
-    if (
-      isTokenMainnetUSDC(selectedToken.address) ||
-      isTokenSepoliaUSDC(selectedToken.address) ||
-      isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
-      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address)
-    ) {
-      updateUsdcBalances();
-      return;
-    }
-
     updateErc20ParentBalances([selectedToken.address]);
     if (selectedToken.l2Address) {
       updateErc20ChildBalances([selectedToken.l2Address]);
@@ -250,7 +225,6 @@ export function TransferPanelMain() {
     updateErc20ParentBalances,
     updateErc20ChildBalances,
     destinationAddressOrWalletAddress,
-    updateUsdcBalances,
   ]);
 
   const isCustomMainnetChain = useMemo(() => {

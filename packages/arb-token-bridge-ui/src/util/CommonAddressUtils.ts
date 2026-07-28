@@ -17,7 +17,6 @@ export const CommonAddress = {
     USDG: '0xe343167631d89b6ffc58b88d6b7fb0228795491d',
     ENA: '0x57e114b691db790c35207b2e685d4a43181e6061',
     ezETH: '0xbf5495efe5db9ce00f80364c8b423567e58d2110',
-    tokenMessengerContractAddress: '0xbd3fa81b58ba92a82136038b25adec7066af3155',
     APE: '0x4d224452801aced8b2f0aebe155379bb5d594381',
   },
   ArbitrumOne: {
@@ -35,7 +34,6 @@ export const CommonAddress = {
     'ARB': '0x912ce59144191c1204e64559fe8253a0e49e6548',
     'sUSDC': '0x940098b108fb7d0a7e374f6eded7760787464609',
     'sUSDe': '0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2',
-    'tokenMessengerContractAddress': '0x19330d10d9cc8751218eaf51e8885d058642e08a',
     'CU': '0x89c49a3fa372920ac23ce757a029e6936c0b8e02',
     'APE': '0x7f9fbf9bdd3f4105c478b996b648fe6e828a1e98',
   },
@@ -45,12 +43,10 @@ export const CommonAddress = {
   },
   Sepolia: {
     USDC: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
-    tokenMessengerContractAddress: '0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5',
   },
   ArbitrumSepolia: {
     'USDC': '0x75faf114eafb1bdbe2f0316df893fd58ce46aa4d',
     'USDC.e': '0x119f0e6303bec7021b295ecab27a4a1a5b37ecf0',
-    'tokenMessengerContractAddress': '0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5',
   },
   Base: {
     USDC: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',

@@ -271,6 +271,40 @@ describe('isArbitrumCanonicalTransfer', () => {
       expect(erc20Withdrawal).toBe(true);
     });
 
+    it('does not offer the canonical route for L2-native tokens', async () => {
+      const nativeUsdcWithdrawal = await isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...usdcToken,
+          address: CommonAddress.ArbitrumOne.USDC,
+          l2Address: CommonAddress.ArbitrumOne.USDC,
+          isL2Native: true,
+        },
+        isSwap: false,
+      });
+      expect(nativeUsdcWithdrawal).toBe(false);
+
+      const bridgedUsdcWithdrawal = await isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.Ethereum,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...usdcToken,
+          l2Address: CommonAddress.ArbitrumOne['USDC.e'],
+        },
+        isSwap: false,
+      });
+      expect(bridgedUsdcWithdrawal).toBe(true);
+    });
+
     it('should return true for withdraw only token', async () => {
       const erc20Withdrawal = await isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,

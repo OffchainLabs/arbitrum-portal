@@ -1,8 +1,6 @@
 import { BigNumber, constants } from 'ethers';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChainId } from '../../types/ChainId';
-import { CommonAddress } from '../../util/CommonAddressUtils';
 import { getGasSummaryStatus } from '../TransferPanel/useGasSummary';
 
 vi.mock('../TransferPanel/useSelectedTokenDecimals', () => ({
@@ -16,13 +14,7 @@ vi.mock('../../components/TransferPanel/hooks/useAmountBigNumber', () => ({
 describe('getGasSummaryStatus', () => {
   describe('given the following combinations of amount and balance', () => {
     const mockedGasSummaryParams = {
-      selectedTokenAddress: '0x123',
-      isDepositMode: true,
-      estimatedParentChainGasFees: 0,
-      estimatedChildChainGasFees: 0,
       gasEstimatesError: null,
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum,
     };
 
     it('should return success if both amount and balance are zero', async () => {
@@ -62,37 +54,10 @@ describe('getGasSummaryStatus', () => {
 
   it('should return error if there is a gas estimate error', async () => {
     const result = getGasSummaryStatus({
-      selectedTokenAddress: '0x123',
       gasEstimatesError: new Error('cannot estimate gas'),
       amountBigNumber: BigNumber.from(100_000),
       balance: BigNumber.from(100_000),
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum,
     });
     expect(result).toEqual('error');
-  });
-
-  it('should return unavailable if UI is withdrawal mode from Arbitrum One to Ethereum and selected token is Arbitrum One native USDC', async () => {
-    const result = getGasSummaryStatus({
-      selectedTokenAddress: CommonAddress.ArbitrumOne.USDC,
-      gasEstimatesError: 'walletNotConnected',
-      amountBigNumber: BigNumber.from(100_000),
-      balance: BigNumber.from(100_000),
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Ethereum,
-    });
-    expect(result).toEqual('unavailable');
-  });
-
-  it('should return unavailable if UI is withdrawal mode from Arbitrum Sepolia to Sepolia and selected token is Arbitrum Sepolia native USDC', async () => {
-    const result = getGasSummaryStatus({
-      selectedTokenAddress: CommonAddress.ArbitrumSepolia.USDC,
-      gasEstimatesError: 'walletNotConnected',
-      amountBigNumber: BigNumber.from(100_000),
-      balance: BigNumber.from(100_000),
-      sourceChainId: ChainId.ArbitrumSepolia,
-      destinationChainId: ChainId.Sepolia,
-    });
-    expect(result).toEqual('unavailable');
   });
 });

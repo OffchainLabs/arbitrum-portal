@@ -22,8 +22,6 @@ export const FAST_WITHDRAWAL_DOCS_ARTICLE_LINK = `${DOCS_DOMAIN}/run-arbitrum-no
 
 export const ORBIT_QUICKSTART_LINK = 'https://docs.arbitrum.io/launch-orbit-chain/orbit-quickstart';
 
-export const CCTP_DOCUMENTATION = 'https://www.circle.com/en/cross-chain-transfer-protocol';
-
 export const MULTICALL_TESTNET_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 
 export const ETHER_TOKEN_LOGO = '/images/EthereumLogoRound.svg';

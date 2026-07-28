@@ -14,7 +14,7 @@ import {
   getWithdrawalDuration,
 } from '../../../hooks/useTransferDuration';
 import { bridgedUsdcToken, nativeUsdcToken } from '../../../util/CommonAddressUtils';
-import { isTokenNativeUSDC } from '../../../util/TokenUtils';
+import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe } from '../../../util/TokenUtils';
 import { isNetwork } from '../../../util/networks';
 import { useRouteStore } from '../hooks/useRouteStore';
 import { Route } from './Route';
@@ -100,7 +100,9 @@ export function ArbitrumCanonicalRoute() {
    * - Withdrawing USDC.e, we receive USDC on Mainnet
    * - Depositing USDC, we receive USDC.e on Arbitrum
    */
-  const isUsdcTransfer = isTokenNativeUSDC(selectedToken?.address);
+  const isUsdcTransfer =
+    isTokenArbitrumOneUSDCe(selectedToken?.l2Address) ||
+    isTokenArbitrumSepoliaUSDCe(selectedToken?.l2Address);
   const overrideToken = isDepositMode ? bridgedUsdcToken : nativeUsdcToken;
 
   const durationMs =

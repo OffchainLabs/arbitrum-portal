@@ -1,60 +1,36 @@
-import { Config, readContract, simulateContract, writeContract } from '@wagmi/core';
+import { Config, simulateContract, writeContract } from '@wagmi/core';
 
-import { ChainDomain } from '../app/api/cctp/[type]';
 import { CCTPSupportedChainId } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Address } from '../util/AddressUtils';
-import { CommonAddress } from '../util/CommonAddressUtils';
 import { MessageTransmitterAbi } from '../util/cctp/MessageTransmitterAbi';
-import { TokenMinterAbi } from '../util/cctp/TokenMinterAbi';
 
-// see https://developers.circle.com/stablecoin/docs/cctp-protocol-contract
 type Contracts = {
-  tokenMessengerContractAddress: Address;
-  targetChainDomain: ChainDomain;
   targetChainId: CCTPSupportedChainId;
-  usdcContractAddress: Address;
   messageTransmitterContractAddress: Address;
   attestationApiUrl: string;
-  tokenMinterContractAddress: Address;
 };
 
 const contracts: Record<CCTPSupportedChainId, Contracts> = {
   [ChainId.Ethereum]: {
-    tokenMessengerContractAddress: CommonAddress.Ethereum.tokenMessengerContractAddress,
-    targetChainDomain: ChainDomain.ArbitrumOne,
     targetChainId: ChainId.ArbitrumOne,
-    usdcContractAddress: CommonAddress.Ethereum.USDC,
     messageTransmitterContractAddress: '0xc30362313fbba5cf9163f0bb16a0e01f01a896ca',
     attestationApiUrl: 'https://iris-api.circle.com/v1',
-    tokenMinterContractAddress: '0xc4922d64a24675e16e1586e3e3aa56c06fabe907',
   },
   [ChainId.Sepolia]: {
-    tokenMessengerContractAddress: CommonAddress.Sepolia.tokenMessengerContractAddress,
-    targetChainDomain: ChainDomain.ArbitrumOne,
     targetChainId: ChainId.ArbitrumSepolia,
-    usdcContractAddress: CommonAddress.Sepolia.USDC,
     messageTransmitterContractAddress: '0xacf1ceef35caac005e15888ddb8a3515c41b4872',
     attestationApiUrl: 'https://iris-api-sandbox.circle.com/v1',
-    tokenMinterContractAddress: '0xe997d7d2f6e065a9a93fa2175e878fb9081f1f0a',
   },
   [ChainId.ArbitrumOne]: {
-    tokenMessengerContractAddress: CommonAddress.ArbitrumOne.tokenMessengerContractAddress,
-    targetChainDomain: ChainDomain.Ethereum,
     targetChainId: ChainId.Ethereum,
-    usdcContractAddress: CommonAddress.ArbitrumOne.USDC,
     messageTransmitterContractAddress: '0x0a992d191deec32afe36203ad87d7d289a738f81',
     attestationApiUrl: 'https://iris-api.circle.com/v1',
-    tokenMinterContractAddress: '0xe7ed1fa7f45d05c508232aa32649d89b73b8ba48',
   },
   [ChainId.ArbitrumSepolia]: {
-    tokenMessengerContractAddress: CommonAddress.ArbitrumSepolia.tokenMessengerContractAddress,
-    targetChainDomain: ChainDomain.Ethereum,
     targetChainId: ChainId.Sepolia,
-    usdcContractAddress: CommonAddress.ArbitrumSepolia.USDC,
     messageTransmitterContractAddress: '0x7865fafc2db2093669d92c0f33aeef291086befd',
     attestationApiUrl: 'https://iris-api-sandbox.circle.com/v1',
-    tokenMinterContractAddress: '0xe997d7d2f6e065a9a93fa2175e878fb9081f1f0a',
   },
 };
 
@@ -73,26 +49,6 @@ export function getCctpContracts({ sourceChainId }: { sourceChainId?: ChainId })
     return contracts[ChainId.Ethereum];
   }
   return contracts[sourceChainId as CCTPSupportedChainId] || contracts[ChainId.Ethereum];
-}
-
-export function fetchPerMessageBurnLimit({
-  sourceChainId,
-  wagmiConfig,
-}: {
-  sourceChainId: CCTPSupportedChainId;
-  wagmiConfig: Config;
-}) {
-  const { usdcContractAddress, tokenMinterContractAddress } = getCctpContracts({
-    sourceChainId,
-  });
-
-  return readContract(wagmiConfig, {
-    address: tokenMinterContractAddress,
-    chainId: sourceChainId,
-    abi: TokenMinterAbi,
-    functionName: 'burnLimitsPerMessage',
-    args: [usdcContractAddress],
-  });
 }
 
 export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {

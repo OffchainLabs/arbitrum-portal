@@ -38,6 +38,9 @@ export async function isArbitrumCanonicalTransfer({
   if (isSwap) {
     return false;
   }
+  if (selectedToken?.isL2Native) {
+    return false;
+  }
 
   return !(await isDisabledCanonicalTransfer({
     childChainId,
@@ -66,6 +69,7 @@ export const useIsArbitrumCanonicalTransfer = function () {
       isSelectedTokenWithdrawOnly,
       isSelectedTokenWithdrawOnlyLoading,
       selectedToken?.address ?? null,
+      selectedToken?.isL2Native ?? false,
       isSwap,
       'useIsArbitrumCanonicalTransfer',
     ] as const,
@@ -76,6 +80,7 @@ export const useIsArbitrumCanonicalTransfer = function () {
       parentChainId,
       _isSelectedTokenWithdrawOnly,
       _isSelectedTokenWithdrawOnlyLoading,
+      ,
       ,
       _isSwap,
     ]) =>

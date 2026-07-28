@@ -4,12 +4,10 @@ import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { useETHPrice } from '@/bridge/hooks/useETHPrice';
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { getUsdValueForAmount } from '@/bridge/util/TokenPriceUtils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
-import { useAccountType } from '../../hooks/useAccountType';
 import { useBalanceOnDestinationChain } from '../../hooks/useBalanceOnDestinationChain';
 import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -65,12 +63,12 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
       return null;
     }
 
-    if (isTokenArbitrumOneNativeUSDC(token?.address)) {
-      return 'Native USDC on Arbitrum One';
-    }
-
-    if (isTokenArbitrumSepoliaNativeUSDC(token?.address)) {
-      return 'Native USDC on Arbitrum Sepolia';
+    if (token.isL2Native) {
+      const isNativeUsdc =
+        isTokenArbitrumOneNativeUSDC(token.address) ||
+        isTokenArbitrumSepoliaNativeUSDC(token.address);
+      const tokenName = isNativeUsdc ? 'Native USDC' : token.name;
+      return `${tokenName} on ${getNetworkName(networks.sourceChain.id)}`;
     }
 
     const listIds: Set<string> = token.listIds;
@@ -88,7 +86,7 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
     const more = listIdsSize - 1;
 
     return tokenListIdsToNames(firstList) + ` and ${more} more list${more > 1 ? 's' : ''}`;
-  }, [token]);
+  }, [networks.sourceChain.id, token]);
 
   if (!token) {
     const nativeTokenChain = getNetworkName(
@@ -219,8 +217,8 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
       return true;
     }
 
-    if (token?.isL2Native) {
-      return false;
+    if (token.isL2Native) {
+      return isTokenArbitrumOneNativeUSDC(token.address);
     }
 
     if (isDepositMode) {
@@ -266,7 +264,6 @@ function TokenBalance({
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
-  const { isLoading: isLoadingAccountType } = useAccountType();
   const { balance, symbol } = useTokenInfo(token, { isDestination });
   const nativeCurrencyOnDestinationChain = useNativeCurrency({
     provider: networks.destinationChainProvider,
@@ -284,10 +281,6 @@ function TokenBalance({
     nativeCurrencyOnDestinationChain.decimals,
   ]);
 
-  const isArbitrumNativeUSDC =
-    isTokenArbitrumOneNativeUSDC(token?.address) ||
-    isTokenArbitrumSepoliaNativeUSDC(token?.address);
-
   const tokenIsAddedToTheBridge = useMemo(() => {
     // Can happen when switching networks.
     if (typeof bridgeTokens === 'undefined') {
@@ -298,12 +291,12 @@ function TokenBalance({
       return true;
     }
 
-    if (isArbitrumNativeUSDC) {
+    if (token.isL2Native) {
       return true;
     }
 
     return typeof bridgeTokens[token.address] !== 'undefined';
-  }, [bridgeTokens, isArbitrumNativeUSDC, token]);
+  }, [bridgeTokens, token]);
 
   const decimals = useMemo(() => {
     if (token) {
@@ -314,11 +307,6 @@ function TokenBalance({
 
   if (!tokenIsAddedToTheBridge) {
     return <span className="arb-hover text-sm">Import</span>;
-  }
-
-  // We don't want users to be able to click on USDC before we know whether or not they are SCW users
-  if (isLoadingAccountType && isArbitrumNativeUSDC) {
-    return <StyledLoader />;
   }
 
   return (
@@ -375,36 +363,6 @@ function TokenContractLink({
 
   if (!token) {
     return null;
-  }
-
-  /**
-   * Native USDC and bridged USDC share the same L2 address (CommonAddress.ArbitrumOne.USDC), but L1 address is different
-   * Bridged USDC has L1 address = CommonAddress.ArbitrumOne.USDC
-   * Native USDC has L1 address = CommonAddress.Ethereum.USDC
-   */
-  if (
-    networks.sourceChain.id === ChainId.ArbitrumOne &&
-    isTokenArbitrumOneNativeUSDC(token.l2Address) &&
-    addressesEqual(token.address, CommonAddress.Ethereum.USDC)
-  ) {
-    return (
-      <BlockExplorerTokenLink
-        chainId={networks.sourceChain.id}
-        address={CommonAddress.ArbitrumOne['USDC.e']}
-      />
-    );
-  }
-  if (
-    networks.sourceChain.id === ChainId.ArbitrumSepolia &&
-    isTokenArbitrumSepoliaNativeUSDC(token.l2Address) &&
-    addressesEqual(token.address, CommonAddress.Sepolia.USDC)
-  ) {
-    return (
-      <BlockExplorerTokenLink
-        chainId={networks.sourceChain.id}
-        address={CommonAddress.ArbitrumSepolia['USDC.e']}
-      />
-    );
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {

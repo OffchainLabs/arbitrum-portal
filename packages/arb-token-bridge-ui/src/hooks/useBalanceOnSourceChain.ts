@@ -3,8 +3,6 @@ import { useAccount } from 'wagmi';
 
 import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
 import { addressesEqual } from '../util/AddressUtils';
-import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
-import { isNetwork } from '../util/networks';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useBalance } from './useBalance';
 import { useNativeCurrency } from './useNativeCurrency';
@@ -18,7 +16,6 @@ export function useBalanceOnSourceChain(token: ERC20BridgeToken | null): BigNumb
   const { address: walletAddress } = useAccount();
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
-  const { isOrbitChain: isSourceOrbitChain } = isNetwork(networks.sourceChain.id);
   const sourceChainNativeCurrency = useNativeCurrency({
     provider: networks.sourceChainProvider,
   });
@@ -55,16 +52,6 @@ export function useBalanceOnSourceChain(token: ERC20BridgeToken | null): BigNumb
 
   if (isDepositMode) {
     return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero;
-  }
-
-  if (
-    isTokenArbitrumOneNativeUSDC(tokenAddressLowercased) ||
-    isTokenArbitrumSepoliaNativeUSDC(tokenAddressLowercased)
-  ) {
-    // because we read parent chain address, make sure we don't read Orbit chain's address if it's the source chain
-    if (!isSourceOrbitChain) {
-      return erc20SourceChainBalances[tokenAddressLowercased] ?? constants.Zero;
-    }
   }
 
   const tokenChildChainAddress = token.l2Address?.toLowerCase();
