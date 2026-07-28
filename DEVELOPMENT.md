@@ -57,6 +57,7 @@ The Bridge app requires environment variables for full functionality:
 
    **Optional features (enable as needed):**
    - `NEXT_PUBLIC_FEATURE_FLAG_LIFI = true` (Enable LiFi integration)
+   - `NEXT_PUBLIC_FEATURE_FLAG_CCTP = true` (Enable CCTP V1 transfer initiation)
    - `LIFI_KEY = your-lifi-key` (Get from [LiFi dashboard](https://portal.li.fi/))
 
    - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP = true / false` (Enable onramp functionality)
