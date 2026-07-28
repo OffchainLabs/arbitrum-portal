@@ -162,6 +162,22 @@ describe('getGasCostAndToken', () => {
         });
       },
     );
+
+    test('does not return a gas row when the combined fee is zero', () => {
+      expect(
+        getGasCostAndToken({
+          childChainNativeCurrency: mockNativeCurrency,
+          parentChainNativeCurrency: mockNativeCurrency,
+          gasSummaryStatus: 'success',
+          estimatedChildChainGasFees: 0,
+          estimatedParentChainGasFees: 0,
+          isDepositMode: true,
+        }),
+      ).toEqual({
+        isLoading: false,
+        gasCost: [],
+      });
+    });
   });
 
   describe('should return gas cost for different native currencies in deposit mode', () => {
@@ -181,44 +197,6 @@ describe('getGasCostAndToken', () => {
             {
               gasCost: 305,
               gasToken: mockCustomNativeCurrency,
-            },
-          ],
-        },
-      },
-      {
-        parentCurrency: mockNativeCurrency,
-        childCurrency: mockCustomNativeCurrency,
-        estimatedParentChainGasFees: 201,
-        estimatedChildChainGasFees: 305,
-        expected: {
-          isLoading: false,
-          gasCost: [
-            {
-              gasCost: 201,
-              gasToken: mockNativeCurrency,
-            },
-            {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
-            },
-          ],
-        },
-      },
-      {
-        parentCurrency: mockCustomNativeCurrency,
-        childCurrency: mockNativeCurrency,
-        estimatedParentChainGasFees: 634,
-        estimatedChildChainGasFees: 234,
-        expected: {
-          isLoading: false,
-          gasCost: [
-            {
-              gasCost: 634,
-              gasToken: mockCustomNativeCurrency,
-            },
-            {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
             },
           ],
         },
@@ -246,8 +224,7 @@ describe('getGasCostAndToken', () => {
       `getGasCostAndToken({
         ...,
         parentCurrency: $parentCurrency.name,
-        childCurrency: $childCurrency.name,
-        selectedToken: $selectedToken
+        childCurrency: $childCurrency.name
       })`,
       ({
         parentCurrency,
@@ -268,6 +245,27 @@ describe('getGasCostAndToken', () => {
         ).toEqual(expected);
       },
     );
+
+    test('omits a zero child-chain gas row while preserving the parent-chain gas row', () => {
+      expect(
+        getGasCostAndToken({
+          childChainNativeCurrency: mockCustomNativeCurrency,
+          parentChainNativeCurrency: mockNativeCurrency,
+          gasSummaryStatus: 'success',
+          estimatedChildChainGasFees: 0,
+          estimatedParentChainGasFees: 201,
+          isDepositMode: true,
+        }),
+      ).toEqual({
+        isLoading: false,
+        gasCost: [
+          {
+            gasCost: 201,
+            gasToken: mockNativeCurrency,
+          },
+        ],
+      });
+    });
   });
 
   describe('should return gas cost for different native currencies in withdrawal mode', () => {
@@ -327,5 +325,21 @@ describe('getGasCostAndToken', () => {
         ).toEqual(expected);
       },
     );
+
+    test('does not return a gas row when the child-chain fee is zero', () => {
+      expect(
+        getGasCostAndToken({
+          childChainNativeCurrency: mockCustomNativeCurrency,
+          parentChainNativeCurrency: mockNativeCurrency,
+          gasSummaryStatus: 'success',
+          estimatedChildChainGasFees: 0,
+          estimatedParentChainGasFees: 201,
+          isDepositMode: false,
+        }),
+      ).toEqual({
+        isLoading: false,
+        gasCost: [],
+      });
+    });
   });
 });
