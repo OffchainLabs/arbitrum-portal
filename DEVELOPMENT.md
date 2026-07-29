@@ -119,7 +119,4 @@ E2E tests are only available for the Bridge app and require a local Nitro test n
 
    # Orbit chain tests
    $ pnpm test:e2e:orbit
-
-   # CCTP Bridging tests
-   $ pnpm test:e2e:cctp
    ```

@@ -7,18 +7,16 @@ at the repo root.
 
 ## Layout
 
-| File                                 | Role                                                                                                                                                                                                  |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `../../../playwright.config.ts`      | runner config (regular / orbit suite)                                                                                                                                                                 |
-| `../../../playwright.cctp.config.ts` | runner config for the CCTP suite (testnets)                                                                                                                                                           |
-| `globalSetup.ts`                     | on-chain prep (deploy/fund ERC20 + WETH, approvals, redeem-retryable tx, custom-gas-token) and the activity/assertion background loops; writes `.e2e-config.json`. Replaces Cypress `setupNodeEvents` |
-| `globalSetup.cctp.ts`                | CCTP prep: funds a fresh wallet on Sepolia/Arb Sepolia and pre-creates CCTP burns                                                                                                                     |
-| `e2eConfig.ts`                       | typed read/write of `.e2e-config.json` (replaces `Cypress.env`)                                                                                                                                       |
-| `fixtures.ts`                        | worker-scoped MetaMask persistent context + `e2eEnv` fixture                                                                                                                                          |
-| `support/common.ts`                  | network configs + node-side chain/balance/activity helpers (no `cy`)                                                                                                                                  |
-| `support/actions.ts`                 | the former Cypress custom commands as async `(page, ...)` functions                                                                                                                                   |
-| `synpress.d.ts`                      | ambient module declarations for the Synpress v3 command paths                                                                                                                                         |
-| `specs/*.spec.ts`                    | the tests (1:1 with the old `*.cy.ts`)                                                                                                                                                                |
+| File                            | Role                                                                                                                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `../../../playwright.config.ts` | runner config (regular / orbit suite)                                                                                                                                                                 |
+| `globalSetup.ts`                | on-chain prep (deploy/fund ERC20 + WETH, approvals, redeem-retryable tx, custom-gas-token) and the activity/assertion background loops; writes `.e2e-config.json`. Replaces Cypress `setupNodeEvents` |
+| `e2eConfig.ts`                  | typed read/write of `.e2e-config.json` (replaces `Cypress.env`)                                                                                                                                       |
+| `fixtures.ts`                   | worker-scoped MetaMask persistent context + `e2eEnv` fixture                                                                                                                                          |
+| `support/common.ts`             | network configs + node-side chain/balance/activity helpers (no `cy`)                                                                                                                                  |
+| `support/actions.ts`            | the former Cypress custom commands as async `(page, ...)` functions                                                                                                                                   |
+| `synpress.d.ts`                 | ambient module declarations for the Synpress v3 command paths                                                                                                                                         |
+| `specs/*.spec.ts`               | the tests (1:1 with the old `*.cy.ts`)                                                                                                                                                                |
 
 ## Architecture notes
 
@@ -42,7 +40,7 @@ pnpm --filter arb-token-bridge-ui exec playwright install chromium
 
 You also need a `.e2e.env` file in `packages/arb-token-bridge-ui/` (see `.e2e.env.sample`). A valid
 `NEXT_PUBLIC_INFURA_KEY` (or `NEXT_PUBLIC_RPC_URL_SEPOLIA`) is required because the suite adds the
-Sepolia / Arbitrum Sepolia networks and the tx-history / CCTP specs run on those testnets.
+Sepolia / Arbitrum Sepolia networks and the tx-history spec runs on those testnets.
 
 ## Running
 
@@ -58,5 +56,4 @@ pnpm test:e2e                               # whole regular suite
 pnpm test:e2e login                         # a single spec (filter by filename)
 pnpm test:e2e:orbit                         # orbit (L3 ETH) variant
 pnpm test:e2e:orbit:custom-gas-token        # orbit custom-gas-token variant
-pnpm test:e2e:cctp                          # CCTP suite (uses playwright.cctp.config.ts)
 ```

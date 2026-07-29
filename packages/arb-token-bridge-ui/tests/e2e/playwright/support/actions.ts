@@ -14,7 +14,6 @@ import { type Locator, type Page, expect } from '@playwright/test';
 import * as metamask from '@synthetixio/synpress/commands/metamask';
 
 import { shortenAddress } from '../../../../src/util/CommonUtils';
-import { formatAmount } from '../../../../src/util/NumberUtils';
 import { type E2EConfig } from '../e2eConfig';
 import {
   type NetworkName,
@@ -94,7 +93,7 @@ export async function acceptTnC(page: Page) {
   await checkbox.click();
 }
 
-export async function selectRoute(page: Page, type: 'arbitrum' | 'oftV2' | 'cctp') {
+export async function selectRoute(page: Page, type: 'arbitrum' | 'oftV2') {
   const route = page.getByLabel(`Route ${type}`);
   await route.scrollIntoViewIfNeeded();
   await expect(route).toBeVisible();
@@ -300,23 +299,6 @@ export async function clickClaimButton(page: Page, amountToClaim: string) {
   await expect(findClaimButton(page, amountToClaim)).toBeVisible({ timeout: 200_000 });
   await page.waitForTimeout(10_000);
   await findClaimButton(page, amountToClaim).click();
-}
-
-export async function claimCctp(page: Page, amount: number, options: { accept: boolean }) {
-  const formattedAmount = formatAmount(amount, { symbol: 'USDC' });
-  await switchToTransactionHistoryTab(page, 'pending');
-  await findTransactionInTransactionHistory(page, { amount, symbol: 'USDC' });
-  await expect(findClaimButton(page, formattedAmount)).toBeVisible({ timeout: 120_000 });
-  await findClaimButton(page, formattedAmount).click();
-  if (options.accept) {
-    await metamask.confirmTransaction({ gasConfig: 'aggressive' });
-    const settledTab = page.getByLabel('show settled transactions');
-    await expect(settledTab).toBeVisible();
-    await settledTab.click();
-    await expect(page.getByText(formattedAmount)).toBeVisible();
-  } else {
-    await metamask.rejectTransaction();
-  }
 }
 
 // --- navigation / login ----------------------------------------------------

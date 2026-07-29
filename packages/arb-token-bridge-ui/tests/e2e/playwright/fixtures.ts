@@ -127,14 +127,11 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       });
 
       // Add the networks the specs use (mirrors the Cypress `before()` in tests/support/index.ts).
-      // CCTP runs only on the public testnets; the regular/orbit suite also needs the local chains.
-      if (!e2eEnv.IS_CCTP) {
-        // Locally MetaMask already has a localhost network, so we only add L1 in CI.
-        if (e2eEnv.ETH_RPC_URL !== 'http://localhost:8545') {
-          await addNetwork(getL1NetworkConfig(e2eEnv));
-        }
-        await addNetwork(getL2NetworkConfig(e2eEnv));
+      // Locally MetaMask already has a localhost network, so we only add L1 in CI.
+      if (e2eEnv.ETH_RPC_URL !== 'http://localhost:8545') {
+        await addNetwork(getL1NetworkConfig(e2eEnv));
       }
+      await addNetwork(getL2NetworkConfig(e2eEnv));
       await addNetwork(getL1TestnetNetworkConfig(e2eEnv));
       await addNetwork(getL2TestnetNetworkConfig(e2eEnv));
 

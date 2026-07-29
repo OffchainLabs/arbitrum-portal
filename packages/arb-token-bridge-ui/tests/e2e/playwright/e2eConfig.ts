@@ -32,8 +32,6 @@ export type E2EConfig = {
   CUSTOM_DESTINATION_ADDRESS?: string;
   REDEEM_RETRYABLE_TEST_TX?: string;
   LOCAL_WALLET_PRIVATE_KEY?: string;
-  // which networks the MetaMask fixture should add. CCTP runs only on testnets.
-  IS_CCTP?: boolean;
 };
 
 // Written by globalSetup, read by the `e2eEnv` fixture. Gitignored.

@@ -49,17 +49,6 @@ switch (testType) {
     });
     break;
   }
-  case 'cctp': {
-    // Running CCTP tests in parallel cause nonce issues, we're running the two tests sequentially
-    tests.push({
-      name: 'cctp',
-      typeName: '',
-      file: '*Cctp.spec.ts',
-      recordVideo: false,
-      type: 'cctp',
-    });
-    break;
-  }
 }
 
 console.log(JSON.stringify(tests));
