@@ -209,7 +209,6 @@ export function TransactionHistoryChainFilter() {
       : [...selectedCoreChainIds, chainId];
 
     trackEvent('Tx History Network Filter', { network: getNetworkName(chainId) });
-    // Unchecking the last core chain falls back to "All Core Chains".
     setSelection({ chainIds: next.length > 0 ? next : null, isTestnetMode });
   };
 

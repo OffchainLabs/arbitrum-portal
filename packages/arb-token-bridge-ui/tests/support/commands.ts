@@ -208,12 +208,9 @@ export function selectTransactionHistoryChain(networkName: string) {
   cy.findByLabelText('Filter transaction history by network').click();
   // the search text persists between popover openings, so drop any previous query
   cy.findByLabelText('Search networks').clear().type(networkName);
-  // core chains render as checkboxes, longtail chains as radios, so find the
-  // row by its exact name instead of by role. The name can also appear
-  // outside the dropdown (trigger label, history table), so only match text
-  // inside a selectable row. Skip rows that are already selected, and core
-  // rows tagged "included" (implicitly covered by the default "All Core
-  // Chains"), so the helper never narrows the filter.
+  // the chain name can also appear outside the dropdown (trigger label,
+  // history table), so only match text inside a radio/checkbox row. Skip rows
+  // already selected or tagged "included": clicking those would narrow the filter.
   cy.findAllByText(networkName)
     .filter(
       (_index, element) =>

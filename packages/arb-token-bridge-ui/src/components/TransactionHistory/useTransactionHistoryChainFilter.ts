@@ -13,7 +13,6 @@ import { isCoreChainForDisplay } from '../../util/networks';
 import { getTxHistoryCoreChainIds } from '../../util/txHistoryRoutes';
 import { useTransactionHistoryChainFilterStore } from './useTransactionHistoryChainFilterStore';
 
-/** The core chains of the current network mode. */
 export function useCoreChainIds(): number[] {
   const [isTestnetMode] = useIsTestnetMode();
 

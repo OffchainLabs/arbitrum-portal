@@ -561,7 +561,6 @@ const useTransactionHistoryWithoutStatuses = (
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
-  // Stable identifier for the filter so SWR refetches when the selection changes.
   const chainFilterKey = getChainFilterKey(chainFilter);
 
   const cctpTransfersMainnet = useCctpFetching({
