@@ -52,6 +52,7 @@ import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
+import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
@@ -407,6 +408,10 @@ export function TransferPanel() {
   };
 
   const transferCctp = async () => {
+    if (!isCctpEnabled()) {
+      return warningToast('CCTP V1 transfers are no longer available.');
+    }
+
     if (!selectedToken) {
       return;
     }

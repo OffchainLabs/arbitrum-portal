@@ -15,7 +15,10 @@ import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferR
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { isLifiEnabled as isLifiEnabledUtil } from '../../../util/featureFlag';
+import {
+  isCctpEnabled as isCctpEnabledUtil,
+  isLifiEnabled as isLifiEnabledUtil,
+} from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
 import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
@@ -69,9 +72,19 @@ function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undef
   return routes[0]?.type;
 }
 
-interface GetEligibleRoutesParams {
+export function getSelectedRouteForAvailableRoutes(
+  userSelectedRoute: RouteType | undefined,
+  routes: RouteData[],
+): RouteType | undefined {
+  return userSelectedRoute && routes.some((route) => route.type === userSelectedRoute)
+    ? userSelectedRoute
+    : getBestRouteForDefaultSelection(routes);
+}
+
+export interface GetEligibleRoutesParams {
   isOftV2Transfer: boolean;
   isNativeUsdcTransfer: boolean;
+  isCctpEnabled: boolean;
   isBatchTransfer: boolean;
   amount: string;
   isDepositMode: boolean;
@@ -82,9 +95,10 @@ interface GetEligibleRoutesParams {
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
 
-function getEligibleRoutes({
+export function getEligibleRoutes({
   isOftV2Transfer,
   isNativeUsdcTransfer,
+  isCctpEnabled,
   isBatchTransfer,
   amount,
   isDepositMode,
@@ -128,7 +142,9 @@ function getEligibleRoutes({
   }
 
   if (isNativeUsdcTransfer) {
-    eligibleRouteTypes.push('cctp');
+    if (isCctpEnabled) {
+      eligibleRouteTypes.push('cctp');
+    }
 
     if (isLifiEnabled) {
       eligibleRouteTypes.push('lifi');
@@ -166,6 +182,7 @@ export function useRoutesUpdater() {
   const { isDepositMode } = useNetworksRelationship(networks);
   const [{ amount, amount2 }] = useArbQueryParams();
   const isNativeUsdcTransfer = useIsCctpTransfer();
+  const isCctpEnabled = isCctpEnabledUtil();
   const isOftV2Transfer = useIsOftV2Transfer();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   // `amount2` can be the literal "max" deep-link value, which resolves to a positive amount.
@@ -200,6 +217,7 @@ export function useRoutesUpdater() {
       getEligibleRoutes({
         isOftV2Transfer,
         isNativeUsdcTransfer,
+        isCctpEnabled,
         isBatchTransfer,
         amount,
         isDepositMode,
@@ -212,6 +230,7 @@ export function useRoutesUpdater() {
     [
       isOftV2Transfer,
       isNativeUsdcTransfer,
+      isCctpEnabled,
       isBatchTransfer,
       amount,
       isDepositMode,
@@ -385,10 +404,7 @@ export function useRoutesUpdater() {
 
   useEffect(() => {
     // if user has not selected a route, then pre-select the best route
-    const selectedRoute =
-      userSelectedRoute && routeData.some((route) => route.type === userSelectedRoute)
-        ? userSelectedRoute // User selection is valid - preserve it
-        : getBestRouteForDefaultSelection(routeData); // Auto-select best route - becomes default selection
+    const selectedRoute = getSelectedRouteForAvailableRoutes(userSelectedRoute, routeData);
 
     // Compute context for LiFi routes, but only after loading completes to ensure button stays disabled during loading
     let context: RouteContext | undefined = undefined;
