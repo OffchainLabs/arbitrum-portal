@@ -272,7 +272,6 @@ function AddCustomOrbitChainButton({
 }
 
 export function NetworksPanel({
-  type = 'source',
   chainIds,
   selectedChainId,
   onNetworkRowClick,
@@ -280,7 +279,6 @@ export function NetworksPanel({
   showSearch = true,
   showFooter = true,
 }: {
-  type?: 'source' | 'destination';
   chainIds: ChainId[];
   selectedChainId: ChainId;
   onNetworkRowClick: (value: Chain) => void;
@@ -300,16 +298,8 @@ export function NetworksPanel({
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
-    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
-
     if (_networkSearched) {
-      return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
-        if (chainId === (70700 as ChainId) || chainId === (70701 as ChainId)) {
-          const popName =
-            chainId === (70700 as ChainId) ? 'Proof of Play Apex' : 'Proof of Play Boss';
-          return popName.toLowerCase().includes(_networkSearched);
-        }
-
+      return chainIds.filter((chainId) => {
         const networkName = getBridgeUiConfigForChain(chainId).network.name.toLowerCase();
         return networkName.includes(_networkSearched);
       });
@@ -319,16 +309,16 @@ export function NetworksPanel({
     const moreNetworks = chainIds.filter(
       (chainId) => !isCoreChainForDisplay(chainId) && !isNetwork(chainId).isOrbitChain,
     );
-    const orbitNetworks = chainIds
-      .filter((chainId) => isNetwork(chainId).isOrbitChain && !isCoreChainForDisplay(chainId))
-      .concat(proofOfPlayNetworks);
+    const orbitNetworks = chainIds.filter(
+      (chainId) => isNetwork(chainId).isOrbitChain && !isCoreChainForDisplay(chainId),
+    );
 
     return {
       core: coreNetworks,
       more: moreNetworks,
       orbit: orbitNetworks,
     };
-  }, [debouncedNetworkSearched, chainIds, isTestnetMode, type]);
+  }, [debouncedNetworkSearched, chainIds]);
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
@@ -445,20 +435,6 @@ export function NetworksPanel({
         );
       }
 
-      if (
-        networkOrChainTypeName === (70700 as ChainId) ||
-        networkOrChainTypeName === (70701 as ChainId)
-      ) {
-        // PoP Apex, PoP Boss
-        return (
-          <NetworkRowPoP
-            chainId={networkOrChainTypeName}
-            style={style}
-            isSelected={networkOrChainTypeName === selectedChainId}
-          />
-        );
-      }
-
       return (
         <NetworkRow
           key={networkOrChainTypeName}
@@ -559,7 +535,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken(null);
         setQueryParams({ destinationAddress: undefined });
       },
-      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, props, isSwapTransfer],
+      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, isSwapTransfer],
     );
 
     return (
@@ -578,7 +554,6 @@ export const NetworkSelectionContainer = React.memo(
           <SearchPanel>
             <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
               <NetworksPanel
-                type={isSource ? 'source' : 'destination'}
                 chainIds={supportedChainIds}
                 selectedChainId={selectedChainId}
                 close={() => props.onClose(false)}
