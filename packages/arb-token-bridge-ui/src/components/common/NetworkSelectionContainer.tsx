@@ -34,7 +34,6 @@ import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
 import { ExternalLink } from './ExternalLink';
 import { NetworkImage } from './NetworkImage';
-import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
