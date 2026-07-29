@@ -4,8 +4,8 @@
  * This is the Playwright replacement for the Cypress `setupNodeEvents` block in
  * synpress.config.ts. It does all the on-chain prep (register the local network, deploy + fund a
  * test ERC20, fund the user wallet with ETH/WETH, approve tokens, handle custom-gas-token chains,
- * create a redeem-retryable tx), writes everything specs need to a JSON config (read back via the
- * `e2eEnv` fixture), then fires the generate-activity / check-assertions loops (fire-and-forget,
+ * create a redeem-retryable tx), puts everything specs need in the `E2E_CONFIG` env var (read back
+ * via the `e2eEnv` fixture), then fires the generate-activity / check-assertions loops (fire-and-forget,
  * exactly like the Cypress config did; Playwright's main process stays alive for the whole run).
  */
 import { Erc20Bridger, EthBridger } from '@arbitrum/sdk';

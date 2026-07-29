@@ -13,7 +13,6 @@
 /test-results
 /playwright-report
 /blob-report
-/tests/e2e/playwright/.e2e-config.json
 
 # production
 /build

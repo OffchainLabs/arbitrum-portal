@@ -14,8 +14,8 @@
  * shares one MetaMask, matching Cypress's `testIsolation: false`. Each test still gets a fresh
  * `page` (tab) in that shared context.
  *
- * The `e2eEnv` worker fixture reads the JSON config produced by globalSetup. It must NOT be read
- * at module load time, since Playwright imports spec files before globalSetup runs.
+ * The `e2eEnv` worker fixture reads the config produced by globalSetup. It must NOT be read at
+ * module load time, since Playwright imports spec files before globalSetup runs.
  */
 import {
   type BrowserContext,

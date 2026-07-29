@@ -7,16 +7,16 @@ at the repo root.
 
 ## Layout
 
-| File                            | Role                                                                                                                                                                                                  |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `../../../playwright.config.ts` | runner config (regular / orbit suite)                                                                                                                                                                 |
-| `globalSetup.ts`                | on-chain prep (deploy/fund ERC20 + WETH, approvals, redeem-retryable tx, custom-gas-token) and the activity/assertion background loops; writes `.e2e-config.json`. Replaces Cypress `setupNodeEvents` |
-| `e2eConfig.ts`                  | typed read/write of `.e2e-config.json` (replaces `Cypress.env`)                                                                                                                                       |
-| `fixtures.ts`                   | worker-scoped MetaMask persistent context + `e2eEnv` fixture                                                                                                                                          |
-| `support/common.ts`             | network configs + node-side chain/balance/activity helpers (no `cy`)                                                                                                                                  |
-| `support/actions.ts`            | the former Cypress custom commands as async `(page, ...)` functions                                                                                                                                   |
-| `synpress.d.ts`                 | ambient module declarations for the Synpress v3 command paths                                                                                                                                         |
-| `specs/*.spec.ts`               | the tests (1:1 with the old `*.cy.ts`)                                                                                                                                                                |
+| File                            | Role                                                                                                                                                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `../../../playwright.config.ts` | runner config (regular / orbit suite)                                                                                                                                                              |
+| `globalSetup.ts`                | on-chain prep (deploy/fund ERC20 + WETH, approvals, redeem-retryable tx, custom-gas-token) and the activity/assertion background loops; populates `E2E_CONFIG`. Replaces Cypress `setupNodeEvents` |
+| `e2eConfig.ts`                  | typed read/write of the `E2E_CONFIG` env var (replaces `Cypress.env`)                                                                                                                              |
+| `fixtures.ts`                   | worker-scoped MetaMask persistent context + `e2eEnv` fixture                                                                                                                                       |
+| `support/common.ts`             | network configs + node-side chain/balance/activity helpers (no `cy`)                                                                                                                               |
+| `support/actions.ts`            | the former Cypress custom commands as async `(page, ...)` functions                                                                                                                                |
+| `synpress.d.ts`                 | ambient module declarations for the Synpress v3 command paths                                                                                                                                      |
+| `specs/*.spec.ts`               | the tests (1:1 with the old `*.cy.ts`)                                                                                                                                                             |
 
 ## Architecture notes
 

@@ -1,15 +1,17 @@
 /*
  * Shared e2e config for the Playwright runner.
  *
- * Playwright's `globalSetup` runs in a separate process from the test workers, so values
- * produced during setup (wallet keys, RPC urls, token info) cannot be shared in memory the
- * way Cypress passes them through `config.env`. Instead globalSetup writes them to a JSON
- * file and the `e2eEnv` fixture reads it back. This is the Playwright replacement for
- * `Cypress.env(...)`.
+ * This is the Playwright replacement for `Cypress.env(...)`. Values produced during setup
+ * (wallet keys, RPC urls, token info) travel through `process.env`, which is the documented
+ * way to pass data from `globalSetup` to tests: globalSetup runs in Playwright's main process
+ * and workers are forked from it afterwards, so they inherit whatever env it set. That keeps
+ * everything on the same channel `.e2e.env` already feeds via `env-cmd` (see the `test:e2e`
+ * script), instead of introducing a second config transport.
+ *
+ * The whole config lives in one JSON-encoded variable rather than one variable per field so
+ * that non-string fields keep their types, and so that keys like `PRIVATE_KEY` cannot collide
+ * with the env names Synpress itself reads (see `.e2e.env.sample`).
  */
-import fs from 'fs';
-import path from 'path';
-
 export type E2EConfig = {
   // RPC urls + identity
   ETH_RPC_URL: string;
@@ -34,19 +36,20 @@ export type E2EConfig = {
   LOCAL_WALLET_PRIVATE_KEY?: string;
 };
 
-// Written by globalSetup, read by the `e2eEnv` fixture. Gitignored.
-const CONFIG_PATH = path.join(__dirname, '.e2e-config.json');
+// Set by globalSetup, read by the `e2eEnv` fixture.
+const CONFIG_ENV_VAR = 'E2E_CONFIG';
 
 export function writeE2EConfig(config: E2EConfig) {
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+  process.env[CONFIG_ENV_VAR] = JSON.stringify(config);
 }
 
 export function readE2EConfig(): E2EConfig {
-  if (!fs.existsSync(CONFIG_PATH)) {
+  const raw = process.env[CONFIG_ENV_VAR];
+  if (!raw) {
     throw new Error(
-      `E2E config not found at ${CONFIG_PATH}. Did Playwright globalSetup run? ` +
-        `Run via the test:e2e:pw script so globalSetup writes the config first.`,
+      `${CONFIG_ENV_VAR} is not set. Did Playwright globalSetup run? ` +
+        `Run via the test:e2e script so globalSetup populates it first.`,
     );
   }
-  return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')) as E2EConfig;
+  return JSON.parse(raw) as E2EConfig;
 }
