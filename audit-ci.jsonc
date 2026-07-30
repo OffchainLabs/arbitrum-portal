@@ -74,6 +74,10 @@
     // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
     // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
     //
+    // https://github.com/advisories/GHSA-h39j-r5qq-r9mm
+    // decompress arbitrary file write (Zip Slip) via a symlink race on ZIP archives with duplicate paths (CVE-2026-10732)
+    // No upstream fix: decompress is unmaintained, 4.2.1 is the latest published version
+    //
     // https://github.com/advisories/GHSA-xv26-6w52-cph6
     // websocket-driver message corruption via abuse of protocol length headers
     //
@@ -98,6 +102,7 @@
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-mp2f-45pm-3cg9",
+    "GHSA-h39j-r5qq-r9mm",
     "GHSA-xv26-6w52-cph6",
     "GHSA-mp7j-qc5w-4988",
     //
