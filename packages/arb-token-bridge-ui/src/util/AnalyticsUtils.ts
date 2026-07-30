@@ -11,6 +11,7 @@ type AccountType = 'EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
+type TokenPickerSide = 'source' | 'destination';
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
@@ -119,6 +120,33 @@ type AnalyticsEventMap = {
   };
   'Onramp Service Click': {
     service: string;
+  };
+  'Bridge Page Loaded': {
+    sourceChainId: number;
+    destinationChainId: number;
+    sourceToken?: string;
+    destinationToken?: string;
+  };
+  'Token Picker Opened': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+  };
+  'Token Search Performed': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+    query: string;
+  };
+  'Token Selected': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+    tokenAddress: string;
+    hasBalance: boolean;
   };
 };
 
