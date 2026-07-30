@@ -42,6 +42,7 @@ type AnalyticsEventMap = {
     amount: number;
   };
   'Connect Wallet Click': { walletName: string };
+  'Trust Wallet Update Confirmation': { confirmed: boolean };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
     tokenSymbol?: SpecialTokenSymbol.USDC;

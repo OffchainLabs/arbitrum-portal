@@ -30,6 +30,7 @@ import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
+import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useMode } from '../../hooks/useMode';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -148,6 +149,8 @@ export function TransferPanel() {
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
+
+  const isTrustWalletConnection = useIsTrustWalletConnection();
 
   const { current: signer } = useLatest(useEthersSigner({ chainId: networks.sourceChain.id }));
   const wagmiConfig = useConfig();
@@ -286,6 +289,17 @@ export function TransferPanel() {
   const confirmDialog = async (dialogType: DialogType) => {
     const waitForInput = openDialog(dialogType);
     const [confirmed] = await waitForInput();
+    return confirmed;
+  };
+
+  const confirmTrustWalletUpdate = async () => {
+    if (!isTrustWalletConnection) {
+      return true;
+    }
+
+    const confirmed = await confirmDialog('trust_wallet_update');
+    trackEvent('Trust Wallet Update Confirmation', { confirmed });
+
     return confirmed;
   };
 
@@ -1294,6 +1308,10 @@ export function TransferPanel() {
       if (!shouldProceedToNova) {
         return;
       }
+    }
+
+    if (!(await confirmTrustWalletUpdate())) {
+      return;
     }
 
     if (selectedRoute == 'oftV2') {
