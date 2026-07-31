@@ -4,7 +4,7 @@ import { getStepTransaction } from '@lifi/sdk';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
@@ -110,7 +110,14 @@ export function TransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
   const [
-    { amount, amount2, destinationAddress, token: tokenFromSearchParams, disabledFeatures },
+    {
+      amount,
+      amount2,
+      destinationAddress,
+      token: tokenFromSearchParams,
+      destinationToken,
+      disabledFeatures,
+    },
     setQueryParams,
   ] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
@@ -128,6 +135,7 @@ export function TransferPanel() {
   } = useAppState();
   const { address: walletAddress, chain, isConnected } = useAccount();
   const [selectedToken, setSelectedToken] = useSelectedToken();
+  const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
     isSwitchingNetworkBeforeTx: true,
   });
@@ -188,6 +196,25 @@ export function TransferPanel() {
   const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
   const { handleError } = useError();
+
+  useEffect(() => {
+    if (hasTrackedBridgePageLoad.current) {
+      return;
+    }
+
+    hasTrackedBridgePageLoad.current = true;
+    trackEvent('Bridge Page Loaded', {
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      sourceToken: tokenFromSearchParams,
+      destinationToken,
+    });
+  }, [
+    destinationToken,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    tokenFromSearchParams,
+  ]);
 
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
     setQueryParams({
