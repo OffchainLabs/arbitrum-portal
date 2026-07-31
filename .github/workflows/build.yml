@@ -11,6 +11,11 @@ on:
       # https://github.com/reviewdog/action-eslint/issues/29#issuecomment-985939887
       - ready_for_review
   workflow_call:
+    inputs:
+      is_e2e_build:
+        description: Build with the local-only E2E chain configuration
+        type: boolean
+        default: true
 
 env:
   NEXT_PUBLIC_RPC_PROVIDER: alchemy
@@ -60,7 +65,7 @@ jobs:
         shell: bash
         run: pnpm build
         env:
-          NEXT_PUBLIC_IS_E2E_TEST: true
+          NEXT_PUBLIC_IS_E2E_TEST: ${{ github.workflow == 'Cache build artifacts' || inputs.is_e2e_build }}
           NEXT_PUBLIC_RPC_PROVIDER: alchemy
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
           NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}

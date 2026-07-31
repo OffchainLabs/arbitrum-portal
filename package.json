@@ -17,6 +17,7 @@
     "prettier:format": "prettier --write .",
     "lint": "tsc && eslint",
     "lint:fix": "tsc && eslint --quiet --fix",
+    "lighthouse:ci": "pnpm --filter scripts generate-lighthouse-report",
     "postinstall": "pnpm run install:chromium",
     "install:chromium": "pnpm dlx @puppeteer/browsers install chrome@$npm_package_config_chromeVersion --path $npm_package_config_chromePath",
     "test:e2e": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec synpress run --configFile synpress.config.ts",
