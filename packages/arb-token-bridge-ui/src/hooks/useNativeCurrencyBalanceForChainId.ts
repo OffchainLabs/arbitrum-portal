@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ether } from '../constants';
+import { e2ePollingInterval } from '../util/CommonUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { getChains } from '../util/networks';
 import { ChainWithRpcUrl } from '../util/networks';
@@ -55,7 +56,7 @@ export const useNativeCurrencyBalanceForChainId = (chainId: number, walletAddres
     walletAddress ? [chainId, walletAddress, 'native-balance-per-chainId'] : null,
     ([_chainId, _walletAddress]) => fetchNativeBalance(_chainId, _walletAddress),
     {
-      refreshInterval: 30_000,
+      refreshInterval: e2ePollingInterval(30_000),
       shouldRetryOnError: true,
       errorRetryCount: 2,
       errorRetryInterval: 3_000,

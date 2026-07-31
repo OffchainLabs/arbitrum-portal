@@ -6,6 +6,7 @@ import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
 import { useBalances } from '../../hooks/useBalances';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useAppState } from '../../state';
+import { e2ePollingInterval } from '../../util/CommonUtils';
 import { isTokenNativeUSDC } from '../../util/TokenUtils';
 
 // Updates all balances periodically
@@ -67,5 +68,5 @@ export function useBalanceUpdater() {
 
       latestTokenBridge?.current?.token?.updateTokenData(selectedToken.address);
     }
-  }, 10000);
+  }, e2ePollingInterval(10_000));
 }
