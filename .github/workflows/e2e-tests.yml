@@ -49,7 +49,7 @@ jobs:
     # build job, also on the host) restores reliably.
     services:
       testnode:
-        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.13-nc3.2-${{ matrix.test.tag }}
+        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.14-nc3.2-${{ matrix.test.tag }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
