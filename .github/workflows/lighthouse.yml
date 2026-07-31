@@ -1,0 +1,120 @@
+name: Lighthouse
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ['master']
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_RPC_PROVIDER: alchemy
+  NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+  NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+  VAULTS_FYI_API_KEY: ${{ secrets.VAULTS_FYI_API_KEY }}
+  THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+
+jobs:
+  build:
+    name: Build
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/build.yml
+    with:
+      is_e2e_build: false
+    secrets: inherit
+
+  lighthouse:
+    name: Run Lighthouse
+    runs-on: ubuntu-4
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Restore build artifacts
+        uses: ./.github/actions/restore-build-artifacts
+
+      - name: Locate Chrome for Testing
+        shell: bash
+        run: |
+          chrome_version=$(node -p "require('./package.json').config.chromeVersion")
+          echo "CHROME_PATH=$PWD/node_modules/.cache/synpress/chrome/linux-$chrome_version/chrome-linux64/chrome" >> "$GITHUB_ENV"
+
+      - name: Run Lighthouse
+        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm lighthouse:ci'
+
+      - name: Add Lighthouse results to job summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f lighthouse-reports/summary.md ]]; then
+            cat lighthouse-reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Update Lighthouse PR comment
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const body = fs.readFileSync('lighthouse-reports/summary.md', 'utf8')
+            const marker = '<!-- lighthouse-user-flow-report -->'
+            const { owner, repo } = context.repo
+            const issue_number = context.issue.number
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            })
+            const previous = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            )
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: previous.id,
+                body
+              })
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body })
+            }
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports-${{ github.sha }}
+          path: lighthouse-reports
+          if-no-files-found: warn
