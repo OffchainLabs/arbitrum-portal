@@ -49,12 +49,13 @@ jobs:
     # build job, also on the host) restores reliably.
     services:
       testnode:
-        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}
+        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.13-nc3.2-${{ matrix.test.tag }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         env:
           TESTNODE_VARIANT: ${{ matrix.test.tag }}
+          TESTNODE_PARENT_CHAIN_POLL_INTERVAL: 1s
         ports:
           - 8080:8080
           - 8545:8545
