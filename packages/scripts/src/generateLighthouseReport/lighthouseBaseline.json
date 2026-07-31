@@ -1,0 +1,57 @@
+{
+  "navigation": {
+    "performance": 59.33,
+    "accessibility": 99,
+    "bestPractices": 74,
+    "seo": 100,
+    "firstContentfulPaint": {
+      "score": 100,
+      "numericValue": 290.153
+    },
+    "largestContentfulPaint": {
+      "score": 14.33,
+      "numericValue": 4216.369
+    },
+    "totalBlockingTime": {
+      "score": 36.67,
+      "numericValue": 443.29
+    },
+    "cumulativeLayoutShift": {
+      "score": 100,
+      "numericValue": 0
+    },
+    "speedIndex": {
+      "score": 100,
+      "numericValue": 375.308
+    },
+    "totalByteWeight": {
+      "score": 50,
+      "numericValue": 3619288.667
+    }
+  },
+  "timespan": {
+    "performance": 45,
+    "bestPractices": 63,
+    "totalBlockingTime": {
+      "score": 0,
+      "numericValue": 3183.219
+    },
+    "cumulativeLayoutShift": {
+      "score": 100,
+      "numericValue": 0.003
+    },
+    "interactionToNextPaint": {
+      "score": 79,
+      "numericValue": 274.667
+    },
+    "longTasks": {
+      "total": 20,
+      "durationMs": 4181.92
+    }
+  },
+  "snapshot": {
+    "accessibility": 95,
+    "bestPractices": 100,
+    "seo": 100
+  }
+}
