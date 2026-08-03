@@ -370,6 +370,11 @@ async function fundWethOnParentChain() {
 }
 
 async function approveWeth() {
+  if (!isNonZeroAddress(l1WethGateway)) {
+    console.log('Skipping WETH approval because no WETH gateway is configured.');
+    return;
+  }
+
   console.log('Approving WETH...');
   const tx = await getWethContract(parentProvider, l1WethAddress).approve(
     l1WethGateway,
