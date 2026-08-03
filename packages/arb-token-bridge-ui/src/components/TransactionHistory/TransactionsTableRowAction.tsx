@@ -1,13 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { GET_HELP_LINK } from '../../constants';
+import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
 import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
-import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
 import { useClaimCctp } from '../../state/cctpState';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -39,11 +40,9 @@ function ActionRowConnectButton() {
 
 export function TransactionsTableRowAction({
   tx,
-  isError,
   type,
 }: {
   tx: MergedTransaction;
-  isError: boolean;
   type: 'deposits' | 'withdrawals';
 }) {
   const { address: connectedAddress, chain, isConnected } = useAccount();
@@ -53,6 +52,23 @@ export function TransactionsTableRowAction({
 
   const isViewingAnotherAddress =
     connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
+
+  const isError = useMemo(() => {
+    if (tx.isCctp || !tx.isWithdrawal) {
+      if (
+        tx.depositStatus === DepositStatus.L1_FAILURE ||
+        tx.depositStatus === DepositStatus.EXPIRED
+      ) {
+        return true;
+      }
+
+      if (tx.depositStatus === DepositStatus.CREATION_FAILED) {
+        return tx.assetType === AssetType.ETH;
+      }
+    }
+
+    return tx.status === WithdrawalStatus.FAILURE;
+  }, [tx]);
 
   const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
     erc20L1Address: tx.tokenAddress,

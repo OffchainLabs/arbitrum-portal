@@ -4,7 +4,11 @@ import type { Config } from '@wagmi/core';
 import { getWalletClient } from '@wagmi/core';
 import { Client, UserRejectedRequestError } from 'viem';
 
-import { getSubmittedLifiRouteTxHash } from '../util/LifiTransactionStatus';
+import {
+  getExecutedLifiRouteTxHash,
+  rejectPendingLifiRouteRequest,
+} from '../util/LifiTransactionStatus';
+import { isUserRejectedError } from '../util/isUserRejectedError';
 
 type SwitchChainAsync = (parameters: { chainId: number }) => Promise<{ id: number } | undefined>;
 
@@ -16,7 +20,7 @@ type LifiRouteRunProps = {
 };
 
 export type LifiRouteExecutionProps = LifiRouteRunProps & {
-  onRouteExecutionError: (error: unknown) => void;
+  onRouteExecutionError: (error: unknown, route: RouteExtended | undefined) => void;
 };
 
 function configureLifiEvmProvider({
@@ -69,10 +73,6 @@ function createExecutionOptions({
   };
 }
 
-// LiFi's `executeRoute` resolves after route execution has finished, but the app needs the
-// submitted route tx id as soon as it exists so it can create history/cache entries. With
-// EIP-5792 this can initially be a wallet batch id; later route updates replace it with the
-// real on-chain tx hash for status checks and LiFi Scan links.
 export function executeLifiRoute(
   route: Route | RouteExtended,
   {
@@ -87,16 +87,18 @@ export function executeLifiRoute(
     wagmiConfig,
     switchChainAsync,
     onApprovalRequest,
-    onRouteUpdate,
   });
 
   return new Promise((resolve, reject) => {
     let resolvedRouteTx = false;
+    let latestRoute: RouteExtended | undefined;
 
     const handleRouteUpdate = (updatedRoute: RouteExtended) => {
+      latestRoute = updatedRoute;
+      const txHash = getExecutedLifiRouteTxHash(updatedRoute);
+
       onRouteUpdate?.(updatedRoute);
 
-      const txHash = getSubmittedLifiRouteTxHash(updatedRoute);
       if (txHash && !resolvedRouteTx) {
         resolvedRouteTx = true;
         resolve({ txHash, route: updatedRoute });
@@ -114,11 +116,16 @@ export function executeLifiRoute(
         }
       })
       .catch((error) => {
+        onRouteExecutionError(
+          error,
+          latestRoute && isUserRejectedError(error)
+            ? rejectPendingLifiRouteRequest(latestRoute)
+            : latestRoute,
+        );
         if (resolvedRouteTx) {
-          onRouteExecutionError(error);
-        } else {
-          reject(error);
+          return;
         }
+        reject(error);
       });
   });
 }
