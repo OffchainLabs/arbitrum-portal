@@ -10,7 +10,9 @@ import { createMockLifiRoute } from '../test-utils/lifi';
 import {
   getExecutedLifiRouteTxHash,
   getLifiRouteStatusRequest,
+  getPendingLifiRouteBatchId,
   getSubmittedLifiRouteTxHash,
+  resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
 import { LifiTransferStarter } from './LifiTransferStarter';
 
@@ -111,6 +113,7 @@ describe('getExecutedLifiRouteTxHash', () => {
     } as unknown as RouteExtended;
 
     expect(getExecutedLifiRouteTxHash(route)).toBeUndefined();
+    expect(getSubmittedLifiRouteTxHash(route)).toBeUndefined();
   });
 
   it('returns the first route execution transaction hash', () => {
@@ -137,6 +140,31 @@ describe('getExecutedLifiRouteTxHash', () => {
 
     expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
   });
+
+  it.each(['ACTION_REQUIRED', 'CANCELLED'] as const)(
+    'does not treat a %s process as a submitted transaction',
+    (status) => {
+      const route = {
+        steps: [
+          {
+            execution: {
+              process: [
+                {
+                  type: 'CROSS_CHAIN',
+                  status,
+                  txHash: batchId32Bytes,
+                  txType: 'batched',
+                },
+              ],
+            },
+          },
+        ],
+      } as unknown as RouteExtended;
+
+      expect(getSubmittedLifiRouteTxHash(route)).toBeUndefined();
+      expect(getExecutedLifiRouteTxHash(route)).toBeUndefined();
+    },
+  );
 
   it('ignores EIP-5792 batch ids until LiFi updates the route with a transaction hash', () => {
     const routeWithBatchId = {
@@ -177,6 +205,90 @@ describe('getExecutedLifiRouteTxHash', () => {
     expect(getSubmittedLifiRouteTxHash(routeWithBatchId)).toBe(batchId32Bytes);
     expect(getExecutedLifiRouteTxHash(routeWithTransactionHash)).toBe(routeTxHash);
     expect(getSubmittedLifiRouteTxHash(routeWithTransactionHash)).toBe(routeTxHash);
+  });
+
+  it('replaces a submitted batch id with its route transaction receipt', () => {
+    const routeWithBatchId = {
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId32Bytes,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+    const txLink = `https://etherscan.io/tx/${routeTxHash}`;
+
+    expect(getPendingLifiRouteBatchId(routeWithBatchId)).toBe(batchId32Bytes);
+
+    const resolvedRoute = resolveLifiRouteBatchId({
+      route: routeWithBatchId,
+      batchId: batchId32Bytes,
+      txHash: routeTxHash,
+      txLink,
+    });
+
+    expect(getPendingLifiRouteBatchId(resolvedRoute)).toBeUndefined();
+    expect(getExecutedLifiRouteTxHash(resolvedRoute)).toBe(routeTxHash);
+    expect(resolvedRoute.steps[0]?.execution?.process[0]).toMatchObject({
+      txHash: routeTxHash,
+      txLink,
+      txType: 'batched',
+    });
+  });
+
+  it('keeps a failed on-chain transaction as an executed transaction', () => {
+    const route = {
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'FAILED',
+                txHash: routeTxHash,
+                txLink: `https://etherscan.io/tx/${routeTxHash}`,
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
+    expect(getSubmittedLifiRouteTxHash(route)).toBeUndefined();
+  });
+
+  it('keeps the first executed transaction when a later step fails', () => {
+    const route = {
+      steps: [
+        {
+          execution: {
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: routeTxHash }],
+          },
+        },
+        {
+          execution: {
+            process: [
+              {
+                type: 'SWAP',
+                status: 'FAILED',
+                txHash: '0x9e3a93e15e2c778c56efba7af7016e0dd149769dd6b087da8c2d92e2e24580b4',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
   });
 });
 

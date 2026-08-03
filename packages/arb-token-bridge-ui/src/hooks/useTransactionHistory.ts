@@ -1,12 +1,13 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { useDebounce } from '@uidotdev/usehooks';
+import { getCallsStatus } from '@wagmi/core';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
 import { isHash } from 'viem';
-import { useAccount } from 'wagmi';
+import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -14,6 +15,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import {
   getDepositsWithoutStatusesFromCache,
+  getLifiTransferDisplayStatus,
   getUpdatedCctpTransfer,
   getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
@@ -34,14 +36,17 @@ import { Transaction } from '../types/Transactions';
 import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
+import { getLifiRouteTransactionData, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
+import { getPendingLifiRouteBatchId, resolveLifiRouteBatchId } from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { isBundleRejectedError } from '../util/isUserRejectedError';
 import { logger } from '../util/logger';
-import { isNetwork } from '../util/networks';
+import { getExplorerUrl, isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
 import { fetchTransactionsByTxHash } from '../util/txHistory/fetchTransactionsByTxHash';
 import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
@@ -254,19 +259,33 @@ function mergeLifiTransaction({
   apiTx: LifiMergedTransaction;
   localTx: LifiMergedTransaction;
 }): LifiMergedTransaction {
+  const apiSnapshot = getLifiTransactionSnapshot(apiTx);
+  const localSnapshot = getLifiTransactionSnapshot(localTx);
+  if (!apiSnapshot || !localSnapshot) {
+    return getLifiTransferDisplayStatus({
+      ...localTx,
+      ...apiTx,
+      lifiRoute: apiTx.lifiRoute ?? localTx.lifiRoute,
+    });
+  }
+
   const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
     sourceChainId: apiTx.sourceChainId,
     destinationChainId: apiTx.destinationChainId,
   });
   const apiFromToken =
-    apiTx.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+    apiSnapshot.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
       ? undefined
-      : apiTx.fromAmount.token;
+      : apiSnapshot.fromAmount.token;
   const apiToToken =
-    apiTx.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL ? undefined : apiTx.toAmount.token;
-  const apiToAmount = apiToToken ? apiTx.toAmount : undefined;
+    apiSnapshot.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+      ? undefined
+      : apiSnapshot.toAmount.token;
+  const apiToAmount = apiToToken ? apiSnapshot.toAmount : undefined;
+  const apiTool = apiSnapshot.toolsDetails[0];
+  const localTool = localSnapshot.toolsDetails[0];
 
-  return {
+  return getLifiTransferDisplayStatus({
     ...localTx,
     ...apiTx,
     parentChainId,
@@ -275,35 +294,42 @@ function mergeLifiTransaction({
     isWithdrawal: !isDepositMode,
     resolvedAt: apiTx.resolvedAt ?? localTx.resolvedAt,
     destinationTxId: apiTx.destinationTxId ?? localTx.destinationTxId,
-    durationMs: apiTx.durationMs || localTx.durationMs,
+    durationMs: Number.isFinite(apiSnapshot.durationMs)
+      ? apiSnapshot.durationMs
+      : localSnapshot.durationMs,
     fromAmount: {
-      amount: apiTx.fromAmount.amount || localTx.fromAmount.amount,
-      amountUSD: apiTx.fromAmount.amountUSD || localTx.fromAmount.amountUSD || '0',
+      amount: apiSnapshot.fromAmount.amount || localSnapshot.fromAmount.amount,
+      amountUSD: apiSnapshot.fromAmount.amountUSD || localSnapshot.fromAmount.amountUSD || '0',
       token: {
-        address: apiFromToken?.address || localTx.fromAmount.token.address || '',
-        decimals: apiFromToken?.decimals || localTx.fromAmount.token.decimals || 0,
-        logoURI: apiFromToken?.logoURI || localTx.fromAmount.token.logoURI || '',
+        address: apiFromToken?.address || localSnapshot.fromAmount.token.address || '',
+        decimals: apiFromToken?.decimals || localSnapshot.fromAmount.token.decimals || 0,
+        logoURI: apiFromToken?.logoURI || localSnapshot.fromAmount.token.logoURI || '',
         symbol:
-          apiFromToken?.symbol || localTx.fromAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
+          apiFromToken?.symbol ||
+          localSnapshot.fromAmount.token.symbol ||
+          UNKNOWN_LIFI_TOKEN_SYMBOL,
       },
     },
     toAmount: {
-      amount: apiToAmount?.amount || localTx.toAmount.amount,
-      amountUSD: apiToAmount?.amountUSD || localTx.toAmount.amountUSD || '0',
+      amount: apiToAmount?.amount || localSnapshot.toAmount.amount,
+      amountUSD: apiToAmount?.amountUSD || localSnapshot.toAmount.amountUSD || '0',
       token: {
-        address: apiToToken?.address || localTx.toAmount.token.address || '',
-        decimals: apiToToken?.decimals || localTx.toAmount.token.decimals || 0,
-        logoURI: apiToToken?.logoURI || localTx.toAmount.token.logoURI || '',
-        symbol: apiToToken?.symbol || localTx.toAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
+        address: apiToToken?.address || localSnapshot.toAmount.token.address || '',
+        decimals: apiToToken?.decimals || localSnapshot.toAmount.token.decimals || 0,
+        logoURI: apiToToken?.logoURI || localSnapshot.toAmount.token.logoURI || '',
+        symbol:
+          apiToToken?.symbol || localSnapshot.toAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
       },
     },
-    toolDetails: {
-      key: apiTx.toolDetails.key || localTx.toolDetails.key || '',
-      name: apiTx.toolDetails.name || localTx.toolDetails.name || '',
-      logoURI: apiTx.toolDetails.logoURI || localTx.toolDetails.logoURI || '',
-    },
-    transactionRequest: apiTx.transactionRequest ?? localTx.transactionRequest,
-  };
+    toolsDetails: [
+      {
+        key: apiTool.key || localTool.key || '',
+        name: apiTool.name || localTool.name || '',
+        logoURI: apiTool.logoURI || localTool.logoURI || '',
+      },
+    ],
+    lifiRoute: apiTx.lifiRoute ?? localTx.lifiRoute,
+  });
 }
 
 // remove the duplicates from the transactions passed
@@ -949,7 +975,8 @@ export const useTransactionHistory = (
   const address = isTxHashSearch ? undefined : searchedAddress;
   const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
-  const { chain } = useAccount();
+  const { chain, connector } = useAccount();
+  const wagmiConfig = useConfig();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
@@ -972,7 +999,9 @@ export const useTransactionHistory = (
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
     (state) => state.updateTransaction,
   );
-  const { connector } = useAccount();
+  const removeLifiTransactionFromCache = useLifiMergedTransactionCacheStore(
+    (state) => state.removeTransaction,
+  );
   // max number of transactions mapped in parallel
   const MAX_BATCH_SIZE = 3;
   // Pause fetching after specified number of days. User can resume fetching to get another batch.
@@ -1056,7 +1085,7 @@ export const useTransactionHistory = (
 
   const lifiTransactionsFromCache = useMemo(() => {
     if (
-      !useLifiMergedTransactionCacheStore.persist.hasHydrated ||
+      !useLifiMergedTransactionCacheStore.persist.hasHydrated() ||
       !address ||
       !isTxHistoryEnabled
     ) {
@@ -1149,6 +1178,10 @@ export const useTransactionHistory = (
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {
+      if (isLifiTransfer(newTx)) {
+        updateLifiTransactionInCache(newTx);
+      }
+
       // check if tx is a new transaction initiated by the user, and update it
       const foundInNewTransactions =
         typeof newTransactionsData?.find((oldTx) => isSameTransaction(oldTx, newTx)) !==
@@ -1161,9 +1194,6 @@ export const useTransactionHistory = (
             return { ...(isSameTransaction(oldTx, newTx) ? newTx : oldTx) };
           }),
         );
-        if (isLifiTransfer(newTx)) {
-          updateLifiTransactionInCache(newTx);
-        }
       }
 
       // the same tx can also exist in the paginated history (txPages, seeded from the
@@ -1204,17 +1234,88 @@ export const useTransactionHistory = (
           ...prevTxPages.slice(pageNumberToUpdate + 1),
         ];
 
-        if (isLifiTransfer(newTx)) {
-          updateLifiTransactionInCache(newTx);
-        }
         return newTxPages;
       }, false);
     },
     [mutateNewTransactionsData, mutateTxPages, newTransactionsData, updateLifiTransactionInCache],
   );
 
+  const removeCachedTransaction = useCallback(
+    (tx: LifiMergedTransaction) => {
+      removeLifiTransactionFromCache(tx);
+      mutateNewTransactionsData(
+        (transactions) => transactions?.filter((existing) => !isSameTransaction(existing, tx)),
+        false,
+      );
+      mutateTxPages(
+        (pages) =>
+          pages?.map((transactions) =>
+            transactions.filter((existing) => !isSameTransaction(existing, tx)),
+          ),
+        false,
+      );
+    },
+    [mutateNewTransactionsData, mutateTxPages, removeLifiTransactionFromCache],
+  );
+
+  const reconcileLifiBatchTransaction = useCallback(
+    async (tx: LifiMergedTransaction) => {
+      const batchId = getPendingLifiRouteBatchId(tx.lifiRoute);
+      if (!batchId || !connector || !tx.lifiRoute) {
+        return false;
+      }
+
+      try {
+        const callsStatus = await getCallsStatus(wagmiConfig, { connector, id: batchId });
+        if (callsStatus.status === 'pending') {
+          return true;
+        }
+
+        const txHash = callsStatus.receipts?.at(-1)?.transactionHash;
+        if (!txHash) {
+          removeCachedTransaction(tx);
+          return true;
+        }
+
+        const txLink = `${getExplorerUrl(callsStatus.chainId ?? tx.sourceChainId)}/tx/${txHash}`;
+        const lifiRoute = resolveLifiRouteBatchId({
+          route: tx.lifiRoute,
+          batchId,
+          txHash,
+          txLink,
+        });
+        updateCachedTransaction({
+          ...tx,
+          txId: txHash,
+          ...getLifiRouteTransactionData(lifiRoute),
+        });
+        return true;
+      } catch (error) {
+        if (isBundleRejectedError(error)) {
+          removeCachedTransaction(tx);
+        }
+        return true;
+      }
+    },
+    [connector, removeCachedTransaction, updateCachedTransaction, wagmiConfig],
+  );
+
+  useEffect(() => {
+    if (!address) {
+      return;
+    }
+
+    (lifiTransactions[address] || []).forEach((tx) => {
+      reconcileLifiBatchTransaction(tx);
+    });
+  }, [address, lifiTransactions, reconcileLifiBatchTransaction]);
+
   const updatePendingTransaction = useCallback(
     async (tx: MergedTransaction) => {
+      if (isLifiTransfer(tx) && (await reconcileLifiBatchTransaction(tx))) {
+        return;
+      }
+
       if (!isTxPending(tx)) {
         // if not pending we don't need to check for status, we accept whatever status is passed in
         updateCachedTransaction(tx);
@@ -1235,7 +1336,7 @@ export const useTransactionHistory = (
 
       if (isLifiTransfer(tx)) {
         const updatedLifiTransfer = await getUpdatedLifiTransfer(tx);
-        updateCachedTransaction(updatedLifiTransfer);
+        updateCachedTransaction(getLifiTransferDisplayStatus(updatedLifiTransfer));
         return;
       }
 
@@ -1257,7 +1358,7 @@ export const useTransactionHistory = (
       const updatedRetryableDeposit = await getUpdatedRetryableDeposit(tx);
       updateCachedTransaction(updatedRetryableDeposit);
     },
-    [updateCachedTransaction],
+    [reconcileLifiBatchTransaction, updateCachedTransaction],
   );
 
   useEffect(() => {

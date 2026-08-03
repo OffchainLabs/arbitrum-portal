@@ -12,9 +12,10 @@ import { twMerge } from 'tailwind-merge';
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import { MergedTransaction } from '../../state/app/state';
+import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isBatchTransfer } from '../../util/TokenDepositUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -74,11 +75,13 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
       <ExternalLink
         href={getSourceTransactionUrl(tx)}
         aria-label="Transaction status"
-        className="arb-hover flex items-center space-x-1 text-yellow-400"
+        className="arb-hover text-yellow-400"
       >
-        <div className="h-[10px] w-[10px] rounded-full border border-yellow-400 " />
-        <span>Pending</span>
-        <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
+        <div className="flex shrink-0 items-center space-x-1 whitespace-nowrap">
+          <div className="h-[10px] w-[10px] shrink-0 rounded-full border border-yellow-400" />
+          <span>Pending</span>
+          <ArrowTopRightOnSquareIcon height={10} className="shrink-0" />
+        </div>
       </ExternalLink>
     );
   }
@@ -119,9 +122,11 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
 
 export function TransactionsTableRow({
   tx,
+  updatePendingTransaction,
   className = '',
 }: {
   tx: MergedTransaction;
+  updatePendingTransaction: UseTransactionHistoryResult['updatePendingTransaction'];
   className?: string;
 }) {
   const openTxDetails = useTxDetailsStore((state) => state.open);
@@ -137,16 +142,19 @@ export function TransactionsTableRow({
   // make sure relative time updates periodically
   useInterval(() => setTxRelativeTime(dayjs(tx.createdAt).fromNow()), 10_000);
 
+  const lifiSnapshot = isLifiTransfer(tx) ? getLifiTransactionSnapshot(tx) : undefined;
   const tokenSymbol = isLifiTransfer(tx)
-    ? tx.fromAmount.token.symbol
+    ? (lifiSnapshot?.fromAmount.token.symbol ?? tx.asset)
     : sanitizeTokenSymbol(tx.asset, {
         erc20L1Address: tx.tokenAddress,
         chainId: tx.sourceChainId,
       });
-  const tokenLogoSrc = isLifiTransfer(tx) ? tx.fromAmount.token.logoURI : undefined;
-  const tokenAddress = isLifiTransfer(tx) ? tx.fromAmount.token.address : tx.tokenAddress;
+  const tokenLogoSrc = lifiSnapshot?.fromAmount.token.logoURI;
+  const tokenAddress = isLifiTransfer(tx)
+    ? (lifiSnapshot?.fromAmount.token.address ?? tx.tokenAddress)
+    : tx.tokenAddress;
 
-  const lifiToAmount = isLifiTransfer(tx) ? tx.toAmount : undefined;
+  const lifiToAmount = lifiSnapshot?.toAmount;
   const toTokenSymbol = lifiToAmount?.token?.symbol ?? tokenSymbol;
   const toTokenLogoSrc = lifiToAmount?.token?.logoURI;
   const toTokenAmount = lifiToAmount
@@ -160,25 +168,6 @@ export function TransactionsTableRow({
     isBatchTransfer(tx) && tx.value2
       ? formatAmount(Number(tx.value2), { symbol: nativeCurrency.symbol })
       : null;
-
-  const isError = useMemo(() => {
-    if (tx.isCctp || !tx.isWithdrawal) {
-      if (
-        tx.depositStatus === DepositStatus.L1_FAILURE ||
-        tx.depositStatus === DepositStatus.EXPIRED
-      ) {
-        return true;
-      }
-
-      if (tx.depositStatus === DepositStatus.CREATION_FAILED) {
-        // In case of a retryable ticket creation failure, mark only the token deposits as errors
-        return tx.assetType === AssetType.ETH;
-      }
-    }
-
-    // Withdrawal
-    return tx.status === 'Failure';
-  }, [tx]);
 
   const testId = useMemo(() => {
     const type = isClaimableTx ? 'claimable' : 'deposit';
@@ -300,8 +289,8 @@ export function TransactionsTableRow({
       <div className="flex justify-center px-3 align-middle">
         <TransactionsTableRowAction
           tx={tx}
-          isError={isError}
           type={tx.isWithdrawal ? 'withdrawals' : 'deposits'}
+          updatePendingTransaction={updatePendingTransaction}
         />
       </div>
       <div className="pl-2 align-middle">

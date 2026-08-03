@@ -10,7 +10,12 @@ import {
   getStandardDepositDuration,
   useTransferDuration,
 } from '../../hooks/useTransferDuration';
-import { MergedTransaction } from '../../state/app/state';
+import {
+  BaseMergedTransaction,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
 import { getOrbitChains } from '../../util/orbitChainsList';
 
 const DAY_IN_MINUTES = 24 * 60;
@@ -28,7 +33,7 @@ function mockTransactionObject({
   isCctp: boolean;
   parentChainId: number;
   childChainId: number;
-}): MergedTransaction {
+}): BaseMergedTransaction {
   return {
     sender: '',
     destination: '',
@@ -72,6 +77,35 @@ describe('useTransferDuration', () => {
   beforeAll(() => {
     // register all chains so we can read `isTestnet`
     getOrbitChains().forEach((chain) => registerCustomArbitrumNetwork(chain));
+  });
+
+  it('preserves a zero LiFi duration', async () => {
+    const token = {
+      address: '0x0000000000000000000000000000000000000000',
+      decimals: 18,
+      logoURI: '',
+      symbol: 'ETH',
+    };
+    const transaction: LifiMergedTransaction = {
+      ...mockTransactionObject({
+        minutesSinceStart: 0,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+      isLifi: true,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      destinationTxId: null,
+      durationMs: 0,
+      toolsDetails: [{ key: 'lifi', name: 'LI.FI', logoURI: '' }],
+      fromAmount: { amount: '1', amountUSD: '1', chainId: 1, token },
+      toAmount: { amount: '1', amountUSD: '1', chainId: 42161, token },
+    };
+
+    const { result } = await renderHookAsyncUseTransferDuration(transaction);
+
+    expect(result.current.approximateDurationInMinutes).toBe(0);
   });
 
   // ========= DEPOSITS =========
