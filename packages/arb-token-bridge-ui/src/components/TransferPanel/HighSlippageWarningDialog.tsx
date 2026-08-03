@@ -1,17 +1,17 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { BigNumber } from 'ethers';
 
-import { Token } from '@/bridge/app/api/crosschain-transfers/types';
+import { RouteCost, Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
-import { useRouteStore } from './hooks/useRouteStore';
+import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
 type AmountProps = {
   amount: string | BigNumber;
   token: Token;
-  showToken?: true;
+  showToken?: boolean;
 };
 function Amount({ token, showToken, amount }: AmountProps) {
   if (showToken) {
@@ -19,6 +19,14 @@ function Amount({ token, showToken, amount }: AmountProps) {
   }
 
   return <span>{formatUSD(Number(amount))}</span>;
+}
+
+function toAmountProps(costs: RouteCost[]): AmountProps[] {
+  return costs.map((cost) => ({
+    amount: cost.amountUSD ?? cost.amount,
+    token: cost.token,
+    showToken: typeof cost.amountUSD === 'undefined',
+  }));
 }
 
 export function getAmountLoss({ fromAmount, toAmount }: { fromAmount: number; toAmount: number }) {
@@ -33,7 +41,7 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
       <span>{title}</span>
       <div className="flex gap-1">
         {amountProps.map(({ amount, token, showToken }, index) => (
-          <span key={token.address}>
+          <span key={`${token.address}-${index}`}>
             <Amount amount={amount} token={token} showToken={showToken} />
             {amountProps.length > 1 && index < amountProps.length - 1 && <span>, </span>}
           </span>
@@ -44,7 +52,7 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
 }
 
 export function HighSlippageWarningDialog(props: UseDialogProps) {
-  const context = useRouteStore((state) => state.context);
+  const context = useRouteStore((state) => getSelectedRouteContext(state));
 
   if (!context) {
     props.onClose(false);
@@ -68,37 +76,23 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
           Slippage
         </div>
       }
-      onClose={(confirmed: boolean) => {
-        props.onClose(confirmed);
-      }}
       className="!max-w-[420px]"
     >
       <div className="mt-4 text-sm">
-        Slippage for this transaction is {lossPercentage.toString()}%, that&apos;s quite high.
+        Slippage for this transaction is {lossPercentage}%, that&apos;s quite high.
       </div>
 
       <div className="my-4 flex flex-col gap-2 text-sm">
         <LineWrapper
           title="Sending"
-          amountProps={Object.keys(amounts).map((address) => ({
-            amount: amounts[address]!.amount,
-            token: amounts[address]!.token,
+          amountProps={Object.values(amounts).map((amountToPay) => ({
+            amount: amountToPay.amount,
+            token: amountToPay.token,
             showToken: true,
           }))}
         />
-        <LineWrapper
-          title="Gas fees"
-          amountProps={[{ amount: context.gas.amountUSD, token: context.gas.token }]}
-        />
-        <LineWrapper
-          title="Protocol fees"
-          amountProps={[
-            {
-              amount: context.fee.amountUSD,
-              token: context.fee.token,
-            },
-          ]}
-        />
+        <LineWrapper title="Gas fees" amountProps={toAmountProps(context.gas)} />
+        <LineWrapper title="Protocol fees" amountProps={toAmountProps(context.fee)} />
         <LineWrapper
           title="Receiving"
           amountProps={[
@@ -112,7 +106,7 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
         <div className="flex items-center justify-between rounded bg-orange-dark px-2 py-1 font-bold text-orange">
           <span>Value lost</span>
           <span>
-            -{lossPercentage.toString()}% (
+            -{lossPercentage}% (
             <Amount amount={diff.toString()} token={context.toAmount.token} />)
           </span>
         </div>

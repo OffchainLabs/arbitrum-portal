@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { utils } from 'ethers';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
@@ -15,7 +14,7 @@ import {
 } from '../../../hooks/useTransferDuration';
 import { bridgedUsdcToken, nativeUsdcToken } from '../../../util/CommonAddressUtils';
 import { isTokenNativeUSDC } from '../../../util/TokenUtils';
-import { isNetwork } from '../../../util/networks';
+import { getNetworkName, isNetwork } from '../../../util/networks';
 import { useRouteStore } from '../hooks/useRouteStore';
 import { Route } from './Route';
 import { getGasCostAndToken } from './getGasCostAndToken';
@@ -45,9 +44,9 @@ function getDuration({
   return getStandardDepositDuration(isTestnet);
 }
 
-export function ArbitrumCanonicalRoute() {
+export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: string }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChainProvider, isDepositMode } =
+  const { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const {
     status: gasSummaryStatus,
@@ -71,15 +70,15 @@ export function ArbitrumCanonicalRoute() {
   );
   const [selectedToken] = useSelectedToken();
 
-  const arbitrumData = useRouteStore(
-    (state) => state.routes.find((route) => route.type === 'arbitrum')?.data,
-  );
-
   const { gasCost, isLoading } = useMemo(
     () =>
       getGasCostAndToken({
         childChainNativeCurrency,
         parentChainNativeCurrency,
+        childChainId: childChain.id,
+        parentChainId: parentChain.id,
+        childChainName: getNetworkName(childChain.id),
+        parentChainName: getNetworkName(parentChain.id),
         gasSummaryStatus,
         estimatedChildChainGasFees,
         estimatedParentChainGasFees,
@@ -87,10 +86,12 @@ export function ArbitrumCanonicalRoute() {
       }),
     [
       childChainNativeCurrency,
+      childChain.id,
       estimatedChildChainGasFees,
       estimatedParentChainGasFees,
       gasSummaryStatus,
       isDepositMode,
+      parentChain.id,
       parentChainNativeCurrency,
     ],
   );
@@ -113,31 +114,18 @@ export function ArbitrumCanonicalRoute() {
     60 *
     1_000;
 
-  if (!arbitrumData) {
-    return null;
-  }
-
   return (
     <Route
       type="arbitrum"
       bridge="Arbitrum Bridge"
       bridgeIconURI="/icons/arbitrum.svg"
       durationMs={durationMs}
-      amountReceived={arbitrumData.amountReceived}
+      amountReceived={amountReceived}
       isLoadingGasEstimate={isLoading}
       overrideToken={isUsdcTransfer ? overrideToken : undefined}
-      gasCost={
-        gasCost && gasCost.length > 0
-          ? gasCost.map(({ gasCost, gasToken }) => ({
-              gasCost: utils
-                .parseUnits(gasCost.toFixed(childChainNativeCurrency.decimals), gasToken.decimals)
-                .toString(),
-              gasToken,
-            }))
-          : []
-      }
+      gasCost={gasCost ?? []}
       onSelectedRouteClick={setSelectedRoute}
-      tag="security-guaranteed"
+      tag={['security-guaranteed']}
       selected={selectedRoute === 'arbitrum'}
     />
   );
