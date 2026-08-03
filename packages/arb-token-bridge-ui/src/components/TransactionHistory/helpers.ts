@@ -28,10 +28,11 @@ import { getBlockBeforeConfirmation } from '../../state/cctpState';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { SimplifiedRouteType } from '../../util/AnalyticsUtils';
-import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+import { getLifiToolDetails, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import {
   getLifiRouteStatusRequest,
   getLifiTransferStatus,
+  isPendingLifiProcessId,
   isValidLifiTransactionHash,
 } from '../../util/LifiTransactionStatus';
 import { getAttestationHashAndMessageFromReceipt } from '../../util/cctp/getAttestationHashAndMessageFromReceipt';
@@ -79,6 +80,21 @@ export function isLifiTransfer(tx: Transfer): tx is LifiMergedTransaction {
   return 'isLifi' in tx && tx.isLifi === true;
 }
 
+function isLifiTransferFailedOrRefunded(tx: LifiMergedTransaction) {
+  return (
+    tx.status === WithdrawalStatus.FAILURE ||
+    tx.destinationStatus === WithdrawalStatus.FAILURE ||
+    tx.status === WithdrawalStatus.REFUNDED ||
+    tx.destinationStatus === WithdrawalStatus.REFUNDED
+  );
+}
+
+function isLifiTransferRefunded(tx: LifiMergedTransaction) {
+  return (
+    tx.status === WithdrawalStatus.REFUNDED || tx.destinationStatus === WithdrawalStatus.REFUNDED
+  );
+}
+
 export function getTransactionType(tx: Transfer): SimplifiedRouteType {
   if (isCctpTransfer(tx)) {
     return 'cctp';
@@ -121,12 +137,7 @@ export function isTxPending(tx: MergedTransaction) {
   }
 
   if (isLifiTransfer(tx)) {
-    if (
-      tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE ||
-      tx.status === WithdrawalStatus.REFUNDED ||
-      tx.destinationStatus === WithdrawalStatus.REFUNDED
-    ) {
+    if (isLifiTransferFailedOrRefunded(tx)) {
       return false;
     }
 
@@ -142,6 +153,55 @@ export function isTxPending(tx: MergedTransaction) {
     );
   }
   return tx.status === WithdrawalStatus.UNCONFIRMED;
+}
+
+export const LIFI_TRANSACTION_SETTLE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+function isWithinLifiPendingPeriod(tx: LifiMergedTransaction) {
+  return tx.createdAt === null || Date.now() - tx.createdAt <= LIFI_TRANSACTION_SETTLE_AFTER_MS;
+}
+
+export function isLifiTransferResumable(tx: MergedTransaction) {
+  if (!isLifiTransfer(tx) || !tx.txId || (tx.lifiRoute?.steps.length ?? 0) <= 1) {
+    return false;
+  }
+
+  if (isLifiTransferRefunded(tx)) {
+    return false;
+  }
+
+  const steps = tx.lifiRoute?.steps ?? [];
+  const hasUnfinishedStep = steps.some((step) => step.execution?.status !== 'DONE');
+  const hasActiveProcess = steps.some((step) =>
+    (step.execution?.process ?? []).some(
+      (process) =>
+        ['PENDING', 'STARTED'].includes(process.status) &&
+        (isWithinLifiPendingPeriod(tx) || !isPendingLifiProcessId(process)),
+    ),
+  );
+
+  return hasUnfinishedStep && !hasActiveProcess;
+}
+
+export function getLifiTransferDisplayStatus(tx: LifiMergedTransaction): LifiMergedTransaction {
+  const routeIsIncomplete = tx.lifiRoute?.steps.some((step) => step.execution?.status !== 'DONE');
+  const bridgeIsComplete = tx.lifiRoute?.steps.some((step) =>
+    (step.execution?.process ?? []).some(
+      (process) => process.type === 'CROSS_CHAIN' && process.status === 'DONE',
+    ),
+  );
+
+  if (!routeIsIncomplete || !bridgeIsComplete) {
+    return tx;
+  }
+
+  return {
+    ...tx,
+    status: WithdrawalStatus.CONFIRMED,
+    destinationStatus: isWithinLifiPendingPeriod(tx)
+      ? WithdrawalStatus.UNCONFIRMED
+      : WithdrawalStatus.CONFIRMED,
+  };
 }
 
 export function isTxClaimable(tx: MergedTransaction): boolean {
@@ -173,12 +233,7 @@ export function isTxFailed(tx: MergedTransaction): boolean {
   }
 
   if (isLifiTransfer(tx)) {
-    return (
-      tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE ||
-      tx.status === WithdrawalStatus.REFUNDED ||
-      tx.destinationStatus === WithdrawalStatus.REFUNDED
-    );
+    return isLifiTransferFailedOrRefunded(tx);
   }
 
   if (isDeposit(tx)) {
@@ -493,8 +548,9 @@ export async function getUpdatedWithdrawal(tx: MergedTransaction): Promise<Merge
   const txReceipt = await getTxReceipt(tx);
   const childTxReceipt = new ChildTransactionReceipt(txReceipt);
   const events = childTxReceipt.getChildToParentEvents();
-  const withdrawalEvent = tx.uniqueId
-    ? events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!))
+  const existingUniqueId = tx.uniqueId;
+  const withdrawalEvent = existingUniqueId
+    ? events.find((e) => getUniqueIdOrHashFromEvent(e).eq(existingUniqueId))
     : events[0];
 
   if (childTxReceipt) {
@@ -640,12 +696,7 @@ function deriveLifiStatus({
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
 ): Promise<MergedTransaction> {
-  if (
-    tx.status === WithdrawalStatus.FAILURE ||
-    tx.destinationStatus === WithdrawalStatus.FAILURE ||
-    tx.status === WithdrawalStatus.REFUNDED ||
-    tx.destinationStatus === WithdrawalStatus.REFUNDED
-  ) {
+  if (isLifiTransferFailedOrRefunded(tx)) {
     return tx;
   }
 
@@ -655,7 +706,8 @@ export async function getUpdatedLifiTransfer(
       ? {
           params: {
             txHash: tx.txId,
-            bridge: tx.toolDetails.key,
+            bridge:
+              getLifiTransactionSnapshot(tx)?.toolsDetails[0]?.key ?? getLifiToolDetails().key,
             fromChain: tx.sourceChainId.toString(),
             toChain: tx.destinationChainId.toString(),
           },
@@ -795,7 +847,7 @@ export function getDestinationNetworkTxId(tx: MergedTransaction) {
 }
 
 function getLifiTransactionUrl(tx: LifiMergedTransaction, txId: string | null | undefined) {
-  if (!txId) {
+  if (!isValidLifiTransactionHash(txId)) {
     return '';
   }
 

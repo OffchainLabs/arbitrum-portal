@@ -1,10 +1,8 @@
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
 import Image from 'next/image';
-import { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import LifiLogo from '@/icons/lifi.svg';
 import ArbitrumLogo from '@/images/ArbitrumLogo.svg';
 import CctpLogoColor from '@/images/CctpLogoColor.svg';
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
@@ -27,28 +25,14 @@ import { getExplorerUrl, getNetworkName, isNetwork } from '../../util/networks';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { NetworkImage } from '../common/NetworkImage';
-import { SafeImage } from '../common/SafeImage';
+import { LifiTransactionDetails } from './LifiTransactionDetails';
+import { TransactionDetailsBox } from './TransactionDetailsBox';
 import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
 import { getTransactionType, isLifiTransfer, isTxCompleted } from './helpers';
 
 const ProtocolNameAndLogo = ({ tx }: { tx: MergedTransaction }) => {
-  if (isLifiTransfer(tx)) {
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-row items-center gap-1">
-          <SafeImage alt="Bridge logo" src={tx.toolDetails.logoURI} width={30} height={30} />
-          <span>{tx.toolDetails.name}</span>
-        </div>
-        <div className="flex flex-row items-center gap-1">
-          <Image alt="Lifi logo" src={LifiLogo} width={16} height={16} />
-          <span>Bridged via LiFi</span>
-        </div>
-      </div>
-    );
-  }
-
   let protocolLogo, protocolName, protocolDescription;
 
   if (tx.isOft) {
@@ -83,15 +67,6 @@ const ProtocolNameAndLogo = ({ tx }: { tx: MergedTransaction }) => {
   );
 };
 
-const DetailsBox = ({ children, header }: PropsWithChildren<{ header?: string }>) => {
-  return (
-    <div className="flex w-full flex-col rounded border border-white/10 bg-white/5 p-3 font-light text-white">
-      {header && <h4 className="mb-2 text-xs uppercase text-white/60">{header}</h4>}
-      {children}
-    </div>
-  );
-};
-
 interface TransactionDetailsContentProps {
   tx: MergedTransaction;
   walletAddress?: string;
@@ -111,13 +86,10 @@ export const TransactionDetailsContent = ({
     return null;
   }
 
-  const tokenSymbol = isLifiTransfer(tx)
-    ? tx.fromAmount.token.symbol
-    : sanitizeTokenSymbol(tx.asset, {
-        erc20L1Address: tx.tokenAddress,
-        chainId: tx.sourceChainId,
-      });
-  const tokenLogoSrc = isLifiTransfer(tx) ? tx.fromAmount.token.logoURI : undefined;
+  const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
+    erc20L1Address: tx.tokenAddress,
+    chainId: tx.sourceChainId,
+  });
 
   const showPriceInUsd = !isNetwork(tx.parentChainId).isTestnet && tx.asset === ether.symbol;
 
@@ -133,10 +105,54 @@ export const TransactionDetailsContent = ({
 
   const sourceNetworkName = getNetworkName(sourceChainId);
   const destinationNetworkName = getNetworkName(destinationChainId);
+  const showFullCustomAddress = isLifiTransfer(tx);
+  const customSourceAddress = isDifferentSourceAddress ? tx.sender : undefined;
+  const customDestinationAddress = isDifferentDestinationAddress ? tx.destination : undefined;
+
+  const customAddressDetails = (isDifferentSourceAddress || isDifferentDestinationAddress) && (
+    <TransactionDetailsBox header="Custom Address">
+      {customSourceAddress && (
+        <span className="text-xs">
+          Funds received from{' '}
+          <ExternalLink
+            className="arb-hover underline"
+            href={`${getExplorerUrl(sourceChainId)}/address/${customSourceAddress}`}
+            aria-label={`Custom address: ${shortenAddress(customSourceAddress)}`}
+          >
+            {showFullCustomAddress ? customSourceAddress : shortenAddress(customSourceAddress)}
+          </ExternalLink>
+        </span>
+      )}
+      {customDestinationAddress && (
+        <span className="text-xs">
+          Funds sent to{' '}
+          <ExternalLink
+            className="arb-hover underline"
+            href={`${getExplorerUrl(destinationChainId)}/address/${customDestinationAddress}`}
+            aria-label={`Custom address: ${shortenAddress(customDestinationAddress)}`}
+          >
+            {showFullCustomAddress
+              ? customDestinationAddress
+              : shortenAddress(customDestinationAddress)}
+          </ExternalLink>
+        </span>
+      )}
+    </TransactionDetailsBox>
+  );
+
+  if (isLifiTransfer(tx)) {
+    return (
+      <LifiTransactionDetails
+        tx={tx}
+        embedMode={embedMode}
+        customAddressDetails={customAddressDetails}
+      />
+    );
+  }
 
   return (
     <div className={twMerge('grid gap-4', embedMode && 'min-[850px]:grid-cols-2')}>
-      <DetailsBox>
+      <TransactionDetailsBox>
         <div className="flex flex-col space-y-3">
           <div className="flex justify-between text-xs text-white">
             <span>{dayjs(tx.createdAt).format('MMMM DD, YYYY')}</span>
@@ -144,18 +160,7 @@ export const TransactionDetailsContent = ({
           </div>
           <div className="flex flex-col space-y-1">
             <div className="flex items-center space-x-2">
-              {tokenLogoSrc ? (
-                <SafeImage
-                  alt={`${tokenSymbol} logo`}
-                  src={tokenLogoSrc}
-                  width={20}
-                  height={20}
-                  className="h-5 w-5"
-                  fallback={<div className="h-5 w-5 rounded-full bg-white/20" />}
-                />
-              ) : (
-                <TransactionsTableTokenImage tx={tx} />
-              )}
+              <TransactionsTableTokenImage tx={tx} />
               <span>
                 {formatAmount(Number(tx.value), {
                   symbol: tokenSymbol,
@@ -187,9 +192,9 @@ export const TransactionDetailsContent = ({
             )}
           </div>
         </div>
-      </DetailsBox>
+      </TransactionDetailsBox>
 
-      <DetailsBox header="Network">
+      <TransactionDetailsBox header="Network">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <NetworkImage chainId={sourceChainId} className="h-5 w-5" />
@@ -201,44 +206,17 @@ export const TransactionDetailsContent = ({
             <span>{destinationNetworkName}</span>
           </div>
         </div>
-      </DetailsBox>
+      </TransactionDetailsBox>
 
-      <DetailsBox header="Bridge">
+      <TransactionDetailsBox header="Bridge">
         <ProtocolNameAndLogo tx={tx} />
-      </DetailsBox>
+      </TransactionDetailsBox>
 
-      {(isDifferentSourceAddress || isDifferentDestinationAddress) && (
-        <DetailsBox header="Custom Address">
-          {isDifferentSourceAddress && (
-            <span className="text-xs">
-              Funds received from{' '}
-              <ExternalLink
-                className="arb-hover underline"
-                href={`${getExplorerUrl(sourceChainId)}/address/${tx.sender}`}
-                aria-label={`Custom address: ${shortenAddress(String(tx.sender))}`}
-              >
-                {shortenAddress(String(tx.sender))}
-              </ExternalLink>
-            </span>
-          )}
-          {isDifferentDestinationAddress && (
-            <span className="text-xs">
-              Funds sent to{' '}
-              <ExternalLink
-                className="arb-hover underline"
-                href={`${getExplorerUrl(destinationChainId)}/address/${tx.destination}`}
-                aria-label={`Custom address: ${shortenAddress(String(tx.destination))}`}
-              >
-                {shortenAddress(String(tx.destination))}
-              </ExternalLink>
-            </span>
-          )}
-        </DetailsBox>
-      )}
+      {customAddressDetails}
 
-      <DetailsBox>
+      <TransactionDetailsBox>
         <TransactionsTableDetailsSteps tx={tx} />
-      </DetailsBox>
+      </TransactionDetailsBox>
 
       {!isTxCompleted(tx) && (
         <div className="flex justify-end">
