@@ -61,10 +61,6 @@ jobs:
           - 8545:8545
           - 8547:8547
           - 3347:8549
-        options: >-
-          --log-driver local
-          --log-opt max-size=1m
-          --log-opt max-file=1
 
     steps:
       - name: Checkout
