@@ -53,7 +53,6 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
-import { getLifiRouteToolsDetails } from '../../util/LifiRouteUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
@@ -664,13 +663,16 @@ export function TransferPanel() {
           return;
         }
 
-        cachedLifiTransfer = {
-          ...cachedLifiTransfer,
+        const routeUpdates = {
           ...(txHash ? { txId: txHash } : {}),
           lifiRoute,
         };
+        cachedLifiTransfer = {
+          ...cachedLifiTransfer,
+          ...routeUpdates,
+        };
         updatePendingTransaction(cachedLifiTransfer);
-        updateLifiTransactionInCache(cachedLifiTransfer);
+        updateLifiTransactionInCache(cachedLifiTransfer, routeUpdates);
       };
 
       const transfer = await lifiTransferStarter.transfer({
@@ -725,9 +727,7 @@ export function TransferPanel() {
           (selectedToken && addressesEqual(selectedToken.address, constants.AddressZero))
             ? AssetType.ETH
             : AssetType.ERC20;
-        const toolsDetails = getLifiRouteToolsDetails(context.protocolData.route);
         const txId = getExecutedLifiRouteTxHash(lifiRoute) ?? transfer.sourceChainTransaction.hash;
-
         const newTransfer: LifiMergedTransaction = {
           txId,
           asset: selectedToken?.symbol || 'ETH',
@@ -750,15 +750,6 @@ export function TransferPanel() {
           childChainId: childChain.id,
           sourceChainId: networks.sourceChain.id,
           destinationChainId: networks.destinationChain.id,
-          toolDetails: toolsDetails[0],
-          toolsDetails,
-          durationMs: context.durationMs,
-          fromAmount: {
-            ...context.fromAmount,
-          },
-          toAmount: {
-            ...context.toAmount,
-          },
           destinationTxId: null,
           lifiRoute,
         };
