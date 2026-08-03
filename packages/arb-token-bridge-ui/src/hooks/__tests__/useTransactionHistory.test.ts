@@ -52,7 +52,7 @@ const lifiTestBaseTx: LifiMergedTransaction = {
   isLifi: true,
   tokenAddress: '0x0000000000000000000000000000000000000000',
   depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-  toolDetails: { key: 'across', name: 'Across', logoURI: '' },
+  toolsDetails: [{ key: 'across', name: 'Across', logoURI: '' }],
   durationMs: 0,
   fromAmount: {
     amount: '1',
@@ -319,13 +319,14 @@ describe('mergeTransactions', () => {
     const cachedLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
       txId: '0xlifi-duplicate',
+      durationMs: 12_000,
       parentChainId: 42161,
       childChainId: 1,
-      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      toolsDetails: [{ key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: 'https://example.com/source-token.png',
         },
       },
@@ -345,13 +346,14 @@ describe('mergeTransactions', () => {
       txId: '0xlifi-duplicate',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      durationMs: 0,
+      toolsDetails: [{ key: 'glacis', name: 'glacis', logoURI: '' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         amount: '2',
         amountUSD: '2',
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: '',
         },
       },
@@ -370,25 +372,53 @@ describe('mergeTransactions', () => {
       childChainId: 42161,
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: {
-        ...pendingApiLifiTx.toolDetails,
-        logoURI: cachedLifiTx.toolDetails.logoURI,
-      },
+      durationMs: 0,
+      toolsDetails: [
+        {
+          ...pendingApiLifiTx.toolsDetails?.[0],
+          logoURI: cachedLifiTx.toolsDetails?.[0]?.logoURI,
+        },
+      ],
       fromAmount: {
         ...pendingApiLifiTx.fromAmount,
-        token: cachedLifiTx.fromAmount.token,
+        token: cachedLifiTx.fromAmount!.token,
       },
       toAmount: cachedLifiTx.toAmount,
     });
+  });
+
+  it('falls back to the cached LiFi duration when the API duration is invalid', () => {
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-invalid-duration',
+      durationMs: 12_000,
+    };
+    const apiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-invalid-duration',
+      durationMs: Number.NaN,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      fetchedTransactions: [[cachedLifiTx, apiLifiTx]],
+    });
+
+    expect(transactions[0]).toMatchObject({ durationMs: 12_000 });
   });
 });
 
 describe('getDedupedTransactionsForPagination', () => {
   it('dedupes local LiFi cache when API history returns the same transaction', () => {
+    const cachedRoute = {
+      id: 'cached-route',
+      steps: [{}, {}],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
     const cachedLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
       status: WithdrawalStatus.UNCONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: cachedRoute,
     };
     const apiLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
@@ -403,7 +433,12 @@ describe('getDedupedTransactionsForPagination', () => {
       cachedLifiTransactions: [cachedLifiTx],
     });
 
-    expect(transactions).toEqual([apiLifiTx]);
+    expect(transactions).toEqual([
+      {
+        ...apiLifiTx,
+        lifiRoute: cachedRoute,
+      },
+    ]);
   });
 
   it('dedupes local LiFi cache with pending API history that has unknown destination token metadata', () => {
@@ -412,11 +447,11 @@ describe('getDedupedTransactionsForPagination', () => {
       txId: '0xlifi-pending-unknown',
       parentChainId: 42161,
       childChainId: 1,
-      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      toolsDetails: [{ key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: 'https://example.com/source-token.png',
         },
       },
@@ -436,13 +471,13 @@ describe('getDedupedTransactionsForPagination', () => {
       txId: '0xlifi-pending-unknown',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      toolsDetails: [{ key: 'glacis', name: 'glacis', logoURI: '' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         amount: '2',
         amountUSD: '2',
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: '',
         },
       },
@@ -462,13 +497,15 @@ describe('getDedupedTransactionsForPagination', () => {
       childChainId: 42161,
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: {
-        ...pendingApiLifiTx.toolDetails,
-        logoURI: cachedLifiTx.toolDetails.logoURI,
-      },
+      toolsDetails: [
+        {
+          ...pendingApiLifiTx.toolsDetails?.[0],
+          logoURI: cachedLifiTx.toolsDetails?.[0]?.logoURI,
+        },
+      ],
       fromAmount: {
         ...pendingApiLifiTx.fromAmount,
-        token: cachedLifiTx.fromAmount.token,
+        token: cachedLifiTx.fromAmount!.token,
       },
       toAmount: cachedLifiTx.toAmount,
     });

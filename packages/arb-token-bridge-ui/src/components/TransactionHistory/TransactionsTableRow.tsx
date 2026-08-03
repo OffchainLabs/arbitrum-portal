@@ -15,6 +15,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isBatchTransfer } from '../../util/TokenDepositUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -137,16 +138,19 @@ export function TransactionsTableRow({
   // make sure relative time updates periodically
   useInterval(() => setTxRelativeTime(dayjs(tx.createdAt).fromNow()), 10_000);
 
+  const lifiSnapshot = isLifiTransfer(tx) ? getLifiTransactionSnapshot(tx) : undefined;
   const tokenSymbol = isLifiTransfer(tx)
-    ? tx.fromAmount.token.symbol
+    ? (lifiSnapshot?.fromAmount.token.symbol ?? tx.asset)
     : sanitizeTokenSymbol(tx.asset, {
         erc20L1Address: tx.tokenAddress,
         chainId: tx.sourceChainId,
       });
-  const tokenLogoSrc = isLifiTransfer(tx) ? tx.fromAmount.token.logoURI : undefined;
-  const tokenAddress = isLifiTransfer(tx) ? tx.fromAmount.token.address : tx.tokenAddress;
+  const tokenLogoSrc = lifiSnapshot?.fromAmount.token.logoURI;
+  const tokenAddress = isLifiTransfer(tx)
+    ? (lifiSnapshot?.fromAmount.token.address ?? tx.tokenAddress)
+    : tx.tokenAddress;
 
-  const lifiToAmount = isLifiTransfer(tx) ? tx.toAmount : undefined;
+  const lifiToAmount = lifiSnapshot?.toAmount;
   const toTokenSymbol = lifiToAmount?.token?.symbol ?? tokenSymbol;
   const toTokenLogoSrc = lifiToAmount?.token?.logoURI;
   const toTokenAmount = lifiToAmount

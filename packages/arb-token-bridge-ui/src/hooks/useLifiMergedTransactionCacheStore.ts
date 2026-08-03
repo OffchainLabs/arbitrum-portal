@@ -5,40 +5,48 @@ import { PersistOptions, persist } from 'zustand/middleware';
 
 import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
 import { isSameTransaction } from '../components/TransactionHistory/helpers';
-import { LifiMergedTransaction } from '../state/app/state';
+import { LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 
 interface LifiMergedTransactionCacheState {
   transactions: Record<string, LifiMergedTransaction[]>;
   addTransaction: (tx: LifiMergedTransaction) => void;
-  updateTransaction: (tx: LifiMergedTransaction) => void;
+  updateTransaction: (tx: LifiMergedTransaction, updates?: Partial<LifiMergedTransaction>) => void;
 }
-
-const LIFI_CACHE_VERSION = 2 as const;
 
 type LifiCachePersistedState<Transaction> = {
   transactions: Record<string, Transaction[]>;
 };
 
 type Version1State = LifiCachePersistedState<
-  Omit<LifiMergedTransaction, 'fromAmount' | 'toAmount'> & {
-    fromAmount: Omit<AmountWithToken, 'amount'> & {
+  Omit<
+    LifiMergedTransaction & {
+      toolDetails?: { key: string; name: string; logoURI: string };
+      transactionRequest?: unknown;
+    },
+    'fromAmount' | 'toAmount'
+  > & {
+    fromAmount?: Omit<AmountWithToken, 'amount'> & {
       amount: string | BigNumber | { type?: string; hex?: string; _hex?: string };
     };
-    toAmount: Omit<AmountWithToken, 'amount'> & {
+    toAmount?: Omit<AmountWithToken, 'amount'> & {
       amount: string | BigNumber | { type?: string; hex?: string; _hex?: string };
     };
   }
 >;
 
-type Version2State = LifiCachePersistedState<LifiMergedTransaction>;
-
-export function sanitizeLifiRouteForStorage(
-  route: RouteExtended | undefined,
-): RouteExtended | undefined {
-  if (!route) {
-    return undefined;
+type Version2State = LifiCachePersistedState<
+  LifiMergedTransaction & {
+    toolDetails?: { key: string; name: string; logoURI: string };
+    transactionRequest?: unknown;
   }
+>;
 
+type Version3State = LifiCachePersistedState<LifiMergedTransaction>;
+
+const LIFI_CACHE_VERSION = 3 as const;
+
+export function sanitizeLifiRouteForStorage(route: RouteExtended): RouteExtended {
   return {
     ...route,
     steps: route.steps.map((step) => {
@@ -70,26 +78,64 @@ export function sanitizeLifiRouteForStorage(
   };
 }
 
-function sanitizeTransactionForStorage(tx: LifiMergedTransaction): LifiMergedTransaction {
-  if (!tx.lifiRoute) {
+function shouldPruneLifiRoute(tx: LifiMergedTransaction) {
+  const routeIsComplete = tx.lifiRoute?.steps.every((step) => step.execution?.status === 'DONE');
+
+  return (
+    (tx.destinationStatus === WithdrawalStatus.CONFIRMED && routeIsComplete) ||
+    tx.destinationStatus === WithdrawalStatus.REFUNDED ||
+    tx.status === WithdrawalStatus.REFUNDED
+  );
+}
+
+export function prepareLifiTransactionForStorage(tx: LifiMergedTransaction): LifiMergedTransaction {
+  const routeForHistory = tx.lifiRoute;
+  if (!routeForHistory) {
     return tx;
   }
 
-  return { ...tx, lifiRoute: sanitizeLifiRouteForStorage(tx.lifiRoute) };
-}
-
-function normalizeVersion1Amount({
-  amount,
-  ...amountWithToken
-}: Version1State['transactions'][string][number]['fromAmount']): AmountWithToken {
-  if (typeof amount === 'string' || BigNumber.isBigNumber(amount)) {
-    return { ...amountWithToken, amount: BigNumber.from(amount).toString() };
+  const lifiRoute = sanitizeLifiRouteForStorage(routeForHistory);
+  const snapshot = getLifiTransactionSnapshot({ ...tx, lifiRoute: routeForHistory });
+  if (!snapshot) {
+    return { ...tx, lifiRoute };
   }
 
-  const serializedHex = amount.hex ?? amount._hex;
+  const pruneLifiRoute = shouldPruneLifiRoute(tx);
+  const lifiRouteSteps = getLifiRouteHistorySteps(routeForHistory);
+
+  if (!pruneLifiRoute) {
+    return {
+      ...tx,
+      lifiRoute,
+      ...(lifiRouteSteps.length > 0 ? { lifiRouteSteps } : {}),
+    };
+  }
+
+  const { lifiRoute: _lifiRoute, ...transactionWithoutRoute } = tx;
+
+  return {
+    ...transactionWithoutRoute,
+    ...snapshot,
+    ...(tx.toAmount ? { toAmount: tx.toAmount } : {}),
+    lifiRouteSteps,
+  };
+}
+
+function normalizeVersion1Amount(
+  amount: Version1State['transactions'][string][number]['fromAmount'],
+): AmountWithToken | undefined {
+  if (!amount) {
+    return undefined;
+  }
+
+  const { amount: legacyAmount, ...amountWithToken } = amount;
+  if (typeof legacyAmount === 'string' || BigNumber.isBigNumber(legacyAmount)) {
+    return { ...amountWithToken, amount: BigNumber.from(legacyAmount).toString() };
+  }
+
   return {
     ...amountWithToken,
-    amount: BigNumber.from(serializedHex).toString(),
+    amount: BigNumber.from(legacyAmount.hex ?? legacyAmount._hex).toString(),
   };
 }
 
@@ -110,24 +156,85 @@ export function migrateLifiCacheStateFromVersion1ToVersion2(
   };
 }
 
-const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version2State> = {
+export function migrateLifiTransactionFromVersion2ToVersion3(
+  transaction: Version2State['transactions'][string][number],
+): LifiMergedTransaction {
+  const {
+    toolDetails,
+    transactionRequest: _transactionRequest,
+    toolsDetails,
+    durationMs,
+    fromAmount,
+    toAmount,
+    ...currentTransaction
+  } = transaction;
+
+  if (currentTransaction.lifiRoute?.steps.length) {
+    return prepareLifiTransactionForStorage(currentTransaction as LifiMergedTransaction);
+  }
+
+  return {
+    ...currentTransaction,
+    toolsDetails: toolsDetails ?? (toolDetails ? [toolDetails] : undefined),
+    durationMs,
+    fromAmount,
+    toAmount,
+  };
+}
+
+export function migrateLifiCacheStateFromVersion2ToVersion3(
+  persistedState: Version2State,
+): Version3State {
+  return {
+    transactions: Object.fromEntries(
+      Object.entries(persistedState.transactions).map(([address, transactions]) => [
+        address,
+        transactions.map(migrateLifiTransactionFromVersion2ToVersion3),
+      ]),
+    ),
+  };
+}
+
+export function migrateLifiCacheStateToVersion3(
+  persistedState: unknown,
+  sourceVersion: number,
+): Version3State {
+  switch (sourceVersion) {
+    case 1:
+      return migrateLifiCacheStateFromVersion2ToVersion3(
+        migrateLifiCacheStateFromVersion1ToVersion2(persistedState as Version1State),
+      );
+    case 2:
+      return migrateLifiCacheStateFromVersion2ToVersion3(persistedState as Version2State);
+    default:
+      throw new Error(`Version 3 migration does not support source version ${sourceVersion}.`);
+  }
+}
+
+const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3State> = {
   name: 'lifi-merged-transaction-cache',
   version: LIFI_CACHE_VERSION,
   partialize: (state) => ({ transactions: state.transactions }),
   // Zustand v4 types migrations as returning the full runtime state, although persisted
   // data is merged with the current state and intentionally excludes store actions.
-  migrate: (persistedState, sourceVersion) => {
-    if (sourceVersion !== 1) {
-      throw new Error(
-        `Cannot migrate LiFi transaction cache from version ${sourceVersion} to ${LIFI_CACHE_VERSION}.`,
-      );
-    }
-
-    return migrateLifiCacheStateFromVersion1ToVersion2(
-      persistedState as Version1State,
-    ) as LifiMergedTransactionCacheState;
-  },
+  migrate: (persistedState, sourceVersion) =>
+    migrateLifiCacheStateToVersion3(
+      persistedState,
+      sourceVersion,
+    ) as LifiMergedTransactionCacheState,
 };
+
+function updateTransactions(
+  transactions: LifiMergedTransaction[],
+  tx: LifiMergedTransaction,
+  updates: Partial<LifiMergedTransaction>,
+): LifiMergedTransaction[] {
+  return transactions.map((existing) =>
+    isSameTransaction(existing, tx)
+      ? prepareLifiTransactionForStorage({ ...existing, ...updates })
+      : existing,
+  );
+}
 
 export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCacheState>()(
   persist(
@@ -138,9 +245,10 @@ export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCa
         if (!sender) {
           return;
         }
-        const transactionToStore = sanitizeTransactionForStorage(tx);
+        const transactionToStore = prepareLifiTransactionForStorage(tx);
         set((state) => ({
           transactions: {
+            ...state.transactions,
             [sender]: [transactionToStore].concat(state.transactions[sender] || []),
             // If transaction is sent to a custom destination address, make sure it's registered for that account too
             ...(tx.destination && tx.destination !== sender
@@ -153,33 +261,27 @@ export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCa
           },
         }));
       },
-      updateTransaction: (tx) => {
+      updateTransaction: (tx, updates = tx) => {
         const sender = tx.sender;
         if (!sender) {
           return;
         }
-        const transactionToStore = sanitizeTransactionForStorage(tx);
 
-        function updateForAddress(transactions: LifiMergedTransaction[]) {
-          return transactions.map((existing) =>
-            isSameTransaction(existing, transactionToStore)
-              ? { ...existing, ...transactionToStore }
-              : existing,
-          );
-        }
-
-        set((state) => {
-          return {
-            transactions: {
-              [sender]: updateForAddress(state.transactions[sender] || []),
-              ...(tx.destination && tx.destination !== sender
-                ? {
-                    [tx.destination]: updateForAddress(state.transactions[tx.destination] || []),
-                  }
-                : {}),
-            },
-          };
-        });
+        set((state) => ({
+          transactions: {
+            ...state.transactions,
+            [sender]: updateTransactions(state.transactions[sender] || [], tx, updates),
+            ...(tx.destination && tx.destination !== sender
+              ? {
+                  [tx.destination]: updateTransactions(
+                    state.transactions[tx.destination] || [],
+                    tx,
+                    updates,
+                  ),
+                }
+              : {}),
+          },
+        }));
       },
     }),
     persistOptions,
