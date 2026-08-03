@@ -12,8 +12,11 @@ import { useError } from './useError';
 function deserializeLifiHistoryTransaction(
   transaction: LifiTransactionHistoryItem,
 ): LifiMergedTransaction {
+  const { toolDetails, ...transactionWithoutLegacyToolDetails } = transaction;
+
   return {
-    ...transaction,
+    ...transactionWithoutLegacyToolDetails,
+    toolsDetails: [toolDetails],
     fromAmount: {
       ...transaction.fromAmount,
       amount: BigNumber.from(transaction.fromAmount.amount),

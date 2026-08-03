@@ -1,5 +1,4 @@
-import type { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
-
+import type { AmountWithToken } from '../../state/app/state';
 import { formatAmount } from '../../util/NumberUtils';
 
 const UNKNOWN_LIFI_TOKEN_SYMBOL = 'Unknown';

@@ -1,29 +1,34 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import dayjs from 'dayjs';
 import { BigNumber, constants } from 'ethers';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shallow } from 'zustand/shallow';
 
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { AssetType } from './arbTokenBridge.types';
+import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
 
-const LIFI_CACHE_KEY = 'lifi-merged-transaction-cache';
-const storage = new Map<string, string>();
-const localStorageMock: Storage = {
-  clear: () => storage.clear(),
-  getItem: (key) => storage.get(key) ?? null,
-  key: (index) => Array.from(storage.keys())[index] ?? null,
-  get length() {
-    return storage.size;
-  },
-  removeItem: (key) => {
-    storage.delete(key);
-  },
-  setItem: (key, value) => {
-    storage.set(key, value);
-  },
-};
-let useLifiMergedTransactionCacheStore: (typeof import('./useLifiMergedTransactionCacheStore'))['useLifiMergedTransactionCacheStore'];
+const localStorageMock = vi.hoisted(() => {
+  const storage = new Map<string, string>();
+  const localStorage = {
+    get length() {
+      return storage.size;
+    },
+    clear: () => storage.clear(),
+    getItem: (key: string) => storage.get(key) ?? null,
+    key: (index: number) => Array.from(storage.keys())[index] ?? null,
+    removeItem: (key: string) => storage.delete(key),
+    setItem: (key: string, value: string) => storage.set(key, value),
+  };
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: localStorage,
+  });
+
+  return localStorage;
+});
 
 function createMockedLifiTransaction({
   hash,
@@ -56,11 +61,13 @@ function createMockedLifiTransaction({
     childChainId: 42161,
     sourceChainId: 42161,
     destinationChainId: 1,
-    toolDetails: {
-      key: 'lifi',
-      logoURI: '',
-      name: 'name',
-    },
+    toolsDetails: [
+      {
+        key: 'lifi',
+        logoURI: '',
+        name: 'name',
+      },
+    ],
     durationMs: 1_000,
     fromAmount: {
       amount: BigNumber.from(10),
@@ -81,25 +88,14 @@ function createMockedLifiTransaction({
       },
     },
     destinationTxId: null,
-    transactionRequest: {},
   };
 }
 
 describe.sequential('useLifiMergedTransactionCacheStore', () => {
-  beforeAll(async () => {
-    vi.stubGlobal('localStorage', localStorageMock);
-    ({ useLifiMergedTransactionCacheStore } = await import('./useLifiMergedTransactionCacheStore'));
-  });
-
   beforeEach(() => {
     localStorageMock.clear();
     useLifiMergedTransactionCacheStore.setState({ transactions: {} });
   });
-
-  afterAll(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('should return undefined by default', async () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
@@ -107,6 +103,79 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     );
 
     expect(result.current).toEqual(undefined);
+  });
+
+  it('hydrates legacy version 1 single-step transactions', async () => {
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const legacyTransaction = createMockedLifiTransaction({
+      hash: '0x240c2c89b5f153b0cc1fce5ea709473b858359887d0aa1d4157fe130c95d2134',
+      sender: walletAddress,
+      destinationAddress: walletAddress,
+    });
+    const { toolsDetails, ...transactionWithoutToolsDetails } = legacyTransaction;
+
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({
+        state: {
+          transactions: {
+            [walletAddress]: [
+              {
+                ...transactionWithoutToolsDetails,
+                toolDetails: toolsDetails?.[0],
+              },
+            ],
+          },
+        },
+        version: 1,
+      }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    const [hydratedTransaction] =
+      useLifiMergedTransactionCacheStore.getState().transactions[walletAddress] ?? [];
+    const snapshot = hydratedTransaction
+      ? getLifiTransactionSnapshot(hydratedTransaction)
+      : undefined;
+
+    expect(snapshot?.fromAmount.amount.toString()).toBe('10');
+    expect(snapshot?.toAmount.amount.toString()).toBe('9');
+    expect(snapshot?.toolsDetails).toEqual(toolsDetails);
+    expect(hydratedTransaction).not.toHaveProperty('toolDetails');
+  });
+
+  it('migrates route-backed transactions to the route-only shape', async () => {
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const transaction = createMockedLifiTransaction({
+      hash: '0x240c2c89b5f153b0cc1fce5ea709473b858359887d0aa1d4157fe130c95d2134',
+      sender: walletAddress,
+      destinationAddress: walletAddress,
+    });
+    const lifiRoute = { id: 'route-id', steps: [{}] } as LifiMergedTransaction['lifiRoute'];
+
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({
+        state: {
+          transactions: {
+            [walletAddress]: [{ ...transaction, lifiRoute }],
+          },
+        },
+        version: 1,
+      }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    const [hydratedTransaction] =
+      useLifiMergedTransactionCacheStore.getState().transactions[walletAddress] ?? [];
+
+    expect(hydratedTransaction?.lifiRoute).toEqual(lifiRoute);
+    expect(hydratedTransaction).not.toHaveProperty('toolsDetails');
+    expect(hydratedTransaction).not.toHaveProperty('durationMs');
+    expect(hydratedTransaction).not.toHaveProperty('fromAmount');
+    expect(hydratedTransaction).not.toHaveProperty('toAmount');
   });
 
   it('should cache transaction for sender and destination address', async () => {
@@ -208,36 +277,85 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     });
   });
 
-  it('rehydrates legacy version-1 transactions that include a transaction request', async () => {
+  it('should update only route metadata without overwriting fresher transaction state', async () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
-    const legacyTransaction = createMockedLifiTransaction({
-      hash: '0x240c2c89b5f153b0cc1fce5ea709473b858359887d0aa1d4157fe130c95d2134',
+    const { result } = renderHook(() =>
+      useLifiMergedTransactionCacheStore(
+        (state) => ({
+          addTransaction: state.addTransaction,
+          updateTransaction: state.updateTransaction,
+          transactions: state.transactions,
+        }),
+        shallow,
+      ),
+    );
+
+    const originalTransaction = createMockedLifiTransaction({
+      hash: '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c',
       sender: walletAddress,
       destinationAddress: walletAddress,
     });
 
-    localStorage.setItem(
-      LIFI_CACHE_KEY,
-      JSON.stringify({
-        state: {
-          transactions: {
-            [walletAddress]: [legacyTransaction],
-          },
+    const currentTransaction = {
+      ...originalTransaction,
+      status: WithdrawalStatus.CONFIRMED,
+    };
+    const lifiRoute = {
+      id: 'route-id',
+      steps: [],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
+
+    await act(async () => {
+      result.current.addTransaction(currentTransaction);
+      result.current.updateTransaction(originalTransaction, { lifiRoute });
+    });
+
+    await waitFor(() => {
+      expect(result.current.transactions[walletAddress]).toEqual([
+        {
+          ...currentTransaction,
+          lifiRoute,
         },
-        version: 1,
-      }),
+      ]);
+    });
+  });
+
+  it('should update cached transaction txId when the route id matches', async () => {
+    const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const { result } = renderHook(() =>
+      useLifiMergedTransactionCacheStore(
+        (state) => ({
+          addTransaction: state.addTransaction,
+          updateTransaction: state.updateTransaction,
+          transactions: state.transactions,
+        }),
+        shallow,
+      ),
     );
 
-    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+    const originalTransaction = {
+      ...createMockedLifiTransaction({
+        hash: '0x3ed2270c44494ccfa9c60daf655e7879',
+        sender: walletAddress,
+        destinationAddress: walletAddress,
+      }),
+      lifiRoute: {
+        id: 'route-id',
+        steps: [],
+      } as unknown as LifiMergedTransaction['lifiRoute'],
+    };
+    const transactionWithRealHash = {
+      ...originalTransaction,
+      txId: '0xa0231341aef0576cd9467d1506011d1dd041167762db0d2b1657678e3c0c5255',
+    };
 
-    const hydratedTransaction =
-      useLifiMergedTransactionCacheStore.getState().transactions[walletAddress]?.[0];
+    await act(async () => {
+      result.current.addTransaction(originalTransaction);
+      result.current.updateTransaction(transactionWithRealHash);
+    });
 
-    expect(hydratedTransaction).toMatchObject({
-      txId: legacyTransaction.txId,
-      isLifi: true,
-      toolDetails: legacyTransaction.toolDetails,
-      transactionRequest: legacyTransaction.transactionRequest,
+    await waitFor(() => {
+      expect(result.current.transactions[walletAddress]).toEqual([transactionWithRealHash]);
     });
   });
 });
