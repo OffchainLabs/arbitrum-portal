@@ -1,7 +1,7 @@
 import { constants } from 'ethers';
-import { useMemo } from 'react';
 
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../components/TransferPanel/TokenSearchUtils';
 import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
@@ -15,7 +15,7 @@ import { useSelectedToken } from './useSelectedToken';
  *
  * - If destinationToken === selectedToken.address: return selectedToken
  * - If destinationToken is the zeroAddress: return ETH token (happen on chain with custom gas token)
- * - If destinationToken is set to a specific address: return that token from bridgeTokens
+ * - If destinationToken is set to a specific address: return that token from token storage
  * - If destinationToken is null: return null
  */
 export function useDestinationToken(): ERC20BridgeToken | null {
@@ -27,28 +27,28 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
+  const { data: tokensFromLists } = useTokensFromLists();
   const isSwapTransfer = useIsSwapTransfer();
-  const overrideToken = useMemo(
-    () =>
-      getTokenOverride({
-        fromToken: constants.AddressZero,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-      }),
-    [networks.destinationChain.id, networks.sourceChain.id],
-  );
 
   if (!isSwapTransfer) return selectedToken;
 
   // Case 1: destinationToken is the zeroAddress -> Return ETH
   // Use getTokenOverride to handle special cases like ApeChain WETH
-  if (destinationToken && addressesEqual(destinationToken, constants.AddressZero)) {
-    return overrideToken.destination;
+  if (addressesEqual(destinationToken, constants.AddressZero)) {
+    return getTokenOverride({
+      fromToken: constants.AddressZero,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    }).destination;
   }
 
   // Case 2: destinationToken is set to a specific token address
-  if (destinationToken && bridgeTokens) {
-    return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+  if (destinationToken) {
+    const destinationTokenAddress = destinationToken.toLowerCase();
+
+    return (
+      bridgeTokens?.[destinationTokenAddress] ?? tokensFromLists[destinationTokenAddress] ?? null
+    );
   }
 
   // For regular chains (native ETH): return null (button will show native ETH)

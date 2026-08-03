@@ -2,9 +2,10 @@ import { constants } from 'ethers';
 import { describe, expect, it, test } from 'vitest';
 
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
-import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { LIFI_TRANSFER_LIST_ID } from '../../../util/TokenListUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
@@ -232,6 +233,29 @@ describe('isValidLifiTransfer', () => {
         fromToken: CommonAddress.ArbitrumOne.USDC,
         sourceChainId: ChainId.ArbitrumOne,
         destinationChainId: ChainId.Ethereum,
+        tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not block regular token-list tokens that share LiFi list membership', () => {
+    const tokenAddress = '0x0000000000000000000000000000000000000300';
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {
+      [tokenAddress]: {
+        address: tokenAddress,
+        decimals: 18,
+        listIds: new Set(['regular-list', LIFI_TRANSFER_LIST_ID]),
+        name: 'Regular Token',
+        symbol: 'REG',
+        type: TokenType.ERC20,
+      },
+    };
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: tokenAddress,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
         tokensFromLists,
       }),
     ).toBe(true);
