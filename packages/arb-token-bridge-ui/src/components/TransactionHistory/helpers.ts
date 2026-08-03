@@ -8,9 +8,11 @@ import {
 } from '@arbitrum/sdk';
 import { BigNumber } from '@ethersproject/bignumber';
 import { Provider } from '@ethersproject/providers';
-import { getStatus } from '@lifi/sdk';
+import { type RouteExtended, getStatus } from '@lifi/sdk';
+import type { StatusResponse } from '@lifi/types';
 import dayjs from 'dayjs';
 
+import type { AmountWithToken } from '../../app/api/crosschain-transfers/types';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from '../../hooks/useArbTokenBridge';
 import { Deposit, Transfer } from '../../hooks/useTransactionHistory';
@@ -26,7 +28,12 @@ import { getBlockBeforeConfirmation } from '../../state/cctpState';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { SimplifiedRouteType } from '../../util/AnalyticsUtils';
-import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
+import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+import {
+  getLifiRouteStatusRequest,
+  getLifiTransferStatus,
+  isValidLifiTransactionHash,
+} from '../../util/LifiTransactionStatus';
 import { getAttestationHashAndMessageFromReceipt } from '../../util/cctp/getAttestationHashAndMessageFromReceipt';
 import {
   getParentToChildMessageDataFromParentTxHash,
@@ -193,16 +200,21 @@ export function isSameTransaction(
     parentChainId: ChainId;
     childChainId: ChainId;
     uniqueId?: BigNumber | null;
+    lifiRoute?: { id?: string };
   },
   txDetails_2: {
     txId: string;
     parentChainId: ChainId;
     childChainId: ChainId;
     uniqueId?: BigNumber | null;
+    lifiRoute?: { id?: string };
   },
 ) {
+  const sameLifiRoute =
+    typeof txDetails_1.lifiRoute?.id === 'string' &&
+    txDetails_1.lifiRoute.id === txDetails_2.lifiRoute?.id;
   const baseMatch =
-    txDetails_1.txId === txDetails_2.txId &&
+    (txDetails_1.txId === txDetails_2.txId || sameLifiRoute) &&
     txDetails_1.parentChainId === txDetails_2.parentChainId &&
     txDetails_1.childChainId === txDetails_2.childChainId;
 
@@ -568,6 +580,63 @@ export async function getUpdatedCctpTransfer(tx: MergedTransaction): Promise<Mer
   return { ...tx, status: WithdrawalStatus.UNCONFIRMED };
 }
 
+function applyCompletedLifiStep({
+  route,
+  stepIndex,
+  actualToAmount,
+}: {
+  route: RouteExtended;
+  stepIndex: number;
+  actualToAmount: AmountWithToken | undefined;
+}): RouteExtended {
+  const nextRoute = structuredClone(route);
+  const execution = nextRoute.steps[stepIndex]?.execution;
+
+  if (execution) {
+    execution.status = 'DONE';
+    execution.process = execution.process.map((process) =>
+      process.type === 'CROSS_CHAIN' ? { ...process, status: 'DONE' } : process,
+    );
+
+    if (actualToAmount) {
+      execution.toAmount = actualToAmount.amount;
+      execution.toToken = actualToAmount.token as NonNullable<typeof execution.toToken>;
+    }
+  }
+
+  return nextRoute;
+}
+
+function deriveLifiStatus({
+  apiStatus,
+  statusResponse,
+  lifiRoute,
+  routeIsComplete,
+  routeHasFailedStep,
+}: {
+  apiStatus: ReturnType<typeof getLifiTransferStatus>;
+  statusResponse: StatusResponse;
+  lifiRoute: RouteExtended | undefined;
+  routeIsComplete: boolean | undefined;
+  routeHasFailedStep: boolean | undefined;
+}): ReturnType<typeof getLifiTransferStatus> {
+  const keepRouteResumable =
+    statusResponse.status === 'DONE' &&
+    statusResponse.substatus !== 'REFUNDED' &&
+    lifiRoute !== undefined &&
+    !routeIsComplete;
+
+  if (!keepRouteResumable) {
+    return apiStatus;
+  }
+
+  return {
+    ...apiStatus,
+    status: WithdrawalStatus.CONFIRMED,
+    destinationStatus: routeHasFailedStep ? WithdrawalStatus.FAILURE : WithdrawalStatus.UNCONFIRMED,
+  };
+}
+
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
 ): Promise<MergedTransaction> {
@@ -580,14 +649,74 @@ export async function getUpdatedLifiTransfer(
     return tx;
   }
 
-  const statusResponse = await getStatus({
-    txHash: tx.txId,
-    bridge: tx.toolDetails.key,
-    fromChain: tx.sourceChainId.toString(),
-    toChain: tx.destinationChainId.toString(),
+  const statusRequest = tx.lifiRoute
+    ? getLifiRouteStatusRequest(tx.lifiRoute)
+    : isValidLifiTransactionHash(tx.txId)
+      ? {
+          params: {
+            txHash: tx.txId,
+            bridge: tx.toolDetails.key,
+            fromChain: tx.sourceChainId.toString(),
+            toChain: tx.destinationChainId.toString(),
+          },
+        }
+      : undefined;
+
+  if (!statusRequest) {
+    return tx;
+  }
+
+  const statusResponse = await getStatus(statusRequest.params);
+  const receiving = 'receiving' in statusResponse ? statusResponse.receiving : undefined;
+  const actualReceiving =
+    statusResponse.status === 'DONE' &&
+    receiving &&
+    'amount' in receiving &&
+    typeof receiving.amount === 'string' &&
+    'token' in receiving &&
+    receiving.token
+      ? (receiving as typeof receiving & {
+          amount: string;
+          amountUSD?: string;
+          token: AmountWithToken['token'];
+        })
+      : undefined;
+  const actualToAmount: AmountWithToken | undefined = actualReceiving
+    ? {
+        amount: actualReceiving.amount,
+        amountUSD: typeof actualReceiving.amountUSD === 'string' ? actualReceiving.amountUSD : '0',
+        chainId: actualReceiving.chainId,
+        token: actualReceiving.token,
+      }
+    : undefined;
+
+  let lifiRoute = tx.lifiRoute;
+  const statusStepIndex = 'stepIndex' in statusRequest ? statusRequest.stepIndex : undefined;
+  if (statusResponse.status === 'DONE' && lifiRoute && statusStepIndex !== undefined) {
+    lifiRoute = applyCompletedLifiStep({
+      route: lifiRoute,
+      stepIndex: statusStepIndex,
+      actualToAmount,
+    });
+  }
+
+  const routeIsComplete = lifiRoute?.steps.every((step) => step.execution?.status === 'DONE');
+  const routeHasFailedStep = lifiRoute?.steps.some((step) => step.execution?.status === 'FAILED');
+  const apiStatus = getLifiTransferStatus(statusResponse);
+  const { status, destinationStatus, destinationTxId } = deriveLifiStatus({
+    apiStatus,
+    statusResponse,
+    lifiRoute,
+    routeIsComplete,
+    routeHasFailedStep,
   });
 
-  const { status, destinationStatus, destinationTxId } = getLifiTransferStatus(statusResponse);
+  const completedToAmount =
+    routeIsComplete && lifiRoute
+      ? getLifiTransactionSnapshot({ ...tx, lifiRoute })?.toAmount
+      : !lifiRoute
+        ? actualToAmount
+        : undefined;
 
   if (status === WithdrawalStatus.REFUNDED || destinationStatus === WithdrawalStatus.REFUNDED) {
     showLifiRefundToastOnce(tx);
@@ -595,11 +724,14 @@ export async function getUpdatedLifiTransfer(
 
   return {
     ...tx,
+    txId: statusRequest.params.txHash,
+    ...(lifiRoute ? { lifiRoute } : {}),
     destinationTxId,
     lifiExplorerLink:
       'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : tx.lifiExplorerLink,
     status,
     destinationStatus,
+    ...(completedToAmount ? { toAmount: completedToAmount } : {}),
   };
 }
 

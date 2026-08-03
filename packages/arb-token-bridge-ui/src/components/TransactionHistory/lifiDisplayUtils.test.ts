@@ -1,12 +1,10 @@
-import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import type { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
-
+import type { AmountWithToken } from '../../app/api/crosschain-transfers/types';
 import { getLifiToAmountDisplay } from './lifiDisplayUtils';
 
 const unknownToAmount: AmountWithToken = {
-  amount: BigNumber.from(0),
+  amount: '0',
   amountUSD: '0',
   token: {
     address: '0x0000000000000000000000000000000000000000',
@@ -27,7 +25,7 @@ describe('getLifiToAmountDisplay', () => {
         isPending: true,
         toAmount: {
           ...unknownToAmount,
-          amount: BigNumber.from(990000),
+          amount: '990000',
         },
       }),
     ).toBe('Pending');
@@ -38,7 +36,7 @@ describe('getLifiToAmountDisplay', () => {
       getLifiToAmountDisplay({
         isPending: true,
         toAmount: {
-          amount: BigNumber.from(990000),
+          amount: '990000',
           amountUSD: '0.99',
           token: {
             address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',

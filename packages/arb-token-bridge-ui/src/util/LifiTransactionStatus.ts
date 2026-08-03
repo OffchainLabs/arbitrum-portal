@@ -10,8 +10,16 @@ const EXECUTED_ROUTE_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'TRANSACTION',
 ]);
 
-export function isValidLifiTransactionHash(txHash: string | null | undefined) {
+export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
   return typeof txHash === 'string' && utils.isHexString(txHash, 32);
+}
+
+function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
+  return (
+    process.txType !== undefined &&
+    process.txType !== 'standard' &&
+    typeof process.txLink !== 'string'
+  );
 }
 
 function getSubmittedLifiRouteProcess(route: RouteExtended | undefined) {
@@ -37,13 +45,38 @@ export function getSubmittedLifiRouteTxHash(route: RouteExtended | undefined) {
 
 export function getExecutedLifiRouteTxHash(route: RouteExtended | undefined) {
   const routeProcess = getSubmittedLifiRouteProcess(route);
-  const txHash = routeProcess?.txHash;
-  const isPendingProcessId =
-    routeProcess?.txType !== undefined &&
-    routeProcess.txType !== 'standard' &&
-    typeof routeProcess.txLink !== 'string';
+  if (!routeProcess || isPendingLifiProcessId(routeProcess)) {
+    return undefined;
+  }
 
-  return !isPendingProcessId && isValidLifiTransactionHash(txHash) ? txHash : undefined;
+  return isValidLifiTransactionHash(routeProcess.txHash) ? routeProcess.txHash : undefined;
+}
+
+export function getLifiRouteStatusRequest(route: RouteExtended | undefined) {
+  for (const [stepIndex, step] of (route?.steps ?? []).entries()) {
+    const crossChainProcess = step.execution?.process.find(
+      (process) => process.type === 'CROSS_CHAIN' && process.status !== 'FAILED',
+    );
+    const txHash = crossChainProcess?.txHash;
+
+    if (
+      crossChainProcess &&
+      !isPendingLifiProcessId(crossChainProcess) &&
+      isValidLifiTransactionHash(txHash)
+    ) {
+      return {
+        params: {
+          txHash,
+          bridge: step.tool,
+          fromChain: step.action.fromChainId.toString(),
+          toChain: step.action.toChainId.toString(),
+        },
+        stepIndex,
+      };
+    }
+  }
+
+  return undefined;
 }
 
 export function getLifiTransferStatus(statusResponse: StatusResponse): {

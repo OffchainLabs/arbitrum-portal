@@ -1,5 +1,6 @@
-import { utils } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
+import { shallow } from 'zustand/shallow';
 
 import { defaultErc20Decimals } from '../../../defaults';
 import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
@@ -9,7 +10,38 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
+import { addressesEqual } from '../../../util/AddressUtils';
+import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
+
+export function getLifiMaxAmount({
+  balance,
+  decimals,
+  sourceChainId,
+  route,
+}: {
+  balance: BigNumber;
+  decimals: number;
+  sourceChainId: number;
+  route: NonNullable<ReturnType<typeof getSelectedRouteContext>>;
+}) {
+  const sourceTokenAddress = route.fromAmount.token.address;
+  const sumSourceTokenCosts = (costs: typeof route.gas) =>
+    costs.reduce(
+      (total, cost) =>
+        cost.chainId === sourceChainId && addressesEqual(cost.token.address, sourceTokenAddress)
+          ? total.add(cost.amount)
+          : total,
+      constants.Zero,
+    );
+
+  const bufferedGasCost = sumSourceTokenCosts(route.gas).mul(14).div(10);
+  const feeCost = sumSourceTokenCosts(route.fee);
+  const totalCost = bufferedGasCost.add(feeCost);
+  const maxAmount = balance.gt(totalCost) ? balance.sub(totalCost) : balance;
+
+  return utils.formatUnits(maxAmount, decimals);
+}
 
 export function useMaxAmount() {
   const [selectedToken] = useSelectedToken();
@@ -18,6 +50,7 @@ export function useMaxAmount() {
   const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const selectedRouteContext = useRouteStore((state) => getSelectedRouteContext(state), shallow);
 
   const { estimatedParentChainGasFees, estimatedChildChainGasFees } = useGasSummary();
 
@@ -35,6 +68,15 @@ export function useMaxAmount() {
       nativeCurrencySourceBalance,
       nativeCurrencyDecimalsOnSourceChain,
     );
+
+    if (selectedRouteContext) {
+      return getLifiMaxAmount({
+        balance: nativeCurrencySourceBalance,
+        decimals: nativeCurrencyDecimalsOnSourceChain,
+        sourceChainId: networks.sourceChain.id,
+        route: selectedRouteContext,
+      });
+    }
 
     if (nativeCurrency.isCustom && isDepositMode) {
       // for custom fee native token deposits, we will need to subtract the child gas fee from source-balance
@@ -77,6 +119,8 @@ export function useMaxAmount() {
     nativeCurrency.isCustom,
     nativeCurrencyBalances.sourceBalance,
     nativeCurrencyDecimalsOnSourceChain,
+    networks.sourceChain.id,
+    selectedRouteContext,
   ]);
 
   const maxAmount = useMemo(() => {

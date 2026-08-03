@@ -1,5 +1,6 @@
-import type { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
+import { BigNumber } from 'ethers';
 
+import type { AmountWithToken } from '../../app/api/crosschain-transfers/types';
 import { formatAmount } from '../../util/NumberUtils';
 
 const UNKNOWN_LIFI_TOKEN_SYMBOL = 'Unknown';
@@ -15,7 +16,7 @@ export function getLifiToAmountDisplay({
     return 'Pending';
   }
 
-  return formatAmount(toAmount.amount, {
+  return formatAmount(BigNumber.from(toAmount.amount), {
     decimals: toAmount.token.decimals,
     symbol: toAmount.token.symbol,
   });
