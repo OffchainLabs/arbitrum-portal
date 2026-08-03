@@ -4,11 +4,13 @@ import { BigNumber, constants } from 'ethers';
 import { UserRejectedRequestError } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
+import type { RouteCost } from '../app/api/crosschain-transfers/types';
 import {
   getExecutedLifiRouteTxHash,
   getSubmittedLifiRouteTxHash,
 } from '../util/LifiTransactionStatus';
-import { LifiData, LifiTransferStarter } from './LifiTransferStarter';
+import { LifiTransferStarter } from './LifiTransferStarter';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@lifi/sdk')>();
@@ -30,20 +32,25 @@ const eth = {
   symbol: 'ETH',
 };
 
-function createLifiData({
-  gasAmount = BigNumber.from(0),
-  feeAmount = BigNumber.from(0),
+function createLifiRoute({
+  gas = [],
+  fee = [],
   route = { id: 'route-id', steps: [] } as unknown as RouteExtended,
 }: {
-  gasAmount?: BigNumber;
-  feeAmount?: BigNumber;
+  gas?: RouteCost[];
+  fee?: RouteCost[];
   route?: RouteExtended;
-} = {}): LifiData {
+} = {}): LifiCrosschainTransfersRoute {
   return {
-    spenderAddress: constants.AddressZero,
-    gas: { amount: gasAmount, amountUSD: '0', token: eth },
-    fee: { amount: feeAmount, amountUSD: '0', token: eth },
-    route,
+    type: 'lifi',
+    durationMs: 0,
+    gas,
+    fee,
+    fromAmount: { amount: '0', amountUSD: '0', token: eth },
+    toAmount: { amount: '0', amountUSD: '0', token: eth },
+    fromChainId: 1,
+    toChainId: 42161,
+    protocolData: { orders: [], route },
   };
 }
 const routeTxHash = '0xa0231341aef0576cd9467d1506011d1dd041167762db0d2b1657678e3c0c5255';
@@ -58,7 +65,7 @@ function createStarter() {
     destinationChainProvider: {
       getNetwork: async () => ({ chainId: 42161 }),
     } as unknown as Provider,
-    lifiData: createLifiData(),
+    lifiRoute: createLifiRoute(),
   });
 }
 
@@ -228,7 +235,7 @@ describe('LifiTransferStarter approvals', () => {
     );
   });
 
-  it('waits for the on-chain transaction hash when a wallet first reports a batch id', async () => {
+  it('returns the submitted route id so batched calls are tracked in history', async () => {
     const routeWithBatchId = {
       id: 'route-id',
       steps: [
@@ -272,8 +279,9 @@ describe('LifiTransferStarter approvals', () => {
 
     await expect(createStarter().transfer(createTransferProps(vi.fn()))).resolves.toMatchObject({
       sourceChainTransaction: {
-        hash: routeTxHash,
+        hash: batchId,
       },
+      lifiRoute: routeWithBatchId,
     });
   });
 
@@ -329,7 +337,7 @@ describe('LifiTransferStarter approvals', () => {
 });
 
 describe('LifiTransferStarter estimates', () => {
-  it('uses the existing scalar gas estimate for a deposit', async () => {
+  it('aggregates gas estimates by source and destination chain', async () => {
     const starter = new LifiTransferStarter({
       sourceChainProvider: {
         getNetwork: async () => ({ chainId: 1 }),
@@ -337,12 +345,35 @@ describe('LifiTransferStarter estimates', () => {
       destinationChainProvider: {
         getNetwork: async () => ({ chainId: 42161 }),
       } as unknown as Provider,
-      lifiData: createLifiData({ gasAmount: BigNumber.from(10) }),
+      lifiRoute: createLifiRoute({
+        gas: [
+          {
+            amount: '100',
+            amountUSD: '1',
+            token: eth,
+            chainId: 1,
+            estimate: '10',
+          },
+          {
+            amount: '999',
+            amountUSD: '9.99',
+            token: eth,
+            chainId: 1,
+          },
+          {
+            amount: '200',
+            amountUSD: '2',
+            token: eth,
+            chainId: 42161,
+            estimate: '20',
+          },
+        ],
+      }),
     });
 
     await expect(starter.transferEstimateGas()).resolves.toEqual({
       estimatedParentChainGas: BigNumber.from(10),
-      estimatedChildChainGas: constants.Zero,
+      estimatedChildChainGas: BigNumber.from(20),
     });
   });
 });

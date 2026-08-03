@@ -4,6 +4,7 @@ import { isLifiTransfer } from '../components/TransactionHistory/helpers';
 import { MergedTransaction } from '../state/app/state';
 import { useRemainingTimeCctp } from '../state/cctpState';
 import { getBoldInfo, getDifferenceInSeconds } from '../util/BoLDUtils';
+import { getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { getConfirmationTime } from '../util/WithdrawalUtils';
 import { isNetwork } from '../util/networks';
 
@@ -50,7 +51,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
   const orbitDepositDuration = getOrbitDepositDuration(isTestnet);
 
   if (isLifiTransfer(tx)) {
-    const durationMinutes = (tx.durationMs || 15_000) / (60 * 1_000);
+    const durationMinutes = (getLifiTransactionSnapshot(tx)?.durationMs || 15_000) / (60 * 1_000);
 
     return {
       approximateDurationInMinutes: durationMinutes,

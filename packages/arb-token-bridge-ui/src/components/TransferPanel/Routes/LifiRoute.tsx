@@ -1,11 +1,16 @@
 import { utils } from 'ethers';
-import { useCallback, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
-import { RouteType, getContextFromRoute, useRouteStore } from '../hooks/useRouteStore';
-import { BadgeType, Route } from './Route';
+import type { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
+import type { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import {
+  getLifiRouteStepLabel,
+  getLifiRouteToolDetails,
+  getLifiRouteToolsDetails,
+  getLifiToolDetails,
+} from '../../../util/LifiRouteUtils';
+import { useRouteStore } from '../hooks/useRouteStore';
+import { BadgeType, Route, RouteStep, RouteTool } from './Route';
 
 // Simplified LifiRoute component that handles only one route
 export function LifiRoute({
@@ -28,46 +33,49 @@ export function LifiRoute({
     shallow,
   );
   const isSelected = selectedRoute === type;
+  const lifiRoute = route.protocolData.route;
+  const primaryTool = getLifiRouteToolDetails(lifiRoute);
 
-  const setSelectedRouteWithContext = useCallback(
-    (routeType: RouteType) => {
-      setSelectedRoute(routeType, getContextFromRoute(route));
-    },
-    [route, setSelectedRoute],
-  );
+  const routeTools: RouteTool[] = getLifiRouteToolsDetails(lifiRoute).map((tool) => ({
+    id: tool.key,
+    name: tool.name,
+    iconURI: tool.logoURI,
+  }));
+  const routeSteps: RouteStep[] = lifiRoute.steps.map((step, stepIndex) => {
+    const toolDetails = getLifiToolDetails(step.toolDetails);
 
-  const bridgeFee = useMemo(
-    () => ({
-      fee: route.fee.amount,
-      token: route.fee.token,
-    }),
-    [route.fee.amount, route.fee.token],
-  );
-
-  const gasCost = useMemo(
-    () => [
-      {
-        gasCost: route.gas.amount,
-        gasToken: route.gas.token,
-      },
-    ],
-    [route.gas.amount, route.gas.token],
-  );
+    return {
+      id: step.id || `lifi-route-step-${stepIndex}`,
+      label: getLifiRouteStepLabel(step),
+      via: toolDetails.name,
+      iconURI: toolDetails.logoURI,
+      fromAmount: step.action.fromAmount,
+      fromToken: step.action.fromToken,
+      toAmount: step.estimate.toAmount,
+      toToken: step.action.toToken,
+    };
+  });
+  const tags = Array.isArray(tag) ? [...tag] : tag ? [tag] : [];
+  if (lifiRoute.steps.length > 1) {
+    tags.push('multi-step');
+  }
 
   return (
     <Route
       type={type}
-      bridge={route.protocolData.tool.name}
-      bridgeIconURI={route.protocolData.tool.logoURI}
+      bridge={primaryTool.name}
+      bridgeIconURI={primaryTool.logoURI}
       durationMs={route.durationMs}
       amountReceived={utils.formatUnits(route.toAmount.amount, route.toAmount.token.decimals)}
       overrideToken={overrideToken}
       isLoadingGasEstimate={false}
-      gasCost={gasCost}
-      bridgeFee={bridgeFee}
+      gasCost={route.gas}
+      bridgeFee={route.fee}
+      routeTools={routeTools}
+      routeSteps={routeSteps}
       selected={isSelected}
-      onSelectedRouteClick={setSelectedRouteWithContext}
-      tag={tag}
+      onSelectedRouteClick={setSelectedRoute}
+      tag={tags.length > 0 ? tags : undefined}
       isDisabled={isLoading}
     />
   );

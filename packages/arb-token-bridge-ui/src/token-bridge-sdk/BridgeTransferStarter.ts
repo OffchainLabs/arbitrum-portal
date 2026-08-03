@@ -3,10 +3,10 @@ import { SimulateContractReturnType } from '@wagmi/core';
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
 import { Config } from 'wagmi';
 
+import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import { DepositGasEstimates, GasEstimates } from '../hooks/arbTokenBridge.types';
 import { MergedTransaction } from '../state/app/state';
 import { Address } from '../util/AddressUtils';
-import { LifiData } from './LifiTransferStarter';
 import { getChainIdFromProvider } from './utils';
 
 type Asset = 'erc20' | 'eth';
@@ -43,7 +43,7 @@ export type BridgeTransferStarterPropsWithChainIds = {
   sourceChainErc20Address?: string;
   destinationChainId: number;
   destinationChainErc20Address?: string;
-  lifiData?: LifiData;
+  lifiRoute?: LifiCrosschainTransfersRoute;
 };
 
 export type TransferEstimateGasProps = {
