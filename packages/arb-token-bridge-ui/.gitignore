@@ -9,6 +9,11 @@
 /coverage
 /cypress
 
+# Playwright e2e (Cypress -> Playwright migration)
+/test-results
+/playwright-report
+/blob-report
+
 # production
 /build
 
