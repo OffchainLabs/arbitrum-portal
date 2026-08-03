@@ -1,20 +1,26 @@
 import type { Route, RouteExtended } from '@lifi/sdk';
+import { constants } from 'ethers';
 
 import type { AmountWithToken, RouteTool } from '../app/api/crosschain-transfers/types';
+import type { LifiRouteHistoryStep } from '../state/app/state';
+import { addressesEqual } from './AddressUtils';
 import { getNetworkName } from './networks';
 
-export type LifiRouteDisplayStep =
-  | Route['steps'][number]
-  | Route['steps'][number]['includedSteps'][number];
+type LifiRouteDisplayStep =
+  | RouteExtended['steps'][number]
+  | RouteExtended['steps'][number]['includedSteps'][number];
+
+type LifiRouteSteps = Pick<Route, 'steps'> | Pick<RouteExtended, 'steps'>;
 
 type LifiRouteSnapshot = {
-  toolsDetails: RouteTool[];
+  toolsDetails: [RouteTool, ...RouteTool[]];
   durationMs: number;
   fromAmount: AmountWithToken;
   toAmount: AmountWithToken;
 };
 
-type LifiTransactionSnapshotSource = Partial<LifiRouteSnapshot> & {
+type LifiTransactionSnapshotSource = Omit<Partial<LifiRouteSnapshot>, 'toolsDetails'> & {
+  toolsDetails?: RouteTool[];
   toolDetails?: RouteTool;
   lifiRoute?: Route | RouteExtended;
 };
@@ -90,7 +96,7 @@ export function getLifiRouteToolsDetails(
 }
 
 export function getLifiRouteDisplaySteps(
-  route: Route | RouteExtended | undefined,
+  route: LifiRouteSteps | undefined,
 ): LifiRouteDisplayStep[] {
   return (route?.steps ?? []).reduce<LifiRouteDisplayStep[]>((displaySteps, step) => {
     const includedSteps = step.includedSteps;
@@ -136,6 +142,59 @@ function getLifiRouteSnapshot(
   };
 }
 
+export function getLifiRouteHistorySteps(route: RouteExtended | undefined): LifiRouteHistoryStep[] {
+  const snapshot = getLifiRouteSnapshot(route);
+  if (!route || !snapshot) {
+    return [];
+  }
+
+  const historySteps = route.steps.map((step) => {
+    const displaySteps = getLifiRouteDisplaySteps({ steps: [step] }).map((displayStep) => {
+      const execution = 'execution' in displayStep ? displayStep.execution : undefined;
+      const fallbackToolDetails = getLifiToolDetails(displayStep.toolDetails);
+      const toToken = execution?.toToken ?? displayStep.action.toToken;
+
+      return {
+        toolDetails:
+          snapshot.toolsDetails.find((tool) => tool.key === fallbackToolDetails.key) ??
+          fallbackToolDetails,
+        toAmount: {
+          amount: execution?.toAmount ?? displayStep.estimate.toAmount,
+          amountUSD: displayStep.estimate.toAmountUSD ?? '0',
+          chainId: displayStep.action.toChainId,
+          token: {
+            address: toToken.address,
+            decimals: toToken.decimals,
+            logoURI: toToken.logoURI,
+            symbol: toToken.symbol,
+          },
+        },
+      };
+    });
+
+    return {
+      id: step.id,
+      fromChainId: step.action.fromChainId,
+      requiresApproval: !addressesEqual(step.action.fromToken.address, constants.AddressZero),
+      displaySteps,
+      execution: step.execution
+        ? {
+            status: step.execution.status,
+            process: step.execution.process.map(({ type, status, txHash, txLink, txType }) => ({
+              type,
+              status,
+              txHash,
+              txLink,
+              txType: typeof txType === 'string' ? txType : undefined,
+            })),
+          }
+        : undefined,
+    };
+  });
+
+  return historySteps;
+}
+
 export function getLifiTransactionSnapshot(
   transaction: LifiTransactionSnapshotSource,
 ): LifiRouteSnapshot | undefined {
@@ -145,8 +204,9 @@ export function getLifiTransactionSnapshot(
   }
 
   const { toolDetails, toolsDetails, durationMs, fromAmount, toAmount } = transaction;
-  const normalizedToolsDetails = toolsDetails?.length
-    ? toolsDetails
+  const [primaryTool, ...otherTools] = toolsDetails ?? [];
+  const normalizedToolsDetails: [RouteTool, ...RouteTool[]] | undefined = primaryTool
+    ? [primaryTool, ...otherTools]
     : toolDetails
       ? [getLifiToolDetails(toolDetails)]
       : undefined;
