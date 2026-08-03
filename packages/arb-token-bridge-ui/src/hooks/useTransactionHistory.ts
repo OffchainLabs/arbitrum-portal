@@ -105,6 +105,7 @@ export type UseTransactionHistoryResult = {
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
+  updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
 
@@ -995,6 +996,12 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
     pause: () => {},
     resume: () => {},
     addPendingTransaction: () => {},
+    updateTransaction: (newTx: MergedTransaction) => {
+      void mutate(
+        (transactions) => transactions?.map((tx) => (isSameTransaction(tx, newTx) ? newTx : tx)),
+        false,
+      );
+    },
     updatePendingTransaction: async () => {
       await mutate();
     },
@@ -1588,6 +1595,7 @@ export const useTransactionHistory = (
       pause,
       resume,
       addPendingTransaction,
+      updateTransaction: updateCachedTransaction,
       updatePendingTransaction,
     };
   }
@@ -1601,6 +1609,7 @@ export const useTransactionHistory = (
     pause,
     resume,
     addPendingTransaction,
+    updateTransaction: updateCachedTransaction,
     updatePendingTransaction,
   };
 };

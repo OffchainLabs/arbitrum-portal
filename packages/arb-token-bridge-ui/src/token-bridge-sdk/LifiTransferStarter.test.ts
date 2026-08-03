@@ -1,5 +1,5 @@
 import type { Provider } from '@ethersproject/providers';
-import { RouteExtended, executeRoute } from '@lifi/sdk';
+import { RouteExtended, executeRoute, resumeRoute } from '@lifi/sdk';
 import { BigNumber, constants } from 'ethers';
 import { UserRejectedRequestError } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +13,7 @@ import {
   getPendingLifiRouteBatchIds,
   resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
+import { resumeLifiRoute } from './LifiRouteExecutor';
 import { LifiTransferStarter } from './LifiTransferStarter';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
@@ -25,6 +26,7 @@ vi.mock('@lifi/sdk', async (importOriginal) => {
     },
     EVM: vi.fn((options) => options),
     executeRoute: vi.fn(),
+    resumeRoute: vi.fn(),
   };
 });
 
@@ -633,6 +635,19 @@ describe.sequential('LifiTransferStarter approvals', () => {
     await createStarter().transfer(transferProps);
 
     expect(onRouteExecutionError).toHaveBeenCalledWith(executionError, submittedRoute);
+  });
+
+  it('clones a cached route before handing it to LiFi resume', async () => {
+    const route = createMockLifiRoute();
+    vi.mocked(resumeRoute).mockResolvedValue(route);
+
+    await resumeLifiRoute(route, {
+      wagmiConfig: {} as Parameters<typeof resumeLifiRoute>[1]['wagmiConfig'],
+      switchChainAsync: vi.fn().mockResolvedValue(undefined),
+    });
+
+    expect(vi.mocked(resumeRoute).mock.calls[0]?.[0]).not.toBe(route);
+    expect(vi.mocked(resumeRoute).mock.calls[0]?.[0]).toEqual(route);
   });
 
   it("rejects route execution when the app's token approval dialog is declined", async () => {
