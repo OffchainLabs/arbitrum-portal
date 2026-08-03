@@ -55,12 +55,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
         env:
           TESTNODE_VARIANT: ${{ matrix.test.tag }}
-          TESTNODE_PARENT_CHAIN_POLL_INTERVAL: 1s
+          TESTNODE_PARENT_CHAIN_POLL_INTERVAL: 100ms
         ports:
           - 8080:8080
           - 8545:8545
           - 8547:8547
           - 3347:8549
+        options: >-
+          --log-driver local
+          --log-opt max-size=1m
+          --log-opt max-file=1
 
     steps:
       - name: Checkout
