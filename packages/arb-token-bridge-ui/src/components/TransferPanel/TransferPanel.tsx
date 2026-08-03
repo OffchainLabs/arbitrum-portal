@@ -273,9 +273,7 @@ export function TransferPanel() {
   }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
   const shouldShowTokenImportDialog =
-    networks.sourceChain.id !== ChainId.RobinhoodChain &&
-    isTokenAlreadyImported === false &&
-    typeof tokenFromSearchParams !== 'undefined';
+    isTokenAlreadyImported === false && typeof tokenFromSearchParams !== 'undefined';
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
