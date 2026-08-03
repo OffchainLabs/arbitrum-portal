@@ -3,6 +3,7 @@ import { BigNumber, Signer } from 'ethers';
 
 import { isValidLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
+import { e2ePollingInterval, isE2eTestingEnvironment } from '../util/CommonUtils';
 import { isDepositMode } from '../util/isDepositMode';
 import { isNetwork, rpcURLs } from '../util/networks';
 import { BridgeTransferStarterPropsWithChainIds } from './BridgeTransferStarter';
@@ -72,6 +73,9 @@ function createProviderWithCache(chainId: ChainId) {
   const rpcUrl = rpcURLs[chainId];
 
   const provider = new EnhancedProvider(rpcUrl, chainId);
+  if (isE2eTestingEnvironment) {
+    provider.pollingInterval = e2ePollingInterval;
+  }
   getProviderForChainCache[chainId] = provider;
   return provider;
 }

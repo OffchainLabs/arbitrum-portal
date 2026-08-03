@@ -36,6 +36,8 @@ export const isE2eTestingEnvironment =
   (typeof window !== 'undefined' && !!window.Cypress) ||
   process.env.NEXT_PUBLIC_IS_E2E_TEST === 'true';
 
+export const e2ePollingInterval = 100;
+
 export const isDevelopmentEnvironment = process.env.NODE_ENV === 'development';
 
 export const isProductionEnvironment = process.env.NODE_ENV === 'production';

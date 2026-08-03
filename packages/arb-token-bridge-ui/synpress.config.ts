@@ -9,6 +9,7 @@ import { BigNumber, Contract, ContractFactory, Wallet, constants, utils } from '
 import { formatUnits, parseUnits } from 'ethers/lib/utils';
 
 import { addressesEqual } from './src/util/AddressUtils';
+import { e2ePollingInterval } from './src/util/CommonUtils';
 import { getL2ERC20Address } from './src/util/TokenUtils';
 import { registerLocalNetwork } from './src/util/networks';
 import {
@@ -249,6 +250,8 @@ const arbSepoliaRpcUrl = 'https://sepolia-rollup.arbitrum.io/rpc';
 
 const parentProvider = new StaticJsonRpcProvider(isOrbitTest ? arbRpcUrl : ethRpcUrl);
 const childProvider = new StaticJsonRpcProvider(isOrbitTest ? l3RpcUrl : arbRpcUrl);
+parentProvider.pollingInterval = e2ePollingInterval;
+childProvider.pollingInterval = e2ePollingInterval;
 
 if (!process.env.PRIVATE_KEY_CUSTOM) {
   throw new Error('PRIVATE_KEY_CUSTOM variable missing.');
@@ -367,6 +370,11 @@ async function fundWethOnParentChain() {
 }
 
 async function approveWeth() {
+  if (!isNonZeroAddress(l1WethGateway)) {
+    console.log('Skipping WETH approval because no WETH gateway is configured.');
+    return;
+  }
+
   console.log('Approving WETH...');
   const tx = await getWethContract(parentProvider, l1WethAddress).approve(
     l1WethGateway,
