@@ -1,8 +1,9 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { constants } from 'ethers';
+import type { BigNumber } from 'ethers';
 import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
-import React, { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
@@ -22,6 +23,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
 import {
@@ -152,13 +154,14 @@ function TokenListsPanel() {
 }
 
 const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
+const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function TokensPanel({
   onTokenSelected,
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
 }): React.JSX.Element {
-  const { address: walletAddress } = useAccount();
+  const { address: walletAddress, isConnected } = useAccount();
   const {
     app: {
       arbTokenBridge: { token, bridgeTokens },
@@ -189,6 +192,22 @@ function TokensPanel({
   const [newToken, setNewToken] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isAddingToken, setIsAddingToken] = useState(false);
+  const searchEventTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    trackEvent('Token Picker Opened', {
+      side: 'source',
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      isConnected,
+    });
+
+    return () => {
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
+      }
+    };
+  }, [isConnected, networks.destinationChain.id, networks.sourceChain.id]);
 
   const getBalance = useCallback(
     (address: string) => {
@@ -430,11 +449,6 @@ function TokensPanel({
     let error = 'Token not found on this network.';
     let isSuccessful = false;
 
-    if (networks.sourceChain.id === ChainId.RobinhoodChain) {
-      setErrorMessage(error);
-      return;
-    }
-
     try {
       // Try to add the token as an L2-native token
       token.addL2NativeToken(newToken);
@@ -478,10 +492,56 @@ function TokensPanel({
     }
   };
 
-  const onSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setErrorMessage('');
-    setNewToken(event.target.value);
-  }, []);
+  const onSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setErrorMessage('');
+      setNewToken(event.target.value);
+
+      const query = event.target.value.trim();
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
+        searchEventTimeout.current = null;
+      }
+
+      if (query) {
+        searchEventTimeout.current = setTimeout(() => {
+          searchEventTimeout.current = null;
+          trackEvent('Token Search Performed', {
+            side: 'source',
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+            isConnected,
+            query,
+          });
+        }, SEARCH_EVENT_DEBOUNCE_MS);
+      }
+    },
+    [isConnected, networks.destinationChain.id, networks.sourceChain.id],
+  );
+
+  const handleTokenSelected = useCallback(
+    (selectedToken: ERC20BridgeToken | null, balance: BigNumber | null) => {
+      trackEvent('Token Selected', {
+        side: 'source',
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        isConnected,
+        tokenAddress:
+          (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ??
+          selectedToken?.address ??
+          constants.AddressZero,
+        hasBalance: balance?.gt(0) ?? false,
+      });
+      onTokenSelected(selectedToken);
+    },
+    [
+      isConnected,
+      isDepositMode,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      onTokenSelected,
+    ],
+  );
 
   const rowRenderer = useCallback(
     (virtualizedProps: ListRowProps) => {
@@ -505,7 +565,7 @@ function TokensPanel({
           <TokenRow
             key={`TokenRowNativeCurrency-${walletAddress}`}
             style={virtualizedProps.style}
-            onTokenSelected={onTokenSelected}
+            onTokenSelected={handleTokenSelected}
             token={null}
           />
         );
@@ -515,7 +575,7 @@ function TokensPanel({
         <TokenRow
           key={`${address}-${walletAddress}`}
           style={virtualizedProps.style}
-          onTokenSelected={onTokenSelected}
+          onTokenSelected={handleTokenSelected}
           token={token}
         />
       );
@@ -524,7 +584,7 @@ function TokensPanel({
       tokensToShow,
       tokensFromLists,
       tokensFromUser,
-      onTokenSelected,
+      handleTokenSelected,
       usdcToken,
       isOrbitChain,
       walletAddress,
@@ -577,6 +637,7 @@ function TokensPanel({
 }
 
 export function TokenSearch(props: UseDialogProps) {
+  const { onClose } = props;
   const { setAmount2 } = useSetInputAmount();
   const {
     app: {
@@ -592,75 +653,86 @@ export function TokenSearch(props: UseDialogProps) {
 
   const { isValidating: isFetchingTokenLists } = useTokenLists(childChain.id); // to show a small loader while token-lists are loading when search panel opens
 
-  async function selectToken(_token: ERC20BridgeToken | null) {
-    props.onClose(false);
+  const selectToken = useCallback(
+    async (_token: ERC20BridgeToken | null) => {
+      onClose(false);
 
-    if (_token === null) {
-      setSelectedToken(null);
-      return;
-    }
-
-    if (!_token.address) {
-      return;
-    }
-
-    if (addressesEqual(_token.address, constants.AddressZero)) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setSelectedToken(constants.AddressZero);
-      } else {
-        // Map native currency to null for other chains
+      if (_token === null) {
         setSelectedToken(null);
-      }
-      return;
-    }
-
-    if (isTokenNativeUSDC(_token.address)) {
-      // not supported
-      setAmount2('');
-    }
-
-    try {
-      if (typeof bridgeTokens === 'undefined') {
         return;
       }
 
-      const isL2NativeUSDC =
-        isTokenArbitrumOneNativeUSDC(_token.address) ||
-        isTokenArbitrumSepoliaNativeUSDC(_token.address);
-
-      if (isL2NativeUSDC) {
-        setSelectedToken(_token.address);
+      if (!_token.address) {
         return;
       }
 
-      // Token not added to the bridge, so we'll handle importing it
-      if (typeof bridgeTokens[_token.address] === 'undefined') {
-        setSelectedToken(_token.address);
+      if (addressesEqual(_token.address, constants.AddressZero)) {
+        if (networks.destinationChain.id === ChainId.ApeChain) {
+          setSelectedToken(constants.AddressZero);
+        } else {
+          // Map native currency to null for other chains
+          setSelectedToken(null);
+        }
         return;
       }
 
-      const data = await fetchErc20Data({
-        address: _token.address,
-        provider: parentChainProvider,
-      });
-
-      if (data) {
-        token.updateTokenData(_token.address);
-        setSelectedToken(_token.address);
+      if (isTokenNativeUSDC(_token.address)) {
+        // not supported
+        setAmount2('');
       }
-    } catch (error: any) {
-      logger.warn(error);
 
-      if (error.name === 'TokenDisabledError') {
-        warningToast('This token is currently paused in the bridge');
+      try {
+        if (typeof bridgeTokens === 'undefined') {
+          return;
+        }
+
+        const isL2NativeUSDC =
+          isTokenArbitrumOneNativeUSDC(_token.address) ||
+          isTokenArbitrumSepoliaNativeUSDC(_token.address);
+
+        if (isL2NativeUSDC) {
+          setSelectedToken(_token.address);
+          return;
+        }
+
+        // Token not added to the bridge, so we'll handle importing it
+        if (typeof bridgeTokens[_token.address] === 'undefined') {
+          setSelectedToken(_token.address);
+          return;
+        }
+
+        const data = await fetchErc20Data({
+          address: _token.address,
+          provider: parentChainProvider,
+        });
+
+        if (data) {
+          token.updateTokenData(_token.address);
+          setSelectedToken(_token.address);
+        }
+      } catch (error: any) {
+        logger.warn(error);
+
+        if (error.name === 'TokenDisabledError') {
+          warningToast('This token is currently paused in the bridge');
+        }
       }
-    }
-  }
+    },
+    [
+      bridgeTokens,
+      networks.destinationChain.id,
+      parentChainProvider,
+      onClose,
+      setAmount2,
+      setSelectedToken,
+      token,
+    ],
+  );
 
   return (
     <Dialog
       {...props}
-      onClose={() => props.onClose(false)}
+      onClose={() => onClose(false)}
       title={activePanel === Panel.MAIN ? 'Select Token' : 'Manage Token Lists'}
       actionButtonProps={{ hidden: true }}
       isFooterHidden={true}
