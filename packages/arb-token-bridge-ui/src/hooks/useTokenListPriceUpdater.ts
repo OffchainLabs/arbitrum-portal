@@ -20,7 +20,7 @@ export function useTokenListPriceUpdater({
     app: { arbTokenBridge, arbTokenBridgeLoaded },
   } = useAppState();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const { mutate } = useTokenLists(childChain.id);
   const arbTokenBridgeRef = useRef(arbTokenBridge);
 
@@ -30,8 +30,8 @@ export function useTokenListPriceUpdater({
 
   const refreshLifiTokenList = useCallback(() => {
     const lifiTokenList = getLifiTokenListForNetworks({
-      childChainId: childChain.id,
-      parentChainId: parentChain.id,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
     });
 
     if (!lifiTokenList) {
@@ -63,11 +63,11 @@ export function useTokenListPriceUpdater({
         };
       });
     }, false);
-  }, [arbTokenBridgeLoaded, childChain.id, parentChain.id, mutate]);
+  }, [arbTokenBridgeLoaded, mutate, networks.destinationChain.id, networks.sourceChain.id]);
 
   useInterval(refreshLifiTokenList, intervalMs);
 
   useEffect(() => {
     refreshLifiTokenList();
-  }, [refreshLifiTokenList, parentChain.id, childChain.id]);
+  }, [refreshLifiTokenList]);
 }

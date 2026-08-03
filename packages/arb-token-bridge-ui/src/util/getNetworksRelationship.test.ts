@@ -35,6 +35,16 @@ describe('getNetworksRelationship', () => {
         isDepositMode: true,
       },
     },
+    {
+      label: 'Robinhood to Ethereum withdrawal',
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+      expected: {
+        parentChainId: ChainId.Ethereum,
+        childChainId: ChainId.RobinhoodChain,
+        isDepositMode: false,
+      },
+    },
   ])('resolves $label', ({ sourceChainId, destinationChainId, expected }) => {
     expect(getNetworksRelationship({ sourceChainId, destinationChainId })).toEqual(expected);
   });

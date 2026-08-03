@@ -339,9 +339,6 @@ describe('sanitizeTokenQueryParam', () => {
       registerCustomArbitrumNetwork(
         orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
       );
-      registerCustomArbitrumNetwork(
-        orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
-      );
     });
 
     describe('from ApeChain', () => {

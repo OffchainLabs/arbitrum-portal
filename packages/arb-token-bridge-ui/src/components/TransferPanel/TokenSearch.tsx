@@ -125,6 +125,8 @@ function TokenListsPanel() {
     return getBridgeTokenListsForNetworks({
       childChainId: childChain.id,
       parentChainId: parentChain.id,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
     }).filter((tokenList) => {
       // Don't show the Arbitrum Token token list, because it's special and can't be disabled
       if (tokenList.isArbitrumTokenTokenList) {
@@ -133,7 +135,7 @@ function TokenListsPanel() {
 
       return true;
     });
-  }, [childChain.id, parentChain.id]);
+  }, [childChain.id, networks.destinationChain.id, networks.sourceChain.id, parentChain.id]);
 
   return (
     <>

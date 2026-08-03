@@ -123,6 +123,8 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
   ]),
 };
 
+const UNPAIRED_TOKEN_CHAIN_IDS: number[] = [ChainId.RobinhoodChain];
+
 export type LifiTokenWithCoinKey = LiFiToken & { coinKey: CoinKey };
 
 function isExcludedToken(token: LiFiToken, chainId: number): boolean {
@@ -145,10 +147,7 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
     const tokenWithCoinKey = token as LifiTokenWithCoinKey;
 
     // Normalize USDCe to USDC on chains that use bridged USDC
-    if (
-      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
-      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
-    ) {
+    if (tokenWithCoinKey.coinKey === CoinKey.USDCe && chainId === ChainId.ApeChain) {
       return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
     }
 
@@ -188,33 +187,31 @@ function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinK
 export interface LifiTokenRegistry {
   tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
+  unpairedTokensByChain: Partial<Record<number, LiFiToken[]>>;
 }
 
-const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
-  const response = await getTokens({
-    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
-  });
-
-  if (!response.tokens) {
-    return {
-      tokensByChain: {},
-      tokensByChainAndCoinKey: {},
-    };
-  }
-
+export function buildLifiTokenRegistry(
+  tokensByChainResponse: Record<number, LiFiToken[]>,
+): LifiTokenRegistry {
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
   const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
+  const unpairedTokensByChain: LifiTokenRegistry['unpairedTokensByChain'] = {};
 
   for (const chainId of allowedLifiSourceChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
+    const filteredTokens = (tokensByChainResponse[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
       (acc, token) => {
         // Exclude tokens on the exclude list
         if (isExcludedToken(token, chainId)) return acc;
 
         const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
-        if (!tokenWithCoinKey) return acc;
+        if (!tokenWithCoinKey) {
+          if (UNPAIRED_TOKEN_CHAIN_IDS.includes(chainId)) {
+            (unpairedTokensByChain[chainId] ??= []).push(token);
+          }
+          return acc;
+        }
 
         const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
         const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
@@ -230,7 +227,23 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
   }
 
-  return { tokensByChain, tokensByChainAndCoinKey };
+  return { tokensByChain, tokensByChainAndCoinKey, unpairedTokensByChain };
+}
+
+const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
+  const response = await getTokens({
+    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
+  });
+
+  if (!response.tokens) {
+    return {
+      tokensByChain: {},
+      tokensByChainAndCoinKey: {},
+      unpairedTokensByChain: {},
+    };
+  }
+
+  return buildLifiTokenRegistry(response.tokens);
 };
 
 export const getLifiTokenRegistry = unstable_cache(fetchRegistry, ['lifi-token-registry'], {

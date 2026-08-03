@@ -22,6 +22,8 @@ const TokenListSyncer = (): React.JSX.Element => {
     const tokenListsToSet = getDefaultBridgeTokenLists({
       childChainId: childChain.id,
       parentChainId: parentChain.id,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
     });
 
     tokenListsToSet.forEach((bridgeTokenList) => {
@@ -31,6 +33,8 @@ const TokenListSyncer = (): React.JSX.Element => {
     // arbTokenBridge.token is not a memoized object, adding it here would cause infinite loop
     childChain.id,
     parentChain.id,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
     arbTokenBridgeLoaded,
   ]);
 

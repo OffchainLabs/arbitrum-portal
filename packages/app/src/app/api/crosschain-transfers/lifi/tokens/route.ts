@@ -17,6 +17,12 @@ export const revalidate = 30;
 
 const TOKEN_LIST_NAME = 'LiFi Transfer Tokens';
 const TOKEN_LIST_VERSION = { major: 1, minor: 0, patch: 0 };
+const EMPTY_TOKEN_LIST_CACHE_HEADERS = {
+  'Cache-Control': 'public, max-age=60, s-maxage=60',
+};
+const TOKEN_LIST_CACHE_HEADERS = {
+  'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=0',
+};
 
 const BASE_TOKEN_LIST = {
   name: TOKEN_LIST_NAME,
@@ -24,6 +30,32 @@ const BASE_TOKEN_LIST = {
   version: TOKEN_LIST_VERSION,
   logoURI: '/icons/lifi.svg',
 } as const;
+
+function createEmptyTokenListResponse(status: 400 | 500): NextResponse<TokenList> {
+  return NextResponse.json(
+    {
+      ...BASE_TOKEN_LIST,
+      tokens: [],
+    },
+    {
+      status,
+      headers: EMPTY_TOKEN_LIST_CACHE_HEADERS,
+    },
+  );
+}
+
+function createTokenListResponse(tokens: TokenList['tokens']): NextResponse<TokenList> {
+  return NextResponse.json(
+    {
+      ...BASE_TOKEN_LIST,
+      tokens,
+    },
+    {
+      status: 200,
+      headers: TOKEN_LIST_CACHE_HEADERS,
+    },
+  );
+}
 
 const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
   [
@@ -65,85 +97,57 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   const parentChainId = parseChainParam(searchParams.get('parentChainId'));
   const childChainId = parseChainParam(searchParams.get('childChainId'));
 
-  const isInvalidChainId = parentChainId === null || childChainId === null;
-  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId!);
-  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId!);
-  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId!]?.includes(childChainId!);
+  if (parentChainId === null || childChainId === null) {
+    return createEmptyTokenListResponse(400);
+  }
 
-  if (isInvalidChainId || isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens: [],
-      },
-      {
-        status: 400,
-        headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=60',
-        },
-      },
-    );
+  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId);
+  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId);
+  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId]?.includes(childChainId);
+
+  if (isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
+    return createEmptyTokenListResponse(400);
   }
 
   try {
-    const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
+    const { tokensByChain, tokensByChainAndCoinKey, unpairedTokensByChain } =
+      await getLifiTokenRegistry();
 
     const parentTokens = getParentTokensForRoute({
       parentChainId,
       tokens: tokensByChain[parentChainId] ?? [],
     });
-    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId];
+    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId] ?? {};
 
-    if (
-      !parentTokens.length ||
-      !childTokensByCoinKey ||
-      Object.keys(childTokensByCoinKey).length === 0
-    ) {
-      return NextResponse.json(
-        {
-          ...BASE_TOKEN_LIST,
-          tokens: [],
-        },
-        {
-          status: 200,
-          headers: {
-            'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=0',
-          },
-        },
-      );
-    }
-
-    const tokens = groupChildTokensAndParentTokens({
-      parentTokens,
-      childTokensByCoinKey,
-      parentChainId,
-      childChainId,
-    });
-
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens,
-      },
-      {
-        status: 200,
-        headers: {
-          'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=0',
-        },
-      },
+    const groupedTokens =
+      parentTokens.length && Object.keys(childTokensByCoinKey).length > 0
+        ? groupChildTokensAndParentTokens({
+            parentTokens,
+            childTokensByCoinKey,
+            parentChainId,
+            childChainId,
+          })
+        : [];
+    const tokenKeys = new Set(
+      groupedTokens.map((token) => `${token.chainId}:${token.address.toLowerCase()}`),
     );
+    const unpairedSourceTokens = (unpairedTokensByChain[parentChainId] ?? [])
+      .map((token) => ({
+        chainId: parentChainId,
+        address: token.address,
+        name: token.name,
+        symbol: token.symbol,
+        decimals: token.decimals,
+        logoURI: token.logoURI,
+        extensions: {
+          ...(token.priceUSD ? { priceUSD: token.priceUSD } : {}),
+        },
+      }))
+      .filter((token) => !tokenKeys.has(`${token.chainId}:${token.address.toLowerCase()}`));
+    const tokens = groupedTokens.concat(unpairedSourceTokens);
+
+    return createTokenListResponse(tokens);
   } catch (error: unknown) {
-    return NextResponse.json(
-      {
-        ...BASE_TOKEN_LIST,
-        tokens: [],
-      },
-      {
-        status: 500,
-        headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=60',
-        },
-      },
-    );
+    return createEmptyTokenListResponse(500);
   }
 }
