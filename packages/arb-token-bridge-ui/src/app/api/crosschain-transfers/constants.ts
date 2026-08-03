@@ -9,9 +9,9 @@ export const lifiDestinationChainIds: Record<number, number[]> = {
   ],
   [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
   [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
-  [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne],
+  [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
   [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
-  [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne],
+  [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
 };
 
 export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationChainIds).map((id) =>

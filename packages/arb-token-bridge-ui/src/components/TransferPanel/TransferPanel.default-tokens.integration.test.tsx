@@ -28,6 +28,22 @@ type DefaultTokenCase = {
 
 const defaultTokenCases: DefaultTokenCase[] = [
   {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'apechain',
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [nativeApeTokenExpectation],
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'robinhood-chain',
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [nativeApeTokenExpectation],
+  },
+  {
     sourceChain: 'base',
     destinationChain: 'apechain',
     sourceToken: apeTokenExpectation,

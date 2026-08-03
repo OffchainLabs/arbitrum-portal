@@ -79,7 +79,7 @@ function generateBaseDepositTestCases() {
 }
 
 function generateRobinhoodDepositTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Base]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Base]
     .map((sourceChainId) => [
       {
         fromToken: undefined,
@@ -96,7 +96,7 @@ function generateRobinhoodDepositTestCases() {
 }
 
 function generateRobinhoodWithdrawTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain]
     .map((destinationChainId) => [
       {
         fromToken: undefined,
@@ -338,6 +338,24 @@ describe('isLifiTransfer', () => {
   });
 
   describe('Robinhood pairs', () => {
+    it('ApeChain → Robinhood is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toBe(true);
+    });
+
+    it('Robinhood → ApeChain is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId: ChainId.ApeChain,
+        }),
+      ).toBe(true);
+    });
+
     it('Base → Robinhood is a valid LiFi pair', () => {
       expect(
         isLifiTransfer({
@@ -454,6 +472,36 @@ describe('getTokenOverride', () => {
     // Override on destination chain to ERC20, default to null (Ape on ApeChain)
     expect(apeToArbOverride.source).toEqual(null);
     expect(apeToArbOverride.destination).toEqual(ape);
+  });
+
+  it('maps native ApeChain APE to Robinhood APE in both directions', () => {
+    const apeToRobinhoodOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const robinhoodToApeOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.ApeChain,
+    });
+    const apeOnApeChain = {
+      ...ape,
+      address: constants.AddressZero,
+    };
+    const apeOnRobinhood = {
+      ...ape,
+      address: CommonAddress.RobinhoodChain.APE,
+    };
+
+    expect(apeToRobinhoodOverride).toEqual({
+      source: apeOnApeChain,
+      destination: apeOnRobinhood,
+    });
+    expect(robinhoodToApeOverride).toEqual({
+      source: apeOnRobinhood,
+      destination: apeOnApeChain,
+    });
   });
 
   it('For transfers on chain with custom fee token, returns null', () => {
