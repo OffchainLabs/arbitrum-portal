@@ -2,6 +2,7 @@ import { constants } from 'ethers';
 import { useMemo } from 'react';
 
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../components/TransferPanel/TokenSearchUtils';
 import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
@@ -15,7 +16,7 @@ import { useSelectedToken } from './useSelectedToken';
  *
  * - If destinationToken === selectedToken.address: return selectedToken
  * - If destinationToken is the zeroAddress: return ETH token (happen on chain with custom gas token)
- * - If destinationToken is set to a specific address: return that token from bridgeTokens
+ * - If destinationToken is set to a specific address: return that token from token storage
  * - If destinationToken is null: return null
  */
 export function useDestinationToken(): ERC20BridgeToken | null {
@@ -27,6 +28,7 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
+  const { data: tokensFromLists } = useTokensFromLists();
   const isSwapTransfer = useIsSwapTransfer();
   const overrideToken = useMemo(
     () =>
@@ -47,8 +49,13 @@ export function useDestinationToken(): ERC20BridgeToken | null {
   }
 
   // Case 2: destinationToken is set to a specific token address
-  if (destinationToken && bridgeTokens) {
-    return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+  if (destinationToken) {
+    const token =
+      bridgeTokens?.[destinationToken.toLowerCase()] ??
+      tokensFromLists[destinationToken.toLowerCase()] ??
+      null;
+
+    return token;
   }
 
   // For regular chains (native ETH): return null (button will show native ETH)
