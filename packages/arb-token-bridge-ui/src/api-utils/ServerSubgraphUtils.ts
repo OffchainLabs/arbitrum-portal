@@ -90,10 +90,15 @@ function createApolloClient(uri: string, headers?: Record<string, string>) {
     }),
   );
 
-  return new ApolloClient({
+  const client = new ApolloClient({
     link: httpLink,
     cache: new InMemoryCache(),
   });
+  // Testing aid: record the endpoint so getSourceFromSubgraphClient can report
+  // which source served a query. The link is a timeout-concat link, so its uri
+  // isn't otherwise readable off the client.
+  (client as unknown as { __uri?: string }).__uri = uri;
+  return client;
 }
 
 function createSelfHostedSubgraphClient(subgraphName: string) {
@@ -174,19 +179,27 @@ function createIndexerClientWithSubgraphFallback(
 ): CctpSubgraphClient {
   const indexerClient = createApolloClient(indexerUri);
 
-  const query: CctpSubgraphClient['query'] = async (options) => {
-    try {
-      return await indexerClient.query(options);
-    } catch (error) {
-      logger.warn(
-        `[getCctpSubgraphClient] indexer query failed, falling back to "${fallbackSubgraphKey}"`,
-        error,
-      );
-      return createSubgraphClient(fallbackSubgraphKey).query(options);
-    }
+  // Testing aid: default source is the indexer; if a query falls back to the
+  // Circle subgraph at runtime, record that source instead so meta.source is truthful.
+  const client: CctpSubgraphClient & { __uri?: string } = {
+    link: indexerClient.link,
+    __uri: indexerUri,
+    query: async (options) => {
+      try {
+        return await indexerClient.query(options);
+      } catch (error) {
+        logger.warn(
+          `[getCctpSubgraphClient] indexer query failed, falling back to "${fallbackSubgraphKey}"`,
+          error,
+        );
+        const fallback = createSubgraphClient(fallbackSubgraphKey);
+        client.__uri = (fallback as unknown as { __uri?: string }).__uri;
+        return fallback.query(options);
+      }
+    },
   };
 
-  return { link: indexerClient.link, query };
+  return client;
 }
 
 const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {
@@ -252,7 +265,10 @@ export function getL2SubgraphClient(l2ChainId: number) {
 export function getSourceFromSubgraphClient(
   subgraphClient: Pick<ApolloClient<NormalizedCacheObject>, 'link'>,
 ): string | null {
-  const uri = (subgraphClient.link as any).options?.uri;
+  // Prefer the endpoint recorded by createApolloClient / the CCTP fallback wrapper
+  // (reflects the actual runtime source); fall back to the link's uri otherwise.
+  const uri =
+    (subgraphClient as { __uri?: string }).__uri ?? (subgraphClient.link as any).options?.uri;
 
   if (typeof uri === 'undefined') {
     return null;
