@@ -17,6 +17,7 @@ import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
 import { TokenSearch } from '../TransferPanel/TokenSearch';
+import { TrustWalletUpdateDialog } from '../TransferPanel/TrustWalletUpdateDialog';
 import { CctpUsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/CctpUsdcDepositConfirmationDialog';
 import { UsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/UsdcDepositConfirmationDialog';
 import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithdrawal/CctpUsdcWithdrawalConfirmationDialog';
@@ -62,6 +63,7 @@ export type DialogType =
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
   | 'nova_deposit_warning'
+  | 'trust_wallet_update'
   | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
@@ -163,6 +165,8 @@ export function DialogWrapper(props: DialogProps) {
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
     case 'nova_deposit_warning':
       return <NovaDepositWarningDialog {...commonProps} />;
+    case 'trust_wallet_update':
+      return <TrustWalletUpdateDialog {...commonProps} />;
     case 'earn_tos':
       return <EarnToSPopupDialog {...commonProps} />;
     default:
