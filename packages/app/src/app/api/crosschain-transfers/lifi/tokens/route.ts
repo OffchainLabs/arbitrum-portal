@@ -34,6 +34,7 @@ const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
     CommonAddress.RobinhoodChain.ENA,
     CommonAddress.RobinhoodChain.WEETH,
     CommonAddress.RobinhoodChain.WSTETH,
+    CommonAddress.RobinhoodChain.SFI,
   ].map((address) => address.toLowerCase()),
 );
 

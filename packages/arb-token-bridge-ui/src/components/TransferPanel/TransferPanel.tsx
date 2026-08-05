@@ -4,7 +4,7 @@ import { getStepTransaction } from '@lifi/sdk';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
@@ -30,6 +30,7 @@ import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
+import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useMode } from '../../hooks/useMode';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -110,7 +111,14 @@ export function TransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
   const [
-    { amount, amount2, destinationAddress, token: tokenFromSearchParams, disabledFeatures },
+    {
+      amount,
+      amount2,
+      destinationAddress,
+      token: tokenFromSearchParams,
+      destinationToken,
+      disabledFeatures,
+    },
     setQueryParams,
   ] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
@@ -128,6 +136,7 @@ export function TransferPanel() {
   } = useAppState();
   const { address: walletAddress, chain, isConnected } = useAccount();
   const [selectedToken, setSelectedToken] = useSelectedToken();
+  const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
     isSwitchingNetworkBeforeTx: true,
   });
@@ -148,6 +157,8 @@ export function TransferPanel() {
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
+
+  const isTrustWalletConnection = useIsTrustWalletConnection();
 
   const { current: signer } = useLatest(useEthersSigner({ chainId: networks.sourceChain.id }));
   const wagmiConfig = useConfig();
@@ -188,6 +199,25 @@ export function TransferPanel() {
   const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
   const { handleError } = useError();
+
+  useEffect(() => {
+    if (hasTrackedBridgePageLoad.current) {
+      return;
+    }
+
+    hasTrackedBridgePageLoad.current = true;
+    trackEvent('Bridge Page Loaded', {
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      sourceToken: tokenFromSearchParams,
+      destinationToken,
+    });
+  }, [
+    destinationToken,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    tokenFromSearchParams,
+  ]);
 
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
     setQueryParams({
@@ -246,9 +276,7 @@ export function TransferPanel() {
   }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
   const shouldShowTokenImportDialog =
-    networks.sourceChain.id !== ChainId.RobinhoodChain &&
-    isTokenAlreadyImported === false &&
-    typeof tokenFromSearchParams !== 'undefined';
+    isTokenAlreadyImported === false && typeof tokenFromSearchParams !== 'undefined';
 
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
@@ -286,6 +314,17 @@ export function TransferPanel() {
   const confirmDialog = async (dialogType: DialogType) => {
     const waitForInput = openDialog(dialogType);
     const [confirmed] = await waitForInput();
+    return confirmed;
+  };
+
+  const confirmTrustWalletUpdate = async () => {
+    if (!isTrustWalletConnection) {
+      return true;
+    }
+
+    const confirmed = await confirmDialog('trust_wallet_update');
+    trackEvent('Trust Wallet Update Confirmation', { confirmed });
+
     return confirmed;
   };
 
@@ -1294,6 +1333,10 @@ export function TransferPanel() {
       if (!shouldProceedToNova) {
         return;
       }
+    }
+
+    if (!(await confirmTrustWalletUpdate())) {
+      return;
     }
 
     if (selectedRoute == 'oftV2') {

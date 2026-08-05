@@ -91,6 +91,14 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
       [ChainId.ApeChain]: CommonAddress.ApeChain.USDT,
     },
   },
+  {
+    coinKey: 'SFI',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.SFI,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.SFI,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.SFI,
+    },
+  },
 ];
 const CUSTOM_TOKEN_LOOKUP = new Map<number, Map<string, CoinKey>>();
 for (const customToken of CUSTOM_TOKENS) {

@@ -1,5 +1,6 @@
+import type { BigNumber } from 'ethers';
 import { constants } from 'ethers/lib/ethers';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
@@ -14,6 +15,7 @@ import { useBalances } from '../../hooks/useBalances';
 import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { trackEvent } from '../../util/AnalyticsUtils';
 import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -22,13 +24,14 @@ import { TokenRow } from './TokenRow';
 import { useTokensFromLists } from './TokenSearchUtils';
 
 const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
+const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function DestinationTokensPanel({
   onTokenSelected,
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
 }): React.JSX.Element {
-  const { address: walletAddress } = useAccount();
+  const { address: walletAddress, isConnected } = useAccount();
   const [networks] = useNetworks();
   const { isDepositMode, childChainProvider } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
@@ -40,6 +43,22 @@ function DestinationTokensPanel({
   const { data: tokensFromLists } = useTokensFromLists();
 
   const [searchValue, setSearchValue] = useState('');
+  const searchEventTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    trackEvent('Token Picker Opened', {
+      side: 'destination',
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      isConnected,
+    });
+
+    return () => {
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
+      }
+    };
+  }, [isConnected, networks.destinationChain.id, networks.sourceChain.id]);
 
   const getBalance = useCallback(
     (address: string) => {
@@ -156,9 +175,55 @@ function DestinationTokensPanel({
     getBalance,
   ]);
 
-  const onSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(event.target.value);
-  }, []);
+  const onSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchValue(event.target.value);
+
+      const query = event.target.value.trim();
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
+        searchEventTimeout.current = null;
+      }
+
+      if (query) {
+        searchEventTimeout.current = setTimeout(() => {
+          searchEventTimeout.current = null;
+          trackEvent('Token Search Performed', {
+            side: 'destination',
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+            isConnected,
+            query,
+          });
+        }, SEARCH_EVENT_DEBOUNCE_MS);
+      }
+    },
+    [isConnected, networks.destinationChain.id, networks.sourceChain.id],
+  );
+
+  const handleTokenSelected = useCallback(
+    (selectedToken: ERC20BridgeToken | null, balance: BigNumber | null) => {
+      trackEvent('Token Selected', {
+        side: 'destination',
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        isConnected,
+        tokenAddress:
+          (isDepositMode ? selectedToken?.l2Address : selectedToken?.address) ??
+          selectedToken?.address ??
+          constants.AddressZero,
+        hasBalance: balance?.gt(0) ?? false,
+      });
+      onTokenSelected(selectedToken);
+    },
+    [
+      isConnected,
+      isDepositMode,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      onTokenSelected,
+    ],
+  );
 
   const rowRenderer = useCallback(
     (virtualizedProps: ListRowProps) => {
@@ -171,13 +236,13 @@ function DestinationTokensPanel({
         <TokenRow
           key={address}
           style={virtualizedProps.style}
-          onTokenSelected={onTokenSelected}
+          onTokenSelected={handleTokenSelected}
           token={address === NATIVE_CURRENCY_IDENTIFIER ? null : token}
           isDestination
         />
       );
     },
-    [tokensToShow, tokensFromLists, onTokenSelected],
+    [handleTokenSelected, tokensToShow, tokensFromLists],
   );
 
   return (
@@ -208,46 +273,50 @@ function DestinationTokensPanel({
 }
 
 export function DestinationTokenSearch(props: UseDialogProps) {
+  const { onClose } = props;
   const [, setQueryParams] = useArbQueryParams();
   const { embedMode } = useMode();
   const [networks] = useNetworks();
 
-  async function selectToken(_token: ERC20BridgeToken | null) {
-    props.onClose(false);
+  const selectToken = useCallback(
+    async (_token: ERC20BridgeToken | null) => {
+      onClose(false);
 
-    if (_token === null) {
-      setQueryParams({ destinationToken: undefined });
-      return;
-    }
-
-    if (!_token?.address) {
-      return;
-    }
-
-    /**
-     * When going from chain that have WETH, it maps to ETH and WETH on the destination chain.
-     * In this case, we need to differentiate between ETH (l2Address: zero) and WETH (l2Address: 0x...)
-     */
-    if (_token.address === constants.AddressZero) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setQueryParams({ destinationToken: constants.AddressZero });
-      } else if (addressesEqual(_token.l2Address, constants.AddressZero)) {
-        // Map native currency to undefined for other chains
+      if (_token === null) {
         setQueryParams({ destinationToken: undefined });
-      } else {
-        // WETH
-        setQueryParams({ destinationToken: constants.AddressZero });
+        return;
       }
-      return;
-    }
 
-    setQueryParams({ destinationToken: _token.address });
-  }
+      if (!_token?.address) {
+        return;
+      }
+
+      /**
+       * When going from chain that have WETH, it maps to ETH and WETH on the destination chain.
+       * In this case, we need to differentiate between ETH (l2Address: zero) and WETH (l2Address: 0x...)
+       */
+      if (_token.address === constants.AddressZero) {
+        if (networks.destinationChain.id === ChainId.ApeChain) {
+          setQueryParams({ destinationToken: constants.AddressZero });
+        } else if (addressesEqual(_token.l2Address, constants.AddressZero)) {
+          // Map native currency to undefined for other chains
+          setQueryParams({ destinationToken: undefined });
+        } else {
+          // WETH
+          setQueryParams({ destinationToken: constants.AddressZero });
+        }
+        return;
+      }
+
+      setQueryParams({ destinationToken: _token.address });
+    },
+    [networks.destinationChain.id, onClose, setQueryParams],
+  );
 
   return (
     <Dialog
       {...props}
-      onClose={() => props.onClose(false)}
+      onClose={() => onClose(false)}
       title="Select Destination Token"
       actionButtonProps={{ hidden: true }}
       isFooterHidden={true}
