@@ -20,27 +20,37 @@ export function useCoreChainIds(): number[] {
 }
 
 /**
- * Overrides the "All Core Chains" default with the bridge pair's child chain
- * when that would hide the user's own transactions: a pair targeting a
- * longtail chain (via query params, including smart-contract wallets whose
- * connected chain is synced into the pair) means the user's history lives on
- * a chain the core-only default excludes. The embed widget always follows its
- * pair — it renders no filter UI to recover with.
+ * Overrides the "All Core Chains" default with the bridge pair's longtail
+ * endpoint when the default would hide the user's own transactions: a pair
+ * touching a longtail chain (via query params, including smart-contract wallets
+ * whose connected chain is synced into the pair) means the user's history lives
+ * on a chain the core-only default excludes. The embed widget always follows
+ * its pair — it renders no filter UI to recover with.
+ *
+ * Either endpoint can be the longtail one. Base is always the parent of its
+ * pairs (`isDepositMode` treats it as a source, and it is never an Orbit
+ * chain), so a child-only lookup would miss every LiFi route out of it. The
+ * child is preferred when both are longtail, keeping canonical history in view
+ * for pairs like Base -> ApeChain.
  */
 function useDefaultChainIdOverride(): number | undefined {
   const { embedMode } = useMode();
   const [{ sourceChain, destinationChain }] = useNetworks();
 
-  const { childChainId } = getNetworksRelationship({
+  const { parentChainId, childChainId } = getNetworksRelationship({
     sourceChainId: sourceChain.id,
     destinationChainId: destinationChain.id,
   });
 
-  if (embedMode || !isCoreChainForDisplay(childChainId)) {
-    return childChainId;
+  const longtailChainId = [childChainId, parentChainId].find(
+    (chainId) => !isCoreChainForDisplay(chainId),
+  );
+
+  if (typeof longtailChainId !== 'undefined') {
+    return longtailChainId;
   }
 
-  return undefined;
+  return embedMode ? childChainId : undefined;
 }
 
 /**

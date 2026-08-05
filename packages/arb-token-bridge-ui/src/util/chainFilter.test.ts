@@ -193,4 +193,28 @@ describe('matchesChainFilter', () => {
     // routes not touching the chain are excluded
     expect(matches(apeChainFilter, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(false);
   });
+
+  it('a longtail-chain filter matches routes where both endpoints are longtail', () => {
+    // Base <> ApeChain is a LiFi route with no core endpoint at all: selecting
+    // either side has to surface it, otherwise it is unreachable from the UI.
+    expect(
+      matches({ type: 'longtail-chain', chainId: ChainId.Base }, ChainId.Base, ChainId.ApeChain),
+    ).toBe(true);
+    expect(
+      matches(
+        { type: 'longtail-chain', chainId: ChainId.ApeChain },
+        ChainId.Base,
+        ChainId.ApeChain,
+      ),
+    ).toBe(true);
+  });
+
+  it('a longtail-chain filter matches a LiFi-only chain’s routes into core chains', () => {
+    // Base has no canonical children, so LiFi routes are its only history
+    const baseFilter: TxHistoryChainFilter = { type: 'longtail-chain', chainId: ChainId.Base };
+
+    expect(matches(baseFilter, ChainId.Base, ChainId.ArbitrumOne)).toBe(true);
+    expect(matches(baseFilter, ChainId.Base, ChainId.RobinhoodChain)).toBe(true);
+    expect(matches(baseFilter, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(false);
+  });
 });

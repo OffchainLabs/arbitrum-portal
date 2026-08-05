@@ -1,7 +1,7 @@
 /**
  * Verifies the bridge pair → tx history filter sync: the filter follows the
- * pair's child chain when it's longtail, and a pair change re-defaults even
- * over an explicit selection (one-way flow from bridge to history).
+ * pair's longtail endpoint, and a pair change re-defaults even over an explicit
+ * selection (one-way flow from bridge to history).
  *
  * The test environment only registers core chains statically (orbit chains
  * register at runtime), so tests demote registered chains to longtail by
@@ -74,6 +74,7 @@ describe.sequential('useTxHistoryChainFilter bridge pair sync', () => {
       selectionDefaultChainId: undefined,
     });
     vi.mocked(isCoreChainForDisplay).mockImplementation(actualNetworks.isCoreChainForDisplay);
+    vi.unstubAllEnvs();
   });
 
   it('defaults to All Core Chains for a core pair', () => {
@@ -148,6 +149,45 @@ describe.sequential('useTxHistoryChainFilter bridge pair sync', () => {
     expect(result.current.filter).toMatchObject({
       type: 'core-chains',
       chainIds: [ChainId.Ethereum],
+    });
+  });
+
+  // Base is a LiFi-only source chain: it has no canonical children, so
+  // `getNetworksRelationship` always resolves it as the pair's parent.
+  it('defaults to the pair parent chain when only the parent is longtail', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_LIFI', 'true');
+    mockPair({ sourceChain: ChainId.Base, destinationChain: ChainId.ArbitrumOne });
+
+    const { result } = renderFilter();
+
+    expect(result.current.filter).toEqual({
+      type: 'longtail-chain',
+      chainId: ChainId.Base,
+    });
+  });
+
+  it('defaults to the pair parent chain when the child chain is core', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_LIFI', 'true');
+    // Robinhood is core for display, so only Base can carry the filter here
+    mockPair({ sourceChain: ChainId.Base, destinationChain: ChainId.RobinhoodChain });
+
+    const { result } = renderFilter();
+
+    expect(result.current.filter).toEqual({
+      type: 'longtail-chain',
+      chainId: ChainId.Base,
+    });
+  });
+
+  it('prefers the child chain when both endpoints are longtail', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_LIFI', 'true');
+    mockPair({ sourceChain: ChainId.Base, destinationChain: ChainId.ApeChain });
+
+    const { result } = renderFilter();
+
+    expect(result.current.filter).toEqual({
+      type: 'longtail-chain',
+      chainId: ChainId.ApeChain,
     });
   });
 
