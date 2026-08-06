@@ -4,21 +4,40 @@ import useSWRImmutable from 'swr/immutable';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { useTokenLists } from '../../hooks/useTokenLists';
+import { useLifiTokenList, useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
-import { TokenListWithId } from '../../util/TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, TokenListWithId } from '../../util/TokenListUtils';
 import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
 const emptyData: ContractStorage<ERC20BridgeToken> = {};
+const emptyTokenLists: TokenListWithId[] = [];
 
 export function useTokensFromLists() {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
   const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
+  const { data: refreshedLifiTokenList } = useLifiTokenList();
+
+  // Memoized for referential stability: this feeds an SWR key that deep-hashes every token.
+  const mergedTokenLists = useMemo(() => {
+    if (!tokenLists) {
+      return emptyTokenLists;
+    }
+
+    if (!refreshedLifiTokenList) {
+      return tokenLists;
+    }
+
+    return tokenLists.map((tokenList) =>
+      tokenList.bridgeTokenListId === LIFI_TRANSFER_LIST_ID
+        ? { ...tokenList, ...refreshedLifiTokenList }
+        : tokenList,
+    );
+  }, [tokenLists, refreshedLifiTokenList]);
 
   const { data = emptyData, isLoading } = useSWRImmutable(
-    [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
+    [mergedTokenLists, parentChain.id, childChain.id, 'useTokensFromLists'],
     ([_tokenLists, _parentChainId, _childChainId]) =>
       tokenListsToSearchableTokenStorage(
         _tokenLists,
