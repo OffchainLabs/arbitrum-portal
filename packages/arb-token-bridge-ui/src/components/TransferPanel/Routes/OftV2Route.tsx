@@ -8,8 +8,12 @@ import { useOftV2FeeEstimates } from '../../../hooks/TransferPanel/useOftV2FeeEs
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { getNetworkName } from '../../../util/networks';
 import { useRouteStore } from '../hooks/useRouteStore';
 import { Route } from './Route';
+
+const LAYERZERO_VIA = 'LayerZero';
+const LAYERZERO_ICON_URI = '/icons/layerzero.svg';
 
 // Only displayed during USDT transfers
 export function OftV2Route() {
@@ -42,29 +46,54 @@ export function OftV2Route() {
       return undefined;
     }
 
+    const gasChainId = isDepositMode ? networks.sourceChain.id : networks.destinationChain.id;
+
     return [
       {
-        gasCost: isDepositMode
+        amount: isDepositMode
           ? utils.parseUnits(estimatedParentChainGasFees.toString(), 18).toString()
           : utils.parseUnits(estimatedChildChainGasFees.toString(), 18).toString(),
-        gasToken: {
+        token: {
           ...ether,
           address: constants.AddressZero,
         },
+        chainId: gasChainId,
+        details: {
+          id: 'oftV2-gas',
+          label: `${getNetworkName(gasChainId)} gas fee`,
+          via: LAYERZERO_VIA,
+          iconURI: LAYERZERO_ICON_URI,
+        },
       },
     ];
-  }, [status, isDepositMode, estimatedParentChainGasFees, estimatedChildChainGasFees]);
+  }, [
+    estimatedChildChainGasFees,
+    estimatedParentChainGasFees,
+    isDepositMode,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    status,
+  ]);
 
   const bridgeFee = useMemo(() => {
     if (!oftFeeEstimates?.sourceChainGasFee) {
       return undefined;
     }
 
-    return {
-      fee: oftFeeEstimates.sourceChainGasFee.toString(),
-      token: { ...ether, address: constants.AddressZero },
-    };
-  }, [oftFeeEstimates]);
+    return [
+      {
+        amount: oftFeeEstimates.sourceChainGasFee.toString(),
+        token: { ...ether, address: constants.AddressZero },
+        chainId: networks.sourceChain.id,
+        details: {
+          id: 'oftV2-bridge-fee',
+          label: 'LayerZero bridge fee',
+          via: LAYERZERO_VIA,
+          iconURI: LAYERZERO_ICON_URI,
+        },
+      },
+    ];
+  }, [networks.sourceChain.id, oftFeeEstimates]);
 
   if (oftFeeEstimatesError || !oftV2Data) {
     return null;
@@ -73,8 +102,8 @@ export function OftV2Route() {
   return (
     <Route
       type="oftV2"
-      bridge="LayerZero"
-      bridgeIconURI="/icons/layerzero.svg"
+      bridge={LAYERZERO_VIA}
+      bridgeIconURI={LAYERZERO_ICON_URI}
       durationMs={5 * 60 * 1_000} // 5 minutes in miliseconds
       amountReceived={oftV2Data.amountReceived}
       isLoadingGasEstimate={status === 'loading'}

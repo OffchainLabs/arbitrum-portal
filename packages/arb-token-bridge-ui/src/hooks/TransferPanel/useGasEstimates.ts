@@ -14,7 +14,7 @@ import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLi
 import {
   RouteContext,
   RouteType,
-  getContextFromRoute,
+  getSelectedRouteContext,
   isLifiRoute,
   useRouteStore,
 } from '../../components/TransferPanel/hooks/useRouteStore';
@@ -59,7 +59,7 @@ async function fetcher([
     sourceChainErc20Address,
     destinationChainId,
     destinationChainErc20Address,
-    lifiData: routeContext,
+    lifiRoute: routeContext,
   });
 
   return await bridgeTransferStarter.transferEstimateGas({
@@ -92,9 +92,9 @@ export function useGasEstimates({
   const { address: walletAddress } = useAccount();
   const balance = useBalanceOnSourceChain(selectedToken);
   const wagmiConfig = useConfig();
-  const { context, eligibleRouteTypes } = useRouteStore(
+  const { selectedRouteContext, eligibleRouteTypes } = useRouteStore(
     (state) => ({
-      context: state.context,
+      selectedRouteContext: getSelectedRouteContext(state),
       eligibleRouteTypes: state.eligibleRouteTypes,
     }),
     shallow,
@@ -177,9 +177,7 @@ export function useGasEstimates({
        * pass the first lifi route as context
        * Otherwise, default to canonical transfer
        */
-      const lifiContext = allRoutesAreLifi
-        ? lifiRoutes?.[0] && getContextFromRoute(lifiRoutes?.[0])
-        : context;
+      const lifiContext = allRoutesAreLifi ? lifiRoutes?.[0] : selectedRouteContext;
 
       return [
         sourceChain.id,

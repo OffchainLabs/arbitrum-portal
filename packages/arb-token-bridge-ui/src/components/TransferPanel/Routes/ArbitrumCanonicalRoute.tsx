@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { utils } from 'ethers';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
@@ -15,7 +14,7 @@ import {
 } from '../../../hooks/useTransferDuration';
 import { bridgedUsdcToken, nativeUsdcToken } from '../../../util/CommonAddressUtils';
 import { isTokenNativeUSDC } from '../../../util/TokenUtils';
-import { isNetwork } from '../../../util/networks';
+import { getNetworkName, isNetwork } from '../../../util/networks';
 import { useRouteStore } from '../hooks/useRouteStore';
 import { Route } from './Route';
 import { getGasCostAndToken } from './getGasCostAndToken';
@@ -47,7 +46,7 @@ function getDuration({
 
 export function ArbitrumCanonicalRoute() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChainProvider, isDepositMode } =
+  const { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const {
     status: gasSummaryStatus,
@@ -80,6 +79,8 @@ export function ArbitrumCanonicalRoute() {
       getGasCostAndToken({
         childChainNativeCurrency,
         parentChainNativeCurrency,
+        childChainName: getNetworkName(childChain.id),
+        parentChainName: getNetworkName(parentChain.id),
         gasSummaryStatus,
         estimatedChildChainGasFees,
         estimatedParentChainGasFees,
@@ -87,10 +88,12 @@ export function ArbitrumCanonicalRoute() {
       }),
     [
       childChainNativeCurrency,
+      childChain.id,
       estimatedChildChainGasFees,
       estimatedParentChainGasFees,
       gasSummaryStatus,
       isDepositMode,
+      parentChain.id,
       parentChainNativeCurrency,
     ],
   );
@@ -126,16 +129,7 @@ export function ArbitrumCanonicalRoute() {
       amountReceived={arbitrumData.amountReceived}
       isLoadingGasEstimate={isLoading}
       overrideToken={isUsdcTransfer ? overrideToken : undefined}
-      gasCost={
-        gasCost && gasCost.length > 0
-          ? gasCost.map(({ gasCost, gasToken }) => ({
-              gasCost: utils
-                .parseUnits(gasCost.toFixed(childChainNativeCurrency.decimals), gasToken.decimals)
-                .toString(),
-              gasToken,
-            }))
-          : []
-      }
+      gasCost={gasCost ?? []}
       onSelectedRouteClick={setSelectedRoute}
       tag="security-guaranteed"
       selected={selectedRoute === 'arbitrum'}

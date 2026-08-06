@@ -2,8 +2,8 @@ import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
 import { WETH_TOKEN_LOGO } from '@/bridge/constants';
-import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
 
+import type { AmountWithToken } from '../../state/app/state';
 import { RouteContext } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
@@ -31,12 +31,26 @@ function getMock({
   fromAmount: AmountWithToken;
 }): RouteContext {
   return {
-    spenderAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-    gas,
-    fee,
-    fromAmount,
+    type: 'lifi',
+    gas: [
+      {
+        ...gas,
+        amount: gas.amount.toString(),
+        estimate: gas.estimate?.toString(),
+        chainId: gas.chainId ?? 1,
+      },
+    ],
+    fee: [
+      {
+        ...fee,
+        amount: fee.amount.toString(),
+        estimate: fee.estimate?.toString(),
+        chainId: fee.chainId ?? 1,
+      },
+    ],
+    fromAmount: { ...fromAmount, amount: fromAmount.amount.toString() },
     toAmount: {
-      amount: BigNumber.from('306496651855301'),
+      amount: '306496651855301',
       amountUSD: '1.1437',
       token: {
         address: '0x0000000000000000000000000000000000000000',
@@ -45,149 +59,12 @@ function getMock({
         logoURI: WETH_TOKEN_LOGO,
       },
     },
-    toolDetails: {
-      key: 'gasZipBridge',
-      name: 'GasZip',
-      logoURI:
-        'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
-    },
     durationMs: 4000,
-    destinationTxId: null,
-    route: {} as RouteContext['route'],
-    step: {
-      type: 'lifi',
-      id: 'ef70a077-0322-4b80-b2c4-7117eaf544d4:0',
-      tool: 'gasZipBridge',
-      toolDetails: {
-        key: 'gasZipBridge',
-        name: 'GasZip',
-        logoURI:
-          'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
-      },
-      action: {
-        fromToken: {
-          address: '0x0000000000000000000000000000000000000000',
-          chainId: 1,
-          symbol: 'ETH',
-          decimals: 18,
-          name: 'ETH',
-          logoURI: WETH_TOKEN_LOGO,
-          priceUSD: '3731.44',
-        },
-        fromAmount: '306838702657301',
-        toToken: {
-          address: '0x0000000000000000000000000000000000000000',
-          chainId: 42161,
-          symbol: 'ETH',
-          decimals: 18,
-          name: 'ETH',
-          logoURI: WETH_TOKEN_LOGO,
-          priceUSD: '3731.44',
-        },
-        fromChainId: 1,
-        toChainId: 42161,
-        slippage: 0.005,
-        fromAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
-        toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
-      },
-      estimate: {
-        tool: 'gasZipBridge',
-        approvalAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-        toAmountMin: '306496651855301',
-        toAmount: '306496651855301',
-        fromAmount: '306838702657301',
-        feeCosts: [],
-        gasCosts: [
-          {
-            type: 'SEND',
-            price: '2281913606',
-            estimate: '70000',
-            limit: '213000',
-            amount: '159733952420000',
-            amountUSD: '0.5960',
-            token: {
-              address: '0x0000000000000000000000000000000000000000',
-              chainId: 1,
-              symbol: 'ETH',
-              decimals: 18,
-              name: 'ETH',
-              logoURI: WETH_TOKEN_LOGO,
-              priceUSD: '3731.44',
-            },
-          },
-        ],
-        executionDuration: 4,
-        fromAmountUSD: '1.1450',
-        toAmountUSD: '1.1437',
-      },
-      includedSteps: [
-        {
-          id: 'c920a56b-5a2c-40c6-bc0d-bbca557f1b3e',
-          type: 'cross',
-          action: {
-            fromChainId: 1,
-            fromAmount: '306838702657301',
-            fromToken: {
-              address: '0x0000000000000000000000000000000000000000',
-              chainId: 1,
-              symbol: 'ETH',
-              decimals: 18,
-              name: 'ETH',
-              logoURI: WETH_TOKEN_LOGO,
-              priceUSD: '3731.44',
-            },
-            toChainId: 42161,
-            toToken: {
-              address: '0x0000000000000000000000000000000000000000',
-              chainId: 42161,
-              symbol: 'ETH',
-              decimals: 18,
-              name: 'ETH',
-              logoURI: WETH_TOKEN_LOGO,
-              priceUSD: '3731.44',
-            },
-            slippage: 0.005,
-            fromAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-            toAddress: '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
-          },
-          estimate: {
-            tool: 'gasZipBridge',
-            fromAmount: '306838702657301',
-            toAmount: '306496651855301',
-            toAmountMin: '306496651855301',
-            gasCosts: [
-              {
-                type: 'SEND',
-                price: '2281913606',
-                estimate: '70000',
-                limit: '91000',
-                amount: '159733952420000',
-                amountUSD: '0.5960',
-                token: {
-                  address: '0x0000000000000000000000000000000000000000',
-                  chainId: 1,
-                  symbol: 'ETH',
-                  decimals: 18,
-                  name: 'ETH',
-                  logoURI: WETH_TOKEN_LOGO,
-                  priceUSD: '3731.44',
-                },
-              },
-            ],
-            executionDuration: 4,
-            approvalAddress: '0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE',
-            feeCosts: [],
-          },
-          tool: 'gasZipBridge',
-          toolDetails: {
-            key: 'gasZipBridge',
-            name: 'GasZip',
-            logoURI:
-              'https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/bridges/gaszip.svg',
-          },
-        },
-      ],
-      integrator: '_arbitrum',
+    fromChainId: 1,
+    toChainId: 42161,
+    protocolData: {
+      orders: [],
+      route: { id: 'route-id', steps: [] } as unknown as RouteContext['protocolData']['route'],
     },
   };
 }
@@ -215,7 +92,7 @@ describe('getAmountToPay', () => {
     );
     expect(fromAmountUsd).toBe(2.039);
     expect(amounts).toStrictEqual({
-      '0x0000000000000000000000000000000000000000': {
+      '1:0x0000000000000000000000000000000000000000': {
         amount: BigNumber.from('306838702657301').add('70000').add('35000'),
         amountUSD: '2.039',
         token: {
@@ -224,6 +101,7 @@ describe('getAmountToPay', () => {
           logoURI: WETH_TOKEN_LOGO,
           symbol: 'ETH',
         },
+        chainId: 1,
       },
     });
   });
@@ -251,16 +129,90 @@ describe('getAmountToPay', () => {
 
     expect(fromAmountUsd).toBe(10.894);
     expect(amounts).toStrictEqual({
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
+      '1:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
+        amount: BigNumber.from('10000000'),
+        amountUSD: '10',
+        token: usdc,
+        chainId: 1,
+      },
+      '1:0x0000000000000000000000000000000000000000': {
+        amount: BigNumber.from('70000').add('35000'),
+        amountUSD: '0.894',
+        token: eth,
+        chainId: 1,
+      },
+    });
+  });
+
+  it('should keep native gas costs separated by chain', () => {
+    const { amounts, fromAmountUsd } = getAmountToPay({
+      ...getMock({
+        gas: {
+          amount: BigNumber.from('70000'),
+          amountUSD: '0.596',
+          token: eth,
+        },
+        fee: {
+          amount: BigNumber.from('35000'),
+          amountUSD: '0.298',
+          token: eth,
+        },
+        fromAmount: {
+          amount: BigNumber.from('10000000'),
+          amountUSD: '10',
+          token: usdc,
+        },
+      }),
+      gas: [
+        {
+          amount: '70000',
+          amountUSD: '0.596',
+          token: eth,
+          chainId: 1,
+        },
+        {
+          amount: '90000',
+          amountUSD: '0.700',
+          token: eth,
+          chainId: 42161,
+        },
+      ],
+    });
+
+    expect(fromAmountUsd).toBe(11.594);
+    expect(amounts['1:0x0000000000000000000000000000000000000000']).toMatchObject({
+      amount: BigNumber.from('70000').add('35000'),
+      amountUSD: '0.894',
+      chainId: 1,
+    });
+    expect(amounts['42161:0x0000000000000000000000000000000000000000']).toMatchObject({
+      amount: BigNumber.from('90000'),
+      amountUSD: '0.700',
+      chainId: 42161,
+    });
+  });
+
+  it('treats missing gas and fee USD values as zero', () => {
+    const route = getMock({
+      gas: {
+        amount: BigNumber.from('70000'),
+        amountUSD: '0',
+        token: eth,
+      },
+      fee: {
+        amount: BigNumber.from('35000'),
+        amountUSD: '0',
+        token: eth,
+      },
+      fromAmount: {
         amount: BigNumber.from('10000000'),
         amountUSD: '10',
         token: usdc,
       },
-      '0x0000000000000000000000000000000000000000': {
-        amount: BigNumber.from('70000').add('35000'),
-        amountUSD: '0.894',
-        token: eth,
-      },
     });
+    route.gas[0]!.amountUSD = undefined;
+    route.fee[0]!.amountUSD = undefined;
+
+    expect(getAmountToPay(route).fromAmountUsd).toBe(10);
   });
 });

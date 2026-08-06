@@ -1,11 +1,12 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { BigNumber } from 'ethers';
+import { shallow } from 'zustand/shallow';
 
 import { Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
-import { useRouteStore } from './hooks/useRouteStore';
+import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
 type AmountProps = {
@@ -33,7 +34,7 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
       <span>{title}</span>
       <div className="flex gap-1">
         {amountProps.map(({ amount, token, showToken }, index) => (
-          <span key={token.address}>
+          <span key={`${token.address}-${index}`}>
             <Amount amount={amount} token={token} showToken={showToken} />
             {amountProps.length > 1 && index < amountProps.length - 1 && <span>, </span>}
           </span>
@@ -44,7 +45,12 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
 }
 
 export function HighSlippageWarningDialog(props: UseDialogProps) {
-  const context = useRouteStore((state) => state.context);
+  const { context } = useRouteStore(
+    (state) => ({
+      context: getSelectedRouteContext(state),
+    }),
+    shallow,
+  );
 
   if (!context) {
     props.onClose(false);
@@ -80,24 +86,25 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
       <div className="my-4 flex flex-col gap-2 text-sm">
         <LineWrapper
           title="Sending"
-          amountProps={Object.keys(amounts).map((address) => ({
-            amount: amounts[address]!.amount,
-            token: amounts[address]!.token,
+          amountProps={Object.values(amounts).map((amountToPay) => ({
+            amount: amountToPay.amount,
+            token: amountToPay.token,
             showToken: true,
           }))}
         />
         <LineWrapper
           title="Gas fees"
-          amountProps={[{ amount: context.gas.amountUSD, token: context.gas.token }]}
+          amountProps={context.gas.map((gas) => ({
+            amount: gas.amountUSD ?? '0',
+            token: gas.token,
+          }))}
         />
         <LineWrapper
           title="Protocol fees"
-          amountProps={[
-            {
-              amount: context.fee.amountUSD,
-              token: context.fee.token,
-            },
-          ]}
+          amountProps={context.fee.map((fee) => ({
+            amount: fee.amountUSD ?? '0',
+            token: fee.token,
+          }))}
         />
         <LineWrapper
           title="Receiving"

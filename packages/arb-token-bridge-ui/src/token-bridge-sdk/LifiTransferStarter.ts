@@ -1,8 +1,6 @@
-import type { Route } from '@lifi/sdk';
 import { BigNumber, constants } from 'ethers';
-import type { Address } from 'viem';
 
-import type { Token } from '@/bridge/app/api/crosschain-transfers/types';
+import type { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { isDepositMode } from '../util/isDepositMode';
 import {
@@ -13,30 +11,19 @@ import {
 } from './BridgeTransferStarter';
 import { LifiRouteExecutionProps, executeLifiRoute } from './LifiRouteExecutor';
 
-export type AmountWithToken = {
-  amount: BigNumber;
-  amountUSD: string;
-  token: Token;
-};
-
-export type LifiData = {
-  spenderAddress: Address;
-  gas: AmountWithToken;
-  fee: AmountWithToken;
-  route: Route;
-};
+export type { AmountWithToken } from '../state/app/state';
 
 type LifiTransferStarterProps = BridgeTransferStarterProps & {
-  lifiData: LifiData;
+  lifiRoute: LifiCrosschainTransfersRoute;
 };
 
 export class LifiTransferStarter extends BridgeTransferStarter {
   public transferType: TransferType = 'lifi';
-  private lifiData: LifiData;
+  private lifiRoute: LifiCrosschainTransfersRoute;
 
   constructor(props: LifiTransferStarterProps) {
     super(props);
-    this.lifiData = props.lifiData;
+    this.lifiRoute = props.lifiRoute;
   }
 
   public requiresNativeCurrencyApproval = async () => {
@@ -67,10 +54,21 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     const sourceChainId = await this.getSourceChainId();
     const destinationChainId = (await this.destinationChainProvider.getNetwork()).chainId;
     const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
+    const parentChainId = isDeposit ? sourceChainId : destinationChainId;
+    const childChainId = isDeposit ? destinationChainId : sourceChainId;
+
+    const getGasEstimateForChain = (chainId: number) =>
+      this.lifiRoute.gas.reduce((sum, gas) => {
+        if (gas.chainId !== chainId || !gas.estimate) {
+          return sum;
+        }
+
+        return sum.add(BigNumber.from(gas.estimate));
+      }, constants.Zero);
 
     return {
-      estimatedParentChainGas: isDeposit ? this.lifiData.gas.amount : constants.Zero,
-      estimatedChildChainGas: isDeposit ? constants.Zero : this.lifiData.gas.amount,
+      estimatedParentChainGas: getGasEstimateForChain(parentChainId),
+      estimatedChildChainGas: getGasEstimateForChain(childChainId),
     };
   }
 
@@ -78,12 +76,14 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     wagmiConfig,
     switchChainAsync,
     onApprovalRequest,
+    onRouteUpdate,
     onRouteExecutionError,
   }: TransferProps & LifiRouteExecutionProps) {
-    const { txHash } = await executeLifiRoute(this.lifiData.route, {
+    const { txHash, route } = await executeLifiRoute(this.lifiRoute.protocolData.route, {
       wagmiConfig,
       switchChainAsync,
       onApprovalRequest,
+      onRouteUpdate,
       onRouteExecutionError,
     });
     const fullTx = await this.sourceChainProvider.getTransaction(txHash).catch(() => null);
@@ -94,10 +94,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
       sourceChainProvider: this.sourceChainProvider,
       sourceChainTransaction: fullTx ?? { hash: txHash },
       destinationChainProvider: this.destinationChainProvider,
+      lifiRoute: route,
     };
-  }
-
-  public async transferEstimateFee() {
-    return this.lifiData.fee.amount;
   }
 }

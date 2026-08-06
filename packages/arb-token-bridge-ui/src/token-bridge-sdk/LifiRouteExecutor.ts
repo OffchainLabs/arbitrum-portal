@@ -1,10 +1,10 @@
 import type { ExecutionOptions, Route, RouteExtended, TransactionParameters } from '@lifi/sdk';
-import { EVM, executeRoute, config as lifiConfig } from '@lifi/sdk';
+import { EVM, executeRoute, config as lifiConfig, resumeRoute } from '@lifi/sdk';
 import type { Config } from '@wagmi/core';
 import { getWalletClient } from '@wagmi/core';
 import { Client, UserRejectedRequestError } from 'viem';
 
-import { getExecutedLifiRouteTxHash } from '../util/LifiTransactionStatus';
+import { getSubmittedLifiRouteTxHash } from '../util/LifiTransactionStatus';
 
 type SwitchChainAsync = (parameters: { chainId: number }) => Promise<{ id: number } | undefined>;
 
@@ -12,6 +12,7 @@ type LifiRouteRunProps = {
   wagmiConfig: Config;
   switchChainAsync: SwitchChainAsync;
   onApprovalRequest?: (approvalRequest: TransactionParameters) => Promise<boolean>;
+  onRouteUpdate?: (route: RouteExtended) => void;
 };
 
 export type LifiRouteExecutionProps = LifiRouteRunProps & {
@@ -48,6 +49,7 @@ function createExecutionOptions({
   wagmiConfig,
   switchChainAsync,
   onApprovalRequest,
+  onRouteUpdate,
 }: LifiRouteRunProps): ExecutionOptions {
   configureLifiEvmProvider({ wagmiConfig, switchChainAsync });
 
@@ -69,35 +71,41 @@ function createExecutionOptions({
 
       return transactionRequest;
     },
+    updateRouteHook: onRouteUpdate,
   };
 }
 
 // LiFi's `executeRoute` resolves after route execution has finished, but the app needs the
-// source-chain transaction hash as soon as it exists so it can create its history entry.
-// EIP-5792 wallet batch ids are ignored until LiFi reports the real on-chain transaction hash.
+// submitted route tx id as soon as it exists so it can create history/cache entries. With
+// EIP-5792 this can initially be a wallet batch id; later route updates replace it with the
+// real on-chain tx hash for status checks and LiFi Scan links.
 export function executeLifiRoute(
   route: Route | RouteExtended,
   {
     wagmiConfig,
     switchChainAsync,
     onApprovalRequest,
+    onRouteUpdate,
     onRouteExecutionError,
   }: LifiRouteExecutionProps,
-): Promise<{ txHash: string }> {
+): Promise<{ txHash: string; route: RouteExtended }> {
   const executionOptions = createExecutionOptions({
     wagmiConfig,
     switchChainAsync,
     onApprovalRequest,
+    onRouteUpdate,
   });
 
   return new Promise((resolve, reject) => {
     let resolvedRouteTx = false;
 
     const handleRouteUpdate = (updatedRoute: RouteExtended) => {
-      const txHash = getExecutedLifiRouteTxHash(updatedRoute);
+      onRouteUpdate?.(updatedRoute);
+
+      const txHash = getSubmittedLifiRouteTxHash(updatedRoute);
       if (txHash && !resolvedRouteTx) {
         resolvedRouteTx = true;
-        resolve({ txHash });
+        resolve({ txHash, route: updatedRoute });
       }
     };
 
@@ -119,4 +127,19 @@ export function executeLifiRoute(
         }
       });
   });
+}
+
+export function resumeLifiRoute(
+  route: Route | RouteExtended,
+  { wagmiConfig, switchChainAsync, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
+): Promise<RouteExtended> {
+  return resumeRoute(
+    route,
+    createExecutionOptions({
+      wagmiConfig,
+      switchChainAsync,
+      onApprovalRequest,
+      onRouteUpdate,
+    }),
+  );
 }

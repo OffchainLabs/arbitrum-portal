@@ -26,14 +26,7 @@ import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
-import {
-  RouteContext,
-  RouteData,
-  RouteType,
-  getContextFromRoute,
-  isLifiRoute,
-  useRouteStore,
-} from './useRouteStore';
+import { RouteData, RouteType, useRouteStore } from './useRouteStore';
 
 /**
  * Determines the best route based on priority order.
@@ -406,15 +399,6 @@ export function useRoutesUpdater() {
     // if user has not selected a route, then pre-select the best route
     const selectedRoute = getSelectedRouteForAvailableRoutes(userSelectedRoute, routeData);
 
-    // Compute context for LiFi routes, but only after loading completes to ensure button stays disabled during loading
-    let context: RouteContext | undefined = undefined;
-    if (!isLifiLoading && selectedRoute && isLifiRoute(selectedRoute)) {
-      const selectedRouteData = routeData.find((route) => route.type === selectedRoute);
-      if (selectedRouteData && 'route' in selectedRouteData.data) {
-        context = getContextFromRoute(selectedRouteData.data.route);
-      }
-    }
-
     setRouteState({
       eligibleRouteTypes,
       isLoading: isLifiLoading,
@@ -424,7 +408,6 @@ export function useRoutesUpdater() {
       hasLowLiquidity: flags.hasLowLiquidity,
       hasModifiedSettings: flags.hasModifiedSettings,
       selectedRoute,
-      context,
     });
   }, [
     eligibleRouteTypes,

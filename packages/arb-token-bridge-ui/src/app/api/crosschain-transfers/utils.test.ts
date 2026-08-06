@@ -2,9 +2,10 @@ import { constants } from 'ethers';
 import { describe, expect, it, test } from 'vitest';
 
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
-import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { LIFI_TRANSFER_LIST_ID } from '../../../util/TokenListUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
 
 function generateTestCases({
@@ -198,6 +199,29 @@ describe('isValidLifiTransfer', () => {
     ).toBe(true);
   });
 
+  it('does not block regular token-list tokens that share LiFi list membership', () => {
+    const tokenAddress = '0x0000000000000000000000000000000000000300';
+    const tokensFromLists: ContractStorage<ERC20BridgeToken> = {
+      [tokenAddress]: {
+        address: tokenAddress,
+        decimals: 18,
+        listIds: new Set(['regular-list', LIFI_TRANSFER_LIST_ID]),
+        name: 'Regular Token',
+        symbol: 'REG',
+        type: TokenType.ERC20,
+      },
+    };
+
+    expect(
+      isValidLifiTransfer({
+        fromToken: tokenAddress,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.RobinhoodChain,
+        tokensFromLists,
+      }),
+    ).toBe(true);
+  });
+
   describe('PYUSD pairs', () => {
     it('Ethereum → ArbitrumOne allows Ethereum PYUSD', () => {
       expect(
@@ -227,17 +251,6 @@ describe('isValidLifiTransfer', () => {
           fromToken: CommonAddress.Ethereum.PYUSD,
           sourceChainId: ChainId.Ethereum,
           destinationChainId: ChainId.ArbitrumNova,
-          tokensFromLists: {},
-        }),
-      ).toBe(false);
-    });
-
-    it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD,
-          sourceChainId: ChainId.ArbitrumOne,
-          destinationChainId: ChainId.Superposition,
           tokensFromLists: {},
         }),
       ).toBe(false);
@@ -474,54 +487,5 @@ describe('getTokenOverride', () => {
 
     expect(xaiToArbOverride.source).toEqual(null);
     expect(xaiToArbOverride.destination).toEqual(null);
-  });
-
-  it('For transfers including Superposition returns USDCe on Superposition', () => {
-    const arbToSuperpositionOverride = getTokenOverride({
-      fromToken: CommonAddress.ArbitrumOne.USDC,
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Superposition,
-    });
-    const superpositionToArbOverride = getTokenOverride({
-      fromToken: CommonAddress.Superposition.USDCe,
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.ArbitrumOne,
-    });
-
-    const nativeUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'USDC',
-      symbol: 'USDC',
-      type: 'ERC20',
-    };
-    const bridgedUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'Bridged USDC',
-      symbol: 'USDC.e',
-      type: 'ERC20',
-    };
-    expect(arbToSuperpositionOverride.source).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
-    expect(arbToSuperpositionOverride.destination).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-
-    expect(superpositionToArbOverride.source).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-    expect(superpositionToArbOverride.destination).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
   });
 });

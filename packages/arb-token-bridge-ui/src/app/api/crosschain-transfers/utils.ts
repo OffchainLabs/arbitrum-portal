@@ -27,7 +27,6 @@ function isUsdcToken(tokenAddress: string | undefined) {
     addressesEqual(tokenAddress, CommonAddress.Ethereum.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne['USDC.e']) ||
-    addressesEqual(tokenAddress, CommonAddress.Superposition.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.ApeChain.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.Base.USDC)
   );
@@ -123,11 +122,6 @@ function getUsdc(chainId: number) {
         symbol: 'USDC',
         name: 'USDC',
       },
-      [ChainId.Superposition]: {
-        address: CommonAddress.Superposition.USDCe,
-        symbol: 'USDC.e',
-        name: 'Bridged USDC',
-      },
       [ChainId.ApeChain]: {
         address: CommonAddress.ApeChain.USDCe,
         symbol: 'USDC.e',
@@ -162,12 +156,6 @@ function getApe(chainId: number) {
         ...apeToken,
         address: CommonAddress.ArbitrumOne.APE,
       },
-      [ChainId.Superposition]: {
-        ...ether,
-        address: constants.AddressZero,
-        type: TokenType.ERC20,
-        listIds: new Set<string>(),
-      } as ERC20BridgeToken,
       [ChainId.ApeChain]: null,
       [ChainId.Base]: {
         ...apeToken,

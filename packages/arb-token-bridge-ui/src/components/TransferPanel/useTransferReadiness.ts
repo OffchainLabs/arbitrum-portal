@@ -28,7 +28,13 @@ import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
 import { useTokensFromLists } from './TokenSearchUtils';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
-import { RouteContext, RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import {
+  RouteContext,
+  RouteType,
+  getSelectedRouteContext,
+  isLifiRoute,
+  useRouteStore,
+} from './hooks/useRouteStore';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
   TransferReadinessRichErrorMessage,
@@ -135,6 +141,7 @@ export type AmountsToPay = {
   amount: BigNumber;
   amountUSD: string;
   token: Token;
+  chainId?: number;
 };
 export type GetAmountToPayResult = {
   amounts: Record<string, AmountsToPay>;
@@ -148,42 +155,109 @@ export function getAmountToPay(selectedRouteContext: RouteContext): GetAmountToP
     token,
     amount,
     amountUSD,
+    chainId,
   }: {
     token: Token;
-    amount: BigNumber;
-    amountUSD: string;
+    amount: BigNumber | string | undefined;
+    amountUSD?: string;
+    chainId?: number;
   }) {
-    const key = token.address.toLowerCase();
+    const key = `${chainId ?? 'unknown'}:${token.address.toLowerCase()}`;
     const acc = amounts[key];
+    const parsedAmount = BigNumber.from(amount ?? 0);
+    const parsedAmountUSD = amountUSD ?? '0';
     if (acc) {
       amounts[key] = {
-        amount: acc.amount.add(amount),
-        amountUSD: (Number(acc.amountUSD) + Number(amountUSD)).toFixed(3),
+        amount: acc.amount.add(parsedAmount),
+        amountUSD: (Number(acc.amountUSD) + Number(parsedAmountUSD)).toFixed(3),
         token,
+        chainId,
       };
     } else {
       amounts[key] = {
-        amount,
-        amountUSD,
+        amount: parsedAmount,
+        amountUSD: parsedAmountUSD,
         token,
+        chainId,
       };
     }
   }
 
-  addAmount(selectedRouteContext.fee);
-  addAmount(selectedRouteContext.gas);
-  addAmount(selectedRouteContext.fromAmount);
+  selectedRouteContext.fee.forEach(addAmount);
+  selectedRouteContext.gas.forEach(addAmount);
+  addAmount({
+    ...selectedRouteContext.fromAmount,
+    chainId: selectedRouteContext.fromChainId,
+  });
 
   const fromAmountUsd =
     Number(selectedRouteContext.fromAmount.amountUSD) +
-    Number(selectedRouteContext.gas.amountUSD) +
-    Number(selectedRouteContext.fee.amountUSD);
+    selectedRouteContext.gas.reduce((sum, gas) => sum + Number(gas.amountUSD ?? 0), 0) +
+    selectedRouteContext.fee.reduce((sum, fee) => sum + Number(fee.amountUSD ?? 0), 0);
 
   return {
     amounts,
     fromAmountUsd: Number(fromAmountUsd.toFixed(3)),
     toAmountUsd: Number(selectedRouteContext.toAmount.amountUSD),
   };
+}
+
+function getAmountToPayForChainAndToken({
+  amounts,
+  chainId,
+  tokenAddress,
+}: {
+  amounts: Record<string, AmountsToPay>;
+  chainId: number;
+  tokenAddress: string;
+}) {
+  return amounts[`${chainId}:${tokenAddress.toLowerCase()}`];
+}
+
+function formatAmountToPay(amountToPay: AmountsToPay | undefined) {
+  return parseFloat(
+    utils.formatUnits(amountToPay?.amount || constants.Zero, amountToPay?.token.decimals || 18),
+  );
+}
+
+function getNativeAmountToPay({
+  amounts,
+  chainId,
+}: {
+  amounts: Record<string, AmountsToPay>;
+  chainId: number;
+}) {
+  return formatAmountToPay(
+    getAmountToPayForChainAndToken({
+      amounts,
+      chainId,
+      tokenAddress: constants.AddressZero,
+    }),
+  );
+}
+
+function getInsufficientNativeBalanceErrorMessage({
+  amountToPay,
+  balance,
+  chainId,
+  chainName,
+}: {
+  amountToPay: number;
+  balance: number | null;
+  chainId: number;
+  chainName: string;
+}) {
+  if (balance === null || amountToPay <= balance) {
+    return undefined;
+  }
+
+  const chain = getWagmiChain(chainId);
+  return getInsufficientFundsForGasFeesErrorMessage({
+    asset: chain.nativeCurrency.symbol,
+    chain: chainName,
+    balance: formatAmount(balance),
+    requiredBalance: formatAmount(amountToPay),
+  });
 }
 
 export type UseTransferReadinessTransferReady = {
@@ -207,7 +281,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
-      selectedRouteContext: state.context,
+      selectedRouteContext: getSelectedRouteContext(state),
     }),
     shallow,
   );
@@ -478,40 +552,59 @@ export function useTransferReadiness(): UseTransferReadinessResult {
 
       const { amounts } = getAmountToPay(selectedRouteContext);
 
-      // Check if we have enough native balance to cover gas, fees and potentially token sent
-      const feeToSend = amounts[constants.AddressZero];
-      const feeToPay = parseFloat(
-        utils.formatUnits(feeToSend?.amount || constants.Zero, feeToSend?.token.decimals || 18),
-      );
+      const sourceNativeAmountToPay = getNativeAmountToPay({
+        amounts,
+        chainId: networks.sourceChain.id,
+      });
+      const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
+        amountToPay: sourceNativeAmountToPay,
+        balance: ethBalanceFloat,
+        chainId: networks.sourceChain.id,
+        chainName: networks.sourceChain.name,
+      });
 
-      if (feeToPay > ethBalanceFloat) {
-        // For LiFi routes, fees are paid in the source chain's native currency
-        const sourceChain = getWagmiChain(networks.sourceChain.id);
+      if (sourceNativeBalanceError) {
         return notReady({
           errorMessages: {
-            inputAmount1: getInsufficientFundsForGasFeesErrorMessage({
-              asset: sourceChain.nativeCurrency.symbol,
-              chain: networks.sourceChain.name,
-              balance: formatAmount(ethBalanceFloat),
-              requiredBalance: formatAmount(feeToPay),
-            }),
+            inputAmount1: sourceNativeBalanceError,
+          },
+        });
+      }
+
+      const destinationNativeAmountToPay = getNativeAmountToPay({
+        amounts,
+        chainId: networks.destinationChain.id,
+      });
+      const destinationEthBalanceFloat = isDepositMode ? ethL2BalanceFloat : ethL1BalanceFloat;
+
+      if (destinationNativeAmountToPay > 0 && destinationEthBalanceFloat === null) {
+        return notReady();
+      }
+
+      const destinationNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
+        amountToPay: destinationNativeAmountToPay,
+        balance: destinationEthBalanceFloat,
+        chainId: networks.destinationChain.id,
+        chainName: networks.destinationChain.name,
+      });
+
+      if (destinationNativeBalanceError) {
+        return notReady({
+          errorMessages: {
+            inputAmount1: destinationNativeBalanceError,
           },
         });
       }
 
       // Check token sent balance
       const amountToSend = selectedToken?.address
-        ? amounts[
-            (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
-              constants.AddressZero
-          ]
+        ? getAmountToPayForChainAndToken({
+            amounts,
+            chainId: networks.sourceChain.id,
+            tokenAddress: selectedRouteContext.fromAmount.token.address,
+          })
         : undefined;
-      const amountToPay = parseFloat(
-        utils.formatUnits(
-          amountToSend?.amount || constants.Zero,
-          amountToSend?.token.decimals || 18,
-        ),
-      );
+      const amountToPay = formatAmountToPay(amountToSend);
 
       if (selectedTokenBalanceFloat && amountToPay > selectedTokenBalanceFloat) {
         return notReady({
@@ -717,6 +810,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     networks.sourceChain.name,
     networks.sourceChain.id,
     networks.destinationChain.id,
+    networks.destinationChain.name,
     tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
