@@ -1,8 +1,7 @@
 import { BigNumber } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import type { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
-
+import type { AmountWithToken } from '../../state/app/state';
 import { getLifiToAmountDisplay } from './lifiDisplayUtils';
 
 const unknownToAmount: AmountWithToken = {

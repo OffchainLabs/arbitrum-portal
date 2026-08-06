@@ -2,7 +2,7 @@ import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
 import type { RouteExtended } from '@lifi/sdk';
 import dayjs from 'dayjs';
-import { BigNumber, constants, utils } from 'ethers';
+import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
@@ -53,7 +53,6 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
-import { getLifiRouteToolDetails, getLifiRouteToolsDetails } from '../../util/LifiRouteUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
@@ -708,8 +707,6 @@ export function TransferPanel() {
           (selectedToken && addressesEqual(selectedToken.address, constants.AddressZero))
             ? AssetType.ETH
             : AssetType.ERC20;
-        const toolsDetails = getLifiRouteToolsDetails(context.protocolData.route);
-
         const newTransfer: LifiMergedTransaction = {
           txId: transfer.sourceChainTransaction.hash,
           asset: selectedToken?.symbol || 'ETH',
@@ -732,17 +729,6 @@ export function TransferPanel() {
           childChainId: childChain.id,
           sourceChainId: networks.sourceChain.id,
           destinationChainId: networks.destinationChain.id,
-          toolDetails: getLifiRouteToolDetails(context.protocolData.route),
-          toolsDetails,
-          durationMs: context.durationMs,
-          fromAmount: {
-            ...context.fromAmount,
-            amount: BigNumber.from(context.fromAmount.amount),
-          },
-          toAmount: {
-            ...context.toAmount,
-            amount: BigNumber.from(context.toAmount.amount),
-          },
           destinationTxId: null,
           lifiRoute: transfer.lifiRoute,
         };

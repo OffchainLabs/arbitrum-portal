@@ -11,8 +11,6 @@ import {
 } from './BridgeTransferStarter';
 import { LifiRouteExecutionProps, executeLifiRoute } from './LifiRouteExecutor';
 
-export type { AmountWithToken } from '../state/app/state';
-
 type LifiTransferStarterProps = BridgeTransferStarterProps & {
   lifiRoute: LifiCrosschainTransfersRoute;
 };

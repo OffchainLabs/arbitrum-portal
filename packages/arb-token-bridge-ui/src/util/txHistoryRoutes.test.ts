@@ -12,8 +12,8 @@ function getUndirectedKey(chainIdA: number, chainIdB: number): string {
 
 describe('getTxHistoryRoutes', () => {
   beforeAll(() => {
-    // Orbit chains referenced by LiFi routes are registered at runtime in the app.
-    for (const chainId of [ChainId.ApeChain, ChainId.Superposition, ChainId.RobinhoodChain]) {
+    // Orbit chains referenced by route enumeration are registered at runtime in the app.
+    for (const chainId of [ChainId.ApeChain, ChainId.RobinhoodChain]) {
       registerCustomArbitrumNetwork(
         orbitChainsData.mainnet.find((chain) => chain.chainId === chainId)!,
       );

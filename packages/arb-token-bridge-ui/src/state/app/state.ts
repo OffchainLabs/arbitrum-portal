@@ -1,4 +1,4 @@
-import { RouteExtended, TransactionRequest } from '@lifi/sdk';
+import { RouteExtended } from '@lifi/sdk';
 import { BigNumber } from 'ethers';
 
 import type { Token } from '../../app/api/crosschain-transfers/types';
@@ -44,15 +44,13 @@ export type AmountWithToken = {
   estimate?: BigNumber;
 };
 
-export type MergedTransactionLifiData = {
-  toolDetails: { key: string; name: string; logoURI: string };
+type MergedTransactionLifiData = {
   toolsDetails?: { key: string; name: string; logoURI: string }[];
-  durationMs: number;
-  fromAmount: AmountWithToken;
-  toAmount: AmountWithToken;
+  durationMs?: number;
+  fromAmount?: AmountWithToken;
+  toAmount?: AmountWithToken;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
-  transactionRequest?: TransactionRequest;
   lifiRoute?: RouteExtended;
 };
 export interface BaseMergedTransaction {

@@ -1,13 +1,15 @@
-import { useCallback } from 'react';
-import { useAccount } from 'wagmi';
+import { useCallback, useState } from 'react';
+import { useAccount, useConfig } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
+import { resumeLifiRoute } from '@/token-bridge-sdk/LifiRouteExecutor';
 
 import { GET_HELP_LINK } from '../../constants';
 import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
+import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
-import { DepositStatus, MergedTransaction } from '../../state/app/state';
+import { MergedTransaction } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
 import { useClaimCctp } from '../../state/cctpState';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -18,10 +20,18 @@ import { isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
+import { DialogData, DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
-import { getTransactionType, isLifiTransfer } from './helpers';
+import {
+  getTransactionType,
+  isLifiTransfer,
+  isLifiTransferResumable,
+  isTxPending,
+} from './helpers';
+
+const actionRowPrimaryButtonClassName = 'w-14 rounded bg-lime-dark p-2 text-xs text-white';
 
 function ActionRowConnectButton() {
   const { openConnectModal } = useWalletModal();
@@ -29,12 +39,16 @@ function ActionRowConnectButton() {
   return (
     <Button
       variant="primary"
-      className="w-14 rounded bg-lime-dark p-2 text-xs text-white"
+      className={actionRowPrimaryButtonClassName}
       onClick={openConnectModal}
     >
       Connect
     </Button>
   );
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export function TransactionsTableRowAction({
@@ -47,7 +61,13 @@ export function TransactionsTableRowAction({
   type: 'deposits' | 'withdrawals';
 }) {
   const { address: connectedAddress, chain, isConnected } = useAccount();
+  const wagmiConfig = useConfig();
   const { switchChainAsync } = useSwitchNetworkWithConfig();
+  const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
+    (state) => state.updateTransaction,
+  );
+  const [isResumingLifiRoute, setIsResumingLifiRoute] = useState(false);
+  const [dialogProps, openDialog] = useDialog2();
   const networkName = getNetworkName(chain?.id ?? 0);
   const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
@@ -63,6 +83,15 @@ export function TransactionsTableRowAction({
   const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
   const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
+  const confirmDialog = useCallback(
+    async (dialogType: DialogType, dialogData?: DialogData) => {
+      const waitForInput = openDialog(dialogType, dialogData);
+      const [confirmed] = await waitForInput();
+      return confirmed;
+    },
+    [openDialog],
+  );
+
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
     ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain
     : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
@@ -74,11 +103,11 @@ export function TransactionsTableRowAction({
       }
 
       await redeem();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isUserRejectedError(error)) {
         return;
       }
-      errorToast(`Can't retry the deposit: ${error?.message ?? error}`);
+      errorToast(`Can't retry the deposit: ${getErrorMessage(error)}`);
     }
   }, [tx, isConnectedToCorrectNetworkForAction, redeem, switchChainAsync]);
 
@@ -93,16 +122,41 @@ export function TransactionsTableRowAction({
       } else {
         return await claim();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isUserRejectedError(error)) {
         return;
       }
 
       errorToast(
-        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${error?.message ?? error}`,
+        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${getErrorMessage(error)}`,
       );
     }
   }, [claim, claimCctp, isConnectedToCorrectNetworkForAction, switchChainAsync, tx, type]);
+
+  const handleResumeLifiRoute = useCallback(async () => {
+    if (!isLifiTransfer(tx) || !tx.lifiRoute) {
+      return;
+    }
+
+    try {
+      setIsResumingLifiRoute(true);
+      await resumeLifiRoute(tx.lifiRoute, {
+        wagmiConfig,
+        switchChainAsync,
+        onApprovalRequest: (approvalRequest) =>
+          confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
+        onRouteUpdate: (lifiRoute) => updateLifiTransactionInCache(tx, { lifiRoute }),
+      });
+    } catch (error: unknown) {
+      if (isUserRejectedError(error)) {
+        return;
+      }
+
+      errorToast(`Can't resume LiFi transaction: ${getErrorMessage(error)}`);
+    } finally {
+      setIsResumingLifiRoute(false);
+    }
+  }, [confirmDialog, switchChainAsync, tx, updateLifiTransactionInCache, wagmiConfig]);
 
   const getHelpOnError = () => {
     window.open(GET_HELP_LINK, '_blank');
@@ -134,12 +188,35 @@ export function TransactionsTableRowAction({
     );
   }
 
-  if (
-    tx.status === 'pending' ||
-    tx.status === 'Unconfirmed' ||
-    tx.depositStatus === DepositStatus.L1_PENDING ||
-    tx.depositStatus === DepositStatus.L2_PENDING
-  ) {
+  if (isLifiTransferResumable(tx)) {
+    if (!isConnected) {
+      return <ActionRowConnectButton />;
+    }
+
+    if (!connectedAddress || !tx.sender || !addressesEqual(connectedAddress, tx.sender)) {
+      return null;
+    }
+
+    return (
+      <>
+        {isResumingLifiRoute ? (
+          <span className="animate-pulse">Resuming...</span>
+        ) : (
+          <Button
+            aria-label="Resume LiFi transaction"
+            variant="primary"
+            onClick={handleResumeLifiRoute}
+            className={actionRowPrimaryButtonClassName}
+          >
+            Resume
+          </Button>
+        )}
+        <DialogWrapper {...dialogProps} />
+      </>
+    );
+  }
+
+  if (isTxPending(tx)) {
     return (
       <div className="flex flex-col text-center text-xs">
         <span>Time left:</span>
