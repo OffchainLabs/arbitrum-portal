@@ -549,9 +549,12 @@ export function getChildChainIds(chain: ArbitrumNetwork | BlockNumberReferenceNe
   return Array.from(new Set(childChainIds));
 }
 
-// Orbit chains surfaced in the Core Chains section of the UI (purely cosmetic; they remain
-// Orbit chains for all bridging logic).
-const uiCoreChainIds: number[] = [ChainId.RobinhoodChain];
+// Orbit chains surfaced in the Core Chains section of the UI (they remain Orbit chains for
+// all bridging logic). NOTE: this list also drives the transaction history's default
+// "All Core Chains" scope (see util/chainFilter.ts), which is fetched for every user on
+// page load — only add chains whose history is indexed (subgraph or tx-history indexer),
+// otherwise the default view falls back to RPC-scanning them.
+const uiCoreChainIds: number[] = [ChainId.RobinhoodChain, ChainId.RobinhoodChainTestnet];
 
 // Whether a chain is shown in the Core Chains UI section. Superset of isCoreChain that also
 // includes Orbit chains we want to surface as core (e.g. Robinhood Chain).
@@ -576,6 +579,7 @@ const coreChainSortOrder: number[] = [
   ChainId.ArbitrumNova,
   ChainId.ArbitrumLocal,
   ChainId.ArbitrumSepolia,
+  ChainId.RobinhoodChainTestnet,
 ];
 
 function getCoreChainRank(chainId: number) {
