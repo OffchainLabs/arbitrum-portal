@@ -20,24 +20,6 @@ export function getNetworksRelationship({
   childChainId: number;
   isDepositMode: boolean;
 } {
-  // Robinhood to Superposition, set Robinhood as parent chain
-  if (sourceChainId === ChainId.RobinhoodChain && destinationChainId === ChainId.Superposition) {
-    return {
-      parentChainId: sourceChainId,
-      childChainId: destinationChainId,
-      isDepositMode: true,
-    };
-  }
-
-  // Superposition to Robinhood, set Robinhood as parent chain
-  if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.RobinhoodChain) {
-    return {
-      parentChainId: destinationChainId,
-      childChainId: sourceChainId,
-      isDepositMode: false,
-    };
-  }
-
   // Nova to ArbitrumOne is a LiFi sibling transfer, not parent-child.
   // Set Nova as parent so the LiFi token list keyed on (parent=Nova, child=One) resolves.
   if (sourceChainId === ChainId.ArbitrumNova && destinationChainId === ChainId.ArbitrumOne) {

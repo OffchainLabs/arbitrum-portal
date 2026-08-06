@@ -800,7 +800,6 @@ export function setupTransferPanelLifiIntegrationSuite() {
 
     const chains = [
       getMainnetOrbitChain(ChainId.ApeChain),
-      getMainnetOrbitChain(ChainId.Superposition),
       getMainnetOrbitChain(ChainId.RobinhoodChain),
     ];
 

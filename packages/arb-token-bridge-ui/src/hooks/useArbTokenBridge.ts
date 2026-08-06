@@ -20,6 +20,7 @@ import {
   isValidErc20,
   l1TokenIsDisabled,
 } from '../util/TokenUtils';
+import { getTokenListMetadata } from '../util/getTokenListMetadata';
 import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
 import { isNetwork } from '../util/networks';
 import {
@@ -151,10 +152,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
 
     for (const tokenData of arbTokenList.tokens) {
       const { address, name, symbol, extensions, decimals, logoURI, chainId } = tokenData;
-      const priceUSD =
-        typeof tokenData.extensions?.priceUSD === 'string'
-          ? Number(tokenData.extensions.priceUSD)
-          : undefined;
+      const tokenListMetadata = getTokenListMetadata(tokenData);
       if (![l1ChainID, l2ChainID].includes(chainId)) {
         continue;
       }
@@ -200,7 +198,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           decimals,
           logoURI,
           listIds: new Set([listId]),
-          priceUSD,
+          ...tokenListMetadata,
         };
       }
       // save potentially unbridged L1 tokens:
@@ -214,7 +212,7 @@ export const useArbTokenBridge = (params: TokenBridgeParams): ArbTokenBridge => 
           decimals,
           logoURI,
           listIds: new Set([listId]),
-          priceUSD,
+          ...tokenListMetadata,
         });
       }
     }

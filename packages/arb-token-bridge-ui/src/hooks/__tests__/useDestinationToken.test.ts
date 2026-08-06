@@ -6,8 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useTokensFromLists } from '../../components/TransferPanel/TokenSearchUtils';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
+import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
@@ -53,12 +55,17 @@ vi.mock('../../app/api/crosschain-transfers/utils', () => ({
   getTokenOverride: vi.fn(),
 }));
 
+vi.mock('../../components/TransferPanel/TokenSearchUtils', () => ({
+  useTokensFromLists: vi.fn(),
+}));
+
 describe.sequential('useDestinationToken', () => {
   const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
   const mockedUseSelectedToken = vi.mocked(useSelectedToken);
   const mockedUseNetworks = vi.mocked(useNetworks);
   const mockedUseAppState = vi.mocked(useAppState);
   const mockedGetTokenOverride = vi.mocked(getTokenOverride);
+  const mockedUseTokensFromLists = vi.mocked(useTokensFromLists);
 
   const mockSelectedToken: ERC20BridgeToken = {
     type: TokenType.ERC20,
@@ -111,6 +118,7 @@ describe.sequential('useDestinationToken', () => {
     } as Context['state']);
 
     mockedUseSelectedToken.mockReturnValue([mockSelectedToken, vi.fn()]);
+    mockedUseTokensFromLists.mockReturnValue({ data: {}, isLoading: false });
 
     mockedUseArbQueryParams.mockReturnValue([
       { ...defaultQueryParams, destinationToken: mockSelectedToken.address },
@@ -194,6 +202,40 @@ describe.sequential('useDestinationToken', () => {
 
         const { result } = renderHook(useDestinationToken);
         expect(result.current).toBeNull();
+      });
+
+      it('should return token from token lists when bridgeTokens has not loaded it yet', () => {
+        const tokenListDestinationToken: ERC20BridgeToken = {
+          type: TokenType.ERC20,
+          decimals: 18,
+          name: 'Robinhood Stock Token',
+          symbol: 'STOCK',
+          address: '0xstock',
+          listIds: new Set([LIFI_TRANSFER_LIST_ID]),
+        };
+
+        mockedUseNetworks.mockReturnValue([
+          {
+            sourceChain: getWagmiChain(ChainId.Ethereum),
+            sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
+            destinationChain: getWagmiChain(ChainId.RobinhoodChain),
+            destinationChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
+          },
+          vi.fn(),
+        ]);
+        mockedUseArbQueryParams.mockReturnValue([
+          { ...defaultQueryParams, destinationToken: tokenListDestinationToken.address },
+          vi.fn(),
+        ]);
+        mockedUseTokensFromLists.mockReturnValue({
+          data: {
+            [tokenListDestinationToken.address]: tokenListDestinationToken,
+          },
+          isLoading: false,
+        });
+
+        const { result } = renderHook(useDestinationToken);
+        expect(result.current).toEqual(tokenListDestinationToken);
       });
     });
 

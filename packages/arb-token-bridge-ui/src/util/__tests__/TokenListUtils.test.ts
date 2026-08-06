@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
-import { getBridgeTokenListsForNetworks, getDefaultBridgeTokenLists } from '../TokenListUtils';
+import {
+  getBridgeTokenListsForNetworks,
+  getDefaultBridgeTokenLists,
+  getLifiTokenListForNetworks,
+} from '../TokenListUtils';
 
 describe('TokenListUtils helpers', () => {
   it('returns LiFi token list matching the active parent/child pair', () => {
@@ -26,6 +30,24 @@ describe('TokenListUtils helpers', () => {
     const nonDefaultIds = lists.filter((list) => !list.isDefault).map((list) => list.id);
 
     expect(nonDefaultIds).toContain('5');
+  });
+
+  it('selects the LiFi token list by transfer direction', () => {
+    const directList = getLifiTokenListForNetworks({
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    });
+    const [selectedList] = getBridgeTokenListsForNetworks({
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.RobinhoodChain,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    }).filter((list) => list.parentChainID !== undefined);
+
+    expect(selectedList).toBe(directList);
+    expect(selectedList?.url).toContain(
+      `parentChainId=${ChainId.RobinhoodChain}&childChainId=${ChainId.Ethereum}`,
+    );
   });
 
   it('filters to default lists when requested', () => {

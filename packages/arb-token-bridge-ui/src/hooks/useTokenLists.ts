@@ -10,12 +10,19 @@ import { isNetwork } from '../util/networks';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
-function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<TokenListWithId[]> {
+function fetchTokenLists(
+  forL2ChainId: number,
+  parentChainId: number,
+  sourceChainId: number,
+  destinationChainId: number,
+): Promise<TokenListWithId[]> {
   return new Promise((resolve) => {
     const { isOrbitChain } = isNetwork(forL2ChainId);
     const requestListArray = getBridgeTokenListsForNetworks({
       childChainId: forL2ChainId,
       parentChainId,
+      sourceChainId,
+      destinationChainId,
     }).filter((bridgeTokenList) => {
       if (bridgeTokenList.isArbitrumTokenTokenList && isOrbitChain) {
         return false;
@@ -64,8 +71,15 @@ export function useTokenLists(forL2ChainId: number): SWRResponse<TokenListWithId
   const [networks] = useNetworks();
   const { parentChain } = useNetworksRelationship(networks);
   return useSWRImmutable(
-    ['useTokenLists', forL2ChainId, parentChain.id],
-    ([, _forL2ChainId, _parentChainId]) => fetchTokenLists(_forL2ChainId, _parentChainId),
+    [
+      'useTokenLists',
+      forL2ChainId,
+      parentChain.id,
+      networks.sourceChain.id,
+      networks.destinationChain.id,
+    ],
+    ([, _forL2ChainId, _parentChainId, _sourceChainId, _destinationChainId]) =>
+      fetchTokenLists(_forL2ChainId, _parentChainId, _sourceChainId, _destinationChainId),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,

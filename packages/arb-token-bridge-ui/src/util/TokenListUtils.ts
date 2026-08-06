@@ -174,13 +174,24 @@ BRIDGE_TOKEN_LISTS.forEach((bridgeTokenList) => {
 export const getBridgeTokenListsForNetworks = ({
   childChainId,
   parentChainId,
+  sourceChainId = parentChainId,
+  destinationChainId = childChainId,
 }: {
   childChainId: number;
   parentChainId: number;
+  sourceChainId?: number;
+  destinationChainId?: number;
 }): BridgeTokenList[] => {
   return BRIDGE_TOKEN_LISTS.filter((bridgeTokenList) => {
     if (bridgeTokenList.isArbitrumTokenTokenList) {
       return true;
+    }
+
+    if (bridgeTokenList.id === LIFI_TRANSFER_LIST_ID) {
+      return (
+        bridgeTokenList.parentChainID === sourceChainId &&
+        bridgeTokenList.originChainID === destinationChainId
+      );
     }
 
     if (bridgeTokenList.parentChainID !== undefined) {
@@ -195,27 +206,37 @@ export const getBridgeTokenListsForNetworks = ({
 };
 
 export const getLifiTokenListForNetworks = ({
-  childChainId,
-  parentChainId,
+  sourceChainId,
+  destinationChainId,
 }: {
-  childChainId: number;
-  parentChainId: number;
+  sourceChainId: number;
+  destinationChainId: number;
 }): BridgeTokenList | undefined => {
-  return getBridgeTokenListsForNetworks({ childChainId, parentChainId }).find(
-    (tokenList) => tokenList.id === LIFI_TRANSFER_LIST_ID,
+  return BRIDGE_TOKEN_LISTS.find(
+    (tokenList) =>
+      tokenList.id === LIFI_TRANSFER_LIST_ID &&
+      tokenList.parentChainID === sourceChainId &&
+      tokenList.originChainID === destinationChainId,
   );
 };
 
 export const getDefaultBridgeTokenLists = ({
   childChainId,
   parentChainId,
+  sourceChainId,
+  destinationChainId,
 }: {
   childChainId: number;
   parentChainId: number;
+  sourceChainId?: number;
+  destinationChainId?: number;
 }): BridgeTokenList[] => {
-  return getBridgeTokenListsForNetworks({ childChainId, parentChainId }).filter(
-    (bridgeTokenList) => bridgeTokenList.isDefault,
-  );
+  return getBridgeTokenListsForNetworks({
+    childChainId,
+    parentChainId,
+    sourceChainId,
+    destinationChainId,
+  }).filter((bridgeTokenList) => bridgeTokenList.isDefault);
 };
 
 export interface TokenListWithId extends TokenList {

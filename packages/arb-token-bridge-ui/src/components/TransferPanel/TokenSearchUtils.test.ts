@@ -58,7 +58,7 @@ describe('tokenListsToSearchableTokenStorage', () => {
       bridgeTokenListId: '1',
     };
 
-    const tokens = tokenListsToSearchableTokenStorage([lifiList, canonicalList], '1', '42161');
+    const tokens = tokenListsToSearchableTokenStorage([lifiList, canonicalList], '1', '42161', '1');
 
     expect(tokens[l1Address]?.name).toBe('PayPal USD OFT');
     expect(tokens[l1Address]?.symbol).toBe('pYUSD');
@@ -121,12 +121,65 @@ describe('tokenListsToSearchableTokenStorage', () => {
       bridgeTokenListId: '1',
     };
 
-    const tokens = tokenListsToSearchableTokenStorage([lifiList, canonicalList], '1', '42161');
+    const tokens = tokenListsToSearchableTokenStorage([lifiList, canonicalList], '1', '42161', '1');
 
     expect(tokens[l1Address]?.name).toBe('PayPal USD OFT');
     expect(tokens[l1Address]?.symbol).toBe('pYUSD');
     expect(tokens[l1Address]?.logoURI).toBe('/images/pyusd.svg');
     expect(tokens[l1Address]?.l2Address).toBe(lifiL2Address);
     expect(tokens[l1Address]?.listIds).toEqual(new Set([LIFI_TRANSFER_LIST_ID, '1']));
+  });
+
+  it('stores unpaired LiFi tokens when their chain is the source', () => {
+    const robinhoodTokenAddress = '0x0000000000000000000000000000000000000300';
+
+    const lifiList: TokenListWithId = {
+      name: 'LiFi Tokens',
+      timestamp: new Date().toISOString(),
+      version: { major: 1, minor: 0, patch: 0 },
+      tokens: [
+        {
+          chainId: 4663,
+          address: robinhoodTokenAddress,
+          name: 'Robinhood Stock Token',
+          symbol: 'STOCK',
+          decimals: 18,
+        },
+      ],
+      l2ChainId: '4663',
+      bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+    };
+
+    const tokens = tokenListsToSearchableTokenStorage([lifiList], '1', '4663', '4663');
+
+    expect(tokens[robinhoodTokenAddress]).toMatchObject({
+      address: robinhoodTokenAddress,
+      l2Address: robinhoodTokenAddress,
+    });
+  });
+
+  it('ignores unpaired LiFi tokens when their chain is the destination', () => {
+    const robinhoodTokenAddress = '0x0000000000000000000000000000000000000300';
+
+    const lifiList: TokenListWithId = {
+      name: 'LiFi Tokens',
+      timestamp: new Date().toISOString(),
+      version: { major: 1, minor: 0, patch: 0 },
+      tokens: [
+        {
+          chainId: 4663,
+          address: robinhoodTokenAddress,
+          name: 'Robinhood Stock Token',
+          symbol: 'STOCK',
+          decimals: 18,
+        },
+      ],
+      l2ChainId: '4663',
+      bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+    };
+
+    const tokens = tokenListsToSearchableTokenStorage([lifiList], '1', '4663', '1');
+
+    expect(tokens[robinhoodTokenAddress]).toBeUndefined();
   });
 });

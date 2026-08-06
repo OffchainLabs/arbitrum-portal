@@ -4,7 +4,9 @@ import { LIFI_TRANSFER_LIST_ID } from '../util/TokenListUtils';
 import { mergeBridgeTokens } from '../util/mergeBridgeTokens';
 import { type ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 
-const buildToken = (overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken => ({
+type ERC20BridgeTokenOverrides = Partial<ERC20BridgeToken>;
+
+const buildToken = (overrides: ERC20BridgeTokenOverrides = {}): ERC20BridgeToken => ({
   name: 'PayPal USD',
   symbol: 'PYUSD',
   type: TokenType.ERC20,

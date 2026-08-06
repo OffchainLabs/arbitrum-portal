@@ -6,7 +6,8 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
-import { TokenListWithId } from '../../util/TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, TokenListWithId } from '../../util/TokenListUtils';
+import { getTokenListMetadata } from '../../util/getTokenListMetadata';
 import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
@@ -18,12 +19,19 @@ export function useTokensFromLists() {
   const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
 
   const { data = emptyData, isLoading } = useSWRImmutable(
-    [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
-    ([_tokenLists, _parentChainId, _childChainId]) =>
+    [
+      tokenLists ?? [],
+      parentChain.id,
+      childChain.id,
+      networks.sourceChain.id,
+      'useTokensFromLists',
+    ],
+    ([_tokenLists, _parentChainId, _childChainId, _sourceChainId]) =>
       tokenListsToSearchableTokenStorage(
         _tokenLists,
         String(_parentChainId),
         String(_childChainId),
+        String(_sourceChainId),
       ),
   );
 
@@ -68,42 +76,56 @@ export function tokenListsToSearchableTokenStorage(
   tokenLists: TokenListWithId[],
   l1ChainId: string,
   l2ChainId: string,
+  sourceChainId: string,
 ): ContractStorage<ERC20BridgeToken> {
   return tokenLists.reduce((acc: ContractStorage<ERC20BridgeToken>, tokenList: TokenListWithId) => {
     tokenList.tokens.forEach((token) => {
       const address = token.address.toLowerCase();
       const stringifiedChainId = String(token.chainId);
       const accAddress = acc[address];
+      const tokenListMetadata = getTokenListMetadata(token);
 
       if (stringifiedChainId === l1ChainId) {
         // The address is from an L1 token
-        const priceUSD = token.extensions?.priceUSD as number;
-        if (typeof accAddress === 'undefined') {
-          // First time encountering the token through its L1 address
-          acc[address] = {
-            ...token,
+        acc[address] = mergeBridgeTokens({
+          existingToken: accAddress,
+          incomingToken: {
+            name: token.name,
+            symbol: token.symbol,
             type: TokenType.ERC20,
-            l2Address: undefined,
-            listIds: new Set(),
-            priceUSD,
-          };
-        } else {
-          // Token was already added to the map through its L2 token
-          acc[address] = {
-            ...accAddress,
             address,
-          };
-          if (!acc[address]!.priceUSD && priceUSD) {
-            acc[address]!.priceUSD = priceUSD;
-          }
-        }
-
-        // acc[address] was defined in the if/else above
-        acc[address]!.listIds.add(tokenList.bridgeTokenListId);
+            l2Address: accAddress?.l2Address,
+            decimals: token.decimals,
+            logoURI: token.logoURI,
+            listIds: new Set(),
+            ...tokenListMetadata,
+          },
+          incomingListId: tokenList.bridgeTokenListId,
+        });
       } else if (stringifiedChainId === l2ChainId) {
         // The token is an L2 token
 
         if (!token.extensions?.bridgeInfo) {
+          if (
+            tokenList.bridgeTokenListId === LIFI_TRANSFER_LIST_ID &&
+            stringifiedChainId === sourceChainId
+          ) {
+            acc[address] = mergeBridgeTokens({
+              existingToken: accAddress,
+              incomingToken: {
+                name: token.name,
+                symbol: token.symbol,
+                type: TokenType.ERC20,
+                address,
+                l2Address: address,
+                decimals: token.decimals,
+                logoURI: token.logoURI,
+                listIds: new Set(),
+                ...tokenListMetadata,
+              },
+              incomingListId: tokenList.bridgeTokenListId,
+            });
+          }
           return;
         }
 
@@ -116,15 +138,14 @@ export function tokenListsToSearchableTokenStorage(
         const l1Bridge = bridgeInfo[l1ChainId];
         if (l1Bridge) {
           const addressOnL1 = l1Bridge.tokenAddress.toLowerCase();
-          const priceUSD = token.extensions?.priceUSD as number;
 
           if (!addressOnL1) {
             return;
           }
 
-          if (typeof acc[addressOnL1] === 'undefined') {
-            // Token is not on the list yet
-            acc[addressOnL1] = {
+          acc[addressOnL1] = mergeBridgeTokens({
+            existingToken: acc[addressOnL1],
+            incomingToken: {
               name: token.name,
               symbol: token.symbol,
               type: TokenType.ERC20,
@@ -133,29 +154,10 @@ export function tokenListsToSearchableTokenStorage(
               l2Address: address,
               decimals: token.decimals,
               listIds: new Set(),
-              priceUSD,
-            };
-          } else {
-            // Prefer LiFi token metadata when multiple lists map the same L1 token.
-            acc[addressOnL1] = mergeBridgeTokens({
-              existingToken: acc[addressOnL1],
-              incomingToken: {
-                name: token.name,
-                symbol: token.symbol,
-                type: TokenType.ERC20,
-                logoURI: token.logoURI,
-                address: addressOnL1,
-                l2Address: address,
-                decimals: token.decimals,
-                listIds: acc[addressOnL1]?.listIds || new Set(),
-                priceUSD,
-              },
-              incomingListId: tokenList.bridgeTokenListId,
-            });
-          }
-
-          // acc[address] was defined in the if/else above
-          acc[addressOnL1]!.listIds.add(tokenList.bridgeTokenListId);
+              ...tokenListMetadata,
+            },
+            incomingListId: tokenList.bridgeTokenListId,
+          });
         }
       }
     });

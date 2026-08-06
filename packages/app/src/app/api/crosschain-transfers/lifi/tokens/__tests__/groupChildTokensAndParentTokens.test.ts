@@ -160,7 +160,7 @@ describe('groupChildTokensAndParentTokens', () => {
     const childTokensByCoinKey = {
       [CoinKey.WETH]: buildToken({
         coinKey: CoinKey.WETH,
-        chainId: LiFiChainId.SUP,
+        chainId: LiFiChainId.BAS,
         logoURI: childLogo,
       }),
     };
@@ -169,7 +169,7 @@ describe('groupChildTokensAndParentTokens', () => {
       parentTokens,
       childTokensByCoinKey,
       parentChainId: ChainId.ArbitrumOne,
-      childChainId: ChainId.Superposition,
+      childChainId: ChainId.Base,
     });
 
     expect(tokens[0]?.logoURI).toBe(childLogo);
