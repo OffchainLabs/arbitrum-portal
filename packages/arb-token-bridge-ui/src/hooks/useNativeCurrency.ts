@@ -91,21 +91,21 @@ export async function fetchNativeCurrency({
   });
 
   /**
-   * When transferring Ape token from Base or Ethereum, address from ethBridger is the address on Arbitrum One.
+   * When ApeChain is paired with another parent chain, ethBridger returns the APE address on
+   * Arbitrum One. Use the APE address on the selected parent chain instead.
    * It should be the address of the Ape token on the source chain instead
    */
   const network = await provider.getNetwork();
   const isApeToken = addressesEqual(address, CommonAddress.ArbitrumOne.APE);
-  const isParentBaseOrEthereum =
-    parentChainIdFromQueryParam === ChainId.Base ||
-    parentChainIdFromQueryParam === ChainId.Ethereum;
   const isChildApeChain = network.chainId === ChainId.ApeChain;
 
-  if (isApeToken && isParentBaseOrEthereum && isChildApeChain) {
+  if (isApeToken && isChildApeChain) {
     address =
-      parentChainIdFromQueryParam === ChainId.Base
-        ? CommonAddress.Base.APE
-        : CommonAddress.Ethereum.APE;
+      {
+        [ChainId.Base]: CommonAddress.Base.APE,
+        [ChainId.Ethereum]: CommonAddress.Ethereum.APE,
+        [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.APE,
+      }[parentChainIdFromQueryParam ?? 0] ?? address;
   }
 
   return {

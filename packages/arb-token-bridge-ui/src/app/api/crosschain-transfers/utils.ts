@@ -151,6 +151,11 @@ const apeToken = {
   listIds: new Set<string>(),
 } as const;
 
+const nativeApeToken = {
+  ...apeToken,
+  address: constants.AddressZero,
+};
+
 function getApe(chainId: number) {
   return (
     {
@@ -161,6 +166,10 @@ function getApe(chainId: number) {
       [ChainId.ArbitrumOne]: {
         ...apeToken,
         address: CommonAddress.ArbitrumOne.APE,
+      },
+      [ChainId.RobinhoodChain]: {
+        ...apeToken,
+        address: CommonAddress.RobinhoodChain.APE,
       },
       [ChainId.Superposition]: {
         ...ether,
@@ -190,6 +199,18 @@ export function getTokenOverride({
   source: ERC20BridgeToken | null;
   destination: ERC20BridgeToken | null;
 } {
+  const isApeChainRobinhoodRoute =
+    (sourceChainId === ChainId.ApeChain && destinationChainId === ChainId.RobinhoodChain) ||
+    (sourceChainId === ChainId.RobinhoodChain && destinationChainId === ChainId.ApeChain);
+
+  if (!fromToken && isApeChainRobinhoodRoute) {
+    return {
+      source: sourceChainId === ChainId.ApeChain ? nativeApeToken : getApe(sourceChainId),
+      destination:
+        destinationChainId === ChainId.ApeChain ? nativeApeToken : getApe(destinationChainId),
+    };
+  }
+
   // Eth on ApeChain
   if (addressesEqual(fromToken, constants.AddressZero)) {
     if (sourceChainId === ChainId.ApeChain) {
