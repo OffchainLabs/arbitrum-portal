@@ -62,7 +62,7 @@ export function useTokenListPriceUpdater({
           ...data,
         };
       });
-    }, false);
+    });
   }, [arbTokenBridgeLoaded, childChain.id, parentChain.id, mutate]);
 
   useInterval(refreshLifiTokenList, intervalMs);

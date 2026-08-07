@@ -17,17 +17,21 @@ export function useTokensFromLists() {
   const { childChain, parentChain } = useNetworksRelationship(networks);
   const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
 
-  const { data = emptyData, isLoading } = useSWRImmutable(
-    [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
-    ([_tokenLists, _parentChainId, _childChainId]) =>
-      tokenListsToSearchableTokenStorage(
-        _tokenLists,
-        String(_parentChainId),
-        String(_childChainId),
-      ),
-  );
+  // Derived synchronously so the tokens can never lag behind the fetched lists,
+  // which an extra async hook allowed under heavy re-rendering
+  const data = useMemo(() => {
+    if (!tokenLists) {
+      return emptyData;
+    }
 
-  return { data, isLoading: isLoadingTokenLists || isLoading };
+    return tokenListsToSearchableTokenStorage(
+      tokenLists,
+      String(parentChain.id),
+      String(childChain.id),
+    );
+  }, [tokenLists, parentChain.id, childChain.id]);
+
+  return { data, isLoading: isLoadingTokenLists };
 }
 
 export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {

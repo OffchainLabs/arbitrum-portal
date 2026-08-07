@@ -47,9 +47,12 @@ export function login({
   function _startWebApp() {
     const sourceChain = networkNameWithDefault.toLowerCase().replace(/ /g, '-');
 
-    // when testing Orbit chains we want to set destination chain to L3
+    // when testing Orbit chains we want to set destination chain to L3,
+    // unless the test explicitly connects to another network (e.g. mainnet)
     const defaultDestinationChain =
-      networkType === 'parentChain' && network.chainId === 412346 ? 'nitro-testnode-l3' : '';
+      networkType === 'parentChain' && network.chainId === 412346 && !networkName
+        ? 'nitro-testnode-l3'
+        : '';
     startWebApp(url, {
       query: {
         ...query,
