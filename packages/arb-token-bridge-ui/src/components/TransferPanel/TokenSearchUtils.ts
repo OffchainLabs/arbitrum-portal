@@ -1,3 +1,4 @@
+import { TokenList } from '@uniswap/token-lists';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
@@ -13,6 +14,58 @@ import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 const emptyData: ContractStorage<ERC20BridgeToken> = {};
 const emptyTokenLists: TokenListWithId[] = [];
 
+/**
+ * Overlays the separately refreshed LiFi token list onto the lists from `useTokenLists`, so the
+ * token panel picks up fresh `priceUSD` without the two sharing an SWR key.
+ *
+ * Returns `tokenLists` unchanged when there is nothing to overlay, since the result feeds an SWR key
+ * that deep-hashes every token and a new array identity forces a full re-walk.
+ */
+export function mergeLifiTokenList({
+  tokenLists,
+  lifiTokenList,
+  childChainId,
+}: {
+  tokenLists: TokenListWithId[] | undefined;
+  lifiTokenList: TokenList | undefined;
+  childChainId: number;
+}): TokenListWithId[] {
+  if (!tokenLists) {
+    return emptyTokenLists;
+  }
+
+  if (!lifiTokenList) {
+    return tokenLists;
+  }
+
+  let didReplace = false;
+  const merged = tokenLists.map((tokenList) => {
+    if (tokenList.bridgeTokenListId !== LIFI_TRANSFER_LIST_ID) {
+      return tokenList;
+    }
+
+    didReplace = true;
+    return { ...tokenList, ...lifiTokenList };
+  });
+
+  if (didReplace) {
+    return merged;
+  }
+
+  /**
+   * `fetchTokenLists` drops any list whose fetch returned no data, so a failed LiFi request at load
+   * leaves nothing to overlay. Add the refreshed list instead of discarding it.
+   */
+  return [
+    ...merged,
+    {
+      ...lifiTokenList,
+      l2ChainId: String(childChainId),
+      bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+    },
+  ];
+}
+
 export function useTokensFromLists() {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
@@ -20,21 +73,15 @@ export function useTokensFromLists() {
   const { data: refreshedLifiTokenList } = useLifiTokenList();
 
   // Memoized for referential stability: this feeds an SWR key that deep-hashes every token.
-  const mergedTokenLists = useMemo(() => {
-    if (!tokenLists) {
-      return emptyTokenLists;
-    }
-
-    if (!refreshedLifiTokenList) {
-      return tokenLists;
-    }
-
-    return tokenLists.map((tokenList) =>
-      tokenList.bridgeTokenListId === LIFI_TRANSFER_LIST_ID
-        ? { ...tokenList, ...refreshedLifiTokenList }
-        : tokenList,
-    );
-  }, [tokenLists, refreshedLifiTokenList]);
+  const mergedTokenLists = useMemo(
+    () =>
+      mergeLifiTokenList({
+        tokenLists,
+        lifiTokenList: refreshedLifiTokenList,
+        childChainId: childChain.id,
+      }),
+    [tokenLists, refreshedLifiTokenList, childChain.id],
+  );
 
   const { data = emptyData, isLoading } = useSWRImmutable(
     [mergedTokenLists, parentChain.id, childChain.id, 'useTokensFromLists'],
