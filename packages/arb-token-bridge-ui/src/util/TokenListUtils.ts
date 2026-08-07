@@ -143,8 +143,8 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
     acc.push({
       id: `${chain.chainId}_uniswap`,
       originChainID: chain.chainId,
-      url: `https://tokenlist.arbitrum.io/ArbTokenLists/${chain.chainId}_arbed_uniswap_labs.json`,
-      name: `${chain.name} Arbed Uniswap List`,
+      url: `https://tokenlist.arbitrum.io/ArbTokenLists/${chain.chainId}_arbed.json`,
+      name: `${chain.name} Token List`,
       isDefault: true,
       logoURI: UniswapLogo,
     });
