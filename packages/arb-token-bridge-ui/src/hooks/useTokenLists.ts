@@ -80,13 +80,20 @@ export function useTokenLists(forL2ChainId: number): SWRResponse<TokenListWithId
 const LIFI_TOKEN_LIST_REFRESH_INTERVAL_MS = 31_000;
 
 /**
- * Polls the LiFi token list on its own SWR key so `priceUSD` stays fresh.
+ * Reads the LiFi token list from its own SWR key, so `priceUSD` stays fresh.
  *
  * The key is deliberately separate from {@link useTokenLists}. Refreshing by calling `mutate` on the
  * `useTokenLists` key meant that whenever a refresh overlapped the initial fetch, SWR discarded the
  * in-flight response and left every consumer with no token data until a new subscriber mounted.
+ *
+ * Pass `poll` from exactly one owner. SWR schedules polling, focus and reconnect revalidation per
+ * hook instance rather than per cache key, and this hook is read by many components, some of them
+ * once per token row inside the virtualized list. Every other caller subscribes to the same cache
+ * entry passively: it receives each update without scheduling a fetch of its own.
  */
-export function useLifiTokenList(): SWRResponse<TokenList | undefined> {
+export function useLifiTokenList({ poll = false }: { poll?: boolean } = {}): SWRResponse<
+  TokenList | undefined
+> {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
 
@@ -106,9 +113,13 @@ export function useLifiTokenList(): SWRResponse<TokenList | undefined> {
       return data;
     },
     {
-      // `useTokenLists` already fetches this list, so only fetch here to pick up later price updates.
-      revalidateOnMount: false,
-      refreshInterval: LIFI_TOKEN_LIST_REFRESH_INTERVAL_MS,
+      refreshInterval: poll ? LIFI_TOKEN_LIST_REFRESH_INTERVAL_MS : 0,
+      // The owner refetches on mount so prices are current after navigating back to the bridge,
+      // where the SWR cache outlives the unmounted components and would otherwise serve stale
+      // prices until the first poll.
+      revalidateOnMount: poll,
+      revalidateOnFocus: poll,
+      revalidateOnReconnect: poll,
     },
   );
 }
