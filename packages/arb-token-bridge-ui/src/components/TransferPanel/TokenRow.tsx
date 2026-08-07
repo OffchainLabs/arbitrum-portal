@@ -1,5 +1,5 @@
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import { constants, utils } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -125,7 +125,7 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
 
 interface TokenRowProps {
   style?: React.CSSProperties;
-  onTokenSelected: (token: ERC20BridgeToken | null) => void;
+  onTokenSelected: (token: ERC20BridgeToken | null, balance: BigNumber | null) => void;
   token: ERC20BridgeToken | null;
   isDestination?: boolean;
 }
@@ -482,7 +482,7 @@ export function TokenRow({
   return (
     <button
       type="button"
-      onClick={() => onTokenSelected(token)}
+      onClick={() => onTokenSelected(token, balance)}
       style={{ ...style, minHeight: '84px' }}
       disabled={!tokenIsBridgeable}
       className={twMerge(

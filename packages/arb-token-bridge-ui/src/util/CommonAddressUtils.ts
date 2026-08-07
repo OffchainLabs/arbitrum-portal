@@ -17,6 +17,7 @@ export const CommonAddress = {
     USDG: '0xe343167631d89b6ffc58b88d6b7fb0228795491d',
     ENA: '0x57e114b691db790c35207b2e685d4a43181e6061',
     ezETH: '0xbf5495efe5db9ce00f80364c8b423567e58d2110',
+    SFI: '0xb753428af26e81097e7fd17f40c88aaa3e04902c',
     tokenMessengerContractAddress: '0xbd3fa81b58ba92a82136038b25adec7066af3155',
     APE: '0x4d224452801aced8b2f0aebe155379bb5d594381',
   },
@@ -38,6 +39,7 @@ export const CommonAddress = {
     'tokenMessengerContractAddress': '0x19330d10d9cc8751218eaf51e8885d058642e08a',
     'CU': '0x89c49a3fa372920ac23ce757a029e6936c0b8e02',
     'APE': '0x7f9fbf9bdd3f4105c478b996b648fe6e828a1e98',
+    'SFI': '0xff0490bf1a58a4151d4d6ec6cb3d2959a561874c',
   },
   // Xai Mainnet
   660279: {
@@ -74,6 +76,7 @@ export const CommonAddress = {
     WETH: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
   },
   RobinhoodChain: {
+    APE: '0x8f86a15ec17cb3369d8b3e666dadbc11daa82b79',
     WETH: '0x0bd7d308f8e1639fab988df18a8011f41eacad73',
     USDe: '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
     sUSDe: '0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2',
@@ -83,6 +86,7 @@ export const CommonAddress = {
     WEETH: '0xa3d68b74bf0528fdd07263c60d6488749044914b',
     SyrupUSDG: '0x40858070814a57fdf33a613ae84fe0a8b4a874f7',
     WSTETH: '0x2dc99af320bc317c567f24ee95811dcbd5983dfd',
+    SFI: '0xe77d354898a44808ff3999947002785cd727bed5',
   },
 } as const;
 

@@ -1,4 +1,3 @@
-import { useWalletInfo } from '@reown/appkit/react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
@@ -35,7 +34,6 @@ import {
   TransferReadinessRichErrorMessage,
   getInsufficientFundsErrorMessage,
   getInsufficientFundsForGasFeesErrorMessage,
-  getTrustWalletDisabledErrorMessage,
   getWithdrawOnlyChainErrorMessage,
 } from './useTransferReadinessUtils';
 
@@ -228,8 +226,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
-  const { walletInfo } = useWalletInfo('eip155');
-  const isTrustWalletConnection = (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
   const { data: tokensFromLists } = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
@@ -311,14 +307,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       isSmartContractWallet,
       isDepositMode,
     });
-
-    if (isTrustWalletConnection) {
-      return notReady({
-        errorMessages: {
-          inputAmount1: getTrustWalletDisabledErrorMessage(),
-        },
-      });
-    }
 
     if (!selectedRoute) {
       return notReady();
@@ -733,6 +721,5 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedRouteContext,
-    isTrustWalletConnection,
   ]);
 }

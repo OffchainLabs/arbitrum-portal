@@ -13,11 +13,11 @@ import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApp
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
 import { NovaDepositWarningDialog } from '../TransferPanel/NovaDepositWarningDialog';
-import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
 import { TokenSearch } from '../TransferPanel/TokenSearch';
+import { TrustWalletUpdateDialog } from '../TransferPanel/TrustWalletUpdateDialog';
 import { CctpUsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/CctpUsdcDepositConfirmationDialog';
 import { UsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/UsdcDepositConfirmationDialog';
 import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithdrawal/CctpUsdcWithdrawalConfirmationDialog';
@@ -62,8 +62,8 @@ export type DialogType =
   | 'source_network_selection'
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
-  | 'pop_disabled'
   | 'nova_deposit_warning'
+  | 'trust_wallet_update'
   | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
@@ -163,10 +163,10 @@ export function DialogWrapper(props: DialogProps) {
       return <NetworkSelectionContainer {...commonProps} type="destination" />;
     case 'buy_panel_network_selection':
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
-    case 'pop_disabled':
-      return <PoPDisabledDialog {...commonProps} />;
     case 'nova_deposit_warning':
       return <NovaDepositWarningDialog {...commonProps} />;
+    case 'trust_wallet_update':
+      return <TrustWalletUpdateDialog {...commonProps} />;
     case 'earn_tos':
       return <EarnToSPopupDialog {...commonProps} />;
     default:

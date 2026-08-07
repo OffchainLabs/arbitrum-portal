@@ -358,7 +358,6 @@ export async function checkForAssertions({
     }
     /* eslint-enable no-await-in-loop */
   }
-  /* eslint-enable no-await-in-loop */
 }
 
 export async function fundEth({

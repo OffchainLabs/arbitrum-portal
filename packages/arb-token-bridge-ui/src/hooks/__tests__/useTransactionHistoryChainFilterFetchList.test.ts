@@ -11,7 +11,7 @@ import { useTransactionHistoryChainFilterStore } from '../../components/Transact
 import { ChainId } from '../../types/ChainId';
 import { Address } from '../../util/AddressUtils';
 import { fetchDeposits } from '../../util/deposits/fetchDeposits';
-import { isNetwork } from '../../util/networks';
+import { isCoreChainForDisplay, isNetwork } from '../../util/networks';
 import { getMultiChainFetchList } from '../../util/txHistoryRoutes';
 import { useTransactionHistory } from '../useTransactionHistory';
 
@@ -27,8 +27,6 @@ vi.mock('next/navigation', async (importActual) => ({
   usePathname: vi.fn().mockReturnValue('/bridge'),
 }));
 
-// Pin the bridge pair to Eth <> Arbitrum One (mainnet), so the filter's
-// derived default is [ArbitrumOne].
 vi.mock('../useArbQueryParams', async (importActual) => ({
   ...(await importActual()),
   useArbQueryParams: vi
@@ -60,16 +58,13 @@ function mainnetPairsMatching(predicate: (parent: number, child: number) => bool
     .map((pair) => `${pair.parentChainId}-${pair.childChainId}`);
 }
 
-// A statically registered mainnet chain outside the default (Arbitrum One)
-// scope, whichever the registry currently has. Orbit chains register at
-// runtime, so they never appear in the test environment's fetch list.
-function getChainOutsideDefaultScope(): number | undefined {
+// A statically registered mainnet longtail (non-core) child chain, whichever
+// the registry currently has. Orbit chains register at runtime, so they may
+// not appear in the test environment's fetch list.
+function getLongtailPair() {
   return getMultiChainFetchList()
     .filter((pair) => !isNetwork(pair.parentChainId).isTestnet)
-    .find(
-      (pair) =>
-        pair.parentChainId !== ChainId.ArbitrumOne && pair.childChainId !== ChainId.ArbitrumOne,
-    )?.childChainId;
+    .find((pair) => !isCoreChainForDisplay(pair.childChainId));
 }
 
 async function renderAndWaitForFetch() {
@@ -83,43 +78,67 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
     vi.mocked(fetchDeposits).mockClear();
   });
 
-  it('default selection fetches only the pairs touching the bridge child chain', async () => {
+  it('the default All Core Chains selection fetches only the pairs with both endpoints core', async () => {
     await renderAndWaitForFetch();
 
     const pairs = fetchedDepositPairs();
     const expected = mainnetPairsMatching(
-      (parent, child) => parent === ChainId.ArbitrumOne || child === ChainId.ArbitrumOne,
+      (parent, child) => isCoreChainForDisplay(parent) && isCoreChainForDisplay(child),
     );
 
     expect(pairs.sort()).toEqual(expected.sort());
     expect(pairs).toContain(`${ChainId.Ethereum}-${ChainId.ArbitrumOne}`);
   }, 40_000);
 
-  it('a single-chain selection fetches only the pairs touching that chain', async (ctx) => {
-    const chainId = getChainOutsideDefaultScope();
-    if (chainId === undefined) {
-      return ctx.skip();
-    }
-
+  it('a core-chains selection fetches only those chains’ pairs with other core chains', async () => {
     useTransactionHistoryChainFilterStore.setState({
-      selection: { chainIds: [chainId], isTestnetMode: false },
+      selection: { chainIds: [ChainId.Ethereum], isTestnetMode: false },
     });
     await renderAndWaitForFetch();
 
     expect(fetchedDepositPairs().sort()).toEqual(
-      mainnetPairsMatching((parent, child) => parent === chainId || child === chainId).sort(),
+      mainnetPairsMatching(
+        (parent, child) =>
+          (parent === ChainId.Ethereum || child === ChainId.Ethereum) &&
+          isCoreChainForDisplay(parent) &&
+          isCoreChainForDisplay(child),
+      ).sort(),
     );
   }, 40_000);
 
-  it('the All Chains selection fetches every mainnet pair', async () => {
+  it('a multi-chain core selection fetches the pairs touching any selected chain', async () => {
+    const selectedChainIds = [ChainId.ArbitrumOne, ChainId.ArbitrumNova];
     useTransactionHistoryChainFilterStore.setState({
-      selection: { chainIds: [], isTestnetMode: false },
+      selection: { chainIds: selectedChainIds, isTestnetMode: false },
     });
     await renderAndWaitForFetch();
 
-    const pairs = fetchedDepositPairs();
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) =>
+          (selectedChainIds.includes(parent) || selectedChainIds.includes(child)) &&
+          isCoreChainForDisplay(parent) &&
+          isCoreChainForDisplay(child),
+      ).sort(),
+    );
+  }, 40_000);
 
-    expect(pairs.length).toBeGreaterThan(1);
-    expect(pairs.sort()).toEqual(mainnetPairsMatching(() => true).sort());
+  it('a longtail-chain selection fetches only the pairs touching that chain', async (ctx) => {
+    const longtailPair = getLongtailPair();
+    if (!longtailPair) {
+      return ctx.skip();
+    }
+
+    const longtailChainId = longtailPair.childChainId;
+    useTransactionHistoryChainFilterStore.setState({
+      selection: { chainIds: [longtailChainId], isTestnetMode: false },
+    });
+    await renderAndWaitForFetch();
+
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) => parent === longtailChainId || child === longtailChainId,
+      ).sort(),
+    );
   }, 40_000);
 });

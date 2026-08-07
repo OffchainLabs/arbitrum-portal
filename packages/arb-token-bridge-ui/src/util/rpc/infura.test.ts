@@ -20,6 +20,7 @@ it('successfully returns the correct url for the provided chain and key', () => 
     [ChainId.ApeChain]: getInfuraRpcUrl(ChainId.ApeChain, key),
     [ChainId.Superposition]: getInfuraRpcUrl(ChainId.Superposition, key),
     [ChainId.RobinhoodChain]: getInfuraRpcUrl(ChainId.RobinhoodChain, key),
+    [ChainId.RobinhoodChainTestnet]: getInfuraRpcUrl(ChainId.RobinhoodChainTestnet, key),
   };
 
   expect(result).toMatchInlineSnapshot(`
@@ -30,6 +31,7 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "42161": "https://arbitrum-mainnet.infura.io/v3/123456",
       "421614": "https://arbitrum-sepolia.infura.io/v3/123456",
       "4663": "",
+      "46630": "",
       "55244": "",
       "8453": "https://base-mainnet.infura.io/v3/123456",
       "84532": "https://base-sepolia.infura.io/v3/123456",

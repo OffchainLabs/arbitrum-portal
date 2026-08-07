@@ -7,6 +7,13 @@
     // Reason to ignore: Not used directly. Patched version is a major bump (v1.2.0).
     // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
     "GHSA-vqpr-j7v3-hqw9",
+    //
+    // https://github.com/advisories/GHSA-5qjj-4xww-7phc
+    // Valibot record() issue paths can make flatten() throw for inherited Object property names
+    // Reason to ignore: Not used directly and we never call valibot's flatten(). Patched version (1.4.2) is a major bump the parents don't support (they pin ^0.36/^0.38).
+    // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
+    "GHSA-5qjj-4xww-7phc",
+    //
     // https://github.com/advisories/GHSA-848j-6mx2-7j84
     // Elliptic Uses a Cryptographic Primitive with a Risky Implementation
     // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
@@ -40,6 +47,12 @@
     // https://github.com/advisories/GHSA-79cf-xcqc-c78w
     // webpack-dev-server cross-origin source code exposure on non-HTTPS origins (CVE-2026-6402)
     //
+    // https://github.com/advisories/GHSA-f5vj-f2hx-8m93
+    // webpack-dev-server cross-site request forgery via internal endpoints
+    //
+    // https://github.com/advisories/GHSA-m28w-2pqf-7qgj
+    // webpack-dev-server denial of service via a malformed Host header
+    //
     // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
     // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
     //
@@ -55,6 +68,10 @@
     // https://github.com/advisories/GHSA-mp2f-45pm-3cg9
     // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
     // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
+    //
+    // https://github.com/advisories/GHSA-h39j-r5qq-r9mm
+    // decompress arbitrary file write (Zip Slip) via a symlink race on ZIP archives with duplicate paths (CVE-2026-10732)
+    // No upstream fix: decompress is unmaintained, 4.2.1 is the latest published version
     //
     // https://github.com/advisories/GHSA-xv26-6w52-cph6
     // websocket-driver message corruption via abuse of protocol length headers
@@ -73,11 +90,14 @@
     "GHSA-9jgg-88mc-972h",
     "GHSA-4v9v-hfq4-rm2v",
     "GHSA-79cf-xcqc-c78w",
+    "GHSA-f5vj-f2hx-8m93",
+    "GHSA-m28w-2pqf-7qgj",
     "GHSA-q8mj-m7cp-5q26",
     "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-mp2f-45pm-3cg9",
+    "GHSA-h39j-r5qq-r9mm",
     "GHSA-xv26-6w52-cph6",
     "GHSA-mp7j-qc5w-4988",
     //

@@ -44,6 +44,15 @@ export function useMaxAmount() {
     }
 
     if (
+      nativeCurrency.isCustom &&
+      !isDepositMode &&
+      (typeof estimatedParentChainGasFees === 'undefined' ||
+        typeof estimatedChildChainGasFees === 'undefined')
+    ) {
+      return nativeCurrencyBalanceFormatted;
+    }
+
+    if (
       typeof estimatedParentChainGasFees === 'undefined' ||
       typeof estimatedChildChainGasFees === 'undefined'
     ) {

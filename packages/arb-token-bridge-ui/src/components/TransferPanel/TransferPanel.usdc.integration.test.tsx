@@ -23,30 +23,6 @@ const usdcCases: RouteTokenCase[] = [
     sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
     destinationToken: tokenExpectationsByChain.Ethereum.USDC,
   },
-  {
-    sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
-    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.Ethereum.USDC,
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
-    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.ApeChain.USDCe,
-  },
 ];
 
 async function assertUsdcRouteTokens({

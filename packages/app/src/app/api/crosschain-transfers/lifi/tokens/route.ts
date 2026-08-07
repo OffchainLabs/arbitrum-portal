@@ -1,4 +1,5 @@
 import { TokenList } from '@uniswap/token-lists';
+import { constants } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
@@ -27,6 +28,8 @@ const BASE_TOKEN_LIST = {
 
 const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
   [
+    constants.AddressZero,
+    CommonAddress.RobinhoodChain.APE,
     CommonAddress.RobinhoodChain.WETH,
     CommonAddress.RobinhoodChain.USDe,
     CommonAddress.RobinhoodChain.sUSDe,
@@ -34,6 +37,7 @@ const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
     CommonAddress.RobinhoodChain.ENA,
     CommonAddress.RobinhoodChain.WEETH,
     CommonAddress.RobinhoodChain.WSTETH,
+    CommonAddress.RobinhoodChain.SFI,
   ].map((address) => address.toLowerCase()),
 );
 

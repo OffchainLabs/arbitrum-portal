@@ -294,8 +294,8 @@
         "sequencerInbox": "0xA3464bf0ed52cFe6676D3e34ab1F4DF53f193631"
       },
       "nativeToken": "0xf8173a39c56a554837C4C7f104153A005D284D11",
-      "explorerUrl": "https://educhain.blockscout.com",
-      "rpcUrl": "https://rpc.edu-chain.raas.gelato.cloud",
+      "explorerUrl": "https://explorer.educhain.xyz",
+      "rpcUrl": "https://rpc.educhain.xyz",
       "isArbitrum": true,
       "isCustom": true,
       "isTestnet": false,
@@ -332,53 +332,6 @@
         },
         "fastWithdrawalTime": 3600000,
         "assertionIntervalSeconds": 3600
-      }
-    },
-    {
-      "chainId": 88899,
-      "confirmPeriodBlocks": 274908,
-      "ethBridge": {
-        "bridge": "0x80b4c2dBEacFF9921cD456e5E1489919185b8a1d",
-        "inbox": "0x319a9c8be1CF9ECB16D29d6327A6Fa2e26Bf42BC",
-        "outbox": "0xd9AD042DCb18628a941C8868bf25e5eCf897E48c",
-        "rollup": "0xd6df93D93c2554412622C567965DA7B16929f0A5",
-        "sequencerInbox": "0x3A2898B10c88cb619635efdC027538D7Aa99BF79"
-      },
-      "nativeToken": "0xA6C6ea2e0140849bE02A3a34780CF61b766916c5",
-      "explorerUrl": "https://unite-mainnet.explorer.alchemy.com/",
-      "rpcUrl": "https://unite-mainnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Unite Mainnet",
-      "slug": "unite-mainnet",
-      "parentChainId": 8453,
-      "tokenBridge": {
-        "parentCustomGateway": "0xeA2Ffb3BA907418a5a9A9Cdb90212c814230Ba5d",
-        "parentErc20Gateway": "0x03b9C7978143A3A360cb37101F2A3f7f1B0eE8e8",
-        "parentGatewayRouter": "0xbaD53A171A9D0785EC179b5C3eFd3d7083b8D3a7",
-        "parentMultiCall": "0xb444317D808b5cFfE66495920D40A35E7D247cC4",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xa123C9a36e7162686197B92800f62573E69FE379",
-        "childErc20Gateway": "0x012595d521139F2Df03F0666a09f08caC99C4b1B",
-        "childGatewayRouter": "0x3224F78EC97bB795D16D5954Aa9e408f882520B2",
-        "childMultiCall": "0x95FdfA72d6C87968da0f38ac17a847203838f56C",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#7aad00",
-        "network": {
-          "name": "Unite Mainnet",
-          "logo": "/images/unite-mainnet_Logo.png"
-        },
-        "nativeTokenData": {
-          "name": "Unite",
-          "symbol": "UNITE",
-          "logoUrl": "/images/unite-mainnet_Logo.png"
-        }
       }
     },
     {
@@ -901,56 +854,6 @@
       }
     },
     {
-      "chainId": 7869,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0x53b168016aA2E3469B5D76315311aAC4Ce0020DB",
-        "inbox": "0x7d4509336b154C17Df80D03A19C051ddAcdA2e7f",
-        "outbox": "0xc0dd0a059a8a948B7737D00bfC9024475C791259",
-        "rollup": "0xc3196FEE2b194bf699076865060d566c7Cb02892",
-        "sequencerInbox": "0x903Af716AA8C7C27Fd785F453D5a59C20E06bDeC"
-      },
-      "nativeToken": "0x429F0d8233e517f9acf6F0C8293BF35804063a83",
-      "explorerUrl": "https://explorer-v2.powerloom.network/",
-      "rpcUrl": "https://rpc-v2.powerloom.network",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Powerloom Mainnet V2",
-      "slug": "powerloom-mainnet-v2",
-      "parentChainId": 1,
-      "tokenBridge": {
-        "parentCustomGateway": "0x74a49376E7e78442853a16f29afCD90b564758d6",
-        "parentErc20Gateway": "0x46D9ff7ED3049798B406be811FE68b75B208f81A",
-        "parentGatewayRouter": "0x8b4b4328455615fCb7aaE14460cfa90767B1df55",
-        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x48bcD9586DDdfa2248B21ba44647295a17967fb0",
-        "childErc20Gateway": "0x0E455D223e55Da7B34cB1E4cFD16D260Ed6278Da",
-        "childGatewayRouter": "0x7C2D8B0ac4b708C8315C6591847aa95990d11DE7",
-        "childMultiCall": "0x6E7500088eeF8A435AA30AbfF379C3cbd5400aA5",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#55E794",
-        "network": {
-          "name": "Powerloom Mainnet V2",
-          "logo": "/images/PowerloomMainnetV2_Logo.svg",
-          "description": "Powerloom Mainnet is the Layer-2 chain supporting Powerloom’s composable data network where devs, orgs, and end-users get access to ready-to-consume, affordable, and verifiable onchain datasets. It serves as the platform for generating and validating billions for ‘snapshots’ daily, i.e., the fundamental unit of Powerloom’s data markets and composed datasets."
-        },
-        "nativeTokenData": {
-          "name": "Powerloom Token",
-          "symbol": "POWER",
-          "logoUrl": "/images/PowerloomMainnetV2_NativeTokenLogo.svg"
-        },
-        "fastWithdrawalTime": 86400000,
-        "assertionIntervalSeconds": 20700
-      }
-    },
-    {
       "chainId": 20010,
       "confirmPeriodBlocks": 6000,
       "ethBridge": {
@@ -1193,53 +1096,6 @@
       }
     },
     {
-      "chainId": 888991,
-      "confirmPeriodBlocks": 900,
-      "ethBridge": {
-        "bridge": "0xA1AF96d8315DCa65F2ff6f8170Fa3e5dB0A6aD3C",
-        "inbox": "0xCA323c4C0A04109F303e3bfd879AEd5F49c9f0C4",
-        "outbox": "0x54a8712d8d5f8D3cD29737d06734eE493758B7cb",
-        "rollup": "0xB2Ff332B564DA65EDd2FDcbf298458837c732997",
-        "sequencerInbox": "0x0b172ba2776C08F6c3147ed2471A32EC4592812B"
-      },
-      "nativeToken": "0xf7a942db06a0cd6945ba4635c46e31c54ed175a4",
-      "explorerUrl": "https://unite-testnet.explorer.alchemy.com/",
-      "rpcUrl": "https://unite-testnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "Unite Testnet",
-      "slug": "unite-testnet",
-      "parentChainId": 84532,
-      "tokenBridge": {
-        "parentCustomGateway": "0xb7B03E20ca71c6036F8F841cCc213e7CaC3e9868",
-        "parentErc20Gateway": "0x98614745322365Ae378Db2A6319F873A4775398C",
-        "parentGatewayRouter": "0xA8f3C0d5eC3E9ACd3422cBf5f25c6C4e608c2499",
-        "parentMultiCall": "0xE0753Df74d86D6B25aCd2d049389c7E52e2dd728",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x01a902C5b160F0c786aDfc702799D25218d8A9B4",
-        "childErc20Gateway": "0xaABa25Ba10B9aFEf17D403B4038886e7FD743E83",
-        "childGatewayRouter": "0xdbAEDA962D2D201F65c06C81Dd5A0FC948FB3A20",
-        "childMultiCall": "0x7df4290268655542E0B39465820a39C4b091D77e",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#7aad00",
-        "network": {
-          "name": "Unite Testnet",
-          "logo": "/images/unite-testnet_Logo.png"
-        },
-        "nativeTokenData": {
-          "name": "Unite",
-          "symbol": "UNITE",
-          "logoUrl": "/images/unite-testnet_Logo.png"
-        }
-      }
-    },
-    {
       "chainId": 7080969,
       "confirmPeriodBlocks": 150,
       "ethBridge": {
@@ -1419,7 +1275,7 @@
         "color": "#AAD394",
         "network": {
           "name": "T-Rex Testnet",
-          "logo": "/images/T-Rex_Logo.png",
+          "logo": "/images/T-REX_Logo.png",
           "description": "Invisible blockchain bridging everyday digital interactions into real-world rewards."
         }
       }

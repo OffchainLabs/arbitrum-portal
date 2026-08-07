@@ -26,26 +26,6 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
-      label: 'Robinhood Chain to Superposition special deposit',
-      sourceChainId: ChainId.RobinhoodChain,
-      destinationChainId: ChainId.Superposition,
-      expected: {
-        parentChainId: ChainId.RobinhoodChain,
-        childChainId: ChainId.Superposition,
-        isDepositMode: true,
-      },
-    },
-    {
-      label: 'Superposition to Robinhood Chain special withdrawal',
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.RobinhoodChain,
-      expected: {
-        parentChainId: ChainId.RobinhoodChain,
-        childChainId: ChainId.Superposition,
-        isDepositMode: false,
-      },
-    },
-    {
       label: 'Nova to ArbitrumOne sibling transfer',
       sourceChainId: ChainId.ArbitrumNova,
       destinationChainId: ChainId.ArbitrumOne,
@@ -56,23 +36,23 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
-      label: 'ApeChain to Superposition special withdrawal',
-      sourceChainId: ChainId.ApeChain,
-      destinationChainId: ChainId.Superposition,
+      label: 'Robinhood Chain to ApeChain sibling transfer',
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.ApeChain,
       expected: {
-        parentChainId: ChainId.Superposition,
+        parentChainId: ChainId.RobinhoodChain,
         childChainId: ChainId.ApeChain,
-        isDepositMode: false,
+        isDepositMode: true,
       },
     },
     {
-      label: 'Superposition to ApeChain special deposit',
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.ApeChain,
+      label: 'ApeChain to Robinhood Chain sibling transfer',
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
       expected: {
-        parentChainId: ChainId.Superposition,
+        parentChainId: ChainId.RobinhoodChain,
         childChainId: ChainId.ApeChain,
-        isDepositMode: true,
+        isDepositMode: false,
       },
     },
   ])('resolves $label', ({ sourceChainId, destinationChainId, expected }) => {

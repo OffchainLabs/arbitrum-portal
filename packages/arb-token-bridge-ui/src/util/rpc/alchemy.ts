@@ -73,6 +73,9 @@ export function getAlchemyKeyFromEnv(chainId: ProductionChainId): string {
       return '';
     case ChainId.RobinhoodChain:
       return '';
+
+    case ChainId.RobinhoodChainTestnet:
+      return '';
   }
 }
 
@@ -107,6 +110,9 @@ export function getAlchemyRpcUrl(
     case ChainId.Superposition:
       return '';
     case ChainId.RobinhoodChain:
+      return '';
+
+    case ChainId.RobinhoodChainTestnet:
       return '';
   }
 }

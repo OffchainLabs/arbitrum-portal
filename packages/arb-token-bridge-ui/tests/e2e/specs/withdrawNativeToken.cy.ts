@@ -89,7 +89,8 @@ describe('Withdraw native token', () => {
         // increase the timeout for this test as claim button can take ~(20 blocks *10 blocks/sec) to activate
         cy.login({ networkType: 'parentChain' }); // login to L1 to claim the funds (otherwise would need to change network after clicking on claim)
 
-        cy.switchToTransactionHistoryTab('pending');
+        // select the child chain so the prior-session withdrawal is in the filter scope
+        cy.switchToTransactionHistoryTab('pending', { chainFilter: getL2NetworkName() });
 
         cy.clickClaimButton(
           formatAmount(ETHToWithdraw, {
