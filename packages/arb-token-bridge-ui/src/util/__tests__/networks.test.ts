@@ -412,13 +412,13 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result3).toEqual([ChainId.ArbitrumOne]);
+      expect(result3).toEqual([ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
 
       const result4 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result4).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne]);
+      expect(result4).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
     });
   });
 

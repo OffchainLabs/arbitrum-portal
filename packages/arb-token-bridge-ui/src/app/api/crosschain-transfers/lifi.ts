@@ -110,7 +110,9 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
     (addressesEqual(tokenAddress, CommonAddress.Ethereum.APE) && chainId === ChainId.Ethereum) ||
     (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.APE) &&
       chainId === ChainId.ArbitrumOne) ||
-    (addressesEqual(tokenAddress, CommonAddress.Base.APE) && chainId === ChainId.Base)
+    (addressesEqual(tokenAddress, CommonAddress.Base.APE) && chainId === ChainId.Base) ||
+    (addressesEqual(tokenAddress, CommonAddress.RobinhoodChain.APE) &&
+      chainId === ChainId.RobinhoodChain)
   );
 }
 
