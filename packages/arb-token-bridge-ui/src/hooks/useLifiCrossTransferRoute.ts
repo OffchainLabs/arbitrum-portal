@@ -141,6 +141,7 @@ export const useLifiCrossTransfersRoute = ({
 
   return {
     ...swrResult,
+    data: swrResult.error ? undefined : swrResult.data,
     isLoading: isUpdating || swrResult.isLoading,
   };
 };

@@ -154,6 +154,45 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an imported Robinhood token to %s without token-list membership',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not allow an unlisted token from a non-opted-in source chain', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an unlisted token from %s when the destination chain opts in',
+    (sourceChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId,
+          destinationChainId: ChainId.RobinhoodChain,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
   it('Robinhood to Base should return false', () => {
     expect(
       isValidLifiTransfer({

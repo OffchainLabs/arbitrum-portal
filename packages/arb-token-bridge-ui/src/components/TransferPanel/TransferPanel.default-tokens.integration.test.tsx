@@ -97,18 +97,9 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.USDC,
-        contract: CommonAddress.ApeChain.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.USDT,
-        contract: CommonAddress.ApeChain.USDT,
-      },
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.WETH,
-        contract: CommonAddress.ApeChain.WETH,
-      },
+      tokenExpectationsByChain.ArbitrumOne.USDC,
+      tokenExpectationsByChain.ArbitrumOne.USDT,
+      tokenExpectationsByChain.ArbitrumOne.WETH,
       nativeEthTokenExpectation,
     ],
   },
@@ -133,18 +124,9 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      {
-        ...tokenExpectationsByChain.Ethereum.USDC,
-        contract: CommonAddress.ApeChain.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.Ethereum.USDT,
-        contract: CommonAddress.ApeChain.USDT,
-      },
-      {
-        ...tokenExpectationsByChain.Ethereum.WETH,
-        contract: CommonAddress.ApeChain.WETH,
-      },
+      tokenExpectationsByChain.Ethereum.USDC,
+      tokenExpectationsByChain.Ethereum.USDT,
+      tokenExpectationsByChain.Ethereum.WETH,
       nativeEthTokenExpectation,
     ],
   },
@@ -193,7 +175,10 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      tokenExpectationsByChain.RobinhoodChain.WETH,
+      {
+        ...tokenExpectationsByChain.RobinhoodChain.WETH,
+        contract: CommonAddress.Ethereum.WETH,
+      },
     ],
   },
   {
@@ -204,7 +189,10 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      tokenExpectationsByChain.RobinhoodChain.WETH,
+      {
+        ...tokenExpectationsByChain.RobinhoodChain.WETH,
+        contract: CommonAddress.ArbitrumOne.WETH,
+      },
     ],
   },
 ];

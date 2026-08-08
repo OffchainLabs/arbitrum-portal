@@ -1,4 +1,4 @@
-import { CoinKey, ChainId as LiFiChainId } from '@lifi/sdk';
+import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/sdk';
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -18,6 +18,16 @@ const buildToken = (
   logoURI: 'https://example.com/logo.png',
   ...overrides,
 });
+
+const unmatchedRobinhoodToken: LiFiToken = {
+  address: '0x0000000000000000000000000000000000004663',
+  name: 'Robinhood-only token',
+  symbol: 'RHOOD',
+  decimals: 18,
+  priceUSD: '1',
+  chainId: ChainId.RobinhoodChain as unknown as LiFiChainId,
+  logoURI: 'https://example.com/robinhood.png',
+};
 
 type BridgeInfo = Record<
   string,
@@ -200,5 +210,36 @@ describe('groupChildTokensAndParentTokens', () => {
       address: childTokensByCoinKey[CoinKey.USDC].address,
       symbol: 'USDC.e',
     });
+  });
+
+  it('includes an unmatched Robinhood token as a chain-specific list entry', () => {
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [],
+      childTokens: [unmatchedRobinhoodToken],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.RobinhoodChain,
+    });
+
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        chainId: ChainId.RobinhoodChain,
+        address: unmatchedRobinhoodToken.address,
+        symbol: unmatchedRobinhoodToken.symbol,
+      }),
+    ]);
+    expect(tokens[0]?.extensions?.bridgeInfo).toBeUndefined();
+  });
+
+  it('does not include unmatched tokens for chains without the opt-in', () => {
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [],
+      childTokens: [{ ...unmatchedRobinhoodToken, chainId: LiFiChainId.ARB }],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(tokens).toEqual([]);
   });
 });

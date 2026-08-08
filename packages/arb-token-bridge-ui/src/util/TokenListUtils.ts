@@ -1,9 +1,9 @@
-import { TokenList } from '@uniswap/token-lists';
+import { TokenInfo, TokenList } from '@uniswap/token-lists';
 import axios from 'axios';
 import { ImageProps } from 'next/image';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
-import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
+import { ArbTokenBridge, ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
 import { logger } from './logger';
 import { getOrbitChains } from './orbitChainsList';
@@ -15,6 +15,72 @@ const UniswapLogo = '/images/lists/uniswap.png';
 
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
 export const LIFI_TRANSFER_LIST_ID = 'lifi-token-list';
+
+export type TokenBridgeInfo = Record<string, { tokenAddress: string }>;
+
+export function getTokenBridgeInfo(token: TokenInfo): TokenBridgeInfo | undefined {
+  const bridgeInfo = token.extensions?.bridgeInfo;
+  if (!bridgeInfo || typeof bridgeInfo !== 'object') {
+    return undefined;
+  }
+
+  return bridgeInfo as TokenBridgeInfo;
+}
+
+export function tokenListTokenToBridgeToken({
+  token,
+  listId,
+  parentChainId,
+  childChainId,
+}: {
+  token: TokenInfo;
+  listId: string;
+  parentChainId: number;
+  childChainId: number;
+}): ERC20BridgeToken | undefined {
+  if (![parentChainId, childChainId].includes(token.chainId)) {
+    return undefined;
+  }
+
+  const bridgeInfo = getTokenBridgeInfo(token);
+  const parentAddress = bridgeInfo?.[String(parentChainId)]?.tokenAddress.toLowerCase();
+  const isLifiToken = listId === LIFI_TRANSFER_LIST_ID;
+  const isChildToken = token.chainId === childChainId;
+  const address = token.address.toLowerCase();
+
+  if (isChildToken && !parentAddress && !isLifiToken) {
+    return undefined;
+  }
+
+  return {
+    name: token.name,
+    symbol: token.symbol,
+    type: TokenType.ERC20,
+    address: parentAddress ?? address,
+    l2Address: isChildToken ? address : undefined,
+    decimals: token.decimals,
+    logoURI: token.logoURI,
+    listIds: new Set([listId]),
+    lifiOnlyChainId: isLifiToken && !parentAddress ? token.chainId : undefined,
+    priceUSD:
+      typeof token.extensions?.priceUSD === 'string'
+        ? Number(token.extensions.priceUSD)
+        : undefined,
+  };
+}
+
+export function isTokenAvailableOnChain(
+  token: ERC20BridgeToken | undefined,
+  chainId: number,
+): boolean {
+  return token?.lifiOnlyChainId === undefined || token.lifiOnlyChainId === chainId;
+}
+
+export function isLifiOnlyToken(
+  token: ERC20BridgeToken | null | undefined,
+): token is ERC20BridgeToken & { lifiOnlyChainId: number } {
+  return token?.lifiOnlyChainId !== undefined;
+}
 
 export interface BridgeTokenList {
   // string is required here to avoid duplicates when mapping orbit chains to tokenlists
