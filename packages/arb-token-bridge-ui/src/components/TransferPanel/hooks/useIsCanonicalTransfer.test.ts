@@ -41,6 +41,24 @@ describe('isArbitrumCanonicalTransfer', () => {
   });
 
   describe('for deposits', () => {
+    it('rejects LiFi-only tokens from canonical routes', async () => {
+      const isCanonical = await isArbitrumCanonicalTransfer({
+        childChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Ethereum,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        isSelectedTokenWithdrawOnly: false,
+        isSelectedTokenWithdrawOnlyLoading: false,
+        selectedToken: {
+          ...usdcToken,
+          lifiOnlyChainId: ChainId.Ethereum,
+        },
+        isSwap: false,
+      });
+
+      expect(isCanonical).toBe(false);
+    });
+
     it('should return true from Ethereum to Arbitrum One', async () => {
       const ethDeposit = await isArbitrumCanonicalTransfer({
         childChainId: ChainId.ArbitrumOne,

@@ -1,7 +1,10 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken, getTokens } from '@lifi/sdk';
 import { unstable_cache } from 'next/cache';
 
-import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
+import {
+  allowedLifiSourceChainIds,
+  allowsUnmatchedLifiTokens,
+} from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
@@ -186,7 +189,7 @@ function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinK
 }
 
 export interface LifiTokenRegistry {
-  tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
+  tokensByChain: Record<number, LiFiToken[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
@@ -208,23 +211,25 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   for (const chainId of allowedLifiSourceChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
-      (acc, token) => {
-        // Exclude tokens on the exclude list
-        if (isExcludedToken(token, chainId)) return acc;
+    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LiFiToken[]>((acc, token) => {
+      // Exclude tokens on the exclude list
+      if (isExcludedToken(token, chainId)) return acc;
 
-        const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
-        if (!tokenWithCoinKey) return acc;
-
-        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
-        const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
-
-        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-        acc.push(normalizedToken);
+      const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
+      if (!tokenWithCoinKey) {
+        if (allowsUnmatchedLifiTokens(chainId)) {
+          acc.push(token);
+        }
         return acc;
-      },
-      [],
-    );
+      }
+
+      const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+      const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
+
+      tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+      acc.push(normalizedToken);
+      return acc;
+    }, []);
 
     tokensByChain[chainId] = filteredTokens;
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;

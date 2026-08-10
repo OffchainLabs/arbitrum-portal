@@ -31,6 +31,8 @@ import {
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
   addBridgeTokenListToBridge,
   getBridgeTokenListsForNetworks,
+  isLifiOnlyToken,
+  isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
 import {
   fetchErc20Data,
@@ -48,7 +50,7 @@ import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { Switch } from '../common/atoms/Switch';
 import { warningToast } from '../common/atoms/Toast';
 import { TokenRow } from './TokenRow';
-import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
+import { addTokenFromSearch, useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 export const ARB_ONE_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
   ...ArbOneNativeUSDC,
@@ -308,6 +310,7 @@ function TokensPanel({
     }
 
     const tokens = Array.from(new Set(tokenAddresses));
+    const seenSourceTokenAddresses = new Set<string>();
 
     return tokens
       .filter((address) => {
@@ -331,6 +334,10 @@ function TokensPanel({
 
         // If the token on the list is used as a custom fee token, we remove the duplicate
         if (nativeCurrency.isCustom && addressesEqual(address, nativeCurrency.address)) {
+          return false;
+        }
+
+        if (!isTokenAvailableOnChain(token, networks.sourceChain.id)) {
           return false;
         }
 
@@ -393,6 +400,22 @@ function TokensPanel({
 
         return (name + symbol + tokenAddress + l2Address).toLowerCase().includes(tokenSearch);
       })
+      .filter((address) => {
+        const token = tokensFromUser[address] || tokensFromLists[address];
+        const sourceTokenAddress = isDepositMode ? token?.address : token?.l2Address;
+
+        if (!sourceTokenAddress) {
+          return true;
+        }
+
+        const normalizedSourceTokenAddress = sourceTokenAddress.toLowerCase();
+        if (seenSourceTokenAddresses.has(normalizedSourceTokenAddress)) {
+          return false;
+        }
+
+        seenSourceTokenAddresses.add(normalizedSourceTokenAddress);
+        return true;
+      })
       .sort((address1: string, address2: string) => {
         // Pin native currency to top
         if (address1 === NATIVE_CURRENCY_IDENTIFIER) {
@@ -446,30 +469,16 @@ function TokensPanel({
   ]);
 
   const storeNewToken = async () => {
-    let error = 'Token not found on this network.';
-    let isSuccessful = false;
+    const result = await addTokenFromSearch({
+      address: newToken,
+      sourceChainId: networks.sourceChain.id,
+      token,
+    });
 
-    try {
-      // Try to add the token as an L2-native token
-      token.addL2NativeToken(newToken);
-      isSuccessful = true;
-    } catch (error) {
-      //
-    }
-
-    try {
-      // Try to add the token as a regular bridged token
-      await token.add(newToken);
-      isSuccessful = true;
-    } catch (ex: any) {
-      if (ex.name === 'TokenDisabledError') {
-        error = 'This token is currently paused in the bridge.';
-      }
-    }
-
-    // Only show error message if neither succeeded
-    if (!isSuccessful) {
-      setErrorMessage(error);
+    if (result === 'disabled') {
+      setErrorMessage('This token is currently paused in the bridge.');
+    } else if (result === 'not-found') {
+      setErrorMessage('Token not found on this network.');
     }
   };
 
@@ -673,6 +682,12 @@ export function TokenSearch(props: UseDialogProps) {
           // Map native currency to null for other chains
           setSelectedToken(null);
         }
+        return;
+      }
+
+      // Tokens available on only one side use that chain's address directly.
+      if (isLifiOnlyToken(_token)) {
+        setSelectedToken(_token.address, _token);
         return;
       }
 

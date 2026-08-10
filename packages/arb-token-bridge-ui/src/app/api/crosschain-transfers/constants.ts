@@ -20,3 +20,14 @@ export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationCh
 export const allowedLifiDestinationChainIds: number[] = Object.values(
   lifiDestinationChainIds,
 ).flatMap((id) => id);
+
+/**
+ * All LiFi chains allowed to have "unmatched" tokens.
+ * Some tokens only exist on one chain (for example stock tokens on Robinhood),
+ * we want to allow them to be source or destination of swaps through LiFi
+ */
+const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([ChainId.RobinhoodChain]);
+
+export function allowsUnmatchedLifiTokens(chainId: number): boolean {
+  return UNMATCHED_LIFI_TOKEN_CHAIN_IDS.has(chainId);
+}

@@ -12,6 +12,7 @@ import {
 import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import { isTokenAvailableOnChain } from '../util/TokenListUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -43,7 +44,7 @@ const commonUSDC: ERC20BridgeToken = {
 
 export const useSelectedToken = (): [
   ERC20BridgeToken | null,
-  (erc20ParentAddress: string | null) => void,
+  (erc20ParentAddress: string | null, tokenOverride?: ERC20BridgeToken) => void,
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
@@ -90,7 +91,7 @@ export const useSelectedToken = (): [
   );
 
   const setSelectedToken = useCallback(
-    (erc20ParentAddress: string | null) => {
+    (erc20ParentAddress: string | null, tokenOverride?: ERC20BridgeToken) => {
       return setQueryParams((latestQuery) => {
         try {
           const sanitizedTokenAddress = sanitizeNullSelectedToken({
@@ -98,17 +99,18 @@ export const useSelectedToken = (): [
             destinationChainId: latestQuery.destinationChain,
             erc20ParentAddress,
           });
-
-          if (sanitizedTokenAddress) {
-            return {
-              token: sanitizedTokenAddress,
-              destinationToken: sanitizedTokenAddress,
-            };
-          }
-
+          const tokenAddress = sanitizedTokenAddress ?? sanitizeTokenAddress(erc20ParentAddress);
+          const tokenStorageAddress =
+            erc20ParentAddress?.toLowerCase() ?? tokenAddress?.toLowerCase() ?? '';
+          const token =
+            tokenOverride ||
+            tokensFromUser[tokenStorageAddress] ||
+            tokensFromLists[tokenStorageAddress];
           return {
-            token: sanitizeTokenAddress(erc20ParentAddress),
-            destinationToken: sanitizeTokenAddress(erc20ParentAddress),
+            token: tokenAddress,
+            destinationToken: isTokenAvailableOnChain(token, networks.destinationChain.id)
+              ? tokenAddress
+              : undefined,
           };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
@@ -116,7 +118,7 @@ export const useSelectedToken = (): [
         }
       });
     },
-    [setQueryParams],
+    [networks.destinationChain.id, setQueryParams, tokensFromLists, tokensFromUser],
   );
 
   const selectedToken = tokenFromSearchParams
