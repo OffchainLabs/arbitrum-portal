@@ -67,7 +67,7 @@ const childChain = { id: ChainId.ArbitrumOne };
 
 function wrapper({ children }: PropsWithChildren) {
   // Fresh cache per render, so one test cannot satisfy another from cache.
-  return <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>;
+  return <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>;
 }
 
 describe.sequential('useTokenListPriceUpdater', () => {
