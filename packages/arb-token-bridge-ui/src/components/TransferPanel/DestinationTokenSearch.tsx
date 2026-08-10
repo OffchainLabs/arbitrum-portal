@@ -16,7 +16,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, isTokenAvailableOnChain } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
@@ -62,18 +62,16 @@ function DestinationTokensPanel({
 
   const getBalance = useCallback(
     (address: string) => {
-      // For destination tokens, we want to show the balance on the destination (child) chain
-      // We need to use the l2Address to get the balance
       const token = tokensFromLists[address];
-      const l2Address = token?.l2Address;
+      const destinationAddress = isDepositMode ? token?.l2Address : token?.address;
 
-      if (!l2Address) {
+      if (!destinationAddress) {
         return null;
       }
 
       return isDepositMode
-        ? erc20ChildBalances?.[l2Address.toLowerCase()]
-        : erc20ParentBalances?.[l2Address.toLowerCase()];
+        ? erc20ChildBalances?.[destinationAddress.toLowerCase()]
+        : erc20ParentBalances?.[destinationAddress.toLowerCase()];
     },
     [erc20ChildBalances, erc20ParentBalances, isDepositMode, tokensFromLists],
   );
@@ -107,6 +105,10 @@ function DestinationTokensPanel({
         }
 
         if (!token) {
+          return false;
+        }
+
+        if (!isTokenAvailableOnChain(token, networks.destinationChain.id)) {
           return false;
         }
 
@@ -166,14 +168,7 @@ function DestinationTokensPanel({
 
         return 0;
       });
-  }, [
-    searchValue,
-    tokensFromLists,
-    networks.sourceChain.id,
-    networks.destinationChain.id,
-    nativeCurrency,
-    getBalance,
-  ]);
+  }, [searchValue, tokensFromLists, networks.destinationChain.id, nativeCurrency, getBalance]);
 
   const onSearchInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {

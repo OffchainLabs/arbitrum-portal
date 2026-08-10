@@ -7,7 +7,11 @@ import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arb
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
-import { allowedLifiSourceChainIds, lifiDestinationChainIds } from './constants';
+import {
+  allowedLifiSourceChainIds,
+  allowsUnmatchedLifiTokens,
+  lifiDestinationChainIds,
+} from './constants';
 
 export function isLifiTransfer({
   sourceChainId,
@@ -52,6 +56,10 @@ export function isValidLifiTransfer({
     })
   ) {
     return false;
+  }
+
+  if (allowsUnmatchedLifiTokens(sourceChainId) || allowsUnmatchedLifiTokens(destinationChainId)) {
+    return true;
   }
 
   // Native ETH is always valid for LiFi

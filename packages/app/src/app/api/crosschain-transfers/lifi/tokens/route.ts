@@ -1,5 +1,4 @@
 import { TokenList } from '@uniswap/token-lists';
-import { constants } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
@@ -7,11 +6,9 @@ import {
   allowedLifiSourceChainIds,
   lifiDestinationChainIds,
 } from '@/bridge/app/api/crosschain-transfers/constants';
-import { ChainId } from '@/bridge/types/ChainId';
-import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { groupChildTokensAndParentTokens } from './groupChildTokensAndParentTokens';
-import { type LifiTokenWithCoinKey, getLifiTokenRegistry } from './registry';
+import { getLifiTokenRegistry } from './registry';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 30;
@@ -26,54 +23,24 @@ const BASE_TOKEN_LIST = {
   logoURI: '/icons/lifi.svg',
 } as const;
 
-const ROBINHOOD_SOURCE_TOKEN_ADDRESSES = new Set(
-  [
-    constants.AddressZero,
-    CommonAddress.RobinhoodChain.APE,
-    CommonAddress.RobinhoodChain.WETH,
-    CommonAddress.RobinhoodChain.USDe,
-    CommonAddress.RobinhoodChain.sUSDe,
-    CommonAddress.RobinhoodChain.USDG,
-    CommonAddress.RobinhoodChain.ENA,
-    CommonAddress.RobinhoodChain.WEETH,
-    CommonAddress.RobinhoodChain.WSTETH,
-    CommonAddress.RobinhoodChain.SFI,
-  ].map((address) => address.toLowerCase()),
-);
-
 const parseChainParam = (value: string | null) => {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-function getParentTokensForRoute({
-  parentChainId,
-  tokens,
-}: {
-  parentChainId: number;
-  tokens: LifiTokenWithCoinKey[];
-}) {
-  if (parentChainId !== ChainId.RobinhoodChain) {
-    return tokens;
-  }
-
-  return tokens.filter((token) =>
-    ROBINHOOD_SOURCE_TOKEN_ADDRESSES.has(token.address.toLowerCase()),
-  );
-}
-
 export async function GET(request: NextRequest): Promise<NextResponse<TokenList>> {
   const { searchParams } = new URL(request.url);
   const parentChainId = parseChainParam(searchParams.get('parentChainId'));
   const childChainId = parseChainParam(searchParams.get('childChainId'));
 
-  const isInvalidChainId = parentChainId === null || childChainId === null;
-  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId!);
-  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId!);
-  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId!]?.includes(childChainId!);
-
-  if (isInvalidChainId || isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
+  if (
+    parentChainId === null ||
+    childChainId === null ||
+    !allowedLifiSourceChainIds.includes(parentChainId) ||
+    !allowedLifiDestinationChainIds.includes(childChainId) ||
+    !lifiDestinationChainIds[parentChainId]?.includes(childChainId)
+  ) {
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,
@@ -91,17 +58,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   try {
     const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
 
-    const parentTokens = getParentTokensForRoute({
-      parentChainId,
-      tokens: tokensByChain[parentChainId] ?? [],
-    });
-    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId];
+    const parentTokens = tokensByChain[parentChainId] ?? [];
+    const childTokens = tokensByChain[childChainId] ?? [];
+    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId] ?? {};
 
-    if (
-      !parentTokens.length ||
-      !childTokensByCoinKey ||
-      Object.keys(childTokensByCoinKey).length === 0
-    ) {
+    if (!parentTokens.length && !childTokens.length) {
       return NextResponse.json(
         {
           ...BASE_TOKEN_LIST,
@@ -118,6 +79,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
 
     const tokens = groupChildTokensAndParentTokens({
       parentTokens,
+      childTokens,
       childTokensByCoinKey,
       parentChainId,
       childChainId,

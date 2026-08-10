@@ -8,8 +8,11 @@ import { twMerge } from 'tailwind-merge';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import MoonPay from '@/images/onramp/moonpay.svg';
 
+import { isOnrampServiceEnabled } from '../../util/featureFlag';
 import { Button } from '../common/Button';
 import { onrampServices } from './utils';
+
+const isMoonPayWidgetEnabled = isOnrampServiceEnabled('moonpay');
 
 function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; slug: string }) {
   const pathname = usePathname();
@@ -69,10 +72,15 @@ export function Homepage() {
     router.push('/projects?subcategories=fiat-on-ramp');
   }, [router]);
 
+  /** When the embedded widget is enabled, MoonPay gets its own tile instead of a grid card. */
+  const gridServices = isMoonPayWidgetEnabled
+    ? onrampServices.filter((service) => service.slug !== 'moonpay')
+    : onrampServices;
+
   return (
     <div className={twMerge('grid gap-3', 'grid-cols-2 md:grid-cols-3')}>
-      <MoonPayTile />
-      {onrampServices.map((service) => (
+      {isMoonPayWidgetEnabled && <MoonPayTile />}
+      {gridServices.map((service) => (
         <OnrampServiceTile key={service.name} {...service} />
       ))}
       <Button
