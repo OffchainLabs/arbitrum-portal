@@ -9,7 +9,9 @@ const transactionHash = '0x77894001ee62c0b245e6e9c3b35fcdc79e917ce352b20a0b2ec49
 
 describe('getCctpSubgraphClient', () => {
   it('returns the transfer missing from unpinned indexers', async () => {
-    const { data } = await getCctpSubgraphClient(ChainId.Ethereum).query({
+    const { data } = await getCctpSubgraphClient(ChainId.Ethereum).query<{
+      messageSents: { transactionHash: string }[];
+    }>({
       query: gql`
         {
           messageSents(where: { transactionHash: "${transactionHash}" }) {

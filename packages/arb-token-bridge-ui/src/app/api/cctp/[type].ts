@@ -1,10 +1,7 @@
 import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
-import {
-  getCctpSubgraphClient,
-  getSourceFromSubgraphClient,
-} from '../../../api-utils/ServerSubgraphUtils';
+import { getCctpSubgraphClient } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
 import { Address } from '../../../util/AddressUtils';
 
@@ -241,7 +238,7 @@ export async function GET(
     return NextResponse.json(
       {
         meta: {
-          source: getSourceFromSubgraphClient(l1Subgraph),
+          source: messagesSentResult.source,
         },
         data: {
           pending,

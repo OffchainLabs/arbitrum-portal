@@ -1,4 +1,13 @@
-import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from '@apollo/client';
+import {
+  ApolloClient,
+  ApolloQueryResult,
+  HttpLink,
+  InMemoryCache,
+  MaybeMasked,
+  NormalizedCacheObject,
+  OperationVariables,
+  QueryOptions,
+} from '@apollo/client';
 import ApolloLinkTimeout from 'apollo-link-timeout';
 
 import { ChainId } from '../types/ChainId';
@@ -10,6 +19,8 @@ import { logger } from '../util/logger';
 const theGraphNetworkApiKey = process.env.THE_GRAPH_NETWORK_API_KEY;
 
 const selfHostedSubgraphApiKey = process.env.SELF_HOSTED_SUBGRAPH_API_KEY;
+
+const subgraphClientSources = new WeakMap<object, string>();
 
 type SubgraphKey = keyof typeof subgraphs;
 
@@ -94,10 +105,7 @@ function createApolloClient(uri: string, headers?: Record<string, string>) {
     link: httpLink,
     cache: new InMemoryCache(),
   });
-  // Testing aid: record the endpoint so getSourceFromSubgraphClient can report
-  // which source served a query. The link is a timeout-concat link, so its uri
-  // isn't otherwise readable off the client.
-  (client as unknown as { __uri?: string }).__uri = uri;
+  subgraphClientSources.set(client, new URL(uri).origin);
   return client;
 }
 
@@ -164,8 +172,32 @@ function createSubgraphClient(key: SubgraphKey) {
   return createTheGraphNetworkClient(theGraphNetworkSubgraphId);
 }
 
+type CctpQueryResult<T> = ApolloQueryResult<MaybeMasked<T>> & {
+  source: string | null;
+};
+
 /** The subset of the Apollo client surface the CCTP route consumes. */
-export type CctpSubgraphClient = Pick<ApolloClient<NormalizedCacheObject>, 'query' | 'link'>;
+export type CctpSubgraphClient = Pick<ApolloClient<NormalizedCacheObject>, 'link'> & {
+  query<T = unknown, TVariables extends OperationVariables = OperationVariables>(
+    options: QueryOptions<TVariables, T>,
+  ): Promise<CctpQueryResult<T>>;
+};
+
+function createCctpSubgraphClient(
+  subgraphClient: ApolloClient<NormalizedCacheObject>,
+): CctpSubgraphClient {
+  const source = getSourceFromSubgraphClient(subgraphClient);
+
+  return {
+    link: subgraphClient.link,
+    query: async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
+      options: QueryOptions<TVariables, T>,
+    ): Promise<CctpQueryResult<T>> => ({
+      ...(await subgraphClient.query<T, TVariables>(options)),
+      source,
+    }),
+  };
+}
 
 /**
  * Queries the arbitrum-indexer's drop-in replica of the Circle CCTP v1
@@ -178,28 +210,31 @@ function createIndexerClientWithSubgraphFallback(
   fallbackSubgraphKey: SubgraphKey,
 ): CctpSubgraphClient {
   const indexerClient = createApolloClient(indexerUri);
+  const indexerSource = getSourceFromSubgraphClient(indexerClient);
 
-  // Testing aid: default source is the indexer; if a query falls back to the
-  // Circle subgraph at runtime, record that source instead so meta.source is truthful.
-  const client: CctpSubgraphClient & { __uri?: string } = {
+  return {
     link: indexerClient.link,
-    __uri: indexerUri,
-    query: async (options) => {
+    query: async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
+      options: QueryOptions<TVariables, T>,
+    ): Promise<CctpQueryResult<T>> => {
       try {
-        return await indexerClient.query(options);
+        return {
+          ...(await indexerClient.query<T, TVariables>(options)),
+          source: indexerSource,
+        };
       } catch (error) {
         logger.warn(
           `[getCctpSubgraphClient] indexer query failed, falling back to "${fallbackSubgraphKey}"`,
           error,
         );
         const fallback = createSubgraphClient(fallbackSubgraphKey);
-        client.__uri = (fallback as unknown as { __uri?: string }).__uri;
-        return fallback.query(options);
+        return {
+          ...(await fallback.query<T, TVariables>(options)),
+          source: getSourceFromSubgraphClient(fallback),
+        };
       }
     },
   };
-
-  return client;
 }
 
 const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {
@@ -219,7 +254,7 @@ export function getCctpSubgraphClient(chainId: number): CctpSubgraphClient {
   const indexerApiBaseUrl = process.env.INDEXER_API_URL;
 
   if (typeof indexerApiBaseUrl === 'undefined' || indexerApiBaseUrl === '') {
-    return createSubgraphClient(subgraphKey);
+    return createCctpSubgraphClient(createSubgraphClient(subgraphKey));
   }
 
   // The indexer serves the CCTP replica under /api/v1 only — it shipped after
@@ -265,10 +300,12 @@ export function getL2SubgraphClient(l2ChainId: number) {
 export function getSourceFromSubgraphClient(
   subgraphClient: Pick<ApolloClient<NormalizedCacheObject>, 'link'>,
 ): string | null {
-  // Prefer the endpoint recorded by createApolloClient / the CCTP fallback wrapper
-  // (reflects the actual runtime source); fall back to the link's uri otherwise.
-  const uri =
-    (subgraphClient as { __uri?: string }).__uri ?? (subgraphClient.link as any).options?.uri;
+  const source = subgraphClientSources.get(subgraphClient);
+  if (typeof source !== 'undefined') {
+    return source;
+  }
+
+  const uri = (subgraphClient.link as { options?: { uri?: string } }).options?.uri;
 
   if (typeof uri === 'undefined') {
     return null;
