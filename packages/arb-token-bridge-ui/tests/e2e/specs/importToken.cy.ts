@@ -10,9 +10,7 @@ import {
 const ERC20TokenAddressL1: string = Cypress.env('ERC20_TOKEN_ADDRESS_PARENT_CHAIN');
 const ERC20TokenAddressL2: string = Cypress.env('ERC20_TOKEN_ADDRESS_CHILD_CHAIN');
 
-// TODO: re-enable once the token-list search is fixed — known broken in CI
-// (token search never surfaces results within the timeout)
-describe.skip('Import token', () => {
+describe('Import token', () => {
   const nativeTokenSymbol = Cypress.env('NATIVE_TOKEN_SYMBOL');
   // we use mainnet to test token lists
 
@@ -110,7 +108,23 @@ describe.skip('Import token', () => {
           connectMetamask: false,
         });
 
-        cy.intercept('GET', '**/ArbTokenLists/arbed_coinmarketcap.json').as('cmcTokenList');
+        // Keep token search coverage independent of the external token-list service.
+        cy.intercept('GET', '**/ArbTokenLists/arbed_coinmarketcap.json', {
+          body: {
+            name: 'E2E Arbed CMC List',
+            timestamp: '2026-01-01T00:00:00.000Z',
+            version: { major: 1, minor: 0, patch: 0 },
+            tokens: [
+              {
+                chainId: 1,
+                address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+                name: 'Uniswap',
+                symbol: 'UNI',
+                decimals: 18,
+              },
+            ],
+          },
+        }).as('cmcTokenList');
 
         cy.findSelectTokenButton('ETH').click();
 
@@ -136,8 +150,7 @@ describe.skip('Import token', () => {
           .should('be.visible')
           .type('UNI');
 
-        // flaky test can load data too slowly here
-        cy.findByText('Uniswap', { timeout: 30_000 }).click();
+        cy.findByText('Uniswap').click();
 
         // UNI token should be selected now and popup should be closed after selection
         cy.findSelectTokenButton('UNI');
