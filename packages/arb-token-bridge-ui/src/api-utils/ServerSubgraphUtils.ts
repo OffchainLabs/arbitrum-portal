@@ -176,8 +176,13 @@ type CctpQueryResult<T> = ApolloQueryResult<MaybeMasked<T>> & {
   source: string | null;
 };
 
-/** The subset of the Apollo client surface the CCTP route consumes. */
-export type CctpSubgraphClient = Pick<ApolloClient<NormalizedCacheObject>, 'link'> & {
+/**
+ * The subset of the Apollo client surface the CCTP route consumes. Deliberately
+ * query-only: a client may serve a query from either the indexer or the
+ * fallback subgraph, so there is no single `link` that describes it — the
+ * origin actually used comes back on each result as `source`.
+ */
+export type CctpSubgraphClient = {
   query<T = unknown, TVariables extends OperationVariables = OperationVariables>(
     options: QueryOptions<TVariables, T>,
   ): Promise<CctpQueryResult<T>>;
@@ -189,7 +194,6 @@ function createCctpSubgraphClient(
   const source = getSourceFromSubgraphClient(subgraphClient);
 
   return {
-    link: subgraphClient.link,
     query: async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
       options: QueryOptions<TVariables, T>,
     ): Promise<CctpQueryResult<T>> => ({
@@ -202,8 +206,9 @@ function createCctpSubgraphClient(
 /**
  * Queries the arbitrum-indexer's drop-in replica of the Circle CCTP v1
  * subgraphs, falling back to the Circle subgraph on failure. The fallback
- * client is created lazily so environments without a Graph API key work as
- * long as the indexer is reachable.
+ * client is created lazily — so environments without a Graph API key work as
+ * long as the indexer is reachable — and then reused, so a run of failing
+ * indexer queries doesn't build a new client (and cache) per query.
  */
 function createIndexerClientWithSubgraphFallback(
   indexerUri: string,
@@ -212,8 +217,13 @@ function createIndexerClientWithSubgraphFallback(
   const indexerClient = createApolloClient(indexerUri);
   const indexerSource = getSourceFromSubgraphClient(indexerClient);
 
+  let fallbackClient: ApolloClient<NormalizedCacheObject> | undefined;
+  const getFallbackClient = () => {
+    fallbackClient ??= createSubgraphClient(fallbackSubgraphKey);
+    return fallbackClient;
+  };
+
   return {
-    link: indexerClient.link,
     query: async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
       options: QueryOptions<TVariables, T>,
     ): Promise<CctpQueryResult<T>> => {
@@ -227,7 +237,7 @@ function createIndexerClientWithSubgraphFallback(
           `[getCctpSubgraphClient] indexer query failed, falling back to "${fallbackSubgraphKey}"`,
           error,
         );
-        const fallback = createSubgraphClient(fallbackSubgraphKey);
+        const fallback = getFallbackClient();
         return {
           ...(await fallback.query<T, TVariables>(options)),
           source: getSourceFromSubgraphClient(fallback),
@@ -258,9 +268,11 @@ export function getCctpSubgraphClient(chainId: number): CctpSubgraphClient {
   }
 
   // The indexer serves the CCTP replica under /api/v1 only — it shipped after
-  // the indexer's API versioning, so no legacy /api alias exists for it.
+  // the indexer's API versioning, so no legacy /api alias exists for it. The
+  // trailing slash is trimmed because some proxies and CDNs treat the
+  // resulting `//api/v1/...` as a different (missing) path.
   return createIndexerClientWithSubgraphFallback(
-    `${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`,
+    `${indexerApiBaseUrl.replace(/\/+$/, '')}/api/v1/cctp/graphql/${chainId}`,
     subgraphKey,
   );
 }
@@ -298,18 +310,7 @@ export function getL2SubgraphClient(l2ChainId: number) {
 }
 
 export function getSourceFromSubgraphClient(
-  subgraphClient: Pick<ApolloClient<NormalizedCacheObject>, 'link'>,
+  subgraphClient: ApolloClient<NormalizedCacheObject>,
 ): string | null {
-  const source = subgraphClientSources.get(subgraphClient);
-  if (typeof source !== 'undefined') {
-    return source;
-  }
-
-  const uri = (subgraphClient.link as { options?: { uri?: string } }).options?.uri;
-
-  if (typeof uri === 'undefined') {
-    return null;
-  }
-
-  return new URL(uri).origin;
+  return subgraphClientSources.get(subgraphClient) ?? null;
 }

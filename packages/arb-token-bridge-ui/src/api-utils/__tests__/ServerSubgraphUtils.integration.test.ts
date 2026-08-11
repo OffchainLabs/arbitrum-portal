@@ -23,6 +23,6 @@ describe('getCctpSubgraphClient', () => {
     });
 
     expect(data.messageSents).toHaveLength(1);
-    expect(data.messageSents[0].transactionHash).toEqual(transactionHash);
+    expect(data.messageSents[0]?.transactionHash).toEqual(transactionHash);
   });
 });
