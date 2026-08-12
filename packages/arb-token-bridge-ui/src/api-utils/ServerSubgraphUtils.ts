@@ -247,6 +247,40 @@ function createIndexerClientWithSubgraphFallback(
   };
 }
 
+/**
+ * Reads the indexer base URL for `chainId` out of `INDEXER_API_URL_BY_CHAIN`, a
+ * JSON object keyed by chain ID (`{"42161":"https://indexer.example"}`). Chains
+ * are split across separate indexer deployments, so there is no single host.
+ *
+ * Returns `undefined` for anything unusable — unparseable JSON, a chain that
+ * isn't in the map, a value that isn't a URL — so a misconfigured map degrades
+ * to the subgraph instead of failing the request.
+ */
+function getIndexerApiUrl(chainId: number): string | undefined {
+  let urlByChainId: Record<string, unknown>;
+
+  try {
+    const parsed: unknown = JSON.parse(process.env.INDEXER_API_URL_BY_CHAIN || '{}');
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new Error('expected a JSON object keyed by chain ID');
+    }
+    urlByChainId = parsed as Record<string, unknown>;
+  } catch (error) {
+    logger.error('[getIndexerApiUrl] cannot parse "INDEXER_API_URL_BY_CHAIN"', error);
+    return undefined;
+  }
+
+  const url = urlByChainId[String(chainId)];
+  if (typeof url !== 'string' || url === '') {
+    return undefined;
+  }
+
+  // Trailing slash trimmed: some proxies and CDNs treat the `//api/v1/...` it
+  // would produce as a different, missing path.
+  const baseUrl = url.replace(/\/+$/, '');
+  return URL.canParse(baseUrl) ? baseUrl : undefined;
+}
+
 const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {
   [ChainId.Ethereum]: 'cctp-ethereum',
   [ChainId.ArbitrumOne]: 'cctp-arbitrum-one',
@@ -261,18 +295,16 @@ export function getCctpSubgraphClient(chainId: number): CctpSubgraphClient {
     throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
   }
 
-  const indexerApiBaseUrl = process.env.INDEXER_API_URL;
+  const indexerApiBaseUrl = getIndexerApiUrl(chainId);
 
-  if (typeof indexerApiBaseUrl === 'undefined' || indexerApiBaseUrl === '') {
+  if (typeof indexerApiBaseUrl === 'undefined') {
     return createCctpSubgraphClient(createSubgraphClient(subgraphKey));
   }
 
   // The indexer serves the CCTP replica under /api/v1 only — it shipped after
-  // the indexer's API versioning, so no legacy /api alias exists for it. The
-  // trailing slash is trimmed because some proxies and CDNs treat the
-  // resulting `//api/v1/...` as a different (missing) path.
+  // the indexer's API versioning, so no legacy /api alias exists for it.
   return createIndexerClientWithSubgraphFallback(
-    `${indexerApiBaseUrl.replace(/\/+$/, '')}/api/v1/cctp/graphql/${chainId}`,
+    `${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`,
     subgraphKey,
   );
 }

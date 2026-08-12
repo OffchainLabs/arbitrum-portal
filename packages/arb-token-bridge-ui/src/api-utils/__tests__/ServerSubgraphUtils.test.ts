@@ -12,6 +12,7 @@ const query = gql`
 `;
 
 const indexerOrigin = 'https://indexer.example';
+const otherIndexerOrigin = 'https://indexer-2.example';
 const subgraphOrigin = 'https://gateway.thegraph.com';
 
 const emptyResult = () =>
@@ -51,6 +52,13 @@ function stubFetch(failRequest: (origin: string, callCount: number) => boolean) 
   };
 }
 
+function stubIndexerApiUrlByChain(urlByChainId: Record<number, string> | string) {
+  vi.stubEnv(
+    'INDEXER_API_URL_BY_CHAIN',
+    typeof urlByChainId === 'string' ? urlByChainId : JSON.stringify(urlByChainId),
+  );
+}
+
 async function loadGetCctpSubgraphClient() {
   vi.resetModules();
   const { getCctpSubgraphClient } = await import('../ServerSubgraphUtils');
@@ -68,7 +76,7 @@ describe.sequential('getCctpSubgraphClient', () => {
   });
 
   it('reports the source used by each query after fallback and recovery', async () => {
-    vi.stubEnv('INDEXER_API_URL', indexerOrigin);
+    stubIndexerApiUrlByChain({ [ChainId.Ethereum]: indexerOrigin });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch((origin, callCount) => origin === indexerOrigin && callCount === 1);
 
@@ -84,7 +92,7 @@ describe.sequential('getCctpSubgraphClient', () => {
   });
 
   it('queries the indexer and never touches the subgraph while it succeeds', async () => {
-    vi.stubEnv('INDEXER_API_URL', indexerOrigin);
+    stubIndexerApiUrlByChain({ [ChainId.ArbitrumOne]: indexerOrigin });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch(() => false);
 
@@ -98,8 +106,30 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.countFor(subgraphOrigin)).toBe(0);
   });
 
+  it('sends each chain to the indexer configured for it', async () => {
+    stubIndexerApiUrlByChain({
+      [ChainId.Ethereum]: indexerOrigin,
+      [ChainId.ArbitrumOne]: otherIndexerOrigin,
+    });
+    vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
+    const fetchStub = stubFetch(() => false);
+
+    const getCctpSubgraphClient = await loadGetCctpSubgraphClient();
+    await getCctpSubgraphClient(ChainId.Ethereum).query<{ messageSents: { id: string }[] }>({
+      query,
+    });
+    await getCctpSubgraphClient(ChainId.ArbitrumOne).query<{ messageSents: { id: string }[] }>({
+      query,
+    });
+
+    expect(fetchStub.urls).toEqual([
+      `${indexerOrigin}/api/v1/cctp/graphql/${ChainId.Ethereum}`,
+      `${otherIndexerOrigin}/api/v1/cctp/graphql/${ChainId.ArbitrumOne}`,
+    ]);
+  });
+
   it('reuses one fallback client across consecutive indexer failures', async () => {
-    vi.stubEnv('INDEXER_API_URL', indexerOrigin);
+    stubIndexerApiUrlByChain({ [ChainId.Ethereum]: indexerOrigin });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch((origin) => origin === indexerOrigin);
 
@@ -115,8 +145,8 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.countFor(subgraphOrigin)).toBe(1);
   });
 
-  it('tolerates a trailing slash on INDEXER_API_URL', async () => {
-    vi.stubEnv('INDEXER_API_URL', `${indexerOrigin}/`);
+  it('tolerates a trailing slash on a configured indexer URL', async () => {
+    stubIndexerApiUrlByChain({ [ChainId.Ethereum]: `${indexerOrigin}/` });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch(() => false);
 
@@ -128,8 +158,15 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.urls).toEqual([`${indexerOrigin}/api/v1/cctp/graphql/${ChainId.Ethereum}`]);
   });
 
-  it('goes straight to the subgraph when INDEXER_API_URL is unset', async () => {
-    vi.stubEnv('INDEXER_API_URL', '');
+  // Every unusable map must degrade to the subgraph, never fail the request.
+  it.each([
+    ['an unset variable', ''],
+    ['a chain missing from the map', JSON.stringify({ [ChainId.ArbitrumOne]: indexerOrigin })],
+    ['malformed JSON', '{"1": '],
+    ['a JSON array', `["${indexerOrigin}"]`],
+    ['a non-URL value', JSON.stringify({ [ChainId.Ethereum]: 'not a url' })],
+  ])('queries the subgraph for Ethereum given %s', async (_label, rawEnvValue) => {
+    stubIndexerApiUrlByChain(rawEnvValue);
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch(() => false);
 
