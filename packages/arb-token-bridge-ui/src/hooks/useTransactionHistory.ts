@@ -66,6 +66,7 @@ import {
 
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: 100_000, // ApeChain
+  41923: 20_000, // Edu Chain
   1628: 10_000, // T-REX
   869: 10_000, // World Mobile Chain
   680: 10_000, // JASMY Chain
