@@ -18,19 +18,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.ref_name }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - uses: pnpm/setup@v2
         with:
-          node-version: '22'
-          package-manager-cache: false
+          version: 11
+          runtime: node@24
+          cache: true
+          install: false
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main
@@ -43,7 +41,7 @@ jobs:
 
       - name: Get issue details
         id: issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const issue = await github.rest.issues.get({
