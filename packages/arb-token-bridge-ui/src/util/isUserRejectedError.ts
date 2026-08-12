@@ -15,6 +15,8 @@ export function isUserRejectedError(error: unknown) {
 
   const hasUserCancelledMessage =
     typeof candidate.message === 'string' && /User Cancelled/.test(candidate.message);
+  const hasUserRejectedRequestMessage =
+    typeof candidate.message === 'string' && /User rejected the request/.test(candidate.message);
 
   const hasWrappedUserRejection =
     error instanceof BaseError && !!error.walk((e) => e instanceof UserRejectedRequestError);
@@ -23,6 +25,7 @@ export function isUserRejectedError(error: unknown) {
     candidate.code === 4001 ||
     candidate.code === 'ACTION_REJECTED' ||
     hasUserCancelledMessage ||
+    hasUserRejectedRequestMessage ||
     error instanceof UserRejectedRequestError ||
     hasWrappedUserRejection ||
     candidate.details === 'MetaMask Tx Signature: User denied transaction signature.' ||

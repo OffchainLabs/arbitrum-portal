@@ -1,6 +1,5 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
-import { getStepTransaction } from '@lifi/sdk';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
@@ -55,7 +54,6 @@ import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
-import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
@@ -67,7 +65,7 @@ import { addDepositToCache } from '../TransactionHistory/helpers';
 import { WidgetBuyPanel } from '../Widget/WidgetBuyPanel';
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
 import { useDialog } from '../common/Dialog';
-import { DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
+import { DialogData, DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { ExternalLink } from '../common/ExternalLink';
 import { errorToast, warningToast } from '../common/atoms/Toast';
 import { ConnectWalletButton } from './ConnectWalletButton';
@@ -311,8 +309,8 @@ export function TransferPanel() {
 
   const { current: amountBigNumber } = useLatest(useAmountBigNumber());
 
-  const confirmDialog = async (dialogType: DialogType) => {
-    const waitForInput = openDialog(dialogType);
+  const confirmDialog = async (dialogType: DialogType, dialogData?: DialogData) => {
+    const waitForInput = openDialog(dialogType, dialogData);
     const [confirmed] = await waitForInput();
     return confirmed;
   };
@@ -615,65 +613,19 @@ export function TransferPanel() {
         destinationChainId: networks.destinationChain.id,
       });
 
-      const { transactionRequest } = await getStepTransaction(context.step);
-      if (!isValidTransactionRequest(transactionRequest)) {
-        return;
-      }
-
       const destinationChainErc20Address =
-        tokenOverrides.destination?.address || isDepositMode
-          ? selectedToken?.l2Address
-          : selectedToken?.address;
+        tokenOverrides.destination?.address ||
+        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
       const sourceChainErc20Address =
-        tokenOverrides.source?.address || isDepositMode
-          ? selectedToken?.address
-          : selectedToken?.l2Address;
+        tokenOverrides.source?.address ||
+        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
       const lifiTransferStarter = new LifiTransferStarter({
         destinationChainProvider,
         sourceChainProvider,
         destinationChainErc20Address,
         sourceChainErc20Address,
-        lifiData: {
-          ...context,
-          transactionRequest,
-        },
+        lifiData: context,
       });
-
-      // Check for allowance
-      if (
-        await lifiTransferStarter.requiresTokenApproval({
-          amount: amountBigNumber,
-          owner: await signer.getAddress(),
-        })
-      ) {
-        const userConfirmation = await confirmDialog('approve_token');
-        if (!userConfirmation) return false;
-
-        if (isSmartContractWallet) {
-          showDelayedSmartContractTxRequest();
-        }
-
-        try {
-          const tx = await lifiTransferStarter.approveToken({
-            signer,
-            amount: amountBigNumber,
-          });
-          if (tx) await tx.wait();
-        } catch (error) {
-          if (isUserRejectedError(error)) {
-            return;
-          }
-          handleError({
-            error,
-            label: 'lifi_approve_token',
-            category: 'token_approval',
-          });
-          errorToast(
-            `Lifi approval transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
-          );
-          return;
-        }
-      }
 
       if (isSmartContractWallet) {
         showDelayedSmartContractTxRequest();
@@ -684,6 +636,19 @@ export function TransferPanel() {
         signer,
         destinationAddress,
         wagmiConfig,
+        switchChainAsync,
+        onApprovalRequest: (approvalRequest) =>
+          confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
+        onRouteExecutionError: (error) => {
+          handleError({
+            error,
+            label: 'lifi_route_execution',
+            category: 'token_transfer',
+          });
+          errorToast(
+            'LiFi transaction execution was interrupted. Check transaction history for its latest status.',
+          );
+        },
       });
 
       const assetType = getLifiAssetType({
@@ -750,7 +715,6 @@ export function TransferPanel() {
           fromAmount: context.fromAmount,
           toAmount: context.toAmount,
           destinationTxId: null,
-          transactionRequest,
         };
         addPendingTransaction(newTransfer);
         addLifiTransactionToCache(newTransfer);
@@ -758,8 +722,9 @@ export function TransferPanel() {
 
       clearRoute();
 
-      if (transfer?.sourceChainTransaction?.wait) {
-        await transfer.sourceChainTransaction.wait();
+      const sourceChainTransaction = transfer.sourceChainTransaction;
+      if ('wait' in sourceChainTransaction) {
+        await sourceChainTransaction.wait();
 
         await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
 
