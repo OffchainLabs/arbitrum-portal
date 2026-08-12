@@ -65,7 +65,7 @@ import {
 } from './useOftTransactionHistory';
 
 const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: 5_000_000, // ApeChain
+  33139: 100_000, // ApeChain
   1628: 10_000, // T-REX
   869: 10_000, // World Mobile Chain
   680: 10_000, // JASMY Chain
@@ -459,10 +459,10 @@ export async function fetchWithdrawalsInBatches(
     // for that block (~log2(latestBlock) RPCs) and use it as the lower bound
     // to skip empty pre-history.
     //
-    // Only do this when BATCH_FETCH_BLOCKS is small. On chains like ApeChain
-    // (5M batch size, ~8 total batches), the ~25 sequential probe calls cost
-    // more than they save. On Mind/T-REX (10k batch size, hundreds/thousands
-    // of batches), the savings dominate.
+    // Only do this when BATCH_FETCH_BLOCKS is small. With a batch size in the
+    // millions (~a handful of total batches), the ~25 sequential probe calls
+    // cost more than they save. On chains with a small batch size (hundreds or
+    // thousands of batches), the savings dominate.
     const SMALL_BATCH_SIZE_THRESHOLD = 100_000;
     const batchSizeIsSmall =
       typeof params.batchSizeBlocks === 'number' &&

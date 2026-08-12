@@ -51,7 +51,9 @@ export interface LifiCrosschainTransfersRoute extends CrosschainTransfersRouteBa
   protocolData: {
     orders: Tags;
     tool: StepToolDetails;
-    /** This is needed to fetch transactionRequest later on */
+    /** Full route used by the LiFi SDK during execution. */
+    route: Route;
+    /** Single-step metadata used by the existing route UI. */
     step: LiFiStep;
   };
 }
@@ -229,6 +231,7 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     toChainId: Number(toChainId),
     spenderAddress: step.estimate.approvalAddress,
     protocolData: {
+      route,
       step,
       tool: step.toolDetails,
       orders: tags,
