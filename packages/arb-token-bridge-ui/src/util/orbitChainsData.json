@@ -996,6 +996,55 @@
           "logoUrl": "/images/HumanityChain_NativeTokenLogo.svg"
         }
       }
+    },
+    {
+      "chainId": 8818,
+      "confirmPeriodBlocks": 45818,
+      "ethBridge": {
+        "bridge": "0xaA4f1669d4f366626fD0630B2954883143e1Bc3D",
+        "inbox": "0x9869baE89F17d6CE1d2CA8B62d057Ecb15379fE3",
+        "outbox": "0xAE4c2bD2c65dA85dE6c7Fe8eF45e519c2de6Eb79",
+        "rollup": "0x00f9edf1e58C58FBdF8193370FF05B0578d7b244",
+        "sequencerInbox": "0xAB08DA432C583F295b9D52B51cd9E7c678c1C2Db"
+      },
+      "nativeToken": "0x87f71CBC3a55700059eDcFa9c36fE43B59dbfB6b",
+      "explorerUrl": "https://explorer.clinkchain.io",
+      "rpcUrl": "https://mainnet.rpc.clinkchain.io",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "C Link Chain Mainnet",
+      "slug": "c-link-chain-mainnet",
+      "parentChainId": 42161,
+      "tokenBridge": {
+        "parentCustomGateway": "0x7E25F64bcDA391CA4BE2aB372436b8578e1fb79D",
+        "parentErc20Gateway": "0x7DDd55266Af448eDf9F2Ce25106f2160D77267d0",
+        "parentGatewayRouter": "0x223B10aD4BAA3E2a8c512606986e242C226DF6BF",
+        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x78278d4891033139a19Fb348B5a50D41cFA00D2B",
+        "childErc20Gateway": "0xf27792f16102510e7d1E809BB66916EE0FF24280",
+        "childGatewayRouter": "0xebC6309597a7AD24cc6243083483f4ff897a1F05",
+        "childMultiCall": "0x4a893e365f79383bB8f45FE565f7D86ca8074F73",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#1649F9",
+        "network": {
+          "name": "C Link Chain Mainnet",
+          "logo": "/images/CLinkChainMainnet_Logo.svg",
+          "description": "C Link Chain."
+        },
+        "nativeTokenData": {
+          "name": "Corebit",
+          "symbol": "CBIT",
+          "logoUrl": "/images/CLinkChainMainnet_Logo.svg"
+        },
+        "fastWithdrawalTime": 900000
+      }
     }
   ],
   "testnet": [
