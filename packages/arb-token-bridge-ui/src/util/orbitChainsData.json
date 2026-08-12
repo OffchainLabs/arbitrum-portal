@@ -1691,6 +1691,55 @@
           "logoUrl": "/images/MarsChainTestnet_NativeTokenLogo.png"
         }
       }
+    },
+    {
+      "chainId": 787878,
+      "confirmPeriodBlocks": 150,
+      "ethBridge": {
+        "bridge": "0xb2C519c4D300d6B708c42613615cC96E2F3EdBeC",
+        "inbox": "0x1ed4beC79E1bD4C6bdA93c81d9b51321EEAB635d",
+        "outbox": "0x7BEB149b17F5cE178CbFF4429aB2A1A2Ed57286D",
+        "rollup": "0xa6437294aaaA470E0a81D6e74517b4e868d1fB70",
+        "sequencerInbox": "0x0EE061429AE46e48586b53Fe883f0Ce77bc90CAd"
+      },
+      "nativeToken": "0x4A410b2A0eD304c2f72B49299E52c7C4e94e5Beb",
+      "explorerUrl": "https://explorer-testnet.recyclefarm.io",
+      "rpcUrl": "https://rpc-testnet.recyclefarm.io",
+      "isCustom": true,
+      "isTestnet": true,
+      "name": "RECYCLEFARM Carbon Network Testnet",
+      "slug": "recyclefarm-carbon-network-testnet",
+      "parentChainId": 421614,
+      "tokenBridge": {
+        "parentCustomGateway": "0x2B5540D211E3406b1f2286874FBd76f08A7dB8F6",
+        "parentErc20Gateway": "0xA7C7a38A815DcE5D072FB74935546cAd32BEB3F3",
+        "parentGatewayRouter": "0x81850a307e935d15026410c51E8d129cFe954ea4",
+        "parentMultiCall": "0xce1CAd780c529e66e3aa6D952a1ED9A6447791c1",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0xb36B796D893163d619eC0267C4fF3E235d165955",
+        "childErc20Gateway": "0xEC007b450A67d2095E9879C6f9cD4a21C6383741",
+        "childGatewayRouter": "0x12D0CcFC67c42702146a246E9ed1f935442514C8",
+        "childMultiCall": "0xCc9770A6B65f33D455F96E841E05aE98D9311A16",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#86E016",
+        "network": {
+          "name": "RECYCLEFARM Carbon Network Testnet",
+          "logo": "/images/RECYCLEFARMCarbonNetworkTestnet_Logo.png",
+          "description": "RECANET is a Digital MRV network that transforms verified environmental activities into trusted on-chain data."
+        },
+        "nativeTokenData": {
+          "name": "RECANET Testnet",
+          "symbol": "tRCF",
+          "logoUrl": "/images/RECYCLEFARMCarbonNetworkTestnet_NativeTokenLogo.png"
+        },
+        "fastWithdrawalTime": 900000
+      }
     }
   ]
 }
