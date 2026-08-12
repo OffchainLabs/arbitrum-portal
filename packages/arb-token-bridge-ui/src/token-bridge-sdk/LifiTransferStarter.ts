@@ -1,34 +1,32 @@
-import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory';
-import { Config, sendTransaction } from '@wagmi/core';
+import type { Route } from '@lifi/sdk';
 import { BigNumber, constants } from 'ethers';
-import { Address } from 'viem';
+import type { Address } from 'viem';
 
-import { TransactionRequest } from '@/bridge/app/api/crosschain-transfers/lifi';
-import { Token } from '@/bridge/app/api/crosschain-transfers/types';
+import type { Token } from '@/bridge/app/api/crosschain-transfers/types';
 
-import { fetchErc20Allowance } from '../util/TokenUtils';
 import { isDepositMode } from '../util/isDepositMode';
 import {
-  ApproveTokenProps,
   BridgeTransferStarter,
   BridgeTransferStarterProps,
-  RequiresTokenApprovalProps,
   TransferProps,
   TransferType,
 } from './BridgeTransferStarter';
+import { LifiRouteExecutionProps, executeLifiRoute } from './LifiRouteExecutor';
 
 export type AmountWithToken = {
   amount: BigNumber;
   amountUSD: string;
   token: Token;
 };
+
 export type LifiData = {
   spenderAddress: Address;
   gas: AmountWithToken;
   fee: AmountWithToken;
-  transactionRequest?: TransactionRequest;
+  route: Route;
 };
-export type LifiTransferStarterProps = BridgeTransferStarterProps & {
+
+type LifiTransferStarterProps = BridgeTransferStarterProps & {
   lifiData: LifiData;
 };
 
@@ -38,12 +36,7 @@ export class LifiTransferStarter extends BridgeTransferStarter {
 
   constructor(props: LifiTransferStarterProps) {
     super(props);
-    this.lifiData = {
-      spenderAddress: props.lifiData.spenderAddress as Address,
-      gas: props.lifiData.gas,
-      fee: props.lifiData.fee,
-      transactionRequest: props.lifiData.transactionRequest,
-    };
+    this.lifiData = props.lifiData;
   }
 
   public requiresNativeCurrencyApproval = async () => {
@@ -58,51 +51,16 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     // no-op
   };
 
-  public async requiresTokenApproval({
-    amount,
-    owner,
-  }: RequiresTokenApprovalProps): Promise<boolean> {
-    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
-      // If we have no sourceChainErc20Address, we assume we want to send ETH
-      return false;
-    }
-
-    const allowance = await fetchErc20Allowance({
-      address: this.sourceChainErc20Address,
-      provider: this.sourceChainProvider,
-      owner,
-      spender: this.lifiData.spenderAddress,
-    });
-
-    return allowance.lt(amount);
+  public async requiresTokenApproval(): Promise<boolean> {
+    return false;
   }
 
-  public async approveToken({ signer, amount }: ApproveTokenProps) {
-    if (!this.sourceChainErc20Address || this.sourceChainErc20Address === constants.AddressZero) {
-      return;
-    }
-
-    const contract = ERC20__factory.connect(this.sourceChainErc20Address, signer);
-
-    return contract.approve(this.lifiData.spenderAddress, amount ?? constants.MaxUint256, {
-      from: await signer.getAddress(),
-    });
+  public async approveToken() {
+    // LiFi SDK handles approval during route execution.
   }
 
-  public async approveTokenEstimateGas({ signer, amount }: ApproveTokenProps) {
-    if (!this.sourceChainErc20Address) {
-      return constants.Zero;
-    }
-
-    const contract = ERC20__factory.connect(this.sourceChainErc20Address, signer);
-
-    return contract.estimateGas.approve(
-      this.lifiData.spenderAddress,
-      amount ?? constants.MaxUint256,
-      {
-        from: await signer.getAddress(),
-      },
-    );
+  public async approveTokenEstimateGas() {
+    return constants.Zero;
   }
 
   public async transferEstimateGas() {
@@ -116,20 +74,19 @@ export class LifiTransferStarter extends BridgeTransferStarter {
     };
   }
 
-  public async transfer({ wagmiConfig }: TransferProps & { wagmiConfig: Config }) {
-    if (!this.lifiData.transactionRequest) {
-      throw new Error('LifiTransferStarter is missing transaction request.');
-    }
-
-    const { to, data, value, chainId } = this.lifiData.transactionRequest;
-    // pinning chainId propagates viem's active-chain assertion to the send
-    const txHash = await sendTransaction(wagmiConfig, {
-      to: to as Address,
-      data: data as Address,
-      value: BigInt(value),
-      chainId,
+  public async transfer({
+    wagmiConfig,
+    switchChainAsync,
+    onApprovalRequest,
+    onRouteExecutionError,
+  }: TransferProps & LifiRouteExecutionProps) {
+    const { txHash } = await executeLifiRoute(this.lifiData.route, {
+      wagmiConfig,
+      switchChainAsync,
+      onApprovalRequest,
+      onRouteExecutionError,
     });
-    const fullTx = await this.sourceChainProvider.getTransaction(txHash);
+    const fullTx = await this.sourceChainProvider.getTransaction(txHash).catch(() => null);
 
     return {
       transferType: this.transferType,

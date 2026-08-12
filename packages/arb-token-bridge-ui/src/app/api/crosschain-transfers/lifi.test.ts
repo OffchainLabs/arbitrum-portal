@@ -31,6 +31,7 @@ function createMockRoute(
     protocolData: {
       orders: [],
       tool: { key: 'test', name: 'Test', logoURI: '' },
+      route: {} as LifiCrosschainTransfersRoute['protocolData']['route'],
       step: {} as LifiCrosschainTransfersRoute['protocolData']['step'],
     },
   };
