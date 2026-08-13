@@ -1,15 +1,23 @@
 [
-  { "name": "Login and balance check", "file": "login.spec.ts" },
-  { "name": "Deposit native token", "file": "depositNativeToken.spec.ts" },
-  { "name": "Withdraw native token", "file": "withdrawNativeToken.spec.ts" },
-  { "name": "Deposit ERC20", "file": "depositERC20.spec.ts" },
-  { "name": "Withdraw ERC20", "file": "withdrawERC20.spec.ts" },
-  { "name": "Batch deposit", "file": "batchDeposit.spec.ts" },
-  { "name": "TX history", "file": "txHistory.spec.ts" },
-  { "name": "Approve ERC20", "file": "approveToken.spec.ts" },
-  { "name": "Import test ERC20", "file": "importToken.spec.ts" },
-  { "name": "Read classic deposits", "file": "readClassicDeposits.spec.ts" },
-  { "name": "Redeem Retryable", "file": "redeemRetryable.spec.ts" },
-  { "name": "Switch network", "file": "switchNetworks.spec.ts" },
-  { "name": "URL query param", "file": "urlQueryParam.spec.ts" }
+  { "name": "Login and balance check", "file": "login.spec.ts", "recordVideo": "false" },
+  { "name": "Deposit native token", "file": "depositNativeToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Withdraw native token",
+    "file": "withdrawNativeToken.spec.ts",
+    "recordVideo": "false"
+  },
+  { "name": "Deposit ERC20", "file": "depositERC20.spec.ts", "recordVideo": "false" },
+  { "name": "Withdraw ERC20", "file": "withdrawERC20.spec.ts", "recordVideo": "false" },
+  { "name": "Batch deposit", "file": "batchDeposit.spec.ts", "recordVideo": "false" },
+  { "name": "TX history", "file": "txHistory.spec.ts", "recordVideo": "false" },
+  { "name": "Approve ERC20", "file": "approveToken.spec.ts", "recordVideo": "false" },
+  { "name": "Import test ERC20", "file": "importToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Read classic deposits",
+    "file": "readClassicDeposits.spec.ts",
+    "recordVideo": "false"
+  },
+  { "name": "Redeem Retryable", "file": "redeemRetryable.spec.ts", "recordVideo": "false" },
+  { "name": "Switch network", "file": "switchNetworks.spec.ts", "recordVideo": "false" },
+  { "name": "URL query param", "file": "urlQueryParam.spec.ts", "recordVideo": "false" }
 ]
