@@ -129,15 +129,21 @@ test.describe('Batch Deposit', () => {
     await findTransactionInTransactionHistory(page, { duration: 'a few seconds ago', ...txData });
     await switchToTransferPanelTab(page);
 
-    // funds should reach destination account successfully
+    // funds should reach destination account successfully.
+    // The balances refresh asynchronously after the deposit settles, so poll instead of taking a
+    // single snapshot (the Cypress `.should(($el) => ...)` form retried the callback).
     const childErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on childChain`);
-    expect(parseFloat(await childErc20.innerText())).toBeGreaterThan(Number(childErc20Balance));
+    await expect
+      .poll(async () => parseFloat(await childErc20.innerText()))
+      .toBeGreaterThan(Number(childErc20Balance));
     const childNative = page.getByLabel(`${nativeTokenSymbol} balance amount on childChain`);
-    expect(parseFloat(await childNative.innerText())).toBeGreaterThan(
-      Number(childNativeTokenBalance),
-    );
+    await expect
+      .poll(async () => parseFloat(await childNative.innerText()))
+      .toBeGreaterThan(Number(childNativeTokenBalance));
     const parentErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on parentChain`);
-    expect(parseFloat(await parentErc20.innerText())).toBeLessThan(Number(parentErc20Balance));
+    await expect
+      .poll(async () => parseFloat(await parentErc20.innerText()))
+      .toBeLessThan(Number(parentErc20Balance));
 
     await expect(findAmountInput(page)).toHaveValue('');
     await expect(findAmount2Input(page)).toHaveValue('');

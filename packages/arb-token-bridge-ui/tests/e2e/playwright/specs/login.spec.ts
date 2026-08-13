@@ -1,8 +1,6 @@
 /**
- * Playwright port of tests/e2e/specs/login.cy.ts (POC).
- *
- * Verifies the Login and balance check flow under the Playwright runner + Synpress v3
- * Playwright commands, while the Cypress version of this spec stays in place untouched.
+ * Login and balance check flow.
+ * Port of tests/e2e/specs/login.cy.ts.
  */
 import { formatAmount } from '../../../../src/util/NumberUtils';
 import { expect, test } from '../fixtures';
@@ -44,7 +42,7 @@ test.describe('Login Account', () => {
     const connectWallet = page.getByText('Connect Wallet').first();
     await expect(connectWallet).toBeVisible();
     await connectWallet.click();
-    await expect(page.getByText('MetaMask')).toBeVisible();
+    await expect(page.getByText('MetaMask').first()).toBeVisible();
   });
 
   test('should connect wallet using MetaMask and display L1 and L2 balances', async ({

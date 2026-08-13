@@ -17,7 +17,9 @@ test.describe('Transaction History', () => {
     });
 
     await switchToTransactionHistoryTab(page, 'pending');
-    expect(await page.getByTestId(CLAIMABLE_ROW_IDENTIFIER).count()).toBeGreaterThan(0);
+    // retrying locator assertion, not a one-shot `.count()`: the rows are virtualized and the list
+    // is still settling right after the tab switch (the Cypress `.should('be.gt', 0)` retried too)
+    await expect(page.getByTestId(CLAIMABLE_ROW_IDENTIFIER).first()).toBeVisible();
   });
 
   test('should successfully open and use settled transactions panel', async ({ page, e2eEnv }) => {
@@ -29,6 +31,8 @@ test.describe('Transaction History', () => {
 
     await switchToTransactionHistoryTab(page, 'settled');
     await page.getByLabel('Load More Transactions').click();
-    expect(await page.getByTestId(DEPOSIT_ROW_IDENTIFIER).count()).toBeGreaterThan(0);
+    // Load More refetches, so the summary is briefly replaced by the loader and the row set is
+    // rebuilt. Assert with a retrying locator rather than counting during that window.
+    await expect(page.getByTestId(DEPOSIT_ROW_IDENTIFIER).first()).toBeVisible();
   });
 });
