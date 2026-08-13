@@ -5,6 +5,7 @@ import useSWR, { Middleware, SWRHook, unstable_serialize, useSWRConfig } from 's
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { e2ePollingInterval } from '../util/CommonUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 
 type Erc20Balances = {
@@ -110,7 +111,7 @@ const useBalance = ({ chainId, walletAddress }: UseBalanceProps) => {
       return _provider.getBalance(_walletAddress);
     },
     {
-      refreshInterval: 15_000,
+      refreshInterval: e2ePollingInterval(15_000),
       shouldRetryOnError: true,
       errorRetryCount: 2,
       errorRetryInterval: 3_000,

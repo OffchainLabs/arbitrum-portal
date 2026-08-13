@@ -36,6 +36,14 @@ export const isE2eTestingEnvironment =
   (typeof window !== 'undefined' && !!window.Cypress) ||
   process.env.NEXT_PUBLIC_IS_E2E_TEST === 'true';
 
+/**
+ * Returns an E2E-friendly polling interval.
+ * In E2E tests, always polls every 1s. Production behavior is unchanged.
+ */
+export function e2ePollingInterval(productionMs: number): number {
+  return isE2eTestingEnvironment ? 1_000 : productionMs;
+}
+
 export const isDevelopmentEnvironment = process.env.NODE_ENV === 'development';
 
 export const isProductionEnvironment = process.env.NODE_ENV === 'production';
