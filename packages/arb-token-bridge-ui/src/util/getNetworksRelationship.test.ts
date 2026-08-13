@@ -35,6 +35,26 @@ describe('getNetworksRelationship', () => {
         isDepositMode: true,
       },
     },
+    {
+      label: 'Robinhood Chain to ApeChain sibling transfer',
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.ApeChain,
+      expected: {
+        parentChainId: ChainId.RobinhoodChain,
+        childChainId: ChainId.ApeChain,
+        isDepositMode: true,
+      },
+    },
+    {
+      label: 'ApeChain to Robinhood Chain sibling transfer',
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+      expected: {
+        parentChainId: ChainId.RobinhoodChain,
+        childChainId: ChainId.ApeChain,
+        isDepositMode: false,
+      },
+    },
   ])('resolves $label', ({ sourceChainId, destinationChainId, expected }) => {
     expect(getNetworksRelationship({ sourceChainId, destinationChainId })).toEqual(expected);
   });

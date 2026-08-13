@@ -4,6 +4,7 @@ import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { isLifiOnlyToken } from '../../../util/TokenListUtils';
 import { isDepositMode } from '../../../util/isDepositMode';
 import { getDestinationChainIds } from '../../../util/networks';
 import { isDisabledCanonicalTransfer } from '../isDisabledCanonicalTransfer';
@@ -33,6 +34,9 @@ export async function isArbitrumCanonicalTransfer({
   const isValidPair = getDestinationChainIds(sourceChainId).includes(destinationChainId);
 
   if (!isValidPair) {
+    return false;
+  }
+  if (isLifiOnlyToken(selectedToken)) {
     return false;
   }
   if (isSwap) {
@@ -66,6 +70,7 @@ export const useIsArbitrumCanonicalTransfer = function () {
       isSelectedTokenWithdrawOnly,
       isSelectedTokenWithdrawOnlyLoading,
       selectedToken?.address ?? null,
+      selectedToken?.lifiOnlyChainId ?? null,
       isSwap,
       'useIsArbitrumCanonicalTransfer',
     ] as const,
@@ -76,6 +81,7 @@ export const useIsArbitrumCanonicalTransfer = function () {
       parentChainId,
       _isSelectedTokenWithdrawOnly,
       _isSelectedTokenWithdrawOnlyLoading,
+      ,
       ,
       _isSwap,
     ]) =>

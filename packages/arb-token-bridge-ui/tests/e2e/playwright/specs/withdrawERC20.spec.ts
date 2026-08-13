@@ -136,7 +136,9 @@ test.describe('Withdraw ERC20 Token', () => {
 
         await login(page, e2eEnv, { networkType: 'parentChain' }); // login to L1 to claim
 
-        await switchToTransactionHistoryTab(page, 'pending');
+        await switchToTransactionHistoryTab(page, 'pending', {
+          chainFilter: getL2NetworkName(e2eEnv),
+        });
 
         await clickClaimButton(page, formatAmount(amountToSend, { symbol: testCase.symbol }));
 

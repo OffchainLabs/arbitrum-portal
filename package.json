@@ -25,7 +25,7 @@
   },
   "keywords": [],
   "author": "",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.21.0",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@headlessui/react": "^2.2.8",

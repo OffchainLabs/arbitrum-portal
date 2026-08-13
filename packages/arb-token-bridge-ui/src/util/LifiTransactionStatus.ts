@@ -1,6 +1,50 @@
+import type { ProcessType, RouteExtended } from '@lifi/sdk';
 import type { StatusResponse } from '@lifi/types';
+import { utils } from 'ethers';
 
 import { WithdrawalStatus } from '../state/app/state';
+
+const EXECUTED_ROUTE_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
+  'CROSS_CHAIN',
+  'SWAP',
+  'TRANSACTION',
+]);
+
+export function isValidLifiTransactionHash(txHash: string | null | undefined) {
+  return typeof txHash === 'string' && utils.isHexString(txHash, 32);
+}
+
+function getSubmittedLifiRouteProcess(route: RouteExtended | undefined) {
+  for (const step of route?.steps ?? []) {
+    const routeProcess = step.execution?.process.find(
+      (process) =>
+        typeof process.txHash === 'string' &&
+        process.status !== 'FAILED' &&
+        EXECUTED_ROUTE_PROCESS_TYPES.has(process.type),
+    );
+
+    if (routeProcess?.txHash) {
+      return routeProcess;
+    }
+  }
+
+  return undefined;
+}
+
+export function getSubmittedLifiRouteTxHash(route: RouteExtended | undefined) {
+  return getSubmittedLifiRouteProcess(route)?.txHash;
+}
+
+export function getExecutedLifiRouteTxHash(route: RouteExtended | undefined) {
+  const routeProcess = getSubmittedLifiRouteProcess(route);
+  const txHash = routeProcess?.txHash;
+  const isPendingProcessId =
+    routeProcess?.txType !== undefined &&
+    routeProcess.txType !== 'standard' &&
+    typeof routeProcess.txLink !== 'string';
+
+  return !isPendingProcessId && isValidLifiTransactionHash(txHash) ? txHash : undefined;
+}
 
 export function getLifiTransferStatus(statusResponse: StatusResponse): {
   status: WithdrawalStatus;

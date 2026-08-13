@@ -129,7 +129,7 @@ const RouteAmount = ({
         <div className="flex flex-row items-center gap-3">
           <TokenLogo
             className="h-8 w-8 min-w-8"
-            srcOverride={'logoURI' in token ? token.logoURI : null}
+            srcOverride={'type' in token ? (token.logoURI ?? '') : null}
             fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
           />
           <div className="flex flex-col">

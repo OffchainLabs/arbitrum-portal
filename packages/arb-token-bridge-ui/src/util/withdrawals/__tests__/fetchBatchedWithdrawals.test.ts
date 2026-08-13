@@ -179,7 +179,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     fetchSpy.mockRestore();
   });
 
-  it('skips the binary search when batch size is above the threshold (e.g. ApeChain)', async () => {
+  it('skips the binary search when batch size is above the threshold', async () => {
     const latestBlock = 38_000_000;
     const provider = createMockProvider({
       chainId: JASMY_CHAIN_ID,

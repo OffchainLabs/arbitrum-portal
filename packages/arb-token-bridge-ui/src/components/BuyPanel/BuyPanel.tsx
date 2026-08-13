@@ -226,10 +226,7 @@ function OnrampServicePanel() {
   const pathname = usePathname();
   const onrampService = pathname.split('/').pop();
 
-  if (onrampService === 'moonpay') {
-    if (!isMoonPayEnabled) {
-      return null;
-    }
+  if (onrampService === 'moonpay' && isMoonPayEnabled) {
     return <MoonPayPanel />;
   }
 

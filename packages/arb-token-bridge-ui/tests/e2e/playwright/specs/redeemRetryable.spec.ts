@@ -17,7 +17,7 @@ import {
   switchToTransactionHistoryTab,
   switchToTransferPanelTab,
 } from '../support/actions';
-import { getInitialERC20Balance, getL2NetworkConfig } from '../support/common';
+import { getInitialERC20Balance, getL2NetworkConfig, getL2NetworkName } from '../support/common';
 
 const wethAmountToDeposit = 0.001;
 
@@ -73,7 +73,7 @@ test.describe('Redeem ERC20 Deposit', () => {
     await expect(page.getByLabel('WETH balance amount on childChain')).toContainText(l2Erc20Bal);
 
     // open transaction history and wait for deposit to fetch data
-    await switchToTransactionHistoryTab(page, 'pending');
+    await switchToTransactionHistoryTab(page, 'pending', { chainFilter: getL2NetworkName(e2eEnv) });
 
     // give CI more time to fetch the transactions
     await page.waitForTimeout(15_000);

@@ -12,6 +12,12 @@ describe('isUserRejectedError', () => {
     expect(isUserRejectedError({ message: 'User Cancelled Request' })).toBe(true);
     expect(
       isUserRejectedError({
+        message:
+          '[TransactionError] User rejected the request. Request Arguments: from: 0x123 Details: MetaMask Tx Signature: User denied transaction signature. Version: viem@2.47.4 LI.FI SDK version: 3.7.0',
+      }),
+    ).toBe(true);
+    expect(
+      isUserRejectedError({
         details: 'MetaMask Tx Signature: User denied transaction signature.',
       }),
     ).toBe(true);

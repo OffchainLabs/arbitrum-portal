@@ -96,7 +96,9 @@ test.describe('Withdraw native token', () => {
 
       await login(page, e2eEnv, { networkType: 'parentChain' }); // login to L1 to claim the funds
 
-      await switchToTransactionHistoryTab(page, 'pending');
+      await switchToTransactionHistoryTab(page, 'pending', {
+        chainFilter: getL2NetworkName(e2eEnv),
+      });
 
       await clickClaimButton(page, formatAmount(ethToWithdraw, { symbol: nativeTokenSymbol }));
 

@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { DecodedValueMap } from 'use-query-params';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -204,6 +204,99 @@ describe.sequential('useSelectedToken', () => {
     // the ApeChain guard must bail out before building providers for getUsdcToken
     expect(mocks.getProviderForChainId).not.toHaveBeenCalled();
     expect(result.current[0]).toEqual(bridgeTokenArbOneUsdc);
+  });
+
+  it('clears the destination token when selecting a child-chain-only token', () => {
+    const address = '0x0000000000000000000000000000000000004663';
+    const token: ERC20BridgeToken = {
+      type: TokenType.ERC20,
+      name: 'Robinhood-only token',
+      symbol: 'RHOOD',
+      address,
+      l2Address: address,
+      decimals: 18,
+      listIds: new Set(),
+      lifiOnlyChainId: ChainId.RobinhoodChain,
+    };
+    const setQueryParams = vi.fn();
+
+    mockNetworks({
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.RobinhoodChain,
+    });
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        ...defaultQueryParams,
+        sourceChain: ChainId.RobinhoodChain,
+        destinationChain: ChainId.Ethereum,
+      },
+      setQueryParams,
+    ]);
+
+    const { result } = renderHook(useSelectedToken);
+    act(() => result.current[1](address, token));
+
+    const updateQuery = setQueryParams.mock.calls[0]?.[0] as (
+      latestQuery: ArbQueryParams,
+    ) => Partial<ArbQueryParams>;
+    expect(
+      updateQuery({
+        ...defaultQueryParams,
+        sourceChain: ChainId.RobinhoodChain,
+        destinationChain: ChainId.Ethereum,
+      }),
+    ).toEqual({
+      token: address,
+      destinationToken: undefined,
+    });
+  });
+
+  it('keeps the destination token when selecting a paired token with the same address on both chains', () => {
+    const address = '0x0000000000000000000000000000000000004663';
+    const token: ERC20BridgeToken = {
+      type: TokenType.ERC20,
+      name: 'Paired token',
+      symbol: 'PAIR',
+      address,
+      l2Address: address,
+      decimals: 18,
+      listIds: new Set(),
+    };
+    const setQueryParams = vi.fn();
+
+    mockNetworks({
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.RobinhoodChain,
+    });
+    mockedUseArbQueryParams.mockReturnValue([
+      {
+        ...defaultQueryParams,
+        sourceChain: ChainId.RobinhoodChain,
+        destinationChain: ChainId.Ethereum,
+      },
+      setQueryParams,
+    ]);
+
+    const { result } = renderHook(useSelectedToken);
+    act(() => result.current[1](address, token));
+
+    const updateQuery = setQueryParams.mock.calls[0]?.[0] as (
+      latestQuery: ArbQueryParams,
+    ) => Partial<ArbQueryParams>;
+    expect(
+      updateQuery({
+        ...defaultQueryParams,
+        sourceChain: ChainId.RobinhoodChain,
+        destinationChain: ChainId.Ethereum,
+      }),
+    ).toEqual({
+      token: address,
+      destinationToken: address,
+    });
   });
 });
 

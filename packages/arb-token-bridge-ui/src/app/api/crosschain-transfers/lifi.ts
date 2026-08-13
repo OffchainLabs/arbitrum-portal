@@ -51,7 +51,9 @@ export interface LifiCrosschainTransfersRoute extends CrosschainTransfersRouteBa
   protocolData: {
     orders: Tags;
     tool: StepToolDetails;
-    /** This is needed to fetch transactionRequest later on */
+    /** Full route used by the LiFi SDK during execution. */
+    route: Route;
+    /** Single-step metadata used by the existing route UI. */
     step: LiFiStep;
   };
 }
@@ -110,7 +112,9 @@ function isApeToken(tokenAddress: string | undefined, chainId: number) {
     (addressesEqual(tokenAddress, CommonAddress.Ethereum.APE) && chainId === ChainId.Ethereum) ||
     (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.APE) &&
       chainId === ChainId.ArbitrumOne) ||
-    (addressesEqual(tokenAddress, CommonAddress.Base.APE) && chainId === ChainId.Base)
+    (addressesEqual(tokenAddress, CommonAddress.Base.APE) && chainId === ChainId.Base) ||
+    (addressesEqual(tokenAddress, CommonAddress.RobinhoodChain.APE) &&
+      chainId === ChainId.RobinhoodChain)
   );
 }
 
@@ -227,6 +231,7 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
     toChainId: Number(toChainId),
     spenderAddress: step.estimate.approvalAddress,
     protocolData: {
+      route,
       step,
       tool: step.toolDetails,
       orders: tags,

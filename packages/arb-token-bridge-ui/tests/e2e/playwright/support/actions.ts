@@ -207,8 +207,44 @@ export async function switchToTransferPanelTab(page: Page) {
   await page.getByLabel('Switch to Bridge Tab').first().click();
 }
 
-export async function switchToTransactionHistoryTab(page: Page, tab: 'pending' | 'settled') {
+export async function selectTransactionHistoryChain(page: Page, networkName: string) {
+  await page.getByLabel('Filter transaction history by network').click();
+
+  // the search text persists between popover openings, so drop any previous query
+  const search = page.getByLabel('Search networks');
+  await search.fill(networkName);
+
+  // the chain name can also appear outside the dropdown (trigger label, history
+  // table), so only match rows inside the popover. Skip rows already selected or
+  // tagged "included": clicking those would narrow the filter.
+  const row = page
+    .getByRole('radio', { name: networkName })
+    .or(page.getByRole('checkbox', { name: networkName }))
+    .first();
+  await expect(row).toBeVisible();
+
+  const isChecked = (await row.getAttribute('aria-checked')) === 'true';
+  const isIncluded = ((await row.textContent()) ?? '').includes('included');
+  if (!isChecked && !isIncluded) {
+    await row.click();
+  }
+
+  // close the filter popover so it doesn't cover the table
+  await page.keyboard.press('Escape');
+}
+
+export async function switchToTransactionHistoryTab(
+  page: Page,
+  tab: 'pending' | 'settled',
+  // The history defaults to core chains only; pass the chain under test so
+  // seeded or prior-session transactions on a longtail chain are fetched.
+  options?: { chainFilter?: string },
+) {
   await page.getByLabel('Switch to Transaction History Tab').first().click();
+
+  if (options?.chainFilter) {
+    await selectTransactionHistoryChain(page, options.chainFilter);
+  }
 
   await selectTransactionsPanelTab(page, tab);
 
