@@ -99,8 +99,9 @@ test.describe('Import token', () => {
       await expect(search).toBeVisible();
       await search.fill('UNI');
 
+      // exact match so we don't also hit the Unisocks row's "Arbed Uniswap List and 2 more lists" label
       // the CMC token list loads over the network on mainnet and can be slow
-      await page.getByText('Uniswap').click({ timeout: 30_000 });
+      await page.getByText('Uniswap', { exact: true }).click({ timeout: 30_000 });
 
       await findSelectTokenButton(page, 'UNI');
     });
