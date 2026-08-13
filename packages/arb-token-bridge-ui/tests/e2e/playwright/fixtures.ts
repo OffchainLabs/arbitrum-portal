@@ -41,7 +41,7 @@ import {
 // MetaMask 11.15.0 is a Manifest V2 extension, which Playwright's bundled (newer) Chromium refuses
 // to load ("unsupported manifest version"). Reuse the Chrome for Testing pinned by the root
 // `install:chromium` script (Chrome 128 still supports MV2), matching the browser the
-// Cypress/Synpress suite used. See the migration plan (decision #4) and the old browser.config.ts.
+// Cypress/Synpress suite used.
 function getPinnedChromePath(): string {
   const workspaceRoot = path.resolve(__dirname, '../../../../..');
   const chromeDir = path.join(workspaceRoot, packageConfig.chromePath, 'chrome');
@@ -104,7 +104,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       if (process.env.CI) {
         browserArgs.push('--disable-gpu');
       }
-      if (process.env.HEADLESS_MODE) {
+      if (process.env.HEADLESS_MODE === 'true') {
         browserArgs.push('--headless=new');
       }
 
@@ -112,6 +112,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         headless: false,
         executablePath: getPinnedChromePath(),
         args: browserArgs,
+        // Matches the Cypress suite's 1366x850. Playwright defaults to 1280x720, and the shorter
+        // viewport renders ~2 fewer rows of the virtualized transaction history table -- rows outside
+        // the rendered window are absent from the DOM, so `findTransactionInTransactionHistory` can
+        // miss a row entirely. Note `use.viewport` in playwright.config.ts does NOT reach this
+        // context, since we build it ourselves rather than letting Playwright create it.
+        viewport: { width: 1366, height: 850 },
       });
 
       // Wait for the MetaMask window to show up
