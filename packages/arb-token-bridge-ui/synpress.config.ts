@@ -143,9 +143,12 @@ export default defineConfig({
         });
       }
 
-      // Wrap ETH to test WETH transactions and approve it's usage
+      // Custom-gas chains bridge WETH through the standard ERC-20 gateway and do not deploy a
+      // dedicated WETH gateway.
       await fundWethOnParentChain();
-      await approveWeth();
+      if (isNonZeroAddress(l1WethGateway)) {
+        await approveWeth();
+      }
       if (isCustomFeeToken) {
         await approveCustomFeeToken({
           signer: userWallet.connect(parentProvider),
