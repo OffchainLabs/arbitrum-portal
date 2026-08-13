@@ -7,9 +7,8 @@
 
 # testing
 /coverage
-/cypress
 
-# Playwright e2e (Cypress -> Playwright migration)
+# Playwright e2e
 /test-results
 /playwright-report
 /blob-report

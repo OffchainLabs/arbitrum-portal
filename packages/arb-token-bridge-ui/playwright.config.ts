@@ -3,11 +3,12 @@ import { defineConfig } from '@playwright/test';
 /**
  * Playwright runner config for the bridge e2e suite (Synpress v3 Playwright plugin).
  *
- * This lives alongside the Cypress setup (synpress.config.ts) during the Cypress -> Playwright
- * migration. See CYPRESS_TO_PLAYWRIGHT_MIGRATION_PLAN.md.
- *
  * MetaMask requires a single shared persistent browser context, so we run serially with one
  * worker. globalSetup performs on-chain prep and writes the e2e config the specs read.
+ *
+ * Note: fixtures.ts builds the browser context itself (to load the MetaMask extension), so
+ * `use` options that only apply at context creation -- `viewport` in particular -- are set there
+ * instead. Page-level options below (baseURL, timeouts, trace, screenshot) do apply.
  */
 export default defineConfig({
   testDir: './tests/e2e/playwright/specs',

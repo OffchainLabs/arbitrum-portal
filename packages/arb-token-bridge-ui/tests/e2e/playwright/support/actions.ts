@@ -26,10 +26,6 @@ import {
 // wallet stays connected across tests, so we only run the connect flow on the first login.
 let walletConnectedToDapp = false;
 
-export function resetWalletConnectedFlag() {
-  walletConnectedToDapp = false;
-}
-
 // --- element finders -------------------------------------------------------
 
 export function findAmountInput(page: Page): Locator {

@@ -1,7 +1,7 @@
 /*
  * Playwright globalSetup for the regular / orbit e2e suite.
  *
- * This is the Playwright replacement for the Cypress `setupNodeEvents` block in
+ * This is the Playwright replacement for the Cypress `setupNodeEvents` block in the old
  * synpress.config.ts. It does all the on-chain prep (register the local network, deploy + fund a
  * test ERC20, fund the user wallet with ETH/WETH, approve tokens, handle custom-gas-token chains,
  * create a redeem-retryable tx), puts everything specs need in the `E2E_CONFIG` env var (read back
