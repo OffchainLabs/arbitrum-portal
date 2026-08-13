@@ -14,11 +14,6 @@
     // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
     "GHSA-5qjj-4xww-7phc",
     //
-    // https://github.com/advisories/GHSA-mh99-v99m-4gvg
-    // brace-expansion DoS via unbounded expansion length causing an out-of-memory process crash (CVE-2026-14257)
-    // Reason to ignore: Only reachable via dev tooling (eslint plugins, typescript-estree, glob in test coverage), where expansion patterns come from our own config, not attacker input. The only patched version (5.0.8) is a major bump whose CJS export shape is incompatible with the minimatch 3.x consumers in the eslint chain.
-    // from: eslint>minimatch>brace-expansion
-    "GHSA-mh99-v99m-4gvg",
     // https://github.com/advisories/GHSA-848j-6mx2-7j84
     // Elliptic Uses a Cryptographic Primitive with a Risky Implementation
     // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
@@ -113,5 +108,15 @@
     // Patched version (3.0.7) is a major bump from react-use's pinned 2.x.
     // from: react-use>js-cookie
     "GHSA-qjx8-664m-686j",
+    //
+    // https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+    // extract-zip does not validate symlink targets during extraction, so a malicious
+    // archive can read or write files outside the target directory (CVE-2026-56876)
+    // Reason to ignore: No patched version available (2.0.1 is the latest published
+    // version). Dev-only: cypress uses it to unpack its own binary from the official
+    // Cypress CDN, so we never extract untrusted archives. Not in production builds.
+    // from: arb-token-bridge-ui>@synthetixio/synpress>cypress>extract-zip
+    // from: arb-token-bridge-ui>cypress-terminal-report>cypress>extract-zip
+    "GHSA-jmr9-qjv8-65gv",
   ],
 }

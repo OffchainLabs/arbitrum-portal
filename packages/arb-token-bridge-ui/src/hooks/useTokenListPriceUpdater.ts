@@ -21,14 +21,34 @@ export function useTokenListPriceUpdater({
   } = useAppState();
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
-  const { mutate } = useTokenLists(childChain.id);
+  const { data: tokenLists, mutate } = useTokenLists(childChain.id);
   const arbTokenBridgeRef = useRef(arbTokenBridge);
+
+  /**
+   * Deliberately a boolean rather than the list itself. Mutating writes a new array, so depending on
+   * `tokenLists` here would give this callback a new identity on every refresh and the effect below
+   * would re-trigger it in a loop.
+   */
+  const hasTokenLists = typeof tokenLists !== 'undefined';
 
   useEffect(() => {
     arbTokenBridgeRef.current = arbTokenBridge;
   }, [arbTokenBridge]);
 
   const refreshLifiTokenList = useCallback(() => {
+    /**
+     * Never mutate this key while its own fetch is in flight. SWR discards any response that
+     * overlaps a mutation on the same key, and `useTokenLists` is `useSWRImmutable`, so there is no
+     * revalidation left to recover the discarded token lists with: every consumer would be stuck
+     * with no tokens until a new subscriber mounted.
+     *
+     * Data being present is a sufficient check only because `useTokenLists` never revalidates once
+     * it has data. Revisit this if that changes.
+     */
+    if (!hasTokenLists) {
+      return;
+    }
+
     const lifiTokenList = getLifiTokenListForNetworks({
       childChainId: childChain.id,
       parentChainId: parentChain.id,
@@ -63,7 +83,7 @@ export function useTokenListPriceUpdater({
         };
       });
     }, false);
-  }, [arbTokenBridgeLoaded, childChain.id, parentChain.id, mutate]);
+  }, [arbTokenBridgeLoaded, hasTokenLists, childChain.id, parentChain.id, mutate]);
 
   useInterval(refreshLifiTokenList, intervalMs);
 

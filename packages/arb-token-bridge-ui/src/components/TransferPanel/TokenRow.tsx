@@ -362,11 +362,14 @@ function TokenContractLink({
       return null;
     }
 
-    if (typeof token.l2Address !== 'undefined') {
-      return <BlockExplorerTokenLink chainId={childChain.id} address={token.l2Address} />;
-    }
+    const destinationTokenAddress = isDepositMode ? token.l2Address : token.address;
 
-    return null;
+    return (
+      <BlockExplorerTokenLink
+        chainId={networks.destinationChain.id}
+        address={destinationTokenAddress}
+      />
+    );
   }
 
   if (isCustomFeeTokenRow && isDepositMode) {

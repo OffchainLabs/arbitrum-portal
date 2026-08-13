@@ -25,6 +25,12 @@ const swapCases: RouteTokenCase[] = [
     destinationToken: nativeEthTokenExpectation,
   },
   {
+    sourceChain: 'apechain',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.ApeChain.WETH,
+    destinationToken: nativeEthTokenExpectation,
+  },
+  {
     sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
     sourceToken: tokenExpectationsByChain.Ethereum.USDe,

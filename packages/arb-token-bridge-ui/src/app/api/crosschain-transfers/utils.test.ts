@@ -79,7 +79,7 @@ function generateBaseDepositTestCases() {
 }
 
 function generateRobinhoodDepositTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Base]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Base]
     .map((sourceChainId) => [
       {
         fromToken: undefined,
@@ -96,7 +96,7 @@ function generateRobinhoodDepositTestCases() {
 }
 
 function generateRobinhoodWithdrawTestCases() {
-  return [ChainId.Ethereum, ChainId.ArbitrumOne]
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain]
     .map((destinationChainId) => [
       {
         fromToken: undefined,
@@ -151,6 +151,45 @@ describe('isValidLifiTransfer', () => {
     `Robinhood route from $sourceChainId to $destinationChainId with token $fromToken should return true`,
     ({ destinationChainId, fromToken, sourceChainId }) => {
       expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
+    },
+  );
+
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an imported Robinhood token to %s without token-list membership',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not allow an unlisted token from a non-opted-in source chain', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an unlisted token from %s when the destination chain opts in',
+    (sourceChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId,
+          destinationChainId: ChainId.RobinhoodChain,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
     },
   );
 
@@ -338,6 +377,24 @@ describe('isLifiTransfer', () => {
   });
 
   describe('Robinhood pairs', () => {
+    it('ApeChain → Robinhood is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toBe(true);
+    });
+
+    it('Robinhood → ApeChain is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId: ChainId.ApeChain,
+        }),
+      ).toBe(true);
+    });
+
     it('Base → Robinhood is a valid LiFi pair', () => {
       expect(
         isLifiTransfer({
@@ -454,6 +511,36 @@ describe('getTokenOverride', () => {
     // Override on destination chain to ERC20, default to null (Ape on ApeChain)
     expect(apeToArbOverride.source).toEqual(null);
     expect(apeToArbOverride.destination).toEqual(ape);
+  });
+
+  it('maps native ApeChain APE to Robinhood APE in both directions', () => {
+    const apeToRobinhoodOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const robinhoodToApeOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.ApeChain,
+    });
+    const apeOnApeChain = {
+      ...ape,
+      address: constants.AddressZero,
+    };
+    const apeOnRobinhood = {
+      ...ape,
+      address: CommonAddress.RobinhoodChain.APE,
+    };
+
+    expect(apeToRobinhoodOverride).toEqual({
+      source: apeOnApeChain,
+      destination: apeOnRobinhood,
+    });
+    expect(robinhoodToApeOverride).toEqual({
+      source: apeOnRobinhood,
+      destination: apeOnApeChain,
+    });
   });
 
   it('For transfers on chain with custom fee token, returns null', () => {

@@ -140,6 +140,7 @@ export function getContextFromRoute(route: LifiCrosschainTransfersRoute): RouteC
     toolDetails: route.protocolData.tool,
     durationMs: route.durationMs,
     destinationTxId: null,
+    route: route.protocolData.route,
     step: route.protocolData.step,
   };
 }

@@ -23,7 +23,7 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
   }
 
   if (props.lifiData) {
-    cacheKey += `-${props.lifiData.transactionRequest?.data}-${props.lifiData.spenderAddress}`;
+    cacheKey += `-${props.lifiData.route.id}`;
   }
 
   return cacheKey;

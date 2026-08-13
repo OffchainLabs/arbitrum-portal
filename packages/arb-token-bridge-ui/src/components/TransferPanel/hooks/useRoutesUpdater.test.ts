@@ -28,6 +28,7 @@ const baseParams: GetEligibleRoutesParams = {
   sourceChainId: ChainId.Ethereum,
   destinationChainId: ChainId.ArbitrumOne,
   selectedToken: {} as ERC20BridgeToken,
+  destinationToken: null,
   isArbitrumCanonicalTransfer: true,
   tokensFromLists: {},
 };
@@ -35,6 +36,18 @@ const baseParams: GetEligibleRoutesParams = {
 describe('getEligibleRoutes', () => {
   it('offers CCTP and existing alternatives when CCTP is enabled', () => {
     expect(getEligibleRoutes(baseParams)).toEqual(['cctp', 'lifi', 'arbitrum']);
+  });
+
+  it('offers only LiFi when either selected token is LiFi-only', () => {
+    expect(
+      getEligibleRoutes({
+        ...baseParams,
+        selectedToken: {
+          ...(baseParams.selectedToken as ERC20BridgeToken),
+          lifiOnlyChainId: ChainId.Ethereum,
+        },
+      }),
+    ).toEqual(['lifi']);
   });
 
   it('removes CCTP while preserving alternatives when CCTP is disabled', () => {

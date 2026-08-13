@@ -6,6 +6,12 @@ export const onrampServices = [
     link: 'https://global.transak.com',
   },
   {
+    name: 'MoonPay',
+    slug: 'moonpay',
+    logo: '/images/onramp/moonpay.svg',
+    link: 'https://www.moonpay.com/buy',
+  },
+  {
     name: 'Ramp',
     slug: 'ramp',
     logo: '/images/onramp/ramp.webp',

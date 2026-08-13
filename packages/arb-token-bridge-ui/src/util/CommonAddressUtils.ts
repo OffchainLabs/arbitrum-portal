@@ -76,6 +76,7 @@ export const CommonAddress = {
     WETH: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
   },
   RobinhoodChain: {
+    APE: '0x8f86a15ec17cb3369d8b3e666dadbc11daa82b79',
     WETH: '0x0bd7d308f8e1639fab988df18a8011f41eacad73',
     USDe: '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
     sUSDe: '0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2',

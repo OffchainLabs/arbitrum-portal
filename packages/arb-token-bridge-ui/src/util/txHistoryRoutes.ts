@@ -7,7 +7,13 @@
  */
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
-import { getChains, getChildChainIds, isNetwork } from './networks';
+import {
+  getChains,
+  getChildChainIds,
+  isCoreChainForDisplay,
+  isNetwork,
+  sortChainIds,
+} from './networks';
 
 export type ChainPair = { parentChainId: ChainId; childChainId: ChainId };
 
@@ -90,4 +96,28 @@ export function getTxHistoryRoutes({ isTestnetMode }: { isTestnetMode: boolean }
   }
 
   return routes;
+}
+
+/**
+ * Every chain appearing as an endpoint of some history route in the given
+ * mode — the universe of chains the history chain filter can select.
+ */
+export function getTxHistoryFilterableChainIds({
+  isTestnetMode,
+}: {
+  isTestnetMode: boolean;
+}): number[] {
+  const routes = getTxHistoryRoutes({ isTestnetMode });
+  return sortChainIds(
+    Array.from(new Set(routes.flatMap((route) => [route.parentChainId, route.childChainId]))),
+  );
+}
+
+/**
+ * The core chains among the filterable set. Single source for the "All Core
+ * Chains" filter scope and the Core Chains section of the filter dropdown, so
+ * the two can't drift apart.
+ */
+export function getTxHistoryCoreChainIds({ isTestnetMode }: { isTestnetMode: boolean }): number[] {
+  return getTxHistoryFilterableChainIds({ isTestnetMode }).filter(isCoreChainForDisplay);
 }

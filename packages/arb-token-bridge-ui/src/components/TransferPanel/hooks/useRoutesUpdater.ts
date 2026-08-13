@@ -15,6 +15,7 @@ import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferR
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { isLifiOnlyToken } from '../../../util/TokenListUtils';
 import {
   isCctpEnabled as isCctpEnabledUtil,
   isLifiEnabled as isLifiEnabledUtil,
@@ -91,6 +92,7 @@ export interface GetEligibleRoutesParams {
   sourceChainId: number;
   destinationChainId: number;
   selectedToken: ERC20BridgeToken | null;
+  destinationToken: ERC20BridgeToken | null;
   isArbitrumCanonicalTransfer: boolean;
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
@@ -105,6 +107,7 @@ export function getEligibleRoutes({
   sourceChainId,
   destinationChainId,
   selectedToken,
+  destinationToken,
   isArbitrumCanonicalTransfer,
   tokensFromLists,
 }: GetEligibleRoutesParams): RouteType[] {
@@ -114,6 +117,22 @@ export function getEligibleRoutes({
 
   if (Number(amount) === 0) {
     return [];
+  }
+
+  const hasLifiOnlyToken = isLifiOnlyToken(selectedToken) || isLifiOnlyToken(destinationToken);
+  if (hasLifiOnlyToken) {
+    if (isBatchTransfer || !isLifiEnabled) {
+      return [];
+    }
+
+    return isValidLifiTransfer({
+      fromToken: selectedToken?.address,
+      sourceChainId,
+      destinationChainId,
+      tokensFromLists,
+    })
+      ? ['lifi']
+      : [];
   }
 
   // Only the canonical route can carry the extra native amount (as the retryable's
@@ -224,6 +243,7 @@ export function useRoutesUpdater() {
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
         selectedToken,
+        destinationToken,
         isArbitrumCanonicalTransfer,
         tokensFromLists,
       }),
@@ -237,6 +257,7 @@ export function useRoutesUpdater() {
       networks.sourceChain.id,
       networks.destinationChain.id,
       selectedToken,
+      destinationToken,
       isArbitrumCanonicalTransfer,
       tokensFromLists,
     ],

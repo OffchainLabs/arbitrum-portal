@@ -1,5 +1,5 @@
 import { ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
-import { LIFI_TRANSFER_LIST_ID } from './TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken } from './TokenListUtils';
 
 export function mergeBridgeTokens({
   existingToken,
@@ -8,14 +8,37 @@ export function mergeBridgeTokens({
 }: {
   existingToken: ERC20BridgeToken | undefined;
   incomingToken: ERC20BridgeToken;
-  incomingListId: string;
+  incomingListId?: string;
 }): ERC20BridgeToken {
   const incomingUsesLifiTokenAddress = incomingListId === LIFI_TRANSFER_LIST_ID;
+  const listIds = new Set([
+    ...(existingToken?.listIds ?? []),
+    ...incomingToken.listIds,
+    ...(incomingListId ? [incomingListId] : []),
+  ]);
+  const incomingIsPaired = !isLifiOnlyToken(incomingToken) && !!incomingToken.l2Address;
+  const existingIsPaired = !isLifiOnlyToken(existingToken) && !!existingToken?.l2Address;
+  const pairedToken =
+    incomingIsPaired && isLifiOnlyToken(existingToken)
+      ? incomingToken
+      : existingIsPaired && isLifiOnlyToken(incomingToken)
+        ? existingToken
+        : undefined;
+  const lifiOnlyToken =
+    pairedToken !== undefined
+      ? undefined
+      : incomingToken.l2Address
+        ? incomingToken
+        : existingToken?.l2Address
+          ? existingToken
+          : incomingToken;
 
   if (incomingUsesLifiTokenAddress || !existingToken) {
     return {
       ...incomingToken,
-      listIds: new Set([...(existingToken?.listIds || new Set<string>()), incomingListId]),
+      l2Address: pairedToken?.l2Address ?? incomingToken.l2Address ?? existingToken?.l2Address,
+      lifiOnlyChainId: pairedToken ? undefined : lifiOnlyToken?.lifiOnlyChainId,
+      listIds,
     };
   }
 
@@ -27,8 +50,10 @@ export function mergeBridgeTokens({
     decimals: existingToken.decimals ?? incomingToken.decimals,
     type: existingToken.type ?? incomingToken.type,
     logoURI: existingToken.logoURI ?? incomingToken.logoURI,
-    l2Address: existingToken.l2Address ?? incomingToken.l2Address,
+    l2Address: pairedToken?.l2Address ?? existingToken.l2Address ?? incomingToken.l2Address,
+    isL2Native: existingToken.isL2Native ?? incomingToken.isL2Native,
     priceUSD: existingToken.priceUSD ?? incomingToken.priceUSD,
-    listIds: new Set([...(existingToken.listIds || new Set<string>()), incomingListId]),
+    lifiOnlyChainId: pairedToken ? undefined : lifiOnlyToken?.lifiOnlyChainId,
+    listIds,
   };
 }
