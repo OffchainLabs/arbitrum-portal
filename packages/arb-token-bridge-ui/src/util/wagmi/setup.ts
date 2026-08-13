@@ -6,7 +6,11 @@ import { arbitrum, mainnet } from 'wagmi/chains';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
-import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
+import {
+  e2ePollingInterval,
+  isDevelopmentEnvironment,
+  isE2eTestingEnvironment,
+} from '../CommonUtils';
 import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, initializeBridgeNetworks, rpcURLs } from '../networks';
 import { getOrbitChains } from '../orbitChainsList';
@@ -107,6 +111,7 @@ const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks: [...chainList],
   batch: { multicall: true },
+  pollingInterval: isE2eTestingEnvironment ? e2ePollingInterval : undefined,
   transports: getTransports(),
 });
 

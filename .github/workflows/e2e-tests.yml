@@ -12,6 +12,7 @@ env:
   NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
   NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+  VAULTS_FYI_API_KEY: ${{ secrets.VAULTS_FYI_API_KEY }}
   THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,7 +37,7 @@ jobs:
 
   test-e2e:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
-    needs: [build, load-e2e-files]
+    needs: [load-e2e-files]
     runs-on: ubuntu-8
     strategy:
       fail-fast: false
@@ -44,22 +45,26 @@ jobs:
         test: ${{ fromJson(needs.load-e2e-files.outputs.matrix) }}
 
     # The testnode runs as a service container; its ports are published to the
-    # host runner so the (non-container) job and the app reach it on localhost.
-    # The job stays on the host runner so the build-artifacts cache (saved by the
-    # build job, also on the host) restores reliably.
+    # host runner so the job can fetch its generated network config before
+    # building and starting the app against the same deployed contracts.
     services:
       testnode:
-        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}
+        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.14-nc3.2-${{ matrix.test.tag }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         env:
           TESTNODE_VARIANT: ${{ matrix.test.tag }}
+          TESTNODE_PARENT_CHAIN_POLL_INTERVAL: 100ms
         ports:
           - 8080:8080
           - 8545:8545
           - 8547:8547
           - 3347:8549
+        options: >-
+          --log-driver json-file
+          --log-opt max-size=1m
+          --log-opt max-file=1
 
     steps:
       - name: Checkout
@@ -79,9 +84,6 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
 
       - name: Install cypress
         run: pnpm cypress install
@@ -105,6 +107,14 @@ jobs:
       # is ready to fetch here.
       - name: Fetch testnode config
         run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
+
+      - name: Build app against testnode config
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_IS_E2E_TEST: true
+          NEXT_PUBLIC_RPC_URL_NITRO_TESTNODE_L1: http://127.0.0.1:8545
+          NEXT_PUBLIC_RPC_URL_NITRO_TESTNODE_L2: http://127.0.0.1:8547
+          NEXT_PUBLIC_RPC_URL_NITRO_TESTNODE_L3: http://127.0.0.1:3347
 
       - name: Run e2e tests via cypress-io/github-action
         uses: cypress-io/github-action@0da3c06ed8217b912deea9d8ee69630baed1737e # pin@v6.7.6

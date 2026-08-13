@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import type { Account, Chain, Client, Transport } from 'viem';
 import { Config, useConnectorClient } from 'wagmi';
 
+import { e2ePollingInterval, isE2eTestingEnvironment } from '../CommonUtils';
+
 export function clientToSigner(client: Client<Transport, Chain, Account>) {
   const { account, chain, transport } = client;
   const network = {
@@ -12,6 +14,9 @@ export function clientToSigner(client: Client<Transport, Chain, Account>) {
     ensAddress: chain.contracts?.ensRegistry?.address,
   };
   const provider = new providers.Web3Provider(transport, network);
+  if (isE2eTestingEnvironment) {
+    provider.pollingInterval = e2ePollingInterval;
+  }
   const signer = provider.getSigner(account.address);
   return signer;
 }
