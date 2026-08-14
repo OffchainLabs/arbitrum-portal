@@ -35,8 +35,7 @@ const searchModeConfig: Record<
   txHash: {
     label: 'Tx hash',
     placeholder: 'Search any transaction hash',
-    tooltip:
-      'Search a bridge transaction hash to view its status and claim it if it is a withdrawal, without waiting for the full history to load.',
+    tooltip: 'Search a transaction hash to find your bridge transaction.',
   },
 };
 
@@ -234,7 +233,8 @@ export function TransactionHistorySearchBar() {
                 ? 'Transaction history transaction hash input'
                 : 'Transaction history wallet address input'
             }
-            className="h-full w-full bg-transparent py-1 pl-2 pr-3 text-sm font-light outline-none placeholder:text-white/60"
+            // focus-visible:outline-0 beats the global white input outline; the form ring shows focus
+            className="h-full w-full bg-transparent py-1 pl-2 pr-3 text-sm font-light outline-none focus-visible:outline-0 placeholder:text-white/60"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"
