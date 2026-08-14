@@ -195,8 +195,11 @@ export function TransactionHistorySearchBar() {
             <ChevronDownIcon className="h-3 w-3" />
           </ListboxButton>
           <ListboxOptions
-            anchor={{ to: 'bottom start', gap: 4 }}
-            className="z-20 rounded border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
+            // non-modal like the chain filter popover, so opening it does not
+            // scroll-lock the page and shift the layout
+            modal={false}
+            anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
+            className="z-20 overflow-hidden rounded border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption
