@@ -48,6 +48,7 @@ type TransactionHistoryAddressStore = {
   setSanitizedTxHash: (txHash: string | undefined) => void;
   setSearchMode: (searchMode: TransactionHistorySearchMode) => void;
   setSearchError: (error: TransactionHistorySearchError | undefined) => void;
+  resetSearch: () => void;
 };
 
 export const useTransactionHistoryAddressStore = create<TransactionHistoryAddressStore>((set) => ({
@@ -70,6 +71,14 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
     set({ searchMode, searchError: undefined, sanitizedTxHash: undefined }),
   searchError: undefined,
   setSearchError: (error: TransactionHistorySearchError | undefined) => set({ searchError: error }),
+  resetSearch: () =>
+    set({
+      address: '',
+      sanitizedAddress: undefined,
+      sanitizedTxHash: undefined,
+      searchMode: 'address',
+      searchError: undefined,
+    }),
 }));
 
 /**
