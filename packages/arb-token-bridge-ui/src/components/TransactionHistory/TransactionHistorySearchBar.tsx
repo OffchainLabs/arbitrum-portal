@@ -11,7 +11,6 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { Button } from '../common/Button';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
@@ -27,13 +26,13 @@ const searchModeConfig: Record<
 > = {
   address: {
     label: 'Address',
-    placeholder: 'Search any wallet address',
+    placeholder: 'Search by wallet address',
     tooltip:
       'Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction.',
   },
   txHash: {
-    label: 'Tx hash',
-    placeholder: 'Search any transaction hash',
+    label: 'Tx Hash',
+    placeholder: 'Search by transaction hash',
     tooltip: 'Search a transaction hash to find your bridge transaction.',
   },
 };
@@ -98,6 +97,7 @@ export function TransactionHistorySearchBar() {
   const {
     address,
     searchMode,
+    searchError,
     setAddress,
     setSanitizedAddress,
     setSanitizedTxHash,
@@ -107,6 +107,7 @@ export function TransactionHistorySearchBar() {
     (state) => ({
       address: state.address,
       searchMode: state.searchMode,
+      searchError: state.searchError,
       setAddress: state.setAddress,
       setSanitizedAddress: state.setSanitizedAddress,
       setSanitizedTxHash: state.setSanitizedTxHash,
@@ -170,6 +171,18 @@ export function TransactionHistorySearchBar() {
     connectedAddress,
   ]);
 
+  // Auto-search when the user clicks out of the field, but only with valid
+  // input: a blur from switching the search mode must not flash an error.
+  const searchTxIfValid = useCallback(() => {
+    const searchInput = address.trim();
+    if (searchInput === '') {
+      return;
+    }
+    if (searchMode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
+      searchTx();
+    }
+  }, [address, searchMode, searchTx]);
+
   return (
     <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:justify-between md:pr-0">
       <div className="flex items-center gap-2">
@@ -180,25 +193,30 @@ export function TransactionHistorySearchBar() {
       </div>
       <form
         className={twMerge(
-          'relative flex w-full items-center justify-center overflow-hidden rounded border border-gray-dark bg-black text-white md:w-1/2',
-          'focus-within:ring-2 focus-within:ring-inset focus-within:ring-white',
+          'relative flex h-[44px] w-full items-center gap-[10px] rounded-[10px] bg-gray-1 pl-[10px] pr-[15px] text-white md:w-1/2',
+          // subtle keyboard focus indicator; the design has no thick focus outline
+          'focus-within:ring-1 focus-within:ring-inset focus-within:ring-white/30',
+          searchError && 'border border-destructive',
         )}
-        onSubmit={(event) => event.preventDefault()}
+        onSubmit={(event) => {
+          event.preventDefault();
+          searchTx();
+        }}
       >
         <Listbox value={searchMode} onChange={setSearchMode}>
           <ListboxButton
-            className="flex h-full shrink-0 select-none items-center gap-1 border-r border-gray-dark px-2 py-1 text-sm font-light hover:bg-white/20"
+            className="arb-hover flex shrink-0 select-none items-center gap-1 text-sm tracking-[-0.28px]"
             aria-label="Transaction history search mode"
           >
             {searchModeConfig[searchMode].label}
-            <ChevronDownIcon className="h-3 w-3" />
+            <ChevronDownIcon className="h-4 w-4" />
           </ListboxButton>
           <ListboxOptions
             // non-modal like the chain filter popover, so opening it does not
             // scroll-lock the page and shift the layout
             modal={false}
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
-            className="z-20 overflow-hidden rounded border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
+            className="z-20 overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption
@@ -211,7 +229,8 @@ export function TransactionHistorySearchBar() {
             ))}
           </ListboxOptions>
         </Listbox>
-        <MagnifyingGlassIcon className="ml-2 h-3 w-3 shrink-0" />
+        <div className="h-6 w-px shrink-0 bg-gray-dark" />
+        <MagnifyingGlassIcon className="h-4 w-4 shrink-0 opacity-50" />
         <Tooltip
           content={searchModeConfig[searchMode].tooltip}
           wrapperClassName="block h-full w-full"
@@ -228,6 +247,7 @@ export function TransactionHistorySearchBar() {
             type="text"
             value={address}
             onChange={(event) => setAddress(event.target.value)}
+            onBlur={searchTxIfValid}
             inputMode="search"
             placeholder={searchModeConfig[searchMode].placeholder}
             aria-label={
@@ -235,27 +255,14 @@ export function TransactionHistorySearchBar() {
                 ? 'Transaction history transaction hash input'
                 : 'Transaction history wallet address input'
             }
-            // focus-visible:outline-0 beats the global white input outline; the form ring shows focus
-            className="h-full w-full bg-transparent py-1 pl-2 pr-3 text-sm font-light outline-none focus-visible:outline-0 placeholder:text-white/60"
+            // focus-visible:outline-0 beats the global white input outline; the form shows focus
+            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-none focus-visible:outline-0 placeholder:text-white/50"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"
             data-form-type="other"
           />
         </Tooltip>
-        <Button
-          type="submit"
-          variant="secondary"
-          className={twMerge(
-            'select-none rounded-l-none border-y-0 border-r-0 border-gray-dark bg-black py-[7px]',
-            'hover:bg-white/20 hover:opacity-100',
-            'disabled:border-y-0 disabled:border-r-0 disabled:border-l-gray-dark',
-          )}
-          onClick={searchTx}
-          disabled={!address}
-        >
-          Search
-        </Button>
       </form>
     </div>
   );
