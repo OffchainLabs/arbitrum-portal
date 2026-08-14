@@ -73,6 +73,10 @@
     // decompress arbitrary file write (Zip Slip) via a symlink race on ZIP archives with duplicate paths (CVE-2026-10732)
     // No upstream fix: decompress is unmaintained, 4.2.1 is the latest published version
     //
+    // https://github.com/advisories/GHSA-jwp9-9v96-94mx
+    // decompress allows arbitrary hardlink creation via unvalidated linkname during archive extraction (CVE-2026-39243)
+    // No upstream fix: decompress is unmaintained, 4.2.1 is the latest published version
+    //
     // https://github.com/advisories/GHSA-xv26-6w52-cph6
     // websocket-driver message corruption via abuse of protocol length headers
     //
@@ -98,6 +102,7 @@
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-mp2f-45pm-3cg9",
     "GHSA-h39j-r5qq-r9mm",
+    "GHSA-jwp9-9v96-94mx",
     "GHSA-xv26-6w52-cph6",
     "GHSA-mp7j-qc5w-4988",
     //
