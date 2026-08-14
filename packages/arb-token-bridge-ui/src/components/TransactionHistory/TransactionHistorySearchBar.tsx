@@ -193,7 +193,8 @@ export function TransactionHistorySearchBar() {
       </div>
       <form
         className={twMerge(
-          'relative flex h-[44px] w-full items-center gap-[10px] rounded-[10px] bg-gray-1 pl-[10px] pr-[15px] text-white md:w-1/2',
+          // gray-9 pops against the panel's #191919 background, per the design
+          'relative flex h-[44px] w-full items-center gap-[10px] rounded-[10px] bg-gray-9 pl-[10px] pr-[15px] text-white md:w-1/2',
           // subtle keyboard focus indicator; the design has no thick focus outline
           'focus-within:ring-1 focus-within:ring-inset focus-within:ring-white/30',
           searchError && 'border border-destructive',
