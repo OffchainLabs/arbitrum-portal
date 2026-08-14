@@ -75,6 +75,28 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
   setSearchError: (error: TransactionHistorySearchError | undefined) => set({ searchError: error }),
 }));
 
+/**
+ * Whether the history view is currently showing tx hash search results.
+ * `sanitizedTxHash` is only returned while the tx hash mode is active, so it
+ * can be passed straight to `useTransactionHistory`.
+ */
+export function useTxHashSearchState() {
+  const { searchMode, sanitizedTxHash } = useTransactionHistoryAddressStore(
+    (state) => ({
+      searchMode: state.searchMode,
+      sanitizedTxHash: state.sanitizedTxHash,
+    }),
+    shallow,
+  );
+
+  const isTxHashSearch = searchMode === 'txHash' && typeof sanitizedTxHash !== 'undefined';
+
+  return {
+    isTxHashSearch,
+    sanitizedTxHash: isTxHashSearch ? sanitizedTxHash : undefined,
+  };
+}
+
 export function TransactionHistorySearchBar() {
   const {
     address,

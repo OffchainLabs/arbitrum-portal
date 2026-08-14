@@ -539,7 +539,7 @@ export function useCctpFetching({
 
 export function useClaimCctp(tx: MergedTransaction) {
   const { address } = useAccount();
-  const { updatePendingTransaction } = useTransactionHistory(address);
+  const { updatePendingTransaction } = useTransactionHistory({ address });
   const [isClaiming, setIsClaiming] = useState(false);
   const { waitForAttestation, receiveMessage } = getCctpUtils({
     sourceChainId: tx.cctpData?.sourceChainId,

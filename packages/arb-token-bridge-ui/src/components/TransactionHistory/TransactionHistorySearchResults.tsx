@@ -3,21 +3,26 @@ import dayjs from 'dayjs';
 import { useEffect, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { useForceFetchReceived } from '../../hooks/useTransactionHistory';
-import { useDisplayedTransactionHistory } from '../../hooks/useTransactionHistoryByTxHash';
+import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
 import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 import { ContentWrapper, TransactionHistoryTable } from './TransactionHistoryTable';
 import { TransactionsTableDetails } from './TransactionsTableDetails';
 import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } from './helpers';
 
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+  const { sanitizedTxHash } = useTxHashSearchState();
 
-  const transactionHistoryProps = useDisplayedTransactionHistory(sanitizedAddress, {
+  const transactionHistoryProps = useTransactionHistory({
+    address: sanitizedAddress,
+    txHash: sanitizedTxHash,
     runFetcher: true,
   });
 
@@ -43,7 +48,8 @@ const tabClasses =
 
 export function TransactionHistorySearchResults() {
   const props = useTransactionHistoryUpdater();
-  const { transactions, isTxHashSearch, loading } = props;
+  const { transactions, loading } = props;
+  const { isTxHashSearch } = useTxHashSearchState();
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
     (state) => ({
       forceFetchReceived: state.forceFetchReceived,

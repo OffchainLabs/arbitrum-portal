@@ -1,7 +1,9 @@
 import { GET_HELP_LINK } from '../../constants';
-import { useTxHashSearchState } from '../../hooks/useTransactionHistoryByTxHash';
 import { ExternalLink } from '../common/ExternalLink';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 import { ContentWrapper, HistoryLoader, LoadMoreButton } from './TransactionHistoryTable';
 
 export const EmptyTransactionHistory = ({

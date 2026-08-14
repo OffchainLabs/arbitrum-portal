@@ -126,7 +126,7 @@ vi.mock('../useArbQueryParams', async (importActual) => ({
 }));
 
 const renderHookAsyncUseTransactionHistory = async (address: Address) => {
-  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }));
+  const hook = renderHook(() => useTransactionHistory({ address, runFetcher: true }));
 
   return { result: hook.result };
 };

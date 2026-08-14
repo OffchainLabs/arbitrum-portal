@@ -4,11 +4,14 @@ import { Fragment, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useDisplayedTransactionHistory } from '../../hooks/useTransactionHistoryByTxHash';
+import { useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { TransactionDetailsContent } from './TransactionDetailsContent';
 import { useTxDetailsStore } from './TransactionHistory';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 
 export const TransactionsTableDetails = () => {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
@@ -22,7 +25,11 @@ export const TransactionsTableDetails = () => {
     shallow,
   );
 
-  const { transactions, isTxHashSearch } = useDisplayedTransactionHistory(sanitizedAddress);
+  const { isTxHashSearch, sanitizedTxHash } = useTxHashSearchState();
+  const { transactions } = useTransactionHistory({
+    address: sanitizedAddress,
+    txHash: sanitizedTxHash,
+  });
 
   const tx = useMemo(() => {
     if (!txFromStore) {

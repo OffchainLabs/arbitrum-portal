@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 
-import { useDisplayedTransactionHistory } from '../../hooks/useTransactionHistoryByTxHash';
+import { useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 import { isTxClaimable, isTxPending } from './helpers';
 
 export function useTransactionReminderInfo() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const { transactions } = useDisplayedTransactionHistory(sanitizedAddress);
+  const { sanitizedTxHash } = useTxHashSearchState();
+  const { transactions } = useTransactionHistory({
+    address: sanitizedAddress,
+    txHash: sanitizedTxHash,
+  });
 
   const { numClaimableTransactions, numRetryablesToRedeem, numPendingTransactions } =
     useMemo(() => {

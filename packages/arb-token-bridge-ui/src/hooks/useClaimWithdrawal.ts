@@ -6,7 +6,10 @@ import { useAccount } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { useTransactionHistoryAddressStore } from '../components/TransactionHistory/TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from '../components/TransactionHistory/TransactionHistorySearchBar';
 import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../components/TransactionHistory/helpers';
 import { errorToast } from '../components/common/atoms/Toast';
 import { useAppState } from '../state';
@@ -18,7 +21,7 @@ import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
 import { fetchNativeCurrency } from './useNativeCurrency';
-import { useDisplayedTransactionHistory } from './useTransactionHistoryByTxHash';
+import { useTransactionHistory } from './useTransactionHistory';
 
 export type UseClaimWithdrawalResult = {
   claim: () => Promise<void>;
@@ -32,7 +35,11 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
   const { address } = useAccount();
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
   const signer = useEthersSigner({ chainId: tx.parentChainId });
-  const { updatePendingTransaction } = useDisplayedTransactionHistory(sanitizedAddress ?? address);
+  const { sanitizedTxHash } = useTxHashSearchState();
+  const { updatePendingTransaction } = useTransactionHistory({
+    address: sanitizedAddress ?? address,
+    txHash: sanitizedTxHash,
+  });
   const [isClaiming, setIsClaiming] = useState(false);
 
   const claim = useCallback(async () => {

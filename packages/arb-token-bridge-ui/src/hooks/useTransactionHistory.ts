@@ -3,6 +3,7 @@ import { useDebounce } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import useSWR from 'swr';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
 import { useAccount } from 'wagmi';
@@ -40,7 +41,11 @@ import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { logger } from '../util/logger';
 import { isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
-import { ChainPair, getMultiChainFetchList } from '../util/txHistoryRoutes';
+import {
+  fetchTransactionsByTxHash,
+  isValidTxHash,
+} from '../util/txHistory/fetchTransactionsByTxHash';
+import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
@@ -812,11 +817,109 @@ const useTransactionHistoryWithoutStatuses = (
  * Maps additional info to previously fetches transaction history, starting with the earliest data.
  * This is done in small batches to safely meet RPC limits.
  */
-export const useTransactionHistory = (
-  address: Address | undefined,
+const noopFetcherControl = () => {
+  // no pagination in tx hash search
+};
+
+/**
+ * Resolves a source chain tx hash directly from its receipt instead of
+ * fetching the full address history, so it stays fast on chains where that
+ * fetch requires long event-log scans (e.g. Edu Chain). Only mounted through
+ * `useTransactionHistory` below.
+ */
+function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransactionHistoryResult {
+  const [isTestnetMode] = useIsTestnetMode();
+  // The chain filter constrains the searched chain pairs, same as it
+  // constrains the address history fetch. Only its key can go in the SWR key,
+  // so the filter object reaches the fetcher via closure.
+  const chainFilter = useTxHistoryChainFilter();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    isValidTxHash(txHash)
+      ? ([
+          txHash.toLowerCase(),
+          isTestnetMode,
+          getChainFilterKey(chainFilter),
+          'txHashSearch',
+        ] as const)
+      : null,
+    async ([_txHash, _isTestnetMode]) => {
+      const matchesFilter = (chainPair: ChainPair) =>
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: chainPair.parentChainId,
+          destinationChainId: chainPair.childChainId,
+        });
+
+      const chainPairs = getMultiChainFetchList().filter(
+        (chainPair) =>
+          matchesFilter(chainPair) &&
+          isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
+      );
+
+      // The receipt is looked up across every route type (canonical, CCTP,
+      // OFT, LiFi), so the probe set is wider than the canonical pairs.
+      const probeChainIds = [
+        ...new Set(
+          getTxHistoryRoutes({ isTestnetMode: _isTestnetMode })
+            .filter(matchesFilter)
+            .flatMap((chainPair) => [chainPair.parentChainId, chainPair.childChainId]),
+        ),
+      ];
+
+      const transfers = await fetchTransactionsByTxHash({
+        txHash: _txHash,
+        chainPairs,
+        probeChainIds,
+        isTestnetMode: _isTestnetMode,
+      });
+
+      const transactions = await Promise.all(
+        transfers.map((transfer) => transformTransaction(transfer).catch(() => null)),
+      );
+
+      return transactions
+        .filter((tx): tx is MergedTransaction => tx !== null)
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+    },
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    },
+  );
+
+  return {
+    transactions: data ?? [],
+    loading: isLoading,
+    completed: true,
+    error,
+    failedChainPairs: [],
+    pause: noopFetcherControl,
+    resume: noopFetcherControl,
+    addPendingTransaction: noopFetcherControl,
+    updatePendingTransaction: async () => {
+      await mutate();
+    },
+  };
+}
+
+export const useTransactionHistory = (params: {
+  address: Address | undefined;
+  /**
+   * When set, the address history fetch is skipped entirely and this source
+   * chain tx hash is resolved directly instead.
+   */
+  txHash?: string;
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
-  { runFetcher = false } = {},
-): UseTransactionHistoryResult => {
+  runFetcher?: boolean;
+}): UseTransactionHistoryResult => {
+  const { txHash } = params;
+  const isTxHashSearch = typeof txHash !== 'undefined';
+  // In tx hash search mode the address pipeline is fully disabled, so no
+  // chain-pair fan-out, event-log scans or pagination run in the background.
+  const address = isTxHashSearch ? undefined : params.address;
+  const runFetcher = !isTxHashSearch && (params.runFetcher ?? false);
+  const txHashSearchResult = useTransactionHistoryByTxHash(txHash);
   const [isTestnetMode] = useIsTestnetMode();
   const { chain } = useAccount();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
@@ -1211,6 +1314,10 @@ export const useTransactionHistory = (
   function resume() {
     setFetching(true);
     setPage((prevPage) => prevPage + 1);
+  }
+
+  if (isTxHashSearch) {
+    return txHashSearchResult;
   }
 
   if (isLoadingTxsWithoutStatus || error) {
