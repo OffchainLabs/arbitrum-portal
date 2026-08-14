@@ -130,14 +130,13 @@ async function fetchApiTransfersForSender({
     isSmartContractWallet: false,
   };
 
-  const emptyCctpResponse = { pending: [], completed: [] };
   const [cctpDeposits, cctpWithdrawals, oftTransfers, lifiTransfers] = await Promise.all([
     fetchCCTPDeposits(cctpParams)
       .then((response) => parseSWRResponse(response, cctpParams.l1ChainId))
-      .catch(() => emptyCctpResponse),
+      .catch(() => ({ pending: [], completed: [] })),
     fetchCCTPWithdrawals(cctpParams)
       .then((response) => parseSWRResponse(response, cctpParams.l1ChainId))
-      .catch(() => emptyCctpResponse),
+      .catch(() => ({ pending: [], completed: [] })),
     fetchOftTransactionHistory({ walletAddress: sender, isTestnet: isTestnetMode, txHash }).catch(
       () => [],
     ),

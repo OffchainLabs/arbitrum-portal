@@ -817,10 +817,6 @@ const useTransactionHistoryWithoutStatuses = (
  * Maps additional info to previously fetches transaction history, starting with the earliest data.
  * This is done in small batches to safely meet RPC limits.
  */
-const noopFetcherControl = () => {
-  // no pagination in tx hash search
-};
-
 /**
  * Resolves a source chain tx hash directly from its receipt instead of
  * fetching the full address history, so it stays fast on chains where that
@@ -894,9 +890,9 @@ function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransacti
     completed: true,
     error,
     failedChainPairs: [],
-    pause: noopFetcherControl,
-    resume: noopFetcherControl,
-    addPendingTransaction: noopFetcherControl,
+    pause: () => {},
+    resume: () => {},
+    addPendingTransaction: () => {},
     updatePendingTransaction: async () => {
       await mutate();
     },
