@@ -217,7 +217,9 @@ export function TransactionHistorySearchBar() {
             // scroll-lock the page and shift the layout
             modal={false}
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
-            className="z-20 overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
+            // outline-style none kills the native focus ring on the focused
+            // menu; width 0 is ignored for the browser's auto style
+            className="z-20 overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [outline-style:none]"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption

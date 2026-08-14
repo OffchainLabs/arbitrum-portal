@@ -1,4 +1,5 @@
 import { Tab } from '@headlessui/react';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
@@ -158,8 +159,9 @@ export function TransactionHistorySearchResults() {
         </Tab.List>
 
         {isForeignTxHashResult && (
-          <div className="mb-2 text-xs text-white/80">
-            This transaction does not belong to your connected wallet.
+          <div className="mb-3 flex w-full space-x-2 rounded border-x-0 border-white/30 bg-orange-dark px-3 py-2 text-left text-sm text-white sm:border">
+            <ExclamationTriangleIcon width={20} className="shrink-0" />
+            <span>This transaction does not belong to your connected wallet.</span>
           </div>
         )}
 

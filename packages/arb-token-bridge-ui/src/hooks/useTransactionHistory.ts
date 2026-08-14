@@ -936,8 +936,7 @@ export const useTransactionHistory = (
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
   { runFetcher: runFetcherProp = false } = {},
 ): UseTransactionHistoryResult => {
-  // While a tx hash search is active, the address pipeline is fully disabled
-  // and the hash search result below is returned instead.
+  // a tx hash search disables the address pipeline and returns the hash result
   const { isTxHashSearch } = useTxHashSearchState();
   const address = isTxHashSearch ? undefined : searchedAddress;
   const runFetcher = !isTxHashSearch && runFetcherProp;
