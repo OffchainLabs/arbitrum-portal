@@ -133,7 +133,10 @@ export function TransactionHistorySearchResults() {
   if (isTxHashSearch && !loading && !error && transactions.length === 0) {
     return (
       <ContentWrapper>
-        <p>We could not find a bridge transaction for this hash. Make sure the hash is correct.</p>
+        <p>
+          We could not find this transaction on the selected chains. Make sure the hash is correct.
+          Make sure the chain filter includes the chain where the transaction started.
+        </p>
       </ContentWrapper>
     );
   }
