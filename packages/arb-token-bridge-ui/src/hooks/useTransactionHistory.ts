@@ -3,7 +3,6 @@ import { useDebounce } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import useSWR from 'swr';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
 import { useAccount } from 'wagmi';
@@ -814,23 +813,17 @@ const useTransactionHistoryWithoutStatuses = (
 };
 
 /**
- * Maps additional info to previously fetches transaction history, starting with the earliest data.
- * This is done in small batches to safely meet RPC limits.
- */
-/**
  * Resolves a source chain tx hash directly from its receipt instead of
  * fetching the full address history, so it stays fast on chains where that
- * fetch requires long event-log scans (e.g. Edu Chain). Only mounted through
- * `useTransactionHistory` below.
+ * fetch requires long event-log scans (e.g. Edu Chain).
  */
-function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransactionHistoryResult {
+function useTransactionHistoryByTxHash(
+  txHash: string | undefined,
+  chainFilter: TxHistoryChainFilter,
+): UseTransactionHistoryResult {
   const [isTestnetMode] = useIsTestnetMode();
-  // The chain filter constrains the searched chain pairs, same as it
-  // constrains the address history fetch. Only its key can go in the SWR key,
-  // so the filter object reaches the fetcher via closure.
-  const chainFilter = useTxHistoryChainFilter();
 
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWRImmutable(
     isValidTxHash(txHash)
       ? ([
           txHash.toLowerCase(),
@@ -853,8 +846,7 @@ function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransacti
           isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
       );
 
-      // The receipt is looked up across every route type (canonical, CCTP,
-      // OFT, LiFi), so the probe set is wider than the canonical pairs.
+      // the probe set spans every route type, so it is wider than the canonical pairs
       const probeChainIds = [
         ...new Set(
           getTxHistoryRoutes({ isTestnetMode: _isTestnetMode })
@@ -871,15 +863,35 @@ function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransacti
       });
 
       const transactions = await Promise.all(
-        transfers.map((transfer) => transformTransaction(transfer).catch(() => null)),
+        transfers.map((transfer) =>
+          transformTransaction(transfer).catch((transformError) => {
+            captureSentryErrorWithExtraData({
+              error: transformError,
+              originFunction: 'useTransactionHistoryByTxHash transformTransaction',
+            });
+            return null;
+          }),
+        ),
       );
 
-      return transactions
-        .filter((tx): tx is MergedTransaction => tx !== null)
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      return (
+        transactions
+          .filter((tx): tx is MergedTransaction => tx !== null)
+          // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
+          // chain filter to their results, same as the address history does
+          .filter((tx) =>
+            isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
+              ? matchesChainFilter({
+                  filter: chainFilter,
+                  sourceChainId: tx.sourceChainId,
+                  destinationChainId: tx.destinationChainId,
+                })
+              : true,
+          )
+          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      );
     },
     {
-      revalidateOnFocus: false,
       shouldRetryOnError: false,
     },
   );
@@ -899,23 +911,22 @@ function useTransactionHistoryByTxHash(txHash: string | undefined): UseTransacti
   };
 }
 
+/**
+ * Maps additional info to previously fetches transaction history, starting with the earliest data.
+ * This is done in small batches to safely meet RPC limits.
+ */
 export const useTransactionHistory = (params: {
   address: Address | undefined;
-  /**
-   * When set, the address history fetch is skipped entirely and this source
-   * chain tx hash is resolved directly instead.
-   */
+  /** When set, this source chain tx hash is resolved instead of the address history. */
   txHash?: string;
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
   runFetcher?: boolean;
 }): UseTransactionHistoryResult => {
   const { txHash } = params;
   const isTxHashSearch = typeof txHash !== 'undefined';
-  // In tx hash search mode the address pipeline is fully disabled, so no
-  // chain-pair fan-out, event-log scans or pagination run in the background.
+  // in tx hash search mode the address pipeline is fully disabled
   const address = isTxHashSearch ? undefined : params.address;
   const runFetcher = !isTxHashSearch && (params.runFetcher ?? false);
-  const txHashSearchResult = useTransactionHistoryByTxHash(txHash);
   const [isTestnetMode] = useIsTestnetMode();
   const { chain } = useAccount();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
@@ -929,6 +940,7 @@ export const useTransactionHistory = (params: {
   // single fetch fan-out. The debounce lives here — next to the instant filter
   // it lags behind — so the settling window below can be derived from both.
   const debouncedChainFilter = useDebounce(chainFilter, 500);
+  const txHashSearchResult = useTransactionHistoryByTxHash(txHash, debouncedChainFilter);
   const debouncedChainFilterKey = getChainFilterKey(debouncedChainFilter);
   // While the debounce settles, fetch inputs (debounced) and display filtering
   // (instant) disagree; surface that window as loading so the table shows a

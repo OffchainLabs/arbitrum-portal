@@ -76,7 +76,6 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
 }));
 
 /**
- * Whether the history view is currently showing tx hash search results.
  * `sanitizedTxHash` is only returned while the tx hash mode is active, so it
  * can be passed straight to `useTransactionHistory`.
  */
@@ -132,34 +131,36 @@ export function TransactionHistorySearchBar() {
   }, [address, connectedAddress, setSanitizedAddress, setSanitizedTxHash, setSearchError]);
 
   const searchTx = useCallback(() => {
-    if (address === '') {
+    const searchInput = address.trim();
+
+    if (searchInput === '') {
       return;
     }
 
     if (searchMode === 'txHash') {
-      if (!isValidTxHash(address)) {
+      if (!isValidTxHash(searchInput)) {
         setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
         return;
       }
 
       trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
 
-      setSanitizedTxHash(address);
+      setSanitizedTxHash(searchInput);
       setSearchError(undefined);
       return;
     }
 
-    if (!isAddress(address)) {
+    if (!isAddress(searchInput)) {
       setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
       return;
     }
 
     trackEvent('Search Tx for Address Click', {
       isTestnetMode,
-      isConnectedAddress: address.toLowerCase() === connectedAddress?.toLowerCase(),
+      isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
     });
 
-    setSanitizedAddress(address);
+    setSanitizedAddress(searchInput);
     setSearchError(undefined);
   }, [
     address,

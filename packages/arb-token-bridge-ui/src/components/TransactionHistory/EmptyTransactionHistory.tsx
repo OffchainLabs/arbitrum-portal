@@ -25,7 +25,9 @@ export const EmptyTransactionHistory = ({
   if (!isTxHashSearch && typeof txHistoryAddress === 'undefined') {
     return (
       <ContentWrapper>
-        <p>Please connect your wallet or search for a wallet address to see transactions.</p>
+        <p>
+          Please connect your wallet or search for a wallet address or tx hash to see transactions.
+        </p>
       </ContentWrapper>
     );
   }

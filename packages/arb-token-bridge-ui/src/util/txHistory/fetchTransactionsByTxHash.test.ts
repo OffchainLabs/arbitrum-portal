@@ -184,6 +184,23 @@ describe('getWithdrawalsFromReceipt', () => {
     ).toBe(8);
   });
 
+  it('drops a WithdrawalInitiated event without a matching child-to-parent event', () => {
+    const receipt = makeReceipt([
+      makeWithdrawalInitiatedLog({ position: 7, amount: BigNumber.from(500) }),
+      makeL2ToL1TxLog({ position: 8, callvalue: BigNumber.from(1_000_000) }),
+    ]);
+
+    const withdrawals = getWithdrawalsFromReceipt({
+      receipt,
+      parentChainId: PARENT_CHAIN_ID,
+      childChainId: CHILD_CHAIN_ID,
+    });
+
+    // the phantom token withdrawal is dropped, the real ETH withdrawal stays
+    expect(withdrawals).toHaveLength(1);
+    expect('l1Token' in (withdrawals[0] ?? {})).toBe(false);
+  });
+
   it('returns an empty list for a receipt without bridge events', () => {
     const receipt = makeReceipt([]);
 

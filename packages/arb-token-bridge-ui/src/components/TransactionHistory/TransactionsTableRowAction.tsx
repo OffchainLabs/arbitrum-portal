@@ -20,7 +20,10 @@ import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 import { getTransactionType, isLifiTransfer } from './helpers';
 
 function ActionRowConnectButton() {
@@ -59,8 +62,9 @@ export function TransactionsTableRowAction({
     chainId: tx.sourceChainId,
   });
 
+  const { sanitizedTxHash } = useTxHashSearchState();
   const { claim, isClaiming } = useClaimWithdrawal(tx);
-  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
+  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx, sanitizedTxHash);
   const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)

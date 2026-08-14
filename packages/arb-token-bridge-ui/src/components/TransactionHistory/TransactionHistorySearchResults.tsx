@@ -18,7 +18,7 @@ import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } fr
 
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const { sanitizedTxHash } = useTxHashSearchState();
+  const { isTxHashSearch, sanitizedTxHash } = useTxHashSearchState();
 
   const transactionHistoryProps = useTransactionHistory({
     address: sanitizedAddress,
@@ -34,11 +34,21 @@ function useTransactionHistoryUpdater() {
 
   useEffect(() => {
     const interval = setInterval(() => {
+      const [firstPendingTransaction] = pendingTransactions;
+
+      // in tx hash search mode one update refetches the whole search
+      if (isTxHashSearch) {
+        if (firstPendingTransaction) {
+          updatePendingTransaction(firstPendingTransaction);
+        }
+        return;
+      }
+
       pendingTransactions.forEach(updatePendingTransaction);
     }, 10_000);
 
     return () => clearInterval(interval);
-  }, [pendingTransactions, updatePendingTransaction]);
+  }, [pendingTransactions, updatePendingTransaction, isTxHashSearch]);
 
   return transactionHistoryProps;
 }
@@ -48,7 +58,7 @@ const tabClasses =
 
 export function TransactionHistorySearchResults() {
   const props = useTransactionHistoryUpdater();
-  const { transactions, loading } = props;
+  const { transactions, loading, error } = props;
   const { isTxHashSearch } = useTxHashSearchState();
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
     (state) => ({
@@ -108,13 +118,12 @@ export function TransactionHistorySearchResults() {
     );
   }
 
-  if (isTxHashSearch && !loading && transactions.length === 0) {
+  if (isTxHashSearch && !loading && !error && transactions.length === 0) {
     return (
       <ContentWrapper>
         <p>
-          No bridge transaction found for this transaction hash on the selected chains. Make sure
-          the chain filter includes the chain the transaction was sent from, and that the hash is
-          the transaction that initiated the transfer on the source chain.
+          We could not find a transaction for this hash. Make sure the hash is correct. Make sure
+          the chain filter includes the chain where the transaction started.
         </p>
       </ContentWrapper>
     );

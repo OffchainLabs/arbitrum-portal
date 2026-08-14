@@ -265,20 +265,7 @@ interface LayerZeroResponse {
   nextToken: 'string';
 }
 
-export async function fetchOftTransactionHistory({
-  walletAddress,
-  isTestnet,
-  txHash,
-}: {
-  walletAddress: string;
-  isTestnet: boolean;
-  /** When set, only messages initiated by this source chain tx hash are validated and returned. */
-  txHash?: string;
-}): Promise<LayerZeroTransaction[]> {
-  const url = `${
-    isTestnet ? LAYERZERO_API_URL_TESTNET : LAYERZERO_API_URL_MAINNET
-  }/messages/wallet/${walletAddress}`;
-
+async function fetchOftTransactionsFromUrl(url: string): Promise<LayerZeroTransaction[]> {
   const response = await fetch(url);
 
   // LayerZero API returns 404 if no transactions are found
@@ -292,14 +279,8 @@ export async function fetchOftTransactionHistory({
 
   const layerZeroResponse: LayerZeroResponse = await response.json();
 
-  const messages = txHash
-    ? layerZeroResponse.data.filter(
-        (message) => message.source?.tx?.txHash?.toLowerCase() === txHash.toLowerCase(),
-      )
-    : layerZeroResponse.data;
-
   const validMessages = [];
-  for (const message of messages) {
+  for (const message of layerZeroResponse.data) {
     // eslint-disable-next-line no-await-in-loop
     if (await validateLayerZeroMessage(message)) {
       validMessages.push(message);
@@ -307,6 +288,32 @@ export async function fetchOftTransactionHistory({
   }
 
   return validMessages.map(mapLayerZeroMessageToLayerZeroTransaction);
+}
+
+export async function fetchOftTransactionHistory({
+  walletAddress,
+  isTestnet,
+}: {
+  walletAddress: string;
+  isTestnet: boolean;
+}): Promise<LayerZeroTransaction[]> {
+  return fetchOftTransactionsFromUrl(
+    `${
+      isTestnet ? LAYERZERO_API_URL_TESTNET : LAYERZERO_API_URL_MAINNET
+    }/messages/wallet/${walletAddress}`,
+  );
+}
+
+export async function fetchOftTransactionsByTxHash({
+  txHash,
+  isTestnet,
+}: {
+  txHash: string;
+  isTestnet: boolean;
+}): Promise<LayerZeroTransaction[]> {
+  return fetchOftTransactionsFromUrl(
+    `${isTestnet ? LAYERZERO_API_URL_TESTNET : LAYERZERO_API_URL_MAINNET}/messages/tx/${txHash}`,
+  );
 }
 
 export function useOftTransactionHistory({

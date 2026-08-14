@@ -8,7 +8,7 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
 import { fetchLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
-import { fetchOftTransactionHistory } from '../../hooks/useOftTransactionHistory';
+import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
 import type { Transfer, Withdrawal } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { parseSWRResponse } from '../../state/cctpState';
@@ -26,10 +26,9 @@ export function isValidTxHash(txHash: string | undefined): txHash is string {
 }
 
 /**
- * Builds withdrawals directly from a child-chain transaction receipt, without
- * scanning any block ranges. Token withdrawals come from the receipt's
- * `WithdrawalInitiated` gateway events, ETH withdrawals from the remaining
- * ArbSys child-to-parent events.
+ * Builds withdrawals directly from a child-chain receipt, without scanning any
+ * block ranges: token withdrawals from its `WithdrawalInitiated` gateway
+ * events, ETH withdrawals from the remaining ArbSys child-to-parent events.
  */
 export function getWithdrawalsFromReceipt({
   receipt,
@@ -47,26 +46,33 @@ export function getWithdrawalsFromReceipt({
 
   const tokenWithdrawals: WithdrawalInitiated[] = receipt.logs
     .filter((log) => log.topics[0] === withdrawalInitiatedTopic)
-    .map((log) => {
+    .flatMap((log) => {
       const { l1Token, _from, _to, _l2ToL1Id, _exitNum, _amount } = gatewayInterface.parseLog(log)
         .args as unknown as WithdrawalInitiatedEvent['args'];
+      // a real gateway withdrawal always has its ArbSys event in the same
+      // receipt; without it this is a same-signature event from another contract
       const matchingEvent = childToParentEvents.find(
         (event) => 'position' in event && event.position.eq(_l2ToL1Id),
       );
-      return {
-        l1Token,
-        _from,
-        _to,
-        _l2ToL1Id,
-        _exitNum,
-        _amount,
-        txHash: receipt.transactionHash,
-        timestamp: matchingEvent?.timestamp,
-        direction: 'withdrawal',
-        source: 'event_logs',
-        parentChainId,
-        childChainId,
-      };
+      if (!matchingEvent) {
+        return [];
+      }
+      return [
+        {
+          l1Token,
+          _from,
+          _to,
+          _l2ToL1Id,
+          _exitNum,
+          _amount,
+          txHash: receipt.transactionHash,
+          timestamp: matchingEvent.timestamp,
+          direction: 'withdrawal' as const,
+          source: 'event_logs' as const,
+          parentChainId,
+          childChainId,
+        },
+      ];
     });
 
   const tokenWithdrawalIds = new Set(tokenWithdrawals.map((tx) => tx._l2ToL1Id.toString()));
@@ -91,7 +97,7 @@ async function getReceiptForChain({
 }: {
   txHash: string;
   chainId: number;
-}): Promise<{ chainId: number; receipt: TransactionReceipt } | null> {
+}): Promise<{ chainId: number; receipt: TransactionReceipt } | 'failed' | null> {
   try {
     const receipt = await getProviderForChainId(chainId).getTransactionReceipt(txHash);
     if (!receipt || receipt.status !== 1) {
@@ -99,19 +105,12 @@ async function getReceiptForChain({
     }
     return { chainId, receipt };
   } catch {
-    return null;
+    return 'failed';
   }
 }
 
-function matchesTxHash(tx: MergedTransaction, txHash: string) {
-  return tx.txId?.toLowerCase() === txHash.toLowerCase();
-}
-
-/**
- * CCTP, OFT and LiFi are fetched by wallet-scoped API calls, so query them
- * with the sender recovered from the receipt and keep only the transfer
- * initiated by the searched hash.
- */
+// CCTP, OFT and LiFi expose no canonical events on the receipt, so query their
+// APIs with the sender recovered from it and keep only the searched hash.
 async function fetchApiTransfersForSender({
   sender,
   txHash,
@@ -137,9 +136,7 @@ async function fetchApiTransfersForSender({
     fetchCCTPWithdrawals(cctpParams)
       .then((response) => parseSWRResponse(response, cctpParams.l1ChainId))
       .catch(() => ({ pending: [], completed: [] })),
-    fetchOftTransactionHistory({ walletAddress: sender, isTestnet: isTestnetMode, txHash }).catch(
-      () => [],
-    ),
+    fetchOftTransactionsByTxHash({ txHash, isTestnet: isTestnetMode }).catch(() => []),
     // The LiFi transaction history API only serves mainnet transfers.
     isTestnetMode ? Promise.resolve([]) : fetchLifiTransactionHistory(sender).catch(() => []),
   ]);
@@ -151,18 +148,14 @@ async function fetchApiTransfersForSender({
     ...cctpWithdrawals.completed,
     ...oftTransfers,
     ...lifiTransfers,
-  ].filter((tx) => matchesTxHash(tx, txHash));
+  ].filter((tx) => tx.txId?.toLowerCase() === txHash.toLowerCase());
 }
 
 /**
- * Finds bridge transfers for a transaction hash by probing the receipt on each
- * candidate chain, then resolving it as a canonical withdrawal (from the
- * receipt's own events), a canonical deposit (via the hash-filtered
- * subgraph/indexer query), or a CCTP/OFT/LiFi transfer (via their wallet APIs,
- * filtered locally to the hash). This avoids the from-genesis event-log scans
- * used by the full history fetch. The hash must be the transaction that
- * initiated the transfer on the source chain; destination chain hashes are not
- * searched.
+ * Finds bridge transfers for a source chain (initiating) tx hash by probing
+ * the receipt on each candidate chain, then resolving it as a canonical
+ * withdrawal/deposit or a CCTP/OFT/LiFi transfer. No event-log block scanning
+ * is involved, unlike the full address history fetch.
  */
 export async function fetchTransactionsByTxHash({
   txHash,
@@ -178,11 +171,19 @@ export async function fetchTransactionsByTxHash({
   isTestnetMode: boolean;
 }): Promise<Transfer[]> {
   const limit = pLimit(10);
-  const receipts = (
-    await Promise.all(
-      probeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),
-    )
-  ).filter((result): result is { chainId: number; receipt: TransactionReceipt } => result !== null);
+  const probeResults = await Promise.all(
+    probeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),
+  );
+
+  const receipts = probeResults.filter(
+    (result): result is { chainId: number; receipt: TransactionReceipt } =>
+      typeof result === 'object' && result !== null,
+  );
+
+  // with no receipt found and a chain unreachable, "not found" could be a lie
+  if (receipts.length === 0 && probeResults.includes('failed')) {
+    throw new Error('Some chains could not be checked for this transaction hash.');
+  }
 
   const transfers = await Promise.all(
     receipts.map(async ({ chainId, receipt }) => {
@@ -216,10 +217,17 @@ export async function fetchTransactionsByTxHash({
     }),
   );
 
+  const canonicalTransfers = transfers.flat();
+
+  // a hash is a single transfer; skip the API lookups once canonical resolved it
+  if (canonicalTransfers.length > 0) {
+    return canonicalTransfers;
+  }
+
   const uniqueSenders = [...new Set(receipts.map(({ receipt }) => receipt.from.toLowerCase()))];
   const apiTransfers = await Promise.all(
     uniqueSenders.map((sender) => fetchApiTransfersForSender({ sender, txHash, isTestnetMode })),
   );
 
-  return [...transfers.flat(), ...apiTransfers.flat()];
+  return apiTransfers.flat();
 }
