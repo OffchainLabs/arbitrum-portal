@@ -129,47 +129,66 @@ export function TransactionHistorySearchBar() {
     }
   }, [address, connectedAddress, setSanitizedAddress, setSanitizedTxHash, setSearchError]);
 
-  const searchTx = useCallback(() => {
-    const searchInput = address.trim();
+  const searchTx = useCallback(
+    (mode: TransactionHistorySearchMode = searchMode) => {
+      const searchInput = address.trim();
 
-    if (searchInput === '') {
-      return;
-    }
-
-    if (searchMode === 'txHash') {
-      if (!isHash(searchInput)) {
-        setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
+      if (searchInput === '') {
         return;
       }
 
-      trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+      if (mode === 'txHash') {
+        if (!isHash(searchInput)) {
+          setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
+          return;
+        }
 
-      setSanitizedTxHash(searchInput);
+        trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+
+        setSanitizedTxHash(searchInput);
+        setSearchError(undefined);
+        return;
+      }
+
+      if (!isAddress(searchInput)) {
+        setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
+        return;
+      }
+
+      trackEvent('Search Tx for Address Click', {
+        isTestnetMode,
+        isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
+      });
+
+      setSanitizedAddress(searchInput);
       setSearchError(undefined);
-      return;
-    }
-
-    if (!isAddress(searchInput)) {
-      setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
-      return;
-    }
-
-    trackEvent('Search Tx for Address Click', {
+    },
+    [
+      address,
+      searchMode,
+      setSanitizedAddress,
+      setSanitizedTxHash,
+      setSearchError,
       isTestnetMode,
-      isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
-    });
+      connectedAddress,
+    ],
+  );
 
-    setSanitizedAddress(searchInput);
-    setSearchError(undefined);
-  }, [
-    address,
-    searchMode,
-    setSanitizedAddress,
-    setSanitizedTxHash,
-    setSearchError,
-    isTestnetMode,
-    connectedAddress,
-  ]);
+  // A mode switch reruns the search when the input is already valid for the
+  // new mode, so the user does not have to submit again.
+  const handleSearchModeChange = useCallback(
+    (mode: TransactionHistorySearchMode) => {
+      setSearchMode(mode);
+      const searchInput = address.trim();
+      if (searchInput === '') {
+        return;
+      }
+      if (mode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
+        searchTx(mode);
+      }
+    },
+    [address, searchTx, setSearchMode],
+  );
 
   // Auto-search when the user clicks out of the field, but only with valid
   // input: a blur from switching the search mode must not flash an error.
@@ -204,7 +223,7 @@ export function TransactionHistorySearchBar() {
           searchTx();
         }}
       >
-        <Listbox value={searchMode} onChange={setSearchMode}>
+        <Listbox value={searchMode} onChange={handleSearchModeChange}>
           <ListboxButton
             className="arb-hover flex shrink-0 select-none items-center gap-1 text-sm tracking-[-0.28px]"
             aria-label="Transaction history search mode"
