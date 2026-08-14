@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const specFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/specfiles.json');
-const cctpFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/cctp.json');
 
 const tests = [];
 
@@ -47,17 +46,6 @@ switch (testType) {
         typeName: 'with L3 (20 decimals custom)',
         tag: tagMap['orbit-custom-20dec'],
       });
-    });
-    break;
-  }
-  case 'cctp': {
-    // Running CCTP tests in parallel cause nonce issues, we're running the two tests sequentially
-    tests.push({
-      name: 'cctp',
-      typeName: '',
-      file: 'tests/e2e/specs/**/*Cctp.cy.{js,jsx,ts,tsx}',
-      recordVideo: false,
-      type: 'cctp',
     });
     break;
   }
