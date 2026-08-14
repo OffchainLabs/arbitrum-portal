@@ -28,9 +28,7 @@ const WidgetTransactionHistoryLoadingPlaceholder = () => {
 
 export const WidgetTransactionHistory = (props: UseDialogProps) => {
   const { address: walletAddress } = useAccount();
-  const { transactions, loading: isLoadingTransactions } = useTransactionHistory({
-    address: walletAddress,
-  });
+  const { transactions, loading: isLoadingTransactions } = useTransactionHistory(walletAddress);
   const currentTx = transactions[0];
   const isLoading = transactions.length ? false : isLoadingTransactions;
 

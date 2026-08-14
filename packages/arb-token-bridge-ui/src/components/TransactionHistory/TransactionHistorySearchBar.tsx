@@ -2,7 +2,7 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Address, isAddress } from 'viem';
+import { Address, isAddress, isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
@@ -11,7 +11,6 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isValidTxHash } from '../../util/txHistory/fetchTransactionsByTxHash';
 import { Button } from '../common/Button';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
@@ -64,7 +63,7 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
     }
   },
   setSanitizedTxHash: (txHash: string | undefined) => {
-    if (typeof txHash === 'undefined' || isValidTxHash(txHash)) {
+    if (typeof txHash === 'undefined' || isHash(txHash)) {
       set({ sanitizedTxHash: txHash });
     }
   },
@@ -137,7 +136,7 @@ export function TransactionHistorySearchBar() {
     }
 
     if (searchMode === 'txHash') {
-      if (!isValidTxHash(searchInput)) {
+      if (!isHash(searchInput)) {
         setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
         return;
       }

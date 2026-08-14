@@ -18,13 +18,6 @@ import { fetchDeposits } from '../deposits/fetchDeposits';
 import { ChainPair } from '../txHistoryRoutes';
 import { EthWithdrawal } from '../withdrawals/helpers';
 
-export function isValidTxHash(txHash: string | undefined): txHash is string {
-  if (!txHash) {
-    return false;
-  }
-  return /^0x[0-9a-fA-F]{64}$/.test(txHash);
-}
-
 /**
  * Builds withdrawals directly from a child-chain receipt, without scanning any
  * block ranges: token withdrawals from its `WithdrawalInitiated` gateway

@@ -68,7 +68,7 @@ function getLongtailPair() {
 }
 
 async function renderAndWaitForFetch() {
-  renderHook(() => useTransactionHistory({ address: ADDRESS, runFetcher: true }));
+  renderHook(() => useTransactionHistory(ADDRESS, { runFetcher: true }));
   await waitFor(() => expect(fetchDeposits).toHaveBeenCalled(), { timeout: 30_000 });
 }
 

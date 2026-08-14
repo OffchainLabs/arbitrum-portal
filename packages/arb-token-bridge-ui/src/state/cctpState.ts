@@ -537,11 +537,9 @@ export function useCctpFetching({
   };
 }
 
-// txHash comes in as a param instead of the tx hash search store to avoid an
-// import cycle (this module is imported by the tx hash search fetcher).
-export function useClaimCctp(tx: MergedTransaction, txHash?: string) {
+export function useClaimCctp(tx: MergedTransaction) {
   const { address } = useAccount();
-  const { updatePendingTransaction } = useTransactionHistory({ address, txHash });
+  const { updatePendingTransaction } = useTransactionHistory(address);
   const [isClaiming, setIsClaiming] = useState(false);
   const { waitForAttestation, receiveMessage } = getCctpUtils({
     sourceChainId: tx.cctpData?.sourceChainId,

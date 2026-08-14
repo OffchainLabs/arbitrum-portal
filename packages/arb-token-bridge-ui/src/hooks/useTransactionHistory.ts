@@ -5,11 +5,13 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
+import { isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import {
   getDepositsWithoutStatusesFromCache,
   getUpdatedCctpTransfer,
@@ -40,10 +42,7 @@ import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { logger } from '../util/logger';
 import { isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
-import {
-  fetchTransactionsByTxHash,
-  isValidTxHash,
-} from '../util/txHistory/fetchTransactionsByTxHash';
+import { fetchTransactionsByTxHash } from '../util/txHistory/fetchTransactionsByTxHash';
 import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
@@ -817,14 +816,12 @@ const useTransactionHistoryWithoutStatuses = (
  * fetching the full address history, so it stays fast on chains where that
  * fetch requires long event-log scans (e.g. Edu Chain).
  */
-function useTransactionHistoryByTxHash(
-  txHash: string | undefined,
-  chainFilter: TxHistoryChainFilter,
-): UseTransactionHistoryResult {
+function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
   const [isTestnetMode] = useIsTestnetMode();
+  const { sanitizedTxHash: txHash } = useTxHashSearchState();
 
   const { data, error, isLoading, mutate } = useSWRImmutable(
-    isValidTxHash(txHash)
+    typeof txHash !== 'undefined' && isHash(txHash)
       ? ([
           txHash.toLowerCase(),
           isTestnetMode,
@@ -915,18 +912,16 @@ function useTransactionHistoryByTxHash(
  * Maps additional info to previously fetches transaction history, starting with the earliest data.
  * This is done in small batches to safely meet RPC limits.
  */
-export const useTransactionHistory = (params: {
-  address: Address | undefined;
-  /** When set, this source chain tx hash is resolved instead of the address history. */
-  txHash?: string;
+export const useTransactionHistory = (
+  searchedAddress: Address | undefined,
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
-  runFetcher?: boolean;
-}): UseTransactionHistoryResult => {
-  const { txHash } = params;
-  const isTxHashSearch = typeof txHash !== 'undefined';
-  // in tx hash search mode the address pipeline is fully disabled
-  const address = isTxHashSearch ? undefined : params.address;
-  const runFetcher = !isTxHashSearch && (params.runFetcher ?? false);
+  { runFetcher: runFetcherProp = false } = {},
+): UseTransactionHistoryResult => {
+  // While a tx hash search is active, the address pipeline is fully disabled
+  // and the hash search result below is returned instead.
+  const { isTxHashSearch } = useTxHashSearchState();
+  const address = isTxHashSearch ? undefined : searchedAddress;
+  const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
   const { chain } = useAccount();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
@@ -940,7 +935,7 @@ export const useTransactionHistory = (params: {
   // single fetch fan-out. The debounce lives here — next to the instant filter
   // it lags behind — so the settling window below can be derived from both.
   const debouncedChainFilter = useDebounce(chainFilter, 500);
-  const txHashSearchResult = useTransactionHistoryByTxHash(txHash, debouncedChainFilter);
+  const txHashSearchResult = useTransactionHistoryByTxHash(debouncedChainFilter);
   const debouncedChainFilterKey = getChainFilterKey(debouncedChainFilter);
   // While the debounce settles, fetch inputs (debounced) and display filtering
   // (instant) disagree; surface that window as loading so the table shows a

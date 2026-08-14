@@ -2,11 +2,38 @@ import { ArbSys__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ArbSys__fa
 import { L2ArbitrumGateway__factory } from '@arbitrum/sdk/dist/lib/abi/factories/L2ArbitrumGateway__factory';
 import { Log, TransactionReceipt } from '@ethersproject/providers';
 import { BigNumber } from 'ethers';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
+import { fetchLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
+import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
+import { MergedTransaction } from '../../state/app/state';
+import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
+import { fetchDeposits } from '../deposits/fetchDeposits';
 import { EthWithdrawal } from '../withdrawals/helpers';
-import { getWithdrawalsFromReceipt, isValidTxHash } from './fetchTransactionsByTxHash';
+import { fetchTransactionsByTxHash, getWithdrawalsFromReceipt } from './fetchTransactionsByTxHash';
+
+vi.mock('@/token-bridge-sdk/utils', () => ({
+  getProviderForChainId: vi.fn(),
+}));
+vi.mock('../deposits/fetchDeposits', () => ({
+  fetchDeposits: vi.fn(),
+}));
+vi.mock('../cctp/fetchCCTP', () => ({
+  fetchCCTPDeposits: vi.fn(),
+  fetchCCTPWithdrawals: vi.fn(),
+}));
+vi.mock('../../hooks/useLifiTransactionHistory', () => ({
+  fetchLifiTransactionHistory: vi.fn(),
+}));
+vi.mock('../../hooks/useOftTransactionHistory', () => ({
+  fetchOftTransactionsByTxHash: vi.fn(),
+}));
+vi.mock('../../state/cctpState', () => ({
+  parseSWRResponse: (response: unknown) => response,
+}));
 
 const TX_HASH = '0x94e3f5f7ae10d9b98df828b7bfa3b7b1c7f0e2a1b4b28ee1cf2a4dbecdd6bbf1';
 const SENDER = '0x1111111111111111111111111111111111111111';
@@ -17,6 +44,8 @@ const GATEWAY_ADDRESS = '0x9E8f79EE5177aBDd76EDfC7D72c8Dc0F16955ae3';
 
 const PARENT_CHAIN_ID = 42161;
 const CHILD_CHAIN_ID = 41923;
+const CHAIN_PAIRS = [{ parentChainId: PARENT_CHAIN_ID, childChainId: CHILD_CHAIN_ID }];
+const PROBE_CHAIN_IDS = [PARENT_CHAIN_ID, CHILD_CHAIN_ID];
 
 const arbSysInterface = ArbSys__factory.createInterface();
 const gatewayInterface = L2ArbitrumGateway__factory.createInterface();
@@ -93,22 +122,29 @@ function makeReceipt(logs: Log[]): TransactionReceipt {
   };
 }
 
-describe('isValidTxHash', () => {
-  it('accepts a 32-byte hex hash', () => {
-    expect(isValidTxHash(TX_HASH)).toBe(true);
-    expect(isValidTxHash(TX_HASH.toUpperCase().replace('0X', '0x'))).toBe(true);
-  });
+/** Providers keyed by chain id; chains without an entry return no receipt. */
+function mockProviders(receipts: { [chainId: number]: TransactionReceipt | Error }) {
+  vi.mocked(getProviderForChainId).mockImplementation(
+    (chainId: number) =>
+      ({
+        getTransactionReceipt: async () => {
+          const result = receipts[chainId];
+          if (result instanceof Error) {
+            throw result;
+          }
+          return result ?? null;
+        },
+      }) as never,
+  );
+}
 
-  it('rejects invalid values', () => {
-    expect(isValidTxHash(undefined)).toBe(false);
-    expect(isValidTxHash('')).toBe(false);
-    expect(isValidTxHash('0x123')).toBe(false);
-    expect(isValidTxHash(TX_HASH.slice(2))).toBe(false); // missing 0x
-    expect(isValidTxHash(`${TX_HASH}ff`)).toBe(false); // too long
-    expect(isValidTxHash('0x' + 'g'.repeat(64))).toBe(false); // non-hex
-    expect(isValidTxHash('0x1111111111111111111111111111111111111111')).toBe(false); // address
-  });
-});
+function emptyApiMocks() {
+  vi.mocked(fetchDeposits).mockResolvedValue([]);
+  vi.mocked(fetchCCTPDeposits).mockResolvedValue({ pending: [], completed: [] });
+  vi.mocked(fetchCCTPWithdrawals).mockResolvedValue({ pending: [], completed: [] });
+  vi.mocked(fetchOftTransactionsByTxHash).mockResolvedValue([]);
+  vi.mocked(fetchLifiTransactionHistory).mockResolvedValue([]);
+}
 
 describe('getWithdrawalsFromReceipt', () => {
   it('builds a token withdrawal from WithdrawalInitiated and its matching child-to-parent event', () => {
@@ -211,5 +247,117 @@ describe('getWithdrawalsFromReceipt', () => {
     });
 
     expect(withdrawals).toHaveLength(0);
+  });
+});
+
+// sequential: these tests share module-level mocks, so the config's default
+// concurrency would let them clobber each other
+describe.sequential('fetchTransactionsByTxHash', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    emptyApiMocks();
+  });
+
+  it('resolves a withdrawal from the child chain receipt and skips the API lookups', async () => {
+    mockProviders({
+      [CHILD_CHAIN_ID]: makeReceipt([
+        makeL2ToL1TxLog({ position: 8, callvalue: BigNumber.from(1_000_000) }),
+      ]),
+    });
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(transfers).toHaveLength(1);
+    expect((transfers[0] as EthWithdrawal).direction).toBe('withdrawal');
+    expect(fetchCCTPDeposits).not.toHaveBeenCalled();
+    expect(fetchOftTransactionsByTxHash).not.toHaveBeenCalled();
+    expect(fetchLifiTransactionHistory).not.toHaveBeenCalled();
+  });
+
+  it('resolves a deposit through the hash-filtered deposits query on the parent chain', async () => {
+    const deposit = { txID: TX_HASH, direction: 'deposit' };
+    mockProviders({ [PARENT_CHAIN_ID]: makeReceipt([]) });
+    vi.mocked(fetchDeposits).mockResolvedValue([deposit as never]);
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(fetchDeposits).toHaveBeenCalledWith(
+      expect.objectContaining({ sender: SENDER, searchString: TX_HASH }),
+    );
+    expect(transfers).toEqual([deposit]);
+    expect(fetchCCTPDeposits).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the API lookups and keeps only the searched hash', async () => {
+    const matching = { txId: TX_HASH, isCctp: true } as MergedTransaction;
+    const other = { txId: '0x' + 'b'.repeat(64), isCctp: true } as MergedTransaction;
+    mockProviders({ [PARENT_CHAIN_ID]: makeReceipt([]) });
+    vi.mocked(fetchCCTPDeposits).mockResolvedValue({
+      pending: [matching],
+      completed: [other],
+    } as never);
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(transfers).toEqual([matching]);
+  });
+
+  it('returns an empty list when the hash is not found on any chain', async () => {
+    mockProviders({});
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(transfers).toEqual([]);
+  });
+
+  it('throws when nothing is found and a chain could not be checked', async () => {
+    mockProviders({ [CHILD_CHAIN_ID]: new Error('rate limited') });
+
+    await expect(
+      fetchTransactionsByTxHash({
+        txHash: TX_HASH,
+        chainPairs: CHAIN_PAIRS,
+        probeChainIds: PROBE_CHAIN_IDS,
+        isTestnetMode: false,
+      }),
+    ).rejects.toThrow('Some chains could not be checked');
+  });
+
+  it('tolerates a failed probe when the receipt was found elsewhere', async () => {
+    mockProviders({
+      [PARENT_CHAIN_ID]: new Error('rate limited'),
+      [CHILD_CHAIN_ID]: makeReceipt([
+        makeL2ToL1TxLog({ position: 8, callvalue: BigNumber.from(1_000_000) }),
+      ]),
+    });
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(transfers).toHaveLength(1);
   });
 });

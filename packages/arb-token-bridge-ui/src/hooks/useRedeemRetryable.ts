@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import { errorToast } from '../components/common/atoms/Toast';
 import { DepositStatus, MergedTransaction } from '../state/app/state';
 import { Address } from '../util/AddressUtils';
@@ -25,11 +24,7 @@ export function useRedeemRetryable(
   address: Address | undefined,
 ): UseRedeemRetryableResult {
   const signer = useEthersSigner({ chainId: tx.destinationChainId });
-  const { sanitizedTxHash } = useTxHashSearchState();
-  const { updatePendingTransaction } = useTransactionHistory({
-    address,
-    txHash: sanitizedTxHash,
-  });
+  const { updatePendingTransaction } = useTransactionHistory(address);
 
   const destinationNetworkName = getNetworkName(tx.destinationChainId);
 

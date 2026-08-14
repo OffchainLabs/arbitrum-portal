@@ -25,11 +25,8 @@ export const TransactionsTableDetails = () => {
     shallow,
   );
 
-  const { isTxHashSearch, sanitizedTxHash } = useTxHashSearchState();
-  const { transactions } = useTransactionHistory({
-    address: sanitizedAddress,
-    txHash: sanitizedTxHash,
-  });
+  const { isTxHashSearch } = useTxHashSearchState();
+  const { transactions } = useTransactionHistory(sanitizedAddress);
 
   const tx = useMemo(() => {
     if (!txFromStore) {
@@ -94,7 +91,12 @@ export const TransactionsTableDetails = () => {
                   </button>
                 </Dialog.Title>
 
-                <TransactionDetailsContent tx={tx} walletAddress={sanitizedAddress} />
+                <TransactionDetailsContent
+                  tx={tx}
+                  // A hash search result is not tied to the searched address,
+                  // so describe the tx relative to its own sender.
+                  walletAddress={isTxHashSearch ? tx.sender : sanitizedAddress}
+                />
               </Dialog.Panel>
             </Transition.Child>
           </div>

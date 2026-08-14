@@ -18,11 +18,9 @@ import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } fr
 
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const { isTxHashSearch, sanitizedTxHash } = useTxHashSearchState();
+  const { isTxHashSearch } = useTxHashSearchState();
 
-  const transactionHistoryProps = useTransactionHistory({
-    address: sanitizedAddress,
-    txHash: sanitizedTxHash,
+  const transactionHistoryProps = useTransactionHistory(sanitizedAddress, {
     runFetcher: true,
   });
 
