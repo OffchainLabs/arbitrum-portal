@@ -18,7 +18,7 @@ export enum TransactionHistorySearchError {
   INVALID_TX_HASH = 'That doesn’t seem to be a valid transaction hash, please try again.',
 }
 
-export type TransactionHistorySearchMode = 'address' | 'txHash';
+type TransactionHistorySearchMode = 'address' | 'txHash';
 
 const searchModeConfig: Record<
   TransactionHistorySearchMode,

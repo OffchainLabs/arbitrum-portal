@@ -146,7 +146,7 @@ function isDeposit(tx: DepositOrWithdrawal): tx is Deposit {
   return tx.direction === 'deposit';
 }
 
-export async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
+async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
   // LifiTransaction are already MergedTransaction
   if (isLifiTransfer(tx)) {
     return tx;

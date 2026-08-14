@@ -290,7 +290,7 @@ async function fetchOftTransactionsFromUrl(url: string): Promise<LayerZeroTransa
   return validMessages.map(mapLayerZeroMessageToLayerZeroTransaction);
 }
 
-export async function fetchOftTransactionHistory({
+async function fetchOftTransactionHistory({
   walletAddress,
   isTestnet,
 }: {
