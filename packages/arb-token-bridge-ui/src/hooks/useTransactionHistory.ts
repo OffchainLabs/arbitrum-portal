@@ -814,7 +814,10 @@ const useTransactionHistoryWithoutStatuses = (
 /**
  * Resolves a source chain tx hash directly from its receipt instead of
  * fetching the full address history, so it stays fast on chains where that
- * fetch requires long event-log scans (e.g. Edu Chain).
+ * fetch requires long event-log scans (e.g. Edu Chain). The chains selected
+ * in the chain filter are searched first; when the hash is not found there,
+ * the search extends to every supported chain, so a valid hash is never
+ * reported as not found just because of the filter.
  */
 function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
   const [isTestnetMode] = useIsTestnetMode();
@@ -838,13 +841,18 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
         });
 
       const chainPairs = getMultiChainFetchList().filter(
-        (chainPair) =>
-          matchesFilter(chainPair) &&
-          isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
+        (chainPair) => isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
       );
-
       // the probe set spans every route type, so it is wider than the canonical pairs
-      const probeChainIds = [
+      const allProbeChainIds = [
+        ...new Set(
+          getTxHistoryRoutes({ isTestnetMode: _isTestnetMode }).flatMap((chainPair) => [
+            chainPair.parentChainId,
+            chainPair.childChainId,
+          ]),
+        ),
+      ];
+      const filteredProbeChainIds = [
         ...new Set(
           getTxHistoryRoutes({ isTestnetMode: _isTestnetMode })
             .filter(matchesFilter)
@@ -852,12 +860,36 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
         ),
       ];
 
-      const transfers = await fetchTransactionsByTxHash({
-        txHash: _txHash,
-        chainPairs,
-        probeChainIds,
-        isTestnetMode: _isTestnetMode,
-      });
+      let transfers: Transfer[] = [];
+      let filteredSearchError: unknown;
+      try {
+        transfers = await fetchTransactionsByTxHash({
+          txHash: _txHash,
+          chainPairs,
+          probeChainIds: filteredProbeChainIds,
+          isTestnetMode: _isTestnetMode,
+        });
+      } catch (searchError) {
+        filteredSearchError = searchError;
+      }
+
+      const remainingProbeChainIds = allProbeChainIds.filter(
+        (chainId) => !filteredProbeChainIds.includes(chainId),
+      );
+
+      if (transfers.length === 0 && remainingProbeChainIds.length > 0) {
+        transfers = await fetchTransactionsByTxHash({
+          txHash: _txHash,
+          chainPairs,
+          probeChainIds: remainingProbeChainIds,
+          isTestnetMode: _isTestnetMode,
+        });
+      }
+
+      // nothing found anywhere and some filtered chains failed: not-found is unreliable
+      if (transfers.length === 0 && filteredSearchError) {
+        throw filteredSearchError;
+      }
 
       const transactions = await Promise.all(
         transfers.map((transfer) =>
@@ -871,22 +903,9 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
         ),
       );
 
-      return (
-        transactions
-          .filter((tx): tx is MergedTransaction => tx !== null)
-          // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
-          // chain filter to their results, same as the address history does
-          .filter((tx) =>
-            isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
-              ? matchesChainFilter({
-                  filter: chainFilter,
-                  sourceChainId: tx.sourceChainId,
-                  destinationChainId: tx.destinationChainId,
-                })
-              : true,
-          )
-          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-      );
+      return transactions
+        .filter((tx): tx is MergedTransaction => tx !== null)
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
     },
     {
       shouldRetryOnError: false,

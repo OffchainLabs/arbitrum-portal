@@ -1,10 +1,12 @@
 import { Tab } from '@headlessui/react';
 import dayjs from 'dayjs';
 import { useEffect, useMemo } from 'react';
+import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
+import { addressesEqual } from '../../util/AddressUtils';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
 import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
@@ -58,6 +60,17 @@ export function TransactionHistorySearchResults() {
   const props = useTransactionHistoryUpdater();
   const { transactions, loading, error } = props;
   const { isTxHashSearch } = useTxHashSearchState();
+  const { address: connectedAddress } = useAccount();
+
+  const isForeignTxHashResult =
+    isTxHashSearch &&
+    typeof connectedAddress !== 'undefined' &&
+    transactions.length > 0 &&
+    transactions.every(
+      (tx) =>
+        !addressesEqual(tx.sender, connectedAddress) &&
+        !addressesEqual(tx.destination, connectedAddress),
+    );
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
     (state) => ({
       forceFetchReceived: state.forceFetchReceived,
@@ -119,10 +132,7 @@ export function TransactionHistorySearchResults() {
   if (isTxHashSearch && !loading && !error && transactions.length === 0) {
     return (
       <ContentWrapper>
-        <p>
-          We could not find a transaction for this hash. Make sure the hash is correct. Make sure
-          the chain filter includes the chain where the transaction started.
-        </p>
+        <p>We could not find a bridge transaction for this hash. Make sure the hash is correct.</p>
       </ContentWrapper>
     );
   }
@@ -146,6 +156,12 @@ export function TransactionHistorySearchResults() {
             <span className="text-sm md:text-base">Settled transactions</span>
           </TabButton>
         </Tab.List>
+
+        {isForeignTxHashResult && (
+          <div className="mb-2 text-xs text-white/80">
+            This transaction does not belong to your connected wallet.
+          </div>
+        )}
 
         {!isTxHashSearch && !forceFetchReceived && typeof txHistoryAddress !== 'undefined' && (
           <div className="mb-2 text-xs text-white">
