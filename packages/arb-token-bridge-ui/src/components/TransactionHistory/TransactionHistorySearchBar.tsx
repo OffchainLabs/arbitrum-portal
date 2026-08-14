@@ -1,4 +1,5 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Address, isAddress } from 'viem';
@@ -10,58 +11,119 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import { trackEvent } from '../../util/AnalyticsUtils';
+import { isValidTxHash } from '../../util/txHistory/fetchTransactionsByTxHash';
 import { Button } from '../common/Button';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
   INVALID_ADDRESS = 'That doesn’t seem to be a valid address, please try again.',
+  INVALID_TX_HASH = 'That doesn’t seem to be a valid transaction hash, please try again.',
 }
+
+export type TransactionHistorySearchMode = 'address' | 'txHash';
+
+const searchModeConfig: Record<
+  TransactionHistorySearchMode,
+  { label: string; placeholder: string; tooltip: string }
+> = {
+  address: {
+    label: 'Address',
+    placeholder: 'Search any wallet address',
+    tooltip:
+      'Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction.',
+  },
+  txHash: {
+    label: 'Tx hash',
+    placeholder: 'Search any transaction hash',
+    tooltip:
+      'Search a bridge transaction hash to view its status and claim it if it is a withdrawal, without waiting for the full history to load.',
+  },
+};
 
 type TransactionHistoryAddressStore = {
   address: string;
   sanitizedAddress: Address | undefined;
+  sanitizedTxHash: string | undefined;
+  searchMode: TransactionHistorySearchMode;
   searchError: TransactionHistorySearchError | undefined;
   setAddress: (address: string) => void;
   setSanitizedAddress: (address: string) => void;
+  setSanitizedTxHash: (txHash: string | undefined) => void;
+  setSearchMode: (searchMode: TransactionHistorySearchMode) => void;
   setSearchError: (error: TransactionHistorySearchError | undefined) => void;
 };
 
 export const useTransactionHistoryAddressStore = create<TransactionHistoryAddressStore>((set) => ({
   address: '',
   sanitizedAddress: undefined,
+  sanitizedTxHash: undefined,
+  searchMode: 'address',
   setAddress: (address: string) => set({ address }),
   setSanitizedAddress: (address: string) => {
     if (isAddress(address)) {
       set({ sanitizedAddress: address });
     }
   },
+  setSanitizedTxHash: (txHash: string | undefined) => {
+    if (typeof txHash === 'undefined' || isValidTxHash(txHash)) {
+      set({ sanitizedTxHash: txHash });
+    }
+  },
+  setSearchMode: (searchMode: TransactionHistorySearchMode) =>
+    set({ searchMode, searchError: undefined, sanitizedTxHash: undefined }),
   searchError: undefined,
   setSearchError: (error: TransactionHistorySearchError | undefined) => set({ searchError: error }),
 }));
 
 export function TransactionHistorySearchBar() {
-  const { address, setAddress, setSanitizedAddress, setSearchError } =
-    useTransactionHistoryAddressStore(
-      (state) => ({
-        address: state.address,
-        setAddress: state.setAddress,
-        setSanitizedAddress: state.setSanitizedAddress,
-        setSearchError: state.setSearchError,
-      }),
-      shallow,
-    );
+  const {
+    address,
+    searchMode,
+    setAddress,
+    setSanitizedAddress,
+    setSanitizedTxHash,
+    setSearchMode,
+    setSearchError,
+  } = useTransactionHistoryAddressStore(
+    (state) => ({
+      address: state.address,
+      searchMode: state.searchMode,
+      setAddress: state.setAddress,
+      setSanitizedAddress: state.setSanitizedAddress,
+      setSanitizedTxHash: state.setSanitizedTxHash,
+      setSearchMode: state.setSearchMode,
+      setSearchError: state.setSearchError,
+    }),
+    shallow,
+  );
   const { address: connectedAddress } = useAccount();
   const [isTestnetMode] = useIsTestnetMode();
 
   useEffect(() => {
-    if (address === '' && connectedAddress) {
-      setSanitizedAddress(connectedAddress);
-      setSearchError(undefined);
-    }
-  }, [address, connectedAddress, setSanitizedAddress, setSearchError]);
-
-  const searchTxForAddress = useCallback(() => {
     if (address === '') {
+      setSanitizedTxHash(undefined);
+      if (connectedAddress) {
+        setSanitizedAddress(connectedAddress);
+        setSearchError(undefined);
+      }
+    }
+  }, [address, connectedAddress, setSanitizedAddress, setSanitizedTxHash, setSearchError]);
+
+  const searchTx = useCallback(() => {
+    if (address === '') {
+      return;
+    }
+
+    if (searchMode === 'txHash') {
+      if (!isValidTxHash(address)) {
+        setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
+        return;
+      }
+
+      trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+
+      setSanitizedTxHash(address);
+      setSearchError(undefined);
       return;
     }
 
@@ -77,7 +139,15 @@ export function TransactionHistorySearchBar() {
 
     setSanitizedAddress(address);
     setSearchError(undefined);
-  }, [address, setSanitizedAddress, setSearchError, isTestnetMode, connectedAddress]);
+  }, [
+    address,
+    searchMode,
+    setSanitizedAddress,
+    setSanitizedTxHash,
+    setSearchError,
+    isTestnetMode,
+    connectedAddress,
+  ]);
 
   return (
     <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:justify-between md:pr-0">
@@ -94,9 +164,32 @@ export function TransactionHistorySearchBar() {
         )}
         onSubmit={(event) => event.preventDefault()}
       >
-        <MagnifyingGlassIcon className="absolute left-2 top-1/2 -mt-[7px] h-3 w-3" />
+        <Listbox value={searchMode} onChange={setSearchMode}>
+          <ListboxButton
+            className="flex h-full shrink-0 select-none items-center gap-1 border-r border-gray-dark px-2 py-1 text-sm font-light hover:bg-white/20"
+            aria-label="Transaction history search mode"
+          >
+            {searchModeConfig[searchMode].label}
+            <ChevronDownIcon className="h-3 w-3" />
+          </ListboxButton>
+          <ListboxOptions
+            anchor={{ to: 'bottom start', gap: 4 }}
+            className="z-20 rounded border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white"
+          >
+            {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
+              <ListboxOption
+                key={mode}
+                value={mode}
+                className="cursor-pointer px-3 py-2 data-[focus]:bg-white/10 data-[selected]:bg-white/20"
+              >
+                {searchModeConfig[mode].label}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Listbox>
+        <MagnifyingGlassIcon className="ml-2 h-3 w-3 shrink-0" />
         <Tooltip
-          content="Search any wallet address to view transactions and claim withdrawals for them. The funds will arrive at the destination wallet address specified by the original withdrawal transaction."
+          content={searchModeConfig[searchMode].tooltip}
           wrapperClassName="block h-full w-full"
           contentProps={{
             className: 'w-auto whitespace-normal break-words',
@@ -112,9 +205,13 @@ export function TransactionHistorySearchBar() {
             value={address}
             onChange={(event) => setAddress(event.target.value)}
             inputMode="search"
-            placeholder="Search any wallet address"
-            aria-label="Transaction history wallet address input"
-            className="h-full w-full bg-transparent py-1 pl-6 pr-3 text-sm font-light outline-none placeholder:text-white/60"
+            placeholder={searchModeConfig[searchMode].placeholder}
+            aria-label={
+              searchMode === 'txHash'
+                ? 'Transaction history transaction hash input'
+                : 'Transaction history wallet address input'
+            }
+            className="h-full w-full bg-transparent py-1 pl-2 pr-3 text-sm font-light outline-none placeholder:text-white/60"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"
@@ -129,7 +226,7 @@ export function TransactionHistorySearchBar() {
             'hover:bg-white/20 hover:opacity-100',
             'disabled:border-y-0 disabled:border-r-0 disabled:border-l-gray-dark',
           )}
-          onClick={searchTxForAddress}
+          onClick={searchTx}
           disabled={!address}
         >
           Search

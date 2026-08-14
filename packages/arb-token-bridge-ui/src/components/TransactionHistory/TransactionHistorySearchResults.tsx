@@ -3,7 +3,8 @@ import dayjs from 'dayjs';
 import { useEffect, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { useForceFetchReceived } from '../../hooks/useTransactionHistory';
+import { useDisplayedTransactionHistory } from '../../hooks/useTransactionHistoryByTxHash';
 import { MergedTransaction } from '../../state/app/state';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
@@ -16,7 +17,7 @@ import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } fr
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
-  const transactionHistoryProps = useTransactionHistory(sanitizedAddress, {
+  const transactionHistoryProps = useDisplayedTransactionHistory(sanitizedAddress, {
     runFetcher: true,
   });
 
@@ -42,7 +43,7 @@ const tabClasses =
 
 export function TransactionHistorySearchResults() {
   const props = useTransactionHistoryUpdater();
-  const { transactions } = props;
+  const { transactions, isTxHashSearch, loading } = props;
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
     (state) => ({
       forceFetchReceived: state.forceFetchReceived,
@@ -101,6 +102,18 @@ export function TransactionHistorySearchResults() {
     );
   }
 
+  if (isTxHashSearch && !loading && transactions.length === 0) {
+    return (
+      <ContentWrapper>
+        <p>
+          No bridge transaction found for this transaction hash on the selected chains. Make sure
+          the chain filter includes the chain the transaction was sent from, and that the hash is
+          the transaction that initiated the transfer on the source chain.
+        </p>
+      </ContentWrapper>
+    );
+  }
+
   return (
     <>
       <div className="pr-4 md:pr-0">
@@ -121,7 +134,7 @@ export function TransactionHistorySearchResults() {
           </TabButton>
         </Tab.List>
 
-        {!forceFetchReceived && typeof txHistoryAddress !== 'undefined' && (
+        {!isTxHashSearch && !forceFetchReceived && typeof txHistoryAddress !== 'undefined' && (
           <div className="mb-2 text-xs text-white">
             Missing a transaction after sending to or receiving from a different address? Click{' '}
             <button onClick={() => setForceFetchReceived(true)} className="arb-hover underline">

@@ -12,7 +12,7 @@ import { getRetryableTicket } from '../util/RetryableUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
 import { getNetworkName } from '../util/networks';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
-import { useTransactionHistory } from './useTransactionHistory';
+import { useDisplayedTransactionHistory } from './useTransactionHistoryByTxHash';
 
 export type UseRedeemRetryableResult = {
   redeem: () => Promise<void>;
@@ -24,7 +24,7 @@ export function useRedeemRetryable(
   address: Address | undefined,
 ): UseRedeemRetryableResult {
   const signer = useEthersSigner({ chainId: tx.destinationChainId });
-  const { updatePendingTransaction } = useTransactionHistory(address);
+  const { updatePendingTransaction } = useDisplayedTransactionHistory(address);
 
   const destinationNetworkName = getNetworkName(tx.destinationChainId);
 

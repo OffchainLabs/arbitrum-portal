@@ -146,7 +146,7 @@ type ParsedResponse = {
   pending: MergedTransaction[];
   completed: MergedTransaction[];
 };
-function parseSWRResponse(
+export function parseSWRResponse(
   { pending, completed }: Response['data'],
   chainId: ChainId,
 ): ParsedResponse {

@@ -265,6 +265,50 @@ interface LayerZeroResponse {
   nextToken: 'string';
 }
 
+export async function fetchOftTransactionHistory({
+  walletAddress,
+  isTestnet,
+  txHash,
+}: {
+  walletAddress: string;
+  isTestnet: boolean;
+  /** When set, only messages initiated by this source chain tx hash are validated and returned. */
+  txHash?: string;
+}): Promise<LayerZeroTransaction[]> {
+  const url = `${
+    isTestnet ? LAYERZERO_API_URL_TESTNET : LAYERZERO_API_URL_MAINNET
+  }/messages/wallet/${walletAddress}`;
+
+  const response = await fetch(url);
+
+  // LayerZero API returns 404 if no transactions are found
+  if (response.status === 404) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch OFT transaction history');
+  }
+
+  const layerZeroResponse: LayerZeroResponse = await response.json();
+
+  const messages = txHash
+    ? layerZeroResponse.data.filter(
+        (message) => message.source?.tx?.txHash?.toLowerCase() === txHash.toLowerCase(),
+      )
+    : layerZeroResponse.data;
+
+  const validMessages = [];
+  for (const message of messages) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await validateLayerZeroMessage(message)) {
+      validMessages.push(message);
+    }
+  }
+
+  return validMessages.map(mapLayerZeroMessageToLayerZeroTransaction);
+}
+
 export function useOftTransactionHistory({
   walletAddress,
   isTestnet,
@@ -272,38 +316,10 @@ export function useOftTransactionHistory({
   walletAddress?: string;
   isTestnet: boolean;
 }) {
-  const fetcher = async (url: string) => {
-    const response = await fetch(url);
-
-    // LayerZero API returns 404 if no transactions are found
-    if (response.status === 404) {
-      return [];
-    }
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch OFT transaction history');
-    }
-
-    const layerZeroResponse: LayerZeroResponse = await response.json();
-
-    const validMessages = [];
-    for (const message of layerZeroResponse.data) {
-      // eslint-disable-next-line no-await-in-loop
-      if (await validateLayerZeroMessage(message)) {
-        validMessages.push(message);
-      }
-    }
-
-    return validMessages.map(mapLayerZeroMessageToLayerZeroTransaction);
-  };
-
   const { data, error, isLoading } = useSWRImmutable(
-    walletAddress
-      ? `${
-          isTestnet ? LAYERZERO_API_URL_TESTNET : LAYERZERO_API_URL_MAINNET
-        }/messages/wallet/${walletAddress}`
-      : null,
-    fetcher,
+    walletAddress ? ([walletAddress, isTestnet, 'oftTransactionHistory'] as const) : null,
+    ([_walletAddress, _isTestnet]) =>
+      fetchOftTransactionHistory({ walletAddress: _walletAddress, isTestnet: _isTestnet }),
     {
       errorRetryCount: 2,
     },

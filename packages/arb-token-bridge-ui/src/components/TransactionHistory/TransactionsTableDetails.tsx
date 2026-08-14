@@ -4,7 +4,7 @@ import { Fragment, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useTransactionHistory } from '../../hooks/useTransactionHistory';
+import { useDisplayedTransactionHistory } from '../../hooks/useTransactionHistoryByTxHash';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { TransactionDetailsContent } from './TransactionDetailsContent';
 import { useTxDetailsStore } from './TransactionHistory';
@@ -22,7 +22,7 @@ export const TransactionsTableDetails = () => {
     shallow,
   );
 
-  const { transactions } = useTransactionHistory(sanitizedAddress);
+  const { transactions, isTxHashSearch } = useDisplayedTransactionHistory(sanitizedAddress);
 
   const tx = useMemo(() => {
     if (!txFromStore) {
@@ -41,7 +41,7 @@ export const TransactionsTableDetails = () => {
   const childProvider = getProviderForChainId(tx?.childChainId ?? 0);
   const nativeCurrency = useNativeCurrency({ provider: childProvider });
 
-  if (!tx || !sanitizedAddress || !nativeCurrency) {
+  if (!tx || (!sanitizedAddress && !isTxHashSearch) || !nativeCurrency) {
     return null;
   }
 

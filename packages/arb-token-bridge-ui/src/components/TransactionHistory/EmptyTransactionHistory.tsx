@@ -1,4 +1,5 @@
 import { GET_HELP_LINK } from '../../constants';
+import { useTxHashSearchState } from '../../hooks/useTransactionHistoryByTxHash';
 import { ExternalLink } from '../common/ExternalLink';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
 import { ContentWrapper, HistoryLoader, LoadMoreButton } from './TransactionHistoryTable';
@@ -17,8 +18,9 @@ export const EmptyTransactionHistory = ({
   tabType: 'pending' | 'settled';
 }) => {
   const txHistoryAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+  const { isTxHashSearch } = useTxHashSearchState();
 
-  if (typeof txHistoryAddress === 'undefined') {
+  if (!isTxHashSearch && typeof txHistoryAddress === 'undefined') {
     return (
       <ContentWrapper>
         <p>Please connect your wallet or search for a wallet address to see transactions.</p>

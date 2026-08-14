@@ -70,6 +70,9 @@ type AnalyticsEventMap = {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;
   };
+  'Search Tx for Tx Hash Click': {
+    isTestnetMode: boolean;
+  };
   'Tx History Network Filter': { network: string };
   'Tx Error: Get Help Click': {
     network: string;

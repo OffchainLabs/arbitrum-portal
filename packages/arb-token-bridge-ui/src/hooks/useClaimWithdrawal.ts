@@ -18,7 +18,7 @@ import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
 import { fetchNativeCurrency } from './useNativeCurrency';
-import { useTransactionHistory } from './useTransactionHistory';
+import { useDisplayedTransactionHistory } from './useTransactionHistoryByTxHash';
 
 export type UseClaimWithdrawalResult = {
   claim: () => Promise<void>;
@@ -32,7 +32,7 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
   const { address } = useAccount();
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
   const signer = useEthersSigner({ chainId: tx.parentChainId });
-  const { updatePendingTransaction } = useTransactionHistory(sanitizedAddress ?? address);
+  const { updatePendingTransaction } = useDisplayedTransactionHistory(sanitizedAddress ?? address);
   const [isClaiming, setIsClaiming] = useState(false);
 
   const claim = useCallback(async () => {
