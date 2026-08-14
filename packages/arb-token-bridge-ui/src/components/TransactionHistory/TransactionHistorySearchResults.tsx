@@ -141,7 +141,18 @@ export function TransactionHistorySearchResults() {
   return (
     <>
       <div className="pr-4 md:pr-0">
-        <TransactionStatusInfo />
+        {isForeignTxHashResult ? (
+          // replaces the claim reminder: it addresses the connected wallet,
+          // which this searched transaction does not belong to
+          <div className="mb-3 mt-3 w-full rounded border-x-0 border-white/30 bg-orange-dark px-3 py-2 text-left text-sm text-white sm:border md:mt-0">
+            <div className="flex space-x-2">
+              <ExclamationTriangleIcon width={20} className="shrink-0" />
+              <span>The searched transaction does not belong to your connected wallet.</span>
+            </div>
+          </div>
+        ) : (
+          <TransactionStatusInfo />
+        )}
       </div>
 
       <div className="mb-4">
@@ -157,13 +168,6 @@ export function TransactionHistorySearchResults() {
             <span className="text-sm md:text-base">Settled transactions</span>
           </TabButton>
         </Tab.List>
-
-        {isForeignTxHashResult && (
-          <div className="mb-3 flex w-full space-x-2 rounded border-x-0 border-white/30 bg-orange-dark px-3 py-2 text-left text-sm text-white sm:border">
-            <ExclamationTriangleIcon width={20} className="shrink-0" />
-            <span>This transaction does not belong to your connected wallet.</span>
-          </div>
-        )}
 
         {!isTxHashSearch && !forceFetchReceived && typeof txHistoryAddress !== 'undefined' && (
           <div className="mb-2 text-xs text-white">
