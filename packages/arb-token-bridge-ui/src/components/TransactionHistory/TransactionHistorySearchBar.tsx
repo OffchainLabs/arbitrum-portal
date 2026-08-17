@@ -247,13 +247,15 @@ export function TransactionHistorySearchBar() {
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
             // outline-style none kills the native focus ring on the focused
             // menu; width 0 is ignored for the browser's auto style
-            className="z-20 overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [outline-style:none]"
+            // spans border to divider: button width plus the 10px field padding on the
+            // left and the 10px gap on the right, shifted to the field's left edge
+            className="z-20 w-[calc(var(--button-width)+20px)] overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [--anchor-offset:-10px] [outline-style:none]"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption
                 key={mode}
                 value={mode}
-                className="cursor-pointer px-3 py-2 data-[focus]:bg-white/10 data-[selected]:bg-white/20"
+                className="cursor-pointer whitespace-nowrap px-[10px] py-2 data-[focus]:bg-white/10 data-[selected]:bg-white/20"
               >
                 {searchModeConfig[mode].label}
               </ListboxOption>
