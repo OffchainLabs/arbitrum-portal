@@ -140,7 +140,10 @@ export function TransactionHistorySearchResults() {
       return;
     }
     autoSwitchedTabForTxHash.current = sanitizedTxHash;
-    setSelectedTabIndex(pendingTransactions.length === 0 ? 1 : 0);
+    // pick the tab from the found tx's status: pending, claimable and failed
+    // txs render in the pending tab, completed and expired in the settled tab
+    const foundOnlySettledTransactions = pendingTransactions.length === 0;
+    setSelectedTabIndex(foundOnlySettledTransactions ? 1 : 0);
   }, [
     isTxHashSearch,
     loading,
