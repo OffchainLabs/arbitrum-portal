@@ -1,7 +1,7 @@
 import { Tab } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
@@ -122,6 +122,33 @@ export function TransactionHistorySearchResults() {
 
   const settledTransactions = groupedTransactions.settled;
 
+  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const autoSwitchedTabForTxHash = useRef<string | undefined>(undefined);
+  const { sanitizedTxHash } = useTxHashSearchState();
+
+  // When a hash search finds only a settled tx, open the settled tab for the
+  // user, once per searched hash so manual tab changes stick.
+  useEffect(() => {
+    if (!isTxHashSearch || loading || typeof sanitizedTxHash === 'undefined') {
+      return;
+    }
+    // wait for a result: an empty render can occur before loading flips on
+    if (pendingTransactions.length === 0 && settledTransactions.length === 0) {
+      return;
+    }
+    if (autoSwitchedTabForTxHash.current === sanitizedTxHash) {
+      return;
+    }
+    autoSwitchedTabForTxHash.current = sanitizedTxHash;
+    setSelectedTabIndex(pendingTransactions.length === 0 ? 1 : 0);
+  }, [
+    isTxHashSearch,
+    loading,
+    sanitizedTxHash,
+    pendingTransactions.length,
+    settledTransactions.length,
+  ]);
+
   if (searchError) {
     return (
       <ContentWrapper>
@@ -162,7 +189,12 @@ export function TransactionHistorySearchResults() {
         <TransactionHistoryDisclaimer />
       </div>
 
-      <Tab.Group as="div" className="h-full overflow-hidden rounded md:pr-0">
+      <Tab.Group
+        as="div"
+        className="h-full overflow-hidden rounded md:pr-0"
+        selectedIndex={selectedTabIndex}
+        onChange={setSelectedTabIndex}
+      >
         <Tab.List className="mb-4 flex border-b border-white/30">
           <TabButton aria-label="show pending transactions" className={tabClasses}>
             <span className="text-sm md:text-base">Pending transactions</span>
