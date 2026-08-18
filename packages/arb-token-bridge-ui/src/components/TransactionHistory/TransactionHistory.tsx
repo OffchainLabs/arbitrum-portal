@@ -1,7 +1,11 @@
+import { useEffect } from 'react';
 import { create } from 'zustand';
 
 import { MergedTransaction } from '../../state/app/state';
-import { TransactionHistorySearchBar } from './TransactionHistorySearchBar';
+import {
+  TransactionHistorySearchBar,
+  useTransactionHistoryAddressStore,
+} from './TransactionHistorySearchBar';
 import { TransactionHistorySearchResults } from './TransactionHistorySearchResults';
 
 type TxDetailsStore = {
@@ -31,6 +35,11 @@ export const useTxDetailsStore = create<TxDetailsStore>((set) => ({
 }));
 
 export const TransactionHistory = () => {
+  const resetSearch = useTransactionHistoryAddressStore((state) => state.resetSearch);
+
+  // leaving the tx history resets the search, so it opens fresh next time
+  useEffect(() => resetSearch, [resetSearch]);
+
   return (
     <div className="m-auto w-full max-w-[100vw] bg-[#191919] p-4 md:max-w-[1000px] rounded">
       <TransactionHistorySearchBar />

@@ -25,6 +25,25 @@ function deserializeLifiHistoryTransaction(
   };
 }
 
+export async function fetchLifiTransactionHistory(
+  walletAddress: string,
+): Promise<LifiMergedTransaction[]> {
+  const response = await fetch(
+    `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/transactions?wallet=${walletAddress}`,
+  );
+  const body = (await response.json()) as LifiTransactionHistoryResponse;
+
+  if (!response.ok) {
+    throw new Error('message' in body ? body.message : 'Failed to fetch LiFi transaction history');
+  }
+
+  if (body.data === null) {
+    throw new Error(body.message);
+  }
+
+  return body.data.map(deserializeLifiHistoryTransaction);
+}
+
 export function useLifiTransactionHistory({
   walletAddress,
 }: {
@@ -33,24 +52,7 @@ export function useLifiTransactionHistory({
   const { handleError } = useError();
   return useSWRImmutable(
     walletAddress ? ([walletAddress, 'useLifiTransactionHistory'] as const) : null,
-    async ([walletAddress]) => {
-      const response = await fetch(
-        `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/transactions?wallet=${walletAddress}`,
-      );
-      const body = (await response.json()) as LifiTransactionHistoryResponse;
-
-      if (!response.ok) {
-        throw new Error(
-          'message' in body ? body.message : 'Failed to fetch LiFi transaction history',
-        );
-      }
-
-      if (body.data === null) {
-        throw new Error(body.message);
-      }
-
-      return body.data.map(deserializeLifiHistoryTransaction);
-    },
+    async ([walletAddress]) => fetchLifiTransactionHistory(walletAddress),
     {
       onError(error) {
         handleError({

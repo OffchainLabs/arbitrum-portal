@@ -5,11 +5,13 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
+import { isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import {
   getDepositsWithoutStatusesFromCache,
   getUpdatedCctpTransfer,
@@ -40,7 +42,8 @@ import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { logger } from '../util/logger';
 import { isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
-import { ChainPair, getMultiChainFetchList } from '../util/txHistoryRoutes';
+import { fetchTransactionsByTxHash } from '../util/txHistory/fetchTransactionsByTxHash';
+import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
@@ -809,14 +812,115 @@ const useTransactionHistoryWithoutStatuses = (
 };
 
 /**
+ * Resolves a source chain tx hash directly from its receipt instead of
+ * fetching the full address history, so it stays fast on chains where that
+ * fetch requires long event-log scans (e.g. Edu Chain). Only the chains
+ * selected in the chain filter are searched.
+ */
+function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
+  const [isTestnetMode] = useIsTestnetMode();
+  const { sanitizedTxHash: txHash } = useTxHashSearchState();
+
+  const { data, error, isLoading, mutate } = useSWRImmutable(
+    typeof txHash !== 'undefined' && isHash(txHash)
+      ? ([
+          txHash.toLowerCase(),
+          isTestnetMode,
+          getChainFilterKey(chainFilter),
+          'txHashSearch',
+        ] as const)
+      : null,
+    async ([_txHash, _isTestnetMode]) => {
+      const matchesFilter = (chainPair: ChainPair) =>
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: chainPair.parentChainId,
+          destinationChainId: chainPair.childChainId,
+        });
+
+      const chainPairs = getMultiChainFetchList().filter(
+        (chainPair) =>
+          matchesFilter(chainPair) &&
+          isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
+      );
+      // the probe set spans every route type, so it is wider than the canonical pairs
+      const probeChainIds = [
+        ...new Set(
+          getTxHistoryRoutes({ isTestnetMode: _isTestnetMode })
+            .filter(matchesFilter)
+            .flatMap((chainPair) => [chainPair.parentChainId, chainPair.childChainId]),
+        ),
+      ];
+
+      const transfers = await fetchTransactionsByTxHash({
+        txHash: _txHash,
+        chainPairs,
+        probeChainIds,
+        isTestnetMode: _isTestnetMode,
+      });
+
+      const transactions = await Promise.all(
+        transfers.map((transfer) =>
+          transformTransaction(transfer).catch((transformError) => {
+            captureSentryErrorWithExtraData({
+              error: transformError,
+              originFunction: 'useTransactionHistoryByTxHash transformTransaction',
+            });
+            return null;
+          }),
+        ),
+      );
+
+      return (
+        transactions
+          .filter((tx): tx is MergedTransaction => tx !== null)
+          // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
+          // chain filter to their results, same as the address history does
+          .filter((tx) =>
+            isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
+              ? matchesChainFilter({
+                  filter: chainFilter,
+                  sourceChainId: tx.sourceChainId,
+                  destinationChainId: tx.destinationChainId,
+                })
+              : true,
+          )
+          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      );
+    },
+    {
+      shouldRetryOnError: false,
+    },
+  );
+
+  return {
+    transactions: data ?? [],
+    loading: isLoading,
+    completed: true,
+    error,
+    failedChainPairs: [],
+    pause: () => {},
+    resume: () => {},
+    addPendingTransaction: () => {},
+    updatePendingTransaction: async () => {
+      await mutate();
+    },
+  };
+}
+
+/**
  * Maps additional info to previously fetches transaction history, starting with the earliest data.
  * This is done in small batches to safely meet RPC limits.
  */
 export const useTransactionHistory = (
-  address: Address | undefined,
+  searchedAddress: Address | undefined,
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
-  { runFetcher = false } = {},
+  { runFetcher: runFetcherProp = false } = {},
 ): UseTransactionHistoryResult => {
+  // a tx hash search disables the address pipeline and returns the hash result
+  const { isTxHashSearch } = useTxHashSearchState();
+  const address = isTxHashSearch ? undefined : searchedAddress;
+  const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
   const { chain } = useAccount();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
@@ -830,6 +934,7 @@ export const useTransactionHistory = (
   // single fetch fan-out. The debounce lives here — next to the instant filter
   // it lags behind — so the settling window below can be derived from both.
   const debouncedChainFilter = useDebounce(chainFilter, 500);
+  const txHashSearchResult = useTransactionHistoryByTxHash(debouncedChainFilter);
   const debouncedChainFilterKey = getChainFilterKey(debouncedChainFilter);
   // While the debounce settles, fetch inputs (debounced) and display filtering
   // (instant) disagree; surface that window as loading so the table shows a
@@ -1211,6 +1316,10 @@ export const useTransactionHistory = (
   function resume() {
     setFetching(true);
     setPage((prevPage) => prevPage + 1);
+  }
+
+  if (isTxHashSearch) {
+    return txHashSearchResult;
   }
 
   if (isLoadingTxsWithoutStatus || error) {
