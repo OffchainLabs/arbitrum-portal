@@ -131,10 +131,10 @@ export function TransactionHistorySearchBar() {
   useEffect(() => {
     if (address === '') {
       setSanitizedTxHash(undefined);
-      if (connectedAddress) {
-        setSanitizedAddress(connectedAddress);
-        setSearchError(undefined);
-      }
+    }
+    if (address === '' && connectedAddress) {
+      setSanitizedAddress(connectedAddress);
+      setSearchError(undefined);
     }
   }, [address, connectedAddress, setSanitizedAddress, setSanitizedTxHash, setSearchError]);
 
@@ -198,18 +198,6 @@ export function TransactionHistorySearchBar() {
     },
     [address, searchTx, setSearchMode],
   );
-
-  // Auto-search when the user clicks out of the field, but only with valid
-  // input: a blur from switching the search mode must not flash an error.
-  const searchTxIfValid = useCallback(() => {
-    const searchInput = address.trim();
-    if (searchInput === '') {
-      return;
-    }
-    if (searchMode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
-      searchTx();
-    }
-  }, [address, searchMode, searchTx]);
 
   return (
     <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:justify-between md:pr-0">
@@ -280,7 +268,9 @@ export function TransactionHistorySearchBar() {
             type="text"
             value={address}
             onChange={(event) => setAddress(event.target.value)}
-            onBlur={searchTxIfValid}
+            // clicking out of the field searches like a submit, including
+            // showing the validation error
+            onBlur={() => searchTx()}
             inputMode="search"
             placeholder={searchModeConfig[searchMode].placeholder}
             aria-label={
