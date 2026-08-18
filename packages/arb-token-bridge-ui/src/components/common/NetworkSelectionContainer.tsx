@@ -546,7 +546,7 @@ export const NetworkSelectionContainer = React.memo(
           actionButtonProps={{ hidden: true }}
           isFooterHidden={true}
           className={twMerge(
-            'h-screen overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
+            'h-[100dvh] overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
             embedMode && 'md:h-full',
           )}
         >
