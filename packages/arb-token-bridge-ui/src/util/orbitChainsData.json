@@ -1787,7 +1787,7 @@
           "symbol": "tRCF",
           "logoUrl": "/images/RECYCLEFARMCarbonNetworkTestnet_NativeTokenLogo.png"
         },
-        "fastWithdrawalTime": 900000
+        "fastWithdrawalTime": 4200000
       }
     }
   ]
