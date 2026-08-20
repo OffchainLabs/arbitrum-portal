@@ -102,6 +102,10 @@ export function useTxHashSearchState() {
   };
 }
 
+function isNewSearch(searchInput: string, currentSearchValue: string | undefined) {
+  return searchInput.toLowerCase() !== currentSearchValue?.toLowerCase();
+}
+
 export function TransactionHistorySearchBar() {
   const {
     address,
@@ -157,7 +161,7 @@ export function TransactionHistorySearchBar() {
         }
 
         // resubmitting the same hash (enter, blur) is not a new search
-        if (searchInput.toLowerCase() !== sanitizedTxHash?.toLowerCase()) {
+        if (isNewSearch(searchInput, sanitizedTxHash)) {
           trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
         }
 
@@ -172,7 +176,7 @@ export function TransactionHistorySearchBar() {
       }
 
       // resubmitting the same address (enter, blur) is not a new search
-      if (searchInput.toLowerCase() !== sanitizedAddress?.toLowerCase()) {
+      if (isNewSearch(searchInput, sanitizedAddress)) {
         trackEvent('Search Tx for Address Click', {
           isTestnetMode,
           isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
