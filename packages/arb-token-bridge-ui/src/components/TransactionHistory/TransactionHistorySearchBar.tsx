@@ -160,7 +160,6 @@ export function TransactionHistorySearchBar() {
           return;
         }
 
-        // resubmitting the same hash (enter, blur) is not a new search
         if (isNewSearch(searchInput, sanitizedTxHash)) {
           trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
         }
@@ -175,7 +174,6 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      // resubmitting the same address (enter, blur) is not a new search
       if (isNewSearch(searchInput, sanitizedAddress)) {
         trackEvent('Search Tx for Address Click', {
           isTestnetMode,
