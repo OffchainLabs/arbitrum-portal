@@ -102,11 +102,17 @@ export function useTxHashSearchState() {
   };
 }
 
+function isNewSearch(searchInput: string, currentSearchValue: string | undefined) {
+  return searchInput.toLowerCase() !== currentSearchValue?.toLowerCase();
+}
+
 export function TransactionHistorySearchBar() {
   const {
     address,
     searchMode,
     searchError,
+    sanitizedAddress,
+    sanitizedTxHash,
     setAddress,
     setSanitizedAddress,
     setSanitizedTxHash,
@@ -117,6 +123,8 @@ export function TransactionHistorySearchBar() {
       address: state.address,
       searchMode: state.searchMode,
       searchError: state.searchError,
+      sanitizedAddress: state.sanitizedAddress,
+      sanitizedTxHash: state.sanitizedTxHash,
       setAddress: state.setAddress,
       setSanitizedAddress: state.setSanitizedAddress,
       setSanitizedTxHash: state.setSanitizedTxHash,
@@ -152,7 +160,9 @@ export function TransactionHistorySearchBar() {
           return;
         }
 
-        trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+        if (isNewSearch(searchInput, sanitizedTxHash)) {
+          trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+        }
 
         setSanitizedTxHash(searchInput);
         setSearchError(undefined);
@@ -164,10 +174,12 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      trackEvent('Search Tx for Address Click', {
-        isTestnetMode,
-        isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
-      });
+      if (isNewSearch(searchInput, sanitizedAddress)) {
+        trackEvent('Search Tx for Address Click', {
+          isTestnetMode,
+          isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
+        });
+      }
 
       setSanitizedAddress(searchInput);
       setSearchError(undefined);
@@ -175,6 +187,8 @@ export function TransactionHistorySearchBar() {
     [
       address,
       searchMode,
+      sanitizedAddress,
+      sanitizedTxHash,
       setSanitizedAddress,
       setSanitizedTxHash,
       setSearchError,
