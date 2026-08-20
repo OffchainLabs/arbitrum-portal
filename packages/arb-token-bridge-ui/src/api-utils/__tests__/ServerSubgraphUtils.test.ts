@@ -181,15 +181,10 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.urls).toEqual([`${indexerOrigin}/api/v1/cctp/graphql/${ChainId.Ethereum}`]);
   });
 
-  // Every unusable map must degrade to the subgraph, never fail the request.
-  it.each([
-    ['an unset variable', ''],
-    ['a chain missing from the map', JSON.stringify({ [ChainId.ArbitrumOne]: indexerOrigin })],
-    ['malformed JSON', '{"1": '],
-    ['a JSON array', `["${indexerOrigin}"]`],
-    ['a non-URL value', JSON.stringify({ [ChainId.Ethereum]: 'not a url' })],
-  ])('queries the subgraph for Ethereum given %s', async (_label, rawEnvValue) => {
-    stubIndexerApiUrlByChain(rawEnvValue);
+  // A map that doesn't resolve must degrade to the subgraph, never fail the
+  // request. Which maps fail to resolve is covered in ServerIndexerUtils.test.
+  it('queries the subgraph for a chain missing from the map', async () => {
+    stubIndexerApiUrlByChain({ [ChainId.ArbitrumOne]: indexerOrigin });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
     const fetchStub = stubFetch(() => false);
 
