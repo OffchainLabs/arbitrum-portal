@@ -62,7 +62,7 @@ export const SearchPanelTable = ({
       )}
       <div
         className={twMerge(
-          'sm:shadow-search-panel h-[calc(100vh_-_200px)] rounded',
+          'sm:shadow-search-panel h-[calc(100dvh_-_200px)] rounded',
           isDialog ? 'md:max-h-[700px]' : 'md:max-h-[400px]',
           embedMode ? 'h-[calc(100vh_-_150px)]' : 'md:h-[calc(100vh_-_390px)] min-h-[180px]',
         )}
