@@ -32,6 +32,7 @@ import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
 import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
+import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
@@ -811,6 +812,8 @@ const useTransactionHistoryWithoutStatuses = (
   };
 };
 
+const trackedTxHashSearches = new Set<string>();
+
 /**
  * Resolves a source chain tx hash directly from its receipt instead of
  * fetching the full address history, so it stays fast on chains where that
@@ -871,22 +874,32 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
         ),
       );
 
-      return (
-        transactions
-          .filter((tx): tx is MergedTransaction => tx !== null)
-          // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
-          // chain filter to their results, same as the address history does
-          .filter((tx) =>
-            isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
-              ? matchesChainFilter({
-                  filter: chainFilter,
-                  sourceChainId: tx.sourceChainId,
-                  destinationChainId: tx.destinationChainId,
-                })
-              : true,
-          )
-          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-      );
+      const results = transactions
+        .filter((tx): tx is MergedTransaction => tx !== null)
+        // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
+        // chain filter to their results, same as the address history does
+        .filter((tx) =>
+          isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
+            ? matchesChainFilter({
+                filter: chainFilter,
+                sourceChainId: tx.sourceChainId,
+                destinationChainId: tx.destinationChainId,
+              })
+            : true,
+        )
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
+      // once per hash, so refetches and status polls do not count again
+      if (!trackedTxHashSearches.has(_txHash)) {
+        trackedTxHashSearches.add(_txHash);
+        trackEvent('Tx Hash Search Result', {
+          found: results.length > 0,
+          sourceChainId: results[0]?.sourceChainId,
+          isTestnetMode: _isTestnetMode,
+        });
+      }
+
+      return results;
     },
     {
       shouldRetryOnError: false,

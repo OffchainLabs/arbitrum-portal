@@ -107,6 +107,8 @@ export function TransactionHistorySearchBar() {
     address,
     searchMode,
     searchError,
+    sanitizedAddress,
+    sanitizedTxHash,
     setAddress,
     setSanitizedAddress,
     setSanitizedTxHash,
@@ -117,6 +119,8 @@ export function TransactionHistorySearchBar() {
       address: state.address,
       searchMode: state.searchMode,
       searchError: state.searchError,
+      sanitizedAddress: state.sanitizedAddress,
+      sanitizedTxHash: state.sanitizedTxHash,
       setAddress: state.setAddress,
       setSanitizedAddress: state.setSanitizedAddress,
       setSanitizedTxHash: state.setSanitizedTxHash,
@@ -152,7 +156,10 @@ export function TransactionHistorySearchBar() {
           return;
         }
 
-        trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+        // resubmitting the same hash (enter, blur) is not a new search
+        if (searchInput.toLowerCase() !== sanitizedTxHash?.toLowerCase()) {
+          trackEvent('Search Tx for Tx Hash Click', { isTestnetMode });
+        }
 
         setSanitizedTxHash(searchInput);
         setSearchError(undefined);
@@ -164,10 +171,13 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      trackEvent('Search Tx for Address Click', {
-        isTestnetMode,
-        isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
-      });
+      // resubmitting the same address (enter, blur) is not a new search
+      if (searchInput.toLowerCase() !== sanitizedAddress?.toLowerCase()) {
+        trackEvent('Search Tx for Address Click', {
+          isTestnetMode,
+          isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
+        });
+      }
 
       setSanitizedAddress(searchInput);
       setSearchError(undefined);
@@ -175,6 +185,8 @@ export function TransactionHistorySearchBar() {
     [
       address,
       searchMode,
+      sanitizedAddress,
+      sanitizedTxHash,
       setSanitizedAddress,
       setSanitizedTxHash,
       setSearchError,
