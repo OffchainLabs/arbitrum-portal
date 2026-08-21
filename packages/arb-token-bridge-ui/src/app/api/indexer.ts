@@ -4,11 +4,7 @@ import { getIndexerApiUrl } from '../../api-utils/ServerIndexerUtils';
 import { logger } from '../../util/logger';
 import { isChildChainIndexed } from '../../util/txHistory/sources';
 
-/**
- * The child chain a bridge history request is about. Every consumer resolves
- * the indexer by child chain — the parent chain's entry points at whichever
- * deployment serves that chain, not necessarily the one indexing this child.
- */
+// Always resolved by child chain: a parent's entry may name another deployment.
 function getChildChainIdFromRequest(request: NextRequest): number | undefined {
   const l2ChainId = new URL(request.url).searchParams.get('l2ChainId');
 

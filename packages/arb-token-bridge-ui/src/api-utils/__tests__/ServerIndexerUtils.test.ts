@@ -34,16 +34,14 @@ describe('getIndexerApiUrl', () => {
     expect(getIndexerApiUrl(ChainId.ArbitrumOne)).toBe(otherIndexerOrigin);
   });
 
-  // Some proxies and CDNs treat the `//api/v1/...` an untrimmed base would
-  // produce as a different, missing path.
+  // Some proxies read an untrimmed base's `//api/v1/...` as a missing path.
   it('trims trailing slashes so callers can append a path', () => {
     stubIndexerApiUrlByChain({ [ChainId.Ethereum]: `${indexerOrigin}///` });
 
     expect(getIndexerApiUrl(ChainId.Ethereum)).toBe(indexerOrigin);
   });
 
-  // Nothing here may throw: a misconfigured map has to leave callers free to
-  // choose their own failure mode.
+  // Nothing here may throw — callers pick their own failure mode.
   it.each([
     ['an unset variable', ''],
     ['a chain missing from the map', JSON.stringify({ [ChainId.ArbitrumOne]: indexerOrigin })],

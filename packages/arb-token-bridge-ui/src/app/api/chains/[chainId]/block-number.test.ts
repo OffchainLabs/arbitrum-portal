@@ -76,8 +76,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns a 502 for an indexed chain that has no entry in the map', async () => {
-    // Nova is indexed here but absent from INDEXER_API_URL_BY_CHAIN, so there is
-    // no host to ask — that must surface, not silently read another chain's.
+    // Nova is indexed but absent from the map: no host to ask, so this must surface.
     isChildChainIndexedMock.mockReturnValue(true);
 
     const response = await getBlockNumber(ChainId.ArbitrumNova);

@@ -67,8 +67,7 @@ describe.sequential('proxyToIndexer', () => {
     );
   });
 
-  // A chain routed to the indexer but absent from the map has no host to ask.
-  // Failing loudly beats falling back to whichever host happens to be first.
+  // No host to ask: fail loudly rather than pick whichever host comes first.
   it('returns a 502 when the child chain has no entry in the map', async () => {
     const response = await proxyToIndexer(
       requestForChain(NON_INDEXED_CHAIN_ID),

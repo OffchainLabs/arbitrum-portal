@@ -181,8 +181,7 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.urls).toEqual([`${indexerOrigin}/api/v1/cctp/graphql/${ChainId.Ethereum}`]);
   });
 
-  // A map that doesn't resolve must degrade to the subgraph, never fail the
-  // request. Which maps fail to resolve is covered in ServerIndexerUtils.test.
+  // Must degrade, never fail. Which maps don't resolve: ServerIndexerUtils.test.
   it('queries the subgraph for a chain missing from the map', async () => {
     stubIndexerApiUrlByChain({ [ChainId.ArbitrumOne]: indexerOrigin });
     vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');

@@ -1,17 +1,10 @@
 import { logger } from '../util/logger';
 
 /**
- * Reads the indexer base URL for `chainId` out of `INDEXER_API_URL_BY_CHAIN`, a
- * JSON object keyed by chain ID (`{"42161":"https://indexer.example"}`). Chains
- * are split across separate indexer deployments, so there is no single host.
- *
- * A chain's entry must point at the deployment serving that chain — both its
- * CCTP replica and its bridge history. CCTP looks up both the parent and the
- * child chain of a transfer; bridge history looks up the child chain only.
- *
- * Returns `undefined` for anything unusable — unparseable JSON, a chain that
- * isn't in the map, a value that isn't a URL. Callers decide what that means:
- * CCTP degrades to the subgraph, the bridge history proxy fails the request.
+ * Indexer base URL for `chainId` from `INDEXER_API_URL_BY_CHAIN`
+ * (`{"42161":"https://indexer.example"}`) — chains sit on separate deployments,
+ * so each entry must serve that chain's CCTP replica and bridge history.
+ * `undefined` for anything unusable; callers pick their own failure mode.
  */
 export function getIndexerApiUrl(chainId: number): string | undefined {
   let urlByChainId: Record<string, unknown>;
@@ -32,8 +25,7 @@ export function getIndexerApiUrl(chainId: number): string | undefined {
     return undefined;
   }
 
-  // Trailing slash trimmed: some proxies and CDNs treat the `//api/v1/...` it
-  // would produce as a different, missing path.
+  // Some proxies read the resulting `//api/v1/...` as a different, missing path.
   const baseUrl = url.replace(/\/+$/, '');
   return URL.canParse(baseUrl) ? baseUrl : undefined;
 }
