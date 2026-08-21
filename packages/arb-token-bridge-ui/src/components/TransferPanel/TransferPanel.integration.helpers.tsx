@@ -25,6 +25,7 @@ vi.mock('../../hooks/TransferPanel/useGasEstimates', () => ({
 export type ChainQuerySlug =
   | 'ethereum'
   | 'arbitrum-one'
+  | 'arbitrum-nova'
   | 'base'
   | 'apechain'
   | 'superposition'
@@ -515,10 +516,12 @@ async function waitForTokenPanelToFinishLoading({
 export async function expectTokenPanelContent({
   isDestination,
   symbolsToContain,
+  symbolsToExclude,
   tokenExpectations,
 }: {
   isDestination: boolean;
   symbolsToContain?: string[];
+  symbolsToExclude?: string[];
   tokenExpectations?: TokenExpectation[];
 }) {
   const origin = captureIntegrationAssertionOrigin();
@@ -554,6 +557,33 @@ export async function expectTokenPanelContent({
           createIntegrationAssertionError({
             description: `Expected ${isDestination ? 'destination' : 'source'} token panel entries.`,
             expected: { symbols: symbolsToContain },
+            received: {
+              dialogText: dialog.textContent?.replace(/\s+/g, ' ').trim(),
+              rows: getTokenPanelRowTexts(dialog),
+            },
+            origin,
+          }),
+      },
+    );
+  }
+
+  if (symbolsToExclude) {
+    const getUnexpectedSymbols = () =>
+      symbolsToExclude.filter(
+        (symbol) => queryTokenPanelRowButtonBySymbol(dialog, symbol) !== null,
+      );
+
+    await waitFor(
+      () => {
+        expect(getUnexpectedSymbols()).toEqual([]);
+      },
+      {
+        timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
+        interval: POLL_INTERVAL_MS,
+        onTimeout: () =>
+          createIntegrationAssertionError({
+            description: `Expected ${isDestination ? 'destination' : 'source'} token panel to exclude entries.`,
+            expected: { excludedSymbols: symbolsToExclude },
             received: {
               dialogText: dialog.textContent?.replace(/\s+/g, ' ').trim(),
               rows: getTokenPanelRowTexts(dialog),

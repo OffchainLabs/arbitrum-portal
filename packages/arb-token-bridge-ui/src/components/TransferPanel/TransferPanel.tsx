@@ -51,6 +51,7 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getNovaDepositBlockReason } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
@@ -1292,7 +1293,22 @@ export function TransferPanel() {
       return networkConnectionWarningToast();
     }
 
-    if (isDepositMode && latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova) {
+    if (latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova) {
+      /**
+       * `MoveFundsButton` is already disabled for these, but its `disabled` state is derived during
+       * render. Re-check here so a stale render can never submit a blocked deposit.
+       */
+      if (
+        getNovaDepositBlockReason({
+          destinationChainId: latestNetworks.current.destinationChain.id,
+          selectedTokenAddress: selectedToken?.address,
+          destinationTokenAddress: destinationToken,
+          amount: amountBigNumber,
+        })
+      ) {
+        return networkConnectionWarningToast();
+      }
+
       const shouldProceedToNova = await confirmNovaDepositWarning();
 
       if (!shouldProceedToNova) {

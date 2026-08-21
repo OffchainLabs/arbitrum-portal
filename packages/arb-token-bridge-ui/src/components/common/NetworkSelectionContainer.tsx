@@ -24,6 +24,7 @@ import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrenc
 import { useNetworks } from '../../hooks/useNetworks';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
+import { NOVA_MINIMIZED_STATE_LINK } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
@@ -418,14 +419,14 @@ export function NetworksPanel({
         return (
           <div style={style} className="px-5">
             <ExternalLink
-              href="https://snapshot.org/#/s:arbitrumfoundation.eth/proposal/0x002b8264f83d19f88d17dc48a92d1e92638285a6592c491255fa7b14c955da81"
+              href={NOVA_MINIMIZED_STATE_LINK}
               className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-[10px] py-[15px] text-xs text-destructive"
             >
               <span className="flex items-center gap-1">
                 <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
                 <span>
-                  Arbitrum Nova is losing support. Please bridge to{' '}
-                  <span className="font-semibold">Arbitrum One.</span>
+                  Arbitrum Nova is in a minimized state and only accepts ETH deposits. Please bridge
+                  to <span className="font-semibold">Arbitrum One.</span>
                 </span>
               </span>
               <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
