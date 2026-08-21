@@ -15,6 +15,11 @@ const indexerOrigin = 'https://indexer.example';
 const otherIndexerOrigin = 'https://indexer-2.example';
 const subgraphOrigin = 'https://gateway.thegraph.com';
 
+// Origins are what the fetch stub keys on; sources are the labels the client
+// reports — deliberately not URLs, so responses don't reveal our endpoints.
+const indexerSource = 'arbitrum-indexer';
+const ethereumSubgraphSource = 'cctp-ethereum';
+
 const emptyResult = () =>
   new Response(JSON.stringify({ data: { messageSents: [] } }), {
     status: 200,
@@ -86,9 +91,34 @@ describe.sequential('getCctpSubgraphClient', () => {
     const fallbackResult = await client.query<{ messageSents: { id: string }[] }>({ query });
     const recoveredResult = await client.query<{ messageSents: { id: string }[] }>({ query });
 
-    expect(fallbackResult.source).toBe(subgraphOrigin);
-    expect(recoveredResult.source).toBe(indexerOrigin);
+    expect(fallbackResult.source).toBe(ethereumSubgraphSource);
+    expect(recoveredResult.source).toBe(indexerSource);
     expect(fetchStub.countFor(subgraphOrigin)).toBe(1);
+  });
+
+  // The equality assertions above break on any subgraph-key rename; this pins
+  // the property that must hold regardless of the vocabulary.
+  it('never puts an endpoint in the source it reports', async () => {
+    stubIndexerApiUrlByChain({ [ChainId.Ethereum]: indexerOrigin });
+    vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'test-api-key');
+    stubFetch((origin, callCount) => origin === indexerOrigin && callCount === 1);
+
+    const getCctpSubgraphClient = await loadGetCctpSubgraphClient();
+    const client = getCctpSubgraphClient(ChainId.Ethereum);
+
+    // the first query falls back to the subgraph, the second recovers to the indexer
+    const sources = [
+      (await client.query<{ messageSents: { id: string }[] }>({ query })).source,
+      (await client.query<{ messageSents: { id: string }[] }>({ query })).source,
+    ];
+
+    for (const source of sources) {
+      expect(URL.canParse(source ?? '')).toBe(false);
+      expect(source).not.toContain('indexer.example');
+      // the self-hosted and Graph Network URIs carry the API key in the path,
+      // so a regression to the full uri would leak credentials, not just a host
+      expect(source).not.toContain('test-api-key');
+    }
   });
 
   it('queries the indexer and never touches the subgraph while it succeeds', async () => {
@@ -101,7 +131,7 @@ describe.sequential('getCctpSubgraphClient', () => {
       messageSents: { id: string }[];
     }>({ query });
 
-    expect(result.source).toBe(indexerOrigin);
+    expect(result.source).toBe(indexerSource);
     expect(fetchStub.urls).toEqual([`${indexerOrigin}/api/v1/cctp/graphql/${ChainId.ArbitrumOne}`]);
     expect(fetchStub.countFor(subgraphOrigin)).toBe(0);
   });
@@ -139,8 +169,8 @@ describe.sequential('getCctpSubgraphClient', () => {
     const first = await client.query<{ messageSents: { id: string }[] }>({ query });
     const second = await client.query<{ messageSents: { id: string }[] }>({ query });
 
-    expect(first.source).toBe(subgraphOrigin);
-    expect(second.source).toBe(subgraphOrigin);
+    expect(first.source).toBe(ethereumSubgraphSource);
+    expect(second.source).toBe(ethereumSubgraphSource);
     // A client rebuilt per failure would bring a cold cache and refetch.
     expect(fetchStub.countFor(subgraphOrigin)).toBe(1);
   });
@@ -175,7 +205,7 @@ describe.sequential('getCctpSubgraphClient', () => {
       messageSents: { id: string }[];
     }>({ query });
 
-    expect(result.source).toBe(subgraphOrigin);
+    expect(result.source).toBe(ethereumSubgraphSource);
     expect(fetchStub.countFor(indexerOrigin)).toBe(0);
   });
 

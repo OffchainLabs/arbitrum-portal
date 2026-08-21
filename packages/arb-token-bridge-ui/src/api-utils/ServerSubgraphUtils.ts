@@ -20,7 +20,20 @@ const theGraphNetworkApiKey = process.env.THE_GRAPH_NETWORK_API_KEY;
 
 const selfHostedSubgraphApiKey = process.env.SELF_HOSTED_SUBGRAPH_API_KEY;
 
-const subgraphClientSources = new WeakMap<object, string>();
+/**
+ * Stable labels for where a query was served from, safe to return to clients:
+ * the indexer, or the `SubgraphKey` of the subgraph that answered. Never a URL
+ * — responses must not reveal the endpoints we keep behind our API.
+ */
+const INDEXER_SOURCE = 'arbitrum-indexer';
+type SubgraphSource = SubgraphKey | typeof INDEXER_SOURCE;
+
+const subgraphClientSources = new WeakMap<object, SubgraphSource>();
+
+function withSource<TClient extends object>(client: TClient, source: SubgraphSource): TClient {
+  subgraphClientSources.set(client, source);
+  return client;
+}
 
 type SubgraphKey = keyof typeof subgraphs;
 
@@ -101,12 +114,10 @@ function createApolloClient(uri: string, headers?: Record<string, string>) {
     }),
   );
 
-  const client = new ApolloClient({
+  return new ApolloClient({
     link: httpLink,
     cache: new InMemoryCache(),
   });
-  subgraphClientSources.set(client, new URL(uri).origin);
-  return client;
 }
 
 function createSelfHostedSubgraphClient(subgraphName: string) {
@@ -150,7 +161,7 @@ function createSubgraphClient(key: SubgraphKey) {
     subgraphs[key];
 
   if (selfHostedSubgraph !== '') {
-    return createSelfHostedSubgraphClient(selfHostedSubgraph);
+    return withSource(createSelfHostedSubgraphClient(selfHostedSubgraph), key);
   }
 
   if ((typeof deploymentId === 'undefined') !== (typeof pinnedIndexer === 'undefined')) {
@@ -163,13 +174,13 @@ function createSubgraphClient(key: SubgraphKey) {
     logger.debug(
       `[createSubgraphClient] using deployment "${deploymentId}" pinned to indexer "${pinnedIndexer}"`,
     );
-    return createPinnedIndexerClient(deploymentId, pinnedIndexer);
+    return withSource(createPinnedIndexerClient(deploymentId, pinnedIndexer), key);
   }
 
   logger.debug(
     `[createSubgraphClient] using subgraph "${theGraphNetworkSubgraphId}" on the graph network`,
   );
-  return createTheGraphNetworkClient(theGraphNetworkSubgraphId);
+  return withSource(createTheGraphNetworkClient(theGraphNetworkSubgraphId), key);
 }
 
 type CctpQueryResult<T> = ApolloQueryResult<MaybeMasked<T>> & {
@@ -180,7 +191,8 @@ type CctpQueryResult<T> = ApolloQueryResult<MaybeMasked<T>> & {
  * The subset of the Apollo client surface the CCTP route consumes. Deliberately
  * query-only: a client may serve a query from either the indexer or the
  * fallback subgraph, so there is no single `link` that describes it — the
- * origin actually used comes back on each result as `source`.
+ * backend actually used comes back on each result as `source`, as a stable
+ * label rather than a URL.
  */
 export type CctpSubgraphClient = {
   query<T = unknown, TVariables extends OperationVariables = OperationVariables>(
@@ -214,8 +226,7 @@ function createIndexerClientWithSubgraphFallback(
   indexerUri: string,
   fallbackSubgraphKey: SubgraphKey,
 ): CctpSubgraphClient {
-  const indexerClient = createApolloClient(indexerUri);
-  const indexerSource = getSourceFromSubgraphClient(indexerClient);
+  const indexerClient = withSource(createApolloClient(indexerUri), INDEXER_SOURCE);
 
   let fallbackClient: ApolloClient<NormalizedCacheObject> | undefined;
   const getFallbackClient = () => {
@@ -230,7 +241,7 @@ function createIndexerClientWithSubgraphFallback(
       try {
         return {
           ...(await indexerClient.query<T, TVariables>(options)),
-          source: indexerSource,
+          source: INDEXER_SOURCE,
         };
       } catch (error) {
         logger.warn(
@@ -240,7 +251,7 @@ function createIndexerClientWithSubgraphFallback(
         const fallback = getFallbackClient();
         return {
           ...(await fallback.query<T, TVariables>(options)),
-          source: getSourceFromSubgraphClient(fallback),
+          source: fallbackSubgraphKey,
         };
       }
     },
@@ -341,6 +352,12 @@ export function getL2SubgraphClient(l2ChainId: number) {
   }
 }
 
+/**
+ * The label for where `subgraphClient` serves queries from — a `SubgraphKey`,
+ * or `arbitrum-indexer` — safe to return to clients as `meta.source`. Never a
+ * URL: the endpoints stay behind our API. `null` for a client built outside the
+ * factories in this module, which is a missing label, not a leaked one.
+ */
 export function getSourceFromSubgraphClient(
   subgraphClient: ApolloClient<NormalizedCacheObject>,
 ): string | null {
