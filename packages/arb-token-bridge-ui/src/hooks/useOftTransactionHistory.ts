@@ -4,6 +4,7 @@ import useSWRImmutable from 'swr/immutable';
 import { LayerZeroTransaction } from '../state/app/state';
 import { getChainIdFromEid, getOftV2TransferDecodedData } from '../token-bridge-sdk/oftUtils';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { addressesEqual } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { isDepositMode } from '../util/isDepositMode';
@@ -224,7 +225,7 @@ function mapLayerZeroMessageToLayerZeroTransaction(
 export async function updateAdditionalLayerZeroData(
   tx: LayerZeroTransaction,
 ): Promise<LayerZeroTransaction> {
-  const { txId } = tx;
+  const { txId, tokenAddress } = tx;
   const updatedTx = { ...tx };
 
   const sourceChainProvider = getProviderForChainId(tx.sourceChainId);
@@ -233,12 +234,26 @@ export async function updateAdditionalLayerZeroData(
   const decodedInputData = await getOftV2TransferDecodedData(txId, sourceChainProvider);
   updatedTx.destination = utils.hexValue(decodedInputData[0][1]);
 
-  // extract token and value
-  const sourceChainTxReceipt = await sourceChainProvider.getTransactionReceipt(txId);
-  const tokenAddress = sourceChainTxReceipt.logs[0]?.address;
-
   if (!tokenAddress) {
     throw new Error('No token address found for OFT transaction');
+  }
+
+  // extract value
+  const sourceChainTxReceipt = await sourceChainProvider.getTransactionReceipt(txId);
+
+  const transferInterface = new ethers.utils.Interface([
+    'event Transfer(address indexed from, address indexed to, uint value)',
+  ]);
+
+  // EIP-7708 makes the protocol emit Transfer logs from the system address, so match on the emitter
+  const transferLog = sourceChainTxReceipt.logs.find(
+    (log) =>
+      log.topics[0] === transferInterface.getEventTopic('Transfer') &&
+      addressesEqual(log.address, tokenAddress),
+  );
+
+  if (!transferLog) {
+    throw new Error('No token transfer log found for OFT transaction');
   }
 
   const { symbol, decimals } = await fetchErc20Data({
@@ -246,16 +261,13 @@ export async function updateAdditionalLayerZeroData(
     provider: sourceChainProvider,
   });
 
-  const transferInterface = new ethers.utils.Interface([
-    'event Transfer(address indexed from, address indexed to, uint value)',
-  ]);
-  const decodedTransferLogs = transferInterface.parseLog(sourceChainTxReceipt.logs[0]!);
+  const decodedTransferLog = transferInterface.parseLog(transferLog);
 
   return {
     ...updatedTx,
     asset: symbol,
-    tokenAddress,
-    value: ethers.utils.formatUnits(decodedTransferLogs.args.value, decimals).toString(),
+    tokenAddress: transferLog.address,
+    value: ethers.utils.formatUnits(decodedTransferLog.args.value, decimals).toString(),
     blockNum: sourceChainTxReceipt.blockNumber,
   };
 }
