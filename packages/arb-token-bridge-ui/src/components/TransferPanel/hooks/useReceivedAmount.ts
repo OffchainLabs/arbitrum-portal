@@ -1,12 +1,10 @@
 import { utils } from 'ethers';
 import { shallow } from 'zustand/shallow';
 
-import { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi';
-
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { formatAmount } from '../../../util/NumberUtils';
 import { useAmountBigNumber } from './useAmountBigNumber';
-import { isLifiRoute, useRouteStore } from './useRouteStore';
+import { isLifiRouteData, useRouteStore } from './useRouteStore';
 
 /**
  * We return raw amount to be able to feed it to other calculations (like USD value)
@@ -48,11 +46,10 @@ export function useReceivedAmount() {
     return { amount, amountRaw: amount, isLoading: false };
   }
 
-  if (isLifiRoute(route.type)) {
-    const data = route.data as { route: LifiCrosschainTransfersRoute };
+  if (isLifiRouteData(route)) {
     const rawAmount = utils.formatUnits(
-      data.route.toAmount.amount,
-      data.route.toAmount.token.decimals,
+      route.route.toAmount.amount,
+      route.route.toAmount.token.decimals,
     );
     return {
       amount: formatAmount(Number(rawAmount)),
@@ -61,9 +58,10 @@ export function useReceivedAmount() {
     };
   }
 
+  const amountReceived = route.amountReceived;
   return {
-    amount: (route.data as { amountReceived: string }).amountReceived || amount || '0',
-    amountRaw: (route.data as { amountReceived: string }).amountReceived || amount || '0',
+    amount: amountReceived || amount || '0',
+    amountRaw: amountReceived || amount || '0',
     isLoading: false,
   };
 }

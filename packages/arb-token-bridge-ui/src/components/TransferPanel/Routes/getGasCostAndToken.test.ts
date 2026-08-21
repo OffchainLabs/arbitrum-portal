@@ -1,4 +1,4 @@
-import { constants } from 'ethers';
+import { constants, utils } from 'ethers';
 import { describe, expect, test } from 'vitest';
 
 import { GasEstimationStatus } from '../../../hooks/TransferPanel/useGasSummary';
@@ -6,6 +6,7 @@ import { NativeCurrency } from '../../../hooks/useNativeCurrency';
 import { getGasCostAndToken } from './getGasCostAndToken';
 
 describe('getGasCostAndToken', () => {
+  const toWei = (amount: number) => utils.parseUnits(amount.toFixed(18), 18).toString();
   const mockNativeCurrency: NativeCurrency & { address: string } = {
     name: 'ETH',
     symbol: 'ETH',
@@ -21,6 +22,8 @@ describe('getGasCostAndToken', () => {
     isCustom: true,
     address: '0x0000000000000000000000000000000000000222',
   };
+  const childChainName = 'Arbitrum One';
+  const parentChainName = 'Ethereum';
 
   describe('should return isLoading true', () => {
     const expected = {
@@ -58,6 +61,8 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: mockNativeCurrency,
             parentChainNativeCurrency: mockNativeCurrency,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: status as GasEstimationStatus,
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -146,6 +151,8 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -155,33 +162,44 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: estimatedParentChainGasFees + estimatedChildChainGasFees,
-              gasToken: childCurrency,
+              amount: toWei(estimatedParentChainGasFees + estimatedChildChainGasFees),
+              token: childCurrency,
+              details: {
+                id: 'arbitrum-gas-total',
+                label: `${parentChainName} and ${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         });
       },
     );
-
-    test('does not return a gas row when the combined fee is zero', () => {
-      expect(
-        getGasCostAndToken({
-          childChainNativeCurrency: mockNativeCurrency,
-          parentChainNativeCurrency: mockNativeCurrency,
-          gasSummaryStatus: 'success',
-          estimatedChildChainGasFees: 0,
-          estimatedParentChainGasFees: 0,
-          isDepositMode: true,
-        }),
-      ).toEqual({
-        isLoading: false,
-        gasCost: [],
-      });
-    });
   });
 
   describe('should return gas cost for different native currencies in deposit mode', () => {
     test.each([
+      {
+        parentCurrency: mockNativeCurrency,
+        childCurrency: mockCustomNativeCurrency,
+        estimatedParentChainGasFees: 201,
+        estimatedChildChainGasFees: 0,
+        expected: {
+          isLoading: false,
+          gasCost: [
+            {
+              amount: toWei(201),
+              token: mockNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
+            },
+          ],
+        },
+      },
       {
         parentCurrency: mockNativeCurrency,
         childCurrency: mockCustomNativeCurrency,
@@ -191,12 +209,24 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 201,
-              gasToken: mockNativeCurrency,
+              amount: toWei(201),
+              token: mockNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
             {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(305),
+              token: mockCustomNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -210,12 +240,55 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 634,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(634),
+              token: mockCustomNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
             {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
+            },
+          ],
+        },
+      },
+      {
+        parentCurrency: mockCustomNativeCurrency,
+        childCurrency: mockNativeCurrency,
+        estimatedParentChainGasFees: 634,
+        estimatedChildChainGasFees: 234,
+        expected: {
+          isLoading: false,
+          gasCost: [
+            {
+              amount: toWei(634),
+              token: mockCustomNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
+            },
+            {
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -224,7 +297,8 @@ describe('getGasCostAndToken', () => {
       `getGasCostAndToken({
         ...,
         parentCurrency: $parentCurrency.name,
-        childCurrency: $childCurrency.name
+        childCurrency: $childCurrency.name,
+        selectedToken: $selectedToken
       })`,
       ({
         parentCurrency,
@@ -237,6 +311,8 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -245,27 +321,6 @@ describe('getGasCostAndToken', () => {
         ).toEqual(expected);
       },
     );
-
-    test('omits a zero child-chain gas row while preserving the parent-chain gas row', () => {
-      expect(
-        getGasCostAndToken({
-          childChainNativeCurrency: mockCustomNativeCurrency,
-          parentChainNativeCurrency: mockNativeCurrency,
-          gasSummaryStatus: 'success',
-          estimatedChildChainGasFees: 0,
-          estimatedParentChainGasFees: 201,
-          isDepositMode: true,
-        }),
-      ).toEqual({
-        isLoading: false,
-        gasCost: [
-          {
-            gasCost: 201,
-            gasToken: mockNativeCurrency,
-          },
-        ],
-      });
-    });
   });
 
   describe('should return gas cost for different native currencies in withdrawal mode', () => {
@@ -279,8 +334,14 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(305),
+              token: mockCustomNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -294,8 +355,14 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -317,6 +384,8 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -325,21 +394,5 @@ describe('getGasCostAndToken', () => {
         ).toEqual(expected);
       },
     );
-
-    test('does not return a gas row when the child-chain fee is zero', () => {
-      expect(
-        getGasCostAndToken({
-          childChainNativeCurrency: mockCustomNativeCurrency,
-          parentChainNativeCurrency: mockNativeCurrency,
-          gasSummaryStatus: 'success',
-          estimatedChildChainGasFees: 0,
-          estimatedParentChainGasFees: 201,
-          isDepositMode: false,
-        }),
-      ).toEqual({
-        isLoading: false,
-        gasCost: [],
-      });
-    });
   });
 });
