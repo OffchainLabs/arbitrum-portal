@@ -1,5 +1,5 @@
 import type { ExecutionOptions, Route, RouteExtended, TransactionParameters } from '@lifi/sdk';
-import { EVM, executeRoute, config as lifiConfig } from '@lifi/sdk';
+import { EVM, executeRoute, config as lifiConfig, resumeRoute } from '@lifi/sdk';
 import type { Config } from '@wagmi/core';
 import { getWalletClient } from '@wagmi/core';
 import { Client, UserRejectedRequestError } from 'viem';
@@ -121,4 +121,19 @@ export function executeLifiRoute(
         }
       });
   });
+}
+
+export function resumeLifiRoute(
+  route: Route | RouteExtended,
+  { wagmiConfig, switchChainAsync, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
+): Promise<RouteExtended> {
+  return resumeRoute(
+    route,
+    createExecutionOptions({
+      wagmiConfig,
+      switchChainAsync,
+      onApprovalRequest,
+      onRouteUpdate,
+    }),
+  );
 }

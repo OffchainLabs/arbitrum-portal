@@ -14,14 +14,13 @@ export function isValidLifiTransactionHash(txHash: string | null | undefined): t
   return typeof txHash === 'string' && utils.isHexString(txHash, 32);
 }
 
-function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
+export function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
   return (
     process.txType !== undefined &&
     process.txType !== 'standard' &&
     typeof process.txLink !== 'string'
   );
 }
-
 function getSubmittedLifiRouteProcess(route: RouteExtended | undefined) {
   for (const step of route?.steps ?? []) {
     const routeProcess = step.execution?.process.find(

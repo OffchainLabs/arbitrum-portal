@@ -1,6 +1,7 @@
 import type { Route, RouteExtended } from '@lifi/sdk';
 
 import type { AmountWithToken, RouteTool } from '../app/api/crosschain-transfers/types';
+import type { LifiRouteHistoryStep } from '../state/app/state';
 import { getNetworkName } from './networks';
 
 type LifiRouteSnapshot = {
@@ -117,6 +118,51 @@ function getLifiRouteSnapshot(
       chainId: lastStep.action.toChainId,
     },
   };
+}
+
+export function getLifiRouteHistorySteps(route: RouteExtended | undefined): LifiRouteHistoryStep[] {
+  const snapshot = getLifiRouteSnapshot(route);
+  if (!route || !snapshot) {
+    return [];
+  }
+
+  const historySteps = route.steps.map((step) => {
+    const fallbackToolDetails = getLifiToolDetails(step.toolDetails);
+
+    return {
+      id: step.id,
+      fromChainId: step.action.fromChainId,
+      display: {
+        toolDetails:
+          snapshot.toolsDetails.find((tool) => tool.key === fallbackToolDetails.key) ??
+          fallbackToolDetails,
+        toAmount: {
+          amount: step.execution?.toAmount ?? step.estimate.toAmount,
+          amountUSD: step.estimate.toAmountUSD ?? '0',
+          chainId: step.action.toChainId,
+          token: {
+            address: (step.execution?.toToken ?? step.action.toToken).address,
+            decimals: (step.execution?.toToken ?? step.action.toToken).decimals,
+            logoURI: (step.execution?.toToken ?? step.action.toToken).logoURI,
+            symbol: (step.execution?.toToken ?? step.action.toToken).symbol,
+          },
+        },
+      },
+      execution: step.execution
+        ? {
+            status: step.execution.status,
+            process: step.execution.process.map(({ type, status, txHash, txLink }) => ({
+              type,
+              status,
+              txHash,
+              txLink,
+            })),
+          }
+        : undefined,
+    };
+  });
+
+  return historySteps;
 }
 
 export function getLifiTransactionSnapshot(
