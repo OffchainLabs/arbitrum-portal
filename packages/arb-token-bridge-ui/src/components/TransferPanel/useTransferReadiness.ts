@@ -16,6 +16,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
+import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, getNovaDepositBlockReason } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import {
@@ -27,6 +28,7 @@ import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
 import { useTokensFromLists } from './TokenSearchUtils';
+import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { RouteContext, RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
@@ -34,6 +36,8 @@ import {
   TransferReadinessRichErrorMessage,
   getInsufficientFundsErrorMessage,
   getInsufficientFundsForGasFeesErrorMessage,
+  getNovaEthDepositCapErrorMessage,
+  getNovaEthOnlyDepositErrorMessage,
   getWithdrawOnlyChainErrorMessage,
 } from './useTransferReadinessUtils';
 
@@ -197,8 +201,9 @@ export type UseTransferReadinessResult = {
 };
 
 export function useTransferReadiness(): UseTransferReadinessResult {
-  const [{ amount, amount2 }] = useArbQueryParams();
+  const [{ amount, amount2, destinationToken }] = useArbQueryParams();
   const [selectedToken] = useSelectedToken();
+  const amountBigNumber = useAmountBigNumber();
   const {
     layout: { isTransferring },
   } = useAppContextState();
@@ -307,6 +312,29 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       isSmartContractWallet,
       isDepositMode,
     });
+
+    /**
+     * Nova is in a minimized state: deposits are ETH-only and capped. This has to run before the
+     * `selectedRoute` and balance-loading checks below, otherwise the message is unreachable
+     * (`getEligibleRoutes` returns no routes while the amount is still 0).
+     */
+    const novaDepositBlockReason = getNovaDepositBlockReason({
+      destinationChainId: networks.destinationChain.id,
+      selectedTokenAddress: selectedToken?.address,
+      destinationTokenAddress: destinationToken,
+      amount: amountBigNumber,
+    });
+
+    if (novaDepositBlockReason) {
+      return notReady({
+        errorMessages: {
+          inputAmount1:
+            novaDepositBlockReason === 'eth-only'
+              ? getNovaEthOnlyDepositErrorMessage()
+              : getNovaEthDepositCapErrorMessage(NOVA_MAX_ETH_DEPOSIT_AMOUNT),
+        },
+      });
+    }
 
     if (!selectedRoute) {
       return notReady();
@@ -708,6 +736,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     nativeCurrency.isCustom,
     nativeCurrency.symbol,
     amount,
+    amountBigNumber,
+    destinationToken,
     isTransferring,
     childChain.id,
     childChain.name,

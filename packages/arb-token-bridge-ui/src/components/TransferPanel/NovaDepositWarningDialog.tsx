@@ -1,19 +1,23 @@
+import { NOVA_MAX_ETH_DEPOSIT_AMOUNT } from '../../util/NovaUtils';
 import { Dialog, DialogProps } from '../common/Dialog';
 
 export function NovaDepositWarningDialog(props: DialogProps) {
   return (
     <Dialog
       {...props}
-      title="Arbitrum Nova is losing support."
+      title="Arbitrum Nova is in a minimized state."
       cancelButtonTitle="No, bridge to Arbitrum One"
       actionButtonTitle="Yes, proceed to Nova"
       className="md:max-w-[560px]"
     >
       <div className="flex flex-col gap-4 py-4">
         <p>
-          Nova is now in a minimized maintenance state.
+          Nova is in a minimized maintenance state. Only ETH deposits are supported, up to{' '}
+          <span className="font-semibold">{NOVA_MAX_ETH_DEPOSIT_AMOUNT} ETH</span>, which is enough
+          to cover the gas needed to withdraw your funds from Nova.
           <br />
-          We strongly advise to bridge your funds to{' '}
+          <br />
+          For everything else, we strongly advise bridging to{' '}
           <span className="font-semibold">Arbitrum One</span> instead.
           <br />
           <br /> Are you sure you still want to bridge to Arbitrum Nova?
