@@ -541,10 +541,24 @@ export const useAddPendingTransactions = (address: Address | undefined) => {
     [mutateNewTransactionsData],
   );
 
+  const updatePendingTransaction = useCallback(
+    (tx: MergedTransaction) => {
+      mutateNewTransactionsData(
+        (currentNewTransactions) =>
+          currentNewTransactions?.map((currentTx) =>
+            isSameTransaction(currentTx, tx) ? tx : currentTx,
+          ),
+        false,
+      );
+    },
+    [mutateNewTransactionsData],
+  );
+
   return {
     newTransactionsData,
     mutateNewTransactionsData,
     addPendingTransaction,
+    updatePendingTransaction,
   };
 };
 

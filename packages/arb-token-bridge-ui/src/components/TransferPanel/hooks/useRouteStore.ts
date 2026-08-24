@@ -1,71 +1,40 @@
-import { LiFiStep } from '@lifi/sdk';
-import { BigNumber } from 'ethers';
-import { Address } from 'viem';
 import { create } from 'zustand';
 
 import { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi';
-import { LifiData } from '@/token-bridge-sdk/LifiTransferStarter';
 
-import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
-import { MergedTransactionLifiData } from '../../../state/app/state';
+export type EligibleRouteType = 'arbitrum' | 'oftV2' | 'cctp' | 'lifi';
 
-export type RouteType = 'arbitrum' | 'oftV2' | 'cctp' | 'lifi-fastest' | 'lifi-cheapest' | 'lifi'; // If fastest and cheapest quotes are the same
+export type RouteType = EligibleRouteType | 'lifi-fastest' | 'lifi-cheapest'; // If fastest and cheapest quotes are the same
 
 export type RouteData =
   | {
-      type: 'cctp';
-      data: {
-        amountReceived: string;
-        gasCost?: RouteGas[];
-        bridgeFee?: BridgeFee;
-      };
+      type: 'cctp' | 'arbitrum' | 'oftV2';
+      amountReceived: string;
     }
   | {
       type: 'lifi' | 'lifi-fastest' | 'lifi-cheapest';
-      data: {
-        route: LifiCrosschainTransfersRoute;
-      };
-    }
-  | {
-      type: 'arbitrum';
-      data: {
-        amountReceived: string;
-        gasCost?: RouteGas[];
-        bridgeFee?: BridgeFee;
-      };
-    }
-  | {
-      type: 'oftV2';
-      data: {
-        amountReceived: string;
-        gasCost?: RouteGas[];
-        bridgeFee?: BridgeFee;
-      };
+      route: LifiCrosschainTransfersRoute;
     };
 
-/** When route is in context, we didn't fetch transactionRequest yet and we only have information about the step */
-export type RouteContext = LifiData &
-  Omit<MergedTransactionLifiData, 'transactionRequest'> & { step: LiFiStep };
+export type RouteContext = LifiCrosschainTransfersRoute;
 
-export type SetRoute = (route: RouteType, context?: RouteContext) => void;
+export type SetRoute = (route: RouteType) => void;
 
 export type RouteStateUpdate = {
   selectedRoute: RouteType | undefined;
-  eligibleRouteTypes: RouteType[];
+  eligibleRouteTypes: EligibleRouteType[];
   isLoading: boolean;
   error?: string | null;
   routes: RouteData[];
   hasLowLiquidity: boolean;
   hasModifiedSettings: boolean;
-  context?: RouteContext | undefined;
 };
 
-interface RouteState {
+export interface RouteState {
   selectedRoute: RouteType | undefined; // the route that is currently selected - can be default or user-selected
   userSelectedRoute: RouteType | undefined; // subset of `selectedRoute` - filled only if user has clicked and selected a route
-  context: RouteContext | undefined; // selected route's context (details)
 
-  eligibleRouteTypes: RouteType[];
+  eligibleRouteTypes: EligibleRouteType[];
   isLoading: boolean;
   error?: string | null;
 
@@ -82,25 +51,22 @@ interface RouteState {
 export const useRouteStore = create<RouteState>()((set) => ({
   selectedRoute: undefined,
   userSelectedRoute: undefined,
-  context: undefined,
   eligibleRouteTypes: [],
   isLoading: false,
   routes: [],
   hasLowLiquidity: false,
   hasModifiedSettings: false,
 
-  setSelectedRoute: (route, context) =>
+  setSelectedRoute: (route) =>
     set({
       selectedRoute: route,
       userSelectedRoute: route, // Mark as user-selected to preserve across route refreshes
-      context,
     }),
 
   clearRoute: () =>
     set({
       selectedRoute: undefined,
       userSelectedRoute: undefined,
-      context: undefined,
     }),
 
   setRouteState: (updates) => set(updates),
@@ -114,33 +80,25 @@ export function isLifiRoute(selectedRoute: RouteType | undefined) {
   );
 }
 
-export function getContextFromRoute(route: LifiCrosschainTransfersRoute): RouteContext {
-  return {
-    spenderAddress: route.spenderAddress as Address,
-    gas: {
-      amount: BigNumber.from(route.gas.amount),
-      amountUSD: route.gas.amountUSD,
-      token: route.gas.token,
-    },
-    fee: {
-      amount: BigNumber.from(route.fee.amount),
-      amountUSD: route.fee.amountUSD,
-      token: route.fee.token,
-    },
-    fromAmount: {
-      amount: BigNumber.from(route.fromAmount.amount),
-      amountUSD: route.fromAmount.amountUSD,
-      token: route.fromAmount.token,
-    },
-    toAmount: {
-      amount: BigNumber.from(route.toAmount.amount),
-      amountUSD: route.toAmount.amountUSD,
-      token: route.toAmount.token,
-    },
-    toolDetails: route.protocolData.tool,
-    durationMs: route.durationMs,
-    destinationTxId: null,
-    route: route.protocolData.route,
-    step: route.protocolData.step,
-  };
+export function isLifiRouteData(
+  route: RouteData,
+): route is Extract<RouteData, { route: LifiCrosschainTransfersRoute }> {
+  return isLifiRoute(route.type);
+}
+
+export function getSelectedRouteContext(
+  state: Pick<RouteState, 'isLoading' | 'routes' | 'selectedRoute'>,
+) {
+  if (state.isLoading || !state.selectedRoute || !isLifiRoute(state.selectedRoute)) {
+    return undefined;
+  }
+
+  const routeData = state.routes
+    .filter(isLifiRouteData)
+    .find((route) => route.type === state.selectedRoute);
+  if (!routeData) {
+    return undefined;
+  }
+
+  return routeData.route;
 }
