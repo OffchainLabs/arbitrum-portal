@@ -1,13 +1,4 @@
-import {
-  ApolloClient,
-  ApolloQueryResult,
-  HttpLink,
-  InMemoryCache,
-  MaybeMasked,
-  NormalizedCacheObject,
-  OperationVariables,
-  QueryOptions,
-} from '@apollo/client';
+import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from '@apollo/client';
 import ApolloLinkTimeout from 'apollo-link-timeout';
 
 import { ChainId } from '../types/ChainId';
@@ -21,12 +12,11 @@ const theGraphNetworkApiKey = process.env.THE_GRAPH_NETWORK_API_KEY;
 
 const selfHostedSubgraphApiKey = process.env.SELF_HOSTED_SUBGRAPH_API_KEY;
 
-// A label for `meta.source`, never a URL — our endpoints stay behind the API.
-const INDEXER_SOURCE = 'arbitrum-indexer';
-
 type SubgraphKey = keyof typeof subgraphs;
 
-export type SubgraphSource = SubgraphKey | typeof INDEXER_SOURCE;
+// Labels, never URLs — our endpoints stay behind the API. Routes report one of
+// these, so no endpoint of ours can be assigned to `meta.source` at all.
+export type SubgraphSource = SubgraphKey | 'arbitrum-indexer';
 
 /** An Apollo client paired with the label to report it as. */
 type SourcedClient = {
@@ -36,35 +26,9 @@ type SourcedClient = {
 
 type Subgraph =
   | { kind: 'self-hosted'; name: string }
-  | { kind: 'graph-network'; subgraphId: string }
-  // pin to one known-good indexer when others serve incomplete data:
-  // https://github.com/graphprotocol/graph-node/issues/6683
-  | { kind: 'pinned'; deploymentId: string; indexer: string };
-
-// Lunanova (https://thegraph.lunanova.tech), verified complete
-const lunanovaIndexer = '0xe13840a2e92e0cb17a246609b432d0fa2e418774';
+  | { kind: 'graph-network'; subgraphId: string };
 
 const subgraphs = {
-  // CCTP Mainnet Subgraphs
-  'cctp-ethereum': {
-    kind: 'pinned',
-    deploymentId: 'QmWgi6hNfwCGiTAhH7gTSMSfvvYUPRbBQSjRmvuviRGGwy',
-    indexer: lunanovaIndexer,
-  },
-  'cctp-arbitrum-one': {
-    kind: 'pinned',
-    deploymentId: 'QmQtNd36amtQ8h8GF5rwkLLWyyBGwqad3j3WgZAMuLvDMd',
-    indexer: lunanovaIndexer,
-  },
-  // CCTP Testnet Subgraphs
-  'cctp-sepolia': {
-    kind: 'graph-network',
-    subgraphId: '4gSU1PTxjYPWk2TXPX2fusjuXrBFHC7kCZrbhrhaF9V5',
-  },
-  'cctp-arbitrum-sepolia': {
-    kind: 'graph-network',
-    subgraphId: '4Dp9ENSFDKfeBsmZeSyATKKrhxC2EKzbC3bZvTHpU1DB',
-  },
   // L1 Mainnet Subgraphs
   'l1-arbitrum-one': {
     kind: 'graph-network',
@@ -135,17 +99,6 @@ function createTheGraphNetworkClient(subgraphId: string) {
   );
 }
 
-function createPinnedIndexerClient(deploymentId: string, indexerAddress: string) {
-  if (typeof theGraphNetworkApiKey === 'undefined' || theGraphNetworkApiKey === '') {
-    throw new Error(`[createPinnedIndexerClient] missing "THE_GRAPH_NETWORK_API_KEY" env variable`);
-  }
-
-  return createApolloClient(
-    `https://gateway.thegraph.com/api/deployments/id/${deploymentId}/indexers/id/${indexerAddress}`,
-    { Authorization: `Bearer ${theGraphNetworkApiKey}` },
-  );
-}
-
 function createSubgraphClient(key: SubgraphKey): SourcedClient {
   const subgraph = subgraphs[key];
   logger.debug(`[createSubgraphClient] key=${key} kind=${subgraph.kind}`);
@@ -160,91 +113,34 @@ function createClientFor(subgraph: Subgraph): ApolloClient<NormalizedCacheObject
 
     case 'graph-network':
       return createTheGraphNetworkClient(subgraph.subgraphId);
-
-    case 'pinned':
-      return createPinnedIndexerClient(subgraph.deploymentId, subgraph.indexer);
   }
 }
 
-type CctpQueryResult<T> = ApolloQueryResult<MaybeMasked<T>> & {
-  source: SubgraphSource;
-};
+const cctpChainIds: readonly ChainId[] = [
+  ChainId.Ethereum,
+  ChainId.ArbitrumOne,
+  ChainId.Sepolia,
+  ChainId.ArbitrumSepolia,
+];
 
 /**
- * The subset of the Apollo client surface the CCTP route consumes. Deliberately
- * query-only: a query may be served by either backend, so there is no single
- * `link` that describes the client — whichever answered comes back as `source`.
+ * The indexer's replica of the Circle CCTP v1 subgraphs, now the only source of
+ * CCTP history. A chain missing from `INDEXER_API_URL_BY_CHAIN` throws rather
+ * than degrading, which the route turns into a 500.
  */
-export type CctpSubgraphClient = {
-  query<T = unknown, TVariables extends OperationVariables = OperationVariables>(
-    options: QueryOptions<TVariables, T>,
-  ): Promise<CctpQueryResult<T>>;
-};
-
-/**
- * Queries `primary`, falling back to `createFallback()` on failure. The fallback
- * is built lazily, so a missing Graph API key is fine while the indexer holds,
- * and reused, so repeated failures don't rebuild it.
- */
-function createCctpSubgraphClient(
-  primary: SourcedClient,
-  createFallback?: () => SourcedClient,
-): CctpSubgraphClient {
-  let fallback: SourcedClient | undefined;
-
-  return {
-    query: async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
-      options: QueryOptions<TVariables, T>,
-    ): Promise<CctpQueryResult<T>> => {
-      try {
-        return { ...(await primary.client.query<T, TVariables>(options)), source: primary.source };
-      } catch (error) {
-        if (typeof createFallback === 'undefined') {
-          throw error;
-        }
-
-        logger.warn(
-          `[getCctpSubgraphClient] "${primary.source}" query failed, falling back`,
-          error,
-        );
-        fallback ??= createFallback();
-        return {
-          ...(await fallback.client.query<T, TVariables>(options)),
-          source: fallback.source,
-        };
-      }
-    },
-  };
-}
-
-const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {
-  [ChainId.Ethereum]: 'cctp-ethereum',
-  [ChainId.ArbitrumOne]: 'cctp-arbitrum-one',
-  [ChainId.Sepolia]: 'cctp-sepolia',
-  [ChainId.ArbitrumSepolia]: 'cctp-arbitrum-sepolia',
-};
-
-export function getCctpSubgraphClient(chainId: number): CctpSubgraphClient {
-  const subgraphKey = cctpSubgraphKeyByChainId[chainId];
-
-  if (typeof subgraphKey === 'undefined') {
+export function getCctpSubgraphClient(chainId: number): ApolloClient<NormalizedCacheObject> {
+  if (!cctpChainIds.includes(chainId)) {
     throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
   }
 
   const indexerApiBaseUrl = getIndexerApiUrl(chainId);
 
   if (typeof indexerApiBaseUrl === 'undefined') {
-    return createCctpSubgraphClient(createSubgraphClient(subgraphKey));
+    throw new Error(`[getCctpSubgraphClient] no indexer configured for chain: ${chainId}`);
   }
 
   // /api/v1 only: the replica postdates the indexer's API versioning, no alias.
-  return createCctpSubgraphClient(
-    {
-      client: createApolloClient(`${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`),
-      source: INDEXER_SOURCE,
-    },
-    () => createSubgraphClient(subgraphKey),
-  );
+  return createApolloClient(`${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`);
 }
 
 export function getL1SubgraphClient(l2ChainId: number): SourcedClient {

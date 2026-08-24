@@ -154,12 +154,12 @@ export async function GET(
     }`);
 
     const sourceSubgraph = type === 'deposits' ? l1Subgraph : l2Subgraph;
-    const messagesSentResult = await sourceSubgraph.query<{
+    const { data } = await sourceSubgraph.query<{
       messageSents: MessageSent[];
     }>({
       query: messagesSentQuery,
     });
-    const { messageSents } = messagesSentResult.data;
+    const { messageSents } = data;
     const formattedIds = messageSents.map((messageSent) => `"${messageSent.id}"`);
 
     /**
@@ -238,7 +238,7 @@ export async function GET(
     return NextResponse.json(
       {
         meta: {
-          source: messagesSentResult.source,
+          source: 'arbitrum-indexer',
         },
         data: {
           pending,
