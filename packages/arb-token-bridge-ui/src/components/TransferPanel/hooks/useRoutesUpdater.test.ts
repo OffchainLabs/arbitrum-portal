@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
 import {
   GetEligibleRoutesParams,
   getEligibleRoutes,
   getSelectedRouteForAvailableRoutes,
+  hasLowLifiLiquidity,
 } from './useRoutesUpdater';
 
 vi.mock('../../../app/api/crosschain-transfers/utils', () => ({
@@ -92,7 +94,7 @@ describe('getSelectedRouteForAvailableRoutes', () => {
       getSelectedRouteForAvailableRoutes('cctp', [
         {
           type: 'arbitrum',
-          data: { amountReceived: '1' },
+          amountReceived: '1',
         },
       ]),
     ).toBe('arbitrum');
@@ -100,5 +102,40 @@ describe('getSelectedRouteForAvailableRoutes', () => {
 
   it('clears a stale CCTP selection when no route remains', () => {
     expect(getSelectedRouteForAvailableRoutes('cctp', [])).toBeUndefined();
+  });
+});
+
+describe('hasLowLifiLiquidity', () => {
+  const params = {
+    eligibleRouteTypes: ['lifi'] as const,
+    isLoading: false,
+    error: undefined,
+  };
+
+  it('returns false when LiFi returned a route', () => {
+    expect(
+      hasLowLifiLiquidity({
+        ...params,
+        eligibleRouteTypes: [...params.eligibleRouteTypes],
+        routes: [{} as LifiCrosschainTransfersRoute],
+      }),
+    ).toBe(false);
+  });
+
+  it('returns true only after LiFi returned an empty route list', () => {
+    expect(
+      hasLowLifiLiquidity({
+        ...params,
+        eligibleRouteTypes: [...params.eligibleRouteTypes],
+        routes: [],
+      }),
+    ).toBe(true);
+    expect(
+      hasLowLifiLiquidity({
+        ...params,
+        eligibleRouteTypes: [...params.eligibleRouteTypes],
+        routes: undefined,
+      }),
+    ).toBe(false);
   });
 });

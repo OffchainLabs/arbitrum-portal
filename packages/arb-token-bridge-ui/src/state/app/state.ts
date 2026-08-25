@@ -1,8 +1,7 @@
-import { TransactionRequest } from '@lifi/sdk';
+import { RouteExtended, TransactionRequest } from '@lifi/sdk';
 import { BigNumber } from 'ethers';
 
-import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
-
+import type { AmountWithToken, RouteTool } from '../../app/api/crosschain-transfers/types';
 import {
   ArbTokenBridge,
   AssetType,
@@ -38,13 +37,15 @@ export enum WithdrawalStatus {
 }
 
 export type MergedTransactionLifiData = {
-  toolDetails: { key: string; name: string; logoURI: string };
+  toolDetails: RouteTool;
+  toolsDetails?: RouteTool[];
   durationMs: number;
   fromAmount: AmountWithToken;
   toAmount: AmountWithToken;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
   transactionRequest?: TransactionRequest;
+  lifiRoute?: RouteExtended;
 };
 export interface BaseMergedTransaction {
   // TODO: https://github.com/OffchainLabs/arbitrum-token-bridge/blob/master/packages/arb-token-bridge-ui/src/util/withdrawals/helpers.ts#L31

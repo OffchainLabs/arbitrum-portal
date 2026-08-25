@@ -22,8 +22,8 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
     cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`;
   }
 
-  if (props.lifiData) {
-    cacheKey += `-${props.lifiData.route.id}`;
+  if (props.lifiRoute) {
+    cacheKey += `-${props.lifiRoute.protocolData.route.id}`;
   }
 
   return cacheKey;
@@ -73,10 +73,10 @@ export class BridgeTransferStarterFactory {
       sourceChainErc20Address: props.sourceChainErc20Address,
     });
 
-    if (props.lifiData) {
+    if (props.lifiRoute) {
       return withCache(
         cacheKey,
-        new LifiTransferStarter({ ...initProps, lifiData: props.lifiData }),
+        new LifiTransferStarter({ ...initProps, lifiRoute: props.lifiRoute }),
       );
     }
 

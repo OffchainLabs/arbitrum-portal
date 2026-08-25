@@ -55,7 +55,7 @@ const lifiTestBaseTx: LifiMergedTransaction = {
   toolDetails: { key: 'across', name: 'Across', logoURI: '' },
   durationMs: 0,
   fromAmount: {
-    amount: BigNumber.from(1),
+    amount: '1',
     amountUSD: '1',
     token: {
       address: '0x0000000000000000000000000000000000000000',
@@ -65,7 +65,7 @@ const lifiTestBaseTx: LifiMergedTransaction = {
     },
   },
   toAmount: {
-    amount: BigNumber.from(1),
+    amount: '1',
     amountUSD: '1',
     token: {
       address: '0x0000000000000000000000000000000000000000',
@@ -78,7 +78,7 @@ const lifiTestBaseTx: LifiMergedTransaction = {
 };
 
 const unknownLifiDestinationAmount: LifiMergedTransaction['toAmount'] = {
-  amount: BigNumber.from(0),
+  amount: '0',
   amountUSD: '0',
   token: {
     address: '0x0000000000000000000000000000000000000000',
@@ -330,7 +330,7 @@ describe('mergeTransactions', () => {
         },
       },
       toAmount: {
-        amount: BigNumber.from(99),
+        amount: '99',
         amountUSD: '9',
         token: {
           address: '0x2222222222222222222222222222222222222222',
@@ -348,7 +348,7 @@ describe('mergeTransactions', () => {
       toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
       fromAmount: {
         ...lifiTestBaseTx.fromAmount,
-        amount: BigNumber.from(2),
+        amount: '2',
         amountUSD: '2',
         token: {
           ...lifiTestBaseTx.fromAmount.token,
@@ -421,7 +421,7 @@ describe('getDedupedTransactionsForPagination', () => {
         },
       },
       toAmount: {
-        amount: BigNumber.from(99),
+        amount: '99',
         amountUSD: '9',
         token: {
           address: '0x2222222222222222222222222222222222222222',
@@ -439,7 +439,7 @@ describe('getDedupedTransactionsForPagination', () => {
       toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
       fromAmount: {
         ...lifiTestBaseTx.fromAmount,
-        amount: BigNumber.from(2),
+        amount: '2',
         amountUSD: '2',
         token: {
           ...lifiTestBaseTx.fromAmount.token,

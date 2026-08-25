@@ -94,6 +94,30 @@ describe('useAddPendingTransactions', () => {
     expect(result.current.newTransactionsData).toEqual([pendingWithdrawal2, pendingWithdrawal]);
   });
 
+  it('replaces a LiFi batch id with the real transaction hash by matching the route id', () => {
+    const { result } = renderHook(() => useAddPendingTransactions(ADDRESS_A), { wrapper: Wrapper });
+    const transactionWithBatchId = {
+      ...pendingWithdrawal,
+      txId: '0xbatch-id',
+      isLifi: true,
+      lifiRoute: { id: 'route-id' },
+    } as MergedTransaction;
+    const transactionWithRealHash = {
+      ...transactionWithBatchId,
+      txId: '0xa0231341aef0576cd9467d1506011d1dd041167762db0d2b1657678e3c0c5255',
+      lifiRoute: { id: 'route-id', steps: [{ execution: { status: 'PENDING' } }] },
+    } as MergedTransaction;
+
+    act(() => {
+      result.current.addPendingTransaction(transactionWithBatchId);
+    });
+    act(() => {
+      result.current.updatePendingTransaction(transactionWithRealHash);
+    });
+
+    expect(result.current.newTransactionsData).toEqual([transactionWithRealHash]);
+  });
+
   it('shares the cache between instances with the same address', () => {
     // Both hooks must sit under the same SWRConfig provider to share the cache.
     const { result } = renderHook(

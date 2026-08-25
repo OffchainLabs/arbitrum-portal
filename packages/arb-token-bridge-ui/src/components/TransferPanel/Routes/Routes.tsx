@@ -1,10 +1,9 @@
 import { MinusCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
-import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { shallow } from 'zustand/shallow';
 
-import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useMode } from '../../../hooks/useMode';
@@ -19,6 +18,15 @@ import { CctpRoute } from './CctpRoute';
 import { LifiRoute } from './LifiRoute';
 import { OftV2Route } from './OftV2Route';
 import { BadgeType } from './Route';
+
+function getLifiRouteTags(
+  routeType: 'lifi' | 'lifi-cheapest' | 'lifi-fastest',
+  hasCctp: boolean,
+): BadgeType[] | undefined {
+  if (routeType === 'lifi-fastest') return ['fastest'];
+  if (routeType === 'lifi') return hasCctp ? ['fastest'] : ['best-deal'];
+  return hasCctp ? undefined : ['best-deal'];
+}
 
 function Wrapper({ children }: PropsWithChildren) {
   const { embedMode } = useMode();
@@ -66,52 +74,6 @@ export const Routes = React.memo(() => {
     setShowHiddenRoutes(false);
   }, [selectedToken]);
 
-  const getRouteTag = useCallback(
-    (routeType: string): BadgeType | undefined => {
-      switch (routeType) {
-        case 'cctp':
-          // Tag as "Best Deal" when shown with LiFi routes OR when shown with Canonical
-          if (eligibleRouteTypes.includes('lifi') || eligibleRouteTypes.includes('arbitrum')) {
-            return 'best-deal';
-          }
-          return undefined;
-
-        case 'arbitrum':
-          // Always show "Security guaranteed by Arbitrum" for security
-          return 'security-guaranteed';
-
-        case 'lifi-cheapest':
-          if (eligibleRouteTypes.includes('cctp')) {
-            // LiFi + CCTP: CCTP = "Best Deal", Cheapest LiFi = no tag
-            return undefined;
-          } else {
-            // LiFi only: Show "best deal"
-            // LiFi + Canonical: Cheapest LiFi = "Best Deal"
-            return 'best-deal';
-          }
-
-        case 'lifi-fastest':
-          // Fastest always gets "fastest" tag
-          return 'fastest';
-
-        case 'lifi':
-          // Single LiFi route (when fastest and cheapest are the same)
-          if (eligibleRouteTypes.includes('cctp')) {
-            // LiFi + CCTP: CCTP = "Best Deal", LiFi = 'fastest'
-            return 'fastest';
-          } else {
-            // LiFi only: Show "best deal"
-            // LiFi + Canonical: LiFi = "Best Deal"
-            return 'best-deal';
-          }
-
-        default:
-          return undefined;
-      }
-    },
-    [eligibleRouteTypes],
-  );
-
   if (eligibleRouteTypes.length === 0) {
     return null;
   }
@@ -145,36 +107,38 @@ export const Routes = React.memo(() => {
         )}
 
         {visibleRoutes.map((route, index) => {
-          const tag = getRouteTag(route.type);
-
           switch (route.type) {
             case 'oftV2':
-              return <OftV2Route key={`oftV2-${index}`} />;
+              return <OftV2Route key={`oftV2-${index}`} amountReceived={route.amountReceived} />;
             case 'cctp':
-              return <CctpRoute key={`cctp-${index}`} />;
+              return <CctpRoute key={`cctp-${index}`} amountReceived={route.amountReceived} />;
             case 'lifi':
             case 'lifi-fastest':
-            case 'lifi-cheapest':
-              const token = (route.data.route as LifiCrosschainTransfersRoute).toAmount.token;
-              const overrideToken = token
-                ? ({
-                    ...token,
-                    type: TokenType.ERC20,
-                    listIds: new Set<string>([LIFI_TRANSFER_LIST_ID]),
-                  } as ERC20BridgeToken)
-                : undefined;
+            case 'lifi-cheapest': {
+              const token = route.route.toAmount.token;
+              const overrideToken = {
+                ...token,
+                type: TokenType.ERC20,
+                listIds: new Set<string>([LIFI_TRANSFER_LIST_ID]),
+              } as ERC20BridgeToken;
 
               return (
                 <LifiRoute
                   key={`lifi-${index}`}
                   type={route.type}
-                  route={route.data.route}
-                  tag={tag}
+                  route={route.route}
+                  tags={getLifiRouteTags(route.type, eligibleRouteTypes.includes('cctp'))}
                   overrideToken={overrideToken}
                 />
               );
+            }
             case 'arbitrum':
-              return <ArbitrumCanonicalRoute key={`arbitrum-${index}`} />;
+              return (
+                <ArbitrumCanonicalRoute
+                  key={`arbitrum-${index}`}
+                  amountReceived={route.amountReceived}
+                />
+              );
             default:
               return null;
           }

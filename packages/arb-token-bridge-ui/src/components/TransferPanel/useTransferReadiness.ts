@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
-import { Token } from '../../app/api/crosschain-transfers/types';
+import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
@@ -34,7 +34,13 @@ import { useAppContextState } from '../App/AppContext';
 import { useTokensFromLists } from './TokenSearchUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
-import { RouteContext, RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import {
+  RouteContext,
+  RouteType,
+  getSelectedRouteContext,
+  isLifiRoute,
+  useRouteStore,
+} from './hooks/useRouteStore';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
   TransferReadinessRichErrorMessage,
@@ -137,59 +143,85 @@ function notReady(
  * For some transfers (from Ape for example), fees and gas are paid in APE token.
  * While amount itself is paid in the token sent (USDC or ETH).
  */
-export type AmountsToPay = {
-  amount: BigNumber;
-  amountUSD: string;
-  token: Token;
-};
-export type GetAmountToPayResult = {
-  amounts: Record<string, AmountsToPay>;
-  fromAmountUsd: number;
-  toAmountUsd: number;
-};
-export function getAmountToPay(selectedRouteContext: RouteContext): GetAmountToPayResult {
-  const amounts: Record<string, AmountsToPay> = {};
+export function getAmountToPay(selectedRouteContext: RouteContext) {
+  const amounts: Record<string, AmountWithToken> = {};
+  let fromAmountUsd = 0;
 
   function addAmount({
     token,
     amount,
     amountUSD,
+    chainId,
   }: {
     token: Token;
-    amount: BigNumber;
-    amountUSD: string;
+    amount: string | undefined;
+    amountUSD?: string;
+    chainId?: number;
   }) {
-    const key = token.address.toLowerCase();
+    const key = `${chainId ?? 'unknown'}:${token.address.toLowerCase()}`;
     const acc = amounts[key];
+    const parsedAmount = BigNumber.from(amount ?? 0);
+    const parsedAmountUSD = amountUSD ?? '0';
+    fromAmountUsd += Number(parsedAmountUSD);
     if (acc) {
       amounts[key] = {
-        amount: acc.amount.add(amount),
-        amountUSD: (Number(acc.amountUSD) + Number(amountUSD)).toFixed(3),
+        amount: BigNumber.from(acc.amount).add(parsedAmount).toString(),
+        amountUSD: (Number(acc.amountUSD) + Number(parsedAmountUSD)).toFixed(3),
         token,
+        chainId,
       };
     } else {
       amounts[key] = {
-        amount,
-        amountUSD,
+        amount: parsedAmount.toString(),
+        amountUSD: parsedAmountUSD,
         token,
+        chainId,
       };
     }
   }
 
-  addAmount(selectedRouteContext.fee);
-  addAmount(selectedRouteContext.gas);
-  addAmount(selectedRouteContext.fromAmount);
-
-  const fromAmountUsd =
-    Number(selectedRouteContext.fromAmount.amountUSD) +
-    Number(selectedRouteContext.gas.amountUSD) +
-    Number(selectedRouteContext.fee.amountUSD);
+  selectedRouteContext.fee.forEach(addAmount);
+  selectedRouteContext.gas.forEach(addAmount);
+  addAmount({
+    ...selectedRouteContext.fromAmount,
+    chainId: selectedRouteContext.fromChainId,
+  });
 
   return {
     amounts,
     fromAmountUsd: Number(fromAmountUsd.toFixed(3)),
     toAmountUsd: Number(selectedRouteContext.toAmount.amountUSD),
   };
+}
+
+function formatAmountToPay(amountToPay: AmountWithToken | undefined) {
+  return parseFloat(
+    utils.formatUnits(amountToPay?.amount || constants.Zero, amountToPay?.token.decimals || 18),
+  );
+}
+
+function getInsufficientNativeBalanceErrorMessage({
+  amountToPay,
+  balance,
+  chainId,
+  chainName,
+}: {
+  amountToPay: number;
+  balance: number | null;
+  chainId: number;
+  chainName: string;
+}) {
+  if (balance === null || amountToPay <= balance) {
+    return undefined;
+  }
+
+  const chain = getWagmiChain(chainId);
+  return getInsufficientFundsForGasFeesErrorMessage({
+    asset: chain.nativeCurrency.symbol,
+    chain: chainName,
+    balance: formatAmount(balance),
+    requiredBalance: formatAmount(amountToPay),
+  });
 }
 
 export type UseTransferReadinessTransferReady = {
@@ -214,7 +246,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
-      selectedRouteContext: state.context,
+      selectedRouteContext: getSelectedRouteContext(state),
     }),
     shallow,
   );
@@ -508,23 +540,44 @@ export function useTransferReadiness(): UseTransferReadinessResult {
 
       const { amounts } = getAmountToPay(selectedRouteContext);
 
-      // Check if we have enough native balance to cover gas, fees and potentially token sent
-      const feeToSend = amounts[constants.AddressZero];
-      const feeToPay = parseFloat(
-        utils.formatUnits(feeToSend?.amount || constants.Zero, feeToSend?.token.decimals || 18),
+      const sourceNativeAmountToPay = formatAmountToPay(
+        amounts[`${networks.sourceChain.id}:${constants.AddressZero}`],
       );
+      const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
+        amountToPay: sourceNativeAmountToPay,
+        balance: ethBalanceFloat,
+        chainId: networks.sourceChain.id,
+        chainName: networks.sourceChain.name,
+      });
 
-      if (feeToPay > ethBalanceFloat) {
-        // For LiFi routes, fees are paid in the source chain's native currency
-        const sourceChain = getWagmiChain(networks.sourceChain.id);
+      if (sourceNativeBalanceError) {
         return notReady({
           errorMessages: {
-            inputAmount1: getInsufficientFundsForGasFeesErrorMessage({
-              asset: sourceChain.nativeCurrency.symbol,
-              chain: networks.sourceChain.name,
-              balance: formatAmount(ethBalanceFloat),
-              requiredBalance: formatAmount(feeToPay),
-            }),
+            inputAmount1: sourceNativeBalanceError,
+          },
+        });
+      }
+
+      const destinationNativeAmountToPay = formatAmountToPay(
+        amounts[`${networks.destinationChain.id}:${constants.AddressZero}`],
+      );
+      const destinationEthBalanceFloat = isDepositMode ? ethL2BalanceFloat : ethL1BalanceFloat;
+
+      if (destinationNativeAmountToPay > 0 && destinationEthBalanceFloat === null) {
+        return notReady();
+      }
+
+      const destinationNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
+        amountToPay: destinationNativeAmountToPay,
+        balance: destinationEthBalanceFloat,
+        chainId: networks.destinationChain.id,
+        chainName: networks.destinationChain.name,
+      });
+
+      if (destinationNativeBalanceError) {
+        return notReady({
+          errorMessages: {
+            inputAmount1: destinationNativeBalanceError,
           },
         });
       }
@@ -532,16 +585,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       // Check token sent balance
       const amountToSend = selectedToken?.address
         ? amounts[
-            (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ||
-              constants.AddressZero
+            `${networks.sourceChain.id}:${selectedRouteContext.fromAmount.token.address.toLowerCase()}`
           ]
         : undefined;
-      const amountToPay = parseFloat(
-        utils.formatUnits(
-          amountToSend?.amount || constants.Zero,
-          amountToSend?.token.decimals || 18,
-        ),
-      );
+      const amountToPay = formatAmountToPay(amountToSend);
 
       if (selectedTokenBalanceFloat && amountToPay > selectedTokenBalanceFloat) {
         return notReady({
@@ -749,6 +796,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     networks.sourceChain.name,
     networks.sourceChain.id,
     networks.destinationChain.id,
+    networks.destinationChain.name,
     tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,

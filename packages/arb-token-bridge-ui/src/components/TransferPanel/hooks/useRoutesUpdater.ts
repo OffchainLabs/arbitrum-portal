@@ -4,7 +4,7 @@ import { Address } from 'viem';
 import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
-import { Order } from '../../../app/api/crosschain-transfers/lifi';
+import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
@@ -27,14 +27,7 @@ import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
-import {
-  RouteContext,
-  RouteData,
-  RouteType,
-  getContextFromRoute,
-  isLifiRoute,
-  useRouteStore,
-} from './useRouteStore';
+import { EligibleRouteType, RouteData, RouteType, useRouteStore } from './useRouteStore';
 
 /**
  * Determines the best route based on priority order.
@@ -45,32 +38,15 @@ import {
  * 2. CCTP (second priority) - Circle's native USDC transfers
  * 3. LiFi cheapest (third priority) - Best deal from LiFi aggregator
  * 4. LiFi single route (fourth priority) - When fastest and cheapest are the same
- * 5. First available route (fallback) - Any other route that was successfully fetched
+ * 5. Arbitrum canonical route (fallback)
  *
  * @param routes - Array of successfully fetched routes
  * @returns The best route type or undefined if no routes available
  */
 function getBestRouteForDefaultSelection(routes: RouteData[]): RouteType | undefined {
-  // 1. OFT V2 (highest priority)
-  const oftV2Route = routes.find((route) => route.type === 'oftV2');
-  if (oftV2Route) return 'oftV2';
+  const routePriority: RouteType[] = ['oftV2', 'cctp', 'lifi-cheapest', 'lifi', 'arbitrum'];
 
-  // 2. CCTP (second priority)
-  const cctpRoute = routes.find((route) => route.type === 'cctp');
-  if (cctpRoute) return 'cctp';
-
-  // 3. LiFi best deal (third priority)
-  const lifiCheapestRoute = routes.find((route) => route.type === 'lifi-cheapest');
-  if (lifiCheapestRoute) return 'lifi-cheapest';
-
-  const lifiFastestRoute = routes.find((route) => route.type === 'lifi-fastest');
-  if (lifiFastestRoute) return 'lifi-fastest';
-
-  const lifiRoute = routes.find((route) => route.type === 'lifi');
-  if (lifiRoute) return 'lifi';
-
-  // 4. First available route (fallback)
-  return routes[0]?.type;
+  return routePriority.find((routeType) => routes.some((route) => route.type === routeType));
 }
 
 export function getSelectedRouteForAvailableRoutes(
@@ -80,6 +56,26 @@ export function getSelectedRouteForAvailableRoutes(
   return userSelectedRoute && routes.some((route) => route.type === userSelectedRoute)
     ? userSelectedRoute
     : getBestRouteForDefaultSelection(routes);
+}
+
+export function hasLowLifiLiquidity({
+  eligibleRouteTypes,
+  isLoading,
+  error,
+  routes,
+}: {
+  eligibleRouteTypes: EligibleRouteType[];
+  isLoading: boolean;
+  error: Error | undefined;
+  routes: LifiCrosschainTransfersRoute[] | undefined;
+}) {
+  return (
+    eligibleRouteTypes.includes('lifi') &&
+    eligibleRouteTypes.length === 1 &&
+    !isLoading &&
+    !error &&
+    routes?.length === 0
+  );
 }
 
 export interface GetEligibleRoutesParams {
@@ -110,10 +106,10 @@ export function getEligibleRoutes({
   destinationToken,
   isArbitrumCanonicalTransfer,
   tokensFromLists,
-}: GetEligibleRoutesParams): RouteType[] {
+}: GetEligibleRoutesParams): EligibleRouteType[] {
   const { isTestnet } = isNetwork(sourceChainId);
   const isLifiEnabled = isLifiEnabledUtil() && !isTestnet;
-  const eligibleRouteTypes: RouteType[] = [];
+  const eligibleRouteTypes: EligibleRouteType[] = [];
 
   if (Number(amount) === 0) {
     return [];
@@ -319,9 +315,7 @@ export function useRoutesUpdater() {
     if (eligibleRouteTypes.includes('oftV2')) {
       routes.push({
         type: 'oftV2',
-        data: {
-          amountReceived: amount,
-        },
+        amountReceived: amount,
       });
     }
 
@@ -329,51 +323,28 @@ export function useRoutesUpdater() {
     if (eligibleRouteTypes.includes('cctp')) {
       routes.push({
         type: 'cctp',
-        data: {
-          amountReceived: amount,
-        },
+        amountReceived: amount,
       });
     }
 
     // LiFi route data - handle fastest/cheapest consolidation
-    if (eligibleRouteTypes.includes('lifi') && lifiRoutes) {
-      const cheapestRoute = lifiRoutes.find((route) =>
-        route.protocolData.orders.find((order) => order === Order.Cheapest),
-      );
-      const fastestRoute = lifiRoutes.find((route) =>
-        route.protocolData.orders.find((order) => order === Order.Fastest),
-      );
+    if (eligibleRouteTypes.includes('lifi') && lifiRoutes?.length) {
+      const [cheapestRoute, fastestRoute = cheapestRoute] = lifiRoutes;
 
-      // Check if fastest and cheapest are the same route
-      const isSameRoute = cheapestRoute && fastestRoute && cheapestRoute === fastestRoute;
-
-      if (isSameRoute) {
-        // Single route with both fastest and cheapest tags
+      if (lifiRoutes.length === 1) {
         routes.push({
           type: 'lifi',
-          data: {
-            route: cheapestRoute,
-          },
+          route: cheapestRoute,
         });
       } else {
-        // Separate routes for fastest and cheapest
-        if (cheapestRoute) {
-          routes.push({
-            type: 'lifi-cheapest',
-            data: {
-              route: cheapestRoute,
-            },
-          });
-        }
-
-        if (fastestRoute) {
-          routes.push({
-            type: 'lifi-fastest',
-            data: {
-              route: fastestRoute,
-            },
-          });
-        }
+        routes.push({
+          type: 'lifi-cheapest',
+          route: cheapestRoute,
+        });
+        routes.push({
+          type: 'lifi-fastest',
+          route: fastestRoute,
+        });
       }
     }
 
@@ -381,43 +352,28 @@ export function useRoutesUpdater() {
     if (eligibleRouteTypes.includes('arbitrum')) {
       routes.push({
         type: 'arbitrum',
-        data: {
-          amountReceived: amount,
-        },
+        amountReceived: amount,
       });
     }
 
     return routes;
   }, [eligibleRouteTypes, lifiRoutes, amount]);
 
-  const flags = useMemo(
-    () => ({
-      hasLowLiquidity:
-        // Only true if:
-        // 1. LiFi is the ONLY eligible route
-        // 2. LiFi fetcher response was successful (no error)
-        // 3. LiFi response contains no routes
-        eligibleRouteTypes.includes('lifi') &&
-        eligibleRouteTypes.length === 1 &&
-        !isLifiLoading &&
-        !lifiError &&
-        routeData.length === 0,
-      hasModifiedSettings:
-        // Check if user has modified default settings
-        slippage !== defaultSlippage.toString() ||
-        disabledExchanges.length > 0 ||
-        disabledBridges.length > 0,
-    }),
-    [
-      eligibleRouteTypes,
-      lifiError,
-      isLifiLoading,
-      slippage,
-      disabledExchanges,
-      disabledBridges,
-      routeData,
-    ],
-  );
+  // Only true if:
+  // 1. LiFi is the ONLY eligible route
+  // 2. LiFi fetcher response was successful (no error)
+  // 3. LiFi response contains no routes
+  const hasLowLiquidity = hasLowLifiLiquidity({
+    eligibleRouteTypes,
+    isLoading: isLifiLoading,
+    error: lifiError,
+    routes: lifiRoutes,
+  });
+  // Check if user has modified default settings
+  const hasModifiedSettings =
+    slippage !== defaultSlippage.toString() ||
+    disabledExchanges.length > 0 ||
+    disabledBridges.length > 0;
 
   // Only show error if ALL routes fail (LiFi is the only route and it failed)
   const hasError =
@@ -427,25 +383,15 @@ export function useRoutesUpdater() {
     // if user has not selected a route, then pre-select the best route
     const selectedRoute = getSelectedRouteForAvailableRoutes(userSelectedRoute, routeData);
 
-    // Compute context for LiFi routes, but only after loading completes to ensure button stays disabled during loading
-    let context: RouteContext | undefined = undefined;
-    if (!isLifiLoading && selectedRoute && isLifiRoute(selectedRoute)) {
-      const selectedRouteData = routeData.find((route) => route.type === selectedRoute);
-      if (selectedRouteData && 'route' in selectedRouteData.data) {
-        context = getContextFromRoute(selectedRouteData.data.route);
-      }
-    }
-
     setRouteState({
       eligibleRouteTypes,
       isLoading: isLifiLoading,
       error: hasError ? `Routes failed to load: ${lifiError?.message || 'Unknown error'}` : null,
 
       routes: routeData,
-      hasLowLiquidity: flags.hasLowLiquidity,
-      hasModifiedSettings: flags.hasModifiedSettings,
+      hasLowLiquidity,
+      hasModifiedSettings,
       selectedRoute,
-      context,
     });
   }, [
     eligibleRouteTypes,
@@ -453,7 +399,8 @@ export function useRoutesUpdater() {
     hasError,
     lifiError,
     routeData,
-    flags,
+    hasLowLiquidity,
+    hasModifiedSettings,
     setRouteState,
     userSelectedRoute,
   ]);

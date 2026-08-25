@@ -1,13 +1,20 @@
-import { constants } from 'ethers';
+import { constants, utils } from 'ethers';
 
-import { Token } from '@/bridge/app/api/crosschain-transfers/types';
+import { RouteCost, Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { UseGasSummaryResult } from '../../../hooks/TransferPanel/useGasSummary';
 import { NativeCurrency } from '../../../hooks/useNativeCurrency';
 
+const ARBITRUM_BRIDGE_VIA = 'Arbitrum Bridge';
+const ARBITRUM_BRIDGE_ICON_URI = '/icons/arbitrum.svg';
+
 export function getGasCostAndToken({
   childChainNativeCurrency,
   parentChainNativeCurrency,
+  childChainId,
+  parentChainId,
+  childChainName,
+  parentChainName,
   gasSummaryStatus,
   estimatedChildChainGasFees,
   estimatedParentChainGasFees,
@@ -15,22 +22,24 @@ export function getGasCostAndToken({
 }: {
   childChainNativeCurrency: NativeCurrency;
   parentChainNativeCurrency: NativeCurrency;
+  childChainId: number;
+  parentChainId: number;
+  childChainName: string;
+  parentChainName: string;
   gasSummaryStatus: UseGasSummaryResult['status'];
   estimatedChildChainGasFees: UseGasSummaryResult['estimatedChildChainGasFees'];
   estimatedParentChainGasFees: UseGasSummaryResult['estimatedParentChainGasFees'];
   isDepositMode: boolean;
 }): {
   isLoading: boolean;
-  gasCost: { gasCost: number; gasToken: Token }[] | null;
+  gasCost: RouteCost[] | null;
 } {
   const sameNativeCurrency =
     childChainNativeCurrency.isCustom === parentChainNativeCurrency.isCustom;
-  const estimatedTotalGasFees =
+  const isGasEstimateUnavailable =
     gasSummaryStatus === 'loading' ||
-    typeof estimatedChildChainGasFees == 'undefined' ||
-    typeof estimatedParentChainGasFees == 'undefined'
-      ? undefined
-      : estimatedParentChainGasFees + estimatedChildChainGasFees;
+    typeof estimatedChildChainGasFees === 'undefined' ||
+    typeof estimatedParentChainGasFees === 'undefined';
 
   const childChainNativeCurrencyWithAddress: Token =
     'address' in childChainNativeCurrency
@@ -42,7 +51,31 @@ export function getGasCostAndToken({
       ? parentChainNativeCurrency
       : { ...parentChainNativeCurrency, address: constants.AddressZero };
 
-  if (typeof estimatedTotalGasFees === 'undefined') {
+  const getGasCost = ({
+    amount,
+    token,
+    chainId,
+    id,
+    label,
+  }: {
+    amount: number;
+    token: Token;
+    chainId: number;
+    id: string;
+    label: string;
+  }): RouteCost => ({
+    amount: utils.parseUnits(amount.toFixed(token.decimals), token.decimals).toString(),
+    token,
+    chainId,
+    details: {
+      id,
+      label,
+      via: ARBITRUM_BRIDGE_VIA,
+      iconURI: ARBITRUM_BRIDGE_ICON_URI,
+    },
+  });
+
+  if (isGasEstimateUnavailable) {
     return {
       gasCost: null,
       isLoading: true,
@@ -59,15 +92,20 @@ export function getGasCostAndToken({
    * x ETH
    */
   if (sameNativeCurrency) {
+    const totalGasFees = estimatedParentChainGasFees + estimatedChildChainGasFees;
+
     return {
       isLoading: false,
       gasCost:
-        estimatedTotalGasFees > 0
+        totalGasFees > 0
           ? [
-              {
-                gasCost: estimatedTotalGasFees,
-                gasToken: childChainNativeCurrencyWithAddress,
-              },
+              getGasCost({
+                amount: totalGasFees,
+                token: childChainNativeCurrencyWithAddress,
+                chainId: childChainId,
+                id: 'arbitrum-gas-total',
+                label: `${parentChainName} and ${childChainName} gas fee`,
+              }),
             ]
           : [],
     };
@@ -86,18 +124,24 @@ export function getGasCostAndToken({
    *  x XAI
    */
   if (isDepositMode) {
-    const gasCost: { gasCost: number; gasToken: Token }[] = [
-      {
-        gasCost: estimatedParentChainGasFees!,
-        gasToken: parentChainNativeCurrencyWithAddress,
-      },
+    const gasCost = [
+      getGasCost({
+        amount: estimatedParentChainGasFees,
+        token: parentChainNativeCurrencyWithAddress,
+        chainId: parentChainId,
+        id: 'arbitrum-gas-parent',
+        label: `${parentChainName} gas fee`,
+      }),
 
       // for custom-native-token deposits that use retryables we will need to add the child gas fee
-      {
-        gasCost: estimatedChildChainGasFees!,
-        gasToken: childChainNativeCurrencyWithAddress,
-      },
-    ].filter(({ gasCost }) => gasCost > 0);
+      getGasCost({
+        amount: estimatedChildChainGasFees,
+        token: childChainNativeCurrencyWithAddress,
+        chainId: childChainId,
+        id: 'arbitrum-gas-child',
+        label: `${childChainName} gas fee`,
+      }),
+    ].filter((cost) => cost.amount !== '0');
 
     return {
       gasCost,
@@ -108,12 +152,15 @@ export function getGasCostAndToken({
   return {
     isLoading: false,
     gasCost:
-      estimatedChildChainGasFees! > 0
+      estimatedChildChainGasFees > 0
         ? [
-            {
-              gasCost: estimatedChildChainGasFees!,
-              gasToken: childChainNativeCurrencyWithAddress,
-            },
+            getGasCost({
+              amount: estimatedChildChainGasFees,
+              token: childChainNativeCurrencyWithAddress,
+              chainId: childChainId,
+              id: 'arbitrum-gas-child',
+              label: `${childChainName} gas fee`,
+            }),
           ]
         : [],
   };
