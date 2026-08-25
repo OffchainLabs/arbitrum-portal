@@ -7,6 +7,7 @@ import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arb
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
+import { isNovaDestination } from '../../../util/NovaUtils';
 import {
   allowedLifiSourceChainIds,
   allowsUnmatchedLifiTokens,
@@ -48,6 +49,14 @@ export function isValidLifiTransfer({
   destinationChainId: number;
   tokensFromLists?: ContractStorage<ERC20BridgeToken>;
 }): boolean {
+  /**
+   * Nova is in a minimized state and only accepts small canonical ETH deposits.
+   * Withdrawals out of Nova are unaffected.
+   */
+  if (isNovaDestination(destinationChainId)) {
+    return false;
+  }
+
   // Check if it's a valid lifi pair
   if (
     !isLifiTransfer({

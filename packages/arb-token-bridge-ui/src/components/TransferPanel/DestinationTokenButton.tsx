@@ -7,7 +7,6 @@ import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
-import { isNovaDestination } from '../../util/NovaUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -22,14 +21,12 @@ export function DestinationTokenButton({
   const [selectedToken] = useSelectedToken();
   const { data: tokensFromLists } = useTokensFromLists();
 
-  // Nova is in a minimized state and only accepts ETH, so swapping into another asset is disabled
-  const isLifiTransfer =
-    isValidLifiTransfer({
-      destinationChainId: networks.destinationChain.id,
-      fromToken: selectedToken?.address,
-      sourceChainId: networks.sourceChain.id,
-      tokensFromLists,
-    }) && !isNovaDestination(networks.destinationChain.id);
+  const isLifiTransfer = isValidLifiTransfer({
+    destinationChainId: networks.destinationChain.id,
+    fromToken: selectedToken?.address,
+    sourceChainId: networks.sourceChain.id,
+    tokensFromLists,
+  });
 
   const [dialogProps, openDialog] = useDialog2();
 
