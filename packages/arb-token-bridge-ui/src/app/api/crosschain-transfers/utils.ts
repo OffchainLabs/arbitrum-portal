@@ -7,7 +7,7 @@ import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arb
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
-import { isNovaDestination } from '../../../util/NovaUtils';
+import { isNativeEthAddress, isNovaDestination } from '../../../util/NovaUtils';
 import {
   allowedLifiSourceChainIds,
   allowsUnmatchedLifiTokens,
@@ -49,14 +49,6 @@ export function isValidLifiTransfer({
   destinationChainId: number;
   tokensFromLists?: ContractStorage<ERC20BridgeToken>;
 }): boolean {
-  /**
-   * Nova is in a minimized state and only accepts small canonical ETH deposits.
-   * Withdrawals out of Nova are unaffected.
-   */
-  if (isNovaDestination(destinationChainId)) {
-    return false;
-  }
-
   // Check if it's a valid lifi pair
   if (
     !isLifiTransfer({
@@ -65,6 +57,18 @@ export function isValidLifiTransfer({
     })
   ) {
     return false;
+  }
+
+  /**
+   * Nova is in a minimized state and only accepts ETH. Decided here
+   * rather than falling through to the token-list checks below, because the Nova LiFi lists spell
+   * ETH as AddressZero and that entry would otherwise have to load before the route appeared.
+   *
+   * The amount cap is enforced separately by `getNovaDepositBlockReason`, which also rejects swaps
+   * that would deliver an ERC20 into Nova. Withdrawals out of Nova are unaffected.
+   */
+  if (isNovaDestination(destinationChainId)) {
+    return isNativeEthAddress(fromToken);
   }
 
   if (allowsUnmatchedLifiTokens(sourceChainId) || allowsUnmatchedLifiTokens(destinationChainId)) {

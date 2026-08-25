@@ -29,6 +29,10 @@ describe.sequential('TransferPanel Nova minimized state', () => {
     });
   });
 
+  /**
+   * The asset received is always ETH, so there is nothing to pick. The LiFi route itself stays
+   * eligible - only the picker is disabled.
+   */
   it('disables the destination token picker when depositing into Nova', async () => {
     await renderTransferPanel({
       sourceChain: 'ethereum',
