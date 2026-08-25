@@ -2,9 +2,9 @@ import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
 import {
+  type SubgraphSource,
   getL1SubgraphClient,
   getL2SubgraphClient,
-  getSourceFromSubgraphClient,
 } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
@@ -59,7 +59,9 @@ function getSubgraphClient(chainId: number) {
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chainId: string }> },
-): Promise<NextResponse<{ data: number; meta?: { source: string | null } } | { message: string }>> {
+): Promise<
+  NextResponse<{ data: number; meta?: { source: SubgraphSource } } | { message: string }>
+> {
   const { chainId } = await params;
   const numericChainId = Number(chainId);
 
@@ -83,7 +85,7 @@ export async function GET(
       );
     }
 
-    const subgraphClient = getSubgraphClient(numericChainId);
+    const subgraph = getSubgraphClient(numericChainId);
 
     const result: {
       data: {
@@ -93,7 +95,7 @@ export async function GET(
           };
         };
       };
-    } = await subgraphClient.query({
+    } = await subgraph.client.query({
       query: gql`
         {
           _meta {
@@ -107,7 +109,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        meta: { source: getSourceFromSubgraphClient(subgraphClient) },
+        meta: { source: subgraph.source },
         data: result.data._meta.block.number,
       },
       { status: 200 },
