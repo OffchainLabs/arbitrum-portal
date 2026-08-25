@@ -100,7 +100,10 @@ export function useMaxAmount() {
       isNovaDestination(networks.destinationChain.id) &&
       typeof nativeCurrencyMaxAmount !== 'undefined'
     ) {
-      return String(Math.min(Number(nativeCurrencyMaxAmount), NOVA_MAX_ETH_DEPOSIT_AMOUNT));
+      // return the balance as-is when under the cap, so small amounts keep their decimal notation
+      return Number(nativeCurrencyMaxAmount) > NOVA_MAX_ETH_DEPOSIT_AMOUNT
+        ? String(NOVA_MAX_ETH_DEPOSIT_AMOUNT)
+        : nativeCurrencyMaxAmount;
     }
 
     return nativeCurrencyMaxAmount;
