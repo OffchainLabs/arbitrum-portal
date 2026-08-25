@@ -16,7 +16,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isNovaDestination } from '../../util/NovaUtils';
+import { isNativeEthAddress, isNovaDestination } from '../../util/NovaUtils';
 import { LIFI_TRANSFER_LIST_ID, isTokenAvailableOnChain } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -96,9 +96,7 @@ function DestinationTokensPanel({
       .filter((address) => {
         // Nova is in a minimized state and only accepts ETH, so it can never be the asset received
         if (isNovaDestination(networks.destinationChain.id)) {
-          return (
-            address === NATIVE_CURRENCY_IDENTIFIER || addressesEqual(address, constants.AddressZero)
-          );
+          return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
         }
 
         const token = tokensFromLists[address];

@@ -26,7 +26,11 @@ import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
-import { isNovaDestination } from '../../util/NovaUtils';
+import {
+  getNovaEthOnlyDepositErrorMessage,
+  isNativeEthAddress,
+  isNovaDestination,
+} from '../../util/NovaUtils';
 import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
@@ -321,9 +325,7 @@ function TokensPanel({
          * an OFT V2 route sourced from the canonical Ethereum token list.
          */
         if (isNovaDestination(networks.destinationChain.id)) {
-          return (
-            address === NATIVE_CURRENCY_IDENTIFIER || addressesEqual(address, constants.AddressZero)
-          );
+          return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
         }
 
         // Derive the token object from the address string
@@ -504,9 +506,7 @@ function TokensPanel({
 
     // Adding a token would succeed but the row would then be filtered out, leaving an empty list
     if (isNovaDestination(networks.destinationChain.id)) {
-      setErrorMessage(
-        'Arbitrum Nova is in a minimized state and only accepts ETH deposits. Please bridge other assets to Arbitrum One instead.',
-      );
+      setErrorMessage(getNovaEthOnlyDepositErrorMessage());
       return;
     }
 

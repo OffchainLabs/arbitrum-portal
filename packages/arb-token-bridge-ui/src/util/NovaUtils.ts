@@ -27,7 +27,12 @@ export function isNovaDestination(destinationChainId: number): boolean {
 
 export type NovaDepositBlockReason = 'eth-only' | 'amount-capped';
 
-function isNativeEthAddress(address: string | undefined): boolean {
+/**
+ * The LiFi list for Ethereum <> Nova contains a real `AddressZero` entry for plain ETH, so both a
+ * missing address and `AddressZero` mean "native ETH". Exported so the token panels filter on the
+ * same definition of ETH that `getNovaDepositBlockReason` gates on.
+ */
+export function isNativeEthAddress(address: string | undefined): boolean {
   return !address || addressesEqual(address, constants.AddressZero);
 }
 
@@ -69,4 +74,12 @@ export function getNovaDepositBlockReason({
   }
 
   return null;
+}
+
+export function getNovaEthOnlyDepositErrorMessage() {
+  return 'Arbitrum Nova is in a minimized state and only accepts ETH deposits. Please bridge other assets to Arbitrum One instead.';
+}
+
+export function getNovaEthDepositCapErrorMessage() {
+  return `Deposits to Arbitrum Nova are limited to ${NOVA_MAX_ETH_DEPOSIT_AMOUNT} ETH, which is enough to cover the gas needed to withdraw your funds.`;
 }

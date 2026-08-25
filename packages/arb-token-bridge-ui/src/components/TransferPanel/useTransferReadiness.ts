@@ -16,7 +16,11 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
-import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, getNovaDepositBlockReason } from '../../util/NovaUtils';
+import {
+  getNovaDepositBlockReason,
+  getNovaEthDepositCapErrorMessage,
+  getNovaEthOnlyDepositErrorMessage,
+} from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import {
@@ -36,8 +40,6 @@ import {
   TransferReadinessRichErrorMessage,
   getInsufficientFundsErrorMessage,
   getInsufficientFundsForGasFeesErrorMessage,
-  getNovaEthDepositCapErrorMessage,
-  getNovaEthOnlyDepositErrorMessage,
   getWithdrawOnlyChainErrorMessage,
 } from './useTransferReadinessUtils';
 
@@ -331,7 +333,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
           inputAmount1:
             novaDepositBlockReason === 'eth-only'
               ? getNovaEthOnlyDepositErrorMessage()
-              : getNovaEthDepositCapErrorMessage(NOVA_MAX_ETH_DEPOSIT_AMOUNT),
+              : getNovaEthDepositCapErrorMessage(),
         },
       });
     }
