@@ -96,7 +96,7 @@ function DestinationTokensPanel({
       .filter((address) => {
         // Nova is in a minimized state and only accepts ETH, so it can never be the asset received
         if (isNovaDestination(networks.destinationChain.id)) {
-          return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
+          return address === NATIVE_CURRENCY_IDENTIFIER;
         }
 
         const token = tokensFromLists[address];
