@@ -1,10 +1,7 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  getL1SubgraphClient,
-  getSourceFromSubgraphClient,
-} from '../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource, getL1SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
 import { FetchEthDepositsToCustomDestinationFromSubgraphResult } from '../../util/deposits/fetchEthDepositsToCustomDestinationFromSubgraph';
 import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
@@ -19,7 +16,7 @@ type RetryableFromSubgraph = {
 };
 
 type EthDepositsToCustomDestinationResponse = {
-  meta?: { source: string | null };
+  meta?: { source: SubgraphSource };
   data: FetchEthDepositsToCustomDestinationFromSubgraphResult[];
   message?: string;
 };
@@ -69,9 +66,9 @@ export async function GET(
     l2Calldata: "0x"
     `;
 
-    const subgraphClient = getL1SubgraphClient(Number(l2ChainId));
+    const subgraph = getL1SubgraphClient(Number(l2ChainId));
 
-    const subgraphResult = await subgraphClient.query({
+    const subgraphResult = await subgraph.client.query({
       query: gql(`{
         retryables(
           where: {            
@@ -115,7 +112,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        meta: { source: getSourceFromSubgraphClient(subgraphClient) },
+        meta: { source: subgraph.source },
         data: transactions,
       },
       { status: 200 },
