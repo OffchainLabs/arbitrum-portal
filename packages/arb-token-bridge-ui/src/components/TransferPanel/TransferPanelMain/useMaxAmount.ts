@@ -10,8 +10,8 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
-import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
 import { addressesEqual } from '../../../util/AddressUtils';
+import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
 import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
