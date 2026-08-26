@@ -2,10 +2,7 @@ import { useDeferredValue, useMemo } from 'react';
 import useSWR from 'swr';
 import { Address } from 'viem';
 
-import {
-  LifiCrosschainTransfersRoute,
-  LifiParams,
-} from '@/bridge/app/api/crosschain-transfers/lifi';
+import type { LifiParams, PreferredLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { getAPIBaseUrl } from '../util';
 
@@ -104,10 +101,10 @@ export const useLifiCrossTransfersRoute = ({
       }
 
       if (_denyBridges && _denyBridges.length > 0) {
-        _denyBridges.map((denyBridge) => urlParams.append('denyBridges', denyBridge));
+        _denyBridges.forEach((denyBridge) => urlParams.append('denyBridges', denyBridge));
       }
       if (_denyExchanges && _denyExchanges.length > 0) {
-        _denyExchanges.map((denyExchange) => urlParams.append('denyExchanges', denyExchange));
+        _denyExchanges.forEach((denyExchange) => urlParams.append('denyExchanges', denyExchange));
       }
       if (_slippage) {
         urlParams.set('slippage', _slippage.toString());
@@ -125,7 +122,7 @@ export const useLifiCrossTransfersRoute = ({
           throw new Error(data.message);
         }
 
-        return data as Promise<{ data: LifiCrosschainTransfersRoute[] }>;
+        return data as { data: PreferredLifiRoutes };
       });
 
       return response.data;

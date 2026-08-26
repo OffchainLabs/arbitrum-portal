@@ -1,10 +1,7 @@
 import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
-import {
-  getCctpSubgraphClient,
-  getSourceFromSubgraphClient,
-} from '../../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource, getCctpSubgraphClient } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
 import { Address } from '../../../util/AddressUtils';
 
@@ -50,7 +47,7 @@ export type CompletedCCTPTransfer = PendingCCTPTransfer & {
 export type Response =
   | {
       meta?: {
-        source: string | null;
+        source: SubgraphSource;
       };
       data: {
         pending: PendingCCTPTransfer[];
@@ -241,7 +238,7 @@ export async function GET(
     return NextResponse.json(
       {
         meta: {
-          source: getSourceFromSubgraphClient(l1Subgraph),
+          source: messagesSentResult.source,
         },
         data: {
           pending,

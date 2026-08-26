@@ -2,10 +2,8 @@ import {
   FeeCost,
   GasCost,
   LiFiStep,
-  TransactionRequest as LiFiTransactionRequest,
   Route,
   RoutesRequest,
-  StepToolDetails,
   createConfig,
   getRoutes,
 } from '@lifi/sdk';
@@ -14,10 +12,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, ether } from '../../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
-import { CrosschainTransfersRouteBase, QueryParams, Token } from './types';
+import { getLifiRouteStepLabel, getLifiToolDetails } from '../../../util/LifiRouteUtils';
+import { CrosschainTransfersRouteBase, QueryParams, RouteCost, Token } from './types';
 import { isValidLifiTransfer } from './utils';
 
 export const LIFI_INTEGRATOR_IDS = {
@@ -38,64 +37,19 @@ export enum Order {
   Fastest = 'FASTEST',
 }
 
-export type TransactionRequest = Required<
-  Pick<
-    LiFiTransactionRequest,
-    'value' | 'to' | 'data' | 'from' | 'chainId' | 'gasPrice' | 'gasLimit'
-  >
->;
-
-type Tags = Order[];
 export interface LifiCrosschainTransfersRoute extends CrosschainTransfersRouteBase {
   type: 'lifi';
   protocolData: {
-    orders: Tags;
-    tool: StepToolDetails;
-    /** Full route used by the LiFi SDK during execution. */
+    /** Full route used by LiFi SDK execution/resume. */
     route: Route;
-    /** Single-step metadata used by the existing route UI. */
-    step: LiFiStep;
   };
 }
 
-function sumGasCosts(gasCosts: GasCost[] | undefined) {
-  const result =
-    (gasCosts || []).reduce(
-      ({ amount, amountUSD }, gas) => {
-        return {
-          amount: amount.add(BigNumber.from(gas.estimate)),
-          amountUSD: amountUSD + Number(gas.amountUSD),
-        };
-      },
-      { amount: constants.Zero, amountUSD: 0 },
-    ) ?? constants.Zero;
+export type PreferredLifiRoutes =
+  | []
+  | [LifiCrosschainTransfersRoute]
+  | [LifiCrosschainTransfersRoute, LifiCrosschainTransfersRoute];
 
-  return {
-    amount: result.amount.toString(),
-    amountUSD: result.amountUSD.toString(),
-  };
-}
-
-function sumFee(feeCosts: FeeCost[] | undefined) {
-  const result =
-    (feeCosts || []).reduce(
-      ({ amount, amountUSD }, fee) => {
-        if (fee.included) {
-          return { amount, amountUSD };
-        }
-        return {
-          amount: amount.add(BigNumber.from(fee.amount)),
-          amountUSD: amountUSD + Number(fee.amountUSD),
-        };
-      },
-      { amount: constants.Zero, amountUSD: 0 },
-    ) ?? constants.Zero;
-
-  return {
-    amount: result.amount.toString(),
-    amountUSD: result.amountUSD.toString(),
-  };
-}
 function isUsdtToken(tokenAddress: string | undefined, chainId: number) {
   return (
     (addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT) && chainId === ChainId.Ethereum) ||
@@ -162,7 +116,33 @@ function applyOverrides(token: Token, chainId: number): Token {
   return overrideTokenLogo(overrideTokenMetadata(token, chainId), chainId);
 }
 
-function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
+function getRouteCosts(steps: LiFiStep[], kind: 'gas' | 'fee'): RouteCost[] {
+  return steps.flatMap((step) => {
+    const toolDetails = getLifiToolDetails(step.toolDetails);
+    const costs: Array<{ cost: GasCost | FeeCost; estimate?: string }> =
+      kind === 'gas'
+        ? (step.estimate.gasCosts ?? []).map((cost) => ({ cost, estimate: cost.estimate }))
+        : (step.estimate.feeCosts ?? []).filter((cost) => !cost.included).map((cost) => ({ cost }));
+
+    return costs.map(
+      ({ cost, estimate }, costIndex): RouteCost => ({
+        amount: cost.amount,
+        amountUSD: cost.amountUSD,
+        token: applyOverrides(cost.token, cost.token.chainId),
+        chainId: cost.token.chainId,
+        estimate,
+        details: {
+          id: `${step.id}-${kind}-${costIndex}`,
+          label: getLifiRouteStepLabel(step, kind),
+          via: toolDetails.name,
+          iconURI: toolDetails.logoURI,
+        },
+      }),
+    );
+  });
+}
+
+export function parseLifiRoute({
   route,
   fromAddress,
   toAddress,
@@ -175,102 +155,70 @@ function parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
   fromChainId: string;
   toChainId: string;
 }): LifiCrosschainTransfersRoute {
-  const step = route.steps[0]!;
-  const tags: Order[] = [];
-  if (route.tags && route.tags.includes(Order.Cheapest)) {
-    tags.push(Order.Cheapest);
+  const firstStep = route.steps[0];
+  const lastStep = route.steps[route.steps.length - 1];
+  if (!firstStep || !lastStep) {
+    throw new Error('LiFi route is missing steps.');
   }
-  if (route.tags && route.tags.includes(Order.Fastest)) {
-    tags.push(Order.Fastest);
-  }
-
-  const nonIncludedFeeCosts = step.estimate.feeCosts?.filter((fee) => !fee.included);
-
-  const gasToken: Token = applyOverrides(
-    step.estimate.gasCosts && step.estimate.gasCosts.length > 0
-      ? step.estimate.gasCosts[0]!.token
-      : { ...ether, address: constants.AddressZero },
-    Number(fromChainId),
-  );
-
-  const feeToken: Token = applyOverrides(
-    nonIncludedFeeCosts && nonIncludedFeeCosts.length > 0
-      ? nonIncludedFeeCosts[0]!.token
-      : { ...ether, address: constants.AddressZero },
-    Number(fromChainId),
-  );
-
   return {
     type: 'lifi',
-    durationMs: step.estimate.executionDuration * 1_000,
-    gas: {
-      /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
-      ...sumGasCosts(step.estimate.gasCosts),
-      token: gasToken,
-    },
-    fee: {
-      /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
-      ...sumFee(step.estimate.feeCosts),
-      token: feeToken,
-    },
+    durationMs: route.steps.reduce((durationMs, step) => {
+      return durationMs + step.estimate.executionDuration * 1_000;
+    }, 0),
+    gas: getRouteCosts(route.steps, 'gas'),
+    fee: getRouteCosts(route.steps, 'fee'),
     fromAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
-      amount: step.action.fromAmount,
-      amountUSD: step.estimate.fromAmountUSD || '0',
-      token: applyOverrides(step.action.fromToken, step.action.fromToken.chainId),
+      amount: firstStep.action.fromAmount,
+      amountUSD: firstStep.estimate.fromAmountUSD || '0',
+      token: applyOverrides(firstStep.action.fromToken, firstStep.action.fromToken.chainId),
     },
     toAmount: {
       /** Amount with all decimals (e.g. 100000000000000 for 0.0001 ETH) */
-      amount: step.estimate.toAmount,
-      amountUSD: step.estimate.toAmountUSD || '0',
-      token: applyOverrides(step.action.toToken, step.action.toToken.chainId),
+      amount: lastStep.estimate.toAmount,
+      amountUSD: lastStep.estimate.toAmountUSD || '0',
+      token: applyOverrides(lastStep.action.toToken, lastStep.action.toToken.chainId),
     },
     fromAddress,
     toAddress,
     fromChainId: Number(fromChainId),
     toChainId: Number(toChainId),
-    spenderAddress: step.estimate.approvalAddress,
     protocolData: {
       route,
-      step,
-      tool: step.toolDetails,
-      orders: tags,
     },
   };
 }
 
-export function findCheapestRoute(
-  routes: LifiCrosschainTransfersRoute[],
-): LifiCrosschainTransfersRoute | undefined {
-  const cheapestRoute = routes.reduce((currentMin, route) => {
-    if (!currentMin) {
-      return route;
-    }
+function getPreferredRoutes(routes: LifiCrosschainTransfersRoute[]): PreferredLifiRoutes {
+  const [firstRoute] = routes;
+  if (!firstRoute) {
+    return [];
+  }
 
-    if (BigNumber.from(route.toAmount.amount).gt(BigNumber.from(currentMin.toAmount.amount))) {
-      return route;
-    }
-    return currentMin;
-  }, routes[0]);
+  const cheapestRoute =
+    routes.find((route) => route.protocolData.route.tags?.includes(Order.Cheapest)) ??
+    routes.reduce((cheapestRoute, route) => {
+      if (BigNumber.from(route.toAmount.amount).gt(BigNumber.from(cheapestRoute.toAmount.amount))) {
+        return route;
+      }
 
-  return cheapestRoute;
-}
+      return cheapestRoute;
+    }, firstRoute);
+  const fastestRoute =
+    routes.find((route) => route.protocolData.route.tags?.includes(Order.Fastest)) ??
+    routes.reduce((fastestRoute, route) => {
+      if (route.durationMs < fastestRoute.durationMs) {
+        return route;
+      }
 
-export function findFastestRoute(
-  routes: LifiCrosschainTransfersRoute[],
-): LifiCrosschainTransfersRoute | undefined {
-  const fastestRoute = routes.reduce((currentMin, route) => {
-    if (!currentMin) {
-      return route;
-    }
+      return fastestRoute;
+    }, firstRoute);
 
-    if (BigNumber.from(route.durationMs).lt(BigNumber.from(currentMin.durationMs))) {
-      return route;
-    }
-    return currentMin;
-  }, routes[0]);
+  if (cheapestRoute.protocolData.route.id === fastestRoute.protocolData.route.id) {
+    return [cheapestRoute];
+  }
 
-  return fastestRoute;
+  return [cheapestRoute, fastestRoute];
 }
 
 type LifiCrossTransfersRoutesResponse =
@@ -279,7 +227,7 @@ type LifiCrossTransfersRoutesResponse =
       data: null;
     }
   | {
-      data: LifiCrosschainTransfersRoute[];
+      data: PreferredLifiRoutes;
     };
 
 export type LifiParams = QueryParams & {
@@ -423,8 +371,8 @@ export async function GET(
 
     const options: RoutesRequest['options'] = {
       integrator: integratorId,
-      allowSwitchChain: false,
-      allowDestinationCall: false,
+      allowSwitchChain: true,
+      allowDestinationCall: true,
     };
 
     if (slippage) {
@@ -443,95 +391,33 @@ export async function GET(
 
     const { routes } = await getRoutes({ ...parameters, options });
 
-    const filteredRoutes = routes
-      .filter((route) => route.steps.length === 1)
-      .map((route) =>
-        parseLifiRouteToCrosschainTransfersQuoteWithLifiData({
-          route,
-          fromAddress,
-          toAddress: toAddress || fromAddress,
-          fromChainId,
-          toChainId,
-        }),
-      );
+    const parsedRoutes = routes.flatMap((route) => {
+      try {
+        return [
+          parseLifiRoute({
+            route,
+            fromAddress,
+            toAddress: toAddress || fromAddress,
+            fromChainId,
+            toChainId,
+          }),
+        ];
+      } catch {
+        return [];
+      }
+    });
 
-    /**
-     * We only care about the fastest and the cheapest route
-     * The fastest and the cheapest route might be the same
-     *
-     * We filter any route with more than 1 step, those filtered out route might be the fastest and/or the cheapest
-     * If we filtered one of those route, we manually compute it
-     *
-     * We filter all route with more than 1 step.
-     * If we filtered the fastest and/or cheapest route, we manually compute and
-     */
-    const tags = filteredRoutes.reduce((acc, route) => {
-      return acc.concat(route.protocolData.orders);
-    }, [] as Order[]);
-
-    // We didn't filter route with tags
-    if (tags.length === 2) {
-      return NextResponse.json(
-        {
-          data: filteredRoutes.filter((route) => route.protocolData.orders.length > 0),
-        },
-        { status: 200 },
-      );
-    }
-
-    const cheapestRoute = findCheapestRoute(filteredRoutes);
-    const fastestRoute = findFastestRoute(filteredRoutes);
-
-    if (!cheapestRoute && !fastestRoute) {
-      return NextResponse.json({ data: [] }, { status: 200 });
-    }
-
-    if (cheapestRoute && fastestRoute && cheapestRoute === fastestRoute) {
-      return NextResponse.json(
-        {
-          data: [
-            {
-              ...cheapestRoute,
-              protocolData: {
-                ...cheapestRoute.protocolData,
-                orders: [Order.Cheapest, Order.Fastest],
-              },
-            },
-          ],
-        },
-        { status: 200 },
-      );
-    }
-
-    const data: LifiCrosschainTransfersRoute[] = [];
-    if (cheapestRoute) {
-      data.push({
-        ...cheapestRoute,
-        protocolData: {
-          ...cheapestRoute.protocolData,
-          orders: [Order.Cheapest],
-        },
-      });
-    }
-    if (fastestRoute) {
-      data.push({
-        ...fastestRoute,
-        protocolData: {
-          ...fastestRoute.protocolData,
-          orders: [Order.Fastest],
-        },
-      });
-    }
+    // LiFi identifies the cheapest and fastest routes. The same route can have both tags.
     return NextResponse.json(
       {
-        data,
+        data: getPreferredRoutes(parsedRoutes),
       },
       { status: 200 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
-        message: error?.message ?? 'Something went wrong',
+        message: error instanceof Error ? error.message : 'Something went wrong',
         data: null,
       },
       { status: 500 },
