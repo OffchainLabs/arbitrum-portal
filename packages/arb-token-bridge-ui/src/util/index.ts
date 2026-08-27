@@ -34,6 +34,18 @@ export const sanitizeQueryParams = (data: any) => {
   return JSON.parse(JSON.stringify(data));
 };
 
+const MAX_ERROR_BODY_CHARS = 200;
+
+export async function assertOk(response: Response, context: string): Promise<void> {
+  if (response.ok) {
+    return;
+  }
+
+  const body = (await response.text().catch(() => '')).slice(0, MAX_ERROR_BODY_CHARS);
+
+  throw new Error(`${context} failed with ${response.status}: ${body || 'no response body'}`);
+}
+
 export const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 };

@@ -48,6 +48,7 @@ jobs:
       NEXT_PUBLIC_FEATURE_FLAG_LIFI: ${{ secrets.NEXT_PUBLIC_FEATURE_FLAG_LIFI }}
       THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
       INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
+      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: ${{ secrets.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
