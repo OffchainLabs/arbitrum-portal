@@ -1,4 +1,4 @@
-import { hasL1Subgraph } from '../SubgraphUtils';
+import { hasBridgeSubgraph } from '../SubgraphUtils';
 import { isChildChainIndexed } from '../txHistory/sources';
 import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
 
@@ -56,8 +56,8 @@ export const fetchDepositsFromSubgraph = async ({
   pageNumber?: number;
   searchString?: string;
 }): Promise<FetchDepositsFromSubgraphResult[]> => {
-  if (!hasL1Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
+  if (!hasBridgeSubgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
+    throw new Error(`Deposit history not available for network: ${l2ChainId}`);
   }
 
   if (toBlock && fromBlock >= toBlock) {

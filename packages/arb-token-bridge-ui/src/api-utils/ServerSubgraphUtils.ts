@@ -28,35 +28,16 @@ type Subgraph =
   | { kind: 'self-hosted'; name: string }
   | { kind: 'graph-network'; subgraphId: string };
 
+// Nova is the last chain the indexer has no bridge history for. Every other chain
+// is served from it, so these two are all that is left of the subgraph path.
 const subgraphs = {
-  // L1 Mainnet Subgraphs
-  'l1-arbitrum-one': {
-    kind: 'graph-network',
-    subgraphId: 'F2N4nGH86Y5Bk2vPo15EVRSTz2wbtz7BGRe8DDJqMPG4',
-  },
   'l1-arbitrum-nova': {
     kind: 'graph-network',
     subgraphId: '6Xvyjk9r91N3DSRQP6UZ1Lkbou567hFxLSWt2Tsv5AWp',
   },
-  // L1 Testnet Subgraphs
-  'l1-arbitrum-sepolia': {
-    kind: 'graph-network',
-    subgraphId: 'GF6Ez7sY2gef8EoXrR76X6iFa41wf38zh4TXZkDkL5Z9',
-  },
-  // L2 Mainnet Subgraphs
-  'l2-arbitrum-one': {
-    kind: 'graph-network',
-    subgraphId: '9eFk14Tms68qBN7YwL6kFuk9e2BVRqkX6gXyjzLR3tuj',
-  },
-  // L2 Nova Subgraphs
   'l2-arbitrum-nova': {
     kind: 'self-hosted',
     name: 'arbitrum-nova/layer2-token-gateway',
-  },
-  // L2 Testnet Subgraphs
-  'l2-arbitrum-sepolia': {
-    kind: 'graph-network',
-    subgraphId: 'AaUuKWWuQbCXbvRkXpVDEpw9B7oVicYrovNyMLPZtLPw',
   },
 } satisfies Record<string, Subgraph>;
 
@@ -143,16 +124,12 @@ export function getCctpSubgraphClient(chainId: number): ApolloClient<NormalizedC
   return createApolloClient(`${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`);
 }
 
+// The throw is the routes' 400 path: a chain that reaches here without indexer
+// bridge history has no source at all, and saying so beats an empty result.
 export function getL1SubgraphClient(l2ChainId: number): SourcedClient {
   switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('l1-arbitrum-one');
-
     case ChainId.ArbitrumNova:
       return createSubgraphClient('l1-arbitrum-nova');
-
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('l1-arbitrum-sepolia');
 
     default:
       throw new Error(`[getL1SubgraphClient] unsupported chain: ${l2ChainId}`);
@@ -161,14 +138,8 @@ export function getL1SubgraphClient(l2ChainId: number): SourcedClient {
 
 export function getL2SubgraphClient(l2ChainId: number): SourcedClient {
   switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('l2-arbitrum-one');
-
     case ChainId.ArbitrumNova:
       return createSubgraphClient('l2-arbitrum-nova');
-
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('l2-arbitrum-sepolia');
 
     default:
       throw new Error(`[getL2SubgraphClient] unsupported chain: ${l2ChainId}`);

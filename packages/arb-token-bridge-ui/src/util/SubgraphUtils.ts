@@ -1,28 +1,13 @@
 import { getAPIBaseUrl } from '.';
 import { ChainId } from '../types/ChainId';
 
-export function hasL1Subgraph(l2ChainId: number) {
-  switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-    case ChainId.ArbitrumNova:
-    case ChainId.ArbitrumSepolia:
-      return true;
-
-    default:
-      return false;
-  }
-}
-
-export function hasL2Subgraph(l2ChainId: number) {
-  switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-    case ChainId.ArbitrumNova:
-    case ChainId.ArbitrumSepolia:
-      return true;
-
-    default:
-      return false;
-  }
+/**
+ * Whether this child chain's bridge history comes from a subgraph rather than the
+ * indexer. Nova is the only one left, and its parent and child subgraphs are
+ * deployed together, so one predicate covers both directions.
+ */
+export function hasBridgeSubgraph(childChainId: number) {
+  return childChainId === ChainId.ArbitrumNova;
 }
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {

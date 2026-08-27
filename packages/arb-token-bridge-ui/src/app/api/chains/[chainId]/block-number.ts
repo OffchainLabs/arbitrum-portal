@@ -34,23 +34,16 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   return chain?.block?.number ?? 0;
 }
 
+// Nova only: every other chain's block number comes from the indexer above. The
+// sole caller (`fetchLatestIndexedBlockNumber`) always asks for a child chain, so
+// Ethereum resolves through Nova's parent subgraph and Sepolia has nothing left.
 function getSubgraphClient(chainId: number) {
   switch (chainId) {
     case ChainId.Ethereum:
-      // it's the same whether we do arb1 or nova
-      return getL1SubgraphClient(ChainId.ArbitrumOne);
-
-    case ChainId.Sepolia:
-      return getL1SubgraphClient(ChainId.ArbitrumSepolia);
-
-    case ChainId.ArbitrumOne:
-      return getL2SubgraphClient(ChainId.ArbitrumOne);
+      return getL1SubgraphClient(ChainId.ArbitrumNova);
 
     case ChainId.ArbitrumNova:
       return getL2SubgraphClient(ChainId.ArbitrumNova);
-
-    case ChainId.ArbitrumSepolia:
-      return getL2SubgraphClient(ChainId.ArbitrumSepolia);
 
     default:
       throw new Error(`[getSubgraphClient] unsupported chain id: ${chainId}`);

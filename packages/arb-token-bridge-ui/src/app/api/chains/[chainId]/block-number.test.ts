@@ -28,7 +28,10 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     vi.clearAllMocks();
     vi.stubEnv(
       'INDEXER_API_URL_BY_CHAIN',
-      JSON.stringify({ [ChainId.ArbitrumOne]: 'https://indexer.test' }),
+      JSON.stringify({
+        [ChainId.ArbitrumOne]: 'https://indexer.test',
+        [ChainId.ArbitrumNova]: 'https://indexer.test',
+      }),
     );
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -40,17 +43,18 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns the indexer block and bypasses the subgraph for an indexed chain (indexer wins when both exist)', async () => {
-    // Arbitrum One has a subgraph client, but it is also configured as indexed
+    // Nova is the only chain left with a subgraph client, so it is the only place
+    // "both exist" can still be tested.
     isChildChainIndexedMock.mockReturnValue(true);
     fetchMock.mockResolvedValue({
       ok: true,
       // the indexer serializes `id` as a string -> exercises the Number() coercion
       json: async () => ({
-        arbOne: { id: String(ChainId.ArbitrumOne), block: { number: 12345 } },
+        arbNova: { id: String(ChainId.ArbitrumNova), block: { number: 12345 } },
       }),
     });
 
-    const response = await getBlockNumber(ChainId.ArbitrumOne);
+    const response = await getBlockNumber(ChainId.ArbitrumNova);
     const body = await response.json();
 
     expect(body).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 12345 });
@@ -71,29 +75,43 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns a 502 for an indexed chain that has no entry in the map', async () => {
-    // Nova is indexed but absent from the map: no host to ask, so this must surface.
+    // Sepolia is indexed but absent from the map: no host to ask, so this must surface.
     isChildChainIndexedMock.mockReturnValue(true);
 
-    const response = await getBlockNumber(ChainId.ArbitrumNova);
+    const response = await getBlockNumber(ChainId.ArbitrumSepolia);
 
     expect(response.status).toBe(502);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('uses the subgraph for a non-indexed chain', async () => {
+  it('uses the subgraph for Nova, the one chain still served by one', async () => {
     isChildChainIndexedMock.mockReturnValue(false);
     const query = vi.fn().mockResolvedValue({ data: { _meta: { block: { number: 999 } } } });
     getL2SubgraphClientMock.mockReturnValue({
       client: { query },
-      source: 'l2-arbitrum-one',
+      source: 'l2-arbitrum-nova',
     } as never);
 
-    const response = await getBlockNumber(ChainId.ArbitrumOne);
+    const response = await getBlockNumber(ChainId.ArbitrumNova);
     const body = await response.json();
 
-    expect(body).toEqual({ meta: { source: 'l2-arbitrum-one' }, data: 999 });
+    expect(body).toEqual({ meta: { source: 'l2-arbitrum-nova' }, data: 999 });
     expect(query).toHaveBeenCalled();
     // the indexer is never consulted for a non-indexed chain
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // Arbitrum One's subgraph is gone, so misconfiguring it out of
+  // NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS leaves nothing to ask. Documents the
+  // pre-existing catch-all rather than endorsing it: `{ data: 0 }` at 200 reads as
+  // "nothing indexed yet", which the client turns into a full event-log scan.
+  it('falls through to the catch-all for a chain with neither an indexer nor a subgraph', async () => {
+    isChildChainIndexedMock.mockReturnValue(false);
+
+    const response = await getBlockNumber(ChainId.ArbitrumOne);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: 0 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

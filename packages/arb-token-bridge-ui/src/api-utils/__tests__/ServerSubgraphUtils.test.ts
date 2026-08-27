@@ -148,3 +148,43 @@ describe.sequential('getCctpSubgraphClient', () => {
     );
   });
 });
+
+// The API keys are read at module load, so stub them before importing.
+async function loadSubgraphClients() {
+  vi.resetModules();
+  vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'the-graph-key');
+  vi.stubEnv('SELF_HOSTED_SUBGRAPH_API_KEY', 'self-hosted-key');
+  const { getL1SubgraphClient, getL2SubgraphClient } = await import('../ServerSubgraphUtils');
+  return { getL1SubgraphClient, getL2SubgraphClient };
+}
+
+// Nova is the only chain whose bridge history still comes from a subgraph; every
+// other chain is served by the indexer, so asking for one is a configuration bug
+// and must throw rather than resolve a client that queries the wrong backend.
+describe.sequential('getL1SubgraphClient / getL2SubgraphClient', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('resolves both Nova subgraphs', async () => {
+    const { getL1SubgraphClient, getL2SubgraphClient } = await loadSubgraphClients();
+
+    expect(getL1SubgraphClient(ChainId.ArbitrumNova).source).toBe('l1-arbitrum-nova');
+    expect(getL2SubgraphClient(ChainId.ArbitrumNova).source).toBe('l2-arbitrum-nova');
+  });
+
+  it.each([
+    ['Arbitrum One', ChainId.ArbitrumOne],
+    ['Arbitrum Sepolia', ChainId.ArbitrumSepolia],
+  ])('throws for %s, now served by the indexer', async (_label, chainId) => {
+    const { getL1SubgraphClient, getL2SubgraphClient } = await loadSubgraphClients();
+
+    expect(() => getL1SubgraphClient(chainId)).toThrow(
+      `[getL1SubgraphClient] unsupported chain: ${chainId}`,
+    );
+    expect(() => getL2SubgraphClient(chainId)).toThrow(
+      `[getL2SubgraphClient] unsupported chain: ${chainId}`,
+    );
+  });
+});
