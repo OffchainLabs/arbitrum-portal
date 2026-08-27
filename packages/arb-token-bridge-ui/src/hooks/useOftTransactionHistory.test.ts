@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { LayerZeroTransaction } from '../state/app/state';
 import { ChainId } from '../types/ChainId';
-import { addressesEqual } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { AssetType } from './arbTokenBridge.types';
 import { updateAdditionalLayerZeroData } from './useOftTransactionHistory';
@@ -79,7 +78,7 @@ function oftTransaction(
     sourceChainId: ChainId.Ethereum,
     destinationChainId: ChainId.ArbitrumOne,
     destinationTxHash: null,
-  } as LayerZeroTransaction;
+  } satisfies LayerZeroTransaction;
 }
 
 describe('updateAdditionalLayerZeroData', () => {
@@ -90,9 +89,7 @@ describe('updateAdditionalLayerZeroData', () => {
 
     expect(result.value).toBe('1.5');
     expect(result.asset).toBe('USDT');
-    expect(addressesEqual(result.tokenAddress ?? undefined, CommonAddress.Ethereum.USDT)).toBe(
-      true,
-    );
+    expect(result.tokenAddress).toBe(CommonAddress.Ethereum.USDT);
     expect(result.blockNum).toBe(100);
   });
 
@@ -114,9 +111,7 @@ describe('updateAdditionalLayerZeroData', () => {
     const result = await updateAdditionalLayerZeroData(tx);
 
     expect(result.value).toBe('1.5');
-    expect(addressesEqual(result.tokenAddress ?? undefined, CommonAddress.ArbitrumOne.USDT)).toBe(
-      true,
-    );
+    expect(result.tokenAddress).toBe(CommonAddress.ArbitrumOne.USDT);
   });
 
   it('throws when the receipt has no transfer log for the token', async () => {
