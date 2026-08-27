@@ -80,6 +80,17 @@ export const fetchEthDepositsToCustomDestinationFromSubgraph = async ({
     },
   );
 
+  // The route answers a failure with an empty `data` array of its own, so parsing
+  // on and reading it would render an indexer outage as "you have no deposits".
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(
+      `[fetchEthDepositsToCustomDestinationFromSubgraph] /api/eth-deposits-custom-destination failed with ${
+        response.status
+      }: ${body || 'no response body'}`,
+    );
+  }
+
   const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] = (
     await response.json()
   ).data;

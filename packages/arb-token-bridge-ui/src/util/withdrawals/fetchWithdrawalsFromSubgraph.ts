@@ -84,6 +84,18 @@ export async function fetchWithdrawalsFromSubgraph({
     headers: { 'Content-Type': 'application/json' },
   });
 
+  // The route answers a failure with an empty `data` array of its own. Reading it
+  // would render an indexer outage as "you have no withdrawals" *and* skip the
+  // event-log fallback in `fetchWithdrawals`, which only runs if this throws.
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(
+      `[fetchWithdrawalsFromSubgraph] /api/withdrawals failed with ${response.status}: ${
+        body || 'no response body'
+      }`,
+    );
+  }
+
   const transactions: WithdrawalFromSubgraph[] = (await response.json()).data;
 
   return transactions;

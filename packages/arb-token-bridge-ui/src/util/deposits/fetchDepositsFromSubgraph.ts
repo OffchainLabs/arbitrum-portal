@@ -86,6 +86,17 @@ export const fetchDepositsFromSubgraph = async ({
     headers: { 'Content-Type': 'application/json' },
   });
 
+  // The route answers a failure with an empty `data` array of its own, so parsing
+  // on and reading it would render an indexer outage as "you have no deposits".
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(
+      `[fetchDepositsFromSubgraph] /api/deposits failed with ${response.status}: ${
+        body || 'no response body'
+      }`,
+    );
+  }
+
   const transactions: FetchDepositsFromSubgraphResult[] = (await response.json()).data;
 
   return transactions;
