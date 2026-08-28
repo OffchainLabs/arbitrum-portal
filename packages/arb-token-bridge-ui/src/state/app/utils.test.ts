@@ -44,18 +44,18 @@ function createDeposit({
 
 function createMsgData(
   status: ParentToChildMessageStatus,
-  isEthDepositMessage?: boolean,
+  isNativeTokenDepositMessage?: boolean,
 ): ParentToChildMessageData {
   return {
     status,
     retryableCreationTxID: '0x7534111b0bc2dd4d04a9d1d29236b7bb81830b8d21e3e826b13114304492e5c1',
     fetchingUpdate: false,
-    isEthDepositMessage,
+    isNativeTokenDepositMessage,
   };
 }
 
 describe('getDepositStatus', () => {
-  it('reports a native ETH deposit message as successful once the funds are deposited', () => {
+  it('reports a native token deposit message as successful once the funds are deposited', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(
         ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
@@ -69,7 +69,7 @@ describe('getDepositStatus', () => {
   // A router (e.g. the 0x Settler) can submit `createRetryableTicket` on the user's behalf with
   // `to` set to the user's own address. The funds sit in escrow until the ticket is redeemed, so
   // this must stay redeemable even though sender and destination match.
-  it('reports an unredeemed ETH retryable back to the sender as failed', () => {
+  it('reports an unredeemed native token retryable back to the sender as failed', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD),
     });
@@ -77,7 +77,7 @@ describe('getDepositStatus', () => {
     expect(getDepositStatus(tx)).toBe(DepositStatus.L2_FAILURE);
   });
 
-  it('reports an expired ETH retryable back to the sender as expired', () => {
+  it('reports an expired native token retryable back to the sender as expired', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.EXPIRED),
     });
@@ -85,7 +85,7 @@ describe('getDepositStatus', () => {
     expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
   });
 
-  it('reports an expired native ETH deposit message as successful', () => {
+  it('reports an expired native token deposit message as successful', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.EXPIRED, true),
     });
@@ -93,7 +93,7 @@ describe('getDepositStatus', () => {
     expect(getDepositStatus(tx)).toBe(DepositStatus.L2_SUCCESS);
   });
 
-  it('reports an unredeemed ETH retryable to a custom destination as failed', () => {
+  it('reports an unredeemed native token retryable to a custom destination as failed', () => {
     const tx = createDeposit({
       destination: OTHER_ADDRESS,
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD),

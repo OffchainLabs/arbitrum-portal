@@ -51,11 +51,11 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
     return DepositStatus.L2_PENDING;
   }
 
-  // A native ETH deposit message has no redeem step, so `FUNDS_DEPOSITED_ON_CHILD` already means
-  // the funds arrived. A retryable ticket carrying ETH keeps them in escrow until it is redeemed,
-  // including when a router submits the ticket on the sender's behalf back to the sender's own
-  // address, so this cannot be inferred from `assetType` and the destination address.
-  const isEthDepositMessage = l1ToL2MsgData.isEthDepositMessage === true;
+  // A native token deposit message has no redeem step, so `FUNDS_DEPOSITED_ON_CHILD` already means
+  // the funds arrived. A retryable ticket carrying the native token keeps them in escrow until it
+  // is redeemed, including when a router submits the ticket on the sender's behalf back to the
+  // sender's own address, so this cannot be inferred from `assetType` and the destination address.
+  const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage === true;
 
   switch (l1ToL2MsgData.status) {
     case ParentToChildMessageStatus.NOT_YET_CREATED:
@@ -63,9 +63,9 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
     case ParentToChildMessageStatus.CREATION_FAILED:
       return DepositStatus.CREATION_FAILED;
     case ParentToChildMessageStatus.EXPIRED:
-      return isEthDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.EXPIRED;
+      return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.EXPIRED;
     case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
-      return isEthDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.L2_FAILURE;
+      return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.L2_FAILURE;
     }
     case ParentToChildMessageStatus.REDEEMED:
       return DepositStatus.L2_SUCCESS;

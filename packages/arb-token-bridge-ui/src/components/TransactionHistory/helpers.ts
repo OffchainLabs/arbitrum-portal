@@ -417,7 +417,7 @@ export async function getUpdatedEthDeposit(tx: MergedTransaction): Promise<Merge
         retryableCreationTxID: (parentToChildMsg as EthDepositMessage).childTxHash,
         // Only show `childTxId` after the deposit is confirmed
         childTxId: isDeposited ? (parentToChildMsg as EthDepositMessage).childTxHash : undefined,
-        isEthDepositMessage: true,
+        isNativeTokenDepositMessage: true,
       },
     };
 
