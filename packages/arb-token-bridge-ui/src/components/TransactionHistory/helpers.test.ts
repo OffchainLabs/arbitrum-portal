@@ -1,13 +1,27 @@
+import {
+  EthDepositMessage,
+  EthDepositMessageStatus,
+  ParentToChildMessageReader,
+  ParentToChildMessageStatus,
+} from '@arbitrum/sdk';
 import { getStatus } from '@lifi/sdk';
 import type { StatusResponse, Token } from '@lifi/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import {
+  DepositStatus,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
+import { ChainId } from '../../types/ChainId';
 import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
+import { getParentToChildMessageDataFromParentTxHash } from '../../util/deposits/helpers';
 import {
   getDestinationTransactionUrl,
   getSourceTransactionUrl,
+  getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
   isSameTransaction,
 } from './helpers';
@@ -18,6 +32,17 @@ vi.mock('@lifi/sdk', async (importOriginal) => {
   return {
     ...actual,
     getStatus: vi.fn(),
+  };
+});
+
+// Only the SDK lookup is stubbed. `isEthDepositMessage` stays real, so the tests exercise the same
+// narrowing that decides which message kind a deposit is.
+vi.mock('../../util/deposits/helpers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../util/deposits/helpers')>();
+
+  return {
+    ...actual,
+    getParentToChildMessageDataFromParentTxHash: vi.fn(),
   };
 });
 
@@ -364,6 +389,93 @@ describe.sequential('getUpdatedLifiTransfer', () => {
       destinationStatus: WithdrawalStatus.CONFIRMED,
       toAmount: { amount: '89', token: finalToken },
     });
+  });
+});
+
+describe('getUpdatedEthDeposit', () => {
+  // Sender and destination match on both fixtures. That used to be what told the two message kinds
+  // apart, so these tests pin the flag the classification now relies on.
+  const SENDER = '0xee7300250a9745c2bA636254a486334bb8120d0a';
+  const NATIVE_TOKEN_DEPOSIT_TX_ID =
+    '0x8b6eb5b1d0f9b06b1d0e3a5e0a1cf0ef1e3d5e1b7c8a9f0d2e4b6a8c0e2f4a6b';
+  const RETRYABLE_TX_ID = '0x21f72d0003dea33e0cce1d2655d680e72dbcddc3e34baea4645363318f91dbd8';
+  const CHILD_TX_HASH = '0x3c9a1f7e5b2d8c4a6e0f2b4d6a8c0e2f4a6b8d0c2e4f6a8b0d2c4e6f8a0b2d4c';
+  const RETRYABLE_CREATION_ID =
+    '0x7534111b0bc2dd4d04a9d1d29236b7bb81830b8d21e3e826b13114304492e5c1';
+
+  function createPendingNativeTokenDeposit(txId: string): MergedTransaction {
+    return {
+      sender: SENDER,
+      destination: SENDER,
+      direction: 'deposit-l1',
+      status: 'pending',
+      createdAt: 1_787_341_919_000,
+      resolvedAt: null,
+      txId,
+      asset: 'ETH',
+      assetType: AssetType.ETH,
+      value: '0.611126206084167590',
+      uniqueId: null,
+      isWithdrawal: false,
+      blockNum: 25_805_722,
+      tokenAddress: null,
+      depositStatus: DepositStatus.L2_PENDING,
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    };
+  }
+
+  // Keyed by tx id rather than by call order, because the suite runs concurrently.
+  beforeEach(() => {
+    vi.mocked(getParentToChildMessageDataFromParentTxHash).mockImplementation(
+      async ({ depositTxId }) => {
+        if (depositTxId === NATIVE_TOKEN_DEPOSIT_TX_ID) {
+          return {
+            isClassic: false,
+            parentToChildMsg: {
+              childTxHash: CHILD_TX_HASH,
+              status: async () => EthDepositMessageStatus.DEPOSITED,
+            } as unknown as EthDepositMessage,
+          };
+        }
+
+        return {
+          isClassic: false,
+          parentToChildMsg: {
+            retryableCreationId: RETRYABLE_CREATION_ID,
+            getSuccessfulRedeem: async () => ({
+              status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+            }),
+          } as unknown as ParentToChildMessageReader,
+        };
+      },
+    );
+  });
+
+  it('marks a deposited native token deposit message as such and reports success', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(NATIVE_TOKEN_DEPOSIT_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+      isNativeTokenDepositMessage: true,
+    });
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_SUCCESS);
+  });
+
+  it('leaves an unredeemed native token retryable unmarked and reports failure', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(RETRYABLE_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+    });
+    expect(updatedDeposit.parentToChildMsgData?.isNativeTokenDepositMessage).toBeUndefined();
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_FAILURE);
   });
 });
 
