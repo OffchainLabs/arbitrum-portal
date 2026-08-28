@@ -26,6 +26,13 @@ export interface ParentToChildMessageData {
   retryableCreationTxID: string;
   childTxId?: string;
   fetchingUpdate: boolean;
+  /**
+   * True only for a native ETH deposit message, where the funds are credited on the child chain
+   * without a redeem. For a retryable ticket carrying ETH the funds sit in escrow until it is
+   * redeemed, even when the ticket was submitted to the sender's own address, so the two cannot be
+   * told apart by comparing `sender` and `destination`.
+   */
+  isEthDepositMessage?: boolean;
 }
 
 export type ChildToParentMessageData = {

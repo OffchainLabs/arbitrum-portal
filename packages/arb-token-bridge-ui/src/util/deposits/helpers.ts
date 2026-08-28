@@ -232,6 +232,7 @@ const updateETHDepositStatusData = async ({
       // Only show `childTxId` after the deposit is confirmed
       childTxId: isDeposited ? ethDepositMessage.childTxHash : undefined,
       fetchingUpdate: false,
+      isEthDepositMessage: true,
     },
   };
 
@@ -343,6 +344,8 @@ const updateClassicDepositStatusData = async ({
     childTxId,
     fetchingUpdate: false,
     retryableCreationTxID: parentToChildMsg.retryableCreationId,
+    // classic ETH deposits were credited directly, same as a nitro ETH deposit message
+    isEthDepositMessage: depositTx.assetType === AssetType.ETH,
   };
 
   const l2BlockNum = childTxId ? (await childProvider.getTransaction(childTxId)).blockNumber : null;
