@@ -66,9 +66,11 @@ describe('getDepositStatus', () => {
     expect(getDepositStatus(tx)).toBe(DepositStatus.L2_SUCCESS);
   });
 
-  // A router (e.g. the 0x Settler) can submit `createRetryableTicket` on the user's behalf with
-  // `to` set to the user's own address. The funds sit in escrow until the ticket is redeemed, so
-  // this must stay redeemable even though sender and destination match.
+  // This is the common case, not an exotic one: every native token deposit from this UI goes
+  // through `ethBridger.depositTo`, which submits a retryable ticket with `to` set to the
+  // destination, the sender's own address by default. Any such deposit whose auto-redeem fails
+  // leaves the funds in escrow, so it must stay redeemable even though sender and destination
+  // match. The incident that surfaced it happened to come from a router.
   it('reports an unredeemed native token retryable back to the sender as failed', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD),

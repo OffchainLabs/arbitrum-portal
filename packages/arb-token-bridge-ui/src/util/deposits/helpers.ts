@@ -345,7 +345,9 @@ const updateClassicDepositStatusData = async ({
     fetchingUpdate: false,
     retryableCreationTxID: parentToChildMsg.retryableCreationId,
     // classic native token deposits were credited directly, same as a nitro native token deposit
-    // message (`AssetType.ETH` denotes the chain's native token, not necessarily ETH)
+    // message (`AssetType.ETH` denotes the chain's native token, not necessarily ETH). The
+    // destination address plays no part here, matching `isCompletedEthDeposit` above, which already
+    // resolves `childTxId` for these without looking at it.
     isNativeTokenDepositMessage: depositTx.assetType === AssetType.ETH,
   };
 

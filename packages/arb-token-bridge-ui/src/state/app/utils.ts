@@ -53,8 +53,9 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
 
   // A native token deposit message has no redeem step, so `FUNDS_DEPOSITED_ON_CHILD` already means
   // the funds arrived. A retryable ticket carrying the native token keeps them in escrow until it
-  // is redeemed, including when a router submits the ticket on the sender's behalf back to the
-  // sender's own address, so this cannot be inferred from `assetType` and the destination address.
+  // is redeemed, and it can perfectly well be addressed to the sender: that is what every native
+  // token deposit from this UI does, as they all go through `ethBridger.depositTo`. So the kind of
+  // message cannot be inferred from `assetType` and the destination address.
   const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage === true;
 
   switch (l1ToL2MsgData.status) {
