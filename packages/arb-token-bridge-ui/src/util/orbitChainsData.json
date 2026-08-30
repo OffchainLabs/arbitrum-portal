@@ -612,6 +612,7 @@
           "logo": "/images/HPPMainnet_Logo.svg",
           "description": "House Party Protocol (HPP) is a modular AI-powered blockchain and data infrastructure designed for the next generation of decentralized applications, built on the pillars of trustworthy data, verifiable AI, and real-world scalability."
         },
+        "fastWithdrawalTime": 86400000,
         "assertionIntervalSeconds": 128700
       }
     },
