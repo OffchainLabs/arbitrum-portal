@@ -5,7 +5,6 @@ import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
-import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -27,11 +26,9 @@ import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
 } from '../../util/TokenUtils';
-import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
-import { useTokensFromLists } from './TokenSearchUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import {
@@ -41,6 +38,7 @@ import {
   isLifiRoute,
   useRouteStore,
 } from './hooks/useRouteStore';
+import { useRouteEligibility } from './hooks/useRoutesUpdater';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
   TransferReadinessRichErrorMessage,
@@ -250,6 +248,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }),
     shallow,
   );
+  const { eligibleRouteTypes } = useRouteEligibility();
 
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
@@ -265,7 +264,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
-  const { data: tokensFromLists } = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))
@@ -374,6 +372,11 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return notReady();
     }
 
+    const eligibleSelectedRoute = isLifiRoute(selectedRoute) ? 'lifi' : selectedRoute;
+    if (!eligibleRouteTypes.includes(eligibleSelectedRoute)) {
+      return notReady();
+    }
+
     const ethBalanceFloat = isDepositMode ? ethL1BalanceFloat : ethL2BalanceFloat;
     const selectedTokenBalanceFloat = isDepositMode
       ? selectedTokenL1BalanceFloat
@@ -433,22 +436,19 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     // ERC-20
     if (selectedToken) {
       const selectedTokenIsDisabled = isTransferDisabledToken(selectedToken.address, childChain.id);
-      const isValidLifiRoute =
-        isLifiEnabled() &&
-        isValidLifiTransfer({
-          sourceChainId: networks.sourceChain.id,
-          fromToken: selectedToken.address,
-          destinationChainId: networks.destinationChain.id,
-          tokensFromLists,
-        });
 
-      if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+      if (
+        selectedRoute === 'arbitrum' &&
+        isDepositMode &&
+        isSelectedTokenWithdrawOnly &&
+        !isSelectedTokenWithdrawOnlyLoading
+      ) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY,
           },
         });
-      } else if (selectedTokenIsDisabled && !isValidLifiRoute) {
+      } else if (selectedRoute === 'arbitrum' && selectedTokenIsDisabled) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_TRANSFER_DISABLED,
@@ -774,6 +774,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   }, [
     gasSummary,
     selectedRoute,
+    eligibleRouteTypes,
     isSmartContractWallet,
     isDepositMode,
     ethL1BalanceFloat,
@@ -797,7 +798,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     networks.sourceChain.id,
     networks.destinationChain.id,
     networks.destinationChain.name,
-    tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedRouteContext,

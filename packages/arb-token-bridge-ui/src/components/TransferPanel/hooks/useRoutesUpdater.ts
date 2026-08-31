@@ -93,12 +93,88 @@ export interface GetEligibleRoutesParams {
   tokensFromLists: ContractStorage<ERC20BridgeToken>;
 }
 
-export function getEligibleRoutes({
+export function getEligibleRoutes(params: GetEligibleRoutesParams): EligibleRouteType[] {
+  const { amount, ...potentialRouteParams } = params;
+
+  if (Number(amount) === 0) {
+    return [];
+  }
+
+  return getPotentialRoutes(potentialRouteParams);
+}
+
+export function hasEligibleAlternativeRoute(
+  params: Omit<GetEligibleRoutesParams, 'amount' | 'isArbitrumCanonicalTransfer'>,
+): boolean {
+  return getPotentialRoutes({
+    ...params,
+    isArbitrumCanonicalTransfer: false,
+  }).some((route) => route !== 'arbitrum');
+}
+
+export function useRouteEligibility() {
+  const [networks] = useNetworks();
+  const { isDepositMode } = useNetworksRelationship(networks);
+  const [{ amount, amount2 }] = useArbQueryParams();
+  const isNativeUsdcTransfer = useIsCctpTransfer();
+  const isCctpEnabled = isCctpEnabledUtil();
+  const { isOft } = useIsOftV2Transfer();
+  const isBatchTransferSupported = useIsBatchTransferSupported();
+  // `amount2` can be the literal "max" deep-link value, which resolves to a positive amount.
+  const isBatchTransfer =
+    isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
+  const [selectedToken] = useSelectedToken();
+  const destinationToken = useDestinationToken();
+  const { data: tokensFromLists } = useTokensFromLists();
+  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
+
+  const eligibleRouteTypes = useMemo(
+    () =>
+      getEligibleRoutes({
+        isOftV2Transfer: isOft,
+        isNativeUsdcTransfer,
+        isCctpEnabled,
+        isBatchTransfer,
+        amount,
+        isDepositMode,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        selectedToken,
+        destinationToken,
+        isArbitrumCanonicalTransfer,
+        tokensFromLists,
+      }),
+    [
+      isOft,
+      isNativeUsdcTransfer,
+      isCctpEnabled,
+      isBatchTransfer,
+      amount,
+      isDepositMode,
+      networks.sourceChain.id,
+      networks.destinationChain.id,
+      selectedToken,
+      destinationToken,
+      isArbitrumCanonicalTransfer,
+      tokensFromLists,
+    ],
+  );
+
+  return {
+    amount,
+    destinationToken,
+    eligibleRouteTypes,
+    isDepositMode,
+    networks,
+    selectedToken,
+  };
+}
+
+function getPotentialRoutes({
   isOftV2Transfer,
   isNativeUsdcTransfer,
   isCctpEnabled,
   isBatchTransfer,
-  amount,
   isDepositMode,
   sourceChainId,
   destinationChainId,
@@ -106,14 +182,10 @@ export function getEligibleRoutes({
   destinationToken,
   isArbitrumCanonicalTransfer,
   tokensFromLists,
-}: GetEligibleRoutesParams): EligibleRouteType[] {
+}: Omit<GetEligibleRoutesParams, 'amount'>): EligibleRouteType[] {
   const { isTestnet } = isNetwork(sourceChainId);
   const isLifiEnabled = isLifiEnabledUtil() && !isTestnet;
   const eligibleRouteTypes: EligibleRouteType[] = [];
-
-  if (Number(amount) === 0) {
-    return [];
-  }
 
   const hasLifiOnlyToken = isLifiOnlyToken(selectedToken) || isLifiOnlyToken(destinationToken);
   if (hasLifiOnlyToken) {
@@ -193,19 +265,8 @@ export function getEligibleRoutes({
 }
 
 export function useRoutesUpdater() {
-  const [networks] = useNetworks();
-  const { isDepositMode } = useNetworksRelationship(networks);
-  const [{ amount, amount2 }] = useArbQueryParams();
-  const isNativeUsdcTransfer = useIsCctpTransfer();
-  const isCctpEnabled = isCctpEnabledUtil();
-  const isOftV2Transfer = useIsOftV2Transfer();
-  const isBatchTransferSupported = useIsBatchTransferSupported();
-  // `amount2` can be the literal "max" deep-link value, which resolves to a positive amount.
-  const isBatchTransfer =
-    isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
-  const [selectedToken] = useSelectedToken();
-  const destinationToken = useDestinationToken();
-  const { data: tokensFromLists } = useTokensFromLists();
+  const { amount, destinationToken, eligibleRouteTypes, isDepositMode, networks, selectedToken } =
+    useRouteEligibility();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
@@ -218,45 +279,12 @@ export function useRoutesUpdater() {
     shallow,
   );
 
-  const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
   const { setRouteState, userSelectedRoute } = useRouteStore(
     (state) => ({
       setRouteState: state.setRouteState,
       userSelectedRoute: state.userSelectedRoute,
     }),
     shallow,
-  );
-
-  const eligibleRouteTypes = useMemo(
-    () =>
-      getEligibleRoutes({
-        isOftV2Transfer,
-        isNativeUsdcTransfer,
-        isCctpEnabled,
-        isBatchTransfer,
-        amount,
-        isDepositMode,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-        selectedToken,
-        destinationToken,
-        isArbitrumCanonicalTransfer,
-        tokensFromLists,
-      }),
-    [
-      isOftV2Transfer,
-      isNativeUsdcTransfer,
-      isCctpEnabled,
-      isBatchTransfer,
-      amount,
-      isDepositMode,
-      networks.sourceChain.id,
-      networks.destinationChain.id,
-      selectedToken,
-      destinationToken,
-      isArbitrumCanonicalTransfer,
-      tokensFromLists,
-    ],
   );
 
   const overrideSourceToken = useMemo(
