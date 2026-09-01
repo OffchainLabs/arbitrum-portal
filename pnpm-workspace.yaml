@@ -4,7 +4,10 @@ packages:
 overrides:
   'node-forge': 1.4.0
   '@types/node-forge': 1.3.14
-  '@walletconnect/ethereum-provider': 2.13.1
+  'json-canonicalize': 2.0.0
+  '@zerodev/react-ui': 'file:./.zd-tarballs/zerodev-react-ui-0.0.7.tgz'
+  '@zerodev/wallet-core': 'file:./.zd-tarballs/zerodev-wallet-core-0.0.5.tgz'
+  '@zerodev/wallet-react': 'file:./.zd-tarballs/zerodev-wallet-react-0.0.7.tgz'
   '@octokit/core>@octokit/request-error': 5.1.1
   '@octokit/core>@octokit/request': 8.4.1
   '@octokit/graphql>@octokit/request': 8.4.1
@@ -33,7 +36,6 @@ overrides:
   '@typescript-eslint/eslint-plugin': 8.59.3
   '@typescript-eslint/parser': 8.59.3
   'next-query-params>next': 16.2.11
-  '@reown/appkit-adapter-wagmi>@wagmi/core': 2.22.1
   'eslint-plugin-react-hooks': 7.1.1
   'utf-8-validate': 6.0.6
   'hono': 4.12.34
@@ -71,7 +73,7 @@ resolvePeersFromWorkspaceRoot: true
 
 # Only allow build scripts for explicitly trusted packages.
 allowBuilds:
-  '@reown/appkit': true
+  '@reown/appkit': false
   bufferutil: true
   core-js: true
   core-js-pure: true

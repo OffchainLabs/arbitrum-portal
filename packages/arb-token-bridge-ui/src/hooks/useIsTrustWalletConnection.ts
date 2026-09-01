@@ -1,7 +1,7 @@
-import { useWalletInfo } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 
 export function useIsTrustWalletConnection() {
-  const { walletInfo } = useWalletInfo('eip155');
+  const { connector } = useAccount();
 
-  return (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
+  return (connector?.name ?? '').toLowerCase().includes('trust wallet');
 }
