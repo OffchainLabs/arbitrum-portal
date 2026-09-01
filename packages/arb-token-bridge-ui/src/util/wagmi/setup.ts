@@ -1,10 +1,8 @@
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { type AppKitNetwork } from '@reown/appkit/networks';
-import { createAppKit } from '@reown/appkit/react';
-import { http } from 'wagmi';
+import { zeroDevWallet, zeroDevWalletConnect } from '@zerodev/wallet-react-ui';
+import { type Chain } from 'viem';
+import { type CreateConnectorFn, createConfig, http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
 
-import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
@@ -22,14 +20,14 @@ import {
   sepolia,
 } from './wagmiAdditionalNetworks';
 
-type AppKitNetworkList = [AppKitNetwork, ...AppKitNetwork[]];
+type ChainList = readonly [Chain, ...Chain[]];
 
-function asAppKitNetworkList(networks: AppKitNetwork[]): AppKitNetworkList {
-  if (networks.length === 0) {
-    throw new Error('[wagmi/setup] Expected at least one AppKit network.');
+function asChainList(chains: Chain[]): ChainList {
+  if (chains.length === 0) {
+    throw new Error('[wagmi/setup] Expected at least one chain.');
   }
 
-  return networks as unknown as AppKitNetworkList;
+  return chains as unknown as ChainList;
 }
 
 initializeBridgeNetworks();
@@ -37,7 +35,7 @@ initializeBridgeNetworks();
 const customChains = getCustomChainsFromLocalStorage().map((chain) => getWagmiChain(chain.chainId));
 const wagmiOrbitChains = getOrbitChains().map((chain) => getWagmiChain(chain.chainId));
 
-const defaultChains: AppKitNetworkList = [
+const defaultChains: Chain[] = [
   mainnet,
   arbitrum,
   arbitrumNova,
@@ -47,13 +45,13 @@ const defaultChains: AppKitNetworkList = [
   baseSepolia,
 ];
 
-function getChainList(): AppKitNetworkList {
+function getChainList(): ChainList {
   if (isE2eTestingEnvironment) {
-    return asAppKitNetworkList([local, arbitrumLocal, l3Local, sepolia, arbitrumSepolia, mainnet]);
+    return asChainList([local, arbitrumLocal, l3Local, sepolia, arbitrumSepolia, mainnet]);
   }
 
   if (isDevelopmentEnvironment) {
-    return asAppKitNetworkList([
+    return asChainList([
       ...defaultChains,
       ...wagmiOrbitChains,
       local,
@@ -63,14 +61,14 @@ function getChainList(): AppKitNetworkList {
     ]);
   }
 
-  return asAppKitNetworkList([...defaultChains, ...wagmiOrbitChains, ...customChains]);
+  return asChainList([...defaultChains, ...wagmiOrbitChains, ...customChains]);
 }
 
 const chainList = getChainList();
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
+const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 
-if (!projectId) {
+if (!walletConnectProjectId) {
   logger.error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID variable missing.');
 }
 
@@ -103,36 +101,36 @@ const metadata = {
   icons: [`${PORTAL_DOMAIN}/logo.png`],
 };
 
-const wagmiAdapter = new WagmiAdapter({
-  projectId,
-  networks: [...chainList],
-  batch: { multicall: true },
+function getConnectors(): CreateConnectorFn[] {
+  const connectors: CreateConnectorFn[] = [
+    // Required by the ZeroDev wallet kit even for external-wallets-only usage:
+    // this connector hosts the kit's UI store (useAuth/useKitStore look it up by
+    // id 'zerodev-wallet'). It is never shown in the connect UI, and
+    // `autoInitialize: false` keeps the embedded wallet from ever booting.
+    zeroDevWallet({
+      projectId: process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID ?? '',
+      chains: chainList,
+      autoInitialize: false,
+    }),
+  ];
+
+  // The kit only pairs through its own WalletConnect connector; a raw
+  // walletConnect() from wagmi/connectors would be ignored by its UI.
+  if (walletConnectProjectId) {
+    connectors.push(
+      zeroDevWalletConnect({
+        projectId: walletConnectProjectId,
+        metadata,
+      }),
+    );
+  }
+
+  return connectors;
+}
+
+export const wagmiConfig = createConfig({
+  chains: chainList,
+  connectors: getConnectors(),
   transports: getTransports(),
+  batch: { multicall: true },
 });
-
-export const appKit = createAppKit({
-  projectId,
-  metadata,
-  networks: [...chainList],
-  defaultNetwork: chainList[0],
-  adapters: [wagmiAdapter],
-  features: {
-    email: false,
-    socials: false,
-    connectorTypeOrder: [
-      'injected',
-      'external',
-      'walletConnect',
-      'featured',
-      'recommended',
-      'recent',
-      'custom',
-    ],
-  },
-  enableWalletGuide: false,
-  themeVariables: {
-    '--apkt-font-family': `${unica.style.fontFamily}, Roboto, sans-serif`,
-  },
-});
-
-export const wagmiConfig = wagmiAdapter.wagmiConfig;
