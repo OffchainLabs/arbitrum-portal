@@ -1,3 +1,4 @@
+import '@zerodev/wallet-react-ui/styles.css';
 import type { Metadata } from 'next';
 import type { CSSProperties, PropsWithChildren } from 'react';
 
@@ -13,14 +14,13 @@ export const metadata: Metadata = {
   },
 };
 
-const reownFontVariables = {
-  '--apkt-fontFamily-regular': `${unica.style.fontFamily}, Roboto, sans-serif`,
-  '--apkt-fontFamily-mono': `${unica.style.fontFamily}, Roboto, sans-serif`,
+const walletKitFontVariables = {
+  '--zd-default-font-family': `${unica.style.fontFamily}, Roboto, sans-serif`,
 } as CSSProperties;
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en" className={unica.variable} style={reownFontVariables}>
+    <html lang="en" className={unica.variable} style={walletKitFontVariables}>
       <body className="relative bg-black text-white">{children}</body>
     </html>
   );

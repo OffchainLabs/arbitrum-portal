@@ -1,6 +1,8 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
+import { zeroDevWallet, zeroDevWalletConnect } from '@zerodev/wallet-react-ui';
+import { type Chain } from 'viem';
 import { http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
 import { baseAccount } from 'wagmi/connectors';
@@ -117,6 +119,18 @@ const wagmiAdapter = new WagmiAdapter({
       appLogoUrl: metadata.icons[0],
       preference: { telemetry: false },
     }),
+    // Required by the ZeroDev wallet kit even for external-wallets-only usage:
+    // this connector hosts the kit's UI store (useAuth/useKitStore look it up by
+    // id 'zerodev-wallet'). It is never shown in the connect UI, and
+    // `autoInitialize: false` keeps the embedded wallet from ever booting.
+    zeroDevWallet({
+      projectId: process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID ?? '',
+      chains: chainList as unknown as readonly [Chain, ...Chain[]],
+      autoInitialize: false,
+    }),
+    // The kit only pairs through its own WalletConnect connector; a raw
+    // walletConnect() from wagmi/connectors would be ignored by its UI.
+    ...(projectId ? [zeroDevWalletConnect({ projectId, metadata })] : []),
   ],
 });
 

@@ -12,6 +12,7 @@
     "@tanstack/react-query": "^5.104.5",
     "@uidotdev/usehooks": "^2.4.1",
     "@uniswap/token-lists": "^1.0.0-beta.34",
+    "@zerodev/wallet-react-ui": "file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz",
     "@vaultsfyi/sdk": "^2.1.3",
     "@vercel/firewall": "^1.2.1",
     "@wagmi/core": "^2.22.1",

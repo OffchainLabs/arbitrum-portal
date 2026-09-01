@@ -18,6 +18,10 @@ overrides:
   '@walletconnect/ethereum-provider': 2.26.0
   # unstorage 1.15+ dropped listhen, which pulled in node-forge. @walletconnect/keyvaluestorage accepts ^1.9.0.
   '@walletconnect/keyvaluestorage>unstorage': 1.17.6
+  'json-canonicalize': 2.0.0
+  '@zerodev/react-ui': 'file:./.zd-tarballs/zerodev-react-ui-0.0.7.tgz'
+  '@zerodev/wallet-core': 'file:./.zd-tarballs/zerodev-wallet-core-0.0.5.tgz'
+  '@zerodev/wallet-react': 'file:./.zd-tarballs/zerodev-wallet-react-0.0.7.tgz'
   '@babel/runtime': 7.26.10
   'form-data': 4.0.6
   'axios': 1.20.0
