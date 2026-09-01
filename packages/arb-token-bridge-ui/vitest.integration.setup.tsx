@@ -51,18 +51,28 @@ vi.mock('react-virtualized', () => ({
   }),
 }));
 
-// Avoid error when reown is making request to walletConnect endpoint
+// Avoid error when the WalletConnect connector reaches its relay endpoint
 vi.mock('./src/wallet/hooks/useWalletModal', () => ({
   useWalletModal: () => ({
     openConnectModal: vi.fn(),
   }),
 }));
 
-// Avoid error from appkit hooks requiring createAppKit to be called first
-vi.mock('@reown/appkit/react', () => ({
-  createAppKit: vi.fn(),
-  useAppKit: () => ({ open: vi.fn() }),
-  useWalletInfo: () => ({ walletInfo: undefined }),
+// The kit's hooks require the zerodev-wallet connector in the wagmi config;
+// the integration-test config doesn't include it, so stub the package.
+vi.mock('@zerodev/wallet-react-ui', () => ({
+  zeroDevWallet: vi.fn(() => () => ({})),
+  zeroDevWalletConnect: vi.fn(() => () => ({})),
+  useAuth: () => ({ step: null, goToStep: vi.fn(), reset: vi.fn() }),
+  ConnectWallet: () => null,
+  SignUp: Object.assign(() => null, {
+    Default: () => null,
+    Wallet: () => null,
+    InstalledWallets: () => null,
+    MoreWallets: () => null,
+    WalletConnect: () => null,
+    Divider: () => null,
+  }),
 }));
 
 class MockLoadedImage {
