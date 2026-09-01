@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
 import {
   GetEligibleRoutesParams,
   getEligibleRoutes,
@@ -20,6 +21,28 @@ vi.mock('../../../util/featureFlag', () => ({
   isLifiEnabled: vi.fn(() => true),
 }));
 
+vi.mock('../../../util/networks', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../util/networks')>();
+
+  return {
+    ...actual,
+    isNetwork: vi.fn((chainId) =>
+      chainId === 4663
+        ? { ...actual.isNetwork(chainId), isTestnet: false }
+        : actual.isNetwork(chainId),
+    ),
+  };
+});
+
+const baseToken: ERC20BridgeToken = {
+  address: '0x0000000000000000000000000000000000000001',
+  decimals: 18,
+  listIds: new Set(),
+  name: 'Token',
+  symbol: 'TOKEN',
+  type: TokenType.ERC20,
+};
+
 const baseParams: GetEligibleRoutesParams = {
   isOftV2Transfer: false,
   isNativeUsdcTransfer: true,
@@ -29,7 +52,7 @@ const baseParams: GetEligibleRoutesParams = {
   isDepositMode: true,
   sourceChainId: ChainId.Ethereum,
   destinationChainId: ChainId.ArbitrumOne,
-  selectedToken: {} as ERC20BridgeToken,
+  selectedToken: baseToken,
   destinationToken: null,
   isArbitrumCanonicalTransfer: true,
   tokensFromLists: {},
@@ -45,7 +68,7 @@ describe('getEligibleRoutes', () => {
       getEligibleRoutes({
         ...baseParams,
         selectedToken: {
-          ...(baseParams.selectedToken as ERC20BridgeToken),
+          ...baseToken,
           lifiOnlyChainId: ChainId.Ethereum,
         },
       }),
@@ -85,6 +108,57 @@ describe('getEligibleRoutes', () => {
         isArbitrumCanonicalTransfer: false,
       }),
     ).toEqual([]);
+  });
+
+  it('offers only the canonical route for canonical VIRTUAL withdrawals', () => {
+    expect(
+      getEligibleRoutes({
+        ...baseParams,
+        isNativeUsdcTransfer: false,
+        isDepositMode: false,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+        selectedToken: {
+          ...baseToken,
+          address: CommonAddress.Ethereum.VIRTUAL,
+          l2Address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+        },
+      }),
+    ).toEqual(['arbitrum']);
+  });
+
+  it('offers only LiFi for VIRTUAL deposits to Robinhood Chain', () => {
+    expect(
+      getEligibleRoutes({
+        ...baseParams,
+        isNativeUsdcTransfer: false,
+        destinationChainId: ChainId.RobinhoodChain,
+        selectedToken: {
+          ...baseToken,
+          address: CommonAddress.Ethereum.VIRTUAL,
+          l2Address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+        },
+        isArbitrumCanonicalTransfer: false,
+      }),
+    ).toEqual(['lifi']);
+  });
+
+  it('offers only LiFi for regular VIRTUAL withdrawals', () => {
+    expect(
+      getEligibleRoutes({
+        ...baseParams,
+        isNativeUsdcTransfer: false,
+        isDepositMode: false,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+        selectedToken: {
+          ...baseToken,
+          address: CommonAddress.RobinhoodChain.VIRTUAL,
+          lifiOnlyChainId: ChainId.RobinhoodChain,
+        },
+        isArbitrumCanonicalTransfer: false,
+      }),
+    ).toEqual(['lifi']);
   });
 });
 

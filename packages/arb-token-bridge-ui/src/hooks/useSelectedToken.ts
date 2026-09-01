@@ -5,6 +5,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import {
   useTokensFromLists,
   useTokensFromUser,
@@ -12,7 +13,7 @@ import {
 import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import { isTokenAvailableOnChain } from '../util/TokenListUtils';
+import { isLifiOnlyToken, isTokenAvailableOnChain } from '../util/TokenListUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -106,11 +107,21 @@ export const useSelectedToken = (): [
             tokenOverride ||
             tokensFromUser[tokenStorageAddress] ||
             tokensFromLists[tokenStorageAddress];
+          const destinationTokenOverride = isLifiOnlyToken(token)
+            ? getTokenOverride({
+                fromToken: tokenAddress,
+                sourceChainId: networks.sourceChain.id,
+                destinationChainId: networks.destinationChain.id,
+              }).destination
+            : null;
+
           return {
             token: tokenAddress,
-            destinationToken: isTokenAvailableOnChain(token, networks.destinationChain.id)
-              ? tokenAddress
-              : undefined,
+            destinationToken:
+              destinationTokenOverride?.address ||
+              (isTokenAvailableOnChain(token, networks.destinationChain.id)
+                ? tokenAddress
+                : undefined),
           };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
@@ -118,7 +129,13 @@ export const useSelectedToken = (): [
         }
       });
     },
-    [networks.destinationChain.id, setQueryParams, tokensFromLists, tokensFromUser],
+    [
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      setQueryParams,
+      tokensFromLists,
+      tokensFromUser,
+    ],
   );
 
   const selectedToken = tokenFromSearchParams

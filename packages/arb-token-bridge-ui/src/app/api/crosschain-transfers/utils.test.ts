@@ -547,6 +547,24 @@ describe('getTokenOverride', () => {
     });
   });
 
+  it('maps LiFi VIRTUAL between Ethereum and the regular Robinhood token', () => {
+    const deposit = getTokenOverride({
+      fromToken: CommonAddress.Ethereum.VIRTUAL,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const withdrawal = getTokenOverride({
+      fromToken: CommonAddress.RobinhoodChain.VIRTUAL,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    });
+
+    expect(deposit.source?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+    expect(deposit.destination?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.source?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.destination?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+  });
+
   it('For transfers on chain with custom fee token, returns null', () => {
     const arbToXaiOverride = getTokenOverride({
       fromToken: undefined,

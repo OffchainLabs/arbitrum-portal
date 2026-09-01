@@ -5,8 +5,7 @@ import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
-import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
-import { isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
+import { getTokenOverride, isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
@@ -15,6 +14,9 @@ import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferR
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressUtils';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { isLifiOnlyToken } from '../../../util/TokenListUtils';
 import {
   isCctpEnabled as isCctpEnabledUtil,
@@ -131,6 +133,11 @@ export function getEligibleRoutes({
       : [];
   }
 
+  const isCanonicalVirtualWithdrawal =
+    sourceChainId === ChainId.RobinhoodChain &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(selectedToken?.l2Address, CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL);
+
   // Only the canonical route can carry the extra native amount (as the retryable's
   // L2 callvalue), so skip LiFi/CCTP/OFT quotes for batches.
   if (isBatchTransfer) {
@@ -174,6 +181,7 @@ export function getEligibleRoutes({
 
   const isValidLifiRoute =
     isLifiEnabled &&
+    !isCanonicalVirtualWithdrawal &&
     isValidLifiTransfer({
       fromToken: selectedToken?.address,
       sourceChainId: sourceChainId,

@@ -15,6 +15,19 @@ type CustomTokenConfig = {
 
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
+    coinKey: 'VIRTUAL',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.VIRTUAL,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.VIRTUAL,
+    },
+  },
+  {
+    coinKey: 'VIRTUAL',
+    addresses: {
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+    },
+  },
+  {
     coinKey: 'PYUSD',
     addresses: {
       [ChainId.Ethereum]: CommonAddress.Ethereum.PYUSD,
@@ -226,7 +239,13 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
       const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
       const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
 
-      tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+      if (
+        !tokensGroupedByCoinKey[normalizedToken.coinKey] ||
+        (chainId === ChainId.RobinhoodChain &&
+          normalizedToken.address.toLowerCase() === CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL)
+      ) {
+        tokensGroupedByCoinKey[normalizedToken.coinKey] = normalizedToken;
+      }
       acc.push(normalizedToken);
       return acc;
     }, []);
