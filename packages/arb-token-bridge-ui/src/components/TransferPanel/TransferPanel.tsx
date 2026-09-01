@@ -73,7 +73,6 @@ import { DialogData, DialogType, DialogWrapper, useDialog2 } from '../common/Dia
 import { ExternalLink } from '../common/ExternalLink';
 import { errorToast, warningToast } from '../common/atoms/Toast';
 import { ConnectWalletButton } from './ConnectWalletButton';
-import { getAmountLoss } from './HighSlippageWarningDialog';
 import { MoveFundsButton } from './MoveFundsButton';
 import { ReceiveFundsHeader } from './ReceiveFundsHeader';
 import { Routes } from './Routes/Routes';
@@ -83,6 +82,7 @@ import { TokenImportDialog, useTokenImportDialogStore } from './TokenImportDialo
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 import { TransferPanelMain } from './TransferPanelMain';
 import { ImportTokenModalStatus, getWarningTokenDescription } from './TransferPanelUtils';
+import { getTransferWarningDialogType } from './TransferWarningUtils';
 import {
   convertBridgeSdkToMergedTransaction,
   convertBridgeSdkToPendingDepositTransaction,
@@ -596,18 +596,18 @@ export function TransferPanel() {
 
       setTransferring(true);
 
-      /**
-       * If the amount received is less than 90% of the sent amount, we show a warning dialog
-       * We multiply by 100 before dividing to avoid BigNumber stripping the value to 0
-       */
       const { fromAmountUsd, toAmountUsd } = getAmountToPay(context);
-      const { lossPercentage } = getAmountLoss({
-        fromAmount: fromAmountUsd,
-        toAmount: toAmountUsd,
+      const warningDialogType = getTransferWarningDialogType({
+        fromAmount: context.fromAmount,
+        toAmount: context.toAmount,
+        fromToken: context.protocolData.route.fromToken,
+        toToken: context.protocolData.route.toToken,
+        fromAmountUsd,
+        toAmountUsd,
       });
 
-      if (lossPercentage > 10) {
-        const confirmation = await confirmDialog('high_slippage_warning');
+      if (warningDialogType) {
+        const confirmation = await confirmDialog(warningDialogType);
         if (!confirmation) return;
       }
 
