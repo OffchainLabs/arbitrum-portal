@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { WETH_TOKEN_LOGO } from '@/bridge/constants';
 
+import { hasHighUsdSlippage } from './TransferWarningUtils';
 import { RouteContext } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
@@ -85,11 +86,10 @@ describe('getAmountToPay', () => {
         },
       }),
     );
-    expect(fromAmountUsd).toBe(2.039);
+    expect(fromAmountUsd).toBeCloseTo(2.039);
     expect(amounts).toStrictEqual({
       '1:0x0000000000000000000000000000000000000000': {
         amount: '306838702762301',
-        amountUSD: '2.039',
         token: {
           address: '0x0000000000000000000000000000000000000000',
           decimals: 18,
@@ -122,17 +122,15 @@ describe('getAmountToPay', () => {
       }),
     );
 
-    expect(fromAmountUsd).toBe(10.894);
+    expect(fromAmountUsd).toBeCloseTo(10.894);
     expect(amounts).toStrictEqual({
       '1:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
         amount: '10000000',
-        amountUSD: '10',
         token: usdc,
         chainId: 1,
       },
       '1:0x0000000000000000000000000000000000000000': {
         amount: '105000',
-        amountUSD: '0.894',
         token: eth,
         chainId: 1,
       },
@@ -176,15 +174,13 @@ describe('getAmountToPay', () => {
       ],
     });
 
-    expect(fromAmountUsd).toBe(11.594);
+    expect(fromAmountUsd).toBeCloseTo(11.594);
     expect(amounts['1:0x0000000000000000000000000000000000000000']).toMatchObject({
       amount: '105000',
-      amountUSD: '0.894',
       chainId: 1,
     });
     expect(amounts['42161:0x0000000000000000000000000000000000000000']).toMatchObject({
       amount: '90000',
-      amountUSD: '0.700',
       chainId: 42161,
     });
   });
@@ -211,5 +207,42 @@ describe('getAmountToPay', () => {
     route.fee[0]!.amountUSD = undefined;
 
     expect(getAmountToPay(route).fromAmountUsd).toBe(10);
+  });
+
+  it('preserves returned zero USD values', () => {
+    const route = getMock({
+      gas: { amount: '70000', amountUSD: '0', token: eth },
+      fee: { amount: '35000', amountUSD: '0', token: eth },
+      fromAmount: { amount: '10000000', amountUSD: '0', token: usdc },
+    });
+    route.toAmount.amountUSD = '0';
+
+    const { fromAmountUsd, toAmountUsd } = getAmountToPay(route);
+    expect(fromAmountUsd).toBe(0);
+    expect(toAmountUsd).toBe(0);
+  });
+
+  it('preserves the precision of USD values returned by the route API', () => {
+    const route = getMock({
+      gas: { amount: '70000', amountUSD: '0.0004', token: eth },
+      fee: { amount: '35000', amountUSD: '0.0004', token: eth },
+      fromAmount: { amount: '10000000', amountUSD: '1', token: usdc },
+    });
+
+    expect(getAmountToPay(route).fromAmountUsd).toBeCloseTo(1.0008);
+  });
+
+  it('includes the transfer, fee, and gas in the USD slippage check', () => {
+    const route = getMock({
+      gas: { amount: '70000', amountUSD: '4', token: eth },
+      fee: { amount: '35000', amountUSD: '2', token: eth },
+      fromAmount: { amount: '10000000', amountUSD: '1', token: usdc },
+    });
+    route.toAmount.amountUSD = '0.30';
+
+    const { fromAmountUsd, toAmountUsd } = getAmountToPay(route);
+
+    expect(fromAmountUsd).toBe(7);
+    expect(hasHighUsdSlippage({ fromAmountUsd, toAmountUsd })).toBe(true);
   });
 });

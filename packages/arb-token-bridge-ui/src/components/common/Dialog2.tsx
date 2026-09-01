@@ -8,6 +8,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { BuyPanelNetworkSelectionContainer } from '../BuyPanel/BuyPanel';
 import { RecoverFundsDialog } from '../RecoverFunds';
+import { AmountMismatchWarningDialog } from '../TransferPanel/AmountMismatchWarningDialog';
 import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/CustomDestinationAddressConfirmationDialog';
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
@@ -66,6 +67,7 @@ export type DialogType =
   | 'confirm_cctp_deposit'
   | 'confirm_usdc_deposit'
   | 'high_slippage_warning'
+  | 'amount_mismatch_warning'
   | 'widget_transaction_history'
   | 'token_selection'
   | 'destination_token_selection'
@@ -173,6 +175,8 @@ export function DialogWrapper(props: DialogProps) {
       );
     case 'high_slippage_warning':
       return <HighSlippageWarningDialog {...commonProps} />;
+    case 'amount_mismatch_warning':
+      return <AmountMismatchWarningDialog {...commonProps} />;
     case 'widget_transaction_history':
       return <WidgetTransactionHistory {...commonProps} />;
     case 'token_selection':
