@@ -60,6 +60,9 @@ overrides:
   'joi@>=18.0.0 <18.2.1': 18.2.1
   '@babel/core': 7.29.6
   'socket.io-parser': 4.2.7
+  # Scoped to query-string@9 only: 0.5.0 is ESM-only, and the CJS query-string@5/7
+  # copies (synpress, WalletConnect) `require()` it. See audit-ci.jsonc.
+  'query-string@9>decode-uri-component': 0.5.0
 
 autoInstallPeers: true
 shamefullyHoist: true
