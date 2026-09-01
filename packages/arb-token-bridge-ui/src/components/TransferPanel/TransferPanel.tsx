@@ -20,7 +20,10 @@ import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory'
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
-import { getExecutedLifiRouteTxHash } from '@/bridge/util/LifiTransactionStatus';
+import {
+  getExecutedLifiRouteTxHash,
+  getSubmittedLifiRouteTxHash,
+} from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
@@ -53,7 +56,7 @@ import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
-import { getLifiRouteToolsDetails } from '../../util/LifiRouteUtils';
+import { getLifiRouteTransactionData } from '../../util/LifiRouteUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
@@ -641,10 +644,12 @@ export function TransferPanel() {
       }
 
       let cachedLifiTransfer: LifiMergedTransaction | null = null;
-      let latestLifiRoute: RouteExtended | undefined;
       let executedTxHash: string | undefined;
       const updateCachedLifiRoute = (lifiRoute: RouteExtended) => {
-        latestLifiRoute = lifiRoute;
+        // Create history only after the route transaction is accepted. A standalone token
+        // approval does not count. Standard and EIP-5792 rejections never reach this point;
+        // accepted standard transactions provide a hash and accepted batches provide a batch id.
+        const submittedTxId = getSubmittedLifiRouteTxHash(lifiRoute);
         const txHash = getExecutedLifiRouteTxHash(lifiRoute);
 
         if (!executedTxHash && txHash) {
@@ -660,17 +665,56 @@ export function TransferPanel() {
           }
         }
 
+        if (!cachedLifiTransfer && submittedTxId && !isSmartContractWallet) {
+          const assetType =
+            !selectedToken || addressesEqual(selectedToken.address, constants.AddressZero)
+              ? AssetType.ETH
+              : AssetType.ERC20;
+          const newTransfer: LifiMergedTransaction = {
+            txId: txHash ?? submittedTxId,
+            asset: selectedToken?.symbol || 'ETH',
+            assetType,
+            blockNum: null,
+            createdAt: dayjs().valueOf(),
+            direction: isDepositMode ? 'deposit' : 'withdraw',
+            isWithdrawal: !isDepositMode,
+            resolvedAt: null,
+            status: WithdrawalStatus.UNCONFIRMED,
+            destinationStatus: WithdrawalStatus.UNCONFIRMED,
+            uniqueId: null,
+            value: amount,
+            depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
+            destination: destinationAddress ?? walletAddress,
+            sender: walletAddress,
+            isLifi: true,
+            tokenAddress: selectedToken?.address || constants.AddressZero,
+            parentChainId: parentChain.id,
+            childChainId: childChain.id,
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+            destinationTxId: null,
+            ...getLifiRouteTransactionData(lifiRoute),
+          };
+          cachedLifiTransfer = newTransfer;
+          addPendingTransaction(newTransfer);
+          addLifiTransactionToCache(newTransfer);
+          return;
+        }
+
         if (!cachedLifiTransfer) {
           return;
         }
 
+        const routeUpdates = {
+          ...(txHash ? { txId: txHash } : {}),
+          ...getLifiRouteTransactionData(lifiRoute),
+        };
         cachedLifiTransfer = {
           ...cachedLifiTransfer,
-          ...(txHash ? { txId: txHash } : {}),
-          lifiRoute,
+          ...routeUpdates,
         };
         updatePendingTransaction(cachedLifiTransfer);
-        updateLifiTransactionInCache(cachedLifiTransfer);
+        updateLifiTransactionInCache(cachedLifiTransfer, routeUpdates);
       };
 
       const transfer = await lifiTransferStarter.transfer({
@@ -683,6 +727,10 @@ export function TransferPanel() {
           confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
         onRouteUpdate: updateCachedLifiRoute,
         onRouteExecutionError: (error) => {
+          if (isUserRejectedError(error)) {
+            return;
+          }
+
           handleError({
             error,
             label: 'lifi_route_execution',
@@ -716,56 +764,6 @@ export function TransferPanel() {
         tag: selectedRoute,
         isSwap: isSwapTransfer,
       });
-
-      const lifiRoute = latestLifiRoute ?? transfer.lifiRoute;
-
-      if (!isSmartContractWallet) {
-        const assetType =
-          !selectedToken ||
-          (selectedToken && addressesEqual(selectedToken.address, constants.AddressZero))
-            ? AssetType.ETH
-            : AssetType.ERC20;
-        const toolsDetails = getLifiRouteToolsDetails(context.protocolData.route);
-        const txId = getExecutedLifiRouteTxHash(lifiRoute) ?? transfer.sourceChainTransaction.hash;
-
-        const newTransfer: LifiMergedTransaction = {
-          txId,
-          asset: selectedToken?.symbol || 'ETH',
-          assetType,
-          blockNum: null,
-          createdAt: dayjs().valueOf(),
-          direction: isDepositMode ? 'deposit' : 'withdraw',
-          isWithdrawal: !isDepositMode,
-          resolvedAt: null,
-          status: WithdrawalStatus.UNCONFIRMED,
-          destinationStatus: WithdrawalStatus.UNCONFIRMED,
-          uniqueId: null,
-          value: amount,
-          depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-          destination: destinationAddress ?? walletAddress,
-          sender: walletAddress,
-          isLifi: true,
-          tokenAddress: selectedToken?.address || constants.AddressZero,
-          parentChainId: parentChain.id,
-          childChainId: childChain.id,
-          sourceChainId: networks.sourceChain.id,
-          destinationChainId: networks.destinationChain.id,
-          toolDetails: toolsDetails[0],
-          toolsDetails,
-          durationMs: context.durationMs,
-          fromAmount: {
-            ...context.fromAmount,
-          },
-          toAmount: {
-            ...context.toAmount,
-          },
-          destinationTxId: null,
-          lifiRoute,
-        };
-        cachedLifiTransfer = newTransfer;
-        addPendingTransaction(newTransfer);
-        addLifiTransactionToCache(newTransfer);
-      }
 
       const sourceChainTransaction = transfer.sourceChainTransaction;
       if ('wait' in sourceChainTransaction) {

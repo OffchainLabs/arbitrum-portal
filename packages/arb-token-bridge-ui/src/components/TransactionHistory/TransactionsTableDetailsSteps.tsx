@@ -3,12 +3,19 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
-import { ReactNode, useMemo } from 'react';
+import type { ProcessType } from '@lifi/sdk';
+import { Fragment, ReactNode, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
-import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import {
+  DepositStatus,
+  LifiRouteHistoryStep,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
+import { LIFI_TRANSFER_PROCESS_TYPES } from '../../util/LifiTransactionStatus';
 import { getNetworkName } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
@@ -25,6 +32,10 @@ import {
   isTxPending,
 } from './helpers';
 
+const LIFI_APPROVAL_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
+  'TOKEN_ALLOWANCE',
+  'PERMIT',
+]);
 function needsToClaimTransfer(tx: MergedTransaction) {
   if (tx.isOft || isLifiTransfer(tx)) {
     return false;
@@ -113,7 +124,7 @@ const LastStepEndItem = ({ tx }: { tx: MergedTransaction }) => {
   }
 
   if (isDepositReadyToRedeem(tx)) {
-    return <TransactionsTableRowAction type="deposits" isError={true} tx={tx} />;
+    return <TransactionsTableRowAction type="deposits" tx={tx} />;
   }
 
   return null;
@@ -148,6 +159,111 @@ function isDestinationChainStatusFailure(tx: MergedTransaction) {
   return !isSourceChainStatusFailure(tx) && isTxFailed(tx);
 }
 
+function FirstStep({ tx }: { tx: MergedTransaction }) {
+  const isSourceChainDepositFailure = isSourceChainStatusFailure(tx);
+  const sourceNetworkName = getNetworkName(tx.sourceChainId);
+
+  return (
+    <Step
+      done={!isSourceChainDepositFailure}
+      failure={isSourceChainDepositFailure}
+      text={
+        isSourceChainDepositFailure
+          ? `Transaction failed on ${sourceNetworkName}`
+          : `Transaction initiated on ${sourceNetworkName}`
+      }
+      endItem={
+        <ExternalLink href={getSourceTransactionUrl(tx)}>
+          <ArrowTopRightOnSquareIcon height={12} />
+        </ExternalLink>
+      }
+    />
+  );
+}
+
+function getLifiStepProcessState(
+  step: LifiRouteHistoryStep,
+  processTypes: ReadonlySet<ProcessType>,
+  { fallbackToAllProcesses = false }: { fallbackToAllProcesses?: boolean } = {},
+) {
+  const execution = step.execution;
+
+  if (!execution) {
+    return 'idle';
+  }
+
+  const allProcesses = execution.process.filter((process) => process.type !== 'SWITCH_CHAIN');
+  const matchingProcesses = allProcesses.filter((process) => processTypes.has(process.type));
+  const processes =
+    matchingProcesses.length > 0 || !fallbackToAllProcesses ? matchingProcesses : allProcesses;
+
+  if (processes.length === 0) {
+    return 'idle';
+  }
+
+  const failure = processes.some((process) => process.status === 'FAILED');
+
+  if (failure) {
+    return 'failure';
+  }
+
+  const done = processes.some((process) => process.status === 'DONE');
+
+  if (done) {
+    return 'done';
+  }
+
+  const pending = processes.some((process) =>
+    ['STARTED', 'ACTION_REQUIRED', 'PENDING'].includes(process.status),
+  );
+
+  return pending ? 'pending' : 'idle';
+}
+
+function LifiDetailsSteps({ tx, steps }: { tx: MergedTransaction; steps: LifiRouteHistoryStep[] }) {
+  const isDestinationChainFailure = isDestinationChainStatusFailure(tx);
+  const destinationNetworkName = getNetworkName(tx.destinationChainId);
+
+  return (
+    <div className="flex flex-col text-xs">
+      <FirstStep tx={tx} />
+
+      {steps.map((step) => {
+        const chainName = getNetworkName(step.fromChainId);
+        const approvalState = getLifiStepProcessState(step, LIFI_APPROVAL_PROCESS_TYPES, {
+          fallbackToAllProcesses: true,
+        });
+        const transferState = getLifiStepProcessState(step, LIFI_TRANSFER_PROCESS_TYPES);
+
+        return (
+          <Fragment key={step.id}>
+            <Step
+              done={approvalState === 'done'}
+              pending={approvalState === 'pending'}
+              failure={approvalState === 'failure'}
+              text={`Approve transaction on ${chainName}`}
+            />
+            <Step
+              done={transferState === 'done'}
+              pending={transferState === 'pending'}
+              failure={transferState === 'failure'}
+              text={`Approve transfer on ${chainName}`}
+            />
+          </Fragment>
+        );
+      })}
+
+      <Step
+        done={isTxCompleted(tx)}
+        pending={isTxPending(tx) && !isTxCompleted(tx)}
+        failure={isTxExpired(tx) || isDestinationChainFailure}
+        text={`Funds arrive on ${destinationNetworkName}`}
+        endItem={<LastStepEndItem tx={tx} />}
+      />
+    </div>
+  );
+}
+
 export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction }) => {
   const { approximateDurationInMinutes } = useTransferDuration(tx);
 
@@ -180,23 +296,15 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
     return fundsArrivedText;
   }, [tx, isDestinationChainFailure, sourceNetworkName, isLifiRefunded]);
 
+  const detailedLifiRouteSteps = isLifiTransfer(tx) ? (tx.lifiRouteSteps ?? []) : [];
+  if (detailedLifiRouteSteps.length > 0) {
+    return <LifiDetailsSteps tx={tx} steps={detailedLifiRouteSteps} />;
+  }
+
   return (
     <div className="flex flex-col text-xs">
       {/* First step when transfer is initiated */}
-      <Step
-        done={!isSourceChainDepositFailure}
-        failure={isSourceChainDepositFailure}
-        text={
-          isSourceChainDepositFailure
-            ? `Transaction failed on ${sourceNetworkName}`
-            : `Transaction initiated on ${sourceNetworkName}`
-        }
-        endItem={
-          <ExternalLink href={getSourceTransactionUrl(tx)}>
-            <ArrowTopRightOnSquareIcon height={12} />
-          </ExternalLink>
-        }
-      />
+      <FirstStep tx={tx} />
 
       {/* Pending transfer showing the remaining time */}
       <Step
@@ -216,7 +324,6 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
             isTxClaimable(tx) && (
               <TransactionsTableRowAction
                 type={tx.isWithdrawal ? 'withdrawals' : 'deposits'}
-                isError={false}
                 tx={tx}
               />
             )
