@@ -11,6 +11,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
 import { addressesEqual } from '../../../util/AddressUtils';
+import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
 import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
@@ -135,8 +136,27 @@ export function useMaxAmount() {
       return utils.formatUnits(tokenBalance, selectedToken?.decimals ?? defaultErc20Decimals);
     }
 
+    /**
+     * Nova deposits are capped, so MAX should never produce an amount the transfer panel will
+     * reject. This is cosmetic only - `useTransferReadiness` is the actual gate.
+     */
+    if (
+      isNovaDestination(networks.destinationChain.id) &&
+      typeof nativeCurrencyMaxAmount !== 'undefined'
+    ) {
+      // return the balance as-is when under the cap, so small amounts keep their decimal notation
+      return Number(nativeCurrencyMaxAmount) > NOVA_MAX_ETH_DEPOSIT_AMOUNT
+        ? String(NOVA_MAX_ETH_DEPOSIT_AMOUNT)
+        : nativeCurrencyMaxAmount;
+    }
+
     return nativeCurrencyMaxAmount;
-  }, [selectedToken, nativeCurrencyMaxAmount, selectedTokenBalances.sourceBalance]);
+  }, [
+    selectedToken,
+    nativeCurrencyMaxAmount,
+    selectedTokenBalances.sourceBalance,
+    networks.destinationChain.id,
+  ]);
 
   const maxAmount2 = useMemo(() => {
     if (!isDepositMode) {

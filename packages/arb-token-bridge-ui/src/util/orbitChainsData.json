@@ -1005,7 +1005,7 @@
         "bridge": "0xaA4f1669d4f366626fD0630B2954883143e1Bc3D",
         "inbox": "0x9869baE89F17d6CE1d2CA8B62d057Ecb15379fE3",
         "outbox": "0xAE4c2bD2c65dA85dE6c7Fe8eF45e519c2de6Eb79",
-        "rollup": "0x00f9edf1e58C58FBdF8193370FF05B0578d7b244",
+        "rollup": "0xc5f29A8911a40ce5E56984F0Fe15802ab4Db4cd0",
         "sequencerInbox": "0xAB08DA432C583F295b9D52B51cd9E7c678c1C2Db"
       },
       "nativeToken": "0x87f71CBC3a55700059eDcFa9c36fE43B59dbfB6b",
