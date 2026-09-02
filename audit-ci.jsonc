@@ -123,5 +123,21 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>cypress>extract-zip
     // from: arb-token-bridge-ui>cypress-terminal-report>cypress>extract-zip
     "GHSA-jmr9-qjv8-65gv",
+    //
+    // https://github.com/advisories/GHSA-vcc3-ghjq-m6fr
+    // decode-uri-component denial of service via exponential decoding of malformed
+    // percent-encoded input (CVE-2026-45822)
+    // Fixed for our own query-string usage: pnpm-workspace.yaml overrides
+    // 'query-string@9>decode-uri-component' to 0.5.0, so the copy that parses
+    // browser URL query params in the app, bridge and portal is patched.
+    // Reason to ignore the paths below: the patch only ships as ESM (0.2.2 is the
+    // last CJS release and it is vulnerable), while query-string@5/7 in these chains
+    // `require()` it, so overriding them would break at runtime. No CJS fix exists.
+    // @walletconnect/utils is reached only through @walletconnect/ethereum-provider,
+    // which is pinned to 2.13.1; synpress is an E2E test devDependency.
+    // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/utils>query-string>decode-uri-component
+    // from: arb-token-bridge-ui>@synthetixio/synpress>download>got>cacheable-request>normalize-url>query-string>decode-uri-component
+    "GHSA-vcc3-ghjq-m6fr|*>@walletconnect/utils>query-string>decode-uri-component",
+    "GHSA-vcc3-ghjq-m6fr|*>@synthetixio/synpress>*>query-string>decode-uri-component",
   ],
 }

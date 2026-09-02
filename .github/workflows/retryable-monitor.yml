@@ -2,12 +2,19 @@ name: Retryable Monitor
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to run against'
+        required: false
+        default: master
+        type: string
   schedule:
     - cron: '3 8 * * *' # Run once a day at 08:03am GMT
 
 jobs:
   run-retryable-monitoring:
     name: Retryable Monitor (${{ matrix.chain == 'orbit' && 'Orbit' || matrix.chain == 'core' && 'Core' || matrix.chain == 'enterprise' && 'Enterprise' || matrix.chain }})
+    if: vars.RUN_RETRYABLE_MONITOR == 'true'
     strategy:
       matrix:
         chain: [core, orbit, enterprise]
@@ -15,4 +22,5 @@ jobs:
     with:
       chain: ${{ matrix.chain }}
       monitor: retryable
+      ref: ${{ inputs.ref || 'master' }}
     secrets: inherit

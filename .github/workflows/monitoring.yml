@@ -9,6 +9,10 @@ on:
       monitor:
         required: true
         type: string
+      ref:
+        required: false
+        type: string
+        default: master
 
 env:
   NEXT_PUBLIC_RPC_PROVIDER: alchemy
@@ -27,6 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: OffchainLabs/arbitrum-portal
+          ref: ${{ inputs.ref }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
@@ -73,7 +78,7 @@ jobs:
         run: cp ./packages/arb-token-bridge-ui/public/${{ steps.config.outputs.config_file }} ./arbitrum-monitoring/config.json
 
       - name: Run monitoring command
-        run: cd ./arbitrum-monitoring && pnpm ${{ inputs.monitor }}-monitor --enableAlerting --writeToNotion ${{ inputs.chain == 'core' && 'true' || 'false' }} ${{ inputs.monitor == 'retryable' && '--autoRedeem' || '' }}
+        run: cd ./arbitrum-monitoring && pnpm ${{ inputs.monitor }}-monitor --enableAlerting --writeToNotion ${{ (inputs.chain == 'core' || inputs.chain == 'enterprise') && 'true' || 'false' }} ${{ inputs.monitor == 'retryable' && '--autoRedeem' || '' }}
         env:
           RETRYABLE_MONITORING_SLACK_TOKEN: ${{ secrets[steps.config.outputs.slack_token] }}
           RETRYABLE_MONITORING_SLACK_CHANNEL: ${{ secrets[steps.config.outputs.slack_channel] }}
