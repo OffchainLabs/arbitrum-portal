@@ -7,6 +7,7 @@ import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
+import { isNovaDestination } from '../../util/NovaUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -21,12 +22,18 @@ export function DestinationTokenButton({
   const [selectedToken] = useSelectedToken();
   const { data: tokensFromLists } = useTokensFromLists();
 
-  const isLifiTransfer = isValidLifiTransfer({
-    destinationChainId: networks.destinationChain.id,
-    fromToken: selectedToken?.address,
-    sourceChainId: networks.sourceChain.id,
-    tokensFromLists,
-  });
+  /**
+   * Nova is in a minimized state and only accepts ETH, so the asset received is always ETH and
+   * there is nothing to pick.
+   */
+  const canSelectDestinationToken =
+    !isNovaDestination(networks.destinationChain.id) &&
+    isValidLifiTransfer({
+      destinationChainId: networks.destinationChain.id,
+      fromToken: selectedToken?.address,
+      sourceChainId: networks.sourceChain.id,
+      tokensFromLists,
+    });
 
   const [dialogProps, openDialog] = useDialog2();
 
@@ -66,12 +73,12 @@ export function DestinationTokenButton({
         className="px-[10px] py-[5px]"
         aria-label="Select Destination Token"
         onClick={() => openDialog('destination_token_selection')}
-        disabled={!isLifiTransfer}
+        disabled={!canSelectDestinationToken}
       >
         <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
           <TokenLogo srcOverride={tokenLogoSrc} />
           <span className="font-light">{tokenSymbol}</span>
-          {isLifiTransfer && (
+          {canSelectDestinationToken && (
             <ChevronDownIcon
               width={12}
               className={
