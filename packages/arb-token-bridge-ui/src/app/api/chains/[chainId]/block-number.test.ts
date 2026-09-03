@@ -26,7 +26,10 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv('INDEXER_API_URL', 'https://indexer.test');
+    vi.stubEnv(
+      'INDEXER_API_URL_BY_CHAIN',
+      JSON.stringify({ [ChainId.ArbitrumOne]: 'https://indexer.test' }),
+    );
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
   });
@@ -65,6 +68,16 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     expect(response.status).toBe(502);
     // failures must not fall through to the subgraph either
     expect(getL2SubgraphClientMock).not.toHaveBeenCalled();
+  });
+
+  it('returns a 502 for an indexed chain that has no entry in the map', async () => {
+    // Nova is indexed but absent from the map: no host to ask, so this must surface.
+    isChildChainIndexedMock.mockReturnValue(true);
+
+    const response = await getBlockNumber(ChainId.ArbitrumNova);
+
+    expect(response.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('uses the subgraph for a non-indexed chain', async () => {
