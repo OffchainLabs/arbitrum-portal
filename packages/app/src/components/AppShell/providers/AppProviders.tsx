@@ -56,7 +56,7 @@ const POSTHOG_MASKED_QUERY_PARAMS = ['destinationAddress', 'amount', 'amount2'];
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: 'https://app.posthog.com',
+    api_host: 'https://us.i.posthog.com',
     cookieless_mode: 'always',
     loaded: (posthog) => {
       posthog.register({ $geoip_disable: true });
