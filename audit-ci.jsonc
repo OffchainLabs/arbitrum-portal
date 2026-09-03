@@ -53,9 +53,6 @@
     // https://github.com/advisories/GHSA-m28w-2pqf-7qgj
     // webpack-dev-server denial of service via a malformed Host header
     //
-    // https://github.com/advisories/GHSA-q8mj-m7cp-5q26
-    // qs has a remotely triggerable DoS in stringify with comma arrays + encodeValuesOnly (CVE-2026-8723)
-    //
     // https://github.com/advisories/GHSA-v6wh-96g9-6wx3
     // launch-editor leaks NTLMv2 hashes via unvalidated Windows UNC paths on the dev-server __open-in-editor endpoint (CVE-2026-53632)
     //
@@ -96,7 +93,6 @@
     "GHSA-79cf-xcqc-c78w",
     "GHSA-f5vj-f2hx-8m93",
     "GHSA-m28w-2pqf-7qgj",
-    "GHSA-q8mj-m7cp-5q26",
     "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",

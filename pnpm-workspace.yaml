@@ -17,6 +17,7 @@ overrides:
   'form-data': 4.0.6
   'axios': 1.18.1
   '@eslint/plugin-kit': 0.3.4
+  '@humanfs/node': 0.16.8
   '@types/react': 19.2.14
   '@types/react-dom': 19.2.3
   '@types/node': 22.19.19
@@ -37,7 +38,7 @@ overrides:
   'eslint-plugin-react-hooks': 7.1.1
   'utf-8-validate': 6.0.6
   'hono': 4.12.34
-  'fast-uri': 3.1.5
+  'fast-uri': 3.1.6
   'sharp': 0.35.3
   'follow-redirects': 1.16.0
   'postcss': 8.5.26
@@ -49,10 +50,10 @@ overrides:
   'test-exclude>glob': 10.5.0
   'ws@>=8.0.0 <8.21.0': 8.21.0
   'ws@>=7.0.0 <7.5.11': 7.5.11
-  'express>qs': 6.15.1
+  'express>qs': 6.16.0
   'express>body-parser': 1.20.6
-  'body-parser>qs': 6.15.1
-  '@cypress/request>qs': 6.15.1
+  'body-parser>qs': 6.16.0
+  '@cypress/request>qs': 6.16.0
   'express>path-to-regexp': 0.1.13
   'tmp': 0.2.7
   'shell-quote': 1.10.0
