@@ -1,29 +1,4 @@
 import { getAPIBaseUrl } from '.';
-import { ChainId } from '../types/ChainId';
-
-export function hasL1Subgraph(l2ChainId: number) {
-  switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-    case ChainId.ArbitrumNova:
-    case ChainId.ArbitrumSepolia:
-      return true;
-
-    default:
-      return false;
-  }
-}
-
-export function hasL2Subgraph(l2ChainId: number) {
-  switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-    case ChainId.ArbitrumNova:
-    case ChainId.ArbitrumSepolia:
-      return true;
-
-    default:
-      return false;
-  }
-}
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {

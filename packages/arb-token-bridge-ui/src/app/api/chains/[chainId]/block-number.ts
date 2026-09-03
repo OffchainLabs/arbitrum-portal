@@ -4,13 +4,14 @@ import { NextResponse } from 'next/server';
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
 import {
   type SubgraphSource,
-  getL1SubgraphClient,
   getL2SubgraphClient,
 } from '../../../../api-utils/ServerSubgraphUtils';
-import { ChainId } from '../../../../types/ChainId';
-import { isChildChainIndexed } from '../../../../util/txHistory/sources';
+import { hasBridgeHistory, isChildChainIndexed } from '../../../../util/txHistory/sources';
 
 type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
+
+/** Callers read this as "nothing is indexed here" and scan event logs instead. */
+const NO_INDEXED_BLOCK = 0;
 
 async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   const indexerUrl = getIndexerApiUrl(chainId);
@@ -34,29 +35,6 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   return chain?.block?.number ?? 0;
 }
 
-function getSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.Ethereum:
-      // it's the same whether we do arb1 or nova
-      return getL1SubgraphClient(ChainId.ArbitrumOne);
-
-    case ChainId.Sepolia:
-      return getL1SubgraphClient(ChainId.ArbitrumSepolia);
-
-    case ChainId.ArbitrumOne:
-      return getL2SubgraphClient(ChainId.ArbitrumOne);
-
-    case ChainId.ArbitrumNova:
-      return getL2SubgraphClient(ChainId.ArbitrumNova);
-
-    case ChainId.ArbitrumSepolia:
-      return getL2SubgraphClient(ChainId.ArbitrumSepolia);
-
-    default:
-      throw new Error(`[getSubgraphClient] unsupported chain id: ${chainId}`);
-  }
-}
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chainId: string }> },
@@ -65,6 +43,10 @@ export async function GET(
 > {
   const { chainId } = await params;
   const numericChainId = Number(chainId);
+
+  if (!hasBridgeHistory(numericChainId)) {
+    return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
+  }
 
   try {
     if (isChildChainIndexed(numericChainId)) {
@@ -86,7 +68,7 @@ export async function GET(
       );
     }
 
-    const subgraph = getSubgraphClient(numericChainId);
+    const subgraph = getL2SubgraphClient(numericChainId);
 
     const result: {
       data: {
@@ -116,6 +98,9 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json({ data: 0 }, { status: 200 });
+    return NextResponse.json(
+      { message: (error as Error)?.message ?? 'Something went wrong' },
+      { status: 502 },
+    );
   }
 }
