@@ -37,7 +37,6 @@ const POSTHOG_DEVICE_PROPERTY_DENYLIST = [
   '$browser',
   '$browser_version',
   '$browser_type',
-  '$raw_user_agent',
   // Locale and timezone
   '$browser_language',
   '$browser_language_prefix',
@@ -49,8 +48,7 @@ const POSTHOG_DEVICE_PROPERTY_DENYLIST = [
  * Catches device properties a future posthog-js may add under a family we already
  * deny above, so the denylist above does not silently go stale on SDK upgrades.
  */
-const POSTHOG_DEVICE_PROPERTY_PATTERN =
-  /^\$(?:screen|viewport|device|os|browser|timezone|raw_user_agent)/;
+const POSTHOG_DEVICE_PROPERTY_PATTERN = /^\$(?:screen|viewport|device|os|browser|timezone)/;
 
 const POSTHOG_MASKED_QUERY_PARAMS = ['destinationAddress', 'amount', 'amount2'];
 
