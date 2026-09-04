@@ -2,6 +2,7 @@ import { constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PathnameEnum } from '@/bridge/constants';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { initializeBridgePage } from '../bridgePageUtils';
 
@@ -97,6 +98,69 @@ describe('initializeBridgePage sanitization', () => {
     expectRedirectedChains({
       sourceChain: 'apechain',
       destinationChain: 'ethereum',
+    });
+  });
+
+  describe('USDG on Robinhood Chain', () => {
+    it('resolves `destinationToken=usdg` to the Robinhood USDG contract from Arbitrum One', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'arbitrum-one',
+          destinationChain: 'robinhood-chain',
+          destinationToken: 'usdg',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
+      expect(redirectMock).toHaveBeenCalledTimes(1);
+      expectRedirectedChains({ sourceChain: 'arbitrum-one', destinationChain: 'robinhood-chain' });
+      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
+        CommonAddress.RobinhoodChain.USDG,
+      );
+    });
+
+    it('resolves `destinationToken=usdg` to the Ethereum USDG contract from Ethereum', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'ethereum',
+          destinationChain: 'robinhood-chain',
+          destinationToken: 'usdg',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
+      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
+        CommonAddress.Ethereum.USDG,
+      );
+    });
+
+    it('drops `destinationToken=usdg` when the destination is not Robinhood Chain', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'ethereum',
+          destinationChain: 'arbitrum-one',
+          destinationToken: 'usdg',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
+      expect(redirectMock).toHaveBeenCalledTimes(1);
+      expect(getRedirectedUrl().searchParams.has('destinationToken')).toBe(false);
+    });
+
+    it('does not redirect a stablecoin deep link that already targets USDG', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'arbitrum-one',
+          destinationChain: 'robinhood-chain',
+          token: CommonAddress.ArbitrumOne.USDC,
+          destinationToken: CommonAddress.RobinhoodChain.USDG,
+          tab: 'bridge',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
+      expect(redirectMock).not.toHaveBeenCalled();
     });
   });
 

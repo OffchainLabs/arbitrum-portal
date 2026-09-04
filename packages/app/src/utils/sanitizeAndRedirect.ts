@@ -9,6 +9,7 @@ import {
   decodeChainQueryParam,
   encodeChainQueryParam,
   encodeString,
+  sanitizeDestinationTokenQueryParam,
   sanitizeQueryParams,
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam,
@@ -144,8 +145,8 @@ export async function getSanitizedRedirectPath(
     sourceChainId: sanitizedChainIds.sourceChainId,
     destinationChainId: sanitizedChainIds.destinationChainId,
   });
-  const sanitizedDestinationToken = sanitizeTokenQueryParam({
-    token: destinationToken,
+  const sanitizedDestinationToken = sanitizeDestinationTokenQueryParam({
+    destinationToken,
     sourceChainId: sanitizedChainIds.sourceChainId,
     destinationChainId: sanitizedChainIds.destinationChainId,
   });
