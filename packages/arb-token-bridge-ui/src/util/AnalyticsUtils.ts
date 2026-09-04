@@ -157,6 +157,13 @@ type AnalyticsEventMap = {
     tokenAddress: string;
     hasBalance: boolean;
   };
+  'USDG Suggestion Banner': {
+    action: 'shown' | 'switched';
+    sourceChainId: number;
+    destinationChainId: number;
+    sourceTokenAddress?: string;
+    destinationTokenAddress?: string;
+  };
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
