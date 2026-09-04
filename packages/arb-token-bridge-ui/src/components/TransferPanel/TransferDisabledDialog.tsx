@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { isLifiTransfer, isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
+import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
+import { AmountQueryParamEnum, useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useDestinationToken } from '../../hooks/useDestinationToken';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -9,10 +11,13 @@ import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { withdrawOnlyTokens } from '../../util/WithdrawOnlyUtils';
-import { isLifiEnabled } from '../../util/featureFlag';
+import { isCctpEnabled } from '../../util/featureFlag';
 import { Dialog } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { useTokensFromLists } from './TokenSearchUtils';
+import { useIsCctpTransfer } from './hooks/useIsCctpTransfer';
+import { useIsOftV2Transfer } from './hooks/useIsOftV2Transfer';
+import { hasEligibleAlternativeRoute } from './hooks/useRoutesUpdater';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import { isDisabledCanonicalTransfer } from './isDisabledCanonicalTransfer';
 
@@ -26,7 +31,26 @@ export function TransferDisabledDialog() {
   >(null);
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
+  const [{ amount2 }] = useArbQueryParams();
+  const destinationToken = useDestinationToken();
+  const isNativeUsdcTransfer = useIsCctpTransfer();
+  const { isOft, isLoading: isOftLoading } = useIsOftV2Transfer();
+  const isBatchTransferSupported = useIsBatchTransferSupported();
+  const isBatchTransfer =
+    isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
   const { data: tokensFromLists, isLoading: isLoadingTokensFromLists } = useTokensFromLists();
+  const hasAlternativeRoute = hasEligibleAlternativeRoute({
+    isOftV2Transfer: isOft,
+    isNativeUsdcTransfer,
+    isCctpEnabled: isCctpEnabled(),
+    isBatchTransfer,
+    isDepositMode,
+    sourceChainId: networks.sourceChain.id,
+    destinationChainId: networks.destinationChain.id,
+    selectedToken,
+    destinationToken,
+    tokensFromLists,
+  });
   const unsupportedToken = sanitizeTokenSymbol(selectedToken?.symbol ?? '', {
     erc20L1Address: selectedToken?.address,
     chainId: networks.sourceChain.id,
@@ -40,26 +64,11 @@ export function TransferDisabledDialog() {
       return null;
     }
 
-    const isLifiRoute =
-      isLifiEnabled() &&
-      isLifiTransfer({
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-      });
-    if (isLifiRoute && isLoadingTokensFromLists) {
+    if (isLoadingTokensFromLists || isOftLoading) {
       return null;
     }
 
-    // If a lifi route exists, don't show any dialog
-    if (
-      isLifiRoute &&
-      isValidLifiTransfer({
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-        fromToken: selectedToken.address,
-        tokensFromLists,
-      })
-    ) {
+    if (hasAlternativeRoute) {
       return null;
     }
 
@@ -74,16 +83,15 @@ export function TransferDisabledDialog() {
     ] as const;
   }, [
     childChain.id,
+    hasAlternativeRoute,
     isDepositMode,
+    isLoadingTokensFromLists,
+    isOftLoading,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     parentChain.id,
     selectedToken,
     selectedTokenAddressLocalValue,
-    tokensFromLists,
-    isLoadingTokensFromLists,
-    networks.sourceChain.id,
-    networks.destinationChain.id,
   ]);
 
   const { data: shouldShowDialog = false } = useSWRImmutable(
