@@ -59,6 +59,8 @@ type ErrorMessages = {
   inputAmount2?: string | TransferReadinessRichErrorMessage;
 };
 
+type AmountToPay = Omit<AmountWithToken, 'amountUSD'>;
+
 function sanitizeEstimatedGasFees(
   gasSummary: UseGasSummaryResult,
   options: {
@@ -142,7 +144,7 @@ function notReady(
  * While amount itself is paid in the token sent (USDC or ETH).
  */
 export function getAmountToPay(selectedRouteContext: RouteContext) {
-  const amounts: Record<string, AmountWithToken> = {};
+  const amounts: Record<string, AmountToPay> = {};
   let fromAmountUsd = 0;
 
   function addAmount({
@@ -159,19 +161,17 @@ export function getAmountToPay(selectedRouteContext: RouteContext) {
     const key = `${chainId ?? 'unknown'}:${token.address.toLowerCase()}`;
     const acc = amounts[key];
     const parsedAmount = BigNumber.from(amount ?? 0);
-    const parsedAmountUSD = amountUSD ?? '0';
-    fromAmountUsd += Number(parsedAmountUSD);
+    const parsedAmountUSD = Number(amountUSD ?? 0);
+    fromAmountUsd += parsedAmountUSD;
     if (acc) {
       amounts[key] = {
         amount: BigNumber.from(acc.amount).add(parsedAmount).toString(),
-        amountUSD: (Number(acc.amountUSD) + Number(parsedAmountUSD)).toFixed(3),
         token,
         chainId,
       };
     } else {
       amounts[key] = {
         amount: parsedAmount.toString(),
-        amountUSD: parsedAmountUSD,
         token,
         chainId,
       };
@@ -187,12 +187,12 @@ export function getAmountToPay(selectedRouteContext: RouteContext) {
 
   return {
     amounts,
-    fromAmountUsd: Number(fromAmountUsd.toFixed(3)),
+    fromAmountUsd,
     toAmountUsd: Number(selectedRouteContext.toAmount.amountUSD),
   };
 }
 
-function formatAmountToPay(amountToPay: AmountWithToken | undefined) {
+function formatAmountToPay(amountToPay: AmountToPay | undefined) {
   return parseFloat(
     utils.formatUnits(amountToPay?.amount || constants.Zero, amountToPay?.token.decimals || 18),
   );
