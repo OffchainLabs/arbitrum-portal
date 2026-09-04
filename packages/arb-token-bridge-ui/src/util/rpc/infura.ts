@@ -56,6 +56,9 @@ export function getInfuraKeyFromEnv(chainId: InfuraSupportedChainId): string {
     case ChainId.Superposition:
       return '';
 
+    case ChainId.HPPMainnet:
+      return '';
+
     case ChainId.RobinhoodChain:
       return '';
 
@@ -93,6 +96,9 @@ export function getInfuraRpcUrl(
       return '';
 
     case ChainId.Superposition:
+      return '';
+
+    case ChainId.HPPMainnet:
       return '';
 
     case ChainId.RobinhoodChain:

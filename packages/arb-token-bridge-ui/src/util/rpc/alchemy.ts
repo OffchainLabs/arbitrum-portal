@@ -71,6 +71,8 @@ export function getAlchemyKeyFromEnv(chainId: ProductionChainId): string {
       return '';
     case ChainId.Superposition:
       return '';
+    case ChainId.HPPMainnet:
+      return '';
     case ChainId.RobinhoodChain:
       return '';
 
@@ -108,6 +110,8 @@ export function getAlchemyRpcUrl(
     case ChainId.ApeChain:
       return '';
     case ChainId.Superposition:
+      return '';
+    case ChainId.HPPMainnet:
       return '';
     case ChainId.RobinhoodChain:
       return '';
