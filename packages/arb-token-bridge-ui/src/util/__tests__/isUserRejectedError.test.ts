@@ -1,3 +1,4 @@
+import { BaseError } from 'viem';
 import { describe, expect, it } from 'vitest';
 
 import { formatTransactionError, isUserRejectedError } from '../isUserRejectedError';
@@ -61,6 +62,23 @@ describe('formatTransactionError', () => {
         },
       }),
     ).toBe('execution reverted: UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+  });
+
+  it('returns shortMessage for viem errors', () => {
+    const error = new BaseError('Execution reverted: INSUFFICIENT_LIQUIDITY', {
+      details: 'execution reverted',
+      metaMessages: ['Contract Call:', '  address: 0x123'],
+    });
+
+    expect(error.message).toContain('Version: viem@');
+    expect(formatTransactionError(error)).toBe('Execution reverted: INSUFFICIENT_LIQUIDITY');
+  });
+
+  it('does not recurse forever on self-referencing errors', () => {
+    const error: Record<string, unknown> = { message: 'RPC failed' };
+    error.error = error;
+
+    expect(formatTransactionError(error)).toBe('RPC failed');
   });
 
   it('returns the revert reason for call exceptions', () => {

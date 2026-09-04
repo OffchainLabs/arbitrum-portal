@@ -1,5 +1,11 @@
 import { BaseError, UserRejectedRequestError } from 'viem';
 
+type EthersRevert = {
+  error?: { message?: string };
+  reason?: string;
+  message?: string;
+};
+
 /**
  * This should only be used to conditionally act on errors,
  * to display an error toast for example.
@@ -47,28 +53,6 @@ export function isBundleRejectedError(error: unknown) {
 }
 
 /**
- * Ethers nests the revert reason inside the RPC error and repeats the whole
- * serialized transaction in the top-level message, so read innermost first.
- */
-function getRevertReason(error: unknown): string | undefined {
-  if (typeof error === 'string') {
-    return error || undefined;
-  }
-
-  if (!error || typeof error !== 'object') {
-    return undefined;
-  }
-
-  const {
-    error: nestedError,
-    reason,
-    message,
-  } = error as { error?: unknown; reason?: unknown; message?: unknown };
-
-  return getRevertReason(nestedError) ?? getRevertReason(reason) ?? getRevertReason(message);
-}
-
-/**
  * Formats a transaction error into a user-friendly error message
  *
  * @param error - The error object from transaction execution
@@ -83,5 +67,16 @@ export function formatTransactionError(
     return 'Transaction rejected';
   }
 
-  return getRevertReason(error) ?? defaultMessage;
+  if (typeof error === 'string') {
+    return error || defaultMessage;
+  }
+
+  if (error instanceof BaseError) {
+    return error.shortMessage || defaultMessage;
+  }
+
+  // ethers repeats the whole serialized transaction in the top-level message
+  const { error: rpcError, reason, message } = (error ?? {}) as EthersRevert;
+
+  return rpcError?.message || reason || message || defaultMessage;
 }
