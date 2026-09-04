@@ -39,6 +39,23 @@ describe('getUsdgSuggestion', () => {
         destinationTokenAddress: undefined,
       }),
     ).toEqual({ isVisible: true, isDestinationStablecoin: false });
+    expect(
+      getUsdgSuggestion({
+        destinationChainId: ChainId.RobinhoodChain,
+        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
+        destinationTokenAddress: constants.AddressZero,
+      }),
+    ).toEqual({ isVisible: true, isDestinationStablecoin: false });
+  });
+
+  it('stays hidden when a stablecoin source was pointed at another asset on purpose', () => {
+    expect(
+      getUsdgSuggestion({
+        destinationChainId: ChainId.RobinhoodChain,
+        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
+        destinationTokenAddress: CommonAddress.RobinhoodChain.APE,
+      }),
+    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
   });
 
   it('stays hidden once USDG is the destination', () => {

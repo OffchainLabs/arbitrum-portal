@@ -1,3 +1,4 @@
+import { constants } from 'ethers';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
@@ -5,6 +6,7 @@ import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { trackEvent } from '../../../util/AnalyticsUtils';
 import {
   getUsdgDestinationTokenAddress,
@@ -16,8 +18,9 @@ import { useTokensFromLists } from '../TokenSearchUtils';
 
 /**
  * The banner shows when a transfer into Robinhood Chain involves a stablecoin but will not deliver
- * USDG. Either side qualifies: a stablecoin source that the user pointed at another destination
- * token, or a non-USDG stablecoin picked directly as the destination.
+ * USDG: either a non-USDG stablecoin picked directly as the destination, or a stablecoin source
+ * whose destination fell back to native ETH because no like-for-like route exists. A stablecoin
+ * source the user pointed at some other asset on purpose is left alone.
  */
 export function getUsdgSuggestion({
   destinationChainId,
@@ -34,8 +37,13 @@ export function getUsdgSuggestion({
     return { isVisible: false, isDestinationStablecoin };
   }
 
+  const isDestinationNativeEth =
+    typeof destinationTokenAddress === 'undefined' ||
+    addressesEqual(destinationTokenAddress, constants.AddressZero);
+
   return {
-    isVisible: isDestinationStablecoin || isStablecoin(sourceTokenAddress),
+    isVisible:
+      isDestinationStablecoin || (isDestinationNativeEth && isStablecoin(sourceTokenAddress)),
     isDestinationStablecoin,
   };
 }
