@@ -46,9 +46,30 @@ export function isBundleRejectedError(error: unknown) {
   return combined.includes('bundle id is unknown') || combined.includes('no matching bundle found');
 }
 
+function asNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Ethers nests the revert reason inside the RPC error and repeats the whole
+ * serialized transaction in the top-level message, so read innermost first.
+ */
+function getRevertReason(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined;
+  }
+
+  const {
+    error: nestedError,
+    reason,
+    message,
+  } = error as { error?: unknown; reason?: unknown; message?: unknown };
+
+  return getRevertReason(nestedError) ?? asNonEmptyString(reason) ?? asNonEmptyString(message);
+}
+
 /**
  * Formats a transaction error into a user-friendly error message
- * Handles UserRejectedRequestError and other error types consistently
  *
  * @param error - The error object from transaction execution
  * @param defaultMessage - Default message if error cannot be parsed (default: 'Transaction failed')
@@ -58,16 +79,9 @@ export function formatTransactionError(
   error: unknown,
   defaultMessage: string = 'Transaction failed',
 ): string {
-  // Handle user rejection errors first
   if (isUserRejectedError(error)) {
     return 'Transaction rejected';
   }
 
-  // Handle generic Error objects
-  if (error instanceof Error) {
-    return error.message || defaultMessage;
-  }
-
-  // Fallback to default message
-  return defaultMessage;
+  return getRevertReason(error) ?? defaultMessage;
 }

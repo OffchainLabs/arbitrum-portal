@@ -42,4 +42,25 @@ describe('formatTransactionError', () => {
   it('returns the provided default message when error shape is unknown', () => {
     expect(formatTransactionError({ foo: 'bar' }, 'Fallback message')).toBe('Fallback message');
   });
+
+  it('returns the revert reason instead of the serialized transaction', () => {
+    expect(
+      formatTransactionError({
+        code: 'UNPREDICTABLE_GAS_LIMIT',
+        reason: 'cannot estimate gas; transaction may fail or may require manual gas limit',
+        message:
+          'cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (transaction={"data":"0x08635a95000000"}, error={"code":3,"message":"execution reverted: UniswapV2Library: INSUFFICIENT_LIQUIDITY"})',
+        error: {
+          code: 3,
+          message: 'execution reverted: UniswapV2Library: INSUFFICIENT_LIQUIDITY',
+        },
+      }),
+    ).toBe('execution reverted: UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+  });
+
+  it('returns the revert reason for call exceptions', () => {
+    expect(formatTransactionError({ code: 'CALL_EXCEPTION', reason: 'NO_TICKET_WITH_ID' })).toBe(
+      'NO_TICKET_WITH_ID',
+    );
+  });
 });
