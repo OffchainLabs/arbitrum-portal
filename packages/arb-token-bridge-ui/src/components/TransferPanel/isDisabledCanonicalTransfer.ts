@@ -3,6 +3,7 @@ import { constants } from 'ethers';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { isBlockedOftDeposit } from '../../util/WithdrawOnlyUtils';
 
@@ -23,6 +24,14 @@ export async function isDisabledCanonicalTransfer({
 }) {
   if (!selectedToken) {
     return false;
+  }
+
+  if (
+    isDepositMode &&
+    childChainId === ChainId.RobinhoodChain &&
+    addressesEqual(selectedToken.address, CommonAddress.Ethereum.VIRTUAL)
+  ) {
+    return true;
   }
 
   if (isTransferDisabledToken(selectedToken.address, childChainId)) {

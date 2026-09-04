@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isDisabledCanonicalTransfer } from './isDisabledCanonicalTransfer';
 
 // OFT tokens whose canonical deposit is blocked in favor of their OFT route
@@ -62,6 +63,27 @@ describe('isDisabledCanonicalTransfer', () => {
 
   it('returns false for a regular token with no restrictions', async () => {
     expect(await isDisabledCanonicalTransfer(baseParams)).toBe(false);
+  });
+
+  it('disables canonical VIRTUAL deposits to Robinhood Chain', async () => {
+    expect(
+      await isDisabledCanonicalTransfer({
+        ...baseParams,
+        selectedToken: buildToken(CommonAddress.Ethereum.VIRTUAL),
+        childChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows canonical VIRTUAL withdrawals from Robinhood Chain', async () => {
+    expect(
+      await isDisabledCanonicalTransfer({
+        ...baseParams,
+        selectedToken: buildToken(CommonAddress.Ethereum.VIRTUAL),
+        childChainId: ChainId.RobinhoodChain,
+        isDepositMode: false,
+      }),
+    ).toBe(false);
   });
 
   it('returns true for a token in the transfer-disabled list, regardless of direction (rDPX)', async () => {

@@ -18,6 +18,7 @@ export const CommonAddress = {
     ENA: '0x57e114b691db790c35207b2e685d4a43181e6061',
     ezETH: '0xbf5495efe5db9ce00f80364c8b423567e58d2110',
     SFI: '0xb753428af26e81097e7fd17f40c88aaa3e04902c',
+    VIRTUAL: '0x44ff8620b8ca30902395a7bd3f2407e1a091bf73',
     tokenMessengerContractAddress: '0xbd3fa81b58ba92a82136038b25adec7066af3155',
     APE: '0x4d224452801aced8b2f0aebe155379bb5d594381',
   },
@@ -87,6 +88,8 @@ export const CommonAddress = {
     SyrupUSDG: '0x40858070814a57fdf33a613ae84fe0a8b4a874f7',
     WSTETH: '0x2dc99af320bc317c567f24ee95811dcbd5983dfd',
     SFI: '0xe77d354898a44808ff3999947002785cd727bed5',
+    VIRTUAL: '0xc6911796042b15d7fa4f6cde69e245ddcd3d9c31',
+    VIRTUAL_CANONICAL: '0x8124dc4802d5d68fc848f6997ca4e7be125a78e9',
   },
 } as const;
 
