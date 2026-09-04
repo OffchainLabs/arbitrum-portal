@@ -43,6 +43,11 @@ describe('formatTransactionError', () => {
     expect(formatTransactionError({ foo: 'bar' }, 'Fallback message')).toBe('Fallback message');
   });
 
+  it('returns thrown strings as-is', () => {
+    expect(formatTransactionError('Signer is undefined')).toBe('Signer is undefined');
+    expect(formatTransactionError('', 'Fallback message')).toBe('Fallback message');
+  });
+
   it('returns the revert reason instead of the serialized transaction', () => {
     expect(
       formatTransactionError({

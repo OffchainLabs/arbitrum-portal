@@ -55,6 +55,10 @@ function asNonEmptyString(value: unknown) {
  * serialized transaction in the top-level message, so read innermost first.
  */
 function getRevertReason(error: unknown): string | undefined {
+  if (typeof error === 'string') {
+    return asNonEmptyString(error);
+  }
+
   if (!error || typeof error !== 'object') {
     return undefined;
   }
