@@ -46,17 +46,13 @@ export function isBundleRejectedError(error: unknown) {
   return combined.includes('bundle id is unknown') || combined.includes('no matching bundle found');
 }
 
-function asNonEmptyString(value: unknown) {
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
 /**
  * Ethers nests the revert reason inside the RPC error and repeats the whole
  * serialized transaction in the top-level message, so read innermost first.
  */
 function getRevertReason(error: unknown): string | undefined {
   if (typeof error === 'string') {
-    return asNonEmptyString(error);
+    return error || undefined;
   }
 
   if (!error || typeof error !== 'object') {
@@ -69,7 +65,7 @@ function getRevertReason(error: unknown): string | undefined {
     message,
   } = error as { error?: unknown; reason?: unknown; message?: unknown };
 
-  return getRevertReason(nestedError) ?? asNonEmptyString(reason) ?? asNonEmptyString(message);
+  return getRevertReason(nestedError) ?? getRevertReason(reason) ?? getRevertReason(message);
 }
 
 /**
