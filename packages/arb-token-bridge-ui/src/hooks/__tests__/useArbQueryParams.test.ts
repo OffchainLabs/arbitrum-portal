@@ -2,11 +2,13 @@ import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isLifiEnabled, isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import {
   isOnrampFeatureEnabled,
+  sanitizeDestinationTokenQueryParam,
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam,
 } from '../../util/queryParamUtils';
@@ -398,6 +400,70 @@ describe('sanitizeTokenQueryParam', () => {
         expect(result).toEqual(testAddress.toLowerCase());
       });
     });
+  });
+});
+
+describe('sanitizeDestinationTokenQueryParam', () => {
+  beforeAll(() => {
+    vi.mocked(isLifiEnabled).mockReturnValue(true);
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.RobinhoodChain)!,
+    );
+  });
+
+  describe('`destinationToken=usdg` alias', () => {
+    it('resolves to the Ethereum USDG contract when bridging from Ethereum', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.Ethereum.USDG);
+    });
+
+    it('resolves to the Robinhood USDG contract from any other chain, case-insensitively', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'USDG',
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.RobinhoodChain.USDG);
+    });
+
+    it('is dropped when the destination is not Robinhood Chain', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toBeUndefined();
+    });
+  });
+
+  it('falls back to the regular token sanitization for addresses', () => {
+    expect(
+      sanitizeDestinationTokenQueryParam({
+        destinationToken: CommonAddress.RobinhoodChain.USDe,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toEqual(CommonAddress.RobinhoodChain.USDe);
+    expect(
+      sanitizeDestinationTokenQueryParam({
+        destinationToken: undefined,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toEqual(
+      sanitizeTokenQueryParam({
+        token: undefined,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    );
   });
 });
 

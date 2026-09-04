@@ -16,6 +16,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { trackEvent } from '../../util/AnalyticsUtils';
+import { isTokenUSDG } from '../../util/RobinhoodStablecoinUtils';
 import { LIFI_TRANSFER_LIST_ID, isTokenAvailableOnChain } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -78,6 +79,7 @@ function DestinationTokensPanel({
 
   const tokensToShow = useMemo(() => {
     const tokenSearch = searchValue.trim().toLowerCase();
+    const isRobinhoodDestination = networks.destinationChain.id === ChainId.RobinhoodChain;
 
     // Get all token addresses that are in the LiFi token list
     const lifiTokenAddresses = Object.keys(tokensFromLists).filter((address) => {
@@ -135,10 +137,12 @@ function DestinationTokensPanel({
         const getPriority = (address: string): number => {
           if (address === NATIVE_CURRENCY_IDENTIFIER) return 0;
           if (addressesEqual(address, constants.AddressZero)) return 1;
-          if (isTokenNativeUSDC(address)) return 2;
-          if (isTokenUSDT(address)) return 3;
-          if (isTokenWBTC(address)) return 4;
-          return 5;
+          // USDG is Robinhood Chain's native stablecoin, keep it right under ETH
+          if (isRobinhoodDestination && isTokenUSDG(address)) return 2;
+          if (isTokenNativeUSDC(address)) return 3;
+          if (isTokenUSDT(address)) return 4;
+          if (isTokenWBTC(address)) return 5;
+          return 6;
         };
 
         const priority1 = getPriority(address1);
@@ -150,7 +154,7 @@ function DestinationTokensPanel({
         }
 
         // If priorities are the same, sort by balance
-        if (priority1 === 5) {
+        if (priority1 === 6) {
           const bal1 = getBalance(address1);
           const bal2 = getBalance(address2);
 
