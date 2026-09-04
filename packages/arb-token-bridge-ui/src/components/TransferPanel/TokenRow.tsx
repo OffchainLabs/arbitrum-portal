@@ -20,6 +20,7 @@ import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
+import { isTokenUSDG } from '../../util/RobinhoodStablecoinUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
@@ -214,6 +215,12 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     return token.listIds.has(SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID);
   }, [token]);
 
+  const isNativeStablecoin =
+    !!token &&
+    isTokenUSDG(token.address) &&
+    (networks.sourceChain.id === ChainId.RobinhoodChain ||
+      networks.destinationChain.id === ChainId.RobinhoodChain);
+
   const isBridgeable = useMemo(() => {
     if (!token) {
       return true;
@@ -236,9 +243,22 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     logoURI,
     balance,
     isArbitrumToken,
+    isNativeStablecoin,
     isBridgeable,
     decimals,
   };
+}
+
+function NativeStablecoinBadge() {
+  return (
+    <StatusBadge variant="green" className="text-xs leading-extra-tight">
+      <CheckCircleIcon className="h-3 w-3" />
+      <p>
+        <span>Native</span>
+        <span className="hidden lg:inline"> stablecoin</span>
+      </p>
+    </StatusBadge>
+  );
 }
 
 function ArbitrumTokenBadge() {
@@ -444,6 +464,7 @@ export function TokenRow({
     symbol: tokenSymbol,
     logoURI: tokenLogoURI,
     isArbitrumToken,
+    isNativeStablecoin,
     isBridgeable: tokenIsBridgeable,
     balance,
     decimals,
@@ -512,6 +533,7 @@ export function TokenRow({
             <span className="text-base font-medium leading-none">{tokenSymbol}</span>
             <span className="text-xs text-white/70">{tokenName}</span>
             <span>{isArbitrumToken && <ArbitrumTokenBadge />}</span>
+            <span>{isNativeStablecoin && <NativeStablecoinBadge />}</span>
           </div>
           <div className="ml-auto font-medium tabular-nums">
             {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}

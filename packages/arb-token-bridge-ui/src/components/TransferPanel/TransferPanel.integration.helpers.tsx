@@ -42,6 +42,8 @@ export type TokenExpectation = {
   symbol: string;
   logoURI?: string;
   contract?: string | 'native';
+  /** Text of a row badge that must be present, for example "Native stablecoin". */
+  badge?: string;
 };
 export type TokenExpectationWithLogo = TokenExpectation & { logoURI: string };
 export type TokenPanelExpectation = TokenExpectationWithLogo & {
@@ -176,7 +178,10 @@ export const tokenExpectationsByChain = {
     ),
   },
   RobinhoodChain: {
-    USDG: withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDG),
+    USDG: {
+      ...withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDG),
+      badge: 'Native stablecoin',
+    },
     USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDe),
     WETH: withContract(wethRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.WETH),
     WETHWithSuperpositionLogo: withContract(
@@ -468,12 +473,14 @@ function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
     });
 }
 
+function getTokenPanelRowSymbol(button: HTMLButtonElement): string {
+  return button.querySelector('span.text-base.font-medium.leading-none')?.textContent?.trim() ?? '';
+}
+
 function formatTokenPanelRowText(button: HTMLButtonElement): string {
   const normalizeText = (value: string | null | undefined) =>
     value?.replace(/\s+/g, ' ').trim() ?? '';
-  const symbolText = normalizeText(
-    button.querySelector('span.text-base.font-medium.leading-none')?.textContent,
-  );
+  const symbolText = getTokenPanelRowSymbol(button);
   const rowInfoContainers = button.querySelectorAll('div.text-left.flex.items-center');
   const subtitleText = normalizeText(rowInfoContainers.item(1)?.textContent);
 
@@ -517,11 +524,14 @@ export async function expectTokenPanelContent({
   isDestination,
   symbolsToContain,
   symbolsToExclude,
+  symbolsInOrder,
   tokenExpectations,
 }: {
   isDestination: boolean;
   symbolsToContain?: string[];
   symbolsToExclude?: string[];
+  /** Symbols the panel must start with, in this exact order (pinned rows). */
+  symbolsInOrder?: string[];
   tokenExpectations?: TokenExpectation[];
 }) {
   const origin = captureIntegrationAssertionOrigin();
@@ -593,6 +603,63 @@ export async function expectTokenPanelContent({
       },
     );
   }
+
+  if (symbolsInOrder) {
+    const getLeadingSymbols = () =>
+      getTokenPanelRowButtons(dialog)
+        .map(getTokenPanelRowSymbol)
+        .filter(Boolean)
+        .slice(0, symbolsInOrder.length);
+
+    await waitFor(
+      () => {
+        expect(getLeadingSymbols()).toEqual(symbolsInOrder);
+      },
+      {
+        timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
+        interval: POLL_INTERVAL_MS,
+        onTimeout: () =>
+          createIntegrationAssertionError({
+            description: `Expected ${isDestination ? 'destination' : 'source'} token panel to start with pinned rows.`,
+            expected: { symbolsInOrder },
+            received: { rows: getTokenPanelRowTexts(dialog) },
+            origin,
+          }),
+      },
+    );
+  }
+
+  const expectedTokenBadges =
+    tokenExpectations?.filter(
+      (tokenExpectation): tokenExpectation is TokenExpectation & { badge: string } =>
+        typeof tokenExpectation.badge !== 'undefined',
+    ) ?? [];
+  await Promise.all(
+    expectedTokenBadges.map((tokenExpectation) =>
+      waitFor(
+        () => {
+          const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+          const rowText = tokenRowButton.textContent?.replace(/\s+/g, ' ') ?? '';
+          expect(rowText).toContain(tokenExpectation.badge);
+        },
+        {
+          timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+          interval: POLL_INTERVAL_MS,
+          onTimeout: () =>
+            createIntegrationAssertionError({
+              description: `Expected ${tokenExpectation.symbol} token-row badge.`,
+              expected: { badge: tokenExpectation.badge },
+              received: {
+                rowText: queryTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol)
+                  ?.textContent?.replace(/\s+/g, ' ')
+                  .trim(),
+              },
+              origin,
+            }),
+        },
+      ),
+    ),
+  );
 
   const expectedTokenLogos =
     tokenExpectations?.filter(({ logoURI }) => typeof logoURI !== 'undefined') ?? [];
