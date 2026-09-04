@@ -215,11 +215,12 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     return token.listIds.has(SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID);
   }, [token]);
 
+  // badge USDG only on the Robinhood Chain side of the pair, not on its Ethereum contract row
+  const rowChainId = options?.isDestination
+    ? networks.destinationChain.id
+    : networks.sourceChain.id;
   const isNativeStablecoin =
-    !!token &&
-    isTokenUSDG(token.address) &&
-    (networks.sourceChain.id === ChainId.RobinhoodChain ||
-      networks.destinationChain.id === ChainId.RobinhoodChain);
+    !!token && isTokenUSDG(token.address) && rowChainId === ChainId.RobinhoodChain;
 
   const isBridgeable = useMemo(() => {
     if (!token) {

@@ -44,6 +44,8 @@ export type TokenExpectation = {
   contract?: string | 'native';
   /** Text of a row badge that must be present, for example "Native stablecoin". */
   badge?: string;
+  /** Text of a row badge that must be absent from the row when it is selected. */
+  absentBadge?: string;
 };
 export type TokenExpectationWithLogo = TokenExpectation & { logoURI: string };
 export type TokenPanelExpectation = TokenExpectationWithLogo & {
@@ -839,6 +841,19 @@ export async function selectTokenPanelToken({
   );
 
   const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+
+  if (typeof tokenExpectation.absentBadge !== 'undefined') {
+    const rowText = tokenRowButton.textContent?.replace(/\s+/g, ' ') ?? '';
+    if (rowText.includes(tokenExpectation.absentBadge)) {
+      throw createIntegrationAssertionError({
+        description: `Expected ${tokenExpectation.symbol} token row without badge.`,
+        expected: { absentBadge: tokenExpectation.absentBadge },
+        received: { rowText: rowText.trim() },
+        origin,
+      });
+    }
+  }
+
   await act(async () => {
     fireEvent.click(tokenRowButton);
   });
