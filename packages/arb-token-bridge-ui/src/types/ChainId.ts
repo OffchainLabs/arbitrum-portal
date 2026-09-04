@@ -17,6 +17,7 @@ export enum ChainId {
   // Orbit chains
   ApeChain = 33139,
   Superposition = 55244,
+  HPPMainnet = 190415,
   RobinhoodChain = 4663,
   // Orbit Testnets
   RobinhoodChainTestnet = 46630,
