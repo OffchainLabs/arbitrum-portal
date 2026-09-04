@@ -16,12 +16,19 @@ import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
 
 import { initializeDayjs } from '../../../initialization';
+import {
+  POSTHOG_DEVICE_PROPERTY_DENYLIST,
+  POSTHOG_MASKED_QUERY_PARAMS,
+  sanitizePostHogEvent,
+} from '../../../utils/posthog';
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: 'https://app.posthog.com',
+    api_host: 'https://us.i.posthog.com',
     cookieless_mode: 'always',
     loaded: (posthog) => {
+      posthog.register({ $geoip_disable: true });
+
       if (process.env.NODE_ENV !== 'production') {
         posthog.debug();
       }
@@ -29,6 +36,12 @@ if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
     persistence: 'memory',
     autocapture: false,
     disable_session_recording: true,
+    capture_heatmaps: false,
+    disableDeviceModel: true,
+    property_denylist: POSTHOG_DEVICE_PROPERTY_DENYLIST,
+    mask_personal_data_properties: true,
+    custom_personal_data_properties: POSTHOG_MASKED_QUERY_PARAMS,
+    before_send: sanitizePostHogEvent,
   });
 }
 
