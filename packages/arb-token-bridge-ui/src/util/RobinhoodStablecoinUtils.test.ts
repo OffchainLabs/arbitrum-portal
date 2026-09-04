@@ -39,9 +39,12 @@ describe('isStablecoin', () => {
     expect(isStablecoin(address)).toBe(true);
   });
 
-  it('does not treat USDG, ETH or WETH as a stablecoin', () => {
+  it('does not treat USDG, yield wrappers, ETH or WETH as a stablecoin', () => {
     expect(isStablecoin(CommonAddress.Ethereum.USDG)).toBe(false);
     expect(isStablecoin(CommonAddress.RobinhoodChain.USDG)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.sUSDe)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.sUSDe)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.spUSDG)).toBe(false);
     expect(isStablecoin(constants.AddressZero)).toBe(false);
     expect(isStablecoin(CommonAddress.ArbitrumOne.WETH)).toBe(false);
     expect(isStablecoin(undefined)).toBe(false);

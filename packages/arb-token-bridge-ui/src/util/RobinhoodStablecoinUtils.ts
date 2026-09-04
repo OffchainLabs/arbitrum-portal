@@ -23,7 +23,7 @@ const usdgAddresses: readonly string[] = [
 
 /**
  * Explicit allowlist. Symbols are not used on purpose: LiFi lists a second "USDG" on Robinhood,
- * plus yield wrappers (spUSDG, syrupUSDG) that must not be treated as stablecoins.
+ * plus yield wrappers (spUSDG, syrupUSDG, sUSDe) that must not be treated as stablecoins.
  */
 const stablecoinAddresses: readonly string[] = [
   CommonAddress.Ethereum.USDC,
@@ -46,13 +46,9 @@ const stablecoinAddresses: readonly string[] = [
   CommonAddress.ApeChain.USDT,
   CommonAddress.ApeChain.USDCe,
   CommonAddress.Ethereum.USDe,
-  CommonAddress.Ethereum.sUSDe,
   CommonAddress.ArbitrumOne.USDe,
-  CommonAddress.ArbitrumOne.sUSDe,
   CommonAddress.Base.USDe,
-  CommonAddress.Base.sUSDe,
   CommonAddress.RobinhoodChain.USDe,
-  CommonAddress.RobinhoodChain.sUSDe,
 ];
 
 function includesAddress(addresses: readonly string[], address: string | undefined): boolean {
