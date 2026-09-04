@@ -124,6 +124,13 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
     '0x74885b4d524d497261259b38900f54e6dbad2210', // Old Ape token
     '0xb9c8f0d3254007ee4b98970b94544e473cd610ec', // Old QiDao token
   ]),
+  [ChainId.RobinhoodChain]: new Set([
+    // LiFi lists two tokens with the "USDG" symbol on Robinhood Chain. This one is named
+    // "Paxos USDG" on chain, has no LiFi coinKey and a supply of about 1,100 USDG. The live one is
+    // "Global Dollar" at CommonAddress.RobinhoodChain.USDG (0x5fc5360d...16f1d168), LiFi coinKey
+    // USDG, mapped in CUSTOM_TOKENS above. Excluding this one keeps a single USDG row.
+    '0x0a3b763d66c0e8c7555c986a3701e1dc1bf3954f',
+  ]),
 };
 
 export type LifiTokenWithCoinKey = LiFiToken & { coinKey: CoinKey };
