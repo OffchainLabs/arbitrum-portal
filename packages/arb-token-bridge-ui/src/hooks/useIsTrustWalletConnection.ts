@@ -1,7 +1,7 @@
-import { useAccount } from 'wagmi';
+import { useWalletInfo } from '@zerodev/wallet-react-ui';
 
 export function useIsTrustWalletConnection() {
-  const { connector } = useAccount();
+  const { walletInfo } = useWalletInfo();
 
-  return (connector?.name ?? '').toLowerCase().includes('trust wallet');
+  return (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
 }
