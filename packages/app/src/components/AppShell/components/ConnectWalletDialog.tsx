@@ -23,6 +23,7 @@ export function ConnectWalletDialog() {
       <div className="relative max-h-full">
         <ConnectWallet
           size="md"
+          logo={<img src="/logo.png" alt="Arbitrum" style={{ height: 32, width: 32 }} />}
           renderSignUp={() => (
             <SignUp>
               <SignUp.Wallet walletId="metamask" />
