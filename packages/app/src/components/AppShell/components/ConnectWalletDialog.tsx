@@ -9,13 +9,15 @@ import { ConnectWallet, SignUp, useAuth } from '@zerodev/wallet-react-ui';
  * chrome ourselves and drive visibility via useAuth().step.
  */
 export function ConnectWalletDialog() {
-  const { step, goToStep } = useAuth();
+  const { step, reset } = useAuth();
 
   if (step === null) {
     return null;
   }
 
-  const close = () => goToStep(null);
+  // Mirror the kit's own X button: reset() closes the flow and clears its
+  // transient state (email, OTP session), unlike a bare goToStep(null).
+  const close = () => reset();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
