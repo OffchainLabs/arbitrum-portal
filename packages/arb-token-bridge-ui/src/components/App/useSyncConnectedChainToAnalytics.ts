@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { useWalletInfo } from '@zerodev/wallet-react-ui';
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -25,11 +26,12 @@ function getBaseUrl(url: string | undefined): string | null {
 export function useSyncConnectedChainToAnalytics() {
   const [networks] = useNetworks();
   const { parentChain, childChain } = useNetworksRelationship(networks);
-  const { isConnected, connector } = useAccount();
+  const { isConnected } = useAccount();
+  const { walletInfo } = useWalletInfo();
 
   useEffect(() => {
     if (isConnected) {
-      const walletName = connector?.name ?? 'Other';
+      const walletName = walletInfo?.name ?? 'Other';
       trackEvent('Connect Wallet Click', { walletName });
 
       // Set wallet name tag only when we have a connected wallet
@@ -39,7 +41,7 @@ export function useSyncConnectedChainToAnalytics() {
       // This prevents it from showing as '<invalid>' in Sentry
       Sentry.setTag('wallet.name', 'not_connected');
     }
-  }, [isConnected, connector?.name]);
+  }, [isConnected, walletInfo?.name]);
 
   useEffect(() => {
     Sentry.setTag('network.parent_chain_id', parentChain.id);

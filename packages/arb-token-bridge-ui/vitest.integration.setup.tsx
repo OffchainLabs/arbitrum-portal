@@ -64,6 +64,7 @@ vi.mock('@zerodev/wallet-react-ui', () => ({
   zeroDevWallet: vi.fn(() => () => ({})),
   zeroDevWalletConnect: vi.fn(() => () => ({})),
   useAuth: () => ({ step: null, goToStep: vi.fn(), reset: vi.fn() }),
+  useWalletInfo: () => ({ walletInfo: undefined }),
   ConnectWallet: () => null,
   SignUp: Object.assign(() => null, {
     Default: () => null,
