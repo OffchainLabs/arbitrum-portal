@@ -15,17 +15,14 @@ export function ConnectWalletDialog() {
     return null;
   }
 
-  // Mirror the kit's own X button: reset() closes the flow and clears its
-  // transient state (email, OTP session), unlike a bare goToStep(null).
-  const close = () => reset();
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" aria-hidden onClick={close} />
+      {/* The kit's X button closes via its internal reset(); the backdrop is
+          portal chrome the kit can't see, so it needs the explicit call. */}
+      <div className="absolute inset-0 bg-black/70" aria-hidden onClick={() => reset()} />
       <div className="relative max-h-full">
         <ConnectWallet
           size="md"
-          onClose={close}
           renderSignUp={() => (
             <SignUp>
               <SignUp.Wallet walletId="metamask" />
