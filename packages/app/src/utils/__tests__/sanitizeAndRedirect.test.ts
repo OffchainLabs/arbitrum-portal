@@ -80,7 +80,7 @@ describe('initializeBridgePage sanitization', () => {
 
     expect(redirectMock).toHaveBeenCalledTimes(1);
     expectRedirectedChains({
-      sourceChain: 'ethereum',
+      sourceChain: 'arbitrum-one',
       destinationChain: 'superposition',
     });
   });
