@@ -1,5 +1,12 @@
 export type CanonicalSource = 'indexer' | 'subgraph';
 
+/** `undefined` for anything that isn't a positive integer chain ID. */
+export function parseChainId(raw: string | null | undefined): number | undefined {
+  const chainId = Number(raw?.trim());
+
+  return Number.isInteger(chainId) && chainId > 0 ? chainId : undefined;
+}
+
 export function parseChainIds(raw: string | undefined): number[] {
   if (!raw) {
     return [];
@@ -7,8 +14,8 @@ export function parseChainIds(raw: string | undefined): number[] {
 
   const ids = raw
     .split(',')
-    .map((value) => Number(value.trim()))
-    .filter((value) => Number.isInteger(value) && value > 0);
+    .map((value) => parseChainId(value))
+    .filter((chainId): chainId is number => typeof chainId !== 'undefined');
 
   return Array.from(new Set(ids));
 }

@@ -13,7 +13,7 @@ import { useAppState } from '../state';
 import { MergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
-import { isUserRejectedError } from '../util/isUserRejectedError';
+import { formatTransactionError, isUserRejectedError } from '../util/isUserRejectedError';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
@@ -119,12 +119,13 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
       return;
     }
 
-    captureSentryErrorWithExtraData({
-      error: err,
-      originFunction: 'useClaimWithdrawal claim',
-    });
     if (!res) {
-      errorToast(`Can't claim withdrawal: ${err?.message ?? err}`);
+      captureSentryErrorWithExtraData({
+        error: err,
+        originFunction: 'useClaimWithdrawal claim',
+      });
+      errorToast(`Can't claim withdrawal: ${formatTransactionError(err)}`);
+      return;
     }
 
     const isSuccess = (res as ContractReceipt).status === 1;

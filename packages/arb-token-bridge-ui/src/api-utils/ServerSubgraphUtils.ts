@@ -12,6 +12,7 @@ import ApolloLinkTimeout from 'apollo-link-timeout';
 
 import { ChainId } from '../types/ChainId';
 import { logger } from '../util/logger';
+import { getIndexerApiUrl } from './ServerIndexerUtils';
 
 /**
  * The API key to be used for calls to The Graph Network.
@@ -214,35 +215,6 @@ function createCctpSubgraphClient(
       }
     },
   };
-}
-
-/**
- * Indexer base URL for `chainId` from `INDEXER_API_URL_BY_CHAIN`
- * (`{"42161":"https://indexer.example"}`) — chains sit on separate deployments.
- * `undefined` for anything unusable, so a bad map degrades to the subgraph.
- */
-function getIndexerApiUrl(chainId: number): string | undefined {
-  let urlByChainId: Record<string, unknown>;
-
-  try {
-    const parsed: unknown = JSON.parse(process.env.INDEXER_API_URL_BY_CHAIN || '{}');
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      throw new Error('expected a JSON object keyed by chain ID');
-    }
-    urlByChainId = parsed as Record<string, unknown>;
-  } catch (error) {
-    logger.error('[getIndexerApiUrl] cannot parse "INDEXER_API_URL_BY_CHAIN"', error);
-    return undefined;
-  }
-
-  const url = urlByChainId[String(chainId)];
-  if (typeof url !== 'string' || url === '') {
-    return undefined;
-  }
-
-  // Some proxies read the resulting `//api/v1/...` as a different, missing path.
-  const baseUrl = url.replace(/\/+$/, '');
-  return URL.canParse(baseUrl) ? baseUrl : undefined;
 }
 
 const cctpSubgraphKeyByChainId: { [chainId: number]: SubgraphKey } = {

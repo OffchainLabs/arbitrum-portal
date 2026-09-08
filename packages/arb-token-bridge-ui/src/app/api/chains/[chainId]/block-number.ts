@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
+import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
 import {
   type SubgraphSource,
   getL1SubgraphClient,
@@ -12,7 +13,7 @@ import { isChildChainIndexed } from '../../../../util/txHistory/sources';
 type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 
 async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
-  const indexerUrl = process.env.INDEXER_API_URL;
+  const indexerUrl = getIndexerApiUrl(chainId);
   if (!indexerUrl) {
     return 0;
   }

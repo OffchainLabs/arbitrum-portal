@@ -5,7 +5,6 @@ import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
-import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -16,17 +15,21 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
+import {
+  getNovaDepositBlockReason,
+  getNovaEthDepositCapErrorMessage,
+  getNovaEthOnlyDepositErrorMessage,
+} from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
 } from '../../util/TokenUtils';
-import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
-import { useTokensFromLists } from './TokenSearchUtils';
+import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import {
   RouteContext,
@@ -35,6 +38,7 @@ import {
   isLifiRoute,
   useRouteStore,
 } from './hooks/useRouteStore';
+import { useRouteEligibility } from './hooks/useRoutesUpdater';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
   TransferReadinessRichErrorMessage,
@@ -229,8 +233,9 @@ export type UseTransferReadinessResult = {
 };
 
 export function useTransferReadiness(): UseTransferReadinessResult {
-  const [{ amount, amount2 }] = useArbQueryParams();
+  const [{ amount, amount2, destinationToken }] = useArbQueryParams();
   const [selectedToken] = useSelectedToken();
+  const amountBigNumber = useAmountBigNumber();
   const {
     layout: { isTransferring },
   } = useAppContextState();
@@ -243,6 +248,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }),
     shallow,
   );
+  const { eligibleRouteTypes } = useRouteEligibility();
 
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
@@ -258,7 +264,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
-  const { data: tokensFromLists } = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))
@@ -340,7 +345,35 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       isDepositMode,
     });
 
+    /**
+     * Nova is in a minimized state: deposits are ETH-only and capped. This has to run before the
+     * `selectedRoute` and balance-loading checks below, otherwise the message is unreachable
+     * (`getEligibleRoutes` returns no routes while the amount is still 0).
+     */
+    const novaDepositBlockReason = getNovaDepositBlockReason({
+      destinationChainId: networks.destinationChain.id,
+      selectedTokenAddress: selectedToken?.address,
+      destinationTokenAddress: destinationToken,
+      amount: amountBigNumber,
+    });
+
+    if (novaDepositBlockReason) {
+      return notReady({
+        errorMessages: {
+          inputAmount1:
+            novaDepositBlockReason === 'eth-only'
+              ? getNovaEthOnlyDepositErrorMessage()
+              : getNovaEthDepositCapErrorMessage(),
+        },
+      });
+    }
+
     if (!selectedRoute) {
+      return notReady();
+    }
+
+    const eligibleSelectedRoute = isLifiRoute(selectedRoute) ? 'lifi' : selectedRoute;
+    if (!eligibleRouteTypes.includes(eligibleSelectedRoute)) {
       return notReady();
     }
 
@@ -403,22 +436,19 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     // ERC-20
     if (selectedToken) {
       const selectedTokenIsDisabled = isTransferDisabledToken(selectedToken.address, childChain.id);
-      const isValidLifiRoute =
-        isLifiEnabled() &&
-        isValidLifiTransfer({
-          sourceChainId: networks.sourceChain.id,
-          fromToken: selectedToken.address,
-          destinationChainId: networks.destinationChain.id,
-          tokensFromLists,
-        });
 
-      if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+      if (
+        selectedRoute === 'arbitrum' &&
+        isDepositMode &&
+        isSelectedTokenWithdrawOnly &&
+        !isSelectedTokenWithdrawOnlyLoading
+      ) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY,
           },
         });
-      } else if (selectedTokenIsDisabled && !isValidLifiRoute) {
+      } else if (selectedRoute === 'arbitrum' && selectedTokenIsDisabled) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_TRANSFER_DISABLED,
@@ -744,6 +774,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   }, [
     gasSummary,
     selectedRoute,
+    eligibleRouteTypes,
     isSmartContractWallet,
     isDepositMode,
     ethL1BalanceFloat,
@@ -755,6 +786,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     nativeCurrency.isCustom,
     nativeCurrency.symbol,
     amount,
+    amountBigNumber,
+    destinationToken,
     isTransferring,
     childChain.id,
     childChain.name,
@@ -765,7 +798,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     networks.sourceChain.id,
     networks.destinationChain.id,
     networks.destinationChain.name,
-    tokensFromLists,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedRouteContext,

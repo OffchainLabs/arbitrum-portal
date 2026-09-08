@@ -18,6 +18,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
+import { isNovaDestination } from '../../util/NovaUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -31,6 +32,7 @@ import { getOrbitChains } from '../../util/orbitChainsList';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
+import { NovaMinimizedStateWarning } from './NovaMinimizedStateWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
 import { SourceNetworkBox } from './TransferPanelMain/SourceNetworkBox';
@@ -272,6 +274,8 @@ export function TransferPanelMain() {
       <SwitchNetworksButton />
 
       <DestinationNetworkBox />
+
+      {isNovaDestination(networks.destinationChain.id) && <NovaMinimizedStateWarning />}
 
       {isCustomMainnetChain && <CustomMainnetChainWarning />}
 

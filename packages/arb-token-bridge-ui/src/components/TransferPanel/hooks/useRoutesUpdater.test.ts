@@ -7,6 +7,7 @@ import {
   GetEligibleRoutesParams,
   getEligibleRoutes,
   getSelectedRouteForAvailableRoutes,
+  hasEligibleAlternativeRoute,
   hasLowLifiLiquidity,
 } from './useRoutesUpdater';
 
@@ -52,6 +53,16 @@ describe('getEligibleRoutes', () => {
     ).toEqual(['lifi']);
   });
 
+  it('keeps LiFi available when the canonical route does not support the token', () => {
+    expect(
+      getEligibleRoutes({
+        ...baseParams,
+        isNativeUsdcTransfer: false,
+        isArbitrumCanonicalTransfer: false,
+      }),
+    ).toEqual(['lifi']);
+  });
+
   it('removes CCTP while preserving alternatives when CCTP is disabled', () => {
     expect(
       getEligibleRoutes({
@@ -85,6 +96,55 @@ describe('getEligibleRoutes', () => {
         isArbitrumCanonicalTransfer: false,
       }),
     ).toEqual([]);
+  });
+});
+
+describe('hasEligibleAlternativeRoute', () => {
+  it.each([
+    {
+      route: 'CCTP',
+      isNativeUsdcTransfer: true,
+      sourceChainId: ChainId.Sepolia,
+      destinationChainId: ChainId.ArbitrumSepolia,
+    },
+    {
+      route: 'OFT',
+      isNativeUsdcTransfer: false,
+      isOftV2Transfer: true,
+      sourceChainId: ChainId.Sepolia,
+      destinationChainId: ChainId.ArbitrumSepolia,
+    },
+    {
+      route: 'LiFi',
+      isNativeUsdcTransfer: false,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    },
+  ])('returns true when $route is eligible', (params) => {
+    expect(
+      hasEligibleAlternativeRoute({
+        ...baseParams,
+        ...params,
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false when only the canonical route is eligible', () => {
+    expect(
+      hasEligibleAlternativeRoute({
+        ...baseParams,
+        isBatchTransfer: true,
+      }),
+    ).toBe(false);
+
+    expect(
+      hasEligibleAlternativeRoute({
+        ...baseParams,
+        isCctpEnabled: false,
+        sourceChainId: ChainId.Sepolia,
+        destinationChainId: ChainId.ArbitrumSepolia,
+      }),
+    ).toBe(false);
   });
 });
 

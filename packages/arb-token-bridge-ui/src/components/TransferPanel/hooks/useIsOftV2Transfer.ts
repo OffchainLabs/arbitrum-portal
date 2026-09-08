@@ -12,7 +12,7 @@ export const useIsOftV2Transfer = function () {
   const { isDepositMode } = useNetworksRelationship(networks);
   const isSwapTransfer = useIsSwapTransfer();
 
-  const { data: isOft = false } = useSWRImmutable(
+  const { data: isOft = false, isLoading } = useSWRImmutable(
     selectedToken
       ? [
           isDepositMode ? selectedToken.address : selectedToken.l2Address,
@@ -32,5 +32,5 @@ export const useIsOftV2Transfer = function () {
           }).isValid,
   );
 
-  return isOft;
+  return { isOft, isLoading };
 };

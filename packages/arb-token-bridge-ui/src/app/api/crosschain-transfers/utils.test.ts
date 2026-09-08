@@ -284,17 +284,21 @@ describe('isValidLifiTransfer', () => {
   });
 
   describe('Arbitrum Nova pairs', () => {
-    it('Ethereum → Nova is allowed with native token', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: undefined,
-          sourceChainId: ChainId.Ethereum,
-          destinationChainId: ChainId.ArbitrumNova,
-        }),
-      ).toBe(true);
-    });
+    test.each([undefined, constants.AddressZero])(
+      'Ethereum → Nova with ETH (%s) is allowed while Nova is in a minimized state',
+      (fromToken) => {
+        expect(
+          isValidLifiTransfer({
+            fromToken,
+            sourceChainId: ChainId.Ethereum,
+            destinationChainId: ChainId.ArbitrumNova,
+            tokensFromLists: {},
+          }),
+        ).toBe(true);
+      },
+    );
 
-    it('Ethereum → Nova is allowed with USDC', () => {
+    it('Ethereum → Nova is rejected with an ERC20 while Nova is in a minimized state', () => {
       expect(
         isValidLifiTransfer({
           fromToken: CommonAddress.Ethereum.USDC,
@@ -302,7 +306,7 @@ describe('isValidLifiTransfer', () => {
           destinationChainId: ChainId.ArbitrumNova,
           tokensFromLists: {},
         }),
-      ).toBe(true);
+      ).toBe(false);
     });
 
     it('Nova → Ethereum is allowed with native token', () => {

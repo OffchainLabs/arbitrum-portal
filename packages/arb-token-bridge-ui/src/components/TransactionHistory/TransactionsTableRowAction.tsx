@@ -14,7 +14,7 @@ import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
-import { isUserRejectedError } from '../../util/isUserRejectedError';
+import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
@@ -78,7 +78,7 @@ export function TransactionsTableRowAction({
       if (isUserRejectedError(error)) {
         return;
       }
-      errorToast(`Can't retry the deposit: ${error?.message ?? error}`);
+      errorToast(`Can't retry the deposit: ${formatTransactionError(error)}`);
     }
   }, [tx, isConnectedToCorrectNetworkForAction, redeem, switchChainAsync]);
 
@@ -99,7 +99,7 @@ export function TransactionsTableRowAction({
       }
 
       errorToast(
-        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${error?.message ?? error}`,
+        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${formatTransactionError(error)}`,
       );
     }
   }, [claim, claimCctp, isConnectedToCorrectNetworkForAction, switchChainAsync, tx, type]);

@@ -54,6 +54,7 @@ import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { getLifiRouteToolsDetails } from '../../util/LifiRouteUtils';
+import { isNovaDestination } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
@@ -1337,7 +1338,7 @@ export function TransferPanel() {
       return networkConnectionWarningToast();
     }
 
-    if (isDepositMode && latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova) {
+    if (isNovaDestination(latestNetworks.current.destinationChain.id)) {
       const shouldProceedToNova = await confirmNovaDepositWarning();
 
       if (!shouldProceedToNova) {

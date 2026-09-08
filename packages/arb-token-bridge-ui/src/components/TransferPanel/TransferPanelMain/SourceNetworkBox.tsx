@@ -260,7 +260,7 @@ export function SourceNetworkBox() {
   const { isAmount2InputVisible, showAmount2Input } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const isCctpTransfer = useIsCctpTransfer();
-  const isOft = useIsOftV2Transfer();
+  const { isOft } = useIsOftV2Transfer();
   const { embedMode } = useMode();
   const [{ amount2 }] = useArbQueryParams();
 

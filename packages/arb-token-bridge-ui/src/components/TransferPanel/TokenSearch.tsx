@@ -27,6 +27,11 @@ import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
 import {
+  getNovaEthOnlyDepositErrorMessage,
+  isNativeEthAddress,
+  isNovaDestination,
+} from '../../util/NovaUtils';
+import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
   addBridgeTokenListToBridge,
@@ -314,6 +319,15 @@ function TokensPanel({
 
     return tokens
       .filter((address) => {
+        /**
+         * Nova is in a minimized state and only accepts ETH deposits, so hide every other token.
+         * This is deliberately unconditional rather than scoped to the LiFi list: USDT into Nova is
+         * an OFT V2 route sourced from the canonical Ethereum token list.
+         */
+        if (isNovaDestination(networks.destinationChain.id)) {
+          return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
+        }
+
         // Derive the token object from the address string
         let token = tokensFromUser[address] || tokensFromLists[address];
 
@@ -487,6 +501,12 @@ function TokensPanel({
     setErrorMessage('');
 
     if (!isAddress(newToken) || isAddingToken) {
+      return;
+    }
+
+    // Adding a token would succeed but the row would then be filtered out, leaving an empty list
+    if (isNovaDestination(networks.destinationChain.id)) {
+      setErrorMessage(getNovaEthOnlyDepositErrorMessage());
       return;
     }
 
