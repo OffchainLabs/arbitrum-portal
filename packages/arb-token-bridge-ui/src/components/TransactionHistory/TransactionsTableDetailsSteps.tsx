@@ -6,9 +6,11 @@ import {
 import { ReactNode, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
+import { addressesEqual } from '../../util/AddressUtils';
 import { getNetworkName } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
@@ -119,12 +121,36 @@ const LastStepEndItem = ({ tx }: { tx: MergedTransaction }) => {
   return null;
 };
 
-export const TransactionFailedOnNetwork = ({ networkName }: { networkName: string }) => (
-  <div>
-    Transaction failed on {networkName}. You have 7 days to try again. After that, your funds will
-    be <span className="font-bold text-red-400">lost forever</span>.
-  </div>
-);
+export const TransactionFailedOnNetwork = ({
+  networkName,
+  tx,
+}: {
+  networkName: string;
+  tx: Pick<MergedTransaction, 'assetType' | 'sender' | 'destination'>;
+}) => {
+  const willSettleOnExpiry =
+    tx.assetType === AssetType.ETH &&
+    !!tx.sender &&
+    !!tx.destination &&
+    addressesEqual(tx.sender, tx.destination);
+
+  return (
+    <div>
+      Transaction failed on {networkName}.{' '}
+      {willSettleOnExpiry ? (
+        <>
+          You can retry now or wait for your funds to settle successfully on {networkName} 7 days
+          after your initial transaction.
+        </>
+      ) : (
+        <>
+          You have 7 days to try again. After that, your funds will be{' '}
+          <span className="font-bold text-red-400">lost forever</span>.
+        </>
+      )}
+    </div>
+  );
+};
 
 function isSourceChainStatusFailure(tx: MergedTransaction) {
   if (isLifiTransfer(tx)) {
@@ -169,7 +195,7 @@ export const TransactionsTableDetailsSteps = ({ tx }: { tx: MergedTransaction })
     }
 
     if (isDepositReadyToRedeem(tx)) {
-      return <TransactionFailedOnNetwork networkName={networkName} />;
+      return <TransactionFailedOnNetwork networkName={networkName} tx={tx} />;
     }
     if (isDestinationChainFailure) {
       if (isLifiRefunded) {

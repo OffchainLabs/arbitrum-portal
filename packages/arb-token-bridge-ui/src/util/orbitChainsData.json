@@ -287,7 +287,7 @@
           "symbol": "EDU",
           "logoUrl": "/images/EduChainTokenLogo.png"
         },
-        "fastWithdrawalTime": 3600000,
+        "fastWithdrawalTime": 86400000,
         "assertionIntervalSeconds": 3600
       }
     },
