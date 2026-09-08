@@ -1,7 +1,7 @@
-import { useWalletInfo } from '@reown/appkit/react';
+import { useWalletInfo } from '@zerodev/wallet-react-ui';
 
 export function useIsTrustWalletConnection() {
-  const { walletInfo } = useWalletInfo('eip155');
+  const { walletInfo } = useWalletInfo();
 
   return (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
 }
