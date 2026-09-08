@@ -1,6 +1,5 @@
-import { hasL1Subgraph } from '../SubgraphUtils';
-import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from '../index';
-import { isChildChainIndexed } from '../txHistory/sources';
+import { fetchBridgeHistory } from '../txHistory/fetchBridgeHistory';
+import { hasBridgeHistory } from '../txHistory/sources';
 
 export type FetchEthDepositsToCustomDestinationFromSubgraphResult = {
   receiver: string;
@@ -47,42 +46,17 @@ export const fetchEthDepositsToCustomDestinationFromSubgraph = async ({
   pageNumber?: number;
   searchString?: string;
 }): Promise<FetchEthDepositsToCustomDestinationFromSubgraphResult[]> => {
+  if (!hasBridgeHistory(Number(l2ChainId))) {
+    return [];
+  }
+
   if (toBlock && fromBlock >= toBlock) {
     // if fromBlock > toBlock or both are equal / 0
     return [];
   }
 
-  const urlParams = new URLSearchParams(
-    sanitizeQueryParams({
-      sender,
-      receiver,
-      fromBlock,
-      toBlock,
-      l2ChainId,
-      pageSize,
-      page: pageNumber,
-      search: searchString,
-      experiments: getCurrentExperimentsQueryParam(),
-    }),
-  );
-
-  if (!hasL1Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
-  }
-
-  if (pageSize === 0) return []; // don't query subgraph if nothing requested
-
-  const response = await fetch(
-    `${getAPIBaseUrl()}/api/eth-deposits-custom-destination?${urlParams}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    },
-  );
-
-  const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] = (
-    await response.json()
-  ).data;
-
-  return transactions;
+  return fetchBridgeHistory<FetchEthDepositsToCustomDestinationFromSubgraphResult>({
+    route: 'eth-deposits-custom-destination',
+    query: { sender, receiver, fromBlock, toBlock, l2ChainId, pageSize, pageNumber, searchString },
+  });
 };

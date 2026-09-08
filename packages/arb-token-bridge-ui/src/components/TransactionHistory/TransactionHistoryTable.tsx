@@ -107,7 +107,11 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
         </div>
       }
     >
-      <ExclamationCircleIcon height={20} className="text-error" />
+      <ExclamationCircleIcon
+        height={20}
+        className="text-error"
+        data-testid="failed-chain-pairs-warning"
+      />
     </Tooltip>
   );
 };

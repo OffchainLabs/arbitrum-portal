@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ChainId } from '../../types/ChainId';
 import { parseChainIds } from './sources';
 
 describe('parseChainIds', () => {
@@ -23,7 +24,7 @@ describe('parseChainIds', () => {
   });
 });
 
-describe('getCanonicalSource', () => {
+describe.sequential('hasBridgeHistory', () => {
   // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so stub the env and re-import
   // per case to make routing deterministic regardless of the ambient env.
   afterEach(() => {
@@ -37,21 +38,21 @@ describe('getCanonicalSource', () => {
     return import('./sources');
   }
 
-  it('treats an unconfigured chain as subgraph-backed', async () => {
-    const { getCanonicalSource, isChildChainIndexed } = await importSourcesWith('');
-
-    expect(isChildChainIndexed(42161)).toBe(false);
-    expect(getCanonicalSource(42161)).toBe('subgraph');
-  });
-
-  it('routes configured chains to the indexer and leaves others on the subgraph', async () => {
-    const { getCanonicalSource, isChildChainIndexed } = await importSourcesWith('46630,33139');
+  it('has history for configured chains and none for the rest', async () => {
+    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('46630,33139');
 
     expect(isChildChainIndexed(46630)).toBe(true);
-    expect(getCanonicalSource(46630)).toBe('indexer');
-    expect(isChildChainIndexed(33139)).toBe(true);
+    expect(hasBridgeHistory(46630)).toBe(true);
+    expect(hasBridgeHistory(33139)).toBe(true);
 
-    expect(isChildChainIndexed(42161)).toBe(false);
-    expect(getCanonicalSource(42161)).toBe('subgraph');
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
+    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
+  });
+
+  it('has history for Nova without it being configured', async () => {
+    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });
