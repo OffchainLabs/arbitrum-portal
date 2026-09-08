@@ -148,10 +148,7 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
     const tokenWithCoinKey = token as LifiTokenWithCoinKey;
 
     // Normalize USDCe to USDC on chains that use bridged USDC
-    if (
-      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
-      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
-    ) {
+    if (tokenWithCoinKey.coinKey === CoinKey.USDCe && chainId === ChainId.ApeChain) {
       return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
     }
 

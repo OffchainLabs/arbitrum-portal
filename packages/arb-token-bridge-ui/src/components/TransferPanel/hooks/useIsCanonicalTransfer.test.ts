@@ -33,9 +33,6 @@ describe('isArbitrumCanonicalTransfer', () => {
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
     );
     registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
-    );
-    registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.RobinhoodChain)!,
     );
   });
@@ -180,35 +177,6 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSwap: false,
       });
       expect(ethDeposit).toBe(false);
-    });
-
-    it('should return from ArbitrumOne to Superposition', async () => {
-      const ethDeposit = await isArbitrumCanonicalTransfer({
-        sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: ChainId.Superposition,
-        childChainId: ChainId.Superposition,
-        parentChainId: ChainId.ArbitrumOne,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null,
-        isSwap: false,
-      });
-      expect(ethDeposit).toBe(true);
-
-      const usdcDeposit = await isArbitrumCanonicalTransfer({
-        sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: ChainId.Superposition,
-        childChainId: ChainId.Superposition,
-        parentChainId: ChainId.ArbitrumOne,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: {
-          ...usdcToken,
-          address: CommonAddress.ArbitrumOne.USDC,
-        },
-        isSwap: false,
-      });
-      expect(usdcDeposit).toBe(true);
     });
 
     it('Should return true for USDC transfers', async () => {
@@ -373,35 +341,6 @@ describe('isArbitrumCanonicalTransfer', () => {
       expect(wethWithdraw).toBe(false);
     });
 
-    it('should return from Superposition to ArbitrumOne', async () => {
-      const ethWithdraw = await isArbitrumCanonicalTransfer({
-        sourceChainId: ChainId.Superposition,
-        destinationChainId: ChainId.ArbitrumOne,
-        childChainId: ChainId.Superposition,
-        parentChainId: ChainId.ArbitrumOne,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: null,
-        isSwap: false,
-      });
-      expect(ethWithdraw).toBe(true);
-
-      const usdcWithdraw = await isArbitrumCanonicalTransfer({
-        sourceChainId: ChainId.Superposition,
-        destinationChainId: ChainId.ArbitrumOne,
-        childChainId: ChainId.Superposition,
-        parentChainId: ChainId.ArbitrumOne,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: {
-          ...usdcToken,
-          address: CommonAddress.ArbitrumOne.USDC,
-        },
-        isSwap: false,
-      });
-      expect(usdcWithdraw).toBe(true);
-    });
-
     it.each([
       {
         symbol: 'USDe',
@@ -460,25 +399,6 @@ describe('isArbitrumCanonicalTransfer', () => {
         isSwap: true,
       });
       expect(erc20Deposit).toBe(false);
-
-      const ethDeposit2 = await isArbitrumCanonicalTransfer({
-        childChainId: ChainId.Superposition,
-        parentChainId: ChainId.ArbitrumOne,
-        sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: ChainId.Superposition,
-        isSelectedTokenWithdrawOnly: false,
-        isSelectedTokenWithdrawOnlyLoading: false,
-        selectedToken: {
-          address: constants.AddressZero, // rDPX
-          decimals: 18,
-          symbol: 'ETH',
-          type: TokenType.ERC20,
-          name: 'ETH',
-          listIds: new Set<string>(),
-        },
-        isSwap: false,
-      });
-      expect(ethDeposit2).toBe(true);
     });
   });
 });
