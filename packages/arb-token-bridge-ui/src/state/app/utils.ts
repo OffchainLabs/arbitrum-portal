@@ -57,7 +57,7 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
   // is redeemed, and it can perfectly well be addressed to the sender: that is what every native
   // token deposit from this UI does, as they all go through `ethBridger.depositTo`. So the kind of
   // message cannot be inferred from `assetType` and the destination address.
-  const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage === true;
+  const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage;
 
   switch (l1ToL2MsgData.status) {
     case ParentToChildMessageStatus.NOT_YET_CREATED:
