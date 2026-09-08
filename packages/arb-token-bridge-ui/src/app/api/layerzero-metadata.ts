@@ -21,7 +21,6 @@ const LZ_CHAIN_KEY_BY_CHAIN_ID: { chainId: number; chainKey: string }[] = [
   { chainId: ChainId.BaseSepolia, chainKey: 'base-sepolia' },
   { chainId: ChainId.ApeChain, chainKey: 'ape' },
   { chainId: ChainId.RobinhoodChain, chainKey: 'robinhood' },
-  { chainId: ChainId.Superposition, chainKey: 'superposition' },
   { chainId: 98866, chainKey: 'plumephoenix' }, // Plume
   { chainId: 1625, chainKey: 'gravity' }, // Gravity Alpha
   { chainId: 41923, chainKey: 'edu' }, // Edu Chain

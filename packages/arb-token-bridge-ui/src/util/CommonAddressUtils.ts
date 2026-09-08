@@ -70,11 +70,6 @@ export const CommonAddress = {
     USDCe: '0xf1815bd50389c46847f0bda824ec8da914045d14',
     WETH: '0xf4d9235269a96aadafc9adae454a0618ebe37949',
   },
-  Superposition: {
-    WBTC: '0x6e142cdaefa4ba7786e8d1ff74968db67c3b910d',
-    USDCe: '0x6c030c5cc283f791b26816f325b9c632d964f8a1',
-    WETH: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
-  },
   RobinhoodChain: {
     APE: '0x8f86a15ec17cb3369d8b3e666dadbc11daa82b79',
     WETH: '0x0bd7d308f8e1639fab988df18a8011f41eacad73',

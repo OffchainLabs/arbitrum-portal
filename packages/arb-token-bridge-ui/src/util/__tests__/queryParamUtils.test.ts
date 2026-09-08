@@ -11,9 +11,6 @@ describe('sanitizeNullSelectedToken', () => {
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
     );
-    registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
-    );
   });
 
   describe('with ERC20 token', () => {
@@ -115,9 +112,6 @@ describe('sanitizeQueryParams - Arbitrum Nova pairs', () => {
   beforeAll(() => {
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
-    );
-    registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
     );
   });
 

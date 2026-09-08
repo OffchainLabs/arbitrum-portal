@@ -360,15 +360,11 @@ export const isTokenArbitrumOneWBTC = (tokenAddress: string | undefined) =>
 export const isTokenBaseWBTC = (tokenAddress: string | undefined) =>
   addressesEqual(tokenAddress, CommonAddress.Base.WBTC);
 
-export const isTokenSuperpositionWBTC = (tokenAddress: string | undefined) =>
-  addressesEqual(tokenAddress, CommonAddress.Superposition.WBTC);
-
 export const isTokenWBTC = (tokenAddress: string | undefined) => {
   return (
     isTokenEthereumWBTC(tokenAddress) ||
     isTokenArbitrumOneWBTC(tokenAddress) ||
-    isTokenBaseWBTC(tokenAddress) ||
-    isTokenSuperpositionWBTC(tokenAddress)
+    isTokenBaseWBTC(tokenAddress)
   );
 };
 
