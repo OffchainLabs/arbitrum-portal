@@ -399,6 +399,8 @@ describe('getUpdatedEthDeposit', () => {
   const NATIVE_TOKEN_DEPOSIT_TX_ID =
     '0x8b6eb5b1d0f9b06b1d0e3a5e0a1cf0ef1e3d5e1b7c8a9f0d2e4b6a8c0e2f4a6b';
   const RETRYABLE_TX_ID = '0x21f72d0003dea33e0cce1d2655d680e72dbcddc3e34baea4645363318f91dbd8';
+  const EXPIRED_RETRYABLE_TX_ID =
+    '0x66706177661e8208bc4e0be88e9bfdc7c12c899970f31b758322c8c4732bc1b0';
   const CHILD_TX_HASH = '0x3c9a1f7e5b2d8c4a6e0f2b4d6a8c0e2f4a6b8d0c2e4f6a8b0d2c4e6f8a0b2d4c';
   const RETRYABLE_CREATION_ID =
     '0x7534111b0bc2dd4d04a9d1d29236b7bb81830b8d21e3e826b13114304492e5c1';
@@ -445,8 +447,12 @@ describe('getUpdatedEthDeposit', () => {
           isClassic: false,
           parentToChildMsg: {
             retryableCreationId: RETRYABLE_CREATION_ID,
+            messageData: { callValueRefundAddress: SENDER },
             getSuccessfulRedeem: async () => ({
-              status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+              status:
+                depositTxId === EXPIRED_RETRYABLE_TX_ID
+                  ? ParentToChildMessageStatus.EXPIRED
+                  : ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
             }),
           } as unknown as ParentToChildMessageReader,
         };
@@ -476,6 +482,18 @@ describe('getUpdatedEthDeposit', () => {
     });
     expect(updatedDeposit.parentToChildMsgData?.isNativeTokenDepositMessage).toBeUndefined();
     expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_FAILURE);
+  });
+
+  it('reports success when an expired native token retryable refunds the sender and recipient', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(EXPIRED_RETRYABLE_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.EXPIRED,
+      callValueRefundAddress: SENDER,
+    });
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_SUCCESS);
   });
 });
 

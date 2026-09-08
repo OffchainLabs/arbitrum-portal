@@ -475,6 +475,7 @@ export async function getUpdatedRetryableDeposit(
       childTxId,
       fetchingUpdate: false,
       retryableCreationTxID: _parentToChildMsg.retryableCreationId,
+      callValueRefundAddress: _parentToChildMsg.messageData.callValueRefundAddress,
     },
   };
 

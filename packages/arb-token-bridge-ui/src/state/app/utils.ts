@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { ethers } from 'ethers';
 
 import {
+  AssetType,
   L2ToL1EventResultPlus,
   NodeBlockDeadlineStatusTypes,
   OutgoingMessageState,
@@ -63,8 +64,20 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
       return DepositStatus.L2_PENDING;
     case ParentToChildMessageStatus.CREATION_FAILED:
       return DepositStatus.CREATION_FAILED;
-    case ParentToChildMessageStatus.EXPIRED:
-      return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.EXPIRED;
+    case ParentToChildMessageStatus.EXPIRED: {
+      // Expiry refunds the native call value on the child chain. When that refund goes to the
+      // sender and the sender is also the intended recipient, the transfer has achieved its goal.
+      const isRefundedToDestination =
+        tx.assetType === AssetType.ETH &&
+        !!tx.sender &&
+        !!tx.destination &&
+        addressesEqual(tx.sender, tx.destination) &&
+        addressesEqual(l1ToL2MsgData.callValueRefundAddress, tx.destination);
+
+      return isNativeTokenDepositMessage || isRefundedToDestination
+        ? DepositStatus.L2_SUCCESS
+        : DepositStatus.EXPIRED;
+    }
     case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
       return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.L2_FAILURE;
     }

@@ -282,6 +282,7 @@ const updateTokenDepositStatusData = async ({
     childTxId,
     fetchingUpdate: false,
     retryableCreationTxID: parentToChildMsg.retryableCreationId,
+    callValueRefundAddress: parentToChildMsg.messageData.callValueRefundAddress,
   };
 
   const isDeposited = parentToChildMsgData.status === ParentToChildMessageStatus.REDEEMED;

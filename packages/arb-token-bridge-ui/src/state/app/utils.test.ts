@@ -5,7 +5,7 @@ import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
 import { ParentToChildMessageData } from '../../types/Transactions';
 import { BaseMergedTransaction, DepositStatus } from './state';
-import { getDepositStatus } from './utils';
+import { getDepositStatus, isDepositReadyToRedeem } from './utils';
 
 const SENDER = '0xee7300250a9745c2bA636254a486334bb8120d0a';
 const OTHER_ADDRESS = '0x370A7E2d300c14D79d4A7ee07aACA46c4B3012cF';
@@ -79,10 +79,88 @@ describe('getDepositStatus', () => {
     expect(getDepositStatus(tx)).toBe(DepositStatus.L2_FAILURE);
   });
 
-  it('reports an expired native token retryable back to the sender as expired', () => {
+  it.each([SENDER, SENDER.toLowerCase()])(
+    'reports an expired native token retryable refunded to its sender and recipient as successful (%s)',
+    (refundAddress) => {
+      const tx = createDeposit({
+        parentToChildMsgData: {
+          ...createMsgData(ParentToChildMessageStatus.EXPIRED),
+          callValueRefundAddress: refundAddress,
+        },
+      });
+
+      const depositStatus = getDepositStatus(tx);
+      expect(depositStatus).toBe(DepositStatus.L2_SUCCESS);
+      expect(isDepositReadyToRedeem({ ...tx, depositStatus })).toBe(false);
+    },
+  );
+
+  it('keeps a native token retryable redeemable before its refund on expiry', () => {
+    const tx = createDeposit({
+      parentToChildMsgData: {
+        ...createMsgData(ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD),
+        callValueRefundAddress: SENDER,
+      },
+    });
+
+    const depositStatus = getDepositStatus(tx);
+    expect(depositStatus).toBe(DepositStatus.L2_FAILURE);
+    expect(isDepositReadyToRedeem({ ...tx, depositStatus })).toBe(true);
+  });
+
+  it('reports an expired native token retryable with an unknown refund address as expired', () => {
     const tx = createDeposit({
       parentToChildMsgData: createMsgData(ParentToChildMessageStatus.EXPIRED),
     });
+
+    expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
+  });
+
+  it('reports an expired native token retryable refunded elsewhere as expired', () => {
+    const tx = createDeposit({
+      parentToChildMsgData: {
+        ...createMsgData(ParentToChildMessageStatus.EXPIRED),
+        callValueRefundAddress: OTHER_ADDRESS,
+      },
+    });
+
+    expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
+  });
+
+  it('reports an expired native token retryable to a different recipient as expired', () => {
+    const tx = createDeposit({
+      destination: OTHER_ADDRESS,
+      parentToChildMsgData: {
+        ...createMsgData(ParentToChildMessageStatus.EXPIRED),
+        callValueRefundAddress: SENDER,
+      },
+    });
+
+    expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
+  });
+
+  it('reports an expired ERC20 retryable as expired even when its native refund reaches the recipient', () => {
+    const tx = createDeposit({
+      assetType: AssetType.ERC20,
+      parentToChildMsgData: {
+        ...createMsgData(ParentToChildMessageStatus.EXPIRED),
+        callValueRefundAddress: SENDER,
+      },
+    });
+
+    expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
+  });
+
+  it('reports an expired native token retryable with no recipient as expired', () => {
+    const tx = {
+      ...createDeposit({
+        parentToChildMsgData: {
+          ...createMsgData(ParentToChildMessageStatus.EXPIRED),
+          callValueRefundAddress: SENDER,
+        },
+      }),
+      destination: undefined,
+    };
 
     expect(getDepositStatus(tx)).toBe(DepositStatus.EXPIRED);
   });

@@ -33,6 +33,8 @@ export interface ParentToChildMessageData {
    * two cannot be told apart by comparing `sender` and `destination`.
    */
   isNativeTokenDepositMessage?: boolean;
+  /** Child-chain address receiving the retryable's native call value on expiry or cancellation. */
+  callValueRefundAddress?: string;
 }
 
 export type ChildToParentMessageData = {
