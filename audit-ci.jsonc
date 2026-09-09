@@ -113,12 +113,18 @@
     // https://github.com/advisories/GHSA-jmr9-qjv8-65gv
     // extract-zip does not validate symlink targets during extraction, so a malicious
     // archive can read or write files outside the target directory (CVE-2026-56876)
+    //
+    // https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+    // extract-zip allows arbitrary file writes through symlink archive entries
+    // (CVE-2026-19693), a variant of the above
+    //
     // Reason to ignore: No patched version available (2.0.1 is the latest published
-    // version). Dev-only: cypress uses it to unpack its own binary from the official
+    // version, last modified 2023; GitHub lists no patched version).
+    // Dev-only: cypress uses it to unpack its own binary from the official
     // Cypress CDN, so we never extract untrusted archives. Not in production builds.
     // from: arb-token-bridge-ui>@synthetixio/synpress>cypress>extract-zip
-    // from: arb-token-bridge-ui>cypress-terminal-report>cypress>extract-zip
     "GHSA-jmr9-qjv8-65gv",
+    "GHSA-7pqw-9j4j-h8q3",
     //
     // https://github.com/advisories/GHSA-vcc3-ghjq-m6fr
     // decode-uri-component denial of service via exponential decoding of malformed
