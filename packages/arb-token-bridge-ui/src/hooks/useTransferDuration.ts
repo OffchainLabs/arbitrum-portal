@@ -51,7 +51,10 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
   const { isTestnet } = isNetwork(childChainId);
 
   if (isLifiTransfer(tx)) {
-    const durationMinutes = (getLifiTransactionSnapshot(tx)?.durationMs || 15_000) / (60 * 1_000);
+    const durationMs = getLifiTransactionSnapshot(tx)?.durationMs;
+    const durationMinutes =
+      (typeof durationMs === 'number' && Number.isFinite(durationMs) ? durationMs : 15_000) /
+      (60 * 1_000);
 
     return {
       approximateDurationInMinutes: durationMinutes,
