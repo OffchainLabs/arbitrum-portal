@@ -19,7 +19,7 @@ const TRANSFER_TIME_MINUTES_CCTP = {
 };
 
 /**
- * Applies to L3 deposits only, i.e. Orbit chains whose parent is an Arbitrum chain.
+ * Applies to deposits whose parent is not an L1, i.e. Orbit chains settling to an Arbitrum chain or to Base.
  * Orbit chains that settle directly to an L1 (e.g. Robinhood Chain) use DEPOSIT_TIME_MINUTES,
  * see `getDepositDuration`.
  *
@@ -158,9 +158,9 @@ export function getOrbitDepositDuration(testnet: boolean) {
 }
 
 /**
- * Deposits whose parent chain is an L1 (Ethereum / Sepolia) wait for L1 finality,
+ * Deposits whose parent chain is an L1 (Ethereum / Sepolia / Local) wait for L1 finality,
  * regardless of whether the child is a core Arbitrum chain or an Orbit chain.
- * Only L3 deposits (parent is an Arbitrum chain) use the shorter Orbit estimate.
+ * Deposits from any other parent (an Arbitrum chain or Base) use the shorter Orbit estimate.
  */
 export function getDepositDuration({
   parentChainId,
