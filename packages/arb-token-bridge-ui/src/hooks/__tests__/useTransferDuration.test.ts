@@ -440,4 +440,16 @@ describe('getDepositDuration', () => {
       getOrbitDepositDuration(true),
     );
   });
+
+  it('returns standard duration when parent is the local L1', () => {
+    expect(getDepositDuration({ parentChainId: 1337, isTestnet: true })).toEqual(
+      getStandardDepositDuration(true),
+    );
+  });
+
+  it('returns orbit duration when parent is Base', () => {
+    expect(getDepositDuration({ parentChainId: 8453, isTestnet: false })).toEqual(
+      getOrbitDepositDuration(false),
+    );
+  });
 });
