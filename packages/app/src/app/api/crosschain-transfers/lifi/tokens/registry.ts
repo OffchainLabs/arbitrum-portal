@@ -1,4 +1,4 @@
-import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken, getTokens } from '@lifi/sdk';
+import { CoinKey, ChainId as LiFiChainId, type Token as LifiSdkToken, getTokens } from '@lifi/sdk';
 import { unstable_cache } from 'next/cache';
 
 import {
@@ -13,7 +13,18 @@ type CustomTokenConfig = {
   addresses: Partial<Record<number, string>>;
 };
 
+const VIRTUAL_COIN_KEY = 'VIRTUAL' as CoinKey;
+const VIRTUAL_LOGO_URI =
+  'https://static.debank.com/image/eth_token/logo_url/0x44ff8620b8ca30902395a7bd3f2407e1a091bf73/cbb70834d9442214c846833e47648255.png';
+
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
+  {
+    coinKey: VIRTUAL_COIN_KEY,
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.VIRTUAL,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.VIRTUAL,
+    },
+  },
   {
     coinKey: 'PYUSD',
     addresses: {
@@ -124,11 +135,16 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
     '0x74885b4d524d497261259b38900f54e6dbad2210', // Old Ape token
     '0xb9c8f0d3254007ee4b98970b94544e473cd610ec', // Old QiDao token
   ]),
+  [ChainId.RobinhoodChain]: new Set([CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL]),
 };
 
-export type LifiTokenWithCoinKey = LiFiToken & { coinKey: CoinKey };
+export type LifiToken = Omit<LifiSdkToken, 'chainId' | 'priceUSD'> & {
+  chainId: number;
+  priceUSD?: string;
+};
+export type LifiTokenWithCoinKey = LifiToken & { coinKey: CoinKey };
 
-function isExcludedToken(token: LiFiToken, chainId: number): boolean {
+function isExcludedToken(token: LifiSdkToken, chainId: number): boolean {
   return EXCLUDED_ADDRESSES[chainId]?.has(token.address.toLowerCase()) ?? false;
 }
 
@@ -137,7 +153,7 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
  * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
  * Returns null if token has no coinKey and isn't in CUSTOM_TOKENS.
  */
-function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
+function assignCustomCoinKey(token: LifiSdkToken, chainId: number): LifiTokenWithCoinKey | null {
   const normalizedAddress = token.address.toLowerCase();
   const customCoinKey = CUSTOM_TOKEN_LOOKUP.get(chainId)?.get(normalizedAddress);
   if (customCoinKey) {
@@ -160,6 +176,10 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
 
 function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
   switch (token.coinKey) {
+    case VIRTUAL_COIN_KEY: {
+      token.logoURI = VIRTUAL_LOGO_URI;
+      return token;
+    }
     case CoinKey.ETH: {
       token.logoURI = '/images/EthereumLogoRound.svg';
       return token;
@@ -186,7 +206,7 @@ function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinK
 }
 
 export interface LifiTokenRegistry {
-  tokensByChain: Record<number, LiFiToken[]>;
+  tokensByChain: Record<number, LifiToken[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
@@ -208,7 +228,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   for (const chainId of allowedLifiSourceChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LiFiToken[]>((acc, token) => {
+    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
       // Exclude tokens on the exclude list
       if (isExcludedToken(token, chainId)) return acc;
 
@@ -231,6 +251,24 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
     tokensByChain[chainId] = filteredTokens;
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
   }
+
+  const canonicalVirtual: LifiTokenWithCoinKey = {
+    address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+    chainId: ChainId.RobinhoodChain,
+    coinKey: VIRTUAL_COIN_KEY,
+    decimals: 18,
+    name: 'Virtual Protocol',
+    symbol: 'VIRTUAL',
+  };
+
+  tokensByChain[ChainId.RobinhoodChain] = [
+    ...(tokensByChain[ChainId.RobinhoodChain] ?? []),
+    canonicalVirtual,
+  ];
+  tokensByChainAndCoinKey[ChainId.RobinhoodChain] = {
+    ...(tokensByChainAndCoinKey[ChainId.RobinhoodChain] ?? {}),
+    [VIRTUAL_COIN_KEY]: canonicalVirtual,
+  };
 
   return { tokensByChain, tokensByChainAndCoinKey };
 };

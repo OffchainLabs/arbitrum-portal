@@ -1,20 +1,22 @@
-import { CoinKey, type Token as LiFiToken } from '@lifi/sdk';
+import { CoinKey } from '@lifi/sdk';
 import { TokenList } from '@uniswap/token-lists';
 
 import { allowsUnmatchedLifiTokens } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { LifiTokenWithCoinKey } from './registry';
+import { LifiToken, LifiTokenWithCoinKey } from './registry';
 
 type MapTokensParams = {
-  parentTokens: LiFiToken[];
-  childTokens?: LiFiToken[];
+  parentTokens: LifiToken[];
+  childTokens?: LifiToken[];
   childTokensByCoinKey: Record<string, LifiTokenWithCoinKey>;
   parentChainId: number;
   childChainId: number;
 };
 
-const getTokenId = (token: LiFiToken) => `${token.chainId}:${token.address.toLowerCase()}`;
+const getTokenId = (token: LifiToken) => `${token.chainId}:${token.address.toLowerCase()}`;
 
 /** Group parent tokens and child tokens based on coinkey */
 export const groupChildTokensAndParentTokens = ({
@@ -45,7 +47,12 @@ export const groupChildTokensAndParentTokens = ({
 
     // Some tokens on Lifi are missing logoURIs, so we fallback to the other token's logoURI if available
     const fallbackLogoURI = childToken.logoURI ?? token.logoURI;
-    const priceUSD = childToken.priceUSD ?? token.priceUSD;
+    const isCanonicalVirtual =
+      childChainId === ChainId.RobinhoodChain &&
+      addressesEqual(childToken.address, CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL);
+    const priceUSD = isCanonicalVirtual
+      ? childToken.priceUSD
+      : (childToken.priceUSD ?? token.priceUSD);
     acc.push({
       chainId: childChainId,
       address: childToken.address,
