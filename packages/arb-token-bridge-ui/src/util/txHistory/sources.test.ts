@@ -23,9 +23,10 @@ describe('parseChainIds', () => {
   });
 });
 
-describe('getCanonicalSource', () => {
-  // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so stub the env and re-import
-  // per case to make routing deterministic regardless of the ambient env.
+// INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so each case stubs the env and
+// re-imports the module. The cases must not run concurrently (the global default): one
+// case's afterEach unstubs the env while another's import is still evaluating.
+describe('getCanonicalSource', { concurrent: false }, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
