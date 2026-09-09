@@ -11,7 +11,7 @@ describe('parseChainIds', () => {
 
   it('parses a comma-separated list', () => {
     expect(parseChainIds('46630')).toEqual([46630]);
-    expect(parseChainIds('46630, 33139 , 55244')).toEqual([46630, 33139, 55244]);
+    expect(parseChainIds('46630, 33139 , 4663')).toEqual([46630, 33139, 4663]);
   });
 
   it('ignores invalid values', () => {

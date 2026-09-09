@@ -325,11 +325,11 @@ describe('sanitizeTokenQueryParam', () => {
     });
 
     it('should be stripped if the destination chain is an Orbit chain with ETH as the gas token', () => {
-      const superpositionChainId = 55244;
+      const edgeChainId = 3343;
 
       const result = sanitizeTokenQueryParam({
         sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: superpositionChainId,
+        destinationChainId: edgeChainId,
         token: 'eth',
       });
       expect(result).toBeUndefined();
@@ -340,9 +340,6 @@ describe('sanitizeTokenQueryParam', () => {
     beforeAll(() => {
       registerCustomArbitrumNetwork(
         orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
-      );
-      registerCustomArbitrumNetwork(
-        orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
       );
     });
 

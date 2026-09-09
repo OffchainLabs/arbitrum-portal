@@ -18,7 +18,6 @@ it('successfully returns the correct url for the provided chain and key', () => 
     [ChainId.ArbitrumSepolia]: getInfuraRpcUrl(ChainId.ArbitrumSepolia, key),
     [ChainId.BaseSepolia]: getInfuraRpcUrl(ChainId.BaseSepolia, key),
     [ChainId.ApeChain]: getInfuraRpcUrl(ChainId.ApeChain, key),
-    [ChainId.Superposition]: getInfuraRpcUrl(ChainId.Superposition, key),
     [ChainId.RobinhoodChain]: getInfuraRpcUrl(ChainId.RobinhoodChain, key),
     [ChainId.RobinhoodChainTestnet]: getInfuraRpcUrl(ChainId.RobinhoodChainTestnet, key),
   };
@@ -32,7 +31,6 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "421614": "https://arbitrum-sepolia.infura.io/v3/123456",
       "4663": "",
       "46630": "",
-      "55244": "",
       "8453": "https://base-mainnet.infura.io/v3/123456",
       "84532": "https://base-sepolia.infura.io/v3/123456",
     }

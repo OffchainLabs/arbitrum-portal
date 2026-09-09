@@ -270,17 +270,6 @@ describe('isValidLifiTransfer', () => {
         }),
       ).toBe(false);
     });
-
-    it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD,
-          sourceChainId: ChainId.ArbitrumOne,
-          destinationChainId: ChainId.Superposition,
-          tokensFromLists: {},
-        }),
-      ).toBe(false);
-    });
   });
 
   describe('Arbitrum Nova pairs', () => {
@@ -547,6 +536,24 @@ describe('getTokenOverride', () => {
     });
   });
 
+  it('maps LiFi VIRTUAL between Ethereum and the regular Robinhood token', () => {
+    const deposit = getTokenOverride({
+      fromToken: CommonAddress.Ethereum.VIRTUAL,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const withdrawal = getTokenOverride({
+      fromToken: CommonAddress.RobinhoodChain.VIRTUAL,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    });
+
+    expect(deposit.source?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+    expect(deposit.destination?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.source?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.destination?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+  });
+
   it('For transfers on chain with custom fee token, returns null', () => {
     const arbToXaiOverride = getTokenOverride({
       fromToken: undefined,
@@ -565,54 +572,5 @@ describe('getTokenOverride', () => {
 
     expect(xaiToArbOverride.source).toEqual(null);
     expect(xaiToArbOverride.destination).toEqual(null);
-  });
-
-  it('For transfers including Superposition returns USDCe on Superposition', () => {
-    const arbToSuperpositionOverride = getTokenOverride({
-      fromToken: CommonAddress.ArbitrumOne.USDC,
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Superposition,
-    });
-    const superpositionToArbOverride = getTokenOverride({
-      fromToken: CommonAddress.Superposition.USDCe,
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.ArbitrumOne,
-    });
-
-    const nativeUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'USDC',
-      symbol: 'USDC',
-      type: 'ERC20',
-    };
-    const bridgedUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'Bridged USDC',
-      symbol: 'USDC.e',
-      type: 'ERC20',
-    };
-    expect(arbToSuperpositionOverride.source).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
-    expect(arbToSuperpositionOverride.destination).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-
-    expect(superpositionToArbOverride.source).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-    expect(superpositionToArbOverride.destination).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
   });
 });

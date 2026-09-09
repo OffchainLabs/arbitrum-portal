@@ -32,7 +32,6 @@ function isUsdcToken(tokenAddress: string | undefined) {
     addressesEqual(tokenAddress, CommonAddress.Ethereum.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne['USDC.e']) ||
-    addressesEqual(tokenAddress, CommonAddress.Superposition.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.ApeChain.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.Base.USDC)
   );
@@ -144,11 +143,6 @@ function getUsdc(chainId: number) {
         symbol: 'USDC',
         name: 'USDC',
       },
-      [ChainId.Superposition]: {
-        address: CommonAddress.Superposition.USDCe,
-        symbol: 'USDC.e',
-        name: 'Bridged USDC',
-      },
       [ChainId.ApeChain]: {
         address: CommonAddress.ApeChain.USDCe,
         symbol: 'USDC.e',
@@ -177,6 +171,24 @@ const nativeApeToken = {
   address: constants.AddressZero,
 };
 
+const virtualToken = {
+  symbol: 'VIRTUAL',
+  name: 'Virtual Protocol',
+  decimals: 18,
+  type: TokenType.ERC20,
+  listIds: new Set<string>(),
+} as const;
+
+function getVirtual(chainId: ChainId.Ethereum | ChainId.RobinhoodChain) {
+  return {
+    ...virtualToken,
+    address:
+      chainId === ChainId.Ethereum
+        ? CommonAddress.Ethereum.VIRTUAL
+        : CommonAddress.RobinhoodChain.VIRTUAL,
+  };
+}
+
 function getApe(chainId: number) {
   return (
     {
@@ -192,12 +204,6 @@ function getApe(chainId: number) {
         ...apeToken,
         address: CommonAddress.RobinhoodChain.APE,
       },
-      [ChainId.Superposition]: {
-        ...ether,
-        address: constants.AddressZero,
-        type: TokenType.ERC20,
-        listIds: new Set<string>(),
-      } as ERC20BridgeToken,
       [ChainId.ApeChain]: null,
       [ChainId.Base]: {
         ...apeToken,
@@ -229,6 +235,22 @@ export function getTokenOverride({
       source: sourceChainId === ChainId.ApeChain ? nativeApeToken : getApe(sourceChainId),
       destination:
         destinationChainId === ChainId.ApeChain ? nativeApeToken : getApe(destinationChainId),
+    };
+  }
+
+  const isVirtualDeposit =
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.RobinhoodChain &&
+    addressesEqual(fromToken, CommonAddress.Ethereum.VIRTUAL);
+  const isVirtualWithdrawal =
+    sourceChainId === ChainId.RobinhoodChain &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(fromToken, CommonAddress.RobinhoodChain.VIRTUAL);
+
+  if (isVirtualDeposit || isVirtualWithdrawal) {
+    return {
+      source: getVirtual(sourceChainId),
+      destination: getVirtual(destinationChainId),
     };
   }
 

@@ -73,7 +73,7 @@ describe('initializeBridgePage sanitization', () => {
     await initializeBridgePage({
       searchParams: {
         sourceChain: 'not-a-chain',
-        destinationChain: 'superposition',
+        destinationChain: 'edge-mainnet',
       },
       redirectPath: PathnameEnum.BRIDGE,
     });
@@ -81,7 +81,7 @@ describe('initializeBridgePage sanitization', () => {
     expect(redirectMock).toHaveBeenCalledTimes(1);
     expectRedirectedChains({
       sourceChain: 'arbitrum-one',
-      destinationChain: 'superposition',
+      destinationChain: 'edge-mainnet',
     });
   });
 
@@ -180,7 +180,7 @@ describe('initializeBridgePage sanitization', () => {
     await initializeBridgePage({
       searchParams: {
         sourceChain: 'apechain',
-        destinationChain: 'superposition',
+        destinationChain: 'arbitrum-one',
         destinationToken: constants.AddressZero,
         sanitized: 'true',
       },
