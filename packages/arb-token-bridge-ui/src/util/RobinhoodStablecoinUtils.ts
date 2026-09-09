@@ -1,5 +1,4 @@
 import { ChainId } from '../types/ChainId';
-import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 
 /**
@@ -16,51 +15,50 @@ import { CommonAddress } from './CommonAddressUtils';
 /** Literal accepted in the `destinationToken` query param as a shorthand for USDG. */
 export const USDG_QUERY_PARAM_ALIAS = 'usdg';
 
-const usdgAddresses: readonly string[] = [
-  CommonAddress.Ethereum.USDG,
-  CommonAddress.RobinhoodChain.USDG,
-];
+const usdgAddresses: ReadonlySet<string> = new Set(
+  [CommonAddress.Ethereum.USDG, CommonAddress.RobinhoodChain.USDG].map((address) =>
+    address.trim().toLowerCase(),
+  ),
+);
 
 /**
  * Explicit allowlist. Symbols are not used on purpose: LiFi lists a second "USDG" on Robinhood,
  * plus yield wrappers (spUSDG, syrupUSDG, sUSDe) that must not be treated as stablecoins.
  */
-const stablecoinAddresses: readonly string[] = [
-  CommonAddress.Ethereum.USDC,
-  CommonAddress.Ethereum.USDT,
-  CommonAddress.Ethereum.DAI,
-  CommonAddress.Ethereum.USDS,
-  CommonAddress.Ethereum.PYUSD,
-  CommonAddress.ArbitrumOne.USDC,
-  CommonAddress.ArbitrumOne['USDC.e'],
-  CommonAddress.ArbitrumOne.USDT,
-  CommonAddress.ArbitrumOne.DAI,
-  CommonAddress.ArbitrumOne.USDS,
-  CommonAddress.ArbitrumOne.AUSD,
-  CommonAddress.ArbitrumOne.PYUSD,
-  CommonAddress.Base.USDC,
-  CommonAddress.Base.USDT,
-  CommonAddress.Base.DAI,
-  CommonAddress.Base.USDS,
-  CommonAddress.Base.AUSD,
-  CommonAddress.ApeChain.USDT,
-  CommonAddress.ApeChain.USDCe,
-  CommonAddress.Ethereum.USDe,
-  CommonAddress.ArbitrumOne.USDe,
-  CommonAddress.Base.USDe,
-  CommonAddress.RobinhoodChain.USDe,
-];
-
-function includesAddress(addresses: readonly string[], address: string | undefined): boolean {
-  return addresses.some((candidate) => addressesEqual(candidate, address));
-}
+const stablecoinAddresses: ReadonlySet<string> = new Set(
+  [
+    CommonAddress.Ethereum.USDC,
+    CommonAddress.Ethereum.USDT,
+    CommonAddress.Ethereum.DAI,
+    CommonAddress.Ethereum.USDS,
+    CommonAddress.Ethereum.PYUSD,
+    CommonAddress.ArbitrumOne.USDC,
+    CommonAddress.ArbitrumOne['USDC.e'],
+    CommonAddress.ArbitrumOne.USDT,
+    CommonAddress.ArbitrumOne.DAI,
+    CommonAddress.ArbitrumOne.USDS,
+    CommonAddress.ArbitrumOne.AUSD,
+    CommonAddress.ArbitrumOne.PYUSD,
+    CommonAddress.Base.USDC,
+    CommonAddress.Base.USDT,
+    CommonAddress.Base.DAI,
+    CommonAddress.Base.USDS,
+    CommonAddress.Base.AUSD,
+    CommonAddress.ApeChain.USDT,
+    CommonAddress.ApeChain.USDCe,
+    CommonAddress.Ethereum.USDe,
+    CommonAddress.ArbitrumOne.USDe,
+    CommonAddress.Base.USDe,
+    CommonAddress.RobinhoodChain.USDe,
+  ].map((address) => address.trim().toLowerCase()),
+);
 
 export function isTokenUSDG(address: string | undefined): boolean {
-  return includesAddress(usdgAddresses, address);
+  return address !== undefined && usdgAddresses.has(address.trim().toLowerCase());
 }
 
 export function isStablecoin(address: string | undefined): boolean {
-  return includesAddress(stablecoinAddresses, address);
+  return address !== undefined && stablecoinAddresses.has(address.trim().toLowerCase());
 }
 
 export function isUsdgQueryParamAlias(value: string | null | undefined): boolean {
