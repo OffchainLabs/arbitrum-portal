@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
   expectTokenButtonContent,
+  nativeEthTokenExpectation,
   renderTransferPanel,
   setupTransferPanelLifiIntegrationSuite,
   tokenExpectationsByChain,
@@ -15,17 +16,16 @@ const BANNER_ASSERT_TIMEOUT_MS = 8_000;
 describe.sequential('TransferPanel LiFi Integration - USDG suggestion banner', () => {
   setupTransferPanelLifiIntegrationSuite();
 
-  it('offers USDG for a stablecoin swap into Robinhood Chain and switches the destination on click', async () => {
+  it('offers USDG when a stablecoin source falls back to ETH on Robinhood Chain and switches the destination on click', async () => {
     await renderTransferPanel({
       sourceChain: 'arbitrum-one',
       destinationChain: 'robinhood-chain',
       token: CommonAddress.ArbitrumOne.USDC,
-      destinationToken: CommonAddress.ArbitrumOne.USDe,
     });
 
     await expectTokenButtonContent({
       isDestination: true,
-      tokenExpectation: tokenExpectationsByChain.ArbitrumOne.USDe,
+      tokenExpectation: nativeEthTokenExpectation,
     });
 
     const banner = await screen.findByRole(
@@ -33,9 +33,7 @@ describe.sequential('TransferPanel LiFi Integration - USDG suggestion banner', (
       { name: BANNER_NAME },
       { timeout: BANNER_ASSERT_TIMEOUT_MS },
     );
-    expect(banner.textContent?.replace(/\s+/g, ' ')).toContain(
-      'Most Robinhood apps use USDG, not USDe.',
-    );
+    expect(banner.textContent?.replace(/\s+/g, ' ')).toContain('Most Robinhood apps use USDG.');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Switch to USDG/ }));
@@ -48,6 +46,21 @@ describe.sequential('TransferPanel LiFi Integration - USDG suggestion banner', (
     await waitFor(() => {
       expect(screen.queryByRole('note', { name: BANNER_NAME })).toBeNull();
     });
+  });
+
+  it('stays hidden for a USDe transfer into Robinhood Chain', async () => {
+    await renderTransferPanel({
+      sourceChain: 'arbitrum-one',
+      destinationChain: 'robinhood-chain',
+      token: CommonAddress.ArbitrumOne.USDe,
+      destinationToken: CommonAddress.ArbitrumOne.USDe,
+    });
+
+    await expectTokenButtonContent({
+      isDestination: true,
+      tokenExpectation: tokenExpectationsByChain.ArbitrumOne.USDe,
+    });
+    expect(screen.queryByRole('note', { name: BANNER_NAME })).toBeNull();
   });
 
   it('stays hidden when USDG is already the destination', async () => {

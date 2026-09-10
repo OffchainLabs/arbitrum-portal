@@ -24,6 +24,8 @@ const usdgAddresses: ReadonlySet<string> = new Set(
 /**
  * Explicit allowlist. Symbols are not used on purpose: LiFi lists a second "USDG" on Robinhood,
  * plus yield wrappers (spUSDG, syrupUSDG, sUSDe) that must not be treated as stablecoins.
+ * USDe is left out too: it has its own canonical route into Robinhood Chain, so the USDG
+ * suggestion must not show for it.
  */
 const stablecoinAddresses: ReadonlySet<string> = new Set(
   [
@@ -46,10 +48,6 @@ const stablecoinAddresses: ReadonlySet<string> = new Set(
     CommonAddress.Base.AUSD,
     CommonAddress.ApeChain.USDT,
     CommonAddress.ApeChain.USDCe,
-    CommonAddress.Ethereum.USDe,
-    CommonAddress.ArbitrumOne.USDe,
-    CommonAddress.Base.USDe,
-    CommonAddress.RobinhoodChain.USDe,
   ].map((address) => address.trim().toLowerCase()),
 );
 

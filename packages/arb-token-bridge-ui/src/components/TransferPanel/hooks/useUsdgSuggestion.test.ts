@@ -26,9 +26,26 @@ describe('getUsdgSuggestion', () => {
       getUsdgSuggestion({
         destinationChainId: ChainId.RobinhoodChain,
         sourceTokenAddress: constants.AddressZero,
-        destinationTokenAddress: CommonAddress.RobinhoodChain.USDe,
+        destinationTokenAddress: CommonAddress.ArbitrumOne.USDT,
       }),
     ).toEqual({ isVisible: true, isDestinationStablecoin: true });
+  });
+
+  it('stays hidden for a USDe transfer into Robinhood Chain', () => {
+    expect(
+      getUsdgSuggestion({
+        destinationChainId: ChainId.RobinhoodChain,
+        sourceTokenAddress: CommonAddress.ArbitrumOne.USDe,
+        destinationTokenAddress: CommonAddress.ArbitrumOne.USDe,
+      }),
+    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
+    expect(
+      getUsdgSuggestion({
+        destinationChainId: ChainId.RobinhoodChain,
+        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
+        destinationTokenAddress: CommonAddress.RobinhoodChain.USDe,
+      }),
+    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
   });
 
   it('shows when a stablecoin source was pointed at native ETH', () => {

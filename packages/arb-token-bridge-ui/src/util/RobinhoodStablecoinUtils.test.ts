@@ -34,14 +34,17 @@ describe('isStablecoin', () => {
     CommonAddress.ArbitrumOne.AUSD,
     CommonAddress.Base.USDS,
     CommonAddress.ApeChain.USDT,
-    CommonAddress.RobinhoodChain.USDe,
   ])('recognises %s', (address) => {
     expect(isStablecoin(address)).toBe(true);
   });
 
-  it('does not treat USDG, yield wrappers, ETH or WETH as a stablecoin', () => {
+  it('does not treat USDG, USDe, yield wrappers, ETH or WETH as a stablecoin', () => {
     expect(isStablecoin(CommonAddress.Ethereum.USDG)).toBe(false);
     expect(isStablecoin(CommonAddress.RobinhoodChain.USDG)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.USDe)).toBe(false);
+    expect(isStablecoin(CommonAddress.ArbitrumOne.USDe)).toBe(false);
+    expect(isStablecoin(CommonAddress.Base.USDe)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.USDe)).toBe(false);
     expect(isStablecoin(CommonAddress.RobinhoodChain.sUSDe)).toBe(false);
     expect(isStablecoin(CommonAddress.Ethereum.sUSDe)).toBe(false);
     expect(isStablecoin(CommonAddress.RobinhoodChain.spUSDG)).toBe(false);
