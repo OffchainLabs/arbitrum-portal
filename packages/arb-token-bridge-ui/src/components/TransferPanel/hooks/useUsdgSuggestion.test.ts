@@ -276,4 +276,95 @@ describe.sequential('useUsdgSuggestion', () => {
     expect(result.current.isVisible).toBe(false);
     expect(trackEvent).not.toHaveBeenCalled();
   });
+
+  it('hides after dismiss, tracks it, and stays hidden for the same selection', () => {
+    const usdc = fakeToken(CommonAddress.ArbitrumOne.USDC, 'USDC');
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdc,
+      destinationToken: usdc,
+    });
+    const { result, rerender } = renderHook(useUsdgSuggestion);
+    expect(result.current.isVisible).toBe(true);
+
+    act(() => result.current.dismiss());
+
+    expect(result.current.isVisible).toBe(false);
+    expect(trackEvent).toHaveBeenLastCalledWith('USDG Suggestion Banner', {
+      action: 'dismissed',
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
+      destinationTokenAddress: CommonAddress.ArbitrumOne.USDC,
+    });
+
+    rerender();
+    expect(result.current.isVisible).toBe(false);
+  });
+
+  it('reappears after dismiss once the selection changes and tracks a new exposure', () => {
+    const usdc = fakeToken(CommonAddress.ArbitrumOne.USDC, 'USDC');
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdc,
+      destinationToken: usdc,
+    });
+    const { result, rerender } = renderHook(useUsdgSuggestion);
+    act(() => result.current.dismiss());
+    expect(result.current.isVisible).toBe(false);
+    expect(trackEvent).toHaveBeenCalledTimes(2);
+
+    const usdt = fakeToken(CommonAddress.ArbitrumOne.USDT, 'USDT');
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdt,
+      destinationToken: usdt,
+    });
+    rerender();
+
+    expect(result.current.isVisible).toBe(true);
+    expect(trackEvent).toHaveBeenCalledTimes(3);
+    expect(trackEvent).toHaveBeenLastCalledWith(
+      'USDG Suggestion Banner',
+      expect.objectContaining({
+        action: 'shown',
+        sourceTokenAddress: CommonAddress.ArbitrumOne.USDT,
+      }),
+    );
+
+    // and picking the originally dismissed stablecoin again brings it back too
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdc,
+      destinationToken: usdc,
+    });
+    rerender();
+    expect(result.current.isVisible).toBe(true);
+  });
+
+  it('treats a missing destination and the zero address as the same selection when dismissed', () => {
+    const usdc = fakeToken(CommonAddress.ArbitrumOne.USDC, 'USDC');
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdc,
+      destinationToken: null,
+    });
+    const { result, rerender } = renderHook(useUsdgSuggestion);
+    act(() => result.current.dismiss());
+
+    mockHooks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      selectedToken: usdc,
+      destinationToken: fakeToken(constants.AddressZero, 'ETH'),
+    });
+    rerender();
+
+    expect(result.current.isVisible).toBe(false);
+  });
 });

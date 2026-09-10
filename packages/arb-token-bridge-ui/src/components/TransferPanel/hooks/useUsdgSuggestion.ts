@@ -1,5 +1,5 @@
 import { constants } from 'ethers';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
@@ -60,11 +60,32 @@ export function useUsdgSuggestion() {
   const sourceTokenAddress = selectedToken?.address;
   const destinationTokenAddress = destinationToken?.address;
 
-  const { isVisible, isDestinationStablecoin } = getUsdgSuggestion({
+  const { isVisible: isSuggested, isDestinationStablecoin } = getUsdgSuggestion({
     destinationChainId,
     sourceTokenAddress,
     destinationTokenAddress,
   });
+
+  // A dismissal only covers the selection that produced the suggestion. Any change to a chain or
+  // token clears it, so picking a stablecoin again brings the banner back, even the one that was
+  // dismissed. Missing addresses mean native ETH and are normalised to the zero address so the
+  // fallback resolving after the fact does not count as a change.
+  const selectionKey = [
+    sourceChainId,
+    destinationChainId,
+    sourceTokenAddress ?? constants.AddressZero,
+    destinationTokenAddress ?? constants.AddressZero,
+  ]
+    .join(':')
+    .toLowerCase();
+  const [dismissedSelectionKey, setDismissedSelectionKey] = useState<string | null>(null);
+  const isVisible = isSuggested && dismissedSelectionKey !== selectionKey;
+
+  useEffect(() => {
+    if (dismissedSelectionKey !== null && dismissedSelectionKey !== selectionKey) {
+      setDismissedSelectionKey(null);
+    }
+  }, [dismissedSelectionKey, selectionKey]);
 
   const usdgAddress = getUsdgDestinationTokenAddress(sourceChainId);
   const usdgLogoURI = tokensFromLists[usdgAddress.toLowerCase()]?.logoURI;
@@ -116,5 +137,22 @@ export function useUsdgSuggestion() {
     usdgAddress,
   ]);
 
-  return { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg };
+  const dismiss = useCallback(() => {
+    trackEvent('USDG Suggestion Banner', {
+      action: 'dismissed',
+      sourceChainId,
+      destinationChainId,
+      sourceTokenAddress,
+      destinationTokenAddress,
+    });
+    setDismissedSelectionKey(selectionKey);
+  }, [
+    destinationChainId,
+    destinationTokenAddress,
+    selectionKey,
+    sourceChainId,
+    sourceTokenAddress,
+  ]);
+
+  return { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss };
 }

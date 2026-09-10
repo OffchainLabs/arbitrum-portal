@@ -1,4 +1,4 @@
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { ChainId } from '../../types/ChainId';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
@@ -7,7 +7,7 @@ import { TokenLogoFallback } from './TokenInfo';
 import { useUsdgSuggestion } from './hooks/useUsdgSuggestion';
 
 export function UsdgSuggestionBanner() {
-  const { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg } = useUsdgSuggestion();
+  const { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss } = useUsdgSuggestion();
 
   if (!isVisible) {
     return null;
@@ -21,7 +21,7 @@ export function UsdgSuggestionBanner() {
       aria-label="USDG suggestion"
       // Robinhood Chain's accent at 20% alpha, same treatment as the custom address banner
       style={{ backgroundColor: `${color}33`, borderColor: color }}
-      className="flex flex-wrap items-center gap-[5px] rounded border p-[15px] text-sm tracking-[-0.28px] text-white"
+      className="relative flex flex-wrap items-center gap-[5px] rounded border p-[15px] text-sm tracking-[-0.28px] text-white pr-6"
     >
       <div className="flex min-w-0 flex-1 items-start gap-[5px]">
         <InformationCircleIcon className="mt-[1px] h-5 w-5 shrink-0" />
@@ -42,6 +42,14 @@ export function UsdgSuggestionBanner() {
           fallback={<TokenLogoFallback className="h-[15px] w-[15px]" />}
         />
         <span>Switch to USDG</span>
+      </button>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss USDG suggestion"
+        className="arb-hover shrink-0 absolute top-1 right-1"
+      >
+        <XMarkIcon className="h-4 w-4" />
       </button>
     </div>
   );
