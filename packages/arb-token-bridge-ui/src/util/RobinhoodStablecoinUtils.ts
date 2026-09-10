@@ -3,8 +3,9 @@ import { CommonAddress } from './CommonAddressUtils';
 
 /**
  * USDG is the native stablecoin of Robinhood Chain. Almost nobody arrives holding it, so when a
- * user bridges a stablecoin into Robinhood Chain we suggest USDG and let LiFi quote the bridge +
- * swap in one route. The user keeps the final say: nothing switches the destination for them.
+ * user picks another stablecoin as the destination on Robinhood Chain we suggest USDG and let LiFi
+ * quote the bridge + swap in one route. The user keeps the final say: nothing switches the
+ * destination for them.
  *
  * USDG has two representations in the LiFi token lists, depending on the source chain:
  * - from Ethereum it is a paired token whose `address` is the Ethereum USDG contract

@@ -11,7 +11,7 @@ import { ChainId } from '../../../types/ChainId';
 import { trackEvent } from '../../../util/AnalyticsUtils';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { useTokensFromLists } from '../TokenSearchUtils';
-import { getUsdgSuggestion, useUsdgSuggestion } from './useUsdgSuggestion';
+import { isUsdgSuggested, useUsdgSuggestion } from './useUsdgSuggestion';
 
 vi.mock('../../../hooks/useArbQueryParams', () => ({ useArbQueryParams: vi.fn() }));
 vi.mock('../../../hooks/useDestinationToken', () => ({ useDestinationToken: vi.fn() }));
@@ -20,102 +20,82 @@ vi.mock('../../../hooks/useSelectedToken', () => ({ useSelectedToken: vi.fn() })
 vi.mock('../../../util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('../TokenSearchUtils', () => ({ useTokensFromLists: vi.fn() }));
 
-describe('getUsdgSuggestion', () => {
+describe('isUsdgSuggested', () => {
   it('shows when a non-USDG stablecoin is the destination on Robinhood Chain', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: constants.AddressZero,
         destinationTokenAddress: CommonAddress.ArbitrumOne.USDT,
       }),
-    ).toEqual({ isVisible: true, isDestinationStablecoin: true });
+    ).toBe(true);
   });
 
-  it('stays hidden for a USDe transfer into Robinhood Chain', () => {
+  it('stays hidden for a USDe destination on Robinhood Chain', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDe,
         destinationTokenAddress: CommonAddress.ArbitrumOne.USDe,
       }),
-    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
+    ).toBe(false);
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
         destinationTokenAddress: CommonAddress.RobinhoodChain.USDe,
       }),
-    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
+    ).toBe(false);
   });
 
-  it('shows when a stablecoin source was pointed at native ETH', () => {
+  it('stays hidden when the destination is native ETH, whether missing or the zero address', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
         destinationTokenAddress: undefined,
       }),
-    ).toEqual({ isVisible: true, isDestinationStablecoin: false });
+    ).toBe(false);
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
         destinationTokenAddress: constants.AddressZero,
       }),
-    ).toEqual({ isVisible: true, isDestinationStablecoin: false });
+    ).toBe(false);
   });
 
-  it('stays hidden when a stablecoin source was pointed at another asset on purpose', () => {
+  it('stays hidden when the destination is any other non-stablecoin', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
         destinationTokenAddress: CommonAddress.RobinhoodChain.APE,
       }),
-    ).toEqual({ isVisible: false, isDestinationStablecoin: false });
+    ).toBe(false);
+    expect(
+      isUsdgSuggested({
+        destinationChainId: ChainId.RobinhoodChain,
+        destinationTokenAddress: CommonAddress.RobinhoodChain.WETH,
+      }),
+    ).toBe(false);
   });
 
   it('stays hidden once USDG is the destination', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.USDC,
         destinationTokenAddress: CommonAddress.RobinhoodChain.USDG,
-      }).isVisible,
+      }),
     ).toBe(false);
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.Ethereum.USDG,
         destinationTokenAddress: CommonAddress.Ethereum.USDG,
-      }).isVisible,
-    ).toBe(false);
-  });
-
-  it('stays hidden when no stablecoin is involved', () => {
-    expect(
-      getUsdgSuggestion({
-        destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: undefined,
-        destinationTokenAddress: undefined,
-      }).isVisible,
-    ).toBe(false);
-    expect(
-      getUsdgSuggestion({
-        destinationChainId: ChainId.RobinhoodChain,
-        sourceTokenAddress: CommonAddress.ArbitrumOne.WETH,
-        destinationTokenAddress: CommonAddress.RobinhoodChain.WETH,
-      }).isVisible,
+      }),
     ).toBe(false);
   });
 
   it('stays hidden for every other destination chain', () => {
     expect(
-      getUsdgSuggestion({
+      isUsdgSuggested({
         destinationChainId: ChainId.ArbitrumOne,
-        sourceTokenAddress: CommonAddress.Ethereum.USDC,
         destinationTokenAddress: CommonAddress.Ethereum.USDC,
-      }).isVisible,
+      }),
     ).toBe(false);
   });
 });
@@ -248,7 +228,7 @@ describe.sequential('useUsdgSuggestion', () => {
     expect(trackEvent).toHaveBeenCalledTimes(1);
   });
 
-  it('omits the destination symbol when a stablecoin source points at native ETH', () => {
+  it('is hidden and tracks nothing when a stablecoin source points at native ETH', () => {
     mockHooks({
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.RobinhoodChain,
@@ -258,8 +238,9 @@ describe.sequential('useUsdgSuggestion', () => {
 
     const { result } = renderHook(useUsdgSuggestion);
 
-    expect(result.current.isVisible).toBe(true);
+    expect(result.current.isVisible).toBe(false);
     expect(result.current.destinationSymbol).toBeUndefined();
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('is hidden and tracks nothing for other destination chains', () => {
@@ -346,22 +327,23 @@ describe.sequential('useUsdgSuggestion', () => {
     expect(result.current.isVisible).toBe(true);
   });
 
-  it('treats a missing destination and the zero address as the same selection when dismissed', () => {
-    const usdc = fakeToken(CommonAddress.ArbitrumOne.USDC, 'USDC');
+  it('treats a missing source and the zero address as the same selection when dismissed', () => {
+    const usdt = fakeToken(CommonAddress.ArbitrumOne.USDT, 'USDT');
     mockHooks({
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.RobinhoodChain,
-      selectedToken: usdc,
-      destinationToken: null,
+      selectedToken: null,
+      destinationToken: usdt,
     });
     const { result, rerender } = renderHook(useUsdgSuggestion);
+    expect(result.current.isVisible).toBe(true);
     act(() => result.current.dismiss());
 
     mockHooks({
       sourceChainId: ChainId.ArbitrumOne,
       destinationChainId: ChainId.RobinhoodChain,
-      selectedToken: usdc,
-      destinationToken: fakeToken(constants.AddressZero, 'ETH'),
+      selectedToken: fakeToken(constants.AddressZero, 'ETH'),
+      destinationToken: usdt,
     });
     rerender();
 

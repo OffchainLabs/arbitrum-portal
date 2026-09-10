@@ -6,7 +6,6 @@ import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressUtils';
 import { trackEvent } from '../../../util/AnalyticsUtils';
 import {
   getUsdgDestinationTokenAddress,
@@ -17,35 +16,22 @@ import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
 import { useTokensFromLists } from '../TokenSearchUtils';
 
 /**
- * The banner shows when a transfer into Robinhood Chain involves a stablecoin but will not deliver
- * USDG: either a non-USDG stablecoin picked directly as the destination, or a stablecoin source
- * whose destination fell back to native ETH because no like-for-like route exists. A stablecoin
- * source the user pointed at some other asset on purpose is left alone.
+ * The banner shows when a non-USDG stablecoin is the destination on Robinhood Chain. The source
+ * token plays no part: a stablecoin source pointed at any other asset, native ETH included, is
+ * treated as a deliberate choice and left alone.
  */
-export function getUsdgSuggestion({
+export function isUsdgSuggested({
   destinationChainId,
-  sourceTokenAddress,
   destinationTokenAddress,
 }: {
   destinationChainId: number;
-  sourceTokenAddress: string | undefined;
   destinationTokenAddress: string | undefined;
-}): { isVisible: boolean; isDestinationStablecoin: boolean } {
-  const isDestinationStablecoin = isStablecoin(destinationTokenAddress);
-
-  if (destinationChainId !== ChainId.RobinhoodChain || isTokenUSDG(destinationTokenAddress)) {
-    return { isVisible: false, isDestinationStablecoin };
-  }
-
-  const isDestinationNativeEth =
-    typeof destinationTokenAddress === 'undefined' ||
-    addressesEqual(destinationTokenAddress, constants.AddressZero);
-
-  return {
-    isVisible:
-      isDestinationStablecoin || (isDestinationNativeEth && isStablecoin(sourceTokenAddress)),
-    isDestinationStablecoin,
-  };
+}): boolean {
+  return (
+    destinationChainId === ChainId.RobinhoodChain &&
+    isStablecoin(destinationTokenAddress) &&
+    !isTokenUSDG(destinationTokenAddress)
+  );
 }
 
 export function useUsdgSuggestion() {
@@ -60,11 +46,7 @@ export function useUsdgSuggestion() {
   const sourceTokenAddress = selectedToken?.address;
   const destinationTokenAddress = destinationToken?.address;
 
-  const { isVisible: isSuggested, isDestinationStablecoin } = getUsdgSuggestion({
-    destinationChainId,
-    sourceTokenAddress,
-    destinationTokenAddress,
-  });
+  const isSuggested = isUsdgSuggested({ destinationChainId, destinationTokenAddress });
 
   // A dismissal only covers the selection that produced the suggestion. Any change to a chain or
   // token clears it, so picking a stablecoin again brings the banner back, even the one that was
@@ -91,7 +73,7 @@ export function useUsdgSuggestion() {
   const usdgLogoURI = tokensFromLists[usdgAddress.toLowerCase()]?.logoURI;
 
   const destinationSymbol =
-    isDestinationStablecoin && destinationToken
+    isSuggested && destinationToken
       ? sanitizeTokenSymbol(destinationToken.symbol, {
           erc20L1Address: destinationToken.address,
           chainId: destinationChainId,
