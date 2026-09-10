@@ -84,6 +84,16 @@ async function fetchCCTP({
     headers: { 'Content-Type': 'application/json' },
   });
 
+  // The error body carries empty `pending`/`completed` arrays of its own, so
+  // parsing on and reading them would render an indexer outage as "you have no
+  // CCTP history". Throw instead and let the tx history show its error state.
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(
+      `[fetchCCTP] /api/cctp/${type} failed with ${response.status}: ${body || 'no response body'}`,
+    );
+  }
+
   const parsedResponse: Response = await response.json();
   const { pending, completed } = parsedResponse.data;
 
