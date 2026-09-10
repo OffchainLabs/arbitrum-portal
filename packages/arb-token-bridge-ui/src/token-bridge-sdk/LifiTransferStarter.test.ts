@@ -80,7 +80,6 @@ function createTransferProps(
   return {
     amount: BigNumber.from(1),
     destinationAddress: constants.AddressZero,
-    signer: {} as Parameters<LifiTransferStarter['transfer']>[0]['signer'],
     wagmiConfig: {} as Parameters<LifiTransferStarter['transfer']>[0]['wagmiConfig'],
     switchChainAsync: vi.fn().mockResolvedValue(undefined),
     onApprovalRequest,

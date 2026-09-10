@@ -584,9 +584,6 @@ export function TransferPanel() {
 
   const transferLifi = async () => {
     try {
-      if (!signer) {
-        throw new Error(signerUndefinedError);
-      }
       if (!isTransferAllowed.current) {
         throw new Error(transferNotAllowedError);
       }
@@ -676,7 +673,6 @@ export function TransferPanel() {
 
       const transfer = await lifiTransferStarter.transfer({
         amount: amountBigNumber,
-        signer,
         destinationAddress,
         wagmiConfig,
         switchChainAsync,

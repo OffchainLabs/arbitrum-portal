@@ -29,15 +29,21 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
   return cacheKey;
 }
 
-function withCache(key: string, value: BridgeTransferStarter): BridgeTransferStarter {
+type TransferStarter = BridgeTransferStarter | LifiTransferStarter;
+
+function withCache(key: string, value: TransferStarter): TransferStarter {
   cache[key] = value;
   return value;
 }
 
-const cache: { [key: string]: BridgeTransferStarter } = {};
+const cache: { [key: string]: TransferStarter } = {};
 
 export class BridgeTransferStarterFactory {
-  public static create(props: BridgeTransferStarterPropsWithChainIds): BridgeTransferStarter {
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds & { lifiRoute?: never },
+  ): BridgeTransferStarter;
+  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter;
+  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter {
     const sourceChainProvider = getProviderForChainId(props.sourceChainId);
     const destinationChainProvider = getProviderForChainId(props.destinationChainId);
 
