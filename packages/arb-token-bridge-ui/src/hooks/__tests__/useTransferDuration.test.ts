@@ -6,11 +6,17 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import {
   getCctpTransferDuration,
+  getDepositDuration,
   getOrbitDepositDuration,
   getStandardDepositDuration,
   useTransferDuration,
 } from '../../hooks/useTransferDuration';
-import { MergedTransaction } from '../../state/app/state';
+import {
+  BaseMergedTransaction,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
 import { getOrbitChains } from '../../util/orbitChainsList';
 
 const DAY_IN_MINUTES = 24 * 60;
@@ -28,7 +34,7 @@ function mockTransactionObject({
   isCctp: boolean;
   parentChainId: number;
   childChainId: number;
-}): MergedTransaction {
+}): BaseMergedTransaction {
   return {
     sender: '',
     destination: '',
@@ -72,6 +78,36 @@ describe('useTransferDuration', () => {
   beforeAll(() => {
     // register all chains so we can read `isTestnet`
     getOrbitChains().forEach((chain) => registerCustomArbitrumNetwork(chain));
+  });
+
+  it('preserves a zero LiFi duration', async () => {
+    const token = {
+      address: '0x0000000000000000000000000000000000000000',
+      decimals: 18,
+      logoURI: '',
+      symbol: 'ETH',
+    };
+    const transaction = {
+      ...mockTransactionObject({
+        minutesSinceStart: 0,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+      isLifi: true,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      destinationTxId: null,
+      durationMs: 0,
+      toolDetails: { key: 'lifi', name: 'LI.FI', logoURI: '' },
+      toolsDetails: [{ key: 'lifi', name: 'LI.FI', logoURI: '' }],
+      fromAmount: { amount: '1', amountUSD: '1', chainId: 1, token },
+      toAmount: { amount: '1', amountUSD: '1', chainId: 42161, token },
+    } as LifiMergedTransaction;
+
+    const { result } = await renderHookAsyncUseTransferDuration(transaction);
+
+    expect(result.current.approximateDurationInMinutes).toBe(0);
   });
 
   // ========= DEPOSITS =========
@@ -224,6 +260,69 @@ describe('useTransferDuration', () => {
     expect(result.current.estimatedMinutesLeft).toEqual(0);
   });
 
+  // Orbit chains settling directly to an L1 (e.g. Robinhood Chain) wait for L1 finality,
+  // so they must use the standard deposit duration rather than the L3 orbit duration.
+
+  it('gets standard deposit duration for a new transfer to an L1-settled orbit chain on Mainnet', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 0,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 4663,
+      }),
+    );
+
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(14);
+  });
+
+  it('gets standard deposit duration for an ongoing transfer to an L1-settled orbit chain on Mainnet', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 3,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 4663,
+      }),
+    );
+
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_MAINNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(11);
+  });
+
+  it('gets standard deposit duration for a new transfer to an L1-settled orbit chain on Testnet', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 0,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 11155111,
+        childChainId: 46630,
+      }),
+    );
+
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(9);
+  });
+
+  it('gets standard deposit duration for an ongoing transfer to an L1-settled orbit chain on Testnet', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 3,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 11155111,
+        childChainId: 46630,
+      }),
+    );
+
+    expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_TESTNET);
+    expect(result.current.estimatedMinutesLeft).toEqual(6);
+  });
+
   // ========= WITHDRAWALS =========
 
   it('gets standard withdrawal duration for a new transfer on Mainnet', async () => {
@@ -314,5 +413,43 @@ describe('useTransferDuration', () => {
     );
 
     expect(result.current.approximateDurationInMinutes).toEqual(TRANSFER_TIME_MINUTES_CCTP_TESTNET);
+  });
+});
+
+describe('getDepositDuration', () => {
+  it('returns standard duration when parent is Ethereum Mainnet', () => {
+    expect(getDepositDuration({ parentChainId: 1, isTestnet: false })).toEqual(
+      getStandardDepositDuration(false),
+    );
+  });
+
+  it('returns standard duration when parent is Sepolia', () => {
+    expect(getDepositDuration({ parentChainId: 11155111, isTestnet: true })).toEqual(
+      getStandardDepositDuration(true),
+    );
+  });
+
+  it('returns orbit duration when parent is Arbitrum One', () => {
+    expect(getDepositDuration({ parentChainId: 42161, isTestnet: false })).toEqual(
+      getOrbitDepositDuration(false),
+    );
+  });
+
+  it('returns orbit duration when parent is Arbitrum Sepolia', () => {
+    expect(getDepositDuration({ parentChainId: 421614, isTestnet: true })).toEqual(
+      getOrbitDepositDuration(true),
+    );
+  });
+
+  it('returns standard duration when parent is the local L1', () => {
+    expect(getDepositDuration({ parentChainId: 1337, isTestnet: true })).toEqual(
+      getStandardDepositDuration(true),
+    );
+  });
+
+  it('returns orbit duration when parent is Base', () => {
+    expect(getDepositDuration({ parentChainId: 8453, isTestnet: false })).toEqual(
+      getOrbitDepositDuration(false),
+    );
   });
 });
