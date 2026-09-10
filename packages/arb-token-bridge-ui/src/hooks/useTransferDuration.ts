@@ -19,8 +19,11 @@ const TRANSFER_TIME_MINUTES_CCTP = {
 };
 
 /**
- * TODO: An assumption should be 15 minutes for mainnet orbit deposits
- * We should default to 15 and allow custom deposit times in orbit config (e.g. Xai should be 1 min)
+ * Applies to deposits whose parent is not an L1, i.e. Orbit chains settling to an Arbitrum chain or to Base.
+ * Orbit chains that settle directly to an L1 (e.g. Robinhood Chain) use DEPOSIT_TIME_MINUTES,
+ * see `getDepositDuration`.
+ *
+ * TODO: Allow custom deposit times in orbit config (e.g. Xai should be 1 min)
  * For now set 5 minutes for mainnet, 1 minute for testnet
  */
 const DEPOSIT_TIME_MINUTES_ORBIT = {
@@ -44,11 +47,8 @@ type UseTransferDurationResult = {
 export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationResult => {
   const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx);
 
-  const { isCctp, childChainId, isOft } = tx;
-  const { isTestnet, isOrbitChain } = isNetwork(childChainId);
-
-  const standardDepositDuration = getStandardDepositDuration(isTestnet);
-  const orbitDepositDuration = getOrbitDepositDuration(isTestnet);
+  const { isCctp, childChainId, parentChainId, isOft } = tx;
+  const { isTestnet } = isNetwork(childChainId);
 
   if (isLifiTransfer(tx)) {
     const durationMs = getLifiTransactionSnapshot(tx)?.durationMs;
@@ -95,21 +95,13 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     };
   }
 
-  if (isOrbitChain) {
-    return {
-      approximateDurationInMinutes: orbitDepositDuration,
-      estimatedMinutesLeft: getRemainingMinutes({
-        createdAt: tx.createdAt,
-        totalDuration: orbitDepositDuration,
-      }),
-    };
-  }
+  const depositDuration = getDepositDuration({ parentChainId, isTestnet });
 
   return {
-    approximateDurationInMinutes: standardDepositDuration,
+    approximateDurationInMinutes: depositDuration,
     estimatedMinutesLeft: getRemainingMinutes({
       createdAt: tx.createdAt,
-      totalDuration: standardDepositDuration,
+      totalDuration: depositDuration,
     }),
   };
 };
@@ -163,6 +155,24 @@ export function getStandardDepositDuration(testnet: boolean) {
 
 export function getOrbitDepositDuration(testnet: boolean) {
   return testnet ? DEPOSIT_TIME_MINUTES_ORBIT.testnet : DEPOSIT_TIME_MINUTES_ORBIT.mainnet;
+}
+
+/**
+ * Deposits whose parent chain is an L1 (Ethereum / Sepolia / Local) wait for L1 finality,
+ * regardless of whether the child is a core Arbitrum chain or an Orbit chain.
+ * Deposits from any other parent (an Arbitrum chain or Base) use the shorter Orbit estimate.
+ */
+export function getDepositDuration({
+  parentChainId,
+  isTestnet,
+}: {
+  parentChainId: number;
+  isTestnet: boolean;
+}) {
+  const { isEthereumMainnetOrTestnet } = isNetwork(parentChainId);
+  return isEthereumMainnetOrTestnet
+    ? getStandardDepositDuration(isTestnet)
+    : getOrbitDepositDuration(isTestnet);
 }
 
 export function getCctpTransferDuration(testnet: boolean) {
