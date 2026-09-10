@@ -140,11 +140,15 @@ describe.sequential('useUsdgSuggestion', () => {
   function mockHooks({
     sourceChainId,
     destinationChainId,
+    // Ethereum, Arbitrum One and Base deposit into Robinhood Chain, so the source is the parent.
+    // ApeChain to Robinhood is not a deposit (see isDepositMode), so that pair overrides this.
+    parentChainId = sourceChainId,
     selectedToken,
     destinationToken,
   }: {
     sourceChainId: ChainId;
     destinationChainId: ChainId;
+    parentChainId?: ChainId;
     selectedToken: ERC20BridgeToken | null;
     destinationToken: ERC20BridgeToken | null;
   }) {
@@ -152,9 +156,8 @@ describe.sequential('useUsdgSuggestion', () => {
       { sourceChain: { id: sourceChainId }, destinationChain: { id: destinationChainId } },
       vi.fn(),
     ] as unknown as ReturnType<typeof useNetworks>);
-    // every transfer into Robinhood Chain is a deposit, so the source chain is the parent
     vi.mocked(useNetworksRelationship).mockReturnValue({
-      parentChain: { id: sourceChainId },
+      parentChain: { id: parentChainId },
     } as unknown as ReturnType<typeof useNetworksRelationship>);
     vi.mocked(useSelectedToken).mockReturnValue([selectedToken, vi.fn()]);
     vi.mocked(useDestinationToken).mockReturnValue(destinationToken);
@@ -282,6 +285,32 @@ describe.sequential('useUsdgSuggestion', () => {
 
     expect(result.current.isVisible).toBe(false);
     expect(trackEvent).not.toHaveBeenCalled();
+  });
+
+  it('resolves the address chain of a LiFi-only destination token from lifiOnlyChainId, not the parent', () => {
+    const apeUsdt = fakeToken(CommonAddress.ApeChain.USDT, 'USDT');
+    mockHooks({
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+      parentChainId: ChainId.RobinhoodChain,
+      selectedToken: apeUsdt,
+      // only reachable through a deep link: the destination picker filters ApeChain-only tokens
+      destinationToken: { ...apeUsdt, lifiOnlyChainId: ChainId.ApeChain },
+    });
+
+    const { result, rerender } = renderHook(useUsdgSuggestion);
+    expect(result.current.isVisible).toBe(true);
+
+    // a paired token's `address` lives on the parent (Robinhood), where nothing is allowlisted
+    mockHooks({
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+      parentChainId: ChainId.RobinhoodChain,
+      selectedToken: apeUsdt,
+      destinationToken: apeUsdt,
+    });
+    rerender();
+    expect(result.current.isVisible).toBe(false);
   });
 
   it('hides after dismiss, tracks it, and stays hidden for the same selection', () => {
