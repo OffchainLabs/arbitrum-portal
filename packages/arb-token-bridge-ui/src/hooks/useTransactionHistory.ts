@@ -34,6 +34,7 @@ import { Transaction } from '../types/Transactions';
 import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
+import { getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
@@ -267,6 +268,10 @@ function mergeLifiTransaction({
   const apiToToken =
     apiTx.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL ? undefined : apiTx.toAmount.token;
   const apiToAmount = apiToToken ? apiTx.toAmount : undefined;
+  const routeToAmount =
+    localTx.lifiRoute && localTx.lifiRoute.steps.length > 1
+      ? getLifiTransactionSnapshot(localTx)?.toAmount
+      : undefined;
 
   return {
     ...localTx,
@@ -289,7 +294,7 @@ function mergeLifiTransaction({
           apiFromToken?.symbol || localTx.fromAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
       },
     },
-    toAmount: {
+    toAmount: routeToAmount ?? {
       amount: apiToAmount?.amount || localTx.toAmount.amount,
       amountUSD: apiToAmount?.amountUSD || localTx.toAmount.amountUSD || '0',
       token: {

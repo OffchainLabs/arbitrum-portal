@@ -242,7 +242,7 @@ export function TransactionsTableRow({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        {toTokenLogoSrc ? (
+        {isLifiTransfer(tx) ? (
           <SafeImage
             src={toTokenLogoSrc}
             alt={`${toTokenSymbol} logo`}

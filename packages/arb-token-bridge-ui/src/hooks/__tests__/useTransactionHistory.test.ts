@@ -1,3 +1,4 @@
+import type { RouteExtended } from '@lifi/sdk';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { BigNumber } from 'ethers';
 import { Address } from 'viem';
@@ -384,6 +385,110 @@ describe('mergeTransactions', () => {
 });
 
 describe('getDedupedTransactionsForPagination', () => {
+  it.each(['FAILED', 'PENDING', 'DONE'] as const)(
+    'Uses the destination token over the intermediate token',
+    (swapStatus) => {
+      const sourceToken = {
+        ...lifiTestBaseTx.fromAmount.token,
+        chainId: 1,
+        name: 'Ether',
+        priceUSD: '2000',
+      };
+      const intermediateToken = { ...sourceToken, chainId: 42161 };
+      const finalToken = {
+        ...intermediateToken,
+        address: '0x2222222222222222222222222222222222222222',
+        decimals: 6,
+        symbol: 'USDC',
+        name: 'USD Coin',
+        logoURI: 'https://example.com/usdc.png',
+        priceUSD: '1',
+      };
+      const step: RouteExtended['steps'][number] = {
+        id: 'bridge',
+        type: 'lifi',
+        tool: 'across',
+        toolDetails: lifiTestBaseTx.toolDetails,
+        includedSteps: [],
+        action: {
+          fromChainId: 1,
+          fromAmount: '1000000000000000000',
+          fromToken: sourceToken,
+          toChainId: 42161,
+          toToken: intermediateToken,
+        },
+        estimate: {
+          tool: 'across',
+          fromAmount: '1000000000000000000',
+          toAmount: '990000000000000000',
+          toAmountMin: '980000000000000000',
+          approvalAddress: sourceToken.address,
+          executionDuration: 60,
+        },
+        execution: { status: 'DONE', process: [], startedAt: 1_700_000_000_000 },
+      };
+      const lifiRoute: RouteExtended = {
+        id: 'multistep-route',
+        insurance: { state: 'NOT_INSURABLE', feeAmountUsd: '0' },
+        fromChainId: 1,
+        fromAmount: step.action.fromAmount,
+        fromAmountUSD: '2000',
+        fromToken: sourceToken,
+        toChainId: 42161,
+        toAmount: '1900000000',
+        toAmountMin: '1800000000',
+        toAmountUSD: '1900',
+        toToken: finalToken,
+        steps: [
+          step,
+          {
+            ...step,
+            id: 'swap',
+            action: {
+              ...step.action,
+              fromChainId: 42161,
+              fromToken: intermediateToken,
+              toToken: finalToken,
+            },
+            estimate: { ...step.estimate, toAmount: '1900000000', toAmountUSD: '1900' },
+            execution: {
+              status: swapStatus,
+              process: [],
+              startedAt: 1_700_000_060_000,
+              toAmount: swapStatus === 'DONE' ? '1890000000' : '990000000000000000',
+              toToken:
+                swapStatus === 'DONE'
+                  ? { ...finalToken, symbol: 'EXEC', name: 'Execution token', logoURI: '' }
+                  : intermediateToken,
+            },
+          },
+        ],
+      };
+      const transactions = getDedupedTransactionsForPagination({
+        fetchedTransactions: [
+          {
+            ...lifiTestBaseTx,
+            toAmount: {
+              amount: '990000000000000000',
+              amountUSD: '1980',
+              token: intermediateToken,
+            },
+          },
+        ],
+        cachedDeposits: [],
+        cachedLifiTransactions: [{ ...lifiTestBaseTx, lifiRoute }],
+      });
+
+      expect(transactions).toHaveLength(1);
+      expect(transactions[0]).toMatchObject({
+        toAmount: {
+          amount: swapStatus === 'DONE' ? '1890000000' : '1900000000',
+          token: finalToken,
+        },
+      });
+    },
+  );
+
   it('dedupes local LiFi cache when API history returns the same transaction', () => {
     const cachedLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
