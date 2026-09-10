@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk grep *)",
+      "Bash(rtk read *)",
+      "Bash(rtk find *)",
+      "Bash(rtk ls *)",
+      "Bash(rtk tsc *)",
+      "Bash(rtk lint *)",
+      "Bash(rtk prettier *)",
+      "Bash(rtk proxy *)",
+      "Bash(python3 -)",
+      "Bash(rtk vitest *)",
+      "Bash(MEASURE=1 rtk proxy pnpm exec vitest --config vitest.config.ts --run --reporter=verbose src/token-registry/__tests__/measure.test.ts)"
+    ]
+  }
+}
