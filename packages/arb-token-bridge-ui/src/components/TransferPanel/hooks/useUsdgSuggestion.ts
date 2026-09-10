@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { ChainId } from '../../../types/ChainId';
 import { trackEvent } from '../../../util/AnalyticsUtils';
@@ -19,23 +20,30 @@ import { useTokensFromLists } from '../TokenSearchUtils';
  * The banner shows when a non-USDG stablecoin is the destination on Robinhood Chain. The source
  * token plays no part: a stablecoin source pointed at any other asset, native ETH included, is
  * treated as a deliberate choice and left alone.
+ *
+ * `destinationTokenAddressChainId` is the chain `destinationTokenAddress` lives on. A bridge
+ * token's `address` is its parent-chain contract, except for LiFi-only tokens where it is the
+ * contract on `lifiOnlyChainId`.
  */
 export function isUsdgSuggested({
   destinationChainId,
   destinationTokenAddress,
+  destinationTokenAddressChainId,
 }: {
   destinationChainId: number;
   destinationTokenAddress: string | undefined;
+  destinationTokenAddressChainId: number;
 }): boolean {
   return (
     destinationChainId === ChainId.RobinhoodChain &&
-    isStablecoin(destinationTokenAddress) &&
+    isStablecoin(destinationTokenAddress, destinationTokenAddressChainId) &&
     !isTokenUSDG(destinationTokenAddress)
   );
 }
 
 export function useUsdgSuggestion() {
   const [networks] = useNetworks();
+  const { parentChain } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
   const destinationToken = useDestinationToken();
   const [, setQueryParams] = useArbQueryParams();
@@ -46,7 +54,11 @@ export function useUsdgSuggestion() {
   const sourceTokenAddress = selectedToken?.address;
   const destinationTokenAddress = destinationToken?.address;
 
-  const isSuggested = isUsdgSuggested({ destinationChainId, destinationTokenAddress });
+  const isSuggested = isUsdgSuggested({
+    destinationChainId,
+    destinationTokenAddress,
+    destinationTokenAddressChainId: destinationToken?.lifiOnlyChainId ?? parentChain.id,
+  });
 
   // A dismissal only covers the selection that produced the suggestion. Any change to a chain or
   // token clears it, so picking a stablecoin again brings the banner back, even the one that was

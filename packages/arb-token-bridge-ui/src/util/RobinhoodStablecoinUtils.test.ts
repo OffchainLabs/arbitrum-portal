@@ -26,31 +26,38 @@ describe('isTokenUSDG', () => {
 
 describe('isStablecoin', () => {
   it.each([
-    CommonAddress.Ethereum.USDC,
-    CommonAddress.Ethereum.USDT,
-    CommonAddress.Ethereum.DAI,
-    CommonAddress.ArbitrumOne.USDC,
-    CommonAddress.ArbitrumOne['USDC.e'],
-    CommonAddress.ArbitrumOne.AUSD,
-    CommonAddress.Base.USDS,
-    CommonAddress.ApeChain.USDT,
-  ])('recognises %s', (address) => {
-    expect(isStablecoin(address)).toBe(true);
+    [CommonAddress.Ethereum.USDC, ChainId.Ethereum],
+    [CommonAddress.Ethereum.USDT, ChainId.Ethereum],
+    [CommonAddress.Ethereum.DAI, ChainId.Ethereum],
+    [CommonAddress.ArbitrumOne.USDC, ChainId.ArbitrumOne],
+    [CommonAddress.ArbitrumOne['USDC.e'], ChainId.ArbitrumOne],
+    [CommonAddress.ArbitrumOne.AUSD, ChainId.ArbitrumOne],
+    [CommonAddress.Base.USDS, ChainId.Base],
+    [CommonAddress.ApeChain.USDT, ChainId.ApeChain],
+  ])('recognises %s on chain %i', (address, chainId) => {
+    expect(isStablecoin(address, chainId)).toBe(true);
+    expect(isStablecoin(address.toUpperCase(), chainId)).toBe(true);
+  });
+
+  it('only matches an address on the chain it lives on', () => {
+    expect(isStablecoin(CommonAddress.ArbitrumOne.USDC, ChainId.Ethereum)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.USDC, ChainId.ArbitrumOne)).toBe(false);
+    expect(isStablecoin(CommonAddress.Base.USDC, ChainId.RobinhoodChain)).toBe(false);
   });
 
   it('does not treat USDG, USDe, yield wrappers, ETH or WETH as a stablecoin', () => {
-    expect(isStablecoin(CommonAddress.Ethereum.USDG)).toBe(false);
-    expect(isStablecoin(CommonAddress.RobinhoodChain.USDG)).toBe(false);
-    expect(isStablecoin(CommonAddress.Ethereum.USDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.ArbitrumOne.USDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.Base.USDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.RobinhoodChain.USDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.RobinhoodChain.sUSDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.Ethereum.sUSDe)).toBe(false);
-    expect(isStablecoin(CommonAddress.RobinhoodChain.spUSDG)).toBe(false);
-    expect(isStablecoin(constants.AddressZero)).toBe(false);
-    expect(isStablecoin(CommonAddress.ArbitrumOne.WETH)).toBe(false);
-    expect(isStablecoin(undefined)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.USDG, ChainId.Ethereum)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.USDG, ChainId.RobinhoodChain)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.USDe, ChainId.Ethereum)).toBe(false);
+    expect(isStablecoin(CommonAddress.ArbitrumOne.USDe, ChainId.ArbitrumOne)).toBe(false);
+    expect(isStablecoin(CommonAddress.Base.USDe, ChainId.Base)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.USDe, ChainId.RobinhoodChain)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.sUSDe, ChainId.RobinhoodChain)).toBe(false);
+    expect(isStablecoin(CommonAddress.Ethereum.sUSDe, ChainId.Ethereum)).toBe(false);
+    expect(isStablecoin(CommonAddress.RobinhoodChain.spUSDG, ChainId.RobinhoodChain)).toBe(false);
+    expect(isStablecoin(constants.AddressZero, ChainId.Ethereum)).toBe(false);
+    expect(isStablecoin(CommonAddress.ArbitrumOne.WETH, ChainId.ArbitrumOne)).toBe(false);
+    expect(isStablecoin(undefined, ChainId.Ethereum)).toBe(false);
   });
 });
 

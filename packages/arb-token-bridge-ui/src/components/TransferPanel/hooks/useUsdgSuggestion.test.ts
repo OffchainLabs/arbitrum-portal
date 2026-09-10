@@ -6,6 +6,7 @@ import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNetworks } from '../../../hooks/useNetworks';
+import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { ChainId } from '../../../types/ChainId';
 import { trackEvent } from '../../../util/AnalyticsUtils';
@@ -16,6 +17,7 @@ import { isUsdgSuggested, useUsdgSuggestion } from './useUsdgSuggestion';
 vi.mock('../../../hooks/useArbQueryParams', () => ({ useArbQueryParams: vi.fn() }));
 vi.mock('../../../hooks/useDestinationToken', () => ({ useDestinationToken: vi.fn() }));
 vi.mock('../../../hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
+vi.mock('../../../hooks/useNetworksRelationship', () => ({ useNetworksRelationship: vi.fn() }));
 vi.mock('../../../hooks/useSelectedToken', () => ({ useSelectedToken: vi.fn() }));
 vi.mock('../../../util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('../TokenSearchUtils', () => ({ useTokensFromLists: vi.fn() }));
@@ -26,6 +28,7 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.ArbitrumOne.USDT,
+        destinationTokenAddressChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(true);
   });
@@ -35,12 +38,14 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.ArbitrumOne.USDe,
+        destinationTokenAddressChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(false);
     expect(
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.RobinhoodChain.USDe,
+        destinationTokenAddressChainId: ChainId.RobinhoodChain,
       }),
     ).toBe(false);
   });
@@ -50,12 +55,14 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: undefined,
+        destinationTokenAddressChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(false);
     expect(
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: constants.AddressZero,
+        destinationTokenAddressChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(false);
   });
@@ -65,12 +72,14 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.RobinhoodChain.APE,
+        destinationTokenAddressChainId: ChainId.RobinhoodChain,
       }),
     ).toBe(false);
     expect(
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.RobinhoodChain.WETH,
+        destinationTokenAddressChainId: ChainId.RobinhoodChain,
       }),
     ).toBe(false);
   });
@@ -80,12 +89,24 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.RobinhoodChain.USDG,
+        destinationTokenAddressChainId: ChainId.RobinhoodChain,
       }),
     ).toBe(false);
     expect(
       isUsdgSuggested({
         destinationChainId: ChainId.RobinhoodChain,
         destinationTokenAddress: CommonAddress.Ethereum.USDG,
+        destinationTokenAddressChainId: ChainId.Ethereum,
+      }),
+    ).toBe(false);
+  });
+
+  it('stays hidden when the address is a stablecoin on some other chain', () => {
+    expect(
+      isUsdgSuggested({
+        destinationChainId: ChainId.RobinhoodChain,
+        destinationTokenAddress: CommonAddress.ArbitrumOne.USDT,
+        destinationTokenAddressChainId: ChainId.Ethereum,
       }),
     ).toBe(false);
   });
@@ -95,6 +116,7 @@ describe('isUsdgSuggested', () => {
       isUsdgSuggested({
         destinationChainId: ChainId.ArbitrumOne,
         destinationTokenAddress: CommonAddress.Ethereum.USDC,
+        destinationTokenAddressChainId: ChainId.Ethereum,
       }),
     ).toBe(false);
   });
@@ -130,6 +152,10 @@ describe.sequential('useUsdgSuggestion', () => {
       { sourceChain: { id: sourceChainId }, destinationChain: { id: destinationChainId } },
       vi.fn(),
     ] as unknown as ReturnType<typeof useNetworks>);
+    // every transfer into Robinhood Chain is a deposit, so the source chain is the parent
+    vi.mocked(useNetworksRelationship).mockReturnValue({
+      parentChain: { id: sourceChainId },
+    } as unknown as ReturnType<typeof useNetworksRelationship>);
     vi.mocked(useSelectedToken).mockReturnValue([selectedToken, vi.fn()]);
     vi.mocked(useDestinationToken).mockReturnValue(destinationToken);
     vi.mocked(useArbQueryParams).mockReturnValue([{}, setQueryParams] as unknown as ReturnType<

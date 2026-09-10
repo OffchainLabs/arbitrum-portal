@@ -13,28 +13,34 @@ import { CommonAddress } from './CommonAddressUtils';
  * Every helper here accepts both.
  */
 
+function toAddressSet(addresses: readonly string[]): ReadonlySet<string> {
+  return new Set(addresses.map((address) => address.trim().toLowerCase()));
+}
+
 /** Literal accepted in the `destinationToken` query param as a shorthand for USDG. */
 export const USDG_QUERY_PARAM_ALIAS = 'usdg';
 
-const usdgAddresses: ReadonlySet<string> = new Set(
-  [CommonAddress.Ethereum.USDG, CommonAddress.RobinhoodChain.USDG].map((address) =>
-    address.trim().toLowerCase(),
-  ),
-);
+const usdgAddresses = toAddressSet([
+  CommonAddress.Ethereum.USDG,
+  CommonAddress.RobinhoodChain.USDG,
+]);
 
 /**
- * Explicit allowlist. Symbols are not used on purpose: LiFi lists a second "USDG" on Robinhood,
- * plus yield wrappers (spUSDG, syrupUSDG, sUSDe) that must not be treated as stablecoins.
+ * Explicit allowlist, keyed by chain so an address only counts on the chain it lives on. Symbols
+ * are not used on purpose: LiFi lists a second "USDG" on Robinhood, plus yield wrappers (spUSDG,
+ * syrupUSDG, sUSDe) that must not be treated as stablecoins.
  * USDe is left out too: it has its own canonical route into Robinhood Chain, so the USDG
  * suggestion must not show for it.
  */
-const stablecoinAddresses: ReadonlySet<string> = new Set(
-  [
+const stablecoinAddressesByChain: Partial<Record<number, ReadonlySet<string>>> = {
+  [ChainId.Ethereum]: toAddressSet([
     CommonAddress.Ethereum.USDC,
     CommonAddress.Ethereum.USDT,
     CommonAddress.Ethereum.DAI,
     CommonAddress.Ethereum.USDS,
     CommonAddress.Ethereum.PYUSD,
+  ]),
+  [ChainId.ArbitrumOne]: toAddressSet([
     CommonAddress.ArbitrumOne.USDC,
     CommonAddress.ArbitrumOne['USDC.e'],
     CommonAddress.ArbitrumOne.USDT,
@@ -42,22 +48,27 @@ const stablecoinAddresses: ReadonlySet<string> = new Set(
     CommonAddress.ArbitrumOne.USDS,
     CommonAddress.ArbitrumOne.AUSD,
     CommonAddress.ArbitrumOne.PYUSD,
+  ]),
+  [ChainId.Base]: toAddressSet([
     CommonAddress.Base.USDC,
     CommonAddress.Base.USDT,
     CommonAddress.Base.DAI,
     CommonAddress.Base.USDS,
     CommonAddress.Base.AUSD,
-    CommonAddress.ApeChain.USDT,
-    CommonAddress.ApeChain.USDCe,
-  ].map((address) => address.trim().toLowerCase()),
-);
+  ]),
+  [ChainId.ApeChain]: toAddressSet([CommonAddress.ApeChain.USDT, CommonAddress.ApeChain.USDCe]),
+};
 
 export function isTokenUSDG(address: string | undefined): boolean {
   return address !== undefined && usdgAddresses.has(address.trim().toLowerCase());
 }
 
-export function isStablecoin(address: string | undefined): boolean {
-  return address !== undefined && stablecoinAddresses.has(address.trim().toLowerCase());
+/** `chainId` is the chain the address lives on, not the chain being bridged to. */
+export function isStablecoin(address: string | undefined, chainId: number): boolean {
+  return (
+    address !== undefined &&
+    (stablecoinAddressesByChain[chainId]?.has(address.trim().toLowerCase()) ?? false)
+  );
 }
 
 export function isUsdgQueryParamAlias(value: string | null | undefined): boolean {
