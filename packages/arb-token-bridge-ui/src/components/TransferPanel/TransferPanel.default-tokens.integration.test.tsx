@@ -24,6 +24,8 @@ type DefaultTokenCase = {
   destinationToken: TokenExpectation;
   expectedSourcePanelTokens: TokenPanelExpectations;
   expectedDestinationPanelTokens: TokenPanelExpectations;
+  /** Leading rows of the destination panel, for chains that pin tokens. */
+  expectedDestinationPanelOrder?: string[];
 };
 
 const defaultTokenCases: DefaultTokenCase[] = [
@@ -142,6 +144,7 @@ const defaultTokenCases: DefaultTokenCase[] = [
       tokenExpectationsByChain.RobinhoodChain.USDe,
       tokenExpectationsByChain.RobinhoodChain.USDG,
     ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
   {
     sourceChain: 'arbitrum-one',
@@ -153,7 +156,9 @@ const defaultTokenCases: DefaultTokenCase[] = [
       nativeEthTokenExpectation,
       tokenExpectationsByChain.RobinhoodChain.WETH,
       tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
     ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
   {
     sourceChain: 'base',
@@ -165,7 +170,9 @@ const defaultTokenCases: DefaultTokenCase[] = [
       nativeEthTokenExpectation,
       tokenExpectationsByChain.RobinhoodChain.WETH,
       tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
     ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
   {
     sourceChain: 'robinhood-chain',
@@ -204,6 +211,7 @@ async function assertDefaultTokenCase({
   destinationToken,
   expectedSourcePanelTokens,
   expectedDestinationPanelTokens,
+  expectedDestinationPanelOrder,
 }: DefaultTokenCase) {
   await renderTransferPanel({
     sourceChain,
@@ -227,6 +235,7 @@ async function assertDefaultTokenCase({
   await expectTokenPanelContent({
     isDestination: true,
     symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
+    symbolsInOrder: expectedDestinationPanelOrder,
     tokenExpectations: expectedDestinationPanelTokens,
   });
 }

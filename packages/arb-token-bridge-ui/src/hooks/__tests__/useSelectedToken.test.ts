@@ -298,6 +298,36 @@ describe.sequential('useSelectedToken', () => {
       destinationToken: address,
     });
   });
+
+  function getUpdateQuery(setQueryParams: ReturnType<typeof vi.fn>) {
+    return setQueryParams.mock.calls[0]?.[0] as (
+      latestQuery: ArbQueryParams,
+    ) => Partial<ArbQueryParams>;
+  }
+
+  it('keeps a stablecoin as the destination when bridging into Robinhood Chain (USDG is suggested, never forced)', () => {
+    const robinhoodQuery = {
+      ...defaultQueryParams,
+      sourceChain: ChainId.ArbitrumOne,
+      destinationChain: ChainId.RobinhoodChain,
+    };
+    mockNetworks({
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.RobinhoodChain,
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.RobinhoodChain,
+    });
+    const setQueryParams = vi.fn();
+    mockedUseArbQueryParams.mockReturnValue([robinhoodQuery, setQueryParams]);
+
+    const { result } = renderHook(useSelectedToken);
+    act(() => result.current[1](CommonAddress.ArbitrumOne.USDC));
+
+    expect(getUpdateQuery(setQueryParams)(robinhoodQuery)).toEqual({
+      token: CommonAddress.ArbitrumOne.USDC,
+      destinationToken: CommonAddress.ArbitrumOne.USDC,
+    });
+  });
 });
 
 describe.sequential('getUsdcToken', () => {

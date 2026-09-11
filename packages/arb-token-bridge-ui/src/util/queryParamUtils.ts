@@ -10,6 +10,7 @@ import {
   getChainQueryParamForChain,
   isValidChainQueryParam,
 } from '../types/ChainQueryParam';
+import { getUsdgDestinationTokenAddress, isUsdgQueryParamAlias } from './RobinhoodStablecoinUtils';
 import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
 import { LOG_LEVELS, LogLevel } from './logger';
@@ -537,6 +538,29 @@ export const sanitizeTokenQueryParam = ({
   }
 
   return tokenLowercased;
+};
+
+/**
+ * `destinationToken` follows the same rules as `token`, plus the `usdg` literal, which resolves to
+ * the USDG address for the chain pair so partners can deep link into a USDG swap.
+ */
+export const sanitizeDestinationTokenQueryParam = ({
+  destinationToken,
+  sourceChainId,
+  destinationChainId,
+}: {
+  destinationToken: string | null | undefined;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) => {
+  if (isUsdgQueryParamAlias(destinationToken)) {
+    if (sourceChainId && destinationChainId === ChainId.RobinhoodChain) {
+      return getUsdgDestinationTokenAddress(sourceChainId);
+    }
+    return undefined;
+  }
+
+  return sanitizeTokenQueryParam({ token: destinationToken, sourceChainId, destinationChainId });
 };
 
 export const isOnrampFeatureEnabled = ({ disabledFeatures }: { disabledFeatures: string[] }) => {

@@ -39,7 +39,8 @@ const swapCases: RouteTokenCase[] = [
   {
     sourceChain: 'ethereum',
     destinationChain: 'robinhood-chain',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDG,
+    // the Ethereum USDG contract is not Ethereum's native stablecoin, so no badge on this side
+    sourceToken: { ...tokenExpectationsByChain.Ethereum.USDG, absentBadge: 'Native stablecoin' },
     destinationToken: nativeEthTokenExpectation,
   },
   {

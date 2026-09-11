@@ -23,6 +23,7 @@ import { Loader } from '../../common/atoms/Loader';
 import { DestinationTokenButton } from '../DestinationTokenButton';
 import { useTokensFromLists, useTokensFromUser } from '../TokenSearchUtils';
 import { NetworkContainer } from '../TransferPanelMain';
+import { UsdgSuggestionBanner } from '../UsdgSuggestionBanner';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useReceivedAmount } from '../hooks/useReceivedAmount';
 import { useRouteStore } from '../hooks/useRouteStore';
@@ -273,6 +274,7 @@ export function DestinationNetworkBox() {
           <NetworkButton type="destination" onClick={openDestinationNetworkSelectionDialog} />
         </div>
         <BalancesContainer />
+        <UsdgSuggestionBanner />
       </NetworkContainer>
       <DialogWrapper {...dialogProps} />
     </>
