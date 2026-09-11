@@ -25,6 +25,7 @@ import {
   getSourceTransactionUrl,
   getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
+  isLifiTransferResumable,
   isSameTransaction,
   isTxFailed,
 } from './helpers';
@@ -638,6 +639,132 @@ describe('transaction urls', () => {
     expect(getDestinationTransactionUrl(transaction)).toBe(
       `https://scan.li.fi/tx/${destinationTxHash}`,
     );
+  });
+});
+
+describe('isLifiTransferResumable', () => {
+  const unfinishedRoute = {
+    steps: [{ execution: { status: 'DONE', process: [] } }, {}],
+  } as unknown as LifiMergedTransaction['lifiRoute'];
+
+  it.each([
+    ['pending destination', WithdrawalStatus.UNCONFIRMED],
+    ['failed destination', WithdrawalStatus.FAILURE],
+    ['settled destination', WithdrawalStatus.CONFIRMED],
+  ])('returns true for an unfinished route with a %s', (_name, destinationStatus) => {
+    expect(
+      isLifiTransferResumable({
+        ...baseLifiTransaction,
+        destinationStatus,
+        lifiRoute: unfinishedRoute,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['legacy transaction', { lifiRoute: undefined }],
+    [
+      'single-step route',
+      { lifiRoute: { steps: [{}] } as unknown as LifiMergedTransaction['lifiRoute'] },
+    ],
+    [
+      'completed route',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [{ execution: { status: 'DONE' } }, { execution: { status: 'DONE' } }],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'active route process',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            {
+              execution: {
+                status: 'PENDING',
+                process: [{ type: 'CROSS_CHAIN', status: 'PENDING' }],
+              },
+            },
+            {},
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'route awaiting wallet action',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            { execution: { status: 'DONE', process: [] } },
+            {
+              execution: {
+                status: 'ACTION_REQUIRED',
+                process: [{ type: 'SWAP', status: 'ACTION_REQUIRED' }],
+              },
+            },
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'pending route step with no active process',
+      {
+        createdAt: Date.now(),
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            {
+              execution: {
+                status: 'PENDING',
+                process: [{ type: 'CROSS_CHAIN', status: 'DONE' }],
+              },
+            },
+            {},
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+  ])('returns false for a %s', (_name, overrides) => {
+    expect(
+      isLifiTransferResumable({
+        ...baseLifiTransaction,
+        ...overrides,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not resume an active unresolved wallet batch based on its age', () => {
+    const routeWithPendingBatchId = {
+      steps: [
+        {
+          execution: {
+            status: 'PENDING',
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+        {},
+      ],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
+    const transaction = {
+      ...baseLifiTransaction,
+      createdAt: Date.now(),
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: routeWithPendingBatchId,
+    };
+
+    expect(isLifiTransferResumable(transaction)).toBe(false);
+    expect(isLifiTransferResumable({ ...transaction, createdAt: 0 })).toBe(false);
   });
 });
 

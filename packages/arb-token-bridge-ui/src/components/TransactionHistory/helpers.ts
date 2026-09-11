@@ -176,6 +176,21 @@ export function isTxPending(tx: MergedTransaction) {
   return tx.status === WithdrawalStatus.UNCONFIRMED;
 }
 
+export function isLifiTransferResumable(tx: MergedTransaction) {
+  if (!isLifiTransfer(tx) || !tx.lifiRoute) {
+    return false;
+  }
+
+  if (isLifiTransferRefunded(tx)) {
+    return false;
+  }
+
+  const { hasActiveProcess, hasPendingStep, hasUnfinishedStep, isMultiStep } =
+    getLifiRouteState(tx);
+
+  return isMultiStep && hasUnfinishedStep && !hasPendingStep && !hasActiveProcess;
+}
+
 export function getLifiTransferDisplayStatus(tx: LifiMergedTransaction): LifiMergedTransaction {
   if (isLifiTransferRefunded(tx)) {
     return tx;
