@@ -58,11 +58,11 @@ export function LifiRoute({
   );
   const tags = useMemo(() => {
     const nextTags = [...(routeTags ?? [])];
-    if (displaySteps.length > 1) {
+    if (lifiRoute.steps.length > 1) {
       nextTags.push('multi-step');
     }
     return nextTags;
-  }, [routeTags, displaySteps]);
+  }, [routeTags, lifiRoute.steps.length]);
 
   return (
     <Route

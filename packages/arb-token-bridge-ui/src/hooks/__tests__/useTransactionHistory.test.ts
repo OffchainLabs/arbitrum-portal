@@ -1,17 +1,22 @@
 import type { RouteExtended } from '@lifi/sdk';
+import * as lifiSdk from '@lifi/sdk';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { BigNumber } from 'ethers';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as transactionHelpers from '../../components/TransactionHistory/helpers';
 import {
   DepositStatus,
   LifiMergedTransaction,
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
+import { createMockLifiBatchedTransaction } from '../../test-utils/lifi';
+import { rejectLifiRouteBatchId } from '../../util/LifiTransactionStatus';
 import { AssetType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
+import { useLifiMergedTransactionCacheStore } from '../useLifiMergedTransactionCacheStore';
 import {
   getDedupedTransactionsForPagination,
   mergeTransactions,
@@ -25,6 +30,24 @@ const wallets = {
 } as const;
 
 const MERGE_TEST_ADDRESS = '0x1111111111111111111111111111111111111111';
+const batchId32Bytes = '0x5f4e4b452a390f349b7fc1f7b9b1666da36199b342de010996606ac8cea5ace1';
+const secondBatchId = '0x3ed2270c44494ccfa9c60daf655e7879d71c83a594c523ee17f80a659aa0d281';
+const resolvedBatchTxHash = '0xa0231341aef0576cd9467d1506011d1dd041167762db0d2b1657678e3c0c5255';
+const secondResolvedBatchTxHash =
+  '0x9c25709d07f1cc9d852ce00ad0c5fcd1264690575ca104ded691cbc2f3bf6ee2';
+const acceptedSourceTxHash = '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c';
+
+const wagmiMocks = vi.hoisted(() => ({
+  address: '0x1111111111111111111111111111111111111111' as Address,
+  connector: null as object | null,
+  config: {},
+}));
+const getCallsStatusMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@lifi/sdk', async (importActual) => ({
+  ...(await importActual<typeof import('@lifi/sdk')>()),
+  getStatus: vi.fn(),
+}));
 
 const mergeTestBaseTx = {
   asset: 'ETH',
@@ -53,7 +76,7 @@ const lifiTestBaseTx: LifiMergedTransaction = {
   isLifi: true,
   tokenAddress: '0x0000000000000000000000000000000000000000',
   depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-  toolDetails: { key: 'across', name: 'Across', logoURI: '' },
+  toolsDetails: [{ key: 'across', name: 'Across', logoURI: '' }],
   durationMs: 0,
   fromAmount: {
     amount: '1',
@@ -109,11 +132,18 @@ const createTestCase = ({
 
 vi.mock('wagmi', async (importActual) => ({
   ...(await importActual()),
+  useConfig: () => wagmiMocks.config,
   useAccount: () => ({
+    address: wagmiMocks.address,
     isConnected: true,
     chain: { id: 11155111 },
-    connector: null,
+    connector: wagmiMocks.connector,
   }),
+}));
+
+vi.mock('@wagmi/core', async (importActual) => ({
+  ...(await importActual()),
+  getCallsStatus: getCallsStatusMock,
 }));
 
 vi.mock('next/navigation', async (importActual) => ({
@@ -132,9 +162,430 @@ const renderHookAsyncUseTransactionHistory = async (address: Address) => {
   return { result: hook.result };
 };
 
+function enableTransactionHistory() {
+  const [currentParams, setParams] = vi.mocked(useArbQueryParams)();
+  vi.mocked(useArbQueryParams).mockReturnValue([
+    { ...currentParams, sourceChain: 11155111, disabledFeatures: [] },
+    setParams,
+  ]);
+}
+
+function createBatchedLifiTestTransaction(routeId: string): LifiMergedTransaction {
+  return {
+    ...lifiTestBaseTx,
+    txId: routeId,
+    showInHistory: false,
+    lifiRoute: {
+      id: routeId,
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId32Bytes,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as LifiMergedTransaction['lifiRoute'],
+  };
+}
+
+function createMixedLifiTestTransaction(routeId: string): LifiMergedTransaction {
+  const transaction = createBatchedLifiTestTransaction(routeId);
+  return {
+    ...transaction,
+    txId: acceptedSourceTxHash,
+    showInHistory: true,
+    lifiRoute: {
+      ...transaction.lifiRoute,
+      steps: [
+        {
+          execution: {
+            status: 'DONE',
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: acceptedSourceTxHash }],
+          },
+        },
+        ...(transaction.lifiRoute?.steps ?? []),
+      ],
+    } as NonNullable<LifiMergedTransaction['lifiRoute']>,
+  };
+}
+
 describe.sequential('useTransactionHistory', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
+    wagmiMocks.address = MERGE_TEST_ADDRESS;
+    wagmiMocks.connector = null;
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+  });
+
+  it('keeps newer SDK progress when an earlier status request finishes', async () => {
+    enableTransactionHistory();
+    const transaction = { ...lifiTestBaseTx, txId: acceptedSourceTxHash };
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+    let releaseStatus = () => {};
+    const statusResponse = new Promise<void>((resolve) => {
+      releaseStatus = resolve;
+    });
+    vi.spyOn(transactionHelpers, 'getUpdatedLifiTransfer').mockImplementation(async (tx) => {
+      await statusResponse;
+      return tx;
+    });
+    const { result } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+
+    const pendingUpdate = result.current.updatePendingTransaction(transaction);
+    const completedTransaction = {
+      ...transaction,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+    };
+    await act(async () => {
+      useLifiMergedTransactionCacheStore.getState().updateTransaction(completedTransaction);
+      releaseStatus();
+      await pendingUpdate;
+    });
+
+    expect(useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]).toEqual([
+      completedTransaction,
+    ]);
+  });
+
+  it('shows the rejected destination batch instead of an older pending history page', () => {
+    const pending = createMockLifiBatchedTransaction();
+    if (!pending.lifiRoute) throw new Error('Expected a saved route');
+    const rejected = {
+      ...pending,
+      lifiRoute: rejectLifiRouteBatchId({
+        route: pending.lifiRoute,
+        batchId: `0x${'3'.repeat(64)}`,
+      }),
+    };
+    const [displayed] = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [rejected],
+      fetchedTransactions: [[pending]],
+    });
+    if (!displayed) throw new Error('Expected the accepted source transaction in history');
+    expect(transactionHelpers.isTxFailed(displayed)).toBe(true);
+    expect(displayed).toMatchObject({ lifiRoute: rejected.lifiRoute });
+  });
+
+  it('preserves a rejected destination batch after a stale poll and reload', async () => {
+    enableTransactionHistory();
+    const pending = createMockLifiBatchedTransaction();
+    if (!pending.lifiRoute) throw new Error('Expected a saved route');
+    const rejected = {
+      ...pending,
+      lifiRoute: rejectLifiRouteBatchId({
+        route: pending.lifiRoute,
+        batchId: `0x${'3'.repeat(64)}`,
+      }),
+    };
+    useLifiMergedTransactionCacheStore.getState().addTransaction(rejected);
+    vi.mocked(lifiSdk.getStatus).mockResolvedValue({
+      status: 'PENDING',
+      substatus: 'WAIT_DESTINATION_TRANSACTION',
+      tool: 'relay',
+      sending: {
+        txHash: pending.txId,
+        chainId: pending.sourceChainId,
+        txLink: `https://arbiscan.io/tx/${pending.txId}`,
+      },
+      receiving: { chainId: pending.destinationChainId },
+    });
+    const { result, unmount } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+
+    await act(async () => {
+      await result.current.updatePendingTransaction(pending);
+    });
+    unmount();
+    const persisted = localStorage.getItem('lifi-merged-transaction-cache');
+    if (!persisted) throw new Error('Expected persisted transaction history');
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+    localStorage.setItem('lifi-merged-transaction-cache', persisted);
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    const [reloaded] =
+      useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+    if (!reloaded) throw new Error('Expected the source transaction to survive reload');
+    expect(transactionHelpers.isTxFailed(reloaded)).toBe(true);
+    expect(reloaded.lifiRoute).toEqual(rejected.lifiRoute);
+    expect(transactionHelpers.isTxPending(reloaded)).toBe(false);
+  });
+
+  it('polls wallet batches only from the history fetcher', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockImplementation(() => new Promise(() => {}));
+    const transaction = createBatchedLifiTestTransaction('single-poller');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => {
+      useTransactionHistory(MERGE_TEST_ADDRESS);
+      useTransactionHistory(MERGE_TEST_ADDRESS);
+    });
+
+    await act(async () => {});
+    expect(getCallsStatusMock).not.toHaveBeenCalled();
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
+  });
+
+  it('replaces a cached batch id with the final route transaction hash', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockResolvedValue({
+      chainId: 1,
+      receipts: [{ transactionHash: resolvedBatchTxHash }],
+      status: 'success',
+    });
+    const transaction = createBatchedLifiTestTransaction('batch-route');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+
+    await waitFor(() => {
+      const [updatedTransaction] =
+        useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+      expect(updatedTransaction?.txId).toBe(resolvedBatchTxHash);
+      expect(updatedTransaction?.lifiRoute?.steps[0]?.execution?.process[0]).toMatchObject({
+        txHash: resolvedBatchTxHash,
+        txLink: `https://etherscan.io/tx/${resolvedBatchTxHash}`,
+      });
+    });
+  });
+
+  it('keeps an accepted route transaction when a later wallet batch is rejected', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockRejectedValue(new Error('bundle id is unknown'));
+    const transaction = createMixedLifiTestTransaction('mixed-rejected-batch-route');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+
+    await waitFor(() => {
+      const [updatedTransaction] =
+        useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+      expect(updatedTransaction?.txId).toBe(acceptedSourceTxHash);
+      expect(updatedTransaction?.lifiRoute?.steps[1]?.execution).toMatchObject({
+        status: 'FAILED',
+        process: [expect.objectContaining({ status: 'FAILED' })],
+      });
+      expect(updatedTransaction?.lifiRoute?.steps[1]?.execution?.process[0]).not.toHaveProperty(
+        'txHash',
+      );
+    });
+  });
+
+  it('keeps the first accepted transaction as route identity when a later batch resolves', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockResolvedValue({
+      chainId: 1,
+      receipts: [{ transactionHash: resolvedBatchTxHash }],
+      status: 'success',
+    });
+    const transaction = createMixedLifiTestTransaction('mixed-resolved-batch-route');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+
+    await waitFor(() => {
+      const [updatedTransaction] =
+        useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+      expect(updatedTransaction?.txId).toBe(acceptedSourceTxHash);
+      expect(updatedTransaction?.lifiRoute?.steps[1]?.execution?.process[0]?.txHash).toBe(
+        resolvedBatchTxHash,
+      );
+    });
+  });
+
+  it('resolves every batch id stored on one route', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockImplementation((_config, { id }: { id: string }) =>
+      Promise.resolve({
+        chainId: 1,
+        receipts: [
+          {
+            transactionHash:
+              id === batchId32Bytes ? resolvedBatchTxHash : secondResolvedBatchTxHash,
+          },
+        ],
+        status: 'success',
+      }),
+    );
+    const transaction = createBatchedLifiTestTransaction('two-batch-route');
+    transaction.lifiRoute?.steps[0]?.execution?.process.push({
+      type: 'SWAP',
+      status: 'PENDING',
+      txHash: secondBatchId,
+      txType: 'batched',
+      startedAt: 1,
+    });
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+
+    await waitFor(() => {
+      const [updatedTransaction] =
+        useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+      expect(updatedTransaction?.txId).toBe(resolvedBatchTxHash);
+      expect(updatedTransaction?.lifiRoute?.steps[0]?.execution?.process).toEqual([
+        expect.objectContaining({ txHash: resolvedBatchTxHash }),
+        expect.objectContaining({ txHash: secondResolvedBatchTxHash }),
+      ]);
+    });
+  });
+
+  it('keeps a wallet batch hidden until its receipt transaction hash is available', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    let batchHasReceipt = false;
+    getCallsStatusMock.mockImplementation(() => {
+      if (batchHasReceipt) {
+        return Promise.resolve({
+          chainId: 1,
+          receipts: [{ transactionHash: resolvedBatchTxHash }],
+          status: 'success',
+        });
+      }
+      return Promise.resolve({ receipts: [], status: 'pending' });
+    });
+    const transaction = createBatchedLifiTestTransaction('mined-hidden-batch');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    const { result } = renderHook(() =>
+      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    );
+
+    await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
+    expect(useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]).toEqual([
+      transaction,
+    ]);
+    expect(result.current.transactions).not.toContainEqual(transaction);
+
+    batchHasReceipt = true;
+    await waitFor(
+      () => {
+        const [promotedTransaction] =
+          useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS] ?? [];
+        expect(promotedTransaction?.txId).toBe(resolvedBatchTxHash);
+        expect(promotedTransaction?.showInHistory).toBe(true);
+        expect(promotedTransaction?.lifiRoute?.steps[0]?.execution?.process[0]).toMatchObject({
+          txHash: resolvedBatchTxHash,
+          txLink: `https://etherscan.io/tx/${resolvedBatchTxHash}`,
+        });
+        expect(result.current.transactions).toEqual(
+          expect.arrayContaining([expect.objectContaining({ txId: resolvedBatchTxHash })]),
+        );
+      },
+      { timeout: 3_000 },
+    );
+  });
+
+  it.each([
+    ['removes a hidden route after rejection', 'bundle id is unknown', false],
+    ['keeps a hidden route after a transient error', 'request timed out', true],
+  ])('%s', async (_name, errorMessage, shouldKeepRoute) => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    getCallsStatusMock.mockRejectedValue(new Error(errorMessage));
+    const transaction = createBatchedLifiTestTransaction('hidden-batch');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    const { result } = renderHook(() =>
+      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    );
+
+    await waitFor(() => {
+      expect(getCallsStatusMock).toHaveBeenCalled();
+      expect(
+        useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS],
+      ).toEqual(shouldKeepRoute ? [transaction] : []);
+    });
+    expect(result.current.transactions).not.toContainEqual(transaction);
+  });
+
+  it('keeps a wallet batch hidden while pending and removes it after rejection', async () => {
+    enableTransactionHistory();
+    wagmiMocks.connector = {};
+    let batchWasRejected = false;
+    getCallsStatusMock.mockImplementation(() => {
+      if (batchWasRejected) {
+        return Promise.reject(new Error('bundle id is unknown'));
+      }
+      return Promise.resolve({ receipts: [], status: 'pending' });
+    });
+    const transaction = createBatchedLifiTestTransaction('pending-then-rejected-batch');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    const { result } = renderHook(() =>
+      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    );
+
+    await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
+    expect(useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]).toEqual([
+      transaction,
+    ]);
+    expect(result.current.transactions).not.toContainEqual(transaction);
+
+    batchWasRejected = true;
+    await waitFor(
+      () => {
+        expect(
+          useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS],
+        ).toEqual([]);
+      },
+      { timeout: 3_000 },
+    );
+    expect(result.current.transactions).not.toContainEqual(transaction);
+  });
+
+  it('does not reconcile a cached batch while viewing a different wallet', async () => {
+    enableTransactionHistory();
+    wagmiMocks.address = wallets.WALLET_EMPTY;
+    wagmiMocks.connector = {};
+    const transaction = createBatchedLifiTestTransaction('another-wallet-batch-route');
+    useLifiMergedTransactionCacheStore.setState({
+      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
+    });
+
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(getCallsStatusMock).not.toHaveBeenCalled();
+    expect(useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]).toEqual([
+      transaction,
+    ]);
   });
 
   it.each([
@@ -320,13 +771,14 @@ describe('mergeTransactions', () => {
     const cachedLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
       txId: '0xlifi-duplicate',
+      durationMs: 12_000,
       parentChainId: 42161,
       childChainId: 1,
-      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      toolsDetails: [{ key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: 'https://example.com/source-token.png',
         },
       },
@@ -346,13 +798,14 @@ describe('mergeTransactions', () => {
       txId: '0xlifi-duplicate',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      durationMs: 0,
+      toolsDetails: [{ key: 'glacis', name: 'glacis', logoURI: '' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         amount: '2',
         amountUSD: '2',
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: '',
         },
       },
@@ -371,16 +824,39 @@ describe('mergeTransactions', () => {
       childChainId: 42161,
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: {
-        ...pendingApiLifiTx.toolDetails,
-        logoURI: cachedLifiTx.toolDetails.logoURI,
-      },
+      durationMs: 0,
+      toolsDetails: [
+        {
+          ...pendingApiLifiTx.toolsDetails?.[0],
+          logoURI: cachedLifiTx.toolsDetails?.[0]?.logoURI,
+        },
+      ],
       fromAmount: {
         ...pendingApiLifiTx.fromAmount,
-        token: cachedLifiTx.fromAmount.token,
+        token: cachedLifiTx.fromAmount!.token,
       },
       toAmount: cachedLifiTx.toAmount,
     });
+  });
+
+  it('falls back to the cached LiFi duration when the API duration is invalid', () => {
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-invalid-duration',
+      durationMs: 12_000,
+    };
+    const apiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      txId: '0xlifi-invalid-duration',
+      durationMs: Number.NaN,
+    };
+
+    const transactions = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      fetchedTransactions: [[cachedLifiTx, apiLifiTx]],
+    });
+
+    expect(transactions[0]).toMatchObject({ durationMs: 12_000 });
   });
 });
 
@@ -389,7 +865,10 @@ describe('getDedupedTransactionsForPagination', () => {
     'Uses the destination token over the intermediate token',
     (swapStatus) => {
       const sourceToken = {
-        ...lifiTestBaseTx.fromAmount.token,
+        address: '0x0000000000000000000000000000000000000000',
+        decimals: 18,
+        logoURI: '',
+        symbol: 'ETH',
         chainId: 1,
         name: 'Ether',
         priceUSD: '2000',
@@ -408,7 +887,7 @@ describe('getDedupedTransactionsForPagination', () => {
         id: 'bridge',
         type: 'lifi',
         tool: 'across',
-        toolDetails: lifiTestBaseTx.toolDetails,
+        toolDetails: { key: 'across', name: 'Across', logoURI: '' },
         includedSteps: [],
         action: {
           fromChainId: 1,
@@ -490,10 +969,15 @@ describe('getDedupedTransactionsForPagination', () => {
   );
 
   it('dedupes local LiFi cache when API history returns the same transaction', () => {
+    const cachedRoute = {
+      id: 'cached-route',
+      steps: [{}, {}],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
     const cachedLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
       status: WithdrawalStatus.UNCONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: cachedRoute,
     };
     const apiLifiTx: LifiMergedTransaction = {
       ...lifiTestBaseTx,
@@ -508,7 +992,52 @@ describe('getDedupedTransactionsForPagination', () => {
       cachedLifiTransactions: [cachedLifiTx],
     });
 
-    expect(transactions).toEqual([apiLifiTx]);
+    expect(transactions).toEqual([
+      {
+        ...apiLifiTx,
+        lifiRoute: cachedRoute,
+      },
+    ]);
+  });
+
+  it('keeps a resumable cached LiFi route pending when API history reports its first step as done', () => {
+    const cachedRoute = {
+      id: 'cached-multi-step-route',
+      steps: [
+        {
+          execution: {
+            status: 'DONE',
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE' }],
+          },
+        },
+        {},
+      ],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
+    const cachedLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      status: WithdrawalStatus.UNCONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      createdAt: Date.now(),
+      lifiRoute: cachedRoute,
+    };
+    const apiLifiTx: LifiMergedTransaction = {
+      ...lifiTestBaseTx,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+      createdAt: Date.now(),
+    };
+
+    const [transaction] = getDedupedTransactionsForPagination({
+      fetchedTransactions: [apiLifiTx],
+      cachedDeposits: [],
+      cachedLifiTransactions: [cachedLifiTx],
+    });
+
+    expect(transaction).toMatchObject({
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: cachedRoute,
+    });
   });
 
   it('dedupes local LiFi cache with pending API history that has unknown destination token metadata', () => {
@@ -517,11 +1046,11 @@ describe('getDedupedTransactionsForPagination', () => {
       txId: '0xlifi-pending-unknown',
       parentChainId: 42161,
       childChainId: 1,
-      toolDetails: { key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' },
+      toolsDetails: [{ key: 'glacis', name: 'Glacis', logoURI: 'https://example.com/glacis.png' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: 'https://example.com/source-token.png',
         },
       },
@@ -541,13 +1070,13 @@ describe('getDedupedTransactionsForPagination', () => {
       txId: '0xlifi-pending-unknown',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: { key: 'glacis', name: 'glacis', logoURI: '' },
+      toolsDetails: [{ key: 'glacis', name: 'glacis', logoURI: '' }],
       fromAmount: {
-        ...lifiTestBaseTx.fromAmount,
+        ...lifiTestBaseTx.fromAmount!,
         amount: '2',
         amountUSD: '2',
         token: {
-          ...lifiTestBaseTx.fromAmount.token,
+          ...lifiTestBaseTx.fromAmount!.token,
           logoURI: '',
         },
       },
@@ -567,13 +1096,15 @@ describe('getDedupedTransactionsForPagination', () => {
       childChainId: 42161,
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      toolDetails: {
-        ...pendingApiLifiTx.toolDetails,
-        logoURI: cachedLifiTx.toolDetails.logoURI,
-      },
+      toolsDetails: [
+        {
+          ...pendingApiLifiTx.toolsDetails?.[0],
+          logoURI: cachedLifiTx.toolsDetails?.[0]?.logoURI,
+        },
+      ],
       fromAmount: {
         ...pendingApiLifiTx.fromAmount,
-        token: cachedLifiTx.fromAmount.token,
+        token: cachedLifiTx.fromAmount!.token,
       },
       toAmount: cachedLifiTx.toAmount,
     });

@@ -1,20 +1,19 @@
-import type { ProcessType, RouteExtended } from '@lifi/sdk';
+import type { Process, ProcessType, RouteExtended } from '@lifi/sdk';
 import type { StatusResponse } from '@lifi/types';
 import { utils } from 'ethers';
 
 import { WithdrawalStatus } from '../state/app/state';
 
-const EXECUTED_ROUTE_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
+export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'CROSS_CHAIN',
   'SWAP',
   'TRANSACTION',
 ]);
-
 export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
   return typeof txHash === 'string' && utils.isHexString(txHash, 32);
 }
 
-function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
+export function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
   return (
     process.txType !== undefined &&
     process.txType !== 'standard' &&
@@ -22,16 +21,25 @@ function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
   );
 }
 
-function getSubmittedLifiRouteProcess(route: RouteExtended | undefined) {
-  for (const step of route?.steps ?? []) {
-    const routeProcess = step.execution?.process.find(
-      (process) =>
-        typeof process.txHash === 'string' &&
-        process.status !== 'FAILED' &&
-        EXECUTED_ROUTE_PROCESS_TYPES.has(process.type),
-    );
+export function isActiveLifiProcess(process: Pick<Process, 'status'>) {
+  return (
+    process.status === 'PENDING' ||
+    process.status === 'STARTED' ||
+    process.status === 'ACTION_REQUIRED'
+  );
+}
 
-    if (routeProcess?.txHash) {
+export function isLifiRouteComplete(route: RouteExtended | undefined) {
+  return route?.steps.every((step) => step.execution?.status === 'DONE') === true;
+}
+
+function findLifiRouteProcess(
+  route: RouteExtended | undefined,
+  predicate: (process: Process) => boolean,
+) {
+  for (const step of route?.steps ?? []) {
+    const routeProcess = step.execution?.process.find(predicate);
+    if (routeProcess) {
       return routeProcess;
     }
   }
@@ -39,17 +47,122 @@ function getSubmittedLifiRouteProcess(route: RouteExtended | undefined) {
   return undefined;
 }
 
-export function getSubmittedLifiRouteTxHash(route: RouteExtended | undefined) {
-  return getSubmittedLifiRouteProcess(route)?.txHash;
+export function getExecutedLifiRouteTxHash(route: RouteExtended | undefined) {
+  return findLifiRouteProcess(
+    route,
+    (process) =>
+      typeof process.txHash === 'string' &&
+      LIFI_TRANSFER_PROCESS_TYPES.has(process.type) &&
+      !isPendingLifiProcessId(process) &&
+      isValidLifiTransactionHash(process.txHash),
+  )?.txHash;
 }
 
-export function getExecutedLifiRouteTxHash(route: RouteExtended | undefined) {
-  const routeProcess = getSubmittedLifiRouteProcess(route);
-  if (!routeProcess || isPendingLifiProcessId(routeProcess)) {
-    return undefined;
-  }
+export function getPendingLifiRouteBatchIds(route: RouteExtended | undefined) {
+  return [
+    ...new Set(
+      (route?.steps ?? []).flatMap(
+        (step) =>
+          step.execution?.process.flatMap((process) =>
+            typeof process.txHash === 'string' &&
+            LIFI_TRANSFER_PROCESS_TYPES.has(process.type) &&
+            isPendingLifiProcessId(process)
+              ? [process.txHash]
+              : [],
+          ) ?? [],
+      ),
+    ),
+  ];
+}
 
-  return isValidLifiTransactionHash(routeProcess.txHash) ? routeProcess.txHash : undefined;
+export function resolveLifiRouteBatchId({
+  route,
+  batchId,
+  txHash,
+  txLink,
+}: {
+  route: RouteExtended;
+  batchId: string;
+  txHash: string;
+  txLink: string;
+}): RouteExtended {
+  return {
+    ...route,
+    steps: route.steps.map((step) => ({
+      ...step,
+      execution: step.execution
+        ? {
+            ...step.execution,
+            process: step.execution.process.map((process) =>
+              process.txHash === batchId && isPendingLifiProcessId(process)
+                ? { ...process, txHash, txLink }
+                : process,
+            ),
+          }
+        : undefined,
+    })),
+  };
+}
+
+function rejectLifiRouteProcesses(
+  route: RouteExtended,
+  shouldReject: (process: Process) => boolean,
+): RouteExtended {
+  return {
+    ...route,
+    steps: route.steps.map((step) => {
+      if (!step.execution) {
+        return step;
+      }
+
+      if (!step.execution.process.some(shouldReject)) {
+        return step;
+      }
+
+      return {
+        ...step,
+        execution: {
+          ...step.execution,
+          status: 'FAILED',
+          process: step.execution.process.map((process) => {
+            if (!shouldReject(process)) {
+              return process;
+            }
+
+            const {
+              txHash: _txHash,
+              txLink: _txLink,
+              txType: _txType,
+              ...rejectedProcess
+            } = process;
+            return { ...rejectedProcess, status: 'FAILED' };
+          }),
+        },
+      };
+    }),
+  };
+}
+
+export function rejectLifiRouteBatchId({
+  route,
+  batchId,
+}: {
+  route: RouteExtended;
+  batchId: string;
+}): RouteExtended {
+  return rejectLifiRouteProcesses(
+    route,
+    (process) => process.txHash === batchId && isPendingLifiProcessId(process),
+  );
+}
+
+export function rejectPendingLifiRouteRequest(route: RouteExtended): RouteExtended {
+  return rejectLifiRouteProcesses(
+    route,
+    (process) =>
+      isActiveLifiProcess(process) &&
+      (isPendingLifiProcessId(process) || !isValidLifiTransactionHash(process.txHash)),
+  );
 }
 
 export function getLifiRouteStatusRequest(route: RouteExtended | undefined) {
