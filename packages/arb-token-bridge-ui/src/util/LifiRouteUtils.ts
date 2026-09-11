@@ -125,9 +125,12 @@ function getLifiRouteSnapshot(
       chainId: firstStep.action.fromChainId,
     },
     toAmount: {
-      amount: lastStepExecution?.toAmount ?? lastStep.estimate.toAmount,
+      amount:
+        lastStepExecution?.status === 'DONE'
+          ? (lastStepExecution.toAmount ?? lastStep.estimate.toAmount)
+          : lastStep.estimate.toAmount,
       amountUSD: lastStep.estimate.toAmountUSD || '0',
-      token: lastStepExecution?.toToken ?? lastStep.action.toToken,
+      token: lastStep.action.toToken,
       chainId: lastStep.action.toChainId,
     },
   };
