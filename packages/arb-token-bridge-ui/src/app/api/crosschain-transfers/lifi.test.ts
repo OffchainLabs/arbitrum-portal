@@ -4,6 +4,8 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createMockLifiRoute } from '../../../test-utils/lifi';
+import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
 import {
   GET,
   type LifiCrosschainTransfersRoute,
@@ -267,6 +269,42 @@ describe('getLifiRoutes', () => {
 });
 
 describe('GET', () => {
+  it.each([
+    ['USDC', CommonAddress.ArbitrumOne.USDC],
+    ['ETH', constants.AddressZero],
+  ])(
+    'requests Base USDC to Arbitrum One %s without changing the destination asset',
+    async (_, toToken) => {
+      vi.mocked(getRoutes).mockResolvedValueOnce({
+        routes: [],
+        unavailableRoutes: { failed: [], filteredOut: [] },
+      } as Awaited<ReturnType<typeof getRoutes>>);
+
+      const searchParams = new URLSearchParams({
+        fromToken: CommonAddress.Base.USDC,
+        toToken,
+        fromChainId: String(ChainId.Base),
+        toChainId: String(ChainId.ArbitrumOne),
+        fromAmount: '1000000',
+        slippage: '0.5',
+      });
+      const response = await GET(
+        new NextRequest(`http://localhost/api/crosschain-transfers/lifi?${searchParams}`),
+      );
+
+      expect(response.status).toBe(200);
+      expect(getRoutes).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromChainId: ChainId.Base,
+          toChainId: ChainId.ArbitrumOne,
+          fromTokenAddress: CommonAddress.Base.USDC,
+          toTokenAddress: toToken,
+          fromAmount: '1000000',
+        }),
+      );
+    },
+  );
+
   function createRequest() {
     const searchParams = new URLSearchParams({
       fromToken: constants.AddressZero,

@@ -80,11 +80,22 @@ export const groupChildTokensAndParentTokens = ({
     [parentChainId, parentTokens],
     [childChainId, childTokens],
   ] as const) {
-    if (!allowsUnmatchedLifiTokens(chainId)) {
+    const allowUnmatchedTokens = allowsUnmatchedLifiTokens(chainId);
+    // Base USDC can fund swaps on these chains even without a matching USDC entry.
+    const allowBaseUsdc =
+      chainId === ChainId.Base &&
+      parentChainId === ChainId.Base &&
+      (childChainId === ChainId.RobinhoodChain || childChainId === ChainId.ArbitrumOne);
+
+    if (!allowUnmatchedTokens && !allowBaseUsdc) {
       continue;
     }
 
     for (const token of chainTokens) {
+      if (!allowUnmatchedTokens && !addressesEqual(token.address, CommonAddress.Base.USDC)) {
+        continue;
+      }
+
       const id = getTokenId(token);
       if (includedTokens.has(id)) {
         continue;
