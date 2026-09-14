@@ -81,11 +81,11 @@ export const groupChildTokensAndParentTokens = ({
     [childChainId, childTokens],
   ] as const) {
     const allowUnmatchedTokens = allowsUnmatchedLifiTokens(chainId);
-    // Base USDC can fund swaps on these chains even without a matching USDC entry.
+    // Base USDC can fund swaps on Robinhood Chain without a matching USDC entry.
     const allowBaseUsdc =
       chainId === ChainId.Base &&
       parentChainId === ChainId.Base &&
-      (childChainId === ChainId.RobinhoodChain || childChainId === ChainId.ArbitrumOne);
+      childChainId === ChainId.RobinhoodChain;
 
     if (!allowUnmatchedTokens && !allowBaseUsdc) {
       continue;
