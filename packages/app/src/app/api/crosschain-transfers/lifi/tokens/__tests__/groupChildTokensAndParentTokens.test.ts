@@ -2,6 +2,12 @@ import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import {
+  LIFI_TRANSFER_LIST_ID,
+  isTokenAvailableOnChain,
+  tokenListTokenToBridgeToken,
+} from '@/bridge/util/TokenListUtils';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import type { LifiTokenWithCoinKey } from '../registry';
@@ -242,4 +248,104 @@ describe('groupChildTokensAndParentTokens', () => {
 
     expect(tokens).toEqual([]);
   });
+
+  it.each([ChainId.RobinhoodChain, ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'includes only allowlisted unmatched Base tokens when destination %s has no matching coinKey',
+    (childChainId) => {
+      const baseUsdc = buildToken({
+        chainId: ChainId.Base,
+        address: CommonAddress.Base.USDC.toUpperCase(),
+        coinKey: CoinKey.USDC,
+        name: 'USD Coin',
+        decimals: 6,
+      });
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          baseUsdc,
+          buildToken({ chainId: ChainId.Base, coinKey: CoinKey.USDT }),
+          // A matching symbol/coinKey is insufficient: only the canonical address is allowed.
+          buildToken({ chainId: ChainId.Base, coinKey: CoinKey.USDC }),
+        ],
+        childTokens: [],
+        childTokensByCoinKey: {},
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]).toMatchObject({
+        chainId: ChainId.Base,
+        address: baseUsdc.address,
+        symbol: 'USDC',
+        decimals: 6,
+      });
+      expect(tokens[0]?.extensions?.bridgeInfo).toBeUndefined();
+
+      const baseUsdcEntry = tokens[0];
+      if (!baseUsdcEntry) {
+        throw new Error('Expected Base USDC in the token list');
+      }
+      const bridgeToken = tokenListTokenToBridgeToken({
+        token: baseUsdcEntry,
+        listId: LIFI_TRANSFER_LIST_ID,
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+      expect(bridgeToken).toMatchObject({
+        address: CommonAddress.Base.USDC.toLowerCase(),
+        lifiOnlyChainId: ChainId.Base,
+      });
+      expect(bridgeToken?.l2Address).toBeUndefined();
+      expect(isTokenAvailableOnChain(bridgeToken, ChainId.Base)).toBe(true);
+      expect(isTokenAvailableOnChain(bridgeToken, childChainId)).toBe(false);
+    },
+  );
+
+  it.each([ChainId.Ethereum, ChainId.ApeChain, ChainId.ArbitrumOne])(
+    'does not apply the Base address allowlist to chain %s',
+    (parentChainId) => {
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          buildToken({
+            chainId: parentChainId,
+            address: CommonAddress.Base.USDC,
+            coinKey: CoinKey.USDC,
+          }),
+        ],
+        childTokensByCoinKey: {},
+        parentChainId,
+        childChainId: ChainId.RobinhoodChain,
+      });
+
+      expect(tokens).toEqual([]);
+    },
+  );
+
+  it.each([ChainId.RobinhoodChain, ChainId.ArbitrumOne])(
+    'does not duplicate Base USDC when a matching token exists on %s',
+    (childChainId) => {
+      const childUsdc = buildToken({
+        chainId: childChainId,
+        coinKey: CoinKey.USDC,
+      });
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          buildToken({
+            chainId: ChainId.Base,
+            address: CommonAddress.Base.USDC,
+            coinKey: CoinKey.USDC,
+          }),
+        ],
+        childTokensByCoinKey: { [CoinKey.USDC]: childUsdc },
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]?.chainId).toBe(childChainId);
+      expect(tokens[0]?.extensions?.bridgeInfo).toMatchObject({
+        [ChainId.Base]: { tokenAddress: CommonAddress.Base.USDC },
+      });
+    },
+  );
 });

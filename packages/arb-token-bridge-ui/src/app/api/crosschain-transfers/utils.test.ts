@@ -1,11 +1,27 @@
 import { constants } from 'ethers';
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
+
+// The only real allowlist entry (Base USDC) is also matched by `isUsdcToken`, so the allowlist path
+// can't be observed on its own. This adds a non-USDC address to exercise it.
+const MOCK_ALLOWLISTED_BASE_TOKEN = '0x00000000000000000000000000000000000000ff';
+
+vi.mock('./constants', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./constants')>();
+
+  return {
+    ...actual,
+    isUnmatchedLifiTokenAllowed: (chainId: number, address: string) =>
+      actual.isUnmatchedLifiTokenAllowed(chainId, address) ||
+      (chainId === ChainId.Base && addressesEqual(address, MOCK_ALLOWLISTED_BASE_TOKEN)),
+  };
+});
 
 function generateTestCases({
   sourceChainId,
@@ -167,6 +183,57 @@ describe('isValidLifiTransfer', () => {
       ).toBe(true);
     },
   );
+
+  // Robinhood Chain is excluded: it returns early at the chain-level check, so it would pass
+  // without consulting the allowlist.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'allows a non-USDC allowlisted Base token to %s through the unmatched-token path',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: MOCK_ALLOWLISTED_BASE_TOKEN,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  // Base USDC passes via `isUsdcToken` too, so this pins only the surrounding contract: an
+  // allowlisted address doesn't make every other token on that chain eligible.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'does not treat the Base token allowlist as permission for every token to %s',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x0000000000000000000000000000000000000001',
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Base.USDC,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not enable unsupported chain pairs for an allowlisted token', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Base.USDC,
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
 
   it('does not allow an unlisted token from a non-opted-in source chain', () => {
     expect(

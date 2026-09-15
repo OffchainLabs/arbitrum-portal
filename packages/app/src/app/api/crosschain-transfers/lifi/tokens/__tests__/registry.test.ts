@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
-import { LIFI_TRANSFER_LIST_ID, tokenListTokenToBridgeToken } from '@/bridge/util/TokenListUtils';
+import {
+  LIFI_TRANSFER_LIST_ID,
+  isTokenAvailableOnChain,
+  tokenListTokenToBridgeToken,
+} from '@/bridge/util/TokenListUtils';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
@@ -76,6 +80,55 @@ const oldApeOnArbitrumOne = buildLifiToken({
 describe('getLifiTokenRegistry', () => {
   beforeEach(() => {
     getTokens.mockReset();
+  });
+
+  it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {
+    const baseUsdc: LiFiToken = {
+      address: CommonAddress.Base.USDC.toUpperCase(),
+      chainId: LiFiChainId.BAS,
+      name: 'USD Coin',
+      symbol: 'USDC',
+      decimals: 6,
+      priceUSD: '1',
+    };
+    const unlistedToken = {
+      ...baseUsdc,
+      address: '0x0000000000000000000000000000000000000001',
+    };
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Base]: [baseUsdc, unlistedToken],
+        [ChainId.Ethereum]: [{ ...baseUsdc, chainId: LiFiChainId.ETH }],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry();
+
+    expect(registry.tokensByChain[ChainId.Base]).toEqual([baseUsdc]);
+    expect(registry.tokensByChain[ChainId.Ethereum]).toEqual([]);
+    expect(registry.tokensByChainAndCoinKey[ChainId.Base]).toEqual({});
+
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: registry.tokensByChain[ChainId.Base] ?? [],
+      childTokens: registry.tokensByChain[ChainId.ArbitrumOne] ?? [],
+      childTokensByCoinKey: registry.tokensByChainAndCoinKey[ChainId.ArbitrumOne] ?? {},
+      parentChainId: ChainId.Base,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(tokens).toHaveLength(1);
+    const entry = tokens[0];
+    if (!entry) throw new Error('Expected unmatched Base USDC');
+    expect(entry.extensions?.bridgeInfo).toBeUndefined();
+
+    const bridgeToken = tokenListTokenToBridgeToken({
+      token: entry,
+      listId: LIFI_TRANSFER_LIST_ID,
+      parentChainId: ChainId.Base,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(bridgeToken?.lifiOnlyChainId).toBe(ChainId.Base);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.Base)).toBe(true);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.ArbitrumOne)).toBe(false);
   });
 
   it('adds canonical VIRTUAL separately when LiFi only returns the regular token', async () => {

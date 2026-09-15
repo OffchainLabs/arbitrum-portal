@@ -3,7 +3,7 @@ import { constants } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 
-import { allowsUnmatchedLifiTokens } from '../../app/api/crosschain-transfers/constants';
+import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useERC20L1Address } from '../../hooks/useERC20L1Address';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -73,7 +73,10 @@ export function TokenImportDialog({
   const [, setSelectedToken] = useSelectedToken();
   const [networks] = useNetworks();
   const { childChain, parentChainProvider, isDepositMode } = useNetworksRelationship(networks);
-  const allowsUnmatchedTokenImport = allowsUnmatchedLifiTokens(networks.sourceChain.id);
+  const allowsUnmatchedTokenImport = isUnmatchedLifiTokenAllowed(
+    networks.sourceChain.id,
+    tokenAddress,
+  );
   const sourceTokenAddress = tokenAddress.toLowerCase();
 
   const tokensFromUser = useTokensFromUser();
