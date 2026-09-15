@@ -1,0 +1,35 @@
+import type { Address } from '../util/AddressUtils';
+
+export type WalletEcosystem = 'evm' | 'solana';
+
+export type WalletStatus = 'connected' | 'disconnected' | 'connecting' | 'reconnecting';
+
+export type ConnectedWalletInfo = {
+  name?: string;
+  icon?: string;
+};
+
+export type WalletAccount<Ecosystem extends WalletEcosystem> = {
+  ecosystem: Ecosystem;
+  address?: Ecosystem extends 'evm' ? Address : string;
+  chainId?: number;
+  status: WalletStatus;
+  walletInfo?: ConnectedWalletInfo;
+};
+
+type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
+  ecosystem: Ecosystem;
+  account: WalletAccount<Ecosystem>;
+  isConnected: boolean;
+  disconnect: () => Promise<void>;
+};
+
+export type EvmWalletHandle = WalletHandleBase<'evm'>;
+
+export type SolanaWalletHandle = WalletHandleBase<'solana'>;
+
+export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;
+
+export type WalletContextValue = {
+  [Ecosystem in WalletEcosystem]: Extract<WalletHandle, { ecosystem: Ecosystem }>;
+};
