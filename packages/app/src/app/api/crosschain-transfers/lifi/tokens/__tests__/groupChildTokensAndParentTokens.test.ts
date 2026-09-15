@@ -250,7 +250,7 @@ describe('groupChildTokensAndParentTokens', () => {
   });
 
   it.each([ChainId.RobinhoodChain, ChainId.ArbitrumOne, ChainId.ApeChain])(
-    'includes only allowlisted unmatched Base tokens for destination %s',
+    'includes only allowlisted unmatched Base tokens when destination %s has no matching coinKey',
     (childChainId) => {
       const baseUsdc = buildToken({
         chainId: ChainId.Base,
