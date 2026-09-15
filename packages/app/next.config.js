@@ -14,6 +14,11 @@ module.exports = {
   },
   turbopack: {
     root: path.resolve(__dirname, '../..'),
+    // App providers and bridge wallet hooks must share Wagmi and React Query contexts.
+    resolveAlias: {
+      'wagmi': '../../node_modules/wagmi',
+      '@tanstack/react-query': '../../node_modules/@tanstack/react-query',
+    },
   },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
@@ -25,6 +30,7 @@ module.exports = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': false,
+      'wagmi$': hoisted('wagmi'),
       '@tanstack/react-query$': hoisted('@tanstack/react-query'),
       'overmind-react$': hoisted('overmind-react'),
       'overmind$': hoisted('overmind'),
