@@ -2,6 +2,10 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- support the pnpm hoist workaround below; this file is CommonJS
 const path = require('path');
 
+const wallets =
+  process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true' ? 'solana' : 'disabled';
+const walletsPath = `../arb-token-bridge-ui/src/wallet/${wallets}.tsx`;
+
 /**
  * @type {import('next').NextConfig}
  **/
@@ -14,6 +18,7 @@ module.exports = {
   },
   turbopack: {
     root: path.resolve(__dirname, '../..'),
+    resolveAlias: { '@wallets': walletsPath },
   },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
@@ -24,6 +29,7 @@ module.exports = {
     const hoisted = (pkg) => path.resolve(__dirname, '../../node_modules', pkg);
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@wallets$': path.resolve(__dirname, walletsPath),
       '@react-native-async-storage/async-storage': false,
       '@tanstack/react-query$': hoisted('@tanstack/react-query'),
       'overmind-react$': hoisted('overmind-react'),
