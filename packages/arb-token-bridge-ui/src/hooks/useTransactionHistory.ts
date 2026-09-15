@@ -622,6 +622,11 @@ const useTransactionHistoryWithoutStatuses = (
     cctpTransfersTestnet.isLoadingDeposits ||
     cctpTransfersTestnet.isLoadingWithdrawals;
 
+  // Scoped to the mode being displayed: both hooks always run, so combining all
+  // four would let a testnet indexer outage blank out mainnet history.
+  const activeCctpTransfers = isTestnetMode ? cctpTransfersTestnet : cctpTransfersMainnet;
+  const cctpError = activeCctpTransfers.depositsError ?? activeCctpTransfers.withdrawalsError;
+
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
     walletAddress: isTxHistoryEnabled ? address : undefined,
     isTestnet: isTestnetMode,
@@ -823,7 +828,7 @@ const useTransactionHistoryWithoutStatuses = (
       cctpLoading ||
       oftLoading ||
       lifiHistoryLoading,
-    error: depositsError ?? withdrawalsError,
+    error: depositsError ?? withdrawalsError ?? cctpError,
     failedChainPairs: failedChainPairs || [],
   };
 };
