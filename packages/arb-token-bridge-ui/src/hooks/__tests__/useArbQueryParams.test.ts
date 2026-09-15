@@ -646,3 +646,5 @@ describe.sequential('Onramp Feature Disabled Tests', () => {
     });
   });
 });
+
+vi.mock('@/app/src/walletConfig', () => ({ additionalSourceChainIds: [] }));

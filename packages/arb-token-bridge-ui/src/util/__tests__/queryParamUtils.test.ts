@@ -1,10 +1,14 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import orbitChainsData from '../orbitChainsData.json';
-import { sanitizeNullSelectedToken, sanitizeQueryParams } from '../queryParamUtils';
+import {
+  decodeChainQueryParam,
+  sanitizeNullSelectedToken,
+  sanitizeQueryParams,
+} from '../queryParamUtils';
 
 describe('sanitizeNullSelectedToken', () => {
   beforeAll(() => {
@@ -163,5 +167,42 @@ describe('sanitizeQueryParams - Arbitrum Nova pairs', () => {
 
     expect(result.sourceChainId).toBe(ChainId.ArbitrumOne);
     expect(result.destinationChainId).not.toBe(ChainId.ArbitrumNova);
+  });
+});
+
+const sourceNetworks = vi.hoisted(() => ({ additionalSourceChainIds: [] as number[] }));
+vi.mock('@/app/src/walletConfig', () => sourceNetworks);
+
+describe.sequential('Solana query parameters', () => {
+  afterEach(() => {
+    sourceNetworks.additionalSourceChainIds.length = 0;
+  });
+  it('discards Solana when it is absent from supported sources', () => {
+    expect(decodeChainQueryParam('solana')).toBeUndefined();
+    expect(decodeChainQueryParam(String(ChainId.Solana))).toBeUndefined();
+    expect(
+      sanitizeQueryParams({
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+      }).sourceChainId,
+    ).not.toBe(ChainId.Solana);
+  });
+  it('preserves a configured Solana source', () => {
+    sourceNetworks.additionalSourceChainIds.push(ChainId.Solana);
+    expect(decodeChainQueryParam('solana')).toBe(ChainId.Solana);
+    expect(decodeChainQueryParam(String(ChainId.Solana))).toBe(ChainId.Solana);
+    expect(
+      sanitizeQueryParams({
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toEqual({ sourceChainId: ChainId.Solana, destinationChainId: ChainId.ArbitrumOne });
+  });
+  it('always removes a Solana destination', () => {
+    sourceNetworks.additionalSourceChainIds.push(ChainId.Solana);
+    expect(
+      sanitizeQueryParams({ sourceChainId: ChainId.Ethereum, destinationChainId: ChainId.Solana })
+        .destinationChainId,
+    ).not.toBe(ChainId.Solana);
   });
 });

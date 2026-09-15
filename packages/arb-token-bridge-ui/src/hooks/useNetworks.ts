@@ -86,7 +86,9 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
     return [
       {
         sourceChain: data.sourceChain,
-        sourceChainProvider: getProviderForChainId(validSourceChainId),
+        sourceChainProvider: getProviderForChainId(
+          validSourceChainId === ChainId.Solana ? ChainId.Ethereum : validSourceChainId,
+        ),
         destinationChain: data.destinationChain,
         destinationChainProvider: getProviderForChainId(validDestinationChainId),
       },

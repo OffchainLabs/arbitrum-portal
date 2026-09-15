@@ -19,6 +19,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
+      "@wallet-runtime": ["./packages/arb-token-bridge-ui/src/wallet/runtime/disabled.tsx"],
       "@/app/*": ["./packages/app/*"],
       "@/common/*": ["./packages/portal/common/*"],
       "@/components/*": ["./packages/portal/components/*"],
