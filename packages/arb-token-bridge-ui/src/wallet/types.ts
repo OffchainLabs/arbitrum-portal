@@ -23,12 +23,8 @@ type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
 
 export type EvmWalletHandle = WalletHandleBase<'evm'>;
 
-export type SolanaTransactionSender = {
-  sendTransaction: (serializedTransaction: Uint8Array) => Promise<string>;
-};
-
 export type SolanaWalletHandle = WalletHandleBase<'solana'> & {
-  transactionSender?: SolanaTransactionSender;
+  sendTransaction?: (serializedTransaction: Uint8Array) => Promise<string>;
 };
 
 export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;

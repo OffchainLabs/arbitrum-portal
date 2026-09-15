@@ -164,5 +164,5 @@ export function NavWallet() {
     return <WalletConnectedDropdown account={{ address }} chain={chain} />;
   }
 
-  return <WalletDisconnectedButton openConnectModal={openConnectModal} />;
+  return <WalletDisconnectedButton openConnectModal={() => openConnectModal()} />;
 }

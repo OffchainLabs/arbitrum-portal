@@ -7,7 +7,7 @@ export function ConnectWalletButton({ onClick }: { onClick?: () => void }) {
   return (
     <Button
       variant="primary"
-      onClick={onClick ?? openConnectModal}
+      onClick={onClick ?? (() => openConnectModal())}
       className="w-full border border-primary-cta bg-primary-cta py-4 text-lg lg:text-2xl"
     >
       <span className="block w-full truncate">Connect Wallet</span>

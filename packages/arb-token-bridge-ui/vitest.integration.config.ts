@@ -27,6 +27,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@wallet-runtime': path.resolve(__dirname, './src/wallet/runtime/disabled.tsx'),
       '@/app': path.resolve(__dirname, '../app'),
       '@/images': path.resolve(__dirname, '../app/public/images'),
       '@/icons': path.resolve(__dirname, '../app/public/icons'),

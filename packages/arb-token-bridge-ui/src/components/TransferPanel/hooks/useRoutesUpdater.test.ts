@@ -273,3 +273,5 @@ describe('hasLowLifiLiquidity', () => {
     ).toBe(false);
   });
 });
+
+vi.mock('@/app/src/walletConfig', () => ({ additionalSourceChainIds: [] }));

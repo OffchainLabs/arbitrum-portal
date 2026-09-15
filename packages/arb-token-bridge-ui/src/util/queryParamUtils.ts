@@ -2,6 +2,8 @@ import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
 import { QueryParamConfig } from 'use-query-params';
 
+import { additionalSourceChainIds } from '@/app/src/walletConfig';
+
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import {
@@ -356,6 +358,20 @@ export function sanitizeQueryParams({
   sourceChainId: ChainId | number;
   destinationChainId: ChainId | number;
 } {
+  if (destinationChainId === ChainId.Solana) {
+    destinationChainId = undefined;
+  }
+  if (sourceChainId === ChainId.Solana) {
+    if (additionalSourceChainIds.includes(ChainId.Solana)) {
+      return {
+        sourceChainId,
+        destinationChainId: isSupportedChainId(destinationChainId)
+          ? destinationChainId
+          : ChainId.ArbitrumOne,
+      };
+    }
+    sourceChainId = undefined;
+  }
   const key = `${sourceChainId}-${destinationChainId}-${disableTransfersToNonArbitrumChains}-${includeLifiEnabledChainPairs}`;
   const cacheHit = cache[key];
   if (cacheHit) {
