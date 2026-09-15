@@ -85,8 +85,8 @@ async function fetchCCTP({
   });
 
   // The error body carries empty `pending`/`completed` arrays of its own, so
-  // parsing on and reading them would render an indexer outage as "you have no
-  // CCTP history". Throw instead and let the tx history show its error state.
+  // reading them would render an indexer outage as "you have no CCTP history".
+  // Throw instead and let the tx history show its error state.
   if (!response.ok) {
     const body = await response.text().catch(() => '');
     throw new Error(
