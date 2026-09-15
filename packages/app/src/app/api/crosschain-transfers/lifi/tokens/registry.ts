@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache';
 
 import {
   allowedLifiSourceChainIds,
-  allowsUnmatchedLifiTokens,
+  isUnmatchedLifiTokenAllowed,
 } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
@@ -241,7 +241,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
 
       const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
       if (!tokenWithCoinKey) {
-        if (allowsUnmatchedLifiTokens(chainId)) {
+        if (isUnmatchedLifiTokenAllowed(chainId, token.address)) {
           acc.push(token);
         }
         return acc;

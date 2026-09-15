@@ -1,7 +1,7 @@
 import { CoinKey } from '@lifi/sdk';
 import { TokenList } from '@uniswap/token-lists';
 
-import { allowsUnmatchedLifiTokens } from '@/bridge/app/api/crosschain-transfers/constants';
+import { isUnmatchedLifiTokenAllowed } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
@@ -80,19 +80,8 @@ export const groupChildTokensAndParentTokens = ({
     [parentChainId, parentTokens],
     [childChainId, childTokens],
   ] as const) {
-    const allowUnmatchedTokens = allowsUnmatchedLifiTokens(chainId);
-    // Base USDC can fund swaps on Robinhood Chain without a matching USDC entry.
-    const allowBaseUsdc =
-      chainId === ChainId.Base &&
-      parentChainId === ChainId.Base &&
-      childChainId === ChainId.RobinhoodChain;
-
-    if (!allowUnmatchedTokens && !allowBaseUsdc) {
-      continue;
-    }
-
     for (const token of chainTokens) {
-      if (!allowUnmatchedTokens && !addressesEqual(token.address, CommonAddress.Base.USDC)) {
+      if (!isUnmatchedLifiTokenAllowed(chainId, token.address)) {
         continue;
       }
 

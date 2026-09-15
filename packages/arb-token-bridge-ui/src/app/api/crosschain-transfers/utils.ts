@@ -5,12 +5,13 @@ import { LIFI_TRANSFER_LIST_ID } from '@/bridge/util/TokenListUtils';
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, WETH_TOKEN_LOGO, ether } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressUtils';
+import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import { isNativeEthAddress, isNovaDestination } from '../../../util/NovaUtils';
 import {
   allowedLifiSourceChainIds,
   allowsUnmatchedLifiTokens,
+  isUnmatchedLifiTokenAllowed,
   lifiDestinationChainIds,
 } from './constants';
 
@@ -91,7 +92,10 @@ export function isValidLifiTransfer({
     return true;
   }
 
-  if (isUsdcToken(fromToken)) {
+  // The allowlist is the generic path: any token configured as unmatched on its source chain is
+  // eligible, without needing an entry here or in the token list. `isUsdcToken` stays as the
+  // hardcoded USDC case, which currently also covers the only allowlisted address (Base USDC).
+  if (isUnmatchedLifiTokenAllowed(sourceChainId, fromToken) || isUsdcToken(fromToken)) {
     return true;
   }
 

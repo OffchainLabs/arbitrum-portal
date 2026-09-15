@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
   LIFI_TRANSFER_LIST_ID,
   type TokenListWithId,
@@ -28,6 +29,37 @@ describe('addTokenFromSearch', () => {
     ).resolves.toBe('success');
 
     expect(token.add).toHaveBeenCalledWith(address);
+    expect(token.addLifiTokenForChain).not.toHaveBeenCalled();
+    expect(token.addL2NativeToken).toHaveBeenCalledWith(address);
+  });
+
+  it('imports an allowlisted Base token through LiFi when canonical import fails', async () => {
+    const token = {
+      add: vi.fn().mockRejectedValue(new Error('Not canonical')),
+      addLifiTokenForChain: vi.fn().mockResolvedValue(undefined),
+      addL2NativeToken: vi.fn(),
+    };
+    const usdcAddress = CommonAddress.Base.USDC.toUpperCase();
+
+    await expect(
+      addTokenFromSearch({ address: usdcAddress, sourceChainId: ChainId.Base, token }),
+    ).resolves.toBe('success');
+
+    expect(token.addLifiTokenForChain).toHaveBeenCalledWith(usdcAddress, ChainId.Base);
+    expect(token.addL2NativeToken).not.toHaveBeenCalled();
+  });
+
+  it('does not import an unlisted Base token through LiFi', async () => {
+    const token = {
+      add: vi.fn().mockRejectedValue(new Error('Not canonical')),
+      addLifiTokenForChain: vi.fn(),
+      addL2NativeToken: vi.fn(),
+    };
+
+    await expect(addTokenFromSearch({ address, sourceChainId: ChainId.Base, token })).resolves.toBe(
+      'success',
+    );
+
     expect(token.addLifiTokenForChain).not.toHaveBeenCalled();
     expect(token.addL2NativeToken).toHaveBeenCalledWith(address);
   });

@@ -168,6 +168,43 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
+  // Base USDC is eligible via both the unmatched-token allowlist and `isUsdcToken`, so these cases
+  // pass either way and do not cover the allowlist path on its own. They pin the surrounding
+  // contract: an allowlisted address does not make every other token on that chain eligible. When a
+  // non-USDC address is added to `UNMATCHED_LIFI_TOKEN_ADDRESSES`, add a case for it here.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'does not treat the Base token allowlist as permission for every token to %s',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x0000000000000000000000000000000000000001',
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Base.USDC,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not enable unsupported chain pairs for an allowlisted token', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Base.USDC,
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
   it('does not allow an unlisted token from a non-opted-in source chain', () => {
     expect(
       isValidLifiTransfer({
