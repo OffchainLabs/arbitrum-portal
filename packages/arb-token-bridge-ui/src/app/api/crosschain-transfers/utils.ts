@@ -11,6 +11,7 @@ import { isNativeEthAddress, isNovaDestination } from '../../../util/NovaUtils';
 import {
   allowedLifiSourceChainIds,
   allowsUnmatchedLifiTokens,
+  isUnmatchedLifiTokenAllowed,
   lifiDestinationChainIds,
 } from './constants';
 
@@ -91,7 +92,7 @@ export function isValidLifiTransfer({
     return true;
   }
 
-  if (isUsdcToken(fromToken)) {
+  if (isUnmatchedLifiTokenAllowed(sourceChainId, fromToken) || isUsdcToken(fromToken)) {
     return true;
   }
 
