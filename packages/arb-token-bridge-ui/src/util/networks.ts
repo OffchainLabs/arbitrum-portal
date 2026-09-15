@@ -346,6 +346,11 @@ export const l2MoonGatewayAddresses: { [chainId: number]: string } = {
   [ChainId.ArbitrumNova]: '0xA430a792c14d3E49d9D00FD7B4BA343F516fbB81',
 };
 
+export const l2UsdcGatewayAddresses: { [chainId: number]: string } = {
+  // HPP Mainnet
+  [ChainId.HPPMainnet]: '0xF70ae1Af7D49dA0f7D66Bb55469caC9da336181b',
+};
+
 export const l2UsdsGatewayAddresses: { [chainId: number]: string } = {
   [ChainId.ArbitrumOne]: '0x13F7F24CA959359a4D710D32c715D4bce273C793',
 };

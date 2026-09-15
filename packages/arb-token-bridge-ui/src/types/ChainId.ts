@@ -16,6 +16,7 @@ export enum ChainId {
   L3Local = 333333,
   // Orbit chains
   ApeChain = 33139,
+  HPPMainnet = 190415,
   RobinhoodChain = 4663,
   // Orbit Testnets
   RobinhoodChainTestnet = 46630,

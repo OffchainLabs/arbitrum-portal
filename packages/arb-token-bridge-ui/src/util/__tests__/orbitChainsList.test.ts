@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ChainId } from '../../types/ChainId';
 import { getOrbitChains, orbitMainnets, orbitTestnets } from '../orbitChainsList';
 
 describe('getOrbitChains', () => {
@@ -23,6 +24,16 @@ describe('getOrbitChains', () => {
 
     expect(chains.length).toBe(Object.keys(orbitTestnets).length);
     expect(chains.some((chain) => mainnetIds.includes(chain.chainId))).toBe(false);
+  });
+
+  it('resolves HPP Mainnet through ChainId.HPPMainnet', () => {
+    expect(ChainId.HPPMainnet).toBe(190415);
+
+    const hpp = orbitMainnets[ChainId.HPPMainnet];
+    expect(hpp).toBeDefined();
+    expect(hpp?.name).toBe('HPP Mainnet');
+    expect(hpp?.chainId).toBe(ChainId.HPPMainnet);
+    expect(hpp?.parentChainId).toBe(ChainId.Ethereum);
   });
 
   it('returns fields required by the monitoring script on every chain', () => {
