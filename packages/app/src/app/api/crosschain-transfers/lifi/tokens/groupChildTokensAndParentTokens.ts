@@ -1,7 +1,10 @@
 import { CoinKey } from '@lifi/sdk';
 import { TokenList } from '@uniswap/token-lists';
 
-import { isUnmatchedLifiTokenAllowed } from '@/bridge/app/api/crosschain-transfers/constants';
+import {
+  hasUnmatchedLifiTokens,
+  isUnmatchedLifiTokenAllowed,
+} from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
@@ -80,6 +83,10 @@ export const groupChildTokensAndParentTokens = ({
     [parentChainId, parentTokens],
     [childChainId, childTokens],
   ] as const) {
+    if (!hasUnmatchedLifiTokens(chainId)) {
+      continue;
+    }
+
     for (const token of chainTokens) {
       if (!isUnmatchedLifiTokenAllowed(chainId, token.address)) {
         continue;

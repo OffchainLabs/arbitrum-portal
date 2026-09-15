@@ -42,6 +42,13 @@ export function allowsUnmatchedLifiTokens(chainId: number): boolean {
   return UNMATCHED_LIFI_TOKEN_CHAIN_IDS.has(chainId);
 }
 
+/** Whether a chain allows any unmatched tokens, including individually allowlisted addresses. */
+export function hasUnmatchedLifiTokens(chainId: number): boolean {
+  return (
+    allowsUnmatchedLifiTokens(chainId) || (UNMATCHED_LIFI_TOKEN_ADDRESSES[chainId]?.length ?? 0) > 0
+  );
+}
+
 /**
  * Superset of {@link allowsUnmatchedLifiTokens}: returns true for every address on a chain that
  * allows all unmatched tokens, and additionally for the individually allowlisted addresses above.
