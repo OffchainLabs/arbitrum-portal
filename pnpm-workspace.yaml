@@ -81,6 +81,7 @@ resolvePeersFromWorkspaceRoot: true
 # Only allow build scripts for explicitly trusted packages.
 allowBuilds:
   '@reown/appkit': true
+  bigint-buffer: false
   bufferutil: true
   core-js: true
   core-js-pure: true
