@@ -25,7 +25,10 @@ export const ARB_SEPOLIA_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
   l2Address: CommonAddress.ArbitrumSepolia.USDC,
 };
 
-/** Resolve the token a token-search row should render, or null while its metadata is pending. */
+/**
+ * Resolve the token a token-search row should render. Returns null while route-specific USDC
+ * metadata is pending; `TokenRow` renders a null token as the native-currency row.
+ */
 export function getTokenForRow({
   address,
   tokensFromLists,
@@ -53,7 +56,7 @@ export function getTokenForRow({
       : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
   }
 
-  // Wait for the route-specific USDC metadata before showing this row.
+  // Route-specific USDC metadata has not resolved yet.
   if (!usdcToken) {
     return null;
   }
