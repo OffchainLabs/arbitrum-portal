@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useChainId } from 'wagmi';
 
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
@@ -22,6 +22,7 @@ import {
 } from '../../util/TokenUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -34,7 +35,11 @@ export type TokenApprovalDialogProps = UseDialogProps & {
 };
 
 export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
   const { isOpen, token, onClose } = props;
 
   const { ethToUSD } = useETHPrice();
