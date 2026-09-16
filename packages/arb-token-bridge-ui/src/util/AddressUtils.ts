@@ -39,6 +39,20 @@ export function isValidAddress(address: string | undefined, options?: Validation
   );
 }
 
+export function isValidTransactionId(transactionId: string, options?: ValidationOptions): boolean {
+  return Object.values(ecosystems).some((ecosystem) =>
+    ecosystem.transactionId.isValid(transactionId, options),
+  );
+}
+
+/** Normalizes with the matching ecosystem; unknown formats are returned unchanged. */
+export function normalizeTransactionId(transactionId: string): string {
+  const adapter = Object.values(ecosystems)
+    .map((ecosystem) => ecosystem.transactionId)
+    .find((adapter) => adapter.isValid(transactionId));
+  return adapter ? adapter.normalize(transactionId) : transactionId;
+}
+
 function getAddressAdapter(chainId: number) {
   try {
     return getEcosystemConfig(chainId).address;

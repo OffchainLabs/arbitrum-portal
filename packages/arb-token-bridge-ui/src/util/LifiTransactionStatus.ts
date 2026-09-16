@@ -1,8 +1,8 @@
 import type { Process, ProcessType, RouteExtended } from '@lifi/sdk';
 import type { StatusResponse } from '@lifi/types';
-import { utils } from 'ethers';
 
 import { WithdrawalStatus } from '../state/app/state';
+import { isValidTransactionId } from './AddressUtils';
 
 export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'CROSS_CHAIN',
@@ -10,7 +10,7 @@ export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'TRANSACTION',
 ]);
 export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
-  return typeof txHash === 'string' && utils.isHexString(txHash, 32);
+  return typeof txHash === 'string' && isValidTransactionId(txHash, { ignoreFeatureFlag: true });
 }
 
 export function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
