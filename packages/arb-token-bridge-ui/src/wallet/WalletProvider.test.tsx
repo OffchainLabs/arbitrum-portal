@@ -60,8 +60,19 @@ describe.sequential('WalletProvider', () => {
       walletInfo,
     });
     expect(result.current.isConnected).toBe(true);
+    expect(result.current.needsNetworkSigningWarning).toBe(false);
     expect(useAppKitAccount).toHaveBeenCalledWith({ namespace: 'eip155' });
     expect(useWalletInfo).toHaveBeenCalledWith('eip155');
+  });
+
+  it('flags Trust Wallet for the network signing warning on EVM only', () => {
+    vi.mocked(useWalletInfo).mockReturnValue({ walletInfo: { name: 'Trust Wallet', icon: '' } });
+    const { result } = renderHook(
+      () => ({ evm: useWalletContext('evm'), solana: useSolanaWallet() }),
+      { wrapper: WalletProvider },
+    );
+    expect(result.current.evm.needsNetworkSigningWarning).toBe(true);
+    expect(result.current.solana.needsNetworkSigningWarning).toBe(false);
   });
 
   it('reacts to the EVM account chain changing', () => {

@@ -20,6 +20,7 @@ import {
 } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
+import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
 import { useAppContextState } from '../App/AppContext';
 import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
@@ -492,7 +493,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       const { amounts } = getAmountToPay(selectedRouteContext);
 
       const sourceNativeAmountToPay = formatAmountToPay(
-        amounts[`${networks.sourceChain.id}:${constants.AddressZero}`],
+        amounts[`${networks.sourceChain.id}:${getNativeTokenAddress(networks.sourceChain.id)}`],
       );
       const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
         amountToPay: sourceNativeAmountToPay,
@@ -510,7 +511,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
 
       const destinationNativeAmountToPay = formatAmountToPay(
-        amounts[`${networks.destinationChain.id}:${constants.AddressZero}`],
+        amounts[
+          `${networks.destinationChain.id}:${getNativeTokenAddress(networks.destinationChain.id)}`
+        ],
       );
       const destinationEthBalanceFloat = destinationGasBalanceFloat;
 
