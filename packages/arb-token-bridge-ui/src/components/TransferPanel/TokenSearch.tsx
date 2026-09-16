@@ -1,19 +1,16 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import { constants } from 'ethers';
-import type { BigNumber } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
 import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
-import { useBalances } from '../../hooks/useBalances';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -52,6 +49,9 @@ import {
 } from '../../util/TokenUtils';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
+import { resolveTokenAddress } from '../../wallet/resolveTokenAddress';
 import { Button } from '../common/Button';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { Panel, SearchPanel } from '../common/SearchPanel/SearchPanel';
@@ -154,7 +154,6 @@ function TokensPanel({
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
 }): React.JSX.Element {
-  const { address: walletAddress, isConnected } = useAccount();
   const {
     app: {
       arbTokenBridge: { token, bridgeTokens },
@@ -164,12 +163,9 @@ function TokensPanel({
   const { childChain, childChainProvider, parentChain, isDepositMode } =
     useNetworksRelationship(networks);
 
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance, erc20ChildBalances } =
-    useBalances({
-      parentWalletAddress: walletAddress,
-      childWalletAddress: walletAddress,
-    });
-
+  const { sourceWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
+  const isConnected = sourceWallet.isConnected;
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
 
   const {
@@ -202,42 +198,6 @@ function TokensPanel({
     };
   }, [isConnected, networks.destinationChain.id, networks.sourceChain.id]);
 
-  const getBalance = useCallback(
-    (address: string) => {
-      if (address === NATIVE_CURRENCY_IDENTIFIER) {
-        if (nativeCurrency.isCustom) {
-          return isDepositMode ? erc20ParentBalances?.[nativeCurrency.address] : ethChildBalance;
-        }
-
-        return isDepositMode ? ethParentBalance : ethChildBalance;
-      }
-
-      if (isDepositMode) {
-        return erc20ParentBalances?.[address.toLowerCase()];
-      }
-
-      if (typeof bridgeTokens === 'undefined') {
-        return null;
-      }
-
-      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        return erc20ChildBalances?.[address.toLowerCase()];
-      }
-
-      const l2Address = bridgeTokens[address.toLowerCase()]?.l2Address;
-      return l2Address ? erc20ChildBalances?.[l2Address.toLowerCase()] : null;
-    },
-    [
-      nativeCurrency,
-      bridgeTokens,
-      erc20ParentBalances,
-      erc20ChildBalances,
-      ethParentBalance,
-      ethChildBalance,
-      isDepositMode,
-    ],
-  );
-
   const usdcParentAddress = useMemo(() => {
     if (isParentChainEthereumMainnet) {
       return CommonAddress.Ethereum.USDC;
@@ -268,6 +228,85 @@ function TokensPanel({
         parentProvider: getProviderForChainId(_parentChainId),
         childProvider: getProviderForChainId(_childChainId),
       }),
+  );
+
+  const getToken = useCallback(
+    (address: string): ERC20BridgeToken | null => {
+      if (address === NATIVE_CURRENCY_IDENTIFIER) return null;
+      if (isTokenArbitrumOneNativeUSDC(address)) {
+        return isOrbitChain ? usdcToken : ARB_ONE_NATIVE_USDC_TOKEN;
+      }
+      if (isTokenArbitrumSepoliaNativeUSDC(address)) {
+        return isOrbitChain ? usdcToken : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
+      }
+
+      return (
+        tokensFromLists[address] ||
+        tokensFromUser[address] ||
+        bridgeTokens?.[address.toLowerCase()] ||
+        null
+      );
+    },
+    [bridgeTokens, isOrbitChain, tokensFromLists, tokensFromUser, usdcToken],
+  );
+  const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
+  const sourceTokenAddresses = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            NATIVE_CURRENCY_IDENTIFIER,
+            CommonAddress.ArbitrumOne.USDC,
+            CommonAddress.ArbitrumSepolia.USDC,
+            ...Object.keys(tokensFromUser),
+            ...Object.keys(tokensFromLists),
+          ]
+            .map((address) =>
+              resolveTokenAddress({
+                token: getToken(address),
+                side: 'source',
+                sourceChainId: networks.sourceChain.id,
+                destinationChainId: networks.destinationChain.id,
+                childNativeCurrencyAddress,
+              }),
+            )
+            .filter((address): address is string => !!address),
+        ),
+      ),
+    [
+      childNativeCurrencyAddress,
+      getToken,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      tokensFromLists,
+      tokensFromUser,
+    ],
+  );
+  const { data: balances } = useTokenBalances({
+    chainId: networks.sourceChain.id,
+    walletAddress,
+    tokenAddresses: sourceTokenAddresses,
+  });
+  const getBalance = useCallback(
+    (address: string) => {
+      const tokenAddress = resolveTokenAddress({
+        token: getToken(address),
+        side: 'source',
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        childNativeCurrencyAddress,
+      });
+      const balance = tokenAddress ? balances?.[tokenAddress] : undefined;
+
+      return balance === undefined ? null : BigNumber.from(balance);
+    },
+    [
+      balances,
+      childNativeCurrencyAddress,
+      getToken,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+    ],
   );
 
   const tokensToShow = useMemo(() => {
@@ -576,6 +615,7 @@ function TokensPanel({
             style={virtualizedProps.style}
             onTokenSelected={handleTokenSelected}
             token={null}
+            balance={getBalance(NATIVE_CURRENCY_IDENTIFIER) ?? null}
           />
         );
       }
@@ -586,10 +626,11 @@ function TokensPanel({
           style={virtualizedProps.style}
           onTokenSelected={handleTokenSelected}
           token={getTokenForRowInPanel(address)}
+          balance={getBalance(address) ?? null}
         />
       );
     },
-    [tokensToShow, getTokenForRowInPanel, handleTokenSelected, walletAddress],
+    [tokensToShow, getTokenForRowInPanel, handleTokenSelected, walletAddress, getBalance],
   );
 
   const AddButton = useMemo(
