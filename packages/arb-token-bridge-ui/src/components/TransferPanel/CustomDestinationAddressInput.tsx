@@ -3,7 +3,6 @@ import { isAddress } from 'ethers/lib/utils';
 import { useCallback, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -13,6 +12,7 @@ import { addressIsSmartContract } from '../../services/evm/account';
 import { AccountType } from '../../util/AccountUtils';
 import { isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
 import { getExplorerUrl } from '../../util/networks';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 
@@ -64,7 +64,11 @@ export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
-  const { address } = useAccount();
+  const {
+    destinationWallet: {
+      account: { address },
+    },
+  } = useWallets();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
   const [{ destinationAddress: destinationAddressFromQueryParams }, setQueryParams] =
     useArbQueryParams();

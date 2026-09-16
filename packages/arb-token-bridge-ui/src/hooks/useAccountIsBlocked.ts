@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
-import { useAccount } from 'wagmi';
 
-import { Address } from '../util/AddressUtils';
+import type { Address } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '../util/CommonUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { logger } from '../util/logger';
+import { useWallets } from '../wallet/hooks/useWallets';
 
 /**
  * Checks if an address is blocked using the external Screenings API service.
- * @param {Address} address - The address to check.
+ * @param address - The address to check.
  * @returns {Promise<boolean>} true if blocked or the request fails
  */
 async function isBlocked(address: Address): Promise<boolean> {
@@ -57,7 +57,11 @@ async function fetcher(address: Address): Promise<boolean> {
 }
 
 export function useAccountIsBlocked() {
-  const { address } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address },
+    },
+  } = useWallets();
 
   const queryKey = useMemo(() => {
     if (typeof address === 'undefined') {
@@ -65,7 +69,7 @@ export function useAccountIsBlocked() {
       return null;
     }
 
-    return [address.toLocaleLowerCase() as Address, 'useAccountIsBlocked'] as const;
+    return [address, 'useAccountIsBlocked'] as const;
   }, [address]);
 
   const { data: isBlocked } = useSWRImmutable(
