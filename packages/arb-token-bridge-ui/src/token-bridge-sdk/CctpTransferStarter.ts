@@ -1,9 +1,9 @@
 import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__factory';
 import { TransactionRequest } from '@ethersproject/providers';
 import { Config, simulateContract, writeContract } from '@wagmi/core';
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, constants } from 'ethers';
+import { isAddress, padHex } from 'viem';
 
-import { Address } from '../util/AddressUtils';
 import { formatAmount } from '../util/NumberUtils';
 import { fetchErc20Allowance } from '../util/TokenUtils';
 import { TokenMessengerAbi } from '../util/cctp/TokenMessengerAbi';
@@ -111,9 +111,13 @@ export class CctpTransferStarter extends BridgeTransferStarter {
     }
 
     const recipient = destinationAddress ?? from;
+    if (!isAddress(recipient)) {
+      throw new Error('Invalid CCTP recipient address');
+    }
+
     // burn token on the selected chain to be transferred from cctp contracts to the other chain
     // CCTP uses 32 bytes addresses, while EVEM uses 20 bytes addresses
-    const mintRecipient = utils.hexlify(utils.zeroPad(recipient, 32)) as Address;
+    const mintRecipient = padHex(recipient, { size: 32 });
 
     const { usdcContractAddress, tokenMessengerContractAddress, targetChainDomain } =
       getCctpContracts({
