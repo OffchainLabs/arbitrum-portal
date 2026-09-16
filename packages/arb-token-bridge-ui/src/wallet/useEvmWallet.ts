@@ -1,5 +1,6 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
 import { useCallback, useMemo } from 'react';
+import { isAddress } from 'viem';
 
 import type { EvmWalletHandle } from './types';
 
@@ -27,7 +28,7 @@ export function useEvmWallet(): EvmWalletHandle {
       ecosystem: 'evm',
       account: {
         ecosystem: 'evm',
-        address,
+        address: address && isAddress(address) ? address : undefined,
         chainId,
         status: status ?? 'disconnected',
         walletInfo: walletInfo && { name: walletInfo.name, icon: walletInfo.icon },
