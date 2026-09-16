@@ -160,6 +160,11 @@ describe.sequential('useDestinationToken', () => {
         isSwap: useIsSwapTransfer(),
       }));
       expect(result.current).toEqual({ token: null, isSwap: true });
+      expect(mockedGetTokenOverride).toHaveBeenCalledWith({
+        fromToken: sourceOnlyToken.address,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      });
     });
 
     it('should return selectedToken when destinationToken equals selectedToken.address', () => {

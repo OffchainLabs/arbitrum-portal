@@ -33,6 +33,16 @@ export function useDestinationToken(): ERC20BridgeToken | null {
       }),
     [networks.destinationChain.id, networks.sourceChain.id],
   );
+  // Memoized so the returned token keeps a stable identity across renders.
+  const sourceTokenOverride = useMemo(
+    () =>
+      getTokenOverride({
+        fromToken: sourceToken?.address,
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+      }),
+    [networks.destinationChain.id, networks.sourceChain.id, sourceToken?.address],
+  );
 
   const isSameToken = isSameTokenSelection({
     sourceToken,
@@ -50,11 +60,7 @@ export function useDestinationToken(): ERC20BridgeToken | null {
   if (isSourceTokenSelectedAsDestination) {
     // An old URL may repeat a source-only token's address. Use an explicit
     // destination mapping if one exists; otherwise null selects native currency.
-    return getTokenOverride({
-      fromToken: sourceToken?.address,
-      sourceChainId: networks.sourceChain.id,
-      destinationChainId: networks.destinationChain.id,
-    }).destination;
+    return sourceTokenOverride.destination;
   }
 
   if (!destinationTokenLookupKey) {
