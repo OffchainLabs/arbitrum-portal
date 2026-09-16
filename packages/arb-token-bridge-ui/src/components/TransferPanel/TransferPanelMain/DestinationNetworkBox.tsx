@@ -5,8 +5,10 @@ import { useAccount } from 'wagmi';
 import { getTokenOverride } from '../../../app/api/crosschain-transfers/utils';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { useBalanceOnDestinationChain } from '../../../hooks/useBalanceOnDestinationChain';
-import { useBalances } from '../../../hooks/useBalances';
+import {
+  useBalanceOnDestinationChain,
+  useResolvedBalanceOnDestinationChain,
+} from '../../../hooks/useBalanceOnDestinationChain';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
@@ -26,8 +28,8 @@ import { NetworkContainer } from '../TransferPanelMain';
 import { UsdgSuggestionBanner } from '../UsdgSuggestionBanner';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useReceivedAmount } from '../hooks/useReceivedAmount';
-import { useRouteStore } from '../hooks/useRouteStore';
-import { isLifiRoute } from '../hooks/useRouteStore';
+import { getSelectedRouteContext, isLifiRoute, useRouteStore } from '../hooks/useRouteStore';
+import { resolveNativeUsdcDestinationAddress } from '../resolveRouteAssetAddress';
 import { useAmount2InputVisibility } from './SourceNetworkBox';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
@@ -99,7 +101,7 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider } = useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
   const destinationToken = useDestinationToken();
@@ -109,9 +111,9 @@ function BalancesContainer() {
   const { data: tokensFromLists } = useTokensFromLists();
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
+  const selectedRouteContext = useRouteStore(getSelectedRouteContext);
   const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
 
-  const { erc20ChildBalances, erc20ParentBalances } = useBalances();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const { isAmount2InputVisible } = useAmount2InputVisibility();
 
@@ -123,25 +125,19 @@ function BalancesContainer() {
     (isCctpTransfer && (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
     (isCctpTransfer && !selectedRoute);
 
-  const nativeUsdcDestinationBalance = useMemo(() => {
-    if (!showNativeUsdcBalance) return constants.Zero;
-
-    if (isArbitrumOne) {
-      return isDepositMode
-        ? (erc20ChildBalances?.[CommonAddress.ArbitrumOne.USDC] ?? constants.Zero)
-        : (erc20ParentBalances?.[CommonAddress.Ethereum.USDC] ?? constants.Zero);
-    } else {
-      return isDepositMode
-        ? (erc20ChildBalances?.[CommonAddress.ArbitrumSepolia.USDC] ?? constants.Zero)
-        : (erc20ParentBalances?.[CommonAddress.Sepolia.USDC] ?? constants.Zero);
-    }
-  }, [
-    showNativeUsdcBalance,
-    isArbitrumOne,
-    isDepositMode,
-    erc20ParentBalances,
-    erc20ChildBalances,
-  ]);
+  const nativeUsdcDestinationAddress = showNativeUsdcBalance
+    ? resolveNativeUsdcDestinationAddress({
+        destinationChainId: networks.destinationChain.id,
+        selectedRoute,
+        selectedRouteContext,
+      })
+    : undefined;
+  const resolvedNativeUsdcDestinationBalance = useResolvedBalanceOnDestinationChain(
+    nativeUsdcDestinationAddress,
+  );
+  const nativeUsdcDestinationBalance = showNativeUsdcBalance
+    ? (resolvedNativeUsdcDestinationBalance ?? constants.Zero)
+    : constants.Zero;
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
