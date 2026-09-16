@@ -1,112 +1,138 @@
-import { renderHook } from '@testing-library/react';
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { BigNumber } from 'ethers';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { zeroAddress } from 'viem';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
-import { useBalances } from '../../../../hooks/useBalances';
-import { useNativeCurrency } from '../../../../hooks/useNativeCurrency';
-import { useNetworks } from '../../../../hooks/useNetworks';
+import { createBridgeTestWrapper } from '../../../../test-utils/bridge-test-wrapper';
 import { ChainId } from '../../../../types/ChainId';
 import { CommonAddress } from '../../../../util/CommonAddressUtils';
-import { getWagmiChain } from '../../../../util/wagmi/getWagmiChain';
+import { orbitMainnets } from '../../../../util/orbitChainsList';
+import { defaultWalletContextValue } from '../../../../wallet/WalletContext';
+import type { WalletContextValue } from '../../../../wallet/types';
 import { useNativeCurrencyBalances } from '../useNativeCurrencyBalances';
 
-vi.mock('../../../../hooks/useNetworks', () => ({
-  useNetworks: vi.fn(),
+vi.mock('../../../../util/featureFlag', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../../util/featureFlag')>()),
+  isLifiEnabled: () => true,
 }));
+beforeAll(() => {
+  for (const chainId of [ChainId.ApeChain, ChainId.RobinhoodChain]) {
+    const network = orbitMainnets[chainId];
+    if (!network) throw new Error('Missing custom chain fixture');
+    registerCustomArbitrumNetwork(network);
+  }
+});
+afterEach(cleanup);
 
-vi.mock('../../../../hooks/useBalances', () => ({
-  useBalances: vi.fn(),
-}));
-
-vi.mock('../../../../hooks/useNativeCurrency', () => ({
-  useNativeCurrency: vi.fn(),
-}));
-
-vi.mock('../../../../hooks/useArbQueryParams', () => ({
-  useArbQueryParams: () => [{ destinationAddress: undefined }],
-}));
-
-vi.mock('wagmi', async () => ({
-  ...(await vi.importActual('wagmi')),
-  useAccount: () => ({
+const sourceAddress = '0x1111111111111111111111111111111111111111';
+const connectedWallets: WalletContextValue = {
+  ...defaultWalletContextValue,
+  evm: {
+    ...defaultWalletContextValue.evm,
+    account: {
+      ecosystem: 'evm',
+      address: sourceAddress,
+      chainId: ChainId.Sepolia,
+      status: 'connected',
+    },
     isConnected: true,
-  }),
-}));
+  },
+};
 
-describe('useNativeCurrencyBalances', () => {
-  const mockedUseNetworks = vi.mocked(useNetworks);
-  const mockedUseBalances = vi.mocked(useBalances);
-  const mockedUseNativeCurrency = vi.mocked(useNativeCurrency);
-
-  beforeEach(() => {
-    mockedUseNativeCurrency.mockReturnValue({
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18,
-      isCustom: false,
+describe.sequential('useNativeCurrencyBalances', () => {
+  it('uses the custom recipient for holdings and the connected payer for destination gas', async () => {
+    const recipient = '0x3333333333333333333333333333333333333333';
+    const query = {
+      sourceChain: ChainId.Sepolia,
+      destinationChain: ChainId.ArbitrumSepolia,
+      destinationAddress: recipient,
+    };
+    const wrapper = createBridgeTestWrapper({
+      wallets: connectedWallets,
+      fetchBalance: async ({ walletAddress }) => ({
+        [zeroAddress]: walletAddress === recipient ? 900n : 100n,
+      }),
+      query,
     });
+    const { result } = renderHook(useNativeCurrencyBalances, { wrapper });
+    await waitFor(() => expect(result.current.destinationBalance).toEqual(BigNumber.from(900)));
+    expect(result.current.destinationGasBalance).toEqual(BigNumber.from(100));
   });
 
-  beforeAll(() => {
-    mockedUseBalances.mockReturnValue({
-      ethParentBalance: BigNumber.from(100_000),
-      erc20ParentBalances: {
-        '0x123': BigNumber.from(200_000),
-        '0x222': BigNumber.from(250_000_000),
-        [CommonAddress.RobinhoodChain.APE]: BigNumber.from(500_000),
-      },
-      ethChildBalance: BigNumber.from(300_000),
-      erc20ChildBalances: { '0x234': BigNumber.from(400_000) },
-      updateEthChildBalance: vi.fn(),
-      updateEthParentBalance: vi.fn(),
-      updateErc20ParentBalances: vi.fn(),
-      updateErc20ChildBalances: vi.fn(),
-    });
-  });
-
-  it('should return ETH parent balance as source balance and ETH child balance as destination balance when wallet is connected, destination address is the same as connected wallet, and source chain is Sepolia and destination chain is Arbitrum Sepolia', () => {
-    mockedUseNetworks.mockReturnValue([
-      {
-        sourceChain: getWagmiChain(ChainId.Sepolia),
-        sourceChainProvider: getProviderForChainId(ChainId.Sepolia),
-        destinationChain: getWagmiChain(ChainId.ArbitrumSepolia),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumSepolia),
-      },
-      vi.fn(),
-    ]);
-
-    const { result } = renderHook(useNativeCurrencyBalances);
-    expect(result.current).toEqual({
-      sourceBalance: BigNumber.from(100_000),
-      destinationBalance: BigNumber.from(300_000),
-    });
-  });
-
-  it('uses the Robinhood APE balance for Robinhood to ApeChain transfers', () => {
-    mockedUseNetworks.mockReturnValue([
-      {
-        sourceChain: getWagmiChain(ChainId.RobinhoodChain),
-        sourceChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
-        destinationChain: getWagmiChain(ChainId.ApeChain),
-        destinationChainProvider: getProviderForChainId(ChainId.ApeChain),
-      },
-      vi.fn(),
-    ]);
-    mockedUseNativeCurrency.mockReturnValue({
+  it('uses the parent ERC-20 and child native balance for a custom gas token deposit', async () => {
+    const query = { sourceChain: ChainId.RobinhoodChain, destinationChain: ChainId.ApeChain };
+    const currency = {
       name: 'ApeCoin',
       symbol: 'APE',
       decimals: 18,
       address: CommonAddress.RobinhoodChain.APE,
-      isCustom: true,
+      isCustom: true as const,
+    };
+    const wrapper = createBridgeTestWrapper({
+      wallets: connectedWallets,
+      fetchBalance: async ({ chainId, tokenAddresses }) =>
+        Object.fromEntries(
+          tokenAddresses.map((tokenAddress) => [
+            tokenAddress,
+            chainId === ChainId.ApeChain
+              ? 300_000n
+              : tokenAddress === zeroAddress
+                ? 100_000n
+                : 500_000n,
+          ]),
+        ),
+      query,
+      nativeCurrencies: { [query.sourceChain]: currency, [query.destinationChain]: currency },
     });
 
-    const { result } = renderHook(useNativeCurrencyBalances);
+    const { result } = renderHook(useNativeCurrencyBalances, { wrapper });
 
-    expect(result.current).toEqual({
-      sourceBalance: BigNumber.from(500_000),
-      destinationBalance: BigNumber.from(300_000),
+    await waitFor(() =>
+      expect(result.current).toEqual({
+        sourceBalance: BigNumber.from(500_000),
+        sourceGasBalance: BigNumber.from(100_000),
+        destinationBalance: BigNumber.from(300_000),
+        destinationGasBalance: BigNumber.from(300_000),
+      }),
+    );
+  });
+
+  it('keeps the received custom token separate from destination gas on withdrawal', async () => {
+    const query = { sourceChain: ChainId.ApeChain, destinationChain: ChainId.ArbitrumOne };
+    const currency = {
+      name: 'ApeCoin',
+      symbol: 'APE',
+      decimals: 18,
+      address: CommonAddress.ArbitrumOne.APE,
+      isCustom: true as const,
+    };
+    const wrapper = createBridgeTestWrapper({
+      wallets: connectedWallets,
+      fetchBalance: async ({ chainId, tokenAddresses }) =>
+        Object.fromEntries(
+          tokenAddresses.map((tokenAddress) => [
+            tokenAddress,
+            chainId === ChainId.ApeChain
+              ? 500_000n
+              : tokenAddress === zeroAddress
+                ? 100_000n
+                : 300_000n,
+          ]),
+        ),
+      query,
+      nativeCurrencies: { [query.sourceChain]: currency, [query.destinationChain]: currency },
     });
+
+    const { result } = renderHook(useNativeCurrencyBalances, { wrapper });
+
+    await waitFor(() =>
+      expect(result.current).toEqual({
+        sourceBalance: BigNumber.from(500_000),
+        sourceGasBalance: BigNumber.from(500_000),
+        destinationBalance: BigNumber.from(300_000),
+        destinationGasBalance: BigNumber.from(100_000),
+      }),
+    );
   });
 });

@@ -10,10 +10,12 @@ export function useTokenBalances({
   chainId,
   walletAddress,
   tokenAddresses,
+  refreshInterval = BALANCE_REFRESH_INTERVAL,
 }: {
   chainId: number;
   walletAddress?: string;
   tokenAddresses: string[];
+  refreshInterval?: number;
 }) {
   const service = useBalanceService();
   return useSWR(
@@ -26,7 +28,11 @@ export function useTokenBalances({
         walletAddress: currentWalletAddress,
         tokenAddresses: currentTokenAddresses,
       }),
-    { refreshInterval: BALANCE_REFRESH_INTERVAL },
+    {
+      refreshInterval,
+      revalidateOnFocus: refreshInterval > 0,
+      revalidateIfStale: refreshInterval > 0,
+    },
   );
 }
 
