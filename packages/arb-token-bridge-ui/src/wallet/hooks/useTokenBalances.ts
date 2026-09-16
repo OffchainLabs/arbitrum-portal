@@ -10,16 +10,22 @@ export function useTokenBalances({
   chainId,
   walletAddress,
   tokenAddresses,
+  refreshInterval = BALANCE_REFRESH_INTERVAL,
+  keepPreviousData = false,
 }: {
   chainId: number;
   walletAddress?: string;
   tokenAddresses: string[];
+  refreshInterval?: number;
+  keepPreviousData?: boolean;
 }) {
-  return useSWR(
+  const key =
     walletAddress && isValidAddressForChain(walletAddress, chainId) && tokenAddresses.length > 0
       ? // Lowercases EVM addresses so checksum casing shares one cache entry, and keeps Solana casing
         ([chainId, normalizeAddress(walletAddress), tokenAddresses, 'token-balances'] as const)
-      : null,
+      : null;
+  const result = useSWR(
+    key,
     ([currentChainId, currentWalletAddress, currentTokenAddresses]) =>
       fetchBalances({
         chainId: currentChainId,
@@ -27,12 +33,17 @@ export function useTokenBalances({
         tokenAddresses: currentTokenAddresses,
       }),
     {
-      refreshInterval: BALANCE_REFRESH_INTERVAL,
+      refreshInterval,
+      revalidateOnFocus: refreshInterval > 0,
+      keepPreviousData,
       shouldRetryOnError: true,
       errorRetryCount: 2,
       errorRetryInterval: 3_000,
     },
   );
+
+  // `keepPreviousData` would keep returning the last balances after the wallet disconnects
+  return key ? result : { ...result, data: undefined };
 }
 
 export function useRefreshTokenBalances() {

@@ -1,7 +1,6 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
@@ -9,12 +8,11 @@ import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
+import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { addressesEqual } from '../../util/AddressUtils';
 import {
   getNovaDepositBlockReason,
   getNovaEthDepositCapErrorMessage,
@@ -22,13 +20,8 @@ import {
 } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-} from '../../util/TokenUtils';
-import { isNetwork } from '../../util/networks';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
+import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import {
@@ -201,21 +194,20 @@ function formatAmountToPay(amountToPay: AmountToPay | undefined) {
 function getInsufficientNativeBalanceErrorMessage({
   amountToPay,
   balance,
-  chainId,
+  nativeCurrencySymbol,
   chainName,
 }: {
   amountToPay: number;
   balance: number | null;
-  chainId: number;
+  nativeCurrencySymbol: string;
   chainName: string;
 }) {
   if (balance === null || amountToPay <= balance) {
     return undefined;
   }
 
-  const chain = getWagmiChain(chainId);
   return getInsufficientFundsForGasFeesErrorMessage({
-    asset: chain.nativeCurrency.symbol,
+    asset: nativeCurrencySymbol,
     chain: chainName,
     balance: formatAmount(balance),
     requiredBalance: formatAmount(amountToPay),
@@ -253,90 +245,43 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
   const gasSummary = useGasSummary();
-  const { address: walletAddress } = useAccount();
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance, erc20ChildBalances } =
-    useBalances({
-      parentWalletAddress: walletAddress,
-      childWalletAddress: walletAddress,
-    });
+  const {
+    sourceBalance: sourceNativeBalance,
+    sourceGasBalance,
+    destinationGasBalance,
+  } = useNativeCurrencyBalances();
+  const selectedTokenSourceBalance = useBalanceOnSourceChain(selectedToken);
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
 
-  const ethL1BalanceFloat = ethParentBalance
-    ? parseFloat(utils.formatEther(ethParentBalance))
+  const sourceNativeBalanceFloat = sourceNativeBalance
+    ? parseFloat(
+        utils.formatUnits(
+          sourceNativeBalance,
+          nativeCurrency.isCustom && isDepositMode
+            ? nativeCurrency.decimals
+            : networks.sourceChain.nativeCurrency.decimals,
+        ),
+      )
     : null;
+  const sourceGasBalanceFloat = sourceGasBalance
+    ? parseFloat(utils.formatUnits(sourceGasBalance, networks.sourceChain.nativeCurrency.decimals))
+    : null;
+  const destinationGasBalanceFloat = destinationGasBalance
+    ? parseFloat(
+        utils.formatUnits(destinationGasBalance, networks.destinationChain.nativeCurrency.decimals),
+      )
+    : null;
+  const selectedTokenSourceBalanceFloat =
+    selectedToken && selectedTokenSourceBalance
+      ? parseFloat(utils.formatUnits(selectedTokenSourceBalance, selectedToken.decimals))
+      : null;
 
-  const ethL2BalanceFloat = ethChildBalance ? parseFloat(utils.formatEther(ethChildBalance)) : null;
-
-  const selectedTokenL1BalanceFloat = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-
-    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
-      if (!ethParentBalance) {
-        return null;
-      }
-      return parseFloat(utils.formatEther(ethParentBalance));
-    }
-
-    const balance = erc20ParentBalances?.[selectedToken.address.toLowerCase()];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, erc20ParentBalances, ethParentBalance]);
-
-  const selectedTokenL2BalanceFloat = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-
-    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
-      if (!ethChildBalance) {
-        return null;
-      }
-      return parseFloat(utils.formatEther(ethChildBalance));
-    }
-
-    const { isOrbitChain } = isNetwork(childChain.id);
-
-    const isL2NativeUSDC =
-      isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
-      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address);
-
-    const selectedTokenL2Address =
-      isL2NativeUSDC && !isOrbitChain
-        ? selectedToken.address.toLowerCase()
-        : (selectedToken.l2Address || '').toLowerCase();
-
-    const balance = erc20ChildBalances?.[selectedTokenL2Address];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, childChain.id, erc20ChildBalances, ethChildBalance]);
-
-  const customFeeTokenL1BalanceFloat = useMemo(() => {
-    if (!nativeCurrency.isCustom) {
-      return null;
-    }
-
-    const balance = erc20ParentBalances?.[nativeCurrency.address];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, nativeCurrency.decimals));
-  }, [nativeCurrency, erc20ParentBalances]);
+  const customFeeTokenL1BalanceFloat =
+    nativeCurrency.isCustom && isDepositMode ? sourceNativeBalanceFloat : null;
 
   return useMemo(() => {
     const disabledChain = [networks.sourceChain, networks.destinationChain].find((chain) =>
@@ -389,15 +334,13 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return notReady();
     }
 
-    const ethBalanceFloat = isDepositMode ? ethL1BalanceFloat : ethL2BalanceFloat;
-    const selectedTokenBalanceFloat = isDepositMode
-      ? selectedTokenL1BalanceFloat
-      : selectedTokenL2BalanceFloat;
+    const ethBalanceFloat = sourceGasBalanceFloat;
+    const selectedTokenBalanceFloat = selectedTokenSourceBalanceFloat;
     const isCustomFeeToken = nativeCurrency.isCustom && !isLifiRoute(selectedRoute);
     const customFeeTokenBalanceFloat = isCustomFeeToken
       ? isDepositMode
         ? customFeeTokenL1BalanceFloat
-        : ethL2BalanceFloat
+        : sourceNativeBalanceFloat
       : null;
 
     // No error while loading balance
@@ -554,7 +497,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
         amountToPay: sourceNativeAmountToPay,
         balance: ethBalanceFloat,
-        chainId: networks.sourceChain.id,
+        nativeCurrencySymbol: networks.sourceChain.nativeCurrency.symbol,
         chainName: networks.sourceChain.name,
       });
 
@@ -569,7 +512,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       const destinationNativeAmountToPay = formatAmountToPay(
         amounts[`${networks.destinationChain.id}:${constants.AddressZero}`],
       );
-      const destinationEthBalanceFloat = isDepositMode ? ethL2BalanceFloat : ethL1BalanceFloat;
+      const destinationEthBalanceFloat = destinationGasBalanceFloat;
 
       if (destinationNativeAmountToPay > 0 && destinationEthBalanceFloat === null) {
         return notReady();
@@ -578,7 +521,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       const destinationNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
         amountToPay: destinationNativeAmountToPay,
         balance: destinationEthBalanceFloat,
-        chainId: networks.destinationChain.id,
+        nativeCurrencySymbol: networks.destinationChain.nativeCurrency.symbol,
         chainName: networks.destinationChain.name,
       });
 
@@ -785,10 +728,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     eligibleRouteTypes,
     isSmartContractWallet,
     isDepositMode,
-    ethL1BalanceFloat,
-    ethL2BalanceFloat,
-    selectedTokenL1BalanceFloat,
-    selectedTokenL2BalanceFloat,
+    sourceGasBalanceFloat,
+    sourceNativeBalanceFloat,
+    destinationGasBalanceFloat,
+    selectedTokenSourceBalanceFloat,
     customFeeTokenL1BalanceFloat,
     amount2,
     nativeCurrency.isCustom,
