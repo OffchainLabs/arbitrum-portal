@@ -1,5 +1,4 @@
 import useSWRImmutable from 'swr/immutable';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
@@ -7,6 +6,7 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { addressIsDenylisted } from '../../../util/AddressUtils';
 import { ecosystems } from '../../../wallet/ecosystems';
 import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import type { WalletEcosystem } from '../../../wallet/types';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
@@ -42,7 +42,11 @@ export async function getDestinationAddressError({
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
   const [{ destinationChain }] = useNetworks();
-  const { address } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address },
+    },
+  } = useWallets();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
 
