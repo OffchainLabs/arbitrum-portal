@@ -10,7 +10,7 @@ import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { AccountType } from '../../util/AccountUtils';
-import { addressIsSmartContract } from '../../util/AddressUtils';
+import { addressIsSmartContract } from '../../util/AddressNetworkUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';

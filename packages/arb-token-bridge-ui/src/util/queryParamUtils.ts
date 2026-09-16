@@ -10,6 +10,7 @@ import {
   getChainQueryParamForChain,
   isValidChainQueryParam,
 } from '../types/ChainQueryParam';
+import { isValidAddress, normalizeAddress } from './AddressUtils';
 import { getUsdgDestinationTokenAddress, isUsdgQueryParamAlias } from './RobinhoodStablecoinUtils';
 import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
@@ -302,25 +303,33 @@ export const LogLevelParam: QueryParamConfig<LogLevel> = {
   },
 };
 
+function normalizeTokenQueryValue(token: string | undefined): string | undefined {
+  const normalizedAddress = normalizeAddress(token);
+
+  return normalizedAddress && !isValidAddress(normalizedAddress)
+    ? normalizedAddress.toLowerCase()
+    : normalizedAddress;
+}
+
 export const TokenQueryParam = {
   encode: (token: string | undefined) => {
-    return token?.toLowerCase();
+    return normalizeTokenQueryValue(token);
   },
   decode: (token: string | (string | null)[] | null | undefined) => {
     const tokenStr = token?.toString();
     // We are not checking for a valid address because we handle it in the UI
     // by showing an invalid token dialog
-    return tokenStr?.toLowerCase();
+    return normalizeTokenQueryValue(tokenStr);
   },
 };
 
 export const DestinationTokenQueryParam = {
   encode: (token: string | undefined) => {
-    return token?.toLowerCase();
+    return normalizeTokenQueryValue(token);
   },
   decode: (token: string | (string | null)[] | null | undefined) => {
     const tokenStr = token?.toString();
-    return tokenStr?.toLowerCase();
+    return normalizeTokenQueryValue(tokenStr);
   },
 };
 
@@ -509,19 +518,19 @@ export const sanitizeTokenQueryParam = ({
   sourceChainId: number | undefined;
   destinationChainId: number | undefined;
 }) => {
-  const tokenLowercased = token?.toLowerCase();
+  const normalizedToken = normalizeTokenQueryValue(token ?? undefined);
 
-  if (!tokenLowercased) {
+  if (!normalizedToken) {
     const sanitizedTokenAddress = sanitizeNullSelectedToken({
       sourceChainId,
       destinationChainId,
-      erc20ParentAddress: tokenLowercased || null,
+      erc20ParentAddress: normalizedToken || null,
     });
 
     return sanitizedTokenAddress;
   }
   if (!destinationChainId) {
-    return tokenLowercased;
+    return normalizedToken;
   }
 
   const orbitChain = orbitChains[destinationChainId];
@@ -533,11 +542,11 @@ export const sanitizeTokenQueryParam = ({
 
   // token=eth doesn't need to be set if ETH is the native gas token
   // we strip it for clarity
-  if (tokenLowercased === 'eth' && !isOrbitChainWithCustomGasToken) {
+  if (normalizedToken === 'eth' && !isOrbitChainWithCustomGasToken) {
     return undefined;
   }
 
-  return tokenLowercased;
+  return normalizedToken;
 };
 
 /**

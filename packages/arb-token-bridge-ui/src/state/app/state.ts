@@ -1,5 +1,6 @@
 import { RouteExtended, TransactionRequest } from '@lifi/sdk';
 import { BigNumber } from 'ethers';
+import type { Address } from 'viem';
 
 import type { AmountWithToken, RouteTool } from '../../app/api/crosschain-transfers/types';
 import {
@@ -12,7 +13,6 @@ import {
   ParentToChildMessageData,
   TxnType,
 } from '../../types/Transactions';
-import { Address } from '../../util/AddressUtils';
 import { CCTPSupportedChainId } from '../cctpState';
 
 export enum DepositStatus {

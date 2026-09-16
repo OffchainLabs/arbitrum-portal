@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { addressIsDenylisted } from '../../../util/AddressUtils';
+import { addressIsDenylisted } from '../../../util/AddressNetworkUtils';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({

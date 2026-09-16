@@ -6,7 +6,8 @@ import { BigNumber } from 'ethers';
 import { AssetType, DepositGasEstimates } from '../hooks/arbTokenBridge.types';
 import { MergedTransaction } from '../state/app/state';
 import { getChainIdFromProvider } from '../token-bridge-sdk/utils';
-import { addressIsSmartContract, addressesEqual } from './AddressUtils';
+import { addressIsSmartContract } from './AddressNetworkUtils';
+import { addressesEqual } from './AddressUtils';
 import { captureSentryErrorWithExtraData } from './SentryUtils';
 import {
   fetchErc20Allowance,

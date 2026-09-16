@@ -4,7 +4,7 @@ import { constants } from 'ethers';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
 import { Withdrawal } from '../../hooks/useTransactionHistory';
-import { getNonce } from '../AddressUtils';
+import { getNonce } from '../AddressNetworkUtils';
 import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestIndexedBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
