@@ -6,7 +6,7 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { isHash } from 'viem';
+import { isAddress, isHash } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
@@ -34,7 +34,8 @@ import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
-import { Address, addressesEqual } from '../util/AddressUtils';
+import type { Address } from '../util/AddressUtils';
+import { addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
@@ -49,6 +50,7 @@ import {
 } from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import { isValidTransactionId, normalizeTransactionId } from '../util/TransactionIdUtils';
 import { BATCH_FETCH_BLOCKS } from '../util/chainBlockRanges';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
@@ -69,13 +71,17 @@ import {
   mapTokenWithdrawalFromEventLogsToL2ToL1EventResult,
   mapWithdrawalFromSubgraphToL2ToL1EventResult,
 } from '../util/withdrawals/helpers';
+import { useWalletForChain } from '../wallet/hooks/useWallets';
 import { AssetType, L2ToL1EventResultPlus, WithdrawalInitiated } from './arbTokenBridge.types';
 import { canFetchTransactionHistory } from './canFetchTransactionHistory';
 import { useAccountType } from './useAccountType';
 import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
-import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
+import {
+  getCachedLifiTransactions,
+  useLifiMergedTransactionCacheStore,
+} from './useLifiMergedTransactionCacheStore';
 import { useLifiTransactionHistory } from './useLifiTransactionHistory';
 import {
   getUpdatedOftTransfer,
@@ -255,10 +261,10 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   }
 
   if (isLifiTransfer(tx)) {
-    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${txId.toLowerCase()}`;
+    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${normalizeTransactionId(txId)}`;
   }
 
-  const base = `${tx.parentChainId}-${txId.toLowerCase()}`;
+  const base = `${tx.parentChainId}-${tx.childChainId}-${normalizeTransactionId(txId)}`;
 
   // For token withdrawals from event logs, include _l2ToL1Id to preserve batch events
   if ('_l2ToL1Id' in tx && tx._l2ToL1Id) {
@@ -436,7 +442,7 @@ export function getDedupedTransactionsForPagination({
 }
 
 function getMergedTransactionIdentity(tx: MergedTransaction) {
-  const normalizedTxId = tx.txId?.toLowerCase();
+  const normalizedTxId = normalizeTransactionId(tx.txId);
 
   if (isLifiTransfer(tx)) {
     return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${normalizedTxId}`;
@@ -447,8 +453,7 @@ function getMergedTransactionIdentity(tx: MergedTransaction) {
 
 function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
   // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
-  const normalizedAddress = address?.toLowerCase();
-  return [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(normalizedAddress);
+  return addressesEqual(tx.sender, address) || addressesEqual(tx.destination, address);
 }
 
 export function mergeTransactions({
@@ -514,10 +519,7 @@ export function mergeTransactions({
         return getIdentity(fetchedTx) === getIdentity(tx);
       }
 
-      return isSameTransaction(
-        { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
-        { ...tx, txId: tx.txId.toLowerCase() },
-      );
+      return isSameTransaction(fetchedTx, tx);
     });
   });
 
@@ -673,9 +675,10 @@ const useTransactionHistoryWithoutStatuses = (
   address: Address | undefined,
   chainFilter: TxHistoryChainFilter,
 ) => {
-  const { chain } = useAccount();
+  const { account } = useWalletForChain(ChainId.Ethereum);
   const [isTestnetMode] = useIsTestnetMode();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const evmAddress = address && isAddress(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
@@ -685,7 +688,7 @@ const useTransactionHistoryWithoutStatuses = (
   const chainFilterKey = getChainFilterKey(chainFilter);
 
   const cctpTransfersMainnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
@@ -694,7 +697,7 @@ const useTransactionHistoryWithoutStatuses = (
   });
 
   const cctpTransfersTestnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
@@ -728,7 +731,7 @@ const useTransactionHistoryWithoutStatuses = (
   const cctpError = activeCctpTransfers.depositsError ?? activeCctpTransfers.withdrawalsError;
 
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled ? evmAddress : undefined,
     isTestnet: isTestnetMode,
   });
   const { data: lifiHistoryTransfers, isLoading: lifiHistoryLoading } = useLifiTransactionHistory({
@@ -737,11 +740,11 @@ const useTransactionHistoryWithoutStatuses = (
   });
 
   const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
-    address ? ['failed_chain_pairs', address] : null,
+    evmAddress ? ['failed_chain_pairs', evmAddress] : null,
   );
-  const connectedChainId = chain?.id;
+  const connectedChainId = account.chainId;
   const canFetch = canFetchTransactionHistory({
-    address,
+    address: evmAddress,
     isLoadingAccountType,
     isTxHistoryEnabled,
     isSmartContractWallet,
@@ -810,8 +813,8 @@ const useTransactionHistoryWithoutStatuses = (
 
               // else, fetch deposits or withdrawals
               return await fetcherFn({
-                sender: includeSentTxs ? address : undefined,
-                receiver: includeReceivedTxs ? address : undefined,
+                sender: includeSentTxs ? evmAddress : undefined,
+                receiver: includeReceivedTxs ? evmAddress : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
                 parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
@@ -846,7 +849,7 @@ const useTransactionHistoryWithoutStatuses = (
     },
     [
       addFailedChainPair,
-      address,
+      evmAddress,
       canFetch,
       connectedChainId,
       forceFetchReceived,
@@ -865,7 +868,7 @@ const useTransactionHistoryWithoutStatuses = (
       ? [
           'tx_list',
           'deposits',
-          address,
+          evmAddress,
           isTestnetMode,
           smartContractWalletChainScope,
           chainFilterKey,
@@ -883,7 +886,7 @@ const useTransactionHistoryWithoutStatuses = (
       ? [
           'tx_list',
           'withdrawals',
-          address,
+          evmAddress,
           isTestnetMode,
           forceFetchReceived,
           smartContractWalletChainScope,
@@ -946,9 +949,9 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
   const { sanitizedTxHash: txHash } = useTxHashSearchState();
 
   const { data, error, isLoading, mutate } = useSWRImmutable(
-    typeof txHash !== 'undefined' && isHash(txHash)
+    typeof txHash !== 'undefined' && isValidTransactionId(txHash)
       ? ([
-          txHash.toLowerCase(),
+          normalizeTransactionId(txHash),
           isTestnetMode,
           getChainFilterKey(chainFilter),
           'txHashSearch',
@@ -1062,9 +1065,12 @@ export const useTransactionHistory = (
   const address = isTxHashSearch ? undefined : searchedAddress;
   const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
-  const { address: connectedAddress, chain, connector } = useAccount();
+  const { account } = useWalletForChain(ChainId.Ethereum);
+  const { connector } = useAccount();
   const wagmiConfig = useConfig();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const connectedAddress = account.address;
+  const evmAddress = address && isAddress(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { isFeatureDisabled } = useDisabledFeatures();
@@ -1124,7 +1130,7 @@ export const useTransactionHistory = (
   );
 
   const depositsFromCache = useMemo(() => {
-    if (isLoadingAccountType || !chain || !isTxHistoryEnabled) {
+    if (isLoadingAccountType || !account.chainId || !isTxHistoryEnabled) {
       return [];
     }
     return getDepositsWithoutStatusesFromCache(address)
@@ -1152,11 +1158,8 @@ export const useTransactionHistory = (
         }
 
         if (isSmartContractWallet) {
-          if (!chain) {
-            return false;
-          }
           // only include txs for the connected network
-          return tx.parentChainId === chain.id;
+          return tx.parentChainId === account.chainId;
         }
         return true;
       });
@@ -1165,7 +1168,7 @@ export const useTransactionHistory = (
     isTestnetMode,
     isLoadingAccountType,
     isSmartContractWallet,
-    chain,
+    account.chainId,
     isTxHistoryEnabled,
     chainFilter,
   ]);
@@ -1179,7 +1182,7 @@ export const useTransactionHistory = (
       return [];
     }
 
-    return (lifiTransactions[address] || []).filter(
+    return getCachedLifiTransactions(lifiTransactions, address).filter(
       (tx) =>
         tx.showInHistory !== false &&
         matchesChainFilter({
@@ -1541,18 +1544,11 @@ export const useTransactionHistory = (
   );
 
   useEffect(() => {
-    if (!runFetcher || !connector) {
-      return;
-    }
-    connector.onAccountsChanged = (accounts: string[]) => {
-      // reset state on account change
-      if (accounts.length > 0) {
-        setPage(1);
-        setPauseCount(0);
-        setFetching(true);
-      }
-    };
-  }, [connector, runFetcher, setPage]);
+    if (!runFetcher || !address) return;
+    setPage(1);
+    setPauseCount(0);
+    setFetching(true);
+  }, [address, runFetcher, setPage]);
 
   useEffect(() => {
     if (!txPages || !fetching || !runFetcher || isValidating) {

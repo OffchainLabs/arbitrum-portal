@@ -2,15 +2,17 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Address, isAddress, isHash } from 'viem';
-import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import type { Address } from '../../util/AddressUtils';
+import { addressesEqual, isValidAddress } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
+import { isValidTransactionId } from '../../util/TransactionIdUtils';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
@@ -58,12 +60,12 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
   searchMode: 'address',
   setAddress: (address: string) => set({ address }),
   setSanitizedAddress: (address: string) => {
-    if (isAddress(address)) {
+    if (isValidAddress(address)) {
       set({ sanitizedAddress: address });
     }
   },
   setSanitizedTxHash: (txHash: string | undefined) => {
-    if (typeof txHash === 'undefined' || isHash(txHash)) {
+    if (typeof txHash === 'undefined' || isValidTransactionId(txHash)) {
       set({ sanitizedTxHash: txHash });
     }
   },
@@ -103,7 +105,7 @@ export function useTxHashSearchState() {
 }
 
 function isNewSearch(searchInput: string, currentSearchValue: string | undefined) {
-  return searchInput.toLowerCase() !== currentSearchValue?.toLowerCase();
+  return !addressesEqual(searchInput, currentSearchValue);
 }
 
 export function TransactionHistorySearchBar() {
@@ -133,7 +135,11 @@ export function TransactionHistorySearchBar() {
     }),
     shallow,
   );
-  const { address: connectedAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: connectedAddress },
+    },
+  } = useWallets();
   const [isTestnetMode] = useIsTestnetMode();
 
   useEffect(() => {
@@ -155,7 +161,7 @@ export function TransactionHistorySearchBar() {
       }
 
       if (mode === 'txHash') {
-        if (!isHash(searchInput)) {
+        if (!isValidTransactionId(searchInput)) {
           setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
           return;
         }
@@ -169,7 +175,7 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      if (!isAddress(searchInput)) {
+      if (!isValidAddress(searchInput)) {
         setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
         return;
       }
@@ -177,7 +183,7 @@ export function TransactionHistorySearchBar() {
       if (isNewSearch(searchInput, sanitizedAddress)) {
         trackEvent('Search Tx for Address Click', {
           isTestnetMode,
-          isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
+          isConnectedAddress: addressesEqual(searchInput, connectedAddress),
         });
       }
 
@@ -206,7 +212,7 @@ export function TransactionHistorySearchBar() {
       if (searchInput === '') {
         return;
       }
-      if (mode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
+      if (mode === 'txHash' ? isValidTransactionId(searchInput) : isValidAddress(searchInput)) {
         searchTx(mode);
       }
     },
