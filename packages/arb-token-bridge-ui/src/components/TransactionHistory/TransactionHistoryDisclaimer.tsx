@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
-import { useBalance } from '../../hooks/useBalance';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { ExternalLink } from '../common/ExternalLink';
 
 export const highlightTransactionHistoryDisclaimer = () => {
@@ -23,17 +23,15 @@ export function TransactionHistoryDisclaimer() {
   const { address: walletAddress } = useAccount();
   const { accountType } = useAccountType();
 
-  const {
-    erc20: [mainnetBalances],
-  } = useBalance({
+  const { data: mainnetBalances } = useTokenBalances({
     chainId: ChainId.Ethereum,
     walletAddress,
+    tokenAddresses: [CommonAddress.Ethereum.USDT],
   });
-  const {
-    erc20: [arbOneBalances],
-  } = useBalance({
+  const { data: arbOneBalances } = useTokenBalances({
     chainId: ChainId.ArbitrumOne,
     walletAddress,
+    tokenAddresses: [CommonAddress.ArbitrumOne.USDT],
   });
 
   const showOftDisclaimer = useMemo(() => {
@@ -41,8 +39,8 @@ export function TransactionHistoryDisclaimer() {
     const arbOneUsdtBalance = arbOneBalances?.[CommonAddress.ArbitrumOne.USDT];
 
     const userHasUsdtBalance =
-      (mainnetUsdtBalance && mainnetUsdtBalance.gt(0)) ||
-      (arbOneUsdtBalance && arbOneUsdtBalance.gt(0));
+      (mainnetUsdtBalance !== undefined && mainnetUsdtBalance > 0n) ||
+      (arbOneUsdtBalance !== undefined && arbOneUsdtBalance > 0n);
 
     return userHasUsdtBalance && accountType === 'smart-contract-wallet';
   }, [mainnetBalances, arbOneBalances, accountType]);
