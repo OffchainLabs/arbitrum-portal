@@ -48,6 +48,84 @@ describe.sequential('useTokenBalances', () => {
     expect(result.current.data).toEqual({ token: 42n });
   });
 
+  it('does not poll token-list requests when periodic refresh is disabled', async () => {
+    vi.useFakeTimers();
+    const fetchBalance = vi.fn(async () => ({ token: 7n }));
+    vi.mocked(getBalanceClient).mockReturnValue({ fetchBalance });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
+    );
+    const { result } = renderHook(
+      () =>
+        useObservedTokenBalances({
+          chainId: 1,
+          walletAddress: 'account',
+          tokenAddresses: ['token'],
+          refreshInterval: 0,
+        }),
+      { wrapper },
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(result.current.data).toEqual({ token: 7n });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(fetchBalance).toHaveBeenCalledTimes(1);
+  });
+
+  it('revalidates cached balances when a consumer without polling mounts again', async () => {
+    let balance = 1n;
+    vi.mocked(getBalanceClient).mockReturnValue({ fetchBalance: async () => ({ token: balance }) });
+    const cache = new Map();
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => cache, dedupingInterval: 0 }}>{children}</SWRConfig>
+    );
+    const input = {
+      chainId: 1,
+      walletAddress: 'account',
+      tokenAddresses: ['token'],
+      refreshInterval: 0,
+    };
+    const first = renderHook(() => useObservedTokenBalances(input), { wrapper });
+    await waitFor(() => expect(first.result.current.data).toEqual({ token: 1n }));
+    first.unmount();
+    balance = 2n;
+    const second = renderHook(() => useObservedTokenBalances(input), { wrapper });
+    await waitFor(() => expect(second.result.current.data).toEqual({ token: 2n }));
+  });
+
+  it('keeps previous balances while a changed token list loads, but not after disconnect', async () => {
+    vi.mocked(getBalanceClient).mockReturnValue({
+      fetchBalance: async ({ tokenAddresses }) =>
+        Object.fromEntries(tokenAddresses.map((token) => [token, 1n])),
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
+    );
+    const initialProps: { walletAddress?: string; tokens: string[] } = {
+      walletAddress: 'account',
+      tokens: ['first'],
+    };
+    const { result, rerender } = renderHook(
+      ({ walletAddress, tokens }) =>
+        useObservedTokenBalances({
+          chainId: 1,
+          walletAddress,
+          tokenAddresses: tokens,
+          keepPreviousData: true,
+        }),
+      { wrapper, initialProps },
+    );
+    await waitFor(() => expect(result.current.data).toEqual({ first: 1n }));
+    rerender({ walletAddress: 'account', tokens: ['first', 'second'] });
+    expect(result.current.data).toEqual({ first: 1n });
+    await waitFor(() => expect(result.current.data).toEqual({ first: 1n, second: 1n }));
+    rerender({ walletAddress: undefined, tokens: ['first', 'second'] });
+    expect(result.current.data).toBeUndefined();
+  });
+
   it('does not retain another account balance during loading, RPC failure, or disconnect', async () => {
     const fetchBalance = vi.fn(async ({ walletAddress }: { walletAddress: string }) => {
       if (walletAddress === 'second') throw new Error('RPC unavailable');
