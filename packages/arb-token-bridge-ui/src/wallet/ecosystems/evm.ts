@@ -1,4 +1,4 @@
-import { isAddress } from 'viem';
+import { isAddress, zeroAddress } from 'viem';
 
 import type { EcosystemConfig } from '.';
 
@@ -9,4 +9,5 @@ export const evmEcosystem: EcosystemConfig = {
     // EVM addresses are case-insensitive: lowercasing drops the checksum casing
     normalize: (address) => address.toLowerCase(),
   },
+  nativeTokenAddress: zeroAddress,
 };
