@@ -1,3 +1,4 @@
+import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import {
   type ContractStorage,
   type ERC20BridgeToken,
@@ -28,23 +29,28 @@ export const ARB_SEPOLIA_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
 };
 
 /**
- * Whether a withdrawal-only token lacks a LiFi alternative for deposits.
+ * Whether a withdrawal-only token lacks a LiFi alternative for deposits on a LiFi route.
  *
  * Deliberately not the same question as `useSelectedTokenIsWithdrawOnly`, which asks whether
  * the *canonical* route is blocked and is what disables that route. This asks whether the
  * token can reach the destination chain at all, so a LiFi pair keeps it available here while
  * the canonical route stays disabled. Do not merge the two.
+ *
+ * Only LiFi routes can swap the deposit into native currency, so canonical-only routes keep
+ * the token as the destination and rely on the withdraw-only dialog.
  */
 export function isTokenDepositUnavailable({
   isDepositMode,
   tokenAddress,
   token,
-  childChainId,
+  sourceChainId,
+  destinationChainId,
 }: {
   isDepositMode: boolean;
   tokenAddress: string | undefined;
   token: ERC20BridgeToken | undefined;
-  childChainId: number;
+  sourceChainId: number;
+  destinationChainId: number;
 }): boolean {
   if (!isDepositMode) {
     return false;
@@ -55,9 +61,14 @@ export function isTokenDepositUnavailable({
     return false;
   }
 
+  if (!isLifiTransfer({ sourceChainId, destinationChainId })) {
+    return false;
+  }
+
+  // In deposit mode the destination chain is the child chain.
   const isCanonicalDepositBlocked = isWithdrawOnlyToken({
     parentChainErc20Address: tokenAddress,
-    childChainId,
+    childChainId: destinationChainId,
   });
   if (!isCanonicalDepositBlocked) {
     return false;

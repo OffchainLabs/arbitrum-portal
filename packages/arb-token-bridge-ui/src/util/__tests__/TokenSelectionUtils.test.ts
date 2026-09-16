@@ -30,8 +30,11 @@ describe('isTokenDepositUnavailable', () => {
     isDepositMode: true,
     tokenAddress: CommonAddress.Ethereum.USDC,
     token: buildToken(),
-    childChainId: ChainId.RobinhoodChain,
+    sourceChainId: ChainId.Ethereum,
+    destinationChainId: ChainId.RobinhoodChain,
   };
+  // Ethereum USDC is also withdraw-only on Plume, which has no LiFi route from Ethereum.
+  const PLUME_CHAIN_ID = 98866;
 
   it('is false on withdrawals, even for a token whose deposit is blocked', () => {
     expect(isTokenDepositUnavailable({ ...withdrawOnlyArgs, isDepositMode: false })).toBe(false);
@@ -48,13 +51,25 @@ describe('isTokenDepositUnavailable', () => {
       isTokenDepositUnavailable({
         ...withdrawOnlyArgs,
         tokenAddress: CommonAddress.Ethereum.USDT,
-        childChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.ArbitrumOne,
       }),
+    ).toBe(false);
+  });
+
+  it('is false when the canonical deposit is blocked on a route without a LiFi swap', () => {
+    expect(
+      isTokenDepositUnavailable({ ...withdrawOnlyArgs, destinationChainId: PLUME_CHAIN_ID }),
     ).toBe(false);
   });
 
   it('is true when the canonical deposit is blocked and no LiFi pair exists', () => {
     expect(isTokenDepositUnavailable(withdrawOnlyArgs)).toBe(true);
+  });
+
+  it('applies to every withdraw-only token on a LiFi route, not only USDC', () => {
+    expect(
+      isTokenDepositUnavailable({ ...withdrawOnlyArgs, tokenAddress: CommonAddress.Ethereum.USDT }),
+    ).toBe(true);
   });
 
   it('is false when the canonical deposit is blocked but a LiFi pair exists', () => {
