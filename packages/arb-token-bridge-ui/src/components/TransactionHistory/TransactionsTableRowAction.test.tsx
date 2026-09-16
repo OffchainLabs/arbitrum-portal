@@ -1,16 +1,20 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
-import type { Address } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WithdrawalStatus } from '../../state/app/state';
 import type { LifiMergedTransaction } from '../../state/app/state';
+import { createBridgeTestWrapper } from '../../test-utils/bridge-test-wrapper';
 import {
   createMockLifiBatchedTransaction,
   createMockLifiRoute,
   createMockLifiTransaction,
 } from '../../test-utils/lifi';
+import { ChainId } from '../../types/ChainId';
+import type { EvmAddress, SolanaAddress } from '../../util/AddressUtils';
 import { rejectLifiRouteBatchId } from '../../util/LifiTransactionStatus';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
+import type { WalletContextValue } from '../../wallet/types';
 import type { DialogProps } from '../common/Dialog2';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
@@ -21,16 +25,9 @@ vi.mock('../../hooks/useTransferDuration', () => ({
 }));
 
 const mocks = vi.hoisted(() => ({
-  useAccount: vi.fn(),
-  useConfig: vi.fn(),
   resumeLifiRoute: vi.fn(),
   updateTransaction: vi.fn(),
   updateLifiTransactionInCache: vi.fn(),
-}));
-
-vi.mock('wagmi', () => ({
-  useAccount: mocks.useAccount,
-  useConfig: mocks.useConfig,
 }));
 
 vi.mock('@/token-bridge-sdk/LifiTransferStarter', () => ({
@@ -128,6 +125,42 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
   } as LifiMergedTransaction['lifiRoute'],
 });
 
+const evmAddress = '0x1111111111111111111111111111111111111111';
+
+function connectedWallets({
+  evm,
+  solana,
+}: {
+  evm?: EvmAddress;
+  solana?: SolanaAddress;
+}): WalletContextValue {
+  return {
+    evm: evm
+      ? {
+          ...defaultWalletContextValue.evm,
+          isConnected: true,
+          account: { ecosystem: 'evm', address: evm, chainId: 1, status: 'connected' },
+        }
+      : defaultWalletContextValue.evm,
+    solana: solana
+      ? {
+          ...defaultWalletContextValue.solana,
+          isConnected: true,
+          account: { ecosystem: 'solana', address: solana, status: 'connected' },
+        }
+      : defaultWalletContextValue.solana,
+  };
+}
+
+let wallets: WalletContextValue;
+
+function wrapper() {
+  return createBridgeTestWrapper({
+    query: { sourceChain: ChainId.Ethereum, destinationChain: ChainId.ArbitrumOne },
+    wallets,
+  });
+}
+
 function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
   cleanup();
   render(
@@ -136,6 +169,7 @@ function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
       type="deposits"
       updateTransaction={mocks.updateTransaction}
     />,
+    { wrapper: wrapper() },
   );
 }
 
@@ -144,12 +178,7 @@ describe.sequential('TransactionsTableRowAction', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.useAccount.mockReturnValue({
-      address: '0x1111111111111111111111111111111111111111' as Address,
-      chain: { id: 1 },
-      isConnected: true,
-    });
-    mocks.useConfig.mockReturnValue({});
+    wallets = connectedWallets({ evm: evmAddress });
   });
 
   it('shows resume for a multi-step LiFi transaction confirmed on source and pending on destination', () => {
@@ -217,7 +246,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         />
       );
     }
-    render(<ActionWithHistory />);
+    render(<ActionWithHistory />, { wrapper: wrapper() });
     fireEvent.click(screen.getByRole('button', { name: 'Resume LiFi transaction' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Approve token' }));
@@ -280,7 +309,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         </>
       );
     }
-    render(<History />);
+    render(<History />, { wrapper: wrapper() });
     expect(
       screen
         .getByText('Funds arrive on Robinhood Chain')
@@ -343,11 +372,7 @@ describe.sequential('TransactionsTableRowAction', () => {
   });
 
   it('does not show resume when the connected wallet is not the LiFi sender', () => {
-    mocks.useAccount.mockReturnValue({
-      address: '0x2222222222222222222222222222222222222222' as Address,
-      chain: { id: 1 },
-      isConnected: true,
-    });
+    wallets = connectedWallets({ evm: '0x2222222222222222222222222222222222222222' });
 
     renderAction();
 
@@ -370,5 +395,19 @@ describe.sequential('TransactionsTableRowAction', () => {
       }),
     ).toBeNull();
     expect(screen.getByText('Time left: Countdown')).toBeDefined();
+  });
+
+  it('shows resume for a Solana LiFi transaction sent by the connected Solana wallet', () => {
+    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    wallets = connectedWallets({ evm: evmAddress, solana: solanaAddress });
+
+    renderAction({
+      ...baseLifiTransaction,
+      sender: solanaAddress,
+      sourceChainId: ChainId.Solana,
+      parentChainId: ChainId.Solana,
+    });
+
+    expect(screen.getByRole('button', { name: 'Resume LiFi transaction' })).toBeDefined();
   });
 });

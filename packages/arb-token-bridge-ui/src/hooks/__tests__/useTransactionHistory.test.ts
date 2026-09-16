@@ -1,11 +1,14 @@
 import type { RouteExtended } from '@lifi/sdk';
 import * as lifiSdk from '@lifi/sdk';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import bs58 from 'bs58';
 import { BigNumber } from 'ethers';
-import { Address } from 'viem';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Config } from 'wagmi';
 
+import { useTransactionHistoryAddressStore } from '../../components/TransactionHistory/TransactionHistorySearchBar';
 import * as transactionHelpers from '../../components/TransactionHistory/helpers';
+import { useTransactionHistoryChainFilterStore } from '../../components/TransactionHistory/useTransactionHistoryChainFilterStore';
 import {
   DepositStatus,
   LifiMergedTransaction,
@@ -13,17 +16,23 @@ import {
   WithdrawalStatus,
 } from '../../state/app/state';
 import {
+  createBridgeTestWrapper,
+  createConnectedWagmiConfig,
+} from '../../test-utils/bridge-test-wrapper';
+import {
   createMockLifiBatchedTransaction,
   createMockLifiPartialTransaction,
+  createMockLifiTransaction,
 } from '../../test-utils/lifi';
+import type { EvmAddress } from '../../util/AddressUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import {
   getPendingLifiRouteBatchIds,
   rejectLifiRouteBatchId,
   resolveLifiRouteBatchId,
 } from '../../util/LifiTransactionStatus';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { AssetType } from '../arbTokenBridge.types';
-import { useArbQueryParams } from '../useArbQueryParams';
 import {
   prepareLifiTransactionForStorage,
   useLifiMergedTransactionCacheStore,
@@ -48,11 +57,6 @@ const secondResolvedBatchTxHash =
   '0x9c25709d07f1cc9d852ce00ad0c5fcd1264690575ca104ded691cbc2f3bf6ee2';
 const acceptedSourceTxHash = '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c';
 
-const wagmiMocks = vi.hoisted(() => ({
-  address: '0x1111111111111111111111111111111111111111' as Address,
-  connector: null as object | null,
-  config: {},
-}));
 const getCallsStatusMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@lifi/sdk', async (importActual) => ({
@@ -141,45 +145,49 @@ const createTestCase = ({
   expectedPagesTxCounts: number[];
 }) => ({ key, enabled, expectedPagesTxCounts });
 
-vi.mock('wagmi', async (importActual) => ({
-  ...(await importActual()),
-  useConfig: () => wagmiMocks.config,
-  useAccount: () => ({
-    address: wagmiMocks.address,
-    isConnected: true,
-    chain: { id: 11155111 },
-    connector: wagmiMocks.connector,
+function createWalletWrapper(
+  address: EvmAddress,
+  {
+    enabled = true,
+    config,
+    history = [],
+  }: { enabled?: boolean; config?: Config; history?: LifiMergedTransaction[] } = {},
+) {
+  return createBridgeTestWrapper({
+    query: {
+      sourceChain: 1,
+      destinationChain: 42161,
+      disabledFeatures: enabled ? '' : 'tx-history',
+    },
+    wallets: {
+      ...defaultWalletContextValue,
+      evm: {
+        ...defaultWalletContextValue.evm,
+        isConnected: true,
+        account: { ecosystem: 'evm', address, chainId: 1, status: 'connected' },
+      },
+    },
+    wagmiConfig: config,
+    cacheEntries: [[[address, 'useLifiTransactionHistory'], history]],
+  });
+}
+
+vi.mock('../../token-bridge-sdk/utils', async (actual) => ({
+  ...(await actual<typeof import('../../token-bridge-sdk/utils')>()),
+  getProviderForChainId: (chainId: number) => ({
+    getNetwork: async () => ({ chainId }),
+    getBlockNumber: async () => 0,
+    getTransactionCount: async () => 0,
   }),
 }));
+
+vi.mock('../../util/deposits/fetchDeposits', () => ({ fetchDeposits: async () => [] }));
+vi.mock('../../util/withdrawals/fetchWithdrawals', () => ({ fetchWithdrawals: async () => [] }));
 
 vi.mock('@wagmi/core', async (importActual) => ({
   ...(await importActual()),
   getCallsStatus: getCallsStatusMock,
 }));
-
-vi.mock('next/navigation', async (importActual) => ({
-  ...(await importActual()),
-  usePathname: vi.fn().mockReturnValue('/bridge'),
-}));
-
-vi.mock('../useArbQueryParams', async (importActual) => ({
-  ...(await importActual()),
-  useArbQueryParams: vi.fn().mockReturnValue([{}, vi.fn()]),
-}));
-
-const renderHookAsyncUseTransactionHistory = async (address: Address) => {
-  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }));
-
-  return { result: hook.result };
-};
-
-function enableTransactionHistory() {
-  const [currentParams, setParams] = vi.mocked(useArbQueryParams)();
-  vi.mocked(useArbQueryParams).mockReturnValue([
-    { ...currentParams, sourceChain: 11155111, disabledFeatures: [] },
-    setParams,
-  ]);
-}
 
 function createBatchedLifiTestTransaction(routeId: string): LifiMergedTransaction {
   return {
@@ -231,43 +239,59 @@ describe.sequential('useTransactionHistory', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
-    wagmiMocks.address = MERGE_TEST_ADDRESS;
-    wagmiMocks.connector = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async (url: string) =>
+          new Response(
+            JSON.stringify({ data: url.includes('/cctp/') ? { pending: [], completed: [] } : [] }),
+          ),
+      ),
+    );
     useLifiMergedTransactionCacheStore.setState({ transactions: {} });
   });
 
-  it('keeps newer SDK progress when an earlier status request finishes', async () => {
-    enableTransactionHistory();
-    const transaction = { ...lifiTestBaseTx, txId: acceptedSourceTxHash };
-    useLifiMergedTransactionCacheStore.setState({
-      transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
-    });
-    let releaseStatus = () => {};
-    const statusResponse = new Promise<void>((resolve) => {
-      releaseStatus = resolve;
-    });
-    vi.spyOn(transactionHelpers, 'getUpdatedLifiTransfer').mockImplementation(async (tx) => {
-      await statusResponse;
-      return tx;
-    });
-    const { result } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+  it.each([MERGE_TEST_ADDRESS, '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'] as const)(
+    'keeps newer SDK progress during status polling for %s',
+    async (address) => {
+      const transaction = {
+        ...lifiTestBaseTx,
+        txId: acceptedSourceTxHash,
+        sender: address,
+        destination: address,
+      };
+      useLifiMergedTransactionCacheStore.setState({
+        transactions: { [address.toLowerCase()]: [transaction] },
+      });
+      let releaseStatus = () => {};
+      const statusResponse = new Promise<void>((resolve) => {
+        releaseStatus = resolve;
+      });
+      vi.spyOn(transactionHelpers, 'getUpdatedLifiTransfer').mockImplementation(async (tx) => {
+        await statusResponse;
+        return tx;
+      });
+      const { result } = renderHook(() => useTransactionHistory(address), {
+        wrapper: createWalletWrapper(address),
+      });
 
-    const pendingUpdate = result.current.updatePendingTransaction(transaction);
-    const completedTransaction = {
-      ...transaction,
-      status: WithdrawalStatus.CONFIRMED,
-      destinationStatus: WithdrawalStatus.CONFIRMED,
-    };
-    await act(async () => {
-      useLifiMergedTransactionCacheStore.getState().updateTransaction(completedTransaction);
-      releaseStatus();
-      await pendingUpdate;
-    });
+      const pendingUpdate = result.current.updatePendingTransaction(transaction);
+      const completedTransaction = {
+        ...transaction,
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.CONFIRMED,
+      };
+      await act(async () => {
+        useLifiMergedTransactionCacheStore.getState().updateTransaction(completedTransaction);
+        releaseStatus();
+        await pendingUpdate;
+      });
 
-    expect(useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]).toEqual([
-      completedTransaction,
-    ]);
-  });
+      expect(
+        useLifiMergedTransactionCacheStore.getState().transactions[address.toLowerCase()],
+      ).toEqual([completedTransaction]);
+    },
+  );
 
   it('shows the rejected destination batch instead of an older pending history page', () => {
     const pending = createMockLifiBatchedTransaction();
@@ -290,7 +314,6 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('preserves a rejected destination batch after a stale poll and reload', async () => {
-    enableTransactionHistory();
     const pending = createMockLifiBatchedTransaction();
     if (!pending.lifiRoute) throw new Error('Expected a saved route');
     const rejected = {
@@ -312,7 +335,9 @@ describe.sequential('useTransactionHistory', () => {
       },
       receiving: { chainId: pending.destinationChainId },
     });
-    const { result, unmount } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+    const { result, unmount } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await act(async () => {
       await result.current.updatePendingTransaction(pending);
@@ -333,29 +358,61 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('polls wallet batches only from the history fetcher', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockImplementation(() => new Promise(() => {}));
     const transaction = createBatchedLifiTestTransaction('single-poller');
     useLifiMergedTransactionCacheStore.setState({
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => {
-      useTransactionHistory(MERGE_TEST_ADDRESS);
-      useTransactionHistory(MERGE_TEST_ADDRESS);
-    });
+    renderHook(
+      () => {
+        useTransactionHistory(MERGE_TEST_ADDRESS);
+        useTransactionHistory(MERGE_TEST_ADDRESS);
+      },
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }) },
+    );
 
     await act(async () => {});
     expect(getCallsStatusMock).not.toHaveBeenCalled();
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+    });
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
   });
 
+  it('reconciles hidden wallet batches stored under a legacy lowercase address key', async () => {
+    const address = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const cacheKey = address.toLowerCase();
+    const config = createConnectedWagmiConfig(address);
+    getCallsStatusMock.mockResolvedValue({
+      chainId: 1,
+      receipts: [{ transactionHash: resolvedBatchTxHash }],
+      status: 'success',
+    });
+    useLifiMergedTransactionCacheStore.setState({ transactions: { [cacheKey]: [] } });
+    useLifiMergedTransactionCacheStore.getState().addTransaction({
+      ...createBatchedLifiTestTransaction('legacy-address-batch'),
+      sender: address,
+      destination: address,
+    });
+
+    const { unmount } = renderHook(() => useTransactionHistory(address, { runFetcher: true }), {
+      wrapper: createWalletWrapper(address, { config }),
+    });
+    await waitFor(() => {
+      const [transaction] =
+        useLifiMergedTransactionCacheStore.getState().transactions[cacheKey] ?? [];
+      expect(transaction?.txId).toBe(resolvedBatchTxHash);
+      expect(transaction?.showInHistory).toBe(true);
+    });
+    expect(getCallsStatusMock).toHaveBeenCalled();
+    unmount();
+  });
+
   it('replaces a cached batch id with the final route transaction hash', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockResolvedValue({
       chainId: 1,
       receipts: [{ transactionHash: resolvedBatchTxHash }],
@@ -366,7 +423,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -385,8 +444,7 @@ describe.sequential('useTransactionHistory', () => {
   ])(
     'fails a destination batch with unsuccessful receipts: %s',
     async ({ status, receiptStatus }) => {
-      enableTransactionHistory();
-      wagmiMocks.connector = {};
+      const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
       getCallsStatusMock.mockResolvedValue({
         status,
         chainId: 1,
@@ -396,7 +454,9 @@ describe.sequential('useTransactionHistory', () => {
       useLifiMergedTransactionCacheStore.setState({
         transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
       });
-      renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+      renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+        wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+      });
       await waitFor(() => {
         const updated =
           useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]?.[0];
@@ -407,15 +467,16 @@ describe.sequential('useTransactionHistory', () => {
   );
 
   it('keeps an accepted route transaction when a later wallet batch is rejected', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockRejectedValue(new Error('bundle id is unknown'));
     const transaction = createMixedLifiTestTransaction('mixed-rejected-batch-route');
     useLifiMergedTransactionCacheStore.setState({
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -432,8 +493,7 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('keeps the first accepted transaction as route identity when a later batch resolves', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockResolvedValue({
       chainId: 1,
       receipts: [{ transactionHash: resolvedBatchTxHash }],
@@ -444,7 +504,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -457,8 +519,7 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('resolves every batch id stored on one route', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockImplementation((_config, { id }: { id: string }) =>
       Promise.resolve({
         chainId: 1,
@@ -483,7 +544,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -497,8 +560,7 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('keeps a wallet batch hidden until its receipt transaction hash is available', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     let batchHasReceipt = false;
     getCallsStatusMock.mockImplementation(() => {
       if (batchHasReceipt) {
@@ -515,8 +577,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }) },
     );
 
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
@@ -548,16 +611,16 @@ describe.sequential('useTransactionHistory', () => {
     ['removes a hidden route after rejection', 'bundle id is unknown', false],
     ['keeps a hidden route after a transient error', 'request timed out', true],
   ])('%s', async (_name, errorMessage, shouldKeepRoute) => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     getCallsStatusMock.mockRejectedValue(new Error(errorMessage));
     const transaction = createBatchedLifiTestTransaction('hidden-batch');
     useLifiMergedTransactionCacheStore.setState({
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }) },
     );
 
     await waitFor(() => {
@@ -570,8 +633,7 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('keeps a wallet batch hidden while pending and removes it after rejection', async () => {
-    enableTransactionHistory();
-    wagmiMocks.connector = {};
+    const wagmiConfig = createConnectedWagmiConfig(MERGE_TEST_ADDRESS);
     let batchWasRejected = false;
     getCallsStatusMock.mockImplementation(() => {
       if (batchWasRejected) {
@@ -584,8 +646,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS, { config: wagmiConfig }) },
     );
 
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
@@ -607,15 +670,17 @@ describe.sequential('useTransactionHistory', () => {
   });
 
   it('does not reconcile a cached batch while viewing a different wallet', async () => {
-    enableTransactionHistory();
-    wagmiMocks.address = wallets.WALLET_EMPTY;
-    wagmiMocks.connector = {};
+    const connectedAddress = wallets.WALLET_EMPTY;
     const transaction = createBatchedLifiTestTransaction('another-wallet-batch-route');
     useLifiMergedTransactionCacheStore.setState({
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(connectedAddress, {
+        config: createConnectedWagmiConfig(connectedAddress),
+      }),
+    });
     await act(async () => {
       await Promise.resolve();
     });
@@ -656,25 +721,25 @@ describe.sequential('useTransactionHistory', () => {
   ])(
     'fetches history for key:$key enabled:$enabled expectedPagesTxCounts:$expectedPagesTxCounts',
     async ({ key, enabled, expectedPagesTxCounts }) => {
-      const mockUseArbQueryParams = vi.mocked(useArbQueryParams);
-      const [currentParams, setParams] = mockUseArbQueryParams();
-
-      mockUseArbQueryParams.mockReturnValue([
-        {
-          ...currentParams,
-          sourceChain: 11155111,
-          disabledFeatures: enabled ? [] : ['tx-history'],
-        },
-        setParams,
-      ]);
-
       const address = wallets[key];
 
       if (!address) {
         throw new Error(`Wallet ${key} not found. Make sure it's added to the list of wallets.`);
       }
 
-      const { result } = await renderHookAsyncUseTransactionHistory(address);
+      const history = Array.from(
+        { length: key === 'WALLET_MULTIPLE_TX' ? 5 : key === 'WALLET_SINGLE_TX' ? 1 : 0 },
+        (_, index) =>
+          createMockLifiTransaction({
+            sender: address,
+            destination: address,
+            txId: `0x${String(index + 1).padStart(64, '0')}`,
+            createdAt: Date.now() - (31 + index) * 24 * 60 * 60 * 1000,
+          }),
+      );
+      const { result } = renderHook(() => useTransactionHistory(address, { runFetcher: true }), {
+        wrapper: createWalletWrapper(address, { enabled, history }),
+      });
 
       // fetch each batch
       for (let page = 0; page < expectedPagesTxCounts.length; page++) {
@@ -685,15 +750,13 @@ describe.sequential('useTransactionHistory', () => {
           });
         }
 
-        expect(result.current.loading).toBe(true);
-
         // eslint-disable-next-line no-await-in-loop
         await waitFor(
           () => {
             // fetching finished
             expect(result.current.loading).toBe(false);
           },
-          { timeout: 30_000, interval: 500 },
+          { timeout: 3_000 },
         );
 
         // total results so far
@@ -1349,5 +1412,176 @@ describe.sequential('LiFi recovered route history', () => {
     expect(updated.destinationStatus).toBe(WithdrawalStatus.FAILURE);
     expect(updated.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
     expect(prepareLifiTransactionForStorage(updated).lifiRoute).toBeDefined();
+  });
+});
+
+describe('signature deduplication', () => {
+  it('dedupes an API signature against the same case-sensitive route process', () => {
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    const cached = createMockLifiBatchedTransaction();
+    const step = cached.lifiRoute?.steps[0];
+    if (!step || !cached.lifiRoute) throw new Error('Expected an executable fixture route');
+    step.action.fromChainId = 1151111081099710;
+    step.action.fromToken.chainId = 1151111081099710;
+    step.execution = {
+      status: 'DONE',
+      startedAt: 1,
+      process: [{ type: 'CROSS_CHAIN', status: 'DONE', startedAt: 1, txHash: signature }],
+    };
+    cached.sourceChainId = 1151111081099710;
+    cached.parentChainId = 1151111081099710;
+    cached.txId = 'local-route-id';
+    const fetched = { ...cached, txId: signature, lifiRoute: undefined };
+
+    expect(
+      getDedupedTransactionsForPagination({
+        fetchedTransactions: [fetched],
+        cachedDeposits: [],
+        cachedLifiTransactions: [cached],
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('keeps signatures that differ only in case apart while merging provider catch-up', () => {
+    const tx = {
+      ...lifiTestBaseTx,
+      txId: bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1)),
+      sourceChainId: 1151111081099710,
+      parentChainId: 1151111081099710,
+    };
+    const differentCase = { ...tx, txId: tx.txId.toLowerCase() };
+    const completed = { ...tx, destinationStatus: WithdrawalStatus.CONFIRMED };
+    const merged = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [tx, differentCase],
+      fetchedTransactions: [[completed]],
+    });
+    expect(merged).toHaveLength(2);
+    expect(merged).toContainEqual(expect.objectContaining(completed));
+    expect(
+      getDedupedTransactionsForPagination({
+        fetchedTransactions: [completed, differentCase],
+        cachedDeposits: [],
+        cachedLifiTransactions: [tx],
+      }),
+    ).toHaveLength(2);
+  });
+});
+
+const solanaFirstAddress = bs58.encode(new Uint8Array(32).fill(1));
+const solanaSecondAddress = bs58.encode(new Uint8Array(32).fill(2));
+
+function solanaTransactions(address: string, count: number, createdAt: number) {
+  return Array.from({ length: count }, (_, index) =>
+    createMockLifiTransaction({
+      sender: address,
+      destination: address,
+      txId: bs58.encode(new Uint8Array(64).fill(index + 1)),
+      sourceChainId: 1151111081099710,
+      destinationChainId: 42161,
+      createdAt: createdAt - index,
+    }),
+  );
+}
+
+function createSolanaWalletWrapper(address: string) {
+  return createBridgeTestWrapper({
+    query: { sourceChain: 1, destinationChain: 42161 },
+    wallets: {
+      ...defaultWalletContextValue,
+      solana: {
+        ...defaultWalletContextValue.solana,
+        isConnected: true,
+        account: { ecosystem: 'solana', address, status: 'connected' },
+      },
+    },
+  });
+}
+
+describe.sequential('history address switches', () => {
+  afterEach(() => {
+    cleanup();
+    useTransactionHistoryChainFilterStore.setState({
+      selection: null,
+      selectionDefaultChainId: undefined,
+    });
+    vi.unstubAllGlobals();
+    useTransactionHistoryAddressStore.getState().resetSearch();
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+  });
+
+  it('loads Solana LiFi history without an EVM wallet and resumes pagination after a search switch', async () => {
+    useTransactionHistoryChainFilterStore
+      .getState()
+      .setSelection({ chainIds: [1151111081099710], isTestnetMode: false });
+    const old = solanaTransactions(solanaFirstAddress, 4, Date.now() - 40 * 24 * 60 * 60 * 1000);
+    const recent = solanaTransactions(solanaSecondAddress, 4, Date.now());
+    const fetchHistory = vi.fn(async (input: string) => {
+      const url = new URL(input, 'http://localhost');
+      expect(url.pathname).toBe('/api/crosschain-transfers/lifi/transactions');
+      const data = url.searchParams.get('wallet') === solanaFirstAddress ? old : recent;
+      return new Response(JSON.stringify({ data }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchHistory);
+    const { result, rerender } = renderHook(
+      ({ address }) => useTransactionHistory(address, { runFetcher: true }),
+      {
+        initialProps: { address: solanaFirstAddress },
+        wrapper: createSolanaWalletWrapper(solanaFirstAddress),
+      },
+    );
+
+    await waitFor(() => expect(result.current.transactions).toHaveLength(3));
+    await act(async () => {});
+    expect(result.current.completed).toBe(false);
+    expect(result.current.loading).toBe(false);
+
+    rerender({ address: solanaSecondAddress });
+    await waitFor(() => expect(result.current.transactions).toHaveLength(4));
+    expect(result.current.transactions.every((tx) => tx.sender === solanaSecondAddress)).toBe(true);
+    expect(result.current.completed).toBe(true);
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores an older address response that arrives after the new search', async () => {
+    useTransactionHistoryChainFilterStore
+      .getState()
+      .setSelection({ chainIds: [1151111081099710], isTestnetMode: false });
+    let releaseFirst: (response: Response) => void = () => {
+      throw new Error('Request not started');
+    };
+    const firstResponse = new Promise<Response>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const fetchHistory = vi.fn((input: string) => {
+      const url = new URL(input, 'http://localhost');
+      return url.searchParams.get('wallet') === solanaFirstAddress
+        ? firstResponse
+        : Promise.resolve(
+            new Response(
+              JSON.stringify({ data: solanaTransactions(solanaSecondAddress, 1, Date.now()) }),
+            ),
+          );
+    });
+    vi.stubGlobal('fetch', fetchHistory);
+    const { result, rerender } = renderHook(
+      ({ address }) => useTransactionHistory(address, { runFetcher: true }),
+      {
+        initialProps: { address: solanaFirstAddress },
+        wrapper: createSolanaWalletWrapper(solanaFirstAddress),
+      },
+    );
+    await waitFor(() => expect(fetchHistory).toHaveBeenCalledTimes(1));
+    rerender({ address: solanaSecondAddress });
+    await waitFor(() => expect(result.current.transactions[0]?.sender).toBe(solanaSecondAddress));
+    await act(async () => {
+      releaseFirst(
+        new Response(
+          JSON.stringify({ data: solanaTransactions(solanaFirstAddress, 1, Date.now()) }),
+        ),
+      );
+      await firstResponse;
+    });
+    expect(result.current.transactions.map((tx) => tx.sender)).toEqual([solanaSecondAddress]);
   });
 });

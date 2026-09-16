@@ -18,6 +18,11 @@ export type EcosystemConfig = {
     /** Whether two addresses that differ only in case are different accounts */
     isCaseSensitive: boolean;
   };
+  transactionId: {
+    /** False while the ecosystem is disabled, unless `ignoreFeatureFlag` is set */
+    isValid: (transactionId: string, options?: ValidationOptions) => boolean;
+    normalize: (transactionId: string) => string;
+  };
   /** Address that stands for the native currency in balance requests and LiFi quotes */
   nativeTokenAddress: string;
   /**
@@ -25,6 +30,8 @@ export type EcosystemConfig = {
    * and no canonical bridge
    */
   isLifiOnly: boolean;
+  /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
+  hasTokenApprovals: boolean;
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {

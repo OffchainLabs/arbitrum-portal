@@ -36,6 +36,16 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
+      label: 'Solana source deposit',
+      sourceChainId: ChainId.Solana,
+      destinationChainId: ChainId.ArbitrumOne,
+      expected: {
+        parentChainId: ChainId.Solana,
+        childChainId: ChainId.ArbitrumOne,
+        isDepositMode: true,
+      },
+    },
+    {
       label: 'Robinhood Chain to ApeChain sibling transfer',
       sourceChainId: ChainId.RobinhoodChain,
       destinationChainId: ChainId.ApeChain,
