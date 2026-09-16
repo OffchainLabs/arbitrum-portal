@@ -2,33 +2,29 @@ import { constants } from 'ethers';
 import { useMemo } from 'react';
 
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
-import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
 import { addressesEqual } from '../util/AddressUtils';
+import { isTokenAvailableOnChain } from '../util/TokenListUtils';
+import { isSameTokenSelection } from '../util/TokenSelectionUtils';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
 import { useSelectedToken } from './useSelectedToken';
 
 /**
- * Returns the destination token based on the destinationToken and token query parameters.
- *
- * - If destinationToken === selectedToken.address: return selectedToken
- * - If destinationToken is the zeroAddress: return ETH token (happen on chain with custom gas token)
- * - If destinationToken is set to a specific address: return that token from bridgeTokens
- * - If destinationToken is null: return null
+ * Resolves the destination selection to a token available on the destination chain.
+ * Returning null lets the panel use the chain's native currency.
  */
 export function useDestinationToken(): ERC20BridgeToken | null {
-  const [{ destinationToken }] = useArbQueryParams();
-  const [selectedToken] = useSelectedToken();
+  const [{ destinationToken: destinationTokenLookupKey }] = useArbQueryParams();
+  const [sourceToken] = useSelectedToken();
   const [networks] = useNetworks();
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
-  const isSwapTransfer = useIsSwapTransfer();
-  const overrideToken = useMemo(
+  const nativeTokenOverride = useMemo(
     () =>
       getTokenOverride({
         fromToken: constants.AddressZero,
@@ -38,19 +34,50 @@ export function useDestinationToken(): ERC20BridgeToken | null {
     [networks.destinationChain.id, networks.sourceChain.id],
   );
 
-  if (!isSwapTransfer) return selectedToken;
-
-  // Case 1: destinationToken is the zeroAddress -> Return ETH
-  // Use getTokenOverride to handle special cases like ApeChain WETH
-  if (destinationToken && addressesEqual(destinationToken, constants.AddressZero)) {
-    return overrideToken.destination;
+  const isSameToken = isSameTokenSelection({
+    sourceToken,
+    destinationTokenLookupKey,
+    destinationChainId: networks.destinationChain.id,
+  });
+  if (isSameToken) {
+    return sourceToken;
   }
 
-  // Case 2: destinationToken is set to a specific token address
-  if (destinationToken && bridgeTokens) {
-    return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+  const isSourceTokenSelectedAsDestination = addressesEqual(
+    destinationTokenLookupKey,
+    sourceToken?.address,
+  );
+  if (isSourceTokenSelectedAsDestination) {
+    // An old URL may repeat a source-only token's address. Use an explicit
+    // destination mapping if one exists; otherwise null selects native currency.
+    return getTokenOverride({
+      fromToken: sourceToken?.address,
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    }).destination;
   }
 
-  // For regular chains (native ETH): return null (button will show native ETH)
-  return null;
+  if (!destinationTokenLookupKey) {
+    return null;
+  }
+
+  // The zero address represents ETH, with overrides such as WETH on ApeChain.
+  if (addressesEqual(destinationTokenLookupKey, constants.AddressZero)) {
+    return nativeTokenOverride.destination;
+  }
+
+  const destinationToken = bridgeTokens?.[destinationTokenLookupKey.toLowerCase()];
+  if (!destinationToken) {
+    return null;
+  }
+
+  const isDestinationTokenAvailable = isTokenAvailableOnChain(
+    destinationToken,
+    networks.destinationChain.id,
+  );
+  if (!isDestinationTokenAvailable) {
+    return null;
+  }
+
+  return destinationToken;
 }

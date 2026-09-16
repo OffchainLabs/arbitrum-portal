@@ -3,9 +3,10 @@ import {
   type ERC20BridgeToken,
   TokenType,
 } from '../hooks/arbTokenBridge.types';
+import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
-import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken } from './TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken, isTokenAvailableOnChain } from './TokenListUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from './TokenUtils';
 import { isWithdrawOnlyToken } from './WithdrawOnlyUtils';
 
@@ -66,6 +67,36 @@ export function isTokenDepositUnavailable({
   // A LiFi token pair can still receive the asset when canonical deposits are blocked.
   const hasLifiTokenPair = token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
   return !hasLifiTokenPair;
+}
+
+/** Whether the selections represent the same asset on both chains. */
+export function isSameTokenSelection({
+  sourceToken,
+  destinationTokenLookupKey,
+  destinationChainId,
+}: {
+  sourceToken: ERC20BridgeToken | null;
+  /**
+   * Value of the destinationToken query parameter. For ERC-20 selections, this
+   * is the bridgeTokens lookup key (ERC20BridgeToken.address): the parent-chain
+   * address for paired tokens, or the token's own address for single-chain tokens.
+   * The actual destination-chain contract address must be resolved separately.
+   */
+  destinationTokenLookupKey: string | undefined;
+  destinationChainId: number;
+}): boolean {
+  const isSourceTokenAvailableOnDestination = isTokenAvailableOnChain(
+    sourceToken ?? undefined,
+    destinationChainId,
+  );
+
+  // A source-only token requires a swap, even if an old URL repeats its address.
+  if (!isSourceTokenAvailableOnDestination) {
+    return false;
+  }
+
+  // Paired tokens share a parent-chain address in the query.
+  return addressesEqual(destinationTokenLookupKey, sourceToken?.address);
 }
 
 /** Choose USDC metadata without discarding a stored destination mapping. */

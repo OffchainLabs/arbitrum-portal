@@ -8,6 +8,7 @@ import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
   getTokenForRow,
+  isSameTokenSelection,
   isTokenDepositUnavailable,
   selectUsdcToken,
 } from '../TokenSelectionUtils';
@@ -68,6 +69,61 @@ describe('isTokenDepositUnavailable', () => {
 
   it('treats an unknown token as having no LiFi pair', () => {
     expect(isTokenDepositUnavailable({ ...withdrawOnlyArgs, token: undefined })).toBe(true);
+  });
+});
+
+describe('isSameTokenSelection', () => {
+  const pairedToken = buildToken();
+  const sourceOnlyToken = buildToken({ lifiOnlyChainId: ChainId.Ethereum });
+
+  it('is true when nothing is selected on either side', () => {
+    expect(
+      isSameTokenSelection({
+        sourceToken: null,
+        destinationTokenLookupKey: undefined,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+  });
+
+  it('is true when a paired token repeats its parent-chain address', () => {
+    expect(
+      isSameTokenSelection({
+        sourceToken: pairedToken,
+        destinationTokenLookupKey: CommonAddress.Ethereum.USDC.toUpperCase(),
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+  });
+
+  it('is false when the destination selection is a different token', () => {
+    expect(
+      isSameTokenSelection({
+        sourceToken: pairedToken,
+        destinationTokenLookupKey: CommonAddress.Ethereum.USDT,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(false);
+  });
+
+  it('is false for a source-only token even when an old URL repeats its address', () => {
+    expect(
+      isSameTokenSelection({
+        sourceToken: sourceOnlyToken,
+        destinationTokenLookupKey: CommonAddress.Ethereum.USDC,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(false);
+  });
+
+  it('is true for a LiFi-only token selected on its own chain', () => {
+    expect(
+      isSameTokenSelection({
+        sourceToken: sourceOnlyToken,
+        destinationTokenLookupKey: CommonAddress.Ethereum.USDC,
+        destinationChainId: ChainId.Ethereum,
+      }),
+    ).toBe(true);
   });
 });
 

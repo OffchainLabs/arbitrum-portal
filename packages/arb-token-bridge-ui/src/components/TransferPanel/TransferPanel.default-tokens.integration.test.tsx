@@ -319,4 +319,33 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
     'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',
     assertDefaultTokenCase,
   );
+
+  it('defaults a saved Arbitrum USDC destination to ETH on Robinhood', async () => {
+    const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
+    await renderTransferPanel({
+      sourceChain: 'arbitrum-one',
+      destinationChain: 'robinhood-chain',
+      token: CommonAddress.ArbitrumOne.USDC,
+      destinationToken: CommonAddress.ArbitrumOne.USDC,
+    });
+
+    await expectTokenButtonContent({
+      isDestination: false,
+      tokenExpectation: {
+        symbol: 'USDC',
+        logoURI:
+          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+      },
+    });
+    await expectTokenButtonContent({ isDestination: true, tokenExpectation: ethTokenExpectation });
+    expect(quoteSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        fromChainId: ChainId.ArbitrumOne,
+        fromToken: CommonAddress.ArbitrumOne.USDC,
+        toChainId: ChainId.RobinhoodChain,
+        toToken: constants.AddressZero,
+      }),
+    );
+    quoteSpy.mockRestore();
+  });
 });

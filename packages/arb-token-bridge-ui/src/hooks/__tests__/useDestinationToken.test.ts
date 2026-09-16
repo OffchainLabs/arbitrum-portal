@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useIsSwapTransfer } from '../../components/TransferPanel/hooks/useIsSwapTransfer';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
@@ -89,6 +90,7 @@ describe.sequential('useDestinationToken', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetTokenOverride.mockReturnValue({ source: null, destination: null });
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -118,7 +120,48 @@ describe.sequential('useDestinationToken', () => {
     ]);
   });
 
-  describe('when not a swap transfer', () => {
+  describe('when destinationToken matches the source', () => {
+    it('preserves an explicit destination override for a source-only token', () => {
+      mockedUseSelectedToken.mockReturnValue([
+        { ...mockSelectedToken, lifiOnlyChainId: ChainId.Ethereum },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockReturnValue({
+        source: null,
+        destination: mockOverrideDestination,
+      });
+
+      const { result } = renderHook(useDestinationToken);
+      expect(result.current).toEqual(mockOverrideDestination);
+    });
+
+    it('resolves an old source-only USDC destination to native ETH and treats it as a swap', () => {
+      const sourceOnlyToken = {
+        ...mockSelectedToken,
+        symbol: 'USDC',
+        lifiOnlyChainId: ChainId.ArbitrumOne,
+      };
+      mockedUseNetworks.mockReturnValue([
+        {
+          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+          destinationChain: getWagmiChain(ChainId.RobinhoodChain),
+          destinationChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
+        },
+        vi.fn(),
+      ]);
+      mockedUseSelectedToken.mockReturnValue([sourceOnlyToken, vi.fn()]);
+      mockedUseAppState.mockReturnValue({
+        app: { arbTokenBridge: { bridgeTokens: { [sourceOnlyToken.address]: sourceOnlyToken } } },
+      } as Context['state']);
+
+      const { result } = renderHook(() => ({
+        token: useDestinationToken(),
+        isSwap: useIsSwapTransfer(),
+      }));
+      expect(result.current).toEqual({ token: null, isSwap: true });
+    });
+
     it('should return selectedToken when destinationToken equals selectedToken.address', () => {
       mockedUseArbQueryParams.mockReturnValue([
         { ...defaultQueryParams, destinationToken: mockSelectedToken.address },
