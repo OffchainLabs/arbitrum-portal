@@ -10,8 +10,6 @@ import { getUsdValueForAmount } from '@/bridge/util/TokenPriceUtils';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
-import { useBalanceOnDestinationChain } from '../../hooks/useBalanceOnDestinationChain';
-import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
@@ -128,6 +126,7 @@ interface TokenRowProps {
   style?: React.CSSProperties;
   onTokenSelected: (token: ERC20BridgeToken | null, balance: BigNumber | null) => void;
   token: ERC20BridgeToken | null;
+  balance: BigNumber | null;
   isDestination?: boolean;
 }
 
@@ -192,10 +191,6 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     return token.logoURI;
   }, [overrideToken, token, nativeCurrency.logoUrl]);
 
-  const sourceBalance = useBalanceOnSourceChain(token);
-  const destinationBalance = useBalanceOnDestinationChain(token);
-  const balance = options?.isDestination ? destinationBalance : sourceBalance;
-
   const decimals = useMemo(() => {
     if (overrideToken) {
       return overrideToken.decimals;
@@ -242,7 +237,6 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     name,
     symbol,
     logoURI,
-    balance,
     isArbitrumToken,
     isNativeStablecoin,
     isBridgeable,
@@ -276,9 +270,11 @@ function ArbitrumTokenBadge() {
 
 function TokenBalance({
   token,
+  balance,
   isDestination,
 }: {
   token: ERC20BridgeToken | null;
+  balance: BigNumber | null;
   isDestination: boolean;
 }) {
   const [networks] = useNetworks();
@@ -288,7 +284,7 @@ function TokenBalance({
     },
   } = useAppState();
   const { isLoading: isLoadingAccountType } = useAccountType();
-  const { balance, symbol } = useTokenInfo(token, { isDestination });
+  const { symbol } = useTokenInfo(token, { isDestination });
   const nativeCurrencyOnDestinationChain = useNativeCurrency({
     provider: networks.destinationChainProvider,
   });
@@ -458,6 +454,7 @@ export function TokenRow({
   style,
   onTokenSelected,
   token,
+  balance,
   isDestination = false,
 }: TokenRowProps): React.JSX.Element {
   const {
@@ -467,7 +464,6 @@ export function TokenRow({
     isArbitrumToken,
     isNativeStablecoin,
     isBridgeable: tokenIsBridgeable,
-    balance,
     decimals,
   } = useTokenInfo(token, { isDestination });
   const [networks] = useNetworks();
@@ -537,7 +533,9 @@ export function TokenRow({
             <span>{isNativeStablecoin && <NativeStablecoinBadge />}</span>
           </div>
           <div className="ml-auto font-medium tabular-nums">
-            {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
+            {tokenIsBridgeable && (
+              <TokenBalance token={token} balance={balance} isDestination={isDestination} />
+            )}
           </div>
 
           {/* Row 2: Contract or token list info + USD value */}
