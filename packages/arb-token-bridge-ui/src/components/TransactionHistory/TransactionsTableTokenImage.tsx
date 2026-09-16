@@ -7,6 +7,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { MergedTransaction } from '../../state/app/state';
 import { TokenListWithId } from '../../util/TokenListUtils';
 import { orbitChains } from '../../util/orbitChainsList';
+import { AddressAdapter } from '../../wallet/addressEcosystem';
 
 // TODO: cache
 function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
@@ -16,7 +17,7 @@ function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefi
   const arrayOfTokens = tokenLists.flatMap((tkn) => tkn.tokens) || [];
   return arrayOfTokens.reduce(
     (acc, tkn) => {
-      acc[tkn.address.toLowerCase()] = tkn.logoURI;
+      acc[new AddressAdapter(tkn.address).normalize()] = tkn.logoURI;
       return acc;
     },
     {} as { [key in string]: string | undefined },
@@ -30,7 +31,7 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
   const tokenAddressToLogoSrcMap = createTokenLogoMapFromTokenLists(tokenLists.data);
 
   const tokenLogoSrc = tx.tokenAddress
-    ? tokenAddressToLogoSrcMap[tx.tokenAddress.toLowerCase()]
+    ? tokenAddressToLogoSrcMap[new AddressAdapter(tx.tokenAddress).normalize()]
     : undefined;
 
   if (tx.assetType === AssetType.ETH) {

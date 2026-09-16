@@ -6,6 +6,7 @@ import {
 } from '../TransactionHistorySearchBar';
 
 const VALID_ADDRESS = '0x1111111111111111111111111111111111111111';
+const VALID_SOLANA_ADDRESS = 'So11111111111111111111111111111111111111112';
 const VALID_TX_HASH = '0x94e3f5f7ae10d9b98df828b7bfa3b7b1c7f0e2a1b4b28ee1cf2a4dbecdd6bbf1';
 
 describe('useTransactionHistoryAddressStore', () => {
@@ -30,6 +31,16 @@ describe('useTransactionHistoryAddressStore', () => {
 
     setSanitizedAddress(VALID_ADDRESS);
     expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(VALID_ADDRESS);
+  });
+
+  it('accepts a Solana address without changing its case', () => {
+    const { setSanitizedAddress } = useTransactionHistoryAddressStore.getState();
+
+    setSanitizedAddress(VALID_SOLANA_ADDRESS);
+
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(
+      VALID_SOLANA_ADDRESS,
+    );
   });
 
   it('setSanitizedTxHash accepts a valid hash and undefined, ignores invalid values', () => {

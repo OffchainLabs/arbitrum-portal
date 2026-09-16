@@ -2,15 +2,17 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Address, isAddress, isHash } from 'viem';
-import { useAccount } from 'wagmi';
+import { isHash } from 'viem';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
+import { AddressAdapter } from '../../wallet/addressEcosystem';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
@@ -39,7 +41,7 @@ const searchModeConfig: Record<
 
 type TransactionHistoryAddressStore = {
   address: string;
-  sanitizedAddress: Address | undefined;
+  sanitizedAddress: string | undefined;
   sanitizedTxHash: string | undefined;
   searchMode: TransactionHistorySearchMode;
   searchError: TransactionHistorySearchError | undefined;
@@ -58,7 +60,7 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
   searchMode: 'address',
   setAddress: (address: string) => set({ address }),
   setSanitizedAddress: (address: string) => {
-    if (isAddress(address)) {
+    if (new AddressAdapter(address).isValidAddress()) {
       set({ sanitizedAddress: address });
     }
   },
@@ -103,7 +105,7 @@ export function useTxHashSearchState() {
 }
 
 function isNewSearch(searchInput: string, currentSearchValue: string | undefined) {
-  return searchInput.toLowerCase() !== currentSearchValue?.toLowerCase();
+  return !addressesEqual(searchInput, currentSearchValue);
 }
 
 export function TransactionHistorySearchBar() {
@@ -133,7 +135,8 @@ export function TransactionHistorySearchBar() {
     }),
     shallow,
   );
-  const { address: connectedAddress } = useAccount();
+  const { sourceWallet } = useWallets();
+  const connectedAddress = sourceWallet.account.address;
   const [isTestnetMode] = useIsTestnetMode();
 
   useEffect(() => {
@@ -169,7 +172,7 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      if (!isAddress(searchInput)) {
+      if (!new AddressAdapter(searchInput).isValidAddress()) {
         setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
         return;
       }
@@ -177,7 +180,7 @@ export function TransactionHistorySearchBar() {
       if (isNewSearch(searchInput, sanitizedAddress)) {
         trackEvent('Search Tx for Address Click', {
           isTestnetMode,
-          isConnectedAddress: searchInput.toLowerCase() === connectedAddress?.toLowerCase(),
+          isConnectedAddress: addressesEqual(searchInput, connectedAddress),
         });
       }
 
@@ -206,7 +209,9 @@ export function TransactionHistorySearchBar() {
       if (searchInput === '') {
         return;
       }
-      if (mode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
+      if (
+        mode === 'txHash' ? isHash(searchInput) : new AddressAdapter(searchInput).isValidAddress()
+      ) {
         searchTx(mode);
       }
     },
