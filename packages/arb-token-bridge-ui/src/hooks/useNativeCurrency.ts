@@ -39,11 +39,15 @@ const nativeCurrencyEther: NativeCurrencyEther = {
   isCustom: false,
 };
 
-export function useNativeCurrency({ provider }: { provider: Provider }): NativeCurrency {
+export function useNativeCurrency({
+  provider,
+}: {
+  provider: Provider | undefined;
+}): NativeCurrency {
   const [networks] = useNetworks();
   const { parentChain } = useNetworksRelationship(networks);
   const { data = nativeCurrencyEther } = useSWRImmutable(
-    [provider, parentChain.id, 'nativeCurrency'],
+    provider ? [provider, parentChain.id, 'nativeCurrency'] : null,
     ([_provider, _parentChainId]) =>
       fetchNativeCurrency({ provider: _provider, parentChainIdFromQueryParam: _parentChainId }),
     {

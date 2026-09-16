@@ -16,6 +16,24 @@ import { TokenListSyncer } from '../components/syncers/TokenListSyncer';
 import { queryParamProviderOptions } from '../hooks/useArbQueryParams';
 import { defaultState } from '../state/app/state';
 import { useAppStore } from '../state/index';
+import { WalletContext, defaultWalletContextValue } from '../wallet/WalletContext';
+import { BalanceProvider } from '../wallet/balance/BalanceContext';
+import { createBalanceService } from '../wallet/balance/createBalanceService';
+import type { WalletContextValue } from '../wallet/types';
+
+const integrationWalletContextValue: WalletContextValue = {
+  ...defaultWalletContextValue,
+  evm: {
+    ecosystem: 'evm',
+    account: {
+      ecosystem: 'evm',
+      address: '0x0000000000000000000000000000000000000001',
+      status: 'connected',
+    },
+    isConnected: true,
+    disconnect: async () => {},
+  },
+};
 
 function createAdapter(initialLocation: PartialLocation): QueryParamAdapterComponent {
   return ({ children }) => {
@@ -64,6 +82,10 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
     multiInjectedProviderDiscovery: false,
     ssr: false,
   });
+  const balanceService = createBalanceService(() => ({
+    fetchBalance: async ({ tokenAddresses }) =>
+      Object.fromEntries(tokenAddresses.map((tokenAddress) => [tokenAddress, 0n])),
+  }));
 
   const Wrapper = ({ children }: PropsWithChildren) => {
     useState(() => {
@@ -81,8 +103,12 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
                 provider: () => new Map(),
               }}
             >
-              <IntegrationBootstrap />
-              {children}
+              <BalanceProvider service={balanceService}>
+                <WalletContext.Provider value={integrationWalletContextValue}>
+                  <IntegrationBootstrap />
+                  {children}
+                </WalletContext.Provider>
+              </BalanceProvider>
             </SWRConfig>
           </QueryClientProvider>
         </WagmiProvider>
