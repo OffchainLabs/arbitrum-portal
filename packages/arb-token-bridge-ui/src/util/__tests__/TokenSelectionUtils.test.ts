@@ -67,6 +67,19 @@ describe('getTokenForRow', () => {
       );
     });
 
+    it('prefers the constant over a listed or imported entry for the same address', () => {
+      const listedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      const importedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      expect(
+        getTokenForRow({
+          ...defaultArgs,
+          address: CommonAddress.ArbitrumOne.USDC,
+          tokensFromLists: { [listedUsdc.address]: listedUsdc },
+          tokensFromUser: { [importedUsdc.address]: importedUsdc },
+        }),
+      ).toBe(ARB_ONE_NATIVE_USDC_TOKEN);
+    });
+
     it('returns the Arbitrum Sepolia constant', () => {
       expect(getTokenForRow({ ...defaultArgs, address: CommonAddress.ArbitrumSepolia.USDC })).toBe(
         ARB_SEPOLIA_NATIVE_USDC_TOKEN,
@@ -81,13 +94,36 @@ describe('getTokenForRow', () => {
       isOrbitChain: true,
     };
 
-    it('hides the row until the route-specific metadata resolves', () => {
+    it('returns null until the route-specific metadata resolves', () => {
       expect(getTokenForRow({ ...orbitArgs, usdcToken: null })).toBeNull();
     });
 
     it('uses the resolved canonical USDC metadata', () => {
       const usdcToken = buildToken({ l2Address: CommonAddress.ArbitrumOne.USDC });
       expect(getTokenForRow({ ...orbitArgs, usdcToken })).toBe(usdcToken);
+    });
+
+    it('ignores a listed entry for the same address while metadata is pending', () => {
+      const listedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      expect(
+        getTokenForRow({
+          ...orbitArgs,
+          usdcToken: null,
+          tokensFromLists: { [listedUsdc.address]: listedUsdc },
+        }),
+      ).toBeNull();
+    });
+
+    it('prefers the resolved metadata over a listed entry for the same address', () => {
+      const listedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      const usdcToken = buildToken({ l2Address: CommonAddress.ArbitrumOne.USDC });
+      expect(
+        getTokenForRow({
+          ...orbitArgs,
+          usdcToken,
+          tokensFromLists: { [listedUsdc.address]: listedUsdc },
+        }),
+      ).toBe(usdcToken);
     });
   });
 });
