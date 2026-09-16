@@ -2,13 +2,12 @@ import { Provider } from '@ethersproject/providers';
 
 import { getAPIBaseUrl } from '.';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { addressesEqual } from '../wallet/addressEcosystem';
 import { logger } from './logger';
 
-export type Address = `0x${string}`;
+export { addressesEqual };
 
-export function addressesEqual(address1: string | undefined, address2: string | undefined) {
-  return address1?.trim().toLowerCase() === address2?.trim().toLowerCase();
-}
+export type Address = `0x${string}`;
 
 export async function addressIsSmartContract(address: string, chainId: number) {
   const provider = getProviderForChainId(chainId);
