@@ -1,118 +1,85 @@
-import { renderHook } from '@testing-library/react';
-import { BigNumber, utils } from 'ethers';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { constants, utils } from 'ethers';
+import { describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
-import { useGasSummary } from '../../../../hooks/TransferPanel/useGasSummary';
-import { useSelectedTokenBalances } from '../../../../hooks/TransferPanel/useSelectedTokenBalances';
-import { useNativeCurrency } from '../../../../hooks/useNativeCurrency';
-import { useNetworks } from '../../../../hooks/useNetworks';
-import { useSelectedToken } from '../../../../hooks/useSelectedToken';
+import { createBridgeTestWrapper } from '../../../../test-utils/bridge-test-wrapper';
 import { ChainId } from '../../../../types/ChainId';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT } from '../../../../util/NovaUtils';
-import { getWagmiChain } from '../../../../util/wagmi/getWagmiChain';
+import { defaultWalletContextValue } from '../../../../wallet/WalletContext';
 import { useMaxAmount } from '../useMaxAmount';
-import { useNativeCurrencyBalances } from '../useNativeCurrencyBalances';
 
-vi.mock('../../../../hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
-vi.mock('../../../../hooks/useSelectedToken', () => ({ useSelectedToken: vi.fn() }));
-vi.mock('../../../../hooks/useNativeCurrency', () => ({ useNativeCurrency: vi.fn() }));
-vi.mock('../../../../hooks/TransferPanel/useGasSummary', () => ({ useGasSummary: vi.fn() }));
-vi.mock('../../../../hooks/TransferPanel/useSelectedTokenBalances', () => ({
-  useSelectedTokenBalances: vi.fn(),
-}));
-vi.mock('../useNativeCurrencyBalances', () => ({ useNativeCurrencyBalances: vi.fn() }));
-vi.mock('../../../../hooks/useSourceChainNativeCurrencyDecimals', () => ({
-  useSourceChainNativeCurrencyDecimals: () => 18,
-}));
-vi.mock('../../../../hooks/useNetworksRelationship', () => ({
-  useNetworksRelationship: (networks: { destinationChain: { id: number } }) => ({
-    childChainProvider: getProviderForChainId(networks.destinationChain.id),
-    // Ethereum -> Nova and Nova -> Arbitrum One are both deposits; Nova -> Ethereum is not
-    isDepositMode: networks.destinationChain.id !== ChainId.Ethereum,
+vi.mock('../../../../token-bridge-sdk/utils', async (actual) => ({
+  ...(await actual<typeof import('../../../../token-bridge-sdk/utils')>()),
+  getProviderForChainId: (chainId: number) => ({
+    getNetwork: async () => ({ chainId }),
+    getGasPrice: async () => constants.Zero,
+    getSigner: (address: string) => ({ getAddress: async () => address }),
   }),
 }));
+vi.mock('../../../../token-bridge-sdk/BridgeTransferStarterFactory', () => ({
+  BridgeTransferStarterFactory: {
+    create: () => ({
+      transferEstimateGas: async () => ({
+        estimatedParentChainGas: constants.Zero,
+        estimatedChildChainGas: constants.Zero,
+        estimatedChildChainSubmissionCost: constants.Zero,
+      }),
+    }),
+  },
+}));
 
-function setNetworks(sourceChainId: ChainId, destinationChainId: ChainId) {
-  vi.mocked(useNetworks).mockReturnValue([
-    {
-      sourceChain: getWagmiChain(sourceChainId),
-      sourceChainProvider: getProviderForChainId(sourceChainId),
-      destinationChain: getWagmiChain(destinationChainId),
-      destinationChainProvider: getProviderForChainId(destinationChainId),
-    },
-    vi.fn(),
-  ]);
-}
-
-// `vitest.config.ts` sets `sequence.concurrent`, and these tests share module-level mocks
 describe.sequential('useMaxAmount', () => {
-  beforeEach(() => {
-    vi.mocked(useSelectedToken).mockReturnValue([null, vi.fn()]);
-    vi.mocked(useNativeCurrency).mockReturnValue({
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18,
-      isCustom: false,
-    });
-    vi.mocked(useSelectedTokenBalances).mockReturnValue({
-      sourceBalance: null,
-      destinationBalance: null,
-    });
-    // 1 ETH balance, negligible gas, so the unclamped max is just under 1
-    vi.mocked(useNativeCurrencyBalances).mockReturnValue({
-      sourceBalance: utils.parseEther('1'),
-      destinationBalance: BigNumber.from(0),
-    });
-    vi.mocked(useGasSummary).mockReturnValue({
-      status: 'success',
-      estimatedParentChainGasFees: 0,
-      estimatedChildChainGasFees: 0,
-    });
-  });
-
-  it('clamps max to the Nova cap when depositing into Nova', () => {
-    setNetworks(ChainId.Ethereum, ChainId.ArbitrumNova);
-
-    const { result } = renderHook(useMaxAmount);
-
-    expect(result.current.maxAmount).toBe(String(NOVA_MAX_ETH_DEPOSIT_AMOUNT));
-  });
-
-  it('does not clamp when the balance is already below the Nova cap', () => {
-    setNetworks(ChainId.Ethereum, ChainId.ArbitrumNova);
-    vi.mocked(useNativeCurrencyBalances).mockReturnValue({
-      sourceBalance: utils.parseEther('0.001'),
-      destinationBalance: BigNumber.from(0),
-    });
-
-    const { result } = renderHook(useMaxAmount);
-
-    expect(Number(result.current.maxAmount)).toBe(0.001);
-  });
-
-  it('does not clamp when withdrawing from Nova to Ethereum', () => {
-    setNetworks(ChainId.ArbitrumNova, ChainId.Ethereum);
-
-    const { result } = renderHook(useMaxAmount);
-
-    expect(Number(result.current.maxAmount)).toBe(1);
-  });
-
-  it('does not clamp when transferring from Nova to Arbitrum One', () => {
-    setNetworks(ChainId.ArbitrumNova, ChainId.ArbitrumOne);
-
-    const { result } = renderHook(useMaxAmount);
-
-    expect(Number(result.current.maxAmount)).toBe(1);
-  });
-
-  it('does not clamp a regular Ethereum to Arbitrum One deposit', () => {
-    setNetworks(ChainId.Ethereum, ChainId.ArbitrumOne);
-
-    const { result } = renderHook(useMaxAmount);
-
-    expect(Number(result.current.maxAmount)).toBe(1);
-  });
+  it.each([
+    {
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumNova,
+      balance: '1',
+      expected: NOVA_MAX_ETH_DEPOSIT_AMOUNT,
+    },
+    {
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumNova,
+      balance: '0.001',
+      expected: 0.001,
+    },
+    {
+      sourceChain: ChainId.ArbitrumNova,
+      destinationChain: ChainId.Ethereum,
+      balance: '1',
+      expected: 1,
+    },
+    {
+      sourceChain: ChainId.ArbitrumNova,
+      destinationChain: ChainId.ArbitrumOne,
+      balance: '1',
+      expected: 1,
+    },
+    {
+      sourceChain: ChainId.Ethereum,
+      destinationChain: ChainId.ArbitrumOne,
+      balance: '1',
+      expected: 1,
+    },
+  ])(
+    'limits $sourceChain to $destinationChain with balance $balance to $expected',
+    async ({ sourceChain, destinationChain, balance, expected }) => {
+      const address = '0x1111111111111111111111111111111111111111';
+      const wrapper = createBridgeTestWrapper({
+        query: { sourceChain, destinationChain },
+        wallets: {
+          ...defaultWalletContextValue,
+          evm: {
+            ...defaultWalletContextValue.evm,
+            isConnected: true,
+            account: { ecosystem: 'evm', address, chainId: sourceChain, status: 'connected' },
+          },
+        },
+        fetchBalance: async () => ({
+          [constants.AddressZero]: BigInt(utils.parseEther(balance).toString()),
+        }),
+      });
+      const { result } = renderHook(useMaxAmount, { wrapper });
+      await waitFor(() => expect(Number(result.current.maxAmount)).toBe(expected));
+    },
+  );
 });
