@@ -10,23 +10,36 @@ export function useTokenBalances({
   chainId,
   walletAddress,
   tokenAddresses,
+  refreshInterval = BALANCE_REFRESH_INTERVAL,
+  keepPreviousData = false,
 }: {
   chainId: number;
   walletAddress?: string;
   tokenAddresses: string[];
+  refreshInterval?: number;
+  keepPreviousData?: boolean;
 }) {
-  return useSWR(
+  const key =
     walletAddress && isValidAddressForChain(walletAddress, chainId) && tokenAddresses.length > 0
       ? ([chainId, walletAddress, tokenAddresses, 'token-balances'] as const)
-      : null,
+      : null;
+  const result = useSWR(
+    key,
     ([currentChainId, currentWalletAddress, currentTokenAddresses]) =>
       fetchBalances({
         chainId: currentChainId,
         walletAddress: currentWalletAddress,
         tokenAddresses: currentTokenAddresses,
       }),
-    { refreshInterval: BALANCE_REFRESH_INTERVAL },
+    {
+      refreshInterval,
+      revalidateOnFocus: refreshInterval > 0,
+      keepPreviousData,
+    },
   );
+
+  // `keepPreviousData` would keep returning the last balances after the wallet disconnects
+  return key ? result : { ...result, data: undefined };
 }
 
 export function useRefreshTokenBalances() {
