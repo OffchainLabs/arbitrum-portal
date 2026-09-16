@@ -1,7 +1,4 @@
-import { constants } from 'ethers';
 import { useEffect, useMemo } from 'react';
-import { Address } from 'viem';
-import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
@@ -23,6 +20,8 @@ import {
   isLifiEnabled as isLifiEnabledUtil,
 } from '../../../util/featureFlag';
 import { isNetwork } from '../../../util/networks';
+import { getNativeTokenAddress } from '../../../wallet/constants';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useTokensFromLists } from '../TokenSearchUtils';
 import { useAmountBigNumber } from '../hooks/useAmountBigNumber';
 import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer';
@@ -282,7 +281,7 @@ export function useRoutesUpdater() {
     networks,
     selectedToken,
   } = useRouteEligibility();
-  const { address } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
@@ -313,15 +312,17 @@ export function useRoutesUpdater() {
   );
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const fromTokenAddress =
-    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+    overrideSourceToken.source?.address ||
+    defaultFromTokenAddress ||
+    getNativeTokenAddress(networks.sourceChain.id);
 
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible
-    fromAddress: address,
+    fromAddress: sourceWallet.account.address,
     fromAmount: amountBN.toString(),
     fromChainId: networks.sourceChain.id,
     fromToken: fromTokenAddress,
-    toAddress: (destinationAddress as Address) || address,
+    toAddress: destinationAddress || destinationWallet.account.address,
     toChainId: networks.destinationChain.id,
     toToken: toTokenAddress,
     denyBridges: disabledBridges,
