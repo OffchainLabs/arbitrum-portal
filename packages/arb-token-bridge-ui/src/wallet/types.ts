@@ -44,3 +44,15 @@ export type WalletHandle = WalletContextValue[WalletEcosystem];
 export type WalletContextValue = {
   [Ecosystem in WalletEcosystem]: WalletHandleBase<Ecosystem>;
 };
+
+export type FetchBalanceInput = {
+  chainId: number;
+  walletAddress: string;
+  tokenAddresses: string[];
+};
+
+export type FetchBalanceResult = Record<string, bigint>;
+
+export type BalanceClient = {
+  fetchBalance: (input: FetchBalanceInput) => Promise<FetchBalanceResult>;
+};

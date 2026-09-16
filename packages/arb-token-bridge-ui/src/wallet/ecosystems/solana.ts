@@ -3,6 +3,8 @@ import bs58 from 'bs58';
 import type { EcosystemConfig, ValidationOptions } from '.';
 import type { SolanaAddress } from '../../util/AddressUtils';
 
+export const SOLANA_NATIVE_TOKEN_ADDRESS = '11111111111111111111111111111111';
+
 export function isValidSolanaAddress(address: string | undefined): address is SolanaAddress {
   if (!address || address.startsWith('0x')) return false;
   try {
@@ -25,4 +27,5 @@ export const solanaEcosystem: EcosystemConfig = {
     normalize: (address) => address,
     isCaseSensitive: true,
   },
+  nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
 };

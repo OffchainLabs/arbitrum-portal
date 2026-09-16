@@ -1,4 +1,4 @@
-import { isAddress } from 'viem';
+import { isAddress, zeroAddress } from 'viem';
 
 import type { EcosystemConfig } from '.';
 
@@ -10,4 +10,5 @@ export const evmEcosystem: EcosystemConfig = {
     normalize: (address) => address.toLowerCase(),
     isCaseSensitive: false,
   },
+  nativeTokenAddress: zeroAddress,
 };
