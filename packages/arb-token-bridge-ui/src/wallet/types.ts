@@ -1,4 +1,4 @@
-import type { Address } from '../util/AddressUtils';
+import type { EvmAddress, SolanaAddress } from '../util/AddressUtils';
 
 export type WalletEcosystem = 'evm' | 'solana';
 
@@ -11,7 +11,7 @@ export type ConnectedWalletInfo = {
 
 export type WalletAccount<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
-  address?: Ecosystem extends 'evm' ? Address : string;
+  address?: Ecosystem extends 'evm' ? EvmAddress : SolanaAddress;
   chainId?: number;
   status: WalletStatus;
   walletInfo?: ConnectedWalletInfo;
