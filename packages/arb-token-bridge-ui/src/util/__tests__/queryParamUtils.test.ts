@@ -1,10 +1,32 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
+import { ecosystems } from '../../wallet/ecosystems';
 import { CommonAddress } from '../CommonAddressUtils';
 import orbitChainsData from '../orbitChainsData.json';
-import { sanitizeNullSelectedToken, sanitizeQueryParams } from '../queryParamUtils';
+import {
+  DestinationTokenQueryParam,
+  TokenQueryParam,
+  sanitizeNullSelectedToken,
+  sanitizeQueryParams,
+} from '../queryParamUtils';
+
+describe('token query parameters', () => {
+  const solanaAddress = 'So11111111111111111111111111111111111111112';
+
+  it('preserves Solana token address case', () => {
+    const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    try {
+      expect(TokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+      expect(TokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+      expect(DestinationTokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+      expect(DestinationTokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+    } finally {
+      isEnabled.mockRestore();
+    }
+  });
+});
 
 describe('sanitizeNullSelectedToken', () => {
   beforeAll(() => {
