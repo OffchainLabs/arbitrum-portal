@@ -28,12 +28,13 @@ import {
   isTxPending,
 } from '../components/TransactionHistory/helpers';
 import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
-import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
+import { Address, addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
