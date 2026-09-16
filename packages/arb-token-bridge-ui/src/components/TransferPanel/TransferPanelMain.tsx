@@ -3,7 +3,6 @@ import { utils } from 'ethers';
 import React, { useEffect, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { isAddress } from 'viem';
-import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import { useUpdateUsdcBalances } from '../../hooks/CCTP/useUpdateUsdcBalances';
@@ -29,6 +28,7 @@ import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getDestinationChainIds, getExplorerUrl, isNetwork } from '../../util/networks';
 import { getOrbitChains } from '../../util/orbitChainsList';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
@@ -160,7 +160,12 @@ export function NetworkContainer({
   bgLogoHeight?: number;
   children: React.ReactNode;
 }) {
-  const { address: walletAddress } = useAccount();
+  const [networks] = useNetworks();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const walletAddress =
+    network.id === networks.sourceChain.id
+      ? sourceWallet.account.address
+      : destinationWallet.account.address;
   const [{ theme }] = useArbQueryParams();
 
   const showCustomAddressBanner = useMemo(() => {
@@ -201,14 +206,11 @@ export function TransferPanelMain() {
 
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const [selectedToken] = useSelectedToken();
-
-  const { address: walletAddress } = useAccount();
-
+  const { destinationWallet } = useWallets();
   const [{ destinationAddress }] = useArbQueryParams();
   const { embedMode } = useMode();
 
-  const destinationAddressOrWalletAddress = destinationAddress || walletAddress;
-
+  const destinationAddressOrWalletAddress = destinationAddress || destinationWallet.account.address;
   const { updateErc20ParentBalances, updateErc20ChildBalances } = useBalances();
 
   const { updateUsdcBalances } = useUpdateUsdcBalances({

@@ -63,6 +63,8 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { AddressAdapter } from '../../wallet/addressEcosystem';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
@@ -136,7 +138,11 @@ export function TransferPanel() {
       warningTokens,
     },
   } = useAppState();
-  const { address: walletAddress, chain, isConnected } = useAccount();
+  const { chain } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
+  const destinationWalletAddress = destinationWallet.account.address;
+  const isConnected = sourceWallet.isConnected;
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
@@ -555,7 +561,7 @@ export function TransferPanel() {
         uniqueId: null,
         value: amount,
         depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
+        destination: destinationAddress ?? destinationWalletAddress,
         sender: walletAddress,
         isCctp: true,
         tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
@@ -739,7 +745,7 @@ export function TransferPanel() {
           uniqueId: null,
           value: amount,
           depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-          destination: destinationAddress ?? walletAddress,
+          destination: destinationAddress ?? destinationWalletAddress,
           sender: walletAddress,
           isLifi: true,
           tokenAddress: selectedToken?.address || constants.AddressZero,
@@ -947,7 +953,8 @@ export function TransferPanel() {
     setTransferring(true);
 
     try {
-      const warningToken = selectedToken && warningTokens[selectedToken.address.toLowerCase()];
+      const warningToken =
+        selectedToken && warningTokens[new AddressAdapter(selectedToken.address).normalize()];
       if (warningToken) {
         const description = getWarningTokenDescription(warningToken.type);
         warningToast(
@@ -1051,7 +1058,8 @@ export function TransferPanel() {
         if (!tokenAddress) Error('Token not deployed on source chain.');
 
         // warning token handling
-        const warningToken = selectedToken && warningTokens[selectedToken.address.toLowerCase()];
+        const warningToken =
+          selectedToken && warningTokens[new AddressAdapter(selectedToken.address).normalize()];
         if (warningToken) {
           const description = getWarningTokenDescription(warningToken.type);
           warningToast(
