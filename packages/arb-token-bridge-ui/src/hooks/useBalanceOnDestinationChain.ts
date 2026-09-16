@@ -1,85 +1,87 @@
 import { BigNumber, constants } from 'ethers';
-import { useAccount } from 'wagmi';
 
-import { useNativeCurrencyBalances } from '../components/TransferPanel/TransferPanelMain/useNativeCurrencyBalances';
 import { addressesEqual } from '../util/AddressUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
 import { isNetwork } from '../util/networks';
+import { getNativeTokenAddress } from '../wallet/constants';
+import { useTokenBalances } from '../wallet/hooks/useTokenBalances';
+import { useWallets } from '../wallet/hooks/useWallets';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
-import { useBalance } from './useBalance';
 import { useNativeCurrency } from './useNativeCurrency';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
-/**
- * Balance of a token on the destination chain
- */
-export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): BigNumber | null {
-  const { address: walletAddress } = useAccount();
-  const [{ destinationAddress }] = useArbQueryParams();
-  const [networks] = useNetworks();
-  const { isDepositMode } = useNetworksRelationship(networks);
-  const { isOrbitChain: isDestinationOrbitChain } = isNetwork(networks.destinationChain.id);
-  const destinationChainNativeCurrency = useNativeCurrency({
-    provider: networks.destinationChainProvider,
-  });
-
-  const {
-    erc20: [erc20DestinationChainBalances],
-    eth: [ethDestinationChainBalance],
-  } = useBalance({
-    chainId: networks.destinationChain.id,
-    walletAddress: destinationAddress || walletAddress,
-  });
-
-  const nativeCurrencyBalances = useNativeCurrencyBalances();
-
-  // user selected destination chain native currency
+function getDestinationTokenAddress({
+  token,
+  isDepositMode,
+  isDestinationOrbitChain,
+  destinationNativeCurrencyIsCustom,
+  destinationChainId,
+}: {
+  token: ERC20BridgeToken | null;
+  isDepositMode: boolean;
+  isDestinationOrbitChain: boolean;
+  destinationNativeCurrencyIsCustom: boolean;
+  destinationChainId: number;
+}) {
   if (!token) {
-    return nativeCurrencyBalances.destinationBalance;
+    return getNativeTokenAddress(destinationChainId);
   }
 
   if (addressesEqual(token.address, constants.AddressZero)) {
-    // If ether is the native currency on the destination chain
-    if (!destinationChainNativeCurrency.isCustom) {
-      return ethDestinationChainBalance;
-    }
-
-    return token.l2Address
-      ? erc20DestinationChainBalances?.[token.l2Address.toLowerCase()] || constants.Zero
-      : constants.Zero;
+    return destinationNativeCurrencyIsCustom
+      ? token.l2Address
+      : getNativeTokenAddress(destinationChainId);
   }
 
-  const tokenAddressLowercased = token.address.toLowerCase();
+  if (isDepositMode) {
+    return token.l2Address;
+  }
 
-  if (!erc20DestinationChainBalances) {
+  if (
+    !isDestinationOrbitChain &&
+    (isTokenArbitrumOneNativeUSDC(token.address) || isTokenArbitrumSepoliaNativeUSDC(token.address))
+  ) {
+    return token.address;
+  }
+
+  return token.address;
+}
+
+/**
+ * Balance of the selected token on the destination chain.
+ *
+ * BigNumber is retained at this legacy UI boundary. Balance providers use bigint.
+ */
+export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): BigNumber | null {
+  const [{ destinationAddress }] = useArbQueryParams();
+  const [networks] = useNetworks();
+  const { destinationWallet } = useWallets();
+  const { isDepositMode } = useNetworksRelationship(networks);
+  const { isOrbitChain: isDestinationOrbitChain } = isNetwork(networks.destinationChain.id);
+  const destinationNativeCurrency = useNativeCurrency({
+    provider: networks.destinationChainProvider,
+  });
+  const tokenAddress = getDestinationTokenAddress({
+    token,
+    isDepositMode,
+    isDestinationOrbitChain,
+    destinationNativeCurrencyIsCustom: destinationNativeCurrency.isCustom,
+    destinationChainId: networks.destinationChain.id,
+  });
+  const walletAddress = destinationAddress || destinationWallet.account.address;
+  const { data } = useTokenBalances({
+    chainId: networks.destinationChain.id,
+    walletAddress,
+    tokenAddresses: tokenAddress ? [tokenAddress] : [],
+  });
+
+  if (!walletAddress || !tokenAddress) {
     return constants.Zero;
   }
 
-  // In deposit mode: destination = child chain, use l2Address
-  if (isDepositMode) {
-    const tokenChildChainAddress = token.l2Address?.toLowerCase();
+  const balance = data?.[tokenAddress];
 
-    // token that has never been deposited so it doesn't have an l2Address
-    // this should not happen because user shouldn't be able to select it
-    if (!tokenChildChainAddress) {
-      return constants.Zero;
-    }
-
-    return erc20DestinationChainBalances[tokenChildChainAddress] ?? constants.Zero;
-  }
-
-  // In withdrawal mode: destination = parent chain, use parent address
-  if (
-    isTokenArbitrumOneNativeUSDC(tokenAddressLowercased) ||
-    isTokenArbitrumSepoliaNativeUSDC(tokenAddressLowercased)
-  ) {
-    // because we read parent chain address, make sure we don't read Orbit chain's address if it's the destination chain
-    if (!isDestinationOrbitChain) {
-      return erc20DestinationChainBalances[tokenAddressLowercased] ?? constants.Zero;
-    }
-  }
-
-  return erc20DestinationChainBalances[tokenAddressLowercased] ?? constants.Zero;
+  return balance === undefined ? null : BigNumber.from(balance);
 }

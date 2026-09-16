@@ -9,16 +9,39 @@ import {
   useDisconnect,
   useWalletInfo,
 } from '@reown/appkit/react';
-import { VersionedTransaction } from '@solana/web3.js';
+import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { type PropsWithChildren, useCallback, useMemo } from 'react';
 
 import { ChainId } from '../types/ChainId';
 import { WalletContext } from './WalletContext';
+import { evmBalanceClient } from './balance/evm';
+import { createBalanceClientResolver } from './balance/getBalanceClient';
+import { createSolanaBalanceClient } from './solana/fetchBalance';
 import type { WalletContextValue } from './types';
 import { useEvmWallet } from './useEvmWallet';
 
 export const appKitAdapters = [new SolanaAdapter()];
 export const appKitNetworks = [solana];
+const solanaBalanceClient = createSolanaBalanceClient(
+  (() => {
+    const connection = new Connection(
+      process.env.NEXT_PUBLIC_RPC_URL_SOLANA ?? 'https://solana-rpc.publicnode.com',
+      'confirmed',
+    );
+
+    return {
+      getBalance: (ownerAddress) => connection.getBalance(ownerAddress, 'confirmed'),
+      getParsedTokenAccountsByOwner: (ownerAddress, programId) =>
+        connection
+          .getParsedTokenAccountsByOwner(ownerAddress, { programId }, 'confirmed')
+          .then((response) => response.value),
+    };
+  })(),
+);
+export const getBalanceClient = createBalanceClientResolver({
+  evm: evmBalanceClient,
+  solana: solanaBalanceClient,
+});
 
 export function WalletProvider({ children }: PropsWithChildren) {
   const evm = useEvmWallet();

@@ -1,0 +1,73 @@
+import { PublicKey } from '@solana/web3.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ChainId } from '../../types/ChainId';
+import {
+  createSolanaBalanceClient,
+  solanaNativeTokenAddress,
+  splTokenProgramId,
+  token2022ProgramId,
+} from './fetchBalance';
+
+const walletAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5';
+const splTokenAddress = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const token2022Address = 'So11111111111111111111111111111111111111112';
+const missingTokenAddress = 'Es9vMFrzaCERmJfrF4H2FYDxuD9g8FZcGzgKQvNwNYB';
+const getBalance = vi.fn();
+const getParsedTokenAccountsByOwner = vi.fn();
+const balanceClient = createSolanaBalanceClient({ getBalance, getParsedTokenAccountsByOwner });
+
+function tokenAccount(mint: string, amount: string) {
+  return { account: { data: { parsed: { info: { mint, tokenAmount: { amount } } } } } };
+}
+
+describe('Solana balance handle', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    getBalance.mockResolvedValue(42);
+    getParsedTokenAccountsByOwner.mockImplementation(
+      (_ownerAddress: PublicKey, programId: PublicKey) => {
+        if (programId.equals(splTokenProgramId)) {
+          return Promise.resolve([tokenAccount(splTokenAddress, '7')]);
+        }
+        if (programId.equals(token2022ProgramId)) {
+          return Promise.resolve([
+            tokenAccount(token2022Address, '9'),
+            tokenAccount(splTokenAddress, '3'),
+          ]);
+        }
+        return Promise.resolve([]);
+      },
+    );
+  });
+
+  it('fetches native, SPL Token, and Token-2022 balances', async () => {
+    const balances = await balanceClient.fetchBalance({
+      chainId: ChainId.Solana,
+      walletAddress,
+      tokenAddresses: [
+        solanaNativeTokenAddress,
+        splTokenAddress,
+        token2022Address,
+        missingTokenAddress,
+      ],
+    });
+
+    expect(balances).toEqual({
+      [solanaNativeTokenAddress]: 42n,
+      [splTokenAddress]: 10n,
+      [token2022Address]: 9n,
+      [missingTokenAddress]: 0n,
+    });
+  });
+
+  it('rejects a non-Solana chain', async () => {
+    await expect(
+      balanceClient.fetchBalance({
+        chainId: ChainId.Ethereum,
+        walletAddress,
+        tokenAddresses: [],
+      }),
+    ).rejects.toThrow('Solana balance provider only supports Solana.');
+  });
+});

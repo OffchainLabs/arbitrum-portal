@@ -1,73 +1,66 @@
 import { renderHook } from '@testing-library/react';
 import { BigNumber } from 'ethers';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { zeroAddress } from 'viem';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { useBalances } from '../../../../hooks/useBalances';
 import { useNativeCurrency } from '../../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../../hooks/useNetworks';
 import { ChainId } from '../../../../types/ChainId';
 import { CommonAddress } from '../../../../util/CommonAddressUtils';
 import { getWagmiChain } from '../../../../util/wagmi/getWagmiChain';
+import { useTokenBalances } from '../../../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../../../wallet/hooks/useWallets';
 import { useNativeCurrencyBalances } from '../useNativeCurrencyBalances';
 
-vi.mock('../../../../hooks/useNetworks', () => ({
-  useNetworks: vi.fn(),
-}));
-
-vi.mock('../../../../hooks/useBalances', () => ({
-  useBalances: vi.fn(),
-}));
-
-vi.mock('../../../../hooks/useNativeCurrency', () => ({
-  useNativeCurrency: vi.fn(),
-}));
-
+vi.mock('../../../../hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
+vi.mock('../../../../hooks/useNativeCurrency', () => ({ useNativeCurrency: vi.fn() }));
 vi.mock('../../../../hooks/useArbQueryParams', () => ({
   useArbQueryParams: () => [{ destinationAddress: undefined }],
 }));
+vi.mock('../../../../wallet/hooks/useTokenBalances', () => ({ useTokenBalances: vi.fn() }));
+vi.mock('../../../../wallet/hooks/useWallets', () => ({ useWallets: vi.fn() }));
 
-vi.mock('wagmi', async () => ({
-  ...(await vi.importActual('wagmi')),
-  useAccount: () => ({
-    isConnected: true,
-  }),
-}));
+const sourceAddress = '0x1111111111111111111111111111111111111111';
+const destinationAddress = '0x2222222222222222222222222222222222222222';
 
 describe('useNativeCurrencyBalances', () => {
-  const mockedUseNetworks = vi.mocked(useNetworks);
-  const mockedUseBalances = vi.mocked(useBalances);
-  const mockedUseNativeCurrency = vi.mocked(useNativeCurrency);
-
   beforeEach(() => {
-    mockedUseNativeCurrency.mockReturnValue({
+    vi.mocked(useNativeCurrency).mockReturnValue({
       name: 'Ether',
       symbol: 'ETH',
       decimals: 18,
       isCustom: false,
     });
-  });
-
-  beforeAll(() => {
-    mockedUseBalances.mockReturnValue({
-      ethParentBalance: BigNumber.from(100_000),
-      erc20ParentBalances: {
-        '0x123': BigNumber.from(200_000),
-        '0x222': BigNumber.from(250_000_000),
-        [CommonAddress.RobinhoodChain.APE]: BigNumber.from(500_000),
+    vi.mocked(useWallets).mockReturnValue({
+      sourceWallet: {
+        ecosystem: 'evm',
+        account: {
+          ecosystem: 'evm',
+          address: sourceAddress,
+          chainId: ChainId.Sepolia,
+          status: 'connected',
+        },
+        isConnected: true,
+        disconnect: vi.fn(),
       },
-      ethChildBalance: BigNumber.from(300_000),
-      erc20ChildBalances: { '0x234': BigNumber.from(400_000) },
-      updateEthChildBalance: vi.fn(),
-      updateEthParentBalance: vi.fn(),
-      updateErc20ParentBalances: vi.fn(),
-      updateErc20ChildBalances: vi.fn(),
+      destinationWallet: {
+        ecosystem: 'evm',
+        account: {
+          ecosystem: 'evm',
+          address: destinationAddress,
+          chainId: ChainId.ArbitrumSepolia,
+          status: 'connected',
+        },
+        isConnected: true,
+        disconnect: vi.fn(),
+      },
     });
   });
 
-  it('should return ETH parent balance as source balance and ETH child balance as destination balance when wallet is connected, destination address is the same as connected wallet, and source chain is Sepolia and destination chain is Arbitrum Sepolia', () => {
-    mockedUseNetworks.mockReturnValue([
+  it('selects the source and destination wallets independently', () => {
+    vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Sepolia),
         sourceChainProvider: getProviderForChainId(ChainId.Sepolia),
@@ -76,16 +69,24 @@ describe('useNativeCurrencyBalances', () => {
       },
       vi.fn(),
     ]);
+    vi.mocked(useTokenBalances).mockImplementation(({ walletAddress }) => ({
+      data:
+        walletAddress === sourceAddress ? { [zeroAddress]: 100_000n } : { [zeroAddress]: 300_000n },
+      error: undefined,
+      isLoading: false,
+      mutate: vi.fn(),
+    }));
 
     const { result } = renderHook(useNativeCurrencyBalances);
+
     expect(result.current).toEqual({
       sourceBalance: BigNumber.from(100_000),
       destinationBalance: BigNumber.from(300_000),
     });
   });
 
-  it('uses the Robinhood APE balance for Robinhood to ApeChain transfers', () => {
-    mockedUseNetworks.mockReturnValue([
+  it('uses the parent ERC-20 and child native balance for a custom gas token deposit', () => {
+    vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.RobinhoodChain),
         sourceChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
@@ -94,13 +95,22 @@ describe('useNativeCurrencyBalances', () => {
       },
       vi.fn(),
     ]);
-    mockedUseNativeCurrency.mockReturnValue({
+    vi.mocked(useNativeCurrency).mockReturnValue({
       name: 'ApeCoin',
       symbol: 'APE',
       decimals: 18,
       address: CommonAddress.RobinhoodChain.APE,
       isCustom: true,
     });
+    vi.mocked(useTokenBalances).mockImplementation(({ chainId, tokenAddresses }) => ({
+      data: {
+        [tokenAddresses[0] ?? zeroAddress]:
+          chainId === ChainId.RobinhoodChain ? 500_000n : 300_000n,
+      },
+      error: undefined,
+      isLoading: false,
+      mutate: vi.fn(),
+    }));
 
     const { result } = renderHook(useNativeCurrencyBalances);
 
