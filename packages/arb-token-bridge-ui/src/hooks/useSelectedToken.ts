@@ -119,7 +119,8 @@ export const useSelectedToken = (): [
             isDepositMode,
             tokenAddress,
             token,
-            childChainId: childChain.id,
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
           });
 
           return {
@@ -137,7 +138,6 @@ export const useSelectedToken = (): [
       });
     },
     [
-      childChain.id,
       isDepositMode,
       networks.destinationChain.id,
       networks.sourceChain.id,
