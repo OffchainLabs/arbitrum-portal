@@ -5,6 +5,7 @@ import {
 } from '../hooks/arbTokenBridge.types';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
+import { isLifiOnlyToken } from './TokenListUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from './TokenUtils';
 
 export const ARB_ONE_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
@@ -24,6 +25,27 @@ export const ARB_SEPOLIA_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
   address: CommonAddress.ArbitrumSepolia.USDC,
   l2Address: CommonAddress.ArbitrumSepolia.USDC,
 };
+
+/** Choose USDC metadata without discarding a stored destination mapping. */
+export function selectUsdcToken({
+  usdcToken,
+  storedToken,
+}: {
+  usdcToken: ERC20BridgeToken | null | undefined;
+  storedToken: ERC20BridgeToken | null | undefined;
+}): ERC20BridgeToken | null {
+  if (!usdcToken) {
+    return storedToken ?? null;
+  }
+
+  // A listed or imported token may have a destination mapping that the
+  // generated source-only USDC fallback does not have.
+  if (isLifiOnlyToken(usdcToken)) {
+    return storedToken ?? usdcToken;
+  }
+
+  return usdcToken;
+}
 
 /** Resolve the token a token-search row should render, or null while its metadata is pending. */
 export function getTokenForRow({
@@ -58,5 +80,5 @@ export function getTokenForRow({
     return null;
   }
 
-  return usdcToken;
+  return selectUsdcToken({ usdcToken, storedToken: listedToken });
 }
