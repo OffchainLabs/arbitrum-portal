@@ -1,7 +1,6 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
@@ -9,7 +8,7 @@ import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
+import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
@@ -22,13 +21,11 @@ import {
 } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
-import {
-  isTokenArbitrumOneNativeUSDC,
-  isTokenArbitrumSepoliaNativeUSDC,
-} from '../../util/TokenUtils';
-import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { AddressAdapter } from '../../wallet/addressEcosystem';
+import { getNativeTokenAddress } from '../../wallet/constants';
 import { useAppContextState } from '../App/AppContext';
+import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import {
@@ -112,7 +109,7 @@ function withdrawalDisabled(token: string) {
     '0x488cc08935458403a0458e45e20c0159c8ab2c92',
     '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
     '0x7468a5d8E02245B00E8C0217fCE021C70Bc51305',
-  ].includes(token.toLowerCase());
+  ].some((disabledToken) => addressesEqual(disabledToken, token));
 }
 
 function ready() {
@@ -156,7 +153,7 @@ export function getAmountToPay(selectedRouteContext: RouteContext) {
     amountUSD?: string;
     chainId?: number;
   }) {
-    const key = `${chainId ?? 'unknown'}:${token.address.toLowerCase()}`;
+    const key = `${chainId ?? 'unknown'}:${new AddressAdapter(token.address).normalize()}`;
     const acc = amounts[key];
     const parsedAmount = BigNumber.from(amount ?? 0);
     const parsedAmountUSD = amountUSD ?? '0';
@@ -253,90 +250,35 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
   const gasSummary = useGasSummary();
-  const { address: walletAddress } = useAccount();
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance, erc20ChildBalances } =
-    useBalances({
-      parentWalletAddress: walletAddress,
-      childWalletAddress: walletAddress,
-    });
+  const { sourceBalance: sourceNativeBalance, destinationBalance: destinationNativeBalance } =
+    useNativeCurrencyBalances();
+  const selectedTokenSourceBalance = useBalanceOnSourceChain(selectedToken);
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
 
-  const ethL1BalanceFloat = ethParentBalance
-    ? parseFloat(utils.formatEther(ethParentBalance))
+  const sourceNativeBalanceFloat = sourceNativeBalance
+    ? parseFloat(
+        utils.formatUnits(sourceNativeBalance, networks.sourceChain.nativeCurrency.decimals),
+      )
     : null;
+  const destinationNativeBalanceFloat = destinationNativeBalance
+    ? parseFloat(
+        utils.formatUnits(
+          destinationNativeBalance,
+          networks.destinationChain.nativeCurrency.decimals,
+        ),
+      )
+    : null;
+  const selectedTokenSourceBalanceFloat =
+    selectedToken && selectedTokenSourceBalance
+      ? parseFloat(utils.formatUnits(selectedTokenSourceBalance, selectedToken.decimals))
+      : null;
 
-  const ethL2BalanceFloat = ethChildBalance ? parseFloat(utils.formatEther(ethChildBalance)) : null;
-
-  const selectedTokenL1BalanceFloat = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-
-    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
-      if (!ethParentBalance) {
-        return null;
-      }
-      return parseFloat(utils.formatEther(ethParentBalance));
-    }
-
-    const balance = erc20ParentBalances?.[selectedToken.address.toLowerCase()];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, erc20ParentBalances, ethParentBalance]);
-
-  const selectedTokenL2BalanceFloat = useMemo(() => {
-    if (!selectedToken) {
-      return null;
-    }
-
-    if (addressesEqual(selectedToken.address, constants.AddressZero)) {
-      if (!ethChildBalance) {
-        return null;
-      }
-      return parseFloat(utils.formatEther(ethChildBalance));
-    }
-
-    const { isOrbitChain } = isNetwork(childChain.id);
-
-    const isL2NativeUSDC =
-      isTokenArbitrumOneNativeUSDC(selectedToken.address) ||
-      isTokenArbitrumSepoliaNativeUSDC(selectedToken.address);
-
-    const selectedTokenL2Address =
-      isL2NativeUSDC && !isOrbitChain
-        ? selectedToken.address.toLowerCase()
-        : (selectedToken.l2Address || '').toLowerCase();
-
-    const balance = erc20ChildBalances?.[selectedTokenL2Address];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, selectedToken.decimals));
-  }, [selectedToken, childChain.id, erc20ChildBalances, ethChildBalance]);
-
-  const customFeeTokenL1BalanceFloat = useMemo(() => {
-    if (!nativeCurrency.isCustom) {
-      return null;
-    }
-
-    const balance = erc20ParentBalances?.[nativeCurrency.address];
-
-    if (!balance) {
-      return null;
-    }
-
-    return parseFloat(utils.formatUnits(balance, nativeCurrency.decimals));
-  }, [nativeCurrency, erc20ParentBalances]);
+  const customFeeTokenL1BalanceFloat =
+    nativeCurrency.isCustom && isDepositMode ? sourceNativeBalanceFloat : null;
 
   return useMemo(() => {
     const { estimatedL1GasFees, estimatedL2GasFees } = sanitizeEstimatedGasFees(gasSummary, {
@@ -377,15 +319,13 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return notReady();
     }
 
-    const ethBalanceFloat = isDepositMode ? ethL1BalanceFloat : ethL2BalanceFloat;
-    const selectedTokenBalanceFloat = isDepositMode
-      ? selectedTokenL1BalanceFloat
-      : selectedTokenL2BalanceFloat;
+    const ethBalanceFloat = sourceNativeBalanceFloat;
+    const selectedTokenBalanceFloat = selectedTokenSourceBalanceFloat;
     const isCustomFeeToken = nativeCurrency.isCustom && !isLifiRoute(selectedRoute);
     const customFeeTokenBalanceFloat = isCustomFeeToken
       ? isDepositMode
         ? customFeeTokenL1BalanceFloat
-        : ethL2BalanceFloat
+        : sourceNativeBalanceFloat
       : null;
 
     // No error while loading balance
@@ -540,8 +480,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
 
       const { amounts } = getAmountToPay(selectedRouteContext);
 
+      const sourceNativeTokenAddress = getNativeTokenAddress(networks.sourceChain.id);
       const sourceNativeAmountToPay = formatAmountToPay(
-        amounts[`${networks.sourceChain.id}:${constants.AddressZero}`],
+        amounts[`${networks.sourceChain.id}:${sourceNativeTokenAddress}`],
       );
       const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
         amountToPay: sourceNativeAmountToPay,
@@ -559,9 +500,11 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
 
       const destinationNativeAmountToPay = formatAmountToPay(
-        amounts[`${networks.destinationChain.id}:${constants.AddressZero}`],
+        amounts[
+          `${networks.destinationChain.id}:${getNativeTokenAddress(networks.destinationChain.id)}`
+        ],
       );
-      const destinationEthBalanceFloat = isDepositMode ? ethL2BalanceFloat : ethL1BalanceFloat;
+      const destinationEthBalanceFloat = destinationNativeBalanceFloat;
 
       if (destinationNativeAmountToPay > 0 && destinationEthBalanceFloat === null) {
         return notReady();
@@ -585,7 +528,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       // Check token sent balance
       const amountToSend = selectedToken?.address
         ? amounts[
-            `${networks.sourceChain.id}:${selectedRouteContext.fromAmount.token.address.toLowerCase()}`
+            `${networks.sourceChain.id}:${new AddressAdapter(selectedRouteContext.fromAmount.token.address).normalize()}`
           ]
         : undefined;
       const amountToPay = formatAmountToPay(amountToSend);
@@ -777,10 +720,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     eligibleRouteTypes,
     isSmartContractWallet,
     isDepositMode,
-    ethL1BalanceFloat,
-    ethL2BalanceFloat,
-    selectedTokenL1BalanceFloat,
-    selectedTokenL2BalanceFloat,
+    sourceNativeBalanceFloat,
+    destinationNativeBalanceFloat,
+    selectedTokenSourceBalanceFloat,
     customFeeTokenL1BalanceFloat,
     amount2,
     nativeCurrency.isCustom,

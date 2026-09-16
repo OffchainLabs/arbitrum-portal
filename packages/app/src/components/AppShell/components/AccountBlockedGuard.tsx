@@ -1,13 +1,14 @@
 'use client';
 
 import { PropsWithChildren } from 'react';
-import { useAccount } from 'wagmi';
 
 import { BlockedDialog } from '@/bridge/components/App/BlockedDialog';
 import { useAccountIsBlocked } from '@/bridge/hooks/useAccountIsBlocked';
+import { useWallets } from '@/bridge/wallet/hooks/useWallets';
 
 export function AccountBlockedGuard({ children }: PropsWithChildren) {
-  const { address } = useAccount();
+  const { sourceWallet } = useWallets();
+  const address = sourceWallet.account.address;
   const { isBlocked } = useAccountIsBlocked();
 
   if (address && isBlocked) {
