@@ -1,22 +1,18 @@
 import { useDeferredValue, useMemo } from 'react';
 import useSWR from 'swr';
-import { Address } from 'viem';
 
 import type { LifiParams, PreferredLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { getAPIBaseUrl } from '../util';
+import type { Address } from '../util/AddressUtils';
+import { parseAddressForChain } from '../util/AddressUtils';
 
 export type UseLifiCrossTransfersRouteParams = Pick<
   LifiParams,
-  | 'fromAmount'
-  | 'fromToken'
-  | 'toToken'
-  | 'slippage'
-  | 'fromAddress'
-  | 'denyBridges'
-  | 'denyExchanges'
+  'fromAmount' | 'fromToken' | 'toToken' | 'slippage' | 'denyBridges' | 'denyExchanges'
 > & {
   enabled?: boolean;
+  fromAddress?: Address;
   toAddress: Address | undefined;
   fromChainId: number;
   toChainId: number;
@@ -35,9 +31,13 @@ export const useLifiCrossTransfersRoute = ({
   denyExchanges,
   slippage,
 }: UseLifiCrossTransfersRouteParams) => {
+  // After a network switch, an address can briefly belong to the other ecosystem
+  const hasValidAddresses =
+    (!fromAddress || parseAddressForChain(fromAddress, fromChainId) !== undefined) &&
+    (!toAddress || parseAddressForChain(toAddress, toChainId) !== undefined);
   const key = useMemo(
     () =>
-      enabled && fromAmount !== '0'
+      enabled && fromAmount !== '0' && hasValidAddresses
         ? ([
             fromAmount,
             fromToken,
@@ -55,6 +55,7 @@ export const useLifiCrossTransfersRoute = ({
     [
       enabled,
       fromAmount,
+      hasValidAddresses,
       fromToken,
       toToken,
       fromChainId,
@@ -138,7 +139,7 @@ export const useLifiCrossTransfersRoute = ({
 
   return {
     ...swrResult,
-    data: swrResult.error ? undefined : swrResult.data,
+    data: !hasValidAddresses || swrResult.error ? undefined : swrResult.data,
     isLoading: isUpdating || swrResult.isLoading,
   };
 };
