@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { BaseError } from 'viem';
+import { BaseError, isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
@@ -29,7 +29,6 @@ import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
 import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
@@ -51,7 +50,7 @@ import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
-import { addressesEqual } from '../../util/AddressUtils';
+import { addressesEqual, normalizeAddress } from '../../util/AddressUtils';
 import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { getLifiRouteToolsDetails } from '../../util/LifiRouteUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
@@ -63,6 +62,8 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
@@ -132,11 +133,15 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridge: { bridgeTokens },
       warningTokens,
     },
   } = useAppState();
-  const { address: walletAddress, chain, isConnected } = useAccount();
+  const { chain } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
+  const destinationWalletAddress = destinationWallet.account.address;
+  const isConnected = sourceWallet.isConnected;
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
@@ -166,8 +171,9 @@ export function TransferPanel() {
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
-  const { addPendingTransaction, updatePendingTransaction } =
-    useAddPendingTransactions(walletAddress);
+  const { addPendingTransaction, updatePendingTransaction } = useAddPendingTransactions(
+    walletAddress && isAddress(walletAddress) ? walletAddress : undefined,
+  );
   const { selectedRoute, clearRoute, context } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
@@ -199,8 +205,26 @@ export function TransferPanel() {
 
   const isCustomDestinationTransfer = !!latestDestinationAddress.current;
 
-  const { updateEthParentBalance, updateErc20ParentBalances, updateEthChildBalance } =
-    useBalances();
+  const refreshTokenBalances = useRefreshTokenBalances();
+  const refreshCurrentTokenBalances = async () => {
+    const refreshes: Promise<unknown>[] = [];
+
+    if (walletAddress) {
+      refreshes.push(refreshTokenBalances({ chainId: networks.sourceChain.id, walletAddress }));
+    }
+
+    const recipientAddress = destinationAddress || destinationWalletAddress;
+    if (recipientAddress) {
+      refreshes.push(
+        refreshTokenBalances({
+          chainId: networks.destinationChain.id,
+          walletAddress: recipientAddress,
+        }),
+      );
+    }
+
+    await Promise.all(refreshes);
+  };
 
   const { destinationAddressError } = useDestinationAddressError();
 
@@ -555,7 +579,7 @@ export function TransferPanel() {
         uniqueId: null,
         value: amount,
         depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
+        destination: destinationAddress ?? destinationWalletAddress,
         sender: walletAddress,
         isCctp: true,
         tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
@@ -739,7 +763,7 @@ export function TransferPanel() {
           uniqueId: null,
           value: amount,
           depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-          destination: destinationAddress ?? walletAddress,
+          destination: destinationAddress ?? destinationWalletAddress,
           sender: walletAddress,
           isLifi: true,
           tokenAddress: selectedToken?.address || constants.AddressZero,
@@ -768,15 +792,7 @@ export function TransferPanel() {
       if ('wait' in sourceChainTransaction) {
         await sourceChainTransaction.wait();
 
-        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
-
-        if (selectedToken) {
-          token.updateTokenData(selectedToken.address);
-        }
-
-        if (nativeCurrency.isCustom) {
-          await updateErc20ParentBalances([nativeCurrency.address]);
-        }
+        await refreshCurrentTokenBalances();
       }
     } catch (error) {
       if (isUserRejectedError(error)) {
@@ -947,7 +963,7 @@ export function TransferPanel() {
     setTransferring(true);
 
     try {
-      const warningToken = selectedToken && warningTokens[selectedToken.address.toLowerCase()];
+      const warningToken = selectedToken && warningTokens[normalizeAddress(selectedToken.address)];
       if (warningToken) {
         const description = getWarningTokenDescription(warningToken.type);
         warningToast(
@@ -1051,7 +1067,7 @@ export function TransferPanel() {
         if (!tokenAddress) Error('Token not deployed on source chain.');
 
         // warning token handling
-        const warningToken = selectedToken && warningTokens[selectedToken.address.toLowerCase()];
+        const warningToken = warningTokens[normalizeAddress(selectedToken.address)];
         if (warningToken) {
           const description = getWarningTokenDescription(warningToken.type);
           warningToast(
@@ -1260,15 +1276,7 @@ export function TransferPanel() {
     await (sourceChainTransaction as TransactionResponse).wait();
 
     // tx confirmed, update balances
-    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
-
-    if (selectedToken) {
-      token.updateTokenData(selectedToken.address);
-    }
-
-    if (nativeCurrency.isCustom) {
-      await updateErc20ParentBalances([nativeCurrency.address]);
-    }
+    await refreshCurrentTokenBalances();
   };
 
   const trackTransferButtonClick = useCallback(() => {

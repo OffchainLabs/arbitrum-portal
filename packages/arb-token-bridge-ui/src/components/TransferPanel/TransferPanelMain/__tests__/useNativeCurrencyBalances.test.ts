@@ -129,4 +129,47 @@ describe('useNativeCurrencyBalances', () => {
       destinationGasBalance: BigNumber.from(300_000),
     });
   });
+
+  it('keeps the received custom token separate from destination gas on withdrawal', () => {
+    vi.mocked(useNetworks).mockReturnValue([
+      {
+        sourceChain: getWagmiChain(ChainId.ApeChain),
+        sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
+        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
+        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+      },
+      vi.fn(),
+    ]);
+    vi.mocked(useNativeCurrency).mockReturnValue({
+      name: 'ApeCoin',
+      symbol: 'APE',
+      decimals: 18,
+      address: CommonAddress.ArbitrumOne.APE,
+      isCustom: true,
+    });
+    vi.mocked(useTokenBalances).mockImplementation(({ chainId, tokenAddresses }) => ({
+      data: Object.fromEntries(
+        tokenAddresses.map((tokenAddress) => [
+          tokenAddress,
+          chainId === ChainId.ApeChain
+            ? 500_000n
+            : tokenAddress === zeroAddress
+              ? 100_000n
+              : 300_000n,
+        ]),
+      ),
+      error: undefined,
+      isLoading: false,
+      mutate: vi.fn(),
+    }));
+
+    const { result } = renderHook(useNativeCurrencyBalances);
+
+    expect(result.current).toEqual({
+      sourceBalance: BigNumber.from(500_000),
+      sourceGasBalance: BigNumber.from(500_000),
+      destinationBalance: BigNumber.from(300_000),
+      destinationGasBalance: BigNumber.from(100_000),
+    });
+  });
 });

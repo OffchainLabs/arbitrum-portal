@@ -1,10 +1,11 @@
 import { isAddress } from 'ethers/lib/utils';
 import useSWRImmutable from 'swr/immutable';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { addressIsDenylisted } from '../../../util/AddressNetworkUtils';
+import { normalizeAddress } from '../../../util/AddressUtils';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({
@@ -34,14 +35,14 @@ export async function getDestinationAddressError({
 
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
-  const { address } = useAccount();
+  const { sourceWallet } = useWallets();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { data: destinationAddressError } = useSWRImmutable(
     [
-      address?.toLowerCase(),
-      (destinationAddress ?? destinationAddressFromQueryParams)?.toLowerCase(),
+      normalizeAddress(sourceWallet.account.address),
+      destinationAddress ?? destinationAddressFromQueryParams,
       isSenderSmartContractWallet,
       'useDestinationAddressError',
     ] as const,
