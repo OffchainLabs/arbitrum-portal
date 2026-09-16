@@ -1,7 +1,9 @@
 import type { RouteExtended } from '@lifi/sdk';
 import * as lifiSdk from '@lifi/sdk';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import bs58 from 'bs58';
 import { BigNumber } from 'ethers';
+import { type PropsWithChildren, createElement } from 'react';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +20,7 @@ import {
   rejectLifiRouteBatchId,
   resolveLifiRouteBatchId,
 } from '../../util/LifiTransactionStatus';
+import { WalletContext, defaultWalletContextValue } from '../../wallet/WalletContext';
 import { AssetType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
 import {
@@ -27,6 +30,7 @@ import {
 import {
   getDedupedTransactionsForPagination,
   mergeTransactions,
+  resolveHistoryAddress,
   useTransactionHistory,
 } from '../useTransactionHistory';
 
@@ -35,6 +39,25 @@ const wallets = {
   WALLET_SINGLE_TX: '0x6d051646D4A9df8679E9AD3429e70415f75f6499',
   WALLET_EMPTY: '0xa5801D65537dF15e90D284E5E917AE84e3F3201c',
 } as const;
+
+describe('resolveHistoryAddress', () => {
+  it.each([
+    ['0x52908400098527886e0f7030069857d2e4169ee7', '0x52908400098527886e0f7030069857d2e4169ee7'],
+    ['0x52908400098527886E0F7030069857D2E4169EE7', '0x52908400098527886e0f7030069857d2e4169ee7'],
+    ['0x27B1FDB04752BBC536007A920D24ACB045561C26', '0x27b1fdb04752bbc536007a920d24acb045561c26'],
+  ])('normalizes EVM input for history queries: %s', (address, expected) => {
+    expect(resolveHistoryAddress(address)).toBe(expected);
+  });
+
+  it.each([
+    undefined,
+    '52908400098527886e0f7030069857d2e4169ee7',
+    'XE65GB6LDNXYOFTX0NSV3FUWKOWIXAMJK36',
+    'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+  ])('preserves non-EVM input: %s', (address) =>
+    expect(resolveHistoryAddress(address)).toBe(address),
+  );
+});
 
 const MERGE_TEST_ADDRESS = '0x1111111111111111111111111111111111111111';
 const batchId32Bytes = '0x5f4e4b452a390f349b7fc1f7b9b1666da36199b342de010996606ac8cea5ace1';
@@ -137,6 +160,25 @@ const createTestCase = ({
   expectedPagesTxCounts: number[];
 }) => ({ key, enabled, expectedPagesTxCounts });
 
+function createWalletWrapper(address: Address) {
+  return function WalletWrapper({ children }: PropsWithChildren) {
+    return createElement(
+      WalletContext.Provider,
+      {
+        value: {
+          ...defaultWalletContextValue,
+          evm: {
+            ...defaultWalletContextValue.evm,
+            account: { ecosystem: 'evm', address, chainId: 11155111, status: 'connected' },
+            isConnected: true,
+          },
+        },
+      },
+      children,
+    );
+  };
+}
+
 vi.mock('wagmi', async (importActual) => ({
   ...(await importActual()),
   useConfig: () => wagmiMocks.config,
@@ -164,7 +206,9 @@ vi.mock('../useArbQueryParams', async (importActual) => ({
 }));
 
 const renderHookAsyncUseTransactionHistory = async (address: Address) => {
-  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }));
+  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }), {
+    wrapper: createWalletWrapper(address),
+  });
 
   return { result: hook.result };
 };
@@ -246,7 +290,9 @@ describe.sequential('useTransactionHistory', () => {
       await statusResponse;
       return tx;
     });
-    const { result } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+    const { result } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     const pendingUpdate = result.current.updatePendingTransaction(transaction);
     const completedTransaction = {
@@ -308,7 +354,9 @@ describe.sequential('useTransactionHistory', () => {
       },
       receiving: { chainId: pending.destinationChainId },
     });
-    const { result, unmount } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS));
+    const { result, unmount } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await act(async () => {
       await result.current.updatePendingTransaction(pending);
@@ -345,7 +393,9 @@ describe.sequential('useTransactionHistory', () => {
     await act(async () => {});
     expect(getCallsStatusMock).not.toHaveBeenCalled();
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
   });
 
@@ -362,7 +412,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -392,7 +444,9 @@ describe.sequential('useTransactionHistory', () => {
       useLifiMergedTransactionCacheStore.setState({
         transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
       });
-      renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+      renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+        wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+      });
       await waitFor(() => {
         const updated =
           useLifiMergedTransactionCacheStore.getState().transactions[MERGE_TEST_ADDRESS]?.[0];
@@ -411,7 +465,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -440,7 +496,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -479,7 +537,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
 
     await waitFor(() => {
       const [updatedTransaction] =
@@ -511,8 +571,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS) },
     );
 
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
@@ -552,8 +613,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS) },
     );
 
     await waitFor(() => {
@@ -580,8 +642,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    const { result } = renderHook(() =>
-      useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+    const { result } = renderHook(
+      () => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }),
+      { wrapper: createWalletWrapper(MERGE_TEST_ADDRESS) },
     );
 
     await waitFor(() => expect(getCallsStatusMock).toHaveBeenCalled());
@@ -611,7 +674,9 @@ describe.sequential('useTransactionHistory', () => {
       transactions: { [MERGE_TEST_ADDRESS]: [transaction] },
     });
 
-    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }));
+    renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+      wrapper: createWalletWrapper(wagmiMocks.address),
+    });
     await act(async () => {
       await Promise.resolve();
     });
@@ -1266,5 +1331,33 @@ describe.sequential('LiFi recovered route history', () => {
     expect(updated.destinationStatus).toBe(WithdrawalStatus.FAILURE);
     expect(updated.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
     expect(prepareLifiTransactionForStorage(updated).lifiRoute).toBeDefined();
+  });
+});
+
+describe('signature deduplication', () => {
+  it('keeps distinct signature case and chains while merging provider catch-up', () => {
+    const tx = {
+      ...lifiTestBaseTx,
+      txId: bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1)),
+      sourceChainId: 1151111081099710,
+      parentChainId: 1151111081099710,
+    };
+    const differentCase = { ...tx, txId: tx.txId.toLowerCase() };
+    const differentChain = { ...tx, sourceChainId: 1 };
+    const completed = { ...tx, destinationStatus: WithdrawalStatus.CONFIRMED };
+    const merged = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [tx, differentCase, differentChain],
+      fetchedTransactions: [[completed]],
+    });
+    expect(merged).toHaveLength(3);
+    expect(merged).toContainEqual(expect.objectContaining(completed));
+    expect(
+      getDedupedTransactionsForPagination({
+        fetchedTransactions: [completed, differentCase, differentChain],
+        cachedDeposits: [],
+        cachedLifiTransactions: [tx],
+      }),
+    ).toHaveLength(3);
   });
 });

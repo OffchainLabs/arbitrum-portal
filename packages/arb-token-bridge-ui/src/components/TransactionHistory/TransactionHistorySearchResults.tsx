@@ -2,12 +2,12 @@ import { Tab } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { addressesEqual } from '../../util/AddressUtils';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
 import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
@@ -61,7 +61,8 @@ export function TransactionHistorySearchResults() {
   const props = useTransactionHistoryUpdater();
   const { transactions, loading, error } = props;
   const { isTxHashSearch } = useTxHashSearchState();
-  const { address: connectedAddress } = useAccount();
+  const { sourceWallet } = useWallets();
+  const connectedAddress = sourceWallet.account.address;
 
   const isForeignTxHashResult =
     isTxHashSearch &&

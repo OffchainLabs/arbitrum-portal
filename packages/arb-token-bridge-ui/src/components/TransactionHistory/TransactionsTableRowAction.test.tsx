@@ -23,6 +23,9 @@ vi.mock('../../hooks/useTransferDuration', () => ({
 const mocks = vi.hoisted(() => ({
   useAccount: vi.fn(),
   useConfig: vi.fn(),
+  useClaimWithdrawal: vi.fn(() => ({ claim: vi.fn(), isClaiming: false })),
+  useClaimCctp: vi.fn(() => ({ claim: vi.fn(), isClaiming: false })),
+  useRedeemRetryable: vi.fn(() => ({ redeem: vi.fn(), isRedeeming: false })),
   resumeLifiRoute: vi.fn(),
   updateTransaction: vi.fn(),
   updateLifiTransactionInCache: vi.fn(),
@@ -31,6 +34,21 @@ const mocks = vi.hoisted(() => ({
 vi.mock('wagmi', () => ({
   useAccount: mocks.useAccount,
   useConfig: mocks.useConfig,
+}));
+
+vi.mock('../../wallet/hooks/useWallets', () => ({
+  useWalletForChain: () => {
+    const { address, chain, isConnected } = mocks.useAccount();
+    return {
+      account: {
+        ecosystem: 'evm',
+        address,
+        chainId: chain?.id,
+        status: isConnected ? 'connected' : 'disconnected',
+      },
+      isConnected,
+    };
+  },
 }));
 
 vi.mock('@/token-bridge-sdk/LifiTransferStarter', () => ({
@@ -46,10 +64,7 @@ vi.mock('@/token-bridge-sdk/utils', () => ({
 }));
 
 vi.mock('../../hooks/useClaimWithdrawal', () => ({
-  useClaimWithdrawal: () => ({
-    claim: vi.fn(),
-    isClaiming: false,
-  }),
+  useClaimWithdrawal: mocks.useClaimWithdrawal,
 }));
 
 vi.mock('../../hooks/useLifiMergedTransactionCacheStore', () => ({
@@ -58,10 +73,7 @@ vi.mock('../../hooks/useLifiMergedTransactionCacheStore', () => ({
 }));
 
 vi.mock('../../hooks/useRedeemRetryable', () => ({
-  useRedeemRetryable: () => ({
-    redeem: vi.fn(),
-    isRedeeming: false,
-  }),
+  useRedeemRetryable: mocks.useRedeemRetryable,
 }));
 
 vi.mock('../../hooks/useSwitchNetworkWithConfig', () => ({
@@ -91,10 +103,7 @@ vi.mock('../../state/app/utils', async (importActual) => ({
 
 vi.mock('../../state/cctpState', async (importActual) => ({
   ...(await importActual<typeof import('../../state/cctpState')>()),
-  useClaimCctp: () => ({
-    claim: vi.fn(),
-    isClaiming: false,
-  }),
+  useClaimCctp: mocks.useClaimCctp,
 }));
 
 vi.mock('../../wallet/hooks/useWalletModal', () => ({
@@ -371,5 +380,20 @@ describe.sequential('TransactionsTableRowAction', () => {
     ).toBeNull();
     expect(screen.getByText('Time left:')).toBeDefined();
     expect(screen.getByText('Countdown')).toBeDefined();
+  });
+
+  it('does not mount canonical action hooks for a settled Solana transfer', () => {
+    renderAction({
+      ...baseLifiTransaction,
+      sourceChainId: 1151111081099710,
+      parentChainId: 1151111081099710,
+      lifiRoute: undefined,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+    });
+
+    expect(mocks.useClaimWithdrawal).not.toHaveBeenCalled();
+    expect(mocks.useClaimCctp).not.toHaveBeenCalled();
+    expect(mocks.useRedeemRetryable).not.toHaveBeenCalled();
   });
 });
