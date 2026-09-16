@@ -5,7 +5,7 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { type Address, isHash } from 'viem';
+import { isAddress, isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 
@@ -362,10 +362,9 @@ function getMergedTransactionIdentity(tx: MergedTransaction) {
   return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
 }
 
-function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
+function isTransactionForAddress(tx: MergedTransaction, address?: string) {
   // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
-  const normalizedAddress = address?.toLowerCase();
-  return [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(normalizedAddress);
+  return addressesEqual(tx.sender, address) || addressesEqual(tx.destination, address);
 }
 
 export function mergeTransactions({
@@ -373,7 +372,7 @@ export function mergeTransactions({
   newTransactions = [],
   fetchedTransactions = [],
 }: {
-  address?: Address;
+  address?: string;
   newTransactions?: MergedTransaction[];
   fetchedTransactions?: MergedTransaction[][];
 }) {
@@ -527,7 +526,7 @@ export async function fetchWithdrawalsInBatches(
 // SWR cache for pending transactions initiated in the current session.
 // Does not fetch; only reads/writes the `new_tx_list` cache. Use this instead
 // of `useTransactionHistory` when a component only needs to add a pending tx.
-export const useAddPendingTransactions = (address: Address | undefined) => {
+export const useAddPendingTransactions = (address: string | undefined) => {
   const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
     MergedTransaction[]
   >(address ? ['new_tx_list', address] : null);
@@ -576,12 +575,13 @@ export const useAddPendingTransactions = (address: Address | undefined) => {
  * and the fetcher always see the same settled value.
  */
 const useTransactionHistoryWithoutStatuses = (
-  address: Address | undefined,
+  address: string | undefined,
   chainFilter: TxHistoryChainFilter,
 ) => {
   const { chain } = useAccount();
   const [isTestnetMode] = useIsTestnetMode();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const evmAddress = address && isAddress(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
@@ -591,7 +591,7 @@ const useTransactionHistoryWithoutStatuses = (
   const chainFilterKey = getChainFilterKey(chainFilter);
 
   const cctpTransfersMainnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
@@ -600,7 +600,7 @@ const useTransactionHistoryWithoutStatuses = (
   });
 
   const cctpTransfersTestnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
@@ -629,7 +629,7 @@ const useTransactionHistoryWithoutStatuses = (
     cctpTransfersTestnet.isLoadingWithdrawals;
 
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled ? evmAddress : undefined,
     isTestnet: isTestnetMode,
   });
   const { data: lifiHistoryTransfers, isLoading: lifiHistoryLoading } = useLifiTransactionHistory({
@@ -638,11 +638,11 @@ const useTransactionHistoryWithoutStatuses = (
   });
 
   const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
-    address ? ['failed_chain_pairs', address] : null,
+    evmAddress ? ['failed_chain_pairs', evmAddress] : null,
   );
   const connectedChainId = chain?.id;
   const canFetch = canFetchTransactionHistory({
-    address,
+    address: evmAddress,
     isLoadingAccountType,
     isTxHistoryEnabled,
     isSmartContractWallet,
@@ -711,8 +711,8 @@ const useTransactionHistoryWithoutStatuses = (
 
               // else, fetch deposits or withdrawals
               return await fetcherFn({
-                sender: includeSentTxs ? address : undefined,
-                receiver: includeReceivedTxs ? address : undefined,
+                sender: includeSentTxs ? evmAddress : undefined,
+                receiver: includeReceivedTxs ? evmAddress : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
                 parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
@@ -747,7 +747,7 @@ const useTransactionHistoryWithoutStatuses = (
     },
     [
       addFailedChainPair,
-      address,
+      evmAddress,
       canFetch,
       connectedChainId,
       forceFetchReceived,
@@ -766,7 +766,7 @@ const useTransactionHistoryWithoutStatuses = (
       ? [
           'tx_list',
           'deposits',
-          address,
+          evmAddress,
           isTestnetMode,
           smartContractWalletChainScope,
           chainFilterKey,
@@ -784,7 +784,7 @@ const useTransactionHistoryWithoutStatuses = (
       ? [
           'tx_list',
           'withdrawals',
-          address,
+          evmAddress,
           isTestnetMode,
           forceFetchReceived,
           smartContractWalletChainScope,
@@ -948,7 +948,7 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
  * This is done in small batches to safely meet RPC limits.
  */
 export const useTransactionHistory = (
-  searchedAddress: Address | undefined,
+  searchedAddress: string | undefined,
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
   { runFetcher: runFetcherProp = false } = {},
 ): UseTransactionHistoryResult => {
@@ -958,7 +958,8 @@ export const useTransactionHistory = (
   const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
   const { chain } = useAccount();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const evmAddress = address && isAddress(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { isFeatureDisabled } = useDisabledFeatures();
