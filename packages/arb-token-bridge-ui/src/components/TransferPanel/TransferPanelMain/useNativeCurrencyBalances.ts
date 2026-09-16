@@ -1,12 +1,21 @@
 import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { useBalances } from '../../../hooks/useBalances';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { getNativeTokenAddress } from '../../../wallet/constants';
+import { useTokenBalances } from '../../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../../wallet/hooks/useWallets';
+
+function toBigNumber(balance: bigint | undefined, hasWalletAddress: boolean) {
+  if (!hasWalletAddress) {
+    return constants.Zero;
+  }
+
+  return balance === undefined ? null : BigNumber.from(balance);
+}
 
 export function useNativeCurrencyBalances(): {
   sourceBalance: BigNumber | null;
@@ -15,63 +24,46 @@ export function useNativeCurrencyBalances(): {
   const [networks] = useNetworks();
   const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const [{ destinationAddress }] = useArbQueryParams();
-  const { isConnected } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const sourceTokenAddress =
+    nativeCurrency.isCustom && isDepositMode
+      ? nativeCurrency.address
+      : getNativeTokenAddress(networks.sourceChain.id);
+  const destinationTokenAddress =
+    nativeCurrency.isCustom && !isDepositMode
+      ? nativeCurrency.address
+      : getNativeTokenAddress(networks.destinationChain.id);
+  const destinationWalletAddress = destinationAddress || destinationWallet.account.address;
+  const { data: sourceBalances } = useTokenBalances({
+    chainId: networks.sourceChain.id,
+    walletAddress: sourceWallet.account.address,
+    tokenAddresses: [sourceTokenAddress],
+  });
+  const { data: destinationBalances } = useTokenBalances({
+    chainId: networks.destinationChain.id,
+    walletAddress: destinationWalletAddress,
+    tokenAddresses: [destinationTokenAddress],
+  });
 
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance } = useBalances();
-
-  const customFeeTokenParentBalance =
-    'address' in nativeCurrency ? (erc20ParentBalances?.[nativeCurrency.address] ?? null) : null;
-  const customFeeTokenChildBalance = ethChildBalance;
-
-  const destinationBalance = useMemo(() => {
-    if (!isConnected && !destinationAddress) {
-      return constants.Zero;
-    }
-
-    if (!nativeCurrency.isCustom) {
-      return isDepositMode ? ethChildBalance : ethParentBalance;
-    }
-
-    return isDepositMode ? customFeeTokenChildBalance : customFeeTokenParentBalance;
-  }, [
-    customFeeTokenChildBalance,
-    customFeeTokenParentBalance,
-    destinationAddress,
-    ethChildBalance,
-    ethParentBalance,
-    isConnected,
-    isDepositMode,
-    nativeCurrency.isCustom,
-  ]);
-
-  return useMemo(() => {
-    if (!isConnected) {
-      return {
-        sourceBalance: constants.Zero,
-        destinationBalance,
-      };
-    }
-
-    if (!nativeCurrency.isCustom) {
-      return {
-        sourceBalance: isDepositMode ? ethParentBalance : ethChildBalance,
-        destinationBalance,
-      };
-    }
-
-    return {
-      sourceBalance: isDepositMode ? customFeeTokenParentBalance : customFeeTokenChildBalance,
-      destinationBalance,
-    };
-  }, [
-    isConnected,
-    nativeCurrency.isCustom,
-    isDepositMode,
-    customFeeTokenParentBalance,
-    customFeeTokenChildBalance,
-    destinationBalance,
-    ethParentBalance,
-    ethChildBalance,
-  ]);
+  return useMemo(
+    () => ({
+      sourceBalance: toBigNumber(
+        sourceBalances?.[sourceTokenAddress],
+        Boolean(sourceWallet.account.address),
+      ),
+      destinationBalance: toBigNumber(
+        destinationBalances?.[destinationTokenAddress],
+        Boolean(destinationWalletAddress),
+      ),
+    }),
+    [
+      destinationBalances,
+      destinationTokenAddress,
+      destinationWalletAddress,
+      sourceBalances,
+      sourceTokenAddress,
+      sourceWallet.account.address,
+    ],
+  );
 }

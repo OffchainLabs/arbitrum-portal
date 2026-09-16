@@ -33,3 +33,19 @@ export type WalletContextValue = {
   evm: EvmWalletHandle;
   solana: SolanaWalletHandle;
 };
+
+export type FetchBalanceInput = {
+  chainId: number;
+  walletAddress: string;
+  tokenAddresses: string[];
+};
+
+export type FetchBalanceResult = Record<string, bigint>;
+
+export type BalanceClient<Ecosystem extends WalletEcosystem = WalletEcosystem> = {
+  ecosystem: Ecosystem;
+  fetchBalance: (input: FetchBalanceInput) => Promise<FetchBalanceResult>;
+};
+
+export type EvmBalanceClient = BalanceClient<'evm'>;
+export type SolanaBalanceClient = BalanceClient<'solana'>;
