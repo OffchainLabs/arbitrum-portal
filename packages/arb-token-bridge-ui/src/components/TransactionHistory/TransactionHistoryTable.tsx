@@ -187,13 +187,17 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
 
   if (isTxHistoryEmpty) {
     return (
-      <EmptyTransactionHistory
-        loading={loading}
-        isError={typeof error !== 'undefined'}
-        paused={paused}
-        resume={resume}
-        tabType={isPendingTab ? 'pending' : 'settled'}
-      />
+      <>
+        {/* an outage leaves nothing to list, so the warning has to render here too */}
+        <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
+        <EmptyTransactionHistory
+          loading={loading}
+          isError={typeof error !== 'undefined'}
+          paused={paused}
+          resume={resume}
+          tabType={isPendingTab ? 'pending' : 'settled'}
+        />
+      </>
     );
   }
 

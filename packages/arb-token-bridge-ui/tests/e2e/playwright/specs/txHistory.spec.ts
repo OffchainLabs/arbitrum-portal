@@ -2,6 +2,8 @@
  * Transaction history panel.
  * Port of tests/e2e/specs/txHistory.cy.ts.
  */
+import { type Page } from '@playwright/test';
+
 import { ChainId } from '../../../../src/types/ChainId';
 import { expect, test } from '../fixtures';
 import {
@@ -13,6 +15,17 @@ import {
 const DEPOSIT_ROW_IDENTIFIER = /deposit-row-/i;
 const CLAIMABLE_ROW_IDENTIFIER = /claimable-row-/i;
 const FAILED_CHAIN_PAIRS_WARNING = 'failed-chain-pairs-warning';
+
+// The route answers a failure with an empty `data` array of its own, which is exactly
+// what makes an outage indistinguishable from an empty history without a status check.
+const stubIndexerOutage = (page: Page, url: string) =>
+  page.route(url, (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], message: 'Indexer unavailable' }),
+    }),
+  );
 
 const sepoliaLogin = {
   networkType: 'parentChain',
@@ -66,19 +79,12 @@ test.describe('Transaction History', () => {
   });
 
   // The contract behind removing the subgraph fallback: an unavailable backend has
-  // to say so. The route answers a failure with an empty `data` array of its own, so
-  // without the status check this renders as "you have no transactions".
+  // to say so, rather than rendering as "you have no transactions".
   test('warns instead of showing an empty history when the backend fails', async ({
     page,
     e2eEnv,
   }) => {
-    await page.route('**/api/deposits*', (route) =>
-      route.fulfill({
-        status: 502,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: [], message: 'Indexer unavailable' }),
-      }),
-    );
+    await stubIndexerOutage(page, '**/api/deposits*');
 
     await login(page, e2eEnv, sepoliaLogin);
 
@@ -95,5 +101,46 @@ test.describe('Transaction History', () => {
       page.getByText(/unable to fetch data for the following chain pairs/i),
     ).toBeVisible();
     await expect(page.getByText('Arbitrum Sepolia')).toBeVisible();
+  });
+
+  // Same contract on the withdrawal side, which reaches the panel by a different
+  // route: a failure here used to be caught in `fetchWithdrawals` and retried as a
+  // full event-log scan, so the panel never heard about it.
+  test('warns when the withdrawal backend fails', async ({ page, e2eEnv }) => {
+    await stubIndexerOutage(page, '**/api/withdrawals*');
+
+    await login(page, e2eEnv, sepoliaLogin);
+
+    await page.getByLabel('Switch to Transaction History Tab').first().click();
+    await selectTransactionsPanelTab(page, 'settled');
+
+    const warning = page.getByTestId(FAILED_CHAIN_PAIRS_WARNING);
+    await expect(warning).toBeVisible({ timeout: 150_000 });
+
+    await warning.hover();
+    await expect(
+      page.getByText(/unable to fetch data for the following chain pairs/i),
+    ).toBeVisible();
+    await expect(page.getByText('Arbitrum Sepolia')).toBeVisible();
+  });
+
+  // The warning used to render only alongside a non-empty table, so a total outage —
+  // the case it exists for — fell through to the empty state and showed "No settled
+  // transactions" instead.
+  test('warns rather than reporting an empty history when every backend fails', async ({
+    page,
+    e2eEnv,
+  }) => {
+    await stubIndexerOutage(page, '**/api/deposits*');
+    await stubIndexerOutage(page, '**/api/withdrawals*');
+
+    await login(page, e2eEnv, sepoliaLogin);
+
+    await page.getByLabel('Switch to Transaction History Tab').first().click();
+    await selectTransactionsPanelTab(page, 'settled');
+
+    const warning = page.getByTestId(FAILED_CHAIN_PAIRS_WARNING);
+    await expect(warning).toBeVisible({ timeout: 150_000 });
+    await expect(page.getByTestId(DEPOSIT_ROW_IDENTIFIER)).toHaveCount(0);
   });
 });

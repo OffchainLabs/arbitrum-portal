@@ -1,4 +1,4 @@
-import { getAPIBaseUrl } from '.';
+import { assertOk, getAPIBaseUrl } from '.';
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {
@@ -6,9 +6,9 @@ export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<nu
     headers: { 'Content-Type': 'application/json' },
   });
 
-  if (!response.ok) {
-    return 0;
-  }
+  // the route reports "no backend serves this chain" as 0 with a 200, so a non-2xx
+  // is a real failure and must not be flattened into the same 0
+  await assertOk(response, `[fetchLatestIndexedBlockNumber] /api/chains/${chainId}/block-number`);
 
   const blockNumber = ((await response.json()) as { data?: number }).data;
   return Number.isFinite(blockNumber) ? (blockNumber as number) : 0;

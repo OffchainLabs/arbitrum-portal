@@ -8,7 +8,6 @@ import { getNonce } from '../AddressUtils';
 import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestIndexedBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
-import { logger } from '../logger';
 import { isAlchemyChain, isNetwork } from '../networks';
 import { fetchETHWithdrawalsFromEventLogs } from './fetchETHWithdrawalsFromEventLogs';
 import {
@@ -206,47 +205,34 @@ export async function fetchWithdrawals({
 
   const head = typeof toBlock === 'number' ? toBlock : await l2Provider.getBlockNumber();
 
-  let lastIndexedBlock = 0;
-  try {
-    lastIndexedBlock = await fetchLatestIndexedBlockNumber(l2ChainID);
-  } catch (error) {
-    logger.info('Error fetching latest indexed block number', error);
-  }
+  const lastIndexedBlock = await fetchLatestIndexedBlockNumber(l2ChainID);
 
   const indexedBoundary =
     lastIndexedBlock > 0 ? Math.max(fromBlock, Math.min(lastIndexedBlock, head)) : fromBlock;
 
-  let eventLogsFromBlock = indexedBoundary;
-
-  let indexedWithdrawals: Withdrawal[] = [];
-  try {
-    indexedWithdrawals = (
-      await fetchWithdrawalsFromSubgraph({
-        sender,
-        receiver,
-        fromBlock,
-        toBlock: indexedBoundary,
-        l2ChainId: l2ChainID,
-        pageNumber,
-        pageSize,
-        searchString,
-      })
-    ).map((tx) => ({
-      ...tx,
-      direction: 'withdrawal' as const,
-      source: 'subgraph' as const,
-      parentChainId,
-      childChainId: l2ChainID,
-    }));
-  } catch (error) {
-    logger.info('Error fetching withdrawals from indexed source', error);
-    eventLogsFromBlock = fromBlock;
-  }
+  const indexedWithdrawals = (
+    await fetchWithdrawalsFromSubgraph({
+      sender,
+      receiver,
+      fromBlock,
+      toBlock: indexedBoundary,
+      l2ChainId: l2ChainID,
+      pageNumber,
+      pageSize,
+      searchString,
+    })
+  ).map((tx) => ({
+    ...tx,
+    direction: 'withdrawal' as const,
+    source: 'subgraph' as const,
+    parentChainId,
+    childChainId: l2ChainID,
+  }));
 
   const eventLogWithdrawals = await fetchWithdrawalsUsingEventLogs({
     sender,
     receiver,
-    fromBlock: eventLogsFromBlock,
+    fromBlock: indexedBoundary,
     toBlock,
     parentChainId,
     l2ChainId: l2ChainID,
