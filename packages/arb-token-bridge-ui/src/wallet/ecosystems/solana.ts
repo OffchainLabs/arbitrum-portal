@@ -28,4 +28,5 @@ export const solanaEcosystem: EcosystemConfig = {
     isCaseSensitive: true,
   },
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
+  hasParentChildTokenAddresses: false,
 };

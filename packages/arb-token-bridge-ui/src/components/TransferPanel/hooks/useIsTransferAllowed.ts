@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useAppState } from '../../../state';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useDestinationAddressError } from './useDestinationAddressError';
 import { isLifiRoute, useRouteStore } from './useRouteStore';
 
@@ -13,14 +13,14 @@ export function useIsTransferAllowed() {
       arbTokenBridge: { eth },
     },
   } = useAppState();
-  // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const { address: walletAddress, isConnected, chain } = useAccount();
+  const { sourceWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const [networks] = useNetworks();
   const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
-    const isConnectedToTheWrongChain = chain?.id !== networks.sourceChain.id;
+    const isConnectedToTheWrongChain = sourceWallet.account.chainId !== networks.sourceChain.id;
     // LiFi routes don't use the bridge SDK
     const requiresBridgeSdk = !isLifiRoute(selectedRoute);
 
@@ -30,7 +30,7 @@ export function useIsTransferAllowed() {
     if (requiresBridgeSdk && !eth) {
       return false;
     }
-    if (!isConnected) {
+    if (!sourceWallet.isConnected) {
       return false;
     }
     if (!walletAddress) {
@@ -45,12 +45,12 @@ export function useIsTransferAllowed() {
     return true;
   }, [
     arbTokenBridgeLoaded,
-    chain?.id,
     destinationAddressError,
-    isConnected,
     eth,
     networks.sourceChain.id,
     selectedRoute,
+    sourceWallet.account.chainId,
+    sourceWallet.isConnected,
     walletAddress,
   ]);
 }

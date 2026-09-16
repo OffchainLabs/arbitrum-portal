@@ -28,6 +28,7 @@ export function useSolanaWallet(): SolanaWalletHandle {
         walletInfo: walletInfo && { name: walletInfo.name, icon: walletInfo.icon },
       },
       isConnected,
+      needsNetworkSigningWarning: false,
       disconnect: disconnectSolana,
     }),
     [address, status, walletInfo, isConnected, disconnectSolana],
