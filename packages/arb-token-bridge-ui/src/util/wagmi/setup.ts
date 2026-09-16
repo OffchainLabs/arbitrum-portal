@@ -7,7 +7,7 @@ import { baseAccount } from 'wagmi/connectors';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
-import { appKitAdapters, appKitNetworks } from '../../wallet/solana';
+import { appKitAdapters, appKitCustomRpcUrls, appKitNetworks } from '../../wallet/solana';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, initializeBridgeNetworks, rpcURLs } from '../networks';
@@ -124,6 +124,7 @@ export const appKit = createAppKit({
   projectId,
   metadata,
   networks: [...chainList, ...appKitNetworks],
+  customRpcUrls: appKitCustomRpcUrls,
   defaultNetwork: chainList[0],
   adapters: [wagmiAdapter, ...appKitAdapters],
   features: {
