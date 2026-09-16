@@ -4,7 +4,23 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import orbitChainsData from '../orbitChainsData.json';
-import { sanitizeNullSelectedToken, sanitizeQueryParams } from '../queryParamUtils';
+import {
+  DestinationTokenQueryParam,
+  TokenQueryParam,
+  sanitizeNullSelectedToken,
+  sanitizeQueryParams,
+} from '../queryParamUtils';
+
+describe('token query parameters', () => {
+  const solanaAddress = 'So11111111111111111111111111111111111111112';
+
+  it('preserves Solana token address case', () => {
+    expect(TokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+    expect(TokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+    expect(DestinationTokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+    expect(DestinationTokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+  });
+});
 
 describe('sanitizeNullSelectedToken', () => {
   beforeAll(() => {

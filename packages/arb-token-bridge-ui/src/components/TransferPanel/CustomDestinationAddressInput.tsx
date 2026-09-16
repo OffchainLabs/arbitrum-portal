@@ -10,7 +10,11 @@ import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { AccountType } from '../../util/AccountUtils';
-import { addressIsSmartContract } from '../../util/AddressUtils';
+import {
+  addressIsSmartContract,
+  normalizeAddressForChain,
+  parseAddressForChain,
+} from '../../util/AddressUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
@@ -78,16 +82,17 @@ export const CustomDestinationAddressInput = () => {
 
   const validateAndSubmitDestinationAddress = useCallback(
     (address: string) => {
-      if (error || !address || !isAddress(address)) {
+      const parsedAddress = parseAddressForChain(address, networks.destinationChain.id);
+      if (error || !parsedAddress) {
         // Clear query params if there's an error
         setLocalDestinationAddress('');
         setQueryParams({ destinationAddress: undefined });
       } else {
         // if valid, commit to query params
-        setQueryParams({ destinationAddress: address });
+        setQueryParams({ destinationAddress: parsedAddress });
       }
     },
-    [error, setQueryParams, setLocalDestinationAddress],
+    [error, networks.destinationChain.id, setQueryParams, setLocalDestinationAddress],
   );
 
   const { data: warning } = useSWRImmutable(
@@ -152,7 +157,10 @@ export const CustomDestinationAddressInput = () => {
           value={localDestinationAddress}
           spellCheck={false}
           onChange={(e) => {
-            const newValue = e.target.value?.toLowerCase().trim();
+            const newValue = normalizeAddressForChain(
+              e.target.value.trim(),
+              networks.destinationChain.id,
+            );
             setLocalDestinationAddress(newValue);
           }}
           onBlur={() => {

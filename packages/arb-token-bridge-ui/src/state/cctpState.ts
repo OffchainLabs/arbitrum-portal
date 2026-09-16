@@ -19,7 +19,7 @@ import { useAccountType } from '../hooks/useAccountType';
 import { useNetworks } from '../hooks/useNetworks';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { ChainId } from '../types/ChainId';
-import { Address } from '../util/AddressUtils';
+import { Address, EvmAddress } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
@@ -559,7 +559,7 @@ export function useClaimCctp(tx: MergedTransaction) {
       const attestation = await waitForAttestation(tx.cctpData.attestationHash);
       const { hash: receiveTxHash } = await receiveMessage({
         attestation,
-        messageBytes: tx.cctpData.messageBytes as Address,
+        messageBytes: tx.cctpData.messageBytes as EvmAddress,
         wagmiConfig,
       });
       const receiveTx = await signer.provider.getTransaction(receiveTxHash);
@@ -575,7 +575,7 @@ export function useClaimCctp(tx: MergedTransaction) {
           ...tx.cctpData,
           receiveMessageTimestamp: resolvedAt,
           receiveMessageTransactionHash:
-            receiveReceiptTx.status === 1 ? (receiveReceiptTx.transactionHash as Address) : null,
+            receiveReceiptTx.status === 1 ? (receiveReceiptTx.transactionHash as EvmAddress) : null,
         },
       });
 
