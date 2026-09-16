@@ -6,6 +6,7 @@ import {
 } from '@arbitrum/sdk';
 import { getStatus } from '@lifi/sdk';
 import type { StatusResponse, Token } from '@lifi/types';
+import bs58 from 'bs58';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
@@ -509,18 +510,57 @@ describe('transaction urls', () => {
   });
 
   it('uses LiFi Scan for LiFi source and destination tx hashes', () => {
-    expect(getSourceTransactionUrl(baseLifiTransaction)).toBe('https://scan.li.fi/tx/0xsource');
-    expect(getDestinationTransactionUrl(baseLifiTransaction)).toBe(
-      'https://scan.li.fi/tx/0xdestination',
+    expect(getSourceTransactionUrl({ ...baseLifiTransaction, txId: sourceTxHash })).toBe(
+      `https://scan.li.fi/tx/${sourceTxHash}`,
     );
+    expect(
+      getDestinationTransactionUrl({ ...baseLifiTransaction, destinationTxId: destinationTxHash }),
+    ).toBe(`https://scan.li.fi/tx/${destinationTxHash}`);
   });
 
   it('uses the LiFi explorer link from the API when present', () => {
     expect(
       getSourceTransactionUrl({
         ...baseLifiTransaction,
+        txId: sourceTxHash,
         lifiExplorerLink: 'https://scan.li.fi/tx/lifi-transaction-id',
       }),
     ).toBe('https://scan.li.fi/tx/lifi-transaction-id');
+  });
+});
+
+const solanaSignature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+
+describe('transaction identity and explorer validation', () => {
+  it('preserves signature case and source-chain identity', () => {
+    const tx = { ...baseLifiTransaction, txId: solanaSignature, sourceChainId: ChainId.Solana };
+    expect(isSameTransaction(tx, { ...tx })).toBe(true);
+    expect(isSameTransaction(tx, { ...tx, txId: solanaSignature.toLowerCase() })).toBe(false);
+    expect(isSameTransaction(tx, { ...tx, sourceChainId: ChainId.Ethereum })).toBe(false);
+    expect(getSourceTransactionUrl(tx)).toBe(`https://scan.li.fi/tx/${solanaSignature}`);
+  });
+
+  it('omits explorer links for request IDs even when LiFi has a link', () => {
+    expect(
+      getSourceTransactionUrl({
+        ...baseLifiTransaction,
+        txId: 'wallet-request-id',
+        lifiExplorerLink: 'https://scan.li.fi/tx/request',
+      }),
+    ).toBe('');
+  });
+});
+
+describe.sequential('Solana pending status', () => {
+  it('polls a signature without changing case', async () => {
+    vi.mocked(getStatus).mockResolvedValue({ ...baseStatusResponse, status: 'PENDING' });
+    await getUpdatedLifiTransfer({
+      ...baseLifiTransaction,
+      txId: solanaSignature,
+      sourceChainId: ChainId.Solana,
+    });
+    expect(getStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ txHash: solanaSignature, fromChain: String(ChainId.Solana) }),
+    );
   });
 });

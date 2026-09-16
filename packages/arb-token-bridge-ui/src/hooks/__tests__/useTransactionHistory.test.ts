@@ -1,6 +1,8 @@
 import type { RouteExtended } from '@lifi/sdk';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import bs58 from 'bs58';
 import { BigNumber } from 'ethers';
+import { createElement } from 'react';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,11 +12,13 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
+import { WalletContext, defaultWalletContextValue } from '../../wallet/WalletContext';
 import { AssetType } from '../arbTokenBridge.types';
 import { useArbQueryParams } from '../useArbQueryParams';
 import {
   getDedupedTransactionsForPagination,
   mergeTransactions,
+  resolveHistoryAddress,
   useTransactionHistory,
 } from '../useTransactionHistory';
 
@@ -23,6 +27,28 @@ const wallets = {
   WALLET_SINGLE_TX: '0x6d051646D4A9df8679E9AD3429e70415f75f6499',
   WALLET_EMPTY: '0xa5801D65537dF15e90D284E5E917AE84e3F3201c',
 } as const;
+
+describe('resolveHistoryAddress', () => {
+  it.each([
+    '0x52908400098527886e0f7030069857d2e4169ee7',
+    '0x52908400098527886E0F7030069857D2E4169EE7',
+    '52908400098527886e0f7030069857d2e4169ee7',
+  ])('resolves accepted EVM input for history queries: %s', (address) => {
+    expect(resolveHistoryAddress(address)).toBe('0x52908400098527886E0F7030069857D2E4169EE7');
+  });
+
+  it.each([
+    ['XE65GB6LDNXYOFTX0NSV3FUWKOWIXAMJK36', '0x8ba1f109551bD432803012645Ac136ddd64DBA72'],
+    ['0x27B1FDB04752BBC536007A920D24ACB045561C26', '0x27b1fdb04752bbc536007a920d24acb045561c26'],
+  ])('converts accepted EVM variants: %s', (address, expected) => {
+    expect(resolveHistoryAddress(address)).toBe(expected);
+  });
+
+  it.each([undefined, 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5'])(
+    'preserves non-EVM input: %s',
+    (address) => expect(resolveHistoryAddress(address)).toBe(address),
+  );
+});
 
 const MERGE_TEST_ADDRESS = '0x1111111111111111111111111111111111111111';
 
@@ -107,15 +133,6 @@ const createTestCase = ({
   expectedPagesTxCounts: number[];
 }) => ({ key, enabled, expectedPagesTxCounts });
 
-vi.mock('wagmi', async (importActual) => ({
-  ...(await importActual()),
-  useAccount: () => ({
-    isConnected: true,
-    chain: { id: 11155111 },
-    connector: null,
-  }),
-}));
-
 vi.mock('next/navigation', async (importActual) => ({
   ...(await importActual()),
   usePathname: vi.fn().mockReturnValue('/bridge'),
@@ -127,7 +144,23 @@ vi.mock('../useArbQueryParams', async (importActual) => ({
 }));
 
 const renderHookAsyncUseTransactionHistory = async (address: Address) => {
-  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }));
+  const hook = renderHook(() => useTransactionHistory(address, { runFetcher: true }), {
+    wrapper: ({ children }) =>
+      createElement(
+        WalletContext.Provider,
+        {
+          value: {
+            ...defaultWalletContextValue,
+            evm: {
+              ...defaultWalletContextValue.evm,
+              account: { ecosystem: 'evm', address, chainId: 11155111, status: 'connected' },
+              isConnected: true,
+            },
+          },
+        },
+        children,
+      ),
+  });
 
   return { result: hook.result };
 };
@@ -577,5 +610,33 @@ describe('getDedupedTransactionsForPagination', () => {
       },
       toAmount: cachedLifiTx.toAmount,
     });
+  });
+});
+
+describe('signature deduplication', () => {
+  it('keeps distinct signature case and chains while merging provider catch-up', () => {
+    const tx = {
+      ...lifiTestBaseTx,
+      txId: bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1)),
+      sourceChainId: 1151111081099710,
+      parentChainId: 1151111081099710,
+    };
+    const differentCase = { ...tx, txId: tx.txId.toLowerCase() };
+    const differentChain = { ...tx, sourceChainId: 1 };
+    const completed = { ...tx, destinationStatus: WithdrawalStatus.CONFIRMED };
+    const merged = mergeTransactions({
+      address: MERGE_TEST_ADDRESS,
+      newTransactions: [tx, differentCase, differentChain],
+      fetchedTransactions: [[completed]],
+    });
+    expect(merged).toHaveLength(3);
+    expect(merged).toContainEqual(expect.objectContaining(completed));
+    expect(
+      getDedupedTransactionsForPagination({
+        fetchedTransactions: [completed, differentCase, differentChain],
+        cachedDeposits: [],
+        cachedLifiTransactions: [tx],
+      }),
+    ).toHaveLength(3);
   });
 });

@@ -7,6 +7,7 @@ import { shallow } from 'zustand/shallow';
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { AssetType } from './arbTokenBridge.types';
 import {
+  getCachedLifiTransactions,
   migrateLifiCacheStateFromVersion1ToVersion2,
   sanitizeLifiRouteForStorage,
   useLifiMergedTransactionCacheStore,
@@ -332,5 +333,45 @@ describe('sanitizeLifiRouteForStorage', () => {
       { type: 'TOKEN_ALLOWANCE', status: 'DONE' },
       { type: 'CROSS_CHAIN', status: 'PENDING', txHash: '0xsubmitted' },
     ]);
+  });
+});
+
+describe.sequential('pending history account isolation', () => {
+  it('preserves unrelated accounts, legacy EVM casing, and Solana case across reloads', async () => {
+    localStorageMock.clear();
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+    const evmAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    const evmTx = createMockedLifiTransaction({
+      hash: 'evm-transaction',
+      sender: evmAddress,
+      destinationAddress: evmAddress,
+    });
+    const solanaTx = createMockedLifiTransaction({
+      hash: 'CaseSensitiveSignature',
+      sender: solanaAddress,
+      destinationAddress: solanaAddress,
+    });
+    const store = useLifiMergedTransactionCacheStore;
+    store.getState().addTransaction(evmTx);
+    store.getState().addTransaction({ ...evmTx, sender: evmAddress.toLowerCase() });
+    expect(Object.keys(store.getState().transactions)).toEqual([evmAddress]);
+    store.getState().updateTransaction(evmTx);
+    store.getState().addTransaction(solanaTx);
+    store.getState().updateTransaction({ ...solanaTx, status: WithdrawalStatus.CONFIRMED });
+    const persisted = localStorageMock.getItem(LIFI_CACHE_KEY);
+    store.setState({ transactions: {} });
+    if (persisted === null) throw new Error('Missing persisted transaction cache');
+    localStorageMock.setItem(LIFI_CACHE_KEY, persisted);
+    await store.persist.rehydrate();
+    expect(
+      getCachedLifiTransactions(store.getState().transactions, evmAddress.toLowerCase()),
+    ).toEqual([evmTx]);
+    expect(getCachedLifiTransactions(store.getState().transactions, solanaAddress)).toEqual([
+      { ...solanaTx, status: WithdrawalStatus.CONFIRMED },
+    ]);
+    expect(
+      getCachedLifiTransactions(store.getState().transactions, solanaAddress.toLowerCase()),
+    ).toEqual([]);
   });
 });

@@ -6,11 +6,21 @@ import { PersistOptions, persist } from 'zustand/middleware';
 import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
 import { isSameTransaction } from '../components/TransactionHistory/helpers';
 import { LifiMergedTransaction } from '../state/app/state';
+import { addressesEqual } from '../util/AddressUtils';
 
 interface LifiMergedTransactionCacheState {
   transactions: Record<string, LifiMergedTransaction[]>;
   addTransaction: (tx: LifiMergedTransaction) => void;
   updateTransaction: (tx: LifiMergedTransaction) => void;
+}
+
+export function getCachedLifiTransactions(
+  transactions: Record<string, LifiMergedTransaction[]>,
+  address: string,
+): LifiMergedTransaction[] {
+  return Object.entries(transactions)
+    .filter(([key]) => addressesEqual(key, address))
+    .flatMap(([, records]) => records);
 }
 
 const LIFI_CACHE_VERSION = 2 as const;
@@ -139,19 +149,21 @@ export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCa
           return;
         }
         const transactionToStore = sanitizeTransactionForStorage(tx);
-        set((state) => ({
-          transactions: {
-            [sender]: [transactionToStore].concat(state.transactions[sender] || []),
-            // If transaction is sent to a custom destination address, make sure it's registered for that account too
-            ...(tx.destination && tx.destination !== sender
-              ? {
-                  [tx.destination]: [transactionToStore].concat(
-                    state.transactions[tx.destination] || [],
-                  ),
-                }
-              : {}),
-          },
-        }));
+        set((state) => {
+          const transactions = { ...state.transactions };
+          for (const address of [sender, tx.destination]) {
+            if (!address) continue;
+            const key =
+              Object.keys(transactions).find((key) => addressesEqual(key, address)) ?? address;
+            transactions[key] = [
+              transactionToStore,
+              ...(transactions[key] ?? []).filter(
+                (existing) => !isSameTransaction(existing, transactionToStore),
+              ),
+            ];
+          }
+          return { transactions };
+        });
       },
       updateTransaction: (tx) => {
         const sender = tx.sender;
@@ -170,14 +182,12 @@ export const useLifiMergedTransactionCacheStore = create<LifiMergedTransactionCa
 
         set((state) => {
           return {
-            transactions: {
-              [sender]: updateForAddress(state.transactions[sender] || []),
-              ...(tx.destination && tx.destination !== sender
-                ? {
-                    [tx.destination]: updateForAddress(state.transactions[tx.destination] || []),
-                  }
-                : {}),
-            },
+            transactions: Object.fromEntries(
+              Object.entries(state.transactions).map(([address, records]) => [
+                address,
+                updateForAddress(records),
+              ]),
+            ),
           };
         });
       },

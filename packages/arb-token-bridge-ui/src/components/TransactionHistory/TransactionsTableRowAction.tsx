@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useAccount } from 'wagmi';
+import { isAddress } from 'viem';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
@@ -16,12 +16,13 @@ import { formatAmount } from '../../util/NumberUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
+import { useWalletContext } from '../../wallet/WalletContext';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
 import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
-import { getTransactionType, isLifiTransfer } from './helpers';
+import { getTransactionType, isLifiTransfer, isOftTransfer, isTxPending } from './helpers';
 
 function ActionRowConnectButton() {
   const { openConnectModal } = useWalletModal();
@@ -37,22 +38,57 @@ function ActionRowConnectButton() {
   );
 }
 
-export function TransactionsTableRowAction({
-  tx,
-  isError,
-  type,
-}: {
+type RowActionProps = {
   tx: MergedTransaction;
   isError: boolean;
   type: 'deposits' | 'withdrawals';
-}) {
-  const { address: connectedAddress, chain, isConnected } = useAccount();
-  const { switchChainAsync } = useSwitchNetworkWithConfig();
-  const networkName = getNetworkName(chain?.id ?? 0);
-  const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+};
 
-  const isViewingAnotherAddress =
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
+export function TransactionsTableRowAction(props: RowActionProps) {
+  const { tx, isError } = props;
+  if (!isLifiTransfer(tx) && !isOftTransfer(tx)) {
+    return <CanonicalTransactionRowAction {...props} />;
+  }
+  if (isTxPending(tx)) {
+    return (
+      <div className="flex flex-col text-center text-xs">
+        <span>Time left:</span>
+        <TransferCountdown tx={tx} />
+      </div>
+    );
+  }
+  if (!isError) return null;
+  return (
+    <Button
+      variant="secondary"
+      className="w-14 border-white/30 text-xs"
+      onClick={() => {
+        window.open(GET_HELP_LINK, '_blank');
+        trackEvent('Tx Error: Get Help Click', {
+          network: getNetworkName(tx.sourceChainId),
+          transactionType: getTransactionType(tx),
+        });
+      }}
+    >
+      Get help
+    </Button>
+  );
+}
+
+function CanonicalTransactionRowAction({ tx, isError, type }: RowActionProps) {
+  const evmWallet = useWalletContext('evm');
+  const chainId = evmWallet.account.chainId;
+  const connectedAddress = evmWallet.account.address;
+  const isConnected = evmWallet.isConnected;
+  const { switchChainAsync } = useSwitchNetworkWithConfig();
+  const networkName = getNetworkName(chainId ?? 0);
+  const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+  const evmSearchedAddress =
+    searchedAddress && isAddress(searchedAddress) ? searchedAddress : undefined;
+
+  const isViewingAnotherAddress = Boolean(
+    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
+  );
 
   const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
     erc20L1Address: tx.tokenAddress,
@@ -61,11 +97,11 @@ export function TransactionsTableRowAction({
 
   const { claim, isClaiming } = useClaimWithdrawal(tx);
   const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
+  const { redeem, isRedeeming } = useRedeemRetryable(tx, evmSearchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
-    ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain
-    : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
+    ? chainId === tx.childChainId // for redemption actions, we connect to the child chain
+    : chainId === tx.destinationChainId; // for claims, we need to be on the destination chain
 
   const handleRedeemRetryable = useCallback(async () => {
     try {
