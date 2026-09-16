@@ -2,7 +2,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
-import * as addressUtils from '../../AddressUtils';
+import * as addressUtils from '../../AddressNetworkUtils';
 import { initializeBridgeNetworks } from '../../networks';
 import * as fetchModule from '../fetchWithdrawals';
 import { getQueryCoveringClassicAndNitroWithResults } from './fetchWithdrawalsTestHelpers';

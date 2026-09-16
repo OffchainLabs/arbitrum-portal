@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
+import type { Address } from 'viem';
 
 import { type SubgraphSource, getCctpSubgraphClient } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
-import { Address } from '../../../util/AddressUtils';
 
 export enum ChainDomain {
   Ethereum = 0,

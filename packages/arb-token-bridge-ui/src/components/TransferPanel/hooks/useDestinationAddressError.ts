@@ -1,18 +1,21 @@
-import { isAddress } from 'ethers/lib/utils';
 import useSWRImmutable from 'swr/immutable';
 import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { addressIsDenylisted } from '../../../util/AddressUtils';
+import { useNetworks } from '../../../hooks/useNetworks';
+import { addressIsDenylisted } from '../../../util/AddressNetworkUtils';
+import { isValidAddressForChain, normalizeAddress } from '../../../util/AddressUtils';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({
   destinationAddress,
   isSenderSmartContractWallet,
+  destinationChainId,
 }: {
   destinationAddress?: string;
   isSenderSmartContractWallet: boolean;
+  destinationChainId: number;
 }): Promise<DestinationAddressErrors | null> {
   if (!destinationAddress && isSenderSmartContractWallet) {
     // destination address required for contract wallets
@@ -21,7 +24,7 @@ export async function getDestinationAddressError({
   if (!destinationAddress) {
     return null;
   }
-  if (!isAddress(destinationAddress)) {
+  if (!isValidAddressForChain(destinationAddress, destinationChainId)) {
     return DestinationAddressErrors.INVALID_ADDRESS;
   }
   if (await addressIsDenylisted(destinationAddress)) {
@@ -34,21 +37,24 @@ export async function getDestinationAddressError({
 
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
+  const [{ destinationChain }] = useNetworks();
   const { address } = useAccount();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { data: destinationAddressError } = useSWRImmutable(
     [
-      address?.toLowerCase(),
-      (destinationAddress ?? destinationAddressFromQueryParams)?.toLowerCase(),
+      normalizeAddress(address),
+      destinationAddress ?? destinationAddressFromQueryParams,
       isSenderSmartContractWallet,
+      destinationChain.id,
       'useDestinationAddressError',
     ] as const,
-    ([, _destinationAddress, _isSenderSmartContractWallet]) =>
+    ([, _destinationAddress, _isSenderSmartContractWallet, destinationChainId]) =>
       getDestinationAddressError({
         destinationAddress: _destinationAddress,
         isSenderSmartContractWallet: _isSenderSmartContractWallet,
+        destinationChainId,
       }),
   );
 
