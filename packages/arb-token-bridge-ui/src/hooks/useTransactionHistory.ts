@@ -6,7 +6,7 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { isHash } from 'viem';
+import { type Address, isHash } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
@@ -33,7 +33,8 @@ import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
-import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
+import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
+import { addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';

@@ -4,9 +4,10 @@ import { Provider } from '@ethersproject/providers';
 import { BigNumber } from 'ethers';
 
 import { AssetType, DepositGasEstimates } from '../hooks/arbTokenBridge.types';
+import { addressIsSmartContract } from '../services/evm/account';
 import { MergedTransaction } from '../state/app/state';
 import { getChainIdFromProvider } from '../token-bridge-sdk/utils';
-import { addressIsSmartContract, addressesEqual } from './AddressUtils';
+import { addressesEqual } from './AddressUtils';
 import { captureSentryErrorWithExtraData } from './SentryUtils';
 import {
   fetchErc20Allowance,

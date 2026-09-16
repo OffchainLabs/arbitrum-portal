@@ -4,10 +4,10 @@
  * way an indexer outage does.
  */
 import { renderHook, waitFor } from '@testing-library/react';
+import type { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
-import { Address } from '../../util/AddressUtils';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useTransactionHistory } from '../useTransactionHistory';
 

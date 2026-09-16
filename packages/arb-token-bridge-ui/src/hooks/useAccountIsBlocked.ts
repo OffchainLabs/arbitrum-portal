@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
+import type { Address } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { Address } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '../util/CommonUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';

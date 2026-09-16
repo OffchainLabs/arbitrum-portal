@@ -1,9 +1,9 @@
 import { Config, readContract, simulateContract, writeContract } from '@wagmi/core';
+import type { Address } from 'viem';
 
 import { ChainDomain } from '../app/api/cctp/[type]';
 import { CCTPSupportedChainId } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
-import { Address } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { MessageTransmitterAbi } from '../util/cctp/MessageTransmitterAbi';
 import { TokenMinterAbi } from '../util/cctp/TokenMinterAbi';
