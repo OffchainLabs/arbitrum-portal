@@ -3,6 +3,7 @@ import { constants } from 'ethers';
 
 import type { AmountWithToken, RouteTool } from '../app/api/crosschain-transfers/types';
 import type { LifiRouteHistoryStep } from '../state/app/state';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { addressesEqual } from './AddressUtils';
 import { getNetworkName } from './networks';
 
@@ -175,7 +176,9 @@ export function getLifiRouteHistorySteps(route: RouteExtended | undefined): Lifi
     return {
       id: step.id,
       fromChainId: step.action.fromChainId,
-      requiresApproval: !addressesEqual(step.action.fromToken.address, constants.AddressZero),
+      requiresApproval:
+        (findEcosystemConfig(step.action.fromChainId)?.hasTokenApprovals ?? true) &&
+        !addressesEqual(step.action.fromToken.address, constants.AddressZero),
       displaySteps,
       execution: step.execution
         ? {

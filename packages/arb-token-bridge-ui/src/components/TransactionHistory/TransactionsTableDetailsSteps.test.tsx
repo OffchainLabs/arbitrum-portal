@@ -534,3 +534,25 @@ describe('TransactionFailedOnNetwork', () => {
     },
   );
 });
+
+describe.sequential('LiFi steps from Solana', () => {
+  it.each([undefined, true])(
+    'shows no token approval step for a Solana step, requiresApproval=%s',
+    (requiresApproval) => {
+      const tx: LifiMergedTransaction = {
+        ...baseLifiTransaction,
+        sourceChainId: ChainId.Solana,
+        parentChainId: ChainId.Solana,
+        childChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.ArbitrumOne,
+        lifiRoute: undefined,
+        lifiRouteSteps: [
+          { id: 'solana-step', fromChainId: ChainId.Solana, requiresApproval, displaySteps: [] },
+        ],
+      };
+      render(<TransactionsTableDetailsSteps tx={tx} />);
+      expect(screen.queryByText(/^Approve transaction on/)).toBeNull();
+      expect(screen.getByText(/^Approve transfer on/)).toBeDefined();
+    },
+  );
+});

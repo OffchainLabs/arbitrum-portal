@@ -30,6 +30,16 @@ export function getNetworksRelationship({
     };
   }
 
+  // Solana routes are source-only LiFi deposits. Treat the source as the parent side of the
+  // relationship so shared UI and history code keep the transfer direction consistent.
+  if (sourceChainId === ChainId.Solana) {
+    return {
+      parentChainId: sourceChainId,
+      childChainId: destinationChainId,
+      isDepositMode: true,
+    };
+  }
+
   if (isDepositMode({ sourceChainId, destinationChainId })) {
     return {
       parentChainId: sourceChainId,
