@@ -57,7 +57,7 @@ export function isUnmatchedLifiTokenAllowed(chainId: number, address: string): b
   return (
     allowsUnmatchedLifiTokens(chainId) ||
     (UNMATCHED_LIFI_TOKEN_ADDRESSES[chainId]?.some((allowedAddress) =>
-      addressesEqual(allowedAddress, address),
+      addressesEqual(allowedAddress, address.trim()),
     ) ??
       false)
   );

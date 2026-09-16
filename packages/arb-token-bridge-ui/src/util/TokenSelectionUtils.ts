@@ -132,7 +132,9 @@ export function resolveDestinationSelection({
       isDepositMode,
     });
 
-  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  const repeatsSource =
+    (destinationTokenLookupKey === undefined && sourceTokenAddress === undefined) ||
+    addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
   let token: ERC20BridgeToken | null;
   let lookupKey = destinationTokenLookupKey;
   let isSwap = !repeatsSource;
