@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useAppState } from '../../../state';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useDestinationAddressError } from './useDestinationAddressError';
 
 export function useIsTransferAllowed() {
@@ -12,13 +12,13 @@ export function useIsTransferAllowed() {
       arbTokenBridge: { eth },
     },
   } = useAppState();
-  // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const { address: walletAddress, isConnected, chain } = useAccount();
+  const { sourceWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
   const [networks] = useNetworks();
   const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
-    const isConnectedToTheWrongChain = chain?.id !== networks.sourceChain.id;
+    const isConnectedToTheWrongChain = sourceWallet.account.chainId !== networks.sourceChain.id;
 
     if (!arbTokenBridgeLoaded) {
       return false;
@@ -26,7 +26,7 @@ export function useIsTransferAllowed() {
     if (!eth) {
       return false;
     }
-    if (!isConnected) {
+    if (!sourceWallet.isConnected) {
       return false;
     }
     if (!walletAddress) {
@@ -41,11 +41,11 @@ export function useIsTransferAllowed() {
     return true;
   }, [
     arbTokenBridgeLoaded,
-    chain?.id,
     destinationAddressError,
-    isConnected,
     eth,
     networks.sourceChain.id,
+    sourceWallet.account.chainId,
+    sourceWallet.isConnected,
     walletAddress,
   ]);
 }

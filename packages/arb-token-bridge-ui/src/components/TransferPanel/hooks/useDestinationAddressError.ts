@@ -1,12 +1,11 @@
 import useSWRImmutable from 'swr/immutable';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { addressIsDenylisted } from '../../../services/denylist';
-import { normalizeAddress } from '../../../util/AddressUtils';
 import { isValidAddressForChain } from '../../../util/isValidAddressForChain';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({
@@ -39,13 +38,17 @@ export async function getDestinationAddressError({
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
   const [{ destinationChain }] = useNetworks();
-  const { address } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: sourceWalletAddress },
+    },
+  } = useWallets();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { data: destinationAddressError } = useSWRImmutable(
     [
-      normalizeAddress(address),
+      sourceWalletAddress,
       destinationAddress ?? destinationAddressFromQueryParams,
       isSenderSmartContractWallet,
       destinationChain.id,
