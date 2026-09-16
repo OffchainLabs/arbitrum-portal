@@ -24,6 +24,7 @@ import {
   isValidLifiTransactionHash,
 } from '../../util/LifiTransactionStatus';
 import { getNetworkName } from '../../util/networks';
+import { findEcosystemConfig } from '../../wallet/ecosystems/getEcosystemConfig';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
@@ -268,7 +269,8 @@ function LifiDetailsSteps({ tx, steps }: { tx: MergedTransaction; steps: LifiRou
   const displaySteps = steps.flatMap((step) => {
     const chainName = getNetworkName(step.fromChainId);
     return [
-      ...(step.requiresApproval === false
+      ...(step.requiresApproval === false ||
+      findEcosystemConfig(step.fromChainId)?.hasTokenApprovals === false
         ? []
         : [
             {

@@ -2,15 +2,17 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Address, isAddress, isHash } from 'viem';
-import { useAccount } from 'wagmi';
+import { isHash } from 'viem';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import type { Address } from '../../util/AddressUtils';
+import { isValidAddress } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
 
 export enum TransactionHistorySearchError {
@@ -58,7 +60,7 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
   searchMode: 'address',
   setAddress: (address: string) => set({ address }),
   setSanitizedAddress: (address: string) => {
-    if (isAddress(address)) {
+    if (isValidAddress(address)) {
       set({ sanitizedAddress: address });
     }
   },
@@ -133,7 +135,11 @@ export function TransactionHistorySearchBar() {
     }),
     shallow,
   );
-  const { address: connectedAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: connectedAddress },
+    },
+  } = useWallets();
   const [isTestnetMode] = useIsTestnetMode();
 
   useEffect(() => {
@@ -169,7 +175,7 @@ export function TransactionHistorySearchBar() {
         return;
       }
 
-      if (!isAddress(searchInput)) {
+      if (!isValidAddress(searchInput)) {
         setSearchError(TransactionHistorySearchError.INVALID_ADDRESS);
         return;
       }
@@ -206,7 +212,7 @@ export function TransactionHistorySearchBar() {
       if (searchInput === '') {
         return;
       }
-      if (mode === 'txHash' ? isHash(searchInput) : isAddress(searchInput)) {
+      if (mode === 'txHash' ? isHash(searchInput) : isValidAddress(searchInput)) {
         searchTx(mode);
       }
     },

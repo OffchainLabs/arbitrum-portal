@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { useWalletContext } from '../../wallet/WalletContext';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { ExternalLink } from '../common/ExternalLink';
 
@@ -20,8 +20,10 @@ export const highlightTransactionHistoryDisclaimer = () => {
 };
 
 export function TransactionHistoryDisclaimer() {
-  const { address: walletAddress } = useAccount();
-  const { accountType } = useAccountType();
+  const {
+    account: { address: walletAddress },
+  } = useWalletContext('evm');
+  const { accountType } = useAccountType(walletAddress ?? '');
 
   const { data: mainnetBalances } = useTokenBalances({
     chainId: ChainId.Ethereum,

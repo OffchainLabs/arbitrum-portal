@@ -4,7 +4,13 @@ import React, { PropsWithChildren } from 'react';
 import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
-import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import {
+  DepositStatus,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
+import { ChainId } from '../../types/ChainId';
 import { AssetType } from '../arbTokenBridge.types';
 import { useAddPendingTransactions } from '../useTransactionHistory';
 
@@ -69,6 +75,72 @@ describe('useAddPendingTransactions', () => {
     });
 
     expect(result.current.newTransactionsData).toEqual([pendingWithdrawal]);
+  });
+
+  it('shares pending transactions between checksummed and lowercase EVM addresses', () => {
+    const checksummedAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const { result } = renderHook(
+      () => ({
+        writer: useAddPendingTransactions(checksummedAddress),
+        reader: useAddPendingTransactions(checksummedAddress.toLowerCase()),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    act(() => {
+      result.current.writer.addPendingTransaction(pendingWithdrawal);
+    });
+
+    expect(result.current.reader.newTransactionsData).toEqual([pendingWithdrawal]);
+  });
+
+  it('records and updates a Solana transfer in the wallet cache', () => {
+    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    const pendingTransfer: LifiMergedTransaction = {
+      ...baseTx,
+      sender: solanaAddress,
+      asset: 'SOL',
+      txId: 'solana-signature',
+      direction: 'deposit',
+      isWithdrawal: false,
+      isLifi: true,
+      parentChainId: ChainId.Solana,
+      sourceChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.ArbitrumOne,
+      depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
+      status: WithdrawalStatus.UNCONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      destinationTxId: null,
+    };
+    const { result } = renderHook(
+      () => ({
+        writer: useAddPendingTransactions(solanaAddress),
+        reader: useAddPendingTransactions(solanaAddress),
+        evm: useAddPendingTransactions(ADDRESS_A),
+      }),
+      { wrapper: Wrapper },
+    );
+
+    act(() => {
+      result.current.writer.addPendingTransaction(pendingTransfer);
+    });
+
+    expect(result.current.reader.newTransactionsData).toEqual([pendingTransfer]);
+    expect(result.current.evm.newTransactionsData).toBeUndefined();
+
+    const completedTransfer: LifiMergedTransaction = {
+      ...pendingTransfer,
+      status: WithdrawalStatus.EXECUTED,
+      destinationStatus: WithdrawalStatus.EXECUTED,
+      destinationTxId: '0xcompleted',
+    };
+    act(() => {
+      result.current.writer.updatePendingTransaction(completedTransfer);
+    });
+
+    expect(result.current.reader.newTransactionsData).toEqual([completedTransfer]);
+    expect(result.current.evm.newTransactionsData).toBeUndefined();
   });
 
   it('does not add the same pending transaction twice', () => {
