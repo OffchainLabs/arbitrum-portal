@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { isAddress } from 'viem';
 import { useAccount } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
@@ -17,6 +18,7 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
@@ -46,13 +48,19 @@ export function TransactionsTableRowAction({
   isError: boolean;
   type: 'deposits' | 'withdrawals';
 }) {
-  const { address: connectedAddress, chain, isConnected } = useAccount();
+  const { chain } = useAccount();
+  const { sourceWallet } = useWallets();
+  const connectedAddress = sourceWallet.account.address;
+  const isConnected = sourceWallet.isConnected;
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const networkName = getNetworkName(chain?.id ?? 0);
   const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
+  const evmSearchedAddress =
+    searchedAddress && isAddress(searchedAddress) ? searchedAddress : undefined;
 
-  const isViewingAnotherAddress =
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
+  const isViewingAnotherAddress = Boolean(
+    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
+  );
 
   const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
     erc20L1Address: tx.tokenAddress,
@@ -61,7 +69,7 @@ export function TransactionsTableRowAction({
 
   const { claim, isClaiming } = useClaimWithdrawal(tx);
   const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
+  const { redeem, isRedeeming } = useRedeemRetryable(tx, evmSearchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
     ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain

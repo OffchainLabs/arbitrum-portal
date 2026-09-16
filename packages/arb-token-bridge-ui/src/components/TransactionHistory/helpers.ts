@@ -41,6 +41,7 @@ import {
 } from '../../util/deposits/helpers';
 import { getExplorerUrl, getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
 import { getOutgoingMessageState } from '../../util/withdrawals/helpers';
+import { AddressAdapter } from '../../wallet/addressEcosystem';
 import { warningToast } from '../common/atoms/Toast';
 
 const PARENT_CHAIN_TX_DETAILS_OF_CLAIM_TX = 'arbitrum:bridge:claim:parent:tx:details';
@@ -271,7 +272,9 @@ export function getDepositsWithoutStatusesFromCache(address: string | undefined)
     return [];
   }
   return JSON.parse(
-    localStorage.getItem(`${DEPOSITS_LOCAL_STORAGE_KEY}-${address.toLowerCase()}`) ?? '[]',
+    localStorage.getItem(
+      `${DEPOSITS_LOCAL_STORAGE_KEY}-${new AddressAdapter(address).normalize()}`,
+    ) ?? '[]',
   ) as Deposit[];
 }
 
@@ -285,7 +288,9 @@ export function addDepositToCache(tx: Deposit) {
     return;
   }
 
-  const cachedDepositsForSender = getDepositsWithoutStatusesFromCache(tx.sender.toLowerCase());
+  const cachedDepositsForSender = getDepositsWithoutStatusesFromCache(
+    new AddressAdapter(tx.sender).normalize(),
+  );
 
   const foundInCacheForSender = cachedDepositsForSender.find((cachedTx) =>
     isSameTransaction({ ...cachedTx, txId: cachedTx.txID }, { ...tx, txId: tx.txID }),
@@ -295,7 +300,7 @@ export function addDepositToCache(tx: Deposit) {
     const newCachedDepositsForSender = [tx, ...cachedDepositsForSender];
 
     localStorage.setItem(
-      `${DEPOSITS_LOCAL_STORAGE_KEY}-${tx.sender.toLowerCase()}`,
+      `${DEPOSITS_LOCAL_STORAGE_KEY}-${new AddressAdapter(tx.sender).normalize()}`,
       JSON.stringify(newCachedDepositsForSender),
     );
   }
@@ -305,7 +310,7 @@ export function addDepositToCache(tx: Deposit) {
   }
 
   const cachedDepositsForReceiver = getDepositsWithoutStatusesFromCache(
-    tx.destination.toLowerCase(),
+    new AddressAdapter(tx.destination).normalize(),
   );
 
   const foundInCacheForReceiver = cachedDepositsForReceiver.find((cachedTx) =>
@@ -319,7 +324,7 @@ export function addDepositToCache(tx: Deposit) {
   const newCachedDepositsForReceiver = [tx, ...cachedDepositsForReceiver];
 
   localStorage.setItem(
-    `${DEPOSITS_LOCAL_STORAGE_KEY}-${tx.destination.toLowerCase()}`,
+    `${DEPOSITS_LOCAL_STORAGE_KEY}-${new AddressAdapter(tx.destination).normalize()}`,
     JSON.stringify(newCachedDepositsForReceiver),
   );
 }
