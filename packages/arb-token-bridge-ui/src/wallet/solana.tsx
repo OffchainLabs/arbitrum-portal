@@ -9,14 +9,27 @@ import {
   useDisconnect,
   useWalletInfo,
 } from '@reown/appkit/react';
-import { VersionedTransaction } from '@solana/web3.js';
+import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { useCallback, useMemo } from 'react';
 
 import { ChainId } from '../types/ChainId';
+import type { BalanceClients } from './balance/getBalanceClient';
+import { createSolanaBalanceClient } from './balance/solana';
 import type { SolanaWalletHandle } from './types';
 
 export const appKitAdapters = [new SolanaAdapter()];
 export const appKitNetworks = [solana];
+
+const connection = new Connection(
+  process.env.NEXT_PUBLIC_RPC_URL_SOLANA ?? 'https://solana-rpc.publicnode.com',
+  'confirmed',
+);
+const solanaBalanceClient = createSolanaBalanceClient(connection);
+
+export const balanceClients = { solana: solanaBalanceClient } satisfies Pick<
+  BalanceClients,
+  'solana'
+>;
 
 export function useSolanaWallet(): SolanaWalletHandle {
   const { address, status, isConnected } = useAppKitAccount({ namespace: 'solana' });
