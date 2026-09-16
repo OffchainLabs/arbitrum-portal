@@ -3,16 +3,21 @@ import { WithdrawalInitiatedEvent } from '@arbitrum/sdk/dist/lib/abi/L2ArbitrumG
 import { L2ArbitrumGateway__factory } from '@arbitrum/sdk/dist/lib/abi/factories/L2ArbitrumGateway__factory';
 import { TransactionReceipt } from '@ethersproject/providers';
 import pLimit from 'p-limit';
+import { isHash } from 'viem';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
-import { fetchLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
+import {
+  fetchLifiTransactionById,
+  fetchLifiTransactionHistory,
+} from '../../hooks/useLifiTransactionHistory';
 import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
 import type { Transfer, Withdrawal } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { parseSWRResponse } from '../../state/cctpState';
 import { ChainId } from '../../types/ChainId';
+import { isValidTransactionId, normalizeTransactionId } from '../TransactionIdUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
 import { fetchDeposits } from '../deposits/fetchDeposits';
 import { ChainPair } from '../txHistoryRoutes';
@@ -141,7 +146,7 @@ async function fetchApiTransfersForSender({
     ...cctpWithdrawals.completed,
     ...oftTransfers,
     ...lifiTransfers,
-  ].filter((tx) => tx.txId?.toLowerCase() === txHash.toLowerCase());
+  ].filter((tx) => normalizeTransactionId(tx.txId) === normalizeTransactionId(txHash));
 }
 
 /**
@@ -163,6 +168,11 @@ export async function fetchTransactionsByTxHash({
   probeChainIds: number[];
   isTestnetMode: boolean;
 }): Promise<Transfer[]> {
+  if (!isHash(txHash)) {
+    if (!isValidTransactionId(txHash) || isTestnetMode) return [];
+    return fetchLifiTransactionById(txHash);
+  }
+
   const limit = pLimit(10);
   const probeResults = await Promise.all(
     probeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),

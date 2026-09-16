@@ -1,36 +1,26 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
-import type { Address } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { WithdrawalStatus } from '../../state/app/state';
 import type { LifiMergedTransaction } from '../../state/app/state';
+import { createBridgeTestWrapper } from '../../test-utils/bridge-test-wrapper';
 import {
   createMockLifiBatchedTransaction,
   createMockLifiRoute,
   createMockLifiTransaction,
 } from '../../test-utils/lifi';
+import type { EvmAddress } from '../../util/AddressUtils';
 import { rejectLifiRouteBatchId } from '../../util/LifiTransactionStatus';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import type { DialogProps } from '../common/Dialog2';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 
-vi.mock('../../hooks/useTransferDuration', () => ({
-  useTransferDuration: () => ({ approximateDurationInMinutes: 1 }),
-  minutesToHumanReadableTime: () => '1 minute',
-}));
-
 const mocks = vi.hoisted(() => ({
-  useAccount: vi.fn(),
-  useConfig: vi.fn(),
   resumeLifiRoute: vi.fn(),
   updateTransaction: vi.fn(),
-  updateLifiTransactionInCache: vi.fn(),
-}));
-
-vi.mock('wagmi', () => ({
-  useAccount: mocks.useAccount,
-  useConfig: mocks.useConfig,
 }));
 
 vi.mock('@/token-bridge-sdk/LifiTransferStarter', () => ({
@@ -41,33 +31,15 @@ vi.mock('@/token-bridge-sdk/LifiRouteExecutor', () => ({
   resumeLifiRoute: mocks.resumeLifiRoute,
 }));
 
-vi.mock('@/token-bridge-sdk/utils', () => ({
-  getProviderForChainId: vi.fn(),
-}));
-
-vi.mock('../../hooks/useClaimWithdrawal', () => ({
-  useClaimWithdrawal: () => ({
-    claim: vi.fn(),
-    isClaiming: false,
+vi.mock('@/token-bridge-sdk/utils', async (actual) => ({
+  ...(await actual<typeof import('../../token-bridge-sdk/utils')>()),
+  getProviderForChainId: vi.fn(() => {
+    throw new Error('Unexpected canonical provider request');
   }),
 }));
-
-vi.mock('../../hooks/useLifiMergedTransactionCacheStore', () => ({
-  useLifiMergedTransactionCacheStore: (selector: (state: unknown) => unknown) =>
-    selector({ updateTransaction: mocks.updateLifiTransactionInCache }),
-}));
-
-vi.mock('../../hooks/useRedeemRetryable', () => ({
-  useRedeemRetryable: () => ({
-    redeem: vi.fn(),
-    isRedeeming: false,
-  }),
-}));
-
-vi.mock('../../hooks/useSwitchNetworkWithConfig', () => ({
-  useSwitchNetworkWithConfig: () => ({
-    switchChainAsync: vi.fn(),
-  }),
+vi.mock('@reown/appkit/react', async (actual) => ({
+  ...(await actual<typeof import('@reown/appkit/react')>()),
+  useAppKit: () => ({ open: vi.fn() }),
 }));
 
 vi.mock('../common/Dialog2', async (importActual) => ({
@@ -87,20 +59,6 @@ vi.mock('../common/TransferCountdown', () => ({
 vi.mock('../../state/app/utils', async (importActual) => ({
   ...(await importActual<typeof import('../../state/app/utils')>()),
   isDepositReadyToRedeem: () => false,
-}));
-
-vi.mock('../../state/cctpState', async (importActual) => ({
-  ...(await importActual<typeof import('../../state/cctpState')>()),
-  useClaimCctp: () => ({
-    claim: vi.fn(),
-    isClaiming: false,
-  }),
-}));
-
-vi.mock('../../wallet/hooks/useWalletModal', () => ({
-  useWalletModal: () => ({
-    openConnectModal: vi.fn(),
-  }),
 }));
 
 const token = {
@@ -128,7 +86,23 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
   } as LifiMergedTransaction['lifiRoute'],
 });
 
-function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
+function createActionWrapper(address: EvmAddress = '0x1111111111111111111111111111111111111111') {
+  return createBridgeTestWrapper({
+    query: { sourceChain: 1, destinationChain: 42161, disabledFeatures: 'tx-history' },
+    wallets: {
+      ...defaultWalletContextValue,
+      evm: {
+        ...defaultWalletContextValue.evm,
+        isConnected: true,
+        account: { ecosystem: 'evm', address, chainId: 1, status: 'connected' },
+      },
+    },
+  });
+}
+function renderAction(
+  tx: LifiMergedTransaction = baseLifiTransaction,
+  address: EvmAddress = '0x1111111111111111111111111111111111111111',
+) {
   cleanup();
   render(
     <TransactionsTableRowAction
@@ -136,6 +110,7 @@ function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
       type="deposits"
       updateTransaction={mocks.updateTransaction}
     />,
+    { wrapper: createActionWrapper(address) },
   );
 }
 
@@ -144,12 +119,7 @@ describe.sequential('TransactionsTableRowAction', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.useAccount.mockReturnValue({
-      address: '0x1111111111111111111111111111111111111111' as Address,
-      chain: { id: 1 },
-      isConnected: true,
-    });
-    mocks.useConfig.mockReturnValue({});
+    vi.spyOn(useLifiMergedTransactionCacheStore.getState(), 'updateTransaction');
   });
 
   it('shows resume for a multi-step LiFi transaction confirmed on source and pending on destination', () => {
@@ -181,7 +151,9 @@ describe.sequential('TransactionsTableRowAction', () => {
         ...baseLifiTransaction,
         lifiRoute: updatedRoute,
       });
-      expect(mocks.updateLifiTransactionInCache).not.toHaveBeenCalled();
+      expect(
+        useLifiMergedTransactionCacheStore.getState().updateTransaction,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -217,7 +189,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         />
       );
     }
-    render(<ActionWithHistory />);
+    render(<ActionWithHistory />, { wrapper: createActionWrapper() });
     fireEvent.click(screen.getByRole('button', { name: 'Resume LiFi transaction' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Approve token' }));
@@ -247,7 +219,9 @@ describe.sequential('TransactionsTableRowAction', () => {
         ...settledTransaction,
         lifiRoute: updatedRoute,
       });
-      expect(mocks.updateLifiTransactionInCache).not.toHaveBeenCalled();
+      expect(
+        useLifiMergedTransactionCacheStore.getState().updateTransaction,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -280,7 +254,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         </>
       );
     }
-    render(<History />);
+    render(<History />, { wrapper: createActionWrapper() });
     expect(
       screen
         .getByText('Funds arrive on Robinhood Chain')
@@ -338,18 +312,14 @@ describe.sequential('TransactionsTableRowAction', () => {
         status: WithdrawalStatus.CONFIRMED,
         destinationStatus: WithdrawalStatus.CONFIRMED,
       });
-      expect(mocks.updateLifiTransactionInCache).not.toHaveBeenCalled();
+      expect(
+        useLifiMergedTransactionCacheStore.getState().updateTransaction,
+      ).not.toHaveBeenCalled();
     });
   });
 
   it('does not show resume when the connected wallet is not the LiFi sender', () => {
-    mocks.useAccount.mockReturnValue({
-      address: '0x2222222222222222222222222222222222222222' as Address,
-      chain: { id: 1 },
-      isConnected: true,
-    });
-
-    renderAction();
+    renderAction(baseLifiTransaction, '0x2222222222222222222222222222222222222222');
 
     expect(
       screen.queryByRole('button', {
@@ -370,5 +340,18 @@ describe.sequential('TransactionsTableRowAction', () => {
       }),
     ).toBeNull();
     expect(screen.getByText('Time left: Countdown')).toBeDefined();
+  });
+
+  it('does not mount canonical action hooks for a settled Solana transfer', () => {
+    renderAction({
+      ...baseLifiTransaction,
+      sourceChainId: 1151111081099710,
+      parentChainId: 1151111081099710,
+      lifiRoute: undefined,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+    });
+
+    expect(screen.queryByRole('button', { name: 'Resume LiFi transaction' })).toBeNull();
   });
 });

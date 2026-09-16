@@ -1,15 +1,25 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import bs58 from 'bs58';
+import { utils } from 'ethers';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   TransactionHistorySearchError,
   useTransactionHistoryAddressStore,
 } from '../TransactionHistorySearchBar';
 
+const flags = vi.hoisted(() => ({ solana: true }));
+vi.mock('../../../util/featureFlag', async (actual) => ({
+  ...(await actual<typeof import('../../../util/featureFlag')>()),
+  isSolanaEnabled: () => flags.solana,
+}));
+
 const VALID_ADDRESS = '0x1111111111111111111111111111111111111111';
+const VALID_SOLANA_ADDRESS = 'So11111111111111111111111111111111111111112';
 const VALID_TX_HASH = '0x94e3f5f7ae10d9b98df828b7bfa3b7b1c7f0e2a1b4b28ee1cf2a4dbecdd6bbf1';
 
-describe('useTransactionHistoryAddressStore', () => {
+describe.sequential('useTransactionHistoryAddressStore', () => {
   beforeEach(() => {
+    flags.solana = true;
     useTransactionHistoryAddressStore.setState({
       address: '',
       sanitizedAddress: undefined,
@@ -28,6 +38,49 @@ describe('useTransactionHistoryAddressStore', () => {
     setSanitizedAddress('not-an-address');
     expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBeUndefined();
 
+    setSanitizedAddress(VALID_ADDRESS);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(VALID_ADDRESS);
+  });
+
+  it.each([
+    '0x8ba1f109551bD432803012645Ac136ddd64DBA72',
+    '8ba1f109551bD432803012645Ac136ddd64DBA72',
+    utils.getIcapAddress('0x8ba1f109551bD432803012645Ac136ddd64DBA72'),
+  ])('canonicalizes EVM search input %s', (address) => {
+    useTransactionHistoryAddressStore.getState().setSanitizedAddress(address);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(
+      '0x8ba1f109551bd432803012645ac136ddd64dba72',
+    );
+  });
+
+  it('rejects an EVM address with an invalid checksum', () => {
+    useTransactionHistoryAddressStore
+      .getState()
+      .setSanitizedAddress('0x8ba1f109551bD432803012645Ac136ddd64DBA73');
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBeUndefined();
+  });
+
+  it('accepts a Solana address without changing its case', () => {
+    const { setSanitizedAddress } = useTransactionHistoryAddressStore.getState();
+
+    setSanitizedAddress(VALID_SOLANA_ADDRESS);
+
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(
+      VALID_SOLANA_ADDRESS,
+    );
+  });
+
+  it('preserves a Solana key that also matches unprefixed EVM hex', () => {
+    const address = '1'.repeat(10) + 'A'.repeat(30);
+    useTransactionHistoryAddressStore.getState().setSanitizedAddress(address);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(address);
+  });
+
+  it('rejects Solana search with the flag off while keeping EVM search available', () => {
+    flags.solana = false;
+    const { setSanitizedAddress } = useTransactionHistoryAddressStore.getState();
+    setSanitizedAddress(VALID_SOLANA_ADDRESS);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBeUndefined();
     setSanitizedAddress(VALID_ADDRESS);
     expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(VALID_ADDRESS);
   });
@@ -68,5 +121,10 @@ describe('useTransactionHistoryAddressStore', () => {
     setSearchMode('txHash');
 
     expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(VALID_ADDRESS);
+  });
+  it('accepts a Solana signature without changing its case', () => {
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    useTransactionHistoryAddressStore.getState().setSanitizedTxHash(signature);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedTxHash).toBe(signature);
   });
 });
