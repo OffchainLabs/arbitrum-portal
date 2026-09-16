@@ -5,11 +5,11 @@
  */
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useTransactionHistoryChainFilterStore } from '../../components/TransactionHistory/useTransactionHistoryChainFilterStore';
 import { ChainId } from '../../types/ChainId';
-import { Address } from '../../util/AddressUtils';
 import { fetchDeposits } from '../../util/deposits/fetchDeposits';
 import { isCoreChainForDisplay, isNetwork } from '../../util/networks';
 import { getMultiChainFetchList } from '../../util/txHistoryRoutes';

@@ -1,10 +1,10 @@
 import { ChildToParentTransactionRequest, Erc20Bridger, EthBridger } from '@arbitrum/sdk';
 import { Provider } from '@ethersproject/providers';
 import { BigNumber } from 'ethers';
+import type { Address } from 'viem';
 
 import { GasEstimates } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { Address } from './AddressUtils';
 import { captureSentryErrorWithExtraData } from './SentryUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import {

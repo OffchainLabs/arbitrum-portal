@@ -2,8 +2,8 @@ import { ERC20__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ERC20__fact
 import { TransactionRequest } from '@ethersproject/providers';
 import { Config, simulateContract, writeContract } from '@wagmi/core';
 import { BigNumber, constants, utils } from 'ethers';
+import type { Address } from 'viem';
 
-import { Address } from '../util/AddressUtils';
 import { formatAmount } from '../util/NumberUtils';
 import { fetchErc20Allowance } from '../util/TokenUtils';
 import { TokenMessengerAbi } from '../util/cctp/TokenMessengerAbi';
