@@ -34,6 +34,9 @@ const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
 const TOKEN_LIST_LOAD_TIMEOUT_MS = 15_000;
+// Headless UI waits for animation frames before unmounting a closed dialog.
+// Those frames can be delayed when integration-test workers are busy.
+const TOKEN_PANEL_CLOSE_TIMEOUT_MS = 8_000;
 const TOKEN_BUTTON_STABILITY_WINDOW_MS = 500;
 const DIALOG_STABILITY_WINDOW_MS = 500;
 
@@ -755,12 +758,16 @@ export async function expectTokenPanelContent({
       expect(screen.queryByRole('dialog')).toBeNull();
     },
     {
-      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      timeout: TOKEN_PANEL_CLOSE_TIMEOUT_MS,
       onTimeout: () =>
         createIntegrationAssertionError({
-          description: 'Token panel did not close after selection.',
+          description: `The ${isDestination ? 'destination' : 'source'} token panel did not close after clicking Close Dialog.`,
           expected: { dialogOpen: false },
-          received: { dialogOpen: screen.queryByRole('dialog') !== null },
+          received: {
+            dialogOpen: screen.queryByRole('dialog') !== null,
+            title: screen.queryByRole('dialog')?.querySelector('h2')?.textContent,
+            transitioning: screen.queryByRole('dialog')?.hasAttribute('data-transition'),
+          },
           origin,
         }),
     },
@@ -845,7 +852,7 @@ export async function selectTokenPanelToken({
       expect(screen.queryByRole('dialog')).toBeNull();
     },
     {
-      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      timeout: TOKEN_PANEL_CLOSE_TIMEOUT_MS,
       onTimeout: () =>
         createIntegrationAssertionError({
           description: 'Token selection dialog did not close.',
