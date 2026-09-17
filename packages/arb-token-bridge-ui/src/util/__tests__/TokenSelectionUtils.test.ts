@@ -165,6 +165,17 @@ describe('selectUsdcToken', () => {
     expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken })).toBe(storedToken);
   });
 
+  it.each([
+    buildToken(),
+    buildToken({ l2Address: '' }),
+    buildToken({ l2Address: '0x0000000000000000000000000000000000000000' }),
+    buildToken({ l2Address: CommonAddress.ArbitrumOne.USDC, lifiOnlyChainId: ChainId.ArbitrumOne }),
+  ])('retains the source-only restriction for an unpaired stored entry: %j', (storedToken) => {
+    expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken })).toBe(
+      sourceOnlyUsdcToken,
+    );
+  });
+
   it('uses the source-only fallback when nothing is stored', () => {
     expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken: undefined })).toBe(
       sourceOnlyUsdcToken,
@@ -276,6 +287,18 @@ describe('getTokenForRow', () => {
           tokensFromLists: { [listedUsdc.address]: listedUsdc },
         }),
       ).toBe(usdcToken);
+    });
+
+    it('keeps source-only row metadata when the list entry has no pair', () => {
+      const storedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      const sourceOnlyUsdc = { ...storedUsdc, lifiOnlyChainId: ChainId.ArbitrumOne };
+      expect(
+        getTokenForRow({
+          ...orbitArgs,
+          usdcToken: sourceOnlyUsdc,
+          tokensFromLists: { [storedUsdc.address]: storedUsdc },
+        }),
+      ).toBe(sourceOnlyUsdc);
     });
 
     it('keeps a stored mapping over a source-only USDC fallback', () => {

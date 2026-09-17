@@ -1,3 +1,5 @@
+import { constants, utils } from 'ethers';
+
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import {
   type ContractStorage,
@@ -80,6 +82,16 @@ export function isTokenDepositUnavailable({
   return !hasLifiTokenPair;
 }
 
+/** A list entry alone does not establish availability on both chains. */
+function hasTokenPair(token: ERC20BridgeToken | null | undefined): token is ERC20BridgeToken {
+  return (
+    !!token?.l2Address &&
+    !isLifiOnlyToken(token) &&
+    utils.isAddress(token.l2Address) &&
+    !addressesEqual(token.l2Address, constants.AddressZero)
+  );
+}
+
 /** Whether the selections represent the same asset on both chains. */
 export function isSameTokenSelection({
   sourceToken,
@@ -125,7 +137,7 @@ export function selectUsdcToken({
   // A listed or imported token may have a destination mapping that the
   // generated source-only USDC fallback does not have.
   if (isLifiOnlyToken(usdcToken)) {
-    return storedToken ?? usdcToken;
+    return hasTokenPair(storedToken) ? storedToken : usdcToken;
   }
 
   return usdcToken;
