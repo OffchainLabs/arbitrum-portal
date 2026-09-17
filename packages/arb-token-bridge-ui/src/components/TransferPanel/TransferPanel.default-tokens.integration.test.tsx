@@ -320,32 +320,49 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
     assertDefaultTokenCase,
   );
 
-  it('defaults a saved Arbitrum USDC destination to ETH on Robinhood', async () => {
-    const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
-    await renderTransferPanel({
-      sourceChain: 'arbitrum-one',
-      destinationChain: 'robinhood-chain',
-      token: CommonAddress.ArbitrumOne.USDC,
-      destinationToken: CommonAddress.ArbitrumOne.USDC,
-    });
+  it.each([
+    {
+      sourceChain: 'arbitrum-one' as const,
+      chainId: ChainId.ArbitrumOne,
+      address: CommonAddress.ArbitrumOne.USDC,
+    },
+    {
+      sourceChain: 'ethereum' as const,
+      chainId: ChainId.Ethereum,
+      address: CommonAddress.Ethereum.USDC,
+    },
+  ])(
+    'defaults a saved $sourceChain USDC destination to ETH on Robinhood',
+    async ({ sourceChain, chainId, address }) => {
+      const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
+      await renderTransferPanel({
+        sourceChain,
+        destinationChain: 'robinhood-chain',
+        token: address,
+        destinationToken: address,
+      });
 
-    await expectTokenButtonContent({
-      isDestination: false,
-      tokenExpectation: {
-        symbol: 'USDC',
-        logoURI:
-          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-      },
-    });
-    await expectTokenButtonContent({ isDestination: true, tokenExpectation: ethTokenExpectation });
-    expect(quoteSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        fromChainId: ChainId.ArbitrumOne,
-        fromToken: CommonAddress.ArbitrumOne.USDC,
-        toChainId: ChainId.RobinhoodChain,
-        toToken: constants.AddressZero,
-      }),
-    );
-    quoteSpy.mockRestore();
-  });
+      await expectTokenButtonContent({
+        isDestination: false,
+        tokenExpectation: {
+          symbol: 'USDC',
+          logoURI:
+            'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+        },
+      });
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: ethTokenExpectation,
+      });
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          fromChainId: chainId,
+          fromToken: address,
+          toChainId: ChainId.RobinhoodChain,
+          toToken: constants.AddressZero,
+        }),
+      );
+      quoteSpy.mockRestore();
+    },
+  );
 });

@@ -1,6 +1,6 @@
 import { constants, utils } from 'ethers';
 
-import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
+import { getTokenOverride, isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import {
   type ContractStorage,
   type ERC20BridgeToken,
@@ -78,7 +78,7 @@ export function isTokenDepositUnavailable({
   }
 
   // A LiFi token pair can still receive the asset when canonical deposits are blocked.
-  const hasLifiTokenPair = token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
+  const hasLifiTokenPair = hasTokenPair(token) && token.listIds.has(LIFI_TRANSFER_LIST_ID);
   return !hasLifiTokenPair;
 }
 
@@ -92,34 +92,80 @@ function hasTokenPair(token: ERC20BridgeToken | null | undefined): token is ERC2
   );
 }
 
-/** Whether the selections represent the same asset on both chains. */
-export function isSameTokenSelection({
+export type DestinationSelection = {
+  token: ERC20BridgeToken | null;
+  lookupKey: string | undefined;
+  isSwap: boolean;
+  /** Contract on the destination chain, ready for the quote request. */
+  destinationAddress: string;
+};
+
+/** Shared destination policy for source clicks, saved URLs, display and quotes. */
+export function resolveDestinationSelection({
   sourceToken,
+  sourceTokenAddress = sourceToken?.address,
   destinationTokenLookupKey,
+  bridgeTokens = {},
+  sourceChainId,
   destinationChainId,
+  isDepositMode,
 }: {
   sourceToken: ERC20BridgeToken | null;
-  /**
-   * Value of the destinationToken query parameter. For ERC-20 selections, this
-   * is the bridgeTokens lookup key (ERC20BridgeToken.address): the parent-chain
-   * address for paired tokens, or the token's own address for single-chain tokens.
-   * The actual destination-chain contract address must be resolved separately.
-   */
+  sourceTokenAddress?: string;
+  /** Parent address for a pair, own address for a single-chain token. */
   destinationTokenLookupKey: string | undefined;
+  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
+  sourceChainId: number;
   destinationChainId: number;
-}): boolean {
-  const isSourceTokenAvailableOnDestination = isTokenAvailableOnChain(
-    sourceToken ?? undefined,
-    destinationChainId,
-  );
+  isDepositMode: boolean;
+}): DestinationSelection {
+  const getOverride = (fromToken: string | undefined) =>
+    getTokenOverride({ fromToken, sourceChainId, destinationChainId }).destination;
+  const isUnavailable = (token: ERC20BridgeToken | null, address: string | undefined) =>
+    !isTokenAvailableOnChain(token ?? undefined, destinationChainId) ||
+    isTokenDepositUnavailable({
+      token: token ?? undefined,
+      tokenAddress: address,
+      sourceChainId,
+      destinationChainId,
+      isDepositMode,
+    });
 
-  // A source-only token requires a swap, even if an old URL repeats its address.
-  if (!isSourceTokenAvailableOnDestination) {
-    return false;
+  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  let token: ERC20BridgeToken | null;
+  let lookupKey = destinationTokenLookupKey;
+  let isSwap = !repeatsSource;
+  let override: ERC20BridgeToken | null = null;
+
+  if (repeatsSource) {
+    if (isUnavailable(sourceToken, sourceTokenAddress)) {
+      // Single-chain assets may have an explicit mapping, e.g. Base USDC to Arbitrum USDC.
+      override = isLifiOnlyToken(sourceToken) ? getOverride(sourceTokenAddress) : null;
+      token = override;
+      lookupKey = override?.address;
+      isSwap = true;
+    } else {
+      token = sourceToken;
+      override = getOverride(sourceTokenAddress);
+    }
+  } else if (!lookupKey || addressesEqual(lookupKey, constants.AddressZero)) {
+    override = getOverride(lookupKey || undefined);
+    token = override;
+  } else {
+    token = bridgeTokens[lookupKey.toLowerCase()] ?? null;
+    if (isUnavailable(token, lookupKey)) {
+      token = null;
+      lookupKey = undefined;
+    } else if (token) {
+      override = getOverride(token.address);
+    }
   }
 
-  // Paired tokens share a parent-chain address in the query.
-  return addressesEqual(destinationTokenLookupKey, sourceToken?.address);
+  const destinationAddress =
+    override?.address ||
+    (isLifiOnlyToken(token) ? token.address : isDepositMode ? token?.l2Address : token?.address) ||
+    constants.AddressZero;
+  return { token, lookupKey, isSwap, destinationAddress };
 }
 
 /** Choose USDC metadata without discarding a stored destination mapping. */

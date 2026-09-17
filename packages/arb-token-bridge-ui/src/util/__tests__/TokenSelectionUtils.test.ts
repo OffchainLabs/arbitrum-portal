@@ -1,3 +1,4 @@
+import { constants } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
@@ -8,8 +9,8 @@ import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
   getTokenForRow,
-  isSameTokenSelection,
   isTokenDepositUnavailable,
+  resolveDestinationSelection,
   selectUsdcToken,
 } from '../TokenSelectionUtils';
 
@@ -77,7 +78,10 @@ describe('isTokenDepositUnavailable', () => {
     expect(
       isTokenDepositUnavailable({
         ...withdrawOnlyArgs,
-        token: buildToken({ listIds: new Set([LIFI_TRANSFER_LIST_ID]) }),
+        token: buildToken({
+          l2Address: CommonAddress.ArbitrumOne.USDC,
+          listIds: new Set([LIFI_TRANSFER_LIST_ID]),
+        }),
       }),
     ).toBe(false);
   });
@@ -87,58 +91,123 @@ describe('isTokenDepositUnavailable', () => {
   });
 });
 
-describe('isSameTokenSelection', () => {
-  const pairedToken = buildToken();
-  const sourceOnlyToken = buildToken({ lifiOnlyChainId: ChainId.Ethereum });
+describe('resolveDestinationSelection', () => {
+  const defaultArgs = {
+    sourceChainId: ChainId.Ethereum,
+    destinationChainId: ChainId.RobinhoodChain,
+    isDepositMode: true,
+  };
 
-  it('is true when nothing is selected on either side', () => {
+  it.each([undefined, '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8'])(
+    'applies the same deposit policy to repeated USDC with mapping %s',
+    (l2Address) => {
+      const sourceToken = buildToken({ l2Address });
+      expect(
+        resolveDestinationSelection({
+          ...defaultArgs,
+          sourceToken,
+          destinationTokenLookupKey: sourceToken.address.toUpperCase(),
+        }),
+      ).toEqual({
+        token: null,
+        lookupKey: undefined,
+        isSwap: true,
+        destinationAddress: constants.AddressZero,
+      });
+    },
+  );
+
+  it('does not mistake an unpaired LiFi list entry for a supported deposit', () => {
+    const sourceToken = buildToken({ listIds: new Set([LIFI_TRANSFER_LIST_ID]) });
     expect(
-      isSameTokenSelection({
+      resolveDestinationSelection({
+        ...defaultArgs,
+        sourceToken,
+        destinationTokenLookupKey: sourceToken.address,
+      }),
+    ).toMatchObject({ token: null, isSwap: true, destinationAddress: constants.AddressZero });
+  });
+
+  it('preserves a verified LiFi pair and quotes its destination contract', () => {
+    const sourceToken = buildToken({
+      l2Address: '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8',
+      listIds: new Set([LIFI_TRANSFER_LIST_ID]),
+    });
+    expect(
+      resolveDestinationSelection({
+        ...defaultArgs,
+        sourceToken,
+        destinationTokenLookupKey: sourceToken.address,
+      }),
+    ).toEqual({
+      token: sourceToken,
+      lookupKey: sourceToken.address,
+      isSwap: false,
+      destinationAddress: sourceToken.l2Address,
+    });
+  });
+
+  it('preserves canonical withdrawals', () => {
+    const sourceToken = buildToken();
+    expect(
+      resolveDestinationSelection({
+        ...defaultArgs,
+        sourceToken,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+        isDepositMode: false,
+        destinationTokenLookupKey: sourceToken.address,
+      }),
+    ).toMatchObject({ token: sourceToken, isSwap: false, destinationAddress: sourceToken.address });
+  });
+
+  it.each([undefined, constants.AddressZero, CommonAddress.RobinhoodChain.USDG])(
+    'preserves explicit destination %s for unsupported USDC',
+    (destinationTokenLookupKey) => {
+      const usdg = buildToken({
+        address: CommonAddress.RobinhoodChain.USDG,
+        symbol: 'USDG',
+        lifiOnlyChainId: ChainId.RobinhoodChain,
+      });
+      const result = resolveDestinationSelection({
+        ...defaultArgs,
+        sourceToken: buildToken(),
+        destinationTokenLookupKey,
+        bridgeTokens: { [usdg.address]: usdg },
+      });
+      expect(result.isSwap).toBe(true);
+      expect(result.destinationAddress).toBe(destinationTokenLookupKey || constants.AddressZero);
+      expect(result.token?.symbol ?? 'ETH').toBe(
+        destinationTokenLookupKey === usdg.address ? 'USDG' : 'ETH',
+      );
+    },
+  );
+
+  it('resolves source-only USDC through its explicit destination override', () => {
+    const sourceToken = buildToken({
+      address: CommonAddress.Base.USDC,
+      lifiOnlyChainId: ChainId.Base,
+    });
+    const result = resolveDestinationSelection({
+      ...defaultArgs,
+      sourceToken,
+      sourceChainId: ChainId.Base,
+      destinationChainId: ChainId.ArbitrumOne,
+      destinationTokenLookupKey: sourceToken.address,
+    });
+    expect(result.token?.symbol).toBe('USDC');
+    expect(result.destinationAddress).toBe(CommonAddress.ArbitrumOne.USDC);
+    expect(result.isSwap).toBe(true);
+  });
+
+  it('keeps native-to-native transfers as non-swaps', () => {
+    expect(
+      resolveDestinationSelection({
+        ...defaultArgs,
         sourceToken: null,
         destinationTokenLookupKey: undefined,
-        destinationChainId: ChainId.ArbitrumOne,
       }),
-    ).toBe(true);
-  });
-
-  it('is true when a paired token repeats its parent-chain address', () => {
-    expect(
-      isSameTokenSelection({
-        sourceToken: pairedToken,
-        destinationTokenLookupKey: CommonAddress.Ethereum.USDC.toUpperCase(),
-        destinationChainId: ChainId.ArbitrumOne,
-      }),
-    ).toBe(true);
-  });
-
-  it('is false when the destination selection is a different token', () => {
-    expect(
-      isSameTokenSelection({
-        sourceToken: pairedToken,
-        destinationTokenLookupKey: CommonAddress.Ethereum.USDT,
-        destinationChainId: ChainId.ArbitrumOne,
-      }),
-    ).toBe(false);
-  });
-
-  it('is false for a source-only token even when an old URL repeats its address', () => {
-    expect(
-      isSameTokenSelection({
-        sourceToken: sourceOnlyToken,
-        destinationTokenLookupKey: CommonAddress.Ethereum.USDC,
-        destinationChainId: ChainId.RobinhoodChain,
-      }),
-    ).toBe(false);
-  });
-
-  it('is true for a LiFi-only token selected on its own chain', () => {
-    expect(
-      isSameTokenSelection({
-        sourceToken: sourceOnlyToken,
-        destinationTokenLookupKey: CommonAddress.Ethereum.USDC,
-        destinationChainId: ChainId.Ethereum,
-      }),
-    ).toBe(true);
+    ).toMatchObject({ token: null, isSwap: false, destinationAddress: constants.AddressZero });
   });
 });
 
