@@ -1,9 +1,12 @@
+import { constants, utils } from 'ethers';
+
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import {
   type ContractStorage,
   type ERC20BridgeToken,
   TokenType,
 } from '../hooks/arbTokenBridge.types';
+import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
 import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken } from './TokenListUtils';
@@ -79,6 +82,16 @@ export function isTokenDepositUnavailable({
   return !hasLifiTokenPair;
 }
 
+/** A list entry alone does not establish availability on both chains. */
+function hasTokenPair(token: ERC20BridgeToken | null | undefined): token is ERC20BridgeToken {
+  return (
+    !!token?.l2Address &&
+    !isLifiOnlyToken(token) &&
+    utils.isAddress(token.l2Address) &&
+    !addressesEqual(token.l2Address, constants.AddressZero)
+  );
+}
+
 /** Choose USDC metadata without discarding a stored destination mapping. */
 export function selectUsdcToken({
   usdcToken,
@@ -94,7 +107,7 @@ export function selectUsdcToken({
   // A listed or imported token may have a destination mapping that the
   // generated source-only USDC fallback does not have.
   if (isLifiOnlyToken(usdcToken)) {
-    return storedToken ?? usdcToken;
+    return hasTokenPair(storedToken) ? storedToken : usdcToken;
   }
 
   return usdcToken;
