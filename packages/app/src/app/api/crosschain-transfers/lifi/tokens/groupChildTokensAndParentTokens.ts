@@ -6,8 +6,9 @@ import {
   isUnmatchedLifiTokenAllowed,
 } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
-import { addressesEqual } from '@/bridge/util/AddressUtils';
+import { addressesEqual, normalizeAddress } from '@/bridge/util/AddressUtils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { getWalletEcosystem } from '@/bridge/wallet/getWalletEcosystem';
 
 import { LifiToken, LifiTokenWithCoinKey } from './registry';
 
@@ -19,7 +20,7 @@ type MapTokensParams = {
   childChainId: number;
 };
 
-const getTokenId = (token: LifiToken) => `${token.chainId}:${token.address.toLowerCase()}`;
+const getTokenId = (token: LifiToken) => `${token.chainId}:${normalizeAddress(token.address)}`;
 
 /** Group parent tokens and child tokens based on coinkey */
 export const groupChildTokensAndParentTokens = ({
@@ -29,6 +30,17 @@ export const groupChildTokensAndParentTokens = ({
   parentChainId,
   childChainId,
 }: MapTokensParams): TokenList['tokens'] => {
+  if (getWalletEcosystem(parentChainId) !== getWalletEcosystem(childChainId)) {
+    return [...parentTokens, ...childTokens].map((token) => ({
+      chainId: token.chainId,
+      address: token.address,
+      name: token.name,
+      symbol: token.symbol,
+      decimals: token.decimals,
+      logoURI: token.logoURI,
+      extensions: token.priceUSD ? { priceUSD: token.priceUSD } : undefined,
+    }));
+  }
   const includedTokens = new Set<string>();
 
   const tokens = parentTokens.reduce<TokenList['tokens']>((acc, token) => {
