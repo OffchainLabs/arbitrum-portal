@@ -9,8 +9,7 @@ import { useDebounce } from '@uidotdev/usehooks';
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
-import { Chain } from 'wagmi/chains';
+import type { Chain } from 'wagmi/chains';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
@@ -27,8 +26,9 @@ import { ChainId } from '../../types/ChainId';
 import { NOVA_MINIMIZED_STATE_LINK } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { useWalletForChain, useWallets } from '../../wallet/hooks/useWallets';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -184,8 +184,10 @@ function NetworkRow({
   close: (focusableElement?: HTMLElement) => void;
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
-  const chain = getWagmiChain(chainId);
-  const { address: walletAddress } = useAccount();
+  const chain = getChainMetadata(chainId);
+  const {
+    account: { address: walletAddress },
+  } = useWalletForChain(chainId);
   const {
     data: balanceState,
     isLoading: isLoadingBalance,
@@ -292,7 +294,8 @@ export function NetworksPanel({
   const listRef = useRef<List>(null);
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
-  const { isConnected } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const isConnected = sourceWallet.isConnected || destinationWallet.isConnected;
   const showNovaWarningBanner = chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {

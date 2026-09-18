@@ -7,10 +7,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
 
-import { useAccountMenu } from '../../hooks/useAccountMenu';
-import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import { useAccountMenu } from '../../wallet/hooks/useAccountMenu';
 import { Button } from '../common/Button';
 import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
 import { SafeImage } from '../common/SafeImage';
@@ -58,9 +56,7 @@ const AccountContent = ({
 };
 
 export const WidgetHeaderAccountButton = () => {
-  const { address, chain, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { openConnectModal } = useWalletModal();
+  const { address, chain, isConnected, disconnect, openConnectModal } = useAccountMenu();
   const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = async () => {
