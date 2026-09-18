@@ -3,8 +3,6 @@ import { constants } from 'ethers';
 import { DecodedValueMap } from 'use-query-params';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useIsSwapTransfer } from '../../components/TransferPanel/hooks/useIsSwapTransfer';
 import { Context, useAppState } from '../../state';
@@ -98,9 +96,7 @@ describe.sequential('useDestinationToken', () => {
     mockedUseNetworks.mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
         destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);
@@ -187,9 +183,7 @@ describe.sequential('useDestinationToken', () => {
       mockedUseNetworks.mockReturnValue([
         {
           sourceChain: getWagmiChain(ChainId.ArbitrumOne),
-          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
           destinationChain: getWagmiChain(ChainId.RobinhoodChain),
-          destinationChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
         },
         vi.fn(),
       ]);
@@ -324,9 +318,7 @@ describe.sequential('useDestinationToken', () => {
       mockedUseNetworks.mockReturnValue([
         {
           sourceChain: getWagmiChain(ChainId.ApeChain),
-          sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
           destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-          destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
         },
         vi.fn(),
       ]);

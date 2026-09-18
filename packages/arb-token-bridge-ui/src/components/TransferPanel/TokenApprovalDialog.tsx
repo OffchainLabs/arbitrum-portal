@@ -14,6 +14,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getOftV2TransferConfig } from '../../token-bridge-sdk/oftUtils';
+import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { shortenTxHash } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import {
@@ -45,9 +46,12 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
   const { ethToUSD } = useETHPrice();
 
   const [networks] = useNetworks();
-  const { sourceChain, destinationChain, sourceChainProvider, destinationChainProvider } = networks;
-  const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { sourceChain, destinationChain } = networks;
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
+  const sourceChainProvider = getProviderForChainId(sourceChain.id);
+  const destinationChainProvider = getProviderForChainId(destinationChain.id);
+  const parentChainProvider = getProviderForChainId(parentChain.id);
+  const childChainProvider = getProviderForChainId(childChain.id);
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
   const gasPrice = useGasPrice({ chainId: sourceChain.id });
   const chainId = useChainId();

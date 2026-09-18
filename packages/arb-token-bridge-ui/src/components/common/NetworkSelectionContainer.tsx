@@ -27,8 +27,8 @@ import { ChainId } from '../../types/ChainId';
 import { NOVA_MINIMIZED_STATE_LINK } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -184,7 +184,7 @@ function NetworkRow({
   close: (focusableElement?: HTMLElement) => void;
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
-  const chain = getWagmiChain(chainId);
+  const chain = getChainMetadata(chainId);
   const { address: walletAddress } = useAccount();
   const {
     data: balanceState,
