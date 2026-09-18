@@ -56,7 +56,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   }
 
   try {
-    const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
+    const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry([
+      parentChainId,
+      childChainId,
+    ]);
 
     const parentTokens = tokensByChain[parentChainId] ?? [];
     const childTokens = tokensByChain[childChainId] ?? [];

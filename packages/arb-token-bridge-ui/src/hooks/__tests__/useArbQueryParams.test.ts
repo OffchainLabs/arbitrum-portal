@@ -21,7 +21,8 @@ import {
 } from '../useArbQueryParams';
 import { createMockOrbitChain } from './helpers';
 
-vi.mock('../../util/featureFlag', () => ({
+vi.mock('../../util/featureFlag', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../util/featureFlag')>()),
   isOnrampEnabled: vi.fn(),
   isLifiEnabled: vi.fn(),
 }));
@@ -199,7 +200,7 @@ describe('ChainParam custom encoder and decoder', () => {
       expect(ChainParam.encode(ChainId.ArbitrumOne)).toEqual('arbitrum-one');
       expect(ChainParam.encode(ChainId.Sepolia)).toEqual('sepolia');
       expect(ChainParam.encode(ChainId.ArbitrumSepolia)).toEqual('arbitrum-sepolia');
-      expect(ChainParam.encode(ChainId.Solana)).toBeUndefined();
+      expect(ChainParam.encode(ChainId.Solana)).toBe('solana');
       expect(ChainParam.encode(1234567890)).toBeUndefined();
       localStorage.setItem(
         customChainLocalStorageKey,
