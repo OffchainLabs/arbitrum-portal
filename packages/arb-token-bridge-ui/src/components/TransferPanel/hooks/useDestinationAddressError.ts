@@ -3,6 +3,7 @@ import useSWRImmutable from 'swr/immutable';
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useNetworks } from '../../../hooks/useNetworks';
+import { requiresRecipientAddress } from '../../../services/destinationAddress';
 import { addressIsDenylisted } from '../../../util/AddressUtils';
 import { ecosystems } from '../../../wallet/ecosystems';
 import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
@@ -13,14 +14,16 @@ import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 export async function getDestinationAddressError({
   destinationAddress,
   isSenderSmartContractWallet,
+  isRecipientAddressRequired,
   destinationEcosystem,
 }: {
   destinationAddress?: string;
   isSenderSmartContractWallet: boolean;
+  isRecipientAddressRequired: boolean;
   destinationEcosystem: WalletEcosystem;
 }): Promise<DestinationAddressErrors | null> {
-  if (!destinationAddress && isSenderSmartContractWallet) {
-    // destination address required for contract wallets
+  if (!destinationAddress && (isSenderSmartContractWallet || isRecipientAddressRequired)) {
+    // required for contract wallets, and for cross-ecosystem transfers with no destination wallet
     return DestinationAddressErrors.REQUIRED_ADDRESS;
   }
   if (!destinationAddress) {
@@ -42,27 +45,32 @@ export async function getDestinationAddressError({
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
   const [{ destinationChain }] = useNetworks();
-  const {
-    sourceWallet: {
-      account: { address },
-    },
-  } = useWallets();
+  const { sourceWallet, destinationWallet } = useWallets();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
+  const isRecipientAddressRequired = requiresRecipientAddress({ sourceWallet, destinationWallet });
 
   const { data: destinationAddressError } = useSWRImmutable(
     [
-      address?.toLowerCase(),
+      sourceWallet.account.address?.toLowerCase(),
       destinationAddress ?? destinationAddressFromQueryParams,
       isSenderSmartContractWallet,
+      isRecipientAddressRequired,
       // Same validation for every chain of an ecosystem, so switching between them reuses the result
       getWalletEcosystem(destinationChain.id),
       'useDestinationAddressError',
     ] as const,
-    ([, _destinationAddress, _isSenderSmartContractWallet, destinationEcosystem]) =>
+    ([
+      ,
+      _destinationAddress,
+      _isSenderSmartContractWallet,
+      _isRecipientAddressRequired,
+      destinationEcosystem,
+    ]) =>
       getDestinationAddressError({
         destinationAddress: _destinationAddress,
         isSenderSmartContractWallet: _isSenderSmartContractWallet,
+        isRecipientAddressRequired: _isRecipientAddressRequired,
         destinationEcosystem,
       }),
   );
