@@ -8,13 +8,6 @@ import { twMerge } from 'tailwind-merge';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
-import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
-import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { addressesEqual } from '../../util/AddressUtils';
-import { getNetworkName } from '../../util/networks';
-import { ExternalLink } from '../common/ExternalLink';
-import { TransferCountdown } from '../common/TransferCountdown';
-import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import {
   getDestinationNetworkTxId,
   getDestinationTransactionUrl,
@@ -25,7 +18,14 @@ import {
   isTxExpired,
   isTxFailed,
   isTxPending,
-} from './helpers';
+} from '../../services/history';
+import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import { isDepositReadyToRedeem } from '../../state/app/utils';
+import { addressesEqual } from '../../util/AddressUtils';
+import { getNetworkName } from '../../util/networks';
+import { ExternalLink } from '../common/ExternalLink';
+import { TransferCountdown } from '../common/TransferCountdown';
+import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 
 function needsToClaimTransfer(tx: MergedTransaction) {
   if (tx.isOft || isLifiTransfer(tx)) {

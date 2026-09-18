@@ -17,8 +17,8 @@ import {
   WithdrawalInitiated,
 } from '../../hooks/arbTokenBridge.types';
 import { getExecutedMessagesCacheKey } from '../../hooks/useArbTokenBridge';
-import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
 import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
+import { fetchEvmNativeCurrency } from '../../services/evm/nativeCurrency';
 import { addToLocalStorageObjectSequentially } from '../CommonUtils';
 import { fetchErc20Data } from '../TokenUtils';
 import { WithdrawalFromSubgraph } from './fetchWithdrawalsFromSubgraph';
@@ -98,7 +98,7 @@ export async function mapETHWithdrawalToL2ToL1EventResult({
     event.childChainId,
   );
 
-  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider });
+  const nativeCurrency = await fetchEvmNativeCurrency({ provider: l2Provider });
 
   return {
     ...event,
@@ -314,7 +314,7 @@ export async function mapWithdrawalFromSubgraphToL2ToL1EventResult({
     } as L2ToL1EventResultPlus;
   }
 
-  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider });
+  const nativeCurrency = await fetchEvmNativeCurrency({ provider: l2Provider });
 
   // Else, Eth withdrawal
   return {

@@ -1,6 +1,5 @@
 import { BigNumber } from 'ethers';
 
-import { getEvmProvider } from '../wallet/getEvmProvider';
 import { useTokenBalances } from '../wallet/hooks/useTokenBalances';
 import { useWallets } from '../wallet/hooks/useWallets';
 import { resolveTokenAddress } from '../wallet/resolveTokenAddress';
@@ -17,9 +16,9 @@ import { useNetworksRelationship } from './useNetworksRelationship';
  */
 export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): BigNumber | null {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const childNativeCurrency = useNativeCurrency({
-    provider: getEvmProvider(childChain.id, childChainProvider),
+    chainId: childChain.id,
   });
   const tokenAddress = resolveTokenAddress({
     token,

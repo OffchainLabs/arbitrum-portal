@@ -37,6 +37,7 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import { useTokenLists } from '../../hooks/useTokenLists';
+import { addDepositToCache } from '../../services/history';
 import { useAppState } from '../../state';
 import {
   DepositStatus,
@@ -66,7 +67,6 @@ import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
-import { addDepositToCache } from '../TransactionHistory/helpers';
 import { WidgetBuyPanel } from '../Widget/WidgetBuyPanel';
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
 import { useDialog } from '../common/Dialog';

@@ -11,6 +11,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import {
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
+  getUpdatedEthDeposit,
+  getUpdatedLifiTransfer,
+  isSameTransaction,
+} from '../../services/history';
+import {
   DepositStatus,
   LifiMergedTransaction,
   MergedTransaction,
@@ -19,13 +26,6 @@ import {
 import { ChainId } from '../../types/ChainId';
 import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
 import { getParentToChildMessageDataFromParentTxHash } from '../../util/deposits/helpers';
-import {
-  getDestinationTransactionUrl,
-  getSourceTransactionUrl,
-  getUpdatedEthDeposit,
-  getUpdatedLifiTransfer,
-  isSameTransaction,
-} from './helpers';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@lifi/sdk')>();

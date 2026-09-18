@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { PersistOptions, persist } from 'zustand/middleware';
 
 import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
-import { isSameTransaction } from '../components/TransactionHistory/helpers';
+import { isSameTransaction } from '../services/history';
 import { LifiMergedTransaction } from '../state/app/state';
 import { addressesEqual } from '../util/AddressUtils';
 

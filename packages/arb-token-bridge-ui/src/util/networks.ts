@@ -14,6 +14,7 @@ import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
 import { logger } from './logger';
+import { registerCustomChainMetadata, removeCustomChainMetadata } from './networkMetadata';
 import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
@@ -199,6 +200,7 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  registerCustomChainMetadata(newCustomChain);
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
@@ -210,6 +212,7 @@ export function removeCustomChainFromLocalStorage(chainId: number) {
   );
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  removeCustomChainMetadata(chainId);
 }
 
 export const supportedCustomOrbitParentChains = [
@@ -500,6 +503,7 @@ export function isAlchemyChain(chainId: number) {
 }
 
 export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
+  registerCustomChainMetadata(chain);
   // custom chain details need to be added to various objects to make it work with the UI
   //
   // add RPC
@@ -516,9 +520,9 @@ export function initializeBridgeNetworks() {
   }
 
   [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    mapCustomChainToNetworkData(chain);
     try {
       registerCustomArbitrumNetwork(chain);
-      mapCustomChainToNetworkData(chain);
     } catch (_) {
       // already added
     }

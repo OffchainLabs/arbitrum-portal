@@ -611,9 +611,9 @@ export const Route = React.memo(
     } = useAppContextState();
     const isDisabled = isDisabledOverride || isTransferring;
     const [networks] = useNetworks();
-    const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+    const { childChain, isDepositMode } = useNetworksRelationship(networks);
     const childNativeCurrency = useNativeCurrency({
-      provider: childChainProvider,
+      chainId: childChain.id,
     });
     const [_token] = useSelectedToken();
     const [{ amount2, destinationAddress }] = useArbQueryParams();

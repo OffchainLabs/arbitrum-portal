@@ -40,7 +40,7 @@ function getCalendarUrl(
 
 export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: string }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const { fastWithdrawalActive } = getConfirmationTime(childChain.id);
 
@@ -51,7 +51,7 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
   const [selectedToken] = useSelectedToken();
 
   const nativeCurrency = useNativeCurrency({
-    provider: childChainProvider,
+    chainId: childChain.id,
   });
 
   const fastBridges = getFastBridges({

@@ -26,9 +26,10 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useError } from '../hooks/useError';
-import { NativeCurrency, fetchNativeCurrency } from '../hooks/useNativeCurrency';
+import type { NativeCurrency } from '../hooks/useNativeCurrency';
 import { useNetworks } from '../hooks/useNetworks';
 import { useSwitchNetworkWithConfig } from '../hooks/useSwitchNetworkWithConfig';
+import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
@@ -238,7 +239,7 @@ export function useFundsOnAliasedAddress({
 
       const balancePromises = chainIds.map(async (chainId) => {
         const provider = getProviderForChainId(chainId);
-        const nativeCurrency = await fetchNativeCurrency({ provider });
+        const nativeCurrency = await fetchEvmNativeCurrency({ provider });
 
         try {
           const balance = await provider.getBalance(aliasedAddress);

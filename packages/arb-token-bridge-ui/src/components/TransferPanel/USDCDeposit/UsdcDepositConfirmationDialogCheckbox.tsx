@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { getCctpTransferDuration } from '../../../hooks/useTransferDuration';
 import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
 import { isNetwork } from '../../../util/networks';
+import { useWallets } from '../../../wallet/hooks/useWallets';
 import { Checkbox } from '../../common/Checkbox';
 import { ExternalLink } from '../../common/ExternalLink';
 
@@ -18,8 +18,8 @@ export function USDCDepositConfirmationDialogCheckbox({
 }) {
   const [checkboxesChecked, setCheckboxesChecked] = useState([false, false, false]);
   const externalLinkClassnames = 'arb-hover underline';
-  const { chain } = useAccount();
-  const { isTestnet } = isNetwork(chain?.id ?? 0);
+  const { sourceWallet } = useWallets();
+  const { isTestnet } = isNetwork(sourceWallet.account.chainId ?? 0);
 
   const destinationNetworkName = isTestnet ? 'Arbitrum Sepolia' : 'Arbitrum One';
 

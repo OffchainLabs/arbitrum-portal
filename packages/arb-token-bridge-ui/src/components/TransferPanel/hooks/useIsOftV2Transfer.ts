@@ -3,7 +3,7 @@ import useSWRImmutable from 'swr/immutable';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { getOftV2TransferConfig } from '../../../token-bridge-sdk/oftUtils';
+import { isOftTransfer } from '../../../services/transferRoutes';
 import { useIsSwapTransfer } from './useIsSwapTransfer';
 
 export const useIsOftV2Transfer = function () {
@@ -25,11 +25,11 @@ export const useIsOftV2Transfer = function () {
     async ([_sourceChainErc20Address, _sourceChainId, _destinationChainId, _isSwapTransfer]) =>
       _isSwapTransfer
         ? false
-        : getOftV2TransferConfig({
+        : isOftTransfer({
             sourceChainId: _sourceChainId,
             destinationChainId: _destinationChainId,
             sourceChainErc20Address: _sourceChainErc20Address,
-          }).isValid,
+          }),
   );
 
   return { isOft, isLoading };

@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
+import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
 import {
   getDepositsWithoutStatusesFromCache,
   getUpdatedCctpTransfer,
@@ -24,8 +25,7 @@ import {
   isOftTransfer,
   isSameTransaction,
   isTxPending,
-} from '../components/TransactionHistory/helpers';
-import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+} from '../services/history';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';

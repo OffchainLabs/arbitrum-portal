@@ -3,8 +3,6 @@ import { constants } from 'ethers';
 import { DecodedValueMap } from 'use-query-params';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
@@ -74,7 +72,7 @@ describe.sequential('useDestinationToken', () => {
     decimals: 6,
     name: 'Destination Token',
     symbol: 'DEST',
-    address: '0xdestination',
+    address: '0xabcdef0000000000000000000000000000000000',
     listIds: new Set(['1']),
   };
 
@@ -93,9 +91,8 @@ describe.sequential('useDestinationToken', () => {
     mockedUseNetworks.mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
+
         destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);
@@ -178,7 +175,10 @@ describe.sequential('useDestinationToken', () => {
 
       it('should handle case insensitive address lookup in bridgeTokens', () => {
         mockedUseArbQueryParams.mockReturnValue([
-          { ...defaultQueryParams, destinationToken: mockDestinationToken.address.toUpperCase() },
+          {
+            ...defaultQueryParams,
+            destinationToken: `0x${mockDestinationToken.address.slice(2).toUpperCase()}`,
+          },
           vi.fn(),
         ]);
 
@@ -233,9 +233,8 @@ describe.sequential('useDestinationToken', () => {
       mockedUseNetworks.mockReturnValue([
         {
           sourceChain: getWagmiChain(ChainId.ApeChain),
-          sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
+
           destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-          destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
         },
         vi.fn(),
       ]);

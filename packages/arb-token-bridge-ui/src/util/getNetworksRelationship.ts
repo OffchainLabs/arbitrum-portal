@@ -1,56 +1,16 @@
-import { ChainId } from '../types/ChainId';
-import { isDepositMode } from './isDepositMode';
+import { getEvmNetworksRelationship } from '../services/evm/networkRelationship';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../wallet/types';
 
-/**
- * Resolves the parent/child relationship for a source/destination chain pair.
- *
- * This is the single source of truth shared by `useNetworksRelationship` (UI) and
- * the LiFi transaction-history API transform, so that a transfer is keyed
- * identically whether it comes from the local cache or the history API. Keep the
- * special cases below in sync between both consumers by only editing them here.
- */
-export function getNetworksRelationship({
-  sourceChainId,
-  destinationChainId,
-}: {
-  sourceChainId: number;
-  destinationChainId: number;
-}): {
-  parentChainId: number;
-  childChainId: number;
-  isDepositMode: boolean;
-} {
-  // Nova to ArbitrumOne is a LiFi sibling transfer, not parent-child.
-  // Set Nova as parent so the LiFi token list keyed on (parent=Nova, child=One) resolves.
-  if (sourceChainId === ChainId.ArbitrumNova && destinationChainId === ChainId.ArbitrumOne) {
-    return {
-      parentChainId: sourceChainId,
-      childChainId: destinationChainId,
-      isDepositMode: true,
-    };
-  }
+const relationships: Record<WalletEcosystem, typeof getEvmNetworksRelationship> = {
+  evm: getEvmNetworksRelationship,
+  solana: ({ sourceChainId, destinationChainId }) => ({
+    parentChainId: sourceChainId,
+    childChainId: destinationChainId,
+    isDepositMode: true,
+  }),
+};
 
-  // Solana routes are source-only LiFi deposits. Treat the source as the parent side of the
-  // relationship so shared UI and history code keep the transfer direction consistent.
-  if (sourceChainId === ChainId.Solana) {
-    return {
-      parentChainId: sourceChainId,
-      childChainId: destinationChainId,
-      isDepositMode: true,
-    };
-  }
-
-  if (isDepositMode({ sourceChainId, destinationChainId })) {
-    return {
-      parentChainId: sourceChainId,
-      childChainId: destinationChainId,
-      isDepositMode: true,
-    };
-  }
-
-  return {
-    parentChainId: destinationChainId,
-    childChainId: sourceChainId,
-    isDepositMode: false,
-  };
+export function getNetworksRelationship(input: Parameters<typeof getEvmNetworksRelationship>[0]) {
+  return relationships[getWalletEcosystem(input.sourceChainId)](input);
 }

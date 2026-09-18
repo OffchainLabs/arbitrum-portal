@@ -13,10 +13,10 @@ import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import { isTxPending } from '../../services/history';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
@@ -24,14 +24,12 @@ import { ChainPair } from '../../util/txHistoryRoutes';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';
-import { isTxPending } from './helpers';
 
 export const BatchTransferNativeTokenTooltip = ({
   children,
   tx,
 }: PropsWithChildren<{ tx: MergedTransaction }>) => {
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   return (
     <Tooltip

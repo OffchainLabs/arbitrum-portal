@@ -7,8 +7,9 @@ import { useAccount } from 'wagmi';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useTransactionHistoryAddressStore } from '../components/TransactionHistory/TransactionHistorySearchBar';
-import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../components/TransactionHistory/helpers';
 import { errorToast } from '../components/common/atoms/Toast';
+import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
+import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../services/history';
 import { useAppState } from '../state';
 import { MergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
@@ -17,7 +18,6 @@ import { formatTransactionError, isUserRejectedError } from '../util/isUserRejec
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
-import { fetchNativeCurrency } from './useNativeCurrency';
 import { useTransactionHistory } from './useTransactionHistory';
 
 export type UseClaimWithdrawalResult = {
@@ -75,7 +75,7 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
             address: tx.tokenAddress as string,
             provider: getProviderForChainId(tx.parentChainId),
           })
-        : await fetchNativeCurrency({ provider: childChainProvider });
+        : await fetchEvmNativeCurrency({ provider: childChainProvider });
 
     const extendedEvent: L2ToL1EventResultPlus = {
       ...event,

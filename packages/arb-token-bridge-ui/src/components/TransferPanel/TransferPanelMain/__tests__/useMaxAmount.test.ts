@@ -2,8 +2,6 @@ import { renderHook } from '@testing-library/react';
 import { BigNumber, utils } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { useGasSummary } from '../../../../hooks/TransferPanel/useGasSummary';
 import { useSelectedTokenBalances } from '../../../../hooks/TransferPanel/useSelectedTokenBalances';
 import { useNativeCurrency } from '../../../../hooks/useNativeCurrency';
@@ -28,7 +26,7 @@ vi.mock('../../../../hooks/useSourceChainNativeCurrencyDecimals', () => ({
 }));
 vi.mock('../../../../hooks/useNetworksRelationship', () => ({
   useNetworksRelationship: (networks: { destinationChain: { id: number } }) => ({
-    childChainProvider: getProviderForChainId(networks.destinationChain.id),
+    childChain: networks.destinationChain,
     // Ethereum -> Nova and Nova -> Arbitrum One are both deposits; Nova -> Ethereum is not
     isDepositMode: networks.destinationChain.id !== ChainId.Ethereum,
   }),
@@ -38,9 +36,8 @@ function setNetworks(sourceChainId: ChainId, destinationChainId: ChainId) {
   vi.mocked(useNetworks).mockReturnValue([
     {
       sourceChain: getWagmiChain(sourceChainId),
-      sourceChainProvider: getProviderForChainId(sourceChainId),
+
       destinationChain: getWagmiChain(destinationChainId),
-      destinationChainProvider: getProviderForChainId(destinationChainId),
     },
     vi.fn(),
   ]);

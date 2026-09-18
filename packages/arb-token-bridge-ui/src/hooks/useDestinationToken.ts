@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import { useIsSwapTransfer } from '../components/TransferPanel/hooks/useIsSwapTransfer';
 import { useAppState } from '../state';
-import { addressesEqual } from '../util/AddressUtils';
+import { addressesEqual, normalizeAddress } from '../util/AddressUtils';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -48,7 +48,7 @@ export function useDestinationToken(): ERC20BridgeToken | null {
 
   // Case 2: destinationToken is set to a specific token address
   if (destinationToken && bridgeTokens) {
-    return bridgeTokens[destinationToken.toLowerCase()] ?? null;
+    return bridgeTokens[normalizeAddress(destinationToken)] ?? null;
   }
 
   // For regular chains (native ETH): return null (button will show native ETH)

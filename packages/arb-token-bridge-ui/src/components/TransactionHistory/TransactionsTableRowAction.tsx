@@ -1,28 +1,21 @@
-import { useCallback } from 'react';
-import { isAddress } from 'viem';
-
 import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { GET_HELP_LINK } from '../../constants';
-import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
-import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
-import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
+import { useCanonicalHistoryActions } from '../../hooks/useCanonicalHistoryActions';
+import {
+  getTransactionType,
+  isLifiTransfer,
+  isOftTransfer,
+  isTxPending,
+} from '../../services/history';
 import { DepositStatus, MergedTransaction } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { useClaimCctp } from '../../state/cctpState';
-import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { formatAmount } from '../../util/NumberUtils';
-import { sanitizeTokenSymbol } from '../../util/TokenUtils';
-import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
-import { useWalletContext } from '../../wallet/WalletContext';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { TransferCountdown } from '../common/TransferCountdown';
-import { errorToast } from '../common/atoms/Toast';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
-import { getTransactionType, isLifiTransfer, isOftTransfer, isTxPending } from './helpers';
 
 function ActionRowConnectButton() {
   const { openConnectModal } = useWalletModal();
@@ -76,79 +69,18 @@ export function TransactionsTableRowAction(props: RowActionProps) {
 }
 
 function CanonicalTransactionRowAction({ tx, isError, type }: RowActionProps) {
-  const evmWallet = useWalletContext('evm');
-  const chainId = evmWallet.account.chainId;
-  const connectedAddress = evmWallet.account.address;
-  const isConnected = evmWallet.isConnected;
-  const { switchChainAsync } = useSwitchNetworkWithConfig();
-  const networkName = getNetworkName(chainId ?? 0);
-  const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const evmSearchedAddress =
-    searchedAddress && isAddress(searchedAddress) ? searchedAddress : undefined;
-
-  const isViewingAnotherAddress = Boolean(
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
-  );
-
-  const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
-    erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId,
-  });
-
-  const { claim, isClaiming } = useClaimWithdrawal(tx);
-  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming } = useRedeemRetryable(tx, evmSearchedAddress);
-
-  const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
-    ? chainId === tx.childChainId // for redemption actions, we connect to the child chain
-    : chainId === tx.destinationChainId; // for claims, we need to be on the destination chain
-
-  const handleRedeemRetryable = useCallback(async () => {
-    try {
-      if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: tx.childChainId });
-      }
-
-      await redeem();
-    } catch (error: any) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-      errorToast(`Can't retry the deposit: ${formatTransactionError(error)}`);
-    }
-  }, [tx, isConnectedToCorrectNetworkForAction, redeem, switchChainAsync]);
-
-  const handleClaim = useCallback(async () => {
-    try {
-      if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: tx.destinationChainId });
-      }
-
-      if (tx.isCctp) {
-        return await claimCctp();
-      } else {
-        return await claim();
-      }
-    } catch (error: any) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-
-      errorToast(
-        `Can't claim ${type === 'deposits' ? 'deposit' : 'withdrawal'}: ${formatTransactionError(error)}`,
-      );
-    }
-  }, [claim, claimCctp, isConnectedToCorrectNetworkForAction, switchChainAsync, tx, type]);
-
-  const getHelpOnError = () => {
-    window.open(GET_HELP_LINK, '_blank');
-
-    // track the button click
-    trackEvent('Tx Error: Get Help Click', {
-      network: networkName,
-      transactionType: getTransactionType(tx),
-    });
-  };
+  const {
+    isConnected,
+    isRedeeming,
+    handleRedeemRetryable,
+    isClaiming,
+    isClaimingCctp,
+    isViewingAnotherAddress,
+    searchedAddress,
+    tokenSymbol,
+    handleClaim,
+    getHelpOnError,
+  } = useCanonicalHistoryActions(tx, type);
 
   if (isDepositReadyToRedeem(tx)) {
     if (!isConnected) {

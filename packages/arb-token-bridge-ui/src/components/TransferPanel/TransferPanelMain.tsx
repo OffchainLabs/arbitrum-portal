@@ -2,7 +2,7 @@ import { ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
 import React, { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Chain } from 'wagmi/chains';
+import type { Chain } from 'wagmi/chains';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';

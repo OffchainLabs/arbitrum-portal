@@ -6,7 +6,6 @@ import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { getNativeTokenAddress } from '../../../wallet/constants';
-import { getEvmProvider } from '../../../wallet/getEvmProvider';
 import { useTokenBalances } from '../../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../../wallet/hooks/useWallets';
 import { resolveTokenAddress } from '../../../wallet/resolveTokenAddress';
@@ -26,11 +25,11 @@ export function useNativeCurrencyBalances(): {
   destinationGasBalance: BigNumber | null;
 } {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const [{ destinationAddress }] = useArbQueryParams();
   const { sourceWallet, destinationWallet } = useWallets();
   const nativeCurrency = useNativeCurrency({
-    provider: getEvmProvider(childChain.id, childChainProvider),
+    chainId: childChain.id,
   });
   const sourceGasTokenAddress = getNativeTokenAddress(networks.sourceChain.id);
   const destinationGasTokenAddress = getNativeTokenAddress(networks.destinationChain.id);

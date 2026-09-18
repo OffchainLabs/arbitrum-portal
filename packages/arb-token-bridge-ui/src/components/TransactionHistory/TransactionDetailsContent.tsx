@@ -9,12 +9,12 @@ import ArbitrumLogo from '@/images/ArbitrumLogo.svg';
 import CctpLogoColor from '@/images/CctpLogoColor.svg';
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import LayerZeroIcon from '@/images/LayerZeroIcon.png';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { GET_HELP_LINK, ether } from '../../constants';
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { getTransactionType, isLifiTransfer, isTxCompleted } from '../../services/history';
 import { MergedTransaction } from '../../state/app/state';
 import { isCustomDestinationAddressTx } from '../../state/app/utils';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -31,7 +31,6 @@ import { SafeImage } from '../common/SafeImage';
 import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
-import { getTransactionType, isLifiTransfer, isTxCompleted } from './helpers';
 
 const ProtocolNameAndLogo = ({ tx }: { tx: MergedTransaction }) => {
   if (isLifiTransfer(tx)) {
@@ -102,8 +101,7 @@ export const TransactionDetailsContent = ({
   walletAddress,
 }: TransactionDetailsContentProps) => {
   const { ethToUSD } = useETHPrice();
-  const childProvider = getProviderForChainId(tx?.childChainId ?? 0);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   const { embedMode } = useMode();
 
