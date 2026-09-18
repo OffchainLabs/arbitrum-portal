@@ -25,7 +25,13 @@ vi.mock('../../hooks/useNetworks', () => ({
   ],
 }));
 vi.mock('../../hooks/useNetworksRelationship', () => ({
-  useNetworksRelationship: () => ({ isDepositMode: !route.isOutbound, childChainProvider: {} }),
+  useNetworksRelationship: () => ({
+    isDepositMode: !route.isOutbound,
+    childChain: { id: ChainId.ApeChain },
+    parentChain: { id: ChainId.RobinhoodChain },
+    isCrossEcosystem: false,
+    isLifi: true,
+  }),
 }));
 vi.mock('../../hooks/useNativeCurrency', () => ({
   useNativeCurrency: () => ({ symbol: 'APE', logoUrl: APE_TOKEN_LOGO }),

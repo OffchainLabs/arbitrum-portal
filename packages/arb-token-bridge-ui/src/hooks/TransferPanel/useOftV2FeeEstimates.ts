@@ -1,66 +1,25 @@
 import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
-import { Config, useAccount, useConfig } from 'wagmi';
 
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getOftV2TransferConfig } from '../../token-bridge-sdk/oftUtils';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
+import { wagmiConfig } from '../../util/wagmi/setup';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useNetworks } from '../useNetworks';
-
-async function fetcher([
-  walletAddress,
-  sourceChainId,
-  destinationChainId,
-  sourceChainErc20Address,
-  isValidOftTransfer,
-  wagmiConfig,
-]: [
-  walletAddress: string | undefined,
-  sourceChainId: number,
-  destinationChainId: number,
-  sourceChainErc20Address: string | undefined,
-  isValidOftTransfer: boolean,
-  wagmiConfig: Config,
-]) {
-  if (!isValidOftTransfer) {
-    return {
-      sourceChainGasFee: BigNumber.from(0),
-      destinationChainGasFee: BigNumber.from(0),
-    };
-  }
-
-  // Assuming minimal dust amount for gas estimates
-  const amount = BigNumber.from(1);
-
-  const _walletAddress = walletAddress ?? constants.AddressZero;
-  const sourceChainProvider = getProviderForChainId(sourceChainId);
-  const destinationChainProvider = getProviderForChainId(destinationChainId);
-
-  const { estimatedSourceChainFee, estimatedDestinationChainFee } = await new OftV2TransferStarter({
-    sourceChainProvider,
-    destinationChainProvider,
-    sourceChainErc20Address,
-  }).transferEstimateFee({
-    amount,
-    from: _walletAddress,
-    wagmiConfig,
-  });
-
-  return {
-    sourceChainGasFee: BigNumber.from(estimatedSourceChainFee),
-    destinationChainGasFee: BigNumber.from(estimatedDestinationChainFee),
-  };
-}
 
 export function useOftV2FeeEstimates({
   sourceChainErc20Address,
 }: {
   sourceChainErc20Address?: string;
 }) {
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
   const [networks] = useNetworks();
-  const wagmiConfig = useConfig();
 
   const sourceChainId = networks.sourceChain.id;
   const destinationChainId = networks.destinationChain.id;
@@ -74,31 +33,30 @@ export function useOftV2FeeEstimates({
   }, [sourceChainId, destinationChainId, sourceChainErc20Address]);
 
   const { data: feeEstimates, error } = useSWR(
-    [
-      sourceChainId,
-      destinationChainId,
-      sourceChainErc20Address,
-      walletAddress,
-      isValidOftTransfer,
-      wagmiConfig,
-      'oftFeeEstimates',
-    ] as const,
-    ([
-      _sourceChainId,
-      _destinationChainId,
-      _sourceChainErc20Address,
-      _walletAddress,
-      _isValidOftTransfer,
-      _wagmiConfig,
-    ]) => {
-      return fetcher([
-        _walletAddress,
-        _sourceChainId,
-        _destinationChainId,
-        _sourceChainErc20Address,
-        _isValidOftTransfer,
-        _wagmiConfig,
-      ]);
+    isValidOftTransfer
+      ? {
+          sourceChainId,
+          destinationChainId,
+          sourceChainErc20Address,
+          walletAddress,
+          key: 'oftFeeEstimates',
+        }
+      : null,
+    async ({ sourceChainId, destinationChainId, sourceChainErc20Address, walletAddress }) => {
+      const { estimatedSourceChainFee, estimatedDestinationChainFee } =
+        await new OftV2TransferStarter({
+          sourceChainProvider: getProviderForChainId(sourceChainId),
+          destinationChainProvider: getProviderForChainId(destinationChainId),
+          sourceChainErc20Address,
+        }).transferEstimateFee({
+          amount: BigNumber.from(1),
+          from: walletAddress ?? constants.AddressZero,
+          wagmiConfig,
+        });
+      return {
+        sourceChainGasFee: BigNumber.from(estimatedSourceChainFee),
+        destinationChainGasFee: BigNumber.from(estimatedDestinationChainFee),
+      };
     },
     {
       refreshInterval: 30_000,
@@ -110,7 +68,7 @@ export function useOftV2FeeEstimates({
 
   return {
     feeEstimates,
-    isLoading: !error && !feeEstimates,
+    isLoading: isValidOftTransfer && !error && !feeEstimates,
     error: !!error,
   };
 }

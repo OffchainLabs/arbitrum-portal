@@ -1,7 +1,6 @@
+import { getConnectorClient } from '@wagmi/core';
 import { BigNumber, constants, utils } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
-
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
 
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -11,10 +10,12 @@ import { NativeCurrencyErc20 } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { BridgeTransferStarterFactory } from '../../token-bridge-sdk/BridgeTransferStarterFactory';
 import { shortenAddress } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { wagmiConfig } from '../../util/wagmi/setup';
+import { clientToSigner } from '../../util/wagmi/useEthersSigner';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -33,22 +34,21 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
 
   const [networks] = useNetworks();
   const { sourceChain, destinationChain } = networks;
-  const { parentChain, parentChainProvider } = useNetworksRelationship(networks);
+  const { parentChain } = useNetworksRelationship(networks);
   const { isEthereumMainnet } = isNetwork(parentChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const [{ amount2 }] = useArbQueryParams();
 
   const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
-  const l1Signer = useEthersSigner({ chainId: parentChain.id });
-  const l1GasPrice = useGasPrice({ provider: parentChainProvider });
+  const l1GasPrice = useGasPrice({ chainId: parentChain.id });
 
   const [checked, setChecked] = useState(false);
   const [estimatedGas, setEstimatedGas] = useState<BigNumber>(constants.Zero);
 
   // Estimated gas fees, denominated in Ether, represented as a floating point number
   const estimatedGasFees = useMemo(
-    () => parseFloat(utils.formatEther(estimatedGas.mul(l1GasPrice))),
+    () => parseFloat(utils.formatEther(estimatedGas.mul(l1GasPrice ?? constants.Zero))),
     [estimatedGas, l1GasPrice],
   );
 
@@ -63,33 +63,26 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
       return;
     }
 
-    async function getEstimatedGas() {
-      if (l1Signer) {
-        /*
-         Note:
-          1. we do not consider CCTP case here, since we are not using it with custom fee token approval
-          2. we are assuming deposits only (withdrawals will return `requiresNativeCurrencyApproval` as false)
-          These will need to be supported on a case-by-case basis later, with checks like in `TokenApprovalDialogue.tsx`
-        */
-        const bridgeTransferStarter = BridgeTransferStarterFactory.create({
+    let cancelled = false;
+    getConnectorClient(wagmiConfig, { chainId: parentChain.id })
+      .then((client) =>
+        BridgeTransferStarterFactory.create({
           sourceChainId: sourceChain.id,
-          sourceChainErc20Address: selectedToken?.address,
           destinationChainId: destinationChain.id,
+          sourceChainErc20Address: selectedToken?.address,
           destinationChainErc20Address: selectedToken?.l2Address,
-        });
-
-        const estimatedGas = await bridgeTransferStarter.approveNativeCurrencyEstimateGas({
-          signer: l1Signer,
-        });
-
-        if (estimatedGas) {
-          setEstimatedGas(estimatedGas);
-        }
-      }
-    }
-
-    getEstimatedGas();
-  }, [isOpen, selectedToken, l1Signer, sourceChain, destinationChain]);
+        }).approveNativeCurrencyEstimateGas({ signer: clientToSigner(client) }),
+      )
+      .then((estimatedGas) => {
+        if (!cancelled && estimatedGas) setEstimatedGas(estimatedGas);
+      })
+      .catch(() => {
+        if (!cancelled) setEstimatedGas(constants.Zero);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, selectedToken, parentChain.id, sourceChain.id, destinationChain.id]);
 
   function closeWithReset(confirmed: boolean) {
     props.onClose(confirmed);

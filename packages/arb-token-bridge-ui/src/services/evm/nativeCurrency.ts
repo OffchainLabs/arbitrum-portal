@@ -2,9 +2,9 @@ import { ArbitrumNetwork, EthBridger, getArbitrumNetwork } from '@arbitrum/sdk';
 import { Provider } from '@ethersproject/providers';
 
 import { ETHER_TOKEN_LOGO, ether } from '../../constants';
-import type { NativeCurrency, NativeCurrencyEther } from '../../hooks/useNativeCurrency';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
+import type { NativeCurrency, NativeCurrencyEther } from '../../types/NativeCurrency';
 import { addressesEqual } from '../../util/AddressUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { fetchErc20Data } from '../../util/TokenUtils';

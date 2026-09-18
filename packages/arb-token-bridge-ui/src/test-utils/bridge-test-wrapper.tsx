@@ -7,12 +7,13 @@ import { mock } from 'wagmi/connectors';
 
 import { AppContextProvider } from '../components/App/AppContext';
 import type { ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
-import type { NativeCurrency } from '../hooks/useNativeCurrency';
 import { useAppStore } from '../state';
 import { type AppState, defaultState } from '../state/app/state';
 import { ChainId } from '../types/ChainId';
+import type { NativeCurrency } from '../types/NativeCurrency';
 import type { EvmAddress } from '../util/AddressUtils';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { initializeBridgeNetworks } from '../util/networks';
 import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
 import { BalanceProvider } from '../wallet/balance/BalanceContext';
@@ -47,6 +48,7 @@ export function createBridgeTestWrapper({
   app?: Partial<AppState>;
   wagmiConfig?: Config;
 }) {
+  initializeBridgeNetworks();
   const { parentChainId, childChainId } = getNetworksRelationship({
     sourceChainId: query.sourceChain,
     destinationChainId: query.destinationChain,

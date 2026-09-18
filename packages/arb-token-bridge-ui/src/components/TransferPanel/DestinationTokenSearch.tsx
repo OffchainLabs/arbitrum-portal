@@ -41,8 +41,8 @@ function DestinationTokensPanel({
       isConnected,
     },
   } = useWallets();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { data: tokensFromLists } = useTokensFromLists();
   const destinationWalletAddress = destinationAddress || address;
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;

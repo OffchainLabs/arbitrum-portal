@@ -1,4 +1,4 @@
-import type { NativeCurrency } from '../hooks/useNativeCurrency';
+import type { NativeCurrency } from '../types/NativeCurrency';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
