@@ -7,6 +7,7 @@ import {
   baseSepolia,
   mainnet,
   sepolia,
+  superposition,
 } from 'viem/chains';
 
 import { ChainId } from '../types/ChainId';
@@ -15,7 +16,12 @@ import type { WalletEcosystem } from '../wallet/types';
 import type { ChainWithRpcUrl } from './networks';
 import orbitChainsData from './orbitChainsData.json';
 
-type NetworkMetadata = { chain: Chain; ecosystem: WalletEcosystem; parentChainId?: number };
+type NetworkMetadata = {
+  chain: Chain;
+  ecosystem: WalletEcosystem;
+  parentChainId?: number;
+  isCustom?: boolean;
+};
 
 type ChainMetadataInput = Pick<
   ChainWithRpcUrl,
@@ -70,12 +76,18 @@ for (const [id, name, rpcUrl] of [
     },
   });
 }
+networks.set(ChainId.Superposition, {
+  chain: superposition,
+  ecosystem: 'evm',
+  parentChainId: ChainId.ArbitrumOne,
+});
 networks.set(ChainId.Solana, { chain: solanaChain, ecosystem: 'solana' });
 
 const customNetworks = new Map<number, NetworkMetadata>();
 
 export function registerCustomChainMetadata(chain: ChainWithRpcUrl): void {
   customNetworks.set(chain.chainId, {
+    isCustom: true,
     chain: toChainMetadata(chain),
     ecosystem: 'evm',
     parentChainId: chain.parentChainId,

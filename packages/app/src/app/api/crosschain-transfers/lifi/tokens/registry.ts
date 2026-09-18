@@ -2,6 +2,7 @@ import { CoinKey, ChainId as LiFiChainId, type Token as LifiSdkToken, getTokens 
 import { unstable_cache } from 'next/cache';
 
 import {
+  allowedLifiDestinationChainIds,
   allowedLifiSourceChainIds,
   isUnmatchedLifiTokenAllowed,
 } from '@/bridge/app/api/crosschain-transfers/constants';
@@ -219,8 +220,11 @@ export interface LifiTokenRegistry {
 }
 
 const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
+  const tokenChainIds = [
+    ...new Set([...allowedLifiSourceChainIds, ...allowedLifiDestinationChainIds]),
+  ];
   const response = await getTokens({
-    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
+    chains: tokenChainIds as LiFiChainId[],
   });
 
   if (!response.tokens) {
@@ -233,7 +237,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
   const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
 
-  for (const chainId of allowedLifiSourceChainIds) {
+  for (const chainId of tokenChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
     const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
