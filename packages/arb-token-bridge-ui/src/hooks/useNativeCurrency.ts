@@ -1,7 +1,7 @@
 import useSWRImmutable from 'swr/immutable';
 
 import { fetchNativeCurrency } from '../services/nativeCurrency';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../util/networkMetadata';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
@@ -35,5 +35,5 @@ export function useNativeCurrency({ chainId }: { chainId: number }): NativeCurre
       fetchNativeCurrency({ chainId, parentChainIdFromQueryParam }),
     { shouldRetryOnError: true, errorRetryCount: 2, errorRetryInterval: 1000 },
   );
-  return data ?? { ...getWagmiChain(chainId).nativeCurrency, isCustom: false };
+  return data ?? { ...getChainMetadata(chainId).nativeCurrency, isCustom: false };
 }

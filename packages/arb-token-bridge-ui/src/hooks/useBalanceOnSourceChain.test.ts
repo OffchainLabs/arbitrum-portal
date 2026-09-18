@@ -2,11 +2,9 @@ import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { BigNumber } from 'ethers';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { createBalanceTestWrapper } from '../test-utils/balance-test-wrapper';
 import { ChainId } from '../types/ChainId';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../util/networkMetadata';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
 import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../wallet/constants';
 import type { WalletContextValue } from '../wallet/types';
@@ -24,10 +22,8 @@ describe('useBalanceOnSourceChain', () => {
     const sourceAddress = 'So11111111111111111111111111111111111111112';
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.Solana),
-        sourceChainProvider: getProviderForChainId(ChainId.Solana),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+        sourceChain: getChainMetadata(ChainId.Solana),
+        destinationChain: getChainMetadata(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);

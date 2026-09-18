@@ -3,11 +3,9 @@ import { BigNumber } from 'ethers';
 import { zeroAddress } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { createBalanceTestWrapper } from '../../test-utils/balance-test-wrapper';
 import { ChainId } from '../../types/ChainId';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { useSelectedTokenBalances } from '../TransferPanel/useSelectedTokenBalances';
 import { TokenType } from '../arbTokenBridge.types';
@@ -56,10 +54,8 @@ describe('useSelectedTokenBalances', () => {
     });
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+        sourceChain: getChainMetadata(ChainId.Ethereum),
+        destinationChain: getChainMetadata(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);

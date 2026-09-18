@@ -18,7 +18,7 @@ import { useAddPendingTransactions } from '../../hooks/useTransactionHistory';
 import { DepositStatus, type MergedTransaction } from '../../state/app/state';
 import { createBalanceTestWrapper } from '../../test-utils/balance-test-wrapper';
 import { ChainId } from '../../types/ChainId';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { WalletContext } from '../../wallet/WalletContext';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import type { BalanceClient, WalletContextValue } from '../../wallet/types';
@@ -57,14 +57,14 @@ vi.mock('../../state', () => ({
 vi.mock('../../hooks/useSelectedToken', () => ({ useSelectedToken: () => [null, vi.fn()] }));
 vi.mock('../../hooks/useNetworks', () => ({
   useNetworks: () => [
-    { sourceChain: getWagmiChain(form.sourceChainId), destinationChain: arbitrum },
+    { sourceChain: getChainMetadata(form.sourceChainId), destinationChain: arbitrum },
     vi.fn(),
   ],
 }));
 vi.mock('../../hooks/useNetworksRelationship', () => ({
   useNetworksRelationship: () => ({
     childChain: arbitrum,
-    parentChain: getWagmiChain(form.sourceChainId),
+    parentChain: getChainMetadata(form.sourceChainId),
     isDepositMode: true,
   }),
 }));

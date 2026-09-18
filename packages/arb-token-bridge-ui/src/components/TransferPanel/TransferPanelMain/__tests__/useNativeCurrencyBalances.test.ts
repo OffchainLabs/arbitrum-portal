@@ -3,14 +3,12 @@ import { BigNumber } from 'ethers';
 import { zeroAddress } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { useNativeCurrency } from '../../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../../hooks/useNetworks';
 import { createBalanceTestWrapper } from '../../../../test-utils/balance-test-wrapper';
 import { ChainId } from '../../../../types/ChainId';
 import { CommonAddress } from '../../../../util/CommonAddressUtils';
-import { getWagmiChain } from '../../../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../../../util/networkMetadata';
 import { defaultWalletContextValue } from '../../../../wallet/WalletContext';
 import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../../../wallet/constants';
 import type { BalanceClient, WalletContextValue } from '../../../../wallet/types';
@@ -62,10 +60,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
     query.destinationAddress = recipient;
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.Sepolia),
-        sourceChainProvider: getProviderForChainId(ChainId.Sepolia),
-        destinationChain: getWagmiChain(ChainId.ArbitrumSepolia),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumSepolia),
+        sourceChain: getChainMetadata(ChainId.Sepolia),
+        destinationChain: getChainMetadata(ChainId.ArbitrumSepolia),
       },
       vi.fn(),
     ]);
@@ -80,10 +76,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
   it('selects the source and destination wallets independently', async () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.Solana),
-        sourceChainProvider: getProviderForChainId(ChainId.Solana),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+        sourceChain: getChainMetadata(ChainId.Solana),
+        destinationChain: getChainMetadata(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);
@@ -126,10 +120,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
   it('uses the parent ERC-20 and child native balance for a custom gas token deposit', async () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.RobinhoodChain),
-        sourceChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
-        destinationChain: getWagmiChain(ChainId.ApeChain),
-        destinationChainProvider: getProviderForChainId(ChainId.ApeChain),
+        sourceChain: getChainMetadata(ChainId.RobinhoodChain),
+        destinationChain: getChainMetadata(ChainId.ApeChain),
       },
       vi.fn(),
     ]);
@@ -167,10 +159,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
   it('keeps the received custom token separate from destination gas on withdrawal', async () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
-        sourceChain: getWagmiChain(ChainId.ApeChain),
-        sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
-        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+        sourceChain: getChainMetadata(ChainId.ApeChain),
+        destinationChain: getChainMetadata(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);

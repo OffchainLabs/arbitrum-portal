@@ -24,6 +24,43 @@ describe.sequential('useAccountType wallet inputs', () => {
     expect(result.current.accountType).toBeUndefined();
   });
 
+  it.each([
+    [ChainId.Solana, ChainId.Ethereum, '0x1111111111111111111111111111111111111111'],
+    [ChainId.Ethereum, ChainId.Solana, 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5'],
+  ])('uses the override wallet for source %s and override %s', async (source, chainId, address) => {
+    selection.sourceChain.id = source;
+    function Wrapper({ children }: PropsWithChildren) {
+      return (
+        <SWRConfig value={{ provider: () => new Map() }}>
+          <WalletContext.Provider
+            value={{
+              evm: {
+                ...defaultWalletContextValue.evm,
+                account: {
+                  ecosystem: 'evm',
+                  status: 'connected',
+                  address: '0x1111111111111111111111111111111111111111',
+                },
+              },
+              solana: {
+                ...defaultWalletContextValue.solana,
+                account: {
+                  ecosystem: 'solana',
+                  status: 'connected',
+                  address: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+                },
+              },
+            }}
+          >
+            {children}
+          </WalletContext.Provider>
+        </SWRConfig>
+      );
+    }
+    renderHook(() => useAccountType(undefined, chainId), { wrapper: Wrapper });
+    await waitFor(() => expect(getAccountType).toHaveBeenCalledWith({ address, chainId }));
+  });
+
   it('inspects the selected account from injected context and follows account changes', async () => {
     selection.sourceChain.id = ChainId.Solana;
     let evmAddress = '0x1111111111111111111111111111111111111111';
