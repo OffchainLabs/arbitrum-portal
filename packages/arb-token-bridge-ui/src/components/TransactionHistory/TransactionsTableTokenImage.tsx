@@ -7,6 +7,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { MergedTransaction } from '../../state/app/state';
 import { normalizeAddress } from '../../util/AddressUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
+import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { orbitChains } from '../../util/orbitChainsList';
 
 // TODO: cache
@@ -37,8 +38,9 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
-
-    const nativeTokenLogoSrc = orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl;
+    const nativeTokenLogoSrc =
+      getBridgeUiConfigForChain(tx.sourceChainId).nativeTokenData?.logoUrl ??
+      orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl;
 
     if (nativeTokenLogoSrc) {
       return (
