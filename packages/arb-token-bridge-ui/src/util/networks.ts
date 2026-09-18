@@ -9,7 +9,9 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import { ecosystems } from '../wallet/ecosystems';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import { solanaChain } from '../wallet/solana/network';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
@@ -66,6 +68,14 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
     isTestnet: true,
   },
 };
+
+// Solana has no Arbitrum child chain: it is only a root for its LiFi pairs
+const solanaNetwork: BlockNumberReferenceNetwork = {
+  chainId: ChainId.Solana,
+  blockTime: 0.4,
+  isTestnet: false,
+};
+
 export const getChains = (
   { includeRootChainsWithoutDestination } = {
     includeRootChainsWithoutDestination: false,
@@ -78,7 +88,7 @@ export const getChains = (
   ];
 
   if (includeRootChainsWithoutDestination) {
-    return chains;
+    return ecosystems.solana.isEnabled() ? [...chains, solanaNetwork] : chains;
   }
 
   return chains.filter((chain) => {
@@ -295,6 +305,7 @@ export const rpcURLs: { [chainId: number]: string } =
     : defaultRpcUrls;
 
 export const explorerUrls: { [chainId: number]: string } = {
+  [ChainId.Solana]: solanaChain.blockExplorers.default.url,
   // L1
   [ChainId.Ethereum]: 'https://etherscan.io',
   // L1 Testnets
