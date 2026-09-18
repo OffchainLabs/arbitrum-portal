@@ -16,7 +16,7 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
-import { isTxPending } from './helpers';
+import { isTxPending } from '../../services/history';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';

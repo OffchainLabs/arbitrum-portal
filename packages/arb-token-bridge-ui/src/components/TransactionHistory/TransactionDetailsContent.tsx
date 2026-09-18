@@ -12,7 +12,7 @@ import { GET_HELP_LINK, ether } from '../../constants';
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { getTransactionType, isLifiTransfer, isTxCompleted } from './helpers';
+import { getTransactionType, isLifiTransfer, isTxCompleted } from '../../services/history';
 import { MergedTransaction } from '../../state/app/state';
 import { isCustomDestinationAddressTx } from '../../state/app/utils';
 import { addressesEqual } from '../../util/AddressUtils';

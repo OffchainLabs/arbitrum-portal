@@ -12,24 +12,25 @@ import { type RouteExtended, getStatus } from '@lifi/sdk';
 import type { StatusResponse } from '@lifi/types';
 import dayjs from 'dayjs';
 
-import type { AmountWithToken } from '../../app/api/crosschain-transfers/types';
-import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { getUniqueIdOrHashFromEvent } from '../../hooks/useArbTokenBridge';
-import { Deposit, Transfer } from '../../hooks/useTransactionHistory';
+import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
+import { warningToast } from '../components/common/atoms/Toast';
+import { AssetType } from '../hooks/arbTokenBridge.types';
+import { getUniqueIdOrHashFromEvent } from '../hooks/useArbTokenBridge';
+import { Deposit, Transfer } from '../hooks/useTransactionHistory';
 import {
   DepositStatus,
   LayerZeroTransaction,
   LifiMergedTransaction,
   MergedTransaction,
   WithdrawalStatus,
-} from '../../state/app/state';
-import { getDepositStatus, isCustomDestinationAddressTx } from '../../state/app/utils';
-import { getBlockBeforeConfirmation } from '../../state/cctpState';
-import { getProviderForChainId } from '../../token-bridge-sdk/utils';
-import { ChainId } from '../../types/ChainId';
-import { normalizeAddress } from '../../util/AddressUtils';
-import { SimplifiedRouteType } from '../../util/AnalyticsUtils';
-import { getLifiToolDetails, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+} from '../state/app/state';
+import { getDepositStatus, isCustomDestinationAddressTx } from '../state/app/utils';
+import { getBlockBeforeConfirmation } from '../state/cctpState';
+import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { ChainId } from '../types/ChainId';
+import { normalizeAddress } from '../util/AddressUtils';
+import { SimplifiedRouteType } from '../util/AnalyticsUtils';
+import { getLifiToolDetails, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import {
   LIFI_TRANSFER_PROCESS_TYPES,
   getLifiRouteStatusRequest,
@@ -38,21 +39,25 @@ import {
   isLifiRouteComplete,
   isPendingLifiProcessId,
   isValidLifiTransactionHash,
-} from '../../util/LifiTransactionStatus';
-import { normalizeTransactionId } from '../../util/TransactionIdUtils';
-import { getAttestationHashAndMessageFromReceipt } from '../../util/cctp/getAttestationHashAndMessageFromReceipt';
+} from '../util/LifiTransactionStatus';
+import { normalizeTransactionId } from '../util/TransactionIdUtils';
+import { getAttestationHashAndMessageFromReceipt } from '../util/cctp/getAttestationHashAndMessageFromReceipt';
 import {
   getParentToChildMessageDataFromParentTxHash,
   isEthDepositMessage,
-} from '../../util/deposits/helpers';
-import { getExplorerUrl, getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
-import { getOutgoingMessageState } from '../../util/withdrawals/helpers';
-import { warningToast } from '../common/atoms/Toast';
+} from '../util/deposits/helpers';
+import { getExplorerUrl, getL1BlockTime, getNetworkName, isNetwork } from '../util/networks';
+import { getOutgoingMessageState } from '../util/withdrawals/helpers';
+import type { WalletHandle } from '../wallet/types';
 
 const PARENT_CHAIN_TX_DETAILS_OF_CLAIM_TX = 'arbitrum:bridge:claim:parent:tx:details';
 const DEPOSITS_LOCAL_STORAGE_KEY = 'arbitrum:bridge:deposits';
 const LIFI_REFUND_TOAST_KEY_PREFIX = 'arbitrum:bridge:lifi:refund:';
 const LIFI_SCAN_URL = 'https://scan.li.fi';
+
+export function getHistoryDisclaimerAddress(wallet: WalletHandle): string | undefined {
+  return wallet.ecosystem === 'evm' ? wallet.account.address : undefined;
+}
 
 function showLifiRefundToastOnce(tx: LifiMergedTransaction) {
   if (typeof window === 'undefined') {

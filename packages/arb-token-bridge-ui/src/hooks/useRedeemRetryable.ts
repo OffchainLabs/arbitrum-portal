@@ -1,7 +1,6 @@
 import { ParentToChildMessageStatus } from '@arbitrum/sdk';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
-import type { Address } from 'viem';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
@@ -21,7 +20,7 @@ export type UseRedeemRetryableResult = {
 
 export function useRedeemRetryable(
   tx: MergedTransaction,
-  address: Address | undefined,
+  address: Parameters<typeof useTransactionHistory>[0],
 ): UseRedeemRetryableResult {
   const signer = useEthersSigner({ chainId: tx.destinationChainId });
   const { updatePendingTransaction } = useTransactionHistory(address);

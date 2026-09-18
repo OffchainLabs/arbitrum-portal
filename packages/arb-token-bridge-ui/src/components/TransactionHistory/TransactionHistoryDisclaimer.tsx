@@ -1,10 +1,4 @@
-import { useMemo } from 'react';
-
-import { useAccountType } from '../../hooks/useAccountType';
-import { ChainId } from '../../types/ChainId';
-import { CommonAddress } from '../../util/CommonAddressUtils';
-import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
-import { useWallets } from '../../wallet/hooks/useWallets';
+import { useHistoryDisclaimer } from '../../hooks/useHistoryDisclaimer';
 import { ExternalLink } from '../common/ExternalLink';
 
 export const highlightTransactionHistoryDisclaimer = () => {
@@ -20,33 +14,8 @@ export const highlightTransactionHistoryDisclaimer = () => {
 };
 
 export function TransactionHistoryDisclaimer() {
-  const { sourceWallet } = useWallets();
-  const walletAddress = sourceWallet.ecosystem === 'evm' ? sourceWallet.account.address : undefined;
-  const { accountType } = useAccountType(walletAddress ?? '');
-
-  const { data: mainnetBalances } = useTokenBalances({
-    chainId: ChainId.Ethereum,
-    walletAddress,
-    tokenAddresses: [CommonAddress.Ethereum.USDT],
-  });
-  const { data: arbOneBalances } = useTokenBalances({
-    chainId: ChainId.ArbitrumOne,
-    walletAddress,
-    tokenAddresses: [CommonAddress.ArbitrumOne.USDT],
-  });
-
-  const showOftDisclaimer = useMemo(() => {
-    const mainnetUsdtBalance = mainnetBalances?.[CommonAddress.Ethereum.USDT];
-    const arbOneUsdtBalance = arbOneBalances?.[CommonAddress.ArbitrumOne.USDT];
-
-    const userHasUsdtBalance =
-      (mainnetUsdtBalance !== undefined && mainnetUsdtBalance > 0n) ||
-      (arbOneUsdtBalance !== undefined && arbOneUsdtBalance > 0n);
-
-    return userHasUsdtBalance && accountType === 'smart-contract-wallet';
-  }, [mainnetBalances, arbOneBalances, accountType]);
-
-  const showLifiDisclaimer = accountType === 'smart-contract-wallet';
+  const { showOftDisclaimer, showLifiDisclaimer, arbiscanUrl, etherscanUrl } =
+    useHistoryDisclaimer();
 
   if (!showOftDisclaimer && !showLifiDisclaimer) {
     return null;
@@ -62,14 +31,7 @@ export function TransactionHistoryDisclaimer() {
         {showLifiDisclaimer && (
           <li>
             LiFi transactions initiated by Smart-contract wallets can be found on{' '}
-            <ExternalLink
-              href={
-                walletAddress
-                  ? `https://arbiscan.io/address/${walletAddress}`
-                  : 'https://arbiscan.io'
-              }
-              className="arb-hover inline-flex underline"
-            >
+            <ExternalLink href={arbiscanUrl} className="arb-hover inline-flex underline">
               Arbiscan
             </ExternalLink>
             .
@@ -78,26 +40,8 @@ export function TransactionHistoryDisclaimer() {
         {showOftDisclaimer && (
           <li>
             LayerZero USDT transfers initiated by Smart-contract wallets can be found on{' '}
-            <ExternalLink
-              href={
-                walletAddress
-                  ? `https://etherscan.io/address/${walletAddress}`
-                  : 'https://etherscan.io'
-              }
-            >
-              Etherscan
-            </ExternalLink>{' '}
-            and{' '}
-            <ExternalLink
-              href={
-                walletAddress
-                  ? `https://arbiscan.io/address/${walletAddress}`
-                  : 'https://arbiscan.io'
-              }
-            >
-              Arbiscan
-            </ExternalLink>
-            .
+            <ExternalLink href={etherscanUrl}>Etherscan</ExternalLink> and{' '}
+            <ExternalLink href={arbiscanUrl}>Arbiscan</ExternalLink>.
           </li>
         )}
       </ul>
