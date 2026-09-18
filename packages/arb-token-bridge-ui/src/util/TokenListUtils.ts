@@ -5,6 +5,7 @@ import { ImageProps } from 'next/image';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ArbTokenBridge, ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { normalizeAddress } from './AddressUtils';
 import { logger } from './logger';
 import { getOrbitChains } from './orbitChainsList';
 
@@ -43,10 +44,10 @@ export function tokenListTokenToBridgeToken({
   }
 
   const bridgeInfo = getTokenBridgeInfo(token);
-  const parentAddress = bridgeInfo?.[String(parentChainId)]?.tokenAddress.toLowerCase();
+  const parentAddress = normalizeAddress(bridgeInfo?.[String(parentChainId)]?.tokenAddress);
   const isLifiToken = listId === LIFI_TRANSFER_LIST_ID;
   const isChildToken = token.chainId === childChainId;
-  const address = token.address.toLowerCase();
+  const address = normalizeAddress(token.address);
 
   if (isChildToken && !parentAddress && !isLifiToken) {
     return undefined;
