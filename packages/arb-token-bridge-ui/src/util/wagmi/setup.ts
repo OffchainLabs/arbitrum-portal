@@ -1,6 +1,7 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
+import { appKitAdapters, appKitNetworks } from '@wallets';
 import { http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
 
@@ -113,9 +114,9 @@ const wagmiAdapter = new WagmiAdapter({
 export const appKit = createAppKit({
   projectId,
   metadata,
-  networks: [...chainList],
+  networks: [...chainList, ...appKitNetworks],
   defaultNetwork: chainList[0],
-  adapters: [wagmiAdapter],
+  adapters: [wagmiAdapter, ...appKitAdapters],
   features: {
     email: false,
     socials: false,

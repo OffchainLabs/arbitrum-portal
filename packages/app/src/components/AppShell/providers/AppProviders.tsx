@@ -2,6 +2,7 @@
 
 import { createConfig } from '@lifi/sdk';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletProvider } from '@wallets';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { PropsWithChildren } from 'react';
@@ -14,7 +15,6 @@ import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
-import { WalletProvider } from '@/bridge/wallet/providers/WalletProvider';
 
 import { initializeDayjs } from '../../../initialization';
 import {

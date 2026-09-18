@@ -27,6 +27,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@wallets': path.resolve(__dirname, './src/wallet/disabled.tsx'),
       '@/app': path.resolve(__dirname, '../app'),
       '@/images': path.resolve(__dirname, '../app/public/images'),
       '@/icons': path.resolve(__dirname, '../app/public/icons'),
