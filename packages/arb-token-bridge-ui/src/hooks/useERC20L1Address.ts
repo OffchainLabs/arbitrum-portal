@@ -1,9 +1,6 @@
 import useSWRImmutable from 'swr/immutable';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
-import { ChainId } from '../types/ChainId';
-import { getL1ERC20Address } from '../util/TokenUtils';
+import { getParentTokenAddress } from '../services/tokenMetadata';
 
 /**
  * Returns L1 address
@@ -25,17 +22,7 @@ export const useERC20L1Address = ({
 }) => {
   const { data = null, isLoading } = useSWRImmutable(
     [eitherL1OrL2Address, l2ChainId, 'useERC20L1Address'],
-    async ([_eitherL1OrL2Address, _l2ChainId]) => {
-      const parentAddress = await getL1ERC20Address({
-        erc20L2Address: _eitherL1OrL2Address,
-        l2Provider: getProviderForChainId(_l2ChainId as ChainId),
-      });
-
-      return {
-        address: (parentAddress ?? _eitherL1OrL2Address).toLowerCase(),
-        hasParentAddress: parentAddress !== null,
-      };
-    },
+    ([_eitherL1OrL2Address, _l2ChainId]) => getParentTokenAddress(_eitherL1OrL2Address, _l2ChainId),
     {
       shouldRetryOnError: true,
       errorRetryCount: 2,

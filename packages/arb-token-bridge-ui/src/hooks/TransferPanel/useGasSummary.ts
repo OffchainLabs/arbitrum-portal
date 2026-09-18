@@ -2,10 +2,8 @@ import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
 import { useMemo } from 'react';
 
-import { DEFAULT_GAS_PRICE_PERCENT_INCREASE } from '@/token-bridge-sdk/Erc20DepositStarter';
-import { percentIncrease } from '@/token-bridge-sdk/utils';
-
 import { useAmountBigNumber } from '../../components/TransferPanel/hooks/useAmountBigNumber';
+import { getCanonicalChildGasPrice } from '../../services/evm/feeMath';
 import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -83,12 +81,11 @@ export function getGasSummaryStatus({
 export function useGasSummary(): UseGasSummaryResult {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChainProvider, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const amountBigNumber = useDebounce(useAmountBigNumber(), 300);
 
-  const parentChainGasPrice = useGasPrice({ provider: parentChainProvider });
-  const childChainGasPrice = useGasPrice({ provider: childChainProvider });
+  const parentChainGasPrice = useGasPrice({ chainId: parentChain.id });
+  const childChainGasPrice = useGasPrice({ chainId: childChain.id });
   const balance = useBalanceOnSourceChain(selectedToken);
 
   const { gasEstimates: estimateGasResult, error: gasEstimatesError } = useGasEstimates({
@@ -119,7 +116,7 @@ export function useGasSummary(): UseGasSummaryResult {
       return parseFloat(
         utils.formatEther(
           estimateGasResult.estimatedChildChainGas
-            .mul(percentIncrease(childChainGasPrice, DEFAULT_GAS_PRICE_PERCENT_INCREASE))
+            .mul(getCanonicalChildGasPrice(childChainGasPrice))
             .add((estimateGasResult as DepositGasEstimates).estimatedChildChainSubmissionCost),
         ),
       );

@@ -10,12 +10,21 @@ import { useInterval } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
-import { MergedTransaction } from '../../state/app/state';
+import { DepositStatus, MergedTransaction } from '../../state/app/state';
 import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+import {
+  getDestinationNetworkTxId,
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
+  isLifiTransfer,
+  isTxClaimable,
+  isTxExpired,
+  isTxFailed,
+  isTxPending,
+} from './helpers';
 import { formatAmount } from '../../util/NumberUtils';
 import { isBatchTransfer } from '../../util/TokenDepositUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -29,16 +38,6 @@ import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
 import { TransactionsTableExternalLink } from './TransactionsTableExternalLink';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
-import {
-  getDestinationNetworkTxId,
-  getDestinationTransactionUrl,
-  getSourceTransactionUrl,
-  isLifiTransfer,
-  isTxClaimable,
-  isTxExpired,
-  isTxFailed,
-  isTxPending,
-} from './helpers';
 import { getLifiToAmountDisplay } from './lifiDisplayUtils';
 
 const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
@@ -130,8 +129,7 @@ export function TransactionsTableRow({
   className?: string;
 }) {
   const openTxDetails = useTxDetailsStore((state) => state.open);
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   const { sourceChainId, destinationChainId } = tx;
 
