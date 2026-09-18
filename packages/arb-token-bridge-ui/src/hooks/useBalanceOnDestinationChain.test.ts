@@ -2,8 +2,6 @@ import { renderHook } from '@testing-library/react';
 import { BigNumber } from 'ethers';
 import { describe, expect, it, vi } from 'vitest';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { ChainId } from '../types/ChainId';
 import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { useTokenBalances } from '../wallet/hooks/useTokenBalances';
@@ -29,9 +27,8 @@ describe('useBalanceOnDestinationChain', () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Ethereum),
-        sourceChainProvider: getProviderForChainId(ChainId.Ethereum),
+
         destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);
