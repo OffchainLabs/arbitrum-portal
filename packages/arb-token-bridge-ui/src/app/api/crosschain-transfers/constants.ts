@@ -1,6 +1,9 @@
+import { additionalLifiDestinationChainIds } from '@bridge-networks';
+
 import { ChainId } from '../../../types/ChainId';
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
+  ...additionalLifiDestinationChainIds,
   [ChainId.Ethereum]: [
     ChainId.ArbitrumOne,
     ChainId.ArbitrumNova,
@@ -26,7 +29,10 @@ export const allowedLifiDestinationChainIds: number[] = Object.values(
  * Some tokens only exist on one chain (for example stock tokens on Robinhood),
  * we want to allow them to be source or destination of swaps through LiFi
  */
-const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([ChainId.RobinhoodChain]);
+const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([
+  ChainId.RobinhoodChain,
+  ...Object.keys(additionalLifiDestinationChainIds).map(Number),
+]);
 
 export function allowsUnmatchedLifiTokens(chainId: number): boolean {
   return UNMATCHED_LIFI_TOKEN_CHAIN_IDS.has(chainId);

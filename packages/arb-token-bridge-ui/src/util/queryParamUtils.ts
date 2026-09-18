@@ -1,4 +1,5 @@
 import { getArbitrumNetwork } from '@arbitrum/sdk';
+import { additionalLifiDestinationChainIds } from '@bridge-networks';
 import { constants } from 'ethers';
 import { QueryParamConfig } from 'use-query-params';
 
@@ -365,6 +366,10 @@ export function sanitizeQueryParams({
   sourceChainId: ChainId | number;
   destinationChainId: ChainId | number;
 } {
+  if (destinationChainId && additionalLifiDestinationChainIds[destinationChainId]) {
+    destinationChainId = undefined;
+  }
+
   const key = `${sourceChainId}-${destinationChainId}-${disableTransfersToNonArbitrumChains}-${includeLifiEnabledChainPairs}`;
   const cacheHit = cache[key];
   if (cacheHit) {

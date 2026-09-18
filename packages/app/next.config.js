@@ -4,6 +4,7 @@ const path = require('path');
 
 const wallets =
   process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true' ? 'solana' : 'disabled';
+const bridgeNetworksPath = `../arb-token-bridge-ui/src/wallet/networks/${wallets}.ts`;
 const walletsPath = `../arb-token-bridge-ui/src/wallet/${wallets}.tsx`;
 
 /**
@@ -18,7 +19,12 @@ module.exports = {
   },
   turbopack: {
     root: path.resolve(__dirname, '../..'),
-    resolveAlias: { '@wallets': walletsPath },
+    resolveAlias: {
+      '@wallets': walletsPath,
+      '@bridge-networks': bridgeNetworksPath,
+      'wagmi': '../../node_modules/wagmi',
+      '@tanstack/react-query': '../../node_modules/@tanstack/react-query',
+    },
   },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding', '@duneanalytics/client-sdk');
@@ -30,7 +36,9 @@ module.exports = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@wallets$': path.resolve(__dirname, walletsPath),
+      '@bridge-networks$': path.resolve(__dirname, bridgeNetworksPath),
       '@react-native-async-storage/async-storage': false,
+      'wagmi$': hoisted('wagmi'),
       '@tanstack/react-query$': hoisted('@tanstack/react-query'),
       'overmind-react$': hoisted('overmind-react'),
       'overmind$': hoisted('overmind'),

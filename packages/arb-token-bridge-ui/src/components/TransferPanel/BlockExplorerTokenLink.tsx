@@ -20,7 +20,7 @@ export function BlockExplorerTokenLink({
       className="arb-hover text-xs underline"
       onClick={(e) => e.stopPropagation()}
     >
-      {shortenAddress(address).toLowerCase()}
+      {shortenAddress(address)}
     </ExternalLink>
   );
 }

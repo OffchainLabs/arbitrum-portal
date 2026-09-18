@@ -27,6 +27,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@bridge-networks': path.resolve(__dirname, './src/wallet/networks/disabled.ts'),
       '@wallets': path.resolve(__dirname, './src/wallet/disabled.tsx'),
       '@/app': path.resolve(__dirname, '../app'),
       '@/images': path.resolve(__dirname, '../app/public/images'),

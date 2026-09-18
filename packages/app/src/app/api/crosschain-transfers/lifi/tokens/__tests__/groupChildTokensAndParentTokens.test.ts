@@ -243,3 +243,31 @@ describe('groupChildTokensAndParentTokens', () => {
     expect(tokens).toEqual([]);
   });
 });
+
+describe('cross-ecosystem token list metadata', () => {
+  it('keeps source mint casing and decimals independent of a destination token with the same coin key', () => {
+    const mint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    const source = buildToken({
+      chainId: ChainId.Solana,
+      address: mint,
+      decimals: 6,
+      coinKey: CoinKey.USDC,
+    });
+    const destination = buildToken({
+      chainId: ChainId.Superposition,
+      decimals: 18,
+      coinKey: CoinKey.USDC,
+    });
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [source],
+      childTokens: [destination],
+      childTokensByCoinKey: { [CoinKey.USDC]: destination },
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.Superposition,
+    });
+    expect(tokens).toHaveLength(2);
+    expect(tokens[0]).toMatchObject({ chainId: ChainId.Solana, address: mint, decimals: 6 });
+    expect(tokens[1]).toMatchObject({ chainId: ChainId.Superposition, decimals: 18 });
+    expect(tokens[1]?.extensions?.bridgeInfo).toBeUndefined();
+  });
+});

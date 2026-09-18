@@ -1,7 +1,14 @@
 import type { NativeCurrency } from '../hooks/useNativeCurrency';
+import { getBridgeUiConfigForChain } from '../util/bridgeUiConfig';
 import { getChainMetadata } from '../util/networkMetadata';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
+
+export function getSourceNativeCurrencyChainId(sourceChainId: number, childChainId: number) {
+  return getWalletEcosystem(sourceChainId) === getWalletEcosystem(childChainId)
+    ? childChainId
+    : sourceChainId;
+}
 
 type Params = { chainId: number; parentChainIdFromQueryParam?: number };
 const implementations: Partial<
@@ -22,5 +29,9 @@ export async function fetchNativeCurrency(params: Params): Promise<NativeCurrenc
   const implementation = implementations[getWalletEcosystem(params.chainId)];
   return implementation
     ? implementation(params)
-    : { ...getChainMetadata(params.chainId).nativeCurrency, isCustom: false };
+    : {
+        ...getChainMetadata(params.chainId).nativeCurrency,
+        isCustom: false,
+        logoUrl: getBridgeUiConfigForChain(params.chainId).nativeTokenData?.logoUrl,
+      };
 }

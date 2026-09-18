@@ -16,9 +16,11 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
+import { getSourceNativeCurrencyChainId } from '../../../services/nativeCurrency';
 import { formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getNetworkName } from '../../../util/networks';
+import { getNativeTokenAddress } from '../../../wallet/constants';
 import { Button } from '../../common/Button';
 import { DialogWrapper, useDialog2 } from '../../common/Dialog2';
 import { ExternalLink } from '../../common/ExternalLink';
@@ -71,7 +73,9 @@ const Input1 = React.memo(() => {
   const sourceNativeCurrency = useNativeCurrency({
     chainId: networks.sourceChain.id,
   });
-  const destinationNativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const destinationNativeCurrency = useNativeCurrency({
+    chainId: getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id),
+  });
   const { ethPrice } = useETHPrice();
   const [{ amount }] = useArbQueryParams();
   const { setAmount } = useSetInputAmount();
@@ -125,7 +129,9 @@ const Input1 = React.memo(() => {
         : sourceNativeCurrency;
     const nativeCurrencyPrice = nativeCurrency.isCustom
       ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
+      : nativeCurrency.symbol === 'ETH'
+        ? ethPrice
+        : tokensFromLists[getNativeTokenAddress(networks.sourceChain.id)]?.priceUSD;
 
     const value = getUsdValueForAmount({
       amount,
@@ -143,6 +149,7 @@ const Input1 = React.memo(() => {
     selectedToken,
     sourceNativeCurrency,
     tokensFromLists,
+    networks.sourceChain.id,
   ]);
 
   return (

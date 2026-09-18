@@ -6,8 +6,8 @@ import {
   registerCustomArbitrumNetwork,
 } from '@arbitrum/sdk';
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { superposition } from 'viem/chains';
 
-import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
@@ -289,7 +289,10 @@ export const rpcURLs: { [chainId: number]: string } =
       }
     : defaultRpcUrls;
 
+rpcURLs[ChainId.Superposition] = superposition.rpcUrls.default.http[0];
+
 export const explorerUrls: { [chainId: number]: string } = {
+  [ChainId.Superposition]: superposition.blockExplorers.default.url,
   // L1
   [ChainId.Ethereum]: 'https://etherscan.io',
   // L1 Testnets
@@ -618,55 +621,7 @@ export function sortChainIds(chainIds: number[]) {
   });
 }
 
-export function getDestinationChainIds(
-  chainId: ChainId | number,
-  {
-    includeLifiEnabledChainPairs = false,
-    disableTransfersToNonArbitrumChains = false,
-  }: {
-    includeLifiEnabledChainPairs?: boolean;
-    disableTransfersToNonArbitrumChains?: boolean;
-  } = {},
-): ChainId[] {
-  const chain = getChainByChainId(chainId, {
-    includeRootChainsWithoutDestination: includeLifiEnabledChainPairs,
-  });
-
-  if (!chain) {
-    return [];
-  }
-
-  const parentChainId = isArbitrumChain(chain) ? chain.parentChainId : undefined;
-  const chainIds = getChildChainIds(chain);
-
-  /**
-   * Add parent chain if:
-   * - parent is an arbitrum network
-   * - parent is a non-arbitrum network and transfers to non-arbitrum chains are not disabled
-   */
-  if (
-    parentChainId &&
-    (!isNetwork(parentChainId).isNonArbitrumNetwork ||
-      (isNetwork(parentChainId).isNonArbitrumNetwork && !disableTransfersToNonArbitrumChains))
-  ) {
-    chainIds.push(parentChainId);
-  }
-
-  /** Include lifi chains, if flag is on */
-  const lifiChainIds = lifiDestinationChainIds[chainId];
-  if (includeLifiEnabledChainPairs && lifiChainIds && lifiChainIds.length) {
-    chainIds.push(...lifiChainIds);
-  }
-
-  /** Disabling transfers to non arbitrum chains, remove non-arbitrum chains */
-  if (disableTransfersToNonArbitrumChains) {
-    return sortChainIds([
-      ...new Set(chainIds.filter((chainId) => !isNetwork(chainId).isNonArbitrumNetwork)),
-    ]);
-  }
-
-  return sortChainIds([...new Set(chainIds)]);
-}
+export { getDestinationChainIds } from './chainUtils';
 
 export function isWithdrawalFromArbSepoliaToSepolia({
   sourceChainId,

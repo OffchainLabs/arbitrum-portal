@@ -19,6 +19,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
+      "@bridge-networks": ["./packages/arb-token-bridge-ui/src/wallet/networks/disabled.ts"],
       "@wallets": ["./packages/arb-token-bridge-ui/src/wallet/disabled.tsx"],
       "@/app/*": ["./packages/app/*"],
       "@/common/*": ["./packages/portal/common/*"],

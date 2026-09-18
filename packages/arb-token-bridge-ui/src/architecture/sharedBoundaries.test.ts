@@ -6,6 +6,10 @@ import { describe, expect, it } from 'vitest';
 const sourceRoot = path.resolve(import.meta.dirname, '..');
 const componentDirectories = ['components/TransferPanel', 'components/TransactionHistory'];
 const sharedHooks = [
+  'components/common/NetworkSelectionContainer.tsx',
+  'components/Widget/WidgetHeaderAccountButton.tsx',
+  'components/App/useSyncConnectedChainToQueryParams.ts',
+  '../../app/src/components/AppShell/components/NavWallet.tsx',
   'hooks/useNetworks.ts',
   'hooks/useNetworksRelationship.ts',
   'hooks/useBalanceOnSourceChain.ts',
