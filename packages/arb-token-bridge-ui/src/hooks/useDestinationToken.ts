@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 
+import { useTokensFromLists } from '../components/TransferPanel/TokenSearchUtils';
 import { useAppState } from '../state';
 import { resolveDestinationSelection } from '../util/TokenSelectionUtils';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import { ERC20BridgeToken } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -18,8 +20,14 @@ export function useDestinationSelection() {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
+  const { data: tokensFromLists } = useTokensFromLists();
   const sourceChainId = networks.sourceChain.id;
   const destinationChainId = networks.destinationChain.id;
+  // The Arbitrum token bridge only loads between EVM chains, so other pairs read the token lists
+  const destinationTokens =
+    getWalletEcosystem(sourceChainId) === getWalletEcosystem(destinationChainId)
+      ? bridgeTokens
+      : tokensFromLists;
 
   // Overrides allocate metadata; keep its identity stable for route effects.
   return useMemo(
@@ -27,7 +35,7 @@ export function useDestinationSelection() {
       resolveDestinationSelection({
         sourceToken,
         destinationTokenLookupKey,
-        bridgeTokens,
+        bridgeTokens: destinationTokens,
         sourceChainId,
         destinationChainId,
         isDepositMode,
@@ -35,7 +43,7 @@ export function useDestinationSelection() {
     [
       sourceToken,
       destinationTokenLookupKey,
-      bridgeTokens,
+      destinationTokens,
       sourceChainId,
       destinationChainId,
       isDepositMode,
