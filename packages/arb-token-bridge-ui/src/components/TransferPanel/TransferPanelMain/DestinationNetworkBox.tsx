@@ -13,6 +13,7 @@ import { useETHPrice } from '../../../hooks/useETHPrice';
 import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { getRecipientToHighlight } from '../../../services/destinationAddress';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
@@ -256,6 +257,12 @@ function BalancesContainer() {
 export function DestinationNetworkBox() {
   const [networks] = useNetworks();
   const [{ destinationAddress }] = useArbQueryParams();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const recipient = getRecipientToHighlight({
+    destinationAddress,
+    sourceWallet,
+    destinationWallet,
+  });
   const [dialogProps, openDialog] = useDialog2();
   const openDestinationNetworkSelectionDialog = () => {
     openDialog('destination_network_selection');
@@ -263,7 +270,7 @@ export function DestinationNetworkBox() {
 
   return (
     <>
-      <NetworkContainer network={networks.destinationChain} customAddress={destinationAddress}>
+      <NetworkContainer network={networks.destinationChain} customAddress={recipient}>
         <div className="flex justify-between">
           <NetworkButton type="destination" onClick={openDestinationNetworkSelectionDialog} />
         </div>
