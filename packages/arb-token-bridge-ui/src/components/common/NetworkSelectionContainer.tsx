@@ -9,7 +9,6 @@ import { useDebounce } from '@uidotdev/usehooks';
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
@@ -29,6 +28,7 @@ import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getChainMetadata } from '../../util/networkMetadata';
 import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
+import { useWalletForChain, useWallets } from '../../wallet/hooks/useWallets';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -185,7 +185,9 @@ function NetworkRow({
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
   const chain = getChainMetadata(chainId);
-  const { address: walletAddress } = useAccount();
+  const {
+    account: { address: walletAddress },
+  } = useWalletForChain(chainId);
   const {
     data: balanceState,
     isLoading: isLoadingBalance,
@@ -292,7 +294,11 @@ export function NetworksPanel({
   const listRef = useRef<List>(null);
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
-  const { isConnected } = useAccount();
+  const {
+    sourceWallet: { isConnected: isSourceWalletConnected },
+    destinationWallet: { isConnected: isDestinationWalletConnected },
+  } = useWallets();
+  const isConnected = isSourceWalletConnected || isDestinationWalletConnected;
   const showNovaWarningBanner = chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {

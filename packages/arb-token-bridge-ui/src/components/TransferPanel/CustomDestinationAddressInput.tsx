@@ -6,7 +6,10 @@ import { twMerge } from 'tailwind-merge';
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
-import { getDestinationAddressWarning } from '../../services/destinationAddress';
+import {
+  getDestinationAddressWarning,
+  requiresRecipientAddress,
+} from '../../services/destinationAddress';
 import { normalizeAddressForChain, parseAddressForChain } from '../../util/AddressUtils';
 import { getAccountExplorerUrl } from '../../util/networks';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -21,14 +24,9 @@ export enum DestinationAddressErrors {
 
 export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks();
-  const {
-    sourceWallet: {
-      account: { address: senderAddress },
-    },
-    destinationWallet: {
-      account: { address },
-    },
-  } = useWallets();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const { address: senderAddress } = sourceWallet.account;
+  const { address } = destinationWallet.account;
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
   const [{ destinationAddress: destinationAddressFromQueryParams }, setQueryParams] =
     useArbQueryParams();
@@ -86,6 +84,8 @@ export const CustomDestinationAddressInput = () => {
             <span className="font-semibold">must specify an address</span> you&apos;d like the funds
             sent to.
           </>
+        ) : requiresRecipientAddress({ sourceWallet, destinationWallet }) ? (
+          `Enter the recipient address on ${networks.destinationChain.name}.`
         ) : (
           'Send your funds to a different address. Be sure you mean to send it here.'
         )}
