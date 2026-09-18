@@ -22,6 +22,7 @@ import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
+import { NetworkWalletButton } from './NetworkWalletButton';
 import { NovaMinimizedStateWarning } from './NovaMinimizedStateWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
@@ -151,7 +152,9 @@ export function NetworkContainer({
   children: React.ReactNode;
 }) {
   const {
+    sourceWallet: { ecosystem: sourceEcosystem },
     destinationWallet: {
+      ecosystem: destinationEcosystem,
       account: { address: walletAddress },
     },
   } = useWallets();
@@ -161,11 +164,12 @@ export function NetworkContainer({
     if (!customAddress) {
       return false;
     }
-    if (addressesEqual(customAddress, walletAddress)) {
+    // On a cross-ecosystem transfer the destination wallet isn't the sender, so it is shown too
+    if (sourceEcosystem === destinationEcosystem && addressesEqual(customAddress, walletAddress)) {
       return false;
     }
     return utils.isAddress(customAddress);
-  }, [customAddress, walletAddress]);
+  }, [customAddress, walletAddress, sourceEcosystem, destinationEcosystem]);
 
   return (
     <div className="rounded border border-white/10">
@@ -183,7 +187,10 @@ export function NetworkContainer({
         }}
       >
         <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
-        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">{children}</div>
+        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">
+          {children}
+          {sourceEcosystem !== destinationEcosystem && <NetworkWalletButton chainId={network.id} />}
+        </div>
       </div>
     </div>
   );
