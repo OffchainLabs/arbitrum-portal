@@ -1,4 +1,4 @@
-import { Chain, arbitrum, mainnet } from 'wagmi/chains';
+import { Chain, arbitrum, mainnet, superposition } from 'wagmi/chains';
 
 import { ChainId } from '../../types/ChainId';
 import { solanaChain } from '../../wallet/solana/network';
@@ -29,6 +29,8 @@ export function getWagmiChain(chainId: number): Chain {
   }
 
   switch (chainId) {
+    case ChainId.Superposition:
+      return superposition;
     case ChainId.Solana:
       return solanaChain;
 

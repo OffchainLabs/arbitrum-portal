@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
+import { useWallets } from '../../wallet/hooks/useWallets';
 
 export function useSyncConnectedChainToQueryParams() {
-  const { chain } = useAccount();
-  const { accountType } = useAccountType(undefined, chain?.id);
+  const { sourceWallet } = useWallets();
+  const chainId = sourceWallet.account.chainId;
+  const { accountType } = useAccountType(sourceWallet.account.address, chainId);
   const [shouldSync, setShouldSync] = useState(false);
   const [didSync, setDidSync] = useState(false);
   const { isFeatureDisabled } = useDisabledFeatures();
@@ -20,29 +21,29 @@ export function useSyncConnectedChainToQueryParams() {
   );
 
   const setSourceChainToConnectedChain = useCallback(() => {
-    if (!chain) {
+    if (!chainId) {
       return;
     }
 
     const { sourceChainId: sourceChain, destinationChainId: destinationChain } =
       sanitizeQueryParams({
-        sourceChainId: chain.id,
+        sourceChainId: chainId,
         destinationChainId: undefined,
         disableTransfersToNonArbitrumChains,
       });
 
     setQueryParams({ sourceChain, destinationChain });
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
+  }, [chainId, setQueryParams, disableTransfersToNonArbitrumChains]);
 
   useEffect(() => {
-    if (!chain || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
+    if (!chainId || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
       return;
     }
 
-    if (sourceChain !== chain.id) {
+    if (sourceChain !== chainId) {
       setSourceChainToConnectedChain();
     }
-  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
+  }, [accountType, chainId, setSourceChainToConnectedChain, sourceChain]);
 
   useEffect(() => {
     if (shouldSync) {
@@ -57,9 +58,9 @@ export function useSyncConnectedChainToQueryParams() {
 
   useEffect(() => {
     // When the chain is connected and we should sync, and we haven't synced yet, sync the connected chain to the query params
-    if (chain && shouldSync && !didSync) {
+    if (chainId && shouldSync && !didSync) {
       setSourceChainToConnectedChain();
       setDidSync(true);
     }
-  }, [chain, shouldSync, didSync, setSourceChainToConnectedChain]);
+  }, [chainId, shouldSync, didSync, setSourceChainToConnectedChain]);
 }

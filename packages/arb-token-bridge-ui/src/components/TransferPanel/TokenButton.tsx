@@ -8,6 +8,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useTokenLists } from '../../hooks/useTokenLists';
+import { getSourceNativeCurrencyChainId } from '../../services/nativeCurrency';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -31,7 +32,9 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): Reac
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrency({
+    chainId: getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id),
+  });
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {

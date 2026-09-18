@@ -5,6 +5,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { getSourceNativeCurrencyChainId } from '../../services/nativeCurrency';
 import { SafeImage } from '../common/SafeImage';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
@@ -29,7 +30,9 @@ export const TokenLogo = ({
 
   const [networks] = useNetworks();
   const { childChain } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrency({
+    chainId: getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id),
+  });
 
   const src = useMemo(() => {
     // Override to show the native currency logo

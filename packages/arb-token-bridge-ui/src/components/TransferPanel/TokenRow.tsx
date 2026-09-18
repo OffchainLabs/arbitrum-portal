@@ -14,6 +14,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
+import { getSourceNativeCurrencyChainId } from '../../services/nativeCurrency';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -27,6 +28,7 @@ import {
   sanitizeTokenSymbol,
 } from '../../util/TokenUtils';
 import { getNetworkName } from '../../util/networks';
+import { getNativeTokenAddress } from '../../wallet/constants';
 import { SafeImage } from '../common/SafeImage';
 import { StatusBadge } from '../common/StatusBadge';
 import { Loader } from '../common/atoms/Loader';
@@ -46,11 +48,17 @@ function StyledLoader() {
   );
 }
 
-function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
+function TokenListInfo({
+  token,
+  isDestination = false,
+}: {
+  token: ERC20BridgeToken | null;
+  isDestination?: boolean;
+}) {
   const [networks] = useNetworks();
   const { childChain } = useNetworksRelationship(networks);
   const { isCustom: childChainNativeCurrencyIsCustom } = useNativeCurrency({
-    chainId: childChain.id,
+    chainId: getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id),
   });
   const sourceChainNativeCurrency = useNativeCurrency({
     chainId: networks.sourceChain.id,
@@ -91,7 +99,10 @@ function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
 
   if (!token) {
     const nativeTokenChain = getNetworkName(
-      (childChainNativeCurrencyIsCustom ? childChain : networks.sourceChain).id,
+      isDestination &&
+        getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id) !== childChain.id
+        ? networks.destinationChain.id
+        : (childChainNativeCurrencyIsCustom ? childChain : networks.sourceChain).id,
     );
     return <span className="flex text-xs text-white/70">Native token on {nativeTokenChain}</span>;
   }
@@ -134,7 +145,12 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
   const [networks] = useNetworks();
   const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const chainId = isDepositMode ? parentChain.id : childChain.id;
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrency({
+    chainId: getSourceNativeCurrencyChainId(
+      options?.isDestination ? networks.destinationChain.id : networks.sourceChain.id,
+      childChain.id,
+    ),
+  });
   const overrideToken = useMemo(() => {
     const override = getTokenOverride({
       fromToken: token?.address,
@@ -481,10 +497,23 @@ export function TokenRow({
     networks.sourceChain.id === ChainId.ApeChain ? sourceNativeCurrency : destinationNativeCurrency;
   const ethNativeCurrency =
     networks.sourceChain.id === ChainId.ApeChain ? destinationNativeCurrency : sourceNativeCurrency;
-  const nativeCurrencyForUsd = !token ? apeNativeCurrency : ethNativeCurrency;
+  const nativeCurrencyForUsd = !token
+    ? getSourceNativeCurrencyChainId(networks.sourceChain.id, networks.destinationChain.id) ===
+      networks.sourceChain.id
+      ? isDestination
+        ? destinationNativeCurrency
+        : sourceNativeCurrency
+      : apeNativeCurrency
+    : ethNativeCurrency;
   const nativeCurrencyPrice = nativeCurrencyForUsd.isCustom
     ? tokensFromLists[nativeCurrencyForUsd.address.toLowerCase()]?.priceUSD
-    : ethPrice;
+    : nativeCurrencyForUsd.symbol === 'ETH'
+      ? ethPrice
+      : tokensFromLists[
+          getNativeTokenAddress(
+            isDestination ? networks.destinationChain.id : networks.sourceChain.id,
+          )
+        ]?.priceUSD;
 
   const amountForPriceUSD = balance === null ? null : Number(utils.formatUnits(balance, decimals));
   const priceUSD =
@@ -540,7 +569,7 @@ export function TokenRow({
           {/* Row 2: Contract or token list info + USD value */}
           <div className="text-left flex items-center">
             {!token || addressesEqual(token.address, constants.AddressZero) ? (
-              <TokenListInfo token={token} />
+              <TokenListInfo token={token} isDestination={isDestination} />
             ) : (
               <TokenContractLink token={token} isDestination={isDestination} />
             )}
@@ -552,7 +581,7 @@ export function TokenRow({
           {/* Row 3: Token list */}
           {hasTokenListInfo && (
             <div className="col-span-2 text-left">
-              <TokenListInfo token={token} />
+              <TokenListInfo token={token} isDestination={isDestination} />
             </div>
           )}
         </div>

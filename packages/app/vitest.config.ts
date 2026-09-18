@@ -13,6 +13,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@bridge-networks': path.resolve(
+        __dirname,
+        '../arb-token-bridge-ui/src/wallet/networks/disabled.ts',
+      ),
       '@/common': path.resolve(__dirname, '../portal/common'),
       '@/bridge': path.resolve(__dirname, '../arb-token-bridge-ui/src'),
       '@/app-lib': path.resolve(__dirname, './src/lib'),

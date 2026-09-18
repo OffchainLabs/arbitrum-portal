@@ -6,6 +6,10 @@ import { getWalletEcosystem } from '../getWalletEcosystem';
 import { selectWallets } from '../selectWallets';
 import type { WalletEcosystem, WalletHandle } from '../types';
 
+export function useWalletForChain(chainId: number) {
+  return useContext(WalletContext)[getWalletEcosystem(chainId)];
+}
+
 export function useWallets() {
   const [{ sourceChain, destinationChain }] = useNetworks();
   const wallets = useContext(WalletContext);

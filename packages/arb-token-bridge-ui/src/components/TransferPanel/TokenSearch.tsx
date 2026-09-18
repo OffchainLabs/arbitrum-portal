@@ -1,6 +1,5 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { BigNumber, constants } from 'ethers';
-import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
 import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
@@ -15,10 +14,11 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useTokenLists } from '../../hooks/useTokenLists';
+import { getSourceNativeCurrencyChainId } from '../../services/nativeCurrency';
 import { getTokenData, getUsdcToken } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual, normalizeAddress } from '../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
@@ -43,6 +43,7 @@ import {
 } from '../../util/TokenUtils';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { getNativeTokenAddress } from '../../wallet/constants';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { resolveTokenAddress } from '../../wallet/resolveTokenAddress';
@@ -177,7 +178,9 @@ function TokensPanel({
   const { sourceWallet } = useWallets();
   const walletAddress = sourceWallet.account.address;
   const isConnected = sourceWallet.isConnected;
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrency({
+    chainId: getSourceNativeCurrencyChainId(networks.sourceChain.id, childChain.id),
+  });
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -364,6 +367,12 @@ function TokensPanel({
           return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
         }
 
+        if (
+          address === getNativeTokenAddress(networks.sourceChain.id) &&
+          address !== constants.AddressZero
+        )
+          return false;
+
         // Derive the token object from the address string
         let token = tokensFromUser[address] || tokensFromLists[address];
 
@@ -536,7 +545,7 @@ function TokensPanel({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!isAddress(newToken) || isAddingToken) {
+    if (!isValidAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
       return;
     }
 
@@ -668,14 +677,14 @@ function TokensPanel({
         variant="secondary"
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
-        disabled={!isAddress(newToken)}
+        disabled={!isValidAddressForChain(newToken, networks.sourceChain.id)}
         className="border border-gray-dark py-1"
         aria-label="Add New Token"
       >
         Add
       </Button>
     ),
-    [isAddingToken, newToken],
+    [isAddingToken, newToken, networks.sourceChain.id],
   );
 
   return (
