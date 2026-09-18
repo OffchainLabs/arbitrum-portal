@@ -21,7 +21,7 @@ export enum DestinationAddressErrors {
 
 export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks();
-  const { destinationWallet } = useWallets();
+  const { sourceWallet, destinationWallet } = useWallets();
   const address = destinationWallet.account.address;
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
   const [{ destinationAddress: destinationAddressFromQueryParams }, setQueryParams] =
@@ -79,6 +79,8 @@ export const CustomDestinationAddressInput = () => {
             <span className="font-semibold">must specify an address</span> you&apos;d like the funds
             sent to.
           </>
+        ) : sourceWallet !== destinationWallet && !address ? (
+          `Enter the recipient address on ${networks.destinationChain.name}.`
         ) : (
           'Send your funds to a different address. Be sure you mean to send it here.'
         )}

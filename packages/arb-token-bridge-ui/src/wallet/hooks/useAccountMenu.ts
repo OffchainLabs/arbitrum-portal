@@ -1,13 +1,18 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import Resolution from '@unstoppabledomains/resolution';
 import { useEffect, useMemo, useState } from 'react';
-import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
+import { isAddress } from 'viem';
+import { useEnsAvatar, useEnsName } from 'wagmi';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { ChainId } from '../types/ChainId';
-import { shortenAddress } from '../util/CommonUtils';
-import { useArbQueryParams } from './useArbQueryParams';
+import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useNetworks } from '../../hooks/useNetworks';
+import { ChainId } from '../../types/ChainId';
+import { shortenAddress } from '../../util/CommonUtils';
+import { getChainMetadata } from '../../util/networkMetadata';
+import { useWalletModal } from './useWalletModal';
+import { useWalletForChain } from './useWallets';
 
 type UDInfo = { name: string | null };
 const udInfoDefaults: UDInfo = { name: null };
@@ -38,14 +43,20 @@ async function tryLookupUDName(provider: JsonRpcProvider, address: string) {
   }
 }
 
-export const useAccountMenu = () => {
-  const { address, chain } = useAccount();
+export const useAccountMenu = (chainId?: number) => {
+  const [networks] = useNetworks();
+  const selectedChainId = chainId ?? networks.sourceChain.id;
+  const wallet = useWalletForChain(selectedChainId);
+  const { address } = wallet.account;
+  const evmAddress = address && isAddress(address) ? address : undefined;
+  const chain = getChainMetadata(selectedChainId);
+  const { openConnectModal } = useWalletModal(selectedChainId);
 
   const [, setQueryParams] = useArbQueryParams();
 
   const [udInfo, setUDInfo] = useState<UDInfo>(udInfoDefaults);
   const { data: ensName } = useEnsName({
-    address,
+    address: evmAddress,
     chainId: ChainId.Ethereum,
   });
 
@@ -55,17 +66,14 @@ export const useAccountMenu = () => {
   });
 
   useEffect(() => {
-    if (!address) return;
-    async function resolveUdName() {
-      const udName = await tryLookupUDName(
-        getProviderForChainId(ChainId.Ethereum),
-        address as string,
-      );
+    if (!evmAddress) return;
+    const resolveUdName = async () => {
+      const udName = await tryLookupUDName(getProviderForChainId(ChainId.Ethereum), evmAddress);
 
       setUDInfo({ name: udName });
-    }
+    };
     resolveUdName();
-  }, [address]);
+  }, [evmAddress]);
 
   const accountShort = useMemo(() => {
     if (typeof address === 'undefined') {
@@ -76,24 +84,24 @@ export const useAccountMenu = () => {
   }, [address]);
 
   useEffect(() => {
-    if (!address) return;
-    async function resolveUdName() {
-      const udName = await tryLookupUDName(
-        getProviderForChainId(ChainId.Ethereum),
-        address as string,
-      );
+    if (!evmAddress) return;
+    const resolveUdName = async () => {
+      const udName = await tryLookupUDName(getProviderForChainId(ChainId.Ethereum), evmAddress);
 
       setUDInfo({ name: udName });
-    }
+    };
     resolveUdName();
-  }, [address]);
+  }, [evmAddress]);
 
   return {
     address,
     accountShort,
-    ensName,
-    ensAvatar,
-    udInfo,
+    ensName: evmAddress ? ensName : undefined,
+    ensAvatar: evmAddress ? ensAvatar : wallet.account.walletInfo?.icon,
+    udInfo: evmAddress ? udInfo : udInfoDefaults,
+    isConnected: wallet.isConnected,
+    disconnect: wallet.disconnect,
+    openConnectModal,
     chain,
     setQueryParams,
   };
