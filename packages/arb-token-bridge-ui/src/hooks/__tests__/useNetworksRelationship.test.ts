@@ -1,10 +1,9 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { renderHook } from '@testing-library/react';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { Chain } from 'wagmi/chains';
 
 import { ChainId } from '../../types/ChainId';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { orbitMainnets } from '../../util/orbitChainsList';
 import { useNetworksRelationship } from '../useNetworksRelationship';
 
@@ -16,7 +15,7 @@ type RelationshipCase = {
 };
 
 /**
- * The hook derives the parent/child chains (and their providers) purely from
+ * The hook derives the parent/child chains purely from
  * `isDepositMode`: on a deposit the source is the parent and the destination the
  * child; on a withdrawal it's reversed. LiFi "sibling" pairs override the
  * deposit/withdrawal direction (the designated parent is treated as the "from"
@@ -89,34 +88,28 @@ describe('useNetworksRelationship', () => {
   });
 
   it.each(cases)('$label', ({ sourceChainId, destinationChainId, isDepositMode }) => {
-    const sourceChain = { id: sourceChainId } as unknown as Chain;
-    const destinationChain = { id: destinationChainId } as unknown as Chain;
-    const sourceChainProvider = {} as unknown as StaticJsonRpcProvider;
-    const destinationChainProvider = {} as unknown as StaticJsonRpcProvider;
+    const sourceChain = getChainMetadata(sourceChainId);
+    const destinationChain = getChainMetadata(destinationChainId);
 
     const { result } = renderHook(() =>
       useNetworksRelationship({
         sourceChain,
-        sourceChainProvider,
         destinationChain,
-        destinationChainProvider,
       }),
     );
 
+    expect(result.current).not.toHaveProperty('parentChainProvider');
+    expect(result.current).not.toHaveProperty('childChainProvider');
     expect(result.current.isDepositMode).toBe(isDepositMode);
 
     if (isDepositMode) {
       // Deposit: source is the parent, destination is the child.
       expect(result.current.parentChain).toBe(sourceChain);
-      expect(result.current.parentChainProvider).toBe(sourceChainProvider);
       expect(result.current.childChain).toBe(destinationChain);
-      expect(result.current.childChainProvider).toBe(destinationChainProvider);
     } else {
       // Withdrawal: destination is the parent, source is the child.
       expect(result.current.parentChain).toBe(destinationChain);
-      expect(result.current.parentChainProvider).toBe(destinationChainProvider);
       expect(result.current.childChain).toBe(sourceChain);
-      expect(result.current.childChainProvider).toBe(sourceChainProvider);
     }
   });
 });
