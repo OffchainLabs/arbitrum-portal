@@ -48,7 +48,7 @@ import {
 } from '../../state/app/state';
 import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
-import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
+import { getBridgeTransferProperties, getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
@@ -158,7 +158,7 @@ export function TransferPanel() {
   const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
   const {
-    current: { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode },
+    current: { childChain, parentChain, isDepositMode },
   } = useLatest(useNetworksRelationship(latestNetworks.current));
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
@@ -521,7 +521,9 @@ export function TransferPanel() {
     const destinationAddress = latestDestinationAddress.current;
 
     try {
-      const { sourceChainProvider, destinationChainProvider, sourceChain } = latestNetworks.current;
+      const { sourceChain, destinationChain } = latestNetworks.current;
+      const sourceChainProvider = getProviderForChainId(sourceChain.id);
+      const destinationChainProvider = getProviderForChainId(destinationChain.id);
 
       const cctpTransferStarter = new CctpTransferStarter({
         sourceChainProvider,
@@ -873,7 +875,9 @@ export function TransferPanel() {
     setTransferring(true);
 
     try {
-      const { sourceChainProvider, destinationChainProvider } = latestNetworks.current;
+      const { sourceChain, destinationChain } = latestNetworks.current;
+      const sourceChainProvider = getProviderForChainId(sourceChain.id);
+      const destinationChainProvider = getProviderForChainId(destinationChain.id);
 
       if (!(await confirmCustomDestinationAddress())) {
         return;
@@ -1130,8 +1134,8 @@ export function TransferPanel() {
         // token suspension handling
         const isTokenSuspended = !(await isGatewayRegistered({
           erc20ParentChainAddress: selectedToken.address,
-          parentChainProvider,
-          childChainProvider,
+          parentChainProvider: getProviderForChainId(parentChain.id),
+          childChainProvider: getProviderForChainId(childChain.id),
         }));
         if (isTokenSuspended) {
           warningToast(
