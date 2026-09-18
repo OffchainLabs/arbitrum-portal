@@ -2,12 +2,16 @@ import { Chain } from 'wagmi/chains';
 import * as chains from 'wagmi/chains';
 
 import { ChainId } from '../types/ChainId';
+import { isSupportedChainId } from '../util/chainUtils';
+import { getChainMetadata } from '../util/networkMetadata';
 import { getCustomChainFromLocalStorageById, getSupportedChainIds } from '../util/networks';
 import { getOrbitChains, orbitChains } from '../util/orbitChainsList';
 import * as customChains from '../util/wagmi/wagmiAdditionalNetworks';
 import { chainToWagmiChain } from '../util/wagmi/wagmiAdditionalNetworks';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 
 const chainQueryParams = [
+  'solana',
   'ethereum',
   'sepolia',
   'arbitrum-one',
@@ -23,19 +27,35 @@ const chainQueryParams = [
 export type ChainKeyQueryParam = (typeof chainQueryParams)[number];
 export type ChainQueryParam = ChainKeyQueryParam | ChainId | number | string;
 
+function isNonEvmChain(chainId: number): boolean {
+  try {
+    return getWalletEcosystem(chainId) !== 'evm';
+  } catch {
+    return false;
+  }
+}
+
 export function isValidChainQueryParam(value: string | number): boolean {
   if (typeof value === 'string') {
     const isValidCoreChainSlug = (chainQueryParams as readonly string[]).includes(value);
     const isValidOrbitChainSlug = getOrbitChains().some((chain) => chain.slug === value);
-    return isValidCoreChainSlug || isValidOrbitChainSlug;
+    if (!isValidCoreChainSlug) {
+      return isValidOrbitChainSlug;
+    }
+    // Chains of other ecosystems are only valid while that ecosystem is enabled
+    const { id } = getChainForChainKeyQueryParam(value as ChainKeyQueryParam);
+    return !isNonEvmChain(id) || isSupportedChainId(id);
   }
 
   const supportedNetworkIds = getSupportedChainIds({ includeTestnets: true });
-  return supportedNetworkIds.includes(value);
+  return supportedNetworkIds.includes(value) || (isNonEvmChain(value) && isSupportedChainId(value));
 }
 
 export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
   switch (chainId) {
+    case ChainId.Solana:
+      return 'solana';
+
     case ChainId.Ethereum:
       return 'ethereum';
 
@@ -85,6 +105,9 @@ export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
 
 export function getChainForChainKeyQueryParam(chainKeyQueryParam: ChainKeyQueryParam): Chain {
   switch (chainKeyQueryParam) {
+    case 'solana':
+      return getChainMetadata(ChainId.Solana);
+
     case 'ethereum':
       return chains.mainnet;
 
