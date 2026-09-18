@@ -13,6 +13,7 @@ import type { EcosystemConfig } from '.';
 
 export const evmEcosystem: EcosystemConfig = {
   isEnabled: () => true,
+  name: 'EVM',
   address: {
     isValid: (address) => isAddress(address),
     // EVM addresses are case-insensitive: lowercasing drops the checksum casing
@@ -27,4 +28,5 @@ export const evmEcosystem: EcosystemConfig = {
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: [mainnet, sepolia, arbitrum, arbitrumNova, arbitrumSepolia, base, baseSepolia],
+  namespace: 'eip155',
 };

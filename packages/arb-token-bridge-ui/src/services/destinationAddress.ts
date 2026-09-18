@@ -21,6 +21,27 @@ export function requiresRecipientAddress({
   return isCrossEcosystem && !!sourceWallet.account.address && !destinationWallet.account.address;
 }
 
+/**
+ * Recipient to point out in the UI: the typed destination address, or on a cross-ecosystem transfer
+ * the destination wallet, since the funds never go back to the sender.
+ */
+export function getRecipientToHighlight({
+  destinationAddress,
+  sourceWallet,
+  destinationWallet,
+}: {
+  destinationAddress: string | undefined;
+  sourceWallet: Pick<WalletHandle, 'ecosystem'>;
+  destinationWallet: Pick<WalletHandle, 'ecosystem' | 'account'>;
+}): string | undefined {
+  if (destinationAddress) {
+    return destinationAddress;
+  }
+  return sourceWallet.ecosystem !== destinationWallet.ecosystem
+    ? destinationWallet.account.address
+    : undefined;
+}
+
 export async function getDestinationAddressWarning({
   destinationAddress,
   accountType,
