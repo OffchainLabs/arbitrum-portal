@@ -1,17 +1,19 @@
 import { useCallback, useState } from 'react';
-import { isAddress } from 'viem';
-import { useConfig } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
-import { resumeLifiRoute } from '@/token-bridge-sdk/LifiRouteExecutor';
 
 import { GET_HELP_LINK } from '../../constants';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { useClaimWithdrawal } from '../../hooks/useClaimWithdrawal';
-import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
-import { useRedeemRetryable } from '../../hooks/useRedeemRetryable';
-import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
+import { useCanonicalHistoryActions } from '../../hooks/useCanonicalHistoryActions';
+import { useLifiHistoryActions } from '../../hooks/useLifiHistoryActions';
 import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import {
+  getTransactionType,
+  isLifiTransfer,
+  isLifiTransferResumable,
+  isOftTransfer,
+  isTxPending,
+} from '../../services/history';
 import {
   DepositStatus,
   LifiMergedTransaction,
@@ -19,28 +21,14 @@ import {
   WithdrawalStatus,
 } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
-import { useClaimCctp } from '../../state/cctpState';
-import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isLifiRouteComplete } from '../../util/LifiTransactionStatus';
 import { formatAmount } from '../../util/NumberUtils';
-import { sanitizeTokenSymbol } from '../../util/TokenUtils';
-import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
-import { useWalletForChain } from '../../wallet/hooks/useWallets';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { errorToast } from '../common/atoms/Toast';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
-import {
-  getTransactionType,
-  isLifiTransfer,
-  isLifiTransferResumable,
-  isOftTransfer,
-  isTxPending,
-} from './helpers';
 
 const actionRowPrimaryButtonClassName = 'w-14 rounded bg-lime-dark p-2 text-xs text-white';
 
@@ -167,81 +155,31 @@ function LifiResumeControls({
   isResuming: boolean;
   setIsResuming: (isResuming: boolean) => void;
 }) {
-  const wallet = useWalletForChain(tx.sourceChainId);
-  const wagmiConfig = useConfig();
-  const { switchChainAsync } = useSwitchNetworkWithConfig();
-  const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
-    (state) => state.updateTransaction,
-  );
+  const { isConnected, isSender, resume } = useLifiHistoryActions(tx, updateTransaction);
   const [dialogProps, openDialog] = useDialog2();
 
   const handleResumeLifiRoute = useCallback(async () => {
-    if (!tx.lifiRoute) {
-      return;
-    }
-
     try {
       setIsResuming(true);
-      await resumeLifiRoute(tx.lifiRoute, {
-        wagmiConfig,
-        switchChainAsync,
-        onApprovalRequest: async (approvalRequest) => {
-          const waitForInput = openDialog('approve_lifi_token', {
-            lifiApproval: { approvalRequest },
-          });
-          const [confirmed] = await waitForInput();
-          return confirmed;
-        },
-        onRouteUpdate: (lifiRoute) => {
-          const transactionUpdates = {
-            lifiRoute,
-            ...(isLifiRouteComplete(lifiRoute)
-              ? {
-                  status: WithdrawalStatus.CONFIRMED,
-                  destinationStatus: WithdrawalStatus.CONFIRMED,
-                }
-              : tx.destinationStatus === WithdrawalStatus.FAILURE &&
-                  !lifiRoute.steps.some((step) => step.execution?.status === 'FAILED')
-                ? { destinationStatus: WithdrawalStatus.UNCONFIRMED }
-                : {}),
-          };
-
-          if (updateTransaction) {
-            updateTransaction({ ...tx, ...transactionUpdates });
-            return;
-          }
-
-          updateLifiTransactionInCache(tx, transactionUpdates);
-        },
+      await resume(async (approvalRequest) => {
+        const waitForInput = openDialog('approve_lifi_token', {
+          lifiApproval: { approvalRequest },
+        });
+        const [confirmed] = await waitForInput();
+        return confirmed;
       });
-    } catch (error: unknown) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-
+    } catch {
       errorToast("Can't resume LiFi transaction.");
     } finally {
       setIsResuming(false);
     }
-  }, [
-    openDialog,
-    setIsResuming,
-    switchChainAsync,
-    tx,
-    updateLifiTransactionInCache,
-    updateTransaction,
-    wagmiConfig,
-  ]);
+  }, [openDialog, resume, setIsResuming]);
 
-  if (!wallet.isConnected) {
+  if (!isConnected) {
     return <ActionRowConnectButton />;
   }
 
-  if (
-    !wallet.account.address ||
-    !tx.sender ||
-    !addressesEqual(wallet.account.address, tx.sender)
-  ) {
+  if (!isSender) {
     return null;
   }
 
@@ -269,72 +207,21 @@ function CanonicalTransactionRowAction({
   isError,
   type,
 }: RowActionProps & { isError: boolean }) {
-  const actionChainId = isDepositReadyToRedeem(tx) ? tx.childChainId : tx.destinationChainId;
-  const wallet = useWalletForChain(actionChainId);
-  const chainId = wallet.account.chainId;
-  const connectedAddress = wallet.account.address;
-  const { switchChainAsync } = useSwitchNetworkWithConfig();
-  const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const evmSearchedAddress =
-    searchedAddress && isAddress(searchedAddress) ? searchedAddress : undefined;
-
-  const isViewingAnotherAddress = Boolean(
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
-  );
-
-  const tokenSymbol = sanitizeTokenSymbol(tx.asset, {
-    erc20L1Address: tx.tokenAddress,
-    chainId: tx.sourceChainId,
-  });
-
-  const { claim, isClaiming } = useClaimWithdrawal(tx);
-  const { claim: claimCctp, isClaiming: isClaimingCctp } = useClaimCctp(tx);
-  const { redeem, isRedeeming } = useRedeemRetryable(tx, evmSearchedAddress);
-
-  const isConnectedToCorrectNetworkForAction = chainId === actionChainId;
-
-  const handleRedeemRetryable = useCallback(async () => {
-    try {
-      if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: tx.childChainId });
-      }
-
-      await redeem();
-    } catch (error: unknown) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-      errorToast("Can't retry the deposit: " + formatTransactionError(error));
-    }
-  }, [tx, isConnectedToCorrectNetworkForAction, redeem, switchChainAsync]);
-
-  const handleClaim = useCallback(async () => {
-    try {
-      if (!isConnectedToCorrectNetworkForAction) {
-        await switchChainAsync({ chainId: tx.destinationChainId });
-      }
-
-      if (tx.isCctp) {
-        return await claimCctp();
-      }
-
-      return await claim();
-    } catch (error: unknown) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-
-      errorToast(
-        "Can't claim " +
-          (type === 'deposits' ? 'deposit' : 'withdrawal') +
-          ': ' +
-          formatTransactionError(error),
-      );
-    }
-  }, [claim, claimCctp, isConnectedToCorrectNetworkForAction, switchChainAsync, tx, type]);
+  const {
+    isConnected,
+    isRedeeming,
+    handleRedeemRetryable,
+    isClaiming,
+    isClaimingCctp,
+    isViewingAnotherAddress,
+    searchedAddress,
+    tokenSymbol,
+    handleClaim,
+    getHelpOnError,
+  } = useCanonicalHistoryActions(tx, type);
 
   if (isDepositReadyToRedeem(tx)) {
-    if (!wallet.isConnected) {
+    if (!isConnected) {
       return <ActionRowConnectButton />;
     }
 
@@ -366,7 +253,7 @@ function CanonicalTransactionRowAction({
       return null;
     }
 
-    if (!wallet.isConnected) {
+    if (!isConnected) {
       return <ActionRowConnectButton />;
     }
 
@@ -402,5 +289,9 @@ function CanonicalTransactionRowAction({
     );
   }
 
-  return isError ? <GetHelpButton networkId={chainId ?? actionChainId} tx={tx} /> : null;
+  return isError ? (
+    <Button variant="secondary" className="w-14 border-white/30 text-xs" onClick={getHelpOnError}>
+      Get help
+    </Button>
+  ) : null;
 }

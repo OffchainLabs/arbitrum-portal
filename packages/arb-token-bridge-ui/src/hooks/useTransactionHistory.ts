@@ -6,13 +6,15 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { type Address, isAddress, isHash } from 'viem';
+import { isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
+import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
 import {
   getDepositsWithoutStatusesFromCache,
   getLifiTransferDisplayStatus,
@@ -26,9 +28,7 @@ import {
   isOftTransfer,
   isSameTransaction,
   isTxPending,
-} from '../components/TransactionHistory/helpers';
-import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
-import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
+} from '../services/history';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';

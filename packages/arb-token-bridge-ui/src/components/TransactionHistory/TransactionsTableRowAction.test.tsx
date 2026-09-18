@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useState } from 'react';
+import { type PropsWithChildren, useState } from 'react';
 import type { Address } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,8 @@ import {
   createMockLifiTransaction,
 } from '../../test-utils/lifi';
 import { rejectLifiRouteBatchId } from '../../util/LifiTransactionStatus';
+import { WalletContext, defaultWalletContextValue } from '../../wallet/WalletContext';
+import type { WalletContextValue } from '../../wallet/types';
 import type { DialogProps } from '../common/Dialog2';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
@@ -34,21 +36,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('wagmi', () => ({
   useAccount: mocks.useAccount,
   useConfig: mocks.useConfig,
-}));
-
-vi.mock('../../wallet/hooks/useWallets', () => ({
-  useWalletForChain: () => {
-    const { address, chain, isConnected } = mocks.useAccount();
-    return {
-      account: {
-        ecosystem: 'evm',
-        address,
-        chainId: chain?.id,
-        status: isConnected ? 'connected' : 'disconnected',
-      },
-      isConnected,
-    };
-  },
 }));
 
 vi.mock('@/token-bridge-sdk/LifiTransferStarter', () => ({
@@ -137,6 +124,11 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
   } as LifiMergedTransaction['lifiRoute'],
 });
 
+let walletContext: WalletContextValue;
+function WalletTestWrapper({ children }: PropsWithChildren) {
+  return <WalletContext.Provider value={walletContext}>{children}</WalletContext.Provider>;
+}
+
 function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
   cleanup();
   render(
@@ -145,6 +137,7 @@ function renderAction(tx: LifiMergedTransaction = baseLifiTransaction) {
       type="deposits"
       updateTransaction={mocks.updateTransaction}
     />,
+    { wrapper: WalletTestWrapper },
   );
 }
 
@@ -158,6 +151,19 @@ describe.sequential('TransactionsTableRowAction', () => {
       chain: { id: 1 },
       isConnected: true,
     });
+    walletContext = {
+      ...defaultWalletContextValue,
+      evm: {
+        ...defaultWalletContextValue.evm,
+        account: {
+          ecosystem: 'evm',
+          status: 'connected',
+          address: '0x1111111111111111111111111111111111111111',
+          chainId: 1,
+        },
+        isConnected: true,
+      },
+    };
     mocks.useConfig.mockReturnValue({});
   });
 
@@ -226,7 +232,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         />
       );
     }
-    render(<ActionWithHistory />);
+    render(<ActionWithHistory />, { wrapper: WalletTestWrapper });
     fireEvent.click(screen.getByRole('button', { name: 'Resume LiFi transaction' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Approve token' }));
@@ -289,7 +295,7 @@ describe.sequential('TransactionsTableRowAction', () => {
         </>
       );
     }
-    render(<History />);
+    render(<History />, { wrapper: WalletTestWrapper });
     expect(
       screen
         .getByText('Funds arrive on Robinhood Chain')
@@ -357,6 +363,19 @@ describe.sequential('TransactionsTableRowAction', () => {
       chain: { id: 1 },
       isConnected: true,
     });
+
+    walletContext = {
+      ...walletContext,
+      evm: {
+        ...walletContext.evm,
+        account: {
+          ecosystem: 'evm',
+          status: 'connected',
+          address: '0x2222222222222222222222222222222222222222',
+          chainId: 1,
+        },
+      },
+    };
 
     renderAction();
 

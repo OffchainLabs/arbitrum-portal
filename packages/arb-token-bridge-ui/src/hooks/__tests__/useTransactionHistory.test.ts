@@ -7,7 +7,7 @@ import { type PropsWithChildren, createElement } from 'react';
 import { Address } from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as transactionHelpers from '../../components/TransactionHistory/helpers';
+import * as transactionHelpers from '../../services/history';
 import {
   DepositStatus,
   LifiMergedTransaction,
