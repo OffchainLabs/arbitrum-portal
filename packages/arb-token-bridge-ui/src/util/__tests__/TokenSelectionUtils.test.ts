@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
+import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
   getTokenForRow,
+  selectUsdcToken,
 } from '../TokenSelectionUtils';
 
 function buildToken(overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken {
@@ -19,6 +21,47 @@ function buildToken(overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken
     ...overrides,
   };
 }
+
+describe('selectUsdcToken', () => {
+  const storedToken = buildToken({ l2Address: CommonAddress.ArbitrumOne['USDC.e'] });
+  const canonicalUsdcToken = buildToken({ l2Address: CommonAddress.ArbitrumOne.USDC });
+  const sourceOnlyUsdcToken = buildToken({ lifiOnlyChainId: ChainId.ArbitrumOne });
+
+  it('falls back to the stored token when no USDC metadata resolved', () => {
+    expect(selectUsdcToken({ usdcToken: undefined, storedToken })).toBe(storedToken);
+  });
+
+  it('returns null when neither is available', () => {
+    expect(selectUsdcToken({ usdcToken: null, storedToken: undefined })).toBeNull();
+  });
+
+  it('prefers resolved canonical USDC metadata over the stored token', () => {
+    expect(selectUsdcToken({ usdcToken: canonicalUsdcToken, storedToken })).toBe(
+      canonicalUsdcToken,
+    );
+  });
+
+  it('keeps the stored token when the resolved USDC is only a source-only fallback', () => {
+    expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken })).toBe(storedToken);
+  });
+
+  it.each([
+    buildToken(),
+    buildToken({ l2Address: '' }),
+    buildToken({ l2Address: '0x0000000000000000000000000000000000000000' }),
+    buildToken({ l2Address: CommonAddress.ArbitrumOne.USDC, lifiOnlyChainId: ChainId.ArbitrumOne }),
+  ])('retains the source-only restriction for an unpaired stored entry: %j', (storedToken) => {
+    expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken })).toBe(
+      sourceOnlyUsdcToken,
+    );
+  });
+
+  it('uses the source-only fallback when nothing is stored', () => {
+    expect(selectUsdcToken({ usdcToken: sourceOnlyUsdcToken, storedToken: undefined })).toBe(
+      sourceOnlyUsdcToken,
+    );
+  });
+});
 
 describe('getTokenForRow', () => {
   const listedToken = buildToken({ symbol: 'USDT', address: CommonAddress.Ethereum.USDT });
@@ -124,6 +167,34 @@ describe('getTokenForRow', () => {
           tokensFromLists: { [listedUsdc.address]: listedUsdc },
         }),
       ).toBe(usdcToken);
+    });
+
+    it('keeps source-only row metadata when the list entry has no pair', () => {
+      const storedUsdc = buildToken({ address: CommonAddress.ArbitrumOne.USDC });
+      const sourceOnlyUsdc = { ...storedUsdc, lifiOnlyChainId: ChainId.ArbitrumOne };
+      expect(
+        getTokenForRow({
+          ...orbitArgs,
+          usdcToken: sourceOnlyUsdc,
+          tokensFromLists: { [storedUsdc.address]: storedUsdc },
+        }),
+      ).toBe(sourceOnlyUsdc);
+    });
+
+    it('keeps a stored mapping over a source-only USDC fallback', () => {
+      const storedUsdc = buildToken({
+        address: CommonAddress.ArbitrumOne.USDC,
+        l2Address: CommonAddress.ArbitrumOne.USDC,
+      });
+      const sourceOnlyUsdc = buildToken({ lifiOnlyChainId: ChainId.ArbitrumOne });
+
+      expect(
+        getTokenForRow({
+          ...orbitArgs,
+          tokensFromLists: { [storedUsdc.address]: storedUsdc },
+          usdcToken: sourceOnlyUsdc,
+        }),
+      ).toBe(storedUsdc);
     });
   });
 });

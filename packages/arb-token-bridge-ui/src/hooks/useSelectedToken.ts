@@ -14,6 +14,7 @@ import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { isLifiOnlyToken, isTokenAvailableOnChain } from '../util/TokenListUtils';
+import { selectUsdcToken } from '../util/TokenSelectionUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -23,7 +24,7 @@ import {
   isTokenSepoliaUSDC,
 } from '../util/TokenUtils';
 import { logger } from '../util/logger';
-import { isNetwork } from '../util/networks';
+import { getDestinationChainIds, isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
@@ -138,17 +139,15 @@ export const useSelectedToken = (): [
     ],
   );
 
-  const selectedToken = tokenFromSearchParams
-    ? usdcToken ||
-      bridgeTokens?.[tokenFromSearchParams] ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null
-    : null;
-
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
   }
+
+  const storedToken =
+    bridgeTokens?.[tokenFromSearchParams] ??
+    tokensFromUser[tokenFromSearchParams] ??
+    tokensFromLists[tokenFromSearchParams];
+  const selectedToken = selectUsdcToken({ usdcToken, storedToken });
 
   return [selectedToken, setSelectedToken] as const;
 };
@@ -228,6 +227,16 @@ export async function getUsdcToken({
     (isTokenMainnetUSDC(tokenAddress) && isParentChainEthereumMainnet) ||
     (isTokenSepoliaUSDC(tokenAddress) && isParentChainSepolia)
   ) {
+    // The UI also uses parent/child terminology for LiFi sibling-chain routes.
+    // Only a real canonical pair can resolve USDC through the child gateway.
+    if (!getDestinationChainIds(parentChainId).includes(childChainId)) {
+      return {
+        ...commonUSDC,
+        address: tokenAddress,
+        lifiOnlyChainId: parentChainId,
+      };
+    }
+
     let childChainUsdcAddress;
     try {
       childChainUsdcAddress = (
