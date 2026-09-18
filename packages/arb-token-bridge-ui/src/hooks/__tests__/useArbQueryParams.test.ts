@@ -199,7 +199,6 @@ describe('ChainParam custom encoder and decoder', () => {
       expect(ChainParam.encode(ChainId.ArbitrumOne)).toEqual('arbitrum-one');
       expect(ChainParam.encode(ChainId.Sepolia)).toEqual('sepolia');
       expect(ChainParam.encode(ChainId.ArbitrumSepolia)).toEqual('arbitrum-sepolia');
-      expect(ChainParam.encode(ChainId.Solana)).toBeUndefined();
       expect(ChainParam.encode(1234567890)).toBeUndefined();
       localStorage.setItem(
         customChainLocalStorageKey,

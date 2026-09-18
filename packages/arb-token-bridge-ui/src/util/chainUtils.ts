@@ -1,6 +1,7 @@
 import { arbitrum, mainnet } from '@wagmi/core/chains';
 
 import { ChainId } from '../types/ChainId';
+import { ecosystems } from '../wallet/ecosystems';
 import { getCustomChainsFromLocalStorage } from './networks';
 import { getOrbitChains } from './orbitChainsList';
 import {
@@ -32,6 +33,7 @@ export function isSupportedChainId(chainId: ChainId | undefined): chainId is Cha
     arbitrumLocal.id,
     l3Local.id,
     local.id,
+    ...(ecosystems.solana.isEnabled() ? [ChainId.Solana] : []),
     ...getOrbitChains().map((chain) => chain.chainId),
     ...customChainIds,
   ].includes(chainId);
