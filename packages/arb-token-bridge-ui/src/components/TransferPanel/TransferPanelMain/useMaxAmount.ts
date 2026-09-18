@@ -12,7 +12,8 @@ import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
-import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
+import { getSelectedRouteContext } from '../../../util/TransferRouteUtils';
+import { useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
 export function getLifiMaxAmount({

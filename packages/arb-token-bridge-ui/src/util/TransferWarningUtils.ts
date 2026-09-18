@@ -1,8 +1,8 @@
 import { BigNumber } from 'ethers';
 
-import { addressesEqual } from '../../util/AddressUtils';
-import { CommonAddress } from '../../util/CommonAddressUtils';
-import type { RouteContext } from './hooks/useRouteStore';
+import { addressesEqual } from './AddressUtils';
+import { CommonAddress } from './CommonAddressUtils';
+import type { RouteContext } from './TransferRouteUtils';
 
 type TokenAmounts = Pick<RouteContext, 'fromAmount' | 'toAmount'>;
 type RouteTokens = Pick<RouteContext['protocolData']['route'], 'fromToken' | 'toToken'>;

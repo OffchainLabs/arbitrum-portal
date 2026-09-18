@@ -1,27 +1,16 @@
-import { BigNumber, constants, utils } from 'ethers';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useCallback, useMemo, useState } from 'react';
+import useSWR from 'swr';
 
-import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
-import { getCctpContracts } from '@/token-bridge-sdk/cctp';
-
+import { fetchTokenApproval } from '../../application/fetchTokenApproval';
 import { TOKEN_APPROVAL_ARTICLE_LINK, ether } from '../../constants';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useETHPrice } from '../../hooks/useETHPrice';
-import { useGasPrice } from '../../hooks/useGasPrice';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
-import { getOftV2TransferConfig } from '../../token-bridge-sdk/oftUtils';
 import { shortenTxHash } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
-import {
-  fetchErc20L2GatewayAddress,
-  fetchErc20ParentChainGatewayAddress,
-} from '../../util/TokenUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -33,172 +22,51 @@ export type TokenApprovalDialogProps = UseDialogProps & {
   token: ERC20BridgeToken | null;
 };
 
-export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
-  const { address: walletAddress } = useAccount();
+export function TokenApprovalDialog({
+  fetchApproval = fetchTokenApproval,
+  ...props
+}: TokenApprovalDialogProps & { fetchApproval?: typeof fetchTokenApproval }) {
   const { isOpen, token, onClose } = props;
-
   const { ethToUSD } = useETHPrice();
-
   const [networks] = useNetworks();
-  const { sourceChain, destinationChain, sourceChainProvider, destinationChainProvider } = networks;
-  const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
-  const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
-  const gasPrice = useGasPrice({ chainId: sourceChain.id });
-  const chainId = useChainId();
-  const signer = useEthersSigner({ chainId });
-  const selectedRoute = useRouteStore((state) => state.selectedRoute);
-  const isCctp = selectedRoute === 'cctp';
-  const isOft = selectedRoute === 'oftV2';
-
+  const { parentChain, isDepositMode } = useNetworksRelationship(networks);
+  const { isEthereumMainnet } = isNetwork(parentChain.id);
+  const chainId = networks.sourceChain.id;
+  const {
+    sourceWallet: {
+      account: { address: sourceWalletAddress },
+    },
+  } = useWallets();
+  const route = useRouteStore((state) => state.selectedRoute);
   const [checked, setChecked] = useState(false);
-  const [estimatedGas, setEstimatedGas] = useState<BigNumber>(constants.Zero);
-  const [contractAddress, setContractAddress] = useState<string>('');
-
-  // Estimated gas fees, denominated in Ether, represented as a floating point number
-  const estimatedGasFees = useMemo(
-    () => parseFloat(utils.formatEther(estimatedGas.mul(gasPrice ?? constants.Zero))),
-    [estimatedGas, gasPrice],
+  const { data } = useSWR(
+    isOpen && token
+      ? {
+          sourceChainId: chainId,
+          destinationChainId: networks.destinationChain.id,
+          token,
+          route,
+          walletAddress: sourceWalletAddress,
+          key: 'tokenApproval',
+        }
+      : null,
+    fetchApproval,
   );
-
+  const estimatedGasFees = data?.estimatedGasFees;
+  const contractAddress = data?.contractAddress ?? '';
   const ethFeeText = useMemo(() => {
+    if (estimatedGasFees === undefined) return 'unavailable';
     const eth = formatAmount(estimatedGasFees, { symbol: ether.symbol });
     return eth;
   }, [estimatedGasFees]);
 
   const usdFeeText = useMemo(() => {
+    if (estimatedGasFees === undefined) return '';
     const usd = formatUSD(ethToUSD(estimatedGasFees));
     return `${isEthereumMainnet ? ` (${usd})` : ''}`;
   }, [estimatedGasFees, ethToUSD, isEthereumMainnet]);
 
   const approvalFeeText = `${ethFeeText} ${usdFeeText}`.trim();
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    async function getEstimatedGas() {
-      if (!token?.address) {
-        return;
-      }
-
-      let gasEstimate;
-
-      if (!signer) {
-        gasEstimate = constants.Zero;
-      } else if (isCctp) {
-        const cctpTransferStarter = new CctpTransferStarter({
-          sourceChainProvider,
-          destinationChainProvider,
-        });
-        gasEstimate = await cctpTransferStarter.approveTokenEstimateGas({
-          amount: constants.MaxUint256,
-          signer,
-        });
-      } else if (isOft) {
-        const oftTransferStarter = new OftV2TransferStarter({
-          sourceChainProvider,
-          destinationChainProvider,
-          sourceChainErc20Address: isDepositMode ? token.address : token.l2Address,
-        });
-        gasEstimate = await oftTransferStarter.approveTokenEstimateGas({
-          amount: constants.MaxUint256,
-          signer,
-        });
-      } else {
-        const bridgeTransferStarter = BridgeTransferStarterFactory.create({
-          sourceChainId: sourceChain.id,
-          sourceChainErc20Address: isDepositMode ? token.address : token.l2Address,
-          destinationChainId: destinationChain.id,
-          destinationChainErc20Address: isDepositMode ? token.l2Address : token.address,
-        });
-
-        gasEstimate = await bridgeTransferStarter.approveTokenEstimateGas({
-          signer,
-        });
-      }
-
-      if (gasEstimate) {
-        setEstimatedGas(gasEstimate);
-      }
-    }
-
-    getEstimatedGas();
-  }, [
-    isOpen,
-    isDepositMode,
-    isTestnet,
-    signer,
-    walletAddress,
-    token?.address,
-    token?.l2Address,
-    sourceChain,
-    sourceChainProvider,
-    destinationChain,
-    destinationChainProvider,
-    chainId,
-    isCctp,
-    isOft,
-  ]);
-
-  useEffect(() => {
-    const getContractAddress = async function () {
-      if (isOft) {
-        const oftTransferConfig = getOftV2TransferConfig({
-          sourceChainId: sourceChain.id,
-          destinationChainId: destinationChain.id,
-          sourceChainErc20Address: isDepositMode ? token?.address : token?.l2Address,
-        });
-
-        if (!oftTransferConfig.isValid) {
-          throw new Error('OFT transfer validation failed');
-        }
-
-        setContractAddress(oftTransferConfig.sourceChainAdapterAddress);
-        return;
-      }
-      if (isCctp) {
-        setContractAddress(
-          getCctpContracts({ sourceChainId: chainId })?.tokenMessengerContractAddress,
-        );
-        return;
-      }
-      if (!token?.address) {
-        setContractAddress('');
-        return;
-      }
-
-      if (isDepositMode) {
-        setContractAddress(
-          await fetchErc20ParentChainGatewayAddress({
-            erc20ParentChainAddress: token.address,
-            parentChainProvider,
-            childChainProvider,
-          }),
-        );
-        return;
-      }
-      setContractAddress(
-        await fetchErc20L2GatewayAddress({
-          erc20L1Address: token.address,
-          l2Provider: childChainProvider,
-        }),
-      );
-    };
-    getContractAddress();
-  }, [
-    chainId,
-    childChainProvider,
-    isCctp,
-    isDepositMode,
-    parentChainProvider,
-    token?.address,
-    token?.l2Address,
-    sourceChain.id,
-    destinationChain.id,
-    isOft,
-  ]);
 
   const closeWithReset = useCallback(
     (confirmed: boolean) => {
@@ -213,7 +81,9 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
       {...props}
       onClose={closeWithReset}
       title="Acknowledge approval and deposit fees"
-      actionButtonTitle={`Pay approval fee of ${approvalFeeText}`}
+      actionButtonTitle={
+        estimatedGasFees === undefined ? 'Approve token' : `Pay approval fee of ${approvalFeeText}`
+      }
       actionButtonProps={{ disabled: !checked }}
     >
       <div className="flex flex-col space-y-4 py-4">
@@ -223,15 +93,26 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
             <div>
               <span className="text-sm font-light">
                 I understand that I have to{' '}
-                <span className="font-medium">pay a one-time approval fee</span> of{' '}
-                <span className="font-medium">{ethFeeText}</span> {usdFeeText} for each new token or
-                spending cap.
+                <span className="font-medium">pay a one-time approval fee</span>
+                {estimatedGasFees !== undefined && (
+                  <>
+                    {' '}
+                    of <span className="font-medium">{ethFeeText}</span> {usdFeeText}
+                  </>
+                )}{' '}
+                for each new token or spending cap.
               </span>
             </div>
           }
           checked={checked}
           onChange={setChecked}
         />
+
+        {data && estimatedGasFees === undefined && (
+          <NoteBox>
+            Gas estimate unavailable. Your wallet will show the approval fee before you confirm.
+          </NoteBox>
+        )}
 
         <div className="text-sm">
           This transaction gives permission to the{' '}
@@ -248,7 +129,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {isOft && (
+          {data?.requiresMaximumApproval && (
             <NoteBox variant="warning">
               Note: USDT approvals for the LayerZero OFT contract must be set to the maximum amount.
               Please do not modify the approval amount, or the transaction may fail.

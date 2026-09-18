@@ -15,6 +15,7 @@ import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { isLifiOnlyToken } from '../../../util/TokenListUtils';
+import { EligibleRouteType, RouteData, RouteType } from '../../../util/TransferRouteUtils';
 import {
   isCctpEnabled as isCctpEnabledUtil,
   isLifiEnabled as isLifiEnabledUtil,
@@ -28,7 +29,7 @@ import { useIsArbitrumCanonicalTransfer } from '../hooks/useIsCanonicalTransfer'
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useIsOftV2Transfer } from '../hooks/useIsOftV2Transfer';
 import { defaultSlippage, useLifiSettingsStore } from '../hooks/useLifiSettingsStore';
-import { EligibleRouteType, RouteData, RouteType, useRouteStore } from './useRouteStore';
+import { useRouteStore } from './useRouteStore';
 
 /**
  * Determines the best route based on priority order.

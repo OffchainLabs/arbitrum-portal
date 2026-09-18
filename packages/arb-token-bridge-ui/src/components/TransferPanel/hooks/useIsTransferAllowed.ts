@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useAppState } from '../../../state';
+import { isLifiRoute } from '../../../util/TransferRouteUtils';
 import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useDestinationAddressError } from './useDestinationAddressError';
+import { useRouteStore } from './useRouteStore';
 
 export function useIsTransferAllowed() {
   const {

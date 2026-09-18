@@ -8,7 +8,7 @@ import {
   areTokensTheSame,
   getTransferWarningDialogType,
   hasHighAmountMismatch,
-} from './TransferWarningUtils';
+} from '../../util/TransferWarningUtils';
 
 function tokenAmount(amount: string, decimals = 18) {
   return {

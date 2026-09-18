@@ -2,7 +2,7 @@ import { constants, utils } from 'ethers';
 import { describe, expect, test } from 'vitest';
 
 import { GasEstimationStatus } from '../../../hooks/TransferPanel/useGasSummary';
-import { NativeCurrency } from '../../../hooks/useNativeCurrency';
+import { NativeCurrency } from '../../../types/NativeCurrency';
 import { getGasCostAndToken } from './getGasCostAndToken';
 
 describe('getGasCostAndToken', () => {

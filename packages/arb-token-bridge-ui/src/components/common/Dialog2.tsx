@@ -6,6 +6,7 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import type { DialogData, DialogType } from '../../types/TransferDialog';
 import { BuyPanelNetworkSelectionContainer } from '../BuyPanel/BuyPanel';
 import { RecoverFundsDialog } from '../RecoverFunds';
 import { AmountMismatchWarningDialog } from '../TransferPanel/AmountMismatchWarningDialog';
@@ -13,10 +14,7 @@ import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/Cus
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
-import {
-  LifiApprovalDialogData,
-  LifiTokenApprovalDialog,
-} from '../TransferPanel/LifiTokenApprovalDialog';
+import { LifiTokenApprovalDialog } from '../TransferPanel/LifiTokenApprovalDialog';
 import { NovaDepositWarningDialog } from '../TransferPanel/NovaDepositWarningDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
@@ -40,10 +38,6 @@ type WaitForInputFunction = () => Promise<[boolean, unknown]>;
 /**
  * Opens the dialog and returns a function which can be called to retrieve a {@link WaitForInputFunction}.
  */
-export type DialogData = {
-  lifiApproval?: LifiApprovalDialogData;
-};
-
 export type OpenDialogFunction = (
   dialogType: DialogType,
   dialogData?: DialogData,
@@ -53,32 +47,6 @@ export type OpenDialogFunction = (
  * Returns an array containing {@link DialogProps} and {@link OpenDialogFunction}.
  */
 type UseDialogResult = [DialogProps, OpenDialogFunction];
-
-export type DialogType =
-  | 'approve_token'
-  | 'approve_lifi_token'
-  | 'approve_cctp_usdc'
-  | 'approve_custom_fee_token'
-  | 'withdraw'
-  | 'deposit_token_new_token'
-  | 'deposit_token_user_added_token'
-  | 'scw_custom_destination_address'
-  | 'confirm_cctp_withdrawal'
-  | 'confirm_cctp_deposit'
-  | 'confirm_usdc_deposit'
-  | 'high_slippage_warning'
-  | 'amount_mismatch_warning'
-  | 'widget_transaction_history'
-  | 'token_selection'
-  | 'destination_token_selection'
-  | 'settings'
-  | 'recover_funds'
-  | 'source_network_selection'
-  | 'destination_network_selection'
-  | 'buy_panel_network_selection'
-  | 'nova_deposit_warning'
-  | 'trust_wallet_update'
-  | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
   const resolveRef = useRef<
@@ -203,3 +171,5 @@ export function DialogWrapper(props: DialogProps) {
       return null;
   }
 }
+
+export type { DialogType, DialogData } from '../../types/TransferDialog';

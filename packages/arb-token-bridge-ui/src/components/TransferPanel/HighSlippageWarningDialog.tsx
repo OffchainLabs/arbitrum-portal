@@ -5,10 +5,11 @@ import { useEffect } from 'react';
 import { RouteCost, Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
+import { getAmountToPay } from '../../util/TransferAmounts';
+import { getSelectedRouteContext } from '../../util/TransferRouteUtils';
+import { getAmountLoss } from '../../util/TransferWarningUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
-import { getAmountLoss } from './TransferWarningUtils';
-import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
-import { getAmountToPay } from './useTransferReadiness';
+import { useRouteStore } from './hooks/useRouteStore';
 
 type AmountProps =
   | {

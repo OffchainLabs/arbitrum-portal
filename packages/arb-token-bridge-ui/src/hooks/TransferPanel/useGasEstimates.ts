@@ -7,11 +7,9 @@ import type { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransfe
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
-import {
-  getSelectedRouteContext,
-  useRouteStore,
-} from '../../components/TransferPanel/hooks/useRouteStore';
+import { useRouteStore } from '../../components/TransferPanel/hooks/useRouteStore';
 import { BridgeTransferStarterFactory } from '../../token-bridge-sdk/BridgeTransferStarterFactory';
+import { getSelectedRouteContext } from '../../util/TransferRouteUtils';
 import { isValidAddressForChain } from '../../util/isValidAddressForChain';
 import { wagmiConfig } from '../../util/wagmi/setup';
 import { getNativeTokenAddress } from '../../wallet/constants';
