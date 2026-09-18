@@ -1,14 +1,45 @@
 import { describe, expect, it, vi } from 'vitest';
+import { zeroAddress } from 'viem';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/constants';
 import {
   LIFI_TRANSFER_LIST_ID,
   type TokenListWithId,
   isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
-import { addTokenFromSearch, tokenListsToSearchableTokenStorage } from './TokenSearchUtils';
+import {
+  NATIVE_CURRENCY_IDENTIFIER,
+  addTokenFromSearch,
+  getTokenPickerAddresses,
+  tokenListsToSearchableTokenStorage,
+} from './TokenSearchUtils';
+
+describe('getTokenPickerAddresses', () => {
+  const tokenAddress = 'So11111111111111111111111111111111111111112';
+
+  it('replaces the selected chain native address and ignores another chain native address', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [SOLANA_NATIVE_TOKEN_ADDRESS, zeroAddress, tokenAddress],
+        chainId: ChainId.Solana,
+        hasCustomNativeCurrency: false,
+      }),
+    ).toEqual([NATIVE_CURRENCY_IDENTIFIER, zeroAddress, tokenAddress]);
+  });
+
+  it('keeps zero-address tokens separate from a custom native currency', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [zeroAddress, tokenAddress],
+        chainId: ChainId.ApeChain,
+        hasCustomNativeCurrency: true,
+      }),
+    ).toEqual([NATIVE_CURRENCY_IDENTIFIER, zeroAddress, tokenAddress]);
+  });
+});
 
 describe('addTokenFromSearch', () => {
   const address = '0x0000000000000000000000000000000000000001';
