@@ -97,7 +97,10 @@ export class LifiTransferStarter extends BridgeTransferStarter<Omit<TransferProp
       transferType: this.transferType,
       status: 'pending',
       sourceChainProvider: this.sourceChainProvider,
-      sourceChainTransaction: fullTx ?? { hash: txHash },
+      sourceChainTransaction: fullTx ?? {
+        hash: txHash,
+        wait: () => this.sourceChainProvider.waitForTransaction(txHash),
+      },
       destinationChainProvider: this.destinationChainProvider,
       lifiRoute: route,
     };
