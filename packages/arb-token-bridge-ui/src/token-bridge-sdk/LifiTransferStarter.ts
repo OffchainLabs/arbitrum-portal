@@ -4,20 +4,33 @@ import type { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-t
 
 import type { GasEstimates } from '../hooks/arbTokenBridge.types';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../wallet/types';
 import type { TransferProps, TransferType } from './BridgeTransferStarter';
 import {
   LifiRouteExecutionProps,
   LifiTransferOverrides,
   executeLifiRoute,
 } from './LifiRouteExecutor';
+import { getProviderForChainId } from './utils';
+
+// LiFi reports an EVM transaction hash once the transaction is sent, and a Solana signature once
+// the transaction is confirmed
+const waitForSourceTransaction: Record<
+  WalletEcosystem,
+  (txHash: string, chainId: number) => Promise<unknown>
+> = {
+  evm: (txHash, chainId) => getProviderForChainId(chainId).waitForTransaction(txHash),
+  solana: () => Promise.resolve(),
+};
 
 type LifiTransferStarterProps = {
   lifiRoute: LifiCrosschainTransfersRoute;
 };
 
 /**
- * Runs a LiFi route from any ecosystem. It needs no provider: chain ids come from the route,
- * and LiFi signs through the wallet signers passed to `transfer`.
+ * Runs a LiFi route from any ecosystem. Chain ids come from the route and LiFi signs through the
+ * wallet signers passed to `transfer`, so the starter creates no provider up front.
  */
 export class LifiTransferStarter {
   public transferType: TransferType = 'lifi';
@@ -54,11 +67,15 @@ export class LifiTransferStarter {
     { executeRoute = executeLifiRoute }: LifiTransferOverrides = {},
   ) {
     const { txHash, route } = await executeRoute(this.lifiRoute.protocolData.route, props);
+    const { fromChainId } = this.lifiRoute;
 
     return {
       transferType: this.transferType,
       status: 'pending' as const,
-      sourceChainTransaction: { hash: txHash },
+      sourceChainTransaction: {
+        hash: txHash,
+        wait: () => waitForSourceTransaction[getWalletEcosystem(fromChainId)](txHash, fromChainId),
+      },
       lifiRoute: route,
     };
   }

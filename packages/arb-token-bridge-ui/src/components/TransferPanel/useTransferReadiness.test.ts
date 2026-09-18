@@ -398,3 +398,11 @@ describe.sequential('custom gas token decimals', () => {
     },
   );
 });
+
+describe.sequential('source wallet', () => {
+  it('is not ready while the source wallet is disconnected', () => {
+    Object.assign(data, { amount: '1' });
+    const { result } = renderReadiness(defaultWalletContextValue);
+    expect(result.current.transferReady).toEqual({ deposit: false, withdrawal: false });
+  });
+});

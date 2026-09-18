@@ -85,7 +85,7 @@ describe('LifiTransferStarter from Solana', () => {
     ).resolves.toEqual({
       transferType: 'lifi',
       status: 'pending',
-      sourceChainTransaction: { hash: signature },
+      sourceChainTransaction: { hash: signature, wait: expect.any(Function) },
       lifiRoute: executedRoute,
     });
     expect(executeRoute).toHaveBeenCalledExactlyOnceWith(quote.protocolData.route, props);
@@ -152,12 +152,9 @@ describe('Solana gas estimates', () => {
         lifiRoute: quote,
       });
       expect(starter).toBeInstanceOf(LifiTransferStarter);
-      await expect(
-        starter.transferEstimateGas({
-          amount: BigNumber.from(1),
-          from: 'So11111111111111111111111111111111111111112',
-        }),
-      ).resolves.toMatchObject({ estimatedParentChainGas: BigNumber.from(100000) });
+      await expect(starter.transferEstimateGas()).resolves.toMatchObject({
+        estimatedParentChainGas: BigNumber.from(100000),
+      });
       expect(provider).not.toHaveBeenCalled();
       expect(() =>
         BridgeTransferStarterFactory.create({
