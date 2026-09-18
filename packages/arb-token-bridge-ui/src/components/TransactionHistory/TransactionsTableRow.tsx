@@ -13,8 +13,7 @@ import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
-import { DepositStatus, MergedTransaction } from '../../state/app/state';
-import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+import { getAccountExplorerUrl } from '../../services/explorer';
 import {
   getDestinationNetworkTxId,
   getDestinationTransactionUrl,
@@ -24,7 +23,9 @@ import {
   isTxExpired,
   isTxFailed,
   isTxPending,
-} from './helpers';
+} from '../../services/history';
+import { MergedTransaction } from '../../state/app/state';
+import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isBatchTransfer } from '../../util/TokenDepositUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
@@ -254,7 +255,7 @@ export function TransactionsTableRow({
       </div>
       <div className="flex items-center space-x-2">
         <TransactionsTableExternalLink
-          href={`${getExplorerUrl(sourceChainId)}/address/${tx.sender}`}
+          href={getAccountExplorerUrl(sourceChainId, String(tx.sender))}
         >
           <span>
             <NetworkImage chainId={sourceChainId} className="h-5 w-5" />
@@ -269,7 +270,7 @@ export function TransactionsTableRow({
       </div>
       <div className="flex items-center space-x-2">
         <TransactionsTableExternalLink
-          href={`${getExplorerUrl(destinationChainId)}/address/${tx.destination ?? tx.sender}`}
+          href={getAccountExplorerUrl(destinationChainId, String(tx.destination ?? tx.sender))}
         >
           <NetworkImage chainId={destinationChainId} className="h-5 w-5" />
 
