@@ -22,9 +22,12 @@ import { resolveTokenAddress } from '../../wallet/resolveTokenAddress';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { TokenRow } from './TokenRow';
-import { useTokensFromLists } from './TokenSearchUtils';
+import {
+  NATIVE_CURRENCY_IDENTIFIER,
+  getTokenPickerAddresses,
+  useTokensFromLists,
+} from './TokenSearchUtils';
 
-const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
 const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function DestinationTokensPanel({
@@ -124,13 +127,11 @@ function DestinationTokensPanel({
       return token?.listIds.has(LIFI_TRANSFER_LIST_ID);
     });
 
-    // Add native currency if not already included
-    // For chains with custom native tokens, always add it even if AddressZero is present
-    if (nativeCurrency.isCustom || !lifiTokenAddresses.includes(constants.AddressZero)) {
-      lifiTokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    }
-
-    return lifiTokenAddresses
+    return getTokenPickerAddresses({
+      tokenAddresses: lifiTokenAddresses,
+      chainId: networks.destinationChain.id,
+      hasCustomNativeCurrency: nativeCurrency.isCustom,
+    })
       .filter((address) => {
         const token = tokensFromLists[address];
 

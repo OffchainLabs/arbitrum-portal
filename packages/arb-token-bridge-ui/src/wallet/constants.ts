@@ -1,9 +1,24 @@
 import { zeroAddress } from 'viem';
 
-import { ChainId } from '../types/ChainId';
+import { getWalletEcosystem } from './getWalletEcosystem';
+import type { WalletEcosystem } from './types';
 
 export const SOLANA_NATIVE_TOKEN_ADDRESS = '11111111111111111111111111111111';
 
+const nativeTokenAddresses: Record<WalletEcosystem, string> = {
+  evm: zeroAddress,
+  solana: SOLANA_NATIVE_TOKEN_ADDRESS,
+};
+
+const nativeTokenPriceAddresses: Record<WalletEcosystem, string | undefined> = {
+  evm: undefined,
+  solana: SOLANA_NATIVE_TOKEN_ADDRESS,
+};
+
 export function getNativeTokenAddress(chainId: number) {
-  return chainId === ChainId.Solana ? SOLANA_NATIVE_TOKEN_ADDRESS : zeroAddress;
+  return nativeTokenAddresses[getWalletEcosystem(chainId)];
+}
+
+export function getNativeTokenPriceAddress(chainId: number) {
+  return nativeTokenPriceAddresses[getWalletEcosystem(chainId)];
 }

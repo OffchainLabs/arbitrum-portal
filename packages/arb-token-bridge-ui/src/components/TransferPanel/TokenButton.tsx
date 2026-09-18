@@ -3,7 +3,7 @@ import { utils } from 'ethers';
 import { useMemo } from 'react';
 
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -31,7 +31,7 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): Reac
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrencyForTransfer();
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {

@@ -11,11 +11,12 @@ import { useSetInputAmount } from '../../../hooks/TransferPanel/useSetInputAmoun
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { useMode } from '../../../hooks/useMode';
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
+import { getNativeCurrencyPrice } from '../../../services/nativeCurrency';
 import { formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getNetworkName } from '../../../util/networks';
@@ -67,11 +68,6 @@ export const useAmount2InputVisibility = create<{
 
 const Input1 = React.memo(() => {
   const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
-  const sourceNativeCurrency = useNativeCurrency({
-    chainId: networks.sourceChain.id,
-  });
-  const destinationNativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { ethPrice } = useETHPrice();
   const [{ amount }] = useArbQueryParams();
   const { setAmount } = useSetInputAmount();
@@ -80,6 +76,12 @@ const Input1 = React.memo(() => {
   const { errorMessages } = useTransferReadiness();
   const [selectedToken] = useSelectedToken();
   const { data: tokensFromLists } = useTokensFromLists();
+  const nativeCurrency = useNativeCurrencyForTransfer({ tokenAddress: selectedToken?.address });
+  const nativeCurrencyPrice = getNativeCurrencyPrice({
+    ...nativeCurrency,
+    tokensFromLists,
+    ethPrice,
+  });
 
   const isMaxAmount = amount === AmountQueryParamEnum.MAX;
 
@@ -119,14 +121,6 @@ const Input1 = React.memo(() => {
   }, [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id]);
 
   const usdValue = useMemo(() => {
-    const nativeCurrency =
-      !selectedToken && destinationNativeCurrency.isCustom
-        ? destinationNativeCurrency
-        : sourceNativeCurrency;
-    const nativeCurrencyPrice = nativeCurrency.isCustom
-      ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
-
     const value = getUsdValueForAmount({
       amount,
       selectedToken,
@@ -136,14 +130,7 @@ const Input1 = React.memo(() => {
     });
 
     return value ? formatUSD(value) : null;
-  }, [
-    amount,
-    destinationNativeCurrency,
-    ethPrice,
-    selectedToken,
-    sourceNativeCurrency,
-    tokensFromLists,
-  ]);
+  }, [amount, selectedToken, nativeCurrency, nativeCurrencyPrice, tokensFromLists]);
 
   return (
     <TransferPanelMainInput

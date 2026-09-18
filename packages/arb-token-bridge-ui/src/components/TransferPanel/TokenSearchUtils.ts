@@ -11,11 +11,32 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
+import { addressesEqual } from '../../util/AddressUtils';
 import { TokenListWithId, tokenListTokenToBridgeToken } from '../../util/TokenListUtils';
 import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
+import { getNativeTokenAddress } from '../../wallet/constants';
 
 // keeps the reference stable
 const emptyData: ContractStorage<ERC20BridgeToken> = {};
+
+export const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
+
+export function getTokenPickerAddresses({
+  tokenAddresses,
+  chainId,
+  hasCustomNativeCurrency,
+}: {
+  tokenAddresses: string[];
+  chainId: number;
+  hasCustomNativeCurrency: boolean;
+}) {
+  const nativeTokenAddress = getNativeTokenAddress(chainId);
+  const nonNativeTokenAddresses = hasCustomNativeCurrency
+    ? tokenAddresses
+    : tokenAddresses.filter((address) => !addressesEqual(address, nativeTokenAddress));
+
+  return Array.from(new Set([NATIVE_CURRENCY_IDENTIFIER, ...nonNativeTokenAddresses]));
+}
 
 export type AddTokenFromSearchResult = 'success' | 'disabled' | 'not-found';
 

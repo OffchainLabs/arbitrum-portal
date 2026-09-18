@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { SafeImage } from '../common/SafeImage';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
@@ -27,9 +25,7 @@ export const TokenLogo = ({
   const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
-  const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrencyForTransfer();
 
   const src = useMemo(() => {
     // Override to show the native currency logo
