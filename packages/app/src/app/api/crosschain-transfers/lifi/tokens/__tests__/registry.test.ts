@@ -1,6 +1,7 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import {
@@ -11,6 +12,8 @@ import {
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
+
+vi.hoisted(() => vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED', 'true'));
 
 const { getTokens } = vi.hoisted(() => ({ getTokens: vi.fn() }));
 
@@ -82,6 +85,18 @@ describe('getLifiTokenRegistry', () => {
     getTokens.mockReset();
   });
 
+  it('requests only chains supported as LiFi token sources', async () => {
+    getTokens.mockResolvedValue({ tokens: {} });
+
+    await getLifiTokenRegistry([ChainId.Solana, ChainId.Superposition]);
+
+    expect(getTokens).toHaveBeenCalledWith({
+      chains: [ChainId.Solana],
+    });
+    expect(allowedLifiSourceChainIds).toContain(ChainId.Solana);
+    expect(allowedLifiSourceChainIds).not.toContain(ChainId.Superposition);
+  });
+
   it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {
     const baseUsdc: LiFiToken = {
       address: CommonAddress.Base.USDC.toUpperCase(),
@@ -102,7 +117,7 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Base, ChainId.Ethereum]);
 
     expect(registry.tokensByChain[ChainId.Base]).toEqual([baseUsdc]);
     expect(registry.tokensByChain[ChainId.Ethereum]).toEqual([]);
@@ -149,7 +164,7 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Ethereum, ChainId.RobinhoodChain]);
     const tokens = groupChildTokensAndParentTokens({
       parentTokens: registry.tokensByChain[ChainId.Ethereum] ?? [],
       childTokens: registry.tokensByChain[ChainId.RobinhoodChain] ?? [],
@@ -244,7 +259,7 @@ describe('getLifiTokenRegistry exclusions', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.RobinhoodChain, ChainId.ArbitrumOne]);
 
     const robinhoodTokens = registry.tokensByChain[ChainId.RobinhoodChain] ?? [];
     const robinhoodUsdg = robinhoodTokens.filter((token) => token.symbol === 'USDG');

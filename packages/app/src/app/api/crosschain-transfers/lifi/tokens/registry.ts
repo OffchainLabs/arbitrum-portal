@@ -217,9 +217,12 @@ export interface LifiTokenRegistry {
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
-const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
+const fetchRegistry = async (requestedChainIds: readonly number[]): Promise<LifiTokenRegistry> => {
+  const tokenChainIds = [
+    ...new Set(requestedChainIds.filter((chainId) => allowedLifiSourceChainIds.includes(chainId))),
+  ];
   const response = await getTokens({
-    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
+    chains: tokenChainIds as unknown as LiFiChainId[],
   });
 
   if (!response.tokens) {
@@ -232,7 +235,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
   const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
 
-  for (const chainId of allowedLifiSourceChainIds) {
+  for (const chainId of tokenChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
     const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
