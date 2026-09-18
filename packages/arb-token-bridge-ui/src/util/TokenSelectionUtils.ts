@@ -150,7 +150,9 @@ export function resolveDestinationSelection({
     }
   } else if (!lookupKey || addressesEqual(lookupKey, constants.AddressZero)) {
     override = getOverride(lookupKey || undefined);
-    token = override;
+    // Keep an unset native selection as null for display consumers. Returning native APE's
+    // zero-address metadata would make their override lookup reinterpret it as WETH.
+    token = lookupKey ? override : null;
   } else {
     token = bridgeTokens[lookupKey.toLowerCase()] ?? null;
     if (isUnavailable(token, lookupKey)) {
