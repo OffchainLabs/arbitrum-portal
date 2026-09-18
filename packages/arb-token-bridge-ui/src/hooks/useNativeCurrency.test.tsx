@@ -13,7 +13,18 @@ import { removeCustomChainFromLocalStorage, saveCustomChainToLocalStorage } from
 import orbitChainsData from '../util/orbitChainsData.json';
 import { orbitMainnets } from '../util/orbitChainsList';
 import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../wallet/ecosystems/solana';
 import { useNativeCurrency, useNativeCurrencyForTransfer } from './useNativeCurrency';
+
+vi.mock('../util/featureFlag', async (actual) => ({
+  ...(await actual<typeof import('../util/featureFlag')>()),
+  isLifiEnabled: () => true,
+}));
+vi.mock('../wallet/ecosystems/solana', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../wallet/ecosystems/solana')>();
+  actual.solanaEcosystem.isEnabled = () => true;
+  return actual;
+});
 
 vi.mock('../token-bridge-sdk/utils', async (actual) => ({
   ...(await actual<typeof import('../token-bridge-sdk/utils')>()),
@@ -177,4 +188,42 @@ describe.sequential('transfer native currency', () => {
       expect(result.current).toBe(previous);
     });
   });
+
+  it.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'keeps source SOL separate from the destination currency on %s',
+    async (destination) => {
+      const wrapper = createWalletTestWrapper({
+        query: { sourceChain: ChainId.Solana, destinationChain: destination },
+      });
+      const { result } = renderHook(
+        () => ({
+          source: useNativeCurrencyForTransfer(),
+          destination: useNativeCurrencyForTransfer({ isDestination: true }),
+        }),
+        { wrapper },
+      );
+      expect(result.current.source).toMatchObject({
+        symbol: 'SOL',
+        decimals: 9,
+        balanceDecimals: 9,
+        nativeTokenChainId: ChainId.Solana,
+        priceAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
+      });
+      expect(
+        getNativeCurrencyPrice({
+          ...result.current.source,
+          tokensFromLists: {},
+          ethPrice: 2000,
+        }),
+      ).toBeUndefined();
+      await waitFor(() =>
+        expect(result.current.destination.isCustom).toBe(destination === ChainId.ApeChain),
+      );
+      expect(result.current.destination).toMatchObject({
+        symbol: destination === ChainId.ApeChain ? 'APE' : 'ETH',
+        balanceDecimals: 18,
+        nativeTokenChainId: destination,
+      });
+    },
+  );
 });
