@@ -2,7 +2,7 @@ import { ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
 import React, { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { Chain } from 'wagmi/chains';
+import type { Chain } from 'wagmi/chains';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -11,12 +11,13 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { getAccountExplorerUrl } from '../../services/explorer';
 import { addressesEqual } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
-import { getDestinationChainIds, getExplorerUrl, isNetwork } from '../../util/networks';
+import { getDestinationChainIds, isNetwork } from '../../util/networks';
 import { getOrbitChains } from '../../util/orbitChainsList';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
@@ -131,7 +132,7 @@ function CustomAddressBanner({
         Showing balance for{' '}
         <ExternalLink
           className="arb-hover underline"
-          href={`${getExplorerUrl(network.id)}/address/${customAddress}`}
+          href={getAccountExplorerUrl(network.id, customAddress)}
         >
           {shortenAddress(customAddress)}
         </ExternalLink>

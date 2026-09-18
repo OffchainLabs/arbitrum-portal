@@ -9,7 +9,7 @@ import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useAddPendingTransactions } from '../../hooks/useTransactionHistory';
 import { DepositStatus, type MergedTransaction } from '../../state/app/state';
 import { ChainId } from '../../types/ChainId';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../util/networkMetadata';
 import { WalletContext } from '../../wallet/WalletContext';
 import type { WalletContextValue } from '../../wallet/types';
 import { TransferPanel } from './TransferPanel';
@@ -47,14 +47,14 @@ vi.mock('../../state', () => ({
 vi.mock('../../hooks/useSelectedToken', () => ({ useSelectedToken: () => [null, vi.fn()] }));
 vi.mock('../../hooks/useNetworks', () => ({
   useNetworks: () => [
-    { sourceChain: getWagmiChain(form.sourceChainId), destinationChain: arbitrum },
+    { sourceChain: getChainMetadata(form.sourceChainId), destinationChain: arbitrum },
     vi.fn(),
   ],
 }));
 vi.mock('../../hooks/useNetworksRelationship', () => ({
   useNetworksRelationship: () => ({
     childChain: arbitrum,
-    parentChain: getWagmiChain(form.sourceChainId),
+    parentChain: getChainMetadata(form.sourceChainId),
     isDepositMode: true,
   }),
 }));

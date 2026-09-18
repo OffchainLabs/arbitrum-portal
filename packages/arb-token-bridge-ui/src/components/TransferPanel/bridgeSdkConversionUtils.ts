@@ -1,5 +1,5 @@
 // the conversion layer for making bridge-sdk results compatible with our current ui code
-import { TransactionResponse } from '@ethersproject/providers';
+import type { TransactionResponse } from '@ethersproject/providers';
 import dayjs from 'dayjs';
 import { BigNumber, utils } from 'ethers';
 

@@ -1,54 +1,33 @@
 import type { Chain } from 'viem';
-import { sepolia as sepoliaDefault } from 'viem/chains';
 
 import { NOVA_EXPLORER_URL } from '@/common/constants';
 
 import { ether } from '../../constants';
-import { NativeCurrencyBase } from '../../hooks/useNativeCurrency';
 import { ChainId } from '../../types/ChainId';
 import { getBridgeUiConfigForChain } from '../bridgeUiConfig';
+import { getChainMetadata, toChainMetadata } from '../networkMetadata';
 import { ChainWithRpcUrl, explorerUrls, rpcURLs } from '../networks';
 
-export function chainToWagmiChain(chain: ChainWithRpcUrl): Chain {
-  const { nativeTokenData } = getBridgeUiConfigForChain(chain.chainId);
-
-  let nativeCurrency: NativeCurrencyBase = nativeTokenData
-    ? {
-        ...nativeTokenData,
-        decimals: 18,
-      }
-    : ether;
-
-  if (chain.chainId === ChainId.L3Local) {
-    nativeCurrency = chain.nativeToken
-      ? {
-          name: 'testnode',
-          symbol: 'TN',
-          decimals: 18,
-        }
-      : ether;
-  }
-
-  return {
-    id: chain.chainId,
-    name: chain.name,
-    nativeCurrency,
-    rpcUrls: {
-      default: {
-        http: [chain.rpcUrl],
-      },
-      public: {
-        http: [chain.rpcUrl],
-      },
-    },
-    blockExplorers: {
-      default: {
-        name: 'Block Explorer',
-        url: chain.explorerUrl,
-      },
-    },
-  };
+function getWalletChainMetadata(chainId: number) {
+  const { id, name, nativeCurrency } = getChainMetadata(chainId);
+  return { id, name, nativeCurrency };
 }
+
+export function chainToWagmiChain(chain: ChainWithRpcUrl): Chain {
+  const metadata = toChainMetadata({
+    ...chain,
+    nativeTokenData: undefined,
+    bridgeUiConfig:
+      chain.chainId === ChainId.L3Local && !chain.nativeToken
+        ? undefined
+        : getBridgeUiConfigForChain(chain.chainId),
+  });
+  // Keep the wallet's existing unset testnet flag; pure metadata retains it.
+  const { testnet: _testnet, ...walletChain } = metadata;
+  return walletChain;
+}
+
+const sepoliaDefault = getChainMetadata(ChainId.Sepolia);
 
 export const sepolia: Chain = {
   ...sepoliaDefault,
@@ -63,8 +42,7 @@ export const sepolia: Chain = {
 };
 
 export const arbitrumSepolia: Chain = {
-  id: ChainId.ArbitrumSepolia,
-  name: 'Arbitrum Sepolia',
+  ...getWalletChainMetadata(ChainId.ArbitrumSepolia),
   nativeCurrency: ether,
   rpcUrls: {
     default: {
@@ -84,8 +62,7 @@ export const arbitrumSepolia: Chain = {
 };
 
 export const baseSepolia: Chain = {
-  id: ChainId.BaseSepolia,
-  name: 'Base Sepolia',
+  ...getWalletChainMetadata(ChainId.BaseSepolia),
   nativeCurrency: ether,
   rpcUrls: {
     default: {
@@ -105,9 +82,7 @@ export const baseSepolia: Chain = {
 };
 
 export const arbitrumNova: Chain = {
-  id: ChainId.ArbitrumNova,
-  name: 'Arbitrum Nova',
-  nativeCurrency: ether,
+  ...getWalletChainMetadata(ChainId.ArbitrumNova),
   rpcUrls: {
     default: {
       http: [rpcURLs[ChainId.ArbitrumNova]!],
@@ -123,9 +98,7 @@ export const arbitrumNova: Chain = {
 };
 
 export const base: Chain = {
-  id: ChainId.Base,
-  name: 'Base',
-  nativeCurrency: ether,
+  ...getWalletChainMetadata(ChainId.Base),
   rpcUrls: {
     default: {
       http: [rpcURLs[ChainId.Base]!],
@@ -144,9 +117,7 @@ export const base: Chain = {
  * For e2e testing
  */
 export const localL1Network: Chain = {
-  id: ChainId.Local,
-  name: 'Nitro Testnode L1',
-  nativeCurrency: ether,
+  ...getWalletChainMetadata(ChainId.Local),
   rpcUrls: {
     default: {
       http: [rpcURLs[ChainId.Local]!],
@@ -164,9 +135,7 @@ export const localL1Network: Chain = {
  * For e2e testing
  */
 export const localL2Network: Chain = {
-  id: ChainId.ArbitrumLocal,
-  name: 'Nitro Testnode L2',
-  nativeCurrency: ether,
+  ...getWalletChainMetadata(ChainId.ArbitrumLocal),
   rpcUrls: {
     default: {
       http: [rpcURLs[ChainId.ArbitrumLocal]!],
@@ -184,9 +153,7 @@ export const localL2Network: Chain = {
  * For e2e testing
  */
 export const localL3Network: Chain = {
-  id: ChainId.L3Local,
-  name: 'Nitro Testnode L3',
-  nativeCurrency: ether,
+  ...getWalletChainMetadata(ChainId.L3Local),
   rpcUrls: {
     default: {
       http: [rpcURLs[ChainId.L3Local]!],
