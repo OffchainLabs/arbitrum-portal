@@ -1,58 +1,27 @@
 import type { ExecutionOptions, Route, RouteExtended, TransactionParameters } from '@lifi/sdk';
-import { EVM, executeRoute, config as lifiConfig } from '@lifi/sdk';
+import { executeRoute, getActiveRoute, resumeRoute } from '@lifi/sdk';
 import type { Config } from '@wagmi/core';
-import { getWalletClient } from '@wagmi/core';
-import { Client, UserRejectedRequestError } from 'viem';
+import { getAccount } from '@wagmi/core';
+import { UserRejectedRequestError } from 'viem';
 
+import { addressesEqual } from '../util/AddressUtils';
 import { getSubmittedLifiRouteTxHash } from '../util/LifiTransactionStatus';
-
-type SwitchChainAsync = (parameters: { chainId: number }) => Promise<{ id: number } | undefined>;
 
 type LifiRouteRunProps = {
   wagmiConfig: Config;
-  switchChainAsync: SwitchChainAsync;
   onApprovalRequest?: (approvalRequest: TransactionParameters) => Promise<boolean>;
   onRouteUpdate?: (route: RouteExtended) => void;
 };
 
 export type LifiRouteExecutionProps = LifiRouteRunProps & {
   onRouteExecutionError: (error: unknown) => void;
+  onRouteExecutionComplete?: (route: RouteExtended) => void;
 };
 
-function configureLifiEvmProvider({
-  wagmiConfig,
-  switchChainAsync,
-}: Pick<LifiRouteRunProps, 'wagmiConfig' | 'switchChainAsync'>) {
-  lifiConfig.setProviders([
-    EVM({
-      getWalletClient: async () => {
-        const walletClient = await getWalletClient(wagmiConfig);
-        if (!walletClient) {
-          throw new Error('LiFi SDK wallet client is unavailable.');
-        }
-        return walletClient as Client;
-      },
-      switchChain: async (chainId) => {
-        await switchChainAsync({ chainId });
-
-        const walletClient = await getWalletClient(wagmiConfig, { chainId });
-        if (!walletClient) {
-          throw new Error('LiFi SDK wallet client is unavailable after switching chain.');
-        }
-        return walletClient as Client;
-      },
-    }),
-  ]);
-}
-
-function createExecutionOptions({
-  wagmiConfig,
-  switchChainAsync,
-  onApprovalRequest,
-  onRouteUpdate,
-}: LifiRouteRunProps): ExecutionOptions {
-  configureLifiEvmProvider({ wagmiConfig, switchChainAsync });
-
+function createExecutionOptions(
+  { wagmiConfig, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
+  expectedAccount: string | undefined,
+): ExecutionOptions {
   return {
     updateTransactionRequestHook: async ({ requestType, ...transactionRequest }) => {
       if (requestType === 'approve') {
@@ -63,6 +32,12 @@ function createExecutionOptions({
         }
       }
 
+      const account = getAccount(wagmiConfig).address;
+      if (!expectedAccount || !addressesEqual(account, expectedAccount)) {
+        throw new Error(
+          'The signing account changed. Reconnect the account that started this route.',
+        );
+      }
       return transactionRequest;
     },
     updateRouteHook: onRouteUpdate,
@@ -73,22 +48,25 @@ function createExecutionOptions({
 // submitted route tx id as soon as it exists so it can create history/cache entries. With
 // EIP-5792 this can initially be a wallet batch id; later route updates replace it with the
 // real on-chain tx hash for status checks and LiFi Scan links.
-export function executeLifiRoute(
+function runLifiRoute(
   route: Route | RouteExtended,
   {
     wagmiConfig,
-    switchChainAsync,
     onApprovalRequest,
     onRouteUpdate,
     onRouteExecutionError,
+    onRouteExecutionComplete,
   }: LifiRouteExecutionProps,
+  run: typeof executeRoute = executeRoute,
 ): Promise<{ txHash: string; route: RouteExtended }> {
-  const executionOptions = createExecutionOptions({
-    wagmiConfig,
-    switchChainAsync,
-    onApprovalRequest,
-    onRouteUpdate,
-  });
+  const executionOptions = createExecutionOptions(
+    {
+      wagmiConfig,
+      onApprovalRequest,
+      onRouteUpdate,
+    },
+    route.fromAddress,
+  );
 
   return new Promise((resolve, reject) => {
     let resolvedRouteTx = false;
@@ -103,12 +81,13 @@ export function executeLifiRoute(
       }
     };
 
-    executeRoute(route, {
+    run(route, {
       ...executionOptions,
       updateRouteHook: handleRouteUpdate,
     })
       .then((updatedRoute) => {
         handleRouteUpdate(updatedRoute);
+        onRouteExecutionComplete?.(updatedRoute);
         if (!resolvedRouteTx) {
           reject(new Error('LiFi route execution completed without a route transaction hash.'));
         }
@@ -121,4 +100,17 @@ export function executeLifiRoute(
         }
       });
   });
+}
+
+export function executeLifiRoute(route: Route | RouteExtended, callbacks: LifiRouteExecutionProps) {
+  if (getActiveRoute(route.id) || getSubmittedLifiRouteTxHash(route)) {
+    return Promise.reject(
+      new Error('This route has already started. Resume it from transaction history.'),
+    );
+  }
+  return runLifiRoute(route, callbacks);
+}
+
+export function resumeLifiRoute(route: RouteExtended, callbacks: LifiRouteExecutionProps) {
+  return runLifiRoute(route, callbacks, resumeRoute);
 }

@@ -27,6 +27,10 @@ vi.mock('@lifi/sdk', async (importOriginal) => {
   };
 });
 
+vi.mock('@wagmi/core', () => ({
+  getAccount: vi.fn(() => ({ address: '0x0000000000000000000000000000000000000001' })),
+}));
+
 const eth = {
   address: constants.AddressZero,
   decimals: 18,
@@ -37,7 +41,7 @@ const eth = {
 function createLifiTransferRoute({
   gas = [],
   fee = [],
-  route = createMockLifiRoute(),
+  route = createMockLifiRoute({ fromAddress: '0x0000000000000000000000000000000000000001' }),
 }: {
   gas?: RouteCost[];
   fee?: RouteCost[];
@@ -81,7 +85,6 @@ function createTransferProps(
     amount: BigNumber.from(1),
     destinationAddress: constants.AddressZero,
     wagmiConfig: {} as Parameters<LifiTransferStarter['transfer']>[0]['wagmiConfig'],
-    switchChainAsync: vi.fn().mockResolvedValue(undefined),
     onApprovalRequest,
     onRouteExecutionError: vi.fn(),
   };

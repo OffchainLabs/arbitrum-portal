@@ -7,6 +7,7 @@ import { arbitrum, mainnet } from 'wagmi/chains';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
+import { initializeLifiRuntime } from '../../wallet/lifiRuntime';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, initializeBridgeNetworks, rpcURLs } from '../networks';
@@ -137,3 +138,5 @@ export const appKit = createAppKit({
 });
 
 export const wagmiConfig = wagmiAdapter.wagmiConfig;
+
+initializeLifiRuntime(wagmiConfig);
