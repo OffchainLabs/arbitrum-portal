@@ -36,8 +36,8 @@ function DestinationTokensPanel({
   const [{ destinationAddress }] = useArbQueryParams();
   const { destinationWallet } = useWallets();
   const isConnected = destinationWallet.isConnected;
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { data: tokensFromLists } = useTokensFromLists();
   const destinationWalletAddress = destinationAddress || destinationWallet.account.address;
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
