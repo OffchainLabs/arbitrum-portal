@@ -1,5 +1,8 @@
-import { describe, it } from 'vitest';
+import { constants } from 'ethers';
+import { describe, expect, it, vi } from 'vitest';
 
+import * as lifiCrossTransfers from '../../hooks/useLifiCrossTransferRoute';
+import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
   type RouteTokenCase,
@@ -12,6 +15,8 @@ import {
   nativeApeTokenExpectation,
   nativeEthTokenExpectation,
   renderTransferPanel,
+  setDestinationToken,
+  setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
   tokenExpectationsByChain,
   usdtArbitrumOneRowTokenExpectation,
@@ -242,6 +247,73 @@ async function assertDefaultTokenCase({
 
 describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
   setupTransferPanelLifiIntegrationSuite();
+
+  it.each([
+    {
+      sourceName: 'Ethereum',
+      sourceChain: 'ethereum',
+      sourceChainId: ChainId.Ethereum,
+      usdc: CommonAddress.Ethereum.USDC,
+    },
+    {
+      sourceName: 'Arbitrum One',
+      sourceChain: 'arbitrum-one',
+      sourceChainId: ChainId.ArbitrumOne,
+      usdc: CommonAddress.ArbitrumOne.USDC,
+    },
+  ] as const)(
+    'defaults $sourceName USDC to ETH on Robinhood when no supported USDC pair exists',
+    async ({ sourceChain, sourceChainId, usdc }) => {
+      const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
+      const sourceUsdc = {
+        ...tokenExpectationsByChain.Ethereum.USDC,
+        contract: usdc,
+        logoURI:
+          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+      };
+
+      await renderTransferPanel({
+        sourceChain,
+        destinationChain: 'robinhood-chain',
+      });
+      await setSourceToken(sourceUsdc);
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          fromChainId: sourceChainId,
+          fromToken: usdc,
+          toChainId: ChainId.RobinhoodChain,
+          toToken: constants.AddressZero,
+        }),
+      );
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: ethTokenExpectation,
+      });
+      await expectTokenPanelContent({
+        isDestination: true,
+        symbolsToContain: ['ETH', 'USDG'],
+        symbolsToExclude: ['USDC'],
+        tokenExpectations: [
+          nativeEthTokenExpectation,
+          tokenExpectationsByChain.RobinhoodChain.USDG,
+        ],
+      });
+      await setDestinationToken(tokenExpectationsByChain.RobinhoodChain.USDG);
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: tokenExpectationsByChain.RobinhoodChain.USDG,
+      });
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ toToken: CommonAddress.RobinhoodChain.USDG }),
+      );
+      await setDestinationToken(nativeEthTokenExpectation);
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: ethTokenExpectation,
+      });
+      quoteSpy.mockRestore();
+    },
+  );
 
   it.each(defaultTokenCases)(
     'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',

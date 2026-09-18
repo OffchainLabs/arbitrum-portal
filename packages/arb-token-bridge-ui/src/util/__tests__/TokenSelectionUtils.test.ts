@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../CommonAddressUtils';
+import { LIFI_TRANSFER_LIST_ID } from '../TokenListUtils';
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
   getTokenForRow,
+  isTokenDepositUnavailable,
   selectUsdcToken,
 } from '../TokenSelectionUtils';
 
@@ -21,6 +23,68 @@ function buildToken(overrides: Partial<ERC20BridgeToken> = {}): ERC20BridgeToken
     ...overrides,
   };
 }
+
+describe('isTokenDepositUnavailable', () => {
+  // Ethereum USDC is withdraw-only on Robinhood Chain, so it is the canonical fixture here.
+  const withdrawOnlyArgs = {
+    isDepositMode: true,
+    tokenAddress: CommonAddress.Ethereum.USDC,
+    token: buildToken(),
+    sourceChainId: ChainId.Ethereum,
+    destinationChainId: ChainId.RobinhoodChain,
+  };
+  // Ethereum USDC is also withdraw-only on Plume, which has no LiFi route from Ethereum.
+  const PLUME_CHAIN_ID = 98866;
+
+  it('is false on withdrawals, even for a token whose deposit is blocked', () => {
+    expect(isTokenDepositUnavailable({ ...withdrawOnlyArgs, isDepositMode: false })).toBe(false);
+  });
+
+  it('is false when no ERC-20 is selected', () => {
+    expect(
+      isTokenDepositUnavailable({ ...withdrawOnlyArgs, tokenAddress: undefined, token: undefined }),
+    ).toBe(false);
+  });
+
+  it('is false for a token whose canonical deposit is allowed', () => {
+    expect(
+      isTokenDepositUnavailable({
+        ...withdrawOnlyArgs,
+        tokenAddress: CommonAddress.Ethereum.USDT,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(false);
+  });
+
+  it('is false when the canonical deposit is blocked on a route without a LiFi swap', () => {
+    expect(
+      isTokenDepositUnavailable({ ...withdrawOnlyArgs, destinationChainId: PLUME_CHAIN_ID }),
+    ).toBe(false);
+  });
+
+  it('is true when the canonical deposit is blocked and no LiFi pair exists', () => {
+    expect(isTokenDepositUnavailable(withdrawOnlyArgs)).toBe(true);
+  });
+
+  it('applies to every withdraw-only token on a LiFi route, not only USDC', () => {
+    expect(
+      isTokenDepositUnavailable({ ...withdrawOnlyArgs, tokenAddress: CommonAddress.Ethereum.USDT }),
+    ).toBe(true);
+  });
+
+  it('is false when the canonical deposit is blocked but a LiFi pair exists', () => {
+    expect(
+      isTokenDepositUnavailable({
+        ...withdrawOnlyArgs,
+        token: buildToken({ listIds: new Set([LIFI_TRANSFER_LIST_ID]) }),
+      }),
+    ).toBe(false);
+  });
+
+  it('treats an unknown token as having no LiFi pair', () => {
+    expect(isTokenDepositUnavailable({ ...withdrawOnlyArgs, token: undefined })).toBe(true);
+  });
+});
 
 describe('selectUsdcToken', () => {
   const storedToken = buildToken({ l2Address: CommonAddress.ArbitrumOne['USDC.e'] });

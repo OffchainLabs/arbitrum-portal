@@ -14,7 +14,7 @@ import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { isLifiOnlyToken, isTokenAvailableOnChain } from '../util/TokenListUtils';
-import { selectUsdcToken } from '../util/TokenSelectionUtils';
+import { isTokenDepositUnavailable, selectUsdcToken } from '../util/TokenSelectionUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -50,7 +50,7 @@ export const useSelectedToken = (): [
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
@@ -115,12 +115,19 @@ export const useSelectedToken = (): [
                 destinationChainId: networks.destinationChain.id,
               }).destination
             : null;
+          const isUnavailableDeposit = isTokenDepositUnavailable({
+            isDepositMode,
+            tokenAddress,
+            token,
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+          });
 
           return {
             token: tokenAddress,
             destinationToken:
               destinationTokenOverride?.address ||
-              (isTokenAvailableOnChain(token, networks.destinationChain.id)
+              (!isUnavailableDeposit && isTokenAvailableOnChain(token, networks.destinationChain.id)
                 ? tokenAddress
                 : undefined),
           };
@@ -131,6 +138,7 @@ export const useSelectedToken = (): [
       });
     },
     [
+      isDepositMode,
       networks.destinationChain.id,
       networks.sourceChain.id,
       setQueryParams,
