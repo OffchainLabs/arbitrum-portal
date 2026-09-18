@@ -1,6 +1,10 @@
 import { ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
 
 export const CommonAddress = {
+  Solana: {
+    USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+  },
   Ethereum: {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',

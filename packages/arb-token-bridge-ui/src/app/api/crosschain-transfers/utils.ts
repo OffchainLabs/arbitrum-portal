@@ -30,6 +30,7 @@ export function isLifiTransfer({
 
 function isUsdcToken(tokenAddress: string | undefined) {
   return (
+    tokenAddress === CommonAddress.Solana.USDC ||
     addressesEqual(tokenAddress, CommonAddress.Ethereum.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne['USDC.e']) ||
@@ -137,6 +138,11 @@ const Weth = {
 function getUsdc(chainId: number) {
   return (
     {
+      [ChainId.Solana]: {
+        address: CommonAddress.Solana.USDC,
+        symbol: 'USDC',
+        name: 'USD Coin',
+      },
       [ChainId.Ethereum]: {
         address: CommonAddress.Ethereum.USDC,
         symbol: 'USDC',
