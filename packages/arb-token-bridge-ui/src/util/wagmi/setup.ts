@@ -7,6 +7,7 @@ import { baseAccount } from 'wagmi/connectors';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
+import { initializeLifiRuntime } from '../../wallet/lifiRuntime';
 import { appKitAdapters, appKitNetworks } from '../../wallet/solana';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
@@ -146,3 +147,5 @@ export const appKit = createAppKit({
 });
 
 export const wagmiConfig = wagmiAdapter.wagmiConfig;
+
+initializeLifiRuntime(wagmiConfig);
