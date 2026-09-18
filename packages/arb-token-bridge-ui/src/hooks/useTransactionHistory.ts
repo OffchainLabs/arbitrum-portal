@@ -108,6 +108,7 @@ export type UseTransactionHistoryResult = {
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
+  updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
 
@@ -291,95 +292,97 @@ function getCacheKeyFromTransaction(tx: Transfer) {
 const UNKNOWN_LIFI_TOKEN_SYMBOL = 'Unknown';
 
 function mergeLifiTransaction({
-  apiTx,
-  localTx,
+  existingTx,
+  incomingTx,
 }: {
-  apiTx: LifiMergedTransaction;
-  localTx: LifiMergedTransaction;
+  existingTx: LifiMergedTransaction;
+  incomingTx: LifiMergedTransaction;
 }): LifiMergedTransaction {
-  if ((apiTx.lifiRoute || apiTx.lifiRouteSteps) && !localTx.lifiRoute && !localTx.lifiRouteSteps) {
-    [localTx, apiTx] = [apiTx, localTx];
-  }
-  const apiSnapshot = getLifiTransactionSnapshot(apiTx);
-  const localSnapshot = getLifiTransactionSnapshot(localTx);
-  if (!apiSnapshot || !localSnapshot) {
+  const existingSnapshot = getLifiTransactionSnapshot(existingTx);
+  const incomingSnapshot = getLifiTransactionSnapshot(incomingTx);
+  if (!existingSnapshot || !incomingSnapshot) {
     return getLifiTransferDisplayStatus({
-      ...localTx,
-      ...apiTx,
-      lifiRoute: localTx.lifiRoute ?? apiTx.lifiRoute,
+      ...existingTx,
+      ...incomingTx,
+      lifiRoute: existingTx.lifiRoute ?? incomingTx.lifiRoute,
     });
   }
 
   const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
-    sourceChainId: apiTx.sourceChainId,
-    destinationChainId: apiTx.destinationChainId,
+    sourceChainId: incomingTx.sourceChainId,
+    destinationChainId: incomingTx.destinationChainId,
   });
-  const apiFromToken =
-    apiSnapshot.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+  const incomingFromToken =
+    incomingSnapshot.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
       ? undefined
-      : apiSnapshot.fromAmount.token;
-  const apiToToken =
-    apiSnapshot.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+      : incomingSnapshot.fromAmount.token;
+  const incomingToToken =
+    incomingSnapshot.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
       ? undefined
-      : apiSnapshot.toAmount.token;
-  const apiToAmount = apiToToken ? apiSnapshot.toAmount : undefined;
-  const hasRouteHistory = Boolean(localTx.lifiRoute || localTx.lifiRouteSteps?.length);
-  const routeToAmount =
-    (localTx.lifiRoute?.steps.length ?? localTx.lifiRouteSteps?.length ?? 0) > 1
-      ? localSnapshot.toAmount
-      : undefined;
-  const apiTool = apiSnapshot.toolsDetails[0];
-  const localTool = localSnapshot.toolsDetails[0];
+      : incomingSnapshot.toAmount.token;
+  const incomingToAmount = incomingToToken ? incomingSnapshot.toAmount : undefined;
+  const routeStepCount =
+    existingTx.lifiRoute?.steps.length ?? existingTx.lifiRouteSteps?.length ?? 0;
+  const hasRouteHistory = routeStepCount > 0;
+  const preserveRouteAmounts = routeStepCount > 1;
+  const incomingTool = incomingSnapshot.toolsDetails[0];
+  const existingTool = existingSnapshot.toolsDetails[0];
 
   return getLifiTransferDisplayStatus({
-    ...localTx,
-    ...apiTx,
-    txId: hasRouteHistory ? localTx.txId : apiTx.txId,
+    ...existingTx,
+    ...incomingTx,
+    txId: hasRouteHistory ? existingTx.txId : incomingTx.txId,
     parentChainId,
     childChainId,
     direction: isDepositMode ? 'deposit' : 'withdraw',
     isWithdrawal: !isDepositMode,
-    resolvedAt: apiTx.resolvedAt ?? localTx.resolvedAt,
-    destinationTxId: apiTx.destinationTxId ?? localTx.destinationTxId,
-    durationMs: Number.isFinite(apiSnapshot.durationMs)
-      ? apiSnapshot.durationMs
-      : localSnapshot.durationMs,
-    fromAmount: routeToAmount
-      ? localSnapshot.fromAmount
+    resolvedAt: incomingTx.resolvedAt ?? existingTx.resolvedAt,
+    destinationTxId: incomingTx.destinationTxId ?? existingTx.destinationTxId,
+    durationMs: Number.isFinite(incomingSnapshot.durationMs)
+      ? incomingSnapshot.durationMs
+      : existingSnapshot.durationMs,
+    fromAmount: preserveRouteAmounts
+      ? existingSnapshot.fromAmount
       : {
-          amount: apiSnapshot.fromAmount.amount || localSnapshot.fromAmount.amount,
-          amountUSD: apiSnapshot.fromAmount.amountUSD || localSnapshot.fromAmount.amountUSD || '0',
+          amount: incomingSnapshot.fromAmount.amount || existingSnapshot.fromAmount.amount,
+          amountUSD:
+            incomingSnapshot.fromAmount.amountUSD || existingSnapshot.fromAmount.amountUSD || '0',
           token: {
-            address: apiFromToken?.address || localSnapshot.fromAmount.token.address || '',
-            decimals: apiFromToken?.decimals || localSnapshot.fromAmount.token.decimals || 0,
-            logoURI: apiFromToken?.logoURI || localSnapshot.fromAmount.token.logoURI || '',
+            address: incomingFromToken?.address || existingSnapshot.fromAmount.token.address || '',
+            decimals:
+              incomingFromToken?.decimals || existingSnapshot.fromAmount.token.decimals || 0,
+            logoURI: incomingFromToken?.logoURI || existingSnapshot.fromAmount.token.logoURI || '',
             symbol:
-              apiFromToken?.symbol ||
-              localSnapshot.fromAmount.token.symbol ||
+              incomingFromToken?.symbol ||
+              existingSnapshot.fromAmount.token.symbol ||
               UNKNOWN_LIFI_TOKEN_SYMBOL,
           },
         },
-    toAmount: routeToAmount ?? {
-      amount: apiToAmount?.amount || localSnapshot.toAmount.amount,
-      amountUSD: apiToAmount?.amountUSD || localSnapshot.toAmount.amountUSD || '0',
-      token: {
-        address: apiToToken?.address || localSnapshot.toAmount.token.address || '',
-        decimals: apiToToken?.decimals || localSnapshot.toAmount.token.decimals || 0,
-        logoURI: apiToToken?.logoURI || localSnapshot.toAmount.token.logoURI || '',
-        symbol:
-          apiToToken?.symbol || localSnapshot.toAmount.token.symbol || UNKNOWN_LIFI_TOKEN_SYMBOL,
-      },
-    },
+    toAmount: preserveRouteAmounts
+      ? existingSnapshot.toAmount
+      : {
+          amount: incomingToAmount?.amount || existingSnapshot.toAmount.amount,
+          amountUSD: incomingToAmount?.amountUSD || existingSnapshot.toAmount.amountUSD || '0',
+          token: {
+            address: incomingToToken?.address || existingSnapshot.toAmount.token.address || '',
+            decimals: incomingToToken?.decimals || existingSnapshot.toAmount.token.decimals || 0,
+            logoURI: incomingToToken?.logoURI || existingSnapshot.toAmount.token.logoURI || '',
+            symbol:
+              incomingToToken?.symbol ||
+              existingSnapshot.toAmount.token.symbol ||
+              UNKNOWN_LIFI_TOKEN_SYMBOL,
+          },
+        },
     toolsDetails: hasRouteHistory
-      ? localSnapshot.toolsDetails
+      ? existingSnapshot.toolsDetails
       : [
           {
-            key: apiTool.key || localTool.key || '',
-            name: apiTool.name || localTool.name || '',
-            logoURI: apiTool.logoURI || localTool.logoURI || '',
+            key: incomingTool.key || existingTool.key || '',
+            name: incomingTool.name || existingTool.name || '',
+            logoURI: incomingTool.logoURI || existingTool.logoURI || '',
           },
         ],
-    lifiRoute: localTx.lifiRoute ?? apiTx.lifiRoute,
+    lifiRoute: existingTx.lifiRoute ?? incomingTx.lifiRoute,
   });
 }
 
@@ -420,10 +423,7 @@ function dedupeTransactions(txs: Transfer[]) {
     const existingTx = transactionsByCacheKey.get(cacheKey);
 
     if (existingTx && isLifiTransfer(existingTx) && isLifiTransfer(tx)) {
-      transactionsByCacheKey.set(
-        cacheKey,
-        mergeLifiTransaction({ localTx: existingTx, apiTx: tx }),
-      );
+      transactionsByCacheKey.set(cacheKey, mergeLifiTransaction({ existingTx, incomingTx: tx }));
       continue;
     }
 
@@ -499,7 +499,7 @@ export function mergeTransactions({
       fetchedByIdentity.set(
         identity,
         existingTx && isLifiTransfer(existingTx)
-          ? [mergeLifiTransaction({ localTx: existingTx, apiTx: tx })]
+          ? [mergeLifiTransaction({ existingTx, incomingTx: tx })]
           : [tx],
       );
       continue;
@@ -518,7 +518,7 @@ export function mergeTransactions({
 
     if (isLifiTransfer(tx) && fetchedTx && isLifiTransfer(fetchedTx)) {
       fetchedByIdentity.set(getIdentity(tx), [
-        mergeLifiTransaction({ localTx: tx, apiTx: fetchedTx }),
+        mergeLifiTransaction({ existingTx: tx, incomingTx: fetchedTx }),
       ]);
       return false;
     }
@@ -1045,6 +1045,12 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
     pause: () => {},
     resume: () => {},
     addPendingTransaction: () => {},
+    updateTransaction: (newTx: MergedTransaction) => {
+      void mutate(
+        (transactions) => transactions?.map((tx) => (isSameTransaction(tx, newTx) ? newTx : tx)),
+        false,
+      );
+    },
     updatePendingTransaction: async () => {
       await mutate();
     },
@@ -1642,6 +1648,7 @@ export const useTransactionHistory = (
       pause,
       resume,
       addPendingTransaction,
+      updateTransaction: updateCachedTransaction,
       updatePendingTransaction,
     };
   }
@@ -1655,6 +1662,7 @@ export const useTransactionHistory = (
     pause,
     resume,
     addPendingTransaction,
+    updateTransaction: updateCachedTransaction,
     updatePendingTransaction,
   };
 };
