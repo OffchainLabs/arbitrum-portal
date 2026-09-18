@@ -2,6 +2,7 @@ import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { constants } from 'ethers';
 import { QueryParamConfig } from 'use-query-params';
 
+import { lifiSourceOnlyChainIds } from '../app/api/crosschain-transfers/constants';
 import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import { ChainId } from '../types/ChainId';
 import {
@@ -365,6 +366,10 @@ export function sanitizeQueryParams({
   sourceChainId: ChainId | number;
   destinationChainId: ChainId | number;
 } {
+  if (destinationChainId && lifiSourceOnlyChainIds.has(destinationChainId)) {
+    destinationChainId = undefined;
+  }
+
   const key = `${sourceChainId}-${destinationChainId}-${disableTransfersToNonArbitrumChains}-${includeLifiEnabledChainPairs}`;
   const cacheHit = cache[key];
   if (cacheHit) {
