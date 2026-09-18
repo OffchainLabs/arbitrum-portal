@@ -54,23 +54,30 @@ describe('getDestinationAddressError', () => {
       await getDestinationAddressError({
         destinationAddress,
         isSenderSmartContractWallet: false,
+        isRecipientAddressRequired: false,
         destinationEcosystem,
       }),
     ).toBe(expected);
   });
 
   it.each([
-    [true, DestinationAddressErrors.REQUIRED_ADDRESS],
-    [false, null],
+    {
+      isSenderSmartContractWallet: true,
+      isRecipientAddressRequired: false,
+      expected: DestinationAddressErrors.REQUIRED_ADDRESS,
+    },
+    {
+      isSenderSmartContractWallet: false,
+      isRecipientAddressRequired: true,
+      expected: DestinationAddressErrors.REQUIRED_ADDRESS,
+    },
+    { isSenderSmartContractWallet: false, isRecipientAddressRequired: false, expected: null },
   ])(
-    'without an address, smart contract wallet %s returns %s',
-    async (isSenderSmartContractWallet, expected) => {
-      expect(
-        await getDestinationAddressError({
-          isSenderSmartContractWallet,
-          destinationEcosystem: 'evm',
-        }),
-      ).toBe(expected);
+    'returns $expected without an address (smart contract wallet: $isSenderSmartContractWallet, recipient required: $isRecipientAddressRequired)',
+    async ({ expected, ...params }) => {
+      expect(await getDestinationAddressError({ ...params, destinationEcosystem: 'evm' })).toBe(
+        expected,
+      );
     },
   );
 });
