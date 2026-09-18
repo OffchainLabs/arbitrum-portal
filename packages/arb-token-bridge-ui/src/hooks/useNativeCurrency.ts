@@ -2,7 +2,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import { fetchNativeCurrency } from '../services/nativeCurrency';
 import type { NativeCurrency } from '../types/NativeCurrency';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../util/networkMetadata';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
@@ -19,7 +19,7 @@ export function useNativeCurrency({ chainId }: { chainId: number }): NativeCurre
   );
   if (data) return data;
   try {
-    return { ...getWagmiChain(chainId).nativeCurrency, isCustom: false };
+    return { ...getChainMetadata(chainId).nativeCurrency, isCustom: false };
   } catch {
     return { name: 'Native currency', symbol: 'Unknown', decimals: 18, isCustom: false };
   }

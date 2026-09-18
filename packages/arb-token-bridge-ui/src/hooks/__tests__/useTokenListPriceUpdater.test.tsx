@@ -233,7 +233,7 @@ describe.sequential('useTokenListPriceUpdater', () => {
     );
   });
 
-  it('loads the new token lists when the chain pair changes', async () => {
+  it('loads the new Orbit token lists and filters the Arbitrum-only list when the chain pair changes', async () => {
     const { result, rerender } = renderHook(
       () => {
         useTokenListPriceUpdater();
@@ -287,6 +287,7 @@ describe.sequential('useTokenListPriceUpdater', () => {
     // mount, so the updater must not mutate until the new key has its own data. Note that
     // `isLoading` is not a usable guard here: SWR only reports it from a cached entry or, as
     // a fallback, from a first-render flag that is already spent by this point.
+    vi.mocked(fetchBridgeTokenList).mockClear();
     currentChildChain = otherChildChain;
     rerender();
 
@@ -295,22 +296,6 @@ describe.sequential('useTokenListPriceUpdater', () => {
     await waitFor(
       () => {
         expect(result.current.data).toEqual([
-          {
-            l2ChainId: '33139',
-            bridgeTokenListId: 'mock-arbitrum-token-list',
-            name: 'Mock Arbitrum Token list',
-            timestamp: '2026-01-01T00:00:00.000Z',
-            version: { major: 1, minor: 0, patch: 0 },
-            tokens: [
-              {
-                chainId: 42161,
-                address: '0x912ce59144191c1204e64559fe8253a0e49e6548',
-                name: 'Arbitrum',
-                symbol: 'ARB',
-                decimals: 18,
-              },
-            ],
-          },
           {
             l2ChainId: '33139',
             bridgeTokenListId: 'lifi-token-list',
@@ -331,5 +316,6 @@ describe.sequential('useTokenListPriceUpdater', () => {
       },
       { timeout: 3_000 },
     );
+    expect(fetchBridgeTokenList).not.toHaveBeenCalledWith(MOCK_BRIDGE_TOKEN_LISTS[0]);
   });
 });

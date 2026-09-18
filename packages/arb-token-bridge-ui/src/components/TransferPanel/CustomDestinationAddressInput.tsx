@@ -7,9 +7,9 @@ import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { getDestinationAddressWarning } from '../../services/destinationAddress';
+import { getAccountExplorerUrl } from '../../services/explorer';
 import { normalizeAddress } from '../../util/AddressUtils';
 import { isValidAddressForChain } from '../../util/isValidAddressForChain';
-import { getExplorerUrl } from '../../util/networks';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
@@ -126,9 +126,7 @@ export const CustomDestinationAddressInput = () => {
       {localDestinationAddress && !error && (
         <ExternalLink
           className="arb-hover flex w-fit items-center text-sm font-medium text-white/50"
-          href={`${getExplorerUrl(
-            networks.destinationChain.id,
-          )}/address/${localDestinationAddress}`}
+          href={getAccountExplorerUrl(networks.destinationChain.id, localDestinationAddress)}
         >
           <ArrowDownTrayIcon height={12} strokeWidth={3} className="mr-1 -rotate-90" />
           View account in explorer

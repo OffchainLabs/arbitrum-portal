@@ -23,8 +23,8 @@ import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { RouteType, SetRoute } from '../../../util/TransferRouteUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
+import { getChainMetadata } from '../../../util/networkMetadata';
 import { isNetwork } from '../../../util/networks';
-import { getWagmiChain } from '../../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../../App/AppContext';
 import { SafeImage } from '../../common/SafeImage';
 import { Loader } from '../../common/atoms/Loader';
@@ -367,7 +367,7 @@ function getRouteCostUSD({
     return Number(cost.amountUSD);
   }
 
-  const isEthNativeCost = getWagmiChain(cost.chainId).nativeCurrency.symbol === 'ETH';
+  const isEthNativeCost = getChainMetadata(cost.chainId).nativeCurrency.symbol === 'ETH';
   if (addressesEqual(cost.token.address, constants.AddressZero) && isEthNativeCost) {
     return ethToUSD(Number(utils.formatEther(BigNumber.from(cost.amount))));
   }

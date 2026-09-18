@@ -46,6 +46,16 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
+      label: 'EVM source to Solana deposit',
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.Solana,
+      expected: {
+        parentChainId: ChainId.ArbitrumOne,
+        childChainId: ChainId.Solana,
+        isDepositMode: true,
+      },
+    },
+    {
       label: 'Robinhood Chain to ApeChain sibling transfer',
       sourceChainId: ChainId.RobinhoodChain,
       destinationChainId: ChainId.ApeChain,
@@ -66,6 +76,9 @@ describe('getNetworksRelationship', () => {
       },
     },
   ])('resolves $label', ({ sourceChainId, destinationChainId, expected }) => {
-    expect(getNetworksRelationship({ sourceChainId, destinationChainId })).toEqual(expected);
+    expect(getNetworksRelationship({ sourceChainId, destinationChainId })).toEqual({
+      ...expected,
+      isCrossEcosystem: sourceChainId === ChainId.Solana || destinationChainId === ChainId.Solana,
+    });
   });
 });

@@ -13,8 +13,8 @@ import { ChainId } from '../types/ChainId';
 import type { NativeCurrency } from '../types/NativeCurrency';
 import type { EvmAddress } from '../util/AddressUtils';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { getChainMetadata } from '../util/networkMetadata';
 import { initializeBridgeNetworks } from '../util/networks';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
 import { BalanceProvider } from '../wallet/balance/BalanceContext';
 import { createBalanceService } from '../wallet/balance/createBalanceService';
@@ -62,7 +62,7 @@ export function createBridgeTestWrapper({
         nativeCurrencies[chainId] ?? {
           ...(chainId === ChainId.Solana
             ? { name: 'Solana', symbol: 'SOL', decimals: 9 }
-            : getWagmiChain(chainId).nativeCurrency),
+            : getChainMetadata(chainId).nativeCurrency),
           isCustom: false,
         },
       ] as const,
