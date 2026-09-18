@@ -1,6 +1,5 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { BigNumber, constants } from 'ethers';
-import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
 import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
@@ -10,7 +9,7 @@ import { twMerge } from 'tailwind-merge';
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useMode } from '../../hooks/useMode';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { getUsdcToken, useSelectedToken } from '../../hooks/useSelectedToken';
@@ -18,7 +17,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { getTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual } from '../../util/AddressUtils';
+import { addressesEqual, normalizeAddress, parseAddressForChain } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
@@ -38,7 +37,9 @@ import {
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  NATIVE_CURRENCY_IDENTIFIER,
   getTokenForRow,
+  getTokenPickerAddresses,
   isHeldTokenFromEnabledList,
 } from '../../util/TokenSelectionUtils';
 import {
@@ -146,7 +147,6 @@ function TokenListsPanel() {
   );
 }
 
-const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
 const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function TokensPanel({
@@ -168,7 +168,7 @@ function TokensPanel({
       isConnected,
     },
   } = useWallets();
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrencyForTransfer();
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -345,15 +345,11 @@ function TokensPanel({
       }
     }
 
-    /**
-     * Add native currency if not already included
-     * For chains with custom native tokens, always add it even if AddressZero is present
-     */
-    if (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) {
-      tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    }
-
-    const tokens = Array.from(new Set(tokenAddresses));
+    const tokens = getTokenPickerAddresses({
+      tokenAddresses,
+      chainId: networks.sourceChain.id,
+      hasCustomNativeCurrency: nativeCurrency.isCustom,
+    });
     const seenSourceTokenAddresses = new Set<string>();
 
     return tokens
@@ -476,7 +472,7 @@ function TokensPanel({
           return true;
         }
 
-        const normalizedSourceTokenAddress = sourceTokenAddress.toLowerCase();
+        const normalizedSourceTokenAddress = normalizeAddress(sourceTokenAddress);
         if (seenSourceTokenAddresses.has(normalizedSourceTokenAddress)) {
           return false;
         }
@@ -565,7 +561,7 @@ function TokensPanel({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!isAddress(newToken) || isAddingToken) {
+    if (!parseAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
       return;
     }
 
@@ -680,14 +676,14 @@ function TokensPanel({
         variant="secondary"
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
-        disabled={!isAddress(newToken)}
+        disabled={!parseAddressForChain(newToken, networks.sourceChain.id)}
         className="border border-gray-dark py-1"
         aria-label="Add New Token"
       >
         Add
       </Button>
     ),
-    [isAddingToken, newToken],
+    [isAddingToken, newToken, networks.sourceChain.id],
   );
 
   return (

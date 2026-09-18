@@ -5,11 +5,10 @@ import { shallow } from 'zustand/shallow';
 import { defaultErc20Decimals } from '../../../defaults';
 import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
 import { useSelectedTokenBalances } from '../../../hooks/TransferPanel/useSelectedTokenBalances';
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
 import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
@@ -50,7 +49,7 @@ export function useMaxAmount() {
   const [networks] = useNetworks();
   const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
-  const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const { balanceDecimals: nativeCurrencyDecimalsOnSourceChain } = useNativeCurrencyForTransfer();
   const selectedRouteContext = useRouteStore((state) => getSelectedRouteContext(state), shallow);
 
   const { estimatedParentChainGasFees, estimatedChildChainGasFees } = useGasSummary();

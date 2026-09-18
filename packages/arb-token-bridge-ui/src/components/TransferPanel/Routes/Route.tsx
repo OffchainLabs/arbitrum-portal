@@ -144,6 +144,7 @@ const RouteAmount = ({
         <div className="flex flex-row items-center gap-3">
           <TokenLogo
             className="h-8 w-8 min-w-8"
+            isDestination
             srcOverride={'type' in token ? (token.logoURI ?? '') : null}
             fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
           />
@@ -164,6 +165,7 @@ const RouteAmount = ({
           <div className="flex flex-row items-center gap-3 text-base">
             <TokenLogo
               className="h-8 w-8 min-w-8"
+              isDestination
               srcOverride={null}
               fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
             />
