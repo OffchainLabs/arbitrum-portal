@@ -7,6 +7,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName } from '../../util/networks';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { Button } from '../common/Button';
 import { useRouteStore } from './hooks/useRouteStore';
@@ -14,7 +15,6 @@ import { useTransferReadiness } from './useTransferReadiness';
 
 type MoveFundsButtonProps = Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'>;
 export function MoveFundsButton({ onClick }: MoveFundsButtonProps) {
-  const signer = useEthersSigner();
   const { layout } = useAppContextState();
   const { isTransferring } = layout;
   const [{ amount, theme }] = useArbQueryParams();
@@ -27,8 +27,14 @@ export function MoveFundsButton({ onClick }: MoveFundsButtonProps) {
   );
   const { accountType } = useAccountType();
   const { transferReady } = useTransferReadiness();
+  const {
+    sourceWallet: { ecosystem: sourceEcosystem },
+  } = useWallets();
+  // EVM transfers sign with wagmi's connector client, which resolves after the wallet connects
+  const signer = useEthersSigner();
+  const isSignerReady = sourceEcosystem !== 'evm' || !!signer;
   const isDisabled =
-    !signer || (isDepositMode ? !transferReady.deposit : !transferReady.withdrawal);
+    !isSignerReady || (isDepositMode ? !transferReady.deposit : !transferReady.withdrawal);
 
   return (
     <Button

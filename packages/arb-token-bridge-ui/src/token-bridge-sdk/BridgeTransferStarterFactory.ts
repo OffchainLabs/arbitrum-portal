@@ -1,3 +1,4 @@
+import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import {
   BridgeTransferStarter,
@@ -36,6 +37,9 @@ function withCache(key: string, value: TransferStarter): TransferStarter {
 const cache: { [key: string]: TransferStarter } = {};
 
 export class BridgeTransferStarterFactory {
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds & { lifiRoute: LifiCrosschainTransfersRoute },
+  ): LifiTransferStarter;
   public static create(
     props: BridgeTransferStarterPropsWithChainIds & { lifiRoute?: never },
   ): BridgeTransferStarter;

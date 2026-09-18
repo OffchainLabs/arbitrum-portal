@@ -26,7 +26,6 @@ import {
   getPendingLifiRouteBatchIds,
 } from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
@@ -673,8 +672,11 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider } = networks;
-      const lifiTransferStarter = new LifiTransferStarter({ lifiRoute: context });
+      const lifiTransferStarter = BridgeTransferStarterFactory.create({
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        lifiRoute: context,
+      });
 
       if (isSmartContractWallet) {
         showDelayedSmartContractTxRequest();
@@ -827,7 +829,7 @@ export function TransferPanel() {
 
       if (!isSmartContractWallet) {
         refreshBalancesAfterConfirmation(
-          sourceChainProvider.waitForTransaction(transfer.sourceChainTransaction.hash),
+          transfer.sourceChainTransaction.wait(),
           'lifi_source_confirmation',
         );
       }
