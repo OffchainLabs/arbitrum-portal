@@ -9,15 +9,15 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { useTransactionHistoryAddressStore } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import { errorToast } from '../components/common/atoms/Toast';
 import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
-import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../components/TransactionHistory/helpers';
+import { setParentChainTxDetailsOfWithdrawalClaimTx } from '../services/history';
 import { useAppState } from '../state';
 import { MergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
+import { getUniqueIdOrHashFromEvent } from '../util/WithdrawalEvent';
 import { formatTransactionError, isUserRejectedError } from '../util/isUserRejectedError';
 import { useEthersSigner } from '../util/wagmi/useEthersSigner';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
-import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
 import { useTransactionHistory } from './useTransactionHistory';
 
 export type UseClaimWithdrawalResult = {

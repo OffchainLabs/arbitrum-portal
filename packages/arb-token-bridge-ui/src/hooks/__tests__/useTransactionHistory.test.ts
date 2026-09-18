@@ -6,7 +6,7 @@ import { BigNumber } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Config } from 'wagmi';
 
-import * as transactionHelpers from '../../components/TransactionHistory/helpers';
+import * as transactionHelpers from '../../services/history';
 import {
   DepositStatus,
   LifiMergedTransaction,
@@ -158,7 +158,12 @@ function createWalletWrapper(
       evm: {
         ...defaultWalletContextValue.evm,
         isConnected: true,
-        account: { ecosystem: 'evm', address, chainId: 1, status: 'connected' },
+        account: {
+          ecosystem: 'evm',
+          address,
+          chainId: 1,
+          status: 'connected',
+        },
       },
     },
     wagmiConfig: config,

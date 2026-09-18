@@ -4,7 +4,6 @@ import { Signer } from '@ethersproject/abstract-signer';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { useLocalStorage } from '@rehooks/local-storage';
 import { TokenList } from '@uniswap/token-lists';
-import { BigNumber } from 'ethers';
 import { useCallback, useState } from 'react';
 import { Chain } from 'viem';
 import { useAccount } from 'wagmi';
@@ -50,18 +49,6 @@ export function getExecutedMessagesCacheKey({
   return isClassicL2ToL1TransactionEvent(event)
     ? `l2ChainId: ${l2ChainId}, batchNumber: ${event.batchNumber.toString()}, indexInBatch: ${event.indexInBatch.toString()}`
     : `l2ChainId: ${l2ChainId}, position: ${event.position.toString()}`;
-}
-
-export function getUniqueIdOrHashFromEvent(event: L2ToL1EventResult): BigNumber {
-  const anyEvent = event as any;
-
-  // Nitro
-  if (anyEvent.hash) {
-    return anyEvent.hash as BigNumber;
-  }
-
-  // Classic
-  return anyEvent.uniqueId as BigNumber;
 }
 
 class TokenDisabledError extends Error {

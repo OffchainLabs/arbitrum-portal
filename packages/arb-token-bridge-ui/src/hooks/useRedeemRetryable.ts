@@ -6,7 +6,6 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { errorToast } from '../components/common/atoms/Toast';
 import { DepositStatus, MergedTransaction } from '../state/app/state';
-import { Address } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { getRetryableTicket } from '../util/RetryableUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
@@ -21,7 +20,7 @@ export type UseRedeemRetryableResult = {
 
 export function useRedeemRetryable(
   tx: MergedTransaction,
-  address: Address | undefined,
+  address: Parameters<typeof useTransactionHistory>[0],
 ): UseRedeemRetryableResult {
   const signer = useEthersSigner({ chainId: tx.destinationChainId });
   const { updatePendingTransaction } = useTransactionHistory(address);

@@ -6,13 +6,16 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { isAddress, isHash } from 'viem';
+import { isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
+import { showLifiRefundToastOnce } from '../components/TransactionHistory/lifiRefundNotification';
+import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
 import {
   getDepositsWithoutStatusesFromCache,
   getLifiTransferDisplayStatus,
@@ -26,14 +29,13 @@ import {
   isOftTransfer,
   isSameTransaction,
   isTxPending,
-} from '../components/TransactionHistory/helpers';
-import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
-import { findFirstBlockWithNonce, getNonce } from '../services/evm/account';
+} from '../services/history';
+import { WithdrawalStatus } from '../state/app/state';
 import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
-import { Transaction } from '../types/Transactions';
+import type { Deposit, DepositOrWithdrawal, Transfer, Withdrawal } from '../types/TransferHistory';
 import { addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
@@ -64,14 +66,13 @@ import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/t
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
-  EthWithdrawal,
   isTokenWithdrawal,
   mapETHWithdrawalToL2ToL1EventResult,
   mapTokenWithdrawalFromEventLogsToL2ToL1EventResult,
   mapWithdrawalFromSubgraphToL2ToL1EventResult,
 } from '../util/withdrawals/helpers';
 import { useWalletForChain } from '../wallet/hooks/useWallets';
-import { AssetType, L2ToL1EventResultPlus, WithdrawalInitiated } from './arbTokenBridge.types';
+import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { canFetchTransactionHistory } from './canFetchTransactionHistory';
 import { useAccountType } from './useAccountType';
 import { DisabledFeatures } from './useArbQueryParams';
@@ -88,6 +89,8 @@ import {
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
 
+export type { Deposit, Withdrawal, Transfer } from '../types/TransferHistory';
+
 const LIFI_BATCH_STATUS_POLL_INTERVAL_MS = 1_000;
 
 export type UseTransactionHistoryResult = {
@@ -102,13 +105,6 @@ export type UseTransactionHistoryResult = {
   updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
-
-export type Deposit = Transaction;
-
-export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
-
-type DepositOrWithdrawal = Deposit | Withdrawal;
-export type Transfer = DepositOrWithdrawal | MergedTransaction;
 
 type ForceFetchReceivedStore = {
   forceFetchReceived: boolean;
@@ -1518,6 +1514,12 @@ export const useTransactionHistory = (
         // SDK updates can arrive while the status request is in flight.
         if (currentTransaction !== cachedTransaction) {
           return;
+        }
+        if (
+          updatedLifiTransfer.status === WithdrawalStatus.REFUNDED ||
+          updatedLifiTransfer.destinationStatus === WithdrawalStatus.REFUNDED
+        ) {
+          showLifiRefundToastOnce(updatedLifiTransfer);
         }
         updateCachedTransaction(getLifiTransferDisplayStatus(updatedLifiTransfer));
         return;
