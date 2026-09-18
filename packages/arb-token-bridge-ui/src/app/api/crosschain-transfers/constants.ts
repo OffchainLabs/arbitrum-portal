@@ -1,6 +1,11 @@
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { ecosystems } from '../../../wallet/ecosystems';
+
+const solanaLifiDestinationChainIds: Record<number, number[]> = ecosystems.solana.isEnabled()
+  ? { [ChainId.Solana]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain] }
+  : {};
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
   [ChainId.Ethereum]: [
@@ -14,6 +19,7 @@ export const lifiDestinationChainIds: Record<number, number[]> = {
   [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
   [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
   [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
+  ...solanaLifiDestinationChainIds,
 };
 
 export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationChainIds).map((id) =>
@@ -28,7 +34,7 @@ export const allowedLifiDestinationChainIds: number[] = Object.values(
  * Some tokens only exist on one chain (for example stock tokens on Robinhood),
  * we want to allow them to be source or destination of swaps through LiFi
  */
-const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([ChainId.RobinhoodChain]);
+const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([ChainId.RobinhoodChain, ChainId.Solana]);
 
 /**
  * Individual tokens allowed to be "unmatched" on chains that don't allow all of them.
