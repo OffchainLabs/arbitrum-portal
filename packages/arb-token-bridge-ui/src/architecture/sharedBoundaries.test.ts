@@ -6,14 +6,21 @@ import { describe, expect, it } from 'vitest';
 const sourceRoot = path.resolve(import.meta.dirname, '..');
 const componentDirectories = ['components/TransferPanel', 'components/TransactionHistory'];
 const sharedHooks = [
+  'components/common/NetworkSelectionContainer.tsx',
+  'components/Widget/WidgetHeaderAccountButton.tsx',
+  'components/App/useSyncConnectedChainToQueryParams.ts',
+  '../../app/src/components/AppShell/components/NavWallet.tsx',
   'hooks/useNetworks.ts',
   'hooks/useNetworksRelationship.ts',
   'hooks/useBalanceOnSourceChain.ts',
   'hooks/useBalanceOnDestinationChain.ts',
   'hooks/useNativeCurrency.ts',
+  'hooks/useAccountType.ts',
+  'hooks/useHistoryDisclaimer.ts',
   'hooks/TransferPanel/useGasEstimates.ts',
   'hooks/TransferPanel/useOftV2FeeEstimates.ts',
 ];
+const chainNeutralFiles = new Set(['components/TransferPanel/TransferPanel.tsx', ...sharedHooks]);
 
 function sourceFiles(directory: string): string[] {
   return readdirSync(path.join(sourceRoot, directory), { withFileTypes: true }).flatMap((entry) => {
@@ -64,6 +71,13 @@ describe('shared application boundaries', () => {
           ) {
             violations.push(`runtime import ${moduleName}`);
           }
+          if (
+            names.length &&
+            chainNeutralFiles.has(file) &&
+            /\/(?:application|services)\/evm/.test(moduleName)
+          ) {
+            violations.push(`EVM boundary import ${moduleName}`);
+          }
           for (const name of names) {
             if (
               /^(getProviderForChainId|getEvmProvider|useEthersSigner|useAccount|useConfig|.*TransferStarter|.*RouteExecutor)$/.test(
@@ -89,7 +103,11 @@ describe('shared application boundaries', () => {
           /^(===|!==|==|!=)$/.test(node.operatorToken.getText(tree))
         ) {
           const comparison = node.getText(tree);
-          if (/\.ecosystem\b|ChainId\.Solana|\b(?:isSolana|isEVM|isEvm)\b/.test(comparison))
+          if (
+            /\.ecosystem\b|ChainId\.Solana|\b(?:isSolana|isEVM|isEvm)\b/.test(comparison) ||
+            /getWalletEcosystem\s*\([^)]*\)\s*[!=]==?\s*['"](?:evm|solana)['"]/.test(comparison) ||
+            /['"](?:evm|solana)['"]\s*[!=]==?\s*getWalletEcosystem\s*\(/.test(comparison)
+          )
             violations.push(`ecosystem policy: ${comparison}`);
         }
         ts.forEachChild(node, visit);
