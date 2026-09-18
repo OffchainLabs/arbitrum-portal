@@ -1,4 +1,13 @@
 import { isAddress, isHash, zeroAddress } from 'viem';
+import {
+  arbitrum,
+  arbitrumNova,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  mainnet,
+  sepolia,
+} from 'viem/chains';
 
 import type { EcosystemConfig } from '.';
 
@@ -18,4 +27,6 @@ export const evmEcosystem: EcosystemConfig = {
   hasGasPrice: true,
   usesEthersSigner: true,
   hasTokenApprovals: true,
+  explorerAccountPath: 'address',
+  chains: [mainnet, sepolia, arbitrum, arbitrumNova, arbitrumSepolia, base, baseSepolia],
 };
