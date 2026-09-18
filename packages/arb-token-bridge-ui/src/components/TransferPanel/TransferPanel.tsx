@@ -13,7 +13,7 @@ import { shallow } from 'zustand/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
-import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
 import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory';
@@ -35,7 +35,6 @@ import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnecti
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useMode } from '../../hooks/useMode';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
@@ -161,7 +160,7 @@ export function TransferPanel() {
   } = useLatest(useNetworksRelationship(latestNetworks.current));
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
-  const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const { balanceDecimals: nativeCurrencyDecimalsOnSourceChain } = useNativeCurrencyForTransfer();
 
   const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 

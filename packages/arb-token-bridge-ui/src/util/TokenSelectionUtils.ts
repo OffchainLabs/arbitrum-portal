@@ -7,12 +7,15 @@ import {
   TokenType,
 } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
 import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken, isTokenAvailableOnChain } from './TokenListUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from './TokenUtils';
 import { isWithdrawOnlyToken } from './WithdrawOnlyUtils';
+
+export const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
 
 export const ARB_ONE_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
   ...ArbOneNativeUSDC,
@@ -238,4 +241,34 @@ export function getTokenForRow({
   }
 
   return selectUsdcToken({ usdcToken, storedToken: listedToken });
+}
+
+/**
+ * Addresses of the token picker rows. The native currency row is added unless the list already has
+ * the zero address for it. Native tokens with their own address (e.g. SOL) always use the native row.
+ */
+export function getTokenPickerAddresses({
+  tokenAddresses,
+  chainId,
+  hasCustomNativeCurrency,
+}: {
+  tokenAddresses: string[];
+  chainId: number;
+  hasCustomNativeCurrency: boolean;
+}) {
+  const nativeTokenAddress = getNativeTokenAddress(chainId);
+  const usesNonzeroNativeAddress = !addressesEqual(nativeTokenAddress, constants.AddressZero);
+  const pickerAddresses = usesNonzeroNativeAddress
+    ? tokenAddresses.filter((address) => !addressesEqual(address, nativeTokenAddress))
+    : [...tokenAddresses];
+
+  if (
+    hasCustomNativeCurrency ||
+    usesNonzeroNativeAddress ||
+    !tokenAddresses.some((address) => addressesEqual(address, nativeTokenAddress))
+  ) {
+    pickerAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
+  }
+
+  return Array.from(new Set(pickerAddresses));
 }
