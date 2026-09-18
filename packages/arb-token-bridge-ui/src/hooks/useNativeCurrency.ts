@@ -1,9 +1,13 @@
+import { constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { nativeCurrencyEther } from '../services/evm/nativeCurrency';
 import { fetchNativeCurrency } from '../services/nativeCurrency';
+import { type Address, addressesEqual, normalizeAddress } from '../util/AddressUtils';
 import { getChainMetadata } from '../util/networkMetadata';
+import { isNetwork } from '../util/networks';
+import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
@@ -56,4 +60,77 @@ function getFallbackNativeCurrency(chainId: number): NativeCurrencyEther {
   } catch {
     return nativeCurrencyEther;
   }
+}
+
+export type TransferNativeCurrency = NativeCurrency & {
+  balanceDecimals: number;
+  /** Chain shown in "Native token on …", undefined when both chains use a custom gas token */
+  nativeTokenChainId: number | undefined;
+  /** Key of the native token price in the token lists, undefined for the ETH price */
+  priceAddress: Address | undefined;
+};
+
+/**
+ * Native currency of a token row or amount input.
+ * Within one ecosystem it is the child chain's currency; across ecosystems each side uses its own chain's.
+ * The zero address token is ETH (e.g. next to APE on ApeChain routes).
+ */
+export function useNativeCurrencyForTransfer({
+  isDestination = false,
+  tokenAddress,
+}: { isDestination?: boolean; tokenAddress?: string } = {}): TransferNativeCurrency {
+  const [networks] = useNetworks();
+  const { childChain } = useNetworksRelationship(networks);
+  const sourceChainId = networks.sourceChain.id;
+  const destinationChainId = networks.destinationChain.id;
+  const sourceCurrency = useNativeCurrency({ chainId: sourceChainId });
+  const destinationCurrency = useNativeCurrency({ chainId: destinationChainId });
+
+  // Stable reference for memoized consumers (e.g. the token list in TokenSearch)
+  return useMemo(() => {
+    const isCrossEcosystem =
+      getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId);
+    const rowChainId = isDestination ? destinationChainId : sourceChainId;
+    const currencyChainId = isCrossEcosystem ? rowChainId : childChain.id;
+    const isEth = addressesEqual(tokenAddress, constants.AddressZero);
+    const nativeCurrency: NativeCurrency = isEth
+      ? nativeCurrencyEther
+      : currencyChainId === sourceChainId
+        ? sourceCurrency
+        : destinationCurrency;
+    const nativeTokenAddress = getNativeTokenAddress(currencyChainId);
+    const priceAddress = isEth
+      ? undefined
+      : nativeCurrency.isCustom
+        ? normalizeAddress(nativeCurrency.address)
+        : addressesEqual(nativeTokenAddress, constants.AddressZero)
+          ? undefined
+          : nativeTokenAddress;
+    const nativeTokenChainId = isEth
+      ? sourceCurrency.isCustom && destinationCurrency.isCustom
+        ? undefined
+        : sourceCurrency.isCustom
+          ? destinationChainId
+          : sourceChainId
+      : isCrossEcosystem
+        ? rowChainId
+        : nativeCurrency.isCustom
+          ? childChain.id
+          : sourceChainId;
+    const balanceDecimals = isDestination
+      ? destinationCurrency.decimals
+      : isNetwork(sourceChainId).isOrbitChain
+        ? 18
+        : nativeCurrency.decimals;
+
+    return { ...nativeCurrency, balanceDecimals, nativeTokenChainId, priceAddress };
+  }, [
+    sourceChainId,
+    destinationChainId,
+    childChain.id,
+    sourceCurrency,
+    destinationCurrency,
+    isDestination,
+    tokenAddress,
+  ]);
 }

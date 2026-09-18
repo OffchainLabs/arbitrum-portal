@@ -16,6 +16,10 @@ import type { Address } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isTokenUSDG, isUsdgSurfacedLikeEth } from '../../util/RobinhoodStablecoinUtils';
 import { LIFI_TRANSFER_LIST_ID, isTokenAvailableOnChain } from '../../util/TokenListUtils';
+import {
+  NATIVE_CURRENCY_IDENTIFIER,
+  getTokenPickerAddresses,
+} from '../../util/TokenSelectionUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -25,7 +29,6 @@ import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { TokenRow } from './TokenRow';
 import { useTokensFromLists } from './TokenSearchUtils';
 
-const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
 const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function DestinationTokensPanel({
@@ -136,13 +139,11 @@ function DestinationTokensPanel({
       return token?.listIds.has(LIFI_TRANSFER_LIST_ID);
     });
 
-    // Add native currency if not already included
-    // For chains with custom native tokens, always add it even if AddressZero is present
-    if (nativeCurrency.isCustom || !lifiTokenAddresses.includes(constants.AddressZero)) {
-      lifiTokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    }
-
-    return lifiTokenAddresses
+    return getTokenPickerAddresses({
+      tokenAddresses: lifiTokenAddresses,
+      chainId: networks.destinationChain.id,
+      hasCustomNativeCurrency: nativeCurrency.isCustom,
+    })
       .filter((address) => {
         const token = tokensFromLists[address];
 
