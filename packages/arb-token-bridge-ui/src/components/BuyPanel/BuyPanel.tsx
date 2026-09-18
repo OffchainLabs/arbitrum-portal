@@ -10,8 +10,6 @@ import { useAccount, useBalance } from 'wagmi';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -142,8 +140,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
   const { address, isConnected } = useAccount();
   const { ethToUSD } = useETHPrice();
   const selectedChainId = useBuyPanelStore((state) => state.selectedChainId);
-  const provider = getProviderForChainId(selectedChainId);
-  const nativeCurrency = useNativeCurrency({ provider });
+  const nativeCurrency = useNativeCurrency({ chainId: selectedChainId });
   const {
     data: balanceState,
     isLoading: isLoadingBalance,

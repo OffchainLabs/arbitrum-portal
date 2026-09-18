@@ -59,13 +59,13 @@ function SourceChainTokenBalance({
 }) {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { isDepositMode, childChainProvider } = useNetworksRelationship(networks);
+  const { isDepositMode, childChain } = useNetworksRelationship(networks);
   const selectedTokenDecimals = useSelectedTokenDecimals();
 
   const nativeCurrencyBalances = useNativeCurrencyBalances();
   const selectedTokenBalances = useSelectedTokenBalances();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   /**
    * If token is ETH (lifi), show ETH balance on source chain

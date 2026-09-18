@@ -160,7 +160,7 @@ export function TransferPanel() {
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
