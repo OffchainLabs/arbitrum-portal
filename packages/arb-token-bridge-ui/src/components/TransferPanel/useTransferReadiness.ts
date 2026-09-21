@@ -48,8 +48,8 @@ import {
 } from './useTransferReadinessUtils';
 
 // Add chains IDs that are currently down or disabled
-// It will block transfers (both deposits and withdrawals) and display an info box in the transfer panel
-export const DISABLED_CHAIN_IDS: number[] = [];
+// It will block transfers (both deposits and withdrawals) and show a transfer panel error.
+export const DISABLED_CHAIN_IDS: number[] = [869]; // World Mobile Chain
 
 // withdraw-only chains (will also display error message in the transfer panel)
 const WITHDRAW_ONLY_CHAIN_IDS: number[] = [];
@@ -339,6 +339,18 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   }, [nativeCurrency, erc20ParentBalances]);
 
   return useMemo(() => {
+    const disabledChain = [networks.sourceChain, networks.destinationChain].find((chain) =>
+      DISABLED_CHAIN_IDS.includes(chain.id),
+    );
+
+    if (disabledChain) {
+      return notReady({
+        errorMessages: {
+          inputAmount1: `Transfers to and from ${disabledChain.name} are temporarily paused.`,
+        },
+      });
+    }
+
     const { estimatedL1GasFees, estimatedL2GasFees } = sanitizeEstimatedGasFees(gasSummary, {
       selectedRoute,
       isSmartContractWallet,
@@ -413,10 +425,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     if (isTransferring) {
-      return notReady();
-    }
-
-    if (DISABLED_CHAIN_IDS.includes(childChain.id)) {
       return notReady();
     }
 
@@ -794,10 +802,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     destinationAddressError,
     selectedToken,
     tosAccepted,
-    networks.sourceChain.name,
-    networks.sourceChain.id,
-    networks.destinationChain.id,
-    networks.destinationChain.name,
+    networks.sourceChain,
+    networks.destinationChain,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedRouteContext,
