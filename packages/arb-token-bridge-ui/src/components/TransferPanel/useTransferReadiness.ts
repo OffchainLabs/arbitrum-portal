@@ -49,7 +49,7 @@ import {
 
 // Add chains IDs that are currently down or disabled
 // It will block transfers (both deposits and withdrawals) and display an info box in the transfer panel
-export const DISABLED_CHAIN_IDS: number[] = [];
+export const DISABLED_CHAIN_IDS: number[] = [869]; // World Mobile Chain
 
 // withdraw-only chains (will also display error message in the transfer panel)
 const WITHDRAW_ONLY_CHAIN_IDS: number[] = [];
