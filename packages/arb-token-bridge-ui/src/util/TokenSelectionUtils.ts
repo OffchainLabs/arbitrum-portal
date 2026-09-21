@@ -6,6 +6,7 @@ import {
   type ERC20BridgeToken,
   TokenType,
 } from '../hooks/arbTokenBridge.types';
+import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
@@ -161,6 +162,14 @@ export function resolveDestinationSelection({
     } else if (token) {
       override = getOverride(token.address);
     }
+  }
+
+  if (!token && !override && sourceChainId === ChainId.ApeChain) {
+    // An unsupported destination falls back to ETH. Null would make display consumers
+    // interpret it as the default APE transfer instead, so retain explicit ETH metadata.
+    override = getOverride(constants.AddressZero);
+    token = override;
+    lookupKey = constants.AddressZero;
   }
 
   const destinationAddress =

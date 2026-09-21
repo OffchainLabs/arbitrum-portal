@@ -200,6 +200,35 @@ describe('resolveDestinationSelection', () => {
     expect(result.isSwap).toBe(true);
   });
 
+  it.each([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain])(
+    'preserves the explicit ETH fallback when reloading an outbound ApeChain selection to %s',
+    (destinationChainId) => {
+      const args = {
+        sourceToken: null,
+        sourceChainId: ChainId.ApeChain,
+        destinationChainId,
+        isDepositMode: false,
+      };
+      const selection = resolveDestinationSelection({
+        ...args,
+        destinationTokenLookupKey: CommonAddress.Ethereum.USDC,
+      });
+
+      expect(selection).toMatchObject({
+        token: { address: constants.AddressZero, symbol: 'ETH' },
+        lookupKey: constants.AddressZero,
+        isSwap: true,
+        destinationAddress: constants.AddressZero,
+      });
+      expect(
+        resolveDestinationSelection({
+          ...args,
+          destinationTokenLookupKey: selection.lookupKey,
+        }),
+      ).toEqual(selection);
+    },
+  );
+
   it('keeps native-to-native transfers as non-swaps', () => {
     expect(
       resolveDestinationSelection({

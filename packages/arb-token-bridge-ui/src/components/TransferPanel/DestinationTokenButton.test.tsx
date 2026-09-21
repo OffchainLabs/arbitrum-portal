@@ -2,7 +2,7 @@ import { cleanup, render, renderHook, screen } from '@testing-library/react';
 import { constants } from 'ethers';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../constants';
+import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../constants';
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { useDestinationSelection } from '../../hooks/useDestinationToken';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -11,6 +11,7 @@ import { CommonAddress } from '../../util/CommonAddressUtils';
 import { DestinationTokenButton } from './DestinationTokenButton';
 
 const selection = vi.hoisted(() => ({ destinationToken: undefined as string | undefined }));
+const route = vi.hoisted(() => ({ isOutbound: false }));
 
 vi.mock('../../hooks/useArbQueryParams', () => ({
   useArbQueryParams: () => [selection],
@@ -18,13 +19,13 @@ vi.mock('../../hooks/useArbQueryParams', () => ({
 vi.mock('../../hooks/useNetworks', () => ({
   useNetworks: () => [
     {
-      sourceChain: { id: ChainId.RobinhoodChain },
-      destinationChain: { id: ChainId.ApeChain },
+      sourceChain: { id: route.isOutbound ? ChainId.ApeChain : ChainId.RobinhoodChain },
+      destinationChain: { id: route.isOutbound ? ChainId.RobinhoodChain : ChainId.ApeChain },
     },
   ],
 }));
 vi.mock('../../hooks/useNetworksRelationship', () => ({
-  useNetworksRelationship: () => ({ isDepositMode: true, childChainProvider: {} }),
+  useNetworksRelationship: () => ({ isDepositMode: !route.isOutbound, childChainProvider: {} }),
 }));
 vi.mock('../../hooks/useNativeCurrency', () => ({
   useNativeCurrency: () => ({ symbol: 'APE', logoUrl: APE_TOKEN_LOGO }),
@@ -56,12 +57,22 @@ const usdg: ERC20BridgeToken = {
   lifiOnlyChainId: ChainId.RobinhoodChain,
 };
 
-describe.sequential('DestinationTokenButton on Robinhood to ApeChain', () => {
+const apeUsdc: ERC20BridgeToken = {
+  ...usdg,
+  address: CommonAddress.ApeChain.USDCe,
+  l2Address: CommonAddress.ApeChain.USDCe,
+  name: 'Bridged USDC',
+  symbol: 'USDC.e',
+  lifiOnlyChainId: ChainId.ApeChain,
+};
+
+describe.sequential('DestinationTokenButton on ApeChain routes', () => {
   afterEach(cleanup);
 
   it.each([
     {
       name: 'USDG to default native APE',
+      isOutbound: false,
       sourceToken: usdg,
       destinationToken: undefined,
       symbol: 'APE',
@@ -70,6 +81,7 @@ describe.sequential('DestinationTokenButton on Robinhood to ApeChain', () => {
     },
     {
       name: 'USDG to explicitly selected WETH',
+      isOutbound: false,
       sourceToken: usdg,
       destinationToken: constants.AddressZero,
       symbol: 'WETH',
@@ -78,15 +90,62 @@ describe.sequential('DestinationTokenButton on Robinhood to ApeChain', () => {
     },
     {
       name: 'default APE transfer',
+      isOutbound: false,
       sourceToken: null,
       destinationToken: undefined,
       symbol: 'APE',
       logo: APE_TOKEN_LOGO,
       quoteAddress: constants.AddressZero,
     },
+    {
+      name: 'unsupported saved USDG destination to native APE',
+      isOutbound: false,
+      sourceToken: usdg,
+      destinationToken: usdg.address,
+      symbol: 'APE',
+      logo: APE_TOKEN_LOGO,
+      quoteAddress: constants.AddressZero,
+    },
+    {
+      name: 'outbound default APE transfer',
+      isOutbound: true,
+      sourceToken: null,
+      destinationToken: undefined,
+      symbol: 'APE',
+      logo: APE_TOKEN_LOGO,
+      quoteAddress: CommonAddress.RobinhoodChain.APE,
+    },
+    {
+      name: 'outbound explicitly selected ETH',
+      isOutbound: true,
+      sourceToken: null,
+      destinationToken: constants.AddressZero,
+      symbol: 'ETH',
+      logo: ETHER_TOKEN_LOGO,
+      quoteAddress: constants.AddressZero,
+    },
+    {
+      name: 'outbound unknown saved destination to native ETH',
+      isOutbound: true,
+      sourceToken: null,
+      destinationToken: CommonAddress.Ethereum.USDC,
+      symbol: 'ETH',
+      logo: ETHER_TOKEN_LOGO,
+      quoteAddress: constants.AddressZero,
+    },
+    {
+      name: 'outbound repeated source-only USDC destination to native ETH',
+      isOutbound: true,
+      sourceToken: apeUsdc,
+      destinationToken: apeUsdc.address,
+      symbol: 'ETH',
+      logo: ETHER_TOKEN_LOGO,
+      quoteAddress: constants.AddressZero,
+    },
   ])(
     'matches the quoted asset for $name',
-    ({ sourceToken, destinationToken, symbol, logo, quoteAddress }) => {
+    ({ isOutbound, sourceToken, destinationToken, symbol, logo, quoteAddress }) => {
+      route.isOutbound = isOutbound;
       selection.destinationToken = destinationToken;
       vi.mocked(useSelectedToken).mockReturnValue([sourceToken, vi.fn()]);
 
