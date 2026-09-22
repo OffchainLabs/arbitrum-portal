@@ -15,6 +15,7 @@ import { useCallback, useMemo } from 'react';
 import { ChainId } from '../types/ChainId';
 import type { BalanceClients } from './balance/getBalanceClient';
 import { createSolanaBalanceClient } from './balance/solana';
+import { confirmSolanaTransaction } from './confirmSolanaTransaction';
 import type { SolanaWalletHandle } from './types';
 
 export const appKitAdapters = [new SolanaAdapter()];
@@ -55,12 +56,23 @@ export function useSolanaWallet(): SolanaWalletHandle {
       disconnect: disconnectSolana,
       sendTransaction:
         isConnected && typeof walletProvider?.signAndSendTransaction === 'function'
-          ? async (serializedTransaction) =>
-              walletProvider.signAndSendTransaction(
-                VersionedTransaction.deserialize(serializedTransaction),
-                { preflightCommitment: 'confirmed' },
-              )
+          ? async (serializedTransaction) => {
+              const transaction = VersionedTransaction.deserialize(serializedTransaction);
+              const payer = transaction.message.staticAccountKeys[0]?.toBase58();
+              if (!address || payer !== address) {
+                throw new Error(
+                  'The Solana transaction signer does not match the connected wallet.',
+                );
+              }
+              return walletProvider.signAndSendTransaction(transaction, {
+                preflightCommitment: 'confirmed',
+              });
+            }
           : undefined,
+      confirmTransaction: isConnected
+        ? (signature, serializedTransaction) =>
+            confirmSolanaTransaction({ connection, signature, serializedTransaction })
+        : undefined,
     }),
     [address, status, walletInfo, isConnected, disconnectSolana, walletProvider],
   );
