@@ -2,6 +2,7 @@ import { BigNumber } from 'ethers';
 import { arbitrum, mainnet } from 'viem/chains';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { defaultWalletContextValue } from '../wallet/WalletContext';
 import {
   type TransferCallbacks,
   type TransferSubmission,
@@ -56,6 +57,15 @@ function snapshot(): TransferSubmission {
     networks: { sourceChain: mainnet, destinationChain: arbitrum },
     parentChain: mainnet,
     childChain: arbitrum,
+    sourceWallet: {
+      ...defaultWalletContextValue.evm,
+      isConnected: true,
+      account: {
+        ...defaultWalletContextValue.evm.account,
+        address: sender,
+        chainId: mainnet.id,
+      },
+    },
     walletAddress: sender,
     destinationWalletAddress: sender,
     destinationAddress: recipient,
