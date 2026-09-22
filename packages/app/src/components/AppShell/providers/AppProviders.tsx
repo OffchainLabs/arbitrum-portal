@@ -1,6 +1,6 @@
 'use client';
 
-import { createConfig } from '@lifi/sdk';
+import { ChainId as LiFiChainId, createConfig } from '@lifi/sdk';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
@@ -15,6 +15,7 @@ import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
 import { WalletProvider } from '@/bridge/wallet/WalletProvider';
+import { solanaRpcUrl } from '@/bridge/wallet/solana/network';
 
 import { initializeDayjs } from '../../../initialization';
 import {
@@ -53,7 +54,7 @@ const integratorId =
 
 const queryClient = new QueryClient();
 
-createConfig({ integrator: integratorId });
+createConfig({ integrator: integratorId, rpcUrls: { [LiFiChainId.SOL]: [solanaRpcUrl] } });
 initializeDayjs();
 
 if (!isProductionEnvironment || isE2eTestingEnvironment) {

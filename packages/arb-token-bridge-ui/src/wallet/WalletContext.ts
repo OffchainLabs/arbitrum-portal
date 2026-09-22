@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 
+import { createSolanaSigner } from './solana/signer';
 import type { WalletContextValue, WalletEcosystem } from './types';
 
 export const defaultWalletContextValue: WalletContextValue = {
@@ -8,12 +9,19 @@ export const defaultWalletContextValue: WalletContextValue = {
     account: { ecosystem: 'evm', status: 'disconnected' },
     isConnected: false,
     disconnect: async () => {},
+    signer: {
+      getAddress: () => undefined,
+      getWalletClient: async () => {
+        throw new Error('Connect a wallet to continue.');
+      },
+    },
   },
   solana: {
     ecosystem: 'solana',
     account: { ecosystem: 'solana', status: 'disconnected' },
     isConnected: false,
     disconnect: async () => {},
+    signer: createSolanaSigner(() => undefined),
   },
 };
 

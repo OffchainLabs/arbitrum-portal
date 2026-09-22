@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import type { RouteCost } from '../app/api/crosschain-transfers/types';
 import { createMockLifiRoute } from '../test-utils/lifi';
+import { createMockSigners } from '../test-utils/signers';
 import {
   getExecutedLifiRouteTxHash,
   getLifiRouteStatusRequest,
@@ -83,7 +84,7 @@ function createTransferProps(
   return {
     amount: BigNumber.from(1),
     destinationAddress: constants.AddressZero,
-    wagmiConfig: {} as Parameters<LifiTransferStarter['transfer']>[0]['wagmiConfig'],
+    signers: createMockSigners(),
     switchChainAsync: vi.fn().mockResolvedValue(undefined),
     onApprovalRequest,
     onRouteExecutionError: vi.fn(),
@@ -642,7 +643,7 @@ describe.sequential('LifiTransferStarter approvals', () => {
     vi.mocked(resumeRoute).mockResolvedValue(route);
 
     await resumeLifiRoute(route, {
-      wagmiConfig: {} as Parameters<typeof resumeLifiRoute>[1]['wagmiConfig'],
+      signers: createMockSigners(),
       switchChainAsync: vi.fn().mockResolvedValue(undefined),
     });
 

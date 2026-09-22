@@ -64,6 +64,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
@@ -139,15 +140,14 @@ export function TransferPanel() {
       warningTokens,
     },
   } = useAppState();
+  const { sourceWallet, destinationWallet } = useWallets();
   const {
-    sourceWallet: {
-      account: { address: walletAddress, chainId: sourceWalletChainId },
-      isConnected,
-    },
-    destinationWallet: {
-      account: { address: destinationWalletAddress },
-    },
-  } = useWallets();
+    account: { address: walletAddress, chainId: sourceWalletChainId },
+    isConnected,
+  } = sourceWallet;
+  const {
+    account: { address: destinationWalletAddress },
+  } = destinationWallet;
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
@@ -774,7 +774,7 @@ export function TransferPanel() {
       const transfer = await lifiTransferStarter.transfer({
         amount: amountBigNumber,
         destinationAddress,
-        wagmiConfig,
+        signers: getSigners(sourceWallet, destinationWallet),
         switchChainAsync,
         onApprovalRequest: (approvalRequest) =>
           confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),

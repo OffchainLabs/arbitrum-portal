@@ -1,7 +1,11 @@
-import type { ExecutionOptions, Route, RouteExtended, TransactionParameters } from '@lifi/sdk';
-import { EVM, executeRoute, config as lifiConfig, resumeRoute } from '@lifi/sdk';
-import type { Config } from '@wagmi/core';
-import { getWalletClient } from '@wagmi/core';
+import type {
+  ExecutionOptions,
+  Route,
+  RouteExtended,
+  SDKProvider,
+  TransactionParameters,
+} from '@lifi/sdk';
+import { EVM, Solana, executeRoute, config as lifiConfig, resumeRoute } from '@lifi/sdk';
 import { Client, UserRejectedRequestError } from 'viem';
 
 import {
@@ -9,11 +13,14 @@ import {
   rejectPendingLifiRouteRequest,
 } from '../util/LifiTransactionStatus';
 import { isUserRejectedError } from '../util/isUserRejectedError';
+import { ecosystems } from '../wallet/ecosystems';
+import type { Signers, WalletEcosystem } from '../wallet/types';
 
 type SwitchChainAsync = (parameters: { chainId: number }) => Promise<{ id: number } | undefined>;
 
 type LifiRouteRunProps = {
-  wagmiConfig: Config;
+  /** Signers of the route's source and destination wallets */
+  signers: Partial<Signers>;
   switchChainAsync: SwitchChainAsync;
   onApprovalRequest?: (approvalRequest: TransactionParameters) => Promise<boolean>;
   onRouteUpdate?: (route: RouteExtended) => void;
@@ -23,39 +30,45 @@ export type LifiRouteExecutionProps = LifiRouteRunProps & {
   onRouteExecutionError: (error: unknown, route: RouteExtended | undefined) => void;
 };
 
-function configureLifiEvmProvider({
-  wagmiConfig,
-  switchChainAsync,
-}: Pick<LifiRouteRunProps, 'wagmiConfig' | 'switchChainAsync'>) {
-  lifiConfig.setProviders([
+export type LifiTransferOverrides = { executeRoute?: typeof executeLifiRoute };
+
+type ProviderProps = Pick<LifiRouteRunProps, 'signers' | 'switchChainAsync'>;
+
+const lifiProviders: {
+  [E in WalletEcosystem]: (signer: Signers[E], props: ProviderProps) => SDKProvider;
+} = {
+  evm: (signer, { switchChainAsync }) =>
     EVM({
-      getWalletClient: async () => {
-        const walletClient = await getWalletClient(wagmiConfig);
-        if (!walletClient) {
-          throw new Error('LiFi SDK wallet client is unavailable.');
-        }
-        return walletClient as Client;
-      },
+      getWalletClient: async () => (await signer.getWalletClient()) as Client,
       switchChain: async (chainId) => {
         await switchChainAsync({ chainId });
-
-        const walletClient = await getWalletClient(wagmiConfig, { chainId });
-        if (!walletClient) {
-          throw new Error('LiFi SDK wallet client is unavailable after switching chain.');
-        }
-        return walletClient as Client;
+        return (await signer.getWalletClient(chainId)) as Client;
       },
     }),
-  ]);
+  solana: (signer) => Solana({ getWalletAdapter: signer.getWalletAdapter }),
+};
+
+function createLifiProvider<E extends WalletEcosystem>(ecosystem: E, props: ProviderProps) {
+  const signer = props.signers[ecosystem];
+  return signer ? [lifiProviders[ecosystem](signer, props)] : [];
+}
+
+// Registers a provider for each enabled ecosystem that has a signer
+function configureLifiProviders(props: ProviderProps) {
+  lifiConfig.setProviders(
+    (Object.keys(lifiProviders) as WalletEcosystem[])
+      .filter((ecosystem) => ecosystems[ecosystem].isEnabled())
+      .flatMap((ecosystem) => createLifiProvider(ecosystem, props)),
+  );
 }
 
 function createExecutionOptions({
-  wagmiConfig,
+  signers,
   switchChainAsync,
   onApprovalRequest,
   onRouteUpdate,
 }: LifiRouteRunProps): ExecutionOptions {
-  configureLifiEvmProvider({ wagmiConfig, switchChainAsync });
+  configureLifiProviders({ signers, switchChainAsync });
 
   return {
     updateTransactionRequestHook: async ({ requestType, ...transactionRequest }) => {
@@ -76,7 +89,7 @@ function createExecutionOptions({
 export function executeLifiRoute(
   route: Route | RouteExtended,
   {
-    wagmiConfig,
+    signers,
     switchChainAsync,
     onApprovalRequest,
     onRouteUpdate,
@@ -84,7 +97,7 @@ export function executeLifiRoute(
   }: LifiRouteExecutionProps,
 ): Promise<{ txHash: string; route: RouteExtended }> {
   const executionOptions = createExecutionOptions({
-    wagmiConfig,
+    signers,
     switchChainAsync,
     onApprovalRequest,
   });
@@ -132,12 +145,12 @@ export function executeLifiRoute(
 
 export function resumeLifiRoute(
   route: Route | RouteExtended,
-  { wagmiConfig, switchChainAsync, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
+  { signers, switchChainAsync, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
 ): Promise<RouteExtended> {
   return resumeRoute(
     structuredClone(route),
     createExecutionOptions({
-      wagmiConfig,
+      signers,
       switchChainAsync,
       onApprovalRequest,
       onRouteUpdate,
