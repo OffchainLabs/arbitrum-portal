@@ -102,15 +102,31 @@ export function useGasSummary(): UseGasSummaryResult {
   });
 
   const estimatedParentChainGasFees = useMemo(() => {
+    if (estimateGasResult && 'estimatedParentChainGasFee' in estimateGasResult) {
+      return Number(
+        utils.formatUnits(
+          estimateGasResult.estimatedParentChainGasFee,
+          parentChain.nativeCurrency.decimals,
+        ),
+      );
+    }
     if (!estimateGasResult?.estimatedParentChainGas) {
       return;
     }
     return parseFloat(
       utils.formatEther(estimateGasResult.estimatedParentChainGas.mul(parentChainGasPrice)),
     );
-  }, [estimateGasResult, parentChainGasPrice]);
+  }, [estimateGasResult, parentChainGasPrice, parentChain.nativeCurrency.decimals]);
 
   const estimatedChildChainGasFees = useMemo(() => {
+    if (estimateGasResult && 'estimatedChildChainGasFee' in estimateGasResult) {
+      return Number(
+        utils.formatUnits(
+          estimateGasResult.estimatedChildChainGasFee,
+          childChain.nativeCurrency.decimals,
+        ),
+      );
+    }
     if (!estimateGasResult?.estimatedChildChainGas) {
       return;
     }
@@ -126,7 +142,7 @@ export function useGasSummary(): UseGasSummaryResult {
     return parseFloat(
       utils.formatEther(estimateGasResult.estimatedChildChainGas.mul(childChainGasPrice)),
     );
-  }, [childChainGasPrice, estimateGasResult, isDepositMode]);
+  }, [childChainGasPrice, estimateGasResult, isDepositMode, childChain.nativeCurrency.decimals]);
 
   const gasSummaryStatus = useMemo(
     () =>
