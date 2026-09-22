@@ -437,9 +437,12 @@ export function RetryableRedeemer({
 
       {(error || (!isLoading && data)) && (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base">Retryable ticket</h2>
-            {submittedTxHash && (
+          {/* only a real ticket gets a heading, so the label never sits above an error */}
+          {data?.type === 'retryables' && (
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base">
+                {data.retryables.length > 1 ? 'Retryable tickets' : 'Retryable ticket'}
+              </h2>
               <button
                 type="button"
                 onClick={handleCopyLink}
@@ -448,8 +451,8 @@ export function RetryableRedeemer({
                 <DocumentDuplicateIcon className="h-4 w-4" />
                 {isLinkCopied ? 'Copied' : 'Copy link'}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {error ? (
             <Message isError>
