@@ -50,10 +50,15 @@ export type RetryableStatusDisplay = {
   isRedeemable: boolean;
 };
 
-export function getRetryableStatusDisplay(
-  status: ParentToChildMessageStatus,
-): RetryableStatusDisplay {
+export function getRetryableStatusDisplay(status: RetryableStatus): RetryableStatusDisplay {
   switch (status) {
+    case INDETERMINATE:
+      return {
+        label: 'Redeemed or expired',
+        description:
+          'The ticket is no longer on the chain, so there is nothing to redeem. Reading which of the two it was needs a log range this chain’s RPC would not serve.',
+        isRedeemable: false,
+      };
     case ParentToChildMessageStatus.NOT_YET_CREATED:
       return {
         label: 'Not created yet',
@@ -115,9 +120,17 @@ export function countEthDepositsForInbox({
   ).length;
 }
 
+/**
+ * `status()` only walks the chain's logs once it knows the ticket is gone and auto-redeem did not
+ * succeed, so an unresolved status is never a redeemable one — see `INDETERMINATE` below.
+ */
+export const INDETERMINATE = 'indeterminate' as const;
+
+export type RetryableStatus = ParentToChildMessageStatus | typeof INDETERMINATE;
+
 export type Retryable = {
   retryableCreationId: string;
-  status: ParentToChildMessageStatus;
+  status: RetryableStatus;
   /** ms timestamp, resolved only while the ticket is still redeemable */
   expiresAt: number | null;
 };
@@ -169,7 +182,11 @@ export async function lookupRetryables({
 
   const retryables = await Promise.all(
     messages.map(async (message): Promise<Retryable> => {
-      const status = await message.status();
+      // Every status but "redeemed by a later manual redeem" and "expired" is answered from the
+      // derived ticket id in a couple of calls. Those two make the SDK walk the chain's logs in
+      // day-sized windows, which RPCs that cap `eth_getLogs` ranges reject. Losing that distinction
+      // must not fail the whole lookup: the ticket is already known to be gone, so not redeemable.
+      const status = await message.status().catch(() => INDETERMINATE);
 
       return {
         retryableCreationId: message.retryableCreationId,

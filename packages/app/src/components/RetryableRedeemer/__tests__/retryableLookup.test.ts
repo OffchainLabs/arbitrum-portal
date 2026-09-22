@@ -6,6 +6,7 @@ import { ChainId } from '@/bridge/types/ChainId';
 import { initializeBridgeNetworks } from '@/bridge/util/networks';
 
 import {
+  INDETERMINATE,
   countEthDepositsForInbox,
   getRedeemableChain,
   getRedeemableChainIds,
@@ -118,26 +119,29 @@ describe('getRedeemableChainIds', () => {
 });
 
 describe('getRetryableStatusDisplay', () => {
+  const allStatuses = [
+    ParentToChildMessageStatus.NOT_YET_CREATED,
+    ParentToChildMessageStatus.CREATION_FAILED,
+    ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+    ParentToChildMessageStatus.REDEEMED,
+    ParentToChildMessageStatus.EXPIRED,
+    INDETERMINATE,
+  ] as const;
+
   it('marks only a deposited-but-unredeemed ticket as redeemable', () => {
-    const redeemableStatuses = [
-      ParentToChildMessageStatus.NOT_YET_CREATED,
-      ParentToChildMessageStatus.CREATION_FAILED,
-      ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
-      ParentToChildMessageStatus.REDEEMED,
-      ParentToChildMessageStatus.EXPIRED,
-    ].filter((status) => getRetryableStatusDisplay(status).isRedeemable);
+    const redeemableStatuses = allStatuses.filter(
+      (status) => getRetryableStatusDisplay(status).isRedeemable,
+    );
 
     expect(redeemableStatuses).toEqual([ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD]);
   });
 
+  it('never offers to redeem a ticket whose status could not be resolved', () => {
+    expect(getRetryableStatusDisplay(INDETERMINATE).isRedeemable).toBe(false);
+  });
+
   it('labels every status', () => {
-    for (const status of [
-      ParentToChildMessageStatus.NOT_YET_CREATED,
-      ParentToChildMessageStatus.CREATION_FAILED,
-      ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
-      ParentToChildMessageStatus.REDEEMED,
-      ParentToChildMessageStatus.EXPIRED,
-    ]) {
+    for (const status of allStatuses) {
       const display = getRetryableStatusDisplay(status);
 
       expect(display.label).not.toBe('');

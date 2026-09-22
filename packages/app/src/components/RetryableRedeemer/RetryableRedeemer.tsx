@@ -9,7 +9,6 @@ import { getConnectorClient } from 'wagmi/actions';
 import { TransactionHistorySearchError } from '@/bridge/components/TransactionHistory/TransactionHistorySearchBar';
 import { Button } from '@/bridge/components/common/Button';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
-import { Loader } from '@/bridge/components/common/atoms/Loader';
 import { errorToast } from '@/bridge/components/common/atoms/Toast';
 import { RETRYABLE_TICKET_DOCS_LINK } from '@/bridge/constants';
 import { useIsTestnetMode } from '@/bridge/hooks/useIsTestnetMode';
@@ -287,17 +286,16 @@ export function RetryableRedeemer() {
         <Button
           variant="secondary"
           type="submit"
-          disabled={txHashInput.trim() === ''}
-          className="h-[44px] shrink-0 justify-center sm:w-[120px]"
+          loading={isLoading}
+          disabled={isLoading || txHashInput.trim() === ''}
+          className="h-[44px] shrink-0 justify-center sm:w-[140px]"
         >
-          Check
+          {isLoading ? 'Checking…' : 'Check'}
         </Button>
       </form>
 
       <div className="flex flex-col gap-2">
         {inputError && <Message isError>{inputError}</Message>}
-
-        {isLoading && <Loader size="small" color="white" />}
 
         {error ? (
           <Message isError>
