@@ -60,6 +60,14 @@ import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
 import { getEvmExecutionRuntime, switchEvmTransferNetwork } from './evmExecutionRuntime';
 
+export type TransferWallet = {
+  ecosystem: string;
+  account: { address?: string; chainId?: number };
+  isConnected: boolean;
+  sendTransaction?: (serializedTransaction: Uint8Array) => Promise<string>;
+  confirmTransaction?: (signature: string) => Promise<void>;
+};
+
 export type TransferSubmission = {
   networks: Pick<UseNetworksState, 'sourceChain' | 'destinationChain'>;
   childChain: UseNetworksState['sourceChain'];

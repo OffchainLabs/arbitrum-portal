@@ -12,6 +12,10 @@ import {
 import { Connection, VersionedTransaction } from '@solana/web3.js';
 import { useCallback, useMemo } from 'react';
 
+import {
+  SolanaTransferStarter,
+  type SolanaTransferStarterProps,
+} from '../token-bridge-sdk/SolanaTransferStarter';
 import { ChainId } from '../types/ChainId';
 import type { BalanceClients } from './balance/getBalanceClient';
 import { createSolanaBalanceClient } from './balance/solana';
@@ -30,6 +34,10 @@ export const balanceClients = { solana: solanaBalanceClient } satisfies Pick<
   BalanceClients,
   'solana'
 >;
+
+export function createSolanaTransferStarter(props: SolanaTransferStarterProps) {
+  return new SolanaTransferStarter(props);
+}
 
 export function useSolanaWallet(): SolanaWalletHandle {
   const { address, status, isConnected } = useAppKitAccount({ namespace: 'solana' });
@@ -61,6 +69,16 @@ export function useSolanaWallet(): SolanaWalletHandle {
                 { preflightCommitment: 'confirmed' },
               )
           : undefined,
+      confirmTransaction: isConnected
+        ? async (signature) => {
+            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+            if (confirmation.value.err) {
+              throw new Error(
+                `Solana transaction confirmation failed: ${JSON.stringify(confirmation.value.err)}`,
+              );
+            }
+          }
+        : undefined,
     }),
     [address, status, walletInfo, isConnected, disconnectSolana, walletProvider],
   );
