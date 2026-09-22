@@ -58,27 +58,27 @@ export function getRetryableStatusDisplay(
       return {
         label: 'Not created yet',
         description:
-          'The destination chain has not picked up the ticket yet. Check again in a few minutes.',
+          'The Arbitrum chain has not picked up the ticket yet. Check again in a few minutes.',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.CREATION_FAILED:
       return {
         label: 'Creation failed',
         description:
-          'The ticket failed to be created on the destination chain, so there is nothing to redeem.',
+          'The ticket failed to be created on the Arbitrum chain, so there is nothing to redeem.',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD:
       return {
         label: 'Ready to redeem',
         description:
-          'Auto-redeem did not go through. Redeem manually to move the funds to the destination address.',
+          'Auto-redeem did not go through. Redeem manually to execute the message on the Arbitrum chain.',
         isRedeemable: true,
       };
     case ParentToChildMessageStatus.REDEEMED:
       return {
         label: 'Redeemed',
-        description: 'The funds have arrived at the destination address.',
+        description: 'The ticket was executed on the Arbitrum chain. Nothing left to do.',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.EXPIRED:

@@ -11,10 +11,12 @@ import { Button } from '@/bridge/components/common/Button';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
 import { Loader } from '@/bridge/components/common/atoms/Loader';
 import { errorToast } from '@/bridge/components/common/atoms/Toast';
+import { RETRYABLE_TICKET_DOCS_LINK } from '@/bridge/constants';
 import { useIsTestnetMode } from '@/bridge/hooks/useIsTestnetMode';
 import { useSwitchNetworkWithConfig } from '@/bridge/hooks/useSwitchNetworkWithConfig';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import { getRetryableTicket } from '@/bridge/util/RetryableUtils';
+import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
 import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
@@ -79,11 +81,15 @@ function RetryableRow({
 
       {isRedeemable && (
         <Button
-          variant="secondary"
+          variant="primary"
           onClick={onRedeem}
           loading={isRedeeming}
           disabled={isRedeemDisabled}
-          className="shrink-0"
+          style={{
+            borderColor: getBridgeUiConfigForChain(childChainId).color,
+            backgroundColor: `${getBridgeUiConfigForChain(childChainId).color}66`,
+          }}
+          className="shrink-0 border px-4 py-2 disabled:!border-white/10 disabled:!bg-white/10"
         >
           Redeem
         </Button>
@@ -110,7 +116,7 @@ function LookupResult({
       return (
         <Message isError>
           No transaction with that hash on {getNetworkName(parentChainId)}. Double-check the hash,
-          and that {networkName} is the chain you were bridging to.
+          and that {networkName} is the chain the message was sent to.
         </Message>
       );
     case 'classicTransaction':
@@ -129,8 +135,8 @@ function LookupResult({
     case 'noRetryables':
       return (
         <Message>
-          This transaction created no tickets for {networkName}. If you were bridging to a different
-          chain, select that chain and check again.
+          This transaction created no retryable tickets for {networkName}. If the message was sent
+          to a different chain, select that chain and check again.
         </Message>
       );
     case 'retryables':
@@ -161,12 +167,21 @@ export function RetryableRedeemer() {
     parentChainTxHash: submittedTxHash,
   });
 
+  // Editing the field drops the previous result, so a ticket on screen always belongs to the hash
+  // currently in the box — otherwise a failed re-check leaves a stale, redeemable-looking row.
+  const handleInputChange = useCallback((value: string) => {
+    setTxHashInput(value);
+    setInputError(undefined);
+    setSubmittedTxHash(undefined);
+  }, []);
+
   const handleSubmit = useCallback(
     (event: React.FormEvent) => {
       event.preventDefault();
       const value = txHashInput.trim();
 
       if (!isHash(value)) {
+        setSubmittedTxHash(undefined);
         setInputError(TransactionHistorySearchError.INVALID_TX_HASH);
         return;
       }
@@ -236,9 +251,14 @@ export function RetryableRedeemer() {
   return (
     <>
       <p className="mb-4 text-sm">
-        A deposit that never arrived usually left a redeemable ticket on the destination chain. Pick
-        the chain you were bridging to, paste the transaction hash from the chain you sent from, and
-        redeem it here.
+        A{' '}
+        <ExternalLink className="arb-hover underline" href={RETRYABLE_TICKET_DOCS_LINK}>
+          retryable ticket
+        </ExternalLink>{' '}
+        is any message sent from a parent chain to an Arbitrum chain, whether that is a deposit or
+        an arbitrary contract call. If its automatic redemption did not go through, it can be
+        redeemed by hand for 7 days. Pick the Arbitrum chain the message was sent to, then paste the
+        transaction hash from the chain it was sent from.
       </p>
 
       <div className="mb-4">
@@ -253,7 +273,7 @@ export function RetryableRedeemer() {
         <input
           type="text"
           value={txHashInput}
-          onChange={(event) => setTxHashInput(event.target.value)}
+          onChange={(event) => handleInputChange(event.target.value)}
           placeholder="Source chain transaction hash"
           aria-label="Source chain transaction hash"
           className={twMerge(

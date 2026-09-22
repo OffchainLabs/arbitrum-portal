@@ -63,9 +63,9 @@ export const SettingsDialog = () => {
 
         <SectionDivider />
 
-        {/* Redeem a stuck retryable ticket */}
+        {/* Check and redeem a retryable ticket */}
         <div className="w-full">
-          <SectionTitle className="mb-1">Redeem a Stuck Deposit</SectionTitle>
+          <SectionTitle className="mb-1">Retryable Tickets</SectionTitle>
           <RetryableRedeemer />
         </div>
 

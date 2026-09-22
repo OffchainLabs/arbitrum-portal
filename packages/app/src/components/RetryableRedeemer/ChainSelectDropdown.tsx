@@ -56,9 +56,9 @@ export function ChainSelectDropdown({
     <Popover className="relative">
       {({ open }) => (
         <>
-          <PopoverButton as={Button} variant="secondary" aria-label="Select destination network">
+          <PopoverButton as={Button} variant="secondary" aria-label="Select destination chain">
             <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-              To:
+              <span className="text-white/70">Destination chain:</span>
               <NetworkImage
                 chainId={selectedChainId}
                 className="h-[20px] w-[20px] p-[2px]"
@@ -98,7 +98,7 @@ export function ChainSelectDropdown({
                     onChange(chainId);
                     close();
                   }}
-                  aria-label="Destination network"
+                  aria-label="Destination chain"
                   // capped directly, because Headless overrides the panel's max-height via `anchor`
                   className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-2 pb-2"
                 >
