@@ -69,7 +69,7 @@ export default async function BuildPage() {
 
         <NetworkStatus status={status} />
 
-        <RetryableTicketsLinkCard ctaLabel="Check a ticket" entryPoint="Build Page" />
+        <RetryableTicketsLinkCard entryPoint="Build Page" />
 
         <Explorers />
       </div>

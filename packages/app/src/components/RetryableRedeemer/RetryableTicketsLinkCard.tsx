@@ -1,39 +1,33 @@
-import { ArrowRightIcon, TicketIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 import { Card } from '@/components/Card';
+import RetryableTicketIcon from '@/public/images/retryable-ticket.svg';
 
-export function RetryableTicketsLinkCard({
-  ctaLabel,
-  entryPoint,
-}: {
-  ctaLabel: string;
-  entryPoint: string;
-}) {
+export function RetryableTicketsLinkCard({ entryPoint }: { entryPoint: string }) {
   return (
     <Card
       cardType="link"
       href="/build/retryables"
-      className="flex flex-col gap-4 border border-gray-dark sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-4 border border-white/10 sm:flex-row sm:items-center sm:justify-between"
       analyticsProps={{
         eventName: 'Retryable Tickets Tool Click',
         eventProperties: { entryPoint },
       }}
     >
       <div className="flex items-center gap-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-white/10">
-          <TicketIcon className="h-5 w-5" />
-        </span>
+        <Image src={RetryableTicketIcon} alt="" className="h-12 w-12 shrink-0" />
         <div className="flex flex-col gap-1">
-          <span className="text-base">Retryable tickets</span>
-          <span className="text-white/70">
-            Check the status of a cross-chain message and redeem it if it&apos;s stuck.
+          <span className="text-lg">Retryable Tickets</span>
+          <span className="text-white/60">
+            A retryable ticket can be redeemed for up to 7 days.
           </span>
         </div>
       </div>
 
-      <span className="flex w-fit shrink-0 items-center gap-2 rounded border border-white/20 px-3 py-2 group-hover:bg-white/10">
-        {ctaLabel}
-        <ArrowRightIcon className="h-4 w-4" />
+      <span className="flex w-fit shrink-0 items-center gap-1 rounded-[10px] bg-gray-dark px-[15px] py-[10px] group-hover:bg-gray-dark/80">
+        Check Status
+        <ChevronRightIcon className="h-4 w-4" />
       </span>
     </Card>
   );
