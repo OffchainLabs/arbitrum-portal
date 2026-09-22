@@ -53,8 +53,7 @@ export const SettingsDialog = () => {
 
           <Switch
             label="Show Network Stats"
-            description="Live, nerdy stats about Ethereum and Arbitrum chains, like
-        block number and current gas price."
+            description="Live stats about Ethereum and Arbitrum chains, like block number and current gas price."
             checked={!!isArbitrumStatsVisible}
             onChange={isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats}
           />
