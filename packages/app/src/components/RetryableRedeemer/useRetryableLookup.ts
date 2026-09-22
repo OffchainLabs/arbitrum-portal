@@ -23,12 +23,12 @@ export function useRetryableLookup({
           'retryableLookup',
         ] as const)
       : null,
-    ([_childChainId, parentChainId, inbox, txHash]) =>
+    ([childChainId_, parentChainId, inbox, txHash]) =>
       lookupRetryables({
         parentChainTxHash: txHash,
         parentChainProvider: getProviderForChainId(parentChainId),
-        childChainProvider: getProviderForChainId(_childChainId),
-        inbox,
+        childChainProvider: getProviderForChainId(childChainId_),
+        childChain: { chainId: childChainId_, parentChainId, inbox },
       }),
     {
       revalidateOnFocus: false,

@@ -15,6 +15,11 @@ import {
 } from '../retryableLookup';
 
 const ARBITRUM_ONE_INBOX = '0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f';
+const ARBITRUM_ONE = {
+  chainId: ChainId.ArbitrumOne,
+  parentChainId: ChainId.Ethereum,
+  inbox: ARBITRUM_ONE_INBOX,
+};
 // first Arbitrum One block produced by Nitro, per ARB1_NITRO_GENESIS_L1_BLOCK in @arbitrum/sdk
 const ARB1_NITRO_GENESIS_L1_BLOCK = 15447158;
 
@@ -58,11 +63,7 @@ beforeAll(() => {
 
 describe('getRedeemableChain', () => {
   it('resolves the parent chain and inbox for an Arbitrum chain', () => {
-    expect(getRedeemableChain(ChainId.ArbitrumOne)).toEqual({
-      chainId: ChainId.ArbitrumOne,
-      parentChainId: ChainId.Ethereum,
-      inbox: ARBITRUM_ONE_INBOX,
-    });
+    expect(getRedeemableChain(ChainId.ArbitrumOne)).toEqual(ARBITRUM_ONE);
   });
 
   it('resolves Orbit chains against their own parent, not against Ethereum', () => {
@@ -197,7 +198,7 @@ describe('lookupRetryables', () => {
       parentChainTxHash: '0x'.padEnd(66, 'a'),
       parentChainProvider: createParentProvider({ receipt: null }),
       childChainProvider: createProvider({ chainId: ChainId.ArbitrumOne }),
-      inbox: ARBITRUM_ONE_INBOX,
+      childChain: ARBITRUM_ONE,
     });
 
     expect(result).toEqual({ type: 'transactionNotFound' });
@@ -210,7 +211,7 @@ describe('lookupRetryables', () => {
         receipt: createReceipt({ blockNumber: ARB1_NITRO_GENESIS_L1_BLOCK - 1 }),
       }),
       childChainProvider: createProvider({ chainId: ChainId.ArbitrumOne }),
-      inbox: ARBITRUM_ONE_INBOX,
+      childChain: ARBITRUM_ONE,
     });
 
     expect(result).toEqual({ type: 'classicTransaction' });
@@ -223,7 +224,7 @@ describe('lookupRetryables', () => {
         receipt: createReceipt({ blockNumber: ARB1_NITRO_GENESIS_L1_BLOCK + 1 }),
       }),
       childChainProvider: createProvider({ chainId: ChainId.ArbitrumOne }),
-      inbox: ARBITRUM_ONE_INBOX,
+      childChain: ARBITRUM_ONE,
     });
 
     expect(result).toEqual({ type: 'noRetryables' });
