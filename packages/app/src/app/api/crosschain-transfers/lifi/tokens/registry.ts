@@ -7,6 +7,7 @@ import {
 } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '@/bridge/wallet/constants';
 
 type CustomTokenConfig = {
   coinKey: string;
@@ -126,6 +127,14 @@ for (const customToken of CUSTOM_TOKENS) {
   }
 }
 
+const INCLUDED_ADDRESSES: Partial<Record<number, ReadonlySet<string>>> = {
+  [ChainId.Solana]: new Set([
+    SOLANA_NATIVE_TOKEN_ADDRESS,
+    CommonAddress.Solana.USDC,
+    CommonAddress.Solana.USDT,
+  ]),
+};
+
 const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
   [ChainId.Ethereum]: new Set([
     // LiFi marks this PulseChain-wrapped token as CoinKey.WETH, which duplicates canonical Ethereum WETH in child token lists.
@@ -152,7 +161,11 @@ export type LifiToken = Omit<LifiSdkToken, 'chainId' | 'priceUSD'> & {
 export type LifiTokenWithCoinKey = LifiToken & { coinKey: CoinKey };
 
 function isExcludedToken(token: LifiSdkToken, chainId: number): boolean {
-  return EXCLUDED_ADDRESSES[chainId]?.has(token.address.toLowerCase()) ?? false;
+  const includedAddresses = INCLUDED_ADDRESSES[chainId];
+  return (
+    (includedAddresses !== undefined && !includedAddresses.has(token.address)) ||
+    (EXCLUDED_ADDRESSES[chainId]?.has(token.address.toLowerCase()) ?? false)
+  );
 }
 
 /**

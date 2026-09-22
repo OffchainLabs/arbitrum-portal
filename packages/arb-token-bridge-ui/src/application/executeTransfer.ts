@@ -1,14 +1,11 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
-import type { RouteExtended } from '@lifi/sdk';
 import dayjs from 'dayjs';
-import { BigNumber, constants, utils } from 'ethers';
-import { BaseError, isHash } from 'viem';
+import { BigNumber, utils } from 'ethers';
+import { isHash } from 'viem';
 
-import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import { highlightTransactionHistoryDisclaimer } from '../components/TransactionHistory/TransactionHistoryDisclaimer';
 import { getWarningTokenDescription } from '../components/TransferPanel/TransferPanelUtils';
-import { getTransferWarningDialogType } from '../components/TransferPanel/TransferWarningUtils';
 import {
   convertBridgeSdkToMergedTransaction,
   convertBridgeSdkToPendingDepositTransaction,
@@ -18,7 +15,6 @@ import {
   RouteType,
   isLifiRoute,
 } from '../components/TransferPanel/hooks/useRouteStore';
-import { getAmountToPay } from '../components/TransferPanel/useTransferReadiness';
 import { DialogData, DialogType } from '../components/common/Dialog2';
 import { errorToast, warningToast } from '../components/common/atoms/Toast';
 import { DOCS_DOMAIN } from '../constants';
@@ -28,28 +24,17 @@ import type { NativeCurrency } from '../hooks/useNativeCurrency';
 import type { UseNetworksState } from '../hooks/useNetworks';
 import { addDepositToCache } from '../services/history';
 import type { useAppState } from '../state';
-import {
-  DepositStatus,
-  LifiMergedTransaction,
-  MergedTransaction,
-  WithdrawalStatus,
-} from '../state/app/state';
+import { DepositStatus, LifiMergedTransaction, MergedTransaction } from '../state/app/state';
 import { getUsdcTokenAddressFromSourceChainId } from '../state/cctpState';
 import { BridgeTransfer, TransferOverrides } from '../token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '../token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '../token-bridge-sdk/CctpTransferStarter';
-import { LifiTransferStarter } from '../token-bridge-sdk/LifiTransferStarter';
 import { OftV2TransferStarter } from '../token-bridge-sdk/OftV2TransferStarter';
 import { getBridgeTransferProperties } from '../token-bridge-sdk/utils';
 import { UiDriverStepExecutor, drive } from '../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../ui-driver/UiDriverCctp';
-import { addressesEqual, normalizeAddress } from '../util/AddressUtils';
-import { getLifiAssetType, trackEvent } from '../util/AnalyticsUtils';
-import { getLifiRouteToolsDetails } from '../util/LifiRouteUtils';
-import {
-  getExecutedLifiRouteTxHash,
-  getPendingLifiRouteBatchIds,
-} from '../util/LifiTransactionStatus';
+import { normalizeAddress } from '../util/AddressUtils';
+import { trackEvent } from '../util/AnalyticsUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../util/TokenUtils';
 import { isCctpEnabled } from '../util/featureFlag';
 import { isUserRejectedError } from '../util/isUserRejectedError';
@@ -59,11 +44,21 @@ import { normalizeTimestamp } from '../util/normalizeTimestamp';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
 import { getEvmExecutionRuntime, switchEvmTransferNetwork } from './evmExecutionRuntime';
+import { executeLifiTransfer } from './executeLifiTransfer';
+
+export type TransferWallet = {
+  ecosystem: string;
+  account: { address?: string; chainId?: number };
+  isConnected: boolean;
+  sendTransaction?: (serializedTransaction: Uint8Array) => Promise<string>;
+  confirmTransaction?: (signature: string) => Promise<void>;
+};
 
 export type TransferSubmission = {
   networks: Pick<UseNetworksState, 'sourceChain' | 'destinationChain'>;
   childChain: UseNetworksState['sourceChain'];
   parentChain: UseNetworksState['sourceChain'];
+  sourceWallet: TransferWallet;
   walletAddress: string;
   destinationWalletAddress?: string;
   destinationAddress?: string;
@@ -108,6 +103,10 @@ export type TransferCallbacks = {
 };
 
 async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: TransferCallbacks) {
+  if (isLifiRoute(snapshot.selectedRoute)) {
+    return executeLifiTransfer(snapshot, callbacks);
+  }
+
   const {
     networks,
     childChain,
@@ -120,14 +119,12 @@ async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: Trans
     amount2,
     amountBigNumber,
     selectedRoute,
-    context,
     nativeCurrency,
     nativeCurrencyDecimalsOnSourceChain,
     warningTokens,
     isDepositMode,
     isSmartContractWallet,
     isBatchTransferSupported,
-    isSwapTransfer,
     isTransferAllowed,
     destinationAddressError,
   } = snapshot;
@@ -141,10 +138,6 @@ async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: Trans
     showDelayInSmartContractTransaction,
     handleError,
     addPendingTransaction,
-    updatePendingTransaction,
-    addLifiTransactionToCache,
-    updateLifiTransactionInCache,
-    removeLifiTransactionFromCache,
     resetAmountAndSwitchToTransactionHistoryTab,
     clearRoute,
     onSubmitted,
@@ -354,240 +347,6 @@ async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: Trans
       await refreshCurrentTokenBalances();
     } catch (error) {
       handleError({ error, label: 'cctp_transfer', category: 'transaction_signing' });
-    } finally {
-      setTransferring(false);
-    }
-  };
-
-  const transferLifi = async () => {
-    try {
-      if (!isTransferAllowed) {
-        throw new Error(transferNotAllowedError);
-      }
-      if (!context) {
-        return;
-      }
-
-      setTransferring(true);
-
-      const { fromAmountUsd, toAmountUsd } = getAmountToPay(context);
-      const warningDialogType = getTransferWarningDialogType({
-        fromAmount: context.fromAmount,
-        toAmount: context.toAmount,
-        fromToken: context.protocolData.route.fromToken,
-        toToken: context.protocolData.route.toToken,
-        fromAmountUsd,
-        toAmountUsd,
-      });
-
-      if (warningDialogType) {
-        const confirmation = await confirmDialog(warningDialogType);
-        if (!confirmation) return;
-      }
-
-      if (!(await confirmCustomDestinationAddress())) {
-        return;
-      }
-
-      const tokenOverrides = getTokenOverride({
-        fromToken: selectedToken?.address,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-      });
-
-      const destinationChainErc20Address =
-        tokenOverrides.destination?.address ||
-        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
-      const sourceChainErc20Address =
-        tokenOverrides.source?.address ||
-        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
-      const lifiTransferStarter = new LifiTransferStarter({
-        destinationChainProvider,
-        sourceChainProvider,
-        destinationChainErc20Address,
-        sourceChainErc20Address,
-        lifiRoute: context,
-      });
-
-      if (isSmartContractWallet) {
-        showDelayedSmartContractTxRequest();
-      }
-
-      let cachedLifiTransfer: LifiMergedTransaction | null = null;
-      const createLifiTransfer = (
-        lifiRoute: RouteExtended,
-        txId: string,
-        showInHistory: boolean,
-      ): LifiMergedTransaction => {
-        const assetType =
-          !selectedToken || addressesEqual(selectedToken.address, constants.AddressZero)
-            ? AssetType.ETH
-            : AssetType.ERC20;
-        const toolsDetails = getLifiRouteToolsDetails(context.protocolData.route);
-
-        return {
-          txId,
-          asset: selectedToken?.symbol || 'ETH',
-          assetType,
-          blockNum: null,
-          createdAt: dayjs().valueOf(),
-          direction: isDepositMode ? 'deposit' : 'withdraw',
-          isWithdrawal: !isDepositMode,
-          resolvedAt: null,
-          status: WithdrawalStatus.UNCONFIRMED,
-          destinationStatus: WithdrawalStatus.UNCONFIRMED,
-          uniqueId: null,
-          value: amount,
-          depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-          destination: destinationAddress ?? destinationWalletAddress,
-          sender: walletAddress,
-          isLifi: true,
-          tokenAddress: selectedToken?.address || constants.AddressZero,
-          parentChainId: parentChain.id,
-          childChainId: childChain.id,
-          sourceChainId: networks.sourceChain.id,
-          destinationChainId: networks.destinationChain.id,
-          toolDetails: toolsDetails[0],
-          toolsDetails,
-          durationMs: context.durationMs,
-          fromAmount: { ...context.fromAmount },
-          toAmount: { ...context.toAmount },
-          destinationTxId: null,
-          lifiRoute,
-          showInHistory,
-        };
-      };
-
-      const updateCachedLifiRoute = (lifiRoute: RouteExtended) => {
-        const txHash = getExecutedLifiRouteTxHash(lifiRoute);
-
-        if (!cachedLifiTransfer && !isSmartContractWallet) {
-          if (!txHash && getPendingLifiRouteBatchIds(lifiRoute).length === 0) {
-            return;
-          }
-
-          const newTransfer = createLifiTransfer(
-            lifiRoute,
-            txHash ?? lifiRoute.id,
-            Boolean(txHash),
-          );
-          cachedLifiTransfer = newTransfer;
-          addLifiTransactionToCache(newTransfer);
-          if (txHash) {
-            addPendingTransaction(newTransfer);
-          }
-          return;
-        }
-
-        if (!cachedLifiTransfer) {
-          return;
-        }
-
-        const becameVisible = cachedLifiTransfer.showInHistory === false && Boolean(txHash);
-        const routeUpdates = {
-          lifiRoute,
-          ...(becameVisible ? { txId: txHash, showInHistory: true } : {}),
-        };
-        cachedLifiTransfer = {
-          ...cachedLifiTransfer,
-          ...routeUpdates,
-        };
-        if (becameVisible) {
-          addPendingTransaction(cachedLifiTransfer);
-        }
-        updatePendingTransaction(cachedLifiTransfer);
-        updateLifiTransactionInCache(cachedLifiTransfer, routeUpdates);
-      };
-
-      const transfer = await lifiTransferStarter.transfer({
-        amount: amountBigNumber,
-        destinationAddress,
-        wagmiConfig,
-        onApprovalRequest: (approvalRequest) =>
-          confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
-        onRouteUpdate: updateCachedLifiRoute,
-        onRouteExecutionComplete: () => {
-          void refreshCurrentTokenBalances();
-        },
-        onRouteExecutionError: (error, latestRoute) => {
-          void refreshCurrentTokenBalances();
-
-          if (isUserRejectedError(error)) {
-            if (cachedLifiTransfer?.showInHistory === false) {
-              removeLifiTransactionFromCache(cachedLifiTransfer);
-              cachedLifiTransfer = null;
-            } else if (latestRoute && getExecutedLifiRouteTxHash(latestRoute)) {
-              updateCachedLifiRoute(latestRoute);
-            }
-            return;
-          }
-
-          if (!getExecutedLifiRouteTxHash(latestRoute)) {
-            return;
-          }
-
-          handleError({
-            error,
-            label: 'lifi_route_execution',
-            category: 'token_transfer',
-          });
-          errorToast(
-            'LiFi transaction execution was interrupted. Check transaction history for its latest status.',
-          );
-        },
-      });
-
-      resetAmountAndSwitchToTransactionHistoryTab();
-      clearRoute();
-
-      if (isSmartContractWallet) {
-        setTimeout(() => {
-          highlightTransactionHistoryDisclaimer();
-        }, 100);
-      }
-
-      const assetType = getLifiAssetType({
-        tokenAddress: context.fromAmount.token.address,
-        chainId: networks.sourceChain.id,
-      });
-      const destinationAssetType = getLifiAssetType({
-        tokenAddress: context.toAmount.token.address,
-        chainId: networks.destinationChain.id,
-      });
-
-      trackEvent('Lifi Transfer', {
-        tokenSymbol: context.fromAmount.token.symbol,
-        assetType,
-        destinationTokenSymbol: context.toAmount.token.symbol,
-        destinationAssetType,
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
-        network: getNetworkName(networks.sourceChain.id),
-        amount: Number(amount),
-        sourceChain: getNetworkName(networks.sourceChain.id),
-        destinationChain: getNetworkName(networks.destinationChain.id),
-        tag: selectedRoute,
-        isSwap: isSwapTransfer,
-      });
-
-      const sourceChainTransaction = transfer.sourceChainTransaction;
-      if ('wait' in sourceChainTransaction) {
-        await sourceChainTransaction.wait();
-
-        await refreshCurrentTokenBalances();
-      }
-    } catch (error) {
-      if (isUserRejectedError(error)) {
-        return;
-      }
-
-      handleError({
-        error,
-        label: 'lifi_transfer',
-        category: 'token_transfer',
-      });
-      errorToast(
-        `Lifi transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
-      );
     } finally {
       setTransferring(false);
     }
@@ -1052,7 +811,6 @@ async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: Trans
 
   if (selectedRoute === 'oftV2') return transferOft();
   if (selectedRoute === 'cctp') return transferCctp();
-  if (isLifiRoute(selectedRoute)) return transferLifi();
   if (
     selectedRoute === 'arbitrum' &&
     isDepositMode &&
@@ -1063,6 +821,13 @@ async function executeEvmTransfer(snapshot: TransferSubmission, callbacks: Trans
   return transfer();
 }
 
+async function executeSolanaTransfer(snapshot: TransferSubmission, callbacks: TransferCallbacks) {
+  if (!isLifiRoute(snapshot.selectedRoute)) {
+    throw new Error('Only LiFi routes can execute from this ecosystem.');
+  }
+  return executeLifiTransfer(snapshot, callbacks);
+}
+
 type TransferExecutor = (
   snapshot: TransferSubmission,
   callbacks: TransferCallbacks,
@@ -1070,6 +835,7 @@ type TransferExecutor = (
 
 const transferExecutors: Partial<Record<WalletEcosystem, TransferExecutor>> = {
   evm: executeEvmTransfer,
+  solana: executeSolanaTransfer,
 };
 
 const transferNetworkSwitchers: Partial<
