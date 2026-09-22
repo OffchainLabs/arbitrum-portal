@@ -63,10 +63,7 @@ export const SettingsDialog = () => {
 
         <SectionDivider />
 
-        {/* Check and redeem a retryable ticket */}
-        <div className="w-full">
-          <RetryableTicketsLinkCard ctaLabel="Open" />
-        </div>
+        <RetryableTicketsLinkCard ctaLabel="Open" entryPoint="Bridge Settings" />
 
         <SectionDivider />
 

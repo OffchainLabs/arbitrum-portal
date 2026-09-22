@@ -69,7 +69,6 @@ export function ChainSelectDropdown({
           </PopoverButton>
 
           <PopoverPanel
-            // portalled via `anchor`, so it is not clipped by any scroll container it sits in
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
             transition
             className="z-50 flex max-h-[min(var(--anchor-max-height,420px),420px)] w-[var(--button-width)] min-w-[320px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"

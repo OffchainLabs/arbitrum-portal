@@ -7,6 +7,7 @@ import { ArbRetryableTx__factory } from '@arbitrum/sdk/dist/lib/abi/factories/Ar
 import { ARB_RETRYABLE_TX_ADDRESS } from '@arbitrum/sdk/dist/lib/dataEntities/constants';
 import { InboxMessageKind } from '@arbitrum/sdk/dist/lib/dataEntities/message';
 import type { Provider } from '@ethersproject/abstract-provider';
+import { utils } from 'ethers';
 
 import { addressesEqual } from '@/bridge/util/AddressEquality';
 import { getBatchFetchBlocks } from '@/bridge/util/chainBlockRanges';
@@ -17,6 +18,14 @@ import {
   sortChainIds,
 } from '@/bridge/util/networks';
 import { normalizeTimestamp } from '@/bridge/util/normalizeTimestamp';
+
+/**
+ * viem's `isHash` sizes hex with `Math.ceil`, so it accepts a 63-character string as 32 bytes and
+ * a single deleted character reaches the RPC as an INVALID_ARGUMENT. `isHexString` length-checks.
+ */
+export function isValidTxHash(value: string): boolean {
+  return utils.isHexString(value, 32);
+}
 
 export type RedeemableChain = {
   chainId: number;

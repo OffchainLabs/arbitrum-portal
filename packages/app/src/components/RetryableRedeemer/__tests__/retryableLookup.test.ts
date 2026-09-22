@@ -11,6 +11,7 @@ import {
   getRedeemableChain,
   getRedeemableChainIds,
   getRetryableStatusDisplay,
+  isValidTxHash,
   lookupRetryables,
 } from '../retryableLookup';
 
@@ -59,6 +60,28 @@ function createReceipt({ blockNumber }: { blockNumber: number }) {
 
 beforeAll(() => {
   initializeBridgeNetworks();
+});
+
+describe('isValidTxHash', () => {
+  it('accepts a 32 byte hash', () => {
+    expect(isValidTxHash(`0x${'a'.repeat(64)}`)).toBe(true);
+  });
+
+  // viem's `isHash` sizes with Math.ceil, so it passes this and the rpc rejects it instead
+  it('rejects a hash with a single character missing', () => {
+    expect(isValidTxHash(`0x${'a'.repeat(63)}`)).toBe(false);
+  });
+
+  it('rejects a hash with a single character too many', () => {
+    expect(isValidTxHash(`0x${'a'.repeat(65)}`)).toBe(false);
+  });
+
+  it.each([['0x'], [''], ['a'.repeat(64)], [`0x${'z'.repeat(64)}`]])(
+    'rejects %s',
+    (value: string) => {
+      expect(isValidTxHash(value)).toBe(false);
+    },
+  );
 });
 
 describe('getRedeemableChain', () => {

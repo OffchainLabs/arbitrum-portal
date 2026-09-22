@@ -36,21 +36,18 @@ export default async function RetryablesPage(props: SearchParamsProps) {
   const txHash = typeof searchParams.tx === 'string' ? searchParams.tx : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="flex w-full max-w-[720px] flex-col gap-6">
-        <Link
-          href="/build"
-          className="arb-hover flex w-fit items-center gap-2 text-sm text-white/70"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Build &amp; Monitor
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <Link href="/build" className="arb-hover flex w-fit items-center gap-2 text-sm text-white/70">
+        <ArrowLeftIcon className="h-4 w-4" />
+        Build &amp; Monitor
+      </Link>
 
-      <RetryableRedeemer
-        initialChainId={Number.isNaN(chainId) ? undefined : chainId}
-        initialTxHash={txHash}
-      />
+      <div className="flex justify-center">
+        <RetryableRedeemer
+          initialChainId={Number.isNaN(chainId) ? undefined : chainId}
+          initialTxHash={txHash}
+        />
+      </div>
     </div>
   );
 }

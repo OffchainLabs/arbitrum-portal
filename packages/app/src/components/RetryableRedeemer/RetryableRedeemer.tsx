@@ -4,6 +4,7 @@ import { ParentToChildMessageStatus } from '@arbitrum/sdk';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import {
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   ClockIcon,
@@ -15,7 +16,6 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { getConnectorClient } from 'wagmi/actions';
 
@@ -43,6 +43,7 @@ import {
   getRedeemableChain,
   getRedeemableChainIds,
   getRetryableStatusDisplay,
+  isValidTxHash,
 } from './retryableLookup';
 import { useRetryableLookup } from './useRetryableLookup';
 
@@ -72,10 +73,22 @@ function Message({ children, isError }: { children: React.ReactNode; isError?: b
 
 function TicketDetail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+    <div className="flex items-baseline justify-between gap-4">
       <span className="shrink-0 text-white/70">{label}</span>
-      <span className="break-all text-right sm:text-right">{children}</span>
+      <span className="text-right">{children}</span>
     </div>
+  );
+}
+
+function TicketDetailTxLink({ chainId, txHash }: { chainId: number; txHash: string }) {
+  return (
+    <ExternalLink
+      className="arb-hover flex items-center gap-1 font-mono underline"
+      href={`${getExplorerUrl(chainId)}/tx/${txHash}`}
+    >
+      {shortenTxHash(txHash)}
+      <ArrowTopRightOnSquareIcon className="h-3 w-3 shrink-0" />
+    </ExternalLink>
   );
 }
 
@@ -111,7 +124,6 @@ function RetryableCard({
             <StatusIcon className="h-5 w-5 shrink-0" />
             {label}
           </span>
-          {/* the ticket id only exists on the chain once it has been created */}
           {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
             <span className="shrink-0 font-mono text-sm text-white/50">
               {shortenTxHash(retryable.retryableCreationId)}
@@ -143,21 +155,14 @@ function RetryableCard({
               <DisclosurePanel className="flex flex-col gap-2 pt-3 text-sm">
                 {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
                   <TicketDetail label="Ticket">
-                    <ExternalLink
-                      className="arb-hover underline"
-                      href={`${getExplorerUrl(childChainId)}/tx/${retryable.retryableCreationId}`}
-                    >
-                      {retryable.retryableCreationId}
-                    </ExternalLink>
+                    <TicketDetailTxLink
+                      chainId={childChainId}
+                      txHash={retryable.retryableCreationId}
+                    />
                   </TicketDetail>
                 )}
                 <TicketDetail label={`Sent from ${getNetworkName(parentChainId)}`}>
-                  <ExternalLink
-                    className="arb-hover underline"
-                    href={`${getExplorerUrl(parentChainId)}/tx/${parentChainTxHash}`}
-                  >
-                    {parentChainTxHash}
-                  </ExternalLink>
+                  <TicketDetailTxLink chainId={parentChainId} txHash={parentChainTxHash} />
                 </TicketDetail>
                 <TicketDetail label="Destination chain">
                   {getNetworkName(childChainId)}
@@ -263,15 +268,14 @@ export function RetryableRedeemer({
   const [selectedChainId, setSelectedChainId] = useState(initialChainId);
   const [txHashInput, setTxHashInput] = useState(initialTxHash ?? '');
   const [submittedTxHash, setSubmittedTxHash] = useState(
-    initialTxHash && isHash(initialTxHash) ? initialTxHash : undefined,
+    initialTxHash && isValidTxHash(initialTxHash) ? initialTxHash : undefined,
   );
   const [inputError, setInputError] = useState<string>();
   const [redeemingId, setRedeemingId] = useState<string>();
   const [isLinkCopied, setIsLinkCopied] = useState(false);
 
   const chainIds = getRedeemableChainIds({ isTestnetMode });
-  // derived rather than synced, so flipping testnet mode can never leave a chain selected that is
-  // no longer in the list
+  // derived, so flipping testnet mode cannot leave a chain selected that is no longer in the list
   const childChainId =
     selectedChainId && chainIds.includes(selectedChainId) ? selectedChainId : chainIds[0];
 
@@ -280,9 +284,8 @@ export function RetryableRedeemer({
     parentChainTxHash: submittedTxHash,
   });
 
-  // The lookup re-runs whenever the effective chain changes, not only on submit, so the url has to
-  // track that same derived value: otherwise a copied link names a chain the result never came from.
-  // `replaceState` rather than `router.replace`, to avoid a server round-trip for client-only state.
+  // the lookup re-runs on every chain change, not just on submit, so a url written only on submit
+  // would name a chain the result never came from. `replaceState` skips a server round-trip.
   useEffect(() => {
     if (typeof childChainId === 'undefined') {
       return;
@@ -297,8 +300,8 @@ export function RetryableRedeemer({
     window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
   }, [childChainId, pathname, submittedTxHash]);
 
-  // Editing the field drops the previous result, so a ticket on screen always belongs to the hash
-  // currently in the box, otherwise a failed re-check leaves a stale, redeemable-looking row.
+  // dropping the result on edit keeps the ticket on screen tied to the hash in the box, so a failed
+  // re-check cannot leave a stale, redeemable-looking row behind
   const handleInputChange = useCallback((value: string) => {
     setTxHashInput(value);
     setInputError(undefined);
@@ -311,7 +314,7 @@ export function RetryableRedeemer({
       event.preventDefault();
       const value = txHashInput.trim();
 
-      if (!isHash(value)) {
+      if (!isValidTxHash(value)) {
         setSubmittedTxHash(undefined);
         setInputError(TransactionHistorySearchError.INVALID_TX_HASH);
         return;
@@ -449,7 +452,6 @@ export function RetryableRedeemer({
 
       {(error || (!isLoading && data)) && (
         <div className="flex flex-col gap-3">
-          {/* only a real ticket gets a heading, so the label never sits above an error */}
           {data?.type === 'retryables' && (
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base">

@@ -2,7 +2,7 @@ import useSWR from 'swr';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { getRedeemableChain, lookupRetryables } from './retryableLookup';
+import { getRedeemableChain, isValidTxHash, lookupRetryables } from './retryableLookup';
 
 export function useRetryableLookup({
   childChainId,
@@ -13,8 +13,9 @@ export function useRetryableLookup({
 }) {
   const chain = typeof childChainId === 'number' ? getRedeemableChain(childChainId) : undefined;
 
+  // re-checked here rather than trusted from the caller, so no malformed hash can reach an RPC
   return useSWR(
-    chain && parentChainTxHash
+    chain && parentChainTxHash && isValidTxHash(parentChainTxHash)
       ? ([
           chain.chainId,
           chain.parentChainId,
