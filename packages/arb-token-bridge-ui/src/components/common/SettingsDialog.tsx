@@ -1,6 +1,8 @@
 import useLocalStorage from '@rehooks/local-storage';
 import { twMerge } from 'tailwind-merge';
 
+import { RetryableRedeemer } from '@/app-components/RetryableRedeemer/RetryableRedeemer';
+
 import { ORBIT_QUICKSTART_LINK } from '../../constants';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { statsLocalStorageKey } from '../MainContent/ArbitrumStats';
@@ -55,6 +57,12 @@ export const SettingsDialog = () => {
             checked={!!isArbitrumStatsVisible}
             onChange={isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats}
           />
+        </div>
+
+        {/* Redeem a stuck retryable ticket */}
+        <div className="w-full">
+          <SectionTitle className="mb-1">Redeem a Stuck Deposit</SectionTitle>
+          <RetryableRedeemer />
         </div>
 
         {/* Add custom chain */}
