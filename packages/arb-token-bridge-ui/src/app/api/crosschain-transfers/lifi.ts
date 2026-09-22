@@ -7,15 +7,17 @@ import {
   createConfig,
   getRoutes,
 } from '@lifi/sdk';
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain } from '../../../util/AddressUtils';
 import { getLifiRouteStepLabel, getLifiToolDetails } from '../../../util/LifiRouteUtils';
+import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../../../wallet/types';
 import { CrosschainTransfersRouteBase, QueryParams, RouteCost, Token } from './types';
 import { isValidLifiTransfer } from './utils';
 
@@ -50,8 +52,18 @@ export type PreferredLifiRoutes =
   | [LifiCrosschainTransfersRoute]
   | [LifiCrosschainTransfersRoute, LifiCrosschainTransfersRoute];
 
+const routeExecutionSupport: Record<WalletEcosystem, (route: Route) => boolean> = {
+  evm: () => true,
+  solana: (route) => route.steps.length === 1,
+};
+
+function canExecuteRoute(route: Route): boolean {
+  return routeExecutionSupport[getWalletEcosystem(route.fromChainId)](route);
+}
+
 function isUsdtToken(tokenAddress: string | undefined, chainId: number) {
   return (
+    (tokenAddress === CommonAddress.Solana.USDT && chainId === ChainId.Solana) ||
     (addressesEqual(tokenAddress, CommonAddress.Ethereum.USDT) && chainId === ChainId.Ethereum) ||
     (addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDT) &&
       chainId === ChainId.ArbitrumOne) ||
@@ -309,20 +321,6 @@ export async function GET(
 
   try {
     // Validate parameters
-    if (!fromToken || !utils.isAddress(fromToken)) {
-      return NextResponse.json(
-        { message: 'fromToken is not a valid address', data: null },
-        { status: 400 },
-      );
-    }
-
-    if (!toToken || !utils.isAddress(toToken)) {
-      return NextResponse.json(
-        { message: 'toToken is not a valid address', data: null },
-        { status: 400 },
-      );
-    }
-
     if (!fromChainId) {
       return NextResponse.json({ message: 'fromChainId is required', data: null }, { status: 400 });
     }
@@ -331,11 +329,28 @@ export async function GET(
       return NextResponse.json({ message: 'toChainId is required', data: null }, { status: 400 });
     }
 
+    const parsedFromChainId = Number(fromChainId);
+    const parsedToChainId = Number(toChainId);
+
+    if (!fromToken || !isValidAddressForChain(fromToken, parsedFromChainId)) {
+      return NextResponse.json(
+        { message: 'fromToken is not a valid address', data: null },
+        { status: 400 },
+      );
+    }
+
+    if (!toToken || !isValidAddressForChain(toToken, parsedToChainId)) {
+      return NextResponse.json(
+        { message: 'toToken is not a valid address', data: null },
+        { status: 400 },
+      );
+    }
+
     if (
       !isValidLifiTransfer({
         fromToken,
-        sourceChainId: Number(fromChainId),
-        destinationChainId: Number(toChainId),
+        sourceChainId: parsedFromChainId,
+        destinationChainId: parsedToChainId,
       })
     ) {
       return NextResponse.json(
@@ -363,8 +378,8 @@ export async function GET(
       fromAddress,
       fromAmount,
       fromTokenAddress: fromToken,
-      fromChainId: Number(fromChainId),
-      toChainId: Number(toChainId),
+      fromChainId: parsedFromChainId,
+      toChainId: parsedToChainId,
       toTokenAddress: toToken,
       toAddress,
     };
@@ -393,6 +408,7 @@ export async function GET(
 
     const parsedRoutes = routes.flatMap((route) => {
       try {
+        if (!canExecuteRoute(route)) return [];
         return [
           parseLifiRoute({
             route,

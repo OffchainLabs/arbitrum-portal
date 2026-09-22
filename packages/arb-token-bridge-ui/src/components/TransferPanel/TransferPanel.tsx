@@ -60,13 +60,13 @@ import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
 
 const networkConnectionWarningToast = () =>
   warningToast(
-    <>
+    <span>
       Network connection issue. Please contact{' '}
-      <ExternalLink href={GET_HELP_LINK} className="underline">
+      <ExternalLink href={GET_HELP_LINK} className="whitespace-nowrap underline">
         support
       </ExternalLink>
       .
-    </>,
+    </span>,
     { autoClose: false },
   );
 
@@ -435,6 +435,7 @@ export function TransferPanel({
         networks,
         childChain,
         parentChain,
+        sourceWallet,
         walletAddress,
         destinationWalletAddress,
         destinationAddress,

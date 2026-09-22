@@ -18,6 +18,7 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
+import { ChainId } from '../../types/ChainId';
 import { getOrbitChains } from '../../util/orbitChainsList';
 
 const DAY_IN_MINUTES = 24 * 60;
@@ -81,7 +82,7 @@ describe('useTransferDuration', () => {
     getOrbitChains().forEach((chain) => registerCustomArbitrumNetwork(chain));
   });
 
-  it('preserves a zero LiFi duration', async () => {
+  it('preserves a zero Solana LiFi duration without running CCTP timing', async () => {
     const token = {
       address: '0x0000000000000000000000000000000000000000',
       decimals: 18,
@@ -93,7 +94,7 @@ describe('useTransferDuration', () => {
         minutesSinceStart: 0,
         isDeposit: true,
         isCctp: false,
-        parentChainId: 1,
+        parentChainId: ChainId.Solana,
         childChainId: 42161,
       }),
       isLifi: true,
@@ -102,7 +103,7 @@ describe('useTransferDuration', () => {
       durationMs: 0,
       toolDetails: { key: 'lifi', name: 'LI.FI', logoURI: '' },
       toolsDetails: [{ key: 'lifi', name: 'LI.FI', logoURI: '' }],
-      fromAmount: { amount: '1', amountUSD: '1', chainId: 1, token },
+      fromAmount: { amount: '1', amountUSD: '1', chainId: ChainId.Solana, token },
       toAmount: { amount: '1', amountUSD: '1', chainId: 42161, token },
     } as LifiMergedTransaction;
 

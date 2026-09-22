@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { useNetworks } from '../../../hooks/useNetworks';
+import { isTransferExecutionAvailable } from '../../../services/transferExecutionAvailability';
 import { useAppState } from '../../../state';
 import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useDestinationAddressError } from './useDestinationAddressError';
@@ -13,23 +14,19 @@ export function useIsTransferAllowed() {
     },
   } = useAppState();
   const { sourceWallet } = useWallets();
-  const walletAddress = sourceWallet.account.address;
   const [networks] = useNetworks();
   const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
     const isConnectedToTheWrongChain = sourceWallet.account.chainId !== networks.sourceChain.id;
 
-    if (!arbTokenBridgeLoaded) {
-      return false;
-    }
-    if (!eth) {
-      return false;
-    }
-    if (!sourceWallet.isConnected) {
-      return false;
-    }
-    if (!walletAddress) {
+    if (
+      !isTransferExecutionAvailable({
+        chainId: networks.sourceChain.id,
+        wallet: sourceWallet,
+        arbTokenBridgeReady: arbTokenBridgeLoaded && Boolean(eth),
+      })
+    ) {
       return false;
     }
     if (isConnectedToTheWrongChain) {
@@ -39,13 +36,5 @@ export function useIsTransferAllowed() {
       return false;
     }
     return true;
-  }, [
-    arbTokenBridgeLoaded,
-    destinationAddressError,
-    eth,
-    networks.sourceChain.id,
-    sourceWallet.account.chainId,
-    sourceWallet.isConnected,
-    walletAddress,
-  ]);
+  }, [arbTokenBridgeLoaded, destinationAddressError, eth, networks.sourceChain.id, sourceWallet]);
 }

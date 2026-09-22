@@ -39,7 +39,7 @@ export const useLifiCrossTransfersRoute = ({
     () =>
       enabled &&
       fromAmount !== '0' &&
-      isValidAddressForChain(fromAddress, fromChainId) &&
+      (!fromAddress || isValidAddressForChain(fromAddress, fromChainId)) &&
       isValidAddressForChain(toAddress, toChainId)
         ? ([
             fromAmount,

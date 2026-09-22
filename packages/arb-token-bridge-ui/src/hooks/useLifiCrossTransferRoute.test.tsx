@@ -37,7 +37,7 @@ describe.sequential('useLifiCrossTransfersRoute', () => {
   });
 
   it.each([
-    { fromAddress: undefined },
+    { fromAddress: 'not-an-address' },
     { toAddress: undefined },
     { toAddress: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5' },
     { toAddress: '0x52908400098527886e0F7030069857D2E4169EE7' },
@@ -53,6 +53,14 @@ describe.sequential('useLifiCrossTransfersRoute', () => {
     renderHook(() => useLifiCrossTransfersRoute(parameters));
     expect(vi.mocked(useSWR).mock.calls.at(-1)?.[0]).toEqual(
       expect.arrayContaining([parameters.fromAddress, parameters.toAddress]),
+    );
+  });
+
+  it('requests a quote before the source wallet connects', () => {
+    renderHook(() => useLifiCrossTransfersRoute({ ...parameters, fromAddress: undefined }));
+
+    expect(vi.mocked(useSWR).mock.calls.at(-1)?.[0]).toEqual(
+      expect.arrayContaining([parameters.toAddress]),
     );
   });
 
@@ -149,4 +157,37 @@ describe.sequential('Solana quote recipient boundary', () => {
       expect(fetchRoute).toHaveBeenCalledOnce();
     },
   );
+
+  it('re-quotes with the Solana sender after the wallet connects', async () => {
+    const fetchRoute = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchRoute);
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
+    );
+    const initialProps: { fromAddress: string | undefined } = { fromAddress: undefined };
+    const { rerender } = renderHook(
+      ({ fromAddress }: { fromAddress: string | undefined }) =>
+        useLifiCrossTransfersRoute({
+          fromChainId: ChainId.Solana,
+          toChainId: ChainId.ArbitrumOne,
+          fromAddress,
+          toAddress: recipient,
+          fromToken: '11111111111111111111111111111111',
+          toToken: '0x0000000000000000000000000000000000000000',
+          fromAmount: '1000000000',
+        }),
+      { initialProps, wrapper },
+    );
+
+    await waitFor(() => expect(fetchRoute).toHaveBeenCalledOnce());
+    const disconnectedUrl = new URL(String(fetchRoute.mock.calls[0]?.[0]), 'http://localhost');
+    expect(disconnectedUrl.searchParams.has('fromAddress')).toBe(false);
+
+    rerender({ fromAddress: sender });
+    await waitFor(() => expect(fetchRoute).toHaveBeenCalledTimes(2));
+    const connectedUrl = new URL(String(fetchRoute.mock.calls[1]?.[0]), 'http://localhost');
+    expect(connectedUrl.searchParams.get('fromAddress')).toBe(sender);
+  });
 });
