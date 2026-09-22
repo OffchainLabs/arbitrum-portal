@@ -24,10 +24,7 @@ vi.mock('wagmi', () => ({
   useAccount: () => ({ isConnected: true, chainId: 42161 }),
 }));
 vi.mock('wagmi/actions', () => ({ getConnectorClient: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: vi.fn() }),
-  usePathname: () => '/build/retryables',
-}));
+vi.mock('next/navigation', () => ({ usePathname: () => '/build/retryables' }));
 vi.mock('react-use', () => ({ useCopyToClipboard: () => [{}, vi.fn()] }));
 vi.mock('@/bridge/util/wagmi/setup', () => ({ wagmiConfig: {} }));
 vi.mock('@/bridge/util/wagmi/useEthersSigner', () => ({ clientToSigner: vi.fn() }));
@@ -48,7 +45,11 @@ vi.mock('@/bridge/components/TransactionHistory/TransactionHistorySearchBar', ()
   },
 }));
 vi.mock('../ChainSelectDropdown', () => ({
-  ChainSelectDropdown: () => <div data-testid="chain-select" />,
+  ChainSelectDropdown: ({ onChange }: { onChange: (chainId: number) => void }) => (
+    <button type="button" onClick={() => onChange(42170)}>
+      Select Arbitrum Nova
+    </button>
+  ),
 }));
 vi.mock('../useRetryableLookup', () => ({
   useRetryableLookup: (args: { childChainId: number | undefined; parentChainTxHash?: string }) =>
@@ -96,7 +97,10 @@ beforeAll(() => {
 });
 
 // this config does not set `globals`, so testing-library's automatic cleanup never registers
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.replaceState(null, '', '/');
+});
 
 beforeEach(() => {
   // the hook only resolves a result for a submitted hash, mirroring its SWR key
@@ -133,6 +137,20 @@ describe('RetryableRedeemer', () => {
       expect.objectContaining({ parentChainTxHash: undefined }),
     );
     expect(screen.queryByText('Ready to redeem')).toBeNull();
+  });
+
+  it('keeps the url on the chain the shown result came from', () => {
+    renderRedeemer({ initialTxHash: VALID_TX_HASH });
+
+    expect(window.location.search).toBe(`?chainId=${ARBITRUM_ONE}&tx=${VALID_TX_HASH}`);
+
+    // switching chains re-runs the lookup on its own, so the url has to follow without a submit
+    fireEvent.click(screen.getByRole('button', { name: 'Select Arbitrum Nova' }));
+
+    expect(useRetryableLookupMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ childChainId: 42170 }),
+    );
+    expect(window.location.search).toBe(`?chainId=42170&tx=${VALID_TX_HASH}`);
   });
 
   it('drops the previous result as soon as the hash is edited', () => {

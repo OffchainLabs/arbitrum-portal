@@ -11,8 +11,8 @@ import {
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
-import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { isHash } from 'viem';
@@ -251,7 +251,6 @@ export function RetryableRedeemer({
   initialChainId: number | undefined;
   initialTxHash: string | undefined;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const { isConnected, chainId: connectedChainId } = useAccount();
   const { openConnectModal } = useWalletModal();
@@ -281,6 +280,23 @@ export function RetryableRedeemer({
     parentChainTxHash: submittedTxHash,
   });
 
+  // The lookup re-runs whenever the effective chain changes, not only on submit, so the url has to
+  // track that same derived value: otherwise a copied link names a chain the result never came from.
+  // `replaceState` rather than `router.replace`, to avoid a server round-trip for client-only state.
+  useEffect(() => {
+    if (typeof childChainId === 'undefined') {
+      return;
+    }
+
+    const params = new URLSearchParams({ chainId: String(childChainId) });
+
+    if (submittedTxHash) {
+      params.set('tx', submittedTxHash);
+    }
+
+    window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+  }, [childChainId, pathname, submittedTxHash]);
+
   // Editing the field drops the previous result, so a ticket on screen always belongs to the hash
   // currently in the box, otherwise a failed re-check leaves a stale, redeemable-looking row.
   const handleInputChange = useCallback((value: string) => {
@@ -303,12 +319,8 @@ export function RetryableRedeemer({
 
       setInputError(undefined);
       setSubmittedTxHash(value);
-
-      if (typeof childChainId === 'number') {
-        router.replace(`${pathname}?chainId=${childChainId}&tx=${value}`, { scroll: false });
-      }
     },
-    [childChainId, pathname, router, txHashInput],
+    [txHashInput],
   );
 
   const handleCopyLink = useCallback(() => {
