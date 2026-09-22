@@ -41,7 +41,7 @@ export const SettingsDialog = () => {
   return (
     <SidePanel
       isOpen={settingsOpen}
-      heading="Settings"
+      heading="Developer Tools"
       onClose={closeSettings}
       dialogWrapperClassName="z-[1001]"
       panelClassNameOverrides="lg:!w-[944px] !min-w-[350px]" // custom width
@@ -60,7 +60,7 @@ export const SettingsDialog = () => {
           />
         </Card>
 
-        <RetryableTicketsLinkCard entryPoint="Bridge Settings" />
+        <RetryableTicketsLinkCard entryPoint="Developer Tools" />
 
         {/* Add custom chain */}
         <Card className="border border-white/10 transition-opacity">
