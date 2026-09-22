@@ -3,9 +3,8 @@ import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outlin
 import { PropsWithChildren, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { Button } from '@/bridge/components/common/Button';
 import { NetworkImage } from '@/bridge/components/common/NetworkImage';
-import { TestnetToggle } from '@/bridge/components/common/TestnetToggle';
+import { Switch } from '@/bridge/components/common/atoms/Switch';
 import { getNetworkName, isCoreChainForDisplay } from '@/bridge/util/networks';
 
 function SectionLabel({ children }: PropsWithChildren) {
@@ -38,10 +37,14 @@ export function ChainSelectDropdown({
   chainIds,
   selectedChainId,
   onChange,
+  isTestnetMode,
+  onTestnetModeChange,
 }: {
   chainIds: number[];
   selectedChainId: number;
   onChange: (chainId: number) => void;
+  isTestnetMode: boolean;
+  onTestnetModeChange: (isTestnetMode: boolean) => void;
 }) {
   const [search, setSearch] = useState('');
 
@@ -56,25 +59,20 @@ export function ChainSelectDropdown({
     <Popover className="relative">
       {({ open }) => (
         <>
-          <PopoverButton as={Button} variant="secondary" aria-label="Select destination chain">
-            <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-              <span className="text-white/70">Destination chain:</span>
-              <NetworkImage
-                chainId={selectedChainId}
-                className="h-[20px] w-[20px] p-[2px]"
-                size={20}
-              />
-              {getNetworkName(selectedChainId)}
-              <ChevronDownIcon width={12} className={open ? 'rotate-180' : ''} />
-            </div>
+          <PopoverButton
+            aria-label="Select destination chain"
+            className="arb-hover flex h-[52px] w-full items-center gap-3 rounded border border-gray-dark bg-black/20 px-3 text-left outline-none hover:bg-white/5"
+          >
+            <NetworkImage chainId={selectedChainId} className="h-6 w-6 p-[2px]" size={24} />
+            <span className="grow truncate text-base">{getNetworkName(selectedChainId)}</span>
+            <ChevronDownIcon width={16} className={open ? 'rotate-180' : ''} />
           </PopoverButton>
 
           <PopoverPanel
-            // Portalled via `anchor`, so it escapes the settings panel's overflow. It also has to
-            // clear that panel's own z-[1001], which a stacking-context-local z-index would not.
+            // portalled via `anchor`, so it is not clipped by any scroll container it sits in
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
             transition
-            className="z-[1100] flex max-h-[min(var(--anchor-max-height,420px),420px)] w-[360px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+            className="z-50 flex max-h-[min(var(--anchor-max-height,420px),420px)] w-[var(--button-width)] min-w-[320px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
           >
             {({ close }) => (
               <div className="flex min-h-0 flex-1 flex-col">
@@ -118,7 +116,13 @@ export function ChainSelectDropdown({
                 </RadioGroup>
 
                 <div className="border-t border-white/10 px-3 py-3">
-                  <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
+                  <label className="cursor-pointer">
+                    <Switch
+                      label={`Testnet mode ${isTestnetMode ? 'ON' : 'OFF'}`}
+                      checked={isTestnetMode}
+                      onChange={() => onTestnetModeChange(!isTestnetMode)}
+                    />
+                  </label>
                 </div>
               </div>
             )}

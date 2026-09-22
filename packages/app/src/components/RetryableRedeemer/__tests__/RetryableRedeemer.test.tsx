@@ -1,14 +1,22 @@
 // @vitest-environment happy-dom
 import { ParentToChildMessageStatus } from '@arbitrum/sdk';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initializeBridgeNetworks } from '@/bridge/util/networks';
 
 import { RetryableRedeemer } from '../RetryableRedeemer';
 
+// the app extends these in `initializeDayjs`, which only runs inside AppProviders
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+
 const INVALID_TX_HASH_ERROR = 'That doesn’t seem to be a valid transaction hash, please try again.';
 const VALID_TX_HASH = `0x${'a'.repeat(64)}`;
+const ARBITRUM_ONE = 42161;
 
 const useRetryableLookupMock = vi.fn();
 
@@ -16,15 +24,17 @@ vi.mock('wagmi', () => ({
   useAccount: () => ({ isConnected: true, chainId: 42161 }),
 }));
 vi.mock('wagmi/actions', () => ({ getConnectorClient: vi.fn() }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => '/build/retryables',
+}));
+vi.mock('react-use', () => ({ useCopyToClipboard: () => [{}, vi.fn()] }));
 vi.mock('@/bridge/util/wagmi/setup', () => ({ wagmiConfig: {} }));
 vi.mock('@/bridge/util/wagmi/useEthersSigner', () => ({ clientToSigner: vi.fn() }));
 vi.mock('@/bridge/util/RetryableUtils', () => ({ getRetryableTicket: vi.fn() }));
 vi.mock('@/bridge/util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('@/bridge/components/common/atoms/Toast', () => ({ errorToast: vi.fn() }));
 vi.mock('@/token-bridge-sdk/utils', () => ({ getProviderForChainId: vi.fn() }));
-vi.mock('@/bridge/hooks/useIsTestnetMode', () => ({
-  useIsTestnetMode: () => [false, vi.fn()],
-}));
 vi.mock('@/bridge/hooks/useSwitchNetworkWithConfig', () => ({
   useSwitchNetworkWithConfig: () => ({ switchChainAsync: vi.fn() }),
 }));
@@ -65,12 +75,20 @@ function redeemableResult() {
 
 const emptyResult = { data: undefined, error: undefined, isLoading: false, mutate: vi.fn() };
 
+function renderRedeemer({ initialTxHash }: { initialTxHash?: string } = {}) {
+  return render(<RetryableRedeemer initialChainId={ARBITRUM_ONE} initialTxHash={initialTxHash} />);
+}
+
 function getInput() {
-  return screen.getByLabelText('Source chain transaction hash');
+  return screen.getByLabelText('Ethereum transaction hash');
 }
 
 function check() {
-  fireEvent.click(screen.getByRole('button', { name: 'Check' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Check status' }));
+}
+
+function queryRedeemButton() {
+  return screen.queryByRole('button', { name: 'Redeem on Arbitrum One' });
 }
 
 beforeAll(() => {
@@ -90,17 +108,35 @@ beforeEach(() => {
 
 describe('RetryableRedeemer', () => {
   it('shows a redeemable ticket after checking a valid hash', () => {
-    render(<RetryableRedeemer />);
+    renderRedeemer();
 
     fireEvent.change(getInput(), { target: { value: VALID_TX_HASH } });
     check();
 
     expect(screen.getByText('Ready to redeem')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Redeem' })).toBeDefined();
+    expect(queryRedeemButton()).not.toBeNull();
+  });
+
+  it('looks up a ticket straight away when the hash comes from the url', () => {
+    renderRedeemer({ initialTxHash: VALID_TX_HASH });
+
+    expect(useRetryableLookupMock).toHaveBeenCalledWith(
+      expect.objectContaining({ parentChainTxHash: VALID_TX_HASH }),
+    );
+    expect(screen.getByText('Ready to redeem')).toBeDefined();
+  });
+
+  it('ignores a malformed hash in the url', () => {
+    renderRedeemer({ initialTxHash: 'xac1cc40081cedd89' });
+
+    expect(useRetryableLookupMock).toHaveBeenCalledWith(
+      expect.objectContaining({ parentChainTxHash: undefined }),
+    );
+    expect(screen.queryByText('Ready to redeem')).toBeNull();
   });
 
   it('drops the previous result as soon as the hash is edited', () => {
-    render(<RetryableRedeemer />);
+    renderRedeemer();
 
     fireEvent.change(getInput(), { target: { value: VALID_TX_HASH } });
     check();
@@ -109,11 +145,11 @@ describe('RetryableRedeemer', () => {
     fireEvent.change(getInput(), { target: { value: `${VALID_TX_HASH}c` } });
 
     expect(screen.queryByText('Ready to redeem')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Redeem' })).toBeNull();
+    expect(queryRedeemButton()).toBeNull();
   });
 
   it('never leaves a redeemable ticket on screen when a re-check fails validation', () => {
-    render(<RetryableRedeemer />);
+    renderRedeemer();
 
     fireEvent.change(getInput(), { target: { value: VALID_TX_HASH } });
     check();
@@ -125,11 +161,11 @@ describe('RetryableRedeemer', () => {
 
     expect(screen.getByText(INVALID_TX_HASH_ERROR)).toBeDefined();
     expect(screen.queryByText('Ready to redeem')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Redeem' })).toBeNull();
+    expect(queryRedeemButton()).toBeNull();
   });
 
   it('does not look up anything until the hash is submitted', () => {
-    render(<RetryableRedeemer />);
+    renderRedeemer();
 
     fireEvent.change(getInput(), { target: { value: VALID_TX_HASH } });
 

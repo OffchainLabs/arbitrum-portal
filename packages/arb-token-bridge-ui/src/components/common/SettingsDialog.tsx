@@ -1,7 +1,7 @@
 import useLocalStorage from '@rehooks/local-storage';
 import { twMerge } from 'tailwind-merge';
 
-import { RetryableRedeemer } from '@/app-components/RetryableRedeemer/RetryableRedeemer';
+import { RetryableTicketsLinkCard } from '@/app-components/RetryableRedeemer/RetryableTicketsLinkCard';
 
 import { ORBIT_QUICKSTART_LINK } from '../../constants';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -65,8 +65,7 @@ export const SettingsDialog = () => {
 
         {/* Check and redeem a retryable ticket */}
         <div className="w-full">
-          <SectionTitle className="mb-1">Retryable Tickets</SectionTitle>
-          <RetryableRedeemer />
+          <RetryableTicketsLinkCard ctaLabel="Open" />
         </div>
 
         <SectionDivider />

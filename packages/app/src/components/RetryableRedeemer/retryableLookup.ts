@@ -51,9 +51,12 @@ export function getRedeemableChainIds({ isTestnetMode }: { isTestnetMode: boolea
   );
 }
 
+export type RetryableStatusTone = 'positive' | 'warning' | 'negative' | 'neutral';
+
 export type RetryableStatusDisplay = {
   label: string;
   description: string;
+  tone: RetryableStatusTone;
   isRedeemable: boolean;
 };
 
@@ -64,6 +67,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
         label: 'Redeemed or expired',
         description:
           'The ticket is no longer on the chain, so there is nothing to redeem. We could not confirm which of the two it was.',
+        tone: 'neutral',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.NOT_YET_CREATED:
@@ -71,6 +75,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
         label: 'Not created yet',
         description:
           'The Arbitrum chain has not picked up the ticket yet. Check again in a few minutes.',
+        tone: 'neutral',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.CREATION_FAILED:
@@ -78,25 +83,28 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
         label: 'Creation failed',
         description:
           'The ticket failed to be created on the Arbitrum chain, so there is nothing to redeem.',
+        tone: 'negative',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD:
       return {
         label: 'Ready to redeem',
-        description:
-          'It was not redeemed automatically. Redeem it to execute the message on the Arbitrum chain.',
+        description: 'Automatic redemption did not complete. You can retry this message.',
+        tone: 'warning',
         isRedeemable: true,
       };
     case ParentToChildMessageStatus.REDEEMED:
       return {
         label: 'Redeemed',
         description: 'The ticket was executed on the Arbitrum chain. Nothing left to do.',
+        tone: 'positive',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.EXPIRED:
       return {
         label: 'Expired',
         description: 'The ticket was not redeemed within 7 days and can no longer be redeemed.',
+        tone: 'negative',
         isRedeemable: false,
       };
   }
