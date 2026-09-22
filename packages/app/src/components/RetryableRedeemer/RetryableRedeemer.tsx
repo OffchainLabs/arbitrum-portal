@@ -255,8 +255,8 @@ export function RetryableRedeemer() {
           retryable ticket
         </ExternalLink>{' '}
         is any message sent from a parent chain to an Arbitrum chain, whether that is a deposit or
-        an arbitrary contract call. If its automatic redemption did not go through, it can be
-        redeemed by hand for 7 days. Pick the Arbitrum chain the message was sent to, then paste the
+        an arbitrary contract call. If it was not redeemed automatically, you can redeem it yourself
+        for up to 7 days. Pick the Arbitrum chain the message was sent to, then paste the
         transaction hash from the chain it was sent from.
       </p>
 

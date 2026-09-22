@@ -63,7 +63,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
       return {
         label: 'Redeemed or expired',
         description:
-          'The ticket is no longer on the chain, so there is nothing to redeem. Reading which of the two it was needs a log range this chain’s RPC would not serve.',
+          'The ticket is no longer on the chain, so there is nothing to redeem. We could not confirm which of the two it was.',
         isRedeemable: false,
       };
     case ParentToChildMessageStatus.NOT_YET_CREATED:
@@ -84,7 +84,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
       return {
         label: 'Ready to redeem',
         description:
-          'Auto-redeem did not go through. Redeem manually to execute the message on the Arbitrum chain.',
+          'It was not redeemed automatically. Redeem it to execute the message on the Arbitrum chain.',
         isRedeemable: true,
       };
     case ParentToChildMessageStatus.REDEEMED:
