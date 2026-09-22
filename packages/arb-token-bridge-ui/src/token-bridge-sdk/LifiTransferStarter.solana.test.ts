@@ -93,7 +93,7 @@ describe('LifiTransferStarter from Solana', () => {
 });
 
 describe('Solana gas estimates', () => {
-  it('sums the quoted Solana and destination gas estimates', async () => {
+  it('keeps quoted fees in lamports, including fees without a compute-unit estimate', async () => {
     const quote = route();
     quote.gas = [
       {
@@ -128,10 +128,12 @@ describe('Solana gas estimates', () => {
     await expect(starter.transferEstimateGas()).resolves.toEqual({
       estimatedParentChainGas: BigNumber.from(100000),
       estimatedChildChainGas: BigNumber.from(20),
+      estimatedParentChainGasFee: BigNumber.from(7500),
+      estimatedChildChainGasFee: BigNumber.from(200),
     });
   });
 
-  it('creates the LiFi starter without EVM providers', async () => {
+  it('creates the LiFi starter without EVM providers and uses the quoted fees', async () => {
     const provider = vi.spyOn(providers, 'getProviderForChainId').mockImplementation(() => {
       throw new Error('Solana estimates must not create an EVM provider');
     });
@@ -153,7 +155,7 @@ describe('Solana gas estimates', () => {
       });
       expect(starter).toBeInstanceOf(LifiTransferStarter);
       await expect(starter.transferEstimateGas()).resolves.toMatchObject({
-        estimatedParentChainGas: BigNumber.from(100000),
+        estimatedParentChainGasFee: BigNumber.from(5000),
       });
       expect(provider).not.toHaveBeenCalled();
       expect(() =>

@@ -43,5 +43,6 @@ export const evmEcosystem: EcosystemConfig = {
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: evmChains,
+  nativeAssetType: 'ETH',
   namespace: 'eip155',
 };
