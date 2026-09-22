@@ -61,6 +61,16 @@ export function useSolanaWallet(): SolanaWalletHandle {
                 { preflightCommitment: 'confirmed' },
               )
           : undefined,
+      confirmTransaction: isConnected
+        ? async (signature) => {
+            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+            if (confirmation.value.err) {
+              throw new Error(
+                `Solana transaction confirmation failed: ${JSON.stringify(confirmation.value.err)}`,
+              );
+            }
+          }
+        : undefined,
     }),
     [address, status, walletInfo, isConnected, disconnectSolana, walletProvider],
   );
