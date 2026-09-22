@@ -10,7 +10,8 @@ import { createMockLifiRoute } from '../test-utils/lifi';
 import {
   getExecutedLifiRouteTxHash,
   getLifiRouteStatusRequest,
-  getSubmittedLifiRouteTxHash,
+  getPendingLifiRouteBatchIds,
+  resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
 import { LifiTransferStarter } from './LifiTransferStarter';
 
@@ -137,6 +138,30 @@ describe('getExecutedLifiRouteTxHash', () => {
     expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
   });
 
+  it.each(['ACTION_REQUIRED', 'CANCELLED'] as const)(
+    'does not treat a %s process as an accepted transaction',
+    (status) => {
+      const route = {
+        steps: [
+          {
+            execution: {
+              process: [
+                {
+                  type: 'CROSS_CHAIN',
+                  status,
+                  txHash: batchId32Bytes,
+                  txType: 'batched',
+                },
+              ],
+            },
+          },
+        ],
+      } as unknown as RouteExtended;
+
+      expect(getExecutedLifiRouteTxHash(route)).toBeUndefined();
+    },
+  );
+
   it('ignores EIP-5792 batch ids until LiFi updates the route with a transaction hash', () => {
     const routeWithBatchId = {
       steps: [
@@ -173,9 +198,90 @@ describe('getExecutedLifiRouteTxHash', () => {
     } as unknown as RouteExtended;
 
     expect(getExecutedLifiRouteTxHash(routeWithBatchId)).toBeUndefined();
-    expect(getSubmittedLifiRouteTxHash(routeWithBatchId)).toBe(batchId32Bytes);
     expect(getExecutedLifiRouteTxHash(routeWithTransactionHash)).toBe(routeTxHash);
-    expect(getSubmittedLifiRouteTxHash(routeWithTransactionHash)).toBe(routeTxHash);
+  });
+
+  it('replaces a submitted batch id with its route transaction receipt', () => {
+    const routeWithBatchId = {
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId32Bytes,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+    const txLink = `https://etherscan.io/tx/${routeTxHash}`;
+
+    expect(getPendingLifiRouteBatchIds(routeWithBatchId)).toEqual([batchId32Bytes]);
+
+    const resolvedRoute = resolveLifiRouteBatchId({
+      route: routeWithBatchId,
+      batchId: batchId32Bytes,
+      txHash: routeTxHash,
+      txLink,
+    });
+
+    expect(getPendingLifiRouteBatchIds(resolvedRoute)).toEqual([]);
+    expect(getExecutedLifiRouteTxHash(resolvedRoute)).toBe(routeTxHash);
+    expect(resolvedRoute.steps[0]?.execution?.process[0]).toMatchObject({
+      txHash: routeTxHash,
+      txLink,
+      txType: 'batched',
+    });
+  });
+
+  it('keeps a failed on-chain transaction as an executed transaction', () => {
+    const route = {
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'FAILED',
+                txHash: routeTxHash,
+                txLink: `https://etherscan.io/tx/${routeTxHash}`,
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
+  });
+
+  it('keeps the first executed transaction when a later step fails', () => {
+    const route = {
+      steps: [
+        {
+          execution: {
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: routeTxHash }],
+          },
+        },
+        {
+          execution: {
+            process: [
+              {
+                type: 'SWAP',
+                status: 'FAILED',
+                txHash: '0x9e3a93e15e2c778c56efba7af7016e0dd149769dd6b087da8c2d92e2e24580b4',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    expect(getExecutedLifiRouteTxHash(route)).toBe(routeTxHash);
   });
 });
 
@@ -245,7 +351,7 @@ describe('getLifiRouteStatusRequest', () => {
   });
 });
 
-describe('LifiTransferStarter approvals', () => {
+describe.sequential('LifiTransferStarter approvals', () => {
   it('asks for approval through each LiFi approval transaction request hook', async () => {
     const onApprovalRequest = vi.fn().mockResolvedValue(true);
     const executedRoute = {
@@ -304,7 +410,8 @@ describe('LifiTransferStarter approvals', () => {
     );
   });
 
-  it('returns the submitted route id so batched calls are tracked in history', async () => {
+  it('waits for a real transaction hash while reporting every route update', async () => {
+    const onRouteUpdate = vi.fn();
     const routeWithBatchId = {
       id: 'route-id',
       steps: [
@@ -347,11 +454,152 @@ describe('LifiTransferStarter approvals', () => {
       return routeWithTransactionHash;
     });
 
-    await expect(createStarter().transfer(createTransferProps(vi.fn()))).resolves.toMatchObject({
+    const transferProps = createTransferProps(vi.fn());
+    transferProps.onRouteUpdate = onRouteUpdate;
+
+    await expect(createStarter().transfer(transferProps)).resolves.toMatchObject({
       sourceChainTransaction: {
-        hash: batchId,
+        hash: routeTxHash,
       },
-      lifiRoute: routeWithBatchId,
+      lifiRoute: routeWithTransactionHash,
+    });
+    expect(onRouteUpdate).toHaveBeenCalledWith(routeWithBatchId);
+    expect(onRouteUpdate).toHaveBeenCalledWith(routeWithTransactionHash);
+  });
+
+  it('reports a rejected wallet request with failed route state', async () => {
+    const onRouteUpdate = vi.fn();
+    const onRouteExecutionError = vi.fn();
+    const routeWithBatchId = {
+      id: 'rejected-route-id',
+      steps: [
+        {
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+    const rejectionError = new Error('bundle id is unknown');
+
+    vi.mocked(executeRoute).mockImplementationOnce(async (_route, executionOptions) => {
+      executionOptions?.updateRouteHook?.(routeWithBatchId);
+      throw rejectionError;
+    });
+    const transferProps = createTransferProps(vi.fn());
+    transferProps.onRouteUpdate = onRouteUpdate;
+    transferProps.onRouteExecutionError = onRouteExecutionError;
+
+    await expect(createStarter().transfer(transferProps)).rejects.toBe(rejectionError);
+    await vi.waitFor(() => {
+      expect(onRouteExecutionError).toHaveBeenCalledWith(
+        rejectionError,
+        expect.objectContaining({
+          steps: [
+            expect.objectContaining({
+              execution: expect.objectContaining({
+                status: 'FAILED',
+                process: [expect.objectContaining({ status: 'FAILED' })],
+              }),
+            }),
+          ],
+        }),
+      );
+    });
+    expect(onRouteUpdate).toHaveBeenCalledWith(routeWithBatchId);
+  });
+
+  it('reports one route update that contains an accepted hash and a later batch', async () => {
+    const onRouteUpdate = vi.fn();
+    const mixedRoute = {
+      id: 'mixed-route-id',
+      steps: [
+        {
+          execution: {
+            status: 'DONE',
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: routeTxHash }],
+          },
+        },
+        {
+          execution: {
+            status: 'PENDING',
+            process: [
+              {
+                type: 'SWAP',
+                status: 'PENDING',
+                txHash: batchId,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    vi.mocked(executeRoute).mockImplementationOnce(async (_route, executionOptions) => {
+      executionOptions?.updateRouteHook?.(mixedRoute);
+      return mixedRoute;
+    });
+    const transferProps = createTransferProps(vi.fn());
+    transferProps.onRouteUpdate = onRouteUpdate;
+
+    await createStarter().transfer(transferProps);
+
+    expect(onRouteUpdate).toHaveBeenCalledWith(mixedRoute);
+  });
+
+  it('marks a later rejected EOA request as resumable route state', async () => {
+    const rejectionError = { code: 4001, message: 'User rejected the request' };
+    const onRouteExecutionError = vi.fn();
+    const routeWithPendingRequest = {
+      id: 'rejected-eoa-route-id',
+      steps: [
+        {
+          execution: {
+            status: 'DONE',
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: routeTxHash }],
+          },
+        },
+        {
+          execution: {
+            status: 'PENDING',
+            process: [{ type: 'SWAP', status: 'PENDING' }],
+          },
+        },
+      ],
+    } as unknown as RouteExtended;
+
+    vi.mocked(executeRoute).mockImplementationOnce(async (_route, executionOptions) => {
+      executionOptions?.updateRouteHook?.(routeWithPendingRequest);
+      throw rejectionError;
+    });
+    const transferProps = createTransferProps(vi.fn());
+    transferProps.onRouteExecutionError = onRouteExecutionError;
+
+    await createStarter().transfer(transferProps);
+
+    await vi.waitFor(() => {
+      expect(onRouteExecutionError).toHaveBeenCalledWith(
+        rejectionError,
+        expect.objectContaining({
+          steps: [
+            routeWithPendingRequest.steps[0],
+            expect.objectContaining({
+              execution: expect.objectContaining({
+                status: 'FAILED',
+                process: [expect.objectContaining({ status: 'FAILED' })],
+              }),
+            }),
+          ],
+        }),
+      );
     });
   });
 
@@ -384,10 +632,10 @@ describe('LifiTransferStarter approvals', () => {
 
     await createStarter().transfer(transferProps);
 
-    expect(onRouteExecutionError).toHaveBeenCalledWith(executionError);
+    expect(onRouteExecutionError).toHaveBeenCalledWith(executionError, submittedRoute);
   });
 
-  it('rejects route execution when the approval modal is declined', async () => {
+  it("rejects route execution when the app's token approval dialog is declined", async () => {
     const onApprovalRequest = vi.fn().mockResolvedValue(false);
 
     vi.mocked(executeRoute).mockImplementationOnce(async (_route, executionOptions) => {
