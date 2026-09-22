@@ -9,7 +9,11 @@ import {
   TransferProps,
   TransferType,
 } from './BridgeTransferStarter';
-import { LifiRouteExecutionProps, executeLifiRoute } from './LifiRouteExecutor';
+import {
+  LifiRouteExecutionProps,
+  LifiTransferOverrides,
+  executeLifiRoute,
+} from './LifiRouteExecutor';
 
 type LifiTransferStarterProps = BridgeTransferStarterProps & {
   lifiRoute: LifiCrosschainTransfersRoute;
@@ -70,15 +74,18 @@ export class LifiTransferStarter extends BridgeTransferStarter<Omit<TransferProp
     };
   }
 
-  public async transfer({
-    wagmiConfig,
-    switchChainAsync,
-    onApprovalRequest,
-    onRouteUpdate,
-    onRouteExecutionError,
-  }: Omit<TransferProps, 'signer'> & LifiRouteExecutionProps) {
-    const { txHash, route } = await executeLifiRoute(this.lifiRoute.protocolData.route, {
-      wagmiConfig,
+  public async transfer(
+    {
+      signers,
+      switchChainAsync,
+      onApprovalRequest,
+      onRouteUpdate,
+      onRouteExecutionError,
+    }: Omit<TransferProps, 'signer'> & LifiRouteExecutionProps,
+    { executeRoute = executeLifiRoute }: LifiTransferOverrides = {},
+  ) {
+    const { txHash, route } = await executeRoute(this.lifiRoute.protocolData.route, {
+      signers,
       switchChainAsync,
       onApprovalRequest,
       onRouteUpdate,
