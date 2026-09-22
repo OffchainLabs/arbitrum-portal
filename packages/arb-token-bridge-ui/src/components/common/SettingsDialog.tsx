@@ -19,6 +19,8 @@ const SectionTitle = ({
   children: React.ReactNode;
 }) => <div className={twMerge('heading mb-4 text-lg', className)}>{children}</div>;
 
+const SectionDivider = () => <hr className="w-full border-white/20" />;
+
 export const SettingsDialog = () => {
   const [{ settingsOpen }, setQueryParams] = useArbQueryParams();
 
@@ -59,11 +61,15 @@ export const SettingsDialog = () => {
           />
         </div>
 
+        <SectionDivider />
+
         {/* Redeem a stuck retryable ticket */}
         <div className="w-full">
           <SectionTitle className="mb-1">Redeem a Stuck Deposit</SectionTitle>
           <RetryableRedeemer />
         </div>
+
+        <SectionDivider />
 
         {/* Add custom chain */}
         <div className="w-full transition-opacity">
@@ -81,6 +87,8 @@ export const SettingsDialog = () => {
 
           <AddCustomChain />
         </div>
+
+        <SectionDivider />
       </div>
     </SidePanel>
   );

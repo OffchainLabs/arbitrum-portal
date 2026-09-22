@@ -1,5 +1,4 @@
 import { ParentToChildMessageStatus } from '@arbitrum/sdk';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -9,12 +8,7 @@ import { getConnectorClient } from 'wagmi/actions';
 
 import { TransactionHistorySearchError } from '@/bridge/components/TransactionHistory/TransactionHistorySearchBar';
 import { Button } from '@/bridge/components/common/Button';
-import { Dialog } from '@/bridge/components/common/Dialog';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
-import { NetworkImage } from '@/bridge/components/common/NetworkImage';
-import { NetworksPanel } from '@/bridge/components/common/NetworkSelectionContainer';
-import { SearchPanel } from '@/bridge/components/common/SearchPanel/SearchPanel';
-import { TestnetToggle } from '@/bridge/components/common/TestnetToggle';
 import { Loader } from '@/bridge/components/common/atoms/Loader';
 import { errorToast } from '@/bridge/components/common/atoms/Toast';
 import { useIsTestnetMode } from '@/bridge/hooks/useIsTestnetMode';
@@ -28,6 +22,7 @@ import { clientToSigner } from '@/bridge/util/wagmi/useEthersSigner';
 import { useWalletModal } from '@/bridge/wallet/hooks/useWalletModal';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { ChainSelectDropdown } from './ChainSelectDropdown';
 import {
   Retryable,
   RetryableLookupResult,
@@ -150,7 +145,6 @@ export function RetryableRedeemer() {
   const { switchChainAsync } = useSwitchNetworkWithConfig();
 
   const [selectedChainId, setSelectedChainId] = useState<number>();
-  const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [txHashInput, setTxHashInput] = useState('');
   const [submittedTxHash, setSubmittedTxHash] = useState<string>();
   const [inputError, setInputError] = useState<string>();
@@ -247,17 +241,12 @@ export function RetryableRedeemer() {
         redeem it here.
       </p>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <Button variant="secondary" onClick={() => setIsNetworkDialogOpen(true)}>
-          <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-            To:
-            <NetworkImage chainId={childChainId} className="h-[20px] w-[20px] p-[2px]" size={20} />
-            {getNetworkName(childChainId)}
-            <ChevronDownIcon width={12} />
-          </div>
-        </Button>
-
-        <TestnetToggle label="Testnet mode" includeToggleStateOnLabel />
+      <div className="mb-4">
+        <ChainSelectDropdown
+          chainIds={chainIds}
+          selectedChainId={childChainId}
+          onChange={setSelectedChainId}
+        />
       </div>
 
       <form className="mb-4 flex flex-col items-stretch gap-2 sm:flex-row" onSubmit={handleSubmit}>
@@ -325,27 +314,6 @@ export function RetryableRedeemer() {
             </Button>
           )}
       </div>
-
-      <Dialog
-        isOpen={isNetworkDialogOpen}
-        onClose={() => setIsNetworkDialogOpen(false)}
-        title="Select Destination Network"
-        actionButtonProps={{ hidden: true }}
-        isFooterHidden
-        className="h-[100dvh] overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]"
-      >
-        <SearchPanel>
-          <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
-            <NetworksPanel
-              chainIds={chainIds}
-              selectedChainId={childChainId}
-              close={() => setIsNetworkDialogOpen(false)}
-              onNetworkRowClick={(chain) => setSelectedChainId(chain.id)}
-              showFooter={false}
-            />
-          </SearchPanel.MainPage>
-        </SearchPanel>
-      </Dialog>
     </>
   );
 }
