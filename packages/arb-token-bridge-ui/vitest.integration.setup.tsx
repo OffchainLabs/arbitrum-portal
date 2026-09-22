@@ -81,6 +81,6 @@ vi.stubGlobal('Image', MockLoadedImage);
 
 mockAnimationsApi();
 
-axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.baseURL = process.env.INTEGRATION_TEST_BASE_URL ?? 'http://localhost:3000';
 // Avoid happy-dom's XMLHttpRequest adapter to prevent async task manager abort rejections.
 (axios.defaults as { adapter?: string }).adapter = 'http';

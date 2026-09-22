@@ -1,3 +1,4 @@
+import { backOff } from 'exponential-backoff';
 import { SWRResponse } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 
@@ -25,7 +26,20 @@ function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<T
     });
 
     Promise.allSettled(
-      requestListArray.map((bridgeTokenList) => fetchBridgeTokenList(bridgeTokenList)),
+      requestListArray.map((bridgeTokenList) =>
+        backOff(
+          async () => {
+            const response = await fetchBridgeTokenList(bridgeTokenList);
+            // Failed requests resolve without data. Retry before caching a partial
+            // result: useSWRImmutable will not revalidate it once it has loaded.
+            if (!response.data) {
+              throw new Error(`Failed to load token list: ${bridgeTokenList.id}`);
+            }
+            return response;
+          },
+          { numOfAttempts: 3, startingDelay: 1_000, timeMultiple: 1 },
+        ),
+      ),
     ).then((responses) => {
       const tokenListsWithBridgeTokenListId = responses.reduce<TokenListWithId[]>(
         (acc, response, index) => {
