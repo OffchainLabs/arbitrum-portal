@@ -28,5 +28,6 @@ export const evmEcosystem: EcosystemConfig = {
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: [mainnet, sepolia, arbitrum, arbitrumNova, arbitrumSepolia, base, baseSepolia],
+  nativeAssetType: 'ETH',
   namespace: 'eip155',
 };

@@ -1,9 +1,8 @@
 import { constants } from 'ethers';
 
 import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
-import type { GasEstimates } from '../hooks/arbTokenBridge.types';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
-import type { TransferProps } from './BridgeTransferStarter';
+import type { QuotedGasEstimates, TransferProps } from './BridgeTransferStarter';
 import {
   LifiRouteExecutionProps,
   LifiTransferOverrides,
@@ -21,24 +20,28 @@ export class SolanaTransferStarter {
     this.lifiRoute = lifiRoute;
   }
 
-  public async transferEstimateGas(): Promise<GasEstimates> {
+  public async transferEstimateGas(): Promise<QuotedGasEstimates> {
     const { parentChainId, childChainId } = getNetworksRelationship({
       sourceChainId: this.lifiRoute.fromChainId,
       destinationChainId: this.lifiRoute.toChainId,
     });
-    return this.lifiRoute.gas.reduce<GasEstimates>(
+    return this.lifiRoute.gas.reduce<QuotedGasEstimates>(
       (result, gas) => {
         if (gas.chainId === parentChainId) {
           result.estimatedParentChainGas = result.estimatedParentChainGas.add(gas.estimate ?? 0);
+          result.estimatedParentChainGasFee = result.estimatedParentChainGasFee.add(gas.amount);
         }
         if (gas.chainId === childChainId) {
           result.estimatedChildChainGas = result.estimatedChildChainGas.add(gas.estimate ?? 0);
+          result.estimatedChildChainGasFee = result.estimatedChildChainGasFee.add(gas.amount);
         }
         return result;
       },
       {
         estimatedParentChainGas: constants.Zero,
         estimatedChildChainGas: constants.Zero,
+        estimatedParentChainGasFee: constants.Zero,
+        estimatedChildChainGasFee: constants.Zero,
       },
     );
   }
