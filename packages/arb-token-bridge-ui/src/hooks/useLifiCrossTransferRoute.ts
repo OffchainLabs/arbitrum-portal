@@ -6,6 +6,7 @@ import type { LifiParams, PreferredLifiRoutes } from '@/bridge/app/api/crosschai
 import { getAPIBaseUrl } from '../util';
 import type { Address } from '../util/AddressUtils';
 import { parseAddressForChain } from '../util/AddressUtils';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 
 export type UseLifiCrossTransfersRouteParams = Pick<
   LifiParams,
@@ -35,6 +36,10 @@ export const useLifiCrossTransfersRoute = ({
   const hasValidAddresses =
     (!fromAddress || parseAddressForChain(fromAddress, fromChainId) !== undefined) &&
     (!toAddress || parseAddressForChain(toAddress, toChainId) !== undefined);
+  const isCrossEcosystem = getWalletEcosystem(fromChainId) !== getWalletEcosystem(toChainId);
+  // Without a recipient, LiFi sends to the sender's address, which doesn't exist on the other
+  // ecosystem, so the quote is requested without addresses
+  const quoteFromAddress = toAddress || !isCrossEcosystem ? fromAddress : undefined;
   const key = useMemo(
     () =>
       enabled && fromAmount !== '0' && hasValidAddresses
@@ -44,7 +49,7 @@ export const useLifiCrossTransfersRoute = ({
             toToken,
             fromChainId,
             toChainId,
-            fromAddress,
+            quoteFromAddress,
             toAddress,
             denyBridges,
             denyExchanges,
@@ -60,7 +65,7 @@ export const useLifiCrossTransfersRoute = ({
       toToken,
       fromChainId,
       toChainId,
-      fromAddress,
+      quoteFromAddress,
       toAddress,
       denyBridges,
       denyExchanges,

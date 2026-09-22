@@ -62,6 +62,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
 import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -673,6 +674,7 @@ export function TransferPanel() {
         return;
       }
 
+      const recipient = destinationAddress || destinationWalletAddress;
       const lifiTransferStarter = BridgeTransferStarterFactory.create({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
@@ -696,7 +698,7 @@ export function TransferPanel() {
 
         return {
           txId,
-          asset: selectedToken?.symbol || 'ETH',
+          asset: selectedToken?.symbol || context.fromAmount.token.symbol,
           assetType,
           blockNum: null,
           createdAt: dayjs().valueOf(),
@@ -708,10 +710,10 @@ export function TransferPanel() {
           uniqueId: null,
           value: amount,
           depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-          destination: destinationAddress ?? walletAddress,
+          destination: recipient,
           sender: walletAddress,
           isLifi: true,
-          tokenAddress: selectedToken?.address || constants.AddressZero,
+          tokenAddress: selectedToken?.address || getNativeTokenAddress(networks.sourceChain.id),
           parentChainId: parentChain.id,
           childChainId: childChain.id,
           sourceChainId: networks.sourceChain.id,
