@@ -73,7 +73,16 @@ export type TransferProps = {
   overrides?: TransferOverrides;
 };
 
-export type TransferEstimateGasResult = GasEstimates | DepositGasEstimates | undefined;
+export type QuotedGasEstimates = GasEstimates & {
+  estimatedParentChainGasFee: BigNumber;
+  estimatedChildChainGasFee: BigNumber;
+};
+
+export type TransferEstimateGasResult =
+  | GasEstimates
+  | DepositGasEstimates
+  | QuotedGasEstimates
+  | undefined;
 
 export type RequiresNativeCurrencyApprovalProps = {
   amount: BigNumber;
