@@ -1,9 +1,10 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
+import { getAccount, getWalletClient } from '@wagmi/core';
 import { useCallback, useMemo } from 'react';
 import { isAddress } from 'viem';
-import { useAccount } from 'wagmi';
+import { useAccount, useConfig } from 'wagmi';
 
-import type { EvmWalletHandle } from './types';
+import type { EvmSigner, EvmWalletHandle } from './types';
 
 export function useEvmWallet(): EvmWalletHandle {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'eip155' });
@@ -11,12 +12,22 @@ export function useEvmWallet(): EvmWalletHandle {
   const chainId = useAccount().chain?.id;
   const { walletInfo } = useWalletInfo('eip155');
   const { disconnect } = useDisconnect();
+  const wagmiConfig = useConfig();
 
   const disconnectEvm = useCallback(async () => {
     if (isConnected) {
       await disconnect({ namespace: 'eip155' });
     }
   }, [disconnect, isConnected]);
+
+  // Reads wagmi's state when LiFi calls it, so a route signs with the account connected at that point
+  const signer = useMemo<EvmSigner>(
+    () => ({
+      getAddress: () => getAccount(wagmiConfig).address,
+      getWalletClient: (chainId) => getWalletClient(wagmiConfig, { chainId }),
+    }),
+    [wagmiConfig],
+  );
 
   return useMemo(
     () => ({
@@ -31,7 +42,8 @@ export function useEvmWallet(): EvmWalletHandle {
       isConnected,
       needsNetworkSigningWarning: (walletInfo?.name ?? '').toLowerCase().includes('trust wallet'),
       disconnect: disconnectEvm,
+      signer,
     }),
-    [address, chainId, status, walletInfo, isConnected, disconnectEvm],
+    [address, chainId, status, walletInfo, isConnected, disconnectEvm, signer],
   );
 }
