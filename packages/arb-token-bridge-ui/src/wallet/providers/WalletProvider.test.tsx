@@ -4,7 +4,7 @@ import {
   useDisconnect,
   useWalletInfo,
 } from '@reown/appkit/react';
-import { PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { act } from '@testing-library/react';
 import { cleanup, renderHook } from '@testing-library/react';
 import { useState } from 'react';
@@ -215,6 +215,7 @@ describe.sequential('WalletProvider', () => {
     });
     expect(result.current.isConnected).toBe(false);
     expect(result.current.sendTransaction).toBeUndefined();
+    expect(result.current.confirmTransaction).toBeUndefined();
     await result.current.disconnect();
     expect(disconnect).not.toHaveBeenCalled();
     expect(useAppKitAccount).toHaveBeenCalledWith({ namespace: 'solana' });
@@ -277,6 +278,7 @@ describe.sequential('WalletProvider with Solana', () => {
     expect(result.current.evm.account.chainId).toBe(42161);
     expect(result.current.solana.account.chainId).toBe(1151111081099710);
     expect(result.current.solana.sendTransaction).toBeDefined();
+    expect(result.current.solana.confirmTransaction).toBeDefined();
     expect(result.current.solana.account.address).toBe(
       'So11111111111111111111111111111111111111112',
     );
@@ -341,6 +343,27 @@ describe.sequential('WalletProvider with Solana', () => {
     reown.signAndSendTransaction.mockRejectedValue(error);
     const { result } = renderHook(() => useSolanaWallet());
     await expect(result.current.sendTransaction?.(serializedTransaction())).rejects.toBe(error);
+  });
+
+  it('confirms a submitted transaction through the Solana connection', async () => {
+    const confirmTransaction = vi.spyOn(Connection.prototype, 'confirmTransaction');
+    confirmTransaction.mockResolvedValue({ context: { slot: 1 }, value: { err: null } });
+    const { result } = renderHook(() => useSolanaWallet());
+
+    await expect(result.current.confirmTransaction?.('signature')).resolves.toBeUndefined();
+    expect(confirmTransaction).toHaveBeenCalledExactlyOnceWith('signature', 'confirmed');
+  });
+
+  it('rejects an on-chain confirmation failure', async () => {
+    vi.spyOn(Connection.prototype, 'confirmTransaction').mockResolvedValue({
+      context: { slot: 1 },
+      value: { err: { InstructionError: [0, 'InvalidArgument'] } },
+    });
+    const { result } = renderHook(() => useSolanaWallet());
+
+    await expect(result.current.confirmTransaction?.('signature')).rejects.toThrow(
+      /confirmation failed/i,
+    );
   });
 
   it('rejects malformed transactions before calling the wallet', async () => {
