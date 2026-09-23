@@ -115,7 +115,18 @@ const SECONDS_IN_DAY = 86400;
  */
 const DEFAULT_ASSERTION_INTERVAL_SECONDS = 3600;
 
+// Measured Sept 2026 over 2 weeks: claimable after the confirm period at p90 2.8h (Arb One), 3.2h (Nova)
+const CORE_CHAIN_EXTRA_DELAY_SECONDS: { [chainId: number]: number } = {
+  [ChainId.ArbitrumOne]: 3 * SECONDS_IN_HOUR,
+  [ChainId.ArbitrumNova]: 3.5 * SECONDS_IN_HOUR,
+};
+
 function getChainExtraDelaySeconds(chainId: number): number {
+  const coreChainExtraDelaySeconds = CORE_CHAIN_EXTRA_DELAY_SECONDS[chainId];
+  if (typeof coreChainExtraDelaySeconds === 'number') {
+    return coreChainExtraDelaySeconds;
+  }
+
   const bridgeUiConfig = orbitChains[chainId]?.bridgeUiConfig;
 
   if (typeof bridgeUiConfig?.assertionIntervalSeconds === 'number') {
@@ -152,9 +163,11 @@ export function getConfirmationTime(chainId: number) {
   const fastWithdrawalActive = typeof fastWithdrawalTime !== 'undefined';
 
   let confirmationTimeInSeconds: number;
+  let minimumConfirmationTimeInSeconds: number;
 
   if (fastWithdrawalActive) {
     confirmationTimeInSeconds = fastWithdrawalTime / 1000;
+    minimumConfirmationTimeInSeconds = confirmationTimeInSeconds;
   } else {
     // Calculate confirmation period using block time from root chain:
     // - Ethereum mainnet for Arbitrum chains
@@ -164,10 +177,12 @@ export function getConfirmationTime(chainId: number) {
     // Local chain has instant confirmation time (in E2Es), so we hardcode it here
     if (blockNumberReferenceChainId === ChainId.Local) {
       confirmationTimeInSeconds = 0;
+      minimumConfirmationTimeInSeconds = 0;
     } else {
+      minimumConfirmationTimeInSeconds =
+        getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId);
       confirmationTimeInSeconds =
-        getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId) +
-        getChainExtraDelaySeconds(chainId);
+        minimumConfirmationTimeInSeconds + getChainExtraDelaySeconds(chainId);
     }
   }
 
@@ -177,6 +192,7 @@ export function getConfirmationTime(chainId: number) {
   return {
     fastWithdrawalActive,
     confirmationTimeInSeconds,
+    minimumConfirmationTimeInSeconds,
     confirmationTimeInReadableFormat,
     confirmationTimeInReadableFormatShort,
   };

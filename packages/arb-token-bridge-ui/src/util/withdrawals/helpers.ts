@@ -138,6 +138,7 @@ export async function getOutgoingMessageState(
   const confirmationDate = getWithdrawalConfirmationDate({
     createdAt: event.timestamp.toNumber() * 1000,
     withdrawalFromChainId: l2ChainID,
+    earliestPossible: true,
   });
 
   if (dayjs() < confirmationDate) {

@@ -11,7 +11,10 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
+import {
+  getWithdrawalConfirmationDate,
+  minutesToHumanReadableTime,
+} from '../../hooks/useTransferDuration';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { getConfirmationTime } from '../../util/WithdrawalUtils';
 import { getFastBridges } from '../../util/fastBridges';
@@ -76,7 +79,9 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
     withdrawalFromChainId: childChain.id,
   });
 
-  const confirmationPeriod = estimatedConfirmationDate.fromNow(true);
+  const confirmationPeriod = minutesToHumanReadableTime(
+    estimatedConfirmationDate.diff(dayjs(), 'minute', true),
+  );
 
   function closeWithReset(confirmed: boolean) {
     props.onClose(confirmed);

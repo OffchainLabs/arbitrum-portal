@@ -13,6 +13,8 @@ const DEPOSIT_TIME_MINUTES = {
   testnet: 10,
 };
 
+const MINUTES_IN_DAY = 24 * 60;
+
 const TRANSFER_TIME_MINUTES_CCTP = {
   mainnet: 15,
   testnet: 1,
@@ -109,11 +111,19 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
 export function getWithdrawalConfirmationDate({
   createdAt,
   withdrawalFromChainId,
+  earliestPossible = false,
 }: {
   createdAt: number | null;
   withdrawalFromChainId: number;
+  earliestPossible?: boolean;
 }): Dayjs {
-  const { confirmationTimeInSeconds } = getConfirmationTime(withdrawalFromChainId);
+  const {
+    confirmationTimeInSeconds: estimatedConfirmationTimeInSeconds,
+    minimumConfirmationTimeInSeconds,
+  } = getConfirmationTime(withdrawalFromChainId);
+  const confirmationTimeInSeconds = earliestPossible
+    ? minimumConfirmationTimeInSeconds
+    : estimatedConfirmationTimeInSeconds;
 
   // For new txs createdAt won't be defined yet, we default to the current time in that case
   if (createdAt === null) {
@@ -199,6 +209,9 @@ export function minutesToHumanReadableTime(minutes: number | null) {
   }
   if (minutes <= 0) {
     return 'Less than a minute';
+  }
+  if (minutes > MINUTES_IN_DAY) {
+    return `${Math.ceil(minutes / MINUTES_IN_DAY)} days`;
   }
   // will convert number to '20 minutes', '1 hour', '7 days', etc
   return dayjs().add(minutes, 'minutes').fromNow(true);
