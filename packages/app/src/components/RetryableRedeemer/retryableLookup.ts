@@ -181,7 +181,7 @@ const DEFAULT_BATCH_FETCH_BLOCKS = 5_000_000;
  * and neither is redeemable, so this is informational: it walks `RedeemScheduled` logs in windows
  * the chain's RPC will actually serve, and reports an unresolved status rather than erroring.
  */
-async function findManualRedeem({
+export async function findManualRedeem({
   childChainProvider,
   childChainId,
   retryableCreationId,
@@ -208,7 +208,15 @@ async function findManualRedeem({
     const events = await contract.queryFilter(filter, from, to);
 
     if (events.length > 0) {
-      return ParentToChildMessageStatus.REDEEMED;
+      // a scheduled retry can itself revert, which leaves the ticket to expire rather than redeem
+      // eslint-disable-next-line no-await-in-loop
+      const receipts = await Promise.all(
+        events.map((event) => childChainProvider.getTransactionReceipt(event.args.retryTxHash)),
+      );
+
+      if (receipts.some((receipt) => receipt?.status === 1)) {
+        return ParentToChildMessageStatus.REDEEMED;
+      }
     }
 
     from = to + 1;

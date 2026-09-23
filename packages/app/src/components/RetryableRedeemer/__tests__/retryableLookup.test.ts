@@ -1,5 +1,7 @@
 import { ParentToChildMessageStatus } from '@arbitrum/sdk';
+import { ArbRetryableTx__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ArbRetryableTx__factory';
 import type { Provider } from '@ethersproject/abstract-provider';
+import { constants } from 'ethers';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -8,6 +10,7 @@ import { initializeBridgeNetworks } from '@/bridge/util/networks';
 import {
   INDETERMINATE,
   countEthDepositsForInbox,
+  findManualRedeem,
   getRedeemableChain,
   getRedeemableChainIds,
   getRetryableStatusDisplay,
@@ -56,6 +59,29 @@ function createReceipt({ blockNumber }: { blockNumber: number }) {
     type: 2,
     status: 1,
   };
+}
+
+const TICKET_ID = '0x'.padEnd(66, 'b');
+const RETRY_TX_HASH = '0x'.padEnd(66, 'c');
+
+function createRedeemScheduledLog() {
+  const contractInterface = ArbRetryableTx__factory.createInterface();
+  const { data, topics } = contractInterface.encodeEventLog(
+    contractInterface.getEvent('RedeemScheduled'),
+    [TICKET_ID, RETRY_TX_HASH, 1, 0, constants.AddressZero, 0, 0],
+  );
+
+  return { data, topics, blockNumber: 10, transactionHash: RETRY_TX_HASH, logIndex: 0 };
+}
+
+function createRedeemProvider({ retryStatus }: { retryStatus: number }) {
+  return {
+    _isProvider: true,
+    getNetwork: async () => ({ chainId: ChainId.ArbitrumOne }),
+    getBlockNumber: async () => 100,
+    getLogs: async () => [createRedeemScheduledLog()],
+    getTransactionReceipt: async () => ({ status: retryStatus }),
+  } as unknown as Provider;
 }
 
 beforeAll(() => {
@@ -212,6 +238,32 @@ describe('countEthDepositsForInbox', () => {
         inbox: ARBITRUM_ONE_INBOX.toLowerCase(),
       }),
     ).toBe(1);
+  });
+});
+
+describe('findManualRedeem', () => {
+  const args = {
+    childChainId: ChainId.ArbitrumOne,
+    retryableCreationId: TICKET_ID,
+    fromBlock: 0,
+  };
+
+  it('reports a redeem whose retry transaction succeeded', async () => {
+    const status = await findManualRedeem({
+      ...args,
+      childChainProvider: createRedeemProvider({ retryStatus: 1 }),
+    });
+
+    expect(status).toBe(ParentToChildMessageStatus.REDEEMED);
+  });
+
+  it('does not report a redeem whose retry transaction reverted', async () => {
+    const status = await findManualRedeem({
+      ...args,
+      childChainProvider: createRedeemProvider({ retryStatus: 0 }),
+    });
+
+    expect(status).toBe(ParentToChildMessageStatus.EXPIRED);
   });
 });
 
