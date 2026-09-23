@@ -45,7 +45,7 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain } = useNetworksRelationship(networks);
 
-  const { fastWithdrawalActive } = getConfirmationTime(childChain.id);
+  const { fastWithdrawalActive, confirmationTimeInSeconds } = getConfirmationTime(childChain.id);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -79,9 +79,7 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
     withdrawalFromChainId: childChain.id,
   });
 
-  const confirmationPeriod = minutesToHumanReadableTime(
-    estimatedConfirmationDate.diff(dayjs(), 'minute', true),
-  );
+  const confirmationPeriod = minutesToHumanReadableTime(confirmationTimeInSeconds / 60);
 
   function closeWithReset(confirmed: boolean) {
     props.onClose(confirmed);

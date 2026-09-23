@@ -163,11 +163,11 @@ export function getConfirmationTime(chainId: number) {
   const fastWithdrawalActive = typeof fastWithdrawalTime !== 'undefined';
 
   let confirmationTimeInSeconds: number;
-  let minimumConfirmationTimeInSeconds: number;
+  let baseConfirmationTimeInSeconds: number;
 
   if (fastWithdrawalActive) {
     confirmationTimeInSeconds = fastWithdrawalTime / 1000;
-    minimumConfirmationTimeInSeconds = confirmationTimeInSeconds;
+    baseConfirmationTimeInSeconds = confirmationTimeInSeconds;
   } else {
     // Calculate confirmation period using block time from root chain:
     // - Ethereum mainnet for Arbitrum chains
@@ -177,12 +177,12 @@ export function getConfirmationTime(chainId: number) {
     // Local chain has instant confirmation time (in E2Es), so we hardcode it here
     if (blockNumberReferenceChainId === ChainId.Local) {
       confirmationTimeInSeconds = 0;
-      minimumConfirmationTimeInSeconds = 0;
+      baseConfirmationTimeInSeconds = 0;
     } else {
-      minimumConfirmationTimeInSeconds =
+      baseConfirmationTimeInSeconds =
         getL1BlockTime(blockNumberReferenceChainId) * getConfirmPeriodBlocks(chainId);
       confirmationTimeInSeconds =
-        minimumConfirmationTimeInSeconds + getChainExtraDelaySeconds(chainId);
+        baseConfirmationTimeInSeconds + getChainExtraDelaySeconds(chainId);
     }
   }
 
@@ -192,7 +192,7 @@ export function getConfirmationTime(chainId: number) {
   return {
     fastWithdrawalActive,
     confirmationTimeInSeconds,
-    minimumConfirmationTimeInSeconds,
+    baseConfirmationTimeInSeconds,
     confirmationTimeInReadableFormat,
     confirmationTimeInReadableFormatShort,
   };

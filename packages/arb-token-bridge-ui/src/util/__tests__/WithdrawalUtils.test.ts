@@ -115,7 +115,7 @@ describe('WithdrawalUtils', () => {
   it('uses the measured extra delay for Arbitrum One and keeps the minimum without it', () => {
     const result = getConfirmationTime(ChainId.ArbitrumOne);
 
-    expect(result.minimumConfirmationTimeInSeconds).toBe(12 * 50);
+    expect(result.baseConfirmationTimeInSeconds).toBe(12 * 50);
     expect(result.confirmationTimeInSeconds).toBe(12 * 50 + 3 * 3600);
   });
 });

@@ -111,18 +111,18 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
 export function getWithdrawalConfirmationDate({
   createdAt,
   withdrawalFromChainId,
-  earliestPossible = false,
+  useBaseConfirmationTime = false,
 }: {
   createdAt: number | null;
   withdrawalFromChainId: number;
-  earliestPossible?: boolean;
+  useBaseConfirmationTime?: boolean;
 }): Dayjs {
   const {
     confirmationTimeInSeconds: estimatedConfirmationTimeInSeconds,
-    minimumConfirmationTimeInSeconds,
+    baseConfirmationTimeInSeconds,
   } = getConfirmationTime(withdrawalFromChainId);
-  const confirmationTimeInSeconds = earliestPossible
-    ? minimumConfirmationTimeInSeconds
+  const confirmationTimeInSeconds = useBaseConfirmationTime
+    ? baseConfirmationTimeInSeconds
     : estimatedConfirmationTimeInSeconds;
 
   // For new txs createdAt won't be defined yet, we default to the current time in that case
