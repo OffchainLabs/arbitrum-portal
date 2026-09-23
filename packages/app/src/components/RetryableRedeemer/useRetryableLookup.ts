@@ -33,7 +33,6 @@ export function useRetryableLookup({
       }),
     {
       revalidateOnFocus: false,
-      revalidateIfStale: false,
       shouldRetryOnError: false,
     },
   );

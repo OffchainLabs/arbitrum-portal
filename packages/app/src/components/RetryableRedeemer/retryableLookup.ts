@@ -218,6 +218,17 @@ async function findManualRedeem({
   return from > headBlock ? ParentToChildMessageStatus.EXPIRED : INDETERMINATE;
 }
 
+// swallowing anything else would report a live ticket as expired and hide its redeem button
+function isTicketGoneRevert(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    error.code === utils.Logger.errors.CALL_EXCEPTION &&
+    'errorName' in error &&
+    error.errorName === 'NoTicketWithID'
+  );
+}
+
 async function resolveRetryable({
   message,
   childChainProvider,
@@ -255,7 +266,12 @@ async function resolveRetryable({
 
   // `getTimeout` reverts with NoTicketWithID once the ticket is gone, so a resolved timeout still
   // in the future is exactly the redeemable case
-  const timeout = await message.getTimeout().catch(() => null);
+  const timeout = await message.getTimeout().catch((error) => {
+    if (isTicketGoneRevert(error)) {
+      return null;
+    }
+    throw error;
+  });
   const expiresAt = timeout === null ? null : normalizeTimestamp(timeout.toNumber());
 
   if (expiresAt !== null && expiresAt > Date.now()) {

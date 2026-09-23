@@ -182,6 +182,18 @@ describe('RetryableRedeemer', () => {
     expect(queryRedeemButton()).toBeNull();
   });
 
+  it('re-runs the lookup when the same hash is checked again', () => {
+    const mutate = vi.fn();
+    useRetryableLookupMock.mockImplementation(({ parentChainTxHash }) =>
+      parentChainTxHash ? { ...redeemableResult(), mutate } : emptyResult,
+    );
+
+    renderRedeemer({ initialTxHash: VALID_TX_HASH });
+    check();
+
+    expect(mutate).toHaveBeenCalled();
+  });
+
   it('does not look up anything until the hash is submitted', () => {
     renderRedeemer();
 

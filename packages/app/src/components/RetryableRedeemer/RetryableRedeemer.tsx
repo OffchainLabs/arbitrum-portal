@@ -344,8 +344,10 @@ export function RetryableRedeemer({
 
       setInputError(undefined);
       setSubmittedTxHash(value);
+      // resubmitting the same hash leaves the swr key untouched, so nothing would refetch
+      mutate();
     },
-    [txHashInput],
+    [mutate, txHashInput],
   );
 
   const handleCopyLink = useCallback(() => {
