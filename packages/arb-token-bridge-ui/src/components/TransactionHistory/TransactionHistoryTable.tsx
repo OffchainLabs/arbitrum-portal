@@ -125,6 +125,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
     error,
     failedChainPairs,
     resume,
+    updateTransaction,
     selectedTabIndex,
     oldestTxTimeAgoString,
   } = props;
@@ -257,6 +258,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
             <div key={key} style={style}>
               <TransactionsTableRow
                 tx={tx}
+                updateTransaction={updateTransaction}
                 className={twMerge(
                   isLastRow && 'border-b-0',
                   isTopmostPendingTx && secondsPassed <= 30 && 'animate-blink bg-highlight',
