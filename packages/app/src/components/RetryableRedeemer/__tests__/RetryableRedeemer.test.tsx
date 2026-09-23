@@ -123,6 +123,23 @@ describe('RetryableRedeemer', () => {
     expect(queryRedeemButton()).not.toBeNull();
   });
 
+  it('does not use the browser clock to label a live ticket as expired', () => {
+    const result = redeemableResult();
+    useRetryableLookupMock.mockReturnValue({
+      ...result,
+      data: {
+        ...result.data,
+        retryables: [{ ...result.data.retryables[0], expiresAt: 0 }],
+      },
+    });
+
+    renderRedeemer({ initialTxHash: VALID_TX_HASH });
+
+    expect(screen.getByText(/^Expires /)).toBeDefined();
+    expect(screen.queryByText(/^Expired /)).toBeNull();
+    expect(queryRedeemButton()).not.toBeNull();
+  });
+
   it('looks up a ticket straight away when the hash comes from the url', () => {
     renderRedeemer({ initialTxHash: VALID_TX_HASH });
 

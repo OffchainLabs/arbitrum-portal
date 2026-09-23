@@ -272,8 +272,7 @@ async function resolveRetryable({
     return { retryableCreationId, status: ParentToChildMessageStatus.REDEEMED, expiresAt: null };
   }
 
-  // `getTimeout` reverts with NoTicketWithID once the ticket is gone, so a resolved timeout still
-  // in the future is exactly the redeemable case
+  // getTimeout reverts with NoTicketWithID once the ticket is gone.
   const timeout = await message.getTimeout().catch((error) => {
     if (isTicketGoneRevert(error)) {
       return null;
@@ -282,7 +281,7 @@ async function resolveRetryable({
   });
   const expiresAt = timeout === null ? null : normalizeTimestamp(timeout.toNumber());
 
-  if (expiresAt !== null && expiresAt > Date.now()) {
+  if (expiresAt !== null) {
     return {
       retryableCreationId,
       status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,

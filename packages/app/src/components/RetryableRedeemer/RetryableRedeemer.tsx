@@ -143,7 +143,6 @@ function RetryableCard({
 }) {
   const { label, description, tone, isRedeemable } = getRetryableStatusDisplay(retryable.status);
   const StatusIcon = isRedeemable ? ArrowPathIcon : toneIcon[tone];
-  const hasExpired = retryable.expiresAt !== null && retryable.expiresAt < Date.now();
 
   return (
     <ResultCard>
@@ -168,7 +167,7 @@ function RetryableCard({
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]">
           <span className="flex items-center gap-1.5">
             <ClockIcon className="h-3.5 w-3.5 shrink-0" />
-            {hasExpired ? 'Expired' : 'Expires'} {dayjs(retryable.expiresAt).fromNow()}
+            Expires {dayjs(retryable.expiresAt).fromNow()}
           </span>
           <span className="text-white/55">
             {dayjs.utc(retryable.expiresAt).format('MMM D, YYYY, HH:mm [UTC]')}
