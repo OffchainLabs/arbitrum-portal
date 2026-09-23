@@ -35,6 +35,7 @@ vi.mock('../../state/cctpState', async (importActual) => ({
 
 vi.mock('wagmi', async (importActual) => ({
   ...(await importActual()),
+  useConfig: () => ({}),
   useAccount: () => ({ isConnected: true, chain: { id: 1 }, connector: null }),
 }));
 
