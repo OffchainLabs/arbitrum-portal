@@ -167,6 +167,10 @@ export async function getOutgoingMessageState(
   }
 
   const messageReader = new ChildToParentMessageReader(l1Provider, event);
+  lastStatusCheckByMessage[cacheKey] = {
+    checkedAt: Date.now(),
+    status: lastStatusCheck?.status ?? OutgoingMessageState.UNCONFIRMED,
+  };
 
   try {
     const status = await messageReader.status(l2Provider);

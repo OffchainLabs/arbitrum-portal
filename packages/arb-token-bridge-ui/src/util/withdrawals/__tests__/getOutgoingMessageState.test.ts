@@ -30,10 +30,10 @@ vi.mock('../../../hooks/useTransferDuration', () => ({
 
 const CREATED_AT_SECONDS = 1_000_000;
 
-function getState() {
+function getState(messageHash = 1) {
   const event = {
     timestamp: BigNumber.from(CREATED_AT_SECONDS),
-    hash: BigNumber.from(1),
+    hash: BigNumber.from(messageHash),
   } as any;
   return getOutgoingMessageState(event, {} as any, {} as any, 42161);
 }
@@ -42,7 +42,7 @@ function setSecondsSinceCreation(seconds: number) {
   vi.setSystemTime((CREATED_AT_SECONDS + seconds) * 1000);
 }
 
-describe('getOutgoingMessageState', () => {
+describe.sequential('getOutgoingMessageState', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     statusMock.mockReset();
@@ -72,5 +72,16 @@ describe('getOutgoingMessageState', () => {
     setSecondsSinceCreation(220);
     await getState();
     expect(statusMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('throttles status checks after a failed request', async () => {
+    statusMock.mockRejectedValue(new Error('RPC timeout'));
+
+    setSecondsSinceCreation(120);
+    expect(await getState(2)).toBe(OutgoingMessageState.UNCONFIRMED);
+
+    setSecondsSinceCreation(130);
+    expect(await getState(2)).toBe(OutgoingMessageState.UNCONFIRMED);
+    expect(statusMock).toHaveBeenCalledTimes(1);
   });
 });
