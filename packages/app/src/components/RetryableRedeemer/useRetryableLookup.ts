@@ -1,8 +1,15 @@
 import useSWR from 'swr';
 
+import { trackEvent } from '@/bridge/util/AnalyticsUtils';
+import { getNetworkName } from '@/bridge/util/networks';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { getRedeemableChain, isValidTxHash, lookupRetryables } from './retryableLookup';
+import {
+  RetryableLookupResult,
+  getRedeemableChain,
+  isValidTxHash,
+  lookupRetryables,
+} from './retryableLookup';
 
 export function useRetryableLookup({
   childChainId,
@@ -12,6 +19,22 @@ export function useRetryableLookup({
   parentChainTxHash: string | undefined;
 }) {
   const chain = typeof childChainId === 'number' ? getRedeemableChain(childChainId) : undefined;
+
+  // reported from here rather than from a render, so one event means one lookup
+  function trackResult(
+    result: RetryableLookupResult['type'] | 'lookupFailed',
+    ticketCount: number,
+  ) {
+    if (!chain) {
+      return;
+    }
+
+    trackEvent('Check Retryable Status Result', {
+      network: getNetworkName(chain.chainId),
+      result,
+      ticketCount,
+    });
+  }
 
   // re-checked here rather than trusted from the caller, so no malformed hash can reach an RPC
   return useSWR(
@@ -34,6 +57,9 @@ export function useRetryableLookup({
     {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
+      onSuccess: (result) =>
+        trackResult(result.type, result.type === 'retryables' ? result.retryables.length : 0),
+      onError: () => trackResult('lookupFailed', 0),
     },
   );
 }

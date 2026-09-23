@@ -6,6 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import { initializeBridgeNetworks } from '@/bridge/util/networks';
 
 import { RetryableRedeemer } from '../RetryableRedeemer';
@@ -103,6 +104,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  vi.mocked(trackEvent).mockClear();
   // the hook only resolves a result for a submitted hash, mirroring its SWR key
   useRetryableLookupMock.mockReset();
   useRetryableLookupMock.mockImplementation(({ parentChainTxHash }) =>
@@ -180,6 +182,16 @@ describe('RetryableRedeemer', () => {
     expect(screen.getByText(INVALID_TX_HASH_ERROR)).toBeDefined();
     expect(screen.queryByText('Ready to redeem')).toBeNull();
     expect(queryRedeemButton()).toBeNull();
+  });
+
+  it('reports the chain a status check was run against', () => {
+    renderRedeemer({ initialTxHash: VALID_TX_HASH });
+    check();
+
+    expect(trackEvent).toHaveBeenCalledWith('Check Retryable Status Click', {
+      network: 'Arbitrum One',
+      isTestnetMode: false,
+    });
   });
 
   it('re-runs the lookup when the same hash is checked again', () => {

@@ -336,7 +336,7 @@ export function RetryableRedeemer({
       event.preventDefault();
       const value = txHashInput.trim();
 
-      if (!isValidTxHash(value)) {
+      if (typeof childChainId === 'undefined' || !isValidTxHash(value)) {
         setSubmittedTxHash(undefined);
         setInputError(TransactionHistorySearchError.INVALID_TX_HASH);
         return;
@@ -346,8 +346,13 @@ export function RetryableRedeemer({
       setSubmittedTxHash(value);
       // resubmitting the same hash leaves the swr key untouched, so nothing would refetch
       mutate();
+
+      trackEvent('Check Retryable Status Click', {
+        network: getNetworkName(childChainId),
+        isTestnetMode,
+      });
     },
-    [mutate, txHashInput],
+    [childChainId, isTestnetMode, mutate, txHashInput],
   );
 
   const handleCopyLink = useCallback(() => {
@@ -397,6 +402,7 @@ export function RetryableRedeemer({
         if (isUserRejectedError(error)) {
           return;
         }
+        trackEvent('Redeem Retryable Error', { network: getNetworkName(childChainId) });
         errorToast(`Couldn't redeem the ticket: ${formatTransactionError(error)}`);
       } finally {
         setRedeemingId(undefined);
