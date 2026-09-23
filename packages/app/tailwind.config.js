@@ -175,6 +175,7 @@ module.exports = {
         'earn-success': '#96d18e',
         'positive': '#b3efbd',
         'green-hover': '#00cc3a',
+        'red-hover': '#cc3600',
         'cta-border': '#163db6',
         'overlay': '#0a0a0a',
       },
