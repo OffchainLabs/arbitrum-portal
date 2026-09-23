@@ -109,8 +109,7 @@ const wagmiAdapter = new WagmiAdapter({
   networks: [...chainList],
   batch: { multicall: true },
   transports: getTransports(),
-  // Passing our own connector stops AppKit adding its default one, which loads Coinbase analytics
-  // and sets a cb_dm cookie on page load.
+  // Overrides AppKit's default Base Account connector, which sets Coinbase's cb_dm tracking cookie
   connectors: [
     baseAccount({
       appName: metadata.name,
