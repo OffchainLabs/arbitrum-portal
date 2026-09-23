@@ -112,7 +112,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
     case ParentToChildMessageStatus.EXPIRED:
       return {
         label: 'Expired',
-        description: 'Automatic redemption did not complete.',
+        description: 'The ticket was not redeemed within 7 days and can no longer be redeemed.',
         tone: 'negative',
         isRedeemable: false,
       };
