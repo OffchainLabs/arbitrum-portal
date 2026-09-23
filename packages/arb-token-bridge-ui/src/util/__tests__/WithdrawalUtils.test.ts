@@ -112,10 +112,13 @@ describe('WithdrawalUtils', () => {
     expect(result.confirmationTimeInSeconds).toBe(12 * 100 + 1500);
   });
 
-  it('uses the measured extra delay for Arbitrum One and keeps the minimum without it', () => {
-    const result = getConfirmationTime(ChainId.ArbitrumOne);
+  it.each([
+    [ChainId.ArbitrumOne, 3],
+    [ChainId.ArbitrumNova, 3.5],
+  ])('uses the measured extra delay for core chain %s', (chainId, extraDelayHours) => {
+    const result = getConfirmationTime(chainId);
 
     expect(result.baseConfirmationTimeInSeconds).toBe(12 * 50);
-    expect(result.confirmationTimeInSeconds).toBe(12 * 50 + 3 * 3600);
+    expect(result.confirmationTimeInSeconds).toBe(12 * 50 + extraDelayHours * 3600);
   });
 });
