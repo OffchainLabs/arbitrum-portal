@@ -173,6 +173,8 @@ module.exports = {
         'neutral-250': '#404040',
         'gray-650': '#737373',
         'earn-success': '#96d18e',
+        'positive': '#b3efbd',
+        'green-hover': '#00cc3a',
         'cta-border': '#163db6',
         'overlay': '#0a0a0a',
       },

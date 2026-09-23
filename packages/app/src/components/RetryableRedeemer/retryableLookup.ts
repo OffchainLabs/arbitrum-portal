@@ -60,7 +60,7 @@ export function getRedeemableChainIds({ isTestnetMode }: { isTestnetMode: boolea
   );
 }
 
-export type RetryableStatusTone = 'positive' | 'warning' | 'negative' | 'neutral';
+export type RetryableStatusTone = 'positive' | 'negative' | 'neutral';
 
 export type RetryableStatusDisplay = {
   label: string;
@@ -99,7 +99,7 @@ export function getRetryableStatusDisplay(status: RetryableStatus): RetryableSta
       return {
         label: 'Ready to redeem',
         description: 'Automatic redemption did not complete. You can retry this message.',
-        tone: 'warning',
+        tone: 'positive',
         isRedeemable: true,
       };
     case ParentToChildMessageStatus.REDEEMED:

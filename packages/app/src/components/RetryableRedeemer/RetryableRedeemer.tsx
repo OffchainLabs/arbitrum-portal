@@ -6,6 +6,7 @@ import {
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
+  CheckIcon,
   ChevronDownIcon,
   ClockIcon,
   DocumentDuplicateIcon,
@@ -22,6 +23,7 @@ import { getConnectorClient } from 'wagmi/actions';
 import { TransactionHistorySearchError } from '@/bridge/components/TransactionHistory/TransactionHistorySearchBar';
 import { Button } from '@/bridge/components/common/Button';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
+import { NetworkImage } from '@/bridge/components/common/NetworkImage';
 import { errorToast } from '@/bridge/components/common/atoms/Toast';
 import { GET_HELP_LINK, RETRYABLE_TICKET_DOCS_LINK } from '@/bridge/constants';
 import { useSwitchNetworkWithConfig } from '@/bridge/hooks/useSwitchNetworkWithConfig';
@@ -48,26 +50,30 @@ import {
 import { useRetryableLookup } from './useRetryableLookup';
 
 const toneClassName: Record<RetryableStatusTone, string> = {
-  positive: 'text-claim',
-  warning: 'text-pending',
+  positive: 'text-green-hover',
   negative: 'text-destructive',
   neutral: 'text-white/70',
 };
 
 const toneIcon: Record<RetryableStatusTone, typeof ClockIcon> = {
   positive: CheckCircleIcon,
-  warning: ArrowPathIcon,
   negative: ExclamationCircleIcon,
   neutral: ClockIcon,
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-sm text-white/70">{children}</span>;
+  return <span className="text-sm text-white/55">{children}</span>;
 }
 
 function Message({ children, isError }: { children: React.ReactNode; isError?: boolean }) {
+  return <p className={twMerge('text-sm', isError && 'text-destructive')}>{children}</p>;
+}
+
+function ResultCard({ children }: { children: React.ReactNode }) {
   return (
-    <p className={twMerge('text-sm text-white/70', isError && 'text-destructive')}>{children}</p>
+    <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-neutral-200 p-4 sm:p-6">
+      {children}
+    </div>
   );
 }
 
@@ -80,14 +86,24 @@ function TicketDetail({ label, children }: { label: string; children: React.Reac
   );
 }
 
-function TicketDetailTxLink({ chainId, txHash }: { chainId: number; txHash: string }) {
+function TicketDetailTxLink({
+  chainId,
+  txHash,
+  className,
+  showIcon = true,
+}: {
+  chainId: number;
+  txHash: string;
+  className?: string;
+  showIcon?: boolean;
+}) {
   return (
     <ExternalLink
-      className="arb-hover flex items-center gap-1 font-mono underline"
+      className={twMerge('arb-hover flex items-center gap-1 font-mono underline', className)}
       href={`${getExplorerUrl(chainId)}/tx/${txHash}`}
     >
       {shortenTxHash(txHash)}
-      <ArrowTopRightOnSquareIcon className="h-3 w-3 shrink-0" />
+      {showIcon && <ArrowTopRightOnSquareIcon className="h-3 w-3 shrink-0" />}
     </ExternalLink>
   );
 }
@@ -114,92 +130,86 @@ function RetryableCard({
   onConnect: () => void;
 }) {
   const { label, description, tone, isRedeemable } = getRetryableStatusDisplay(retryable.status);
-  const StatusIcon = toneIcon[tone];
+  const StatusIcon = isRedeemable ? ArrowPathIcon : toneIcon[tone];
+  const hasExpired = retryable.expiresAt !== null && retryable.expiresAt < Date.now();
 
   return (
-    <div className="overflow-hidden rounded border border-gray-dark bg-default-black">
-      <div className="flex flex-col gap-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <span className={twMerge('flex items-center gap-2 text-base', toneClassName[tone])}>
-            <StatusIcon className="h-5 w-5 shrink-0" />
-            {label}
-          </span>
-          {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
-            <span className="shrink-0 font-mono text-sm text-white/50">
-              {shortenTxHash(retryable.retryableCreationId)}
-            </span>
-          )}
-        </div>
-
-        <Message>{description}</Message>
-
-        {retryable.expiresAt !== null && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className="flex items-center gap-2">
-              <ClockIcon className="h-4 w-4 shrink-0" />
-              Expires {dayjs(retryable.expiresAt).fromNow()}
-            </span>
-            <span className="text-white/50">
-              {dayjs.utc(retryable.expiresAt).format('MMM D, YYYY, HH:mm [UTC]')}
-            </span>
-          </div>
+    <ResultCard>
+      <div className="flex items-start justify-between gap-3">
+        <span className={twMerge('flex items-center gap-2 text-sm', toneClassName[tone])}>
+          <StatusIcon className="h-4 w-4 shrink-0" />
+          {label}
+        </span>
+        {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
+          <TicketDetailTxLink
+            chainId={childChainId}
+            txHash={retryable.retryableCreationId}
+            className="shrink-0 text-sm text-white/55"
+            showIcon={false}
+          />
         )}
-
-        <Disclosure>
-          {({ open }) => (
-            <>
-              <DisclosureButton className="arb-hover flex w-fit items-center gap-1 text-sm text-white/70">
-                Ticket details
-                <ChevronDownIcon className={twMerge('h-4 w-4', open && 'rotate-180')} />
-              </DisclosureButton>
-              <DisclosurePanel className="flex flex-col gap-2 pt-3 text-sm">
-                {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
-                  <TicketDetail label="Ticket">
-                    <TicketDetailTxLink
-                      chainId={childChainId}
-                      txHash={retryable.retryableCreationId}
-                    />
-                  </TicketDetail>
-                )}
-                <TicketDetail label={`Sent from ${getNetworkName(parentChainId)}`}>
-                  <TicketDetailTxLink chainId={parentChainId} txHash={parentChainTxHash} />
-                </TicketDetail>
-                <TicketDetail label="Destination chain">
-                  {getNetworkName(childChainId)}
-                </TicketDetail>
-              </DisclosurePanel>
-            </>
-          )}
-        </Disclosure>
       </div>
 
-      {isRedeemable && (
-        <div className="flex flex-col gap-2 border-t border-gray-dark p-4">
-          {isConnected ? (
-            <Button
-              variant="primary"
-              onClick={onRedeem}
-              loading={isRedeeming}
-              disabled={isRedeemDisabled}
-              className="w-full justify-center border-primary-cta bg-primary-cta py-3 hover:bg-primary-cta/80"
-            >
-              {isRedeeming ? 'Redeeming…' : `Redeem on ${getNetworkName(childChainId)}`}
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="primary"
-                onClick={onConnect}
-                className="w-full justify-center border-primary-cta bg-primary-cta py-3 hover:bg-primary-cta/80"
-              >
-                Connect wallet to redeem
-              </Button>
-              <Message>Connect only when you&apos;re ready to redeem.</Message>
-            </>
-          )}
+      <Message>{description}</Message>
+
+      {retryable.expiresAt !== null && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+          <span className="flex items-center gap-1.5">
+            <ClockIcon className="h-3.5 w-3.5 shrink-0" />
+            {hasExpired ? 'Expired' : 'Expires'} {dayjs(retryable.expiresAt).fromNow()}
+          </span>
+          <span className="text-white/55">
+            {dayjs.utc(retryable.expiresAt).format('MMM D, YYYY, HH:mm [UTC]')}
+          </span>
         </div>
       )}
-    </div>
+
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <DisclosureButton className="arb-hover flex w-fit items-center gap-1 text-[13px] text-white/55">
+              Ticket details
+              <ChevronDownIcon className={twMerge('h-4 w-4', open && 'rotate-180')} />
+            </DisclosureButton>
+            <DisclosurePanel className="flex flex-col gap-2 text-sm">
+              {retryable.status !== ParentToChildMessageStatus.NOT_YET_CREATED && (
+                <TicketDetail label="Ticket">
+                  <TicketDetailTxLink
+                    chainId={childChainId}
+                    txHash={retryable.retryableCreationId}
+                  />
+                </TicketDetail>
+              )}
+              <TicketDetail label={`Sent from ${getNetworkName(parentChainId)}`}>
+                <TicketDetailTxLink chainId={parentChainId} txHash={parentChainTxHash} />
+              </TicketDetail>
+              <TicketDetail label="Destination chain">{getNetworkName(childChainId)}</TicketDetail>
+            </DisclosurePanel>
+          </>
+        )}
+      </Disclosure>
+
+      {isRedeemable &&
+        (isConnected ? (
+          <Button
+            variant="primary"
+            onClick={onRedeem}
+            loading={isRedeeming}
+            disabled={isRedeemDisabled}
+            className="w-full justify-center rounded-[10px] border-primary-cta bg-primary-cta py-2.5 hover:bg-primary-cta/80"
+          >
+            {isRedeeming ? 'Redeeming…' : `Redeem on ${getNetworkName(childChainId)}`}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            onClick={onConnect}
+            className="w-full justify-center rounded-[10px] border-primary-cta bg-primary-cta py-2.5 hover:bg-primary-cta/80"
+          >
+            Connect wallet to redeem
+          </Button>
+        ))}
+    </ResultCard>
   );
 }
 
@@ -219,30 +229,38 @@ function LookupResult({
   switch (result.type) {
     case 'transactionNotFound':
       return (
-        <Message isError>
-          No transaction with that hash on {getNetworkName(parentChainId)}. Double-check the hash,
-          and that {networkName} is the chain the message was sent to.
-        </Message>
+        <ResultCard>
+          <Message isError>
+            No transaction with that hash on {getNetworkName(parentChainId)}. Double-check the hash,
+            and that {networkName} is the chain the message was sent to.
+          </Message>
+        </ResultCard>
       );
     case 'classicTransaction':
       return (
-        <Message isError>
-          This is a pre-Nitro (classic) transaction, which this tool cannot read.
-        </Message>
+        <ResultCard>
+          <Message isError>
+            This is a pre-Nitro (classic) transaction, which this tool cannot read.
+          </Message>
+        </ResultCard>
       );
     case 'ethDeposit':
       return (
-        <Message>
-          This is a plain ETH deposit to {networkName}. It is credited automatically and has no
-          ticket to redeem.
-        </Message>
+        <ResultCard>
+          <Message>
+            This is a plain ETH deposit to {networkName}. It is credited automatically and has no
+            ticket to redeem.
+          </Message>
+        </ResultCard>
       );
     case 'noRetryables':
       return (
-        <Message>
-          This transaction created no retryable tickets for {networkName}. If the message was sent
-          to a different chain, select that chain and check again.
-        </Message>
+        <ResultCard>
+          <Message>
+            This transaction created no retryable tickets for {networkName}. If the message was sent
+            to a different chain, select that chain and check again.
+          </Message>
+        </ResultCard>
       );
     case 'retryables':
       return <>{result.retryables.map(renderRetryable)}</>;
@@ -390,17 +408,14 @@ export function RetryableRedeemer({
   const parentChainName = getNetworkName(chain.parentChainId);
 
   return (
-    <div className="flex w-full max-w-[720px] flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        <h1 className="text-3xl">Retryable tickets</h1>
-        <p className="text-white/70">
-          Check a cross-chain message and redeem it if needed. Select its destination chain and
-          enter the transaction hash from the source chain.
-        </p>
-      </div>
+    <div className="flex w-full flex-col gap-6">
+      <p className="text-sm leading-[1.4] text-white/55">
+        Check a cross-chain message and redeem it if needed. Select its destination chain and enter
+        the transaction hash from the source chain.
+      </p>
 
       <form
-        className="flex flex-col gap-4 rounded border border-gray-dark bg-default-black p-4 sm:p-6"
+        className="flex flex-col gap-6 rounded-xl border border-white/10 bg-default-black/80 p-4 sm:p-6"
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-2">
@@ -412,67 +427,72 @@ export function RetryableRedeemer({
             isTestnetMode={isTestnetMode}
             onTestnetModeChange={setIsTestnetMode}
           />
-          <Message>
-            {parentChainName} &rarr; {getNetworkName(childChainId)}
-          </Message>
         </div>
 
         <div className="flex flex-col gap-2">
-          <FieldLabel>{parentChainName} transaction hash</FieldLabel>
+          <FieldLabel>Source chain tx hash</FieldLabel>
+          <div className="flex items-center gap-2.5">
+            <NetworkImage chainId={chain.parentChainId} className="h-6 w-6 p-[2px]" size={24} />
+            <span className="font-medium">{parentChainName}</span>
+          </div>
           <input
             type="text"
             value={txHashInput}
             onChange={(event) => handleInputChange(event.target.value)}
-            placeholder="0x..."
+            placeholder={`Paste tx hash from ${parentChainName}`}
             aria-label={`${parentChainName} transaction hash`}
             className={twMerge(
-              'h-[52px] w-full rounded border border-gray-dark bg-black/20 px-3 text-base text-white outline-none placeholder:text-white/40',
+              'h-12 w-full rounded-md border border-white/10 bg-default-black px-4 text-sm text-white outline-none placeholder:text-white/40',
               inputError && 'border-destructive',
             )}
             data-1p-ignore
             data-lpignore="true"
             data-form-type="other"
           />
-          <Message isError={typeof inputError !== 'undefined'}>
-            {inputError ??
-              `Use the transaction from ${parentChainName}, where the message was sent.`}
-          </Message>
+          {inputError && <Message isError>{inputError}</Message>}
         </div>
 
         <Button
           variant="primary"
           type="submit"
           loading={isLoading}
-          disabled={isLoading || txHashInput.trim() === ''}
-          className="w-full justify-center border-primary-cta bg-primary-cta py-3 hover:bg-primary-cta/80"
+          loadingProps={{ loaderColor: 'black' }}
+          disabled={txHashInput.trim() === ''}
+          className="w-full justify-center rounded-[10px] border-none bg-positive py-2.5 font-medium text-black hover:bg-positive/80 disabled:bg-neutral-250 disabled:text-white/50"
         >
-          {isLoading ? 'Checking…' : 'Check status'}
+          {isLoading ? 'Checking status' : 'Check status'}
         </Button>
       </form>
 
       {(error || (!isLoading && data)) && (
-        <div className="flex flex-col gap-3">
-          {data?.type === 'retryables' && (
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base">
-                {data.retryables.length > 1 ? 'Retryable tickets' : 'Retryable ticket'}
-              </h2>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="arb-hover flex items-center gap-2 text-sm text-white/70"
-              >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-lg font-medium">
+              {data?.type === 'retryables' && data.retryables.length > 1
+                ? 'Retryable tickets'
+                : 'Retryable ticket'}
+            </h2>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              aria-label="Copy link to this result"
+              className="arb-hover text-white/55"
+            >
+              {isLinkCopied ? (
+                <CheckIcon className="h-4 w-4" />
+              ) : (
                 <DocumentDuplicateIcon className="h-4 w-4" />
-                {isLinkCopied ? 'Copied' : 'Copy link'}
-              </button>
-            </div>
-          )}
+              )}
+            </button>
+          </div>
 
           {error ? (
-            <Message isError>
-              Couldn&apos;t read that transaction:{' '}
-              {error instanceof Error ? error.message : 'the RPC request failed.'}
-            </Message>
+            <ResultCard>
+              <Message isError>
+                Couldn&apos;t read that transaction:{' '}
+                {error instanceof Error ? error.message : 'the RPC request failed.'}
+              </Message>
+            </ResultCard>
           ) : (
             data &&
             submittedTxHash && (
@@ -500,7 +520,7 @@ export function RetryableRedeemer({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 text-sm text-white/70">
+      <div className="flex items-center justify-between gap-3 text-[13px] text-white/55">
         <ExternalLink className="arb-hover underline" href={RETRYABLE_TICKET_DOCS_LINK}>
           About retryable tickets
         </ExternalLink>

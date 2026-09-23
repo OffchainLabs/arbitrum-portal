@@ -61,10 +61,10 @@ export function ChainSelectDropdown({
         <>
           <PopoverButton
             aria-label="Select destination chain"
-            className="arb-hover flex h-[52px] w-full items-center gap-3 rounded border border-gray-dark bg-black/20 px-3 text-left outline-none hover:bg-white/5"
+            className="arb-hover flex h-12 w-full items-center gap-2.5 rounded-md border border-white/10 bg-default-black px-4 text-left outline-none hover:bg-white/5"
           >
             <NetworkImage chainId={selectedChainId} className="h-6 w-6 p-[2px]" size={24} />
-            <span className="grow truncate text-base">{getNetworkName(selectedChainId)}</span>
+            <span className="grow truncate font-medium">{getNetworkName(selectedChainId)}</span>
             <ChevronDownIcon width={16} className={open ? 'rotate-180' : ''} />
           </PopoverButton>
 

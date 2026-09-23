@@ -1,8 +1,8 @@
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
 import { RetryableRedeemer } from '@/app-components/RetryableRedeemer/RetryableRedeemer';
+import { EarnBackButtonLabel, earnBackButtonClassName } from '@/app-components/earn/EarnBackButton';
 import { SearchParamsProps } from '@/app/src/types';
 
 const metadataContent = {
@@ -36,13 +36,14 @@ export default async function RetryablesPage(props: SearchParamsProps) {
   const txHash = typeof searchParams.tx === 'string' ? searchParams.tx : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/build" className="arb-hover flex w-fit items-center gap-2 text-sm text-white/70">
-        <ArrowLeftIcon className="h-4 w-4" />
-        Build &amp; Monitor
-      </Link>
+    <div className="flex justify-center">
+      <div className="flex w-full max-w-[560px] flex-col gap-8">
+        <Link href="/build" className={earnBackButtonClassName}>
+          <EarnBackButtonLabel />
+        </Link>
 
-      <div className="flex justify-center">
+        <h1 className="text-4xl tracking-[-0.02em]">Retryable Tickets</h1>
+
         <RetryableRedeemer
           initialChainId={Number.isNaN(chainId) ? undefined : chainId}
           initialTxHash={txHash}
