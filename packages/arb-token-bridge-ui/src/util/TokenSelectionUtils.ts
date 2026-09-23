@@ -140,7 +140,8 @@ export function resolveDestinationSelection({
 
   if (repeatsSource) {
     if (isUnavailable(sourceToken, sourceTokenAddress)) {
-      // Single-chain assets may have an explicit mapping, e.g. Base USDC to Arbitrum USDC.
+      // Token records without a canonical parent/child address pair may still have an
+      // explicit destination override, e.g. Base USDC to Arbitrum USDC.
       override = isLifiOnlyToken(sourceToken) ? getOverride(sourceTokenAddress) : null;
       token = override;
       lookupKey = override?.address;
