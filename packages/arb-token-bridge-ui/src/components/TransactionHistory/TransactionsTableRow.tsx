@@ -13,6 +13,7 @@ import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { formatAmount } from '../../util/NumberUtils';
@@ -121,9 +122,11 @@ const StatusLabel = ({ tx }: { tx: MergedTransaction }) => {
 
 export function TransactionsTableRow({
   tx,
+  updateTransaction,
   className = '',
 }: {
   tx: MergedTransaction;
+  updateTransaction: UseTransactionHistoryResult['updateTransaction'];
   className?: string;
 }) {
   const openTxDetails = useTxDetailsStore((state) => state.open);
@@ -284,7 +287,11 @@ export function TransactionsTableRow({
         <StatusLabel tx={tx} />
       </div>
       <div className="flex justify-center px-3 align-middle">
-        <TransactionsTableRowAction tx={tx} type={tx.isWithdrawal ? 'withdrawals' : 'deposits'} />
+        <TransactionsTableRowAction
+          tx={tx}
+          type={tx.isWithdrawal ? 'withdrawals' : 'deposits'}
+          updateTransaction={updateTransaction}
+        />
       </div>
       <div className="pl-2 align-middle">
         <Button
