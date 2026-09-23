@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { twMerge } from 'tailwind-merge';
 
 import { RetryableRedeemer } from '@/app-components/RetryableRedeemer/RetryableRedeemer';
 import { EarnBackButtonLabel, earnBackButtonClassName } from '@/app-components/earn/EarnBackButton';
@@ -38,11 +39,11 @@ export default async function RetryablesPage(props: SearchParamsProps) {
   return (
     <div className="flex justify-center">
       <div className="flex w-full max-w-[560px] flex-col gap-8">
-        <Link href="/build" className={earnBackButtonClassName}>
+        <Link href="/build" className={twMerge(earnBackButtonClassName, 'font-normal')}>
           <EarnBackButtonLabel />
         </Link>
 
-        <h1 className="text-4xl tracking-[-0.02em]">Retryable Tickets</h1>
+        <h1 className="text-4xl font-bold tracking-[-0.02em]">Retryable Tickets</h1>
 
         <RetryableRedeemer
           initialChainId={Number.isNaN(chainId) ? undefined : chainId}
