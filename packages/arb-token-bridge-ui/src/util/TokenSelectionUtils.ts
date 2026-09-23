@@ -1,15 +1,16 @@
 import { constants, utils } from 'ethers';
 
-import { isLifiTransfer } from '../app/api/crosschain-transfers/utils';
+import { getTokenOverride, isLifiTransfer } from '../app/api/crosschain-transfers/utils';
 import {
   type ContractStorage,
   type ERC20BridgeToken,
   TokenType,
 } from '../hooks/arbTokenBridge.types';
+import { ChainId } from '../types/ChainId';
 import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
-import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken } from './TokenListUtils';
+import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken, isTokenAvailableOnChain } from './TokenListUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from './TokenUtils';
 import { isWithdrawOnlyToken } from './WithdrawOnlyUtils';
 
@@ -78,7 +79,7 @@ export function isTokenDepositUnavailable({
   }
 
   // A LiFi token pair can still receive the asset when canonical deposits are blocked.
-  const hasLifiTokenPair = token?.listIds.has(LIFI_TRANSFER_LIST_ID) ?? false;
+  const hasLifiTokenPair = hasTokenPair(token) && token.listIds.has(LIFI_TRANSFER_LIST_ID);
   return !hasLifiTokenPair;
 }
 
@@ -90,6 +91,93 @@ function hasTokenPair(token: ERC20BridgeToken | null | undefined): token is ERC2
     utils.isAddress(token.l2Address) &&
     !addressesEqual(token.l2Address, constants.AddressZero)
   );
+}
+
+export type DestinationSelection = {
+  token: ERC20BridgeToken | null;
+  lookupKey: string | undefined;
+  isSwap: boolean;
+  /** Contract on the destination chain, ready for the quote request. */
+  destinationAddress: string;
+};
+
+/** Shared destination policy for source clicks, saved URLs, display and quotes. */
+export function resolveDestinationSelection({
+  sourceToken,
+  sourceTokenAddress = sourceToken?.address,
+  destinationTokenLookupKey,
+  bridgeTokens = {},
+  sourceChainId,
+  destinationChainId,
+  isDepositMode,
+}: {
+  sourceToken: ERC20BridgeToken | null;
+  sourceTokenAddress?: string;
+  /** Parent address for a pair, own address for a single-chain token. */
+  destinationTokenLookupKey: string | undefined;
+  bridgeTokens?: ContractStorage<ERC20BridgeToken>;
+  sourceChainId: number;
+  destinationChainId: number;
+  isDepositMode: boolean;
+}): DestinationSelection {
+  const getOverride = (fromToken: string | undefined) =>
+    getTokenOverride({ fromToken, sourceChainId, destinationChainId }).destination;
+  const isUnavailable = (token: ERC20BridgeToken | null, address: string | undefined) =>
+    !isTokenAvailableOnChain(token ?? undefined, destinationChainId) ||
+    isTokenDepositUnavailable({
+      token: token ?? undefined,
+      tokenAddress: address,
+      sourceChainId,
+      destinationChainId,
+      isDepositMode,
+    });
+
+  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  let token: ERC20BridgeToken | null;
+  let lookupKey = destinationTokenLookupKey;
+  let isSwap = !repeatsSource;
+  let override: ERC20BridgeToken | null = null;
+
+  if (repeatsSource) {
+    if (isUnavailable(sourceToken, sourceTokenAddress)) {
+      // Token records without a canonical parent/child address pair may still have an
+      // explicit destination override, e.g. Base USDC to Arbitrum USDC.
+      override = isLifiOnlyToken(sourceToken) ? getOverride(sourceTokenAddress) : null;
+      token = override;
+      lookupKey = override?.address;
+      isSwap = true;
+    } else {
+      token = sourceToken;
+      override = getOverride(sourceTokenAddress);
+    }
+  } else if (!lookupKey || addressesEqual(lookupKey, constants.AddressZero)) {
+    override = getOverride(lookupKey || undefined);
+    // Keep an unset native selection as null for display consumers. Returning native APE's
+    // zero-address metadata would make their override lookup reinterpret it as WETH.
+    token = lookupKey ? override : null;
+  } else {
+    token = bridgeTokens[lookupKey.toLowerCase()] ?? null;
+    if (isUnavailable(token, lookupKey)) {
+      token = null;
+      lookupKey = undefined;
+    } else if (token) {
+      override = getOverride(token.address);
+    }
+  }
+
+  if (!token && !override && sourceChainId === ChainId.ApeChain) {
+    // An unsupported destination falls back to ETH. Null would make display consumers
+    // interpret it as the default APE transfer instead, so retain explicit ETH metadata.
+    override = getOverride(constants.AddressZero);
+    token = override;
+    lookupKey = constants.AddressZero;
+  }
+
+  const destinationAddress =
+    override?.address ||
+    (isLifiOnlyToken(token) ? token.address : isDepositMode ? token?.l2Address : token?.address) ||
+    constants.AddressZero;
+  return { token, lookupKey, isSwap, destinationAddress };
 }
 
 /** Choose USDC metadata without discarding a stored destination mapping. */
@@ -113,7 +201,10 @@ export function selectUsdcToken({
   return usdcToken;
 }
 
-/** Resolve the token a token-search row should render, or null while its metadata is pending. */
+/**
+ * Resolve the token a token-search row should render. Returns null while route-specific USDC
+ * metadata is pending; `TokenRow` renders a null token as the native-currency row.
+ */
 export function getTokenForRow({
   address,
   tokensFromLists,
