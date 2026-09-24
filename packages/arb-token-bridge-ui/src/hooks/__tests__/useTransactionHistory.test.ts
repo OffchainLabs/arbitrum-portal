@@ -12,7 +12,11 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
-import { createMockLifiBatchedTransaction } from '../../test-utils/lifi';
+import {
+  createMockLifiBatchedTransaction,
+  createMockLifiPartialTransaction,
+} from '../../test-utils/lifi';
+import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import {
   getPendingLifiRouteBatchIds,
   rejectLifiRouteBatchId,
@@ -895,8 +899,84 @@ describe('mergeTransactions', () => {
 });
 
 describe('getDedupedTransactionsForPagination', () => {
-  it.each(['FAILED', 'PENDING', 'DONE'] as const)(
-    'Uses the destination token over the intermediate token',
+  it('refreshes API-only output without turning a received amount into a quote', () => {
+    const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+    const receivedAmount = tx.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount;
+    if (!receivedAmount) throw new Error('Missing fixture received output');
+    tx.lifiRouteSteps = undefined;
+    tx.toAmount = undefined;
+    tx.receivedAmount = receivedAmount;
+    const corrected = { ...receivedAmount, amount: '8103481105' };
+
+    const [merged] = getDedupedTransactionsForPagination({
+      cachedLifiTransactions: [tx],
+      fetchedTransactions: [{ ...tx, receivedAmount: corrected }],
+      cachedDeposits: [],
+    });
+
+    expect(merged).toMatchObject({ toAmount: undefined, receivedAmount: corrected });
+    if (!merged || !('isLifi' in merged) || !merged.isLifi) {
+      throw new Error('Expected LiFi transaction');
+    }
+    expect(getLifiTransactionSnapshot(merged)?.toAmount).toEqual(corrected);
+  });
+
+  it.each([false, true])(
+    'preserves the original quote when received history refreshes, compact=%s',
+    (compact) => {
+      const route = createMockLifiPartialTransaction();
+      const cached = compact ? prepareLifiTransactionForStorage(route) : route;
+      const receivedAmount = getLifiRouteHistorySteps(route.lifiRoute)[0]?.displaySteps.at(
+        -1,
+      )?.toAmount;
+      const [merged] = getDedupedTransactionsForPagination({
+        cachedLifiTransactions: [cached],
+        fetchedTransactions: [
+          {
+            ...prepareLifiTransactionForStorage(route),
+            lifiRouteSteps: undefined,
+            toAmount: undefined,
+            receivedAmount,
+          },
+        ],
+        cachedDeposits: [],
+      });
+      expect(merged).toMatchObject({
+        toAmount: { amount: '8126613689', token: { symbol: 'USDG' } },
+        receivedAmount,
+      });
+    },
+  );
+
+  it.each([false, true])(
+    'refreshes an older compact record, API quote available=%s',
+    (hasQuote) => {
+      const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+      const quotedAmount = tx.toAmount;
+      if (!quotedAmount) throw new Error('Missing fixture quote');
+      const receivedAmount = tx.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount;
+      tx.toAmount = { ...quotedAmount, amount: '16206962210' };
+      const [merged] = getDedupedTransactionsForPagination({
+        cachedLifiTransactions: [tx],
+        fetchedTransactions: [
+          {
+            ...tx,
+            lifiRouteSteps: undefined,
+            toAmount: hasQuote ? quotedAmount : undefined,
+            receivedAmount,
+          },
+        ],
+        cachedDeposits: [],
+      });
+      expect(merged).toMatchObject({
+        toAmount: hasQuote ? quotedAmount : tx.toAmount,
+        receivedAmount,
+      });
+    },
+  );
+
+  it.each([undefined, 'FAILED', 'PENDING', 'DONE'] as const)(
+    'keeps the final quote regardless of destination step status=%s',
     (swapStatus) => {
       const sourceToken = {
         address: '0x0000000000000000000000000000000000000000',
@@ -964,16 +1044,18 @@ describe('getDedupedTransactionsForPagination', () => {
               toToken: finalToken,
             },
             estimate: { ...step.estimate, toAmount: '1900000000', toAmountUSD: '1900' },
-            execution: {
-              status: swapStatus,
-              process: [],
-              startedAt: 1_700_000_060_000,
-              toAmount: swapStatus === 'DONE' ? '1890000000' : '990000000000000000',
-              toToken:
-                swapStatus === 'DONE'
-                  ? { ...finalToken, symbol: 'EXEC', name: 'Execution token', logoURI: '' }
-                  : intermediateToken,
-            },
+            execution: swapStatus
+              ? {
+                  status: swapStatus,
+                  process: [],
+                  startedAt: 1_700_000_060_000,
+                  toAmount: swapStatus === 'DONE' ? '1890000000' : '990000000000000000',
+                  toToken:
+                    swapStatus === 'DONE'
+                      ? { ...finalToken, symbol: 'EXEC', name: 'Execution token', logoURI: '' }
+                      : intermediateToken,
+                }
+              : undefined,
           },
         ],
       };
@@ -995,7 +1077,7 @@ describe('getDedupedTransactionsForPagination', () => {
       expect(transactions).toHaveLength(1);
       expect(transactions[0]).toMatchObject({
         toAmount: {
-          amount: swapStatus === 'DONE' ? '1890000000' : '1900000000',
+          amount: '1900000000',
           token: finalToken,
         },
       });
@@ -1243,7 +1325,8 @@ describe.sequential('LiFi recovered route history', () => {
     );
     expect(updated.destinationStatus).toBe(WithdrawalStatus.CONFIRMED);
     expect(updated.lifiRoute?.steps[1]?.execution?.process.at(-1)?.status).toBe('DONE');
-    expect(updated.toAmount?.amount).toBe('12345');
+    expect(updated.toAmount?.amount).toBe('1000000');
+    expect(updated.lifiRoute?.steps[1]?.execution?.toAmount).toBe('12345');
     expect(prepareLifiTransactionForStorage(updated).lifiRoute).toBeUndefined();
   });
   it('records a recovered failed destination swap without failing the completed source', async () => {
