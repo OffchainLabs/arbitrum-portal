@@ -2,6 +2,7 @@ import { createConfig, getTransactionHistory } from '@lifi/sdk';
 import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
 import { constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
@@ -54,7 +55,8 @@ export type LifiTransactionHistoryItem = {
   toolsDetails: RouteTool[];
   durationMs: number;
   fromAmount: LifiTransactionHistoryAmount;
-  toAmount: LifiTransactionHistoryAmount;
+  toAmount?: LifiTransactionHistoryAmount;
+  receivedAmount?: LifiTransactionHistoryAmount;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
 };
@@ -82,6 +84,21 @@ function getIncludedSteps(statusResponse: StatusResponse) {
   return statusResponse.sending.includedSteps ?? [];
 }
 
+const quoteSchema = z.object({
+  action: z.object({
+    toToken: z.object({
+      address: z.string(),
+      decimals: z.number().int().nonnegative(),
+      symbol: z.string(),
+      logoURI: z.string().optional(),
+    }),
+  }),
+  estimate: z.object({
+    toAmount: z.string().regex(/^\d+$/),
+    toAmountUSD: z.string().optional(),
+  }),
+});
+
 export function transformLifiHistoryTransaction({
   wallet,
   statusResponse,
@@ -101,6 +118,10 @@ export function transformLifiHistoryTransaction({
     'receiving' in statusResponse
       ? (statusResponse.receiving as Partial<ExtendedTransactionInfo>)
       : undefined;
+  const parsedQuote = quoteSchema.safeParse(
+    'quote' in statusResponse ? statusResponse.quote : undefined,
+  );
+  const quote = parsedQuote.success ? parsedQuote.data : undefined;
   const sourceChainId = Number(sending.chainId || firstStep?.fromToken.chainId);
   const destinationChainId = Number(
     receiving ? receiving.chainId || lastStep?.toToken.chainId : lastStep?.toToken.chainId,
@@ -147,6 +168,13 @@ export function transformLifiHistoryTransaction({
     destinationChainId,
   });
   const isWithdrawal = !isDepositMode;
+  const quotedAmount = quote
+    ? {
+        amount: quote.estimate.toAmount,
+        amountUSD: quote.estimate.toAmountUSD ?? '0',
+        token: quote.action.toToken,
+      }
+    : undefined;
 
   return {
     txId: statusResponse.sending.txHash,
@@ -179,11 +207,15 @@ export function transformLifiHistoryTransaction({
       amountUSD: sending.amountUSD ?? '0',
       token: fromToken,
     },
-    toAmount: {
-      amount: toAmount,
-      amountUSD: receiving?.amountUSD ?? '0',
-      token: toToken,
-    },
+    toAmount: quotedAmount,
+    receivedAmount:
+      receiving?.amount && receiving.token
+        ? {
+            amount: receiving.amount,
+            amountUSD: receiving.amountUSD ?? '0',
+            token: receiving.token,
+          }
+        : undefined,
     destinationTxId,
     lifiExplorerLink:
       'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : undefined,
