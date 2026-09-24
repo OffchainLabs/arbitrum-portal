@@ -1,5 +1,5 @@
 import type { Route, RouteExtended } from '@lifi/sdk';
-import { constants } from 'ethers';
+import { constants, utils } from 'ethers';
 
 import type { AmountWithToken, RouteTool } from '../app/api/crosschain-transfers/types';
 import type { LifiRouteHistoryStep } from '../state/app/state';
@@ -23,6 +23,7 @@ type LifiTransactionSnapshotSource = Omit<Partial<LifiRouteSnapshot>, 'toolsDeta
   toolsDetails?: RouteTool[];
   toolDetails?: RouteTool;
   lifiRoute?: Route | RouteExtended;
+  receivedAmount?: AmountWithToken;
 };
 
 const LIFI_FALLBACK_TOOL: RouteTool = {
@@ -116,8 +117,6 @@ function getLifiRouteSnapshot(
     return undefined;
   }
 
-  const lastStepExecution = 'execution' in lastStep ? lastStep.execution : undefined;
-
   return {
     toolsDetails: getLifiRouteToolsDetails(route),
     durationMs: (route?.steps ?? []).reduce(
@@ -131,14 +130,32 @@ function getLifiRouteSnapshot(
       chainId: firstStep.action.fromChainId,
     },
     toAmount: {
-      amount:
-        lastStepExecution?.status === 'DONE'
-          ? (lastStepExecution.toAmount ?? lastStep.estimate.toAmount)
-          : lastStep.estimate.toAmount,
+      amount: lastStep.estimate.toAmount,
       amountUSD: lastStep.estimate.toAmountUSD || '0',
       token: lastStep.action.toToken,
       chainId: lastStep.action.toChainId,
     },
+  };
+}
+
+function getLifiStepToAmount(step: LifiRouteDisplayStep): AmountWithToken {
+  const execution = 'execution' in step ? step.execution : undefined;
+  const completedExecution =
+    execution?.status === 'DONE' && execution.toAmount !== undefined ? execution : undefined;
+  const amount = completedExecution?.toAmount ?? step.estimate.toAmount;
+  const token = completedExecution?.toToken ?? step.action.toToken;
+  let amountUSD = step.estimate.toAmountUSD || '0';
+  if (completedExecution?.toToken) {
+    const receivedAmountUSD =
+      Number(utils.formatUnits(amount, token.decimals)) * Number(token.priceUSD);
+    amountUSD = Number.isFinite(receivedAmountUSD) ? String(receivedAmountUSD) : '0';
+  }
+
+  return {
+    amount,
+    amountUSD,
+    token,
+    chainId: completedExecution?.toToken?.chainId ?? step.action.toChainId,
   };
 }
 
@@ -149,24 +166,22 @@ export function getLifiRouteHistorySteps(route: RouteExtended | undefined): Lifi
   }
 
   const historySteps = route.steps.map((step) => {
-    const displaySteps = getLifiRouteDisplaySteps({ steps: [step] }).map((displayStep) => {
-      const execution = 'execution' in displayStep ? displayStep.execution : undefined;
+    const includedSteps = getLifiRouteDisplaySteps({ steps: [step] });
+    const displaySteps = includedSteps.map((displayStep, index) => {
       const fallbackToolDetails = getLifiToolDetails(displayStep.toolDetails);
-      const toToken = execution?.toToken ?? displayStep.action.toToken;
+      const toAmount = getLifiStepToAmount(index === includedSteps.length - 1 ? step : displayStep);
 
       return {
         toolDetails:
           snapshot.toolsDetails.find((tool) => tool.key === fallbackToolDetails.key) ??
           fallbackToolDetails,
         toAmount: {
-          amount: execution?.toAmount ?? displayStep.estimate.toAmount,
-          amountUSD: displayStep.estimate.toAmountUSD ?? '0',
-          chainId: displayStep.action.toChainId,
+          ...toAmount,
           token: {
-            address: toToken.address,
-            decimals: toToken.decimals,
-            logoURI: toToken.logoURI,
-            symbol: toToken.symbol,
+            address: toAmount.token.address,
+            decimals: toAmount.token.decimals,
+            logoURI: toAmount.token.logoURI,
+            symbol: toAmount.token.symbol,
           },
         },
       };
@@ -203,7 +218,13 @@ export function getLifiTransactionSnapshot(
     return routeSnapshot;
   }
 
-  const { toolDetails, toolsDetails, durationMs, fromAmount, toAmount } = transaction;
+  const { toolDetails, toolsDetails, durationMs, fromAmount } = transaction;
+  const toAmount = transaction.toAmount ??
+    transaction.receivedAmount ?? {
+      amount: '0',
+      amountUSD: '0',
+      token: { address: constants.AddressZero, decimals: 0, logoURI: '', symbol: 'Unknown' },
+    };
   const [primaryTool, ...otherTools] = toolsDetails ?? [];
   const normalizedToolsDetails: [RouteTool, ...RouteTool[]] | undefined = primaryTool
     ? [primaryTool, ...otherTools]
@@ -211,7 +232,7 @@ export function getLifiTransactionSnapshot(
       ? [getLifiToolDetails(toolDetails)]
       : undefined;
 
-  if (!normalizedToolsDetails || typeof durationMs !== 'number' || !fromAmount || !toAmount) {
+  if (!normalizedToolsDetails || typeof durationMs !== 'number' || !fromAmount) {
     return undefined;
   }
 
