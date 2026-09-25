@@ -4,6 +4,7 @@ import { twMerge } from 'tailwind-merge';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
+import { normalizeAddress } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
@@ -48,31 +49,31 @@ export const TokenInfo = ({
     destinationChainId: networks.destinationChain.id,
   }).source;
 
-  const tokenAddressLowercased =
-    tokenOverride?.address.toLowerCase() || token?.address.toLowerCase();
+  const tokenAddress = normalizeAddress(tokenOverride?.address || token?.address);
 
   const tokenLogo = useMemo(() => {
-    if (!tokenAddressLowercased) {
+    if (!tokenAddress) {
       return undefined;
+    }
+
+    if (token?.logoURI) {
+      return token.logoURI;
     }
 
     if (tokenOverride?.logoURI) {
       return tokenOverride.logoURI;
     }
 
-    if (isTokenArbitrumOneNativeUSDC(tokenAddressLowercased)) {
+    if (isTokenArbitrumOneNativeUSDC(tokenAddress)) {
       return ARB_ONE_NATIVE_USDC_TOKEN.logoURI;
     }
 
-    if (isTokenArbitrumSepoliaNativeUSDC(tokenAddressLowercased)) {
+    if (isTokenArbitrumSepoliaNativeUSDC(tokenAddress)) {
       return ARB_SEPOLIA_NATIVE_USDC_TOKEN.logoURI;
     }
 
-    return (
-      tokensFromLists[tokenAddressLowercased]?.logoURI ||
-      tokensFromUser[tokenAddressLowercased]?.logoURI
-    );
-  }, [tokenAddressLowercased, tokensFromLists, tokensFromUser, tokenOverride]);
+    return tokensFromLists[tokenAddress]?.logoURI || tokensFromUser[tokenAddress]?.logoURI;
+  }, [token?.logoURI, tokenAddress, tokensFromLists, tokensFromUser, tokenOverride]);
 
   return (
     <div className="flex flex-row items-center space-x-3">
@@ -87,12 +88,12 @@ export const TokenInfo = ({
           <span className="text-base">{token?.symbol}</span>
           <span className="text-xs text-white/70">{token?.name}</span>
         </div>
-        {tokenAddressLowercased && (
+        {tokenAddress && (
           <ExternalLink
-            href={`${getExplorerUrl(networks.sourceChain.id)}/token/${tokenAddressLowercased}`}
+            href={`${getExplorerUrl(networks.sourceChain.id)}/token/${tokenAddress}`}
             className="arb-hover text-xs underline"
           >
-            {showFullAddress ? tokenAddressLowercased : shortenAddress(tokenAddressLowercased)}
+            {showFullAddress ? tokenAddress : shortenAddress(tokenAddress)}
           </ExternalLink>
         )}
       </div>

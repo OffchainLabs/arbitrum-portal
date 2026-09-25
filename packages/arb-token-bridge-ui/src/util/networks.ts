@@ -9,6 +9,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import { solanaChain } from '../wallet/solana/network';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
@@ -297,6 +298,7 @@ export const rpcURLs: { [chainId: number]: string } =
 const DEFAULT_EXPLORER_URL = 'https://etherscan.io';
 
 export const explorerUrls: { [chainId: number]: string } = {
+  [ChainId.Solana]: solanaChain.blockExplorers.default.url,
   // L1
   [ChainId.Ethereum]: DEFAULT_EXPLORER_URL,
   // L1 Testnets
