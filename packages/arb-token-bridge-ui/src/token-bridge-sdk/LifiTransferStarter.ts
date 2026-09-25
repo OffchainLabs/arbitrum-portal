@@ -72,17 +72,17 @@ export class LifiTransferStarter extends BridgeTransferStarter<Omit<TransferProp
 
   public async transfer({
     wagmiConfig,
-    switchChainAsync,
     onApprovalRequest,
     onRouteUpdate,
     onRouteExecutionError,
+    onRouteExecutionComplete,
   }: Omit<TransferProps, 'signer'> & LifiRouteExecutionProps) {
     const { txHash, route } = await executeLifiRoute(this.lifiRoute.protocolData.route, {
       wagmiConfig,
-      switchChainAsync,
       onApprovalRequest,
       onRouteUpdate,
       onRouteExecutionError,
+      onRouteExecutionComplete,
     });
     const fullTx = await this.sourceChainProvider.getTransaction(txHash).catch(() => null);
 
