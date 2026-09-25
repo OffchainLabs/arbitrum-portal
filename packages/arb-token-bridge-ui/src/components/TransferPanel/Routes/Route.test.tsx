@@ -66,14 +66,13 @@ vi.mock('../../../hooks/useNetworks', () => ({
   useNetworks: () => [
     {
       sourceChain: { id: networksMock.sourceChainId },
-      sourceChainProvider: {},
     },
   ],
 }));
 
 vi.mock('../../../hooks/useNetworksRelationship', () => ({
   useNetworksRelationship: () => ({
-    childChainProvider: {},
+    childChain: { id: ChainId.ArbitrumOne },
     isDepositMode: true,
   }),
 }));

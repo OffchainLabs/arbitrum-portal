@@ -1,4 +1,3 @@
-import { Provider } from '@ethersproject/providers';
 import { constants } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
@@ -9,9 +8,11 @@ import { useERC20L1Address } from '../../hooks/useERC20L1Address';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { getValidatedTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
+import { normalizeAddress } from '../../util/AddressUtils';
 import { isLifiOnlyToken } from '../../util/TokenListUtils';
-import { erc20DataToErc20BridgeToken, fetchErc20Data, isValidErc20 } from '../../util/TokenUtils';
+import { erc20DataToErc20BridgeToken } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { NoteBox } from '../common/NoteBox';
 import { Loader } from '../common/atoms/Loader';
@@ -53,14 +54,6 @@ type TokenImportDialogProps = Omit<UseDialogProps, 'isOpen'> & {
   tokenAddress: string;
 };
 
-async function getValidatedTokenData(address: string, provider: Provider) {
-  const erc20Params = { address, provider };
-  if (!(await isValidErc20(erc20Params))) {
-    throw new Error(`${address} is not a valid ERC-20 token`);
-  }
-  return fetchErc20Data(erc20Params);
-}
-
 export function TokenImportDialog({
   onClose,
   tokenAddress,
@@ -72,12 +65,12 @@ export function TokenImportDialog({
   } = useAppState();
   const [, setSelectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChain, parentChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const allowsUnmatchedTokenImport = isUnmatchedLifiTokenAllowed(
     networks.sourceChain.id,
     tokenAddress,
   );
-  const sourceTokenAddress = tokenAddress.toLowerCase();
+  const sourceTokenAddress = normalizeAddress(tokenAddress);
 
   const tokensFromUser = useTokensFromUser();
   const { data: tokensFromLists } = useTokensFromLists();
@@ -124,7 +117,7 @@ export function TokenImportDialog({
   const getTokenData = useCallback(async () => {
     if (!hasParentAddress && !isDepositMode && allowsUnmatchedTokenImport) {
       try {
-        const data = await getValidatedTokenData(sourceTokenAddress, networks.sourceChainProvider);
+        const data = await getValidatedTokenData(sourceTokenAddress, networks.sourceChain.id);
         return {
           ...erc20DataToErc20BridgeToken(data),
           address: sourceTokenAddress,
@@ -137,16 +130,15 @@ export function TokenImportDialog({
       }
     }
 
-    const data = await getValidatedTokenData(addressToImport, parentChainProvider);
+    const data = await getValidatedTokenData(addressToImport, parentChain.id);
     return erc20DataToErc20BridgeToken(data);
   }, [
     addressToImport,
     allowsUnmatchedTokenImport,
     hasParentAddress,
     isDepositMode,
-    networks.sourceChainProvider,
-    parentChainProvider,
     networks.sourceChain.id,
+    parentChain.id,
     sourceTokenAddress,
   ]);
 

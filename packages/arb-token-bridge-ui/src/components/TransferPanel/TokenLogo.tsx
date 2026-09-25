@@ -28,8 +28,8 @@ export const TokenLogo = ({
   const tokensFromUser = useTokensFromUser();
 
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const src = useMemo(() => {
     // Override to show the native currency logo

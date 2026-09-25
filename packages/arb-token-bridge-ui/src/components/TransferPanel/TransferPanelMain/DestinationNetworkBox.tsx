@@ -49,8 +49,8 @@ function BalanceRow({
   const {
     destinationWallet: { isConnected },
   } = useWallets();
-  const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
@@ -103,12 +103,12 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
   const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
-  const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const destinationNativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { ethPrice } = useETHPrice();
   const { data: tokensFromLists } = useTokensFromLists();
 
