@@ -301,6 +301,9 @@ importers:
       boring-avatars:
         specifier: ^1.11.2
         version: 1.11.2
+      bs58:
+        specifier: 6.0.0
+        version: 6.0.0
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0

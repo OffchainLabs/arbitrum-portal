@@ -2,7 +2,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
-import * as addressUtils from '../../AddressUtils';
+import * as accountService from '../../../services/evm/account';
 import { initializeBridgeNetworks } from '../../networks';
 import * as fetchModule from '../fetchWithdrawals';
 import { getQueryCoveringClassicAndNitroWithResults } from './fetchWithdrawalsTestHelpers';
@@ -128,7 +128,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       firstNonZeroBlock,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();
@@ -157,7 +157,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       failHistoricalLookup: true,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();
@@ -186,7 +186,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       firstNonZeroBlock: 30_000_000,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();
@@ -215,7 +215,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock,
       firstNonZeroBlock,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();
@@ -242,7 +242,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();
@@ -269,7 +269,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });
-    const searchSpy = vi.spyOn(addressUtils, 'findFirstBlockWithNonce');
+    const searchSpy = vi.spyOn(accountService, 'findFirstBlockWithNonce');
     searchSpy.mockClear();
     const fetchSpy = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue([]);
     fetchSpy.mockClear();

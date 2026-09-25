@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getNonce } from '../../../services/evm/account';
 import { ChainId } from '../../../types/ChainId';
-import { getNonce } from '../../AddressUtils';
 import { fetchLatestIndexedBlockNumber } from '../../SubgraphUtils';
 import { isAlchemyChain, isNetwork } from '../../networks';
 import { fetchETHWithdrawalsFromEventLogs } from '../fetchETHWithdrawalsFromEventLogs';
@@ -29,7 +29,7 @@ vi.mock('../fetchL2Gateways', () => ({
   fetchL2Gateways: vi.fn(() => Promise.resolve([])),
 }));
 
-vi.mock('../../AddressUtils', () => ({
+vi.mock('../../../services/evm/account', () => ({
   getNonce: vi.fn(),
 }));
 
