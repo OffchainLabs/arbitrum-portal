@@ -17,7 +17,8 @@ vi.mock('../../../app/api/crosschain-transfers/utils', () => ({
   isValidLifiTransfer: vi.fn(() => true),
 }));
 
-vi.mock('../../../util/featureFlag', () => ({
+vi.mock('../../../util/featureFlag', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../util/featureFlag')>()),
   isCctpEnabled: vi.fn(() => true),
   isLifiEnabled: vi.fn(() => true),
 }));

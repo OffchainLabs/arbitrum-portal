@@ -1,13 +1,20 @@
-import { Chain } from 'wagmi/chains';
+import type { Chain } from 'wagmi/chains';
 import * as chains from 'wagmi/chains';
 
+import {
+  allowedLifiDestinationChainIds,
+  allowedLifiSourceChainIds,
+} from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import { getChainMetadata } from '../util/networkMetadata';
 import { getCustomChainFromLocalStorageById, getSupportedChainIds } from '../util/networks';
 import { getOrbitChains, orbitChains } from '../util/orbitChainsList';
 import * as customChains from '../util/wagmi/wagmiAdditionalNetworks';
 import { chainToWagmiChain } from '../util/wagmi/wagmiAdditionalNetworks';
 
 const chainQueryParams = [
+  'solana',
+  'superposition',
   'ethereum',
   'sepolia',
   'arbitrum-one',
@@ -24,6 +31,12 @@ export type ChainKeyQueryParam = (typeof chainQueryParams)[number];
 export type ChainQueryParam = ChainKeyQueryParam | ChainId | number | string;
 
 export function isValidChainQueryParam(value: string | number): boolean {
+  if (value === 'superposition' || value === ChainId.Superposition) {
+    return allowedLifiDestinationChainIds.includes(ChainId.Superposition);
+  }
+  if (value === 'solana' || value === ChainId.Solana) {
+    return allowedLifiSourceChainIds.includes(ChainId.Solana);
+  }
   if (typeof value === 'string') {
     const isValidCoreChainSlug = (chainQueryParams as readonly string[]).includes(value);
     const isValidOrbitChainSlug = getOrbitChains().some((chain) => chain.slug === value);
@@ -36,6 +49,11 @@ export function isValidChainQueryParam(value: string | number): boolean {
 
 export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
   switch (chainId) {
+    case ChainId.Superposition:
+      return 'superposition';
+    case ChainId.Solana:
+      return 'solana';
+
     case ChainId.Ethereum:
       return 'ethereum';
 
@@ -85,6 +103,11 @@ export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
 
 export function getChainForChainKeyQueryParam(chainKeyQueryParam: ChainKeyQueryParam): Chain {
   switch (chainKeyQueryParam) {
+    case 'superposition':
+      return getChainMetadata(ChainId.Superposition);
+    case 'solana':
+      return getChainMetadata(ChainId.Solana);
+
     case 'ethereum':
       return chains.mainnet;
 

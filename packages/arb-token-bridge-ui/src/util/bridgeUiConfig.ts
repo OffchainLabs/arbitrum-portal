@@ -25,6 +25,11 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
   const customChain = getCustomChainFromLocalStorageById(chainId);
 
   switch (chainId) {
+    case ChainId.Superposition:
+      return {
+        color: '#99D5C9',
+        network: { name: 'Superposition', logo: '/images/OrbitLogo.svg' },
+      };
     case ChainId.Solana:
       return {
         color: '#9945FF',
