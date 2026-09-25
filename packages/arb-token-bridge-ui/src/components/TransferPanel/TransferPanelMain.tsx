@@ -12,17 +12,19 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { getAccountExplorerUrl } from '../../services/explorer';
+import { isTransferExecutionSupported } from '../../services/transferExecutionAvailability';
 import { addressesEqual } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
+import { getNetworkMetadata } from '../../util/networkMetadata';
 import { getDestinationChainIds, isNetwork } from '../../util/networks';
-import { getOrbitChains } from '../../util/orbitChainsList';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
+import { NetworkWalletButton } from './NetworkWalletButton';
 import { NovaMinimizedStateWarning } from './NovaMinimizedStateWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
@@ -185,7 +187,10 @@ export function NetworkContainer({
         }}
       >
         <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
-        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">{children}</div>
+        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">
+          {children}
+          {sourceWallet !== destinationWallet && <NetworkWalletButton chainId={network.id} />}
+        </div>
       </div>
     </div>
   );
@@ -205,7 +210,7 @@ export function TransferPanelMain() {
     }
 
     // This will not include custom chains
-    return !getOrbitChains().some((_chain) => _chain.chainId === childChain.id);
+    return getNetworkMetadata(childChain.id).isCustom === true;
   }, [parentChain, childChain]);
 
   return (
@@ -215,6 +220,12 @@ export function TransferPanelMain() {
       <SwitchNetworksButton />
 
       <DestinationNetworkBox />
+
+      {!isTransferExecutionSupported(networks.sourceChain.id) && (
+        <p role="status" className="px-4 py-2 text-sm text-white/70">
+          Transfers from this network are not available yet.
+        </p>
+      )}
 
       {isNovaDestination(networks.destinationChain.id) && <NovaMinimizedStateWarning />}
 

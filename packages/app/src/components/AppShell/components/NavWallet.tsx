@@ -13,13 +13,13 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
 
 import { CustomBoringAvatar } from '@/bridge/components/common/CustomBoringAvatar';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
-import { useAccountMenu } from '@/bridge/hooks/useAccountMenu';
+import { ChainId } from '@/bridge/types/ChainId';
 import { getExplorerUrl } from '@/bridge/util/networks';
-import { useWalletModal } from '@/bridge/wallet/hooks/useWalletModal';
+import { useAccountMenu } from '@/bridge/wallet/hooks/useAccountMenu';
+import { useWalletForChain } from '@/bridge/wallet/hooks/useWallets';
 
 const MENU_ITEM_BUTTON_CLASSES =
   'opacity-70 hover:opacity-100 flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-white cursor-pointer transition-colors hover:bg-neutral-25/50 focus:bg-neutral-25/50 w-full';
@@ -27,6 +27,7 @@ const ICON_CLASSES = 'h-4 w-4 shrink-0';
 const AVATAR_CLASSES = 'h-6 w-6 rounded-full shrink-0';
 
 interface WalletConnectedDropdownProps {
+  walletChainId?: number;
   account: {
     address: string;
   };
@@ -35,9 +36,9 @@ interface WalletConnectedDropdownProps {
   };
 }
 
-function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProps) {
-  const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams } = useAccountMenu();
-  const { disconnect } = useDisconnect();
+function WalletConnectedDropdown({ account, chain, walletChainId }: WalletConnectedDropdownProps) {
+  const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams, disconnect } =
+    useAccountMenu(walletChainId);
   const [, copyToClipboard] = useCopyToClipboard();
   const [showCopied, setShowCopied] = useState(false);
   const pathname = usePathname();
@@ -157,11 +158,21 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
 }
 
 export function NavWallet() {
-  const { address, chain } = useAccount();
-  const { openConnectModal } = useWalletModal();
+  const pathname = usePathname();
+  const evmWallet = useWalletForChain(ChainId.Ethereum);
+  const isBridgeRoute = pathname.startsWith('/bridge');
+  const walletChainId = isBridgeRoute ? undefined : ChainId.Ethereum;
+  const { address, chain: selectedChain, openConnectModal } = useAccountMenu(walletChainId);
+  const chain = isBridgeRoute
+    ? selectedChain
+    : evmWallet.account.chainId
+      ? { id: evmWallet.account.chainId }
+      : undefined;
 
   if (address) {
-    return <WalletConnectedDropdown account={{ address }} chain={chain} />;
+    return (
+      <WalletConnectedDropdown account={{ address }} chain={chain} walletChainId={walletChainId} />
+    );
   }
 
   return <WalletDisconnectedButton openConnectModal={openConnectModal} />;

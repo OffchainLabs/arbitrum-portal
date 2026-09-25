@@ -4,6 +4,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { Loader } from '../common/atoms/Loader';
 import { CustomDestinationAddressInput } from './CustomDestinationAddressInput';
@@ -13,6 +14,8 @@ import { useRouteStore } from './hooks/useRouteStore';
 export const ReceiveFundsHeader = () => {
   const [showCustomDestinationAddressInput, setShowCustomDestinationAddressInput] = useState(false);
 
+  const { sourceWallet, destinationWallet } = useWallets();
+  const needsRecipient = sourceWallet !== destinationWallet && !destinationWallet.account.address;
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { destinationAddressError } = useDestinationAddressError();
@@ -23,7 +26,7 @@ export const ReceiveFundsHeader = () => {
 
   useEffect(() => {
     // if there is a destination address or error, show the custom destination address input
-    if (destinationAddress || destinationAddressError) {
+    if (destinationAddress || destinationAddressError || needsRecipient) {
       setShowCustomDestinationAddressInput(true);
       return;
     }
@@ -31,7 +34,7 @@ export const ReceiveFundsHeader = () => {
     if (isSmartContractWallet && !showCustomDestinationAddressInput) {
       setShowCustomDestinationAddressInput(true);
     }
-  }, [isSmartContractWallet, destinationAddress, destinationAddressError]);
+  }, [isSmartContractWallet, destinationAddress, destinationAddressError, needsRecipient]);
 
   const toggleCustomDestinationAddressInput = useCallback(() => {
     // for SCW, we must always show the custom destination address input
