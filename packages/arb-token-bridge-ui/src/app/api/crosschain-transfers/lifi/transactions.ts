@@ -1,12 +1,13 @@
-import { createConfig, getTransactionHistory } from '@lifi/sdk';
+import { createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
 import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
 import { constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
-import { addressesEqual } from '../../../../util/AddressUtils';
+import { addressesEqual, isValidAddress } from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
+import { isValidTransactionId } from '../../../../util/TransactionIdUtils';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
@@ -213,8 +214,16 @@ export async function GET(
 ): Promise<NextResponse<LifiTransactionHistoryResponse>> {
   const { searchParams } = new URL(request.url);
   const wallet = searchParams.get('wallet');
+  const txHash = searchParams.get('txHash');
 
-  if (!wallet || !utils.isAddress(wallet)) {
+  if (txHash !== null && (wallet !== null || !isValidTransactionId(txHash))) {
+    return NextResponse.json(
+      { message: 'Provide a valid transaction ID or wallet address', data: null },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  if (txHash === null && (!wallet || !isValidAddress(wallet))) {
     return NextResponse.json(
       { message: 'wallet is not a valid address', data: null },
       { status: 400, headers: NO_STORE_HEADERS },
@@ -227,6 +236,15 @@ export async function GET(
     apiKey: process.env.LIFI_KEY,
   });
 
+  if (txHash !== null) {
+    const statusResponse = await getStatus({ txHash });
+    return NextResponse.json(
+      { data: transformLifiHistoryTransactions({ wallet: '', statusResponses: [statusResponse] }) },
+      { headers: NO_STORE_HEADERS },
+    );
+  }
+
+  if (!wallet) throw new Error('Missing validated wallet address');
   const fromTimestamp = Math.floor((Date.now() - 10 * 365 * 24 * 60 * 60 * 1000) / 1000);
   const response = await getTransactionHistory({
     wallet,

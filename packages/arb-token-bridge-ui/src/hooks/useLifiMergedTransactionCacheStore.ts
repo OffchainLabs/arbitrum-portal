@@ -6,6 +6,7 @@ import { PersistOptions, persist } from 'zustand/middleware';
 import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
 import { isSameTransaction } from '../components/TransactionHistory/helpers';
 import { LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { addressesEqual } from '../util/AddressUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { isLifiRouteComplete } from '../util/LifiTransactionStatus';
 
@@ -14,6 +15,15 @@ interface LifiMergedTransactionCacheState {
   addTransaction: (tx: LifiMergedTransaction) => void;
   updateTransaction: (tx: LifiMergedTransaction, updates?: Partial<LifiMergedTransaction>) => void;
   removeTransaction: (tx: LifiMergedTransaction) => void;
+}
+
+export function getCachedLifiTransactions(
+  transactions: Record<string, LifiMergedTransaction[]>,
+  address: string,
+): LifiMergedTransaction[] {
+  return Object.entries(transactions)
+    .filter(([key]) => addressesEqual(key, address))
+    .flatMap(([, records]) => records);
 }
 
 type LifiCachePersistedState<Transaction> = {
@@ -231,13 +241,17 @@ function applyToTransactionAddresses({
   destination: string | undefined;
   apply: (transactions: LifiMergedTransaction[]) => LifiMergedTransaction[];
 }): Record<string, LifiMergedTransaction[]> {
+  const senderKey =
+    Object.keys(transactions).find((key) => addressesEqual(key, sender)) ?? sender;
   const updatedTransactions = {
     ...transactions,
-    [sender]: apply(transactions[sender] || []),
+    [senderKey]: apply(transactions[senderKey] || []),
   };
 
-  if (destination && destination !== sender) {
-    updatedTransactions[destination] = apply(transactions[destination] || []);
+  if (destination && !addressesEqual(destination, sender)) {
+    const destinationKey =
+      Object.keys(transactions).find((key) => addressesEqual(key, destination)) ?? destination;
+    updatedTransactions[destinationKey] = apply(transactions[destinationKey] || []);
   }
 
   return updatedTransactions;

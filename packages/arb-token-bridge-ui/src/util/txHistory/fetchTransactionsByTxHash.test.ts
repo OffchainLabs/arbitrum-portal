@@ -1,13 +1,17 @@
 import { ArbSys__factory } from '@arbitrum/sdk/dist/lib/abi/factories/ArbSys__factory';
 import { L2ArbitrumGateway__factory } from '@arbitrum/sdk/dist/lib/abi/factories/L2ArbitrumGateway__factory';
 import { Log, TransactionReceipt } from '@ethersproject/providers';
+import bs58 from 'bs58';
 import { BigNumber } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
-import { fetchLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
+import {
+  fetchLifiTransactionById,
+  fetchLifiTransactionHistory,
+} from '../../hooks/useLifiTransactionHistory';
 import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
@@ -27,6 +31,7 @@ vi.mock('../cctp/fetchCCTP', () => ({
 }));
 vi.mock('../../hooks/useLifiTransactionHistory', () => ({
   fetchLifiTransactionHistory: vi.fn(),
+  fetchLifiTransactionById: vi.fn(),
 }));
 vi.mock('../../hooks/useOftTransactionHistory', () => ({
   fetchOftTransactionsByTxHash: vi.fn(),
@@ -359,5 +364,21 @@ describe.sequential('fetchTransactionsByTxHash', () => {
     });
 
     expect(transfers).toHaveLength(1);
+  });
+});
+
+describe.sequential('signature search', () => {
+  it('uses LiFi without probing EVM providers', async () => {
+    vi.clearAllMocks();
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    vi.mocked(fetchLifiTransactionById).mockResolvedValue([]);
+    await fetchTransactionsByTxHash({
+      txHash: signature,
+      chainPairs: [],
+      probeChainIds: [1, 42161],
+      isTestnetMode: false,
+    });
+    expect(fetchLifiTransactionById).toHaveBeenCalledWith(signature);
+    expect(getProviderForChainId).not.toHaveBeenCalled();
   });
 });
