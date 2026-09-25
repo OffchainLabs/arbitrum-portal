@@ -15,8 +15,13 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
-import { createMockLifiRoute, createMockLifiTransaction } from '../../test-utils/lifi';
+import {
+  createMockLifiPartialTransaction,
+  createMockLifiRoute,
+  createMockLifiTransaction,
+} from '../../test-utils/lifi';
 import { ChainId } from '../../types/ChainId';
+import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
 import { getParentToChildMessageDataFromParentTxHash } from '../../util/deposits/helpers';
 import {
@@ -120,48 +125,51 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
 });
 
 describe('getLifiTransferStatus', () => {
-  it('maps completed transfers to confirmed statuses and destination tx', () => {
-    const statusResponse: StatusResponse = {
-      ...baseStatusResponse,
-      status: 'DONE',
-      substatus: 'COMPLETED',
-      transactionId: 'transaction-id',
-      sending: {
-        ...baseStatusResponse.sending,
-        amount: '1',
-        amountUSD: '1',
-        gasAmount: '0',
-        gasAmountUSD: '0',
-        gasPrice: '0',
-        gasToken: token,
-        gasUsed: '0',
-        token,
-      },
-      receiving: {
-        ...baseStatusResponse.receiving,
-        txHash: '0xdestination',
-        txLink: '',
-        amount: '1',
-        amountUSD: '1',
-        gasAmount: '0',
-        gasAmountUSD: '0',
-        gasPrice: '0',
-        gasToken: token,
-        gasUsed: '0',
-        token,
-      },
-      feeCosts: [],
-      fromAddress: '0x1111111111111111111111111111111111111111',
-      metadata: { integrator: '_arbitrum' },
-      toAddress: '0x1111111111111111111111111111111111111111',
-    };
+  it.each(['COMPLETED', 'PARTIAL'] as const)(
+    'maps DONE / %s to confirmed statuses and destination tx',
+    (substatus) => {
+      const statusResponse: StatusResponse = {
+        ...baseStatusResponse,
+        status: 'DONE',
+        substatus,
+        transactionId: 'transaction-id',
+        sending: {
+          ...baseStatusResponse.sending,
+          amount: '1',
+          amountUSD: '1',
+          gasAmount: '0',
+          gasAmountUSD: '0',
+          gasPrice: '0',
+          gasToken: token,
+          gasUsed: '0',
+          token,
+        },
+        receiving: {
+          ...baseStatusResponse.receiving,
+          txHash: '0xdestination',
+          txLink: '',
+          amount: '1',
+          amountUSD: '1',
+          gasAmount: '0',
+          gasAmountUSD: '0',
+          gasPrice: '0',
+          gasToken: token,
+          gasUsed: '0',
+          token,
+        },
+        feeCosts: [],
+        fromAddress: '0x1111111111111111111111111111111111111111',
+        metadata: { integrator: '_arbitrum' },
+        toAddress: '0x1111111111111111111111111111111111111111',
+      };
 
-    expect(getLifiTransferStatus(statusResponse)).toEqual({
-      status: WithdrawalStatus.CONFIRMED,
-      destinationStatus: WithdrawalStatus.CONFIRMED,
-      destinationTxId: '0xdestination',
-    });
-  });
+      expect(getLifiTransferStatus(statusResponse)).toEqual({
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.CONFIRMED,
+        destinationTxId: '0xdestination',
+      });
+    },
+  );
 
   it('maps pending transfers with executed source tx to pending destination', () => {
     const statusResponse: StatusResponse = {
@@ -349,36 +357,83 @@ describe.sequential('getUpdatedLifiTransfer', () => {
     },
   } as unknown as StatusResponse;
 
-  it('updates the completed bridge step without completing a failed later step', async () => {
-    vi.mocked(getStatus).mockResolvedValueOnce(completedBridgeStatus);
+  it.each(['COMPLETED', 'PARTIAL'] as const)(
+    'updates a DONE / %s bridge without completing a failed later step',
+    async (substatus) => {
+      if (completedBridgeStatus.status !== 'DONE') throw new Error('Expected completed fixture');
+      vi.mocked(getStatus).mockResolvedValueOnce({ ...completedBridgeStatus, substatus });
 
-    const updatedTransaction = (await getUpdatedLifiTransfer({
-      ...baseLifiTransaction,
-      txId: sourceTxHash,
-      destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      lifiRoute: createRouteWithSwapStatus('FAILED'),
-      toAmount: { amount: '90', amountUSD: '0.9', token: finalToken, chainId: 42161 },
-    })) as LifiMergedTransaction;
+      const updatedTransaction = (await getUpdatedLifiTransfer({
+        ...baseLifiTransaction,
+        txId: sourceTxHash,
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: createRouteWithSwapStatus('FAILED'),
+        toAmount: { amount: '90', amountUSD: '0.9', token: finalToken, chainId: 42161 },
+      })) as LifiMergedTransaction;
 
-    expect(updatedTransaction).toMatchObject({
-      status: WithdrawalStatus.CONFIRMED,
-      destinationStatus: WithdrawalStatus.FAILURE,
-      toAmount: { amount: '90', token: finalToken },
+      expect(updatedTransaction).toMatchObject({
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.FAILURE,
+        toAmount: { amount: '90', token: finalToken },
+      });
+      expect(updatedTransaction.lifiRoute?.steps[0]?.execution).toMatchObject({
+        status: 'DONE',
+        toAmount: '95',
+        toToken: destinationToken,
+      });
+      expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
+      expect(updatedTransaction.lifiRoute?.steps[0]?.execution?.process[0]?.status).toBe('DONE');
+      expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.process[0]?.status).toBe('FAILED');
+      expect(isLifiTransferResumable(updatedTransaction)).toBe(true);
+      expect(getStatus).toHaveBeenCalledWith({
+        txHash: sourceTxHash,
+        bridge: 'across',
+        fromChain: '1',
+        toChain: '42161',
+      });
+    },
+  );
+
+  it('settles a DONE / PARTIAL fallback and keeps the quote separate from its received output', async () => {
+    const tx = createMockLifiPartialTransaction();
+    const step = tx.lifiRoute?.steps[0];
+    if (
+      !step?.execution?.toToken ||
+      completedBridgeStatus.status !== 'DONE' ||
+      !('amount' in completedBridgeStatus.receiving)
+    ) {
+      throw new Error('Missing fixture output');
+    }
+    const receivedToken = step.execution.toToken;
+    step.execution.status = 'PENDING';
+    step.execution.process = [
+      { type: 'CROSS_CHAIN', status: 'PENDING', txHash: sourceTxHash, startedAt: 1 },
+    ];
+    tx.destinationStatus = WithdrawalStatus.UNCONFIRMED;
+    vi.mocked(getStatus).mockResolvedValueOnce({
+      ...completedBridgeStatus,
+      substatus: 'PARTIAL',
+      receiving: {
+        ...completedBridgeStatus.receiving,
+        amount: '8103481105',
+        token: receivedToken,
+      },
     });
-    expect(updatedTransaction.lifiRoute?.steps[0]?.execution).toMatchObject({
-      status: 'DONE',
-      toAmount: '95',
-      toToken: destinationToken,
+
+    const updated = await getUpdatedLifiTransfer(tx);
+
+    expect(updated.destinationStatus).toBe(WithdrawalStatus.CONFIRMED);
+    expect(getLifiTransactionSnapshot(updated)?.toAmount).toMatchObject({
+      amount: '8126613689',
+      token: { symbol: 'USDG' },
     });
-    expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
-    expect(updatedTransaction.lifiRoute?.steps[0]?.execution?.process[0]?.status).toBe('DONE');
-    expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.process[0]?.status).toBe('FAILED');
-    expect(getStatus).toHaveBeenCalledWith({
-      txHash: sourceTxHash,
-      bridge: 'across',
-      fromChain: '1',
-      toChain: '42161',
+    expect(
+      getLifiRouteHistorySteps(updated.lifiRoute)[0]?.displaySteps.at(-1)?.toAmount,
+    ).toMatchObject({
+      amount: '8103481105',
+      token: { symbol: 'USDC' },
     });
+    expect(isLifiTransferResumable(updated)).toBe(false);
   });
 
   it('keeps the first accepted hash when status checks a later bridge transaction', async () => {
@@ -395,7 +450,7 @@ describe.sequential('getUpdatedLifiTransfer', () => {
     expect(updatedTransaction.txId).toBe(finalStepTxHash);
   });
 
-  it('completes the transaction using the final output when all steps are done', async () => {
+  it('completes the transaction while retaining its quoted list output', async () => {
     vi.mocked(getStatus).mockResolvedValueOnce(completedBridgeStatus);
 
     await expect(
@@ -408,7 +463,7 @@ describe.sequential('getUpdatedLifiTransfer', () => {
     ).resolves.toMatchObject({
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.CONFIRMED,
-      toAmount: { amount: '89', token: finalToken },
+      toAmount: { amount: '90', token: finalToken },
     });
   });
 });

@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import type { Token } from '../../app/api/crosschain-transfers/types';
-import { LifiMergedTransaction } from '../../state/app/state';
+import { LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
@@ -50,6 +50,11 @@ function getLifiTokenFlowItems(tx: LifiMergedTransaction): LifiTokenFlowItem[] {
 
   const routeSteps =
     tx.lifiRouteSteps ?? (tx.lifiRoute ? getLifiRouteHistorySteps(tx.lifiRoute) : []);
+  const finalStep = routeSteps.at(-1);
+  const completed = finalStep
+    ? finalStep.execution?.status === 'DONE'
+    : tx.destinationStatus === WithdrawalStatus.CONFIRMED;
+  const receivedAmount = completed && routeSteps.length <= 1 ? tx.receivedAmount : undefined;
   const steps = routeSteps.flatMap((step) =>
     step.displaySteps.map((displayStep, displayStepIndex) => ({
       id: `${step.id}-${displayStepIndex}`,
@@ -59,6 +64,7 @@ function getLifiTokenFlowItems(tx: LifiMergedTransaction): LifiTokenFlowItem[] {
 
   if (steps.length === 0) {
     const tool = snapshot.toolsDetails[0];
+    const toAmount = receivedAmount ?? snapshot.toAmount;
     return [
       sourceItem,
       {
@@ -70,16 +76,18 @@ function getLifiTokenFlowItems(tx: LifiMergedTransaction): LifiTokenFlowItem[] {
       {
         type: 'token',
         id: 'destination-token',
-        amount: snapshot.toAmount.amount,
-        amountUSD: snapshot.toAmount.amountUSD,
-        chainId: snapshot.toAmount.chainId ?? tx.destinationChainId,
-        token: snapshot.toAmount.token,
+        amount: toAmount.amount,
+        amountUSD: toAmount.amountUSD,
+        chainId: toAmount.chainId ?? tx.destinationChainId,
+        token: toAmount.token,
       },
     ];
   }
 
   return steps.reduce<LifiTokenFlowItem[]>(
-    (items, step) => {
+    (items, step, index) => {
+      const toAmount =
+        index === steps.length - 1 && receivedAmount ? receivedAmount : step.toAmount;
       items.push(
         {
           type: 'tool',
@@ -90,10 +98,10 @@ function getLifiTokenFlowItems(tx: LifiMergedTransaction): LifiTokenFlowItem[] {
         {
           type: 'token',
           id: `${step.id}-destination-token`,
-          amount: step.toAmount.amount,
-          amountUSD: step.toAmount.amountUSD,
-          chainId: step.toAmount.chainId ?? tx.destinationChainId,
-          token: step.toAmount.token,
+          amount: toAmount.amount,
+          amountUSD: toAmount.amountUSD,
+          chainId: toAmount.chainId ?? tx.destinationChainId,
+          token: toAmount.token,
         },
       );
 
