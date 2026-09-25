@@ -12,6 +12,14 @@ type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
 type TokenPickerSide = 'source' | 'destination';
+// mirrors RetryableLookupResult['type'], kept separate so the reported values stay stable
+type RetryableLookupOutcome =
+  | 'retryables'
+  | 'noRetryables'
+  | 'ethDeposit'
+  | 'classicTransaction'
+  | 'transactionNotFound'
+  | 'lookupFailed';
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
@@ -66,6 +74,13 @@ type AnalyticsEventMap = {
     version: number;
   };
   'Redeem Retryable': { network: string };
+  'Redeem Retryable Error': { network: string };
+  'Check Retryable Status Click': { network: string; isTestnetMode: boolean };
+  'Check Retryable Status Result': {
+    network: string;
+    result: RetryableLookupOutcome;
+    ticketCount: number;
+  };
   'Search Tx for Address Click': {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;
