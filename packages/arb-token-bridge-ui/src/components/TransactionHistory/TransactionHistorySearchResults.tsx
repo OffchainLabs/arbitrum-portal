@@ -5,6 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
+import {
+  isTxClaimable,
+  isTxCompleted,
+  isTxExpired,
+  isTxFailed,
+  isTxPending,
+} from '../../services/history';
 import { MergedTransaction } from '../../state/app/state';
 import { addressesEqual } from '../../util/AddressUtils';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -17,7 +24,6 @@ import {
 } from './TransactionHistorySearchBar';
 import { ContentWrapper, TransactionHistoryTable } from './TransactionHistoryTable';
 import { TransactionsTableDetails } from './TransactionsTableDetails';
-import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } from './helpers';
 
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
