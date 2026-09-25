@@ -20,12 +20,16 @@ const VALID_TX_HASH = `0x${'a'.repeat(64)}`;
 const ARBITRUM_ONE = 42161;
 
 const useRetryableLookupMock = vi.fn();
+const routerMock = vi.hoisted(() => ({ replace: vi.fn() }));
 
 vi.mock('wagmi', () => ({
   useAccount: () => ({ isConnected: true, chainId: 42161 }),
 }));
 vi.mock('wagmi/actions', () => ({ getConnectorClient: vi.fn() }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/build/retryables' }));
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/build/retryables',
+  useRouter: () => routerMock,
+}));
 vi.mock('react-use', () => ({ useCopyToClipboard: () => [{}, vi.fn()] }));
 vi.mock('@/bridge/util/wagmi/setup', () => ({ wagmiConfig: {} }));
 vi.mock('@/bridge/util/wagmi/useEthersSigner', () => ({ clientToSigner: vi.fn() }));
@@ -104,6 +108,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  routerMock.replace.mockClear();
   vi.mocked(trackEvent).mockClear();
   // the hook only resolves a result for a submitted hash, mirroring its SWR key
   useRetryableLookupMock.mockReset();
@@ -161,7 +166,10 @@ describe('RetryableRedeemer', () => {
   it('keeps the url on the chain the shown result came from', () => {
     renderRedeemer({ initialTxHash: VALID_TX_HASH });
 
-    expect(window.location.search).toBe(`?chainId=${ARBITRUM_ONE}&tx=${VALID_TX_HASH}`);
+    expect(routerMock.replace).toHaveBeenLastCalledWith(
+      `/build/retryables?chainId=${ARBITRUM_ONE}&tx=${VALID_TX_HASH}`,
+      { scroll: false },
+    );
 
     // switching chains re-runs the lookup on its own, so the url has to follow without a submit
     fireEvent.click(screen.getByRole('button', { name: 'Select Arbitrum Nova' }));
@@ -169,7 +177,10 @@ describe('RetryableRedeemer', () => {
     expect(useRetryableLookupMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ childChainId: 42170 }),
     );
-    expect(window.location.search).toBe(`?chainId=42170&tx=${VALID_TX_HASH}`);
+    expect(routerMock.replace).toHaveBeenLastCalledWith(
+      `/build/retryables?chainId=42170&tx=${VALID_TX_HASH}`,
+      { scroll: false },
+    );
   });
 
   it('drops the previous result as soon as the hash is edited', () => {

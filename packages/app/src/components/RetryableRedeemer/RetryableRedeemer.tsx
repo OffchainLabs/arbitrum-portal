@@ -13,7 +13,7 @@ import {
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
@@ -278,6 +278,7 @@ export function RetryableRedeemer({
   initialTxHash: string | undefined;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isConnected, chainId: connectedChainId } = useAccount();
   const { openConnectModal } = useWalletModal();
   const { switchChainAsync } = useSwitchNetworkWithConfig();
@@ -305,8 +306,6 @@ export function RetryableRedeemer({
     parentChainTxHash: submittedTxHash,
   });
 
-  // the lookup re-runs on every chain change, not just on submit, so a url written only on submit
-  // would name a chain the result never came from. `replaceState` skips a server round-trip.
   useEffect(() => {
     if (typeof childChainId === 'undefined') {
       return;
@@ -318,8 +317,8 @@ export function RetryableRedeemer({
       params.set('tx', submittedTxHash);
     }
 
-    window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
-  }, [childChainId, pathname, submittedTxHash]);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [childChainId, pathname, router, submittedTxHash]);
 
   // dropping the result on edit keeps the ticket on screen tied to the hash in the box, so a failed
   // re-check cannot leave a stale, redeemable-looking row behind
