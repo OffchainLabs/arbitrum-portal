@@ -2,7 +2,6 @@ import { ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { utils } from 'ethers';
 import React, { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import { useAccountType } from '../../hooks/useAccountType';
@@ -19,6 +18,7 @@ import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
 import { getDestinationChainIds, getExplorerUrl, isNetwork } from '../../util/networks';
 import { getOrbitChains } from '../../util/orbitChainsList';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
@@ -150,7 +150,12 @@ export function NetworkContainer({
   bgLogoHeight?: number;
   children: React.ReactNode;
 }) {
-  const { address: walletAddress } = useAccount();
+  const [networks] = useNetworks();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const walletAddress =
+    network.id === networks.sourceChain.id
+      ? sourceWallet.account.address
+      : destinationWallet.account.address;
   const [{ theme }] = useArbQueryParams();
 
   const showCustomAddressBanner = useMemo(() => {

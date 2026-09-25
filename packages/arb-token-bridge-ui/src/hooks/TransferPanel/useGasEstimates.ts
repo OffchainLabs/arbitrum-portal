@@ -1,8 +1,7 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
-import { Address } from 'viem';
-import { Config, useAccount, useConfig } from 'wagmi';
+import { Config, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
@@ -16,6 +15,8 @@ import {
   getSelectedRouteContext,
   useRouteStore,
 } from '../../components/TransferPanel/hooks/useRouteStore';
+import { getNativeTokenAddress } from '../../wallet/constants';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
 import { useDestinationSelection } from '../useDestinationToken';
@@ -87,7 +88,9 @@ export function useGasEstimates({
   // Quote the same destination as the route request so both agree on the received asset.
   const { destinationAddress: toTokenAddress } = useDestinationSelection();
   const [{ destinationAddress }] = useArbQueryParams();
-  const { address: walletAddress } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const walletAddress = sourceWallet.account.address;
+  const recipientAddress = destinationAddress || destinationWallet.account.address;
   const balance = useBalanceOnSourceChain(selectedToken);
   const wagmiConfig = useConfig();
   const { selectedRouteContext, eligibleRouteTypes } = useRouteStore(
@@ -120,7 +123,9 @@ export function useGasEstimates({
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const fromTokenAddress =
-    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+    overrideSourceToken.source?.address ||
+    defaultFromTokenAddress ||
+    getNativeTokenAddress(sourceChain.id);
 
   const parameters = {
     enabled: isLifiRouteEligible,
@@ -128,7 +133,7 @@ export function useGasEstimates({
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
     fromToken: fromTokenAddress,
-    toAddress: (destinationAddress as Address) || walletAddress,
+    toAddress: recipientAddress,
     toChainId: destinationChain.id,
     toToken: toTokenAddress,
     denyBridges: disabledBridges,
