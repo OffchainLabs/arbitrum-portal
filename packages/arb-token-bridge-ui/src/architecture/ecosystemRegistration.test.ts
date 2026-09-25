@@ -38,9 +38,17 @@ function getEcosystem(chainId: number): Ecosystem {
 }
 
 const wallets = {
-  evm: { account: { address: registrations[0].address }, isConnected: true },
-  solana: { account: { address: registrations[1].address }, isConnected: true },
-  fixture: { account: { address: registrations[2].address }, isConnected: true },
+  evm: { ecosystem: 'evm', account: { address: registrations[0].address }, isConnected: true },
+  solana: {
+    ecosystem: 'solana',
+    account: { address: registrations[1].address },
+    isConnected: true,
+  },
+  fixture: {
+    ecosystem: 'fixture',
+    account: { address: registrations[2].address },
+    isConnected: true,
+  },
 };
 
 function callbacks(): TransferCallbacks {
@@ -57,6 +65,7 @@ function callbacks(): TransferCallbacks {
     updatePendingTransaction: vi.fn(),
     addLifiTransactionToCache: vi.fn(),
     updateLifiTransactionInCache: vi.fn(),
+    removeLifiTransactionFromCache: vi.fn(),
     resetAmountAndSwitchToTransactionHistoryTab: vi.fn(),
     clearRoute: vi.fn(),
     onSubmitted: vi.fn(),
@@ -110,6 +119,7 @@ describe('ecosystem registration through application boundaries', () => {
         networks: { sourceChain: { ...mainnet, id: chainId }, destinationChain: arbitrum },
         childChain: arbitrum,
         parentChain: mainnet,
+        sourceWallet,
         walletAddress: address,
         destinationWalletAddress: destinationWallet.account.address,
         selectedToken: token,

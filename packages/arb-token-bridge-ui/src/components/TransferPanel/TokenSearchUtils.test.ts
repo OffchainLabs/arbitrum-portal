@@ -1,15 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
 import { zeroAddress } from 'viem';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/constants';
 import {
   LIFI_TRANSFER_LIST_ID,
   type TokenListWithId,
   isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/constants';
 import {
   NATIVE_CURRENCY_IDENTIFIER,
   addTokenFromSearch,
@@ -27,7 +27,7 @@ describe('getTokenPickerAddresses', () => {
         chainId: ChainId.Solana,
         hasCustomNativeCurrency: false,
       }),
-    ).toEqual([NATIVE_CURRENCY_IDENTIFIER, zeroAddress, tokenAddress]);
+    ).toEqual([zeroAddress, tokenAddress, NATIVE_CURRENCY_IDENTIFIER]);
   });
 
   it('keeps zero-address tokens separate from a custom native currency', () => {
@@ -37,7 +37,17 @@ describe('getTokenPickerAddresses', () => {
         chainId: ChainId.ApeChain,
         hasCustomNativeCurrency: true,
       }),
-    ).toEqual([NATIVE_CURRENCY_IDENTIFIER, zeroAddress, tokenAddress]);
+    ).toEqual([zeroAddress, tokenAddress, NATIVE_CURRENCY_IDENTIFIER]);
+  });
+
+  it('preserves the existing zero-address native row', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [zeroAddress, tokenAddress],
+        chainId: ChainId.Ethereum,
+        hasCustomNativeCurrency: false,
+      }),
+    ).toEqual([zeroAddress, tokenAddress]);
   });
 });
 

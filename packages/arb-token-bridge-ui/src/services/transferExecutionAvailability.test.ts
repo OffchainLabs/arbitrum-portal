@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../types/ChainId';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
 import { isTransferExecutionAvailable } from './transferExecutionAvailability';
+
+vi.hoisted(() => vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED', 'true'));
 
 describe('execution availability', () => {
   it('requires a connected account and a registered implementation', () => {
@@ -23,7 +25,15 @@ describe('execution availability', () => {
     ).toBe(false);
     expect(isTransferExecutionAvailable({ chainId: 999999999, wallet })).toBe(false);
   });
-  it('does not enable placeholder Solana execution', () => {
+  it('uses ecosystem-specific execution prerequisites', () => {
+    const evmWallet = {
+      ...defaultWalletContextValue.evm,
+      isConnected: true,
+      account: {
+        ...defaultWalletContextValue.evm.account,
+        address: '0x1111111111111111111111111111111111111111',
+      },
+    };
     const wallet = {
       ...defaultWalletContextValue.solana,
       isConnected: true,
@@ -32,6 +42,21 @@ describe('execution availability', () => {
         address: 'So11111111111111111111111111111111111111112',
       },
     };
-    expect(isTransferExecutionAvailable({ chainId: ChainId.Solana, wallet })).toBe(false);
+    expect(
+      isTransferExecutionAvailable({
+        chainId: ChainId.Ethereum,
+        wallet: evmWallet,
+        arbTokenBridgeReady: false,
+      }),
+    ).toBe(false);
+    expect(
+      isTransferExecutionAvailable({
+        chainId: ChainId.Solana,
+        wallet,
+        arbTokenBridgeReady: false,
+      }),
+    ).toBe(true);
   });
 });
+
+afterAll(() => vi.unstubAllEnvs());

@@ -4,7 +4,9 @@ import {
   lifiDestinationChainIds,
   lifiSourceOnlyChainIds,
 } from '../../app/api/crosschain-transfers/constants';
+import { isTransferExecutionAvailable } from '../../services/transferExecutionAvailability';
 import { ChainId } from '../../types/ChainId';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { getDestinationChainIds, isSupportedChainId } from '../chainUtils';
 import { decodeChainQueryParam, sanitizeQueryParams } from '../queryParamUtils';
 
@@ -22,6 +24,20 @@ describe('disabled Solana network selection', () => {
     expect(getDestinationChainIds(ChainId.Solana, { includeLifiEnabledChainPairs: true })).toEqual(
       [],
     );
+    expect(
+      isTransferExecutionAvailable({
+        chainId: ChainId.Solana,
+        wallet: {
+          ...defaultWalletContextValue.solana,
+          isConnected: true,
+          account: {
+            ecosystem: 'solana',
+            status: 'connected',
+            address: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+          },
+        },
+      }),
+    ).toBe(false);
     expect(
       sanitizeQueryParams({
         sourceChainId: ChainId.Solana,
