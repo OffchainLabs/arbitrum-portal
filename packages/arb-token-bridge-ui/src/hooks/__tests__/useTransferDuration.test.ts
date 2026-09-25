@@ -9,6 +9,7 @@ import {
   getDepositDuration,
   getOrbitDepositDuration,
   getStandardDepositDuration,
+  minutesToHumanReadableTime,
   useTransferDuration,
 } from '../../hooks/useTransferDuration';
 import {
@@ -451,5 +452,11 @@ describe('getDepositDuration', () => {
     expect(getDepositDuration({ parentChainId: 8453, isTestnet: false })).toEqual(
       getOrbitDepositDuration(false),
     );
+  });
+
+  it('rounds multi-day durations up', () => {
+    expect(minutesToHumanReadableTime(6 * DAY_IN_MINUTES + 10 * HOUR_IN_MINUTES)).toBe('7 days');
+    expect(minutesToHumanReadableTime(DAY_IN_MINUTES + 1)).toBe('2 days');
+    expect(minutesToHumanReadableTime(0)).toBe('Less than a minute');
   });
 });
