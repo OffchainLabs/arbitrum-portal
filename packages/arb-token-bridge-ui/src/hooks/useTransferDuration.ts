@@ -203,6 +203,10 @@ function getRemainingMinutes({
   return Math.max(estimatedCompletionTime.diff(dayjs(), 'minute'), 0);
 }
 
+export function roundMultiDayDurationInMinutes(minutes: number) {
+  return minutes > MINUTES_IN_DAY ? Math.ceil(minutes / MINUTES_IN_DAY) * MINUTES_IN_DAY : minutes;
+}
+
 export function minutesToHumanReadableTime(minutes: number | null) {
   if (minutes === null) {
     return 'Calculating...';
@@ -211,7 +215,7 @@ export function minutesToHumanReadableTime(minutes: number | null) {
     return 'Less than a minute';
   }
   if (minutes > MINUTES_IN_DAY) {
-    return `${Math.ceil(minutes / MINUTES_IN_DAY)} days`;
+    return `${roundMultiDayDurationInMinutes(minutes) / MINUTES_IN_DAY} days`;
   }
   // will convert number to '20 minutes', '1 hour', '7 days', etc
   return dayjs().add(minutes, 'minutes').fromNow(true);
