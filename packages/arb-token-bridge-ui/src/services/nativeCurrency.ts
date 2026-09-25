@@ -1,5 +1,5 @@
 import type { NativeCurrency } from '../hooks/useNativeCurrency';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../util/networkMetadata';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
 
@@ -22,5 +22,5 @@ export async function fetchNativeCurrency(params: Params): Promise<NativeCurrenc
   const implementation = implementations[getWalletEcosystem(params.chainId)];
   return implementation
     ? implementation(params)
-    : { ...getWagmiChain(params.chainId).nativeCurrency, isCustom: false };
+    : { ...getChainMetadata(params.chainId).nativeCurrency, isCustom: false };
 }

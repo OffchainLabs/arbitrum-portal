@@ -1,4 +1,3 @@
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { renderHook } from '@testing-library/react';
 import { BigNumber, utils } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,11 +36,8 @@ function setNetworks(sourceChainId: ChainId, destinationChainId: ChainId) {
   vi.mocked(useNetworks).mockReturnValue([
     {
       sourceChain: getWagmiChain(sourceChainId),
-      sourceChainProvider: getProviderForChainId(sourceChainId),
 
       destinationChain: getWagmiChain(destinationChainId),
-
-      destinationChainProvider: getProviderForChainId(destinationChainId),
     },
     vi.fn(),
   ]);

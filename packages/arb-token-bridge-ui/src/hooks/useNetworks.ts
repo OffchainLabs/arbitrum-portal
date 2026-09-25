@@ -1,14 +1,11 @@
-import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { useCallback, useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
-import { Chain } from 'wagmi/chains';
-
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
+import type { Chain } from 'wagmi/chains';
 
 import { ChainId } from '../types/ChainId';
 import { isSupportedChainId } from '../util/chainUtils';
+import { getChainMetadata } from '../util/networkMetadata';
 import { sanitizeQueryParams } from '../util/queryParamUtils';
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { DisabledFeatures, useArbQueryParams } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 
@@ -16,9 +13,7 @@ export { isSupportedChainId, sanitizeQueryParams };
 
 export type UseNetworksState = {
   sourceChain: Chain;
-  sourceChainProvider: StaticJsonRpcProvider;
   destinationChain: Chain;
-  destinationChainProvider: StaticJsonRpcProvider;
 };
 
 export type UseNetworksSetStateParams = {
@@ -50,14 +45,14 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
 
   const {
     data = {
-      sourceChain: getWagmiChain(validSourceChainId),
-      destinationChain: getWagmiChain(validDestinationChainId),
+      sourceChain: getChainMetadata(validSourceChainId),
+      destinationChain: getChainMetadata(validDestinationChainId),
     },
   } = useSWRImmutable(
     [validSourceChainId, validDestinationChainId, 'useNetworks'] as const,
     ([_validSourceChainId, _validDestinationChainId]) => {
-      const sourceChain = getWagmiChain(_validSourceChainId);
-      const destinationChain = getWagmiChain(_validDestinationChainId);
+      const sourceChain = getChainMetadata(_validSourceChainId);
+      const destinationChain = getChainMetadata(_validDestinationChainId);
       return { sourceChain, destinationChain };
     },
   );
@@ -86,17 +81,9 @@ export function useNetworks(): [UseNetworksState, UseNetworksSetState] {
     return [
       {
         sourceChain: data.sourceChain,
-        sourceChainProvider: getProviderForChainId(validSourceChainId),
         destinationChain: data.destinationChain,
-        destinationChainProvider: getProviderForChainId(validDestinationChainId),
       },
       setState,
     ];
-  }, [
-    data.destinationChain,
-    data.sourceChain,
-    setState,
-    validDestinationChainId,
-    validSourceChainId,
-  ]);
+  }, [data.destinationChain, data.sourceChain, setState]);
 }

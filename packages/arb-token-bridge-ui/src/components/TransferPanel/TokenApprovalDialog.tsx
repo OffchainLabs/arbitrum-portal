@@ -7,9 +7,10 @@ import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { getAccountExplorerUrl } from '../../services/explorer';
 import { shortenTxHash } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
-import { getExplorerUrl, isNetwork } from '../../util/networks';
+import { isNetwork } from '../../util/networks';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -99,7 +100,7 @@ export function TokenApprovalDialog({
           This transaction gives permission to the{' '}
           <ExternalLink
             className="arb-hover underline"
-            href={`${getExplorerUrl(chainId)}/address/${contractAddress}`}
+            href={getAccountExplorerUrl(chainId, contractAddress)}
             onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
               event.stopPropagation();
             }}

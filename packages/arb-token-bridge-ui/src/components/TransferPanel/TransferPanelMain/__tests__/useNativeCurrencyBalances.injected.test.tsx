@@ -3,7 +3,7 @@ import { SWRConfig } from 'swr';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../../../types/ChainId';
-import { getWagmiChain } from '../../../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../../../util/networkMetadata';
 import { WalletContext, defaultWalletContextValue } from '../../../../wallet/WalletContext';
 import { BalanceProvider } from '../../../../wallet/balance/BalanceContext';
 import { createBalanceService } from '../../../../wallet/balance/createBalanceService';
@@ -16,8 +16,8 @@ const source = 'So11111111111111111111111111111111111111112';
 vi.mock('../../../../hooks/useNetworks', () => ({
   useNetworks: () => [
     {
-      sourceChain: getWagmiChain(ChainId.Solana),
-      destinationChain: getWagmiChain(ChainId.ArbitrumOne),
+      sourceChain: getChainMetadata(ChainId.Solana),
+      destinationChain: getChainMetadata(ChainId.ArbitrumOne),
     },
     vi.fn(),
   ],

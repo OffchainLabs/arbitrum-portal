@@ -1,7 +1,6 @@
 import { Chain, arbitrum, mainnet } from 'wagmi/chains';
 
 import { ChainId } from '../../types/ChainId';
-import { solanaChain } from '../../wallet/solana/network';
 import { getCustomChainFromLocalStorageById } from '../networks';
 import { orbitChains } from '../orbitChainsList';
 import {
@@ -29,9 +28,6 @@ export function getWagmiChain(chainId: number): Chain {
   }
 
   switch (chainId) {
-    case ChainId.Solana:
-      return solanaChain;
-
     case ChainId.Ethereum:
       return mainnet;
 
