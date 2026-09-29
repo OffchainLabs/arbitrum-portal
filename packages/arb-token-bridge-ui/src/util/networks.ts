@@ -410,6 +410,7 @@ function getIsArbitrumChain(chainId: ChainId) {
 }
 
 export function isNetwork(chainId: ChainId) {
+  const isSolana = chainId === ChainId.Solana;
   const isEthereumMainnet = chainId === ChainId.Ethereum;
 
   const isSepolia = chainId === ChainId.Sepolia;
@@ -431,9 +432,10 @@ export function isNetwork(chainId: ChainId) {
 
   const isCoreChain = isEthereumMainnetOrTestnet || isArbitrum;
   const isOrbitChain = getIsArbitrumChain(chainId) && !isCoreChain;
-  const isNonArbitrumNetwork = isBase || isEthereumMainnetOrTestnet;
+  const isNonArbitrumNetwork = isSolana || isBase || isEthereumMainnetOrTestnet;
 
   return {
+    isSolana,
     // L1
     isEthereumMainnet,
     isEthereumMainnetOrTestnet,
@@ -459,6 +461,7 @@ export function isNetwork(chainId: ChainId) {
 }
 
 export function getNetworkName(chainId: number) {
+  if (chainId === ChainId.Solana) return 'Solana';
   return getBridgeUiConfigForChain(chainId).network.name;
 }
 
