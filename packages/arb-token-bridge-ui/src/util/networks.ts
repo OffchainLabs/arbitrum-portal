@@ -15,6 +15,12 @@ import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
 import { logger } from './logger';
 import {
+  getChainMetadata,
+  getNetworkMetadata,
+  registerCustomChainMetadata,
+  removeCustomChainMetadata,
+} from './networkMetadata';
+import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
@@ -199,6 +205,7 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  registerCustomChainMetadata(newCustomChain);
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
@@ -210,6 +217,7 @@ export function removeCustomChainFromLocalStorage(chainId: number) {
   );
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  removeCustomChainMetadata(chainId);
 }
 
 export const supportedCustomOrbitParentChains = [
@@ -286,9 +294,11 @@ export const rpcURLs: { [chainId: number]: string } =
       }
     : defaultRpcUrls;
 
+const DEFAULT_EXPLORER_URL = 'https://etherscan.io';
+
 export const explorerUrls: { [chainId: number]: string } = {
   // L1
-  [ChainId.Ethereum]: 'https://etherscan.io',
+  [ChainId.Ethereum]: DEFAULT_EXPLORER_URL,
   // L1 Testnets
   [ChainId.Sepolia]: 'https://sepolia.etherscan.io',
   // L2
@@ -300,9 +310,16 @@ export const explorerUrls: { [chainId: number]: string } = {
   [ChainId.BaseSepolia]: 'https://sepolia.basescan.org',
 };
 
-export const getExplorerUrl = (chainId: ChainId) => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return explorerUrls[chainId] ?? explorerUrls[ChainId.Ethereum]!; //defaults to etherscan, can never be null
+export const getExplorerUrl = (chainId: number) => {
+  try {
+    return (
+      getChainMetadata(chainId).blockExplorers?.default.url ??
+      explorerUrls[chainId] ??
+      DEFAULT_EXPLORER_URL
+    );
+  } catch {
+    return explorerUrls[chainId] ?? DEFAULT_EXPLORER_URL;
+  }
 };
 
 export const getL1BlockTime = (chainId: number) => {
@@ -383,19 +400,9 @@ export async function registerLocalNetwork() {
 }
 
 function isTestnetChain(chainId: ChainId) {
-  const l1Network = l1Networks[chainId];
-  if (l1Network) {
-    return l1Network.isTestnet;
-  }
-
-  const baseNetwork = baseNetworks[chainId];
-  if (baseNetwork) {
-    return baseNetwork.isTestnet;
-  }
-
   try {
-    return getArbitrumNetwork(chainId).isTestnet;
-  } catch (error) {
+    return getChainMetadata(chainId).testnet === true;
+  } catch {
     // users could have data in local storage for chains that aren't supported anymore, avoid app error
     return true;
   }
@@ -403,14 +410,21 @@ function isTestnetChain(chainId: ChainId) {
 
 function getIsArbitrumChain(chainId: ChainId) {
   try {
-    return !!getArbitrumNetwork(chainId).parentChainId;
-  } catch (error) {
-    return false;
+    if (getNetworkMetadata(chainId).parentChainId !== undefined) return true;
+  } catch {
+    // A runtime-registered custom chain may exist only in the Arbitrum SDK registry.
   }
+
+  try {
+    return getArbitrumNetwork(chainId).parentChainId !== undefined;
+  } catch {
+    // Unknown and removed chains are not Arbitrum chains.
+  }
+
+  return false;
 }
 
 export function isNetwork(chainId: ChainId) {
-  const isSolana = chainId === ChainId.Solana;
   const isEthereumMainnet = chainId === ChainId.Ethereum;
 
   const isSepolia = chainId === ChainId.Sepolia;
@@ -432,10 +446,9 @@ export function isNetwork(chainId: ChainId) {
 
   const isCoreChain = isEthereumMainnetOrTestnet || isArbitrum;
   const isOrbitChain = getIsArbitrumChain(chainId) && !isCoreChain;
-  const isNonArbitrumNetwork = isSolana || isBase || isEthereumMainnetOrTestnet;
+  const isNonArbitrumNetwork = !isArbitrum && !isOrbitChain;
 
   return {
-    isSolana,
     // L1
     isEthereumMainnet,
     isEthereumMainnetOrTestnet,
@@ -461,8 +474,11 @@ export function isNetwork(chainId: ChainId) {
 }
 
 export function getNetworkName(chainId: number) {
-  if (chainId === ChainId.Solana) return 'Solana';
-  return getBridgeUiConfigForChain(chainId).network.name;
+  try {
+    return getChainMetadata(chainId).name;
+  } catch {
+    return getBridgeUiConfigForChain(chainId).network.name;
+  }
 }
 
 export function getSupportedChainIds({
@@ -500,6 +516,7 @@ export function isAlchemyChain(chainId: number) {
 }
 
 export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
+  registerCustomChainMetadata(chain);
   // custom chain details need to be added to various objects to make it work with the UI
   //
   // add RPC
@@ -516,9 +533,9 @@ export function initializeBridgeNetworks() {
   }
 
   [...getOrbitChains(), ...getCustomChainsFromLocalStorage()].forEach((chain) => {
+    mapCustomChainToNetworkData(chain);
     try {
       registerCustomArbitrumNetwork(chain);
-      mapCustomChainToNetworkData(chain);
     } catch (_) {
       // already added
     }

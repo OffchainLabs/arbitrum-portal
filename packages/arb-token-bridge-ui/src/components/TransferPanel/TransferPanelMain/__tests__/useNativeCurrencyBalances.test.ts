@@ -1,4 +1,3 @@
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { renderHook } from '@testing-library/react';
 import { BigNumber } from 'ethers';
 import { zeroAddress } from 'viem';
@@ -66,11 +65,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Sepolia),
-        sourceChainProvider: getProviderForChainId(ChainId.Sepolia),
 
         destinationChain: getWagmiChain(ChainId.ArbitrumSepolia),
-
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumSepolia),
       },
       vi.fn(),
     ]);
@@ -89,11 +85,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.Sepolia),
-        sourceChainProvider: getProviderForChainId(ChainId.Sepolia),
 
         destinationChain: getWagmiChain(ChainId.ArbitrumSepolia),
-
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumSepolia),
       },
       vi.fn(),
     ]);
@@ -134,11 +127,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.RobinhoodChain),
-        sourceChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
 
         destinationChain: getWagmiChain(ChainId.ApeChain),
-
-        destinationChainProvider: getProviderForChainId(ChainId.ApeChain),
       },
       vi.fn(),
     ]);
@@ -179,11 +169,8 @@ describe.sequential('useNativeCurrencyBalances', () => {
     vi.mocked(useNetworks).mockReturnValue([
       {
         sourceChain: getWagmiChain(ChainId.ApeChain),
-        sourceChainProvider: getProviderForChainId(ChainId.ApeChain),
 
         destinationChain: getWagmiChain(ChainId.ArbitrumOne),
-
-        destinationChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
       },
       vi.fn(),
     ]);
