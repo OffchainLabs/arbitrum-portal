@@ -44,8 +44,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
   const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
-  const provider = isDepositMode ? parentChainProvider : childChainProvider;
-  const gasPrice = useGasPrice({ provider });
+  const gasPrice = useGasPrice({ chainId: sourceChain.id });
   const chainId = useChainId();
   const signer = useEthersSigner({ chainId });
   const selectedRoute = useRouteStore((state) => state.selectedRoute);

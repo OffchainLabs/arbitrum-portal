@@ -7,12 +7,12 @@ import ArbitrumLogo from '@/images/ArbitrumLogo.svg';
 import CctpLogoColor from '@/images/CctpLogoColor.svg';
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import LayerZeroIcon from '@/images/LayerZeroIcon.png';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { GET_HELP_LINK, ether } from '../../constants';
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { getTransactionType, isLifiTransfer, isTxCompleted } from './helpers';
 import { MergedTransaction } from '../../state/app/state';
 import { isCustomDestinationAddressTx } from '../../state/app/utils';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -30,7 +30,6 @@ import { TransactionDetailsBox } from './TransactionDetailsBox';
 import { BatchTransferNativeTokenTooltip } from './TransactionHistoryTable';
 import { TransactionsTableDetailsSteps } from './TransactionsTableDetailsSteps';
 import { TransactionsTableTokenImage } from './TransactionsTableTokenImage';
-import { getTransactionType, isLifiTransfer, isTxCompleted } from './helpers';
 
 const ProtocolNameAndLogo = ({ tx }: { tx: MergedTransaction }) => {
   let protocolLogo, protocolName, protocolDescription;
@@ -125,8 +124,7 @@ const LegacyTransactionDetailsContent = ({
   embedMode,
 }: TransactionDetailsContentProps & { embedMode: boolean }) => {
   const { ethToUSD } = useETHPrice();
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   if (!nativeCurrency) {
     return null;
