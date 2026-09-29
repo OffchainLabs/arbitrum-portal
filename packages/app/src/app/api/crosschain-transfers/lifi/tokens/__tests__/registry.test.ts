@@ -9,6 +9,7 @@ import {
   isTokenAvailableOnChain,
   tokenListTokenToBridgeToken,
 } from '@/bridge/util/TokenListUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '@/bridge/wallet/constants';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
@@ -95,6 +96,30 @@ describe('getLifiTokenRegistry', () => {
     });
     expect(allowedLifiSourceChainIds).toContain(ChainId.Solana);
     expect(allowedLifiSourceChainIds).not.toContain(ChainId.Superposition);
+  });
+
+  it('keeps only the supported Solana source tokens', async () => {
+    const supportedTokens = [
+      virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+      virtualToken(CommonAddress.Solana.USDC, ChainId.Solana, CoinKey.USDC),
+      virtualToken(CommonAddress.Solana.USDT, ChainId.Solana, CoinKey.USDT),
+    ];
+    const unsupportedToken = virtualToken(
+      'XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w',
+      ChainId.Solana,
+      CoinKey.ETH,
+    );
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Solana]: [...supportedTokens, unsupportedToken],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry([ChainId.Solana]);
+
+    expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual(
+      supportedTokens.map((token) => token.address),
+    );
   });
 
   it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {

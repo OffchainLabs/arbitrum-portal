@@ -68,7 +68,7 @@ describe('enabled Solana network selection', () => {
     expect(decodeChainQueryParam(String(ChainId.Solana))).toBe(ChainId.Solana);
     expect(decodeChainQueryParam('superposition')).toBe(ChainId.Superposition);
   });
-  it('keeps Solana submission unavailable even with a connected wallet', () => {
+  it('enables Solana submission with a connected wallet', () => {
     expect(
       isTransferExecutionAvailable({
         chainId: ChainId.Solana,
@@ -82,7 +82,7 @@ describe('enabled Solana network selection', () => {
           },
         },
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
   it('classifies Solana history routes as mainnet', () => {
     const route = {

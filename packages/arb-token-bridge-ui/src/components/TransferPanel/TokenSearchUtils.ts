@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
+import { zeroAddress } from 'viem';
 
 import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import {
@@ -31,11 +32,20 @@ export function getTokenPickerAddresses({
   hasCustomNativeCurrency: boolean;
 }) {
   const nativeTokenAddress = getNativeTokenAddress(chainId);
-  const nonNativeTokenAddresses = hasCustomNativeCurrency
-    ? tokenAddresses
-    : tokenAddresses.filter((address) => !addressesEqual(address, nativeTokenAddress));
+  const usesNonzeroNativeAddress = !addressesEqual(nativeTokenAddress, zeroAddress);
+  const pickerAddresses = usesNonzeroNativeAddress
+    ? tokenAddresses.filter((address) => !addressesEqual(address, nativeTokenAddress))
+    : [...tokenAddresses];
 
-  return Array.from(new Set([NATIVE_CURRENCY_IDENTIFIER, ...nonNativeTokenAddresses]));
+  if (
+    hasCustomNativeCurrency ||
+    usesNonzeroNativeAddress ||
+    !tokenAddresses.some((address) => addressesEqual(address, nativeTokenAddress))
+  ) {
+    pickerAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
+  }
+
+  return Array.from(new Set(pickerAddresses));
 }
 
 export type AddTokenFromSearchResult = 'success' | 'disabled' | 'not-found';

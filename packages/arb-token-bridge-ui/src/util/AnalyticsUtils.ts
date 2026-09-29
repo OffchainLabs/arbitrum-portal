@@ -1,8 +1,8 @@
-import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { getNativeTokenAddress } from '../wallet/constants';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
@@ -180,7 +180,7 @@ export function getLifiAssetType({
     return 'ERC20';
   }
 
-  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
+  return addressesEqual(tokenAddress, getNativeTokenAddress(chainId)) ? 'ETH' : 'ERC20';
 }
 
 export function trackEvent(

@@ -648,7 +648,7 @@ export function useRemainingTimeCctp(tx: MergedTransaction) {
   }, [tx.status, setEstimatedMinutesLeftCctp]);
 
   useEffect(() => {
-    if (!tx.createdAt || tx.status === 'Failure') {
+    if (!tx.isCctp || !tx.createdAt || tx.status === 'Failure') {
       return;
     }
 
@@ -656,7 +656,7 @@ export function useRemainingTimeCctp(tx: MergedTransaction) {
   }, [tx]);
 
   useInterval(() => {
-    if (!canBeClaimedDate) {
+    if (!tx.isCctp || !canBeClaimedDate) {
       return;
     }
 
