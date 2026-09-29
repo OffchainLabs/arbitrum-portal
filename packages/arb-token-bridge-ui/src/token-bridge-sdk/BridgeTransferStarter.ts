@@ -1,12 +1,12 @@
 import { Provider, TransactionRequest } from '@ethersproject/providers';
 import { SimulateContractReturnType } from '@wagmi/core';
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
+import type { Address } from 'viem';
 import { Config } from 'wagmi';
 
 import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import { DepositGasEstimates, GasEstimates } from '../hooks/arbTokenBridge.types';
 import { MergedTransaction } from '../state/app/state';
-import { Address } from '../util/AddressUtils';
 import { getChainIdFromProvider } from './utils';
 
 type Asset = 'erc20' | 'eth';

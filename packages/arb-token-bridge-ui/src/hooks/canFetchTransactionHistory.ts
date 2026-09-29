@@ -1,4 +1,4 @@
-import type { Address } from '../util/AddressUtils';
+import type { Address } from 'viem';
 
 export function canFetchTransactionHistory({
   address,

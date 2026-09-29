@@ -1,7 +1,6 @@
 import { TransactionReceipt } from '@ethersproject/providers';
 import { utils } from 'ethers';
-
-import { Address } from '../AddressUtils';
+import type { Address } from 'viem';
 
 export function getAttestationHashAndMessageFromReceipt(txReceipt: TransactionReceipt) {
   const eventTopic = utils.keccak256(utils.toUtf8Bytes('MessageSent(bytes)'));

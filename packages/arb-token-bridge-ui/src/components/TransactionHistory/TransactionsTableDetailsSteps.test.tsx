@@ -507,7 +507,7 @@ describe('TransactionFailedOnNetwork', () => {
     const html = renderToStaticMarkup(
       <TransactionFailedOnNetwork
         networkName="Robinhood Chain"
-        tx={{ assetType: AssetType.ETH, sender, destination: sender.toUpperCase() }}
+        tx={{ assetType: AssetType.ETH, sender, destination: sender }}
       />,
     );
 

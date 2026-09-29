@@ -1,12 +1,12 @@
 import { ParentToChildMessageStatus } from '@arbitrum/sdk';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
+import type { Address } from 'viem';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { errorToast } from '../components/common/atoms/Toast';
 import { DepositStatus, MergedTransaction } from '../state/app/state';
-import { Address } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { getRetryableTicket } from '../util/RetryableUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
