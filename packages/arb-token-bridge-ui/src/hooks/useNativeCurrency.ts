@@ -1,14 +1,10 @@
-import { ArbitrumNetwork, EthBridger, getArbitrumNetwork } from '@arbitrum/sdk';
-import { Provider } from '@ethersproject/providers';
+import type { Provider } from '@ethersproject/providers';
 import useSWRImmutable from 'swr/immutable';
 
 import { ETHER_TOKEN_LOGO, ether } from '../constants';
-import { getProviderForChainId } from '../token-bridge-sdk/utils';
-import { ChainId } from '../types/ChainId';
-import { addressesEqual } from '../util/AddressUtils';
-import { CommonAddress } from '../util/CommonAddressUtils';
-import { fetchErc20Data } from '../util/TokenUtils';
-import { getBridgeUiConfigForChain } from '../util/bridgeUiConfig';
+import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
+import { fetchNativeCurrency } from '../services/nativeCurrency';
+import { getWagmiChain } from '../util/wagmi/getWagmiChain';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
@@ -39,81 +35,25 @@ const nativeCurrencyEther: NativeCurrencyEther = {
   isCustom: false,
 };
 
-export function useNativeCurrency({ provider }: { provider: Provider }): NativeCurrency {
+type UseNativeCurrencyParams = { chainId: number } | { provider: Provider };
+
+export function useNativeCurrency(params: UseNativeCurrencyParams): NativeCurrency {
   const [networks] = useNetworks();
   const { parentChain } = useNetworksRelationship(networks);
-  const { data = nativeCurrencyEther } = useSWRImmutable(
-    [provider, parentChain.id, 'nativeCurrency'],
-    ([_provider, _parentChainId]) =>
-      fetchNativeCurrency({ provider: _provider, parentChainIdFromQueryParam: _parentChainId }),
-    {
-      shouldRetryOnError: true,
-      errorRetryCount: 2,
-      errorRetryInterval: 1_000,
-    },
+  const { data: currencyForChain } = useSWRImmutable(
+    'chainId' in params ? [params.chainId, parentChain.id, 'nativeCurrency'] : null,
+    ([chainId, parentChainIdFromQueryParam]) =>
+      fetchNativeCurrency({ chainId, parentChainIdFromQueryParam }),
+    { shouldRetryOnError: true, errorRetryCount: 2, errorRetryInterval: 1000 },
+  );
+  const { data: currencyForProvider = nativeCurrencyEther } = useSWRImmutable(
+    'provider' in params ? [params.provider, parentChain.id, 'nativeCurrency'] : null,
+    ([provider, parentChainIdFromQueryParam]) =>
+      fetchEvmNativeCurrency({ provider, parentChainIdFromQueryParam }),
+    { shouldRetryOnError: true, errorRetryCount: 2, errorRetryInterval: 1000 },
   );
 
-  return data;
-}
-
-export async function fetchNativeCurrency({
-  provider,
-  parentChainIdFromQueryParam,
-}: {
-  provider: Provider;
-  parentChainIdFromQueryParam?: number;
-}): Promise<NativeCurrency> {
-  let chain: ArbitrumNetwork;
-
-  try {
-    chain = await getArbitrumNetwork(provider);
-  } catch (error) {
-    // This will only throw for L1s, so we can safely assume that the native currency is ETH
-    return nativeCurrencyEther;
-  }
-
-  const ethBridger = await EthBridger.fromProvider(provider);
-
-  // Could be an L2 or an Orbit chain, but doesn't really matter
-  if (typeof ethBridger.nativeToken === 'undefined') {
-    return nativeCurrencyEther;
-  }
-
-  let address = ethBridger.nativeToken.toLowerCase();
-
-  /** This parent chain id is the parent chain id from ethBridger (e.g., ArbitrumOne for ApeChain) */
-  const canonicalParentChainId = chain.parentChainId;
-  const parentChainProvider = getProviderForChainId(canonicalParentChainId);
-
-  const { name, symbol, decimals } = await fetchErc20Data({
-    address,
-    provider: parentChainProvider,
-  });
-
-  /**
-   * When ApeChain is paired with another parent chain, ethBridger returns the APE address on
-   * Arbitrum One. Use the APE address on the selected parent chain instead.
-   * It should be the address of the Ape token on the source chain instead
-   */
-  const network = await provider.getNetwork();
-  const isApeToken = addressesEqual(address, CommonAddress.ArbitrumOne.APE);
-  const isChildApeChain = network.chainId === ChainId.ApeChain;
-
-  if (isApeToken && isChildApeChain) {
-    address =
-      {
-        [ChainId.Base]: CommonAddress.Base.APE,
-        [ChainId.Ethereum]: CommonAddress.Ethereum.APE,
-        [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.APE,
-      }[parentChainIdFromQueryParam ?? 0] ?? address;
-  }
-
-  return {
-    name,
-    logoUrl: getBridgeUiConfigForChain(chain.chainId).nativeTokenData?.logoUrl,
-    symbol,
-    decimals,
-    address,
-    isCustom: true,
-  };
+  return 'chainId' in params
+    ? (currencyForChain ?? { ...getWagmiChain(params.chainId).nativeCurrency, isCustom: false })
+    : currencyForProvider;
 }

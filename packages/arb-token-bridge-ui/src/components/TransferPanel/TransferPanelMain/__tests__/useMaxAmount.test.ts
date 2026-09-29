@@ -63,7 +63,9 @@ describe.sequential('useMaxAmount', () => {
     // 1 ETH balance, negligible gas, so the unclamped max is just under 1
     vi.mocked(useNativeCurrencyBalances).mockReturnValue({
       sourceBalance: utils.parseEther('1'),
+      sourceGasBalance: utils.parseEther('1'),
       destinationBalance: BigNumber.from(0),
+      destinationGasBalance: BigNumber.from(0),
     });
     vi.mocked(useGasSummary).mockReturnValue({
       status: 'success',
@@ -84,7 +86,9 @@ describe.sequential('useMaxAmount', () => {
     setNetworks(ChainId.Ethereum, ChainId.ArbitrumNova);
     vi.mocked(useNativeCurrencyBalances).mockReturnValue({
       sourceBalance: utils.parseEther('0.001'),
+      sourceGasBalance: utils.parseEther('0.001'),
       destinationBalance: BigNumber.from(0),
+      destinationGasBalance: BigNumber.from(0),
     });
 
     const { result } = renderHook(useMaxAmount);
