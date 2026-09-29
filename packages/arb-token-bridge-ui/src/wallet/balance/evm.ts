@@ -1,6 +1,7 @@
 import { MultiCaller } from '@arbitrum/sdk';
 import { utils } from 'ethers';
 import { zeroAddress } from 'viem';
+import { superposition } from 'viem/chains';
 
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { addressesEqual } from '../../util/AddressUtils';
@@ -26,7 +27,10 @@ export async function fetchEvmBalance({
   const [nativeBalance, tokenData] = await Promise.all([
     nativeTokenAddresses.length > 0 ? provider.getBalance(walletAddress) : undefined,
     erc20TokenAddresses.length > 0
-      ? MultiCaller.fromProvider(provider).then((multiCaller) =>
+      ? (chainId === superposition.id
+          ? Promise.resolve(new MultiCaller(provider, superposition.contracts.multicall3.address))
+          : MultiCaller.fromProvider(provider)
+        ).then((multiCaller) =>
           multiCaller.getTokenData(erc20TokenAddresses, {
             balanceOf: { account: walletAddress },
           }),
