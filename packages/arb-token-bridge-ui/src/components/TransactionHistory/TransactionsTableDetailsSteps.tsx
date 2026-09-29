@@ -10,6 +10,17 @@ import { twMerge } from 'tailwind-merge';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { minutesToHumanReadableTime, useTransferDuration } from '../../hooks/useTransferDuration';
 import {
+  getDestinationNetworkTxId,
+  getDestinationTransactionUrl,
+  getSourceTransactionUrl,
+  isLifiTransfer,
+  isTxClaimable,
+  isTxCompleted,
+  isTxExpired,
+  isTxFailed,
+  isTxPending,
+} from '../../services/history';
+import {
   DepositStatus,
   LifiRouteHistoryStep,
   MergedTransaction,
@@ -27,17 +38,6 @@ import { getNetworkName } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { TransferCountdown } from '../common/TransferCountdown';
 import { TransactionsTableRowAction } from './TransactionsTableRowAction';
-import {
-  getDestinationNetworkTxId,
-  getDestinationTransactionUrl,
-  getSourceTransactionUrl,
-  isLifiTransfer,
-  isTxClaimable,
-  isTxCompleted,
-  isTxExpired,
-  isTxFailed,
-  isTxPending,
-} from './helpers';
 
 const LIFI_APPROVAL_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'TOKEN_ALLOWANCE',
