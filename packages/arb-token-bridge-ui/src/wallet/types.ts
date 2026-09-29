@@ -26,6 +26,7 @@ export type EvmWalletHandle = WalletHandleBase<'evm'>;
 
 export type SolanaWalletHandle = WalletHandleBase<'solana'> & {
   sendTransaction?: (serializedTransaction: Uint8Array) => Promise<string>;
+  confirmTransaction?: (signature: string) => Promise<void>;
 };
 
 export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;
