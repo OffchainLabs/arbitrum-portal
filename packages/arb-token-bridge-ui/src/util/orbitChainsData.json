@@ -247,7 +247,7 @@
         "bridge": "0x2F12c50b46adB01a4961AdDa5038c0974C7C78e8",
         "inbox": "0x590044e628ea1B9C10a86738Cf7a7eeF52D031B8",
         "outbox": "0x6339965Cb3002f5c746895e4eD895bd775dbfdf9",
-        "rollup": "0xBaE3B462a2A7fb758F66D91170514C10B14Ce914",
+        "rollup": "0xC92793985e0026583Dc70aBDFBa167b1932b834D",
         "sequencerInbox": "0xA3464bf0ed52cFe6676D3e34ab1F4DF53f193631"
       },
       "nativeToken": "0xf8173a39c56a554837C4C7f104153A005D284D11",
@@ -440,12 +440,12 @@
     },
     {
       "chainId": 32766,
-      "confirmPeriodBlocks": 45818,
+      "confirmPeriodBlocks": 50400,
       "ethBridge": {
         "bridge": "0xA9F4ee72439afC704db48dc049CbFb7E914aD300",
         "inbox": "0x446626827f14F89B38D5bA1ab152B484cd7912fD",
         "outbox": "0x39919941b42DAb335d9924Ef56dF7b9813b2D6d9",
-        "rollup": "0xc930fd48846e956b308f28524dA2d5E14c832e33",
+        "rollup": "0x2E3f48e1A9B9849e5c0e4Fe987AEa2dA1702Ddda",
         "sequencerInbox": "0x38d41Ac2fbc3f13FcA7838F6638D8FbDb189e807"
       },
       "nativeToken": "0x3e62fED35c97145e6B445704B8CE74B2544776A9",
@@ -629,7 +629,7 @@
         "bridge": "0x249888c93F18f50a0EcA6a29b644F8Fa1Ff7539d",
         "inbox": "0x46EE1145523b58125fF5ed02A8946F748B9735FB",
         "outbox": "0xa38d087580480A2266D2e50656bF43a39982c694",
-        "rollup": "0x6Db7d43375720FFf98A50841ddddc80ACB07d969",
+        "rollup": "0x851c037dF70A208573A2D635744BbEdaa21A0959",
         "sequencerInbox": "0x3Ba9426AcC831cDDa0Dd0b537f6b4E98670Bf280"
       },
       "nativeToken": "0x3e31966d4f81C72D2a55310A6365A56A4393E98D",
@@ -677,7 +677,7 @@
         "bridge": "0x6F4836aFD5e21EDcee9b838C5a4125829EC198d0",
         "inbox": "0xeB88b89e085D6B747Dd6b9CEaf2716bdd89F1E7c",
         "outbox": "0x9f427c80C4DF962726808d4c876fc2c55474a764",
-        "rollup": "0x14FdC47483e79d5A76599a74A2D622DA1cf97BBF",
+        "rollup": "0x0D9cCeB5Cd108CC9B0b7Ac3aACe3d85c28243c9e",
         "sequencerInbox": "0xe44B83D8a3A86994043C809E29B723a44FAEE479"
       },
       "explorerUrl": "https://edge-mainnet.explorer.alchemy.com/",
@@ -769,7 +769,7 @@
         "bridge": "0x9d4AB2E611a7b9Fdc0168C4C1EEd563eba35A43D",
         "inbox": "0xAFbB601aa3c5F7D38e8C19422A9a16EcD066bCde",
         "outbox": "0x12097891604714718b1eaf24C4e7c5BcBFBc6A0A",
-        "rollup": "0xB6192CB8E2acBb34Ca83c7a39161CE207fEf4b5C",
+        "rollup": "0x2abc91f8C84C548a7F388F59e8BD10dbFB5E994F",
         "sequencerInbox": "0x9fE4399563Cb6e1Bbb0947d51420Dbb725b16ffE"
       },
       "nativeToken": "0x9Ffb8BAE5feD58AF7dC06C096D1AfC981DE8A387",
