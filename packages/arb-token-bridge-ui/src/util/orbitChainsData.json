@@ -401,7 +401,7 @@
         "sequencerInbox": "0x2fccc2de02Dd598E14403C4151F192d962E646Ba"
       },
       "nativeToken": "0x690F1eEf8AcEaD09Ac695d9111Af081045c6d5b7",
-      "explorerUrl": "https://galactica-mainnet.explorer.alchemy.com/",
+      "explorerUrl": "https://explorer.galactica.com",
       "rpcUrl": "https://galactica-mainnet.g.alchemy.com/public",
       "isCustom": true,
       "isTestnet": false,
@@ -680,7 +680,7 @@
         "rollup": "0x0D9cCeB5Cd108CC9B0b7Ac3aACe3d85c28243c9e",
         "sequencerInbox": "0xe44B83D8a3A86994043C809E29B723a44FAEE479"
       },
-      "explorerUrl": "https://edge-mainnet.explorer.alchemy.com/",
+      "explorerUrl": "https://pro.edgex.exchange/explorer",
       "rpcUrl": "https://edge-mainnet.g.alchemy.com/public",
       "isCustom": true,
       "isTestnet": false,
@@ -725,7 +725,7 @@
       },
       "nativeToken": "0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC",
       "explorerUrl": "https://explorer.jasmyscan.net",
-      "rpcUrl": "https://jasmychain-mainnet.alt.technology",
+      "rpcUrl": "https://rpc.jasmyscan.net",
       "isCustom": true,
       "isTestnet": false,
       "name": "JasmyChain",
