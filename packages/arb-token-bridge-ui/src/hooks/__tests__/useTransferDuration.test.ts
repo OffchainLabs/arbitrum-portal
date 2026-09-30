@@ -129,6 +129,35 @@ describe('useTransferDuration', () => {
     expect(result.current.estimatedMinutesLeft).toEqual(14);
   });
 
+  it('reports how long a transfer has run past its estimate', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: DEPOSIT_TIME_MINUTES_MAINNET + 12,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+    );
+
+    expect(result.current.estimatedMinutesLeft).toEqual(0);
+    expect(result.current.minutesPastEstimate).toEqual(12);
+  });
+
+  it('reports no time past the estimate while a transfer is on time', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 8,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+    );
+
+    expect(result.current.minutesPastEstimate).toEqual(0);
+  });
+
   it('gets standard deposit duration for an ongoing transfer on Mainnet', async () => {
     const { result } = await renderHookAsyncUseTransferDuration(
       mockTransactionObject({

@@ -36,6 +36,7 @@ const DEPOSIT_TIME_MINUTES_ORBIT = {
 type UseTransferDurationResult = {
   approximateDurationInMinutes: number;
   estimatedMinutesLeft: number | null;
+  minutesPastEstimate: number | null;
 };
 
 /**
@@ -45,6 +46,7 @@ type UseTransferDurationResult = {
  * @returns {UseTransferDurationResult} - An object containing the total duration, first leg duration, and remaining time.
  * @property {number} approximateDurationInMinutes - The total duration of the transfer in minutes.
  * @property {number | null} estimatedMinutesLeft - The remaining time for the transfer in minutes, or null if calculating or unavailable.
+ * @property {number | null} minutesPastEstimate - How many minutes the transfer has run past its estimate, or null if unavailable.
  */
 export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationResult => {
   const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx);
@@ -60,7 +62,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
 
     return {
       approximateDurationInMinutes: durationMinutes,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: durationMinutes,
       }),
@@ -72,6 +74,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     return {
       approximateDurationInMinutes: cctpTransferDuration,
       estimatedMinutesLeft: estimatedMinutesLeftCctp,
+      minutesPastEstimate: null,
     };
   }
 
@@ -79,7 +82,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     const OFT_TRANSFER_DURATION_MINUTES = 5;
     return {
       approximateDurationInMinutes: OFT_TRANSFER_DURATION_MINUTES,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: OFT_TRANSFER_DURATION_MINUTES,
       }),
@@ -90,7 +93,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     const withdrawalDuration = getWithdrawalDuration(tx);
     return {
       approximateDurationInMinutes: withdrawalDuration,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: withdrawalDuration,
       }),
@@ -101,7 +104,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
 
   return {
     approximateDurationInMinutes: depositDuration,
-    estimatedMinutesLeft: getRemainingMinutes({
+    ...getRemainingTime({
       createdAt: tx.createdAt,
       totalDuration: depositDuration,
     }),
@@ -189,18 +192,22 @@ export function getCctpTransferDuration(testnet: boolean) {
   return testnet ? TRANSFER_TIME_MINUTES_CCTP.testnet : TRANSFER_TIME_MINUTES_CCTP.mainnet;
 }
 
-function getRemainingMinutes({
+function getRemainingTime({
   createdAt,
   totalDuration,
 }: {
   createdAt: number | null;
   totalDuration: number;
-}): number {
+}): Pick<UseTransferDurationResult, 'estimatedMinutesLeft' | 'minutesPastEstimate'> {
   // For new txs createdAt won't be defined yet, we default to the current time in that case
   const createdAtDate = createdAt ? dayjs(createdAt) : dayjs();
   const estimatedCompletionTime = createdAtDate.add(totalDuration, 'minutes');
+  const now = dayjs();
 
-  return Math.max(estimatedCompletionTime.diff(dayjs(), 'minute'), 0);
+  return {
+    estimatedMinutesLeft: Math.max(estimatedCompletionTime.diff(now, 'minute'), 0),
+    minutesPastEstimate: Math.max(now.diff(estimatedCompletionTime, 'minute'), 0),
+  };
 }
 
 export function roundMultiDayDurationInMinutes(minutes: number) {
