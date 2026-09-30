@@ -48,6 +48,7 @@ import {
 } from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import { BATCH_FETCH_BLOCKS } from '../util/chainBlockRanges';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
@@ -80,21 +81,6 @@ import {
   updateAdditionalLayerZeroData,
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
-
-const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: 100_000, // ApeChain
-  41923: 20_000, // Edu Chain
-  1628: 10_000, // T-REX
-  869: 10_000, // World Mobile Chain
-  680: 10_000, // JASMY Chain
-  20010: 10_000, // Mandala Chain
-  704851: 10_000, // Mars Chain
-  8818: 10_000, // C Link Chain Mainnet
-  1962: 10_000, // T-Rex Testnet
-  681: 10_000, // JASMY Chain Testnet
-  20011: 10_000, // Mandala Chain Testnet
-  704852: 10_000, // Mars Chain Testnet
-};
 
 const LIFI_BATCH_STATUS_POLL_INTERVAL_MS = 1_000;
 
