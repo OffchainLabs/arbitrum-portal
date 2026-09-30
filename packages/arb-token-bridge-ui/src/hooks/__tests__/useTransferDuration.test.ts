@@ -10,6 +10,7 @@ import {
   getOrbitDepositDuration,
   getStandardDepositDuration,
   minutesToHumanReadableTime,
+  roundMultiDayDurationInMinutes,
   useTransferDuration,
 } from '../../hooks/useTransferDuration';
 import {
@@ -455,8 +456,12 @@ describe('getDepositDuration', () => {
   });
 
   it('rounds multi-day durations up', () => {
-    expect(minutesToHumanReadableTime(6 * DAY_IN_MINUTES + 10 * HOUR_IN_MINUTES)).toBe('7 days');
+    const duration = 6 * DAY_IN_MINUTES + 10 * HOUR_IN_MINUTES;
+
+    expect(minutesToHumanReadableTime(duration)).toBe('7 days');
+    expect(roundMultiDayDurationInMinutes(duration)).toBe(7 * DAY_IN_MINUTES);
     expect(minutesToHumanReadableTime(DAY_IN_MINUTES + 1)).toBe('2 days');
+    expect(roundMultiDayDurationInMinutes(HOUR_IN_MINUTES)).toBe(HOUR_IN_MINUTES);
     expect(minutesToHumanReadableTime(0)).toBe('Less than a minute');
   });
 });
