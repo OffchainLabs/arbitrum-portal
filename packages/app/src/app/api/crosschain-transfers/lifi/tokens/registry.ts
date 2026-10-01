@@ -63,6 +63,7 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
     coinKey: 'USDG',
     addresses: {
       [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDG,
       [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.USDG,
     },
   },

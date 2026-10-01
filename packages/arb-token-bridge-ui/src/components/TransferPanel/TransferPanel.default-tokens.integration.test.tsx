@@ -166,6 +166,18 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
   {
+    sourceChain: 'ethereum',
+    destinationChain: 'arbitrum-one',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.ArbitrumOne.USDGWithEthereumLogo,
+    ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
+  },
+  {
     sourceChain: 'base',
     destinationChain: 'robinhood-chain',
     sourceToken: ethTokenExpectation,
@@ -205,7 +217,9 @@ const defaultTokenCases: DefaultTokenCase[] = [
         ...tokenExpectationsByChain.RobinhoodChain.WETH,
         contract: CommonAddress.ArbitrumOne.WETH,
       },
+      tokenExpectationsByChain.ArbitrumOne.USDG,
     ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
 ];
 
