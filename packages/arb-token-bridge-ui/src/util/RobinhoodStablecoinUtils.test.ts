@@ -9,7 +9,15 @@ import {
   isTokenUSDG,
   isUsdgNativeStablecoinChain,
   isUsdgQueryParamAlias,
+  isUsdgSurfacedLikeEth,
 } from './RobinhoodStablecoinUtils';
+import { isTransferDisabledToken } from './TokenTransferDisabledUtils';
+
+describe('USDG canonical transfers', () => {
+  it('disables the canonical Ethereum route on Arbitrum One', () => {
+    expect(isTransferDisabledToken(CommonAddress.Ethereum.USDG, ChainId.ArbitrumOne)).toBe(true);
+  });
+});
 
 describe('isTokenUSDG', () => {
   it('matches the Ethereum, Arbitrum One and Robinhood USDG contracts, case-insensitively', () => {
@@ -70,6 +78,59 @@ describe('isUsdgNativeStablecoinChain', () => {
     expect(isUsdgNativeStablecoinChain(ChainId.Ethereum)).toBe(false);
     expect(isUsdgNativeStablecoinChain(ChainId.Base)).toBe(false);
     expect(isUsdgNativeStablecoinChain(ChainId.ArbitrumNova)).toBe(false);
+  });
+});
+
+describe('isUsdgSurfacedLikeEth', () => {
+  it('is true on every route into Robinhood Chain', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('is true on every route with Arbitrum One as source or destination', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+  });
+
+  it('leaves every other route alone, including withdrawals out of Robinhood Chain', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+      }),
+    ).toBe(false);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.ApeChain,
+      }),
+    ).toBe(false);
   });
 });
 

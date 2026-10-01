@@ -5,12 +5,9 @@ import { CommonAddress } from './CommonAddressUtils';
 import { isTransferDisabledToken } from './TokenTransferDisabledUtils';
 
 describe('isTransferDisabledToken', () => {
-  it.each([CommonAddress.Ethereum.PYUSD, CommonAddress.Ethereum.USDG])(
-    'disables canonical %s transfers on Arbitrum One',
-    (tokenAddress) => {
-      expect(isTransferDisabledToken(tokenAddress, ChainId.ArbitrumOne)).toBe(true);
-    },
-  );
+  it('disables canonical PYUSD transfers on Arbitrum One', () => {
+    expect(isTransferDisabledToken(CommonAddress.Ethereum.PYUSD, ChainId.ArbitrumOne)).toBe(true);
+  });
 
   it.each([CommonAddress.Ethereum.USDe, CommonAddress.Ethereum.USDG])(
     'disables canonical %s transfers on Robinhood Chain',

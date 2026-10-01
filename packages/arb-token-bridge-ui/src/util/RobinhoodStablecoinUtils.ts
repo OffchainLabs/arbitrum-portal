@@ -30,10 +30,7 @@ const usdgAddresses = toAddressSet([
   CommonAddress.RobinhoodChain.USDG,
 ]);
 
-/**
- * Chains where USDG is the official stablecoin. Their USDG row carries the native stablecoin badge
- * and is pinned right under ETH in the destination picker.
- */
+/** Chains where USDG is the official stablecoin. Their USDG row carries the native stablecoin badge. */
 const usdgNativeStablecoinChainIds = new Set<number>([ChainId.RobinhoodChain, ChainId.ArbitrumOne]);
 
 /**
@@ -76,6 +73,21 @@ export function isTokenUSDG(address: string | undefined): boolean {
 
 export function isUsdgNativeStablecoinChain(chainId: number): boolean {
   return usdgNativeStablecoinChainIds.has(chainId);
+}
+
+/**
+ * USDG is surfaced the way ETH is, listed in both token panels whether or not the wallet holds it
+ * and pinned right under ETH, on every route into a chain where it is the official stablecoin and
+ * on every route out of Arbitrum One.
+ */
+export function isUsdgSurfacedLikeEth({
+  sourceChainId,
+  destinationChainId,
+}: {
+  sourceChainId: number;
+  destinationChainId: number;
+}): boolean {
+  return isUsdgNativeStablecoinChain(destinationChainId) || sourceChainId === ChainId.ArbitrumOne;
 }
 
 /** `chainId` is the chain the address lives on, not the chain being bridged to. */
