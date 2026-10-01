@@ -63,9 +63,6 @@ const WETH_ROBINHOOD_ROW_LOGO =
 const USDE_ROBINHOOD_ROW_LOGO =
   'https://static.debank.com/image/eth_token/logo_url/0x4c9edd5852cd905f086c759e8383e09bff1e68b3/734064e545eabfc501b9d0e752644b7d.png';
 const USDG_ROBINHOOD_ROW_LOGO = 'https://s2.coinmarketcap.com/static/img/coins/64x64/33793.png';
-// LiFi has no logo for Arbitrum One USDG, so the Ethereum <> Arbitrum One pair falls back to Ethereum's
-const USDG_ETHEREUM_ROW_LOGO =
-  'https://static.debank.com/image/eth_token/logo_url/0xe343167631d89b6ffc58b88d6b7fb0228795491d/4cbeae5d28b9db12bcf655fae7a328bb.png';
 export const USDT_ARBITRUM_ONE_ROW_LOGO =
   'https://static.debank.com/image/ink_token/logo_url/0x0200c29006150606b650577bbe7b6248f58470c1/8bba37fddc2774e06a94b8952e3e3ad7.png';
 
@@ -132,10 +129,6 @@ export const usdgRobinhoodRowTokenExpectation = {
   symbol: 'USDG',
   logoURI: USDG_ROBINHOOD_ROW_LOGO,
 } satisfies TokenExpectationWithLogo;
-export const usdgEthereumRowTokenExpectation = {
-  symbol: 'USDG',
-  logoURI: USDG_ETHEREUM_ROW_LOGO,
-} satisfies TokenExpectationWithLogo;
 export const usdtArbitrumOneRowTokenExpectation = {
   symbol: 'USDT',
   logoURI: USDT_ARBITRUM_ONE_ROW_LOGO,
@@ -156,15 +149,6 @@ export const tokenExpectationsByChain = {
   },
   ArbitrumOne: {
     APE: withContract(apeTokenExpectation, CommonAddress.ArbitrumOne.APE),
-    // paired with Robinhood USDG, so the row carries the Robinhood logo
-    USDG: {
-      ...withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.ArbitrumOne.USDG),
-      badge: 'Native stablecoin',
-    },
-    USDGWithEthereumLogo: {
-      ...withContract(usdgEthereumRowTokenExpectation, CommonAddress.ArbitrumOne.USDG),
-      badge: 'Native stablecoin',
-    },
     USDC: withContract(usdcTokenExpectation, CommonAddress.ArbitrumOne.USDC),
     USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.ArbitrumOne.USDe),
     USDT: withContract(usdtTokenExpectation, CommonAddress.ArbitrumOne.USDT),
