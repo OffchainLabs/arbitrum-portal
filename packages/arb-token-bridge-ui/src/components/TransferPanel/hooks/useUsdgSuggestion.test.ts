@@ -175,6 +175,10 @@ describe.sequential('useUsdgSuggestion', () => {
           ...fakeToken(CommonAddress.Ethereum.USDG, 'USDG'),
           logoURI: usdgLogoURI,
         },
+        [CommonAddress.ArbitrumOne.USDG.toLowerCase()]: {
+          ...fakeToken(CommonAddress.ArbitrumOne.USDG, 'USDG'),
+          logoURI: usdgLogoURI,
+        },
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useTokensFromLists>);
@@ -184,7 +188,7 @@ describe.sequential('useUsdgSuggestion', () => {
     vi.clearAllMocks();
   });
 
-  it('switches a USDC transfer from Arbitrum One to the Robinhood USDG contract and tracks it', () => {
+  it('switches a USDC transfer from Arbitrum One to the Arbitrum One USDG contract and tracks it', () => {
     const usdc = fakeToken(CommonAddress.ArbitrumOne.USDC, 'USDC');
     mockHooks({
       sourceChainId: ChainId.ArbitrumOne,
@@ -211,7 +215,7 @@ describe.sequential('useUsdgSuggestion', () => {
     act(() => result.current.switchToUsdg());
 
     expect(setQueryParams).toHaveBeenCalledWith({
-      destinationToken: CommonAddress.RobinhoodChain.USDG,
+      destinationToken: CommonAddress.ArbitrumOne.USDG,
     });
     expect(trackEvent).toHaveBeenLastCalledWith(
       'USDG Suggestion Banner',
