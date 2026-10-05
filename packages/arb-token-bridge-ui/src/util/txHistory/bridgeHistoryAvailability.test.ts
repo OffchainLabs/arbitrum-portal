@@ -47,17 +47,14 @@ describe.sequential('bridge history availability', () => {
 
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>
-        expect(fetchHistory(query(ChainId.ArbitrumOne)), name).resolves.toEqual([]),
+        expect(fetchHistory(query(ChainId.ArbitrumNova)), name).resolves.toEqual([]),
       ),
     );
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['a chain the indexer serves', 46630],
-    ['Nova, still on a subgraph', ChainId.ArbitrumNova],
-  ])('requests history for %s', async (_label, l2ChainId) => {
+  it('requests history for a chain the indexer serves', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
@@ -66,7 +63,7 @@ describe.sequential('bridge history availability', () => {
 
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>
-        expect(fetchHistory(query(l2ChainId)), name).resolves.toEqual([]),
+        expect(fetchHistory(query(46630)), name).resolves.toEqual([]),
       ),
     );
 

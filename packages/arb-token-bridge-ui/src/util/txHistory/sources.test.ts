@@ -24,7 +24,7 @@ describe('parseChainIds', () => {
   });
 });
 
-describe.sequential('hasBridgeHistory', () => {
+describe.sequential('isChildChainIndexed', () => {
   // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so stub the env and re-import
   // per case to make routing deterministic regardless of the ambient env.
   afterEach(() => {
@@ -39,20 +39,16 @@ describe.sequential('hasBridgeHistory', () => {
   }
 
   it('has history for configured chains and none for the rest', async () => {
-    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('46630,33139');
+    const { isChildChainIndexed } = await importSourcesWith('46630,33139');
 
     expect(isChildChainIndexed(46630)).toBe(true);
-    expect(hasBridgeHistory(46630)).toBe(true);
-    expect(hasBridgeHistory(33139)).toBe(true);
-
+    expect(isChildChainIndexed(33139)).toBe(true);
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
-    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
   });
 
-  it('has history for Nova without it being configured', async () => {
-    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('');
+  it('has no history for Nova unless it is configured', async () => {
+    const { isChildChainIndexed } = await importSourcesWith('');
 
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
-    expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });

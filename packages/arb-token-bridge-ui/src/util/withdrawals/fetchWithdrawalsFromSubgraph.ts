@@ -1,5 +1,5 @@
 import { fetchBridgeHistory } from '../txHistory/fetchBridgeHistory';
-import { hasBridgeHistory } from '../txHistory/sources';
+import { isChildChainIndexed } from '../txHistory/sources';
 
 export type WithdrawalFromSubgraph = {
   id: string;
@@ -53,7 +53,7 @@ export async function fetchWithdrawalsFromSubgraph({
   pageNumber?: number;
   searchString?: string;
 }): Promise<WithdrawalFromSubgraph[]> {
-  if (!hasBridgeHistory(Number(l2ChainId))) {
+  if (!isChildChainIndexed(Number(l2ChainId))) {
     return [];
   }
 
