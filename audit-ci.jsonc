@@ -32,6 +32,10 @@
     // https://github.com/advisories/GHSA-rc47-6667-2j5j
     // http-cache-semantics vulnerable to Regular Expression Denial of Service (CVE-2022-25881)
     //
+    // https://github.com/advisories/GHSA-ch52-4w7c-c8xp
+    // http-cache-semantics max-stale handling can disclose cross-user cached responses (CVE-2026-93748)
+    // No backport: only 4.3.0 is patched; cacheable-request@2 in the synpress chain pins ^3.8.1
+    //
     // https://github.com/advisories/GHSA-p8p7-x288-28g6
     // Server-Side Request Forgery in @cypress/request (CVE-2023-28155)
     //
@@ -94,6 +98,7 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>...
     "GHSA-pfrx-2q88-qq97",
     "GHSA-rc47-6667-2j5j",
+    "GHSA-ch52-4w7c-c8xp",
     "GHSA-p8p7-x288-28g6",
     "GHSA-8mmm-9v2q-x3f9",
     "GHSA-9jgg-88mc-972h",
@@ -151,5 +156,25 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>download>got>cacheable-request>normalize-url>query-string>decode-uri-component
     "GHSA-vcc3-ghjq-m6fr|*>@walletconnect/utils>query-string>decode-uri-component",
     "GHSA-vcc3-ghjq-m6fr|*>@synthetixio/synpress>*>query-string>decode-uri-component",
+    //
+    // https://github.com/advisories/GHSA-86w9-cpqp-85rv
+    // node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements (CVE-2026-85393)
+    // Reason to ignore: No patched version available (1.4.0 is the latest published version and is
+    // already pinned via pnpm-workspace.yaml overrides). Only reached through listhen, which uses
+    // node-forge to generate self-signed certs for its local HTTPS dev listener. We never start that
+    // listener and never verify RSA signatures with node-forge.
+    // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>listhen>node-forge
+    "GHSA-86w9-cpqp-85rv",
+    //
+    // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+    // braces stack-exhaustion denial of service through deeply nested brace patterns (CVE-2026-93687)
+    // Reason to ignore: No patched version available (3.0.3 is the latest published version).
+    // braces only expands glob patterns we write ourselves: tailwindcss content globs, eslint and
+    // fast-glob file matching at build/lint time, and the unstorage file watcher in the WalletConnect
+    // chain. No untrusted input reaches it.
+    // from: @headlessui/tailwindcss>tailwindcss>micromatch>braces
+    // from: eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces
+    // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>chokidar>braces
+    "GHSA-vfj7-8cjw-p6xm",
   ],
 }
