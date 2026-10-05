@@ -118,6 +118,12 @@ export async function mapETHWithdrawalToL2ToL1EventResult({
   };
 }
 
+const STATUS_CHECK_THROTTLE_MS = 3 * 60_000;
+
+const lastStatusCheckByMessage: {
+  [cacheKey: string]: { checkedAt: number; status: OutgoingMessageState };
+} = {};
+
 export async function getOutgoingMessageState(
   event: L2ToL1EventResult,
   l1Provider: Provider,
@@ -135,19 +141,40 @@ export async function getOutgoingMessageState(
     return OutgoingMessageState.EXECUTED;
   }
 
-  const confirmationDate = getWithdrawalConfirmationDate({
-    createdAt: event.timestamp.toNumber() * 1000,
+  const createdAt = event.timestamp.toNumber() * 1000;
+  const baseConfirmationDate = getWithdrawalConfirmationDate({
+    createdAt,
     withdrawalFromChainId: l2ChainID,
+    useBaseConfirmationTime: true,
   });
 
-  if (dayjs() < confirmationDate) {
+  if (dayjs() < baseConfirmationDate) {
     return OutgoingMessageState.UNCONFIRMED;
   }
 
+  const estimatedConfirmationDate = getWithdrawalConfirmationDate({
+    createdAt,
+    withdrawalFromChainId: l2ChainID,
+  });
+  const lastStatusCheck = lastStatusCheckByMessage[cacheKey];
+
+  if (
+    dayjs() < estimatedConfirmationDate &&
+    lastStatusCheck &&
+    Date.now() - lastStatusCheck.checkedAt < STATUS_CHECK_THROTTLE_MS
+  ) {
+    return lastStatusCheck.status;
+  }
+
   const messageReader = new ChildToParentMessageReader(l1Provider, event);
+  lastStatusCheckByMessage[cacheKey] = {
+    checkedAt: Date.now(),
+    status: lastStatusCheck?.status ?? OutgoingMessageState.UNCONFIRMED,
+  };
 
   try {
     const status = await messageReader.status(l2Provider);
+    lastStatusCheckByMessage[cacheKey] = { checkedAt: Date.now(), status };
 
     if (status === OutgoingMessageState.EXECUTED) {
       addToLocalStorageObjectSequentially({

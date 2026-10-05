@@ -12,7 +12,7 @@ describe('parseChainIds', () => {
 
   it('parses a comma-separated list', () => {
     expect(parseChainIds('46630')).toEqual([46630]);
-    expect(parseChainIds('46630, 33139 , 55244')).toEqual([46630, 33139, 55244]);
+    expect(parseChainIds('46630, 33139 , 4663')).toEqual([46630, 33139, 4663]);
   });
 
   it('ignores invalid values', () => {
@@ -24,9 +24,10 @@ describe('parseChainIds', () => {
   });
 });
 
-describe.sequential('isChildChainIndexed', () => {
-  // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so stub the env and re-import
-  // per case to make routing deterministic regardless of the ambient env.
+// INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so each case stubs the env and
+// re-imports the module. The cases must not run concurrently (the global default): one
+// case's afterEach unstubs the env while another's import is still evaluating.
+describe('isChildChainIndexed', { concurrent: false }, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();

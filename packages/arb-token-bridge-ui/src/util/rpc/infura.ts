@@ -53,9 +53,6 @@ export function getInfuraKeyFromEnv(chainId: InfuraSupportedChainId): string {
     case ChainId.ApeChain:
       return '';
 
-    case ChainId.Superposition:
-      return '';
-
     case ChainId.RobinhoodChain:
       return '';
 
@@ -90,9 +87,6 @@ export function getInfuraRpcUrl(
       return `https://base-sepolia.infura.io/v3/${infuraKey}`;
 
     case ChainId.ApeChain:
-      return '';
-
-    case ChainId.Superposition:
       return '';
 
     case ChainId.RobinhoodChain:

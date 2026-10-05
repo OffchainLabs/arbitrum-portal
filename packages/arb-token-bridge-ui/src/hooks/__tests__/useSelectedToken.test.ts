@@ -1,11 +1,13 @@
 import { Provider } from '@ethersproject/providers';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { DecodedValueMap } from 'use-query-params';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { LIFI_TRANSFER_LIST_ID } from '../../util/TokenListUtils';
+import { initializeBridgeNetworks } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
@@ -14,6 +16,12 @@ import { useNetworksRelationship } from '../useNetworksRelationship';
 import { getUsdcToken, useSelectedToken } from '../useSelectedToken';
 
 type ArbQueryParams = DecodedValueMap<typeof queryParamProviderOptions.params>;
+
+// ApeChain and Robinhood Chain must be registered before `getDestinationChainIds` can
+// resolve their parent/child relationships.
+beforeAll(() => {
+  initializeBridgeNetworks();
+});
 
 const defaultQueryParams: ArbQueryParams = {
   sourceChain: undefined,
@@ -119,6 +127,7 @@ describe.sequential('useSelectedToken', () => {
     vi.mocked(useNetworksRelationship).mockReturnValue({
       parentChain: getWagmiChain(parentChainId),
       childChain: getWagmiChain(childChainId),
+      isDepositMode: sourceChainId === parentChainId,
     } as unknown as ReturnType<typeof useNetworksRelationship>);
   }
 
@@ -298,6 +307,130 @@ describe.sequential('useSelectedToken', () => {
       destinationToken: address,
     });
   });
+
+  function getUpdateQuery(setQueryParams: ReturnType<typeof vi.fn>) {
+    return setQueryParams.mock.calls[0]?.[0] as (
+      latestQuery: ArbQueryParams,
+    ) => Partial<ArbQueryParams>;
+  }
+
+  it.each([
+    { name: 'a canonical-only deposit', isWithdrawal: false, listIds: [], expected: undefined },
+    {
+      name: 'a deposit with a LiFi token pair',
+      isWithdrawal: false,
+      listIds: [LIFI_TRANSFER_LIST_ID],
+      expected: CommonAddress.Ethereum.USDC,
+    },
+    {
+      name: 'a canonical withdrawal',
+      isWithdrawal: true,
+      listIds: [],
+      expected: CommonAddress.Ethereum.USDC,
+    },
+  ])(
+    'selects an available destination for Robinhood USDC: $name',
+    ({ isWithdrawal, listIds, expected }) => {
+      const sourceChain = isWithdrawal ? ChainId.RobinhoodChain : ChainId.Ethereum;
+      const destinationChain = isWithdrawal ? ChainId.Ethereum : ChainId.RobinhoodChain;
+      const query = { ...defaultQueryParams, sourceChain, destinationChain };
+      mockNetworks({
+        sourceChainId: sourceChain,
+        destinationChainId: destinationChain,
+        parentChainId: ChainId.Ethereum,
+        childChainId: ChainId.RobinhoodChain,
+      });
+      const setQueryParams = vi.fn();
+      mockedUseArbQueryParams.mockReturnValue([query, setQueryParams]);
+      const { result } = renderHook(useSelectedToken);
+
+      act(() =>
+        result.current[1](CommonAddress.Ethereum.USDC, {
+          ...bridgeTokenMainnetUsdc,
+          l2Address: '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8',
+          listIds: new Set(listIds),
+        }),
+      );
+
+      expect(getUpdateQuery(setQueryParams)(query)).toEqual({
+        token: CommonAddress.Ethereum.USDC,
+        destinationToken: expected,
+      });
+    },
+  );
+
+  it.each([false, true])(
+    'only defaults Arbitrum USDC to USDC on Robinhood with a verified pair: %s',
+    (paired) => {
+      const robinhoodQuery = {
+        ...defaultQueryParams,
+        sourceChain: ChainId.ArbitrumOne,
+        destinationChain: ChainId.RobinhoodChain,
+      };
+      mockNetworks({
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+        parentChainId: ChainId.ArbitrumOne,
+        childChainId: ChainId.RobinhoodChain,
+      });
+      const setQueryParams = vi.fn();
+      mockedUseArbQueryParams.mockReturnValue([robinhoodQuery, setQueryParams]);
+
+      const { result } = renderHook(useSelectedToken);
+      act(() =>
+        result.current[1](CommonAddress.ArbitrumOne.USDC, {
+          ...bridgeTokenArbOneUsdc,
+          l2Address: paired ? bridgeTokenArbOneUsdc.l2Address : undefined,
+          lifiOnlyChainId: paired ? undefined : ChainId.ArbitrumOne,
+        }),
+      );
+
+      expect(getUpdateQuery(setQueryParams)(robinhoodQuery)).toEqual({
+        token: CommonAddress.ArbitrumOne.USDC,
+        destinationToken: paired ? CommonAddress.ArbitrumOne.USDC : undefined,
+      });
+    },
+  );
+
+  it.each([false, true])(
+    'resolves sibling-chain USDC without replacing a verified pair: %s',
+    async (paired) => {
+      mockNetworks({
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+        parentChainId: ChainId.ArbitrumOne,
+        childChainId: ChainId.RobinhoodChain,
+      });
+      mockedUseArbQueryParams.mockReturnValue([
+        { ...defaultQueryParams, token: CommonAddress.ArbitrumOne.USDC },
+        vi.fn(),
+      ]);
+      mockedUseAppState.mockReturnValue({
+        app: {
+          arbTokenBridge: {
+            bridgeTokens: paired
+              ? {
+                  [bridgeTokenArbOneUsdc.address]: bridgeTokenArbOneUsdc,
+                }
+              : {},
+          },
+        },
+      } as Context['state']);
+
+      const { result } = renderHook(useSelectedToken);
+      await waitFor(() =>
+        expect(result.current[0]).toMatchObject(
+          paired
+            ? bridgeTokenArbOneUsdc
+            : {
+                address: CommonAddress.ArbitrumOne.USDC,
+                lifiOnlyChainId: ChainId.ArbitrumOne,
+              },
+        ),
+      );
+      expect(mocks.getL2ERC20Address).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe.sequential('getUsdcToken', () => {
@@ -312,6 +445,22 @@ describe.sequential('getUsdcToken', () => {
       Promise.resolve(provider.chainId),
     );
     mocks.getL2ERC20Address.mockResolvedValue('0x00000000000000000000000000000000000000BB');
+  });
+
+  it('keeps Arbitrum USDC source-only for Robinhood without querying an unrelated canonical gateway', async () => {
+    const token = await getUsdcToken({
+      tokenAddress: CommonAddress.ArbitrumOne.USDC,
+      parentProvider: fakeProvider(ChainId.ArbitrumOne),
+      childProvider: fakeProvider(ChainId.RobinhoodChain),
+    });
+
+    expect(token).toMatchObject({
+      symbol: 'USDC',
+      address: CommonAddress.ArbitrumOne.USDC,
+      lifiOnlyChainId: ChainId.ArbitrumOne,
+    });
+    expect(token?.l2Address).toBeUndefined();
+    expect(mocks.getL2ERC20Address).not.toHaveBeenCalled();
   });
 
   it('returns mainnet USDC with the bridged USDC.e child address for Ethereum -> Arbitrum One', async () => {

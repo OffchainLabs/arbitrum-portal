@@ -69,8 +69,6 @@ export function getAlchemyKeyFromEnv(chainId: ProductionChainId): string {
     // Orbit chains
     case ChainId.ApeChain:
       return '';
-    case ChainId.Superposition:
-      return '';
     case ChainId.RobinhoodChain:
       return '';
 
@@ -106,8 +104,6 @@ export function getAlchemyRpcUrl(
     case ChainId.BaseSepolia:
       return `https://base-sepolia.g.alchemy.com/v2/${alchemyKey}`;
     case ChainId.ApeChain:
-      return '';
-    case ChainId.Superposition:
       return '';
     case ChainId.RobinhoodChain:
       return '';

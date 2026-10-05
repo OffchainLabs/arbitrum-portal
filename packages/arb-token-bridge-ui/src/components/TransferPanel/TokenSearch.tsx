@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
-import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
+import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useBalances } from '../../hooks/useBalances';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
@@ -25,7 +25,6 @@ import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
 import {
   getNovaEthOnlyDepositErrorMessage,
   isNativeEthAddress,
@@ -39,6 +38,11 @@ import {
   isLifiOnlyToken,
   isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
+import {
+  ARB_ONE_NATIVE_USDC_TOKEN,
+  ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  getTokenForRow,
+} from '../../util/TokenSelectionUtils';
 import {
   fetchErc20Data,
   isTokenArbitrumOneNativeUSDC,
@@ -56,24 +60,6 @@ import { Switch } from '../common/atoms/Switch';
 import { warningToast } from '../common/atoms/Toast';
 import { TokenRow } from './TokenRow';
 import { addTokenFromSearch, useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
-
-export const ARB_ONE_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
-  ...ArbOneNativeUSDC,
-  listIds: new Set<string>(),
-  type: TokenType.ERC20,
-  // the address field is for L1 address but native USDC does not have an L1 address
-  // the L2 address is used instead to avoid errors
-  address: CommonAddress.ArbitrumOne.USDC,
-  l2Address: CommonAddress.ArbitrumOne.USDC,
-};
-
-export const ARB_SEPOLIA_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
-  ...ArbOneNativeUSDC,
-  listIds: new Set<string>(),
-  type: TokenType.ERC20,
-  address: CommonAddress.ArbitrumSepolia.USDC,
-  l2Address: CommonAddress.ArbitrumSepolia.USDC,
-};
 
 function TokenListRow({ tokenList }: { tokenList: BridgeTokenList }) {
   const {
@@ -572,22 +558,16 @@ function TokensPanel({
     ],
   );
 
+  const getTokenForRowInPanel = useCallback(
+    (address: string) =>
+      getTokenForRow({ address, tokensFromLists, tokensFromUser, isOrbitChain, usdcToken }),
+    [tokensFromLists, tokensFromUser, isOrbitChain, usdcToken],
+  );
+
   const rowRenderer = useCallback(
     (virtualizedProps: ListRowProps) => {
       const address = tokensToShow[virtualizedProps.index];
-      let token: ERC20BridgeToken | null = null;
-
-      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        if (isOrbitChain) {
-          token = usdcToken;
-        } else {
-          token = isTokenArbitrumOneNativeUSDC(address)
-            ? ARB_ONE_NATIVE_USDC_TOKEN
-            : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
-        }
-      } else if (address) {
-        token = tokensFromLists[address] || tokensFromUser[address] || null;
-      }
+      if (!address) return null;
 
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
         return (
@@ -605,19 +585,11 @@ function TokensPanel({
           key={`${address}-${walletAddress}`}
           style={virtualizedProps.style}
           onTokenSelected={handleTokenSelected}
-          token={token}
+          token={getTokenForRowInPanel(address)}
         />
       );
     },
-    [
-      tokensToShow,
-      tokensFromLists,
-      tokensFromUser,
-      handleTokenSelected,
-      usdcToken,
-      isOrbitChain,
-      walletAddress,
-    ],
+    [tokensToShow, getTokenForRowInPanel, handleTokenSelected, walletAddress],
   );
 
   const AddButton = useMemo(

@@ -62,6 +62,10 @@
     // https://github.com/advisories/GHSA-64mm-vxmg-q3vj
     // http-proxy-middleware host-header-driven backend routing bypass via substring matching in router rules (CVE-2026-55602)
     //
+    // https://github.com/advisories/GHSA-g84c-rxfj-3j2c
+    // webpack-dev-middleware path traversal outside the output directory via a non-slash-terminated publicPath (CVE-2026-76844)
+    // No backport: only 7.4.6 and 8.3.0 are patched; webpack-dev-server 4 in the synpress chain requires 5.x
+    //
     // https://github.com/advisories/GHSA-mp2f-45pm-3cg9
     // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
     // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
@@ -73,6 +77,10 @@
     // https://github.com/advisories/GHSA-jwp9-9v96-94mx
     // decompress allows arbitrary hardlink creation via unvalidated linkname during archive extraction (CVE-2026-39243)
     // No upstream fix: decompress is unmaintained, 4.2.1 is the latest published version
+    //
+    // https://github.com/advisories/GHSA-hrh2-vp3x-79xf
+    // decompress path traversal via a chain of symlink entries resolving outside the output directory (CVE-2026-101894)
+    // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
     //
     // https://github.com/advisories/GHSA-xv26-6w52-cph6
     // websocket-driver message corruption via abuse of protocol length headers
@@ -96,9 +104,11 @@
     "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
+    "GHSA-g84c-rxfj-3j2c",
     "GHSA-mp2f-45pm-3cg9",
     "GHSA-h39j-r5qq-r9mm",
     "GHSA-jwp9-9v96-94mx",
+    "GHSA-hrh2-vp3x-79xf",
     "GHSA-xv26-6w52-cph6",
     "GHSA-mp7j-qc5w-4988",
     //
@@ -113,12 +123,18 @@
     // https://github.com/advisories/GHSA-jmr9-qjv8-65gv
     // extract-zip does not validate symlink targets during extraction, so a malicious
     // archive can read or write files outside the target directory (CVE-2026-56876)
+    //
+    // https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+    // extract-zip allows arbitrary file writes through symlink archive entries
+    // (CVE-2026-19693), a variant of the above
+    //
     // Reason to ignore: No patched version available (2.0.1 is the latest published
-    // version). Dev-only: cypress uses it to unpack its own binary from the official
+    // version, last modified 2023; GitHub lists no patched version).
+    // Dev-only: cypress uses it to unpack its own binary from the official
     // Cypress CDN, so we never extract untrusted archives. Not in production builds.
     // from: arb-token-bridge-ui>@synthetixio/synpress>cypress>extract-zip
-    // from: arb-token-bridge-ui>cypress-terminal-report>cypress>extract-zip
     "GHSA-jmr9-qjv8-65gv",
+    "GHSA-7pqw-9j4j-h8q3",
     //
     // https://github.com/advisories/GHSA-vcc3-ghjq-m6fr
     // decode-uri-component denial of service via exponential decoding of malformed

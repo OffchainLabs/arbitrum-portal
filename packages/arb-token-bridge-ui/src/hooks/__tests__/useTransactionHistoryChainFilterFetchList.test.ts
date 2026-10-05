@@ -19,6 +19,7 @@ const ADDRESS = '0x1111111111111111111111111111111111111111' as Address;
 
 vi.mock('wagmi', async (importActual) => ({
   ...(await importActual()),
+  useConfig: () => ({}),
   useAccount: () => ({ isConnected: true, chain: { id: 1 }, connector: null }),
 }));
 

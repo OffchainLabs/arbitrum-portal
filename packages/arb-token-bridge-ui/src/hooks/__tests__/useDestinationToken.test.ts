@@ -6,8 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
+import { useIsSwapTransfer } from '../../components/TransferPanel/hooks/useIsSwapTransfer';
 import { Context, useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
@@ -49,8 +51,9 @@ vi.mock('../../state', () => ({
   useAppState: vi.fn(),
 }));
 
-vi.mock('../../app/api/crosschain-transfers/utils', () => ({
-  getTokenOverride: vi.fn(),
+vi.mock('../../app/api/crosschain-transfers/utils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../app/api/crosschain-transfers/utils')>()),
+  getTokenOverride: vi.fn(() => ({ source: null, destination: null })),
 }));
 
 describe.sequential('useDestinationToken', () => {
@@ -89,6 +92,8 @@ describe.sequential('useDestinationToken', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetTokenOverride.mockReturnValue({ source: null, destination: null });
+    mockedGetTokenOverride.mockReturnValue({ source: null, destination: null });
 
     mockedUseNetworks.mockReturnValue([
       {
@@ -118,7 +123,93 @@ describe.sequential('useDestinationToken', () => {
     ]);
   });
 
-  describe('when not a swap transfer', () => {
+  it.each([undefined, '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8'])(
+    'resolves saved Ethereum USDC to ETH despite canonical mapping %s',
+    (l2Address) => {
+      const token = { ...mockSelectedToken, address: CommonAddress.Ethereum.USDC, l2Address };
+      mockedUseNetworks.mockReturnValue([
+        {
+          sourceChain: getWagmiChain(ChainId.Ethereum),
+          destinationChain: getWagmiChain(ChainId.RobinhoodChain),
+        },
+        vi.fn(),
+      ] as unknown as ReturnType<typeof useNetworks>);
+      mockedUseSelectedToken.mockReturnValue([token, vi.fn()]);
+      mockedUseArbQueryParams.mockReturnValue([
+        { ...defaultQueryParams, destinationToken: token.address },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockReturnValue({ source: null, destination: null });
+      const { result } = renderHook(() => ({
+        token: useDestinationToken(),
+        isSwap: useIsSwapTransfer(),
+      }));
+      expect(result.current).toEqual({ token: null, isSwap: true });
+    },
+  );
+
+  describe('when destinationToken matches the source', () => {
+    it('preserves an explicit destination override for a source-only token', () => {
+      mockedUseSelectedToken.mockReturnValue([
+        { ...mockSelectedToken, lifiOnlyChainId: ChainId.Ethereum },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockReturnValue({
+        source: null,
+        destination: mockOverrideDestination,
+      });
+
+      const { result } = renderHook(useDestinationToken);
+      expect(result.current).toEqual(mockOverrideDestination);
+    });
+
+    it('keeps override metadata stable across rerenders', () => {
+      mockedUseSelectedToken.mockReturnValue([
+        { ...mockSelectedToken, lifiOnlyChainId: ChainId.Ethereum },
+        vi.fn(),
+      ]);
+      mockedGetTokenOverride.mockImplementation(() => ({
+        source: null,
+        destination: { ...mockOverrideDestination },
+      }));
+      const { result, rerender } = renderHook(useDestinationToken);
+      const firstToken = result.current;
+      rerender();
+      expect(result.current).toBe(firstToken);
+    });
+
+    it('resolves an old source-only USDC destination to native ETH and treats it as a swap', () => {
+      const sourceOnlyToken = {
+        ...mockSelectedToken,
+        symbol: 'USDC',
+        lifiOnlyChainId: ChainId.ArbitrumOne,
+      };
+      mockedUseNetworks.mockReturnValue([
+        {
+          sourceChain: getWagmiChain(ChainId.ArbitrumOne),
+          sourceChainProvider: getProviderForChainId(ChainId.ArbitrumOne),
+          destinationChain: getWagmiChain(ChainId.RobinhoodChain),
+          destinationChainProvider: getProviderForChainId(ChainId.RobinhoodChain),
+        },
+        vi.fn(),
+      ]);
+      mockedUseSelectedToken.mockReturnValue([sourceOnlyToken, vi.fn()]);
+      mockedUseAppState.mockReturnValue({
+        app: { arbTokenBridge: { bridgeTokens: { [sourceOnlyToken.address]: sourceOnlyToken } } },
+      } as Context['state']);
+
+      const { result } = renderHook(() => ({
+        token: useDestinationToken(),
+        isSwap: useIsSwapTransfer(),
+      }));
+      expect(result.current).toEqual({ token: null, isSwap: true });
+      expect(mockedGetTokenOverride).toHaveBeenCalledWith({
+        fromToken: sourceOnlyToken.address,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      });
+    });
+
     it('should return selectedToken when destinationToken equals selectedToken.address', () => {
       mockedUseArbQueryParams.mockReturnValue([
         { ...defaultQueryParams, destinationToken: mockSelectedToken.address },

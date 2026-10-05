@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { allowsUnmatchedLifiTokens } from '../../app/api/crosschain-transfers/constants';
+import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import {
   ArbTokenBridgeToken,
   ContractStorage,
@@ -37,7 +37,7 @@ export async function addTokenFromSearch({
     }
   }
 
-  if (allowsUnmatchedLifiTokens(sourceChainId)) {
+  if (isUnmatchedLifiTokenAllowed(sourceChainId, address)) {
     try {
       await token.addLifiTokenForChain(address, sourceChainId);
       return 'success';

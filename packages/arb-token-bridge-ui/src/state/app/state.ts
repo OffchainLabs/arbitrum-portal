@@ -1,4 +1,4 @@
-import { RouteExtended, TransactionRequest } from '@lifi/sdk';
+import { RouteExtended } from '@lifi/sdk';
 import { BigNumber } from 'ethers';
 
 import type { AmountWithToken, RouteTool } from '../../app/api/crosschain-transfers/types';
@@ -36,16 +36,34 @@ export enum WithdrawalStatus {
   REFUNDED = 'Refunded', // Lifi only
 }
 
-export type MergedTransactionLifiData = {
-  toolDetails: RouteTool;
+type LifiRouteStepExecution = NonNullable<RouteExtended['steps'][number]['execution']>;
+export type LifiRouteHistoryStep = {
+  id: string;
+  fromChainId: number;
+  requiresApproval?: boolean;
+  displaySteps: Array<{
+    toolDetails: RouteTool;
+    toAmount: AmountWithToken;
+  }>;
+  execution?: {
+    status?: LifiRouteStepExecution['status'];
+    process: Array<
+      Pick<LifiRouteStepExecution['process'][number], 'type' | 'status' | 'txHash' | 'txLink'> & {
+        txType?: string;
+      }
+    >;
+  };
+};
+
+type MergedTransactionLifiData = {
   toolsDetails?: RouteTool[];
-  durationMs: number;
-  fromAmount: AmountWithToken;
-  toAmount: AmountWithToken;
+  durationMs?: number;
+  fromAmount?: AmountWithToken;
+  toAmount?: AmountWithToken;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
-  transactionRequest?: TransactionRequest;
   lifiRoute?: RouteExtended;
+  lifiRouteSteps?: LifiRouteHistoryStep[];
 };
 export interface BaseMergedTransaction {
   // TODO: https://github.com/OffchainLabs/arbitrum-token-bridge/blob/master/packages/arb-token-bridge-ui/src/util/withdrawals/helpers.ts#L31
@@ -89,6 +107,7 @@ export interface LifiMergedTransaction
   extends Omit<BaseMergedTransaction, 'isLifi'>,
     MergedTransactionLifiData {
   isLifi: true;
+  showInHistory?: boolean;
   destinationStatus: WithdrawalStatus;
 }
 
