@@ -7,12 +7,11 @@ import { getIndexerApiUrl } from './ServerIndexerUtils';
 // Labels, never URLs — our endpoints stay behind the API.
 export type SubgraphSource = 'arbitrum-indexer';
 
-function createApolloClient(uri: string, headers?: Record<string, string>) {
+function createApolloClient(uri: string) {
   const timeoutLink = new ApolloLinkTimeout();
   const httpLink = timeoutLink.concat(
     new HttpLink({
       uri,
-      headers,
       fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
     }),
   );
