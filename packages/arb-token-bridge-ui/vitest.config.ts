@@ -18,7 +18,7 @@ export default defineConfig({
     env: {
       ...loadEnv('', '../app/', ''),
       // pinned so history routing doesn't depend on the ambient env
-      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '42161,421614,4663,46630',
+      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '42161,421614,42170,4663,46630',
     },
     environment: 'happy-dom',
     setupFiles: ['./vitest.mocks.ts'],
