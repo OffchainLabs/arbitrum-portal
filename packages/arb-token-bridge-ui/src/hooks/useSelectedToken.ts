@@ -12,7 +12,7 @@ import {
 import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import { isTokenAvailableOnChain } from '../util/TokenListUtils';
+import { resolveDestinationSelection, selectUsdcToken } from '../util/TokenSelectionUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -22,7 +22,7 @@ import {
   isTokenSepoliaUSDC,
 } from '../util/TokenUtils';
 import { logger } from '../util/logger';
-import { isNetwork } from '../util/networks';
+import { getDestinationChainIds, isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
@@ -48,7 +48,7 @@ export const useSelectedToken = (): [
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
@@ -106,32 +106,40 @@ export const useSelectedToken = (): [
             tokenOverride ||
             tokensFromUser[tokenStorageAddress] ||
             tokensFromLists[tokenStorageAddress];
-          return {
-            token: tokenAddress,
-            destinationToken: isTokenAvailableOnChain(token, networks.destinationChain.id)
-              ? tokenAddress
-              : undefined,
-          };
+          const destination = resolveDestinationSelection({
+            sourceToken: token ?? null,
+            sourceTokenAddress: tokenAddress,
+            destinationTokenLookupKey: tokenAddress,
+            isDepositMode,
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+          });
+          return { token: tokenAddress, destinationToken: destination.lookupKey };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };
         }
       });
     },
-    [networks.destinationChain.id, setQueryParams, tokensFromLists, tokensFromUser],
+    [
+      isDepositMode,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      setQueryParams,
+      tokensFromLists,
+      tokensFromUser,
+    ],
   );
-
-  const selectedToken = tokenFromSearchParams
-    ? usdcToken ||
-      bridgeTokens?.[tokenFromSearchParams] ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null
-    : null;
 
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
   }
+
+  const storedToken =
+    bridgeTokens?.[tokenFromSearchParams] ??
+    tokensFromUser[tokenFromSearchParams] ??
+    tokensFromLists[tokenFromSearchParams];
+  const selectedToken = selectUsdcToken({ usdcToken, storedToken });
 
   return [selectedToken, setSelectedToken] as const;
 };
@@ -211,6 +219,16 @@ export async function getUsdcToken({
     (isTokenMainnetUSDC(tokenAddress) && isParentChainEthereumMainnet) ||
     (isTokenSepoliaUSDC(tokenAddress) && isParentChainSepolia)
   ) {
+    // The UI also uses parent/child terminology for LiFi sibling-chain routes.
+    // Only a real canonical pair can resolve USDC through the child gateway.
+    if (!getDestinationChainIds(parentChainId).includes(childChainId)) {
+      return {
+        ...commonUSDC,
+        address: tokenAddress,
+        lifiOnlyChainId: parentChainId,
+      };
+    }
+
     let childChainUsdcAddress;
     try {
       childChainUsdcAddress = (

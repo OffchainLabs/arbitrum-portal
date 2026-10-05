@@ -10,7 +10,7 @@
         "rollup": "0x23A19d23e89166adedbDcB432518AB01e4272D94",
         "sequencerInbox": "0xBd0D173EEb87D57A09521c24388a12789F33ba96"
       },
-      "explorerUrl": "https://robinhoodchain.blockscout.com",
+      "explorerUrl": "https://robin.etherscan.io",
       "rpcUrl": "https://rpc.mainnet.chain.robinhood.com",
       "isCustom": true,
       "isTestnet": false,
@@ -90,49 +90,6 @@
           "logoUrl": "/images/XaiLogo.svg"
         },
         "assertionIntervalSeconds": 3600
-      }
-    },
-    {
-      "chainId": 55244,
-      "confirmPeriodBlocks": 40320,
-      "ethBridge": {
-        "bridge": "0xEca0fEB4aA6112a3923823559e7197294Bc49CC7",
-        "inbox": "0x2EAf07A964c6601c4fAefd6D8969DF0B84f65e55",
-        "outbox": "0xa4b3B4D5f7976a8D283864ea83f1Bb3D815b1798",
-        "rollup": "0xf3C4a84a948658D012C915Ad4bb4b501F6C3c075",
-        "sequencerInbox": "0xe0064A9fb8e45BfD8e5aB1cE7523888814A096E0"
-      },
-      "explorerUrl": "https://explorer.superposition.so",
-      "rpcUrl": "https://rpc.superposition.so",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "Superposition",
-      "slug": "superposition",
-      "parentChainId": 42161,
-      "tokenBridge": {
-        "parentCustomGateway": "0xacb51eA5b465692c889C36615a398BA14D42b619",
-        "parentErc20Gateway": "0x62bEd4b862254789825Cd6F2352aa2b76B16145e",
-        "parentGatewayRouter": "0x9FE42A08751E8566A0918807bF2870594bf22806",
-        "parentMultiCall": "0x90B02D9F861017844F30dFbdF725b6aa84E63822",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        "parentWethGateway": "0xAD1B3e0474456DA577157d472410B53e91810D3b",
-        "childCustomGateway": "0x8767D9ec58A3f9B8ca36B201c5A2544927E4cAe8",
-        "childErc20Gateway": "0x705818fEbefB70Ff0997438E472C7B565eF8c6B1",
-        "childGatewayRouter": "0x5494dB62F5F799F49e05a0F5B7925D699fa32c6f",
-        "childMultiCall": "0x020dcb08cBd4809384Bc7944CCB5d7A371779dE8",
-        "childProxyAdmin": "0x2D1D86b7F0C134a79A6bc0cE82614Fef9B98672a",
-        "childWeth": "0x1fB719f10b56d7a85DCD32f27f897375fB21cfdd",
-        "childWethGateway": "0x478021001536eEdB1841def8f71c6DA68e2b2890"
-      },
-      "bridgeUiConfig": {
-        "color": "#1E1E1E",
-        "network": {
-          "name": "Superposition",
-          "logo": "/images/SuperpositionLogo.svg",
-          "description": "Superposition is the first DeFi-native Layer-3, with shared and permissionless liquidity, AA, and minimal fees, while providing higher yields."
-        },
-        "assertionIntervalSeconds": 6300
       }
     },
     {
@@ -290,7 +247,7 @@
         "bridge": "0x2F12c50b46adB01a4961AdDa5038c0974C7C78e8",
         "inbox": "0x590044e628ea1B9C10a86738Cf7a7eeF52D031B8",
         "outbox": "0x6339965Cb3002f5c746895e4eD895bd775dbfdf9",
-        "rollup": "0xBaE3B462a2A7fb758F66D91170514C10B14Ce914",
+        "rollup": "0xC92793985e0026583Dc70aBDFBa167b1932b834D",
         "sequencerInbox": "0xA3464bf0ed52cFe6676D3e34ab1F4DF53f193631"
       },
       "nativeToken": "0xf8173a39c56a554837C4C7f104153A005D284D11",
@@ -330,7 +287,7 @@
           "symbol": "EDU",
           "logoUrl": "/images/EduChainTokenLogo.png"
         },
-        "fastWithdrawalTime": 3600000,
+        "fastWithdrawalTime": 86400000,
         "assertionIntervalSeconds": 3600
       }
     },
@@ -444,7 +401,7 @@
         "sequencerInbox": "0x2fccc2de02Dd598E14403C4151F192d962E646Ba"
       },
       "nativeToken": "0x690F1eEf8AcEaD09Ac695d9111Af081045c6d5b7",
-      "explorerUrl": "https://galactica-mainnet.explorer.alchemy.com/",
+      "explorerUrl": "https://explorer.galactica.com",
       "rpcUrl": "https://galactica-mainnet.g.alchemy.com/public",
       "isCustom": true,
       "isTestnet": false,
@@ -483,12 +440,12 @@
     },
     {
       "chainId": 32766,
-      "confirmPeriodBlocks": 45818,
+      "confirmPeriodBlocks": 50400,
       "ethBridge": {
         "bridge": "0xA9F4ee72439afC704db48dc049CbFb7E914aD300",
         "inbox": "0x446626827f14F89B38D5bA1ab152B484cd7912fD",
         "outbox": "0x39919941b42DAb335d9924Ef56dF7b9813b2D6d9",
-        "rollup": "0xc930fd48846e956b308f28524dA2d5E14c832e33",
+        "rollup": "0x2E3f48e1A9B9849e5c0e4Fe987AEa2dA1702Ddda",
         "sequencerInbox": "0x38d41Ac2fbc3f13FcA7838F6638D8FbDb189e807"
       },
       "nativeToken": "0x3e62fED35c97145e6B445704B8CE74B2544776A9",
@@ -672,7 +629,7 @@
         "bridge": "0x249888c93F18f50a0EcA6a29b644F8Fa1Ff7539d",
         "inbox": "0x46EE1145523b58125fF5ed02A8946F748B9735FB",
         "outbox": "0xa38d087580480A2266D2e50656bF43a39982c694",
-        "rollup": "0x6Db7d43375720FFf98A50841ddddc80ACB07d969",
+        "rollup": "0x851c037dF70A208573A2D635744BbEdaa21A0959",
         "sequencerInbox": "0x3Ba9426AcC831cDDa0Dd0b537f6b4E98670Bf280"
       },
       "nativeToken": "0x3e31966d4f81C72D2a55310A6365A56A4393E98D",
@@ -720,10 +677,10 @@
         "bridge": "0x6F4836aFD5e21EDcee9b838C5a4125829EC198d0",
         "inbox": "0xeB88b89e085D6B747Dd6b9CEaf2716bdd89F1E7c",
         "outbox": "0x9f427c80C4DF962726808d4c876fc2c55474a764",
-        "rollup": "0x14FdC47483e79d5A76599a74A2D622DA1cf97BBF",
+        "rollup": "0x0D9cCeB5Cd108CC9B0b7Ac3aACe3d85c28243c9e",
         "sequencerInbox": "0xe44B83D8a3A86994043C809E29B723a44FAEE479"
       },
-      "explorerUrl": "https://edge-mainnet.explorer.alchemy.com/",
+      "explorerUrl": "https://pro.edgex.exchange/explorer",
       "rpcUrl": "https://edge-mainnet.g.alchemy.com/public",
       "isCustom": true,
       "isTestnet": false,
@@ -768,7 +725,7 @@
       },
       "nativeToken": "0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC",
       "explorerUrl": "https://explorer.jasmyscan.net",
-      "rpcUrl": "https://jasmychain-mainnet.alt.technology",
+      "rpcUrl": "https://rpc.jasmyscan.net",
       "isCustom": true,
       "isTestnet": false,
       "name": "JasmyChain",
@@ -812,7 +769,7 @@
         "bridge": "0x9d4AB2E611a7b9Fdc0168C4C1EEd563eba35A43D",
         "inbox": "0xAFbB601aa3c5F7D38e8C19422A9a16EcD066bCde",
         "outbox": "0x12097891604714718b1eaf24C4e7c5BcBFBc6A0A",
-        "rollup": "0xB6192CB8E2acBb34Ca83c7a39161CE207fEf4b5C",
+        "rollup": "0x2abc91f8C84C548a7F388F59e8BD10dbFB5E994F",
         "sequencerInbox": "0x9fE4399563Cb6e1Bbb0947d51420Dbb725b16ffE"
       },
       "nativeToken": "0x9Ffb8BAE5feD58AF7dC06C096D1AfC981DE8A387",
@@ -1740,55 +1697,6 @@
           "symbol": "MarsC",
           "logoUrl": "/images/MarsChainTestnet_NativeTokenLogo.png"
         }
-      }
-    },
-    {
-      "chainId": 787878,
-      "confirmPeriodBlocks": 150,
-      "ethBridge": {
-        "bridge": "0xb2C519c4D300d6B708c42613615cC96E2F3EdBeC",
-        "inbox": "0x1ed4beC79E1bD4C6bdA93c81d9b51321EEAB635d",
-        "outbox": "0x7BEB149b17F5cE178CbFF4429aB2A1A2Ed57286D",
-        "rollup": "0xa6437294aaaA470E0a81D6e74517b4e868d1fB70",
-        "sequencerInbox": "0x0EE061429AE46e48586b53Fe883f0Ce77bc90CAd"
-      },
-      "nativeToken": "0x4A410b2A0eD304c2f72B49299E52c7C4e94e5Beb",
-      "explorerUrl": "https://explorer-testnet.recyclefarm.io",
-      "rpcUrl": "https://rpc-testnet.recyclefarm.io",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "RECYCLEFARM Carbon Network Testnet",
-      "slug": "recyclefarm-carbon-network-testnet",
-      "parentChainId": 421614,
-      "tokenBridge": {
-        "parentCustomGateway": "0x2B5540D211E3406b1f2286874FBd76f08A7dB8F6",
-        "parentErc20Gateway": "0xA7C7a38A815DcE5D072FB74935546cAd32BEB3F3",
-        "parentGatewayRouter": "0x81850a307e935d15026410c51E8d129cFe954ea4",
-        "parentMultiCall": "0xce1CAd780c529e66e3aa6D952a1ED9A6447791c1",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xb36B796D893163d619eC0267C4fF3E235d165955",
-        "childErc20Gateway": "0xEC007b450A67d2095E9879C6f9cD4a21C6383741",
-        "childGatewayRouter": "0x12D0CcFC67c42702146a246E9ed1f935442514C8",
-        "childMultiCall": "0xCc9770A6B65f33D455F96E841E05aE98D9311A16",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#86E016",
-        "network": {
-          "name": "RECYCLEFARM Carbon Network Testnet",
-          "logo": "/images/RECYCLEFARMCarbonNetworkTestnet_Logo.png",
-          "description": "RECANET is a Digital MRV network that transforms verified environmental activities into trusted on-chain data."
-        },
-        "nativeTokenData": {
-          "name": "RECANET Testnet",
-          "symbol": "tRCF",
-          "logoUrl": "/images/RECYCLEFARMCarbonNetworkTestnet_NativeTokenLogo.png"
-        },
-        "fastWithdrawalTime": 4200000
       }
     }
   ]

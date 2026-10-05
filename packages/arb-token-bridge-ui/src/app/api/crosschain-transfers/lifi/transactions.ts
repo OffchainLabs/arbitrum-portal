@@ -10,7 +10,7 @@ import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
-import type { Token } from '../types';
+import type { RouteTool, Token } from '../types';
 
 const NO_STORE_HEADERS = {
   'Cache-Control': 'private, no-cache, no-store, must-revalidate',
@@ -51,7 +51,7 @@ export type LifiTransactionHistoryItem = {
   childChainId: number;
   sourceChainId: number;
   destinationChainId: number;
-  toolDetails: { key: string; name: string; logoURI: string };
+  toolsDetails: RouteTool[];
   durationMs: number;
   fromAmount: LifiTransactionHistoryAmount;
   toAmount: LifiTransactionHistoryAmount;
@@ -172,7 +172,7 @@ export function transformLifiHistoryTransaction({
     childChainId,
     sourceChainId,
     destinationChainId,
-    toolDetails,
+    toolsDetails: [toolDetails],
     durationMs: createdAt && resolvedAt ? Math.max(resolvedAt - createdAt, 0) : 0,
     fromAmount: {
       amount: fromAmount,

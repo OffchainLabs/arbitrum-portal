@@ -1,11 +1,27 @@
 import { constants } from 'ethers';
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
+
+// The only real allowlist entry (Base USDC) is also matched by `isUsdcToken`, so the allowlist path
+// can't be observed on its own. This adds a non-USDC address to exercise it.
+const MOCK_ALLOWLISTED_BASE_TOKEN = '0x00000000000000000000000000000000000000ff';
+
+vi.mock('./constants', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./constants')>();
+
+  return {
+    ...actual,
+    isUnmatchedLifiTokenAllowed: (chainId: number, address: string) =>
+      actual.isUnmatchedLifiTokenAllowed(chainId, address) ||
+      (chainId === ChainId.Base && addressesEqual(address, MOCK_ALLOWLISTED_BASE_TOKEN)),
+  };
+});
 
 function generateTestCases({
   sourceChainId,
@@ -168,6 +184,57 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
+  // Robinhood Chain is excluded: it returns early at the chain-level check, so it would pass
+  // without consulting the allowlist.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'allows a non-USDC allowlisted Base token to %s through the unmatched-token path',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: MOCK_ALLOWLISTED_BASE_TOKEN,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  // Base USDC passes via `isUsdcToken` too, so this pins only the surrounding contract: an
+  // allowlisted address doesn't make every other token on that chain eligible.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'does not treat the Base token allowlist as permission for every token to %s',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x0000000000000000000000000000000000000001',
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Base.USDC,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not enable unsupported chain pairs for an allowlisted token', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Base.USDC,
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
   it('does not allow an unlisted token from a non-opted-in source chain', () => {
     expect(
       isValidLifiTransfer({
@@ -266,17 +333,6 @@ describe('isValidLifiTransfer', () => {
           fromToken: CommonAddress.Ethereum.PYUSD,
           sourceChainId: ChainId.Ethereum,
           destinationChainId: ChainId.ArbitrumNova,
-          tokensFromLists: {},
-        }),
-      ).toBe(false);
-    });
-
-    it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD,
-          sourceChainId: ChainId.ArbitrumOne,
-          destinationChainId: ChainId.Superposition,
           tokensFromLists: {},
         }),
       ).toBe(false);
@@ -547,6 +603,24 @@ describe('getTokenOverride', () => {
     });
   });
 
+  it('maps LiFi VIRTUAL between Ethereum and the regular Robinhood token', () => {
+    const deposit = getTokenOverride({
+      fromToken: CommonAddress.Ethereum.VIRTUAL,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const withdrawal = getTokenOverride({
+      fromToken: CommonAddress.RobinhoodChain.VIRTUAL,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    });
+
+    expect(deposit.source?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+    expect(deposit.destination?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.source?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.destination?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+  });
+
   it('For transfers on chain with custom fee token, returns null', () => {
     const arbToXaiOverride = getTokenOverride({
       fromToken: undefined,
@@ -565,54 +639,5 @@ describe('getTokenOverride', () => {
 
     expect(xaiToArbOverride.source).toEqual(null);
     expect(xaiToArbOverride.destination).toEqual(null);
-  });
-
-  it('For transfers including Superposition returns USDCe on Superposition', () => {
-    const arbToSuperpositionOverride = getTokenOverride({
-      fromToken: CommonAddress.ArbitrumOne.USDC,
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Superposition,
-    });
-    const superpositionToArbOverride = getTokenOverride({
-      fromToken: CommonAddress.Superposition.USDCe,
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.ArbitrumOne,
-    });
-
-    const nativeUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'USDC',
-      symbol: 'USDC',
-      type: 'ERC20',
-    };
-    const bridgedUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'Bridged USDC',
-      symbol: 'USDC.e',
-      type: 'ERC20',
-    };
-    expect(arbToSuperpositionOverride.source).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
-    expect(arbToSuperpositionOverride.destination).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-
-    expect(superpositionToArbOverride.source).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-    expect(superpositionToArbOverride.destination).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
   });
 });

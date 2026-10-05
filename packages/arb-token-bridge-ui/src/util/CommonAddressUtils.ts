@@ -11,6 +11,7 @@ export const CommonAddress = {
     WSTETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
     WEETH: '0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee',
     DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    USDS: '0xdc035d45d973e3ec169d2276ddab16f1e407384f',
     ARB: '0xb50721bcf8d664c30412cfbc6cf7a15145234ad1',
     USDe: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
     sUSDe: '0x9d39a5de30e57443bff2a8307a4256c8797a3497',
@@ -18,6 +19,7 @@ export const CommonAddress = {
     ENA: '0x57e114b691db790c35207b2e685d4a43181e6061',
     ezETH: '0xbf5495efe5db9ce00f80364c8b423567e58d2110',
     SFI: '0xb753428af26e81097e7fd17f40c88aaa3e04902c',
+    VIRTUAL: '0x44ff8620b8ca30902395a7bd3f2407e1a091bf73',
     tokenMessengerContractAddress: '0xbd3fa81b58ba92a82136038b25adec7066af3155',
     APE: '0x4d224452801aced8b2f0aebe155379bb5d594381',
   },
@@ -25,6 +27,9 @@ export const CommonAddress = {
     'USDC': '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     'USDC.e': '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
     'USDT': '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+    'DAI': '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+    'USDS': '0x6491c05a82219b8d1479057361ff1654749b876b',
+    'AUSD': '0x00000000efe302beaa2b3e6e1b18d08d69a9012a',
     'PYUSD_CANONICAL': '0x327006c8712fe0abdbbd55b7999db39b0967342e',
     'PYUSD': '0x46850ad61c2b7d64d08c9c754f45254596696984',
     'WBTC': '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
@@ -57,6 +62,9 @@ export const CommonAddress = {
   Base: {
     USDC: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
     USDT: '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2',
+    DAI: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+    USDS: '0x820c137fa70c8691f0e44dc420a5e53c168921dc',
+    AUSD: '0x00000000efe302beaa2b3e6e1b18d08d69a9012a',
     WBTC: '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
     WSTETH: '0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452',
     WEETH: '0x04c0599ae5a44757c0af6f9ec3b93da8976c150a',
@@ -70,11 +78,6 @@ export const CommonAddress = {
     USDCe: '0xf1815bd50389c46847f0bda824ec8da914045d14',
     WETH: '0xf4d9235269a96aadafc9adae454a0618ebe37949',
   },
-  Superposition: {
-    WBTC: '0x6e142cdaefa4ba7786e8d1ff74968db67c3b910d',
-    USDCe: '0x6c030c5cc283f791b26816f325b9c632d964f8a1',
-    WETH: '0x1fb719f10b56d7a85dcd32f27f897375fb21cfdd',
-  },
   RobinhoodChain: {
     APE: '0x8f86a15ec17cb3369d8b3e666dadbc11daa82b79',
     WETH: '0x0bd7d308f8e1639fab988df18a8011f41eacad73',
@@ -87,6 +90,8 @@ export const CommonAddress = {
     SyrupUSDG: '0x40858070814a57fdf33a613ae84fe0a8b4a874f7',
     WSTETH: '0x2dc99af320bc317c567f24ee95811dcbd5983dfd',
     SFI: '0xe77d354898a44808ff3999947002785cd727bed5',
+    VIRTUAL: '0xc6911796042b15d7fa4f6cde69e245ddcd3d9c31',
+    VIRTUAL_CANONICAL: '0x8124dc4802d5d68fc848f6997ca4e7be125a78e9',
   },
 } as const;
 

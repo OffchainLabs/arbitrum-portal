@@ -47,24 +47,39 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
     return DepositStatus.L1_PENDING;
   }
 
-  const isNativeTokenTransferToSameAddress =
-    tx.assetType === AssetType.ETH && !isCustomDestinationAddressTx(tx);
-
   const { parentToChildMsgData: l1ToL2MsgData } = tx;
   if (!l1ToL2MsgData) {
     return DepositStatus.L2_PENDING;
   }
+
+  // A native token deposit message has no redeem step, so `FUNDS_DEPOSITED_ON_CHILD` already means
+  // the funds arrived. A retryable ticket carrying the native token keeps them in escrow until it
+  // is redeemed, and it can perfectly well be addressed to the sender: that is what every native
+  // token deposit from this UI does, as they all go through `ethBridger.depositTo`. So the kind of
+  // message cannot be inferred from `assetType` and the destination address.
+  const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage;
+
   switch (l1ToL2MsgData.status) {
     case ParentToChildMessageStatus.NOT_YET_CREATED:
       return DepositStatus.L2_PENDING;
     case ParentToChildMessageStatus.CREATION_FAILED:
       return DepositStatus.CREATION_FAILED;
-    case ParentToChildMessageStatus.EXPIRED:
-      return isNativeTokenTransferToSameAddress ? DepositStatus.L2_SUCCESS : DepositStatus.EXPIRED;
-    case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
-      return isNativeTokenTransferToSameAddress
+    case ParentToChildMessageStatus.EXPIRED: {
+      // Expiry refunds the native call value on the child chain. When that refund goes to the
+      // sender and the sender is also the intended recipient, the transfer has achieved its goal.
+      const isRefundedToDestination =
+        tx.assetType === AssetType.ETH &&
+        !!tx.sender &&
+        !!tx.destination &&
+        addressesEqual(tx.sender, tx.destination) &&
+        addressesEqual(l1ToL2MsgData.callValueRefundAddress, tx.destination);
+
+      return isNativeTokenDepositMessage || isRefundedToDestination
         ? DepositStatus.L2_SUCCESS
-        : DepositStatus.L2_FAILURE;
+        : DepositStatus.EXPIRED;
+    }
+    case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
+      return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.L2_FAILURE;
     }
     case ParentToChildMessageStatus.REDEEMED:
       return DepositStatus.L2_SUCCESS;

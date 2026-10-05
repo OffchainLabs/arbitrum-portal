@@ -1,5 +1,4 @@
 import { ClockIcon, InformationCircleIcon, UserIcon } from '@heroicons/react/24/outline';
-import dayjs from 'dayjs';
 import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -16,6 +15,7 @@ import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurre
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
@@ -196,7 +196,7 @@ const RouteDuration = ({ durationMs, fastWithdrawalActive }: RouteDurationProps)
   <div className="flex items-center">
     <ClockIcon width={18} height={18} className="-ml-[1px]" />
     <span className="ml-1 whitespace-nowrap">
-      {dayjs().add(durationMs, 'millisecond').fromNow(true)}
+      {minutesToHumanReadableTime(durationMs / 60_000)}
     </span>
     {fastWithdrawalActive && (
       <div className="flex items-center">

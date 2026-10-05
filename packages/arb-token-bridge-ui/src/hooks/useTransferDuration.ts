@@ -13,14 +13,19 @@ const DEPOSIT_TIME_MINUTES = {
   testnet: 10,
 };
 
+const MINUTES_IN_DAY = 24 * 60;
+
 const TRANSFER_TIME_MINUTES_CCTP = {
   mainnet: 15,
   testnet: 1,
 };
 
 /**
- * TODO: An assumption should be 15 minutes for mainnet orbit deposits
- * We should default to 15 and allow custom deposit times in orbit config (e.g. Xai should be 1 min)
+ * Applies to deposits whose parent is not an L1, i.e. Orbit chains settling to an Arbitrum chain or to Base.
+ * Orbit chains that settle directly to an L1 (e.g. Robinhood Chain) use DEPOSIT_TIME_MINUTES,
+ * see `getDepositDuration`.
+ *
+ * TODO: Allow custom deposit times in orbit config (e.g. Xai should be 1 min)
  * For now set 5 minutes for mainnet, 1 minute for testnet
  */
 const DEPOSIT_TIME_MINUTES_ORBIT = {
@@ -31,6 +36,7 @@ const DEPOSIT_TIME_MINUTES_ORBIT = {
 type UseTransferDurationResult = {
   approximateDurationInMinutes: number;
   estimatedMinutesLeft: number | null;
+  minutesPastEstimate: number | null;
 };
 
 /**
@@ -40,22 +46,23 @@ type UseTransferDurationResult = {
  * @returns {UseTransferDurationResult} - An object containing the total duration, first leg duration, and remaining time.
  * @property {number} approximateDurationInMinutes - The total duration of the transfer in minutes.
  * @property {number | null} estimatedMinutesLeft - The remaining time for the transfer in minutes, or null if calculating or unavailable.
+ * @property {number | null} minutesPastEstimate - How many minutes the transfer has run past its estimate, or null if unavailable.
  */
 export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationResult => {
   const { estimatedMinutesLeftCctp } = useRemainingTimeCctp(tx);
 
-  const { isCctp, childChainId, isOft } = tx;
-  const { isTestnet, isOrbitChain } = isNetwork(childChainId);
-
-  const standardDepositDuration = getStandardDepositDuration(isTestnet);
-  const orbitDepositDuration = getOrbitDepositDuration(isTestnet);
+  const { isCctp, childChainId, parentChainId, isOft } = tx;
+  const { isTestnet } = isNetwork(childChainId);
 
   if (isLifiTransfer(tx)) {
-    const durationMinutes = (getLifiTransactionSnapshot(tx)?.durationMs || 15_000) / (60 * 1_000);
+    const durationMs = getLifiTransactionSnapshot(tx)?.durationMs;
+    const durationMinutes =
+      (typeof durationMs === 'number' && Number.isFinite(durationMs) ? durationMs : 15_000) /
+      (60 * 1_000);
 
     return {
       approximateDurationInMinutes: durationMinutes,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: durationMinutes,
       }),
@@ -67,6 +74,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     return {
       approximateDurationInMinutes: cctpTransferDuration,
       estimatedMinutesLeft: estimatedMinutesLeftCctp,
+      minutesPastEstimate: null,
     };
   }
 
@@ -74,7 +82,7 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     const OFT_TRANSFER_DURATION_MINUTES = 5;
     return {
       approximateDurationInMinutes: OFT_TRANSFER_DURATION_MINUTES,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: OFT_TRANSFER_DURATION_MINUTES,
       }),
@@ -85,28 +93,20 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
     const withdrawalDuration = getWithdrawalDuration(tx);
     return {
       approximateDurationInMinutes: withdrawalDuration,
-      estimatedMinutesLeft: getRemainingMinutes({
+      ...getRemainingTime({
         createdAt: tx.createdAt,
         totalDuration: withdrawalDuration,
       }),
     };
   }
 
-  if (isOrbitChain) {
-    return {
-      approximateDurationInMinutes: orbitDepositDuration,
-      estimatedMinutesLeft: getRemainingMinutes({
-        createdAt: tx.createdAt,
-        totalDuration: orbitDepositDuration,
-      }),
-    };
-  }
+  const depositDuration = getDepositDuration({ parentChainId, isTestnet });
 
   return {
-    approximateDurationInMinutes: standardDepositDuration,
-    estimatedMinutesLeft: getRemainingMinutes({
+    approximateDurationInMinutes: depositDuration,
+    ...getRemainingTime({
       createdAt: tx.createdAt,
-      totalDuration: standardDepositDuration,
+      totalDuration: depositDuration,
     }),
   };
 };
@@ -114,11 +114,19 @@ export const useTransferDuration = (tx: MergedTransaction): UseTransferDurationR
 export function getWithdrawalConfirmationDate({
   createdAt,
   withdrawalFromChainId,
+  useBaseConfirmationTime = false,
 }: {
   createdAt: number | null;
   withdrawalFromChainId: number;
+  useBaseConfirmationTime?: boolean;
 }): Dayjs {
-  const { confirmationTimeInSeconds } = getConfirmationTime(withdrawalFromChainId);
+  const {
+    confirmationTimeInSeconds: estimatedConfirmationTimeInSeconds,
+    baseConfirmationTimeInSeconds,
+  } = getConfirmationTime(withdrawalFromChainId);
+  const confirmationTimeInSeconds = useBaseConfirmationTime
+    ? baseConfirmationTimeInSeconds
+    : estimatedConfirmationTimeInSeconds;
 
   // For new txs createdAt won't be defined yet, we default to the current time in that case
   if (createdAt === null) {
@@ -162,22 +170,48 @@ export function getOrbitDepositDuration(testnet: boolean) {
   return testnet ? DEPOSIT_TIME_MINUTES_ORBIT.testnet : DEPOSIT_TIME_MINUTES_ORBIT.mainnet;
 }
 
+/**
+ * Deposits whose parent chain is an L1 (Ethereum / Sepolia / Local) wait for L1 finality,
+ * regardless of whether the child is a core Arbitrum chain or an Orbit chain.
+ * Deposits from any other parent (an Arbitrum chain or Base) use the shorter Orbit estimate.
+ */
+export function getDepositDuration({
+  parentChainId,
+  isTestnet,
+}: {
+  parentChainId: number;
+  isTestnet: boolean;
+}) {
+  const { isEthereumMainnetOrTestnet } = isNetwork(parentChainId);
+  return isEthereumMainnetOrTestnet
+    ? getStandardDepositDuration(isTestnet)
+    : getOrbitDepositDuration(isTestnet);
+}
+
 export function getCctpTransferDuration(testnet: boolean) {
   return testnet ? TRANSFER_TIME_MINUTES_CCTP.testnet : TRANSFER_TIME_MINUTES_CCTP.mainnet;
 }
 
-function getRemainingMinutes({
+function getRemainingTime({
   createdAt,
   totalDuration,
 }: {
   createdAt: number | null;
   totalDuration: number;
-}): number {
+}): Pick<UseTransferDurationResult, 'estimatedMinutesLeft' | 'minutesPastEstimate'> {
   // For new txs createdAt won't be defined yet, we default to the current time in that case
   const createdAtDate = createdAt ? dayjs(createdAt) : dayjs();
   const estimatedCompletionTime = createdAtDate.add(totalDuration, 'minutes');
+  const now = dayjs();
 
-  return Math.max(estimatedCompletionTime.diff(dayjs(), 'minute'), 0);
+  return {
+    estimatedMinutesLeft: Math.max(estimatedCompletionTime.diff(now, 'minute'), 0),
+    minutesPastEstimate: Math.max(now.diff(estimatedCompletionTime, 'minute'), 0),
+  };
+}
+
+export function roundMultiDayDurationInMinutes(minutes: number) {
+  return minutes > MINUTES_IN_DAY ? Math.ceil(minutes / MINUTES_IN_DAY) * MINUTES_IN_DAY : minutes;
 }
 
 export function minutesToHumanReadableTime(minutes: number | null) {
@@ -186,6 +220,9 @@ export function minutesToHumanReadableTime(minutes: number | null) {
   }
   if (minutes <= 0) {
     return 'Less than a minute';
+  }
+  if (minutes > MINUTES_IN_DAY) {
+    return `${roundMultiDayDurationInMinutes(minutes) / MINUTES_IN_DAY} days`;
   }
   // will convert number to '20 minutes', '1 hour', '7 days', etc
   return dayjs().add(minutes, 'minutes').fromNow(true);

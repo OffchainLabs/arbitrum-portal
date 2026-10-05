@@ -189,7 +189,7 @@ describe('matchesChainFilter', () => {
     expect(matches(apeChainFilter, ChainId.ApeChain, ChainId.ArbitrumOne)).toBe(true);
     // non-canonical routes (e.g. LiFi) are viewable under this selection only
     expect(matches(apeChainFilter, ChainId.Ethereum, ChainId.ApeChain)).toBe(true);
-    expect(matches(apeChainFilter, ChainId.ApeChain, ChainId.Superposition)).toBe(true);
+    expect(matches(apeChainFilter, ChainId.ApeChain, ChainId.RobinhoodChain)).toBe(true);
     // routes not touching the chain are excluded
     expect(matches(apeChainFilter, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(false);
   });

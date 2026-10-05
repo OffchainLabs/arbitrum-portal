@@ -28,13 +28,15 @@ export type ChainQuerySlug =
   | 'arbitrum-nova'
   | 'base'
   | 'apechain'
-  | 'superposition'
   | 'robinhood-chain';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
 const TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS = 8_000;
 const TOKEN_LIST_LOAD_TIMEOUT_MS = 15_000;
+// Headless UI waits for animation frames before unmounting a closed dialog.
+// Those frames can be delayed when integration-test workers are busy.
+const TOKEN_PANEL_CLOSE_TIMEOUT_MS = 8_000;
 const TOKEN_BUTTON_STABILITY_WINDOW_MS = 500;
 const DIALOG_STABILITY_WINDOW_MS = 500;
 
@@ -42,6 +44,10 @@ export type TokenExpectation = {
   symbol: string;
   logoURI?: string;
   contract?: string | 'native';
+  /** Text of a row badge that must be present, for example "Native stablecoin". */
+  badge?: string;
+  /** Text of a row badge that must be absent from the row when it is selected. */
+  absentBadge?: string;
 };
 export type TokenExpectationWithLogo = TokenExpectation & { logoURI: string };
 export type TokenPanelExpectation = TokenExpectationWithLogo & {
@@ -52,7 +58,6 @@ export type TokenPanelExpectations = [TokenPanelExpectation, ...TokenPanelExpect
 export const USDC_TOKEN_LOGO = commonUsdcToken.logoURI;
 export const USDT_TOKEN_LOGO =
   'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png';
-const WETH_SUPERPOSITION_ROW_LOGO = `https://static.debank.com/image/eth_token/logo_url/${CommonAddress.Ethereum.WETH}/61844453e63cf81301f845d7864236f6.png`;
 const WETH_ROBINHOOD_ROW_LOGO =
   'https://static.debank.com/image/uni_token/logo_url/uni/48bfb74adddd170e936578aec422836d.png';
 const USDE_ROBINHOOD_ROW_LOGO =
@@ -112,10 +117,6 @@ export const wethTokenExpectation = {
   symbol: 'WETH',
   logoURI: WETH_TOKEN_LOGO,
 } satisfies TokenExpectationWithLogo;
-export const wethSuperpositionRowTokenExpectation = {
-  symbol: 'WETH',
-  logoURI: WETH_SUPERPOSITION_ROW_LOGO,
-} satisfies TokenExpectationWithLogo;
 export const wethRobinhoodRowTokenExpectation = {
   symbol: 'WETH',
   logoURI: WETH_ROBINHOOD_ROW_LOGO,
@@ -167,22 +168,13 @@ export const tokenExpectationsByChain = {
     USDT: withContract(usdtTokenExpectation, CommonAddress.ApeChain.USDT),
     WETH: withContract(wethTokenExpectation, CommonAddress.ApeChain.WETH),
   },
-  Superposition: {
-    USDCe: withContract(usdcETokenExpectation, CommonAddress.Superposition.USDCe),
-    WETH: withContract(wethTokenExpectation, CommonAddress.Superposition.WETH),
-    WETHWithSuperpositionLogo: withContract(
-      wethSuperpositionRowTokenExpectation,
-      CommonAddress.Superposition.WETH,
-    ),
-  },
   RobinhoodChain: {
-    USDG: withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDG),
+    USDG: {
+      ...withContract(usdgRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDG),
+      badge: 'Native stablecoin',
+    },
     USDe: withContract(usdeRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.USDe),
     WETH: withContract(wethRobinhoodRowTokenExpectation, CommonAddress.RobinhoodChain.WETH),
-    WETHWithSuperpositionLogo: withContract(
-      wethSuperpositionRowTokenExpectation,
-      CommonAddress.RobinhoodChain.WETH,
-    ),
   },
 } as const;
 
@@ -468,12 +460,14 @@ function getTokenPanelRowButtons(dialog: HTMLElement): HTMLButtonElement[] {
     });
 }
 
+function getTokenPanelRowSymbol(button: HTMLButtonElement): string {
+  return button.querySelector('span.text-base.font-medium.leading-none')?.textContent?.trim() ?? '';
+}
+
 function formatTokenPanelRowText(button: HTMLButtonElement): string {
   const normalizeText = (value: string | null | undefined) =>
     value?.replace(/\s+/g, ' ').trim() ?? '';
-  const symbolText = normalizeText(
-    button.querySelector('span.text-base.font-medium.leading-none')?.textContent,
-  );
+  const symbolText = getTokenPanelRowSymbol(button);
   const rowInfoContainers = button.querySelectorAll('div.text-left.flex.items-center');
   const subtitleText = normalizeText(rowInfoContainers.item(1)?.textContent);
 
@@ -517,11 +511,14 @@ export async function expectTokenPanelContent({
   isDestination,
   symbolsToContain,
   symbolsToExclude,
+  symbolsInOrder,
   tokenExpectations,
 }: {
   isDestination: boolean;
   symbolsToContain?: string[];
   symbolsToExclude?: string[];
+  /** Symbols the panel must start with, in this exact order (pinned rows). */
+  symbolsInOrder?: string[];
   tokenExpectations?: TokenExpectation[];
 }) {
   const origin = captureIntegrationAssertionOrigin();
@@ -593,6 +590,63 @@ export async function expectTokenPanelContent({
       },
     );
   }
+
+  if (symbolsInOrder) {
+    const getLeadingSymbols = () =>
+      getTokenPanelRowButtons(dialog)
+        .map(getTokenPanelRowSymbol)
+        .filter(Boolean)
+        .slice(0, symbolsInOrder.length);
+
+    await waitFor(
+      () => {
+        expect(getLeadingSymbols()).toEqual(symbolsInOrder);
+      },
+      {
+        timeout: TOKEN_PANEL_CONTENT_ASSERT_TIMEOUT_MS,
+        interval: POLL_INTERVAL_MS,
+        onTimeout: () =>
+          createIntegrationAssertionError({
+            description: `Expected ${isDestination ? 'destination' : 'source'} token panel to start with pinned rows.`,
+            expected: { symbolsInOrder },
+            received: { rows: getTokenPanelRowTexts(dialog) },
+            origin,
+          }),
+      },
+    );
+  }
+
+  const expectedTokenBadges =
+    tokenExpectations?.filter(
+      (tokenExpectation): tokenExpectation is TokenExpectation & { badge: string } =>
+        typeof tokenExpectation.badge !== 'undefined',
+    ) ?? [];
+  await Promise.all(
+    expectedTokenBadges.map((tokenExpectation) =>
+      waitFor(
+        () => {
+          const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+          const rowText = tokenRowButton.textContent?.replace(/\s+/g, ' ') ?? '';
+          expect(rowText).toContain(tokenExpectation.badge);
+        },
+        {
+          timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+          interval: POLL_INTERVAL_MS,
+          onTimeout: () =>
+            createIntegrationAssertionError({
+              description: `Expected ${tokenExpectation.symbol} token-row badge.`,
+              expected: { badge: tokenExpectation.badge },
+              received: {
+                rowText: queryTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol)
+                  ?.textContent?.replace(/\s+/g, ' ')
+                  .trim(),
+              },
+              origin,
+            }),
+        },
+      ),
+    ),
+  );
 
   const expectedTokenLogos =
     tokenExpectations?.filter(({ logoURI }) => typeof logoURI !== 'undefined') ?? [];
@@ -704,12 +758,16 @@ export async function expectTokenPanelContent({
       expect(screen.queryByRole('dialog')).toBeNull();
     },
     {
-      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      timeout: TOKEN_PANEL_CLOSE_TIMEOUT_MS,
       onTimeout: () =>
         createIntegrationAssertionError({
-          description: 'Token panel did not close after selection.',
+          description: `The ${isDestination ? 'destination' : 'source'} token panel did not close after clicking Close Dialog.`,
           expected: { dialogOpen: false },
-          received: { dialogOpen: screen.queryByRole('dialog') !== null },
+          received: {
+            dialogOpen: screen.queryByRole('dialog') !== null,
+            title: screen.queryByRole('dialog')?.querySelector('h2')?.textContent,
+            transitioning: screen.queryByRole('dialog')?.hasAttribute('data-transition'),
+          },
           origin,
         }),
     },
@@ -772,6 +830,19 @@ export async function selectTokenPanelToken({
   );
 
   const tokenRowButton = getTokenPanelRowButtonBySymbol(dialog, tokenExpectation.symbol);
+
+  if (typeof tokenExpectation.absentBadge !== 'undefined') {
+    const rowText = tokenRowButton.textContent?.replace(/\s+/g, ' ') ?? '';
+    if (rowText.includes(tokenExpectation.absentBadge)) {
+      throw createIntegrationAssertionError({
+        description: `Expected ${tokenExpectation.symbol} token row without badge.`,
+        expected: { absentBadge: tokenExpectation.absentBadge },
+        received: { rowText: rowText.trim() },
+        origin,
+      });
+    }
+  }
+
   await act(async () => {
     fireEvent.click(tokenRowButton);
   });
@@ -781,7 +852,7 @@ export async function selectTokenPanelToken({
       expect(screen.queryByRole('dialog')).toBeNull();
     },
     {
-      timeout: INTEGRATION_ASSERT_TIMEOUT_MS,
+      timeout: TOKEN_PANEL_CLOSE_TIMEOUT_MS,
       onTimeout: () =>
         createIntegrationAssertionError({
           description: 'Token selection dialog did not close.',
@@ -830,7 +901,6 @@ export function setupTransferPanelLifiIntegrationSuite() {
 
     const chains = [
       getMainnetOrbitChain(ChainId.ApeChain),
-      getMainnetOrbitChain(ChainId.Superposition),
       getMainnetOrbitChain(ChainId.RobinhoodChain),
     ];
 

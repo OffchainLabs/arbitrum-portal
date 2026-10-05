@@ -7,11 +7,7 @@ import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import {
-  getOrbitDepositDuration,
-  getStandardDepositDuration,
-  getWithdrawalDuration,
-} from '../../../hooks/useTransferDuration';
+import { getDepositDuration, getWithdrawalDuration } from '../../../hooks/useTransferDuration';
 import { bridgedUsdcToken, nativeUsdcToken } from '../../../util/CommonAddressUtils';
 import { isTokenNativeUSDC } from '../../../util/TokenUtils';
 import { getNetworkName, isNetwork } from '../../../util/networks';
@@ -23,12 +19,12 @@ function getDuration({
   isTestnet,
   sourceChainId,
   isWithdrawal,
-  isOrbitChain,
+  parentChainId,
 }: {
   isTestnet: boolean;
   sourceChainId: number;
   isWithdrawal: boolean;
-  isOrbitChain: boolean;
+  parentChainId: number;
 }) {
   if (isWithdrawal) {
     return getWithdrawalDuration({
@@ -37,11 +33,7 @@ function getDuration({
     });
   }
 
-  if (isOrbitChain) {
-    return getOrbitDepositDuration(isTestnet);
-  }
-
-  return getStandardDepositDuration(isTestnet);
+  return getDepositDuration({ parentChainId, isTestnet });
 }
 
 export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: string }) {
@@ -59,7 +51,7 @@ export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: str
   const parentChainNativeCurrency = useNativeCurrency({
     provider: parentChainProvider,
   });
-  const { isTestnet, isOrbitChain } = isNetwork(childChain.id);
+  const { isTestnet } = isNetwork(childChain.id);
 
   const { selectedRoute, setSelectedRoute } = useRouteStore(
     (state) => ({
@@ -109,7 +101,7 @@ export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: str
       isTestnet,
       isWithdrawal: !isDepositMode,
       sourceChainId: networks.sourceChain.id,
-      isOrbitChain,
+      parentChainId: parentChain.id,
     }) *
     60 *
     1_000;

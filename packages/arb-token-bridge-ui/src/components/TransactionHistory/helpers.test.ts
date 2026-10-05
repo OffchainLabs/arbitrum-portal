@@ -1,15 +1,33 @@
+import {
+  EthDepositMessage,
+  EthDepositMessageStatus,
+  ParentToChildMessageReader,
+  ParentToChildMessageStatus,
+} from '@arbitrum/sdk';
 import { getStatus } from '@lifi/sdk';
 import type { StatusResponse, Token } from '@lifi/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
+import {
+  DepositStatus,
+  LifiMergedTransaction,
+  MergedTransaction,
+  WithdrawalStatus,
+} from '../../state/app/state';
+import { createMockLifiRoute, createMockLifiTransaction } from '../../test-utils/lifi';
+import { ChainId } from '../../types/ChainId';
 import { getLifiTransferStatus } from '../../util/LifiTransactionStatus';
+import { getParentToChildMessageDataFromParentTxHash } from '../../util/deposits/helpers';
 import {
   getDestinationTransactionUrl,
+  getLifiTransferDisplayStatus,
   getSourceTransactionUrl,
+  getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
+  isLifiTransferResumable,
   isSameTransaction,
+  isTxFailed,
 } from './helpers';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
@@ -18,6 +36,17 @@ vi.mock('@lifi/sdk', async (importOriginal) => {
   return {
     ...actual,
     getStatus: vi.fn(),
+  };
+});
+
+// Only the SDK lookup is stubbed. `isEthDepositMessage` stays real, so the tests exercise the same
+// narrowing that decides which message kind a deposit is.
+vi.mock('../../util/deposits/helpers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../util/deposits/helpers')>();
+
+  return {
+    ...actual,
+    getParentToChildMessageDataFromParentTxHash: vi.fn(),
   };
 });
 
@@ -32,6 +61,9 @@ const token: Token = {
 };
 const sourceTxHash = '0xa0231341aef0576cd9467d1506011d1dd041167762db0d2b1657678e3c0c5255';
 const destinationTxHash = '0x7aca61daf6b90259aa8e40a57cba32a234650fa681691c53a0de09187226694c';
+const finalStepTxHash = '0x9c25709d07f1cc9d852ce00ad0c5fcd1264690575ca104ded691cbc2f3bf6ee2';
+const batchId = '0x3ed2270c44494ccfa9c60daf655e7879';
+const batchId32Bytes = '0x5f4e4b452a390f349b7fc1f7b9b1666da36199b342de010996606ac8cea5ace1';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,7 +74,7 @@ describe('isSameTransaction', () => {
     expect(
       isSameTransaction(
         {
-          txId: '0xbatch-id',
+          txId: batchId,
           parentChainId: 1,
           childChainId: 42161,
           lifiRoute: { id: 'route-id' },
@@ -57,11 +89,10 @@ describe('isSameTransaction', () => {
     ).toBe(true);
   });
 });
-
 const baseStatusResponse = {
   tool: 'across',
   sending: {
-    txHash: '0xsource',
+    txHash: sourceTxHash,
     chainId: 1,
     txLink: '',
   },
@@ -70,30 +101,11 @@ const baseStatusResponse = {
   },
 };
 
-const baseLifiTransaction: LifiMergedTransaction = {
-  txId: '0xsource',
-  asset: 'ETH',
-  assetType: AssetType.ETH,
-  blockNum: null,
-  createdAt: 1_700_000_000_000,
-  direction: 'deposit',
-  isWithdrawal: false,
-  resolvedAt: null,
+const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
+  txId: sourceTxHash,
   status: WithdrawalStatus.CONFIRMED,
   destinationStatus: WithdrawalStatus.CONFIRMED,
-  uniqueId: null,
-  value: '1',
-  depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
-  destination: '0x1111111111111111111111111111111111111111',
-  sender: '0x1111111111111111111111111111111111111111',
-  isLifi: true,
-  tokenAddress: '0x0000000000000000000000000000000000000000',
-  parentChainId: 1,
-  childChainId: 42161,
-  sourceChainId: 1,
-  destinationChainId: 42161,
-  toolDetails: { key: 'across', name: 'Across', logoURI: '' },
-  durationMs: 0,
+  toolsDetails: [{ key: 'across', name: 'Across', logoURI: '' }],
   fromAmount: {
     amount: '1000000000000000000',
     amountUSD: '1',
@@ -104,8 +116,8 @@ const baseLifiTransaction: LifiMergedTransaction = {
     amountUSD: '1',
     token,
   },
-  destinationTxId: '0xdestination',
-};
+  destinationTxId: destinationTxHash,
+});
 
 describe('getLifiTransferStatus', () => {
   it('maps completed transfers to confirmed statuses and destination tx', () => {
@@ -254,12 +266,14 @@ describe.sequential('getUpdatedLifiTransfer', () => {
     symbol: 'SPCX',
   };
 
-  function createRoute(swapStatus: 'DONE' | 'FAILED') {
-    return {
+  function createRouteWithSwapStatus(swapStatus: 'DONE' | 'FAILED') {
+    return createMockLifiRoute({
       steps: [
         {
           id: 'bridge-step',
+          type: 'lifi',
           tool: 'across',
+          includedSteps: [],
           toolDetails: { key: 'across', name: 'Across', logoURI: '' },
           action: {
             fromChainId: 1,
@@ -269,19 +283,28 @@ describe.sequential('getUpdatedLifiTransfer', () => {
             toToken: destinationToken,
           },
           estimate: {
+            tool: 'across',
             executionDuration: 60,
+            fromAmount: '100',
             fromAmountUSD: '1',
             toAmount: '95',
+            toAmountMin: '95',
             toAmountUSD: '0.95',
+            approvalAddress: token.address,
           },
           execution: {
             status: 'PENDING',
-            process: [{ type: 'CROSS_CHAIN', status: 'PENDING', txHash: sourceTxHash }],
+            startedAt: 1,
+            process: [
+              { type: 'CROSS_CHAIN', status: 'PENDING', txHash: sourceTxHash, startedAt: 1 },
+            ],
           },
         },
         {
           id: 'swap-step',
+          type: 'lifi',
           tool: 'sushi',
+          includedSteps: [],
           toolDetails: { key: 'sushi', name: 'Sushi', logoURI: '' },
           action: {
             fromChainId: 42161,
@@ -291,19 +314,26 @@ describe.sequential('getUpdatedLifiTransfer', () => {
             toToken: finalToken,
           },
           estimate: {
+            tool: 'sushi',
             executionDuration: 30,
+            fromAmount: '95',
             fromAmountUSD: '0.95',
             toAmount: '90',
+            toAmountMin: '90',
             toAmountUSD: '0.9',
+            approvalAddress: token.address,
           },
           execution: {
             status: swapStatus,
-            process: [{ type: 'SWAP', status: swapStatus, txHash: destinationTxHash }],
+            startedAt: 2,
+            process: [
+              { type: 'SWAP', status: swapStatus, txHash: destinationTxHash, startedAt: 2 },
+            ],
             ...(swapStatus === 'DONE' ? { toAmount: '89', toToken: finalToken } : {}),
           },
         },
       ],
-    } as unknown as NonNullable<LifiMergedTransaction['lifiRoute']>;
+    });
   }
 
   const completedBridgeStatus = {
@@ -326,7 +356,7 @@ describe.sequential('getUpdatedLifiTransfer', () => {
       ...baseLifiTransaction,
       txId: sourceTxHash,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
-      lifiRoute: createRoute('FAILED'),
+      lifiRoute: createRouteWithSwapStatus('FAILED'),
       toAmount: { amount: '90', amountUSD: '0.9', token: finalToken, chainId: 42161 },
     })) as LifiMergedTransaction;
 
@@ -341,12 +371,28 @@ describe.sequential('getUpdatedLifiTransfer', () => {
       toToken: destinationToken,
     });
     expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
+    expect(updatedTransaction.lifiRoute?.steps[0]?.execution?.process[0]?.status).toBe('DONE');
+    expect(updatedTransaction.lifiRoute?.steps[1]?.execution?.process[0]?.status).toBe('FAILED');
     expect(getStatus).toHaveBeenCalledWith({
       txHash: sourceTxHash,
       bridge: 'across',
       fromChain: '1',
       toChain: '42161',
     });
+  });
+
+  it('keeps the first accepted hash when status checks a later bridge transaction', async () => {
+    vi.mocked(getStatus).mockResolvedValueOnce(completedBridgeStatus);
+
+    const updatedTransaction = await getUpdatedLifiTransfer({
+      ...baseLifiTransaction,
+      txId: finalStepTxHash,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: createRouteWithSwapStatus('FAILED'),
+    });
+
+    expect(getStatus).toHaveBeenCalledWith(expect.objectContaining({ txHash: sourceTxHash }));
+    expect(updatedTransaction.txId).toBe(finalStepTxHash);
   });
 
   it('completes the transaction using the final output when all steps are done', async () => {
@@ -357,13 +403,118 @@ describe.sequential('getUpdatedLifiTransfer', () => {
         ...baseLifiTransaction,
         txId: sourceTxHash,
         destinationStatus: WithdrawalStatus.UNCONFIRMED,
-        lifiRoute: createRoute('DONE'),
+        lifiRoute: createRouteWithSwapStatus('DONE'),
       }),
     ).resolves.toMatchObject({
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.CONFIRMED,
       toAmount: { amount: '89', token: finalToken },
     });
+  });
+});
+
+describe('getUpdatedEthDeposit', () => {
+  // Sender and destination match on both fixtures. That used to be what told the two message kinds
+  // apart, so these tests pin the flag the classification now relies on.
+  const SENDER = '0xee7300250a9745c2bA636254a486334bb8120d0a';
+  const NATIVE_TOKEN_DEPOSIT_TX_ID =
+    '0x8b6eb5b1d0f9b06b1d0e3a5e0a1cf0ef1e3d5e1b7c8a9f0d2e4b6a8c0e2f4a6b';
+  const RETRYABLE_TX_ID = '0x21f72d0003dea33e0cce1d2655d680e72dbcddc3e34baea4645363318f91dbd8';
+  const EXPIRED_RETRYABLE_TX_ID =
+    '0x66706177661e8208bc4e0be88e9bfdc7c12c899970f31b758322c8c4732bc1b0';
+  const CHILD_TX_HASH = '0x3c9a1f7e5b2d8c4a6e0f2b4d6a8c0e2f4a6b8d0c2e4f6a8b0d2c4e6f8a0b2d4c';
+  const RETRYABLE_CREATION_ID =
+    '0x7534111b0bc2dd4d04a9d1d29236b7bb81830b8d21e3e826b13114304492e5c1';
+
+  function createPendingNativeTokenDeposit(txId: string): MergedTransaction {
+    return {
+      sender: SENDER,
+      destination: SENDER,
+      direction: 'deposit-l1',
+      status: 'pending',
+      createdAt: 1_787_341_919_000,
+      resolvedAt: null,
+      txId,
+      asset: 'ETH',
+      assetType: AssetType.ETH,
+      value: '0.611126206084167590',
+      uniqueId: null,
+      isWithdrawal: false,
+      blockNum: 25_805_722,
+      tokenAddress: null,
+      depositStatus: DepositStatus.L2_PENDING,
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.ArbitrumOne,
+    };
+  }
+
+  // Keyed by tx id rather than by call order, because the suite runs concurrently.
+  beforeEach(() => {
+    vi.mocked(getParentToChildMessageDataFromParentTxHash).mockImplementation(
+      async ({ depositTxId }) => {
+        if (depositTxId === NATIVE_TOKEN_DEPOSIT_TX_ID) {
+          return {
+            isClassic: false,
+            parentToChildMsg: {
+              childTxHash: CHILD_TX_HASH,
+              status: async () => EthDepositMessageStatus.DEPOSITED,
+            } as unknown as EthDepositMessage,
+          };
+        }
+
+        return {
+          isClassic: false,
+          parentToChildMsg: {
+            retryableCreationId: RETRYABLE_CREATION_ID,
+            messageData: { callValueRefundAddress: SENDER },
+            getSuccessfulRedeem: async () => ({
+              status:
+                depositTxId === EXPIRED_RETRYABLE_TX_ID
+                  ? ParentToChildMessageStatus.EXPIRED
+                  : ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+            }),
+          } as unknown as ParentToChildMessageReader,
+        };
+      },
+    );
+  });
+
+  it('marks a deposited native token deposit message as such and reports success', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(NATIVE_TOKEN_DEPOSIT_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+      isNativeTokenDepositMessage: true,
+    });
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_SUCCESS);
+  });
+
+  it('leaves an unredeemed native token retryable unmarked and reports failure', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(RETRYABLE_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD,
+    });
+    expect(updatedDeposit.parentToChildMsgData?.isNativeTokenDepositMessage).toBeUndefined();
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_FAILURE);
+  });
+
+  it('reports success when an expired native token retryable refunds the sender and recipient', async () => {
+    const updatedDeposit = await getUpdatedEthDeposit(
+      createPendingNativeTokenDeposit(EXPIRED_RETRYABLE_TX_ID),
+    );
+
+    expect(updatedDeposit.parentToChildMsgData).toMatchObject({
+      status: ParentToChildMessageStatus.EXPIRED,
+      callValueRefundAddress: SENDER,
+    });
+    expect(updatedDeposit.depositStatus).toBe(DepositStatus.L2_SUCCESS);
   });
 });
 
@@ -375,13 +526,15 @@ describe('transaction urls', () => {
         isLifi: false,
         depositStatus: DepositStatus.L2_SUCCESS,
       }),
-    ).toBe('https://etherscan.io/tx/0xsource');
+    ).toBe(`https://etherscan.io/tx/${sourceTxHash}`);
   });
 
   it('uses LiFi Scan for LiFi source and destination tx hashes', () => {
-    expect(getSourceTransactionUrl(baseLifiTransaction)).toBe('https://scan.li.fi/tx/0xsource');
+    expect(getSourceTransactionUrl(baseLifiTransaction)).toBe(
+      `https://scan.li.fi/tx/${sourceTxHash}`,
+    );
     expect(getDestinationTransactionUrl(baseLifiTransaction)).toBe(
-      'https://scan.li.fi/tx/0xdestination',
+      `https://scan.li.fi/tx/${destinationTxHash}`,
     );
   });
 
@@ -392,5 +545,353 @@ describe('transaction urls', () => {
         lifiExplorerLink: 'https://scan.li.fi/tx/lifi-transaction-id',
       }),
     ).toBe('https://scan.li.fi/tx/lifi-transaction-id');
+  });
+
+  it('uses the final route step for a multi-step LiFi destination link', () => {
+    const transaction: LifiMergedTransaction = {
+      ...baseLifiTransaction,
+      lifiExplorerLink: `https://scan.li.fi/tx/${sourceTxHash}`,
+      lifiRouteSteps: [
+        {
+          id: 'bridge-step',
+          fromChainId: 1,
+          displaySteps: [],
+          execution: {
+            process: [{ type: 'CROSS_CHAIN', status: 'DONE', txHash: sourceTxHash }],
+          },
+        },
+        {
+          id: 'swap-step',
+          fromChainId: 42161,
+          displaySteps: [],
+          execution: {
+            process: [{ type: 'SWAP', status: 'DONE', txHash: finalStepTxHash }],
+          },
+        },
+      ],
+    };
+
+    expect(getSourceTransactionUrl(transaction)).toBe(`https://scan.li.fi/tx/${sourceTxHash}`);
+    expect(getDestinationTransactionUrl(transaction)).toBe(
+      `https://scan.li.fi/tx/${finalStepTxHash}`,
+    );
+  });
+
+  it('does not build LiFi Scan links for EIP-5792 batch ids', () => {
+    const transaction = {
+      ...baseLifiTransaction,
+      txId: batchId32Bytes,
+      destinationTxId: null,
+      lifiRoute: {
+        id: 'batch-route',
+        steps: [
+          {
+            execution: {
+              process: [
+                {
+                  type: 'CROSS_CHAIN',
+                  status: 'PENDING',
+                  txHash: batchId32Bytes,
+                  txType: 'batched',
+                },
+              ],
+            },
+          },
+        ],
+      } as unknown as LifiMergedTransaction['lifiRoute'],
+    };
+
+    expect(getSourceTransactionUrl(transaction)).toBe('');
+    expect(getDestinationTransactionUrl(transaction)).toBe('');
+  });
+
+  it('uses the source explorer and LiFi Scan after a batch id is resolved', () => {
+    const sourceTxLink = `https://etherscan.io/tx/${sourceTxHash}`;
+    const destinationTxLink = `https://arbiscan.io/tx/${destinationTxHash}`;
+    const transaction: LifiMergedTransaction = {
+      ...baseLifiTransaction,
+      lifiRouteSteps: [
+        {
+          id: 'bridge-step',
+          fromChainId: 1,
+          displaySteps: [],
+          execution: {
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'DONE',
+                txHash: sourceTxHash,
+                txLink: sourceTxLink,
+              },
+              {
+                type: 'TRANSACTION',
+                status: 'DONE',
+                txHash: destinationTxHash,
+                txLink: destinationTxLink,
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    expect(getSourceTransactionUrl(transaction)).toBe(sourceTxLink);
+    expect(getDestinationTransactionUrl(transaction)).toBe(
+      `https://scan.li.fi/tx/${destinationTxHash}`,
+    );
+  });
+});
+
+describe('isLifiTransferResumable', () => {
+  const unfinishedRoute = {
+    steps: [{ execution: { status: 'DONE', process: [] } }, {}],
+  } as unknown as LifiMergedTransaction['lifiRoute'];
+
+  it.each([
+    ['pending destination', WithdrawalStatus.UNCONFIRMED],
+    ['failed destination', WithdrawalStatus.FAILURE],
+    ['settled destination', WithdrawalStatus.CONFIRMED],
+  ])('returns true for an unfinished route with a %s', (_name, destinationStatus) => {
+    expect(
+      isLifiTransferResumable({
+        ...baseLifiTransaction,
+        destinationStatus,
+        lifiRoute: unfinishedRoute,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['legacy transaction', { lifiRoute: undefined }],
+    [
+      'single-step route',
+      { lifiRoute: { steps: [{}] } as unknown as LifiMergedTransaction['lifiRoute'] },
+    ],
+    [
+      'completed route',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [{ execution: { status: 'DONE' } }, { execution: { status: 'DONE' } }],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'active route process',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            {
+              execution: {
+                status: 'PENDING',
+                process: [{ type: 'CROSS_CHAIN', status: 'PENDING' }],
+              },
+            },
+            {},
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'route awaiting wallet action',
+      {
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            { execution: { status: 'DONE', process: [] } },
+            {
+              execution: {
+                status: 'ACTION_REQUIRED',
+                process: [{ type: 'SWAP', status: 'ACTION_REQUIRED' }],
+              },
+            },
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+    [
+      'pending route step with no active process',
+      {
+        createdAt: Date.now(),
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            {
+              execution: {
+                status: 'PENDING',
+                process: [{ type: 'CROSS_CHAIN', status: 'DONE' }],
+              },
+            },
+            {},
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      },
+    ],
+  ])('returns false for a %s', (_name, overrides) => {
+    expect(
+      isLifiTransferResumable({
+        ...baseLifiTransaction,
+        ...overrides,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not resume an active unresolved wallet batch based on its age', () => {
+    const routeWithPendingBatchId = {
+      steps: [
+        {
+          execution: {
+            status: 'PENDING',
+            process: [
+              {
+                type: 'CROSS_CHAIN',
+                status: 'PENDING',
+                txHash: batchId,
+                txType: 'batched',
+              },
+            ],
+          },
+        },
+        {},
+      ],
+    } as unknown as LifiMergedTransaction['lifiRoute'];
+    const transaction = {
+      ...baseLifiTransaction,
+      createdAt: Date.now(),
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: routeWithPendingBatchId,
+    };
+
+    expect(isLifiTransferResumable(transaction)).toBe(false);
+    expect(isLifiTransferResumable({ ...transaction, createdAt: 0 })).toBe(false);
+  });
+});
+
+describe('isTxFailed', () => {
+  it('treats a failed LiFi route as failed before a real transaction hash exists', () => {
+    expect(
+      isTxFailed({
+        ...baseLifiTransaction,
+        txId: batchId,
+        status: WithdrawalStatus.UNCONFIRMED,
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+        lifiRoute: {
+          steps: [
+            {
+              execution: {
+                status: 'FAILED',
+                process: [
+                  {
+                    type: 'CROSS_CHAIN',
+                    status: 'FAILED',
+                    txHash: batchId,
+                    txType: 'batched',
+                  },
+                ],
+              },
+            },
+            {},
+          ],
+        } as unknown as LifiMergedTransaction['lifiRoute'],
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('getLifiTransferDisplayStatus', () => {
+  const bridgeCompleteRoute = {
+    steps: [
+      {
+        execution: {
+          status: 'DONE',
+          process: [{ type: 'CROSS_CHAIN', status: 'DONE' }],
+        },
+      },
+      {},
+    ],
+  } as unknown as LifiMergedTransaction['lifiRoute'];
+
+  it('keeps a recent unfinished transaction pending', () => {
+    expect(
+      getLifiTransferDisplayStatus({
+        ...baseLifiTransaction,
+        createdAt: Date.now(),
+        destinationStatus: WithdrawalStatus.FAILURE,
+        lifiRoute: bridgeCompleteRoute,
+      }).destinationStatus,
+    ).toBe(WithdrawalStatus.UNCONFIRMED);
+  });
+
+  it('does not settle an unfinished transaction based on its age', () => {
+    const transaction = {
+      ...baseLifiTransaction,
+      createdAt: 0,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: bridgeCompleteRoute,
+      fromAmount: {
+        amount: '1000000000000000000',
+        amountUSD: '1',
+        token: { ...token, symbol: 'WETH' },
+      },
+      toAmount: {
+        amount: '1000000000000000000',
+        amountUSD: '1',
+        token: { ...token, symbol: 'SPCX' },
+      },
+    };
+
+    expect(getLifiTransferDisplayStatus(transaction)).toMatchObject({
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      fromAmount: { token: { symbol: 'WETH' } },
+      toAmount: { token: { symbol: 'SPCX' } },
+      lifiRoute: bridgeCompleteRoute,
+    });
+  });
+
+  it('does not settle before the cross-chain transfer completes', () => {
+    const transaction = {
+      ...baseLifiTransaction,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: {
+        steps: [{ execution: { status: 'PENDING', process: [] } }, {}],
+      } as unknown as LifiMergedTransaction['lifiRoute'],
+    };
+
+    expect(getLifiTransferDisplayStatus(transaction)).toBe(transaction);
+  });
+
+  it('shows a failed later route step as a destination failure', () => {
+    const transaction = {
+      ...baseLifiTransaction,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      lifiRoute: {
+        steps: [
+          {
+            execution: {
+              status: 'DONE',
+              process: [{ type: 'CROSS_CHAIN', status: 'DONE' }],
+            },
+          },
+          { execution: { status: 'FAILED', process: [{ type: 'SWAP', status: 'FAILED' }] } },
+        ],
+      } as unknown as LifiMergedTransaction['lifiRoute'],
+    };
+
+    expect(getLifiTransferDisplayStatus(transaction).destinationStatus).toBe(
+      WithdrawalStatus.FAILURE,
+    );
+  });
+
+  it('preserves a refunded status', () => {
+    const transaction = {
+      ...baseLifiTransaction,
+      status: WithdrawalStatus.REFUNDED,
+      destinationStatus: WithdrawalStatus.REFUNDED,
+      lifiRoute: bridgeCompleteRoute,
+    };
+
+    expect(getLifiTransferDisplayStatus(transaction)).toBe(transaction);
   });
 });
