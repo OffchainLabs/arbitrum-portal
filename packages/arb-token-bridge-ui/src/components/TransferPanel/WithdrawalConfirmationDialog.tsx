@@ -11,7 +11,10 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
+import {
+  minutesToHumanReadableTime,
+  roundMultiDayDurationInMinutes,
+} from '../../hooks/useTransferDuration';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { getConfirmationTime } from '../../util/WithdrawalUtils';
 import { getFastBridges } from '../../util/fastBridges';
@@ -42,7 +45,7 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
   const [networks] = useNetworks();
   const { childChain, childChainProvider, parentChain } = useNetworksRelationship(networks);
 
-  const { fastWithdrawalActive } = getConfirmationTime(childChain.id);
+  const { fastWithdrawalActive, confirmationTimeInSeconds } = getConfirmationTime(childChain.id);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -71,12 +74,12 @@ export function WithdrawalConfirmationDialog(props: UseDialogProps & { amount: s
   const allCheckboxesChecked =
     checkbox1Checked && checkbox2Checked && (fastWithdrawalActive ? checkbox3Checked : true);
 
-  const estimatedConfirmationDate = getWithdrawalConfirmationDate({
-    createdAt: null,
-    withdrawalFromChainId: childChain.id,
-  });
-
-  const confirmationPeriod = estimatedConfirmationDate.fromNow(true);
+  const confirmationTimeInMinutes = confirmationTimeInSeconds / 60;
+  const confirmationPeriod = minutesToHumanReadableTime(confirmationTimeInMinutes);
+  const estimatedConfirmationDate = dayjs().add(
+    roundMultiDayDurationInMinutes(confirmationTimeInMinutes),
+    'minutes',
+  );
 
   function closeWithReset(confirmed: boolean) {
     props.onClose(confirmed);

@@ -5,7 +5,6 @@ import { useAccount } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
-import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -27,11 +26,9 @@ import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
 } from '../../util/TokenUtils';
-import { isLifiEnabled } from '../../util/featureFlag';
 import { isNetwork } from '../../util/networks';
 import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
 import { useAppContextState } from '../App/AppContext';
-import { useTokensFromLists } from './TokenSearchUtils';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import {
@@ -41,6 +38,7 @@ import {
   isLifiRoute,
   useRouteStore,
 } from './hooks/useRouteStore';
+import { useRouteEligibility } from './hooks/useRoutesUpdater';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
   TransferReadinessRichErrorMessage,
@@ -50,7 +48,7 @@ import {
 } from './useTransferReadinessUtils';
 
 // Add chains IDs that are currently down or disabled
-// It will block transfers (both deposits and withdrawals) and display an info box in the transfer panel
+// It will block transfers (both deposits and withdrawals) and show a transfer panel error.
 export const DISABLED_CHAIN_IDS: number[] = [];
 
 // withdraw-only chains (will also display error message in the transfer panel)
@@ -60,6 +58,8 @@ type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage;
   inputAmount2?: string | TransferReadinessRichErrorMessage;
 };
+
+type AmountToPay = Omit<AmountWithToken, 'amountUSD'>;
 
 function sanitizeEstimatedGasFees(
   gasSummary: UseGasSummaryResult,
@@ -144,7 +144,7 @@ function notReady(
  * While amount itself is paid in the token sent (USDC or ETH).
  */
 export function getAmountToPay(selectedRouteContext: RouteContext) {
-  const amounts: Record<string, AmountWithToken> = {};
+  const amounts: Record<string, AmountToPay> = {};
   let fromAmountUsd = 0;
 
   function addAmount({
@@ -161,19 +161,17 @@ export function getAmountToPay(selectedRouteContext: RouteContext) {
     const key = `${chainId ?? 'unknown'}:${token.address.toLowerCase()}`;
     const acc = amounts[key];
     const parsedAmount = BigNumber.from(amount ?? 0);
-    const parsedAmountUSD = amountUSD ?? '0';
-    fromAmountUsd += Number(parsedAmountUSD);
+    const parsedAmountUSD = Number(amountUSD ?? 0);
+    fromAmountUsd += parsedAmountUSD;
     if (acc) {
       amounts[key] = {
         amount: BigNumber.from(acc.amount).add(parsedAmount).toString(),
-        amountUSD: (Number(acc.amountUSD) + Number(parsedAmountUSD)).toFixed(3),
         token,
         chainId,
       };
     } else {
       amounts[key] = {
         amount: parsedAmount.toString(),
-        amountUSD: parsedAmountUSD,
         token,
         chainId,
       };
@@ -189,12 +187,12 @@ export function getAmountToPay(selectedRouteContext: RouteContext) {
 
   return {
     amounts,
-    fromAmountUsd: Number(fromAmountUsd.toFixed(3)),
+    fromAmountUsd,
     toAmountUsd: Number(selectedRouteContext.toAmount.amountUSD),
   };
 }
 
-function formatAmountToPay(amountToPay: AmountWithToken | undefined) {
+function formatAmountToPay(amountToPay: AmountToPay | undefined) {
   return parseFloat(
     utils.formatUnits(amountToPay?.amount || constants.Zero, amountToPay?.token.decimals || 18),
   );
@@ -250,6 +248,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }),
     shallow,
   );
+  const { eligibleRouteTypes } = useRouteEligibility();
 
   const { isSelectedTokenWithdrawOnly, isSelectedTokenWithdrawOnlyLoading } =
     useSelectedTokenIsWithdrawOnly();
@@ -265,7 +264,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     });
   const { destinationAddressError } = useDestinationAddressError();
   const [tosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY);
-  const { data: tokensFromLists } = useTokensFromLists();
 
   const ethL1BalanceFloat = ethParentBalance
     ? parseFloat(utils.formatEther(ethParentBalance))
@@ -341,6 +339,18 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   }, [nativeCurrency, erc20ParentBalances]);
 
   return useMemo(() => {
+    const disabledChain = [networks.sourceChain, networks.destinationChain].find((chain) =>
+      DISABLED_CHAIN_IDS.includes(chain.id),
+    );
+
+    if (disabledChain) {
+      return notReady({
+        errorMessages: {
+          inputAmount1: `Transfers to and from ${disabledChain.name} are temporarily paused.`,
+        },
+      });
+    }
+
     const { estimatedL1GasFees, estimatedL2GasFees } = sanitizeEstimatedGasFees(gasSummary, {
       selectedRoute,
       isSmartContractWallet,
@@ -371,6 +381,11 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     }
 
     if (!selectedRoute) {
+      return notReady();
+    }
+
+    const eligibleSelectedRoute = isLifiRoute(selectedRoute) ? 'lifi' : selectedRoute;
+    if (!eligibleRouteTypes.includes(eligibleSelectedRoute)) {
       return notReady();
     }
 
@@ -413,10 +428,6 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return notReady();
     }
 
-    if (DISABLED_CHAIN_IDS.includes(childChain.id)) {
-      return notReady();
-    }
-
     if (isDepositMode && WITHDRAW_ONLY_CHAIN_IDS.includes(childChain.id)) {
       return notReady({
         errorMessages: {
@@ -433,22 +444,19 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     // ERC-20
     if (selectedToken) {
       const selectedTokenIsDisabled = isTransferDisabledToken(selectedToken.address, childChain.id);
-      const isValidLifiRoute =
-        isLifiEnabled() &&
-        isValidLifiTransfer({
-          sourceChainId: networks.sourceChain.id,
-          fromToken: selectedToken.address,
-          destinationChainId: networks.destinationChain.id,
-          tokensFromLists,
-        });
 
-      if (isDepositMode && isSelectedTokenWithdrawOnly && !isSelectedTokenWithdrawOnlyLoading) {
+      if (
+        selectedRoute === 'arbitrum' &&
+        isDepositMode &&
+        isSelectedTokenWithdrawOnly &&
+        !isSelectedTokenWithdrawOnlyLoading
+      ) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_WITHDRAW_ONLY,
           },
         });
-      } else if (selectedTokenIsDisabled && !isValidLifiRoute) {
+      } else if (selectedRoute === 'arbitrum' && selectedTokenIsDisabled) {
         return notReady({
           errorMessages: {
             inputAmount1: TransferReadinessRichErrorMessage.TOKEN_TRANSFER_DISABLED,
@@ -774,6 +782,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   }, [
     gasSummary,
     selectedRoute,
+    eligibleRouteTypes,
     isSmartContractWallet,
     isDepositMode,
     ethL1BalanceFloat,
@@ -793,11 +802,8 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     destinationAddressError,
     selectedToken,
     tosAccepted,
-    networks.sourceChain.name,
-    networks.sourceChain.id,
-    networks.destinationChain.id,
-    networks.destinationChain.name,
-    tokensFromLists,
+    networks.sourceChain,
+    networks.destinationChain,
     isSelectedTokenWithdrawOnly,
     isSelectedTokenWithdrawOnlyLoading,
     selectedRouteContext,

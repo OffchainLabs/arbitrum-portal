@@ -5,12 +5,13 @@ import { LIFI_TRANSFER_LIST_ID } from '@/bridge/util/TokenListUtils';
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, WETH_TOKEN_LOGO, ether } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressUtils';
+import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import { isNativeEthAddress, isNovaDestination } from '../../../util/NovaUtils';
 import {
   allowedLifiSourceChainIds,
   allowsUnmatchedLifiTokens,
+  isUnmatchedLifiTokenAllowed,
   lifiDestinationChainIds,
 } from './constants';
 
@@ -32,7 +33,6 @@ function isUsdcToken(tokenAddress: string | undefined) {
     addressesEqual(tokenAddress, CommonAddress.Ethereum.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne.USDC) ||
     addressesEqual(tokenAddress, CommonAddress.ArbitrumOne['USDC.e']) ||
-    addressesEqual(tokenAddress, CommonAddress.Superposition.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.ApeChain.USDCe) ||
     addressesEqual(tokenAddress, CommonAddress.Base.USDC)
   );
@@ -92,7 +92,10 @@ export function isValidLifiTransfer({
     return true;
   }
 
-  if (isUsdcToken(fromToken)) {
+  // The allowlist is the generic path: any token configured as unmatched on its source chain is
+  // eligible, without needing an entry here or in the token list. `isUsdcToken` stays as the
+  // hardcoded USDC case, which currently also covers the only allowlisted address (Base USDC).
+  if (isUnmatchedLifiTokenAllowed(sourceChainId, fromToken) || isUsdcToken(fromToken)) {
     return true;
   }
 
@@ -144,11 +147,6 @@ function getUsdc(chainId: number) {
         symbol: 'USDC',
         name: 'USDC',
       },
-      [ChainId.Superposition]: {
-        address: CommonAddress.Superposition.USDCe,
-        symbol: 'USDC.e',
-        name: 'Bridged USDC',
-      },
       [ChainId.ApeChain]: {
         address: CommonAddress.ApeChain.USDCe,
         symbol: 'USDC.e',
@@ -177,6 +175,24 @@ const nativeApeToken = {
   address: constants.AddressZero,
 };
 
+const virtualToken = {
+  symbol: 'VIRTUAL',
+  name: 'Virtual Protocol',
+  decimals: 18,
+  type: TokenType.ERC20,
+  listIds: new Set<string>(),
+} as const;
+
+function getVirtual(chainId: ChainId.Ethereum | ChainId.RobinhoodChain) {
+  return {
+    ...virtualToken,
+    address:
+      chainId === ChainId.Ethereum
+        ? CommonAddress.Ethereum.VIRTUAL
+        : CommonAddress.RobinhoodChain.VIRTUAL,
+  };
+}
+
 function getApe(chainId: number) {
   return (
     {
@@ -192,12 +208,6 @@ function getApe(chainId: number) {
         ...apeToken,
         address: CommonAddress.RobinhoodChain.APE,
       },
-      [ChainId.Superposition]: {
-        ...ether,
-        address: constants.AddressZero,
-        type: TokenType.ERC20,
-        listIds: new Set<string>(),
-      } as ERC20BridgeToken,
       [ChainId.ApeChain]: null,
       [ChainId.Base]: {
         ...apeToken,
@@ -229,6 +239,22 @@ export function getTokenOverride({
       source: sourceChainId === ChainId.ApeChain ? nativeApeToken : getApe(sourceChainId),
       destination:
         destinationChainId === ChainId.ApeChain ? nativeApeToken : getApe(destinationChainId),
+    };
+  }
+
+  const isVirtualDeposit =
+    sourceChainId === ChainId.Ethereum &&
+    destinationChainId === ChainId.RobinhoodChain &&
+    addressesEqual(fromToken, CommonAddress.Ethereum.VIRTUAL);
+  const isVirtualWithdrawal =
+    sourceChainId === ChainId.RobinhoodChain &&
+    destinationChainId === ChainId.Ethereum &&
+    addressesEqual(fromToken, CommonAddress.RobinhoodChain.VIRTUAL);
+
+  if (isVirtualDeposit || isVirtualWithdrawal) {
+    return {
+      source: getVirtual(sourceChainId),
+      destination: getVirtual(destinationChainId),
     };
   }
 

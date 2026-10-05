@@ -6,9 +6,7 @@ import { logger } from './logger';
 
 export type Address = `0x${string}`;
 
-export function addressesEqual(address1: string | undefined, address2: string | undefined) {
-  return address1?.trim().toLowerCase() === address2?.trim().toLowerCase();
-}
+export { addressesEqual } from './AddressEquality';
 
 export async function addressIsSmartContract(address: string, chainId: number) {
   const provider = getProviderForChainId(chainId);

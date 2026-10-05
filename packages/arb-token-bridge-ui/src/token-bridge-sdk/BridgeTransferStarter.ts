@@ -113,7 +113,7 @@ export type ApproveTokenProps = {
   amount?: BigNumber;
 };
 
-export abstract class BridgeTransferStarter {
+export abstract class BridgeTransferStarter<TTransferProps = TransferProps> {
   private sourceChainId?: number;
 
   public sourceChainProvider: Provider;
@@ -180,5 +180,5 @@ export abstract class BridgeTransferStarter {
     props: TransferEstimateGasProps,
   ): Promise<TransferEstimateGasResult>;
 
-  public abstract transfer(props: TransferProps): Promise<BridgeTransfer>;
+  public abstract transfer(props: TTransferProps): Promise<BridgeTransfer>;
 }

@@ -15,6 +15,7 @@ export default defineConfig({
     alias: {
       '@/common': path.resolve(__dirname, '../portal/common'),
       '@/bridge': path.resolve(__dirname, '../arb-token-bridge-ui/src'),
+      '@/token-bridge-sdk': path.resolve(__dirname, '../arb-token-bridge-ui/src/token-bridge-sdk'),
       '@/app-lib': path.resolve(__dirname, './src/lib'),
       '@/app-types': path.resolve(__dirname, './src/types'),
       '@/app-hooks': path.resolve(__dirname, './src/hooks'),
