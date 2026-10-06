@@ -5,7 +5,7 @@ import { Card } from '@/components/Card';
 export function UsdgBanner() {
   return (
     <Card
-      cardType="link"
+      cardType="externalLink"
       href="https://arbitrum.io/products/usdg-vaults"
       className="relative aspect-[2000/483] overflow-hidden p-0 md:aspect-auto md:h-[282px]"
       analyticsProps={{
