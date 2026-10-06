@@ -10,7 +10,7 @@ import { CommonAddress } from './CommonAddressUtils';
  * USDG is also the official stablecoin of Arbitrum One, where it is issued natively (not bridged
  * from Ethereum), so it pairs with the other chains through LiFi.
  *
- * USDG has three representations in the LiFi token lists, depending on the source chain:
+ * USDG has three representations in the LiFi token lists, depending on the chain pair:
  * - from Ethereum it is a paired token whose `address` is the Ethereum USDG contract
  * - from Arbitrum One it is a paired token whose `address` is the Arbitrum One contract
  * - from every other chain it is a LiFi-only token whose `address` is the Robinhood contract
@@ -103,17 +103,30 @@ export function isUsdgQueryParamAlias(value: string | null | undefined): boolean
 }
 
 /**
- * The `destinationToken` query param stores the parent-chain address. From Ethereum and Arbitrum
- * One that is their own USDG contract (both pair with Robinhood USDG); from every other chain USDG
- * is LiFi-only and uses its Robinhood address.
+ * Lookup key of the USDG pair by destination chain, then source chain. It is the parent-chain
+ * address of the pair (what the `destinationToken` query param stores), or the Robinhood
+ * contract where USDG is LiFi-only. A missing entry means the route has no USDG pair.
  */
-export function getUsdgDestinationTokenAddress(sourceChainId: number): string {
-  switch (sourceChainId) {
-    case ChainId.Ethereum:
-      return CommonAddress.Ethereum.USDG;
-    case ChainId.ArbitrumOne:
-      return CommonAddress.ArbitrumOne.USDG;
-    default:
-      return CommonAddress.RobinhoodChain.USDG;
-  }
+const usdgPairLookupKeys: Partial<Record<number, Partial<Record<number, string>>>> = {
+  [ChainId.RobinhoodChain]: {
+    [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+    [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDG,
+    [ChainId.Base]: CommonAddress.RobinhoodChain.USDG,
+    [ChainId.ApeChain]: CommonAddress.RobinhoodChain.USDG,
+  },
+  [ChainId.ArbitrumOne]: {
+    [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+    // Arbitrum One is the parent on this pair
+    [ChainId.RobinhoodChain]: CommonAddress.ArbitrumOne.USDG,
+  },
+};
+
+export function getUsdgDestinationTokenAddress({
+  sourceChainId,
+  destinationChainId,
+}: {
+  sourceChainId: number;
+  destinationChainId: number;
+}): string | undefined {
+  return usdgPairLookupKeys[destinationChainId]?.[sourceChainId];
 }

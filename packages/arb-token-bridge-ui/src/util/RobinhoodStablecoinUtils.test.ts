@@ -145,20 +145,31 @@ describe('isUsdgQueryParamAlias', () => {
 });
 
 describe('getUsdgDestinationTokenAddress', () => {
-  it('uses the Ethereum contract when bridging from Ethereum', () => {
-    expect(getUsdgDestinationTokenAddress(ChainId.Ethereum)).toBe(CommonAddress.Ethereum.USDG);
+  const into = (sourceChainId: ChainId, destinationChainId: ChainId) =>
+    getUsdgDestinationTokenAddress({ sourceChainId, destinationChainId });
+
+  it('into Robinhood Chain: the Ethereum or Arbitrum One contract from those chains', () => {
+    expect(into(ChainId.Ethereum, ChainId.RobinhoodChain)).toBe(CommonAddress.Ethereum.USDG);
+    expect(into(ChainId.ArbitrumOne, ChainId.RobinhoodChain)).toBe(CommonAddress.ArbitrumOne.USDG);
   });
 
-  it('uses the Arbitrum One contract when bridging from Arbitrum One', () => {
-    expect(getUsdgDestinationTokenAddress(ChainId.ArbitrumOne)).toBe(
-      CommonAddress.ArbitrumOne.USDG,
-    );
+  it('into Robinhood Chain: the Robinhood contract from every other chain', () => {
+    expect(into(ChainId.Base, ChainId.RobinhoodChain)).toBe(CommonAddress.RobinhoodChain.USDG);
+    expect(into(ChainId.ApeChain, ChainId.RobinhoodChain)).toBe(CommonAddress.RobinhoodChain.USDG);
   });
 
-  it('uses the Robinhood contract for every other source chain', () => {
-    expect(getUsdgDestinationTokenAddress(ChainId.Base)).toBe(CommonAddress.RobinhoodChain.USDG);
-    expect(getUsdgDestinationTokenAddress(ChainId.ApeChain)).toBe(
-      CommonAddress.RobinhoodChain.USDG,
-    );
+  it('into Arbitrum One: the parent-chain contract of the pair', () => {
+    expect(into(ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(CommonAddress.Ethereum.USDG);
+    // Arbitrum One is the parent when withdrawing from Robinhood Chain
+    expect(into(ChainId.RobinhoodChain, ChainId.ArbitrumOne)).toBe(CommonAddress.ArbitrumOne.USDG);
+  });
+
+  it('is undefined on routes without a USDG pair', () => {
+    expect(into(ChainId.Base, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ApeChain, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ArbitrumNova, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ArbitrumOne, ChainId.Ethereum)).toBeUndefined();
+    expect(into(ChainId.RobinhoodChain, ChainId.Ethereum)).toBeUndefined();
+    expect(into(ChainId.Ethereum, ChainId.ApeChain)).toBeUndefined();
   });
 });
