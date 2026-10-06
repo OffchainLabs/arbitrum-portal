@@ -160,10 +160,11 @@
     // https://github.com/advisories/GHSA-86w9-cpqp-85rv
     // node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements (CVE-2026-85393)
     // Reason to ignore: No patched version available (1.4.0 is the latest published version and is
-    // already pinned via pnpm-workspace.yaml overrides). Only reached through listhen, which uses
-    // node-forge to generate self-signed certs for its local HTTPS dev listener. We never start that
-    // listener and never verify RSA signatures with node-forge.
+    // already pinned via pnpm-workspace.yaml overrides). It is reached through listhen and through
+    // Synpress's webpack-dev-server > selfsigned chain; both use node-forge to generate self-signed
+    // certificates for development listeners, and application code does not verify RSA signatures with it.
     // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>listhen>node-forge
+    // from: arb-token-bridge-ui>@synthetixio/synpress>...>webpack-dev-server>selfsigned>node-forge
     "GHSA-86w9-cpqp-85rv",
     //
     // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
