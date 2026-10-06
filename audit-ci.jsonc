@@ -177,5 +177,15 @@
     // from: eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces
     // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>chokidar>braces
     "GHSA-vfj7-8cjw-p6xm",
+    //
+    // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+    // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
+    // Reason to ignore: Only 7.1.6 is patched and tailwindcss@3 / postcss-nested@6 pin ^6.1.x, so the fix is a major
+    // bump the parents do not declare support for. The parser only runs at build time over selectors we author
+    // ourselves (tailwind utilities, our own CSS); the advisory scopes the impact to services parsing untrusted
+    // selectors, not build-time use.
+    // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
+    // from: tailwindcss>postcss-nested>postcss-selector-parser
+    "GHSA-rj75-hqrm-r3gf",
   ],
 }
