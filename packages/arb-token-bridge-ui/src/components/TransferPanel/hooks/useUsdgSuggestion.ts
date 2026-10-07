@@ -6,6 +6,7 @@ import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { ChainId } from '../../../types/ChainId';
 import { trackEvent } from '../../../util/AnalyticsUtils';
 import {
   getUsdgDestinationTokenAddress,
@@ -16,28 +17,25 @@ import { sanitizeTokenSymbol } from '../../../util/TokenUtils';
 import { useTokensFromLists } from '../TokenSearchUtils';
 
 /**
- * The banner shows when a non-USDG stablecoin is the destination on a chain where USDG is the
- * official stablecoin (Robinhood Chain, Arbitrum One) and the route has a USDG pair to switch
- * to. The source token plays no part: a stablecoin source pointed at any other asset, native ETH
- * included, is treated as a deliberate choice and left alone.
+ * The banner shows when a non-USDG stablecoin is the destination on Robinhood Chain. The source
+ * token plays no part: a stablecoin source pointed at any other asset, native ETH included, is
+ * treated as a deliberate choice and left alone.
  *
  * `destinationTokenAddressChainId` is the chain `destinationTokenAddress` lives on. A bridge
  * token's `address` is its parent-chain contract, except for LiFi-only tokens where it is the
  * contract on `lifiOnlyChainId`.
  */
 export function isUsdgSuggested({
-  sourceChainId,
   destinationChainId,
   destinationTokenAddress,
   destinationTokenAddressChainId,
 }: {
-  sourceChainId: number;
   destinationChainId: number;
   destinationTokenAddress: string | undefined;
   destinationTokenAddressChainId: number;
 }): boolean {
   return (
-    getUsdgDestinationTokenAddress({ sourceChainId, destinationChainId }) !== undefined &&
+    destinationChainId === ChainId.RobinhoodChain &&
     isStablecoin(destinationTokenAddress, destinationTokenAddressChainId) &&
     !isTokenUSDG(destinationTokenAddress)
   );
@@ -57,7 +55,6 @@ export function useUsdgSuggestion() {
   const destinationTokenAddress = destinationToken?.address;
 
   const isSuggested = isUsdgSuggested({
-    sourceChainId,
     destinationChainId,
     destinationTokenAddress,
     destinationTokenAddressChainId: destinationToken?.lifiOnlyChainId ?? parentChain.id,
@@ -84,8 +81,8 @@ export function useUsdgSuggestion() {
     }
   }, [dismissedSelectionKey, selectionKey]);
 
-  const usdgAddress = getUsdgDestinationTokenAddress({ sourceChainId, destinationChainId });
-  const usdgLogoURI = usdgAddress ? tokensFromLists[usdgAddress.toLowerCase()]?.logoURI : undefined;
+  const usdgAddress = getUsdgDestinationTokenAddress(sourceChainId);
+  const usdgLogoURI = tokensFromLists[usdgAddress.toLowerCase()]?.logoURI;
 
   const destinationSymbol =
     isSuggested && destinationToken
@@ -116,10 +113,6 @@ export function useUsdgSuggestion() {
   }, [isVisible, sourceChainId, destinationChainId]);
 
   const switchToUsdg = useCallback(() => {
-    // the banner is only visible on routes with a USDG pair, so this is just a type guard
-    if (!usdgAddress) {
-      return;
-    }
     trackEvent('USDG Suggestion Banner', {
       action: 'switched',
       sourceChainId,
@@ -155,5 +148,5 @@ export function useUsdgSuggestion() {
     sourceTokenAddress,
   ]);
 
-  return { isVisible, destinationChainId, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss };
+  return { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss };
 }

@@ -439,36 +439,12 @@ describe('sanitizeDestinationTokenQueryParam', () => {
       ).toEqual(CommonAddress.RobinhoodChain.USDG);
     });
 
-    it('resolves into Arbitrum One to the parent-chain contract of the pair', () => {
+    it('is dropped when the destination is not Robinhood Chain', () => {
       expect(
         sanitizeDestinationTokenQueryParam({
           destinationToken: 'usdg',
           sourceChainId: ChainId.Ethereum,
           destinationChainId: ChainId.ArbitrumOne,
-        }),
-      ).toEqual(CommonAddress.Ethereum.USDG);
-      expect(
-        sanitizeDestinationTokenQueryParam({
-          destinationToken: 'usdg',
-          sourceChainId: ChainId.RobinhoodChain,
-          destinationChainId: ChainId.ArbitrumOne,
-        }),
-      ).toEqual(CommonAddress.ArbitrumOne.USDG);
-    });
-
-    it('is dropped on routes without a USDG pair', () => {
-      expect(
-        sanitizeDestinationTokenQueryParam({
-          destinationToken: 'usdg',
-          sourceChainId: ChainId.Base,
-          destinationChainId: ChainId.ArbitrumOne,
-        }),
-      ).toBeUndefined();
-      expect(
-        sanitizeDestinationTokenQueryParam({
-          destinationToken: 'usdg',
-          sourceChainId: ChainId.Ethereum,
-          destinationChainId: ChainId.ApeChain,
         }),
       ).toBeUndefined();
     });

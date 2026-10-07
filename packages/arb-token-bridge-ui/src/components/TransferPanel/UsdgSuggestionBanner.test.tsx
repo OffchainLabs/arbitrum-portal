@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ChainId } from '../../types/ChainId';
 import { UsdgSuggestionBanner } from './UsdgSuggestionBanner';
 import { useUsdgSuggestion } from './hooks/useUsdgSuggestion';
 
@@ -13,7 +12,6 @@ const BANNER_NAME = 'USDG suggestion';
 function mockSuggestion(overrides: Partial<ReturnType<typeof useUsdgSuggestion>> = {}) {
   const suggestion = {
     isVisible: true,
-    destinationChainId: ChainId.RobinhoodChain,
     destinationSymbol: 'USDC',
     usdgLogoURI: undefined,
     switchToUsdg: vi.fn(),
@@ -48,17 +46,7 @@ describe.sequential('UsdgSuggestionBanner', () => {
     render(<UsdgSuggestionBanner />);
 
     expect(getBannerText()).toContain(
-      "USDG is Robinhood Chain's native stablecoin. Most apps on Robinhood Chain use USDG, not USDT.",
-    );
-  });
-
-  it('names Arbitrum One when that is the destination', () => {
-    mockSuggestion({ destinationChainId: ChainId.ArbitrumOne });
-
-    render(<UsdgSuggestionBanner />);
-
-    expect(getBannerText()).toContain(
-      "USDG is Arbitrum One's native stablecoin. Most apps on Arbitrum One use USDG, not USDC.",
+      "USDG is Robinhood Chain's native stablecoin. Most Robinhood apps use USDG, not USDT.",
     );
   });
 
@@ -67,7 +55,7 @@ describe.sequential('UsdgSuggestionBanner', () => {
 
     render(<UsdgSuggestionBanner />);
 
-    expect(getBannerText()).toContain('Most apps on Robinhood Chain use USDG.');
+    expect(getBannerText()).toContain('Most Robinhood apps use USDG.');
     expect(getBannerText()).not.toContain(', not ');
   });
 
