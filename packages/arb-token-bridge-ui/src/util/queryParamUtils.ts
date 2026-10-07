@@ -542,7 +542,8 @@ export const sanitizeTokenQueryParam = ({
 
 /**
  * `destinationToken` follows the same rules as `token`, plus the `usdg` literal, which resolves to
- * the USDG address for the chain pair so partners can deep link into a USDG swap.
+ * the USDG address for the chain pair so partners can deep link into a USDG swap. It is dropped on
+ * routes without a USDG pair.
  */
 export const sanitizeDestinationTokenQueryParam = ({
   destinationToken,
@@ -554,8 +555,8 @@ export const sanitizeDestinationTokenQueryParam = ({
   destinationChainId: number | undefined;
 }) => {
   if (isUsdgQueryParamAlias(destinationToken)) {
-    if (sourceChainId && destinationChainId === ChainId.RobinhoodChain) {
-      return getUsdgDestinationTokenAddress(sourceChainId);
+    if (sourceChainId && destinationChainId) {
+      return getUsdgDestinationTokenAddress({ sourceChainId, destinationChainId });
     }
     return undefined;
   }

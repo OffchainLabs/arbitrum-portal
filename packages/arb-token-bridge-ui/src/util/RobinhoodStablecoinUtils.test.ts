@@ -7,12 +7,22 @@ import {
   getUsdgDestinationTokenAddress,
   isStablecoin,
   isTokenUSDG,
+  isUsdgNativeStablecoinChain,
   isUsdgQueryParamAlias,
+  isUsdgSurfacedLikeEth,
 } from './RobinhoodStablecoinUtils';
+import { isTransferDisabledToken } from './TokenTransferDisabledUtils';
+
+describe('USDG canonical transfers', () => {
+  it('disables the canonical Ethereum route on Arbitrum One', () => {
+    expect(isTransferDisabledToken(CommonAddress.Ethereum.USDG, ChainId.ArbitrumOne)).toBe(true);
+  });
+});
 
 describe('isTokenUSDG', () => {
-  it('matches both the Ethereum and the Robinhood USDG contracts, case-insensitively', () => {
+  it('matches the Ethereum, Arbitrum One and Robinhood USDG contracts, case-insensitively', () => {
     expect(isTokenUSDG(CommonAddress.Ethereum.USDG)).toBe(true);
+    expect(isTokenUSDG(CommonAddress.ArbitrumOne.USDG)).toBe(true);
     expect(isTokenUSDG(CommonAddress.RobinhoodChain.USDG.toUpperCase())).toBe(true);
   });
 
@@ -61,6 +71,69 @@ describe('isStablecoin', () => {
   });
 });
 
+describe('isUsdgNativeStablecoinChain', () => {
+  it('is true only where USDG is the official stablecoin', () => {
+    expect(isUsdgNativeStablecoinChain(ChainId.RobinhoodChain)).toBe(true);
+    expect(isUsdgNativeStablecoinChain(ChainId.ArbitrumOne)).toBe(true);
+    expect(isUsdgNativeStablecoinChain(ChainId.Ethereum)).toBe(false);
+    expect(isUsdgNativeStablecoinChain(ChainId.Base)).toBe(false);
+    expect(isUsdgNativeStablecoinChain(ChainId.ArbitrumNova)).toBe(false);
+  });
+});
+
+describe('isUsdgSurfacedLikeEth', () => {
+  it('is true on every route into Robinhood Chain', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+  });
+
+  it('is true on every route with Arbitrum One as source or destination', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toBe(true);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(true);
+  });
+
+  it('leaves every other route alone, including withdrawals out of Robinhood Chain', () => {
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Ethereum,
+      }),
+    ).toBe(false);
+    expect(
+      isUsdgSurfacedLikeEth({
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.ApeChain,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe('isUsdgQueryParamAlias', () => {
   it('accepts the usdg literal in any casing and nothing else', () => {
     expect(isUsdgQueryParamAlias('usdg')).toBe(true);
@@ -72,17 +145,31 @@ describe('isUsdgQueryParamAlias', () => {
 });
 
 describe('getUsdgDestinationTokenAddress', () => {
-  it('uses the Ethereum contract when bridging from Ethereum', () => {
-    expect(getUsdgDestinationTokenAddress(ChainId.Ethereum)).toBe(CommonAddress.Ethereum.USDG);
+  const into = (sourceChainId: ChainId, destinationChainId: ChainId) =>
+    getUsdgDestinationTokenAddress({ sourceChainId, destinationChainId });
+
+  it('into Robinhood Chain: the Ethereum or Arbitrum One contract from those chains', () => {
+    expect(into(ChainId.Ethereum, ChainId.RobinhoodChain)).toBe(CommonAddress.Ethereum.USDG);
+    expect(into(ChainId.ArbitrumOne, ChainId.RobinhoodChain)).toBe(CommonAddress.ArbitrumOne.USDG);
   });
 
-  it('uses the Robinhood contract for every other source chain', () => {
-    expect(getUsdgDestinationTokenAddress(ChainId.ArbitrumOne)).toBe(
-      CommonAddress.RobinhoodChain.USDG,
-    );
-    expect(getUsdgDestinationTokenAddress(ChainId.Base)).toBe(CommonAddress.RobinhoodChain.USDG);
-    expect(getUsdgDestinationTokenAddress(ChainId.ApeChain)).toBe(
-      CommonAddress.RobinhoodChain.USDG,
-    );
+  it('into Robinhood Chain: the Robinhood contract from every other chain', () => {
+    expect(into(ChainId.Base, ChainId.RobinhoodChain)).toBe(CommonAddress.RobinhoodChain.USDG);
+    expect(into(ChainId.ApeChain, ChainId.RobinhoodChain)).toBe(CommonAddress.RobinhoodChain.USDG);
+  });
+
+  it('into Arbitrum One: the parent-chain contract of the pair', () => {
+    expect(into(ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(CommonAddress.Ethereum.USDG);
+    // Arbitrum One is the parent when withdrawing from Robinhood Chain
+    expect(into(ChainId.RobinhoodChain, ChainId.ArbitrumOne)).toBe(CommonAddress.ArbitrumOne.USDG);
+  });
+
+  it('is undefined on routes without a USDG pair', () => {
+    expect(into(ChainId.Base, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ApeChain, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ArbitrumNova, ChainId.ArbitrumOne)).toBeUndefined();
+    expect(into(ChainId.ArbitrumOne, ChainId.Ethereum)).toBeUndefined();
+    expect(into(ChainId.RobinhoodChain, ChainId.Ethereum)).toBeUndefined();
+    expect(into(ChainId.Ethereum, ChainId.ApeChain)).toBeUndefined();
   });
 });

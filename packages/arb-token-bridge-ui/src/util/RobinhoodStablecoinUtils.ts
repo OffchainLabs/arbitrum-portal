@@ -7,10 +7,14 @@ import { CommonAddress } from './CommonAddressUtils';
  * quote the bridge + swap in one route. The user keeps the final say: nothing switches the
  * destination for them.
  *
- * USDG has two representations in the LiFi token lists, depending on the source chain:
+ * USDG is also the official stablecoin of Arbitrum One, where it is issued natively (not bridged
+ * from Ethereum), so it pairs with the other chains through LiFi.
+ *
+ * USDG has three representations in the LiFi token lists, depending on the chain pair:
  * - from Ethereum it is a paired token whose `address` is the Ethereum USDG contract
+ * - from Arbitrum One it is a paired token whose `address` is the Arbitrum One contract
  * - from every other chain it is a LiFi-only token whose `address` is the Robinhood contract
- * Every helper here accepts both.
+ * Every helper here accepts all of them.
  */
 
 function toAddressSet(addresses: readonly string[]): ReadonlySet<string> {
@@ -22,8 +26,12 @@ export const USDG_QUERY_PARAM_ALIAS = 'usdg';
 
 const usdgAddresses = toAddressSet([
   CommonAddress.Ethereum.USDG,
+  CommonAddress.ArbitrumOne.USDG,
   CommonAddress.RobinhoodChain.USDG,
 ]);
+
+/** Chains where USDG is the official stablecoin. Their USDG row carries the native stablecoin badge. */
+const usdgNativeStablecoinChainIds = new Set<number>([ChainId.RobinhoodChain, ChainId.ArbitrumOne]);
 
 /**
  * Explicit allowlist, keyed by chain so an address only counts on the chain it lives on. Symbols
@@ -63,6 +71,25 @@ export function isTokenUSDG(address: string | undefined): boolean {
   return address !== undefined && usdgAddresses.has(address.trim().toLowerCase());
 }
 
+export function isUsdgNativeStablecoinChain(chainId: number): boolean {
+  return usdgNativeStablecoinChainIds.has(chainId);
+}
+
+/**
+ * USDG is surfaced the way ETH is, listed in both token panels whether or not the wallet holds it
+ * and pinned right under ETH, on every route into a chain where it is the official stablecoin and
+ * on every route out of Arbitrum One.
+ */
+export function isUsdgSurfacedLikeEth({
+  sourceChainId,
+  destinationChainId,
+}: {
+  sourceChainId: number;
+  destinationChainId: number;
+}): boolean {
+  return isUsdgNativeStablecoinChain(destinationChainId) || sourceChainId === ChainId.ArbitrumOne;
+}
+
 /** `chainId` is the chain the address lives on, not the chain being bridged to. */
 export function isStablecoin(address: string | undefined, chainId: number): boolean {
   return (
@@ -76,11 +103,30 @@ export function isUsdgQueryParamAlias(value: string | null | undefined): boolean
 }
 
 /**
- * The `destinationToken` query param stores the parent-chain address. From Ethereum that is the
- * Ethereum USDG contract; from every other chain USDG is LiFi-only and uses its Robinhood address.
+ * Lookup key of the USDG pair by destination chain, then source chain. It is the parent-chain
+ * address of the pair (what the `destinationToken` query param stores), or the Robinhood
+ * contract where USDG is LiFi-only. A missing entry means the route has no USDG pair.
  */
-export function getUsdgDestinationTokenAddress(sourceChainId: number): string {
-  return sourceChainId === ChainId.Ethereum
-    ? CommonAddress.Ethereum.USDG
-    : CommonAddress.RobinhoodChain.USDG;
+const usdgPairLookupKeys: Partial<Record<number, Partial<Record<number, string>>>> = {
+  [ChainId.RobinhoodChain]: {
+    [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+    [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDG,
+    [ChainId.Base]: CommonAddress.RobinhoodChain.USDG,
+    [ChainId.ApeChain]: CommonAddress.RobinhoodChain.USDG,
+  },
+  [ChainId.ArbitrumOne]: {
+    [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+    // Arbitrum One is the parent on this pair
+    [ChainId.RobinhoodChain]: CommonAddress.ArbitrumOne.USDG,
+  },
+};
+
+export function getUsdgDestinationTokenAddress({
+  sourceChainId,
+  destinationChainId,
+}: {
+  sourceChainId: number;
+  destinationChainId: number;
+}): string | undefined {
+  return usdgPairLookupKeys[destinationChainId]?.[sourceChainId];
 }
