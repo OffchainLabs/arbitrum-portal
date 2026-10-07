@@ -102,7 +102,7 @@ describe('initializeBridgePage sanitization', () => {
   });
 
   describe('USDG on Robinhood Chain', () => {
-    it('resolves `destinationToken=usdg` to the Robinhood USDG contract from Arbitrum One', async () => {
+    it('resolves `destinationToken=usdg` to the Arbitrum One USDG contract from Arbitrum One', async () => {
       await initializeBridgePage({
         searchParams: {
           sourceChain: 'arbitrum-one',
@@ -114,6 +114,21 @@ describe('initializeBridgePage sanitization', () => {
 
       expect(redirectMock).toHaveBeenCalledTimes(1);
       expectRedirectedChains({ sourceChain: 'arbitrum-one', destinationChain: 'robinhood-chain' });
+      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
+        CommonAddress.ArbitrumOne.USDG,
+      );
+    });
+
+    it('resolves `destinationToken=usdg` to the Robinhood USDG contract from Base', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'base',
+          destinationChain: 'robinhood-chain',
+          destinationToken: 'usdg',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
       expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
         CommonAddress.RobinhoodChain.USDG,
       );
@@ -134,10 +149,25 @@ describe('initializeBridgePage sanitization', () => {
       );
     });
 
-    it('drops `destinationToken=usdg` when the destination is not Robinhood Chain', async () => {
+    it('resolves `destinationToken=usdg` into Arbitrum One from Ethereum', async () => {
       await initializeBridgePage({
         searchParams: {
           sourceChain: 'ethereum',
+          destinationChain: 'arbitrum-one',
+          destinationToken: 'usdg',
+        },
+        redirectPath: PathnameEnum.BRIDGE,
+      });
+
+      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
+        CommonAddress.Ethereum.USDG,
+      );
+    });
+
+    it('drops `destinationToken=usdg` on a route without a USDG pair', async () => {
+      await initializeBridgePage({
+        searchParams: {
+          sourceChain: 'base',
           destinationChain: 'arbitrum-one',
           destinationToken: 'usdg',
         },

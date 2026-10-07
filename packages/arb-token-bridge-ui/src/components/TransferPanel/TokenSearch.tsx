@@ -30,6 +30,7 @@ import {
   isNativeEthAddress,
   isNovaDestination,
 } from '../../util/NovaUtils';
+import { isTokenUSDG, isUsdgSurfacedLikeEth } from '../../util/RobinhoodStablecoinUtils';
 import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
@@ -273,6 +274,10 @@ function TokensPanel({
   const tokensToShow = useMemo(() => {
     const tokenSearch = newToken.trim().toLowerCase();
     const tokenAddresses = Object.keys(tokensFromUser).concat(Object.keys(tokensFromLists));
+    const isUsdgPinned = isUsdgSurfacedLikeEth({
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    });
 
     if (!isDepositMode) {
       // L2 to L1 withdrawals
@@ -364,6 +369,11 @@ function TokensPanel({
             return true;
           }
 
+          // USDG is surfaced like ETH on this route, so it shows whether or not it is held
+          if (isUsdgPinned && isTokenUSDG(address)) {
+            return true;
+          }
+
           const isArbOneNovaTransfer =
             (networks.sourceChain.id === ChainId.ArbitrumOne &&
               networks.destinationChain.id === ChainId.ArbitrumNova) ||
@@ -435,6 +445,15 @@ function TokensPanel({
         // Pin Ether to top
         if (addressesEqual(address2, constants.AddressZero)) {
           return 1;
+        }
+
+        // Pin USDG right under Ether
+        if (isUsdgPinned) {
+          const isUsdg1 = isTokenUSDG(address1);
+          const isUsdg2 = isTokenUSDG(address2);
+          if (isUsdg1 !== isUsdg2) {
+            return isUsdg1 ? -1 : 1;
+          }
         }
 
         const bal1 = getBalance(address1);

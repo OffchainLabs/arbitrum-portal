@@ -419,22 +419,56 @@ describe('sanitizeDestinationTokenQueryParam', () => {
       ).toEqual(CommonAddress.Ethereum.USDG);
     });
 
+    it('resolves to the Arbitrum One USDG contract when bridging from Arbitrum One', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.ArbitrumOne.USDG);
+    });
+
     it('resolves to the Robinhood USDG contract from any other chain, case-insensitively', () => {
       expect(
         sanitizeDestinationTokenQueryParam({
           destinationToken: 'USDG',
-          sourceChainId: ChainId.ArbitrumOne,
+          sourceChainId: ChainId.Base,
           destinationChainId: ChainId.RobinhoodChain,
         }),
       ).toEqual(CommonAddress.RobinhoodChain.USDG);
     });
 
-    it('is dropped when the destination is not Robinhood Chain', () => {
+    it('resolves into Arbitrum One to the parent-chain contract of the pair', () => {
       expect(
         sanitizeDestinationTokenQueryParam({
           destinationToken: 'usdg',
           sourceChainId: ChainId.Ethereum,
           destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toEqual(CommonAddress.Ethereum.USDG);
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toEqual(CommonAddress.ArbitrumOne.USDG);
+    });
+
+    it('is dropped on routes without a USDG pair', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toBeUndefined();
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ApeChain,
         }),
       ).toBeUndefined();
     });
