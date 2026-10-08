@@ -5,7 +5,6 @@ import { defaultErc20Decimals } from '../../defaults';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
 import { Transaction } from '../../types/Transactions';
-import { logger } from '../logger';
 import {
   FetchDepositsFromSubgraphResult,
   fetchDepositsFromSubgraph,
@@ -53,10 +52,6 @@ export const fetchDeposits = async ({
     fromBlock = 0;
   }
 
-  let depositsFromSubgraph: FetchDepositsFromSubgraphResult[] = [];
-  let ethDepositsToCustomDestinationFromSubgraph: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
-    [];
-
   const subgraphParams = {
     sender,
     receiver,
@@ -68,18 +63,10 @@ export const fetchDeposits = async ({
     searchString,
   };
 
-  try {
-    depositsFromSubgraph = await fetchDepositsFromSubgraph(subgraphParams);
-  } catch (error: any) {
-    logger.info('Error fetching deposits from subgraph', error);
-  }
-
-  try {
-    ethDepositsToCustomDestinationFromSubgraph =
-      await fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams);
-  } catch (error: any) {
-    logger.info('Error fetching native token deposits to custom destination from subgraph', error);
-  }
+  const [depositsFromSubgraph, ethDepositsToCustomDestinationFromSubgraph] = await Promise.all([
+    fetchDepositsFromSubgraph(subgraphParams),
+    fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams),
+  ]);
 
   // filter out classic deposits
   const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph

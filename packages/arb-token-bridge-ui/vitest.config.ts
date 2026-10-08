@@ -15,7 +15,11 @@ export default defineConfig({
     testTimeout: 15_000,
     include: ['./src/**/*.test.ts', './src/**/*.test.tsx', './scripts/**/*.test.ts'],
     exclude: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
-    env: loadEnv('', '../app/', ''),
+    env: {
+      ...loadEnv('', '../app/', ''),
+      // pinned so history routing doesn't depend on the ambient env
+      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '42161,421614,4663,46630',
+    },
     environment: 'happy-dom',
     setupFiles: ['./vitest.mocks.ts'],
   },

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ChainId } from '../../types/ChainId';
 import { parseChainIds } from './sources';
 
 describe('parseChainIds', () => {
@@ -26,7 +27,7 @@ describe('parseChainIds', () => {
 // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so each case stubs the env and
 // re-imports the module. The cases must not run concurrently (the global default): one
 // case's afterEach unstubs the env while another's import is still evaluating.
-describe('getCanonicalSource', { concurrent: false }, () => {
+describe('hasBridgeHistory', { concurrent: false }, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
@@ -38,21 +39,29 @@ describe('getCanonicalSource', { concurrent: false }, () => {
     return import('./sources');
   }
 
-  it('treats an unconfigured chain as subgraph-backed', async () => {
-    const { getCanonicalSource, isChildChainIndexed } = await importSourcesWith('');
-
-    expect(isChildChainIndexed(42161)).toBe(false);
-    expect(getCanonicalSource(42161)).toBe('subgraph');
-  });
-
-  it('routes configured chains to the indexer and leaves others on the subgraph', async () => {
-    const { getCanonicalSource, isChildChainIndexed } = await importSourcesWith('46630,33139');
+  it('has history for configured chains and none for the rest', async () => {
+    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('46630,33139');
 
     expect(isChildChainIndexed(46630)).toBe(true);
-    expect(getCanonicalSource(46630)).toBe('indexer');
-    expect(isChildChainIndexed(33139)).toBe(true);
+    expect(hasBridgeHistory(46630)).toBe(true);
+    expect(hasBridgeHistory(33139)).toBe(true);
 
-    expect(isChildChainIndexed(42161)).toBe(false);
-    expect(getCanonicalSource(42161)).toBe('subgraph');
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
+    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
+  });
+
+  it('falls back to the core chains when the list is unset', async () => {
+    const { isChildChainIndexed } = await importSourcesWith('');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
+    expect(isChildChainIndexed(46630)).toBe(false);
+  });
+
+  it('has history for Nova without it being configured', async () => {
+    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });

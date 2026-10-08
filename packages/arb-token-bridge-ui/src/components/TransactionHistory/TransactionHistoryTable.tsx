@@ -107,7 +107,11 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
         </div>
       }
     >
-      <ExclamationCircleIcon height={20} className="text-error" />
+      <ExclamationCircleIcon
+        height={20}
+        className="text-error"
+        data-testid="failed-chain-pairs-warning"
+      />
     </Tooltip>
   );
 };
@@ -184,13 +188,18 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
 
   if (isTxHistoryEmpty) {
     return (
-      <EmptyTransactionHistory
-        loading={loading}
-        isError={typeof error !== 'undefined'}
-        paused={paused}
-        resume={resume}
-        tabType={isPendingTab ? 'pending' : 'settled'}
-      />
+      <>
+        {/* an outage leaves nothing to list, so the warning has to render here too */}
+        <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
+        <EmptyTransactionHistory
+          loading={loading}
+          // with a chain unchecked, "no transactions" could be a lie
+          isError={typeof error !== 'undefined' || failedChainPairs.length > 0}
+          paused={paused}
+          resume={resume}
+          tabType={isPendingTab ? 'pending' : 'settled'}
+        />
+      </>
     );
   }
 
