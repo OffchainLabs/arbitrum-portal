@@ -795,7 +795,7 @@ export async function getUpdatedLifiTransfer(
     routeIsComplete && lifiRoute
       ? getLifiTransactionSnapshot({ ...tx, lifiRoute })?.toAmount
       : !lifiRoute
-        ? actualToAmount
+        ? (tx.toAmount ?? actualToAmount)
         : undefined;
 
   if (status === WithdrawalStatus.REFUNDED || destinationStatus === WithdrawalStatus.REFUNDED) {
@@ -811,6 +811,7 @@ export async function getUpdatedLifiTransfer(
     status,
     destinationStatus,
     ...(completedToAmount ? { toAmount: completedToAmount } : {}),
+    ...(!lifiRoute && actualToAmount ? { receivedAmount: actualToAmount } : {}),
   };
 }
 
