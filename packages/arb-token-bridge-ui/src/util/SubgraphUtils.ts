@@ -1,6 +1,12 @@
 import { assertOk, getAPIBaseUrl } from '.';
+import { hasBridgeHistory } from './txHistory/sources';
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
+  // the route answers 0 for these anyway; batched callers ask once per batch
+  if (!hasBridgeHistory(chainId)) {
+    return 0;
+  }
+
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
