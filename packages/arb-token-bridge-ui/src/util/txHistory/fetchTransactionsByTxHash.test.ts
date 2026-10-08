@@ -343,6 +343,42 @@ describe.sequential('fetchTransactionsByTxHash', () => {
     ).rejects.toThrow('Some chains could not be checked');
   });
 
+  it('resolves a deposit when another pair on the same parent chain fails', async () => {
+    const deposit = { txID: TX_HASH, direction: 'deposit' };
+    const otherChildChainId = 42170;
+    mockProviders({ [PARENT_CHAIN_ID]: makeReceipt([]) });
+    vi.mocked(fetchDeposits)
+      .mockRejectedValueOnce(new Error('/api/deposits failed with 502'))
+      .mockResolvedValueOnce([deposit as never]);
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: [
+        { parentChainId: PARENT_CHAIN_ID, childChainId: otherChildChainId },
+        ...CHAIN_PAIRS,
+      ],
+      probeChainIds: PROBE_CHAIN_IDS,
+      isTestnetMode: false,
+    });
+
+    expect(fetchDeposits).toHaveBeenCalledTimes(2);
+    expect(transfers).toEqual([deposit]);
+  });
+
+  it('throws when nothing is found and a deposit lookup failed', async () => {
+    mockProviders({ [PARENT_CHAIN_ID]: makeReceipt([]) });
+    vi.mocked(fetchDeposits).mockRejectedValue(new Error('/api/deposits failed with 502'));
+
+    await expect(
+      fetchTransactionsByTxHash({
+        txHash: TX_HASH,
+        chainPairs: CHAIN_PAIRS,
+        probeChainIds: PROBE_CHAIN_IDS,
+        isTestnetMode: false,
+      }),
+    ).rejects.toThrow('Some chains could not be checked');
+  });
+
   it('tolerates a failed probe when the receipt was found elsewhere', async () => {
     mockProviders({
       [PARENT_CHAIN_ID]: new Error('rate limited'),
