@@ -22,10 +22,14 @@ const routes = [
   ['eth-deposits-custom-destination', getEthDepositsToCustomDestination],
 ] as const;
 
+const SENDER = '0x1234567890123456789012345678901234567890';
+
+function requestWith(route: string, params: Record<string, string>) {
+  return new NextRequest(`https://app.test/api/${route}?${new URLSearchParams(params)}`);
+}
+
 function request(route: string, l2ChainId: number) {
-  return new NextRequest(
-    `https://app.test/api/${route}?sender=0x1234567890123456789012345678901234567890&l2ChainId=${l2ChainId}`,
-  );
+  return requestWith(route, { sender: SENDER, l2ChainId: String(l2ChainId) });
 }
 
 describe.sequential('bridge history routes', () => {
@@ -67,4 +71,54 @@ describe.sequential('bridge history routes', () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it.each(routes)('/api/%s asks for a missing or malformed l2ChainId', async (route, GET) => {
+    await Promise.all(
+      ['', 'abc', '1.5', '0', '-42161'].map(async (rawChainId) => {
+        const response = await GET(requestWith(route, { sender: SENDER, l2ChainId: rawChainId }));
+
+        expect(response.status, rawChainId).toBe(400);
+        expect(await response.json()).toEqual({ message: '<l2ChainId> is required', data: [] });
+      }),
+    );
+    expect(isChildChainIndexedMock).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each(routes)('/api/%s requires a sender or receiver', async (route, GET) => {
+    const response = await GET(requestWith(route, { l2ChainId: String(INDEXED_CHAIN_ID) }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      message: '<sender> or <receiver> is required',
+      data: [],
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each(routes)('/api/%s accepts a receiver alone', async (route, GET) => {
+    const response = await GET(
+      requestWith(route, { receiver: SENDER, l2ChainId: String(INDEXED_CHAIN_ID) }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it.each(routes)(
+    '/api/%s answers an empty page for a zero or bad pageSize',
+    async (route, GET) => {
+      await Promise.all(
+        ['0', 'abc'].map(async (pageSize) => {
+          const response = await GET(
+            requestWith(route, { sender: SENDER, l2ChainId: String(INDEXED_CHAIN_ID), pageSize }),
+          );
+
+          expect(response.status, pageSize).toBe(200);
+          expect(await response.json()).toEqual({ data: [] });
+        }),
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -9,12 +9,6 @@ export function getChildChainId(searchParams: URLSearchParams): number | undefin
   return parseChainId(searchParams.get('l2ChainId'));
 }
 
-export function isIndexerEnabledForRequest(request: NextRequest): boolean {
-  const childChainId = getChildChainId(new URL(request.url).searchParams);
-
-  return typeof childChainId === 'undefined' ? false : isChildChainIndexed(childChainId);
-}
-
 export async function proxyToIndexer(request: NextRequest, path: string) {
   const { searchParams } = new URL(request.url);
   const childChainId = getChildChainId(searchParams);
@@ -41,4 +35,41 @@ export async function proxyToIndexer(request: NextRequest, path: string) {
     logger.error('[indexer] Proxy to indexer failed:', error);
     return NextResponse.json({ data: [], message: 'Indexer unavailable' }, { status: 502 });
   }
+}
+
+/**
+ * GET handler for a bridge history route the indexer alone serves. Checks the
+ * request first, as the subgraph path did, so a malformed request gets a clear
+ * answer here instead of being forwarded.
+ */
+export function indexerOnlyRoute(path: string) {
+  return async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const childChainId = getChildChainId(searchParams);
+
+    if (typeof childChainId === 'undefined') {
+      return NextResponse.json({ message: '<l2ChainId> is required', data: [] }, { status: 400 });
+    }
+
+    if (!searchParams.get('sender') && !searchParams.get('receiver')) {
+      return NextResponse.json(
+        { message: '<sender> or <receiver> is required', data: [] },
+        { status: 400 },
+      );
+    }
+
+    const pageSize = Number(searchParams.get('pageSize') || '10');
+    if (Number.isNaN(pageSize) || pageSize === 0) {
+      return NextResponse.json({ data: [] }, { status: 200 });
+    }
+
+    if (!isChildChainIndexed(childChainId)) {
+      return NextResponse.json(
+        { message: `unsupported chain: ${childChainId}`, data: [] },
+        { status: 400 },
+      );
+    }
+
+    return proxyToIndexer(request, path);
+  };
 }
