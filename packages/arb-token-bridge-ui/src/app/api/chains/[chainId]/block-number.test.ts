@@ -66,12 +66,14 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
   it('returns a 502 (not a misleading success) when the indexer block number cannot be fetched', async () => {
     isChildChainIndexedMock.mockReturnValue(true);
-    fetchMock.mockResolvedValue({ ok: false });
+    fetchMock.mockResolvedValue({ ok: false, status: 503 });
 
     const response = await getBlockNumber(ChainId.ArbitrumOne);
 
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ message: 'Unable to fetch indexer block number' });
+    expect(await response.json()).toEqual({
+      message: `Indexer status failed with 503 for chain ${ChainId.ArbitrumOne}`,
+    });
     // failures must not fall through to the subgraph either
     expect(getL2SubgraphClientMock).not.toHaveBeenCalled();
   });
@@ -82,7 +84,25 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     const response = await getBlockNumber(ChainId.ArbitrumSepolia);
 
     expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      message: `No indexer configured for chain ${ChainId.ArbitrumSepolia}`,
+    });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns a 502 naming the chain when the indexer status does not list it', async () => {
+    isChildChainIndexedMock.mockReturnValue(true);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ethereum: { id: '1', block: { number: 999 } } }),
+    });
+
+    const response = await getBlockNumber(ChainId.ArbitrumOne);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      message: `Indexer status does not report chain ${ChainId.ArbitrumOne}`,
+    });
   });
 
   it('surfaces a subgraph failure as a 502', async () => {

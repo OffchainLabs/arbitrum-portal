@@ -193,7 +193,8 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
         <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
         <EmptyTransactionHistory
           loading={loading}
-          isError={typeof error !== 'undefined'}
+          // with a chain unchecked, "no transactions" could be a lie
+          isError={typeof error !== 'undefined' || failedChainPairs.length > 0}
           paused={paused}
           resume={resume}
           tabType={isPendingTab ? 'pending' : 'settled'}

@@ -50,6 +50,14 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
   });
 
+  it('falls back to the core chains when the list is unset', async () => {
+    const { isChildChainIndexed } = await importSourcesWith('');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
+    expect(isChildChainIndexed(46630)).toBe(false);
+  });
+
   it('has history for Nova without it being configured', async () => {
     const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('');
 
