@@ -47,8 +47,24 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
   });
 
-  it('has no history for Nova unless it is configured', async () => {
+  it('falls back to the core chains when the list is unset', async () => {
     const { isChildChainIndexed } = await importSourcesWith('');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
+    expect(isChildChainIndexed(46630)).toBe(false);
+  });
+
+  it('serves Nova from the indexer under the pinned list', async () => {
+    vi.resetModules();
+    const { isChildChainIndexed } = await import('./sources');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+  });
+
+  it('has no history for Nova when a set list leaves it out', async () => {
+    const { isChildChainIndexed } = await importSourcesWith('42161');
 
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
   });

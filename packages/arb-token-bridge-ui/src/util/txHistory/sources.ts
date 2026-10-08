@@ -1,3 +1,5 @@
+import { ChainId } from '../../types/ChainId';
+
 /** `undefined` for anything that isn't a positive integer chain ID. */
 export function parseChainId(raw: string | null | undefined): number | undefined {
   const chainId = Number(raw?.trim());
@@ -18,9 +20,23 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-export const INDEXER_CHILD_CHAIN_IDS = parseChainIds(
+// The core chains have no other history source, so a build missing the var
+// must not leave them silently empty. A configured list still wins, which keeps
+// moving a chain off the indexer an env change.
+const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
+  ChainId.ArbitrumOne,
+  ChainId.ArbitrumNova,
+  ChainId.ArbitrumSepolia,
+];
+
+const configuredIndexerChildChainIds = parseChainIds(
   process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS,
 );
+
+export const INDEXER_CHILD_CHAIN_IDS =
+  configuredIndexerChildChainIds.length > 0
+    ? configuredIndexerChildChainIds
+    : DEFAULT_INDEXER_CHILD_CHAIN_IDS;
 
 export function isChildChainIndexed(childChainId: number): boolean {
   return INDEXER_CHILD_CHAIN_IDS.includes(childChainId);
