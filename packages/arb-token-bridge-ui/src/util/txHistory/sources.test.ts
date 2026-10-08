@@ -27,7 +27,7 @@ describe('parseChainIds', () => {
 // INDEXER_CHILD_CHAIN_IDS is evaluated at module load, so each case stubs the env and
 // re-imports the module. The cases must not run concurrently (the global default): one
 // case's afterEach unstubs the env while another's import is still evaluating.
-describe('hasBridgeHistory', { concurrent: false }, () => {
+describe('isChildChainIndexed', { concurrent: false }, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
@@ -40,14 +40,11 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
   }
 
   it('has history for configured chains and none for the rest', async () => {
-    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('46630,33139');
+    const { isChildChainIndexed } = await importSourcesWith('46630,33139');
 
     expect(isChildChainIndexed(46630)).toBe(true);
-    expect(hasBridgeHistory(46630)).toBe(true);
-    expect(hasBridgeHistory(33139)).toBe(true);
-
+    expect(isChildChainIndexed(33139)).toBe(true);
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
-    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
   });
 
   it('falls back to the core chains when the list is unset', async () => {
@@ -66,10 +63,9 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 
-  it('keeps Nova on its subgraph when a set list leaves it out', async () => {
-    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('42161');
+  it('has no history for Nova when a set list leaves it out', async () => {
+    const { isChildChainIndexed } = await importSourcesWith('42161');
 
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
-    expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });

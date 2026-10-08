@@ -1,9 +1,9 @@
 import { assertOk, getAPIBaseUrl } from '.';
-import { hasBridgeHistory } from './txHistory/sources';
+import { isChildChainIndexed } from './txHistory/sources';
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
   // the route answers 0 for these anyway; batched callers ask once per batch
-  if (!hasBridgeHistory(chainId)) {
+  if (!isChildChainIndexed(chainId)) {
     return 0;
   }
 

@@ -1,13 +1,9 @@
-import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
-import {
-  type SubgraphSource,
-  getL2SubgraphClient,
-} from '../../../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource } from '../../../../api-utils/ServerSubgraphUtils';
 import { logger } from '../../../../util/logger';
-import { hasBridgeHistory, isChildChainIndexed } from '../../../../util/txHistory/sources';
+import { isChildChainIndexed } from '../../../../util/txHistory/sources';
 
 type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 
@@ -54,49 +50,17 @@ export async function GET(
   const { chainId } = await params;
   const numericChainId = Number(chainId);
 
-  if (!hasBridgeHistory(numericChainId)) {
+  if (!isChildChainIndexed(numericChainId)) {
     return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
   }
 
   try {
-    if (isChildChainIndexed(numericChainId)) {
-      const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId);
-
-      return NextResponse.json(
-        {
-          meta: { source: 'arbitrum-indexer' },
-          data: indexerBlockNumber,
-        },
-        { status: 200 },
-      );
-    }
-
-    const subgraph = getL2SubgraphClient(numericChainId);
-
-    const result: {
-      data: {
-        _meta: {
-          block: {
-            number: number;
-          };
-        };
-      };
-    } = await subgraph.client.query({
-      query: gql`
-        {
-          _meta {
-            block {
-              number
-            }
-          }
-        }
-      `,
-    });
+    const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId);
 
     return NextResponse.json(
       {
-        meta: { source: subgraph.source },
-        data: result.data._meta.block.number,
+        meta: { source: 'arbitrum-indexer' },
+        data: indexerBlockNumber,
       },
       { status: 200 },
     );
