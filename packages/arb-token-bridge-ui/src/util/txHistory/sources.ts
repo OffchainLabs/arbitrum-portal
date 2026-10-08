@@ -25,6 +25,7 @@ export function parseChainIds(raw: string | undefined): number[] {
 // moving a chain off the indexer an env change.
 const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
   ChainId.ArbitrumOne,
+  ChainId.ArbitrumNova,
   ChainId.ArbitrumSepolia,
 ];
 

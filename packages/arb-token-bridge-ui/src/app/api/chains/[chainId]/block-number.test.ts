@@ -119,7 +119,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     expect(await response.json()).toEqual({ message: 'subgraph unavailable' });
   });
 
-  it('uses the subgraph for Nova, the one chain still served by one', async () => {
+  it("uses Nova's subgraph when Nova isn't in the indexed list", async () => {
     isChildChainIndexedMock.mockReturnValue(false);
     const query = vi.fn().mockResolvedValue({ data: { _meta: { block: { number: 999 } } } });
     getL2SubgraphClientMock.mockReturnValue({
