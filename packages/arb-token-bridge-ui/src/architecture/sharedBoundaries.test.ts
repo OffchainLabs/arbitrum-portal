@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const sourceRoot = path.resolve(import.meta.dirname, '..');
 const componentDirectories = ['components', '../../app/src/components'];
 const sharedHooks = [
+  'application/executeLifiTransfer.ts',
   'components/common/NetworkSelectionContainer.tsx',
   'components/Widget/WidgetHeaderAccountButton.tsx',
   'components/App/useSyncConnectedChainToQueryParams.ts',

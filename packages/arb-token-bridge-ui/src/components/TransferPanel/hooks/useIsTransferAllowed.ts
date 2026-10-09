@@ -15,23 +15,17 @@ export function useIsTransferAllowed() {
     },
   } = useAppState();
   const { sourceWallet } = useWallets();
-  const walletAddress = sourceWallet.account.address;
+  const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const [networks] = useNetworks();
   const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
     const isConnectedToTheWrongChain = sourceWallet.account.chainId !== networks.sourceChain.id;
 
-    if (!arbTokenBridgeLoaded) {
+    if (!sourceWallet.isConnected || !sourceWallet.account.address) {
       return false;
     }
-    if (!eth) {
-      return false;
-    }
-    if (!sourceWallet.isConnected) {
-      return false;
-    }
-    if (!walletAddress) {
+    if (!isLifiRoute(selectedRoute) && (!arbTokenBridgeLoaded || !eth)) {
       return false;
     }
     if (isConnectedToTheWrongChain) {
@@ -46,8 +40,7 @@ export function useIsTransferAllowed() {
     destinationAddressError,
     eth,
     networks.sourceChain.id,
-    sourceWallet.account.chainId,
-    sourceWallet.isConnected,
-    walletAddress,
+    sourceWallet,
+    selectedRoute,
   ]);
 }
