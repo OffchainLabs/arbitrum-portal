@@ -14,13 +14,6 @@ import {
   TransactionsTableDetailsSteps,
 } from './TransactionsTableDetailsSteps';
 
-vi.mock('../../hooks/useTransferDuration', () => ({
-  minutesToHumanReadableTime: (minutes: number) => `${minutes} minutes`,
-  useTransferDuration: () => ({
-    approximateDurationInMinutes: 15,
-  }),
-}));
-
 vi.mock('./TransactionsTableRowAction', () => ({
   TransactionsTableRowAction: () => <button>Action</button>,
 }));
@@ -507,7 +500,7 @@ describe('TransactionFailedOnNetwork', () => {
     const html = renderToStaticMarkup(
       <TransactionFailedOnNetwork
         networkName="Robinhood Chain"
-        tx={{ assetType: AssetType.ETH, sender, destination: sender.toUpperCase() }}
+        tx={{ assetType: AssetType.ETH, sender, destination: sender }}
       />,
     );
 

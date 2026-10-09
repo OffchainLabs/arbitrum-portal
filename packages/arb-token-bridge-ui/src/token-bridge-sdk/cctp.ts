@@ -1,22 +1,23 @@
 import { Config, readContract, simulateContract, writeContract } from '@wagmi/core';
+import { isHex } from 'viem';
 
 import { ChainDomain } from '../app/api/cctp/[type]';
 import { CCTPSupportedChainId } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
-import { Address } from '../util/AddressUtils';
+import { Address, EvmAddress } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { MessageTransmitterAbi } from '../util/cctp/MessageTransmitterAbi';
 import { TokenMinterAbi } from '../util/cctp/TokenMinterAbi';
 
 // see https://developers.circle.com/stablecoin/docs/cctp-protocol-contract
 type Contracts = {
-  tokenMessengerContractAddress: Address;
+  tokenMessengerContractAddress: EvmAddress;
   targetChainDomain: ChainDomain;
   targetChainId: CCTPSupportedChainId;
-  usdcContractAddress: Address;
-  messageTransmitterContractAddress: Address;
+  usdcContractAddress: EvmAddress;
+  messageTransmitterContractAddress: EvmAddress;
   attestationApiUrl: string;
-  tokenMinterContractAddress: Address;
+  tokenMinterContractAddress: EvmAddress;
 };
 
 const contracts: Record<CCTPSupportedChainId, Contracts> = {
@@ -132,6 +133,10 @@ export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {
     attestation: Address;
     wagmiConfig: Config;
   }) => {
+    if (!isHex(messageBytes) || !isHex(attestation)) {
+      throw new Error('Invalid CCTP receive-message parameters');
+    }
+
     const { request } = await simulateContract(wagmiConfig, {
       address: messageTransmitterContractAddress,
       abi: MessageTransmitterAbi,

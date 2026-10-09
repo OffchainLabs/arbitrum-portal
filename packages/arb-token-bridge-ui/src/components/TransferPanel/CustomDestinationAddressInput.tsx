@@ -9,8 +9,10 @@ import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { addressIsSmartContract } from '../../services/evm/account';
 import { AccountType } from '../../util/AccountUtils';
-import { addressIsSmartContract } from '../../util/AddressUtils';
+import { normalizeAddress } from '../../util/AddressUtils';
+import { isValidAddressForChain } from '../../util/isValidAddressForChain';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
@@ -78,16 +80,16 @@ export const CustomDestinationAddressInput = () => {
 
   const validateAndSubmitDestinationAddress = useCallback(
     (address: string) => {
-      if (error || !address || !isAddress(address)) {
+      if (error || !isValidAddressForChain(address, networks.destinationChain.id)) {
         // Clear query params if there's an error
         setLocalDestinationAddress('');
         setQueryParams({ destinationAddress: undefined });
       } else {
         // if valid, commit to query params
-        setQueryParams({ destinationAddress: address });
+        setQueryParams({ destinationAddress: normalizeAddress(address) });
       }
     },
-    [error, setQueryParams, setLocalDestinationAddress],
+    [error, networks.destinationChain.id, setQueryParams, setLocalDestinationAddress],
   );
 
   const { data: warning } = useSWRImmutable(
@@ -152,7 +154,7 @@ export const CustomDestinationAddressInput = () => {
           value={localDestinationAddress}
           spellCheck={false}
           onChange={(e) => {
-            const newValue = e.target.value?.toLowerCase().trim();
+            const newValue = e.target.value.trim();
             setLocalDestinationAddress(newValue);
           }}
           onBlur={() => {

@@ -7,7 +7,7 @@ import {
   TokenType,
 } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { addressesEqual } from './AddressEquality';
+import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
 import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken, isTokenAvailableOnChain } from './TokenListUtils';
@@ -132,7 +132,9 @@ export function resolveDestinationSelection({
       isDepositMode,
     });
 
-  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  const repeatsSource =
+    (destinationTokenLookupKey === undefined && sourceTokenAddress === undefined) ||
+    addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
   let token: ERC20BridgeToken | null;
   let lookupKey = destinationTokenLookupKey;
   let isSwap = !repeatsSource;

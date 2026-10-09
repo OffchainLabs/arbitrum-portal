@@ -4,7 +4,7 @@ import { describe, expect, it, test, vi } from 'vitest';
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressEquality';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
 

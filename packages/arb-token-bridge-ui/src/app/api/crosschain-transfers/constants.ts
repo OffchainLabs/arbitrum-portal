@@ -1,5 +1,5 @@
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressEquality';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
