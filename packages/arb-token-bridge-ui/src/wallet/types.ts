@@ -1,3 +1,5 @@
+import type { EvmAddress, SolanaAddress } from '../util/AddressUtils';
+
 export type WalletEcosystem = 'evm' | 'solana';
 
 export type WalletStatus = 'connected' | 'disconnected' | 'connecting' | 'reconnecting';
@@ -9,7 +11,7 @@ export type ConnectedWalletInfo = {
 
 export type WalletAccount<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
-  address?: string;
+  address?: Ecosystem extends 'evm' ? EvmAddress : SolanaAddress;
   chainId?: number;
   status: WalletStatus;
   walletInfo?: ConnectedWalletInfo;
@@ -32,4 +34,16 @@ export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;
 
 export type WalletContextValue = {
   [Ecosystem in WalletEcosystem]: Extract<WalletHandle, { ecosystem: Ecosystem }>;
+};
+
+export type FetchBalanceInput = {
+  chainId: number;
+  walletAddress: string;
+  tokenAddresses: string[];
+};
+
+export type FetchBalanceResult = Record<string, bigint>;
+
+export type BalanceClient = {
+  fetchBalance: (input: FetchBalanceInput) => Promise<FetchBalanceResult>;
 };
