@@ -19,7 +19,7 @@ export function useAccountType(addressOverride?: string, chainIdOverride?: numbe
 
   // By default we resolve account type against the bridge source chain.
   // Callers can override the chain when they need to inspect a specific connected chain instead.
-  const chainId = chainIdOverride ?? sourceChain?.id;
+  const chainId = chainIdOverride ?? sourceChain.id;
   const address = addressOverride ?? walletAddress;
 
   const { data: accountType, isLoading } = useSWRImmutable(
