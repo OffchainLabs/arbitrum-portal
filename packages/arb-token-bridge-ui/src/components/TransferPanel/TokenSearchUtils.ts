@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
+import { zeroAddress } from 'viem';
 
 import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import {
@@ -11,11 +12,41 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
+import { addressesEqual } from '../../util/AddressUtils';
 import { TokenListWithId, tokenListTokenToBridgeToken } from '../../util/TokenListUtils';
 import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
+import { getNativeTokenAddress } from '../../wallet/constants';
 
 // keeps the reference stable
 const emptyData: ContractStorage<ERC20BridgeToken> = {};
+
+export const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
+
+export function getTokenPickerAddresses({
+  tokenAddresses,
+  chainId,
+  hasCustomNativeCurrency,
+}: {
+  tokenAddresses: string[];
+  chainId: number;
+  hasCustomNativeCurrency: boolean;
+}) {
+  const nativeTokenAddress = getNativeTokenAddress(chainId);
+  const usesNonzeroNativeAddress = !addressesEqual(nativeTokenAddress, zeroAddress);
+  const pickerAddresses = usesNonzeroNativeAddress
+    ? tokenAddresses.filter((address) => !addressesEqual(address, nativeTokenAddress))
+    : [...tokenAddresses];
+
+  if (
+    hasCustomNativeCurrency ||
+    usesNonzeroNativeAddress ||
+    !tokenAddresses.some((address) => addressesEqual(address, nativeTokenAddress))
+  ) {
+    pickerAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
+  }
+
+  return Array.from(new Set(pickerAddresses));
+}
 
 export type AddTokenFromSearchResult = 'success' | 'disabled' | 'not-found';
 

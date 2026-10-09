@@ -1,6 +1,5 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { BigNumber, constants } from 'ethers';
-import { isAddress } from 'ethers/lib/utils';
 import Image from 'next/image';
 import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
@@ -10,7 +9,7 @@ import { twMerge } from 'tailwind-merge';
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useMode } from '../../hooks/useMode';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
@@ -46,6 +45,7 @@ import {
   isTokenArbitrumSepoliaNativeUSDC,
   isTokenNativeUSDC,
 } from '../../util/TokenUtils';
+import { isValidAddressForChain } from '../../util/isValidAddressForChain';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
@@ -58,7 +58,13 @@ import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { Switch } from '../common/atoms/Switch';
 import { warningToast } from '../common/atoms/Toast';
 import { TokenRow } from './TokenRow';
-import { addTokenFromSearch, useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
+import {
+  NATIVE_CURRENCY_IDENTIFIER,
+  addTokenFromSearch,
+  getTokenPickerAddresses,
+  useTokensFromLists,
+  useTokensFromUser,
+} from './TokenSearchUtils';
 
 function TokenListRow({ tokenList }: { tokenList: BridgeTokenList }) {
   const {
@@ -145,7 +151,6 @@ function TokenListsPanel() {
   );
 }
 
-const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
 const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function TokensPanel({
@@ -167,7 +172,7 @@ function TokensPanel({
       isConnected,
     },
   } = useWallets();
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrencyForTransfer();
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -338,15 +343,11 @@ function TokensPanel({
       }
     }
 
-    /**
-     * Add native currency if not already included
-     * For chains with custom native tokens, always add it even if AddressZero is present
-     */
-    if (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) {
-      tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    }
-
-    const tokens = Array.from(new Set(tokenAddresses));
+    const tokens = getTokenPickerAddresses({
+      tokenAddresses,
+      chainId: networks.sourceChain.id,
+      hasCustomNativeCurrency: nativeCurrency.isCustom,
+    });
     const seenSourceTokenAddresses = new Set<string>();
 
     return tokens
@@ -546,7 +547,7 @@ function TokensPanel({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!isAddress(newToken) || isAddingToken) {
+    if (!isValidAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
       return;
     }
 
@@ -661,14 +662,14 @@ function TokensPanel({
         variant="secondary"
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
-        disabled={!isAddress(newToken)}
+        disabled={!isValidAddressForChain(newToken, networks.sourceChain.id)}
         className="border border-gray-dark py-1"
         aria-label="Add New Token"
       >
         Add
       </Button>
     ),
-    [isAddingToken, newToken],
+    [isAddingToken, newToken, networks.sourceChain.id],
   );
 
   return (
