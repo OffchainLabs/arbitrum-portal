@@ -43,7 +43,7 @@ function createWrapper(destinationChain: ChainId, bridgeTokens = {}) {
 afterEach(cleanup);
 
 describe.sequential('shared source token row', () => {
-  it.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+  it.each([ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition])(
     'renders native SOL with nine decimals when depositing to %s',
     (destination) => {
       const wrapper = createWrapper(destination);

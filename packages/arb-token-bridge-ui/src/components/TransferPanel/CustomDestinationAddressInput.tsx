@@ -23,7 +23,9 @@ export enum DestinationAddressErrors {
 export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks();
   const {
+    sourceWallet: { ecosystem: sourceEcosystem },
     destinationWallet: {
+      ecosystem: destinationEcosystem,
       account: { address },
     },
   } = useWallets();
@@ -83,6 +85,8 @@ export const CustomDestinationAddressInput = () => {
             <span className="font-semibold">must specify an address</span> you&apos;d like the funds
             sent to.
           </>
+        ) : sourceEcosystem !== destinationEcosystem && !address ? (
+          `Enter the recipient address on ${networks.destinationChain.name}.`
         ) : (
           'Send your funds to a different address. Be sure you mean to send it here.'
         )}

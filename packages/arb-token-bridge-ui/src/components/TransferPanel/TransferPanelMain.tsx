@@ -17,12 +17,13 @@ import { shortenAddress } from '../../util/CommonUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
+import { getNetworkMetadata } from '../../util/networkMetadata';
 import { getDestinationChainIds, isNetwork } from '../../util/networks';
-import { getOrbitChains } from '../../util/orbitChainsList';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { CustomMainnetChainWarning } from './CustomMainnetChainWarning';
+import { NetworkWalletButton } from './NetworkWalletButton';
 import { NovaMinimizedStateWarning } from './NovaMinimizedStateWarning';
 import { TransferDisabledDialog } from './TransferDisabledDialog';
 import { DestinationNetworkBox } from './TransferPanelMain/DestinationNetworkBox';
@@ -153,8 +154,10 @@ export function NetworkContainer({
 }) {
   const {
     sourceWallet: {
+      ecosystem: sourceEcosystem,
       account: { address: walletAddress },
     },
+    destinationWallet: { ecosystem: destinationEcosystem },
   } = useWallets();
   const [{ theme }] = useArbQueryParams();
 
@@ -184,7 +187,10 @@ export function NetworkContainer({
         }}
       >
         <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
-        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">{children}</div>
+        <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">
+          {children}
+          {sourceEcosystem !== destinationEcosystem && <NetworkWalletButton chainId={network.id} />}
+        </div>
       </div>
     </div>
   );
@@ -204,7 +210,7 @@ export function TransferPanelMain() {
     }
 
     // This will not include custom chains
-    return !getOrbitChains().some((_chain) => _chain.chainId === childChain.id);
+    return getNetworkMetadata(childChain.id).isCustom === true;
   }, [parentChain, childChain]);
 
   return (
