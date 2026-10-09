@@ -8,9 +8,9 @@ import {
   NodeBlockDeadlineStatusTypes,
   OutgoingMessageState,
 } from '../../hooks/arbTokenBridge.types';
-import { getUniqueIdOrHashFromEvent } from '../../hooks/useArbTokenBridge';
 import { Transaction } from '../../types/Transactions';
 import { addressesEqual } from '../../util/AddressUtils';
+import { getUniqueIdOrHashFromEvent } from '../../util/WithdrawalEvent';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { DepositStatus, MergedTransaction } from './state';
 

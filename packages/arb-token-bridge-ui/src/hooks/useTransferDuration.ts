@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from 'dayjs';
 
-import { isLifiTransfer } from '../components/TransactionHistory/helpers';
+import { isLifiTransfer } from '../services/history';
 import { MergedTransaction } from '../state/app/state';
 import { useRemainingTimeCctp } from '../state/cctpState';
 import { getBoldInfo, getDifferenceInSeconds } from '../util/BoLDUtils';

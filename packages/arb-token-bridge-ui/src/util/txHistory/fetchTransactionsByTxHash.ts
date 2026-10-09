@@ -13,10 +13,10 @@ import {
   fetchLifiTransactionHistory,
 } from '../../hooks/useLifiTransactionHistory';
 import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
-import type { Transfer, Withdrawal } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { parseSWRResponse } from '../../state/cctpState';
 import { ChainId } from '../../types/ChainId';
+import type { Transfer, Withdrawal } from '../../types/TransferHistory';
 import { isValidTransactionId, normalizeTransactionId } from '../TransactionIdUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
 import { fetchDeposits } from '../deposits/fetchDeposits';

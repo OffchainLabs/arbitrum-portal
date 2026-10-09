@@ -3,8 +3,8 @@ import { Provider } from '@ethersproject/providers';
 import { constants } from 'ethers';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
-import { Withdrawal } from '../../hooks/useTransactionHistory';
 import { getNonce } from '../../services/evm/account';
+import { Withdrawal } from '../../types/TransferHistory';
 import { backOff, wait } from '../ExponentialBackoffUtils';
 import { fetchLatestIndexedBlockNumber } from '../SubgraphUtils';
 import { fetchL2Gateways } from '../fetchL2Gateways';
