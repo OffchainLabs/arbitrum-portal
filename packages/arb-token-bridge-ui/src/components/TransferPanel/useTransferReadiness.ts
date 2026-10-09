@@ -1,9 +1,8 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { BigNumber, constants, utils } from 'ethers';
+import { constants, utils } from 'ethers';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
 import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -21,19 +20,16 @@ import {
 } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
+import { getAmountToPay } from '../../util/TransferAmounts';
+import type { AmountToPay } from '../../util/TransferAmounts';
+import { RouteType, getSelectedRouteContext, isLifiRoute } from '../../util/TransferRouteUtils';
 import { getNativeTokenAddress } from '../../wallet/constants';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
-import {
-  RouteContext,
-  RouteType,
-  getSelectedRouteContext,
-  isLifiRoute,
-  useRouteStore,
-} from './hooks/useRouteStore';
+import { useRouteStore } from './hooks/useRouteStore';
 import { useRouteEligibility } from './hooks/useRoutesUpdater';
 import { useSelectedTokenIsWithdrawOnly } from './hooks/useSelectedTokenIsWithdrawOnly';
 import {
@@ -54,8 +50,6 @@ type ErrorMessages = {
   inputAmount1?: string | TransferReadinessRichErrorMessage;
   inputAmount2?: string | TransferReadinessRichErrorMessage;
 };
-
-type AmountToPay = Omit<AmountWithToken, 'amountUSD'>;
 
 function sanitizeEstimatedGasFees(
   gasSummary: UseGasSummaryResult,
@@ -139,55 +133,6 @@ function notReady(
  * For some transfers (from Ape for example), fees and gas are paid in APE token.
  * While amount itself is paid in the token sent (USDC or ETH).
  */
-export function getAmountToPay(selectedRouteContext: RouteContext) {
-  const amounts: Record<string, AmountToPay> = {};
-  let fromAmountUsd = 0;
-
-  function addAmount({
-    token,
-    amount,
-    amountUSD,
-    chainId,
-  }: {
-    token: Token;
-    amount: string | undefined;
-    amountUSD?: string;
-    chainId?: number;
-  }) {
-    const key = `${chainId ?? 'unknown'}:${normalizeAddress(token.address)}`;
-    const acc = amounts[key];
-    const parsedAmount = BigNumber.from(amount ?? 0);
-    const parsedAmountUSD = Number(amountUSD ?? 0);
-    fromAmountUsd += parsedAmountUSD;
-    if (acc) {
-      amounts[key] = {
-        amount: BigNumber.from(acc.amount).add(parsedAmount).toString(),
-        token,
-        chainId,
-      };
-    } else {
-      amounts[key] = {
-        amount: parsedAmount.toString(),
-        token,
-        chainId,
-      };
-    }
-  }
-
-  selectedRouteContext.fee.forEach(addAmount);
-  selectedRouteContext.gas.forEach(addAmount);
-  addAmount({
-    ...selectedRouteContext.fromAmount,
-    chainId: selectedRouteContext.fromChainId,
-  });
-
-  return {
-    amounts,
-    fromAmountUsd,
-    toAmountUsd: Number(selectedRouteContext.toAmount.amountUSD),
-  };
-}
-
 function formatAmountToPay(amountToPay: AmountToPay | undefined) {
   return parseFloat(
     utils.formatUnits(amountToPay?.amount || constants.Zero, amountToPay?.token.decimals || 18),

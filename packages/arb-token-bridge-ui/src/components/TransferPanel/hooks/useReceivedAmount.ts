@@ -3,8 +3,9 @@ import { shallow } from 'zustand/shallow';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { formatAmount } from '../../../util/NumberUtils';
+import { isLifiRouteData } from '../../../util/TransferRouteUtils';
 import { useAmountBigNumber } from './useAmountBigNumber';
-import { isLifiRouteData, useRouteStore } from './useRouteStore';
+import { useRouteStore } from './useRouteStore';
 
 /**
  * We return raw amount to be able to feed it to other calculations (like USD value)

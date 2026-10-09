@@ -5,8 +5,9 @@ import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship'
 import { useSelectedToken } from '@/bridge/hooks/useSelectedToken';
 
 import { useDestinationToken } from '../../hooks/useDestinationToken';
-import { NativeCurrency, useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
+import { NativeCurrency } from '../../types/NativeCurrency';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { Button } from '../common/Button';

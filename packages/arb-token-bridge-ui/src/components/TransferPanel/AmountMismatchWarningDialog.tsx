@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 
 import { useNetworks } from '../../hooks/useNetworks';
 import { formatAmount } from '../../util/NumberUtils';
+import { getSelectedRouteContext } from '../../util/TransferRouteUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
-import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
+import { useRouteStore } from './hooks/useRouteStore';
 
 export function AmountMismatchWarningDialog(props: UseDialogProps) {
   const context = useRouteStore((state) => getSelectedRouteContext(state));

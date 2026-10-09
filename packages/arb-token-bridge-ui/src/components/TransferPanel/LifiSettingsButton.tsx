@@ -4,9 +4,10 @@ import { twMerge } from 'tailwind-merge';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { useMode } from '../../hooks/useMode';
+import { RouteType, isLifiRoute } from '../../util/TransferRouteUtils';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
-import { RouteType, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import { useRouteStore } from './hooks/useRouteStore';
 
 export function LifiSettingsButton() {
   const [dialogProps, openDialog] = useDialog2();

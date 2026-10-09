@@ -2,7 +2,7 @@ import { BigNumber, providers } from 'ethers';
 
 import { BridgeTransferStarter } from '@/token-bridge-sdk/BridgeTransferStarter';
 
-import { DialogType } from '../components/common/Dialog2';
+import { DialogType } from '../types/TransferDialog';
 
 export type Dialog = Extract<
   DialogType,

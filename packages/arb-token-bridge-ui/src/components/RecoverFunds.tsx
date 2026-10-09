@@ -26,11 +26,11 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useError } from '../hooks/useError';
-import type { NativeCurrency } from '../hooks/useNativeCurrency';
 import { useNetworks } from '../hooks/useNetworks';
 import { useSwitchNetworkWithConfig } from '../hooks/useSwitchNetworkWithConfig';
 import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
 import { ChainId } from '../types/ChainId';
+import type { NativeCurrency } from '../types/NativeCurrency';
 import { addressesEqual } from '../util/AddressUtils';
 import { trackEvent } from '../util/AnalyticsUtils';
 import { shortenAddress } from '../util/CommonUtils';

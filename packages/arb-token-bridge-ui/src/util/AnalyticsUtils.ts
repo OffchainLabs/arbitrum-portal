@@ -1,10 +1,10 @@
-import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
-import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { getNativeTokenAddress } from '../wallet/constants';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
+import { RouteType } from './TransferRouteUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
 type AccountType = 'EOA' | 'Smart Contract';
@@ -189,13 +189,16 @@ export function getLifiAssetType({
 }: {
   tokenAddress: string | undefined;
   chainId: number;
-}): 'ERC20' | 'ETH' {
+}): 'ERC20' | 'ETH' | 'SOL' {
   // ApeChain uses APE token (ERC20) for native token
   if (chainId === ChainId.ApeChain) {
     return 'ERC20';
   }
 
-  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
+  if (!addressesEqual(tokenAddress, getNativeTokenAddress(chainId))) {
+    return 'ERC20';
+  }
+  return chainId === ChainId.Solana ? 'SOL' : 'ETH';
 }
 
 export function trackEvent(

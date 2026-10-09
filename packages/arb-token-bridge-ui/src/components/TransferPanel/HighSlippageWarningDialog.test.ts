@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAmountLoss, hasHighUsdSlippage } from './TransferWarningUtils';
+import { getAmountLoss, hasHighUsdSlippage } from '../../util/TransferWarningUtils';
 
 describe('getAmountLoss', () => {
   it('calculates the absolute and percentage loss', () => {

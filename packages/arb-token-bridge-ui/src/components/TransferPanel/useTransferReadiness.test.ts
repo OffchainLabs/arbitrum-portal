@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { WETH_TOKEN_LOGO } from '@/bridge/constants';
 
-import { hasHighUsdSlippage } from './TransferWarningUtils';
-import { RouteContext } from './hooks/useRouteStore';
-import { getAmountToPay } from './useTransferReadiness';
+import { getAmountToPay } from '../../util/TransferAmounts';
+import { RouteContext } from '../../util/TransferRouteUtils';
+import { hasHighUsdSlippage } from '../../util/TransferWarningUtils';
 
 const eth = {
   address: '0x0000000000000000000000000000000000000000',

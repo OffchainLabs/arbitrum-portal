@@ -11,15 +11,17 @@ import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { useMode } from '../../../hooks/useMode';
-import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
+import { NativeCurrency } from '../../../types/NativeCurrency';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
+import { RouteType, SetRoute } from '../../../util/TransferRouteUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
 import { isNetwork } from '../../../util/networks';
 import { getWagmiChain } from '../../../util/wagmi/getWagmiChain';
@@ -28,7 +30,6 @@ import { SafeImage } from '../../common/SafeImage';
 import { Loader } from '../../common/atoms/Loader';
 import { TokenLogo } from '../TokenLogo';
 import { useTokensFromLists } from '../TokenSearchUtils';
-import { RouteType, SetRoute } from '../hooks/useRouteStore';
 
 export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest' | 'multi-step';
 export type RouteProps = {

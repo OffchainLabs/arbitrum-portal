@@ -1,7 +1,7 @@
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import type { RouteType } from './hooks/useRouteStore';
-import { isLifiRoute } from './hooks/useRouteStore';
+import type { RouteType } from '../../util/TransferRouteUtils';
+import { isLifiRoute } from '../../util/TransferRouteUtils';
 
 export function resolveNativeUsdcDestinationAddress({
   destinationChainId,

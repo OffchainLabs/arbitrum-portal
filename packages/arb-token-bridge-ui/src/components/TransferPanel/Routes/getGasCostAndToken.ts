@@ -3,7 +3,7 @@ import { constants, utils } from 'ethers';
 import { RouteCost, Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { UseGasSummaryResult } from '../../../hooks/TransferPanel/useGasSummary';
-import { NativeCurrency } from '../../../hooks/useNativeCurrency';
+import { NativeCurrency } from '../../../types/NativeCurrency';
 
 const ARBITRUM_BRIDGE_VIA = 'Arbitrum Bridge';
 const ARBITRUM_BRIDGE_ICON_URI = '/icons/arbitrum.svg';

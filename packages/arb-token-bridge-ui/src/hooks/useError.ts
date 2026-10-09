@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useCallback } from 'react';
 
+import type { HandleErrorParams } from '../types/TransferError';
 import type { ErrorCategory, EthersError } from '../util/SentryUtils';
 import { isEthersError } from '../util/SentryUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
@@ -15,19 +16,6 @@ const IGNORED_ERROR_CATEGORIES: ErrorCategory[] = ['user_rejection'];
 /**
  * Parameters for the `handleError` function
  */
-export interface HandleErrorParams {
-  /** The original error object caught. */
-  error: unknown;
-  /** A specific, unique identifier for the *operation* or context being attempted (e.g., 'cctp_approve_token', 'eth_deposit'). */
-  label: string;
-  /** Caller-determined category for Sentry tagging. */
-  category: ErrorCategory;
-  /** Optional: Additional key-value data specific to this error instance for Sentry 'extra' context. */
-  additionalData?: Record<string, any>;
-  /** Optional: Sentry severity level. Defaults to 'error' if not provided. */
-  level?: Sentry.SeverityLevel;
-}
-
 /**
  * Common data structure for error context
  */

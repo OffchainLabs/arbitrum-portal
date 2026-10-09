@@ -6,11 +6,11 @@ import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatc
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useETHPrice } from '../../hooks/useETHPrice';
 import { useGasPrice } from '../../hooks/useGasPrice';
-import { NativeCurrencyErc20 } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { BridgeTransferStarterFactory } from '../../token-bridge-sdk/BridgeTransferStarterFactory';
+import { NativeCurrencyErc20 } from '../../types/NativeCurrency';
 import { shortenAddress } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
