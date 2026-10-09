@@ -49,6 +49,35 @@ describe.sequential('useTokenBalances', () => {
     expect(result.current.data).toEqual({ token: 42n });
   });
 
+  it('does not poll token-list requests when periodic refresh is disabled', async () => {
+    vi.useFakeTimers();
+    const fetchBalance = vi.fn(async () => ({ token: 7n }));
+    const service = createBalanceService(() => ({ fetchBalance }));
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+        <BalanceProvider service={service}>{children}</BalanceProvider>
+      </SWRConfig>
+    );
+    const { result } = renderHook(
+      () =>
+        useObservedTokenBalances({
+          chainId: 1,
+          walletAddress: 'account',
+          tokenAddresses: ['token'],
+          refreshInterval: 0,
+        }),
+      { wrapper },
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(result.current.data).toEqual({ token: 7n });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(fetchBalance).toHaveBeenCalledTimes(1);
+  });
+
   it('does not retain another account balance during loading, RPC failure, or disconnect', async () => {
     const fetchBalance = vi.fn(async ({ walletAddress }: { walletAddress: string }) => {
       if (walletAddress === 'second') throw new Error('RPC unavailable');
@@ -200,7 +229,11 @@ describe.sequential('useTokenBalances', () => {
     const account = '0x52908400098527886E0F7030069857D2E4169EE7';
     const { result } = renderHook(
       () => ({
-        first: useObservedTokenBalances({ chainId: 1, walletAddress: account, tokenAddresses: ['first'] }),
+        first: useObservedTokenBalances({
+          chainId: 1,
+          walletAddress: account,
+          tokenAddresses: ['first'],
+        }),
         second: useObservedTokenBalances({
           chainId: 1,
           walletAddress: account,
@@ -221,7 +254,8 @@ describe.sequential('useTokenBalances', () => {
       { wrapper },
     );
     const other = renderHook(
-      () => useObservedTokenBalances({ chainId: 1, walletAddress: account, tokenAddresses: ['first'] }),
+      () =>
+        useObservedTokenBalances({ chainId: 1, walletAddress: account, tokenAddresses: ['first'] }),
       {
         wrapper: ({ children }: PropsWithChildren) => (
           <SWRConfig value={{ provider: () => cache }}>
