@@ -1,4 +1,5 @@
 export enum ChainId {
+  Solana = 1151111081099710,
   // L1
   Ethereum = 1,
   // L1 Testnets

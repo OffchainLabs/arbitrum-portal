@@ -7,6 +7,7 @@ import { baseAccount } from 'wagmi/connectors';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
+import { appKitAdapters, appKitNetworks } from '../../wallet/solana';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
 import { getCustomChainsFromLocalStorage, initializeBridgeNetworks, rpcURLs } from '../networks';
@@ -122,9 +123,9 @@ const wagmiAdapter = new WagmiAdapter({
 export const appKit = createAppKit({
   projectId,
   metadata,
-  networks: [...chainList],
+  networks: [...chainList, ...appKitNetworks],
   defaultNetwork: chainList[0],
-  adapters: [wagmiAdapter],
+  adapters: [wagmiAdapter, ...appKitAdapters],
   features: {
     email: false,
     socials: false,

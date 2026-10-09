@@ -1,10 +1,15 @@
 import { cleanup, renderHook } from '@testing-library/react';
-import type { PropsWithChildren } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { WalletContext, defaultWalletContextValue, useWalletContext } from '../WalletContext';
+import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
+import { defaultWalletContextValue, useWalletContext } from '../WalletContext';
 import type { EvmWalletHandle, SolanaWalletHandle } from '../types';
-import { useWallets } from './useWallets';
+import { useWalletForChain, useWallets } from './useWallets';
+
+vi.mock('../../util/featureFlag', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../util/featureFlag')>()),
+  isLifiEnabled: () => true,
+}));
 
 const evm: EvmWalletHandle = {
   ecosystem: 'evm',
@@ -27,26 +32,44 @@ const solana: SolanaWalletHandle = {
   isConnected: true,
   disconnect: async () => {},
 };
-function Wrapper({ children }: PropsWithChildren) {
-  return <WalletContext.Provider value={{ evm, solana }}>{children}</WalletContext.Provider>;
-}
 describe.sequential('useWallets', () => {
   afterEach(cleanup);
   it('returns the same injected EVM handle for both sides without Reown providers', () => {
-    const { result } = renderHook(() => useWallets(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useWallets(), {
+      wrapper: createWalletTestWrapper({
+        wallets: { evm, solana },
+        query: { sourceChain: 42161, destinationChain: 1 },
+      }),
+    });
     expect(result.current.sourceWallet).toBe(evm);
     expect(result.current.destinationWallet).toBe(evm);
+  });
+  it('selects a wallet from the requested chain', () => {
+    const { result } = renderHook(() => useWalletForChain(1151111081099710), {
+      wrapper: createWalletTestWrapper({
+        wallets: { evm, solana },
+        query: { sourceChain: 42161, destinationChain: 1 },
+      }),
+    });
+    expect(result.current).toBe(solana);
   });
   it('allows each ecosystem to be injected through the combined context', () => {
     const { result } = renderHook(
       () => ({ evm: useWalletContext('evm'), solana: useWalletContext('solana') }),
-      { wrapper: Wrapper },
+      {
+        wrapper: createWalletTestWrapper({
+          wallets: { evm, solana },
+          query: { sourceChain: 42161, destinationChain: 1 },
+        }),
+      },
     );
     expect(result.current.evm).toBe(evm);
     expect(result.current.solana).toBe(solana);
   });
   it('returns disconnected defaults outside a provider', () => {
-    const { result } = renderHook(() => useWallets());
+    const { result } = renderHook(() => useWallets(), {
+      wrapper: createWalletTestWrapper({ query: { sourceChain: 42161, destinationChain: 1 } }),
+    });
     expect(result.current.sourceWallet).toBe(defaultWalletContextValue.evm);
     expect(result.current.destinationWallet).toBe(defaultWalletContextValue.evm);
     expect(result.current.sourceWallet.isConnected).toBe(false);
