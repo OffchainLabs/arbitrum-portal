@@ -5,7 +5,7 @@ import { LIFI_TRANSFER_LIST_ID } from '@/bridge/util/TokenListUtils';
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO, WETH_TOKEN_LOGO, ether } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressEquality';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress, bridgedUsdcToken, commonUsdcToken } from '../../../util/CommonAddressUtils';
 import { isNativeEthAddress, isNovaDestination } from '../../../util/NovaUtils';
 import {

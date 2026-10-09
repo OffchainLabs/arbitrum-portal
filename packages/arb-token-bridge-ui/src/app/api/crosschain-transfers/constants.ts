@@ -1,5 +1,5 @@
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressEquality';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
@@ -57,7 +57,7 @@ export function isUnmatchedLifiTokenAllowed(chainId: number, address: string): b
   return (
     allowsUnmatchedLifiTokens(chainId) ||
     (UNMATCHED_LIFI_TOKEN_ADDRESSES[chainId]?.some((allowedAddress) =>
-      addressesEqual(allowedAddress, address.trim()),
+      addressesEqual(allowedAddress, address),
     ) ??
       false)
   );

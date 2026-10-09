@@ -8,11 +8,10 @@ import {
   type SolanaAddress,
   addressesEqual,
   isValidAddress,
-  isValidAddressForChain,
+  isValidSolanaAddress,
   normalizeAddress,
-  parseEvmAddress,
-  parseSolanaAddress,
 } from './AddressUtils';
+import { isValidAddressForChain } from './isValidAddressForChain';
 
 describe('EVM address compatibility', () => {
   it.each([
@@ -30,8 +29,8 @@ describe('EVM address compatibility', () => {
     );
   });
 
-  it('does not normalize an invalid checksum into a valid address', () => {
-    const address = '0x52908400098527886e0F7030069857D2E4169EE7';
+  it.each(['0x', '0X'])('preserves an invalid checksum with prefix %s', (prefix) => {
+    const address = `${prefix}52908400098527886e0F7030069857D2E4169EE7`;
     expect(isValidAddress(address)).toBe(false);
     expect(normalizeAddress(address)).toBe(address);
     expect(isValidAddress(normalizeAddress(address))).toBe(false);
@@ -63,7 +62,7 @@ describe('normalizeAddress', () => {
   it('preserves a valid Solana address that also resembles unprefixed EVM hex', () => {
     const address = '1'.repeat(10) + 'A'.repeat(30);
     expect(bs58.decode(address)).toHaveLength(32);
-    expect(parseSolanaAddress(address)).toBe(address);
+    expect(isValidSolanaAddress(address)).toBe(true);
     expect(normalizeAddress(address)).toBe(address);
     expect(addressesEqual(address, address.toLowerCase())).toBe(false);
   });
@@ -75,11 +74,12 @@ describe('normalizeAddress', () => {
     expect(isValidAddress(address)).toBe(true);
   });
 
-  it('leaves an uppercase prefix rejected by the EVM validator unchanged', () => {
-    const address = '0X9481EF9E2CA814FC94676DEA3E8C3097B06B3A33';
-
-    expect(isValidAddress(address)).toBe(false);
-    expect(normalizeAddress(address)).toBe(address);
+  it.each([
+    '0X9481EF9E2CA814FC94676DEA3E8C3097B06B3A33',
+    '0X9481eF9e2CA814fc94676dEa3E8c3097B06b3a33',
+  ])('normalizes an uppercase prefix before validating %s', (address) => {
+    expect(normalizeAddress(address)).toBe('0x9481ef9e2ca814fc94676dea3e8c3097b06b3a33');
+    expect(addressesEqual(address, address.toLowerCase())).toBe(true);
   });
 
   it('leaves a Solana address unchanged', () => {
@@ -133,29 +133,32 @@ describe('addressesEqual', () => {
     ).toBe(false);
   });
 
-  it('does not ignore whitespace', () => {
-    expect(
-      addressesEqual(
-        ' Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
-        'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
-      ),
-    ).toBe(false);
+  it.each([
+    ['EVM', '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33'],
+    ['Solana', 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5'],
+  ])('preserves surrounding whitespace for %s addresses', (_, address) => {
+    expect(addressesEqual(` ${address}`, address)).toBe(false);
+    expect(addressesEqual(address, `${address} `)).toBe(false);
   });
+
+  it('does not match empty addresses', () => {
+    expect(addressesEqual('', '')).toBe(false);
+  });
+
+  it.each(['0x', '0X'])(
+    'does not normalize an invalid checksum with prefix %s for comparison',
+    (prefix) => {
+      const address = `${prefix}52908400098527886e0F7030069857D2E4169EE7`;
+      expect(addressesEqual(address, address.toLowerCase())).toBe(false);
+    },
+  );
 });
 
 describe('address boundaries', () => {
-  it('keeps ecosystem addresses distinct from arbitrary strings', () => {
-    expectTypeOf<string>().not.toExtend<Address>();
+  it('accepts Solana addresses as strings', () => {
+    expectTypeOf<SolanaAddress>().toEqualTypeOf<string>();
+    expectTypeOf<string>().toExtend<Address>();
     expectTypeOf<EvmAddress>().toExtend<Address>();
-    expectTypeOf<SolanaAddress>().toExtend<Address>();
-  });
-
-  it('parses EVM external formats into a prefixed address', () => {
-    expect(parseEvmAddress('52908400098527886e0f7030069857d2e4169ee7')).toBe(
-      '0x52908400098527886e0f7030069857d2e4169ee7',
-    );
-    expect(parseEvmAddress('invalid')).toBeUndefined();
-    expect(parseSolanaAddress('0x52908400098527886e0f7030069857d2e4169ee7')).toBeUndefined();
   });
 
   it('never decodes hex addresses or compares Solana addresses with base58', () => {

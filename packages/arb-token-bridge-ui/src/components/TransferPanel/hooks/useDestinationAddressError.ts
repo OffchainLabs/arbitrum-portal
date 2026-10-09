@@ -5,7 +5,8 @@ import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { addressIsDenylisted } from '../../../services/denylist';
-import { isValidAddressForChain, normalizeAddress } from '../../../util/AddressUtils';
+import { normalizeAddress } from '../../../util/AddressUtils';
+import { isValidAddressForChain } from '../../../util/isValidAddressForChain';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({

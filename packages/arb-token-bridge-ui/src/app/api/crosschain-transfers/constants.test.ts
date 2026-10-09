@@ -32,11 +32,14 @@ describe('isUnmatchedLifiTokenAllowed', () => {
     expect(isUnmatchedLifiTokenAllowed(ChainId.Base, CommonAddress.Base.USDC)).toBe(true);
   });
 
-  it('matches allowlisted addresses regardless of casing or surrounding whitespace', () => {
+  it('matches allowlisted addresses with uppercase casing', () => {
     expect(isUnmatchedLifiTokenAllowed(ChainId.Base, CommonAddress.Base.USDC.toUpperCase())).toBe(
       true,
     );
-    expect(isUnmatchedLifiTokenAllowed(ChainId.Base, ` ${CommonAddress.Base.USDC} `)).toBe(true);
+  });
+
+  it('does not trim addresses before checking the allowlist', () => {
+    expect(isUnmatchedLifiTokenAllowed(ChainId.Base, ` ${CommonAddress.Base.USDC} `)).toBe(false);
   });
 
   it('does not treat the address list as a blanket permission for the chain', () => {

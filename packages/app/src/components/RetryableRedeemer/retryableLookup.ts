@@ -9,7 +9,7 @@ import { InboxMessageKind } from '@arbitrum/sdk/dist/lib/dataEntities/message';
 import type { Provider } from '@ethersproject/abstract-provider';
 import { utils } from 'ethers';
 
-import { addressesEqual } from '@/bridge/util/AddressEquality';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { getBatchFetchBlocks } from '@/bridge/util/chainBlockRanges';
 import {
   getChainByChainId,

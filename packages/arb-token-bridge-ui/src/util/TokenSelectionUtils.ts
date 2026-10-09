@@ -7,7 +7,7 @@ import {
   TokenType,
 } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
-import { addressesEqual } from './AddressEquality';
+import { addressesEqual } from './AddressUtils';
 import { CommonAddress } from './CommonAddressUtils';
 import { ArbOneNativeUSDC } from './L2NativeUtils';
 import { LIFI_TRANSFER_LIST_ID, isLifiOnlyToken, isTokenAvailableOnChain } from './TokenListUtils';
