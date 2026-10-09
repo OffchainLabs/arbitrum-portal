@@ -21,7 +21,8 @@
     "install:chromium": "pnpm dlx @puppeteer/browsers install chrome@$npm_package_config_chromeVersion --path $npm_package_config_chromePath",
     "test:e2e": "pnpm --filter arb-token-bridge-ui exec env-cmd --silent --file .e2e.env pnpm exec playwright test",
     "test:e2e:orbit": "E2E_ORBIT=true pnpm run test:e2e",
-    "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true pnpm run test:e2e"
+    "test:e2e:orbit:custom-gas-token": "E2E_ORBIT_CUSTOM_GAS_TOKEN=true pnpm run test:e2e",
+    "test:ecosystem-types": "node packages/arb-token-bridge-ui/scripts/checkEcosystemExhaustiveness.mjs"
   },
   "keywords": [],
   "author": "",

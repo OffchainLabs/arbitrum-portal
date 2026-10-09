@@ -1,6 +1,9 @@
-import { arbitrum, mainnet } from '@wagmi/core/chains';
-
-import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
+import {
+  allowedLifiDestinationChainIds,
+  allowedLifiSourceChainIds,
+  lifiDestinationChainIds,
+  lifiSourceOnlyChainIds,
+} from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
 import {
   getChainByChainId,
@@ -11,16 +14,6 @@ import {
   sortChainIds,
 } from './networks';
 import { getOrbitChains } from './orbitChainsList';
-import {
-  localL2Network as arbitrumLocal,
-  arbitrumNova,
-  arbitrumSepolia,
-  base,
-  baseSepolia,
-  localL3Network as l3Local,
-  localL1Network as local,
-  sepolia,
-} from './wagmi/wagmiAdditionalNetworks';
 
 export function isSupportedChainId(chainId: ChainId | undefined): chainId is ChainId {
   if (!chainId) {
@@ -30,16 +23,18 @@ export function isSupportedChainId(chainId: ChainId | undefined): chainId is Cha
   const customChainIds = getCustomChainsFromLocalStorage().map((chain) => chain.chainId);
 
   return [
-    mainnet.id,
-    sepolia.id,
-    arbitrum.id,
-    arbitrumNova.id,
-    base.id,
-    arbitrumSepolia.id,
-    baseSepolia.id,
-    arbitrumLocal.id,
-    l3Local.id,
-    local.id,
+    ...allowedLifiSourceChainIds,
+    ...allowedLifiDestinationChainIds,
+    ChainId.Ethereum,
+    ChainId.Sepolia,
+    ChainId.ArbitrumOne,
+    ChainId.ArbitrumNova,
+    ChainId.Base,
+    ChainId.ArbitrumSepolia,
+    ChainId.BaseSepolia,
+    ChainId.ArbitrumLocal,
+    ChainId.L3Local,
+    ChainId.Local,
     ...getOrbitChains().map((chain) => chain.chainId),
     ...customChainIds,
   ].includes(chainId);
@@ -55,28 +50,15 @@ export function getDestinationChainIds(
     disableTransfersToNonArbitrumChains?: boolean;
   } = {},
 ): ChainId[] {
-  const chain = getChainByChainId(chainId, {
-    includeRootChainsWithoutDestination: includeLifiEnabledChainPairs,
-  });
+  const chainIds: number[] = [];
+  if (!lifiSourceOnlyChainIds.has(chainId)) {
+    const chain = getChainByChainId(chainId, {
+      includeRootChainsWithoutDestination: includeLifiEnabledChainPairs,
+    });
+    if (!chain) return [];
 
-  if (!chain) {
-    return [];
-  }
-
-  const parentChainId = isArbitrumChain(chain) ? chain.parentChainId : undefined;
-  const chainIds = getChildChainIds(chain);
-
-  /**
-   * Add parent chain if:
-   * - parent is an arbitrum network
-   * - parent is a non-arbitrum network and transfers to non-arbitrum chains are not disabled
-   */
-  if (
-    parentChainId &&
-    (!isNetwork(parentChainId).isNonArbitrumNetwork ||
-      (isNetwork(parentChainId).isNonArbitrumNetwork && !disableTransfersToNonArbitrumChains))
-  ) {
-    chainIds.push(parentChainId);
+    chainIds.push(...getChildChainIds(chain));
+    if (isArbitrumChain(chain)) chainIds.push(chain.parentChainId);
   }
 
   /** Include lifi chains, if flag is on */
@@ -86,8 +68,8 @@ export function getDestinationChainIds(
   }
 
   /** Allow Arbitrum Nova to reach Arbitrum One as destination (one-way only) when LiFi pairs are enabled */
-  if (includeLifiEnabledChainPairs && chainId === arbitrumNova.id) {
-    chainIds.push(arbitrum.id);
+  if (includeLifiEnabledChainPairs && chainId === ChainId.ArbitrumNova) {
+    chainIds.push(ChainId.ArbitrumOne);
   }
 
   /** Disabling transfers to non arbitrum chains, remove non-arbitrum chains */

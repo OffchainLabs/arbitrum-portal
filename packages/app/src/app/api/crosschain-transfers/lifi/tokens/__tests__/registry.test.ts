@@ -1,6 +1,10 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  allowedLifiDestinationChainIds,
+  allowedLifiSourceChainIds,
+} from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import {
@@ -8,9 +12,12 @@ import {
   isTokenAvailableOnChain,
   tokenListTokenToBridgeToken,
 } from '@/bridge/util/TokenListUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '@/bridge/wallet/constants';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
+
+vi.hoisted(() => vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED', 'true'));
 
 const { getTokens } = vi.hoisted(() => ({ getTokens: vi.fn() }));
 
@@ -80,6 +87,76 @@ const oldApeOnArbitrumOne = buildLifiToken({
 describe('getLifiTokenRegistry', () => {
   beforeEach(() => {
     getTokens.mockReset();
+  });
+
+  it('requests every enabled source and destination chain, including destination-only Superposition', async () => {
+    const superpositionToken = virtualToken(
+      '0x0000000000000000000000000000000000000000',
+      ChainId.Superposition,
+      CoinKey.ETH,
+    );
+    getTokens.mockResolvedValue({ tokens: { [ChainId.Superposition]: [superpositionToken] } });
+
+    const registry = await getLifiTokenRegistry();
+    expect(registry.tokensByChain[ChainId.Superposition]).toEqual([superpositionToken]);
+
+    expect(getTokens).toHaveBeenCalledWith({
+      chains: [...new Set([...allowedLifiSourceChainIds, ...allowedLifiDestinationChainIds])],
+    });
+    expect(allowedLifiSourceChainIds).toContain(ChainId.Solana);
+    expect(allowedLifiSourceChainIds).not.toContain(ChainId.Superposition);
+  });
+
+  it('keeps Solana tokens beyond SOL and stablecoins', async () => {
+    const supportedTokens = [
+      virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+      virtualToken(CommonAddress.Solana.USDC, ChainId.Solana, CoinKey.USDC),
+      virtualToken(CommonAddress.Solana.USDT, ChainId.Solana, CoinKey.USDT),
+    ];
+    const additionalToken = virtualToken(
+      'XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w',
+      ChainId.Solana,
+      CoinKey.ETH,
+    );
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Solana]: [...supportedTokens, additionalToken],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry();
+
+    expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual(
+      [...supportedTokens, additionalToken].map((token) => token.address),
+    );
+  });
+
+  it('retains an unmatched Solana mint through registry, grouping, and selection', async () => {
+    const unmatched = virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana);
+    getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: [unmatched] } });
+
+    const registry = await getLifiTokenRegistry();
+    expect(registry.tokensByChain[ChainId.Solana]).toEqual([unmatched]);
+    expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toEqual({});
+    const entries = groupChildTokensAndParentTokens({
+      parentTokens: registry.tokensByChain[ChainId.Solana] ?? [],
+      childTokens: [],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    const entry = entries[0];
+    if (!entry) throw new Error('Expected unmatched Solana token');
+    expect(entry.extensions?.bridgeInfo).toBeUndefined();
+    const bridgeToken = tokenListTokenToBridgeToken({
+      token: entry,
+      listId: LIFI_TRANSFER_LIST_ID,
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(bridgeToken?.lifiOnlyChainId).toBe(ChainId.Solana);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.Solana)).toBe(true);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.ArbitrumOne)).toBe(false);
   });
 
   it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {
