@@ -27,11 +27,11 @@ export function TokenButton({ options }: { options?: TokenButtonOptions }): Reac
   const [dialogProps, openDialog] = useDialog2();
 
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const [{ token: tokenFromSearchParams }] = useArbQueryParams();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const tokenSymbol = useMemo(() => {
     if (typeof options?.symbol !== 'undefined') {

@@ -1,5 +1,5 @@
 import { ContractStorage, ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
-import { NativeCurrency } from '../hooks/useNativeCurrency';
+import { NativeCurrency } from '../types/NativeCurrency';
 
 /**
  * Return USD value for a given amount using token/native price data.

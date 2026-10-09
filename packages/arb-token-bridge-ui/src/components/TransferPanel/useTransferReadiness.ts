@@ -22,6 +22,7 @@ import {
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { getNativeTokenAddress } from '../../wallet/constants';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
@@ -234,7 +235,9 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     layout: { isTransferring },
   } = useAppContextState();
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { sourceWallet } = useWallets();
+  const executionAvailable = sourceWallet.isConnected && !!sourceWallet.account.address;
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
@@ -249,7 +252,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const gasSummary = useGasSummary();
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const {
     sourceBalance: sourceNativeBalance,
     sourceGasBalance,
@@ -325,6 +328,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
               : getNovaEthDepositCapErrorMessage(),
         },
       });
+    }
+
+    if (!executionAvailable) {
+      return notReady();
     }
 
     if (!selectedRoute) {
@@ -728,6 +735,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
   }, [
+    executionAvailable,
     gasSummary,
     selectedRoute,
     eligibleRouteTypes,

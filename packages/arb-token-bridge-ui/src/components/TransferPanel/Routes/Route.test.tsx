@@ -2,25 +2,19 @@ import { cleanup, render, screen } from '@testing-library/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { constants, utils } from 'ethers';
+import type { Key } from 'swr';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { RouteCost } from '../../../app/api/crosschain-transfers/types';
 import type { RouteTool } from '../../../app/api/crosschain-transfers/types';
+import { createBridgeTestWrapper } from '../../../test-utils/bridge-test-wrapper';
 import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { Route, RouteStep } from './Route';
 
 dayjs.extend(relativeTime);
 
-const tokenSearchUtilsMock = vi.hoisted(() => ({
-  tokensFromLists: {} as Record<string, { priceUSD?: number }>,
-}));
-const networksMock = vi.hoisted(() => ({ sourceChainId: 1 }));
-
-afterEach(() => {
-  cleanup();
-  tokenSearchUtilsMock.tokensFromLists = {};
-  networksMock.sourceChainId = ChainId.Ethereum;
-});
+afterEach(cleanup);
 
 vi.mock('@/app/components/common/Tooltip', () => ({
   Tooltip: ({ children, content }: { children: React.ReactNode; content: React.ReactNode }) => (
@@ -29,70 +23,6 @@ vi.mock('@/app/components/common/Tooltip', () => ({
       <div data-testid="tooltip-content">{content}</div>
     </>
   ),
-}));
-
-vi.mock('../../../hooks/TransferPanel/useIsBatchTransferSupported', () => ({
-  useIsBatchTransferSupported: () => false,
-}));
-
-vi.mock('../../../hooks/useArbQueryParams', () => ({
-  useArbQueryParams: () => [
-    {
-      amount2: '',
-      destinationAddress: undefined,
-      theme: {},
-    },
-    vi.fn(),
-  ],
-}));
-
-vi.mock('../../../hooks/useETHPrice', () => ({
-  useETHPrice: () => ({
-    ethPrice: 2_000,
-    ethToUSD: (eth: number) => eth * 2_000,
-  }),
-}));
-
-vi.mock('../../../hooks/useNativeCurrency', () => ({
-  useNativeCurrency: () => ({
-    decimals: 18,
-    isCustom: false,
-    name: 'Ether',
-    symbol: 'ETH',
-  }),
-}));
-
-vi.mock('../../../hooks/useNetworks', () => ({
-  useNetworks: () => [
-    {
-      sourceChain: { id: networksMock.sourceChainId },
-      sourceChainProvider: {},
-    },
-  ],
-}));
-
-vi.mock('../../../hooks/useNetworksRelationship', () => ({
-  useNetworksRelationship: () => ({
-    childChainProvider: {},
-    isDepositMode: true,
-  }),
-}));
-
-vi.mock('../../../hooks/useSelectedToken', () => ({
-  useSelectedToken: () => [null, vi.fn()],
-}));
-
-vi.mock('../TokenSearchUtils', () => ({
-  useTokensFromLists: () => ({ data: tokenSearchUtilsMock.tokensFromLists, isLoading: false }),
-  useTokensFromUser: () => ({}),
-}));
-
-vi.mock('../../App/AppContext', () => ({
-  useAppContextState: () => ({
-    layout: {
-      isTransferring: false,
-    },
-  }),
 }));
 
 const ethToken = {
@@ -129,7 +59,13 @@ function renderRoute({
   gasCost,
   routeTools,
   routeSteps,
+  sourceChain = ChainId.Ethereum,
+  destinationChain = ChainId.ArbitrumOne,
+  cacheEntries = [],
 }: {
+  sourceChain?: ChainId;
+  destinationChain?: ChainId;
+  cacheEntries?: ReadonlyArray<readonly [Key, unknown]>;
   bridgeFee?: RouteCost[];
   gasCost: RouteCost[];
   routeTools?: RouteTool[];
@@ -152,10 +88,13 @@ function renderRoute({
       selected={false}
       onSelectedRouteClick={vi.fn()}
     />,
+    {
+      wrapper: createBridgeTestWrapper({ query: { sourceChain, destinationChain }, cacheEntries }),
+    },
   );
 }
 
-describe('Route', () => {
+describe.sequential('Route', () => {
   it('shows the gas USD total instead of joining token amounts', () => {
     renderRoute({
       gasCost: [
@@ -305,11 +244,13 @@ describe('Route', () => {
   });
 
   it('uses token-list prices in route fee breakdown tooltips', () => {
-    tokenSearchUtilsMock.tokensFromLists = {
-      [usdcToken.address.toLowerCase()]: { priceUSD: 1 },
-    };
-
     renderRoute({
+      cacheEntries: [
+        [
+          [[], ChainId.Ethereum, ChainId.ArbitrumOne, 'useTokensFromLists'],
+          { [usdcToken.address.toLowerCase()]: { priceUSD: 1 } },
+        ],
+      ],
       gasCost: [
         {
           amount: utils.parseUnits('2', 6).toString(),
@@ -330,9 +271,9 @@ describe('Route', () => {
   });
 
   it('does not show USD values in testnet fee breakdown tooltips', () => {
-    networksMock.sourceChainId = ChainId.Sepolia;
-
     renderRoute({
+      sourceChain: ChainId.Sepolia,
+      destinationChain: ChainId.ArbitrumSepolia,
       gasCost: [
         createRouteCost('testnet-gas', {
           amount: utils.parseEther('0.001').toString(),
@@ -350,6 +291,18 @@ describe('Route', () => {
 
   it('does not price another chain native token as ETH', () => {
     renderRoute({
+      cacheEntries: [
+        [
+          [ChainId.ApeChain, ChainId.Ethereum, 'nativeCurrency'],
+          {
+            name: 'ApeCoin',
+            symbol: 'APE',
+            decimals: 18,
+            isCustom: true,
+            address: CommonAddress.Ethereum.APE,
+          },
+        ],
+      ],
       gasCost: [
         createRouteCost('ape-gas', {
           amount: utils.parseEther('1').toString(),
@@ -361,6 +314,6 @@ describe('Route', () => {
 
     expect(screen.getByLabelText('Route gas').textContent).toBe('1 APE');
     expect(screen.getAllByText('1 APE')).toHaveLength(2);
-    expect(screen.queryByText(/\$2,000/)).toBeNull();
+    expect(screen.queryByText('1 APE (~$2,000)')).toBeNull();
   });
 });

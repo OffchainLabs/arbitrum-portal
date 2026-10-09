@@ -7,19 +7,18 @@ import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
 
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
-
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { getUsdcToken, useSelectedToken } from '../../hooks/useSelectedToken';
+import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { useTokenLists } from '../../hooks/useTokenLists';
+import { getTokenData, getUsdcToken } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual } from '../../util/AddressUtils';
+import { addressesEqual, normalizeAddress } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
@@ -42,7 +41,6 @@ import {
   getTokenForRow,
 } from '../../util/TokenSelectionUtils';
 import {
-  fetchErc20Data,
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumOneUSDCe,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -161,8 +159,7 @@ function TokensPanel({
     },
   } = useAppState();
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
 
   const {
     sourceWallet: {
@@ -170,7 +167,7 @@ function TokensPanel({
       isConnected,
     },
   } = useWallets();
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -229,8 +226,8 @@ function TokensPanel({
     ([_usdcParentAddress, _parentChainId, _childChainId]) =>
       getUsdcToken({
         tokenAddress: _usdcParentAddress,
-        parentProvider: getProviderForChainId(_parentChainId),
-        childProvider: getProviderForChainId(_childChainId),
+        parentChainId: _parentChainId,
+        childChainId: _childChainId,
       }),
   );
 
@@ -247,7 +244,7 @@ function TokensPanel({
       return (
         tokensFromLists[address] ||
         tokensFromUser[address] ||
-        bridgeTokens?.[address.toLowerCase()] ||
+        bridgeTokens?.[normalizeAddress(address)] ||
         null
       );
     },
@@ -462,7 +459,7 @@ function TokensPanel({
           return true;
         }
 
-        const normalizedSourceTokenAddress = sourceTokenAddress.toLowerCase();
+        const normalizedSourceTokenAddress = normalizeAddress(sourceTokenAddress);
         if (seenSourceTokenAddresses.has(normalizedSourceTokenAddress)) {
           return false;
         }
@@ -712,7 +709,7 @@ export function TokenSearch(props: UseDialogProps) {
   } = useAppState();
   const [, setSelectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChain, parentChainProvider } = useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const { embedMode } = useMode();
   const [activePanel, setActivePanel] = useState<Panel>(Panel.MAIN);
@@ -773,10 +770,7 @@ export function TokenSearch(props: UseDialogProps) {
           return;
         }
 
-        const data = await fetchErc20Data({
-          address: _token.address,
-          provider: parentChainProvider,
-        });
+        const data = await getTokenData(_token.address, parentChain.id);
 
         if (data) {
           token.updateTokenData(_token.address);
@@ -793,7 +787,7 @@ export function TokenSearch(props: UseDialogProps) {
     [
       bridgeTokens,
       networks.destinationChain.id,
-      parentChainProvider,
+      parentChain.id,
       onClose,
       setAmount2,
       setSelectedToken,

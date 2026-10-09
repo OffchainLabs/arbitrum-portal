@@ -32,8 +32,7 @@ export const ArbitrumStats = () => {
   const [{ settingsOpen }] = useArbQueryParams();
 
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, parentChainProvider } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const { data: currentL1BlockNumber } = useBlockNumber({
     chainId: parentChain.id,
@@ -47,12 +46,16 @@ export const ArbitrumStats = () => {
 
   const { data: tpsData, isValidating: tpsLoading } = useNetworkTPS();
 
-  const currentL1GasPrice = useGasPrice({ provider: parentChainProvider });
-  const currentL1GasPriceGwei = utils.formatUnits(currentL1GasPrice, 'gwei');
+  const currentL1GasPrice = useGasPrice({ chainId: parentChain.id });
+  const currentL1GasPriceGwei = currentL1GasPrice
+    ? utils.formatUnits(currentL1GasPrice, 'gwei')
+    : undefined;
   const currentL1Activity = getActivityThresholdL1(Number(currentL1GasPriceGwei || 0));
 
-  const currentL2GasPrice = useGasPrice({ provider: childChainProvider });
-  const currentL2GasPriceGwei = utils.formatUnits(currentL2GasPrice, 'gwei');
+  const currentL2GasPrice = useGasPrice({ chainId: childChain.id });
+  const currentL2GasPriceGwei = currentL2GasPrice
+    ? utils.formatUnits(currentL2GasPrice, 'gwei')
+    : undefined;
   const currentL2Activity = getActivityThresholdL2(Number(currentL2GasPriceGwei || 0));
 
   const closeArbitrumStats = () => {
@@ -78,7 +81,7 @@ export const ArbitrumStats = () => {
           Gas price:{' '}
           <span className={`${currentL1Activity.className}`}>
             {' '}
-            {Number(currentL1GasPriceGwei).toFixed(2)} Gwei{' '}
+            {currentL1GasPriceGwei ? Number(currentL1GasPriceGwei).toFixed(2) + ' Gwei' : '—'}{' '}
           </span>
         </span>
       </div>
@@ -100,7 +103,7 @@ export const ArbitrumStats = () => {
           Gas price:{' '}
           <span className={`${currentL2Activity.className}`}>
             {' '}
-            {Number(currentL2GasPriceGwei).toFixed(2)} Gwei{' '}
+            {currentL2GasPriceGwei ? Number(currentL2GasPriceGwei).toFixed(2) + ' Gwei' : '—'}{' '}
           </span>
         </span>
 

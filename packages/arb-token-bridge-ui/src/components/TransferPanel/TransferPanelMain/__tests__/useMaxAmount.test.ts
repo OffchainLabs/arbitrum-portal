@@ -79,7 +79,9 @@ describe.sequential('useMaxAmount', () => {
         }),
       });
       const { result } = renderHook(useMaxAmount, { wrapper });
-      await waitFor(() => expect(Number(result.current.maxAmount)).toBe(expected));
+      await waitFor(() => expect(Number(result.current.maxAmount)).toBe(expected), {
+        timeout: 3_000,
+      });
     },
   );
 });

@@ -1,162 +1,113 @@
-import { renderHook } from '@testing-library/react';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { BigNumber, constants } from 'ethers';
-import { DecodedValueMap } from 'use-query-params';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
-import { Context, useAppState } from '../../state';
+import { useRouteStore } from '../../components/TransferPanel/hooks/useRouteStore';
+import { createBridgeTestWrapper } from '../../test-utils/bridge-test-wrapper';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { useGasEstimates } from '../TransferPanel/useGasEstimates';
-import { ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
-import { queryParamProviderOptions, useArbQueryParams } from '../useArbQueryParams';
+import { type ERC20BridgeToken, TokenType } from '../arbTokenBridge.types';
 import { useDestinationSelection } from '../useDestinationToken';
-import { useLifiCrossTransfersRoute } from '../useLifiCrossTransferRoute';
-import { useNetworks } from '../useNetworks';
-import { useSelectedToken } from '../useSelectedToken';
 
-type ArbQueryParams = DecodedValueMap<typeof queryParamProviderOptions.params>;
-
-const defaultQueryParams: ArbQueryParams = {
-  sourceChain: undefined,
-  destinationChain: undefined,
-  amount: '',
-  amount2: '',
-  destinationAddress: undefined,
-  token: undefined,
-  destinationToken: undefined,
-  settingsOpen: false,
-  tab: 0,
-  disabledFeatures: [],
-  theme: {},
-  debugLevel: 'silent',
-  experiments: undefined,
+const ethereumUsdc: ERC20BridgeToken = {
+  type: TokenType.ERC20,
+  decimals: 6,
+  name: 'USD Coin',
+  symbol: 'USDC',
+  address: CommonAddress.Ethereum.USDC,
+  l2Address: '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8',
+  listIds: new Set(['1']),
 };
 
-vi.mock('swr', () => ({
-  default: vi.fn(() => ({ data: undefined, error: undefined })),
-}));
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  useRouteStore.getState().clearRoute();
+  useRouteStore.setState({ eligibleRouteTypes: [] });
+});
 
-vi.mock('wagmi', () => ({
-  useAccount: vi.fn(() => ({ address: undefined })),
-  useConfig: vi.fn(() => ({})),
-}));
-
-vi.mock('../useArbQueryParams', () => ({
-  useArbQueryParams: vi.fn(),
-}));
-
-vi.mock('../useSelectedToken', () => ({
-  useSelectedToken: vi.fn(),
-}));
-
-vi.mock('../useNetworks', () => ({
-  useNetworks: vi.fn(),
-}));
-
-vi.mock('../useNetworksRelationship', () => ({
-  useNetworksRelationship: vi.fn(() => ({ isDepositMode: true })),
-}));
-
-vi.mock('../useBalanceOnSourceChain', () => ({
-  useBalanceOnSourceChain: vi.fn(() => null),
-}));
-
-vi.mock('../useLifiCrossTransferRoute', () => ({
-  useLifiCrossTransfersRoute: vi.fn(() => ({ data: undefined, isLoading: false })),
-}));
-
-vi.mock('../../components/TransferPanel/hooks/useRouteStore', () => ({
-  useRouteStore: vi.fn((selector) => selector({ eligibleRouteTypes: ['lifi'] })),
-  getSelectedRouteContext: vi.fn(() => undefined),
-}));
-
-vi.mock('../../components/TransferPanel/hooks/useLifiSettingsStore', () => ({
-  useLifiSettingsStore: vi.fn((selector) =>
-    selector({ disabledBridges: [], disabledExchanges: [], slippage: '0.5' }),
-  ),
-}));
-
-vi.mock('../../state', () => ({
-  useAppState: vi.fn(),
-}));
-
-vi.mock('../../app/api/crosschain-transfers/utils', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../app/api/crosschain-transfers/utils')>()),
-  getTokenOverride: vi.fn(() => ({ source: null, destination: null })),
-}));
-
-describe('useGasEstimates', () => {
-  const mockedUseArbQueryParams = vi.mocked(useArbQueryParams);
-  const mockedUseSelectedToken = vi.mocked(useSelectedToken);
-  const mockedUseNetworks = vi.mocked(useNetworks);
-  const mockedUseAppState = vi.mocked(useAppState);
-  const mockedUseLifiCrossTransfersRoute = vi.mocked(useLifiCrossTransfersRoute);
-
-  const ethereumUsdc: ERC20BridgeToken = {
-    type: TokenType.ERC20,
-    decimals: 6,
-    name: 'USD Coin',
-    symbol: 'USDC',
-    address: CommonAddress.Ethereum.USDC,
-    l2Address: '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8',
-    listIds: new Set(['1']),
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(getTokenOverride).mockReturnValue({ source: null, destination: null });
-    mockedUseSelectedToken.mockReturnValue([ethereumUsdc, vi.fn()]);
-    mockedUseArbQueryParams.mockReturnValue([
-      { ...defaultQueryParams, destinationToken: ethereumUsdc.address },
-      vi.fn(),
-    ]);
-    mockedUseAppState.mockReturnValue({
-      app: { arbTokenBridge: { bridgeTokens: {} } },
-    } as Context['state']);
-  });
-
-  function setNetworks(destinationChainId: ChainId) {
-    mockedUseNetworks.mockReturnValue([
-      {
-        sourceChain: getWagmiChain(ChainId.Ethereum),
-        destinationChain: getWagmiChain(destinationChainId),
+describe.sequential('useGasEstimates', () => {
+  it.each([
+    {
+      description: 'quotes the resolved native destination for saved USDC with a canonical mapping',
+      destinationChainId: ChainId.RobinhoodChain,
+      sourceToken: ethereumUsdc,
+      expectedToToken: constants.AddressZero,
+    },
+    {
+      description: 'keeps quoting the mapped token when the destination still receives it',
+      destinationChainId: ChainId.ArbitrumOne,
+      sourceToken: {
+        ...ethereumUsdc,
+        address: '0x0000000000000000000000000000000000000002',
+        name: 'Test token',
+        symbol: 'TEST',
       },
-      vi.fn(),
-    ] as unknown as ReturnType<typeof useNetworks>);
-  }
+      expectedToToken: ethereumUsdc.l2Address,
+    },
+  ])('$description', async ({ destinationChainId, sourceToken, expectedToToken }) => {
+    const fetchRoute = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchRoute);
+    useRouteStore.setState({ eligibleRouteTypes: ['lifi'], isLoading: false, routes: [] });
 
-  function renderGasEstimates() {
-    return renderHook(() => {
-      useGasEstimates({
-        sourceChainErc20Address: ethereumUsdc.address,
-        destinationChainErc20Address: ethereumUsdc.l2Address,
-        amount: BigNumber.from(1),
-      });
-      return useDestinationSelection().destinationAddress;
+    const wrapper = createBridgeTestWrapper({
+      query: {
+        sourceChain: ChainId.Ethereum,
+        destinationChain: destinationChainId,
+        token: sourceToken.address,
+        destinationToken: sourceToken.address,
+      },
+      wallets: {
+        ...defaultWalletContextValue,
+        evm: {
+          ...defaultWalletContextValue.evm,
+          isConnected: true,
+          account: {
+            ecosystem: 'evm',
+            address: '0x1111111111111111111111111111111111111111',
+            chainId: ChainId.Ethereum,
+            status: 'connected',
+          },
+        },
+      },
+      fetchBalance: async () => ({ [sourceToken.address]: 1_000_000n }),
+      bridgeTokens: { [sourceToken.address]: sourceToken },
+      cacheEntries: [
+        [
+          [
+            sourceToken.address,
+            ChainId.Ethereum,
+            destinationChainId,
+            destinationChainId,
+            'useSelectedToken_usdc',
+          ],
+          sourceToken,
+        ],
+      ],
     });
-  }
-
-  it('quotes the resolved native destination for saved USDC with a canonical mapping', () => {
-    setNetworks(ChainId.RobinhoodChain);
-
-    const { result } = renderGasEstimates();
-
-    expect(result.current).toBe(constants.AddressZero);
-    expect(mockedUseLifiCrossTransfersRoute).toHaveBeenLastCalledWith(
-      expect.objectContaining({ enabled: true, toToken: constants.AddressZero }),
+    const { result } = renderHook(
+      () => {
+        useGasEstimates({
+          sourceChainErc20Address: sourceToken.address,
+          destinationChainErc20Address: sourceToken.l2Address,
+          amount: BigNumber.from(1),
+        });
+        return useDestinationSelection().destinationAddress;
+      },
+      { wrapper },
     );
-  });
 
-  it('keeps quoting the mapped token when the destination still receives it', () => {
-    setNetworks(ChainId.ArbitrumOne);
-
-    const { result } = renderGasEstimates();
-
-    expect(result.current).toBe(ethereumUsdc.l2Address);
-    expect(mockedUseLifiCrossTransfersRoute).toHaveBeenLastCalledWith(
-      expect.objectContaining({ toToken: ethereumUsdc.l2Address }),
-    );
+    await waitFor(() => {
+      const requests = fetchRoute.mock.calls
+        .map(([input]) => new URL(String(input), 'http://localhost'))
+        .filter((url) => url.pathname === '/api/crosschain-transfers/lifi');
+      expect(requests.length).toBeGreaterThan(0);
+      expect(requests.at(-1)?.searchParams.get('toToken')).toBe(expectedToToken);
+    });
+    expect(result.current).toBe(expectedToToken);
   });
 });
