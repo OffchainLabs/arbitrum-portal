@@ -1,17 +1,33 @@
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../wallet/types';
+import { isValidAddressForChain } from './isValidAddressForChain';
 
 export type AccountType =
   | 'externally-owned-account'
   | 'delegated-account'
   | 'smart-contract-wallet';
 
-export async function getAccountType({
+type AccountTypeParams = { address: string; chainId: number };
+const accountTypeProbes: Record<
+  WalletEcosystem,
+  (params: AccountTypeParams) => Promise<AccountType | undefined>
+> = {
+  evm: getEvmAccountType,
+  solana: async () => undefined,
+};
+
+export async function getAccountType(params: AccountTypeParams): Promise<AccountType | undefined> {
+  return accountTypeProbes[getWalletEcosystem(params.chainId)](params);
+}
+
+async function getEvmAccountType({
   address,
   chainId,
-}: {
-  address: string;
-  chainId: number;
-}): Promise<AccountType | undefined> {
+}: AccountTypeParams): Promise<AccountType | undefined> {
+  if (!isValidAddressForChain(address, chainId)) {
+    return undefined;
+  }
   const provider = getProviderForChainId(chainId);
   try {
     const code = await provider.getCode(address);
