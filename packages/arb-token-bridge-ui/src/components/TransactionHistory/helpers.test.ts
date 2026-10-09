@@ -28,6 +28,7 @@ import {
   isLifiTransferResumable,
   isSameTransaction,
   isTxFailed,
+  isTxPending,
 } from './helpers';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
@@ -120,6 +121,23 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
 });
 
 describe('getLifiTransferStatus', () => {
+  it.each([false, true])('keeps NOT_FOUND pending with source execution %s', (sourceExecuted) => {
+    const statusResponse: StatusResponse = {
+      ...baseStatusResponse,
+      status: 'NOT_FOUND',
+      sending: {
+        ...baseStatusResponse.sending,
+        ...(sourceExecuted ? { timestamp: 1_700_000_000 } : {}),
+      },
+    };
+
+    expect(getLifiTransferStatus(statusResponse)).toEqual({
+      status: sourceExecuted ? WithdrawalStatus.CONFIRMED : WithdrawalStatus.UNCONFIRMED,
+      destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      destinationTxId: null,
+    });
+  });
+
   it('maps completed transfers to confirmed statuses and destination tx', () => {
     const statusResponse: StatusResponse = {
       ...baseStatusResponse,
@@ -348,6 +366,57 @@ describe.sequential('getUpdatedLifiTransfer', () => {
       token: destinationToken,
     },
   } as unknown as StatusResponse;
+
+  it.each([WithdrawalStatus.UNCONFIRMED, WithdrawalStatus.CONFIRMED])(
+    'preserves source status %s and retries after NOT_FOUND',
+    async (status) => {
+      const transaction = createMockLifiTransaction({
+        txId: sourceTxHash,
+        status,
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      });
+      vi.mocked(getStatus).mockResolvedValueOnce({
+        ...baseStatusResponse,
+        status: 'NOT_FOUND',
+      });
+
+      const pendingTransaction = await getUpdatedLifiTransfer(transaction);
+
+      expect(pendingTransaction).toBe(transaction);
+      expect(isTxPending(pendingTransaction)).toBe(true);
+
+      vi.mocked(getStatus).mockResolvedValueOnce(completedBridgeStatus);
+      const completedTransaction = await getUpdatedLifiTransfer(pendingTransaction);
+
+      expect(completedTransaction).toMatchObject({
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.CONFIRMED,
+        destinationTxId: destinationTxHash,
+      });
+      expect(getStatus).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('stops polling after an actual refund', async () => {
+    vi.mocked(getStatus).mockResolvedValueOnce({
+      ...baseStatusResponse,
+      status: 'DONE',
+      substatus: 'REFUNDED',
+    });
+
+    const refundedTransaction = await getUpdatedLifiTransfer(
+      createMockLifiTransaction({
+        txId: sourceTxHash,
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.UNCONFIRMED,
+      }),
+    );
+
+    expect(refundedTransaction.destinationStatus).toBe(WithdrawalStatus.REFUNDED);
+    expect(isTxPending(refundedTransaction)).toBe(false);
+    expect(await getUpdatedLifiTransfer(refundedTransaction)).toBe(refundedTransaction);
+    expect(getStatus).toHaveBeenCalledTimes(1);
+  });
 
   it('updates the completed bridge step without completing a failed later step', async () => {
     vi.mocked(getStatus).mockResolvedValueOnce(completedBridgeStatus);

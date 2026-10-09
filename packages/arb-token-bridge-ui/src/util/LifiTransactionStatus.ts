@@ -220,7 +220,7 @@ export function getLifiTransferStatus(statusResponse: StatusResponse): {
     if ('txHash' in statusResponse.receiving) {
       destinationTxId = statusResponse.receiving.txHash;
     }
-  } else if (statusResponse.status === 'PENDING') {
+  } else if (statusResponse.status === 'PENDING' || statusResponse.status === 'NOT_FOUND') {
     if ('timestamp' in statusResponse.sending) {
       status = WithdrawalStatus.CONFIRMED;
       destinationStatus = WithdrawalStatus.UNCONFIRMED;
