@@ -1,7 +1,7 @@
 import { EthBridger, scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { BigNumber, Signer } from 'ethers';
 
-import { fetchNativeCurrency } from '../hooks/useNativeCurrency';
+import { fetchEvmNativeCurrency } from '../services/evm/nativeCurrency';
 import { depositEthEstimateGas } from '../util/EthDepositUtils';
 import { fetchErc20Allowance } from '../util/TokenUtils';
 import {
@@ -41,7 +41,7 @@ export class EthDepositStarter extends BridgeTransferStarter {
     destinationAddress?: string;
   }) {
     const nativeTokenDecimals = (
-      await fetchNativeCurrency({ provider: this.destinationChainProvider })
+      await fetchEvmNativeCurrency({ provider: this.destinationChainProvider })
     ).decimals;
 
     // All Eth/Native currency transfers use Retryables now
