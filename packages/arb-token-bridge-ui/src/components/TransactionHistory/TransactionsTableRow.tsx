@@ -10,7 +10,6 @@ import { useInterval } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
@@ -130,8 +129,7 @@ export function TransactionsTableRow({
   className?: string;
 }) {
   const openTxDetails = useTxDetailsStore((state) => state.open);
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   const { sourceChainId, destinationChainId } = tx;
 

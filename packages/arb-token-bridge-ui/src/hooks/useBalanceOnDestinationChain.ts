@@ -16,8 +16,8 @@ import { useNetworksRelationship } from './useNetworksRelationship';
  */
 export function useBalanceOnDestinationChain(token: ERC20BridgeToken | null): BigNumber | null {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const childNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const childNativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const tokenAddress = resolveTokenAddress({
     token,
     side: 'destination',
