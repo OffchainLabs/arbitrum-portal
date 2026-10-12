@@ -37,8 +37,8 @@ export function DestinationTokenButton({
 
   const [dialogProps, openDialog] = useDialog2();
 
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const tokenOverride = getTokenOverride({
     destinationChainId: networks.destinationChain.id,
     fromToken: destinationToken?.address,

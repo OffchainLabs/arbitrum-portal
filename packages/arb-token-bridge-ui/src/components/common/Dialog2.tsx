@@ -125,8 +125,8 @@ export function DialogWrapper(props: DialogProps) {
   const [selectedToken] = useSelectedToken();
   const [{ amount }] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const [isOpen, setIsOpen] = useState(false);
 
