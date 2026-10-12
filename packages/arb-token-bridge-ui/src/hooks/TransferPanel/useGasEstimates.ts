@@ -1,4 +1,4 @@
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { Config, useConfig } from 'wagmi';
@@ -6,7 +6,6 @@ import { shallow } from 'zustand/shallow';
 
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
@@ -15,6 +14,7 @@ import {
   getSelectedRouteContext,
   useRouteStore,
 } from '../../components/TransferPanel/hooks/useRouteStore';
+import { parseAddressForChain } from '../../util/AddressUtils';
 import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useArbQueryParams } from '../useArbQueryParams';
@@ -50,8 +50,6 @@ async function fetcher([
   routeContext: RouteContext | undefined,
 ]): Promise<TransferEstimateGasResult> {
   const _walletAddress = walletAddress ?? constants.AddressZero;
-  const sourceProvider = getProviderForChainId(sourceChainId);
-  const signer = sourceProvider.getSigner(_walletAddress);
   // use chainIds to initialize the bridgeTransferStarter to save RPC calls
   const bridgeTransferStarter = BridgeTransferStarterFactory.create({
     sourceChainId,
@@ -63,7 +61,7 @@ async function fetcher([
 
   return await bridgeTransferStarter.transferEstimateGas({
     amount,
-    from: await signer.getAddress(),
+    from: _walletAddress,
     destinationAddress,
     wagmiConfig,
   });
@@ -152,9 +150,7 @@ export function useGasEstimates({
 
   const amountToTransfer = balance !== null && amount.gte(balance) ? balance : amount;
 
-  const sanitizedDestinationAddress = utils.isAddress(String(destinationAddress))
-    ? destinationAddress
-    : undefined;
+  const sanitizedDestinationAddress = parseAddressForChain(destinationAddress, destinationChain.id);
 
   const { data: gasEstimates, error } = useSWR(
     () => {

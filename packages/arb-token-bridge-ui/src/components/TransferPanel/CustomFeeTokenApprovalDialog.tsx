@@ -33,7 +33,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
 
   const [networks] = useNetworks();
   const { sourceChain, destinationChain } = networks;
-  const { parentChain, parentChainProvider } = useNetworksRelationship(networks);
+  const { parentChain } = useNetworksRelationship(networks);
   const { isEthereumMainnet } = isNetwork(parentChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const [{ amount2 }] = useArbQueryParams();
@@ -41,7 +41,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
   const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
   const l1Signer = useEthersSigner({ chainId: parentChain.id });
-  const l1GasPrice = useGasPrice({ provider: parentChainProvider });
+  const l1GasPrice = useGasPrice({ chainId: parentChain.id });
 
   const [checked, setChecked] = useState(false);
   const [estimatedGas, setEstimatedGas] = useState<BigNumber>(constants.Zero);

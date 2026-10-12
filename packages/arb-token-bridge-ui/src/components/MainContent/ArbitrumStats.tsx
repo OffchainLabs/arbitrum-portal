@@ -32,8 +32,7 @@ export const ArbitrumStats = () => {
   const [{ settingsOpen }] = useArbQueryParams();
 
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, parentChainProvider } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const { data: currentL1BlockNumber } = useBlockNumber({
     chainId: parentChain.id,
@@ -47,11 +46,11 @@ export const ArbitrumStats = () => {
 
   const { data: tpsData, isValidating: tpsLoading } = useNetworkTPS();
 
-  const currentL1GasPrice = useGasPrice({ provider: parentChainProvider });
+  const currentL1GasPrice = useGasPrice({ chainId: parentChain.id });
   const currentL1GasPriceGwei = utils.formatUnits(currentL1GasPrice, 'gwei');
   const currentL1Activity = getActivityThresholdL1(Number(currentL1GasPriceGwei || 0));
 
-  const currentL2GasPrice = useGasPrice({ provider: childChainProvider });
+  const currentL2GasPrice = useGasPrice({ chainId: childChain.id });
   const currentL2GasPriceGwei = utils.formatUnits(currentL2GasPrice, 'gwei');
   const currentL2Activity = getActivityThresholdL2(Number(currentL2GasPriceGwei || 0));
 
