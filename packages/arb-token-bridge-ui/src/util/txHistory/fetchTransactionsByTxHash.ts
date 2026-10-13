@@ -7,12 +7,17 @@ import pLimit from 'p-limit';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { WithdrawalInitiated } from '../../hooks/arbTokenBridge.types';
-import { fetchLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
+import {
+  fetchLifiTransactionById,
+  fetchLifiTransactionHistory,
+} from '../../hooks/useLifiTransactionHistory';
 import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
 import type { Transfer, Withdrawal } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { parseSWRResponse } from '../../state/cctpState';
 import { ChainId } from '../../types/ChainId';
+import { ecosystems } from '../../wallet/ecosystems';
+import { isValidTransactionId } from '../AddressUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
 import { fetchDeposits } from '../deposits/fetchDeposits';
 import { ChainPair } from '../txHistoryRoutes';
@@ -163,6 +168,12 @@ export async function fetchTransactionsByTxHash({
   probeChainIds: number[];
   isTestnetMode: boolean;
 }): Promise<Transfer[]> {
+  // Transaction IDs from other ecosystems can only be looked up through LiFi
+  if (!ecosystems.evm.transactionId.isValid(txHash)) {
+    if (!isValidTransactionId(txHash) || isTestnetMode) return [];
+    return fetchLifiTransactionById(txHash);
+  }
+
   const limit = pLimit(10);
   const probeResults = await Promise.all(
     probeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),
