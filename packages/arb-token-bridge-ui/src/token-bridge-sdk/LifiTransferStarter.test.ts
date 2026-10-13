@@ -32,6 +32,7 @@ vi.mock('@lifi/sdk', async (importOriginal) => {
     resumeRoute: vi.fn(),
   };
 });
+const sender = '0x0000000000000000000000000000000000000001';
 
 const eth = {
   address: constants.AddressZero,
@@ -43,7 +44,10 @@ const eth = {
 function createLifiTransferRoute({
   gas = [],
   fee = [],
-  route = createMockLifiRoute(),
+  route = {
+    ...createMockLifiRoute(),
+    steps: [{ action: { fromChainId: 1, fromAddress: sender } }],
+  } as unknown as RouteExtended,
 }: {
   gas?: RouteCost[];
   fee?: RouteCost[];
@@ -77,7 +81,7 @@ function createTransferProps(
   return {
     amount: BigNumber.from(1),
     destinationAddress: constants.AddressZero,
-    signers: createMockSigners(),
+    signers: createMockSigners({ evm: sender }),
     switchChainAsync: vi.fn().mockResolvedValue(undefined),
     onApprovalRequest,
     onRouteExecutionError: vi.fn(),
