@@ -1,14 +1,19 @@
-import { createConfig, getTransactionHistory } from '@lifi/sdk';
+import { createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
 import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
 import { constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
-import { addressesEqual, isValidAddress } from '../../../../util/AddressUtils';
+import {
+  addressesEqual,
+  isValidAddress,
+  isValidTransactionId,
+} from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
+import { ecosystems } from '../../../../wallet/ecosystems';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
 import type { RouteTool, Token } from '../types';
 
@@ -208,11 +213,50 @@ export function transformLifiHistoryTransactions({
     .filter((tx): tx is LifiTransactionHistoryItem => tx !== null);
 }
 
+async function getLifiTransactionById(
+  request: NextRequest,
+  txHash: string,
+): Promise<NextResponse<LifiTransactionHistoryResponse>> {
+  // EVM transactions are found through the wallet history
+  if (!isValidTransactionId(txHash) || ecosystems.evm.transactionId.isValid(txHash)) {
+    return NextResponse.json(
+      { message: 'txHash is not a valid transaction ID', data: null },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  createConfig({
+    integrator: getIntegratorId(request),
+    apiKey: process.env.LIFI_KEY,
+  });
+
+  try {
+    const statusResponse = await getStatus({ txHash });
+    return NextResponse.json(
+      { data: transformLifiHistoryTransactions({ wallet: '', statusResponses: [statusResponse] }) },
+      { headers: NO_STORE_HEADERS },
+    );
+  } catch (error: unknown) {
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch LiFi transaction',
+        data: null,
+      },
+      { status: 500, headers: NO_STORE_HEADERS },
+    );
+  }
+}
+
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiTransactionHistoryResponse>> {
   const { searchParams } = new URL(request.url);
   const wallet = searchParams.get('wallet');
+  const txHash = searchParams.get('txHash');
+
+  if (txHash) {
+    return getLifiTransactionById(request, txHash);
+  }
 
   if (!wallet || !isValidAddress(wallet)) {
     return NextResponse.json(
