@@ -28,7 +28,8 @@ import { NetworkContainer } from '../TransferPanelMain';
 import { UsdgSuggestionBanner } from '../UsdgSuggestionBanner';
 import { useIsCctpTransfer } from '../hooks/useIsCctpTransfer';
 import { useReceivedAmount } from '../hooks/useReceivedAmount';
-import { isLifiRoute, useRouteStore } from '../hooks/useRouteStore';
+import { getSelectedRouteContext, isLifiRoute, useRouteStore } from '../hooks/useRouteStore';
+import { resolveNativeUsdcDestinationAddress } from '../resolveRouteAssetAddress';
 import { useAmount2InputVisibility } from './SourceNetworkBox';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
@@ -102,7 +103,7 @@ function BalanceRow({
 
 function BalancesContainer() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { childChain, childChainProvider } = useNetworksRelationship(networks);
   const { isArbitrumOne } = isNetwork(childChain.id);
   const isCctpTransfer = useIsCctpTransfer();
   const destinationToken = useDestinationToken();
@@ -112,6 +113,7 @@ function BalancesContainer() {
   const { data: tokensFromLists } = useTokensFromLists();
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
+  const selectedRouteContext = useRouteStore((state) => getSelectedRouteContext(state));
   const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
 
   const isBatchTransferSupported = useIsBatchTransferSupported();
@@ -125,17 +127,15 @@ function BalancesContainer() {
     (isCctpTransfer && (selectedRoute === 'cctp' || isLifiRoute(selectedRoute))) ||
     (isCctpTransfer && !selectedRoute);
 
-  const nativeUsdcDestinationAddress = isArbitrumOne
-    ? isDepositMode
-      ? CommonAddress.ArbitrumOne.USDC
-      : CommonAddress.Ethereum.USDC
-    : isDepositMode
-      ? CommonAddress.ArbitrumSepolia.USDC
-      : CommonAddress.Sepolia.USDC;
+  const nativeUsdcDestinationAddress = showNativeUsdcBalance
+    ? resolveNativeUsdcDestinationAddress({
+        destinationChainId: networks.destinationChain.id,
+        selectedRoute,
+        selectedRouteContext,
+      })
+    : undefined;
   const nativeUsdcDestinationBalance =
-    useResolvedBalanceOnDestinationChain(
-      showNativeUsdcBalance ? nativeUsdcDestinationAddress : undefined,
-    ) ?? constants.Zero;
+    useResolvedBalanceOnDestinationChain(nativeUsdcDestinationAddress) ?? constants.Zero;
 
   const tokenOverride = useMemo(() => {
     const override = getTokenOverride({
