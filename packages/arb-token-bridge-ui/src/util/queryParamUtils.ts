@@ -11,10 +11,10 @@ import {
   isValidChainQueryParam,
 } from '../types/ChainQueryParam';
 import { getUsdgDestinationTokenAddress, isUsdgQueryParamAlias } from './RobinhoodStablecoinUtils';
-import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
+import { isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
 import { LOG_LEVELS, LogLevel } from './logger';
-import { isNetwork } from './networks';
+import { getDestinationChainIds, isNetwork } from './networks';
 import { orbitChains } from './orbitChainsList';
 
 export interface ThemeConfig {
