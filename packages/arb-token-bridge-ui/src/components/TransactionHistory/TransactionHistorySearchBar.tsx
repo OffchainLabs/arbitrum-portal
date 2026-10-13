@@ -2,7 +2,6 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useCallback, useEffect } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { isHash } from 'viem';
 import { create } from 'zustand';
 import { shallow } from 'zustand/shallow';
 
@@ -10,7 +9,7 @@ import { Tooltip } from '@/app/components/common/Tooltip';
 
 import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
 import type { Address } from '../../util/AddressUtils';
-import { isValidAddress } from '../../util/AddressUtils';
+import { isValidAddress, isValidTransactionId } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionHistoryChainFilter } from './TransactionHistoryChainFilter';
@@ -65,7 +64,7 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
     }
   },
   setSanitizedTxHash: (txHash: string | undefined) => {
-    if (typeof txHash === 'undefined' || isHash(txHash)) {
+    if (typeof txHash === 'undefined' || isValidTransactionId(txHash)) {
       set({ sanitizedTxHash: txHash });
     }
   },
@@ -161,7 +160,7 @@ export function TransactionHistorySearchBar() {
       }
 
       if (mode === 'txHash') {
-        if (!isHash(searchInput)) {
+        if (!isValidTransactionId(searchInput)) {
           setSearchError(TransactionHistorySearchError.INVALID_TX_HASH);
           return;
         }
@@ -212,7 +211,7 @@ export function TransactionHistorySearchBar() {
       if (searchInput === '') {
         return;
       }
-      if (mode === 'txHash' ? isHash(searchInput) : isValidAddress(searchInput)) {
+      if (mode === 'txHash' ? isValidTransactionId(searchInput) : isValidAddress(searchInput)) {
         searchTx(mode);
       }
     },
