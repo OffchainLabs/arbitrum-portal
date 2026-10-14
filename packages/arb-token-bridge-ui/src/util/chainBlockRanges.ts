@@ -8,8 +8,8 @@
 export const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
   33139: 100_000, // ApeChain
   41923: 20_000, // Edu Chain
-  4663: 5_000_000, // Robinhood Chain
-  46630: 5_000_000, // Robinhood Chain Testnet
+  4663: 9_000_000, // Robinhood Chain
+  46630: 9_000_000, // Robinhood Chain Testnet
   1628: 10_000, // T-REX
   869: 10_000, // World Mobile Chain
   680: 10_000, // JASMY Chain
