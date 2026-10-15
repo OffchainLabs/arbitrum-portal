@@ -736,6 +736,10 @@ export async function getUpdatedLifiTransfer(
   }
 
   const statusResponse = await getStatus(statusRequest.params);
+  if (statusResponse.status === 'NOT_FOUND') {
+    return tx;
+  }
+
   const receiving = 'receiving' in statusResponse ? statusResponse.receiving : undefined;
   const actualReceiving =
     statusResponse.status === 'DONE' &&

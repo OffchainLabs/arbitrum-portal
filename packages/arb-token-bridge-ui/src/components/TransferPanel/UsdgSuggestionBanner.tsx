@@ -1,34 +1,32 @@
 import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
+import { ChainId } from '../../types/ChainId';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
-import { getNetworkName } from '../../util/networks';
 import { SafeImage } from '../common/SafeImage';
 import { TokenLogoFallback } from './TokenInfo';
 import { useUsdgSuggestion } from './hooks/useUsdgSuggestion';
 
 export function UsdgSuggestionBanner() {
-  const { isVisible, destinationChainId, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss } =
-    useUsdgSuggestion();
+  const { isVisible, destinationSymbol, usdgLogoURI, switchToUsdg, dismiss } = useUsdgSuggestion();
 
   if (!isVisible) {
     return null;
   }
 
-  const networkName = getNetworkName(destinationChainId);
-  const { color } = getBridgeUiConfigForChain(destinationChainId);
+  const { color } = getBridgeUiConfigForChain(ChainId.RobinhoodChain);
 
   return (
     <div
       role="note"
       aria-label="USDG suggestion"
-      // the destination chain's accent at 20% alpha, same treatment as the custom address banner
+      // Robinhood Chain's accent at 20% alpha, same treatment as the custom address banner
       style={{ backgroundColor: `${color}33`, borderColor: color }}
       className="relative flex flex-wrap items-center gap-[5px] rounded border p-[15px] text-sm tracking-[-0.28px] text-white pr-6"
     >
       <div className="flex min-w-0 flex-1 items-start gap-[5px]">
         <InformationCircleIcon className="mt-[1px] h-5 w-5 shrink-0" />
         <p>
-          USDG is {networkName}&apos;s native stablecoin. Most apps on {networkName} use USDG
+          USDG is Robinhood Chain&apos;s native stablecoin. Most Robinhood apps use USDG
           {destinationSymbol ? `, not ${destinationSymbol}` : ''}.
         </p>
       </div>

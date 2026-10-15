@@ -98,9 +98,9 @@ test.describe('Transaction History', () => {
 
     await warning.hover();
     await expect(
-      page.getByText(/unable to fetch data for the following chain pairs/i),
+      page.getByRole('tooltip').getByText(/unable to fetch data for the following chain pairs/i),
     ).toBeVisible();
-    await expect(page.getByText('Arbitrum Sepolia')).toBeVisible();
+    await expect(page.getByRole('tooltip').getByText('Arbitrum Sepolia')).toBeVisible();
   });
 
   // Same contract on the withdrawal side, which reaches the panel by a different
@@ -119,9 +119,9 @@ test.describe('Transaction History', () => {
 
     await warning.hover();
     await expect(
-      page.getByText(/unable to fetch data for the following chain pairs/i),
+      page.getByRole('tooltip').getByText(/unable to fetch data for the following chain pairs/i),
     ).toBeVisible();
-    await expect(page.getByText('Arbitrum Sepolia')).toBeVisible();
+    await expect(page.getByRole('tooltip').getByText('Arbitrum Sepolia')).toBeVisible();
   });
 
   // The warning used to render only alongside a non-empty table, so a total outage —

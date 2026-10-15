@@ -214,6 +214,26 @@ export function TransferPanel() {
 
   const { handleError } = useError();
 
+  const refreshBalances = async () => {
+    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+
+    if (selectedToken) {
+      token.updateTokenData(selectedToken.address);
+    }
+
+    if (nativeCurrency.isCustom) {
+      await updateErc20ParentBalances([nativeCurrency.address]);
+    }
+  };
+
+  // The panel doesn't wait for the source transaction to confirm, so a slow or failed
+  // confirmation can't keep the transfer in progress. Balances refresh once it confirms.
+  const refreshBalancesAfterConfirmation = (confirmation: Promise<unknown>, label: string) => {
+    confirmation.then(refreshBalances).catch((error: unknown) => {
+      handleError({ error, label, category: 'transaction_confirmation' });
+    });
+  };
+
   useEffect(() => {
     if (hasTrackedBridgePageLoad.current) {
       return;
@@ -234,12 +254,18 @@ export function TransferPanel() {
   ]);
 
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+    if (embedMode) {
+      openDialog('widget_transaction_history');
+      setQueryParams({ amount: '', amount2: '' });
+      return;
+    }
+
     setQueryParams({
       tab: tabToIndex[TabParamEnum.TX_HISTORY],
       amount: '',
       amount2: '',
     });
-  }, [setQueryParams]);
+  }, [embedMode, openDialog, setQueryParams]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
@@ -582,7 +608,15 @@ export function TransferPanel() {
       setTransferring(false);
       resetAmountAndSwitchToTransactionHistoryTab();
       clearRoute();
-    } catch (e) {
+
+      if (!isSmartContractWallet) {
+        refreshBalancesAfterConfirmation(
+          sourceChainProvider.waitForTransaction(depositForBurnTx.hash),
+          'cctp_transfer_confirmation',
+        );
+      }
+    } catch (error) {
+      handleError({ error, label: 'cctp_transfer', category: 'transaction_signing' });
     } finally {
       setTransferring(false);
     }
@@ -790,18 +824,13 @@ export function TransferPanel() {
       });
 
       const sourceChainTransaction = transfer.sourceChainTransaction;
-      if ('wait' in sourceChainTransaction) {
-        await sourceChainTransaction.wait();
-
-        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
-
-        if (selectedToken) {
-          token.updateTokenData(selectedToken.address);
-        }
-
-        if (nativeCurrency.isCustom) {
-          await updateErc20ParentBalances([nativeCurrency.address]);
-        }
+      if (!isSmartContractWallet) {
+        refreshBalancesAfterConfirmation(
+          'wait' in sourceChainTransaction
+            ? sourceChainTransaction.wait()
+            : transfer.sourceChainProvider.waitForTransaction(sourceChainTransaction.hash),
+          'lifi_source_confirmation',
+        );
       }
     } catch (error) {
       if (isUserRejectedError(error)) {
@@ -933,6 +962,10 @@ export function TransferPanel() {
           value: amount,
           tokenAddress: selectedToken.address,
         });
+        refreshBalancesAfterConfirmation(
+          sourceChainProvider.waitForTransaction(transfer.sourceChainTransaction.hash),
+          'oft_transfer_confirmation',
+        );
       }
 
       clearRoute();
@@ -1182,7 +1215,7 @@ export function TransferPanel() {
       });
 
       // transaction submitted callback
-      onTxSubmit(transfer);
+      await onTxSubmit(transfer);
     } catch (error) {
       handleError({
         error,
@@ -1267,33 +1300,14 @@ export function TransferPanel() {
       );
     }
 
-    if (embedMode) {
-      openDialog('widget_transaction_history');
-    } else {
-      setQueryParams({
-        tab: tabToIndex[TabParamEnum.TX_HISTORY],
-      });
-    }
-
+    resetAmountAndSwitchToTransactionHistoryTab();
     setTransferring(false);
     clearRoute();
-    setQueryParams({
-      amount: '',
-      amount2: '',
-    });
 
-    await (sourceChainTransaction as TransactionResponse).wait();
-
-    // tx confirmed, update balances
-    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
-
-    if (selectedToken) {
-      token.updateTokenData(selectedToken.address);
-    }
-
-    if (nativeCurrency.isCustom) {
-      await updateErc20ParentBalances([nativeCurrency.address]);
-    }
+    refreshBalancesAfterConfirmation(
+      (sourceChainTransaction as TransactionResponse).wait(),
+      'arbitrum_transfer_confirmation',
+    );
   };
 
   const trackTransferButtonClick = useCallback(() => {
@@ -1371,19 +1385,23 @@ export function TransferPanel() {
       return;
     }
 
-    if (selectedRoute == 'oftV2') {
-      return transferOft();
+    try {
+      if (selectedRoute == 'oftV2') {
+        return await transferOft();
+      }
+      if (selectedRoute === 'cctp') {
+        return await transferCctp();
+      }
+      if (isLifiRoute(selectedRoute)) {
+        return await transferLifi();
+      }
+      if (selectedRoute === 'arbitrum' && isDepositMode && selectedToken) {
+        return await depositToken();
+      }
+      return await transfer();
+    } catch (error) {
+      handleError({ error, label: 'transfer', category: 'transaction_signing' });
     }
-    if (selectedRoute === 'cctp') {
-      return transferCctp();
-    }
-    if (isLifiRoute(selectedRoute)) {
-      return transferLifi();
-    }
-    if (selectedRoute === 'arbitrum' && isDepositMode && selectedToken) {
-      return depositToken();
-    }
-    return transfer();
   };
 
   if (embedMode) {

@@ -23,6 +23,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     vi.stubEnv(
       'INDEXER_API_URL_BY_CHAIN',
       JSON.stringify({
+        [ChainId.Ethereum]: 'https://indexer.test',
         [ChainId.ArbitrumOne]: 'https://indexer.test',
         [ChainId.ArbitrumNova]: 'https://indexer.test',
       }),
@@ -36,8 +37,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     vi.unstubAllEnvs();
   });
 
-  it('returns the indexer block for an indexed chain', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
+  it('returns the indexer block for an indexed child chain', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
       // the indexer serializes `id` as a string -> exercises the Number() coercion
@@ -47,14 +47,28 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     });
 
     const response = await getBlockNumber(ChainId.ArbitrumNova);
-    const body = await response.json();
 
-    expect(body).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 12345 });
+    expect(await response.json()).toEqual({
+      meta: { source: 'arbitrum-indexer' },
+      data: 12345,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('https://indexer.test/status', expect.anything());
+  });
+
+  it('preserves the parent-chain block-number path through the indexer', async () => {
+    isChildChainIndexedMock.mockReturnValue(false);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ethereum: { id: String(ChainId.Ethereum), block: { number: 999 } } }),
+    });
+
+    const response = await getBlockNumber(ChainId.Ethereum);
+
+    expect(await response.json()).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 999 });
     expect(fetchMock).toHaveBeenCalledWith('https://indexer.test/status', expect.anything());
   });
 
   it('returns a 502 (not a misleading success) when the indexer block number cannot be fetched', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
     fetchMock.mockResolvedValue({ ok: false, status: 503 });
 
     const response = await getBlockNumber(ChainId.ArbitrumOne);
@@ -66,8 +80,6 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns a 502 for an indexed chain that has no entry in the map', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
-
     const response = await getBlockNumber(ChainId.ArbitrumSepolia);
 
     expect(response.status).toBe(502);
@@ -78,7 +90,6 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns a 502 naming the chain when the indexer status does not list it', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ ethereum: { id: '1', block: { number: 999 } } }),
@@ -95,7 +106,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   it('answers 0 for a chain nothing serves, rather than a failure', async () => {
     isChildChainIndexedMock.mockReturnValue(false);
 
-    const response = await getBlockNumber(ChainId.ArbitrumOne);
+    const response = await getBlockNumber(33139);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ data: 0 });

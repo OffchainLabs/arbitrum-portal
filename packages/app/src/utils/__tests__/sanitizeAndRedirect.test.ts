@@ -119,21 +119,6 @@ describe('initializeBridgePage sanitization', () => {
       );
     });
 
-    it('resolves `destinationToken=usdg` to the Robinhood USDG contract from Base', async () => {
-      await initializeBridgePage({
-        searchParams: {
-          sourceChain: 'base',
-          destinationChain: 'robinhood-chain',
-          destinationToken: 'usdg',
-        },
-        redirectPath: PathnameEnum.BRIDGE,
-      });
-
-      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
-        CommonAddress.RobinhoodChain.USDG,
-      );
-    });
-
     it('resolves `destinationToken=usdg` to the Ethereum USDG contract from Ethereum', async () => {
       await initializeBridgePage({
         searchParams: {
@@ -149,25 +134,10 @@ describe('initializeBridgePage sanitization', () => {
       );
     });
 
-    it('resolves `destinationToken=usdg` into Arbitrum One from Ethereum', async () => {
+    it('drops `destinationToken=usdg` when the destination is not Robinhood Chain', async () => {
       await initializeBridgePage({
         searchParams: {
           sourceChain: 'ethereum',
-          destinationChain: 'arbitrum-one',
-          destinationToken: 'usdg',
-        },
-        redirectPath: PathnameEnum.BRIDGE,
-      });
-
-      expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
-        CommonAddress.Ethereum.USDG,
-      );
-    });
-
-    it('drops `destinationToken=usdg` on a route without a USDG pair', async () => {
-      await initializeBridgePage({
-        searchParams: {
-          sourceChain: 'base',
           destinationChain: 'arbitrum-one',
           destinationToken: 'usdg',
         },
