@@ -51,6 +51,9 @@ describe.sequential('TransactionHistoryTable empty state', () => {
     renderEmptyTable({ failedChainPairs: [{ parentChainId: 1, childChainId: 42161 }] });
 
     expect(screen.getByTestId('empty-history').textContent).toBe('error');
+    expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
+      'We were unable to fetch data for the following chain pairs: Ethereum to Arbitrum One',
+    );
   });
 
   it('reports a load error on a fetch error', () => {
