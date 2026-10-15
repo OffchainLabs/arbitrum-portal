@@ -29,7 +29,12 @@ export function MainContent() {
   const { embedMode } = useMode();
 
   if (embedMode) {
-    return <TransferPanel />;
+    return (
+      <>
+        <TransferPanel />
+        <UsdgDripCard />
+      </>
+    );
   }
 
   // Determine which content to show based on route and query params

@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
+import { useMode } from '@/bridge/hooks/useMode';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 
 import { useUsdgDripCardStore } from './useUsdgDripCard';
@@ -14,6 +15,7 @@ export function UsdgDripCard() {
   const isOpen = useUsdgDripCardStore((state) => state.isOpen);
   const dismiss = useUsdgDripCardStore((state) => state.dismiss);
   const isBannerVisible = useSiteBannerVisible();
+  const { embedMode } = useMode();
 
   if (!isOpen) {
     return null;
@@ -31,12 +33,18 @@ export function UsdgDripCard() {
         // #293300 is Robinhood's #CCFF00 accent at 20% over the black page, made opaque so the
         // card stays readable where it overlaps the panel on narrow screens.
         'fixed z-40 flex flex-col items-start gap-[15px] rounded border border-[#CCFF00] bg-[#293300] p-[15px] text-white',
-        'inset-x-4 bottom-[calc(theme(navbar.mobileBottom)+16px)]',
-        'md:inset-x-auto md:bottom-auto md:right-0 md:w-[360px] md:rounded-r-none md:border-r-0',
-        'md:top-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
-        isBannerVisible &&
-          'md:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
         'motion-safe:animate-slide-in-right',
+        embedMode
+          ? // the widget has no app shell to anchor to, so it keeps the mobile layout at every
+            // width, with nothing to clear at the bottom edge
+            'inset-x-4 bottom-4'
+          : [
+              'inset-x-4 bottom-[calc(theme(navbar.mobileBottom)+16px)]',
+              'md:inset-x-auto md:bottom-auto md:right-0 md:w-[360px] md:rounded-r-none md:border-r-0',
+              'md:top-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
+              isBannerVisible &&
+                'md:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
+            ],
       )}
     >
       <span className="rounded-[5px] bg-black px-2 py-0.5 text-xs text-[#CCFF00]">

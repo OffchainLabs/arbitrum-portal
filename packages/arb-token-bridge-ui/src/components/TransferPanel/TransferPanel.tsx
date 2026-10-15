@@ -257,6 +257,10 @@ export function TransferPanel() {
   ]);
 
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+    // every submit path ends here once the source transaction is out, so this is the one place
+    // that sees all of them
+    showUsdgDripCardAfterSubmit();
+
     if (embedMode) {
       openDialog('widget_transaction_history');
       setQueryParams({ amount: '', amount2: '' });
@@ -268,10 +272,6 @@ export function TransferPanel() {
       amount: '',
       amount2: '',
     });
-
-    // every submit path ends here once the source transaction is out, so this is the one place
-    // that sees all of them
-    showUsdgDripCardAfterSubmit();
   }, [embedMode, openDialog, setQueryParams, showUsdgDripCardAfterSubmit]);
 
   useEffect(() => {

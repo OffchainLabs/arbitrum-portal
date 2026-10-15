@@ -17,7 +17,7 @@ import {
 } from './useUsdgDripCard';
 
 vi.mock('@/bridge/hooks/useDestinationToken', () => ({ useDestinationSelection: vi.fn() }));
-vi.mock('@/bridge/hooks/useMode', () => ({ useMode: vi.fn() }));
+vi.mock('@/bridge/hooks/useMode', () => ({ useMode: vi.fn(() => ({ embedMode: false })) }));
 vi.mock('@/bridge/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 vi.mock('@/bridge/util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('@/bridge/components/common/SiteBanner', () => ({ useSiteBannerVisible: () => false }));
@@ -100,8 +100,6 @@ describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(useMode).mockReturnValue({ embedMode: false });
     act(() => useUsdgDripCardStore.getState().dismiss());
   });
 
@@ -112,17 +110,6 @@ describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
     act(() => result.current());
 
     expect(useUsdgDripCardStore.getState().isOpen).toBe(true);
-  });
-
-  it('never opens or tracks in the embedded widget, which has no card to show', () => {
-    vi.mocked(useMode).mockReturnValue({ embedMode: true });
-    mockSelection(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDG);
-    const { result } = renderHook(() => useShowUsdgDripCardAfterSubmit());
-
-    act(() => result.current());
-
-    expect(useUsdgDripCardStore.getState().isOpen).toBe(false);
-    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('leaves the card closed for any other transfer', () => {
@@ -138,7 +125,19 @@ describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
 describe.sequential('UsdgDripCard', () => {
   afterEach(() => {
     cleanup();
+    vi.mocked(useMode).mockReturnValue({ embedMode: false });
     act(() => useUsdgDripCardStore.getState().dismiss());
+  });
+
+  it('keeps the mobile layout at every width inside the embedded widget', () => {
+    vi.mocked(useMode).mockReturnValue({ embedMode: true });
+    render(<UsdgDripCard />);
+    act(() => useUsdgDripCardStore.getState().show());
+
+    const card = screen.getByRole('complementary', { name: CARD_NAME });
+    expect(card.className).toContain('inset-x-4');
+    expect(card.className).toContain('bottom-4');
+    expect(card.className).not.toContain('md:');
   });
 
   it('renders nothing until a qualifying transfer shows it', () => {
