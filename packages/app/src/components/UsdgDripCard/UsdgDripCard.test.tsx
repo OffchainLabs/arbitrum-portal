@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDestinationSelection } from '@/bridge/hooks/useDestinationToken';
+import { useMode } from '@/bridge/hooks/useMode';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { ChainId } from '@/bridge/types/ChainId';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
@@ -16,6 +17,7 @@ import {
 } from './useUsdgDripCard';
 
 vi.mock('@/bridge/hooks/useDestinationToken', () => ({ useDestinationSelection: vi.fn() }));
+vi.mock('@/bridge/hooks/useMode', () => ({ useMode: vi.fn() }));
 vi.mock('@/bridge/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 vi.mock('@/bridge/util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('@/bridge/components/common/SiteBanner', () => ({ useSiteBannerVisible: () => false }));
@@ -98,6 +100,8 @@ describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
   }
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useMode).mockReturnValue({ embedMode: false });
     act(() => useUsdgDripCardStore.getState().dismiss());
   });
 
@@ -108,6 +112,17 @@ describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
     act(() => result.current());
 
     expect(useUsdgDripCardStore.getState().isOpen).toBe(true);
+  });
+
+  it('never opens or tracks in the embedded widget, which has no card to show', () => {
+    vi.mocked(useMode).mockReturnValue({ embedMode: true });
+    mockSelection(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDG);
+    const { result } = renderHook(() => useShowUsdgDripCardAfterSubmit());
+
+    act(() => result.current());
+
+    expect(useUsdgDripCardStore.getState().isOpen).toBe(false);
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('leaves the card closed for any other transfer', () => {

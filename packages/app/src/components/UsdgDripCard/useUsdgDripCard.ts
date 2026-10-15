@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { create } from 'zustand';
 
 import { useDestinationSelection } from '@/bridge/hooks/useDestinationToken';
+import { useMode } from '@/bridge/hooks/useMode';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { ChainId } from '@/bridge/types/ChainId';
 import { addressesEqual } from '@/bridge/util/AddressUtils';
@@ -53,16 +54,23 @@ export const useUsdgDripCardStore = create<UsdgDripCardStore>((set, get) => ({
  * Every submit path calls the returned callback once the source transaction is out. It closes
  * over the render the user clicked in, so it sees the transfer's own destination token rather
  * than whatever the panel shows afterwards.
+ *
+ * The embedded widget never mounts the card, so the callback is a no-op there regardless of
+ * where TransferPanel calls it; otherwise a widget submit would count a `shown` impression.
  */
 export function useShowUsdgDripCardAfterSubmit() {
+  const { embedMode } = useMode();
   const [networks] = useNetworks();
   const { destinationAddress: destinationChainTokenAddress } = useDestinationSelection();
   const show = useUsdgDripCardStore((state) => state.show);
   const destinationChainId = networks.destinationChain.id;
 
   return useCallback(() => {
+    if (embedMode) {
+      return;
+    }
     if (shouldShowUsdgDripCard({ destinationChainId, destinationChainTokenAddress })) {
       show();
     }
-  }, [destinationChainId, destinationChainTokenAddress, show]);
+  }, [destinationChainId, destinationChainTokenAddress, embedMode, show]);
 }
