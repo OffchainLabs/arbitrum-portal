@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import { UsdgDripCard } from '@/app-components/UsdgDripCard/UsdgDripCard';
 import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { TabParamEnum, isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
@@ -58,6 +59,9 @@ export function MainContent() {
 
       {/* Settings panel */}
       <SettingsDialog />
+
+      {/* Lives outside the panels so it stays open when a submit switches to the history tab */}
+      <UsdgDripCard />
 
       {/* Toggle-able Stats for nerds */}
       {isArbitrumStatsVisible && <ArbitrumStats />}

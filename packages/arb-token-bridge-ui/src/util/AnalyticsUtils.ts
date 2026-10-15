@@ -179,6 +179,9 @@ type AnalyticsEventMap = {
     sourceTokenAddress?: string;
     destinationTokenAddress?: string;
   };
+  'USDG DRIP Card': {
+    action: 'shown' | 'dismissed' | 'learn_more_clicked';
+  };
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;

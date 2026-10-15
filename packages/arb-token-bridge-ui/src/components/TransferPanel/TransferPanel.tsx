@@ -11,6 +11,10 @@ import { BaseError } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import {
+  shouldShowUsdgDripCard,
+  useUsdgDripCardStore,
+} from '@/app-components/UsdgDripCard/useUsdgDripCardStore';
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
@@ -33,6 +37,7 @@ import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatc
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useBalances } from '../../hooks/useBalances';
+import { useDestinationSelection } from '../../hooks/useDestinationToken';
 import { useError } from '../../hooks/useError';
 import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
@@ -195,6 +200,10 @@ export function TransferPanel() {
 
   const isSwapTransfer = useIsSwapTransfer();
 
+  // the submit handlers close over the render the user clicked in, so this is the transfer's token
+  const { destinationAddress: destinationChainTokenAddress } = useDestinationSelection();
+  const showUsdgDripCard = useUsdgDripCardStore((state) => state.show);
+
   const latestDestinationAddress = useLatest(destinationAddress);
 
   const [dialogProps, openDialog] = useDialog2();
@@ -265,7 +274,26 @@ export function TransferPanel() {
       amount: '',
       amount2: '',
     });
-  }, [embedMode, openDialog, setQueryParams]);
+
+    // every submit path ends here once the source transaction is out, so this is the one place
+    // that sees all of them
+    if (
+      shouldShowUsdgDripCard({
+        destinationChainId: networks.destinationChain.id,
+        destinationChainTokenAddress,
+      })
+    ) {
+      trackEvent('USDG DRIP Card', { action: 'shown' });
+      showUsdgDripCard();
+    }
+  }, [
+    destinationChainTokenAddress,
+    embedMode,
+    networks.destinationChain.id,
+    openDialog,
+    setQueryParams,
+    showUsdgDripCard,
+  ]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
