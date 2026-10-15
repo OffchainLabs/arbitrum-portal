@@ -95,12 +95,9 @@ test.describe('Transaction History', () => {
 
     const warning = page.getByTestId(FAILED_CHAIN_PAIRS_WARNING);
     await expect(warning).toBeVisible({ timeout: 150_000 });
-
-    await warning.hover();
-    await expect(
-      page.getByRole('tooltip').getByText(/unable to fetch data for the following chain pairs/i),
-    ).toBeVisible();
-    await expect(page.getByRole('tooltip').getByText('Arbitrum Sepolia')).toBeVisible();
+    await expect(warning).toHaveAccessibleName(
+      /unable to fetch data for the following chain pairs: Sepolia to Arbitrum Sepolia/i,
+    );
   });
 
   // Same contract on the withdrawal side, which reaches the panel by a different
@@ -116,12 +113,9 @@ test.describe('Transaction History', () => {
 
     const warning = page.getByTestId(FAILED_CHAIN_PAIRS_WARNING);
     await expect(warning).toBeVisible({ timeout: 150_000 });
-
-    await warning.hover();
-    await expect(
-      page.getByRole('tooltip').getByText(/unable to fetch data for the following chain pairs/i),
-    ).toBeVisible();
-    await expect(page.getByRole('tooltip').getByText('Arbitrum Sepolia')).toBeVisible();
+    await expect(warning).toHaveAccessibleName(
+      /unable to fetch data for the following chain pairs: Sepolia to Arbitrum Sepolia/i,
+    );
   });
 
   // The warning used to render only alongside a non-empty table, so a total outage —

@@ -90,6 +90,10 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
     return null;
   }
 
+  const warningLabel = `We were unable to fetch data for the following chain pairs: ${failedChainPairs
+    .map((pair) => `${getNetworkName(pair.parentChainId)} to ${getNetworkName(pair.childChainId)}`)
+    .join(', ')}`;
+
   return (
     <Tooltip
       content={
@@ -107,11 +111,14 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
         </div>
       }
     >
-      <ExclamationCircleIcon
-        height={20}
-        className="text-error"
+      <span
+        role="img"
+        aria-label={warningLabel}
+        className="inline-flex"
         data-testid="failed-chain-pairs-warning"
-      />
+      >
+        <ExclamationCircleIcon height={20} className="text-error" aria-hidden="true" />
+      </span>
     </Tooltip>
   );
 };
