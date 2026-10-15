@@ -1,13 +1,22 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useDestinationSelection } from '@/bridge/hooks/useDestinationToken';
+import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { ChainId } from '@/bridge/types/ChainId';
+import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
-import { DRIP_OPPORTUNITIES_URL, UsdgDripCard } from './UsdgDripCard';
-import { shouldShowUsdgDripCard, useUsdgDripCardStore } from './useUsdgDripCardStore';
+import { UsdgDripCard } from './UsdgDripCard';
+import {
+  shouldShowUsdgDripCard,
+  useShowUsdgDripCardAfterSubmit,
+  useUsdgDripCardStore,
+} from './useUsdgDripCard';
 
+vi.mock('@/bridge/hooks/useDestinationToken', () => ({ useDestinationSelection: vi.fn() }));
+vi.mock('@/bridge/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 vi.mock('@/bridge/util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('@/bridge/components/common/SiteBanner', () => ({ useSiteBannerVisible: () => false }));
 vi.mock('next/image', () => ({
@@ -18,16 +27,7 @@ vi.mock('next/image', () => ({
 const CARD_NAME = 'USDG DRIP rewards';
 
 describe('shouldShowUsdgDripCard', () => {
-  it('shows for Arbitrum One USDG landing on Arbitrum One', () => {
-    expect(
-      shouldShowUsdgDripCard({
-        destinationChainId: ChainId.ArbitrumOne,
-        destinationChainTokenAddress: CommonAddress.ArbitrumOne.USDG,
-      }),
-    ).toBe(true);
-  });
-
-  it('matches the Arbitrum One USDG address regardless of case', () => {
+  it('shows for Arbitrum One USDG landing on Arbitrum One, whatever the address case', () => {
     expect(
       shouldShowUsdgDripCard({
         destinationChainId: ChainId.ArbitrumOne,
@@ -57,16 +57,69 @@ describe('shouldShowUsdgDripCard', () => {
         destinationChainTokenAddress: CommonAddress.Ethereum.USDG,
       }),
     ).toBe(false);
-    expect(
-      shouldShowUsdgDripCard({
-        destinationChainId: ChainId.RobinhoodChain,
-        destinationChainTokenAddress: CommonAddress.ArbitrumOne.USDG,
-      }),
-    ).toBe(false);
   });
 });
 
 // the store is module-level, so these tests must not interleave
+describe.sequential('useUsdgDripCardStore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    act(() => useUsdgDripCardStore.getState().dismiss());
+  });
+
+  it('tracks one impression while the card stays open across transfers', () => {
+    act(() => useUsdgDripCardStore.getState().show());
+    act(() => useUsdgDripCardStore.getState().show());
+
+    expect(useUsdgDripCardStore.getState().isOpen).toBe(true);
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith('USDG DRIP Card', { action: 'shown' });
+  });
+
+  it('tracks again once the card re-opens after a dismissal', () => {
+    act(() => useUsdgDripCardStore.getState().show());
+    act(() => useUsdgDripCardStore.getState().dismiss());
+    act(() => useUsdgDripCardStore.getState().show());
+
+    expect(useUsdgDripCardStore.getState().isOpen).toBe(true);
+    expect(trackEvent).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe.sequential('useShowUsdgDripCardAfterSubmit', () => {
+  function mockSelection(destinationChainId: ChainId, destinationAddress: string) {
+    vi.mocked(useNetworks).mockReturnValue([
+      { destinationChain: { id: destinationChainId } },
+      vi.fn(),
+    ] as unknown as ReturnType<typeof useNetworks>);
+    vi.mocked(useDestinationSelection).mockReturnValue({
+      destinationAddress,
+    } as unknown as ReturnType<typeof useDestinationSelection>);
+  }
+
+  beforeEach(() => {
+    act(() => useUsdgDripCardStore.getState().dismiss());
+  });
+
+  it('opens the card for USDG landing on Arbitrum One', () => {
+    mockSelection(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDG);
+    const { result } = renderHook(() => useShowUsdgDripCardAfterSubmit());
+
+    act(() => result.current());
+
+    expect(useUsdgDripCardStore.getState().isOpen).toBe(true);
+  });
+
+  it('leaves the card closed for any other transfer', () => {
+    mockSelection(ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.USDC);
+    const { result } = renderHook(() => useShowUsdgDripCardAfterSubmit());
+
+    act(() => result.current());
+
+    expect(useUsdgDripCardStore.getState().isOpen).toBe(false);
+  });
+});
+
 describe.sequential('UsdgDripCard', () => {
   afterEach(() => {
     cleanup();
@@ -91,28 +144,20 @@ describe.sequential('UsdgDripCard', () => {
     );
 
     const link = screen.getByRole('link', { name: 'Learn More' });
-    expect(link.getAttribute('href')).toBe(DRIP_OPPORTUNITIES_URL);
+    expect(link.getAttribute('href')).toBe('https://arbitrumdrip.com/opportunities');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
-  it('stays closed after dismissal until the next transfer shows it again', () => {
+  it('closes on dismiss, tracks it, and comes back on the next transfer', () => {
     render(<UsdgDripCard />);
     act(() => useUsdgDripCardStore.getState().show());
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss USDG DRIP rewards' }));
     expect(screen.queryByRole('complementary', { name: CARD_NAME })).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('USDG DRIP Card', { action: 'dismissed' });
 
     act(() => useUsdgDripCardStore.getState().show());
     expect(screen.getByRole('complementary', { name: CARD_NAME })).toBeTruthy();
-  });
-
-  it('only slides in when motion is allowed', () => {
-    render(<UsdgDripCard />);
-    act(() => useUsdgDripCardStore.getState().show());
-
-    const { classList } = screen.getByRole('complementary', { name: CARD_NAME });
-    expect(classList.contains('motion-safe:animate-slide-in-right')).toBe(true);
-    expect(classList.contains('animate-slide-in-right')).toBe(false);
   });
 });

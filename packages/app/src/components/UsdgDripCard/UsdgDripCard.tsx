@@ -8,9 +8,7 @@ import { ExternalLink } from '@/bridge/components/common/ExternalLink';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
 
-import { useUsdgDripCardStore } from './useUsdgDripCardStore';
-
-export const DRIP_OPPORTUNITIES_URL = 'https://arbitrumdrip.com/opportunities';
+import { useUsdgDripCardStore } from './useUsdgDripCard';
 
 export function UsdgDripCard() {
   const isOpen = useUsdgDripCardStore((state) => state.isOpen);
@@ -68,7 +66,7 @@ export function UsdgDripCard() {
         Supply USDG to Morpho or GMX vaults and earn up to 8% APR.
       </p>
       <ExternalLink
-        href={DRIP_OPPORTUNITIES_URL}
+        href="https://arbitrumdrip.com/opportunities"
         onClick={() => trackEvent('USDG DRIP Card', { action: 'learn_more_clicked' })}
         className="arb-hover flex items-center gap-2 rounded bg-black px-[10px] py-[5px] text-sm leading-[1.35] tracking-[-0.28px] text-white"
       >
