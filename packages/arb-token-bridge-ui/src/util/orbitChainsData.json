@@ -1294,7 +1294,7 @@
         "bridge": "0x28C3C1FC243DCCDD5Ae2Aa9081fA01b64D69cD21",
         "inbox": "0xa5099f144FA1ed4A74a6E6dFc6Bb1B4E514FD061",
         "outbox": "0x193cc92D190D5d9d593A8b9242449e1f5AA8a678",
-        "rollup": "0x30FDF7506264aD964067eb1E049C44b00dfd631f",
+        "rollup": "0xEE0e953FEF4733e93E228207a1DdFDcEDFD650F6",
         "sequencerInbox": "0x96729ffcea2d26CdB4e72d4d67448416f5f96C89"
       },
       "nativeToken": "0x84285795BFed8A757Dac4659163f549449AF7115",

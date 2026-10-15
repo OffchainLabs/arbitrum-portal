@@ -4,10 +4,12 @@ import { NextResponse } from 'next/server';
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
 import {
   type SubgraphSource,
+  getL1SubgraphClient,
   getL2SubgraphClient,
 } from '../../../../api-utils/ServerSubgraphUtils';
+import { ChainId } from '../../../../types/ChainId';
 import { logger } from '../../../../util/logger';
-import { hasBridgeHistory, isChildChainIndexed } from '../../../../util/txHistory/sources';
+import { isChildChainIndexed } from '../../../../util/txHistory/sources';
 
 type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 
@@ -45,6 +47,29 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   return blockNumber;
 }
 
+function getSubgraphClient(chainId: number) {
+  switch (chainId) {
+    case ChainId.Ethereum:
+      // it's the same whether we do arb1 or nova
+      return getL1SubgraphClient(ChainId.ArbitrumOne);
+
+    case ChainId.Sepolia:
+      return getL1SubgraphClient(ChainId.ArbitrumSepolia);
+
+    case ChainId.ArbitrumOne:
+      return getL2SubgraphClient(ChainId.ArbitrumOne);
+
+    case ChainId.ArbitrumNova:
+      return getL2SubgraphClient(ChainId.ArbitrumNova);
+
+    case ChainId.ArbitrumSepolia:
+      return getL2SubgraphClient(ChainId.ArbitrumSepolia);
+
+    default:
+      return undefined;
+  }
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chainId: string }> },
@@ -53,10 +78,6 @@ export async function GET(
 > {
   const { chainId } = await params;
   const numericChainId = Number(chainId);
-
-  if (!hasBridgeHistory(numericChainId)) {
-    return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
-  }
 
   try {
     if (isChildChainIndexed(numericChainId)) {
@@ -71,7 +92,11 @@ export async function GET(
       );
     }
 
-    const subgraph = getL2SubgraphClient(numericChainId);
+    const subgraph = getSubgraphClient(numericChainId);
+
+    if (!subgraph) {
+      return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
+    }
 
     const result: {
       data: {
