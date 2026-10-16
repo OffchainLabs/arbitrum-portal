@@ -55,7 +55,7 @@ import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getLifiAssetType, registerWalletAccountType, trackEvent } from '../../util/AnalyticsUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
@@ -161,6 +161,12 @@ export function TransferPanel() {
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
+
+  useEffect(() => {
+    if (accountType) {
+      registerWalletAccountType(accountType);
+    }
+  }, [accountType]);
 
   const isTrustWalletConnection = useIsTrustWalletConnection();
 

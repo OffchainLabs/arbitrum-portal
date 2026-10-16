@@ -3,6 +3,7 @@ import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import type { AccountType as WalletAccountType } from './AccountUtils';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
@@ -208,4 +209,12 @@ export function trackEvent(
 
   // Posthog
   posthog.capture(event, properties);
+}
+
+export function registerWalletAccountType(walletAccountType: WalletAccountType): void {
+  if (!isProductionEnvironment) {
+    return;
+  }
+
+  posthog.register({ walletAccountType });
 }
