@@ -8,7 +8,7 @@ import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
-type AccountType = 'EOA' | 'Smart Contract';
+type AccountType = 'EOA' | 'Delegated EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
@@ -184,6 +184,15 @@ type AnalyticsEventMap = {
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
 
+export function getAnalyticsAccountType(
+  walletAccountType: WalletAccountType | undefined,
+): AccountType {
+  if (walletAccountType === 'smart-contract-wallet') {
+    return 'Smart Contract';
+  }
+  return walletAccountType === 'delegated-account' ? 'Delegated EOA' : 'EOA';
+}
+
 export function getLifiAssetType({
   tokenAddress,
   chainId,
@@ -209,12 +218,4 @@ export function trackEvent(
 
   // Posthog
   posthog.capture(event, properties);
-}
-
-export function registerWalletAccountType(walletAccountType: WalletAccountType): void {
-  if (!isProductionEnvironment) {
-    return;
-  }
-
-  posthog.register({ walletAccountType });
 }
