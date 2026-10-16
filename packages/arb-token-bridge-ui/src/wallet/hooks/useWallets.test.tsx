@@ -16,6 +16,7 @@ const evm: EvmWalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  signer: defaultWalletContextValue.evm.signer,
 };
 const solana: SolanaWalletHandle = {
   ecosystem: 'solana',
@@ -26,6 +27,7 @@ const solana: SolanaWalletHandle = {
   },
   isConnected: true,
   disconnect: async () => {},
+  signer: defaultWalletContextValue.solana.signer,
 };
 describe.sequential('useWallets', () => {
   afterEach(cleanup);

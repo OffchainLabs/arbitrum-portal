@@ -1,3 +1,4 @@
+import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import {
   BridgeTransferStarter,
   BridgeTransferStarterPropsWithChainIds,
@@ -8,6 +9,7 @@ import { EthDepositStarter } from './EthDepositStarter';
 import { EthWithdrawalStarter } from './EthWithdrawalStarter';
 import { LifiTransferStarter } from './LifiTransferStarter';
 import { OftV2TransferStarter } from './OftV2TransferStarter';
+import { SolanaTransferStarter } from './SolanaTransferStarter';
 import { getOftV2TransferConfig } from './oftUtils';
 import { getBridgeTransferProperties, getProviderForChainId } from './utils';
 
@@ -42,8 +44,19 @@ export class BridgeTransferStarterFactory {
   public static create(
     props: BridgeTransferStarterPropsWithChainIds & { lifiRoute?: never },
   ): BridgeTransferStarter;
-  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter;
-  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter {
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds,
+  ): TransferStarter | SolanaTransferStarter;
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds,
+  ): TransferStarter | SolanaTransferStarter {
+    if (getWalletEcosystem(props.sourceChainId) === 'solana') {
+      if (!props.lifiRoute) {
+        throw new Error('A LiFi quote is required to estimate a Solana transfer.');
+      }
+      return new SolanaTransferStarter({ lifiRoute: props.lifiRoute });
+    }
+
     const sourceChainProvider = getProviderForChainId(props.sourceChainId);
     const destinationChainProvider = getProviderForChainId(props.destinationChainId);
 

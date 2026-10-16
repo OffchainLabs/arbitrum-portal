@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useConfig } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { resumeLifiRoute } from '@/token-bridge-sdk/LifiRouteExecutor';
@@ -23,6 +22,7 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { useWalletContext } from '../../wallet/WalletContext';
+import { getSigners } from '../../wallet/getSigners';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -63,11 +63,14 @@ export function TransactionsTableRowAction({
 }) {
   // LiFi routes are resumed by the sender's wallet; claims and redeems are EVM actions.
   // Picking the ecosystem without a chain lookup keeps rows for unknown chains renderable.
+  const sourceWallet = useWalletContext(tx.sourceChainId === ChainId.Solana ? 'solana' : 'evm');
+  const destinationWallet = useWalletContext(
+    tx.destinationChainId === ChainId.Solana ? 'solana' : 'evm',
+  );
   const {
     account: { address: connectedAddress, chainId },
     isConnected,
-  } = useWalletContext(tx.sourceChainId === ChainId.Solana ? 'solana' : 'evm');
-  const wagmiConfig = useConfig();
+  } = sourceWallet;
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
     (state) => state.updateTransaction,
@@ -156,7 +159,7 @@ export function TransactionsTableRowAction({
     try {
       setIsResumingLifiRoute(true);
       await resumeLifiRoute(tx.lifiRoute, {
-        wagmiConfig,
+        signers: getSigners(sourceWallet, destinationWallet),
         switchChainAsync,
         onApprovalRequest: async (approvalRequest) => {
           const waitForInput = openDialog('approve_lifi_token', {
@@ -197,12 +200,13 @@ export function TransactionsTableRowAction({
       setIsResumingLifiRoute(false);
     }
   }, [
+    destinationWallet,
     openDialog,
+    sourceWallet,
     switchChainAsync,
     tx,
     updateLifiTransactionInCache,
     updateTransaction,
-    wagmiConfig,
   ]);
 
   const getHelpOnError = () => {
