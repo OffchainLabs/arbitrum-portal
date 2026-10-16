@@ -25,7 +25,6 @@ import {
   getPendingLifiRouteBatchIds,
 } from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
@@ -667,8 +666,6 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider, destinationChainProvider } = networks;
-
       const tokenOverrides = getTokenOverride({
         fromToken: selectedToken?.address,
         sourceChainId: networks.sourceChain.id,
@@ -681,9 +678,9 @@ export function TransferPanel() {
       const sourceChainErc20Address =
         tokenOverrides.source?.address ||
         (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
-      const lifiTransferStarter = new LifiTransferStarter({
-        destinationChainProvider,
-        sourceChainProvider,
+      const lifiTransferStarter = BridgeTransferStarterFactory.create({
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
         destinationChainErc20Address,
         sourceChainErc20Address,
         lifiRoute: context,
@@ -838,12 +835,9 @@ export function TransferPanel() {
         isSwap: isSwapTransfer,
       });
 
-      const sourceChainTransaction = transfer.sourceChainTransaction;
       if (!isSmartContractWallet) {
         refreshBalancesAfterConfirmation(
-          'wait' in sourceChainTransaction
-            ? sourceChainTransaction.wait()
-            : transfer.sourceChainProvider.waitForTransaction(sourceChainTransaction.hash),
+          transfer.sourceChainTransaction.wait(),
           'lifi_source_confirmation',
         );
       }

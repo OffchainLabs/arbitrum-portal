@@ -1,3 +1,4 @@
+import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import {
   BridgeTransferStarter,
@@ -24,10 +25,6 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
     cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`;
   }
 
-  if (props.lifiRoute) {
-    cacheKey += `-${props.lifiRoute.protocolData.route.id}`;
-  }
-
   return cacheKey;
 }
 
@@ -41,6 +38,9 @@ function withCache(key: string, value: TransferStarter): TransferStarter {
 const cache: { [key: string]: TransferStarter } = {};
 
 export class BridgeTransferStarterFactory {
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds & { lifiRoute: LifiCrosschainTransfersRoute },
+  ): LifiTransferStarter | SolanaTransferStarter;
   public static create(
     props: BridgeTransferStarterPropsWithChainIds & { lifiRoute?: never },
   ): BridgeTransferStarter;
@@ -79,6 +79,10 @@ export class BridgeTransferStarterFactory {
       throw new Error('Unsupported transfer detected');
     }
 
+    if (props.lifiRoute) {
+      return new LifiTransferStarter({ ...initProps, lifiRoute: props.lifiRoute });
+    }
+
     const cacheKey = getCacheKey(props);
     const cacheValue = cache[cacheKey];
 
@@ -91,13 +95,6 @@ export class BridgeTransferStarterFactory {
       destinationChainId: props.destinationChainId,
       sourceChainErc20Address: props.sourceChainErc20Address,
     });
-
-    if (props.lifiRoute) {
-      return withCache(
-        cacheKey,
-        new LifiTransferStarter({ ...initProps, lifiRoute: props.lifiRoute }),
-      );
-    }
 
     if (isOft.isValid) {
       return withCache(cacheKey, new OftV2TransferStarter(initProps));
