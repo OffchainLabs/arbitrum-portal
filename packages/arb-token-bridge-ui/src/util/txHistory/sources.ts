@@ -41,11 +41,3 @@ export const INDEXER_CHILD_CHAIN_IDS =
 export function isChildChainIndexed(childChainId: number): boolean {
   return INDEXER_CHILD_CHAIN_IDS.includes(childChainId);
 }
-
-function hasBridgeSubgraph(childChainId: number): boolean {
-  return childChainId === ChainId.ArbitrumNova;
-}
-
-export function hasBridgeHistory(childChainId: number): boolean {
-  return isChildChainIndexed(childChainId) || hasBridgeSubgraph(childChainId);
-}
