@@ -1,7 +1,7 @@
 import useSWRImmutable from 'swr/immutable';
-import { useAccount } from 'wagmi';
 
 import { AccountType, getAccountType } from '../util/AccountUtils';
+import { useWallets } from '../wallet/hooks/useWallets';
 import { useNetworks } from './useNetworks';
 
 type Result = {
@@ -10,7 +10,11 @@ type Result = {
 };
 
 export function useAccountType(addressOverride?: string, chainIdOverride?: number): Result {
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
   const [{ sourceChain }] = useNetworks();
 
   const address = addressOverride ?? walletAddress;

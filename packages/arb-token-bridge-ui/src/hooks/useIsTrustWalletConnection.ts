@@ -1,7 +1,7 @@
-import { useWalletInfo } from '@reown/appkit/react';
+import { useWallets } from '../wallet/hooks/useWallets';
 
 export function useIsTrustWalletConnection() {
-  const { walletInfo } = useWalletInfo('eip155');
+  const { sourceWallet } = useWallets();
 
-  return (walletInfo?.name ?? '').toLowerCase().includes('trust wallet');
+  return sourceWallet.needsNetworkSigningWarning ?? false;
 }
