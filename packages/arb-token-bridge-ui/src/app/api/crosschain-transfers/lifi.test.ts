@@ -1,9 +1,12 @@
 import { type RouteExtended, getRoutes } from '@lifi/sdk';
 import { constants } from 'ethers';
 import { NextRequest } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createMockLifiRoute } from '../../../test-utils/lifi';
+import { ChainId } from '../../../types/ChainId';
+import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../../wallet/ecosystems/solana';
 import {
   GET,
   type LifiCrosschainTransfersRoute,
@@ -11,6 +14,12 @@ import {
   getLifiRoutes,
   parseLifiRoute,
 } from './lifi';
+
+vi.mock('../../../wallet/ecosystems/solana', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../wallet/ecosystems/solana')>();
+  actual.solanaEcosystem.isEnabled = () => true;
+  return actual;
+});
 
 vi.mock('@lifi/sdk', async (importActual) => ({
   ...(await importActual<typeof import('@lifi/sdk')>()),
@@ -352,5 +361,76 @@ describe('GET', () => {
     expect(response.status).toBe(200);
     expect(body.data).toHaveLength(1);
     expect(body.data[0].protocolData.route.id).toBe('valid');
+  });
+});
+
+describe.sequential('GET with a Solana source', () => {
+  const solanaSender = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5';
+  const evmSender = '0x1111111111111111111111111111111111111111';
+
+  function createRequest(params: Record<string, string> = {}) {
+    const searchParams = new URLSearchParams({
+      fromToken: SOLANA_NATIVE_TOKEN_ADDRESS,
+      toToken: constants.AddressZero,
+      fromChainId: String(ChainId.Solana),
+      toChainId: String(ChainId.ArbitrumOne),
+      fromAmount: '1000',
+      slippage: '0.5',
+      ...params,
+    });
+
+    return new NextRequest(`http://localhost/api/crosschain-transfers/lifi?${searchParams}`);
+  }
+
+  beforeEach(() => {
+    vi.mocked(getRoutes).mockReset();
+    vi.mocked(getRoutes).mockResolvedValue({
+      routes: [],
+      unavailableRoutes: { failed: [], filteredOut: [] },
+    });
+  });
+
+  it.each([SOLANA_NATIVE_TOKEN_ADDRESS, CommonAddress.Solana.USDC, CommonAddress.Solana.USDT])(
+    'accepts Solana token %s',
+    async (fromToken) => {
+      const response = await GET(createRequest({ fromToken }));
+
+      expect(response.status).toBe(200);
+      expect(getRoutes).toHaveBeenCalledWith(
+        expect.objectContaining({ fromChainId: ChainId.Solana, fromTokenAddress: fromToken }),
+      );
+    },
+  );
+
+  it.each<Record<string, string>>([
+    { toChainId: String(ChainId.Base) },
+    { fromToken: 'not-a-solana-address' },
+  ])('rejects unsupported or malformed requests: %o', async (params) => {
+    const response = await GET(createRequest(params));
+
+    expect(response.status).toBe(400);
+    expect(getRoutes).not.toHaveBeenCalled();
+  });
+
+  it('does not default a cross-ecosystem recipient to the Solana sender', async () => {
+    await GET(createRequest({ fromAddress: solanaSender }));
+
+    expect(getRoutes).toHaveBeenCalledWith(
+      expect.objectContaining({ fromAddress: solanaSender, toAddress: undefined }),
+    );
+  });
+
+  it('defaults an EVM recipient to the sender', async () => {
+    await GET(
+      createRequest({
+        fromChainId: String(ChainId.Ethereum),
+        fromToken: constants.AddressZero,
+        fromAddress: evmSender,
+      }),
+    );
+
+    expect(getRoutes).toHaveBeenCalledWith(
+      expect.objectContaining({ fromAddress: evmSender, toAddress: evmSender }),
+    );
   });
 });

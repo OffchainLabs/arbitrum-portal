@@ -1,8 +1,9 @@
-import { constants } from 'ethers';
 import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import { type EcosystemConfig } from '../wallet/ecosystems';
+import { getEcosystemConfig, getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import type { AccountType as WalletAccountType } from './AccountUtils';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
@@ -199,13 +200,16 @@ export function getLifiAssetType({
 }: {
   tokenAddress: string | undefined;
   chainId: number;
-}): 'ERC20' | 'ETH' {
+}): 'ERC20' | EcosystemConfig['nativeAssetType'] {
   // ApeChain uses APE token (ERC20) for native token
   if (chainId === ChainId.ApeChain) {
     return 'ERC20';
   }
 
-  return addressesEqual(tokenAddress, constants.AddressZero) ? 'ETH' : 'ERC20';
+  if (!addressesEqual(tokenAddress, getNativeTokenAddress(chainId))) {
+    return 'ERC20';
+  }
+  return getEcosystemConfig(chainId).nativeAssetType;
 }
 
 export function trackEvent(
