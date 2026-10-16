@@ -17,6 +17,10 @@ const VIRTUAL_COIN_KEY = 'VIRTUAL' as CoinKey;
 const VIRTUAL_LOGO_URI =
   'https://static.debank.com/image/eth_token/logo_url/0x44ff8620b8ca30902395a7bd3f2407e1a091bf73/cbb70834d9442214c846833e47648255.png';
 
+const USDG_COIN_KEY = 'USDG' as CoinKey;
+const USDG_LOGO_URI =
+  'https://static.debank.com/image/eth_token/logo_url/0xe343167631d89b6ffc58b88d6b7fb0228795491d/4cbeae5d28b9db12bcf655fae7a328bb.png';
+
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
   {
     coinKey: VIRTUAL_COIN_KEY,
@@ -60,7 +64,7 @@ const CUSTOM_TOKENS: CustomTokenConfig[] = [
     },
   },
   {
-    coinKey: 'USDG',
+    coinKey: USDG_COIN_KEY,
     addresses: {
       [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
       [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDG,
@@ -186,6 +190,11 @@ function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
   switch (token.coinKey) {
     case VIRTUAL_COIN_KEY: {
       token.logoURI = VIRTUAL_LOGO_URI;
+      return token;
+    }
+    case USDG_COIN_KEY: {
+      // LiFi has no logo for Arbitrum One USDG
+      token.logoURI ??= USDG_LOGO_URI;
       return token;
     }
     case CoinKey.ETH: {
