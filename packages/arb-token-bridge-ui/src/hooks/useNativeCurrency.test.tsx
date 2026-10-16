@@ -1,14 +1,34 @@
+import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { constants } from 'ethers';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as nativeCurrencyService from '../services/nativeCurrency';
+import { getNativeCurrencyPrice } from '../services/nativeCurrency';
 import { createWalletTestWrapper } from '../test-utils/wallet-test-wrapper';
 import { ChainId } from '../types/ChainId';
+import { CommonAddress } from '../util/CommonAddressUtils';
 import { getChainMetadata } from '../util/networkMetadata';
 import { removeCustomChainFromLocalStorage, saveCustomChainToLocalStorage } from '../util/networks';
 import orbitChainsData from '../util/orbitChainsData.json';
+import { orbitMainnets } from '../util/orbitChainsList';
 import { getWagmiChain } from '../util/wagmi/getWagmiChain';
-import { useNativeCurrency } from './useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from './useNativeCurrency';
+
+vi.mock('../token-bridge-sdk/utils', async (actual) => ({
+  ...(await actual<typeof import('../token-bridge-sdk/utils')>()),
+  getProviderForChainId: (chainId: number) => ({ getNetwork: async () => ({ chainId }) }),
+}));
+vi.mock('../util/TokenUtils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../util/TokenUtils')>()),
+  fetchErc20Data: async () => ({ name: 'ApeCoin', symbol: 'APE', decimals: 18 }),
+}));
+beforeAll(() => {
+  const apeChain = orbitMainnets[ChainId.ApeChain];
+  if (!apeChain) throw new Error('Missing ApeChain fixture');
+  registerCustomArbitrumNetwork(apeChain);
+});
+afterEach(cleanup);
 
 describe.sequential('useNativeCurrency', () => {
   beforeEach(() => {
@@ -109,5 +129,52 @@ describe.sequential('useNativeCurrency', () => {
       removeCustomChainFromLocalStorage(chain.chainId);
     }
     expect(() => getChainMetadata(chain.chainId)).toThrow('Unexpected chain id');
+  });
+});
+
+describe.sequential('transfer native currency', () => {
+  it.each([
+    [ChainId.ArbitrumOne, ChainId.ApeChain, CommonAddress.ArbitrumOne.APE],
+    [ChainId.ApeChain, ChainId.ArbitrumOne, CommonAddress.ArbitrumOne.APE],
+  ])('preserves the custom gas token for %s to %s', async (source, destination, address) => {
+    const wrapper = createWalletTestWrapper({
+      query: { sourceChain: source, destinationChain: destination },
+    });
+    const { result } = renderHook(() => useNativeCurrencyForTransfer(), { wrapper });
+    await waitFor(() => expect(result.current.isCustom).toBe(true));
+    expect(result.current).toMatchObject({
+      symbol: 'APE',
+      decimals: 18,
+      balanceDecimals: 18,
+      nativeTokenChainId: ChainId.ApeChain,
+      priceAddress: address.toLowerCase(),
+    });
+
+    const { result: eth } = renderHook(
+      () => useNativeCurrencyForTransfer({ tokenAddress: constants.AddressZero }),
+      { wrapper },
+    );
+    await waitFor(() =>
+      expect(eth.current.nativeTokenChainId).toBe(
+        source === ChainId.ApeChain ? destination : source,
+      ),
+    );
+    expect(eth.current.symbol).toBe('ETH');
+    expect(getNativeCurrencyPrice({ ...eth.current, tokensFromLists: {}, ethPrice: 2000 })).toBe(
+      2000,
+    );
+  });
+
+  it('keeps the same reference across renders once the currencies are loaded', async () => {
+    const wrapper = createWalletTestWrapper({
+      query: { sourceChain: ChainId.ArbitrumOne, destinationChain: ChainId.ApeChain },
+    });
+    const { result, rerender } = renderHook(() => useNativeCurrencyForTransfer(), { wrapper });
+    await waitFor(() => {
+      const previous = result.current;
+      rerender();
+      expect(result.current.isCustom).toBe(true);
+      expect(result.current).toBe(previous);
+    });
   });
 });
