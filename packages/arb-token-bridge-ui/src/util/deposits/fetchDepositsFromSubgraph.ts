@@ -1,6 +1,5 @@
-import { hasL1Subgraph } from '../SubgraphUtils';
-import { isChildChainIndexed } from '../txHistory/sources';
-import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
+import { fetchBridgeHistory } from '../txHistory/fetchBridgeHistory';
+import { hasBridgeHistory } from '../txHistory/sources';
 
 export type FetchDepositsFromSubgraphResult = {
   receiver: string;
@@ -56,8 +55,8 @@ export const fetchDepositsFromSubgraph = async ({
   pageNumber?: number;
   searchString?: string;
 }): Promise<FetchDepositsFromSubgraphResult[]> => {
-  if (!hasL1Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    throw new Error(`L1 subgraph not available for network: ${l2ChainId}`);
+  if (!hasBridgeHistory(Number(l2ChainId))) {
+    return [];
   }
 
   if (toBlock && fromBlock >= toBlock) {
@@ -65,28 +64,8 @@ export const fetchDepositsFromSubgraph = async ({
     return [];
   }
 
-  const urlParams = new URLSearchParams(
-    sanitizeQueryParams({
-      sender,
-      receiver,
-      fromBlock,
-      toBlock,
-      l2ChainId,
-      pageSize,
-      page: pageNumber,
-      search: searchString,
-      experiments: getCurrentExperimentsQueryParam(),
-    }),
-  );
-
-  if (pageSize === 0) return []; // don't query subgraph if nothing requested
-
-  const response = await fetch(`${getAPIBaseUrl()}/api/deposits?${urlParams}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+  return fetchBridgeHistory<FetchDepositsFromSubgraphResult>({
+    route: 'deposits',
+    query: { sender, receiver, fromBlock, toBlock, l2ChainId, pageSize, pageNumber, searchString },
   });
-
-  const transactions: FetchDepositsFromSubgraphResult[] = (await response.json()).data;
-
-  return transactions;
 };

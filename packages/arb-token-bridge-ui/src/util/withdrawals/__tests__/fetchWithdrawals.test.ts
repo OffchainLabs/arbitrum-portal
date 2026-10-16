@@ -165,17 +165,20 @@ describe.sequential('fetchWithdrawals', () => {
     });
   });
 
-  describe('resilience', () => {
-    it('falls back to a full event-log scan when the indexed fetch fails', async () => {
+  describe('surfacing failures', () => {
+    // a silent event-log fallback here would render an outage as a short history,
+    // which is indistinguishable from an account with few withdrawals
+    it('rejects when the indexed fetch fails', async () => {
       fetchLatestIndexedBlockNumberMock.mockResolvedValue(500);
       fetchWithdrawalsFromSubgraphMock.mockRejectedValue(new Error('indexer down'));
 
-      await fetchWithdrawals(baseParams);
+      await expect(fetchWithdrawals(baseParams)).rejects.toThrow('indexer down');
+    });
 
-      // the indexed range was not fetched, so event logs must cover from the original fromBlock
-      expect(fetchTokenWithdrawalsFromEventLogsSequentiallyMock).toHaveBeenCalledWith(
-        expect.objectContaining({ fromBlock: FROM_BLOCK + 1 }),
-      );
+    it('rejects when the latest indexed block number is unavailable', async () => {
+      fetchLatestIndexedBlockNumberMock.mockRejectedValue(new Error('502'));
+
+      await expect(fetchWithdrawals(baseParams)).rejects.toThrow('502');
     });
   });
 });

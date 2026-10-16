@@ -102,6 +102,48 @@ export type Deposit = Transaction;
 export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
 
 type DepositOrWithdrawal = Deposit | Withdrawal;
+
+type FailedChainPairFetch = { type: 'deposits' | 'withdrawals'; chainPair: ChainPair };
+
+function isSameChainPair(a: ChainPair, b: ChainPair) {
+  return a.parentChainId === b.parentChainId && a.childChainId === b.childChainId;
+}
+
+/**
+ * Records the outcome of one pair's fetch. Tracked per type: deposits and
+ * withdrawals fetch the same pairs independently, so one succeeding must not
+ * clear the other's failure. Returns `failures` itself when nothing changed.
+ */
+export function recordChainPairFetch({
+  failures = [],
+  type,
+  chainPair,
+  failed,
+}: {
+  failures?: FailedChainPairFetch[];
+  type: FailedChainPairFetch['type'];
+  chainPair: ChainPair;
+  failed: boolean;
+}): FailedChainPairFetch[] {
+  const isMatch = (failure: FailedChainPairFetch) =>
+    failure.type === type && isSameChainPair(failure.chainPair, chainPair);
+  const isRecorded = failures.some(isMatch);
+
+  if (failed) {
+    return isRecorded ? failures : [...failures, { type, chainPair }];
+  }
+
+  return isRecorded ? failures.filter((failure) => !isMatch(failure)) : failures;
+}
+
+/** The pairs with any failed fetch, each listed once. */
+export function getFailedChainPairs(failures: FailedChainPairFetch[] = []): ChainPair[] {
+  return failures.reduce<ChainPair[]>(
+    (pairs, { chainPair }) =>
+      pairs.some((pair) => isSameChainPair(pair, chainPair)) ? pairs : [...pairs, chainPair],
+    [],
+  );
+}
 export type Transfer = DepositOrWithdrawal | MergedTransaction;
 
 type ForceFetchReceivedStore = {
@@ -735,9 +777,10 @@ const useTransactionHistoryWithoutStatuses = (
       isTxHistoryEnabled && !isSmartContractWallet && !isTestnetMode ? address : undefined,
   });
 
-  const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
-    address ? ['failed_chain_pairs', address] : null,
-  );
+  // scoped by mode so a testnet failure doesn't warn while viewing mainnet
+  const { data: failedChainPairFetches, mutate: setFailedChainPairFetches } = useSWRImmutable<
+    FailedChainPairFetch[]
+  >(address ? ['failed_chain_pairs', address, isTestnetMode] : null);
   const connectedChainId = chain?.id;
   const canFetch = canFetchTransactionHistory({
     address,
@@ -808,7 +851,7 @@ const useTransactionHistoryWithoutStatuses = (
               const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
 
               // else, fetch deposits or withdrawals
-              return await fetcherFn({
+              const result = await fetcherFn({
                 sender: includeSentTxs ? address : undefined,
                 receiver: includeReceivedTxs ? address : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
@@ -819,24 +862,17 @@ const useTransactionHistoryWithoutStatuses = (
                 forceFetchReceived,
                 batchSizeBlocks,
               });
-            } catch {
-              addFailedChainPair((prevFailedChainPairs) => {
-                if (!prevFailedChainPairs) {
-                  return [chainPair];
-                }
-                if (
-                  typeof prevFailedChainPairs.find(
-                    (prevPair) =>
-                      prevPair.parentChainId === chainPair.parentChainId &&
-                      prevPair.childChainId === chainPair.childChainId,
-                  ) !== 'undefined'
-                ) {
-                  // already added
-                  return prevFailedChainPairs;
-                }
 
-                return [...prevFailedChainPairs, chainPair];
-              });
+              // a later success clears the warning a transient failure raised
+              setFailedChainPairFetches((failures) =>
+                recordChainPairFetch({ failures, type, chainPair, failed: false }),
+              );
+
+              return result;
+            } catch {
+              setFailedChainPairFetches((failures) =>
+                recordChainPairFetch({ failures, type, chainPair, failed: true }),
+              );
 
               return [];
             }
@@ -844,7 +880,7 @@ const useTransactionHistoryWithoutStatuses = (
       );
     },
     [
-      addFailedChainPair,
+      setFailedChainPairFetches,
       address,
       canFetch,
       connectedChainId,
@@ -928,7 +964,7 @@ const useTransactionHistoryWithoutStatuses = (
       oftLoading ||
       lifiHistoryLoading,
     error: depositsError ?? withdrawalsError ?? cctpError,
-    failedChainPairs: failedChainPairs || [],
+    failedChainPairs: getFailedChainPairs(failedChainPairFetches),
   };
 };
 
