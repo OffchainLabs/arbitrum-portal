@@ -1,18 +1,23 @@
-import { isAddress } from 'ethers/lib/utils';
 import useSWRImmutable from 'swr/immutable';
 import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../../hooks/useAccountType';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
+import { useNetworks } from '../../../hooks/useNetworks';
 import { addressIsDenylisted } from '../../../util/AddressUtils';
+import { ecosystems } from '../../../wallet/ecosystems';
+import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../../../wallet/types';
 import { DestinationAddressErrors } from '../CustomDestinationAddressInput';
 
 export async function getDestinationAddressError({
   destinationAddress,
   isSenderSmartContractWallet,
+  destinationEcosystem,
 }: {
   destinationAddress?: string;
   isSenderSmartContractWallet: boolean;
+  destinationEcosystem: WalletEcosystem;
 }): Promise<DestinationAddressErrors | null> {
   if (!destinationAddress && isSenderSmartContractWallet) {
     // destination address required for contract wallets
@@ -21,10 +26,12 @@ export async function getDestinationAddressError({
   if (!destinationAddress) {
     return null;
   }
-  if (!isAddress(destinationAddress)) {
+  const { address: addressAdapter } = ecosystems[destinationEcosystem];
+  const parsedDestinationAddress = addressAdapter.normalize(destinationAddress);
+  if (!addressAdapter.isValid(parsedDestinationAddress)) {
     return DestinationAddressErrors.INVALID_ADDRESS;
   }
-  if (await addressIsDenylisted(destinationAddress)) {
+  if (await addressIsDenylisted(parsedDestinationAddress)) {
     return DestinationAddressErrors.DENYLISTED_ADDRESS;
   }
 
@@ -34,6 +41,7 @@ export async function getDestinationAddressError({
 
 export function useDestinationAddressError(destinationAddress?: string) {
   const [{ destinationAddress: destinationAddressFromQueryParams }] = useArbQueryParams();
+  const [{ destinationChain }] = useNetworks();
   const { address } = useAccount();
   const { accountType } = useAccountType();
   const isSenderSmartContractWallet = accountType === 'smart-contract-wallet';
@@ -41,14 +49,17 @@ export function useDestinationAddressError(destinationAddress?: string) {
   const { data: destinationAddressError } = useSWRImmutable(
     [
       address?.toLowerCase(),
-      (destinationAddress ?? destinationAddressFromQueryParams)?.toLowerCase(),
+      destinationAddress ?? destinationAddressFromQueryParams,
       isSenderSmartContractWallet,
+      // Same validation for every chain of an ecosystem, so switching between them reuses the result
+      getWalletEcosystem(destinationChain.id),
       'useDestinationAddressError',
     ] as const,
-    ([, _destinationAddress, _isSenderSmartContractWallet]) =>
+    ([, _destinationAddress, _isSenderSmartContractWallet, destinationEcosystem]) =>
       getDestinationAddressError({
         destinationAddress: _destinationAddress,
         isSenderSmartContractWallet: _isSenderSmartContractWallet,
+        destinationEcosystem,
       }),
   );
 
