@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 
-import { getWagmiChain } from '../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../util/networkMetadata';
 import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import { useTokenBalances } from '../wallet/hooks/useTokenBalances';
 
@@ -16,7 +16,7 @@ export const useNativeCurrencyBalanceForChainId = (chainId: number, walletAddres
     errorRetryInterval: 3_000,
   });
   const balance = result.data?.[tokenAddress];
-  const { decimals, symbol } = getWagmiChain(chainId).nativeCurrency;
+  const { decimals, symbol } = getChainMetadata(chainId).nativeCurrency;
   return {
     ...result,
     data:

@@ -1,3 +1,6 @@
+import type { Chain } from 'wagmi/chains';
+
+import { ChainId } from '../../types/ChainId';
 import { loadEnvironmentVariableWithFallback } from '../../util';
 
 const alchemyKey =
@@ -11,3 +14,11 @@ export const solanaRpcUrl = loadEnvironmentVariableWithFallback({
     ? `https://solana-mainnet.g.alchemy.com/v2/${alchemyKey}`
     : 'https://api.mainnet-beta.solana.com',
 });
+
+export const solanaChain = {
+  id: ChainId.Solana,
+  name: 'Solana',
+  nativeCurrency: { name: 'Solana', symbol: 'SOL', decimals: 9 },
+  rpcUrls: { default: { http: [solanaRpcUrl] } },
+  blockExplorers: { default: { name: 'Solscan', url: 'https://solscan.io' } },
+} satisfies Chain;

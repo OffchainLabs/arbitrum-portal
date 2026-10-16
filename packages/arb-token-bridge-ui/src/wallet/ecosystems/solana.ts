@@ -1,6 +1,7 @@
 import bs58 from 'bs58';
 
 import type { EcosystemConfig, ValidationOptions } from '.';
+import { solanaChain } from '../solana/network';
 
 export const SOLANA_NATIVE_TOKEN_ADDRESS = '11111111111111111111111111111111';
 
@@ -41,4 +42,7 @@ export const solanaEcosystem: EcosystemConfig = {
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
   hasParentChildTokenAddresses: false,
   hasTokenApprovals: false,
+  // Solscan
+  explorerAccountPath: 'account',
+  chains: [solanaChain],
 };
