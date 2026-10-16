@@ -32,7 +32,6 @@ import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
 import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
@@ -65,6 +64,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
@@ -134,7 +134,7 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridge: { bridgeTokens },
       warningTokens,
     },
   } = useAppState();
@@ -205,8 +205,7 @@ export function TransferPanel() {
 
   const isCustomDestinationTransfer = !!latestDestinationAddress.current;
 
-  const { updateEthParentBalance, updateErc20ParentBalances, updateEthChildBalance } =
-    useBalances();
+  const refreshTokenBalances = useRefreshTokenBalances();
 
   const { destinationAddressError } = useDestinationAddressError();
 
@@ -215,15 +214,23 @@ export function TransferPanel() {
   const { handleError } = useError();
 
   const refreshBalances = async () => {
-    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+    const refreshes: Promise<unknown>[] = [];
 
-    if (selectedToken) {
-      token.updateTokenData(selectedToken.address);
+    if (walletAddress) {
+      refreshes.push(refreshTokenBalances({ chainId: networks.sourceChain.id, walletAddress }));
     }
 
-    if (nativeCurrency.isCustom) {
-      await updateErc20ParentBalances([nativeCurrency.address]);
+    const recipientAddress = destinationAddress || walletAddress;
+    if (recipientAddress) {
+      refreshes.push(
+        refreshTokenBalances({
+          chainId: networks.destinationChain.id,
+          walletAddress: recipientAddress,
+        }),
+      );
     }
+
+    await Promise.all(refreshes);
   };
 
   // The panel doesn't wait for the source transaction to confirm, so a slow or failed
