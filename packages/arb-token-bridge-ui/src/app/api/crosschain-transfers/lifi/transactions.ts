@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
-import { addressesEqual } from '../../../../util/AddressUtils';
+import { addressesEqual, isValidAddress } from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
@@ -214,7 +214,7 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const wallet = searchParams.get('wallet');
 
-  if (!wallet || !utils.isAddress(wallet)) {
+  if (!wallet || !isValidAddress(wallet)) {
     return NextResponse.json(
       { message: 'wallet is not a valid address', data: null },
       { status: 400, headers: NO_STORE_HEADERS },

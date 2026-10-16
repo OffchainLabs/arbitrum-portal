@@ -13,6 +13,14 @@ export function isValidSolanaAddress(address: string | undefined): boolean {
   }
 }
 
+export function isValidSolanaSignature(signature: string): boolean {
+  try {
+    return bs58.decode(signature).length === 64;
+  } catch {
+    return false;
+  }
+}
+
 // Reads `solanaEcosystem.isEnabled` at call time, so mocking it also gates validation
 function isEnabledOrIgnored({ ignoreFeatureFlag = false }: ValidationOptions = {}) {
   return ignoreFeatureFlag || solanaEcosystem.isEnabled();
@@ -25,6 +33,12 @@ export const solanaEcosystem: EcosystemConfig = {
     // base58 is case-sensitive
     normalize: (address) => address,
   },
+  transactionId: {
+    isValid: (signature, options) =>
+      isEnabledOrIgnored(options) && isValidSolanaSignature(signature),
+    normalize: (signature) => signature,
+  },
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
   hasParentChildTokenAddresses: false,
+  hasTokenApprovals: false,
 };
