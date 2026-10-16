@@ -38,18 +38,17 @@ function getDuration({
 
 export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: string }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const {
     status: gasSummaryStatus,
     estimatedParentChainGasFees,
     estimatedChildChainGasFees,
   } = useGasSummary();
   const childChainNativeCurrency = useNativeCurrency({
-    provider: childChainProvider,
+    chainId: childChain.id,
   });
   const parentChainNativeCurrency = useNativeCurrency({
-    provider: parentChainProvider,
+    chainId: parentChain.id,
   });
   const { isTestnet } = isNetwork(childChain.id);
 

@@ -83,12 +83,11 @@ export function getGasSummaryStatus({
 export function useGasSummary(): UseGasSummaryResult {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChainProvider, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const amountBigNumber = useDebounce(useAmountBigNumber(), 300);
 
-  const parentChainGasPrice = useGasPrice({ provider: parentChainProvider });
-  const childChainGasPrice = useGasPrice({ provider: childChainProvider });
+  const parentChainGasPrice = useGasPrice({ chainId: parentChain.id });
+  const childChainGasPrice = useGasPrice({ chainId: childChain.id });
   const balance = useBalanceOnSourceChain(selectedToken);
 
   const { gasEstimates: estimateGasResult, error: gasEstimatesError } = useGasEstimates({
