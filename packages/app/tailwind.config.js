@@ -228,11 +228,16 @@ module.exports = {
             opacity: 0.5,
           },
         },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'blink': 'blink-pulse 1s ease-in-out 1',
         'blinkInfinite': 'blink-pulse 1s ease-in-out infinite',
         'progress-bar': 'progress-bar 1.2s ease-in-out 1 forwards',
+        'slide-in-right': 'slide-in-right 300ms ease-out',
       },
       transitionDuration: {
         400: '400ms',
