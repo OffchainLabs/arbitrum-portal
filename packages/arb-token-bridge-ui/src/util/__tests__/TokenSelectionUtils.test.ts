@@ -147,6 +147,30 @@ describe('resolveDestinationSelection', () => {
     });
   });
 
+  // Ethereum USDG is withdraw-only on Arbitrum One, where the canonical list pairs it with an
+  // undeployed placeholder. The LiFi list pairs it with the native contract and that mapping wins
+  // the merge, so the quote and the USDG DRIP card both see the native address.
+  it('quotes native Arbitrum One USDG for an Ethereum USDG deposit', () => {
+    const sourceToken = buildToken({
+      symbol: 'USDG',
+      address: CommonAddress.Ethereum.USDG,
+      l2Address: CommonAddress.ArbitrumOne.USDG,
+      listIds: new Set([LIFI_TRANSFER_LIST_ID]),
+    });
+    expect(
+      resolveDestinationSelection({
+        ...defaultArgs,
+        destinationChainId: ChainId.ArbitrumOne,
+        sourceToken,
+        destinationTokenLookupKey: sourceToken.address,
+      }),
+    ).toMatchObject({
+      token: sourceToken,
+      isSwap: false,
+      destinationAddress: CommonAddress.ArbitrumOne.USDG,
+    });
+  });
+
   it('preserves canonical withdrawals', () => {
     const sourceToken = buildToken();
     expect(

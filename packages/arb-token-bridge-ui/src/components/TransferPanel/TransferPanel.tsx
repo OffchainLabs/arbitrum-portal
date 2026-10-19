@@ -11,6 +11,7 @@ import { BaseError } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import { useShowUsdgDripCardAfterSubmit } from '@/app-components/UsdgDripCard/useUsdgDripCard';
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
 import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
@@ -195,6 +196,8 @@ export function TransferPanel() {
 
   const isSwapTransfer = useIsSwapTransfer();
 
+  const showUsdgDripCardAfterSubmit = useShowUsdgDripCardAfterSubmit();
+
   const latestDestinationAddress = useLatest(destinationAddress);
 
   const [dialogProps, openDialog] = useDialog2();
@@ -254,6 +257,10 @@ export function TransferPanel() {
   ]);
 
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+    // every submit path ends here once the source transaction is out, so this is the one place
+    // that sees all of them
+    showUsdgDripCardAfterSubmit();
+
     if (embedMode) {
       openDialog('widget_transaction_history');
       setQueryParams({ amount: '', amount2: '' });
@@ -265,7 +272,7 @@ export function TransferPanel() {
       amount: '',
       amount2: '',
     });
-  }, [embedMode, openDialog, setQueryParams]);
+  }, [embedMode, openDialog, setQueryParams, showUsdgDripCardAfterSubmit]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
