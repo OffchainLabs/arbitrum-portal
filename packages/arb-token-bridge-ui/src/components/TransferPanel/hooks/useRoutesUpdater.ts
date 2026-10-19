@@ -9,7 +9,7 @@ import { getTokenOverride, isValidLifiTransfer } from '../../../app/api/crosscha
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
-import { useDestinationToken } from '../../../hooks/useDestinationToken';
+import { useDestinationSelection } from '../../../hooks/useDestinationToken';
 import { useLifiCrossTransfersRoute } from '../../../hooks/useLifiCrossTransferRoute';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
@@ -126,7 +126,7 @@ export function useRouteEligibility() {
   const isBatchTransfer =
     isBatchTransferSupported && (amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0);
   const [selectedToken] = useSelectedToken();
-  const destinationToken = useDestinationToken();
+  const { token: destinationToken, destinationAddress } = useDestinationSelection();
   const { data: tokensFromLists } = useTokensFromLists();
   const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
 
@@ -165,6 +165,7 @@ export function useRouteEligibility() {
   return {
     amount,
     destinationToken,
+    destinationAddress,
     eligibleRouteTypes,
     isDepositMode,
     networks,
@@ -273,8 +274,14 @@ function getPotentialRoutes({
 }
 
 export function useRoutesUpdater() {
-  const { amount, destinationToken, eligibleRouteTypes, isDepositMode, networks, selectedToken } =
-    useRouteEligibility();
+  const {
+    amount,
+    destinationAddress: toTokenAddress,
+    eligibleRouteTypes,
+    isDepositMode,
+    networks,
+    selectedToken,
+  } = useRouteEligibility();
   const { address } = useAccount();
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
@@ -304,25 +311,9 @@ export function useRoutesUpdater() {
       }),
     [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id],
   );
-  const overrideDestinationToken = useMemo(
-    () =>
-      getTokenOverride({
-        sourceChainId: networks.sourceChain.id,
-        fromToken: destinationToken?.address,
-        destinationChainId: networks.destinationChain.id,
-      }),
-    [destinationToken?.address, networks.sourceChain.id, networks.destinationChain.id],
-  );
-
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
-  const defaultToTokenAddress = isDepositMode
-    ? destinationToken?.l2Address
-    : destinationToken?.address;
-
   const fromTokenAddress =
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
-  const toTokenAddress =
-    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
 
   const lifiParameters = {
     enabled: eligibleRouteTypes.includes('lifi'), // only fetch lifi routes if lifi is eligible

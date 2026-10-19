@@ -419,11 +419,21 @@ describe('sanitizeDestinationTokenQueryParam', () => {
       ).toEqual(CommonAddress.Ethereum.USDG);
     });
 
+    it('resolves to the Arbitrum One USDG contract when bridging from Arbitrum One', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.ArbitrumOne.USDG);
+    });
+
     it('resolves to the Robinhood USDG contract from any other chain, case-insensitively', () => {
       expect(
         sanitizeDestinationTokenQueryParam({
           destinationToken: 'USDG',
-          sourceChainId: ChainId.ArbitrumOne,
+          sourceChainId: ChainId.Base,
           destinationChainId: ChainId.RobinhoodChain,
         }),
       ).toEqual(CommonAddress.RobinhoodChain.USDG);

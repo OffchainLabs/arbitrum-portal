@@ -102,7 +102,7 @@ describe('initializeBridgePage sanitization', () => {
   });
 
   describe('USDG on Robinhood Chain', () => {
-    it('resolves `destinationToken=usdg` to the Robinhood USDG contract from Arbitrum One', async () => {
+    it('resolves `destinationToken=usdg` to the Arbitrum One USDG contract from Arbitrum One', async () => {
       await initializeBridgePage({
         searchParams: {
           sourceChain: 'arbitrum-one',
@@ -115,7 +115,7 @@ describe('initializeBridgePage sanitization', () => {
       expect(redirectMock).toHaveBeenCalledTimes(1);
       expectRedirectedChains({ sourceChain: 'arbitrum-one', destinationChain: 'robinhood-chain' });
       expect(getRedirectedUrl().searchParams.get('destinationToken')).toBe(
-        CommonAddress.RobinhoodChain.USDG,
+        CommonAddress.ArbitrumOne.USDG,
       );
     });
 

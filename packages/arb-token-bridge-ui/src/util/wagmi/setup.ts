@@ -3,6 +3,7 @@ import { type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/react';
 import { http } from 'wagmi';
 import { arbitrum, mainnet } from 'wagmi/chains';
+import { baseAccount } from 'wagmi/connectors';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
@@ -108,6 +109,14 @@ const wagmiAdapter = new WagmiAdapter({
   networks: [...chainList],
   batch: { multicall: true },
   transports: getTransports(),
+  // Overrides AppKit's default Base Account connector, which sets Coinbase's cb_dm tracking cookie
+  connectors: [
+    baseAccount({
+      appName: metadata.name,
+      appLogoUrl: metadata.icons[0],
+      preference: { telemetry: false },
+    }),
+  ],
 });
 
 export const appKit = createAppKit({

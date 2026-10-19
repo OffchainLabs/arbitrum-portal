@@ -24,6 +24,13 @@ const transferDisabledTokens: { [chainId: number]: TransferDisabledToken[] } = {
       l1Address: CommonAddress.Ethereum.PYUSD,
       l2Address: CommonAddress.ArbitrumOne.PYUSD_CANONICAL,
     },
+    {
+      symbol: 'USDG',
+      l1Address: CommonAddress.Ethereum.USDG,
+      // Address the gateway router would assign to canonical USDG. Nothing is deployed there:
+      // USDG is issued natively on Arbitrum One (CommonAddress.ArbitrumOne.USDG) and moves via LiFi.
+      l2Address: '0xa8ce132d85f5eb199e997415d3cf15ca79222da6',
+    },
   ],
   [ChainId.RobinhoodChain]: [
     {

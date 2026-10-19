@@ -9,6 +9,8 @@ import {
   getDepositDuration,
   getOrbitDepositDuration,
   getStandardDepositDuration,
+  minutesToHumanReadableTime,
+  roundMultiDayDurationInMinutes,
   useTransferDuration,
 } from '../../hooks/useTransferDuration';
 import {
@@ -125,6 +127,35 @@ describe('useTransferDuration', () => {
 
     expect(result.current.approximateDurationInMinutes).toEqual(DEPOSIT_TIME_MINUTES_MAINNET);
     expect(result.current.estimatedMinutesLeft).toEqual(14);
+  });
+
+  it('reports how long a transfer has run past its estimate', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: DEPOSIT_TIME_MINUTES_MAINNET + 12,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+    );
+
+    expect(result.current.estimatedMinutesLeft).toEqual(0);
+    expect(result.current.minutesPastEstimate).toEqual(12);
+  });
+
+  it('reports no time past the estimate while a transfer is on time', async () => {
+    const { result } = await renderHookAsyncUseTransferDuration(
+      mockTransactionObject({
+        minutesSinceStart: 8,
+        isDeposit: true,
+        isCctp: false,
+        parentChainId: 1,
+        childChainId: 42161,
+      }),
+    );
+
+    expect(result.current.minutesPastEstimate).toEqual(0);
   });
 
   it('gets standard deposit duration for an ongoing transfer on Mainnet', async () => {
@@ -451,5 +482,15 @@ describe('getDepositDuration', () => {
     expect(getDepositDuration({ parentChainId: 8453, isTestnet: false })).toEqual(
       getOrbitDepositDuration(false),
     );
+  });
+
+  it('rounds multi-day durations up', () => {
+    const duration = 6 * DAY_IN_MINUTES + 10 * HOUR_IN_MINUTES;
+
+    expect(minutesToHumanReadableTime(duration)).toBe('7 days');
+    expect(roundMultiDayDurationInMinutes(duration)).toBe(7 * DAY_IN_MINUTES);
+    expect(minutesToHumanReadableTime(DAY_IN_MINUTES + 1)).toBe('2 days');
+    expect(roundMultiDayDurationInMinutes(HOUR_IN_MINUTES)).toBe(HOUR_IN_MINUTES);
+    expect(minutesToHumanReadableTime(0)).toBe('Less than a minute');
   });
 });

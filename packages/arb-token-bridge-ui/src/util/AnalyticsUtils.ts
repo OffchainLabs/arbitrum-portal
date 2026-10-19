@@ -3,15 +3,24 @@ import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import type { AccountType as WalletAccountType } from './AccountUtils';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
-type AccountType = 'EOA' | 'Smart Contract';
+type AccountType = 'EOA' | 'Delegated EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
 type TokenPickerSide = 'source' | 'destination';
+// mirrors RetryableLookupResult['type'], kept separate so the reported values stay stable
+type RetryableLookupOutcome =
+  | 'retryables'
+  | 'noRetryables'
+  | 'ethDeposit'
+  | 'classicTransaction'
+  | 'transactionNotFound'
+  | 'lookupFailed';
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
@@ -66,6 +75,13 @@ type AnalyticsEventMap = {
     version: number;
   };
   'Redeem Retryable': { network: string };
+  'Redeem Retryable Error': { network: string };
+  'Check Retryable Status Click': { network: string; isTestnetMode: boolean };
+  'Check Retryable Status Result': {
+    network: string;
+    result: RetryableLookupOutcome;
+    ticketCount: number;
+  };
   'Search Tx for Address Click': {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;
@@ -167,6 +183,15 @@ type AnalyticsEventMap = {
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
+
+export function getAnalyticsAccountType(
+  walletAccountType: WalletAccountType | undefined,
+): AccountType {
+  if (walletAccountType === 'smart-contract-wallet') {
+    return 'Smart Contract';
+  }
+  return walletAccountType === 'delegated-account' ? 'Delegated EOA' : 'EOA';
+}
 
 export function getLifiAssetType({
   tokenAddress,

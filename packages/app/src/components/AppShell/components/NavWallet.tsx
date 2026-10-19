@@ -125,7 +125,7 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
             {isBridgeRoute && (
               <button onClick={handleSettingsClick} className={MENU_ITEM_BUTTON_CLASSES}>
                 <CodeBracketIcon className={twMerge(ICON_CLASSES, 'text-white')} />
-                <span>Bridge Dev Tools</span>
+                <span>Developer Tools</span>
               </button>
             )}
 

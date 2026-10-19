@@ -81,7 +81,7 @@ vi.mock('../common/Dialog2', async (importActual) => ({
 }));
 
 vi.mock('../common/TransferCountdown', () => ({
-  TransferCountdown: () => <span>Countdown</span>,
+  TransferCountdown: ({ label }: { label?: string }) => <span>{label} Countdown</span>,
 }));
 
 vi.mock('../../state/app/utils', async (importActual) => ({
@@ -369,7 +369,6 @@ describe.sequential('TransactionsTableRowAction', () => {
         name: 'Resume LiFi transaction',
       }),
     ).toBeNull();
-    expect(screen.getByText('Time left:')).toBeDefined();
-    expect(screen.getByText('Countdown')).toBeDefined();
+    expect(screen.getByText('Time left: Countdown')).toBeDefined();
   });
 });

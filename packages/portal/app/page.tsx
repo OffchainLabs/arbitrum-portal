@@ -4,9 +4,9 @@ import { redirect } from 'next/navigation';
 import { getEntityMetaData } from '@/common/getMetaData';
 import { ServerSideAppProps, getServerSideAppParams } from '@/common/getServerSideAppParams';
 import { EntityType } from '@/common/types';
-import { EarnBanner } from '@/components/HomePage/EarnBanner';
 import { EcosystemEssentials } from '@/components/HomePage/EcosystemEssentials';
 import { HeroBanner } from '@/components/HomePage/HeroBanner';
+import { HomeBannerCarousel } from '@/components/HomePage/HomeBannerCarousel';
 import { HomePageFAQs } from '@/components/HomePage/HomePageFAQs';
 import { LiveIncentivesProjects } from '@/components/HomePage/LiveIncentivesProjects';
 import { NewProjects } from '@/components/HomePage/NewProjects';
@@ -60,14 +60,14 @@ export default async function Home(props: ServerSideAppProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8 lg:gap-12">
+    <div className="flex flex-col gap-8">
       <HeroBanner />
 
       <LiveIncentivesProjects />
 
       <TrendingProjects />
 
-      <EarnBanner />
+      <HomeBannerCarousel />
 
       <EcosystemEssentials />
 

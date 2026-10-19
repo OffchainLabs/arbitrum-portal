@@ -1,6 +1,9 @@
 import useLocalStorage from '@rehooks/local-storage';
 import { twMerge } from 'tailwind-merge';
 
+import { RetryableTicketsLinkCard } from '@/app-components/RetryableRedeemer/RetryableTicketsLinkCard';
+import { Card } from '@/components/Card';
+
 import { ORBIT_QUICKSTART_LINK } from '../../constants';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { statsLocalStorageKey } from '../MainContent/ArbitrumStats';
@@ -38,27 +41,28 @@ export const SettingsDialog = () => {
   return (
     <SidePanel
       isOpen={settingsOpen}
-      heading="Settings"
+      heading="Developer Tools"
       onClose={closeSettings}
       dialogWrapperClassName="z-[1001]"
       panelClassNameOverrides="lg:!w-[944px] !min-w-[350px]" // custom width
     >
-      <div className="flex w-full flex-col items-center gap-6 text-white">
+      <div className="flex w-full flex-col items-center gap-4 text-white">
         {/* Arbitrum stats toggle */}
-        <div className="w-full">
-          <SectionTitle>Stats</SectionTitle>
+        <Card className="border border-white/10">
+          <SectionTitle>Network Stats</SectionTitle>
 
           <Switch
             label="Show Network Stats"
-            description="Live, nerdy stats about Ethereum and Arbitrum chains, like
-        block number and current gas price."
+            description="Live stats about Ethereum and Arbitrum chains, like block number and current gas price."
             checked={!!isArbitrumStatsVisible}
             onChange={isArbitrumStatsVisible ? closeArbitrumStats : openArbitrumStats}
           />
-        </div>
+        </Card>
+
+        <RetryableTicketsLinkCard entryPoint="Developer Tools" />
 
         {/* Add custom chain */}
-        <div className="w-full transition-opacity">
+        <Card className="border border-white/10 transition-opacity">
           <SectionTitle className="mb-1">Add Custom Arbitrum Chain</SectionTitle>
           <p className="mb-4 text-sm">
             Add in your own Arbitrum chain to the bridge. This will only be for local testing, other
@@ -72,7 +76,7 @@ export const SettingsDialog = () => {
           </p>
 
           <AddCustomChain />
-        </div>
+        </Card>
       </div>
     </SidePanel>
   );

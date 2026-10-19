@@ -20,7 +20,7 @@ import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
-import { isTokenUSDG } from '../../util/RobinhoodStablecoinUtils';
+import { isTokenUSDG, isUsdgNativeStablecoinChain } from '../../util/RobinhoodStablecoinUtils';
 import { SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID, listIdsToNames } from '../../util/TokenListUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
@@ -215,12 +215,12 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     return token.listIds.has(SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID);
   }, [token]);
 
-  // badge USDG only on the Robinhood Chain side of the pair, not on its Ethereum contract row
+  // badge USDG only on the chains where it is the official stablecoin, not on its Ethereum row
   const rowChainId = options?.isDestination
     ? networks.destinationChain.id
     : networks.sourceChain.id;
   const isNativeStablecoin =
-    !!token && isTokenUSDG(token.address) && rowChainId === ChainId.RobinhoodChain;
+    !!token && isTokenUSDG(token.address) && isUsdgNativeStablecoinChain(rowChainId);
 
   const isBridgeable = useMemo(() => {
     if (!token) {

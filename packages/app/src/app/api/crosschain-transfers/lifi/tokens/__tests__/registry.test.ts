@@ -261,3 +261,55 @@ describe('getLifiTokenRegistry exclusions', () => {
     expect(registry.tokensByChain[ChainId.ArbitrumOne]).toEqual([]);
   });
 });
+
+describe('getLifiTokenRegistry USDG pairing', () => {
+  beforeEach(() => {
+    getTokens.mockReset();
+  });
+
+  it('pairs the natively issued Arbitrum One USDG, which LiFi lists without a coinKey', async () => {
+    const ethereumUsdg = {
+      ...buildLifiToken({
+        address: CommonAddress.Ethereum.USDG,
+        name: 'Global Dollar',
+        symbol: 'USDG',
+        chainId: ChainId.Ethereum,
+      }),
+      coinKey: 'USDG' as CoinKey,
+    } as LiFiToken;
+    const arbitrumOneUsdg = buildLifiToken({
+      address: CommonAddress.ArbitrumOne.USDG,
+      name: 'Global Dollar',
+      symbol: 'USDG',
+      chainId: ChainId.ArbitrumOne,
+    });
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Ethereum]: [ethereumUsdg],
+        [ChainId.ArbitrumOne]: [arbitrumOneUsdg],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry();
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: registry.tokensByChain[ChainId.Ethereum] ?? [],
+      childTokens: registry.tokensByChain[ChainId.ArbitrumOne] ?? [],
+      childTokensByCoinKey: registry.tokensByChainAndCoinKey[ChainId.ArbitrumOne] ?? {},
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        address: CommonAddress.ArbitrumOne.USDG,
+        extensions: expect.objectContaining({
+          bridgeInfo: {
+            [ChainId.Ethereum]: expect.objectContaining({
+              tokenAddress: CommonAddress.Ethereum.USDG,
+            }),
+          },
+        }),
+      }),
+    ]);
+  });
+});

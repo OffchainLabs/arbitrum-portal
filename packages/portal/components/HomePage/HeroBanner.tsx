@@ -31,7 +31,7 @@ const projectsToHighlight = inflateArrayToSize(
 
 export const HeroBanner = () => {
   return (
-    <Card className="relative flex h-[300px] flex-col justify-end bg-[#491BCA] p-6 lg:flex-row lg:items-center lg:justify-start lg:p-[50px]">
+    <Card className="relative flex h-[280px] md:h-[220px] flex-col justify-end bg-[#491BCA] p-6 lg:flex-row lg:items-center lg:justify-start lg:p-[50px]">
       <div className="z-20 flex shrink-0 flex-col gap-2 lg:max-w-sm lg:gap-6">
         <h1 className="text-4xl">Ethereum’s Leading Ecosystem</h1>
         <div className="text-base">

@@ -258,8 +258,7 @@ export function TransactionsTableRowAction({
   if (isTxPending(tx)) {
     return (
       <div className="flex flex-col text-center text-xs">
-        <span>Time left:</span>
-        <TransferCountdown tx={tx} />
+        <TransferCountdown tx={tx} label="Time left:" />
       </div>
     );
   }

@@ -18,7 +18,7 @@ import {
 } from '../../components/TransferPanel/hooks/useRouteStore';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
-import { useDestinationToken } from '../useDestinationToken';
+import { useDestinationSelection } from '../useDestinationToken';
 import {
   UseLifiCrossTransfersRouteParams,
   useLifiCrossTransfersRoute,
@@ -84,8 +84,8 @@ export function useGasEstimates({
   const { sourceChain, destinationChain } = networks;
   const { isDepositMode } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
-  const destinationToken = useDestinationToken();
-  const destinationTokenForGas = destinationToken ?? selectedToken;
+  // Quote the same destination as the route request so both agree on the received asset.
+  const { destinationAddress: toTokenAddress } = useDestinationSelection();
   const [{ destinationAddress }] = useArbQueryParams();
   const { address: walletAddress } = useAccount();
   const balance = useBalanceOnSourceChain(selectedToken);
@@ -109,15 +109,6 @@ export function useGasEstimates({
       }),
     [selectedToken?.address, sourceChain.id, destinationChain.id],
   );
-  const overrideDestinationToken = useMemo(
-    () =>
-      getTokenOverride({
-        sourceChainId: sourceChain.id,
-        fromToken: destinationTokenForGas?.address,
-        destinationChainId: destinationChain.id,
-      }),
-    [destinationTokenForGas?.address, sourceChain.id, destinationChain.id],
-  );
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
     (state) => ({
       disabledBridges: state.disabledBridges,
@@ -128,14 +119,8 @@ export function useGasEstimates({
   );
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
-  const defaultToTokenAddress = isDepositMode
-    ? destinationTokenForGas?.l2Address
-    : destinationTokenForGas?.address;
-
   const fromTokenAddress =
     overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
-  const toTokenAddress =
-    overrideDestinationToken.destination?.address || defaultToTokenAddress || constants.AddressZero;
 
   const parameters = {
     enabled: isLifiRouteEligible,

@@ -5,7 +5,6 @@ import useSWRImmutable from 'swr/immutable';
 
 import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
 
-import { getTokenOverride } from '../app/api/crosschain-transfers/utils';
 import {
   useTokensFromLists,
   useTokensFromUser,
@@ -13,8 +12,7 @@ import {
 import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import { isLifiOnlyToken, isTokenAvailableOnChain } from '../util/TokenListUtils';
-import { isTokenDepositUnavailable, selectUsdcToken } from '../util/TokenSelectionUtils';
+import { resolveDestinationSelection, selectUsdcToken } from '../util/TokenSelectionUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -108,29 +106,15 @@ export const useSelectedToken = (): [
             tokenOverride ||
             tokensFromUser[tokenStorageAddress] ||
             tokensFromLists[tokenStorageAddress];
-          const destinationTokenOverride = isLifiOnlyToken(token)
-            ? getTokenOverride({
-                fromToken: tokenAddress,
-                sourceChainId: networks.sourceChain.id,
-                destinationChainId: networks.destinationChain.id,
-              }).destination
-            : null;
-          const isUnavailableDeposit = isTokenDepositUnavailable({
+          const destination = resolveDestinationSelection({
+            sourceToken: token ?? null,
+            sourceTokenAddress: tokenAddress,
+            destinationTokenLookupKey: tokenAddress,
             isDepositMode,
-            tokenAddress,
-            token,
             sourceChainId: networks.sourceChain.id,
             destinationChainId: networks.destinationChain.id,
           });
-
-          return {
-            token: tokenAddress,
-            destinationToken:
-              destinationTokenOverride?.address ||
-              (!isUnavailableDeposit && isTokenAvailableOnChain(token, networks.destinationChain.id)
-                ? tokenAddress
-                : undefined),
-          };
+          return { token: tokenAddress, destinationToken: destination.lookupKey };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };

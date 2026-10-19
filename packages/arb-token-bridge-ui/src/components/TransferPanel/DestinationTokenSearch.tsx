@@ -16,7 +16,7 @@ import { useMode } from '../../hooks/useMode';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { trackEvent } from '../../util/AnalyticsUtils';
-import { isTokenUSDG } from '../../util/RobinhoodStablecoinUtils';
+import { isTokenUSDG, isUsdgSurfacedLikeEth } from '../../util/RobinhoodStablecoinUtils';
 import { LIFI_TRANSFER_LIST_ID, isTokenAvailableOnChain } from '../../util/TokenListUtils';
 import { isTokenNativeUSDC, isTokenUSDT, isTokenWBTC } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -79,7 +79,10 @@ function DestinationTokensPanel({
 
   const tokensToShow = useMemo(() => {
     const tokenSearch = searchValue.trim().toLowerCase();
-    const isRobinhoodDestination = networks.destinationChain.id === ChainId.RobinhoodChain;
+    const isUsdgPinned = isUsdgSurfacedLikeEth({
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    });
 
     // Get all token addresses that are in the LiFi token list
     const lifiTokenAddresses = Object.keys(tokensFromLists).filter((address) => {
@@ -137,8 +140,8 @@ function DestinationTokensPanel({
         const getPriority = (address: string): number => {
           if (address === NATIVE_CURRENCY_IDENTIFIER) return 0;
           if (addressesEqual(address, constants.AddressZero)) return 1;
-          // USDG is Robinhood Chain's native stablecoin, keep it right under ETH
-          if (isRobinhoodDestination && isTokenUSDG(address)) return 2;
+          // keep the official stablecoin right under ETH
+          if (isUsdgPinned && isTokenUSDG(address)) return 2;
           if (isTokenNativeUSDC(address)) return 3;
           if (isTokenUSDT(address)) return 4;
           if (isTokenWBTC(address)) return 5;
@@ -172,7 +175,14 @@ function DestinationTokensPanel({
 
         return 0;
       });
-  }, [searchValue, tokensFromLists, networks.destinationChain.id, nativeCurrency, getBalance]);
+  }, [
+    searchValue,
+    tokensFromLists,
+    networks.sourceChain.id,
+    networks.destinationChain.id,
+    nativeCurrency,
+    getBalance,
+  ]);
 
   const onSearchInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
