@@ -13,7 +13,6 @@ import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
@@ -30,8 +29,7 @@ export const BatchTransferNativeTokenTooltip = ({
   children,
   tx,
 }: PropsWithChildren<{ tx: MergedTransaction }>) => {
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   return (
     <Tooltip
