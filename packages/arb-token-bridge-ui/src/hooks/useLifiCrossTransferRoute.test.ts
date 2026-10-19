@@ -93,6 +93,7 @@ describe('useLifiCrossTransfersRoute', () => {
           ...parameters,
           fromChainId: ChainId.Solana,
           fromAddress: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+          toAddress: '0x1111111111111111111111111111111111111111',
         }),
       );
     } finally {
@@ -102,5 +103,37 @@ describe('useLifiCrossTransfersRoute', () => {
     expect(vi.mocked(useSWR).mock.lastCall?.[0]).toContain(
       'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
     );
+  });
+
+  it('quotes across ecosystems without addresses while no sender is connected', () => {
+    vi.mocked(useSWR).mockReturnValue({ data: undefined } as ReturnType<typeof useSWR>);
+
+    renderHook(() => useLifiCrossTransfersRoute({ ...parameters, fromChainId: ChainId.Solana }));
+
+    const key = vi.mocked(useSWR).mock.lastCall?.[0] as unknown[] | null;
+    expect(key).not.toBeNull();
+    expect(key?.[5]).toBeUndefined();
+    expect(key?.[6]).toBeUndefined();
+  });
+
+  it('quotes across ecosystems without the sender when there is no recipient', () => {
+    vi.mocked(useSWR).mockReturnValue({ data: undefined } as ReturnType<typeof useSWR>);
+    const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+
+    try {
+      renderHook(() =>
+        useLifiCrossTransfersRoute({
+          ...parameters,
+          fromChainId: ChainId.Solana,
+          fromAddress: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+        }),
+      );
+    } finally {
+      isEnabled.mockRestore();
+    }
+
+    const key = vi.mocked(useSWR).mock.lastCall?.[0] as unknown[] | null;
+    expect(key).not.toBeNull();
+    expect(key?.[5]).toBeUndefined();
   });
 });
