@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '../types/ChainId';
 import { getAccountType } from '../util/AccountUtils';
 import type { WalletHandle } from '../wallet/types';
-import { getDestinationAddressWarning, requiresRecipientAddress } from './destinationAddress';
+import {
+  getDestinationAddressWarning,
+  getRecipientToHighlight,
+  requiresRecipientAddress,
+} from './destinationAddress';
 
 vi.mock('../util/AccountUtils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../util/AccountUtils')>()),
@@ -147,6 +151,30 @@ describe('requiresRecipientAddress', () => {
           destinationWallet: {
             ecosystem: destination,
             account: { ecosystem: destination, address, status: 'connected' },
+          },
+        }),
+      ).toBe(expected);
+    },
+  );
+});
+
+describe('getRecipientToHighlight', () => {
+  const typedAddress = '0x2222222222222222222222222222222222222222';
+  it.each([
+    { source: 'solana', typed: undefined, expected: evmAddress },
+    { source: 'solana', typed: typedAddress, expected: typedAddress },
+    { source: 'evm', typed: undefined, expected: undefined },
+    { source: 'evm', typed: typedAddress, expected: typedAddress },
+  ] as const)(
+    '$source → evm with typed address $typed: $expected',
+    ({ source, typed, expected }) => {
+      expect(
+        getRecipientToHighlight({
+          destinationAddress: typed,
+          sourceWallet: { ecosystem: source },
+          destinationWallet: {
+            ecosystem: 'evm',
+            account: { ecosystem: 'evm', address: evmAddress, status: 'connected' },
           },
         }),
       ).toBe(expected);

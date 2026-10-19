@@ -13,6 +13,8 @@ export type ValidationOptions = {
 export type EcosystemConfig = {
   /** Whether the bridge offers this ecosystem */
   isEnabled: () => boolean;
+  /** Shown next to the wallet of this ecosystem */
+  name: string;
   address: {
     /** False while the ecosystem is disabled, unless `ignoreFeatureFlag` is set */
     isValid: (address: string, options?: ValidationOptions) => boolean;
@@ -33,6 +35,8 @@ export type EcosystemConfig = {
   explorerAccountPath: string;
   /** Built-in chains. The network registry adds Orbit, local and custom chains as EVM */
   chains: readonly Chain[];
+  /** AppKit (CAIP-2) namespace */
+  namespace: 'eip155' | 'solana';
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
