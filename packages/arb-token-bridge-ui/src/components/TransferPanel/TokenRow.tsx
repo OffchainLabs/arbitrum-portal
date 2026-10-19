@@ -507,7 +507,6 @@ export function TokenRow({
   return (
     <button
       type="button"
-      aria-label={`Select ${tokenSymbol}`}
       onClick={() => onTokenSelected(token, balance)}
       style={{ ...style, minHeight: '84px' }}
       disabled={!tokenIsBridgeable}
