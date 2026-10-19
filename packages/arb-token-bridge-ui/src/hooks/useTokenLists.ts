@@ -32,7 +32,10 @@ function fetchTokenLists(forL2ChainId: number, parentChainId: number): Promise<T
             const response = await fetchBridgeTokenList(bridgeTokenList);
             // Failed requests resolve without data. Retry before caching a partial
             // result: useSWRImmutable will not revalidate it once it has loaded.
-            if (!response.data) {
+            // 4xx responses (bad request, rate limited) will not change on a retry.
+            const isClientError =
+              response.status && response.status >= 400 && response.status < 500;
+            if (!response.data && !isClientError) {
               throw new Error(`Failed to load token list: ${bridgeTokenList.id}`);
             }
             return response;

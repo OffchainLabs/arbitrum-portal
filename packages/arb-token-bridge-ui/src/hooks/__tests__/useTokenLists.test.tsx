@@ -152,6 +152,32 @@ describe.sequential('useTokenLists', () => {
     expect(fetchBridgeTokenList).toHaveBeenCalledTimes(4);
   });
 
+  it('does not retry a list that failed with a 4xx response', async () => {
+    let lifiRequestCount = 0;
+
+    vi.mocked(fetchBridgeTokenList).mockImplementation(async ({ id }) => {
+      if (id !== LIFI_TRANSFER_LIST_ID) {
+        return { data: otherTokenList };
+      }
+
+      lifiRequestCount += 1;
+      return { data: undefined, status: 429 };
+    });
+
+    const { result } = renderHook(() => useTokenLists(ChainId.RobinhoodChain), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data).toEqual([
+      {
+        ...otherTokenList,
+        l2ChainId: String(ChainId.RobinhoodChain),
+        bridgeTokenListId: 'other-list',
+      },
+    ]);
+    expect(lifiRequestCount).toBe(1);
+    expect(fetchBridgeTokenList).toHaveBeenCalledTimes(2);
+  });
+
   it('accepts a successfully loaded empty token list without retrying', async () => {
     vi.mocked(fetchBridgeTokenList).mockResolvedValue({ data: otherTokenList });
 
