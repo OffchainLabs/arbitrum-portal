@@ -187,5 +187,11 @@
     // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
     // from: tailwindcss>postcss-nested>postcss-selector-parser
     "GHSA-rj75-hqrm-r3gf",
+    //
+    // https://github.com/advisories/GHSA-3gc7-fjrx-p6mg
+    // bigint-buffer Vulnerable to Buffer Overflow via toBigIntLE() Function
+    // Reason to ignore: No patched version published (1.1.5 is the latest). Transitive dependency via Reown's Solana adapter.
+    // from: arb-token-bridge-ui>@reown/appkit-adapter-solana>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer
+    "GHSA-3gc7-fjrx-p6mg",
   ],
 }
