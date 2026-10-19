@@ -56,7 +56,7 @@ import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getAnalyticsAccountType, getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
@@ -574,7 +574,7 @@ export function TransferPanel() {
       }
 
       trackEvent(isDepositMode ? 'CCTP Deposit' : 'CCTP Withdrawal', {
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: childChainName,
         amount: Number(amount),
         complete: false,
@@ -821,7 +821,7 @@ export function TransferPanel() {
         assetType,
         destinationTokenSymbol: context.toAmount.token.symbol,
         destinationAssetType,
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
@@ -932,7 +932,7 @@ export function TransferPanel() {
       trackEvent('OFT Transfer', {
         tokenSymbol: selectedToken.symbol,
         assetType: 'ERC-20',
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
@@ -1249,7 +1249,7 @@ export function TransferPanel() {
       trackEvent(isDepositMode ? 'Deposit' : 'Withdraw', {
         tokenSymbol: selectedToken?.symbol,
         assetType: selectedToken ? 'ERC-20' : 'ETH',
-        accountType: 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: getNetworkName(childChain.id),
         amount: Number(amount),
         amount2: isBatchTransfer ? Number(amount2) : undefined,
@@ -1323,7 +1323,7 @@ export function TransferPanel() {
       selectedRoute,
       tokenSymbol: selectedToken?.symbol,
       assetType: selectedToken ? 'ERC-20' : 'ETH',
-      accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+      accountType: getAnalyticsAccountType(accountType),
       network: childChain.name,
       amount: Number(amount),
       amount2: isBatchTransfer ? Number(amount2) : undefined,
@@ -1336,7 +1336,7 @@ export function TransferPanel() {
     childChain.name,
     isBatchTransfer,
     isDepositMode,
-    isSmartContractWallet,
+    accountType,
     selectedToken,
     isCustomDestinationTransfer,
     selectedRoute,
@@ -1359,7 +1359,7 @@ export function TransferPanel() {
           type: isDepositMode ? 'Deposit' : 'Withdrawal',
           tokenSymbol: selectedToken?.symbol,
           assetType: selectedToken ? 'ERC-20' : 'ETH',
-          accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+          accountType: getAnalyticsAccountType(accountType),
           network: childChainName,
           amount: Number(amount),
           amount2: isBatchTransfer ? Number(amount2) : undefined,
