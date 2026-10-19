@@ -242,8 +242,6 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
     '',
     `Median of ${runs} desktop and mobile runs of the bridge user flow. PR and base (${baseSha.slice(0, 7)}) runs alternate on the same runner. Δ is PR minus base.`,
     '',
-    `${icons.better} improvement · ${icons.worse} regression · ${icons.same} within run-to-run noise (2 points for scores, 10% and at least 50 ms for timings, 0.02 for CLS, 5 KiB for JavaScript)`,
-    '',
     ...tables,
     `Full reports are attached to the [workflow run](${runUrl}).`,
     '',
