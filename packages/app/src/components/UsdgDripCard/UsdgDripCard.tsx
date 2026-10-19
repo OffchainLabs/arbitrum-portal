@@ -38,7 +38,7 @@ export function UsdgDripCard() {
       style={{ borderColor: color }}
       className={twMerge(
         // opaque so the card stays readable where it overlaps the panel on narrow screens
-        'fixed z-40 flex flex-col items-start gap-[15px] rounded border bg-robinhood-dark p-[15px] text-white',
+        'fixed z-40 flex flex-col items-start gap-4 rounded border bg-robinhood-dark p-4 text-white',
         'motion-safe:animate-slide-in-right',
         embedMode
           ? // the widget has no app shell to anchor to, so it keeps the mobile layout at every
@@ -53,7 +53,7 @@ export function UsdgDripCard() {
             ],
       )}
     >
-      <span style={{ color }} className="rounded-[5px] bg-black px-2 py-0.5 text-xs">
+      <span style={{ color }} className="rounded-sm bg-black px-2 py-0.5 text-xs">
         DRIP program
       </span>
       <div className="flex w-full items-start gap-[5px]">
