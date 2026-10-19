@@ -6,18 +6,64 @@ const path = require('path');
 const marker = '<!-- lighthouse-report -->';
 const resultsDirectory = 'lighthouse-reports';
 
+// Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise
 const metrics = {
-  'performance': { label: 'Performance' },
-  'accessibility': { label: 'Accessibility' },
-  'best-practices': { label: 'Best Practices' },
-  'seo': { label: 'SEO' },
-  'first-contentful-paint': { label: 'First Contentful Paint', short: 'FCP', unit: 'ms' },
-  'largest-contentful-paint': { label: 'Largest Contentful Paint', short: 'LCP', unit: 'ms' },
-  'total-blocking-time': { label: 'Total Blocking Time', short: 'TBT', unit: 'ms' },
-  'cumulative-layout-shift': { label: 'Cumulative Layout Shift', short: 'CLS', decimals: 3 },
-  'speed-index': { label: 'Speed Index', short: 'SI', unit: 'ms' },
-  'total-byte-weight': { label: 'Total Byte Weight', short: 'Size', unit: 'KiB' },
-  'interaction-to-next-paint': { label: 'Interaction to Next Paint', short: 'INP', unit: 'ms' },
+  'performance': { label: 'Performance', higherIsBetter: true, minDelta: 2 },
+  'accessibility': { label: 'Accessibility', higherIsBetter: true, minDelta: 2 },
+  'best-practices': { label: 'Best Practices', higherIsBetter: true, minDelta: 2 },
+  'seo': { label: 'SEO', higherIsBetter: true, minDelta: 2 },
+  'first-contentful-paint': {
+    label: 'First Contentful Paint',
+    short: 'FCP',
+    unit: 'ms',
+    minDelta: 50,
+    minRatio: 0.1,
+  },
+  'largest-contentful-paint': {
+    label: 'Largest Contentful Paint',
+    short: 'LCP',
+    unit: 'ms',
+    minDelta: 50,
+    minRatio: 0.1,
+  },
+  'total-blocking-time': {
+    label: 'Total Blocking Time',
+    short: 'TBT',
+    unit: 'ms',
+    minDelta: 50,
+    minRatio: 0.1,
+  },
+  'cumulative-layout-shift': {
+    label: 'Cumulative Layout Shift',
+    short: 'CLS',
+    decimals: 3,
+    minDelta: 0.02,
+  },
+  'interaction-to-next-paint': {
+    label: 'Interaction to Next Paint',
+    short: 'INP',
+    unit: 'ms',
+    minDelta: 50,
+    minRatio: 0.1,
+  },
+  // Unlike the total byte weight, which varies with API responses, this is stable across runs
+  'script-size': {
+    label: 'JavaScript Transfer Size',
+    short: 'JS',
+    unit: 'KiB',
+    minDelta: 5,
+    read: (lhr) =>
+      (lhr.audits['resource-summary']?.details?.items?.find(
+        (item) => item.resourceType === 'script',
+      )?.transferSize ?? 0) / 1024,
+  },
+};
+
+const icons = { better: '🟢', same: '⚪', worse: '🔴' };
+const verdicts = {
+  better: '🟢 **Lighthouse: improvement**',
+  same: '⚪ **Lighthouse: no significant change**',
+  worse: '🔴 **Lighthouse: regression**',
 };
 
 // Matches the navigation, timespan and snapshot steps of flow.mjs
@@ -34,10 +80,9 @@ const steps = [
       'largest-contentful-paint',
       'total-blocking-time',
       'cumulative-layout-shift',
-      'speed-index',
-      'total-byte-weight',
+      'script-size',
     ],
-    summary: ['performance', 'largest-contentful-paint', 'total-blocking-time'],
+    summary: ['performance', 'largest-contentful-paint', 'total-blocking-time', 'script-size'],
   },
   {
     name: 'Configure transfer',
@@ -65,11 +110,13 @@ function median(values) {
 }
 
 function readMetric(lhr, id) {
+  if (metrics[id].read) {
+    return metrics[id].read(lhr);
+  }
   if (lhr.categories[id]) {
     return (lhr.categories[id].score ?? 0) * 100;
   }
-  const value = lhr.audits[id]?.numericValue ?? 0;
-  return metrics[id].unit === 'KiB' ? value / 1024 : value;
+  return lhr.audits[id]?.numericValue ?? 0;
 }
 
 function readFlows(build) {
@@ -91,46 +138,73 @@ function summarize(flows) {
   });
 }
 
+function compare(pr, base, id) {
+  const { higherIsBetter = false, minDelta, minRatio = 0, decimals = 0 } = metrics[id];
+  const difference = Number((pr - base).toFixed(decimals));
+  if (Math.abs(difference) < Math.max(minDelta, minRatio * Math.abs(base))) {
+    return { difference, status: 'same' };
+  }
+  return { difference, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
+}
+
 function withUnit(value, id) {
   return metrics[id].unit ? `${value} ${metrics[id].unit}` : `${value}`;
 }
 
-function delta(pr, base, id) {
-  const difference = Number((pr - base).toFixed(metrics[id].decimals ?? 0));
+function formatDelta({ difference }, id) {
   return withUnit(difference > 0 ? `+${difference}` : `${difference}`, id);
 }
 
 function formatReport({ pr, base, runs, baseSha, runUrl }) {
-  const summary = steps
-    .map((step, index) => ({ step, pr: pr[index], base: base[index] }))
-    .filter(({ step }) => step.summary.length > 0)
-    .map(({ step, pr, base }) => {
-      const values = step.summary.map((id) =>
-        id === 'performance'
-          ? `Performance **${pr[id]}** (base ${base[id]}, ${delta(pr[id], base[id], id)})`
-          : `${metrics[id].short} ${withUnit(pr[id], id)} (${delta(pr[id], base[id], id)})`,
-      );
-      return `${step.short}: ${values.join(', ')}`;
+  const comparisons = steps.map((step, index) =>
+    Object.fromEntries(step.metrics.map((id) => [id, compare(pr[index][id], base[index][id], id)])),
+  );
+  const statuses = comparisons.flatMap((comparison) =>
+    Object.values(comparison).map(({ status }) => status),
+  );
+  const verdict = statuses.includes('worse')
+    ? 'worse'
+    : statuses.includes('better')
+      ? 'better'
+      : 'same';
+
+  // Key metrics of each step, plus any other metric that changed significantly
+  const summary = steps.flatMap((step, index) => {
+    const ids = step.metrics.filter(
+      (id) => step.summary.includes(id) || comparisons[index][id].status !== 'same',
+    );
+    if (ids.length === 0) {
+      return [];
+    }
+    const values = ids.map((id) => {
+      const comparison = comparisons[index][id];
+      return `${icons[comparison.status]} ${metrics[id].short ?? metrics[id].label} ${withUnit(pr[index][id], id)} (${formatDelta(comparison, id)})`;
     });
+    return [`- **${step.short ?? step.name}**: ${values.join(' · ')}`];
+  });
 
   const tables = steps.flatMap((step, index) => [
     `| ${step.name} | PR | Base | Δ |`,
     '|---|---:|---:|---:|',
-    ...step.metrics.map(
-      (id) =>
-        `| ${metrics[id].label} | ${withUnit(pr[index][id], id)} | ${withUnit(base[index][id], id)} | ${delta(pr[index][id], base[index][id], id)} |`,
-    ),
+    ...step.metrics.map((id) => {
+      const comparison = comparisons[index][id];
+      return `| ${metrics[id].label} | ${withUnit(pr[index][id], id)} | ${withUnit(base[index][id], id)} | ${icons[comparison.status]} ${formatDelta(comparison, id)} |`;
+    }),
     '',
   ]);
 
   return [
     marker,
-    `🗼 **Lighthouse** · ${summary.join(' · ')}`,
+    verdicts[verdict],
+    '',
+    ...summary,
     '',
     '<details>',
     '<summary>Details</summary>',
     '',
     `Median of ${runs} desktop runs of the bridge user flow. PR and base (${baseSha.slice(0, 7)}) runs alternate on the same runner. Δ is PR minus base.`,
+    '',
+    `${icons.better} improvement · ${icons.worse} regression · ${icons.same} within run-to-run noise (2 points for scores, 10% and at least 50 ms for timings, 0.02 for CLS, 5 KiB for JavaScript)`,
     '',
     ...tables,
     `Full reports are attached to the [workflow run](${runUrl}).`,
