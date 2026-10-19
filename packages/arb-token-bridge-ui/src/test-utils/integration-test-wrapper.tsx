@@ -7,6 +7,7 @@ import {
   QueryParamAdapterComponent,
   QueryParamProvider,
 } from 'use-query-params';
+import { vi } from 'vitest';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 
@@ -16,6 +17,25 @@ import { TokenListSyncer } from '../components/syncers/TokenListSyncer';
 import { queryParamProviderOptions } from '../hooks/useArbQueryParams';
 import { defaultState } from '../state/app/state';
 import { useAppStore } from '../state/index';
+import { WalletContext, defaultWalletContextValue } from '../wallet/WalletContext';
+import { getBalanceClient } from '../wallet/balance/getBalanceClient';
+import type { WalletContextValue } from '../wallet/types';
+
+vi.mock('../wallet/balance/getBalanceClient', () => ({ getBalanceClient: vi.fn() }));
+
+const integrationWalletContextValue: WalletContextValue = {
+  ...defaultWalletContextValue,
+  evm: {
+    ecosystem: 'evm',
+    account: {
+      ecosystem: 'evm',
+      address: '0x0000000000000000000000000000000000000001',
+      status: 'connected',
+    },
+    isConnected: true,
+    disconnect: async () => {},
+  },
+};
 
 function createAdapter(initialLocation: PartialLocation): QueryParamAdapterComponent {
   return ({ children }) => {
@@ -64,6 +84,10 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
     multiInjectedProviderDiscovery: false,
     ssr: false,
   });
+  vi.mocked(getBalanceClient).mockReturnValue({
+    fetchBalance: async ({ tokenAddresses }) =>
+      Object.fromEntries(tokenAddresses.map((tokenAddress) => [tokenAddress, 0n])),
+  });
 
   const Wrapper = ({ children }: PropsWithChildren) => {
     useState(() => {
@@ -81,8 +105,10 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
                 provider: () => new Map(),
               }}
             >
-              <IntegrationBootstrap />
-              {children}
+              <WalletContext.Provider value={integrationWalletContextValue}>
+                <IntegrationBootstrap />
+                {children}
+              </WalletContext.Provider>
             </SWRConfig>
           </QueryClientProvider>
         </WagmiProvider>
