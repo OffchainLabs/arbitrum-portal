@@ -16,10 +16,17 @@ export type EcosystemConfig = {
     isValid: (address: string, options?: ValidationOptions) => boolean;
     normalize: (address: string) => string;
   };
+  transactionId: {
+    /** False while the ecosystem is disabled, unless `ignoreFeatureFlag` is set */
+    isValid: (transactionId: string, options?: ValidationOptions) => boolean;
+    normalize: (transactionId: string) => string;
+  };
   /** Address that stands for the native currency in balance requests and LiFi quotes */
   nativeTokenAddress: string;
   /** Tokens have separate parent and child chain addresses, as with Arbitrum's token bridge */
   hasParentChildTokenAddresses: boolean;
+  /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
+  hasTokenApprovals: boolean;
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
