@@ -1,5 +1,4 @@
-// Runs the Lighthouse bridge user flow against the PR and base builds.
-// Runs alternate between both builds, so they share the same runner conditions.
+// Runs the Lighthouse bridge user flow against the app at APP_URL, on desktop and mobile.
 import { mkdir, writeFile } from 'fs/promises';
 import { desktopConfig, startFlow } from 'lighthouse';
 import puppeteer from 'puppeteer-core';
@@ -8,7 +7,6 @@ const runs = 5;
 const outputDirectory = 'lighthouse-reports';
 const bridgePath =
   '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0';
-const builds = { pr: process.env.PR_URL, base: process.env.BASE_URL };
 
 async function click(page, selector) {
   const element = await page.waitForSelector(selector, { visible: true });
@@ -91,16 +89,11 @@ async function runFlow(origin, config) {
 await mkdir(outputDirectory, { recursive: true });
 
 for (let run = 1; run <= runs; run += 1) {
-  // Alternate which build goes first, so neither one always runs on a warmer runner
-  const order = run % 2 ? ['pr', 'base'] : ['base', 'pr'];
-
   for (const [formFactor, config] of Object.entries(formFactors)) {
-    for (const build of order) {
-      console.log(`Run ${run}/${runs}: ${build} ${formFactor}`);
-      const { result, html } = await runFlow(builds[build], config);
-      const file = `${outputDirectory}/${build}-${formFactor}-${run}`;
-      await writeFile(`${file}.json`, JSON.stringify(result));
-      await writeFile(`${file}.html`, html);
-    }
+    console.log(`Run ${run}/${runs}: ${formFactor}`);
+    const { result, html } = await runFlow(process.env.APP_URL, config);
+    const file = `${outputDirectory}/${formFactor}-${run}`;
+    await writeFile(`${file}.json`, JSON.stringify(result));
+    await writeFile(`${file}.html`, html);
   }
 }
