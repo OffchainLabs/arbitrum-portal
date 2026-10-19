@@ -6,7 +6,8 @@ const path = require('path');
 const marker = '<!-- lighthouse-report -->';
 const resultsDirectory = 'lighthouse-reports';
 
-// Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise
+// Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise.
+// Noisier metrics need larger changes, see compare().
 const metrics = {
   'performance': { label: 'Performance', higherIsBetter: true, minDelta: 2 },
   'accessibility': { label: 'Accessibility', higherIsBetter: true, minDelta: 2 },
@@ -132,6 +133,12 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+// Median absolute deviation, a measure of the run-to-run spread that ignores outliers
+function deviation(values) {
+  const center = median(values);
+  return median(values.map((value) => Math.abs(value - center)));
+}
+
 function readMetric(lhr, id) {
   if (metrics[id].read) {
     return metrics[id].read(lhr);
@@ -153,18 +160,26 @@ function summarize(flows) {
   return steps.map((step, index) => {
     const lhrs = flows.map((flow) => flow.steps[index].lhr);
     return Object.fromEntries(
-      step.metrics.map((id) => [
-        id,
-        Number(median(lhrs.map((lhr) => readMetric(lhr, id))).toFixed(metrics[id].decimals ?? 0)),
-      ]),
+      step.metrics.map((id) => {
+        const values = lhrs.map((lhr) => readMetric(lhr, id));
+        const value = Number(median(values).toFixed(metrics[id].decimals ?? 0));
+        return [id, { value, spread: deviation(values) }];
+      }),
     );
   });
 }
 
 function compare(pr, base, id) {
   const { higherIsBetter = false, minDelta, minRatio = 0, decimals = 0 } = metrics[id];
-  const difference = Number((pr - base).toFixed(decimals));
-  if (Math.abs(difference) < Math.max(minDelta, minRatio * Math.abs(base))) {
+  const difference = Number((pr.value - base.value).toFixed(decimals));
+  // Some runs on a shared runner are much slower than others, so changes also need to exceed
+  // three times the spread of the runs to count
+  const threshold = Math.max(
+    minDelta,
+    minRatio * Math.abs(base.value),
+    3 * Math.max(pr.spread, base.spread),
+  );
+  if (Math.abs(difference) < threshold) {
     return { difference, status: 'same' };
   }
   return { difference, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
@@ -186,9 +201,14 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
       rows: step.metrics
         .filter((id) => !formFactor.exclude?.includes(id))
         .map((id) => {
-          const prValue = pr[formFactor.key][index][id];
-          const baseValue = base[formFactor.key][index][id];
-          return { id, pr: prValue, base: baseValue, ...compare(prValue, baseValue, id) };
+          const prResult = pr[formFactor.key][index][id];
+          const baseResult = base[formFactor.key][index][id];
+          return {
+            id,
+            pr: prResult.value,
+            base: baseResult.value,
+            ...compare(prResult, baseResult, id),
+          };
         }),
     })),
   );
