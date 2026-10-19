@@ -21,6 +21,8 @@ type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
   account: WalletAccount<Ecosystem>;
   isConnected: boolean;
+  /** Old Trust Wallet versions can sign on the wrong network, so transfers warn first. */
+  needsNetworkSigningWarning?: boolean;
   disconnect: () => Promise<void>;
 };
 

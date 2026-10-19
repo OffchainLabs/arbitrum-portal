@@ -10,4 +10,5 @@ export const evmEcosystem: EcosystemConfig = {
     normalize: (address) => address.toLowerCase(),
   },
   nativeTokenAddress: zeroAddress,
+  hasParentChildTokenAddresses: true,
 };

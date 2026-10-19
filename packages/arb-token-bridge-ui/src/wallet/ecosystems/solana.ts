@@ -26,4 +26,5 @@ export const solanaEcosystem: EcosystemConfig = {
     normalize: (address) => address,
   },
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
+  hasParentChildTokenAddresses: false,
 };

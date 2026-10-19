@@ -1,10 +1,11 @@
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { useMemo } from 'react';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
+import { getNativeTokenAddress } from '../../../wallet/ecosystems/getEcosystemConfig';
 import { useTokenBalances } from '../../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../../wallet/hooks/useWallets';
 import { resolveTokenAddress } from '../../../wallet/resolveTokenAddress';
@@ -27,6 +28,8 @@ export function useNativeCurrencyBalances(): {
     },
   } = useWallets();
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const sourceGasTokenAddress = getNativeTokenAddress(networks.sourceChain.id);
+  const destinationGasTokenAddress = getNativeTokenAddress(networks.destinationChain.id);
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
   const sourceTokenAddress = resolveTokenAddress({
     token: null,
@@ -52,7 +55,7 @@ export function useNativeCurrencyBalances(): {
   const { data: sourceGasBalances } = useTokenBalances({
     chainId: networks.sourceChain.id,
     walletAddress: sourceWalletAddress,
-    tokenAddresses: [constants.AddressZero],
+    tokenAddresses: [sourceGasTokenAddress],
   });
   const { data: destinationBalances } = useTokenBalances({
     chainId: networks.destinationChain.id,
@@ -62,7 +65,7 @@ export function useNativeCurrencyBalances(): {
   const { data: destinationGasBalances } = useTokenBalances({
     chainId: networks.destinationChain.id,
     walletAddress: destinationWalletAccountAddress,
-    tokenAddresses: [constants.AddressZero],
+    tokenAddresses: [destinationGasTokenAddress],
   });
 
   return useMemo(() => {
@@ -73,18 +76,20 @@ export function useNativeCurrencyBalances(): {
       sourceBalance: toBigNumber(
         sourceTokenAddress ? sourceBalances?.[sourceTokenAddress] : undefined,
       ),
-      sourceGasBalance: toBigNumber(sourceGasBalances?.[constants.AddressZero]),
+      sourceGasBalance: toBigNumber(sourceGasBalances?.[sourceGasTokenAddress]),
       destinationBalance: toBigNumber(
         destinationTokenAddress ? destinationBalances?.[destinationTokenAddress] : undefined,
       ),
-      destinationGasBalance: toBigNumber(destinationGasBalances?.[constants.AddressZero]),
+      destinationGasBalance: toBigNumber(destinationGasBalances?.[destinationGasTokenAddress]),
     };
   }, [
     destinationBalances,
     destinationGasBalances,
+    destinationGasTokenAddress,
     destinationTokenAddress,
     sourceBalances,
     sourceGasBalances,
+    sourceGasTokenAddress,
     sourceTokenAddress,
   ]);
 }
