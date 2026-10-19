@@ -46,6 +46,13 @@ const metrics = {
     minDelta: 50,
     minRatio: 0.1,
   },
+  'bootup-time': {
+    label: 'JavaScript Execution Time',
+    short: 'JS time',
+    unit: 'ms',
+    minDelta: 50,
+    minRatio: 0.1,
+  },
   // Unlike the total byte weight, which varies with API responses, this is stable across runs
   'script-size': {
     label: 'JavaScript Transfer Size',
@@ -66,11 +73,25 @@ const verdicts = {
   worse: '🔴 **Lighthouse: regression**',
 };
 
-// Matches the navigation, timespan and snapshot steps of flow.mjs
+const formFactors = [
+  { key: 'desktop', label: 'Desktop' },
+  // The JavaScript transfer size doesn't depend on the form factor, so it's only reported once
+  { key: 'mobile', label: 'Mobile', exclude: ['script-size'] },
+];
+
+const interactionMetrics = [
+  'total-blocking-time',
+  'cumulative-layout-shift',
+  'interaction-to-next-paint',
+  'bootup-time',
+];
+
+// Matches the navigation, timespan and snapshot steps of flow.mjs.
+// Steps of the same group share a line in the summary.
 const steps = [
   {
     name: 'Load bridge',
-    short: 'Load',
+    group: 'load',
     metrics: [
       'performance',
       'accessibility',
@@ -80,24 +101,26 @@ const steps = [
       'largest-contentful-paint',
       'total-blocking-time',
       'cumulative-layout-shift',
+      'bootup-time',
       'script-size',
     ],
     summary: ['performance', 'largest-contentful-paint', 'total-blocking-time', 'script-size'],
   },
-  {
-    name: 'Configure transfer',
-    short: 'Interaction',
-    metrics: [
-      'performance',
-      'best-practices',
-      'total-blocking-time',
-      'cumulative-layout-shift',
-      'interaction-to-next-paint',
-    ],
-    summary: ['total-blocking-time', 'interaction-to-next-paint'],
-  },
+  ...[
+    ['Enter amount', 'Amount'],
+    ['Switch networks', 'Networks'],
+    ['Select token', 'Token'],
+    ['Switch to Xai', 'Xai'],
+  ].map(([name, short]) => ({
+    name,
+    short,
+    group: 'interactions',
+    metrics: interactionMetrics,
+    summary: ['interaction-to-next-paint'],
+  })),
   {
     name: 'Configured transfer',
+    group: 'final state',
     metrics: ['accessibility', 'best-practices', 'seo'],
     summary: [],
   },
@@ -119,10 +142,10 @@ function readMetric(lhr, id) {
   return lhr.audits[id]?.numericValue ?? 0;
 }
 
-function readFlows(build) {
+function readFlows(build, formFactor) {
   return fs
     .readdirSync(resultsDirectory)
-    .filter((file) => file.startsWith(`${build}-`) && file.endsWith('.json'))
+    .filter((file) => file.startsWith(`${build}-${formFactor}-`) && file.endsWith('.json'))
     .map((file) => JSON.parse(fs.readFileSync(path.join(resultsDirectory, file), 'utf8')));
 }
 
@@ -151,17 +174,25 @@ function withUnit(value, id) {
   return metrics[id].unit ? `${value} ${metrics[id].unit}` : `${value}`;
 }
 
-function formatDelta({ difference }, id) {
+function formatDelta({ id, difference }) {
   return withUnit(difference > 0 ? `+${difference}` : `${difference}`, id);
 }
 
 function formatReport({ pr, base, runs, baseSha, runUrl }) {
-  const comparisons = steps.map((step, index) =>
-    Object.fromEntries(step.metrics.map((id) => [id, compare(pr[index][id], base[index][id], id)])),
+  const sections = formFactors.flatMap((formFactor) =>
+    steps.map((step, index) => ({
+      formFactor,
+      step,
+      rows: step.metrics
+        .filter((id) => !formFactor.exclude?.includes(id))
+        .map((id) => {
+          const prValue = pr[formFactor.key][index][id];
+          const baseValue = base[formFactor.key][index][id];
+          return { id, pr: prValue, base: baseValue, ...compare(prValue, baseValue, id) };
+        }),
+    })),
   );
-  const statuses = comparisons.flatMap((comparison) =>
-    Object.values(comparison).map(({ status }) => status),
-  );
+  const statuses = sections.flatMap(({ rows }) => rows.map(({ status }) => status));
   const verdict = statuses.includes('worse')
     ? 'worse'
     : statuses.includes('better')
@@ -169,28 +200,35 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
       : 'same';
 
   // Key metrics of each step, plus any other metric that changed significantly
-  const summary = steps.flatMap((step, index) => {
-    const ids = step.metrics.filter(
-      (id) => step.summary.includes(id) || comparisons[index][id].status !== 'same',
-    );
-    if (ids.length === 0) {
-      return [];
-    }
-    const values = ids.map((id) => {
-      const comparison = comparisons[index][id];
-      return `${icons[comparison.status]} ${metrics[id].short ?? metrics[id].label} ${withUnit(pr[index][id], id)} (${formatDelta(comparison, id)})`;
-    });
-    return [`- **${step.short ?? step.name}**: ${values.join(' · ')}`];
-  });
+  const groups = new Map();
+  for (const { formFactor, step, rows } of sections) {
+    const label = `${formFactor.label} ${step.group}`;
+    const items = rows
+      .filter((row) => step.summary.includes(row.id) || row.status !== 'same')
+      .map((row) => {
+        const name = [step.short, metrics[row.id].short ?? metrics[row.id].label].filter(Boolean);
+        return `${icons[row.status]} ${name.join(' ')} ${withUnit(row.pr, row.id)} (${formatDelta(row)})`;
+      });
+    groups.set(label, [...(groups.get(label) ?? []), ...items]);
+  }
+  const summary = [...groups]
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => `- **${label}**: ${items.join(' · ')}`);
 
-  const tables = steps.flatMap((step, index) => [
-    `| ${step.name} | PR | Base | Δ |`,
-    '|---|---:|---:|---:|',
-    ...step.metrics.map((id) => {
-      const comparison = comparisons[index][id];
-      return `| ${metrics[id].label} | ${withUnit(pr[index][id], id)} | ${withUnit(base[index][id], id)} | ${icons[comparison.status]} ${formatDelta(comparison, id)} |`;
-    }),
+  const tables = formFactors.flatMap((formFactor) => [
+    `#### ${formFactor.label}`,
     '',
+    ...sections
+      .filter((section) => section.formFactor === formFactor)
+      .flatMap(({ step, rows }) => [
+        `| ${step.name} | PR | Base | Δ |`,
+        '|---|---:|---:|---:|',
+        ...rows.map(
+          (row) =>
+            `| ${metrics[row.id].label} | ${withUnit(row.pr, row.id)} | ${withUnit(row.base, row.id)} | ${icons[row.status]} ${formatDelta(row)} |`,
+        ),
+        '',
+      ]),
   ]);
 
   return [
@@ -202,7 +240,7 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
     '<details>',
     '<summary>Details</summary>',
     '',
-    `Median of ${runs} desktop runs of the bridge user flow. PR and base (${baseSha.slice(0, 7)}) runs alternate on the same runner. Δ is PR minus base.`,
+    `Median of ${runs} desktop and mobile runs of the bridge user flow. PR and base (${baseSha.slice(0, 7)}) runs alternate on the same runner. Δ is PR minus base.`,
     '',
     `${icons.better} improvement · ${icons.worse} regression · ${icons.same} within run-to-run noise (2 points for scores, 10% and at least 50 ms for timings, 0.02 for CLS, 5 KiB for JavaScript)`,
     '',
@@ -214,19 +252,27 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
 }
 
 module.exports = async ({ github, context, core }) => {
-  const prFlows = readFlows('pr');
-  const baseFlows = readFlows('base');
+  const flows = Object.fromEntries(
+    ['pr', 'base'].map((build) => [
+      build,
+      Object.fromEntries(formFactors.map(({ key }) => [key, readFlows(build, key)])),
+    ]),
+  );
 
-  if (prFlows.length === 0 || baseFlows.length === 0) {
+  if (
+    Object.values(flows).some((build) => Object.values(build).some((runs) => runs.length === 0))
+  ) {
     throw new Error('Missing Lighthouse results for the PR or base build.');
   }
 
   const { owner, repo } = context.repo;
   const pullRequest = context.payload.pull_request;
+  const summarizeBuild = (build) =>
+    Object.fromEntries(Object.entries(build).map(([key, runs]) => [key, summarize(runs)]));
   const body = formatReport({
-    pr: summarize(prFlows),
-    base: summarize(baseFlows),
-    runs: prFlows.length,
+    pr: summarizeBuild(flows.pr),
+    base: summarizeBuild(flows.base),
+    runs: flows.pr.desktop.length,
     baseSha: pullRequest.base.sha,
     runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
   });
