@@ -1,10 +1,11 @@
-// Compares the Lighthouse user flow runs of the PR build against the base build and
-// posts the result as a PR comment. Each value is the median of all runs of a build.
+// Compares the Lighthouse user flow runs of the PR against the latest runs on master and
+// posts the result as a PR comment. Each value is the median of all runs.
 const fs = require('fs');
 const path = require('path');
 
 const marker = '<!-- lighthouse-report -->';
 const resultsDirectory = 'lighthouse-reports';
+const baselineDirectory = 'lighthouse-baseline';
 
 // Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise.
 // Noisier metrics need larger changes, see compare().
@@ -68,16 +69,11 @@ const metrics = {
 };
 
 const icons = { better: '🟢', same: '⚪', worse: '🔴' };
-const verdicts = {
-  better: '🟢 **Lighthouse: improvement**',
-  same: '⚪ **Lighthouse: no significant change**',
-  worse: '🔴 **Lighthouse: regression**',
-};
 
 const formFactors = [
-  { key: 'desktop', label: 'Desktop' },
+  { key: 'desktop', label: 'Desktop', icon: '🖥️' },
   // The JavaScript transfer size doesn't depend on the form factor, so it's only reported once
-  { key: 'mobile', label: 'Mobile', exclude: ['script-size'] },
+  { key: 'mobile', label: 'Mobile', icon: '📱', exclude: ['script-size'] },
 ];
 
 const interactionMetrics = [
@@ -87,12 +83,10 @@ const interactionMetrics = [
   'bootup-time',
 ];
 
-// Matches the navigation, timespan and snapshot steps of flow.mjs.
-// Steps of the same group share a line in the summary.
+// Matches the navigation, timespan and snapshot steps of flow.mjs
 const steps = [
   {
     name: 'Load bridge',
-    group: 'load',
     metrics: [
       'performance',
       'accessibility',
@@ -105,25 +99,14 @@ const steps = [
       'bootup-time',
       'script-size',
     ],
-    summary: ['performance', 'largest-contentful-paint', 'total-blocking-time', 'script-size'],
   },
-  ...[
-    ['Enter amount', 'Amount'],
-    ['Switch networks', 'Networks'],
-    ['Select token', 'Token'],
-    ['Switch to Xai', 'Xai'],
-  ].map(([name, short]) => ({
+  ...['Enter amount', 'Switch networks', 'Select token', 'Switch to Xai'].map((name) => ({
     name,
-    short,
-    group: 'interactions',
     metrics: interactionMetrics,
-    summary: ['interaction-to-next-paint'],
   })),
   {
     name: 'Configured transfer',
-    group: 'final state',
     metrics: ['accessibility', 'best-practices', 'seo'],
-    summary: [],
   },
 ];
 
@@ -149,11 +132,14 @@ function readMetric(lhr, id) {
   return lhr.audits[id]?.numericValue ?? 0;
 }
 
-function readFlows(build, formFactor) {
+function readFlows(directory, formFactor) {
+  if (!fs.existsSync(directory)) {
+    return [];
+  }
   return fs
-    .readdirSync(resultsDirectory)
-    .filter((file) => file.startsWith(`${build}-${formFactor}-`) && file.endsWith('.json'))
-    .map((file) => JSON.parse(fs.readFileSync(path.join(resultsDirectory, file), 'utf8')));
+    .readdirSync(directory)
+    .filter((file) => file.startsWith(`${formFactor}-`) && file.endsWith('.json'))
+    .map((file) => JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')));
 }
 
 function summarize(flows) {
@@ -189,11 +175,56 @@ function withUnit(value, id) {
   return metrics[id].unit ? `${value} ${metrics[id].unit}` : `${value}`;
 }
 
-function formatDelta({ id, difference }) {
-  return withUnit(difference > 0 ? `+${difference}` : `${difference}`, id);
+// Relative changes are only shown for measurements, scores are already percentages
+function formatDelta({ id, difference, base }) {
+  const delta = withUnit(difference > 0 ? `+${difference}` : `${difference}`, id);
+  if (!metrics[id].unit || base === 0) {
+    return delta;
+  }
+  const percent = Math.round((difference / base) * 100);
+  return `${delta} (${percent > 0 ? '+' : ''}${percent}%)`;
 }
 
-function formatReport({ pr, base, runs, baseSha, runUrl }) {
+function formatDirection(id) {
+  return metrics[id].higherIsBetter ? '⬆️ higher is better' : '⬇️ lower is better';
+}
+
+// One collapsible section per status, with a nested one for each step that changed
+function formatChanges({ sections, status, title }) {
+  const groups = sections
+    .map((section) => ({ ...section, rows: section.rows.filter((row) => row.status === status) }))
+    .filter(({ rows }) => rows.length > 0);
+  const count = groups.reduce((total, { rows }) => total + rows.length, 0);
+  if (count === 0) {
+    return [];
+  }
+
+  return [
+    '<details>',
+    `<summary><b>${icons[status]} ${title} (${count})</b></summary>`,
+    '',
+    ...groups.flatMap(({ formFactor, step, rows }) => [
+      '<details>',
+      `<summary>${formFactor.icon} ${formFactor.label} · ${step.name} — ${rows
+        .map(({ id }) => metrics[id].short ?? metrics[id].label)
+        .join(', ')}</summary>`,
+      '',
+      '| Metric | Master | PR | Δ |',
+      '|:---|---:|---:|---:|',
+      ...rows.map(
+        (row) =>
+          `| ${metrics[row.id].label}<br><sub>${formatDirection(row.id)}</sub> | ${withUnit(row.base, row.id)} | ${withUnit(row.pr, row.id)} | **${formatDelta(row)}** |`,
+      ),
+      '',
+      '</details>',
+      '',
+    ]),
+    '</details>',
+    '',
+  ];
+}
+
+function formatReport({ pr, base, runs, baseline, runUrl }) {
   const sections = formFactors.flatMap((formFactor) =>
     steps.map((step, index) => ({
       formFactor,
@@ -212,78 +243,53 @@ function formatReport({ pr, base, runs, baseSha, runUrl }) {
         }),
     })),
   );
-  const statuses = sections.flatMap(({ rows }) => rows.map(({ status }) => status));
-  const verdict = statuses.includes('worse')
-    ? 'worse'
-    : statuses.includes('better')
-      ? 'better'
-      : 'same';
 
-  // Key metrics of each step, plus any other metric that changed significantly
-  const groups = new Map();
-  for (const { formFactor, step, rows } of sections) {
-    const label = `${formFactor.label} ${step.group}`;
-    const items = rows
-      .filter((row) => step.summary.includes(row.id) || row.status !== 'same')
-      .map((row) => {
-        const name = [step.short, metrics[row.id].short ?? metrics[row.id].label].filter(Boolean);
-        return `${icons[row.status]} ${name.join(' ')} ${withUnit(row.pr, row.id)} (${formatDelta(row)})`;
-      });
-    groups.set(label, [...(groups.get(label) ?? []), ...items]);
-  }
-  const summary = [...groups]
-    .filter(([, items]) => items.length > 0)
-    .map(([label, items]) => `- **${label}**: ${items.join(' · ')}`);
-
-  const tables = formFactors.flatMap((formFactor) => [
-    `#### ${formFactor.label}`,
-    '',
-    ...sections
-      .filter((section) => section.formFactor === formFactor)
-      .flatMap(({ step, rows }) => [
-        `| ${step.name} | PR | Base | Δ |`,
-        '|---|---:|---:|---:|',
-        ...rows.map(
-          (row) =>
-            `| ${metrics[row.id].label} | ${withUnit(row.pr, row.id)} | ${withUnit(row.base, row.id)} | ${icons[row.status]} ${formatDelta(row)} |`,
-        ),
-        '',
-      ]),
-  ]);
+  const rows = sections.flatMap((section) => section.rows);
+  const count = (status) => rows.filter((row) => row.status === status).length;
+  const changes = [
+    ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
+    ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
+  ];
 
   return [
     marker,
-    verdicts[verdict],
+    '## 🔦 Lighthouse report',
     '',
-    ...summary,
+    `| ${icons.worse} Regressions | ${icons.better} Improvements | ${icons.same} Unchanged |`,
+    '|:---:|:---:|:---:|',
+    `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    '<details>',
-    '<summary>Details</summary>',
+    `Median of ${runs} desktop and mobile runs of the bridge user flow, compared with the [latest master runs](${baseline.url}) (\`${baseline.sha.slice(0, 7)}\`).`,
     '',
-    `Median of ${runs} desktop and mobile runs of the bridge user flow. PR and base (${baseSha.slice(0, 7)}) runs alternate on the same runner. Δ is PR minus base.`,
+    ...(changes.length > 0 ? ['---', '', ...changes] : []),
+    '---',
     '',
-    ...tables,
-    `Full reports are attached to the [workflow run](${runUrl}).`,
-    '',
-    '</details>',
+    `📄 Full reports are attached to the [workflow run](${runUrl}).`,
   ].join('\n');
 }
 
 module.exports = async ({ github, context, core }) => {
+  const { owner, repo } = context.repo;
+  const runUrl = (runId) => `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`;
   const flows = Object.fromEntries(
-    ['pr', 'base'].map((build) => [
+    [
+      ['pr', resultsDirectory],
+      ['base', baselineDirectory],
+    ].map(([build, directory]) => [
       build,
-      Object.fromEntries(formFactors.map(({ key }) => [key, readFlows(build, key)])),
+      Object.fromEntries(formFactors.map(({ key }) => [key, readFlows(directory, key)])),
     ]),
   );
 
-  if (
-    Object.values(flows).some((build) => Object.values(build).some((runs) => runs.length === 0))
-  ) {
-    throw new Error('Missing Lighthouse results for the PR or base build.');
+  if (Object.values(flows.pr).some((runs) => runs.length === 0)) {
+    throw new Error('Missing Lighthouse results for the PR.');
+  }
+  // The baseline comes from the Lighthouse workflow on master, which runs after each merge
+  if (Object.values(flows.base).some((runs) => runs.length === 0)) {
+    core.warning('No Lighthouse baseline from master yet, skipping the comparison.');
+    return;
   }
 
-  const { owner, repo } = context.repo;
   const pullRequest = context.payload.pull_request;
   const summarizeBuild = (build) =>
     Object.fromEntries(Object.entries(build).map(([key, runs]) => [key, summarize(runs)]));
@@ -291,8 +297,8 @@ module.exports = async ({ github, context, core }) => {
     pr: summarizeBuild(flows.pr),
     base: summarizeBuild(flows.base),
     runs: flows.pr.desktop.length,
-    baseSha: pullRequest.base.sha,
-    runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+    baseline: { sha: process.env.BASELINE_SHA, url: runUrl(process.env.BASELINE_RUN_ID) },
+    runUrl: runUrl(context.runId),
   });
 
   await core.summary.addRaw(body).write();
