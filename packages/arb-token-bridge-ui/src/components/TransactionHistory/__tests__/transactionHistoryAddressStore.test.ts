@@ -1,3 +1,4 @@
+import bs58 from 'bs58';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -96,5 +97,18 @@ describe.sequential('useTransactionHistoryAddressStore', () => {
     setSearchMode('txHash');
 
     expect(useTransactionHistoryAddressStore.getState().sanitizedAddress).toBe(VALID_ADDRESS);
+  });
+
+  it('accepts a Solana signature without changing its case only while Solana is enabled', () => {
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    const { setSanitizedTxHash } = useTransactionHistoryAddressStore.getState();
+
+    flags.solana = false;
+    setSanitizedTxHash(signature);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedTxHash).toBeUndefined();
+
+    flags.solana = true;
+    setSanitizedTxHash(signature);
+    expect(useTransactionHistoryAddressStore.getState().sanitizedTxHash).toBe(signature);
   });
 });
