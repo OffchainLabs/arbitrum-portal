@@ -114,6 +114,8 @@ module.exports = {
         'off-white': '#fbfbfb',
         'one-blue': '#1b4add',
         'nova-orange': '#e57310',
+        // Robinhood Chain's #CCFF00 accent at 20% over black, made opaque
+        'robinhood-dark': '#293300',
         'orange': '#FFEED3',
         'dark-orange': '#60461F',
         'atmosphere-blue': '#152C4E',

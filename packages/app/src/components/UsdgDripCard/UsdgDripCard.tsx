@@ -8,7 +8,9 @@ import { shallow } from 'zustand/shallow';
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
 import { useMode } from '@/bridge/hooks/useMode';
+import { ChainId } from '@/bridge/types/ChainId';
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
+import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
 
 import { useUsdgDripCardStore } from './useUsdgDripCard';
 
@@ -19,6 +21,7 @@ export function UsdgDripCard() {
   );
   const isBannerVisible = useSiteBannerVisible();
   const { embedMode } = useMode();
+  const { color } = getBridgeUiConfigForChain(ChainId.RobinhoodChain);
 
   if (!isOpen) {
     return null;
@@ -32,10 +35,10 @@ export function UsdgDripCard() {
   return (
     <aside
       aria-label="USDG DRIP rewards"
+      style={{ borderColor: color }}
       className={twMerge(
-        // #293300 is Robinhood's #CCFF00 accent at 20% over the black page, made opaque so the
-        // card stays readable where it overlaps the panel on narrow screens.
-        'fixed z-40 flex flex-col items-start gap-[15px] rounded border border-[#CCFF00] bg-[#293300] p-[15px] text-white',
+        // opaque so the card stays readable where it overlaps the panel on narrow screens
+        'fixed z-40 flex flex-col items-start gap-[15px] rounded border bg-robinhood-dark p-[15px] text-white',
         'motion-safe:animate-slide-in-right',
         embedMode
           ? // the widget has no app shell to anchor to, so it keeps the mobile layout at every
@@ -50,7 +53,7 @@ export function UsdgDripCard() {
             ],
       )}
     >
-      <span className="rounded-[5px] bg-black px-2 py-0.5 text-xs text-[#CCFF00]">
+      <span style={{ color }} className="rounded-[5px] bg-black px-2 py-0.5 text-xs">
         DRIP program
       </span>
       <div className="flex w-full items-start gap-[5px]">
