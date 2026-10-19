@@ -2,7 +2,6 @@ name: Lighthouse
 
 permissions:
   contents: read
-  issues: write
   pull-requests: write
 
 on:
@@ -13,11 +12,9 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-  workflow_dispatch:
-  merge_group:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 env:
@@ -27,20 +24,15 @@ env:
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
   VAULTS_FYI_API_KEY: ${{ secrets.VAULTS_FYI_API_KEY }}
   THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+  INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
+  PR_URL: http://localhost:3000/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0
+  BASE_URL: http://localhost:3001/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0
 
 jobs:
-  build:
-    name: Build
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ./.github/workflows/build.yml
-    with:
-      is_e2e_build: false
-    secrets: inherit
-
   lighthouse:
     name: Run Lighthouse
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-4
-    needs: [build]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -60,61 +52,50 @@ jobs:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
+      - name: Build PR
+        run: pnpm build
 
+      # Measure the base build on the same runner, so the comparison isn't skewed by hardware differences
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Build base
+        working-directory: base
+        run: pnpm install --frozen-lockfile && pnpm build
+
+      # Use the pinned Chrome for Testing, so results don't shift with runner image updates
       - name: Locate Chrome for Testing
-        shell: bash
         run: |
           chrome_version=$(node -p "require('./package.json').config.chromeVersion")
           echo "CHROME_PATH=$PWD/node_modules/.cache/synpress/chrome/linux-$chrome_version/chrome-linux64/chrome" >> "$GITHUB_ENV"
 
-      - name: Run Lighthouse
-        run: pnpm start-server-and-test 'start' http://127.0.0.1:3000 'pnpm lighthouse:ci'
-
-      - name: Add Lighthouse results to job summary
-        if: always()
-        shell: bash
+      - name: Start servers
         run: |
-          if [[ -f lighthouse-reports/summary.md ]]; then
-            cat lighthouse-reports/summary.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          PORT=3000 pnpm start &
+          (cd base && PORT=3001 pnpm start) &
+          # Wait for both servers, then warm them up so no measured run hits a cold server
+          for url in "$PR_URL" "$BASE_URL"; do
+            curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "$url"
+            curl --silent --fail --output /dev/null "$url"
+          done
 
-      - name: Update Lighthouse PR comment
-        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      - name: Run Lighthouse
+        id: lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: .github/lighthouse/lighthouserc.json
+          urls: |
+            ${{ env.PR_URL }}
+            ${{ env.BASE_URL }}
+
+      - name: Report results
         uses: actions/github-script@v7
+        env:
+          RESULTS_PATH: ${{ steps.lighthouse.outputs.resultsPath }}
         with:
           script: |
-            const fs = require('fs')
-            const body = fs.readFileSync('lighthouse-reports/summary.md', 'utf8')
-            const marker = '<!-- lighthouse-user-flow-report -->'
-            const { owner, repo } = context.repo
-            const issue_number = context.issue.number
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100
-            })
-            const previous = comments.find(comment =>
-              comment.user?.type === 'Bot' && comment.body?.includes(marker)
-            )
-
-            if (previous) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: previous.id,
-                body
-              })
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body })
-            }
-
-      - name: Upload Lighthouse reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-reports-${{ github.sha }}
-          path: lighthouse-reports
-          if-no-files-found: warn
+            const report = require('./.github/lighthouse/report.js')
+            await report({ github, context, core })
