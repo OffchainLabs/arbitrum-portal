@@ -302,9 +302,15 @@ export const addBridgeTokenListToBridge = (
   });
 };
 
-export async function fetchBridgeTokenList(bridgeTokenList: BridgeTokenList): Promise<{
+export type TokenListFetchResult = {
   data: TokenList | undefined;
-}> {
+  /** HTTP status code when the server answered a failed request. */
+  status?: number;
+};
+
+export async function fetchBridgeTokenList(
+  bridgeTokenList: BridgeTokenList,
+): Promise<TokenListFetchResult> {
   if (bridgeTokenList.tokenList) {
     return { data: bridgeTokenList.tokenList };
   }
@@ -316,9 +322,7 @@ export async function fetchBridgeTokenList(bridgeTokenList: BridgeTokenList): Pr
   return fetchTokenListFromURL(bridgeTokenList.url);
 }
 
-export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
-  data: TokenList | undefined;
-}> {
+export async function fetchTokenListFromURL(tokenListURL: string): Promise<TokenListFetchResult> {
   try {
     const { data } = await axios.get(tokenListURL, {
       headers: {
@@ -329,6 +333,9 @@ export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
     return { data };
   } catch (error) {
     logger.warn('Token List URL Invalid', tokenListURL);
-    return { data: undefined };
+    return {
+      data: undefined,
+      status: axios.isAxiosError(error) ? error.response?.status : undefined,
+    };
   }
 }
