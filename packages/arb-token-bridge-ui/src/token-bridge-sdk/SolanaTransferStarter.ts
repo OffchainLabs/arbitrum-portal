@@ -52,7 +52,8 @@ export class SolanaTransferStarter {
     return {
       transferType: 'lifi' as const,
       status: 'pending' as const,
-      sourceChainTransaction: { hash: txHash },
+      // LiFi returns the signature once the transaction is confirmed
+      sourceChainTransaction: { hash: txHash, wait: () => Promise.resolve() },
       lifiRoute: route,
     };
   }
