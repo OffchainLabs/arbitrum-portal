@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { PropsWithChildren, useMemo, useState } from 'react';
-import { SWRConfig } from 'swr';
+import { type Middleware, SWRConfig } from 'swr';
 import {
   PartialLocation,
   QueryParamAdapter,
@@ -61,6 +61,7 @@ function createAdapter(initialLocation: PartialLocation): QueryParamAdapterCompo
 
 type CreateIntegrationWrapperParams = {
   search?: string;
+  swrMiddleware?: Middleware[];
 };
 
 function IntegrationBootstrap() {
@@ -74,7 +75,10 @@ function IntegrationBootstrap() {
   );
 }
 
-export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapperParams = {}) {
+export function createIntegrationWrapper({
+  search = '',
+  swrMiddleware,
+}: CreateIntegrationWrapperParams = {}) {
   const queryClient = new QueryClient();
   const adapter = createAdapter({
     search,
@@ -107,6 +111,7 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
               <SWRConfig
                 value={{
                   provider: () => new Map(),
+                  use: swrMiddleware,
                 }}
               >
                 <WalletContext.Provider value={integrationWalletContextValue}>
